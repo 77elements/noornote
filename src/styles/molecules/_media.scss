@@ -130,6 +130,53 @@
   }
 }
 
+// YouTube embed wrapper (iframe + external link)
+.youtube-embed-wrapper {
+  margin: $gap 0;
+
+  .youtube-embed {
+    position: relative;
+    width: 100%;
+    max-width: 514px; // Keep under 514px to prevent YouTube's own "Watch on YouTube"
+    padding-bottom: min(56.25%, 289px); // 16:9 aspect ratio, capped at 289px (514px * 9/16)
+    border-radius: calc($gap / 2);
+    background: $color-1;
+
+    iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: calc($gap / 2);
+    }
+  }
+
+  .youtube-external-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: calc($gap / 2);
+    color: $color-4;
+    font-size: 13px;
+    text-decoration: none;
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      width: 20px;
+      height: 14px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 20'%3E%3Cpath fill='%23FF0000' d='M27.4 3.1c-.3-1.2-1.2-2.1-2.4-2.4C22.8 0 14 0 14 0S5.2 0 3 .7C1.8 1 .9 1.9.6 3.1 0 5.3 0 10 0 10s0 4.7.6 6.9c.3 1.2 1.2 2.1 2.4 2.4 2.2.7 11 .7 11 .7s8.8 0 11-.7c1.2-.3 2.1-1.2 2.4-2.4.6-2.2.6-6.9.6-6.9s0-4.7-.6-6.9z'/%3E%3Cpath fill='%23FFF' d='M11.2 14.3L18.5 10l-7.3-4.3v8.6z'/%3E%3C/svg%3E") no-repeat center;
+      background-size: contain;
+    }
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
 // NSFW media blur (timeline)
 .nsfw-media {
   position: relative;

@@ -19,6 +19,23 @@ export interface MediaContent {
 }
 
 /**
+ * Extract YouTube video ID from URL
+ */
+function getYouTubeVideoId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /youtube\.com\/watch\?.*v=([^&\n?#]+)/,
+    /youtube\.com\/shorts\/([^&\n?#]+)/,
+    /youtube\.com\/live\/([^&\n?#]+)/
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1].trim();
+  }
+  return null;
+}
+
+/**
  * Render single media item inline (without grid wrapper)
  * Used for inline media placement where placeholders are
  */
@@ -28,8 +45,12 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
       const imageClass = isNSFW ? 'note-image note-image--clickable note-image--nsfw-blur' : 'note-image note-image--clickable';
       return `<img src="${item.url}" alt="${item.alt || ''}" class="${imageClass}" loading="lazy" data-image-index="${index}">`;
     case 'video':
+      // Check if YouTube
+      const videoId = getYouTubeVideoId(item.url);
+      if (videoId) {
+        return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${videoId}" class="youtube-external-link">Watch on YouTube</a></div>`;
+      }
       if (item.thumbnail) {
-        // YouTube or video with thumbnail
         return `<div class="note-video"><img src="${item.thumbnail}" alt="Video thumbnail" class="video-thumbnail"><a href="${item.url}" target="_blank" class="video-link">▶️ Watch Video</a></div>`;
       } else {
         return `<video src="${item.url}" controls class="note-video" preload="auto"></video>`;
@@ -60,8 +81,11 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
       case 'image':
         return `<img src="${item.url}" alt="${item.alt || ''}" class="note-image note-image--clickable" loading="lazy" data-image-index="${index}">`;
       case 'video':
+        const ytId = getYouTubeVideoId(item.url);
+        if (ytId) {
+          return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${ytId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${ytId}" class="youtube-external-link">Watch on YouTube</a></div>`;
+        }
         if (item.thumbnail) {
-          // YouTube or video with thumbnail - NO whitespace to prevent invisible text nodes
           return `<div class="note-video"><img src="${item.thumbnail}" alt="Video thumbnail" class="video-thumbnail"><a href="${item.url}" target="_blank" class="video-link">▶️ Watch Video</a></div>`;
         } else {
           return `<video src="${item.url}" controls class="note-video" preload="auto"></video>`;
