@@ -88,6 +88,7 @@ export class NoteMenu {
     // Check if thread is muted
     const muteOrch = MuteOrchestrator.getInstance();
     const isThreadMuted = await muteOrch.isEventMuted(this.options.eventId);
+    const privateMutesEnabled = muteOrch.isPrivateMutesEnabled();
 
     // Check if subscribed to article notifications for this user
     const articleNotifService = ArticleNotificationService.getInstance();
@@ -170,19 +171,27 @@ export class NoteMenu {
         Report
       </button>
 
-      <button class="note-menu-item note-menu-item--danger" data-action="mute-user-privately">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Mute user privately
-      </button>
-
-      <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Mute user publicly
-      </button>
+      ${privateMutesEnabled ? `
+        <button class="note-menu-item note-menu-item--danger" data-action="mute-user-privately">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Mute user privately
+        </button>
+        <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Mute user publicly
+        </button>
+      ` : `
+        <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Mute user
+        </button>
+      `}
 
       <div class="note-menu-divider"></div>
 
