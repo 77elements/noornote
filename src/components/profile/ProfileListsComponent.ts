@@ -234,7 +234,7 @@ export class ProfileListsComponent {
             </svg>
           </span>
           <div class="profile-list-item__content">
-            <a href="${url.startsWith('http') ? url : `https://${url}`}" target="_blank" rel="noopener noreferrer" class="profile-list-item__url">
+            <a href="${url.startsWith('http') ? url : `https://${url}`}" rel="noopener noreferrer" class="profile-list-item__url">
               ${this.escapeHtml(displayUrl)}
             </a>
             ${description ? `<span class="profile-list-item__desc">${this.escapeHtml(description)}</span>` : ''}

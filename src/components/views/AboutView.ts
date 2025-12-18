@@ -85,7 +85,7 @@ export class AboutView extends View {
           <h2>Open Source</h2>
           <p>
             NoorNote and NoorSigner are free and open source software, released under the
-            <a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT License</a>.
+            <a href="https://opensource.org/licenses/MIT" rel="noopener noreferrer">MIT License</a>.
           </p>
         </section>
 

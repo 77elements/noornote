@@ -7,11 +7,12 @@
  *
  * @example
  * linkifyUrls("Visit https://example.com")
- * // => 'Visit <a href="https://example.com" target="_blank" rel="noopener">https://example.com</a>'
+ * // => 'Visit <a href="https://example.com" rel="noopener">https://example.com</a>'
  */
 
 export function linkifyUrls(html: string): string {
   // Exclude quotes and > to prevent matching URLs inside href attributes
   const urlRegex = /(https?:\/\/[^\s<>"']+)/gi;
-  return html.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+  // No target="_blank" - global handler in App.ts opens external links
+  return html.replace(urlRegex, '<a href="$1" rel="noopener">$1</a>');
 }

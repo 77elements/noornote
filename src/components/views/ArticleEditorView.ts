@@ -804,8 +804,8 @@ export class ArticleEditorView extends View {
       });
 
       const html = marked.parse(content) as string;
-      // Add target="_blank" to links
-      return html.replace(/<a href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
+      // Add rel for security - global handler in App.ts opens external links
+      return html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
     } catch (_err) {
       return `<p>${this.escapeHtml(content)}</p>`;
     }

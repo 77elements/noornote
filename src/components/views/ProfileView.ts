@@ -289,7 +289,7 @@ export class ProfileView extends View {
             </div>
 
             ${processedAbout ? `<p class="profile-about">${processedAbout}</p>` : ''}
-            ${website ? `<p class="profile-website"><a href="${this.escapeHtml(website)}" target="_blank" rel="noopener noreferrer">${this.escapeHtml(website)}</a></p>` : ''}
+            ${website ? `<p class="profile-website"><a href="${this.escapeHtml(website)}" rel="noopener noreferrer">${this.escapeHtml(website)}</a></p>` : ''}
 
             <div class="profile-stats">
               ${this.renderEditButton()}

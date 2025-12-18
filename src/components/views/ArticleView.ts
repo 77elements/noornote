@@ -242,8 +242,8 @@ export class ArticleView {
       // Parse markdown to HTML
       const html = marked.parse(content) as string;
 
-      // Add target="_blank" and rel to all links for security
-      return html.replace(/<a href=/g, '<a target="_blank" rel="noopener noreferrer" href=');
+      // Add rel for security - global handler in App.ts opens external links
+      return html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
     } catch (_error) {
       console.error('Failed to render markdown:', _error);
       // Fallback: return escaped plain text
