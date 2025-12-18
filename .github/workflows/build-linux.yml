@@ -65,12 +65,16 @@ jobs:
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
             librsvg2-dev \
-            patchelf
+            patchelf \
+            libfuse2
 
       - name: Install npm dependencies
         run: npm ci
 
       - name: Build Tauri App (deb + rpm + appimage)
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+          NO_STRIP: 1
         run: npm run tauri build -- --bundles deb,rpm,appimage
 
       - name: Get version from tag
