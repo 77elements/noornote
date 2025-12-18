@@ -50,11 +50,9 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
       if (videoId) {
         return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${videoId}" class="youtube-external-link">Watch on YouTube</a></div>`;
       }
-      if (item.thumbnail) {
-        return `<div class="note-video"><img src="${item.thumbnail}" alt="Video thumbnail" class="video-thumbnail"><a href="${item.url}" target="_blank" class="video-link">▶️ Watch Video</a></div>`;
-      } else {
-        return `<video src="${item.url}" controls class="note-video" preload="auto"></video>`;
-      }
+      const posterAttr = item.thumbnail ? ` data-poster="${item.thumbnail}"` : '';
+      const videoUrl = item.thumbnail ? item.url : `${item.url}#t=0.001`;
+      return `<video src="${videoUrl}"${posterAttr} controls class="note-video" preload="metadata"></video>`;
     default:
       return '';
   }
@@ -85,11 +83,9 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
         if (ytId) {
           return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${ytId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${ytId}" class="youtube-external-link">Watch on YouTube</a></div>`;
         }
-        if (item.thumbnail) {
-          return `<div class="note-video"><img src="${item.thumbnail}" alt="Video thumbnail" class="video-thumbnail"><a href="${item.url}" target="_blank" class="video-link">▶️ Watch Video</a></div>`;
-        } else {
-          return `<video src="${item.url}" controls class="note-video" preload="auto"></video>`;
-        }
+        const posterAttr = item.thumbnail ? ` data-poster="${item.thumbnail}"` : '';
+        const videoUrl = item.thumbnail ? item.url : `${item.url}#t=0.001`;
+        return `<video src="${videoUrl}"${posterAttr} controls class="note-video" preload="metadata"></video>`;
       default:
         return '';
     }

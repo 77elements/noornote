@@ -7,8 +7,18 @@
 @use '../abstracts/mixins' as *;
 
 // Plyr video player customization
+.plyr,
+.plyr * {
+  background-color: transparent !important;
+}
+
 .plyr {
   --plyr-color-main: #{$color-4};
+
+  // Hide empty poster overlay (when no poster attribute set)
+  .plyr__poster:empty {
+    display: none;
+  }
 }
 
 // Base media container
@@ -38,9 +48,8 @@
 
   .note-video {
     width: 100%;
-    min-height: 300px;
     border-radius: calc($gap / 2);
-    background: $color-1;
+    background: transparent;
     object-fit: contain;
   }
 
