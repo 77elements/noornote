@@ -70,8 +70,8 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Build Tauri App (deb + rpm only)
-        run: npm run tauri build -- --bundles deb,rpm
+      - name: Build Tauri App (deb + rpm + appimage)
+        run: npm run tauri build -- --bundles deb,rpm,appimage
 
       - name: Get version from tag
         id: version
@@ -123,6 +123,12 @@ jobs:
             mv "$RPM_FILE" "src-tauri/target/release/bundle/rpm/noornote-${VERSION}-linux-${RPM_ARCH}.rpm"
           fi
 
+          # Rename .AppImage
+          APPIMAGE_FILE=$(find src-tauri/target/release/bundle/appimage -name "*.AppImage" | head -1)
+          if [ -n "$APPIMAGE_FILE" ]; then
+            mv "$APPIMAGE_FILE" "src-tauri/target/release/bundle/appimage/noornote-${VERSION}-linux-${ARCH}.AppImage"
+          fi
+
           # Rename tarball (already correctly named but ensure lowercase)
           TARBALL=$(ls -1 *.tar.gz 2>/dev/null | head -1)
           if [ -n "$TARBALL" ]; then
@@ -135,6 +141,8 @@ jobs:
           find src-tauri/target/release/bundle -name "*.deb" -exec ls -lh {} \; 2>/dev/null || true
           echo "=== .rpm files ==="
           find src-tauri/target/release/bundle -name "*.rpm" -exec ls -lh {} \; 2>/dev/null || true
+          echo "=== .AppImage files ==="
+          find src-tauri/target/release/bundle -name "*.AppImage" -exec ls -lh {} \; 2>/dev/null || true
           echo "=== .tar.gz files ==="
           ls -lh *.tar.gz 2>/dev/null || true
 
@@ -149,6 +157,12 @@ jobs:
         with:
           name: noornote-linux-${{ matrix.arch }}-rpm
           path: src-tauri/target/release/bundle/rpm/*.rpm
+
+      - name: Upload .AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: noornote-linux-${{ matrix.arch }}-appimage
+          path: src-tauri/target/release/bundle/appimage/*.AppImage
 
       - name: Upload tarball
         uses: actions/upload-artifact@v4
@@ -175,6 +189,12 @@ jobs:
           name: noornote-linux-amd64-rpm
           path: release/
 
+      - name: Download amd64 .AppImage
+        uses: actions/download-artifact@v4
+        with:
+          name: noornote-linux-amd64-appimage
+          path: release/
+
       - name: Download amd64 tarball
         uses: actions/download-artifact@v4
         with:
@@ -191,6 +211,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: noornote-linux-arm64-rpm
+          path: release/
+
+      - name: Download arm64 .AppImage
+        uses: actions/download-artifact@v4
+        with:
+          name: noornote-linux-arm64-appimage
           path: release/
 
       - name: Download arm64 tarball
