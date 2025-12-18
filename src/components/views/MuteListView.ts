@@ -54,11 +54,19 @@ export class MuteListView extends View {
   }
 
   /**
-   * Initialize browser storage from files (called once on app start)
+   * Initialize browser storage from files (only if browser is empty)
+   * This prevents overwriting user changes (like unmutes) when navigating back to this view
    */
   private async initializeBrowserStorage(): Promise<void> {
     try {
-      await this.listSyncManager.restoreFromFile();
+      // Check if browser storage already has data
+      const browserKey = 'noornote_mutes_browser_v2';
+      const existingData = localStorage.getItem(browserKey);
+
+      if (!existingData || existingData === '[]') {
+        // Only restore from file if browser storage is empty
+        await this.listSyncManager.restoreFromFile();
+      }
     } catch (_error) {
       console.error('[MuteListView] Failed to initialize browser storage:', _error);
     }

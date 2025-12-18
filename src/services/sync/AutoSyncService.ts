@@ -118,8 +118,11 @@ export class AutoSyncService {
       this.startupSyncDone.clear();
       this.clearAllTimers();
       this.startPeriodicSync();
-      // Immediate sync from relays on login
-      setTimeout(() => this.syncFromRelaysAll(), 2000); // Wait 2s for app to settle
+      // Note: Don't do immediate syncFromRelaysAll() here.
+      // restoreIfEmpty() already handles startup cascade (browser → file → relays).
+      // The periodic sync (5 min) will catch any relay changes.
+      // Immediate sync was causing unmute bug: muted users were restored from relay
+      // before local changes (unmute) could be published.
     });
 
     // Listen for mode changes
@@ -134,8 +137,7 @@ export class AutoSyncService {
     // Start periodic sync if already logged in and in Easy Mode
     if (this.authService.getCurrentUser() && isEasyMode()) {
       this.startPeriodicSync();
-      // Also do an immediate sync on startup
-      this.syncFromRelaysAll();
+      // Note: No immediate syncFromRelaysAll() - restoreIfEmpty() handles startup
     }
   }
 
@@ -154,8 +156,15 @@ export class AutoSyncService {
       // 1. Save to file immediately (backup first!)
       await this.saveToFile(listType);
 
-      // 2. Schedule relay sync (debounced)
-      this.scheduleRelaySync(listType);
+      // 2. Sync to relays
+      // For mutes: sync immediately (no debounce) to prevent unmute bug
+      // (if user reloads before relay sync, mute could be restored from relay)
+      // For other lists: use debounce to batch rapid changes
+      if (listType === 'mutes') {
+        await this.syncToRelays(listType);
+      } else {
+        this.scheduleRelaySync(listType);
+      }
     } finally {
       this.isSyncing.delete(listType);
     }
