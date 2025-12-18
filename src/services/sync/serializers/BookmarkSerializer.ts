@@ -147,7 +147,11 @@ export function toNostrEvents(
 
     // Add public tags
     for (const tag of set.publicTags) {
-      tags.push([tag.type, tag.value]);
+      if (tag.description) {
+        tags.push([tag.type, tag.value, tag.description]);
+      } else {
+        tags.push([tag.type, tag.value]);
+      }
     }
 
     // Encrypt private tags
@@ -190,7 +194,12 @@ export function fromNostrEvents(
       const publicTags: BookmarkTag[] = [];
       for (const tag of event.tags) {
         if (['e', 'a', 't', 'r'].includes(tag[0]) && tag[1]) {
-          publicTags.push({ type: tag[0] as 'e' | 'a' | 't' | 'r', value: tag[1] });
+          const bookmarkTag: BookmarkTag = { type: tag[0] as 'e' | 'a' | 't' | 'r', value: tag[1] };
+          // r-tags can have description as third element
+          if (tag[2]) {
+            bookmarkTag.description = tag[2];
+          }
+          publicTags.push(bookmarkTag);
         }
       }
 

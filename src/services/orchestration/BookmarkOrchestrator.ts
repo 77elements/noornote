@@ -632,20 +632,35 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       }
 
       // Assign bookmarks to their categories from relay
+      // BUG FIX: Only assign categories for NEW bookmarks (not in local storage before sync)
+      // Existing bookmarks keep their local folder assignment - user's manual organization takes precedence
       if (categoryAssignments) {
         const updatedFolders = this.folderService.getFolders(); // Refresh after creating new folders
 
+        // Build set of local bookmark IDs (before merge) for fast lookup
+        const localBookmarkIds = new Set(localItems.map(item => item.id));
+
         for (const [bookmarkId, categoryName] of categoryAssignments) {
-          if (categoryName === '') {
-            // Root - ensure assignment exists (to root)
-            this.folderService.ensureBookmarkAssignment(bookmarkId);
-          } else {
-            // Find folder by name and move bookmark there
-            const folder = updatedFolders.find(f => f.name === categoryName);
-            if (folder) {
-              this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
+          const isNewBookmark = !localBookmarkIds.has(bookmarkId);
+
+          if (isNewBookmark) {
+            // NEW bookmark: assign relay category
+            if (categoryName === '') {
+              this.folderService.ensureBookmarkAssignment(bookmarkId);
+            } else {
+              const folder = updatedFolders.find(f => f.name === categoryName);
+              if (folder) {
+                this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
+              } else {
+                // Folder doesn't exist locally, assign to root
+                this.folderService.ensureBookmarkAssignment(bookmarkId);
+                this.systemLogger.warn('BookmarkOrchestrator',
+                  `Folder "${categoryName}" not found, assigned bookmark ${bookmarkId.slice(0, 8)}... to root`
+                );
+              }
             }
           }
+          // EXISTING bookmark: Skip - keep local folder assignment
         }
       }
 

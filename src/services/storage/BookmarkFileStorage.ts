@@ -239,6 +239,8 @@ export class BookmarkFileStorage {
    * Read bookmark data (new format)
    */
   public async read(): Promise<BookmarkSetData> {
+    // Ensure initialization (triggers legacy migration if needed)
+    await this.initialize();
     return await this.storage.read();
   }
 
@@ -246,6 +248,8 @@ export class BookmarkFileStorage {
    * Write bookmark data (new format)
    */
   public async write(data: BookmarkSetData): Promise<void> {
+    // Ensure initialization
+    await this.initialize();
     data.metadata.lastModified = Math.floor(Date.now() / 1000);
     await this.storage.write(data);
   }
@@ -391,6 +395,69 @@ export class BookmarkFileStorage {
       rootOrder,
       lastModified: data.metadata.lastModified
     };
+  }
+
+  /**
+   * Get folder data for ALL bookmarks (public AND private)
+   * Used by restoreFolderDataFromFile to restore folder assignments correctly
+   */
+  public async getAllFolderData(): Promise<{
+    folders: BookmarkFolder[];
+    folderAssignments: FolderAssignment[];
+    rootOrder: RootOrderItem[];
+  }> {
+    const data = await this.read();
+
+    const folders: BookmarkFolder[] = [];
+    const folderAssignments: FolderAssignment[] = [];
+    const rootOrder: RootOrderItem[] = [];
+
+    // Build folders from sets (except root)
+    let folderOrder = 0;
+    for (const set of data.sets) {
+      if (set.d !== '') {
+        const folderId = `folder_${set.d}`;
+        folders.push({
+          id: folderId,
+          name: set.d,
+          createdAt: data.metadata.lastModified,
+          order: folderOrder++
+        });
+        rootOrder.push({ type: 'folder', id: folderId });
+      }
+    }
+
+    // Extract folder assignments for ALL items (public AND private)
+    let itemOrder = 0;
+    for (const set of data.sets) {
+      const folderId = set.d === '' ? '' : `folder_${set.d}`;
+
+      // Process public tags
+      for (const tag of set.publicTags) {
+        folderAssignments.push({
+          bookmarkId: tag.value,
+          folderId,
+          order: itemOrder++
+        });
+        if (set.d === '') {
+          rootOrder.push({ type: 'bookmark', id: tag.value });
+        }
+      }
+
+      // Process private tags (the fix!)
+      for (const tag of set.privateTags) {
+        folderAssignments.push({
+          bookmarkId: tag.value,
+          folderId,
+          order: itemOrder++
+        });
+        if (set.d === '') {
+          rootOrder.push({ type: 'bookmark', id: tag.value });
+        }
+      }
+    }
+
+    return { folders, folderAssignments, rootOrder };
   }
 
   /**

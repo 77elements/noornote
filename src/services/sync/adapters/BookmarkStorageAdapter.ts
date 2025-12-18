@@ -80,19 +80,21 @@ export class BookmarkStorageAdapter extends BaseListStorageAdapter<BookmarkItem>
 
   /**
    * Restore folder data from file to localStorage
+   * Uses getAllFolderData() to include BOTH public AND private bookmark assignments
    */
   async restoreFolderDataFromFile(): Promise<void> {
     try {
-      const publicData = await this.fileStorage.readPublic();
+      // Use new method that includes both public and private bookmarks
+      const folderData = await this.fileStorage.getAllFolderData();
 
-      if (publicData.folders) {
-        localStorage.setItem(STORAGE_KEY_FOLDERS, JSON.stringify(publicData.folders));
+      if (folderData.folders.length > 0) {
+        localStorage.setItem(STORAGE_KEY_FOLDERS, JSON.stringify(folderData.folders));
       }
-      if (publicData.folderAssignments) {
-        localStorage.setItem(STORAGE_KEY_ASSIGNMENTS, JSON.stringify(publicData.folderAssignments));
+      if (folderData.folderAssignments.length > 0) {
+        localStorage.setItem(STORAGE_KEY_ASSIGNMENTS, JSON.stringify(folderData.folderAssignments));
       }
-      if (publicData.rootOrder) {
-        localStorage.setItem(STORAGE_KEY_ROOT_ORDER, JSON.stringify(publicData.rootOrder));
+      if (folderData.rootOrder.length > 0) {
+        localStorage.setItem(STORAGE_KEY_ROOT_ORDER, JSON.stringify(folderData.rootOrder));
       }
     } catch (error) {
       this.logger.error('BookmarkStorageAdapter', `Failed to restore folder data: ${error}`);
