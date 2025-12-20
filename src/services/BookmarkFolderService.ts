@@ -3,9 +3,8 @@
  * Manages bookmark folders (categories) and item-to-folder assignments
  *
  * Storage Strategy:
- * - Folders: localStorage (UI feature, not synced to relays yet)
- * - Bookmark-to-folder assignments: localStorage
- * - Root-level ordering: localStorage
+ * - Uses PerAccountLocalStorage for per-account isolation
+ * - Folders, assignments, and root order are all per-account
  *
  * NIP-51 Future:
  * - Kind 30003 = Bookmark Sets (each folder = one event)
@@ -15,9 +14,7 @@
  * @used-by BookmarkSecondaryManager
  */
 
-const STORAGE_KEY_FOLDERS = 'noornote_bookmark_folders';
-const STORAGE_KEY_ASSIGNMENTS = 'noornote_bookmark_folder_assignments';
-const STORAGE_KEY_ROOT_ORDER = 'noornote_bookmark_root_order';
+import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 export interface BookmarkFolder {
   id: string;           // Unique identifier (will be d-tag in NIP-51)
@@ -32,10 +29,18 @@ export interface FolderAssignment {
   order: number;        // Position within folder/root
 }
 
+export interface RootOrderItem {
+  type: 'folder' | 'bookmark';
+  id: string;
+}
+
 export class BookmarkFolderService {
   private static instance: BookmarkFolderService;
+  private storage: PerAccountLocalStorage;
 
-  private constructor() {}
+  private constructor() {
+    this.storage = PerAccountLocalStorage.getInstance();
+  }
 
   public static getInstance(): BookmarkFolderService {
     if (!BookmarkFolderService.instance) {
@@ -49,15 +54,8 @@ export class BookmarkFolderService {
   // ========================================
 
   public getFolders(): BookmarkFolder[] {
-    const data = localStorage.getItem(STORAGE_KEY_FOLDERS);
-    if (!data) return [];
-
-    try {
-      const folders: BookmarkFolder[] = JSON.parse(data);
-      return folders.sort((a, b) => a.order - b.order);
-    } catch {
-      return [];
-    }
+    const folders = this.storage.get<BookmarkFolder[]>(StorageKeys.BOOKMARK_FOLDERS, []);
+    return folders.sort((a, b) => a.order - b.order);
   }
 
   public getFolder(folderId: string): BookmarkFolder | null {
@@ -123,7 +121,7 @@ export class BookmarkFolderService {
   }
 
   private saveFolders(folders: BookmarkFolder[]): void {
-    localStorage.setItem(STORAGE_KEY_FOLDERS, JSON.stringify(folders));
+    this.storage.set(StorageKeys.BOOKMARK_FOLDERS, folders);
   }
 
   // ========================================
@@ -131,18 +129,11 @@ export class BookmarkFolderService {
   // ========================================
 
   private getAssignments(): FolderAssignment[] {
-    const data = localStorage.getItem(STORAGE_KEY_ASSIGNMENTS);
-    if (!data) return [];
-
-    try {
-      return JSON.parse(data);
-    } catch {
-      return [];
-    }
+    return this.storage.get<FolderAssignment[]>(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
   }
 
   private saveAssignments(assignments: FolderAssignment[]): void {
-    localStorage.setItem(STORAGE_KEY_ASSIGNMENTS, JSON.stringify(assignments));
+    this.storage.set(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, assignments);
   }
 
   public getBookmarkFolder(bookmarkId: string): string {
@@ -295,36 +286,32 @@ export class BookmarkFolderService {
   // ========================================
 
   public hasRootOrder(): boolean {
-    return localStorage.getItem(STORAGE_KEY_ROOT_ORDER) !== null;
+    const order = this.storage.get<RootOrderItem[]>(StorageKeys.BOOKMARK_ROOT_ORDER, []);
+    return order.length > 0;
   }
 
   public clearRootOrder(): void {
-    localStorage.removeItem(STORAGE_KEY_ROOT_ORDER);
+    this.storage.remove(StorageKeys.BOOKMARK_ROOT_ORDER);
   }
 
   public clearAssignments(): void {
-    localStorage.removeItem(STORAGE_KEY_ASSIGNMENTS);
+    this.storage.remove(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS);
   }
 
-  public getRootOrder(): Array<{ type: 'folder' | 'bookmark'; id: string }> {
-    const data = localStorage.getItem(STORAGE_KEY_ROOT_ORDER);
-    if (!data) {
+  public getRootOrder(): RootOrderItem[] {
+    const order = this.storage.get<RootOrderItem[]>(StorageKeys.BOOKMARK_ROOT_ORDER, []);
+    if (order.length === 0) {
       // Build initial order from existing data
       return this.buildInitialRootOrder();
     }
-
-    try {
-      return JSON.parse(data);
-    } catch {
-      return this.buildInitialRootOrder();
-    }
+    return order;
   }
 
-  private buildInitialRootOrder(): Array<{ type: 'folder' | 'bookmark'; id: string }> {
+  private buildInitialRootOrder(): RootOrderItem[] {
     const folders = this.getFolders();
     const rootBookmarkIds = this.getBookmarksInFolder('');
 
-    const order: Array<{ type: 'folder' | 'bookmark'; id: string }> = [];
+    const order: RootOrderItem[] = [];
 
     // Add bookmarks in reverse order (newest first) for initial display
     // User can reorder later via drag & drop
@@ -342,8 +329,8 @@ export class BookmarkFolderService {
     return order;
   }
 
-  public saveRootOrder(order: Array<{ type: 'folder' | 'bookmark'; id: string }>): void {
-    localStorage.setItem(STORAGE_KEY_ROOT_ORDER, JSON.stringify(order));
+  public saveRootOrder(order: RootOrderItem[]): void {
+    this.storage.set(StorageKeys.BOOKMARK_ROOT_ORDER, order);
   }
 
   public addToRootOrder(type: 'folder' | 'bookmark', id: string): void {
@@ -374,6 +361,35 @@ export class BookmarkFolderService {
     order.splice(insertIndex, 0, item);
 
     this.saveRootOrder(order);
+  }
+
+  // ========================================
+  // Cleanup
+  // ========================================
+
+  /**
+   * Remove orphaned assignments (assignments referencing non-existent bookmarks)
+   * Returns the number of removed orphans
+   */
+  public cleanupOrphanedAssignments(): number {
+    // Get existing bookmark IDs from storage
+    const bookmarkItems = this.storage.get<{ id: string }[]>(StorageKeys.BOOKMARKS, []);
+    const existingBookmarkIds = new Set(bookmarkItems.map(item => item.id));
+
+    // Get all assignments
+    const assignments = this.getAssignments();
+    const originalCount = assignments.length;
+
+    // Filter to keep only assignments with existing bookmarks
+    const cleanedAssignments = assignments.filter(a => existingBookmarkIds.has(a.bookmarkId));
+
+    const removedCount = originalCount - cleanedAssignments.length;
+
+    if (removedCount > 0) {
+      this.saveAssignments(cleanedAssignments);
+    }
+
+    return removedCount;
   }
 
   // ========================================

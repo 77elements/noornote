@@ -6,6 +6,7 @@
 import type { ListConfig, FileStorageWrapper } from '../../../types/ListConfig';
 import type { BookmarkItem } from '../../storage/BookmarkFileStorage';
 import { BookmarkFileStorage } from '../../storage/BookmarkFileStorage';
+import { StorageKeys } from '../../PerAccountLocalStorage';
 
 /**
  * File Storage Wrapper for Bookmarks
@@ -44,7 +45,8 @@ class BookmarkFileStorageWrapper implements FileStorageWrapper<BookmarkItem> {
 export const bookmarkListConfig: ListConfig<BookmarkItem> = {
   // Identification
   name: 'bookmarks',
-  browserStorageKey: 'noornote_bookmarks_browser',
+  browserStorageKey: 'noornote_bookmarks_browser',  // Legacy (for migration)
+  perAccountStorageKey: StorageKeys.BOOKMARKS,      // Per-account storage
 
   // Nostr Event (NIP-51: Bookmark Sets - one event per category)
   publicEventKind: 30003,       // kind:30003 (bookmark sets)

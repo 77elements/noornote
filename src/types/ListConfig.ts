@@ -4,11 +4,13 @@
  */
 
 import type { BaseListItem } from './BaseListItem';
+import type { StorageKey } from '../services/PerAccountLocalStorage';
 
 export interface ListConfig<T extends BaseListItem> {
   // ===== Identification =====
   name: string;                           // 'follows', 'mutes', 'bookmarks'
-  browserStorageKey: string;              // localStorage key for browser storage
+  browserStorageKey: string;              // localStorage key (legacy, for migration)
+  perAccountStorageKey?: StorageKey;      // Per-account storage key (new, preferred)
 
   // ===== Nostr Event Configuration =====
   /**

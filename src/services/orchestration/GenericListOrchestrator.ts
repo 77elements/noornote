@@ -30,6 +30,7 @@ import { AuthService } from '../AuthService';
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { EventBus } from '../EventBus';
+import { PerAccountLocalStorage } from '../PerAccountLocalStorage';
 
 export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrator {
   protected transport: NostrTransport;
@@ -65,11 +66,18 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
   // ===== Browser Storage (Single Source of Truth) =====
 
   /**
-   * Get items from browser storage (localStorage)
+   * Get items from browser storage (per-account or legacy global)
    * CLAUDE.md Rule: Browser is single source of truth
    */
   public getBrowserItems(): T[] {
     try {
+      // Use per-account storage if configured (preferred)
+      if (this.config.perAccountStorageKey) {
+        const storage = PerAccountLocalStorage.getInstance();
+        return storage.get<T[]>(this.config.perAccountStorageKey, []);
+      }
+
+      // Fallback: Legacy global storage
       const stored = localStorage.getItem(this.config.browserStorageKey);
       if (!stored) return [];
       return JSON.parse(stored);
@@ -80,13 +88,21 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
   }
 
   /**
-   * Set items in browser storage (localStorage)
+   * Set items in browser storage (per-account or legacy global)
    * CLAUDE.md Rule: ALL changes happen ONLY in Browser
    */
   public setBrowserItems(items: T[]): void {
     try {
-      // Deduplicate by ID
       const uniqueItems = this.deduplicateItems(items);
+
+      // Use per-account storage if configured (preferred)
+      if (this.config.perAccountStorageKey) {
+        const storage = PerAccountLocalStorage.getInstance();
+        storage.set(this.config.perAccountStorageKey, uniqueItems);
+        return;
+      }
+
+      // Fallback: Legacy global storage
       localStorage.setItem(this.config.browserStorageKey, JSON.stringify(uniqueItems));
     } catch (error) {
       this.systemLogger.error(this.name, `Failed to write browser items: ${error}`);

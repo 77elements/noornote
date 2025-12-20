@@ -20,6 +20,7 @@ import { AccountStorageService, type StoredAccount } from './AccountStorageServi
 import { KeySignerConnectionManager } from './managers/KeySignerConnectionManager';
 import { Nip46SignerManager } from './managers/Nip46SignerManager';
 import { PlatformService } from './PlatformService';
+import { PerAccountListStorageMigration } from './PerAccountListStorageMigration';
 
 export interface NostrExtension {
   getPublicKey(): Promise<string>;
@@ -68,6 +69,12 @@ export class AuthService {
     // Create initialization promise
     this.initPromise = new Promise<void>(resolve => {
       this.initResolve = resolve;
+    });
+
+    // Listen for login to trigger per-account storage migration
+    this.eventBus.on('user:login', (data: { pubkey: string }) => {
+      const migration = PerAccountListStorageMigration.getInstance();
+      migration.migrateForUser(data.pubkey);
     });
 
     // Initialize session (async)

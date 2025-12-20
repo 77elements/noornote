@@ -6,6 +6,7 @@
 import type { ListConfig, FileStorageWrapper } from '../../../types/ListConfig';
 import type { FollowItem } from '../../storage/FollowFileStorage';
 import { FollowFileStorage } from '../../storage/FollowFileStorage';
+import { StorageKeys } from '../../PerAccountLocalStorage';
 
 /**
  * File Storage Wrapper for Follows
@@ -44,7 +45,8 @@ class FollowFileStorageWrapper implements FileStorageWrapper<FollowItem> {
 export const followListConfig: ListConfig<FollowItem> = {
   // Identification
   name: 'follows',
-  browserStorageKey: 'noornote_follows_browser',
+  browserStorageKey: 'noornote_follows_browser',  // Legacy (for migration)
+  perAccountStorageKey: StorageKeys.FOLLOWS,      // Per-account storage
 
   // Nostr Event (NIP-51: ONE event with public tags + encrypted private content)
   publicEventKind: 3,           // kind:3 (contact list)

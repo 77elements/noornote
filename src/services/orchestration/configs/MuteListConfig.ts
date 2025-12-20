@@ -6,6 +6,7 @@
 import type { ListConfig, FileStorageWrapper } from '../../../types/ListConfig';
 import type { MuteItem } from '../../../types/BaseListItem';
 import { MuteFileStorage } from '../../storage/MuteFileStorage';
+import { StorageKeys } from '../../PerAccountLocalStorage';
 
 /**
  * File Storage Wrapper for Mutes
@@ -69,7 +70,8 @@ class MuteFileStorageWrapper implements FileStorageWrapper<MuteItem> {
 export const muteListConfig: ListConfig<MuteItem> = {
   // Identification
   name: 'mutes',
-  browserStorageKey: 'noornote_mutes_browser_v2',  // New unified key (old: 4 separate keys)
+  browserStorageKey: 'noornote_mutes_browser_v2',  // Legacy (for migration)
+  perAccountStorageKey: StorageKeys.MUTES,         // Per-account storage
 
   // Nostr Event (NIP-51: ONE event with public tags + encrypted private content)
   publicEventKind: 10000,       // kind:10000 (mute list)

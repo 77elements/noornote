@@ -14,11 +14,20 @@
 import { AuthService } from './AuthService';
 
 export const StorageKeys = {
+  // Existing keys
   NOTIFICATIONS_LAST_SEEN: 'noornote_notifications_seen_map',
   NOTIFICATIONS_CACHE: 'noornote_notifications_cache_map',
   USER_EVENT_IDS: 'noornote_user_event_ids_map',
   USER_EVENT_ANCESTRY: 'noornote_user_event_ancestry_map',
   ZAP_DEFAULTS: 'noornote_zap_defaults_map',
+
+  // List storage (per-account)
+  BOOKMARKS: 'noornote_bookmarks_map',
+  BOOKMARK_FOLDERS: 'noornote_bookmark_folders_map',
+  BOOKMARK_FOLDER_ASSIGNMENTS: 'noornote_bookmark_folder_assignments_map',
+  BOOKMARK_ROOT_ORDER: 'noornote_bookmark_root_order_map',
+  FOLLOWS: 'noornote_follows_map',
+  MUTES: 'noornote_mutes_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
