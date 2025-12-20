@@ -75,24 +75,62 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
     folderSets.set(folder.id, set);
   }
 
-  // Assign bookmarks to sets
+  // Build item map for quick lookup
+  const itemMap = new Map<string, BookmarkItem>();
   for (const item of oldData.items) {
-    const tag: BookmarkTag = { type: item.type, value: item.value, description: item.description };
-    const assignment = assignments.find(a => a.bookmarkId === item.id);
+    itemMap.set(item.id, item);
+  }
 
-    if (assignment && assignment.folderId && folderSets.has(assignment.folderId)) {
-      const set = folderSets.get(assignment.folderId)!;
-      if (item.isPrivate) {
-        set.privateTags.push(tag);
-      } else {
-        set.publicTags.push(tag);
-      }
+  // Group assignments by folder and sort by order
+  const rootAssignments: typeof assignments = [];
+  const folderAssignmentsMap = new Map<string, typeof assignments>();
+
+  for (const assignment of assignments) {
+    if (assignment.folderId && folderSets.has(assignment.folderId)) {
+      const existing = folderAssignmentsMap.get(assignment.folderId) || [];
+      existing.push(assignment);
+      folderAssignmentsMap.set(assignment.folderId, existing);
     } else {
-      // Root
+      rootAssignments.push(assignment);
+    }
+  }
+
+  // Find items without assignments (add to root)
+  const assignedIds = new Set(assignments.map(a => a.bookmarkId));
+  for (const item of oldData.items) {
+    if (!assignedIds.has(item.id)) {
+      rootAssignments.push({ bookmarkId: item.id, folderId: '', order: rootAssignments.length });
+    }
+  }
+
+  // Sort and add root items
+  rootAssignments.sort((a, b) => a.order - b.order);
+  for (const assignment of rootAssignments) {
+    const item = itemMap.get(assignment.bookmarkId);
+    if (item) {
+      const tag: BookmarkTag = { type: item.type, value: item.value, description: item.description };
       if (item.isPrivate) {
         rootSet.privateTags.push(tag);
       } else {
         rootSet.publicTags.push(tag);
+      }
+    }
+  }
+
+  // Sort and add folder items
+  for (const [folderId, folderAssignments] of folderAssignmentsMap) {
+    const set = folderSets.get(folderId)!;
+    folderAssignments.sort((a, b) => a.order - b.order);
+
+    for (const assignment of folderAssignments) {
+      const item = itemMap.get(assignment.bookmarkId);
+      if (item) {
+        const tag: BookmarkTag = { type: item.type, value: item.value, description: item.description };
+        if (item.isPrivate) {
+          set.privateTags.push(tag);
+        } else {
+          set.publicTags.push(tag);
+        }
       }
     }
   }
