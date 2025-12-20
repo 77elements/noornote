@@ -629,6 +629,7 @@ export class App {
       // DM service start failed
     }
   }
+
 }
 
 // Global type declarations for Vite environment variables

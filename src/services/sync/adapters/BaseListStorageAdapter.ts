@@ -4,17 +4,28 @@
  * @used-by MuteStorageAdapter, FollowStorageAdapter, BookmarkStorageAdapter
  *
  * Provides:
- * - Common browser storage (localStorage) read/write with deduplication
+ * - Common browser storage (PerAccountLocalStorage) read/write with deduplication
  * - Template methods for file and relay operations
  */
 
 import type { ListStorageAdapter, FetchFromRelaysResult } from '../ListStorageAdapter';
+import { PerAccountLocalStorage, type StorageKey } from '../../PerAccountLocalStorage';
 
 export abstract class BaseListStorageAdapter<T> implements ListStorageAdapter<T> {
+  protected perAccountStorage = PerAccountLocalStorage.getInstance();
+
   /**
-   * Get the localStorage key for this list type
+   * Get the localStorage key for this list type (legacy, for migration)
    */
   protected abstract getBrowserStorageKey(): string;
+
+  /**
+   * Get the per-account storage key for this list type
+   * Override in subclass to enable per-account storage
+   */
+  protected getPerAccountStorageKey(): StorageKey | null {
+    return null;
+  }
 
   /**
    * Get the log prefix for error messages
@@ -50,10 +61,16 @@ export abstract class BaseListStorageAdapter<T> implements ListStorageAdapter<T>
 
   /**
    * Browser Storage (Runtime) - Synchronous Read
-   * Common implementation for all list types
+   * Uses per-account storage if available, falls back to legacy global storage
    */
   getBrowserItems(): T[] {
     try {
+      const perAccountKey = this.getPerAccountStorageKey();
+      if (perAccountKey) {
+        return this.perAccountStorage.get<T[]>(perAccountKey, []);
+      }
+
+      // Fallback: Legacy global storage
       const stored = localStorage.getItem(this.getBrowserStorageKey());
       if (!stored) return [];
       return JSON.parse(stored);
@@ -65,11 +82,19 @@ export abstract class BaseListStorageAdapter<T> implements ListStorageAdapter<T>
 
   /**
    * Browser Storage (Runtime) - Synchronous Write
-   * Common implementation with deduplication
+   * Uses per-account storage if available, falls back to legacy global storage
    */
   setBrowserItems(items: T[]): void {
     try {
       const uniqueItems = this.deduplicateItems(items);
+      const perAccountKey = this.getPerAccountStorageKey();
+
+      if (perAccountKey) {
+        this.perAccountStorage.set(perAccountKey, uniqueItems);
+        return;
+      }
+
+      // Fallback: Legacy global storage
       localStorage.setItem(this.getBrowserStorageKey(), JSON.stringify(uniqueItems));
     } catch (error) {
       console.error(`[${this.getLogPrefix()}] Failed to write to browser storage:`, error);

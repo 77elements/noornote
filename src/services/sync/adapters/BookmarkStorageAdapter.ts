@@ -15,11 +15,7 @@ import type { FetchFromRelaysResult } from '../ListStorageAdapter';
 import { BookmarkOrchestrator } from '../../orchestration/BookmarkOrchestrator';
 import { AuthService } from '../../AuthService';
 import { SystemLogger } from '../../../components/system/SystemLogger';
-
-// localStorage keys for folder data (same as BookmarkFolderService)
-const STORAGE_KEY_FOLDERS = 'noornote_bookmark_folders';
-const STORAGE_KEY_ASSIGNMENTS = 'noornote_bookmark_folder_assignments';
-const STORAGE_KEY_ROOT_ORDER = 'noornote_bookmark_root_order';
+import { StorageKeys, type StorageKey } from '../../PerAccountLocalStorage';
 
 export class BookmarkStorageAdapter extends BaseListStorageAdapter<BookmarkItem> {
   private fileStorage: BookmarkFileStorage;
@@ -35,7 +31,11 @@ export class BookmarkStorageAdapter extends BaseListStorageAdapter<BookmarkItem>
   }
 
   protected getBrowserStorageKey(): string {
-    return 'noornote_bookmarks_browser';
+    return 'noornote_bookmarks_browser';  // Legacy, for migration only
+  }
+
+  protected override getPerAccountStorageKey(): StorageKey {
+    return StorageKeys.BOOKMARKS;
   }
 
   protected getLogPrefix(): string {
@@ -79,7 +79,7 @@ export class BookmarkStorageAdapter extends BaseListStorageAdapter<BookmarkItem>
   }
 
   /**
-   * Restore folder data from file to localStorage
+   * Restore folder data from file to per-account storage
    * Uses getAllFolderData() to include BOTH public AND private bookmark assignments
    */
   async restoreFolderDataFromFile(): Promise<void> {
@@ -88,13 +88,13 @@ export class BookmarkStorageAdapter extends BaseListStorageAdapter<BookmarkItem>
       const folderData = await this.fileStorage.getAllFolderData();
 
       if (folderData.folders.length > 0) {
-        localStorage.setItem(STORAGE_KEY_FOLDERS, JSON.stringify(folderData.folders));
+        this.perAccountStorage.set(StorageKeys.BOOKMARK_FOLDERS, folderData.folders);
       }
       if (folderData.folderAssignments.length > 0) {
-        localStorage.setItem(STORAGE_KEY_ASSIGNMENTS, JSON.stringify(folderData.folderAssignments));
+        this.perAccountStorage.set(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, folderData.folderAssignments);
       }
       if (folderData.rootOrder.length > 0) {
-        localStorage.setItem(STORAGE_KEY_ROOT_ORDER, JSON.stringify(folderData.rootOrder));
+        this.perAccountStorage.set(StorageKeys.BOOKMARK_ROOT_ORDER, folderData.rootOrder);
       }
     } catch (error) {
       this.logger.error('BookmarkStorageAdapter', `Failed to restore folder data: ${error}`);

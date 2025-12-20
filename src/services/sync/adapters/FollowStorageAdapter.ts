@@ -14,6 +14,7 @@ import { FollowFileStorage, type FollowItem } from '../../storage/FollowFileStor
 import type { FetchFromRelaysResult } from '../ListStorageAdapter';
 import { FollowListOrchestrator } from '../../orchestration/FollowListOrchestrator';
 import { AuthService } from '../../AuthService';
+import { StorageKeys, type StorageKey } from '../../PerAccountLocalStorage';
 
 export class FollowStorageAdapter extends BaseListStorageAdapter<FollowItem> {
   private fileStorage: FollowFileStorage;
@@ -28,7 +29,11 @@ export class FollowStorageAdapter extends BaseListStorageAdapter<FollowItem> {
   }
 
   protected getBrowserStorageKey(): string {
-    return 'noornote_follows_browser';
+    return 'noornote_follows_browser';  // Legacy, for migration only
+  }
+
+  protected override getPerAccountStorageKey(): StorageKey {
+    return StorageKeys.FOLLOWS;
   }
 
   protected getLogPrefix(): string {

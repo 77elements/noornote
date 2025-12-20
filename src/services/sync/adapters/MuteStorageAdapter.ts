@@ -17,8 +17,9 @@ import type { FetchFromRelaysResult } from '../ListStorageAdapter';
 import { MuteOrchestrator } from '../../orchestration/MuteOrchestrator';
 import type { MuteItem } from '../../../types/BaseListItem';
 import { migrateMuteStorage, needsMuteMigration, cleanupOldMuteStorage } from '../../../types/BaseListItem';
+import { StorageKeys, type StorageKey } from '../../PerAccountLocalStorage';
 
-// Browser storage key (must match MuteOrchestrator config)
+// Legacy browser storage key (for migration only)
 const BROWSER_STORAGE_KEY = 'noornote_mutes_browser_v2';
 
 export class MuteStorageAdapter extends BaseListStorageAdapter<string> {
@@ -53,7 +54,11 @@ export class MuteStorageAdapter extends BaseListStorageAdapter<string> {
   }
 
   protected getBrowserStorageKey(): string {
-    return BROWSER_STORAGE_KEY;
+    return BROWSER_STORAGE_KEY;  // Legacy, for migration only
+  }
+
+  protected override getPerAccountStorageKey(): StorageKey {
+    return StorageKeys.MUTES;
   }
 
   protected getLogPrefix(): string {
@@ -68,24 +73,22 @@ export class MuteStorageAdapter extends BaseListStorageAdapter<string> {
   }
 
   /**
-   * Get MuteItems from unified browser storage
+   * Get MuteItems from per-account browser storage
    */
   private getBrowserMuteItems(): MuteItem[] {
     try {
-      const stored = localStorage.getItem(BROWSER_STORAGE_KEY);
-      if (!stored) return [];
-      return JSON.parse(stored);
+      return this.perAccountStorage.get<MuteItem[]>(StorageKeys.MUTES, []);
     } catch {
       return [];
     }
   }
 
   /**
-   * Set MuteItems in unified browser storage
+   * Set MuteItems in per-account browser storage
    */
   private setBrowserMuteItems(items: MuteItem[]): void {
     try {
-      localStorage.setItem(BROWSER_STORAGE_KEY, JSON.stringify(items));
+      this.perAccountStorage.set(StorageKeys.MUTES, items);
     } catch (error) {
       console.error('[MuteStorageAdapter] Failed to write to browser storage:', error);
     }

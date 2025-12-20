@@ -121,6 +121,7 @@ class BookmarkSetStorage extends BaseFileStorage<BookmarkSetData> {
 
 /**
  * Legacy storage for reading old public file (migration only)
+ * Read-only - never creates files
  */
 class LegacyPublicBookmarkStorage extends BaseFileStorage<BookmarkListData> {
   protected getFileName(): string {
@@ -134,10 +135,16 @@ class LegacyPublicBookmarkStorage extends BaseFileStorage<BookmarkListData> {
   protected getLoggerName(): string {
     return 'LegacyPublicBookmarkStorage';
   }
+
+  // Override to skip file creation - read-only for migration
+  protected override async ensureFileExists(): Promise<void> {
+    // Do nothing - never create legacy files
+  }
 }
 
 /**
  * Legacy storage for reading old private file (migration only)
+ * Read-only - never creates files
  */
 class LegacyPrivateBookmarkStorage extends BaseFileStorage<BookmarkListData> {
   protected getFileName(): string {
@@ -150,6 +157,11 @@ class LegacyPrivateBookmarkStorage extends BaseFileStorage<BookmarkListData> {
 
   protected getLoggerName(): string {
     return 'LegacyPrivateBookmarkStorage';
+  }
+
+  // Override to skip file creation - read-only for migration
+  protected override async ensureFileExists(): Promise<void> {
+    // Do nothing - never create legacy files
   }
 }
 
