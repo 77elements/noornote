@@ -329,29 +329,30 @@ export class BookmarkSecondaryManager {
       <div class="bookmark-header">
         <span class="bookmark-header__title">${this.escapeHtml(title)}</span>
         <div class="bookmark-header__new-dropdown">
-          <button class="bookmark-header__new-btn" title="Create new item">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-            New
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" class="bookmark-header__new-chevron">
-              <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-            </svg>
-          </button>
-          <div class="bookmark-header__dropdown-menu">
-            <button class="bookmark-header__dropdown-item" data-action="new-folder">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M3 7C3 5.89543 3.89543 5 5 5H9.58579C9.851 5 10.1054 5.10536 10.2929 5.29289L12 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="1.5"/>
+            <button class="bookmark-header__new-btn" title="Create new item">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
-              Folder
-            </button>
-            <button class="bookmark-header__dropdown-item" data-action="new-bookmark">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+              New
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" class="bookmark-header__new-chevron">
+                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
-              Bookmark
             </button>
+            <div class="bookmark-header__dropdown-menu">
+              <button class="bookmark-header__dropdown-item" data-action="new-folder">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 7C3 5.89543 3.89543 5 5 5H9.58579C9.851 5 10.1054 5.10536 10.2929 5.29289L12 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                Folder
+              </button>
+              <button class="bookmark-header__dropdown-item" data-action="new-bookmark">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                  <path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+                Bookmark
+              </button>
+            </div>
           </div>
         </div>
       </div>

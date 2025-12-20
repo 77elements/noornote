@@ -420,11 +420,17 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
   }
 
   /**
-   * Build BookmarkSetData from localStorage (uses item.category directly)
-   * Only creates sets for folders that exist in FolderService
+   * Build BookmarkSetData from localStorage with CORRECT ORDER from FolderService
+   * Uses FolderService.getBookmarksInFolder() to preserve user's manual ordering
    */
   private buildSetDataFromLocalStorage(): BookmarkSetData {
     const allItems = this.getBrowserItems();
+
+    // Build item lookup map (id -> item)
+    const itemMap = new Map<string, BookmarkItem>();
+    for (const item of allItems) {
+      itemMap.set(item.id, item);
+    }
 
     // Create sets map
     const setsMap = new Map<string, BookmarkSet>();
@@ -433,58 +439,81 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     setsMap.set('', {
       kind: 30003,
       d: '',
-      title: '',  // d-tag = title-tag
+      title: '',
       publicTags: [],
       privateTags: []
     });
 
-    // Get valid folder names from FolderService
+    // Get all folders from FolderService
     const existingFolders = this.folderService.getFolders();
-    const validFolderNames = new Set(existingFolders.map(f => f.name));
 
-    // Assign bookmarks to sets (using item.category, fallback to FolderService for migration)
-    for (const item of allItems) {
-      let category = item.category;
+    // Create sets for each folder
+    for (const folder of existingFolders) {
+      setsMap.set(folder.name, {
+        kind: 30003,
+        d: folder.name,
+        title: folder.name,
+        publicTags: [],
+        privateTags: []
+      });
+    }
 
-      // If category is undefined OR empty string, try to get from FolderService
-      if (category === undefined || category === '') {
-        const folderId = this.folderService.getBookmarkFolder(item.id);
-        const folder = folderId ? this.folderService.getFolder(folderId) : null;
-        if (folder) {
-          category = folder.name;
-        } else {
-          category = '';
+    // Track which items have been assigned (to catch orphans)
+    const assignedItemIds = new Set<string>();
+
+    // Process each folder IN ORDER from FolderService
+    for (const folder of existingFolders) {
+      const set = setsMap.get(folder.name)!;
+      // getBookmarksInFolder returns IDs sorted by order field
+      const sortedBookmarkIds = this.folderService.getBookmarksInFolder(folder.id);
+
+      for (const bookmarkId of sortedBookmarkIds) {
+        const item = itemMap.get(bookmarkId);
+        if (item) {
+          const tag = { type: item.type, value: item.value, description: item.description };
+          if (item.isPrivate) {
+            set.privateTags.push(tag);
+          } else {
+            set.publicTags.push(tag);
+          }
+          assignedItemIds.add(bookmarkId);
         }
-      }
-
-      // Only use category if the folder still exists, otherwise assign to root
-      if (category !== '' && !validFolderNames.has(category)) {
-        category = '';
-      }
-
-      // Create set if it doesn't exist
-      if (!setsMap.has(category)) {
-        setsMap.set(category, {
-          kind: 30003,
-          d: category,
-          title: category,
-          publicTags: [],
-          privateTags: []
-        });
-      }
-
-      const set = setsMap.get(category)!;
-      const tag = { type: item.type, value: item.value, description: item.description };
-      if (item.isPrivate) {
-        set.privateTags.push(tag);
-      } else {
-        set.publicTags.push(tag);
       }
     }
 
-    // Build setOrder (root first, then alphabetically)
-    const categories = Array.from(setsMap.keys()).filter(k => k !== '').sort();
-    const setOrder = ['', ...categories];
+    // Process root items IN ORDER from FolderService
+    const rootSet = setsMap.get('')!;
+    const sortedRootBookmarkIds = this.folderService.getBookmarksInFolder('');
+
+    for (const bookmarkId of sortedRootBookmarkIds) {
+      const item = itemMap.get(bookmarkId);
+      if (item) {
+        const tag = { type: item.type, value: item.value, description: item.description };
+        if (item.isPrivate) {
+          rootSet.privateTags.push(tag);
+        } else {
+          rootSet.publicTags.push(tag);
+        }
+        assignedItemIds.add(bookmarkId);
+      }
+    }
+
+    // Handle orphaned items (in browserItems but not in FolderService) - add to root
+    for (const item of allItems) {
+      if (!assignedItemIds.has(item.id)) {
+        const tag = { type: item.type, value: item.value, description: item.description };
+        if (item.isPrivate) {
+          rootSet.privateTags.push(tag);
+        } else {
+          rootSet.publicTags.push(tag);
+        }
+        // Also ensure FolderService knows about this item
+        this.folderService.ensureBookmarkAssignment(item.id);
+      }
+    }
+
+    // Build setOrder (root first, then by folder order)
+    const setOrder = ['', ...existingFolders.map(f => f.name)];
 
     return {
       version: 2,
