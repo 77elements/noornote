@@ -155,7 +155,7 @@ export class BookmarkFolderService {
     return assignments.filter(a => a.folderId === folderId).length;
   }
 
-  public moveBookmarkToFolder(bookmarkId: string, targetFolderId: string): void {
+  public moveBookmarkToFolder(bookmarkId: string, targetFolderId: string, explicitOrder?: number): void {
     const assignments = this.getAssignments();
     const existing = assignments.find(a => a.bookmarkId === bookmarkId);
 
@@ -163,11 +163,15 @@ export class BookmarkFolderService {
       const oldFolderId = existing.folderId;
       existing.folderId = targetFolderId;
 
-      // Get max order in target folder
-      const maxOrder = assignments
-        .filter(a => a.folderId === targetFolderId && a.bookmarkId !== bookmarkId)
-        .reduce((max, a) => Math.max(max, a.order), -1);
-      existing.order = maxOrder + 1;
+      if (explicitOrder !== undefined) {
+        existing.order = explicitOrder;
+      } else {
+        // Get max order in target folder
+        const maxOrder = assignments
+          .filter(a => a.folderId === targetFolderId && a.bookmarkId !== bookmarkId)
+          .reduce((max, a) => Math.max(max, a.order), -1);
+        existing.order = maxOrder + 1;
+      }
 
       this.saveAssignments(assignments);
 
@@ -175,33 +179,37 @@ export class BookmarkFolderService {
       this.reorderItems(oldFolderId);
     } else {
       // Create new assignment
-      const maxOrder = assignments
-        .filter(a => a.folderId === targetFolderId)
-        .reduce((max, a) => Math.max(max, a.order), -1);
+      const order = explicitOrder !== undefined
+        ? explicitOrder
+        : assignments
+            .filter(a => a.folderId === targetFolderId)
+            .reduce((max, a) => Math.max(max, a.order), -1) + 1;
 
       assignments.push({
         bookmarkId,
         folderId: targetFolderId,
-        order: maxOrder + 1
+        order
       });
       this.saveAssignments(assignments);
     }
   }
 
-  public ensureBookmarkAssignment(bookmarkId: string): void {
+  public ensureBookmarkAssignment(bookmarkId: string, explicitOrder?: number): void {
     const assignments = this.getAssignments();
     const existing = assignments.find(a => a.bookmarkId === bookmarkId);
 
     if (!existing) {
-      // Add to root with next order
-      const maxOrder = assignments
-        .filter(a => a.folderId === '')
-        .reduce((max, a) => Math.max(max, a.order), -1);
+      // Add to root with specified order or next available
+      const order = explicitOrder !== undefined
+        ? explicitOrder
+        : assignments
+            .filter(a => a.folderId === '')
+            .reduce((max, a) => Math.max(max, a.order), -1) + 1;
 
       assignments.push({
         bookmarkId,
         folderId: '',
-        order: maxOrder + 1
+        order
       });
       this.saveAssignments(assignments);
     }

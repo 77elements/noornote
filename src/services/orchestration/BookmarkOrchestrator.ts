@@ -660,7 +660,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         }
       }
 
-      // Assign bookmarks to their categories from relay
+      // Assign bookmarks to their categories from relay, preserving order
       // BUG FIX: Only assign categories for NEW bookmarks (not in local storage before sync)
       // Existing bookmarks keep their local folder assignment - user's manual organization takes precedence
       if (categoryAssignments) {
@@ -669,17 +669,24 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         // Build set of local bookmark IDs (before merge) for fast lookup
         const localBookmarkIds = new Set(localItems.map(item => item.id));
 
+        // Track order per category (Map iteration preserves insertion order from relay)
+        const orderByCategory = new Map<string, number>();
+
         for (const [bookmarkId, categoryName] of categoryAssignments) {
           const isNewBookmark = !localBookmarkIds.has(bookmarkId);
 
+          // Get next order for this category
+          const currentOrder = orderByCategory.get(categoryName) ?? 0;
+          orderByCategory.set(categoryName, currentOrder + 1);
+
           if (isNewBookmark) {
-            // NEW bookmark: assign relay category
+            // NEW bookmark: assign relay category with preserved order
             if (categoryName === '') {
-              this.folderService.ensureBookmarkAssignment(bookmarkId);
+              this.folderService.ensureBookmarkAssignment(bookmarkId, currentOrder);
             } else {
               const folder = updatedFolders.find(f => f.name === categoryName);
               if (folder) {
-                this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
+                this.folderService.moveBookmarkToFolder(bookmarkId, folder.id, currentOrder);
               } else {
                 // Folder doesn't exist locally, assign to root
                 this.folderService.ensureBookmarkAssignment(bookmarkId);

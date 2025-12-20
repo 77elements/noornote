@@ -440,9 +440,9 @@ export class BookmarkFileStorage {
     }
 
     // Extract folder assignments for ALL items (public AND private)
-    let itemOrder = 0;
     for (const set of data.sets) {
       const folderId = set.d === '' ? '' : `folder_${set.d}`;
+      let itemOrder = 0;  // Reset order for each folder
 
       // Process public tags
       for (const tag of set.publicTags) {
@@ -456,7 +456,7 @@ export class BookmarkFileStorage {
         }
       }
 
-      // Process private tags (the fix!)
+      // Process private tags
       for (const tag of set.privateTags) {
         folderAssignments.push({
           bookmarkId: tag.value,
