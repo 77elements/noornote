@@ -16,7 +16,6 @@ import { MuteFileStorage } from '../../storage/MuteFileStorage';
 import type { FetchFromRelaysResult } from '../ListStorageAdapter';
 import { MuteOrchestrator } from '../../orchestration/MuteOrchestrator';
 import type { MuteItem } from '../../../types/BaseListItem';
-import { migrateMuteStorage, needsMuteMigration, cleanupOldMuteStorage } from '../../../types/BaseListItem';
 import { StorageKeys, type StorageKey } from '../../PerAccountLocalStorage';
 
 // Legacy browser storage key (for migration only)
@@ -30,27 +29,8 @@ export class MuteStorageAdapter extends BaseListStorageAdapter<string> {
     super();
     this.fileStorage = MuteFileStorage.getInstance();
     this.muteOrchestrator = MuteOrchestrator.getInstance();
-
-    // Run migration if needed
-    this.checkAndRunMigration();
-  }
-
-  /**
-   * Run one-time migration from old 4-key format to new unified format
-   */
-  private checkAndRunMigration(): void {
-    if (needsMuteMigration()) {
-      console.log('[MuteStorageAdapter] Running localStorage migration (4 keys → 1 key)...');
-
-      const migratedItems = migrateMuteStorage();
-
-      if (migratedItems.length > 0) {
-        this.setBrowserMuteItems(migratedItems);
-        cleanupOldMuteStorage();
-
-        console.log('[MuteStorageAdapter] Migration complete:', migratedItems.length, 'items');
-      }
-    }
+    // Note: Migration from 4-key format is handled by MuteOrchestrator
+    // Migration from legacy global to per-account is handled by PerAccountListStorageMigration
   }
 
   protected getBrowserStorageKey(): string {

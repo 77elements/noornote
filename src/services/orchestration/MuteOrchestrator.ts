@@ -58,8 +58,29 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
 
   /**
    * Run one-time migration from old 4-key format to new unified format
+   * IMPORTANT: Only runs when user is logged in, otherwise data would be lost!
    */
   private checkAndRunMigration(): void {
+    // Don't run migration if no user - PerAccountLocalStorage.set() silently fails
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      // Schedule migration for when user logs in
+      const eventBus = EventBus.getInstance();
+      const handler = () => {
+        this.runMigrationIfNeeded();
+        eventBus.off('user:login', handler);
+      };
+      eventBus.on('user:login', handler);
+      return;
+    }
+
+    this.runMigrationIfNeeded();
+  }
+
+  /**
+   * Actually run the migration
+   */
+  private runMigrationIfNeeded(): void {
     if (needsMuteMigration()) {
       this.systemLogger.info('MuteOrchestrator', 'Running localStorage migration (4 keys → 1 key)...');
 
