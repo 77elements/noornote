@@ -47,6 +47,12 @@ export class TribeMemberCard {
     const username = profile?.name || profile?.display_name || 'Anonymous';
     const profilePic = profile?.picture || '';
 
+    // NIP-05: prefer nip05s from tags, fallback to single nip05 from content
+    const nip05s = profile?.nip05s && profile.nip05s.length > 0
+      ? profile.nip05s
+      : (profile?.nip05 ? [profile.nip05] : []);
+    const nip05Display = nip05s.length > 0 ? nip05s.join(', ') : '';
+
     card.innerHTML = `
       ${isPrivate ? '<span class="tribe-member-card__private-badge">🔒</span>' : ''}
       <div class="tribe-member-card__content">
@@ -58,7 +64,7 @@ export class TribeMemberCard {
         </div>
         <div class="tribe-member-card__info">
           <span class="tribe-member-card__username">${this.escapeHtml(username)}</span>
-          <span class="tribe-member-card__pubkey">${this.escapeHtml(pubkey.slice(0, 8))}...</span>
+          ${nip05Display ? `<span class="tribe-member-card__nip05">${this.escapeHtml(nip05Display)}</span>` : `<span class="tribe-member-card__pubkey">${this.escapeHtml(pubkey.slice(0, 8))}...</span>`}
         </div>
       </div>
       <button class="tribe-member-card__delete" aria-label="Remove member" title="Remove member">

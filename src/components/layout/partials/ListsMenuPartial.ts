@@ -68,11 +68,13 @@ export class ListsMenuPartial {
         </li>
         <li>
           <a href="#" class="primary-nav__sublink" data-list-type="tribes">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="6" cy="7" r="3"></circle>
+              <circle cx="12" cy="7" r="3"></circle>
+              <circle cx="18" cy="7" r="3"></circle>
+              <path d="M3 19v-1a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v1"></path>
+              <path d="M9 19v-1a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v1"></path>
+              <path d="M15 19v-1a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v1"></path>
             </svg>
             Tribes
           </a>
