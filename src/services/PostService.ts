@@ -115,7 +115,8 @@ export class PostService {
       }
 
       // Extract mentions from content (nostr:npub... or nostr:nprofile...)
-      const mentionedPubkeys = this.extractMentionedPubkeys(content);
+      const { extractPubkeysFromText } = await import('../helpers/nip19');
+      const mentionedPubkeys = extractPubkeysFromText(content);
 
       // Add p-tags for mentioned users
       mentionedPubkeys.forEach(pubkey => {
@@ -368,40 +369,4 @@ export class PostService {
     return { eTags, pTags };
   }
 
-  /**
-   * Extract mentioned pubkeys from content (nostr:npub... or nostr:nprofile...)
-   * @param content - Post content
-   * @returns Set of hex pubkeys
-   */
-  private extractMentionedPubkeys(content: string): Set<string> {
-    const mentionRegex = /nostr:(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
-    const mentions = content.matchAll(mentionRegex);
-    const mentionedPubkeys = new Set<string>();
-
-    for (const match of mentions) {
-      try {
-        const nip19 = match[1];
-        let pubkeyHex: string;
-
-        if (nip19.startsWith('npub')) {
-          const decoded = decodeNip19(nip19);
-          if (decoded.type === 'npub') {
-            pubkeyHex = decoded.data as string;
-            mentionedPubkeys.add(pubkeyHex);
-          }
-        } else if (nip19.startsWith('nprofile')) {
-          const decoded = decodeNip19(nip19);
-          if (decoded.type === 'nprofile') {
-            pubkeyHex = (decoded.data as any).pubkey;
-            mentionedPubkeys.add(pubkeyHex);
-          }
-        }
-      } catch (error) {
-        // Skip invalid mentions
-        continue;
-      }
-    }
-
-    return mentionedPubkeys;
-  }
 }

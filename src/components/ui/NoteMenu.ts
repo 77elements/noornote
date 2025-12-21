@@ -13,12 +13,15 @@ import { ReportModal } from '../report/ReportModal';
 import { DeleteNoteModal } from '../delete/DeleteNoteModal';
 import { AuthService } from '../../services/AuthService';
 import { BookmarkOrchestrator } from '../../services/orchestration/BookmarkOrchestrator';
+import { TribeOrchestrator } from '../../services/orchestration/TribeOrchestrator';
+import { TribeFolderService } from '../../services/TribeFolderService';
 import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
 import { ArticleNotificationService } from '../../services/ArticleNotificationService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
+import { ModalService } from '../../services/ModalService';
 
 export interface NoteMenuOptions {
   eventId: string;
@@ -104,6 +107,14 @@ export class NoteMenu {
       <path d="M2 2l12 12M3 12l-1 3 3-1 7-7M12 4a2 2 0 0 0-3-3L4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>`;
 
+    // Tribe icon SVG (users group)
+    const tribeIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`;
+
     menu.innerHTML = `
       <button class="note-menu-item" data-action="copy-event-id">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -143,6 +154,13 @@ export class NoteMenu {
           ${isPublicBookmarked ? 'Remove Bookmark' : 'Bookmark'}
         </button>
       `}
+
+      ${!isOwnNote ? `
+        <button class="note-menu-item" data-action="add-author-to-tribe">
+          ${tribeIcon}
+          Add author to Tribe
+        </button>
+      ` : ''}
 
       <button class="note-menu-item" data-action="view-raw-event">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -390,6 +408,9 @@ export class NoteMenu {
         break;
       case 'bookmark-private':
         this.toggleBookmark(true);
+        break;
+      case 'add-author-to-tribe':
+        this.addAuthorToTribe();
         break;
       case 'view-raw-event':
         this.viewRawEvent();
@@ -642,6 +663,90 @@ export class NoteMenu {
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
       ToastService.show('Failed to update bookmark', 'error');
+    }
+  }
+
+  /**
+   * Add author to tribe
+   */
+  private async addAuthorToTribe(): Promise<void> {
+    // AuthGuard check
+    if (!AuthGuard.requireAuth('add to tribe')) {
+      return;
+    }
+
+    const tribeFolderService = TribeFolderService.getInstance();
+    const tribes = tribeFolderService.getFolders();
+
+    if (tribes.length === 0) {
+      ToastService.show('No tribes found. Create a tribe first.', 'info');
+      return;
+    }
+
+    // Build tribe selection list HTML
+    const tribeListHtml = tribes.map(tribe =>
+      `<button class="btn btn--medium" data-tribe-id="${tribe.id}" style="margin: 0.5rem 0; width: 100%;">${tribe.name}</button>`
+    ).join('');
+
+    const modalService = ModalService.getInstance();
+    modalService.show({
+      title: 'Add author to Tribe',
+      content: `
+        <div style="padding: 1rem 0;">
+          <p style="margin-bottom: 1rem;">Select a tribe to add this author to:</p>
+          <div class="tribe-selection-list">
+            ${tribeListHtml}
+          </div>
+        </div>
+      `,
+      width: '400px',
+      showCloseButton: true,
+      closeOnOverlay: true,
+      closeOnEsc: true
+    });
+
+    // Wait for modal to be in DOM
+    setTimeout(() => {
+      const tribeButtons = document.querySelectorAll('[data-tribe-id]');
+      tribeButtons.forEach(button => {
+        button.addEventListener('click', async () => {
+          const tribeId = (button as HTMLElement).dataset.tribeId;
+          if (tribeId) {
+            await this.performAddAuthorToTribe(tribeId);
+            modalService.hide();
+          }
+        });
+      });
+    }, 0);
+  }
+
+  /**
+   * Perform add author to tribe action
+   */
+  private async performAddAuthorToTribe(tribeFolderId: string): Promise<void> {
+    const tribeOrch = TribeOrchestrator.getInstance();
+    const tribeFolderService = TribeFolderService.getInstance();
+
+    try {
+      // Check if tribe uses private members
+      const isPrivate = tribeOrch.isPrivateTribesEnabled();
+
+      // Add member to tribe
+      await tribeOrch.addMember(this.options.authorPubkey, isPrivate, tribeFolderId);
+
+      // Get tribe name for toast message
+      const tribes = tribeFolderService.getFolders();
+      const tribe = tribes.find(t => t.id === tribeFolderId);
+      const tribeName = tribe ? tribe.name : 'Tribe';
+
+      ToastService.show(`Author added to ${tribeName}`, 'success');
+
+      // Notify tribe list to refresh
+      const eventBus = EventBus.getInstance();
+      eventBus.emit('tribe:updated', {});
+    } catch (error) {
+      console.error('Failed to add author to tribe:', error);
+      ToastService.show('Failed to add author to tribe', 'error');
     }
   }
 

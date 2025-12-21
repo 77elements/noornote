@@ -31,6 +31,7 @@ export class Timeline extends View {
   private infiniteScroll: InfiniteScroll;
   private userPubkey: string;
   private filterAuthorPubkey?: string; // Optional: filter timeline to specific author (for ProfileView)
+  private tribePubkeys?: string[]; // Optional: filter timeline to tribe members (for TribeView)
   private refreshButton: RefreshButton | null = null;
   private viewDropdown: CustomDropdown | null = null;
 
@@ -47,10 +48,11 @@ export class Timeline extends View {
   private eventBus: EventBus;
   private userLoginSubscriptionId?: string;
 
-  constructor(userPubkey: string, filterAuthorPubkey?: string) {
+  constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
     this.userPubkey = userPubkey;
     this.filterAuthorPubkey = filterAuthorPubkey;
+    this.tribePubkeys = tribePubkeys;
     this.feedOrchestrator = FeedOrchestrator.getInstance();
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
@@ -310,8 +312,18 @@ export class Timeline extends View {
       // Wait for auth to be fully initialized (session restore, NIP-46, etc.)
       await this.authService.waitForInitialization();
 
-      // Get authors to fetch: either filtered (ProfileView) or following list (TimelineView)
-      if (this.filterAuthorPubkey) {
+      // Get authors to fetch: tribe members, specific author, or following list
+      if (this.tribePubkeys && this.tribePubkeys.length > 0) {
+        // TribeView: show notes from tribe members
+        this.stateManager.setFollowingPubkeys(this.tribePubkeys);
+        console.log(`📱 TIMELINE UI: Loading notes from ${this.tribePubkeys.length} tribe members`);
+
+        if (this.tribePubkeys.length === 0) {
+          this.uiStateHandler.hideSkeletonLoaders();
+          this.uiStateHandler.showError('No members in this tribe. Add some members to see their notes.');
+          return;
+        }
+      } else if (this.filterAuthorPubkey) {
         // ProfileView: show only this author's notes
         this.stateManager.setFollowingPubkeys([this.filterAuthorPubkey]);
         console.log(`📱 TIMELINE UI: Loading notes for author: ${this.filterAuthorPubkey.slice(0, 8)}...`);

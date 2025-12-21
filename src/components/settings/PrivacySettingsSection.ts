@@ -1,6 +1,6 @@
 /**
  * PrivacySettingsSection Component
- * Manages NIP-51 privacy settings (Follow Lists, Bookmarks, Mutes)
+ * Manages NIP-51 privacy settings (Follow Lists, Bookmarks, Tribes, Mutes)
  *
  * @purpose Configure private lists using NIP-51 encryption
  * @used-by SettingsView
@@ -9,6 +9,7 @@
 import { SettingsSection } from './SettingsSection';
 import { FollowListOrchestrator } from '../../services/orchestration/FollowListOrchestrator';
 import { BookmarkOrchestrator } from '../../services/orchestration/BookmarkOrchestrator';
+import { TribeOrchestrator } from '../../services/orchestration/TribeOrchestrator';
 import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
 import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
@@ -19,17 +20,20 @@ import { EventBus } from '../../services/EventBus';
 export class PrivacySettingsSection extends SettingsSection {
   private followListOrch: FollowListOrchestrator;
   private bookmarkOrch: BookmarkOrchestrator;
+  private tribeOrch: TribeOrchestrator;
   private muteOrch: MuteOrchestrator;
   private authService: AuthService;
   private modalService: ModalService;
   private privateFollowsSwitch: Switch | null = null;
   private privateBookmarksSwitch: Switch | null = null;
+  private privateTribesSwitch: Switch | null = null;
   private privateMutesSwitch: Switch | null = null;
 
   constructor() {
     super('privacy-settings'); // Combined section ID
     this.followListOrch = FollowListOrchestrator.getInstance();
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
+    this.tribeOrch = TribeOrchestrator.getInstance();
     this.muteOrch = MuteOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
     this.modalService = ModalService.getInstance();
@@ -54,6 +58,7 @@ export class PrivacySettingsSection extends SettingsSection {
       <div class="privacy-settings">
         ${this.renderFollowLists()}
         ${this.renderBookmarks()}
+        ${this.renderTribes()}
         ${this.renderMutes()}
       </div>
     `;
@@ -137,6 +142,31 @@ export class PrivacySettingsSection extends SettingsSection {
   }
 
   /**
+   * Render tribes subsection
+   */
+  private renderTribes(): string {
+    return `
+      <div class="privacy-subsection">
+        <h3 class="subsection-title">Tribes</h3>
+        <div class="tribes-settings">
+          <div class="form__info">
+            <p>Private tribes (NIP-51 kind:30000) allow you to create curated user lists without publicly revealing who you added. Your tribe members are encrypted and only you can see them.</p>
+            <p class="tribes-warning">⚠️ <strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private tribe members.</p>
+          </div>
+
+          <div class="private-tribes-switch-container" id="private-tribes-switch-container">
+            <!-- Switch will be mounted here -->
+          </div>
+
+          <div class="settings-section__actions">
+            <button class="btn btn--medium" id="view-tribes-btn">View Tribes</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
    * Render mutes subsection
    */
   private renderMutes(): string {
@@ -212,6 +242,7 @@ export class PrivacySettingsSection extends SettingsSection {
   private bindListeners(contentContainer: HTMLElement): void {
     this.bindFollowListsListeners(contentContainer);
     this.bindBookmarksListeners(contentContainer);
+    this.bindTribesListeners(contentContainer);
     this.bindMutesListeners(contentContainer);
   }
 
@@ -289,6 +320,36 @@ export class PrivacySettingsSection extends SettingsSection {
     const viewBookmarksBtn = contentContainer.querySelector('#view-bookmarks-btn');
     viewBookmarksBtn?.addEventListener('click', () => {
       EventBus.getInstance().emit('list:open', { listType: 'bookmarks' });
+    });
+  }
+
+  /**
+   * Bind tribes event listeners
+   */
+  private bindTribesListeners(contentContainer: HTMLElement): void {
+    const switchContainer = contentContainer.querySelector('#private-tribes-switch-container');
+    if (!switchContainer) return;
+
+    this.privateTribesSwitch = new Switch({
+      label: 'Use private tribes (NIP-51)',
+      checked: this.tribeOrch.isPrivateTribesEnabled(),
+      onChange: async (checked) => {
+        this.tribeOrch.setPrivateTribesEnabled(checked);
+
+        ToastService.show(
+          checked ? 'Private tribes enabled' : 'Private tribes disabled',
+          'success'
+        );
+      }
+    });
+
+    switchContainer.innerHTML = this.privateTribesSwitch.render();
+    this.privateTribesSwitch.setupEventListeners(switchContainer as HTMLElement);
+
+    // Bind button to open Tribes list in MainLayout
+    const viewTribesBtn = contentContainer.querySelector('#view-tribes-btn');
+    viewTribesBtn?.addEventListener('click', () => {
+      EventBus.getInstance().emit('list:open', { listType: 'tribes' });
     });
   }
 
@@ -479,6 +540,9 @@ export class PrivacySettingsSection extends SettingsSection {
     }
     if (this.privateBookmarksSwitch) {
       this.privateBookmarksSwitch = null;
+    }
+    if (this.privateTribesSwitch) {
+      this.privateTribesSwitch = null;
     }
     if (this.privateMutesSwitch) {
       this.privateMutesSwitch = null;

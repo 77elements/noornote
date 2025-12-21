@@ -21,6 +21,7 @@ import { GlobalSearchView } from '../search/GlobalSearchView';
 import { BookmarkSecondaryManager } from './managers/BookmarkSecondaryManager';
 import { FollowListSecondaryManager } from './managers/FollowListSecondaryManager';
 import { MuteListSecondaryManager } from './managers/MuteListSecondaryManager';
+import { TribeSecondaryManager } from './managers/TribeSecondaryManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
@@ -46,6 +47,7 @@ export class MainLayout {
   private bookmarkManager: BookmarkSecondaryManager | null = null;
   private followManager: FollowListSecondaryManager | null = null;
   private muteManager: MuteListSecondaryManager | null = null;
+  private tribeManager: TribeSecondaryManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
   private currentListView: ListViewPartial | null = null;
@@ -113,13 +115,14 @@ export class MainLayout {
   }
 
   /**
-   * Initialize managers (Bookmark, Follow, Mute, Badge, Lists Menu)
+   * Initialize managers (Bookmark, Follow, Mute, Tribe, Badge, Lists Menu)
    */
   private initializeManagers(): void {
     // Initialize list managers
     this.bookmarkManager = new BookmarkSecondaryManager(this.element);
     this.followManager = new FollowListSecondaryManager(this.element);
     this.muteManager = new MuteListSecondaryManager(this.element);
+    this.tribeManager = new TribeSecondaryManager(this.element);
 
     // Initialize NotificationsBadgeManager
     const badgeElement = this.element.querySelector('.notifications-badge') as HTMLElement;
@@ -1033,14 +1036,16 @@ export class MainLayout {
     const titles: Record<ListType, string> = {
       bookmarks: 'List: Bookmarks',
       follows: 'List: Follows',
-      mutes: 'List: Muted'
+      mutes: 'List: Muted',
+      tribes: 'List: Tribes'
     };
 
     // Map list types to managers
     const managers: Record<ListType, any> = {
       bookmarks: this.bookmarkManager,
       follows: this.followManager,
-      mutes: this.muteManager
+      mutes: this.muteManager,
+      tribes: this.tribeManager
     };
 
     const manager = managers[listType];

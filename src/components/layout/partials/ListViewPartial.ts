@@ -3,15 +3,15 @@
  * Generic list view component for secondary-content tabs
  *
  * @purpose Provides unified tab + content structure for all list types
- * @used-by MainLayout (for Bookmarks, Follows, Muted Users)
+ * @used-by MainLayout (for Bookmarks, Follows, Muted Users, Tribes)
  *
  * Architecture:
  * - ListViewPartial provides the container structure (tab + content area)
- * - Individual managers (BookmarkSecondaryManager, FollowListSecondaryManager, MuteListSecondaryManager)
+ * - Individual managers (BookmarkSecondaryManager, FollowListSecondaryManager, MuteListSecondaryManager, TribeSecondaryManager)
  *   render their specific content into the provided container
  */
 
-export type ListType = 'bookmarks' | 'follows' | 'mutes';
+export type ListType = 'bookmarks' | 'follows' | 'mutes' | 'tribes';
 
 export interface ListViewConfig {
   type: ListType;

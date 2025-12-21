@@ -295,6 +295,20 @@ export class App {
       false // No auth required to view
     );
 
+    // Tribes View (curated user lists)
+    this.router.register(
+      '/tribes',
+      () => {
+        this.appState.setState('view', {
+          currentView: 'tribes'
+        });
+        this.mountPrimaryContent('tribes');
+        this.mountSecondaryContent('debug-log');
+      },
+      'tribes-view', // Tribes View
+      true // Requires authentication
+    );
+
   }
 
   private async mountPrimaryContent(viewType: string, param?: string): Promise<void> {
@@ -407,6 +421,14 @@ export class App {
         const { ArticleTimelineView } = await import('./components/views/ArticleTimelineView');
         const articleTimeline = new ArticleTimelineView();
         primaryContent.appendChild(articleTimeline.getElement());
+        break;
+      }
+
+      case 'tribes': {
+        // TribeView: Curated user lists with filtered timeline
+        const { TribeView } = await import('./components/views/TribeView');
+        const tribeView = new TribeView();
+        primaryContent.appendChild(tribeView.getElement());
         break;
       }
 

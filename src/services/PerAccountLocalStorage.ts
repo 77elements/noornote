@@ -28,6 +28,10 @@ export const StorageKeys = {
   BOOKMARK_ROOT_ORDER: 'noornote_bookmark_root_order_map',
   FOLLOWS: 'noornote_follows_map',
   MUTES: 'noornote_mutes_map',
+  TRIBES: 'noornote_tribes_map',
+  TRIBE_FOLDERS: 'noornote_tribe_folders_map',
+  TRIBE_MEMBER_ASSIGNMENTS: 'noornote_tribe_member_assignments_map',
+  TRIBE_ROOT_ORDER: 'noornote_tribe_root_order_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

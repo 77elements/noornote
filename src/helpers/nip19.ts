@@ -91,3 +91,42 @@ export function nprofileToNpub(nprofile: string): string {
 
   throw new Error(`Expected nprofile, got ${decoded.type}`);
 }
+
+/**
+ * Extract all npub/nprofile identifiers from text and convert to hex pubkeys
+ * Supports both with and without "nostr:" prefix
+ *
+ * @param text - Text containing npub/nprofile identifiers
+ * @returns Array of unique hex pubkeys
+ *
+ * @example
+ * extractPubkeysFromText("Follow @alice nostr:npub1abc... and npub1xyz...")
+ * // => ["<hex1>", "<hex2>"]
+ */
+export function extractPubkeysFromText(text: string): string[] {
+  // Match npub and nprofile with or without "nostr:" prefix
+  const nip19Regex = /(?:nostr:)?(npub1[023456789acdefghjklmnpqrstuvwxyz]{58}|nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})/g;
+  const matches = text.matchAll(nip19Regex);
+  const pubkeys = new Set<string>();
+
+  for (const match of matches) {
+    try {
+      const nip19 = match[1]; // Capture group without "nostr:" prefix
+
+      if (nip19.startsWith('npub')) {
+        const hex = npubToHex(nip19);
+        if (hex) pubkeys.add(hex);
+      } else if (nip19.startsWith('nprofile')) {
+        const decoded = decodeNip19(nip19);
+        if (decoded.type === 'nprofile') {
+          const pubkeyHex = (decoded.data as any).pubkey;
+          pubkeys.add(pubkeyHex);
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to decode NIP-19 identifier:', match[1], error);
+    }
+  }
+
+  return Array.from(pubkeys);
+}
