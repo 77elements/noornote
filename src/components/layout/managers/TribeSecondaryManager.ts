@@ -987,15 +987,21 @@ export class TribeSecondaryManager {
    * Bind sync buttons
    */
   private bindSyncButtons(container: HTMLElement): void {
-    const syncFromRelaysBtn = container.querySelector('[data-list-sync-action="sync-from-relays"]');
-    const syncToRelaysBtn = container.querySelector('[data-list-sync-action="sync-to-relays"]');
-    const saveToFileBtn = container.querySelector('[data-list-sync-action="save-to-file"]');
-    const restoreFromFileBtn = container.querySelector('[data-list-sync-action="restore-from-file"]');
+    container.querySelectorAll('.sync-from-relays-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.handleSyncFromRelays(container));
+    });
 
-    syncFromRelaysBtn?.addEventListener('click', () => this.handleSyncFromRelays(container));
-    syncToRelaysBtn?.addEventListener('click', () => this.handleSyncToRelays());
-    saveToFileBtn?.addEventListener('click', () => this.handleSaveToFile());
-    restoreFromFileBtn?.addEventListener('click', () => this.handleRestoreFromFile(container));
+    container.querySelectorAll('.sync-to-relays-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.handleSyncToRelays());
+    });
+
+    container.querySelectorAll('.save-to-file-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.handleSaveToFile());
+    });
+
+    container.querySelectorAll('.restore-from-file-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.handleRestoreFromFile(container));
+    });
   }
 
   /**
@@ -1107,34 +1113,38 @@ export class TribeSecondaryManager {
       ToastService.show('Restoring from file...', 'info');
 
       const browserItems = this.adapter.getBrowserItems();
+      const fileMembers = await this.adapter.getFileItems();
       const hasExisting = browserItems.length > 0;
 
       if (hasExisting) {
-        // Show confirmation modal
-        const fileMembers = await this.adapter.getFileItems();
-        const fileDisplayNames = await Promise.all(
-          fileMembers.slice(0, 5).map(async m => {
-            const profile = await this.profileService.getUserProfile(m.pubkey);
-            return profile?.name || m.pubkey.slice(0, 8) + '...';
-          })
-        );
+        // Calculate diff
+        const browserPubkeys = new Set(browserItems.map(m => m.pubkey));
+        const filePubkeys = new Set(fileMembers.map(m => m.pubkey));
 
-        const browserDisplayNames = await Promise.all(
-          browserItems.slice(0, 5).map(async m => {
-            const profile = await this.profileService.getUserProfile(m.pubkey);
-            return profile?.name || m.pubkey.slice(0, 8) + '...';
-          })
-        );
+        const added = fileMembers.filter(m => !browserPubkeys.has(m.pubkey));
+        const removed = browserItems.filter(m => !filePubkeys.has(m.pubkey));
 
         const modal = new SyncConfirmationModal({
-          source: 'file',
-          target: 'browser',
-          sourceItems: fileDisplayNames,
-          targetItems: browserDisplayNames,
-          sourceCount: fileMembers.length,
-          targetCount: browserItems.length,
-          onConfirm: async () => {
-            await this.listSyncManager.restoreFromFile();
+          listType: 'Tribes',
+          added: added,
+          removed: removed,
+          getDisplayName: async (item) => {
+            const profile = await this.profileService.getUserProfile(item.pubkey);
+            return profile?.name || item.pubkey.slice(0, 8) + '...';
+          },
+          onKeep: async () => {
+            // Merge: Add new items from file, keep existing
+            await this.restoreFoldersAndMembers();
+            ToastService.show('Merged tribes from file', 'success');
+
+            // Reload and re-render
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          },
+          onDelete: async () => {
+            // Overwrite: Replace with file content
+            await this.restoreFoldersAndMembers();
             ToastService.show('Restored from file', 'success');
 
             // Reload and re-render
@@ -1147,7 +1157,7 @@ export class TribeSecondaryManager {
         modal.show();
       } else {
         // No browser items - restore directly
-        await this.listSyncManager.restoreFromFile();
+        await this.restoreFoldersAndMembers();
         ToastService.show('Restored from file', 'success');
 
         // Reload and re-render
@@ -1158,6 +1168,54 @@ export class TribeSecondaryManager {
     } catch (error) {
       console.error('Restore from file failed:', error);
       ToastService.show('Failed to restore from file', 'error');
+    }
+  }
+
+  /**
+   * Restore folders and members from file (creates folder structure from categories)
+   */
+  private async restoreFoldersAndMembers(): Promise<void> {
+    // Restore tribe members from file
+    await this.listSyncManager.restoreFromFile();
+
+    // Apply category assignments from restored items
+    const restoredItems = this.adapter.getBrowserItems();
+    const existingFolders = this.folderService.getFolders();
+
+    // Create folders for categories that don't exist yet
+    const categories = new Set<string>();
+    for (const item of restoredItems) {
+      if (item.category && item.category !== '') {
+        categories.add(item.category);
+      }
+    }
+
+    for (const categoryName of categories) {
+      const existingFolder = existingFolders.find(f => f.name === categoryName);
+      if (!existingFolder) {
+        const newFolder = this.folderService.createFolder(categoryName);
+        this.folderService.addToRootOrder('folder', newFolder.id);
+      }
+    }
+
+    // Assign members to their categories
+    const updatedFolders = this.folderService.getFolders();
+    for (const item of restoredItems) {
+      const categoryName = item.category || '';
+      if (categoryName === '') {
+        // Root - ensure assignment exists
+        this.folderService.ensureMemberAssignment(item.pubkey);
+      } else {
+        // Find folder by name and move member there
+        const folder = updatedFolders.find(f => f.name === categoryName);
+        if (folder) {
+          this.folderService.ensureMemberAssignment(item.pubkey);
+          this.folderService.moveMemberToFolder(item.pubkey, folder.id);
+        } else {
+          // Folder not found - assign to root
+          this.folderService.ensureMemberAssignment(item.pubkey);
+        }
+      }
     }
   }
 
