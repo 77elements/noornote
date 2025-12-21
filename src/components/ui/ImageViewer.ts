@@ -178,7 +178,8 @@ export class ImageViewer {
    * Share image as Quoted Repost
    * Extracts current image URL and creates a new note with:
    * - The image itself (URL)
-   * - Attribution: "Image via [Username]" (linked to original event)
+   * - Attribution: "Image via nostr:npub..." (user mention)
+   * - Source link to original event
    * - User can add their own text above
    * Preserves NSFW tags for security (NIP-36)
    */
@@ -189,30 +190,26 @@ export class ImageViewer {
     }
 
     try {
-      const { encodeNevent: _encodeNevent } = await import('../../helpers/encodeNevent');
-      const { RelayConfig: _RelayConfig } = await import('../../services/RelayConfig');
-      const { UserProfileService } = await import('../../services/UserProfileService');
+      const { encodeNpub } = await import('../../services/NostrToolsAdapter');
       const { PostNoteModal } = await import('../post/PostNoteModal');
 
       // Get current image URL
       const currentImageUrl = this.images[this.currentIndex];
 
-      // Fetch author profile to get username
-      const userProfileService = UserProfileService.getInstance();
-      const profile = await userProfileService.getUserProfile(this.sourceEvent.authorPubkey);
-      const username = profile?.name || profile?.display_name || 'Unknown';
+      // Convert author pubkey to npub mention (nostr:npub format)
+      const npub = encodeNpub(this.sourceEvent.authorPubkey);
+      const mentionTag = `nostr:${npub}`;
 
-      // Generate njump.me URL for the original event
-      // URL in parentheses will be auto-linkified by ContentProcessor
-      const sourceUrl = `https://njump.me/${this.sourceEvent.eventId}`;
+      // Generate nostr.ae URL for the original event
+      const sourceUrl = `https://nostr.ae/${this.sourceEvent.eventId}`;
 
-      // Build content: Image URL + attribution with source link in parentheses
-      // Format: <image-url>\nImage via Username (https://njump.me/...)
+      // Build content: Image URL + attribution with user mention + source link
+      // Format: <image-url>\nImage via nostr:npub... https://nostr.ae/...
       let content = '';
       if (this.sourceEvent.isNSFW) {
         content += '⚠️ NSFW Content\n\n';
       }
-      content += `${currentImageUrl}\nImage via ${username} (${sourceUrl})`;
+      content += `${currentImageUrl}\nImage via ${mentionTag} ${sourceUrl}`;
 
       // Open PostNoteModal with pre-filled content
       PostNoteModal.getInstance().show(content);
