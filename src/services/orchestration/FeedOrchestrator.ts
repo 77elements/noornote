@@ -194,7 +194,13 @@ export class FeedOrchestrator extends Orchestrator {
             specificRelay
           });
 
-          accumulatedEvents = [...accumulatedEvents, ...loadMoreResult.events];
+          // Merge new events and deduplicate by event ID
+          const mergedEvents = [...accumulatedEvents, ...loadMoreResult.events];
+          accumulatedEvents = Array.from(
+            new Map(mergedEvents.map(e => [e.id, e])).values()
+          );
+          // Re-sort after deduplication (newest first)
+          accumulatedEvents.sort((a, b) => b.created_at - a.created_at);
           currentUntil = loadMoreResult.events[loadMoreResult.events.length - 1]?.created_at || currentUntil - 3 * 3600;
 
           if (accumulatedEvents.length >= minimumNotes) {

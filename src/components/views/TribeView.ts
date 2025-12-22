@@ -4,9 +4,9 @@
  *
  * Features:
  * - Tab-based navigation between tribes
- * - "All" tab showing all tribe members
  * - Timeline filtered to selected tribe's members
  * - "Edit" link to open TribeSecondaryManager
+ * - Tabs follow folder root order
  *
  * @purpose Filtered timeline view for tribe management
  * @used-by Router (/tribes route)
@@ -15,7 +15,6 @@
 import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
 import { TribeFolderService, type TribeFolder } from '../../services/TribeFolderService';
-import { TribeStorageAdapter } from '../../services/sync/adapters/TribeStorageAdapter';
 import { EventBus } from '../../services/EventBus';
 import { AuthService } from '../../services/AuthService';
 
@@ -23,16 +22,14 @@ export class TribeView extends View {
   private container: HTMLElement;
   private timeline: Timeline | null = null;
   private tribeFolderService: TribeFolderService;
-  private tribeStorageAdapter: TribeStorageAdapter;
   private eventBus: EventBus;
   private authService: AuthService;
-  private currentTribeId: string = 'all'; // 'all' or folder ID
+  private currentTribeId: string = ''; // Current folder ID
   private tribes: TribeFolder[] = [];
 
   constructor() {
     super();
     this.tribeFolderService = TribeFolderService.getInstance();
-    this.tribeStorageAdapter = new TribeStorageAdapter();
     this.eventBus = EventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.container = document.createElement('div');
@@ -51,8 +48,16 @@ export class TribeView extends View {
       return;
     }
 
-    // Load tribes
-    this.tribes = this.tribeFolderService.getFolders();
+    // Load tribes in root order
+    this.tribes = this.getTribesInRootOrder();
+
+    if (this.tribes.length === 0) {
+      this.container.innerHTML = '<div class="tribe-view__error">No tribes found. Create one in the sidebar.</div>';
+      return;
+    }
+
+    // Set first tribe as current
+    this.currentTribeId = this.tribes[0].id;
 
     // Build header with tabs and edit link
     const header = document.createElement('div');
@@ -66,13 +71,11 @@ export class TribeView extends View {
     const tabs = document.createElement('div');
     tabs.className = 'tabs';
 
-    // "All" tab
-    const allTab = this.createTab('all', 'All', true);
-    tabs.appendChild(allTab);
-
-    // Tribe tabs
-    for (const tribe of this.tribes) {
-      const tab = this.createTab(tribe.id, tribe.name, false);
+    // Tribe tabs (in root order)
+    for (let i = 0; i < this.tribes.length; i++) {
+      const tribe = this.tribes[i];
+      const isActive = i === 0; // First tribe is active
+      const tab = this.createTab(tribe.id, tribe.name, isActive);
       tabs.appendChild(tab);
     }
 
@@ -95,8 +98,28 @@ export class TribeView extends View {
     timelineContainer.className = 'tribe-view__timeline';
     this.container.appendChild(timelineContainer);
 
-    // Create initial timeline for "All" members
+    // Create initial timeline for first tribe
     await this.updateTimeline(currentUser.pubkey);
+  }
+
+  /**
+   * Get tribes sorted by root order
+   */
+  private getTribesInRootOrder(): TribeFolder[] {
+    const allFolders = this.tribeFolderService.getFolders();
+    const rootOrder = this.tribeFolderService.getRootOrder();
+
+    // Extract folder IDs from root order (only folders, not members)
+    const folderOrder = rootOrder
+      .filter(item => item.type === 'folder')
+      .map(item => item.id);
+
+    // Sort folders according to root order
+    const orderedFolders = folderOrder
+      .map(id => allFolders.find(f => f.id === id))
+      .filter((f): f is TribeFolder => f !== undefined);
+
+    return orderedFolders;
   }
 
   /**
@@ -132,16 +155,7 @@ export class TribeView extends View {
    */
   private async updateTimeline(userPubkey: string): Promise<void> {
     // Get pubkeys for selected tribe
-    let tribePubkeys: string[];
-
-    if (this.currentTribeId === 'all') {
-      // All members from all tribes
-      const allMembers = this.tribeStorageAdapter.getBrowserItems();
-      tribePubkeys = allMembers.map(m => m.pubkey);
-    } else {
-      // Members from specific tribe
-      tribePubkeys = this.tribeFolderService.getMembersInFolder(this.currentTribeId);
-    }
+    const tribePubkeys = this.tribeFolderService.getMembersInFolder(this.currentTribeId);
 
     // Destroy existing timeline
     if (this.timeline) {
@@ -150,7 +164,6 @@ export class TribeView extends View {
     }
 
     // Create new timeline with tribe filter
-    // Note: Timeline.ts needs to be updated to support tribePubkeys parameter
     this.timeline = new Timeline(userPubkey, undefined, tribePubkeys);
 
     // Mount timeline
