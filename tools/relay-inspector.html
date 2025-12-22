@@ -54,6 +54,19 @@
       font-size: 12px;
       line-height: 1.5;
     }
+    .tree-view {
+      font-family: monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre;
+      color: #f8f8f2;
+    }
+    .tree-kind { color: #ff79c6; font-weight: bold; }
+    .tree-event { color: #8be9fd; }
+    .tree-tag { color: #50fa7b; }
+    .tree-value { color: #f1fa8c; }
+    .tree-content { color: #bd93f9; }
+    .tree-empty { color: #6272a4; font-style: italic; }
     .status { color: #50fa7b; margin-bottom: 10px; }
     .error { color: #ff5555; }
     .info { color: #8be9fd; font-size: 12px; margin-top: 5px; }
@@ -67,6 +80,9 @@
     .summary h3 { margin: 0 0 10px 0; color: #ff79c6; }
     .summary-item { margin: 5px 0; }
     .copy-btn { background: #6272a4; font-size: 12px; padding: 5px 10px; }
+    .view-toggle { margin-top: 10px; }
+    .view-toggle button { background: #6272a4; margin-right: 5px; }
+    .view-toggle button.active { background: #ff79c6; }
   </style>
 </head>
 <body>
@@ -74,10 +90,12 @@
 
   <div class="presets">
     <strong>Presets:</strong><br>
+    <button onclick="loadPreset('allnip51')">All NIP-51 Lists</button>
     <button onclick="loadPreset('follows')">Follows (kind:3)</button>
     <button onclick="loadPreset('mutes')">Mutes (kind:10000)</button>
     <button onclick="loadPreset('bookmarks')">Bookmarks OLD (kind:10003)</button>
     <button onclick="loadPreset('bookmarksets')">Bookmark Sets (kind:30003)</button>
+    <button onclick="loadPreset('tribes')">Tribes (kind:30000)</button>
     <button onclick="loadPreset('profile')">Profile (kind:0)</button>
     <button onclick="loadPreset('relaylist')">Relay List (kind:10002)</button>
   </div>
@@ -117,6 +135,10 @@ wss://purplepag.es</textarea>
   <div class="output">
     <div id="status" class="status"></div>
     <div id="summary"></div>
+    <div class="view-toggle" id="viewToggle" style="display:none;">
+      <button id="jsonViewBtn" class="active" onclick="switchView('json')">JSON View</button>
+      <button id="treeViewBtn" onclick="switchView('tree')">Tree View</button>
+    </div>
     <pre id="result">Results will appear here...</pre>
   </div>
 
@@ -127,7 +149,8 @@ wss://purplepag.es</textarea>
     <code>a</code> = article reference |
     <code>t</code> = hashtag |
     <code>r</code> = URL |
-    <code>word</code> = muted word
+    <code>word</code> = muted word |
+    <code>d</code> = identifier (parameterized replaceable events)
   </div>
 
   <script>
@@ -195,12 +218,27 @@ wss://purplepag.es</textarea>
       'wss://purplepag.es'
     ];
 
+    const NIP51_KINDS = {
+      10000: 'Mute List',
+      10001: 'Pin List',
+      30000: 'Follow Sets / Tribes',
+      30001: 'Generic Lists',
+      30002: 'Relay Sets',
+      30003: 'Bookmark Sets',
+      30004: 'Curation Sets',
+      30005: 'Interest Sets',
+      30015: 'Interest Sets (alt)',
+      30030: 'Emoji Sets'
+    };
+
     function loadPreset(type) {
       const presets = {
+        allnip51: { kinds: '10000,10001,30000,30001,30002,30003,30004,30005,30015,30030', limit: 100 },
         follows: { kinds: '3', limit: 1 },
         mutes: { kinds: '10000', limit: 1 },
         bookmarks: { kinds: '10003', limit: 1 },
         bookmarksets: { kinds: '30003', limit: 20 },
+        tribes: { kinds: '30000', limit: 50 },
         profile: { kinds: '0', limit: 1 },
         relaylist: { kinds: '10002', limit: 1 }
       };
@@ -219,6 +257,115 @@ wss://purplepag.es</textarea>
       document.getElementById('result').textContent = 'Results will appear here...';
       document.getElementById('status').textContent = '';
       document.getElementById('summary').innerHTML = '';
+      document.getElementById('viewToggle').style.display = 'none';
+      currentView = 'json';
+      currentData = null;
+    }
+
+    let currentView = 'json';
+    let currentData = null;
+
+    function switchView(view) {
+      if (!currentData) return;
+      currentView = view;
+
+      document.getElementById('jsonViewBtn').classList.toggle('active', view === 'json');
+      document.getElementById('treeViewBtn').classList.toggle('active', view === 'tree');
+
+      const resultEl = document.getElementById('result');
+      if (view === 'json') {
+        resultEl.className = '';
+        resultEl.textContent = JSON.stringify(currentData, null, 2);
+      } else {
+        resultEl.className = 'tree-view';
+        resultEl.innerHTML = buildTreeView(currentData);
+      }
+    }
+
+    function buildTreeView(data) {
+      if (!data.events || data.events.length === 0) {
+        return '<span class="tree-empty">No events found</span>';
+      }
+
+      // Group events by kind
+      const eventsByKind = {};
+      data.events.forEach(event => {
+        if (!eventsByKind[event.kind]) {
+          eventsByKind[event.kind] = [];
+        }
+        eventsByKind[event.kind].push(event);
+      });
+
+      let tree = '';
+      tree += `<span class="tree-kind">NIP-51 Lists Overview (${data.totalEvents} events)</span>\n`;
+      tree += '│\n';
+
+      const kinds = Object.keys(eventsByKind).sort((a, b) => parseInt(a) - parseInt(b));
+      kinds.forEach((kind, kindIdx) => {
+        const isLastKind = kindIdx === kinds.length - 1;
+        const kindPrefix = isLastKind ? '└─' : '├─';
+        const childPrefix = isLastKind ? '  ' : '│ ';
+
+        const kindName = NIP51_KINDS[kind] || `Kind ${kind}`;
+        const events = eventsByKind[kind];
+
+        tree += `${kindPrefix} <span class="tree-kind">${kindName} (kind:${kind})</span> - ${events.length} event(s)\n`;
+
+        events.forEach((event, eventIdx) => {
+          const isLastEvent = eventIdx === events.length - 1;
+          const eventPrefix = isLastEvent ? '└─' : '├─';
+          const eventChildPrefix = isLastEvent ? '  ' : '│ ';
+
+          // Get d-tag for parameterized replaceable events
+          const dTag = event.tags.find(t => t[0] === 'd');
+          const dValue = dTag ? dTag[1] : null;
+          const titleTag = event.tags.find(t => t[0] === 'title');
+          const title = titleTag ? titleTag[1] : null;
+
+          const eventLabel = dValue !== null
+            ? `<span class="tree-value">d:"${dValue}"</span>${title && title !== dValue ? ` (${title})` : ''}`
+            : `Event ${event.id.slice(0, 8)}...`;
+
+          const timestamp = new Date(event.created_at * 1000).toLocaleString('de-DE');
+          tree += `${childPrefix}${eventPrefix} <span class="tree-event">${eventLabel}</span> - ${timestamp}\n`;
+
+          // Count tags by type
+          const tagCounts = {};
+          event.tags.forEach(tag => {
+            const type = tag[0];
+            if (type !== 'd' && type !== 'title' && type !== 'client') {
+              tagCounts[type] = (tagCounts[type] || 0) + 1;
+            }
+          });
+
+          // Show tag counts
+          const tagTypes = Object.keys(tagCounts).sort();
+          if (tagTypes.length > 0) {
+            tree += `${childPrefix}${eventChildPrefix}├─ <span class="tree-tag">Tags:</span> `;
+            tree += tagTypes.map(t => `<span class="tree-value">${t}:${tagCounts[t]}</span>`).join(', ');
+            tree += '\n';
+          }
+
+          // Show content if present
+          if (event.content && event.content.trim() !== '') {
+            const contentPreview = event.content.length > 60
+              ? event.content.slice(0, 60) + '...'
+              : event.content;
+            tree += `${childPrefix}${eventChildPrefix}├─ <span class="tree-content">Content:</span> ${event.content.length} chars`;
+            if (event.content.length < 100) {
+              tree += ` - "${contentPreview}"`;
+            }
+            tree += '\n';
+          }
+
+          // Show relay source
+          tree += `${childPrefix}${eventChildPrefix}└─ <span class="tree-tag">From:</span> ${event._fromRelay.replace('wss://', '')}\n`;
+        });
+
+        if (!isLastKind) tree += '│\n';
+      });
+
+      return tree;
     }
 
     async function fetchEvents() {
@@ -401,7 +548,9 @@ wss://purplepag.es</textarea>
         }))
       };
 
-      document.getElementById('result').textContent = JSON.stringify(output, null, 2);
+      currentData = output;
+      document.getElementById('viewToggle').style.display = 'block';
+      switchView('tree'); // Default to tree view for NIP-51 lists
       btn.disabled = false;
     }
 

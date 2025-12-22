@@ -1083,7 +1083,7 @@ export class TribeSecondaryManager {
   private async handleSyncToRelays(): Promise<void> {
     try {
       ToastService.show('Publishing to relays...', 'info');
-      await this.listSyncManager.publishToRelays();
+      await this.listSyncManager.syncToRelays();
       ToastService.show('Published to relays', 'success');
     } catch (error) {
       console.error('Publish to relays failed:', error);

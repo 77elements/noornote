@@ -370,8 +370,9 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
   /**
    * Publish an empty event for a tribe to "delete" it from relays
    * This overwrites the existing event with an empty one
+   * @param dTag - d-tag with tribes/ prefix (e.g., "tribes/Friends")
    */
-  public async publishEmptyTribe(tribeName: string): Promise<void> {
+  public async publishEmptyTribe(dTag: string): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       throw new Error('User not authenticated');
@@ -382,9 +383,12 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       throw new Error('No write relays available');
     }
 
+    // Extract tribe name from d-tag for title (remove tribes/ prefix)
+    const tribeName = dTag === 'tribes/' ? '' : dTag.substring(7);
+
     // Build empty event with this d-tag
     const tags: string[][] = [
-      ['d', tribeName],
+      ['d', dTag],
       ['title', tribeName],
       ['client', 'NoorNote']
     ];
@@ -425,10 +429,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     // Create sets map
     const setsMap = new Map<string, TribeSet>();
 
-    // Initialize root set
+    // Initialize root set with tribes/ prefix
     setsMap.set('', {
       kind: 30000,
-      d: '',
+      d: 'tribes/',
       title: '',
       publicMembers: [],
       privateMembers: []
@@ -437,11 +441,11 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     // Get all folders from FolderService
     const existingFolders = this.folderService.getFolders();
 
-    // Create sets for each folder (tribe)
+    // Create sets for each folder (tribe) with tribes/ prefix
     for (const folder of existingFolders) {
       setsMap.set(folder.name, {
         kind: 30000,
-        d: folder.name,
+        d: `tribes/${folder.name}`,
         title: folder.name,
         publicMembers: [],
         privateMembers: []
@@ -539,6 +543,12 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       const eventsByDTag = new Map<string, NostrEvent>();
       events.forEach(event => {
         const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+
+        // FILTER: Only process events with d-tag starting with "tribes/"
+        if (!dTag.startsWith('tribes/')) {
+          return; // Skip non-tribe events (other apps, settings, etc.)
+        }
+
         const existing = eventsByDTag.get(dTag);
         if (!existing || event.created_at > existing.created_at) {
           eventsByDTag.set(dTag, event);
@@ -550,9 +560,13 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       const categories: string[] = [];
       let anyContentWasEmpty = true;
 
-      for (const [tribeName, event] of eventsByDTag) {
-        // Track all tribes (including root "")
-        categories.push(tribeName);
+      for (const [dTag, event] of eventsByDTag) {
+        // Remove "tribes/" prefix to get tribe name for category
+        // "tribes/" → "" (root), "tribes/Friends" → "Friends"
+        const tribeName = dTag === 'tribes/' ? '' : dTag.substring(7); // 7 = length of "tribes/"
+
+        // Track d-tags WITH prefix for relay comparison
+        categories.push(dTag);
 
         const hasContent = event.content && event.content.trim() !== '';
         if (hasContent) anyContentWasEmpty = false;
