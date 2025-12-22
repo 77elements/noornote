@@ -194,7 +194,7 @@ export class FeedOrchestrator extends Orchestrator {
             specificRelay
           });
 
-          accumulatedEvents = loadMoreResult.events;
+          accumulatedEvents = [...accumulatedEvents, ...loadMoreResult.events];
           currentUntil = loadMoreResult.events[loadMoreResult.events.length - 1]?.created_at || currentUntil - 3 * 3600;
 
           if (accumulatedEvents.length >= minimumNotes) {
