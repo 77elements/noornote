@@ -116,7 +116,7 @@ export class PostService {
 
       // Extract mentions from content (nostr:npub... or nostr:nprofile...)
       const { extractPubkeysFromText } = await import('../helpers/nip19');
-      const mentionedPubkeys = extractPubkeysFromText(content);
+      const mentionedPubkeys = new Set(extractPubkeysFromText(content));
 
       // Add p-tags for mentioned users
       mentionedPubkeys.forEach(pubkey => {
