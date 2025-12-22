@@ -34,6 +34,8 @@ export class Timeline extends View {
   private tribePubkeys?: string[]; // Optional: filter timeline to tribe members (for TribeView)
   private refreshButton: RefreshButton | null = null;
   private viewDropdown: CustomDropdown | null = null;
+  private lookForNotesLink: HTMLElement | null = null;
+  private lookForNotesLinkTimeout: number | null = null;
 
   // Managers
   private stateManager: TimelineStateManager;
@@ -290,6 +292,77 @@ export class Timeline extends View {
         oldRefreshBtn.replaceWith(this.refreshButton.getElement());
       }
     }
+
+    // Setup "Look for new notes" link
+    this.setupLookForNotesLink();
+  }
+
+  /**
+   * Setup "Look for new notes" link (shown when polling might be stuck)
+   */
+  private setupLookForNotesLink(): void {
+    const link = document.createElement('a');
+    link.className = 'timeline-look-for-notes-link';
+    link.href = '#';
+    link.textContent = 'Look for new notes';
+    link.style.display = 'none'; // Hidden by default
+
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.restartPolling();
+    });
+
+    this.lookForNotesLink = link;
+
+    // Mount after refresh button
+    const controls = this.element.querySelector('.timeline-controls');
+    if (controls) {
+      controls.appendChild(link);
+    }
+
+    // Show link when refresh button is hidden, hide when it's shown
+    const originalShowMethod = this.refreshButton!.show.bind(this.refreshButton);
+    const originalHideMethod = this.refreshButton!.hide.bind(this.refreshButton);
+
+    this.refreshButton!.show = () => {
+      originalShowMethod();
+      this.lookForNotesLink!.style.display = 'none';
+    };
+
+    this.refreshButton!.hide = () => {
+      originalHideMethod();
+      this.lookForNotesLink!.style.display = 'block';
+    };
+  }
+
+  /**
+   * Restart polling for new notes (called when link is clicked)
+   */
+  private restartPolling(): void {
+    const newestTimestamp = this.stateManager.getNewestTimestamp();
+    if (newestTimestamp === 0 || this.stateManager.getFollowingPubkeys().length === 0) {
+      return;
+    }
+
+    // Hide link immediately
+    if (this.lookForNotesLink) {
+      this.lookForNotesLink.style.display = 'none';
+    }
+
+    // Stop and restart polling
+    this.feedOrchestrator.stopPolling();
+    this.feedOrchestrator.startPolling(
+      this.stateManager.getFollowingPubkeys(),
+      newestTimestamp,
+      (info: NewNotesInfo) => this.handleNewNotesDetected(info),
+      this.stateManager.getIncludeReplies(),
+      60000, // Start after 60 seconds
+      this.stateManager.getSelectedRelay(),
+      this.filterAuthorPubkey
+    );
+
+    // Schedule link to reappear after 60s
+    this.scheduleLookForNotesLinkVisibility();
   }
 
   /**
@@ -394,6 +467,30 @@ export class Timeline extends View {
       this.stateManager.getSelectedRelay(), // Poll only from this relay (if relay-filtered)
       this.filterAuthorPubkey // Don't filter profile user's notes in ProfileView
     );
+
+    // Show "Look for new notes" link after 10s
+    this.scheduleLookForNotesLinkVisibility();
+  }
+
+  /**
+   * Schedule "Look for new notes" link to appear after 10s
+   */
+  private scheduleLookForNotesLinkVisibility(): void {
+    // Clear any existing timeout
+    if (this.lookForNotesLinkTimeout !== null) {
+      clearTimeout(this.lookForNotesLinkTimeout);
+    }
+
+    // Show link after 10s (if RefreshButton is still hidden)
+    this.lookForNotesLinkTimeout = window.setTimeout(() => {
+      if (this.lookForNotesLink && this.refreshButton) {
+        // Only show link if RefreshButton is hidden
+        const refreshButtonVisible = this.refreshButton.getElement().style.display !== 'none';
+        if (!refreshButtonVisible) {
+          this.lookForNotesLink.style.display = 'block';
+        }
+      }
+    }, 10000);
   }
 
   /**
@@ -435,6 +532,15 @@ export class Timeline extends View {
    */
   public override pause(): void {
     this.lifecycleManager.pause();
+
+    // Clear "Look for new notes" link timeout and hide link
+    if (this.lookForNotesLinkTimeout !== null) {
+      clearTimeout(this.lookForNotesLinkTimeout);
+      this.lookForNotesLinkTimeout = null;
+    }
+    if (this.lookForNotesLink) {
+      this.lookForNotesLink.style.display = 'none';
+    }
   }
 
   /**
@@ -443,23 +549,19 @@ export class Timeline extends View {
   public override resume(): void {
     const loadTrigger = this.element.querySelector('.timeline-load-trigger') as HTMLElement;
 
-    // Only restart polling if not already running (avoid duplicate on first mount)
-    if (!this.feedOrchestrator.isPolling()) {
-      this.lifecycleManager.resume(
-        this.stateManager.getFollowingPubkeys(),
-        this.stateManager.getNewestTimestamp(),
-        (info: NewNotesInfo) => this.handleNewNotesDetected(info),
-        this.stateManager.getIncludeReplies(),
-        loadTrigger,
-        this.stateManager.getSelectedRelay(),
-        this.filterAuthorPubkey // Don't filter profile user's notes in ProfileView
-      );
-    } else {
-      // Just reconnect infinite scroll observer
-      if (loadTrigger) {
-        this.infiniteScroll.observe(loadTrigger);
-      }
-    }
+    // Always restart polling (startPolling internally calls stopPolling first to avoid duplicates)
+    this.lifecycleManager.resume(
+      this.stateManager.getFollowingPubkeys(),
+      this.stateManager.getNewestTimestamp(),
+      (info: NewNotesInfo) => this.handleNewNotesDetected(info),
+      this.stateManager.getIncludeReplies(),
+      loadTrigger,
+      this.stateManager.getSelectedRelay(),
+      this.filterAuthorPubkey // Don't filter profile user's notes in ProfileView
+    );
+
+    // Schedule "Look for new notes" link visibility
+    this.scheduleLookForNotesLinkVisibility();
 
     // Update ISL with cached stats (from SNV visits)
     this.islStatsUpdater.updateFromCache(this.stateManager.getEvents());
@@ -473,6 +575,12 @@ export class Timeline extends View {
     // Unsubscribe from user login events
     if (this.userLoginSubscriptionId) {
       this.eventBus.off(this.userLoginSubscriptionId);
+    }
+
+    // Clear "Look for new notes" link timeout
+    if (this.lookForNotesLinkTimeout !== null) {
+      clearTimeout(this.lookForNotesLinkTimeout);
+      this.lookForNotesLinkTimeout = null;
     }
 
     this.lifecycleManager.destroy();

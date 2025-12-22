@@ -28,6 +28,24 @@
 
     .timeline-controls {
       // Refresh button styles moved to molecules/_buttons.scss
+      display: flex;
+      align-items: center;
+      gap: $gap;
+    }
+  }
+
+  // "Look for new notes" link (shown when polling might be stuck)
+  .timeline-look-for-notes-link {
+    font-size: 0.875rem;
+    color: $color-4;
+    text-decoration: none;
+    padding: calc($gap / 2) $gap;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba($color-4, 0.1);
+      text-decoration: underline;
     }
   }
 
