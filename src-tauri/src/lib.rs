@@ -48,7 +48,7 @@ pub fn run() {
     ])
     .setup(|app| {
       // Register global keyboard shortcuts
-      register_global_shortcuts(app)?;
+      // register_global_shortcuts(app)?;
       if cfg!(debug_assertions) {
         use tauri::Manager;
         let window = app.get_webview_window("main").unwrap();
