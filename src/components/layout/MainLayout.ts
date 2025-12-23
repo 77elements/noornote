@@ -569,6 +569,9 @@ export class MainLayout {
       const link = target.closest('a[href^="/profile/"]') as HTMLAnchorElement;
       if (!link) return;
 
+      // Exclude sidebar links - they have their own handlers
+      if (link.closest('.sidebar')) return;
+
       e.preventDefault();
       const href = link.getAttribute('href');
       if (href) {
