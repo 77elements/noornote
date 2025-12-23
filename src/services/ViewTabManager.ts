@@ -109,16 +109,35 @@ export class ViewTabManager {
     const tab = this.tabs.get(tabId);
     if (!tab) return;
 
+    // Find next tab to activate (before removing current)
+    let nextTabId: string | null = null;
+    if (this.activeTabId === tabId) {
+      const allTabs = Array.from(this.tabs.values());
+      const currentIndex = allTabs.findIndex(t => t.id === tabId);
+
+      if (currentIndex !== -1) {
+        // Try next tab (right), or previous (left), or system-log
+        if (currentIndex < allTabs.length - 1) {
+          nextTabId = allTabs[currentIndex + 1].id;
+        } else if (currentIndex > 0) {
+          nextTabId = allTabs[currentIndex - 1].id;
+        } else {
+          nextTabId = 'system-log';
+        }
+      } else {
+        nextTabId = 'system-log';
+      }
+    }
+
     // Destroy view instance
     tab.viewInstance.destroy();
 
     // Remove from map
     this.tabs.delete(tabId);
 
-    // Switch to another tab if this was active
-    if (this.activeTabId === tabId) {
-      const remaining = Array.from(this.tabs.values());
-      this.activeTabId = remaining.length > 0 ? remaining[0].id : 'system-log';
+    // Switch to next tab if this was active
+    if (nextTabId) {
+      this.activeTabId = nextTabId;
       this.eventBus.emit('view-tab:switched', { tabId: this.activeTabId });
     }
 

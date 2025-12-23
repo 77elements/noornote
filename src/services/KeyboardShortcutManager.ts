@@ -36,11 +36,14 @@ export class KeyboardShortcutManager {
    * Setup global keyboard shortcuts via Tauri events
    */
   private async setupGlobalShortcuts(): Promise<void> {
+    // Always setup browser shortcuts (focus-aware)
+    this.setupBrowserShortcuts();
+
     try {
       // Import Tauri event API
       const { listen } = await import('@tauri-apps/api/event');
 
-      // Listen for global shortcuts from Tauri backend
+      // Listen for global shortcuts from Tauri backend (if registered)
       await listen<string>('global-shortcut', (event) => {
         console.log('[KeyboardShortcutManager] Global shortcut received:', event.payload);
 
@@ -68,9 +71,7 @@ export class KeyboardShortcutManager {
 
       console.log('[KeyboardShortcutManager] Listening for Tauri global shortcuts');
     } catch (error) {
-      console.warn('[KeyboardShortcutManager] Using browser shortcuts (focus-aware)');
-      // Fallback to browser keyboard events for development
-      this.setupBrowserShortcuts();
+      console.warn('[KeyboardShortcutManager] Not in Tauri environment');
     }
   }
 
@@ -80,6 +81,19 @@ export class KeyboardShortcutManager {
   private setupBrowserShortcuts(): void {
     window.addEventListener('keydown', (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
+
+      // Cmd+W: Close active closable tab
+      if (isMod && e.key === 'w') {
+        e.preventDefault(); // Always prevent default (don't close app window)
+        const activeClosableTab = document.querySelector('.tab--closable.tab--active');
+        if (activeClosableTab) {
+          const closeButton = activeClosableTab.querySelector('.tab__close') as HTMLElement;
+          if (closeButton) {
+            closeButton.click();
+          }
+        }
+        return;
+      }
 
       // Cmd+Enter OR Cmd+K: Open search modal
       if (isMod && (e.key === 'Enter' || e.key === 'k')) {
