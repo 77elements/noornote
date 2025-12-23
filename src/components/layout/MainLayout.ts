@@ -27,6 +27,9 @@ import { DMBadgeManager } from './managers/DMBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent } from '../../helpers/TabsHelper';
+import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 
 export class MainLayout {
   private element: HTMLElement;
@@ -51,6 +54,8 @@ export class MainLayout {
   private badgeManager: NotificationsBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
   private currentListView: ListViewPartial | null = null;
+  private viewTabManager: ViewTabManager | null = null;
+  private viewTabEventSubscriptions: string[] = [];
 
   constructor() {
     this.element = this.createElement();
@@ -73,6 +78,7 @@ export class MainLayout {
     this.setupSpacebarScroll();
     this.initializeGlobalSearchView();
     this.setupActiveNavigation();
+    this.initializeViewTabManager();
   }
 
   /**
@@ -156,6 +162,263 @@ export class MainLayout {
     this.eventBus.on('list:open', (data: { listType: ListType }) => {
       this.openListTab(data.listType);
     });
+  }
+
+  /**
+   * Initialize ViewTabManager if setting is enabled
+   * Subscribe to EventBus events for tab management
+   */
+  private initializeViewTabManager(): void {
+    const storage = PerAccountLocalStorage.getInstance();
+    const enabled = storage.get<boolean>(StorageKeys.VIEW_TABS_RIGHT_PANE, false);
+
+    // ALWAYS subscribe to setting change event (even if currently disabled)
+    const settingsChangedSub = this.eventBus.on('settings:view-tabs-changed', (data: { enabled: boolean }) => {
+      if (data.enabled && !this.viewTabManager) {
+        // Enable: Initialize manager and event handlers
+        this.enableViewTabManager();
+      } else if (!data.enabled && this.viewTabManager) {
+        // Disable: Cleanup manager
+        this.disableViewTabManager();
+      }
+    });
+    this.viewTabEventSubscriptions.push(settingsChangedSub);
+
+    // On logout, close all tabs
+    const logoutSub = this.eventBus.on('user:logout', () => {
+      this.viewTabManager?.closeAllTabs();
+    });
+    this.viewTabEventSubscriptions.push(logoutSub);
+
+    // On login, re-check setting (user might have enabled it)
+    const loginSub = this.eventBus.on('user:login', () => {
+      const storage = PerAccountLocalStorage.getInstance();
+      const enabled = storage.get<boolean>(StorageKeys.VIEW_TABS_RIGHT_PANE, false);
+      if (enabled && !this.viewTabManager) {
+        this.enableViewTabManager();
+      }
+    });
+    this.viewTabEventSubscriptions.push(loginSub);
+
+    // If enabled on init, setup immediately
+    if (enabled) {
+      this.enableViewTabManager();
+    }
+  }
+
+  /**
+   * Enable ViewTabManager and subscribe to tab events
+   */
+  private enableViewTabManager(): void {
+    if (this.viewTabManager) {
+      return; // Already enabled
+    }
+
+    // Initialize ViewTabManager
+    this.viewTabManager = ViewTabManager.getInstance();
+
+    // Apply scrollable class to sidebar tabs
+    const sidebarTabs = this.element.querySelector('#sidebar-tabs');
+    if (sidebarTabs) {
+      sidebarTabs.classList.add('tabs--scrollable');
+    }
+
+    // Subscribe to view-tab events
+    const openedSub = this.eventBus.on('view-tab:opened', (data: { tab: ViewTab }) => {
+      this.renderViewTab(data.tab);
+    });
+    this.viewTabEventSubscriptions.push(openedSub);
+
+    const closedSub = this.eventBus.on('view-tab:closed', (data: { tabId: string }) => {
+      this.removeViewTab(data.tabId);
+    });
+    this.viewTabEventSubscriptions.push(closedSub);
+
+    const switchedSub = this.eventBus.on('view-tab:switched', (data: { tabId: string }) => {
+      this.switchToViewTab(data.tabId);
+    });
+    this.viewTabEventSubscriptions.push(switchedSub);
+
+    const labelUpdatedSub = this.eventBus.on('view-tab:label-updated', (data: { tabId: string; label: string; pubkey?: string; profilePicUrl?: string }) => {
+      this.updateViewTabLabel(data.tabId, data.label, data.pubkey, data.profilePicUrl);
+    });
+    this.viewTabEventSubscriptions.push(labelUpdatedSub);
+  }
+
+  /**
+   * Disable ViewTabManager and cleanup
+   */
+  private disableViewTabManager(): void {
+    if (!this.viewTabManager) return; // Already disabled
+
+    this.viewTabManager.closeAllTabs();
+    this.viewTabManager = null;
+
+    // Remove scrollable class
+    const sidebarTabs = this.element.querySelector('#sidebar-tabs');
+    if (sidebarTabs) {
+      sidebarTabs.classList.remove('tabs--scrollable');
+    }
+
+    // Note: We keep the event subscriptions because they check if viewTabManager exists
+    // Only the main subscriptions (settings change, logout) persist
+  }
+
+  /**
+   * Cleanup ViewTabManager and all subscriptions (on destroy)
+   */
+  private cleanupViewTabManager(): void {
+    if (this.viewTabManager) {
+      this.viewTabManager.closeAllTabs();
+      this.viewTabManager = null;
+    }
+
+    // Unsubscribe from ALL events
+    this.viewTabEventSubscriptions.forEach(subId => this.eventBus.off(subId));
+    this.viewTabEventSubscriptions = [];
+
+    // Remove scrollable class
+    const sidebarTabs = this.element.querySelector('#sidebar-tabs');
+    if (sidebarTabs) {
+      sidebarTabs.classList.remove('tabs--scrollable');
+    }
+  }
+
+  /**
+   * Render view tab in secondary content
+   */
+  private renderViewTab(tab: ViewTab): void {
+    const sidebarTabs = this.element.querySelector('#sidebar-tabs');
+    const contentBody = this.element.querySelector('.secondary-content-body');
+    if (!sidebarTabs || !contentBody) return;
+
+    // Create tab button
+    const tabButton = document.createElement('button');
+    tabButton.className = 'tab tab--closable';
+    tabButton.dataset.tab = tab.id;
+
+    // Profile picture (if available)
+    if (tab.profilePicUrl) {
+      const profilePic = document.createElement('img');
+      profilePic.className = 'profile-pic profile-pic--mini';
+      profilePic.src = tab.profilePicUrl;
+      profilePic.alt = 'Profile';
+      tabButton.appendChild(profilePic);
+    }
+
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'tab__label';
+    labelSpan.textContent = tab.label;
+    tabButton.appendChild(labelSpan);
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'tab__close';
+    closeBtn.innerHTML = '×';
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.viewTabManager?.closeTab(tab.id);
+    });
+    tabButton.appendChild(closeBtn);
+
+    sidebarTabs.appendChild(tabButton);
+
+    // Create tab content
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'tab-content';
+    contentDiv.dataset.tabContent = tab.id;
+    contentDiv.appendChild(tab.viewInstance.getElement());
+    contentBody.appendChild(contentDiv);
+
+    // Tab click handler
+    tabButton.addEventListener('click', () => {
+      this.viewTabManager?.switchTab(tab.id);
+    });
+
+    // Auto-switch if active
+    if (tab.isActive) {
+      this.switchToViewTab(tab.id);
+    }
+  }
+
+  /**
+   * Remove view tab from DOM
+   */
+  private removeViewTab(tabId: string): void {
+    this.element.querySelector(`[data-tab="${tabId}"]`)?.remove();
+    this.element.querySelector(`[data-tab-content="${tabId}"]`)?.remove();
+  }
+
+  /**
+   * Switch to view tab (activate)
+   */
+  private switchToViewTab(tabId: string): void {
+    const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
+    if (secondaryContent) {
+      // Switch only direct child tabs (not nested tabs within views like MessagesView)
+      const sidebarTabs = secondaryContent.querySelector('#sidebar-tabs');
+      const contentBody = secondaryContent.querySelector('.secondary-content-body');
+
+      if (sidebarTabs && contentBody) {
+        // Update tabs (only direct children of #sidebar-tabs)
+        sidebarTabs.querySelectorAll(':scope > .tab').forEach(tab => {
+          const el = tab as HTMLElement;
+          if (el.dataset.tab === tabId) {
+            el.classList.add('tab--active');
+          } else {
+            el.classList.remove('tab--active');
+          }
+        });
+
+        // Update content (only direct children of content-body)
+        contentBody.querySelectorAll(':scope > .tab-content').forEach(content => {
+          const el = content as HTMLElement;
+          if (el.dataset.tabContent === tabId) {
+            el.classList.add('tab-content--active');
+          } else {
+            el.classList.remove('tab-content--active');
+          }
+        });
+      }
+
+      // Auto-scroll tab into view (align to end = right edge)
+      const tabButton = secondaryContent.querySelector(`#sidebar-tabs > [data-tab="${tabId}"]`) as HTMLElement;
+      tabButton?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
+    }
+  }
+
+  /**
+   * Update view tab label + profile pic
+   */
+  private updateViewTabLabel(tabId: string, label: string, pubkey?: string, profilePicUrl?: string): void {
+    const tabButton = this.element.querySelector(`[data-tab="${tabId}"]`) as HTMLElement;
+    if (!tabButton) return;
+
+    // Update label
+    const labelEl = tabButton.querySelector('.tab__label');
+    if (labelEl) labelEl.textContent = label;
+
+    // Update or add profile pic
+    if (profilePicUrl) {
+      let profilePic = tabButton.querySelector('.profile-pic') as HTMLImageElement;
+      if (profilePic) {
+        // Update existing pic
+        profilePic.src = profilePicUrl;
+      } else {
+        // Add new pic (before label) - this makes tab wider
+        profilePic = document.createElement('img');
+        profilePic.className = 'profile-pic profile-pic--mini';
+        profilePic.src = profilePicUrl;
+        profilePic.alt = 'Profile';
+        tabButton.insertBefore(profilePic, labelEl);
+
+        // Re-scroll to end if this is the active tab (tab got wider)
+        if (tabButton.classList.contains('tab--active')) {
+          setTimeout(() => {
+            tabButton.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'end' });
+          }, 50);
+        }
+      }
+    }
   }
 
   /**
@@ -335,20 +598,24 @@ export class MainLayout {
 
     const notificationsLink = this.element.querySelector('.sidebar .notifications-link');
     if (notificationsLink) {
-      notificationsLink.addEventListener('click', (e) => {
+      const handleNotifications = (e: MouseEvent) => {
         e.preventDefault();
-        const router = Router.getInstance();
-        router.navigate('/notifications');
-      });
+        const navController = getViewNavigationController();
+        navController.openView('notifications', undefined, e);
+      };
+      notificationsLink.addEventListener('click', handleNotifications);
+      notificationsLink.addEventListener('auxclick', handleNotifications); // Middle-click
     }
 
     const messagesLink = this.element.querySelector('.sidebar a[href="/messages"]');
     if (messagesLink) {
-      messagesLink.addEventListener('click', (e) => {
+      const handleMessages = (e: MouseEvent) => {
         e.preventDefault();
-        const router = Router.getInstance();
-        router.navigate('/messages');
-      });
+        const navController = getViewNavigationController();
+        navController.openView('messages', undefined, e);
+      };
+      messagesLink.addEventListener('click', handleMessages);
+      messagesLink.addEventListener('auxclick', handleMessages); // Middle-click
     }
 
     const settingsLink = this.element.querySelector('.sidebar a[href="/settings"]');
@@ -380,14 +647,16 @@ export class MainLayout {
 
     const profileLink = this.element.querySelector('.sidebar .profile-link');
     if (profileLink) {
-      profileLink.addEventListener('click', (e) => {
+      const handleProfile = (e: MouseEvent) => {
         e.preventDefault();
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
-          const router = Router.getInstance();
-          router.navigate(`/profile/${currentUser.npub}`);
+          const navController = getViewNavigationController();
+          navController.openView('profile', currentUser.npub, e);
         }
-      });
+      };
+      profileLink.addEventListener('click', handleProfile);
+      profileLink.addEventListener('auxclick', handleProfile); // Middle-click
     }
 
     const searchLink = this.element.querySelector('.sidebar .search-link');
@@ -1127,6 +1396,9 @@ export class MainLayout {
     if (this.authStateUnsubscribe) {
       this.authStateUnsubscribe();
     }
+
+    // Cleanup ViewTabManager
+    this.cleanupViewTabManager();
 
     // Destroy managers
     if (this.bookmarkManager) {

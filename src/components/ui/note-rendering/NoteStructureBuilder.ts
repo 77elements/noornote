@@ -17,6 +17,7 @@ import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
 import { getImageClickHandler } from '../../../services/ImageClickHandler';
 import { getVideoPlayerService } from '../../../services/VideoPlayerService';
 import { UserHoverCard } from '../UserHoverCard';
+import { getViewNavigationController } from '../../../services/ViewNavigationController';
 
 // Store component instances for cleanup
 const noteHeaderInstances: Map<string, NoteHeader> = new Map();
@@ -223,7 +224,7 @@ export class NoteStructureBuilder {
     islInstances.set(islNoteId, isl);
 
     // Add click handler to navigate to Single Note View
-    noteDiv.addEventListener('click', (e) => {
+    noteDiv.addEventListener('mousedown', (e) => {
       const target = e.target as HTMLElement;
 
       // Don't navigate if clicking on interactive elements
@@ -240,10 +241,10 @@ export class NoteStructureBuilder {
         return;
       }
 
-      // Navigate to Single Note View
-      const router = Router.getInstance();
+      // Navigate to Single Note View via ViewNavigationController
+      const navController = getViewNavigationController();
       const nevent = encodeNevent(note.id);
-      router.navigate(`/note/${nevent}`);
+      navController.openView('single-note', nevent, e);
     });
 
     // Store header reference

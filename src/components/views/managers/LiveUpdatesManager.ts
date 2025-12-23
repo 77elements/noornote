@@ -38,10 +38,10 @@ export class LiveUpdatesManager {
   private transport: NostrTransport;
   private router: Router;
 
-  private zapAddedUnsubscribe?: () => void;
-  private muteUpdatedUnsubscribe?: () => void;
-  private deleteUnsubscribe?: () => void;
-  private replyCreatedUnsubscribe?: () => void;
+  private zapAddedUnsubscribe?: string;
+  private muteUpdatedUnsubscribe?: string;
+  private deleteUnsubscribe?: string;
+  private replyCreatedUnsubscribe?: string;
 
   constructor(config: LiveUpdatesConfig) {
     this.config = config;
@@ -186,16 +186,16 @@ export class LiveUpdatesManager {
   public destroy(): void {
     // Unsubscribe from EventBus
     if (this.zapAddedUnsubscribe) {
-      this.zapAddedUnsubscribe();
+      this.eventBus.off(this.zapAddedUnsubscribe);
     }
     if (this.muteUpdatedUnsubscribe) {
-      this.muteUpdatedUnsubscribe();
+      this.eventBus.off(this.muteUpdatedUnsubscribe);
     }
     if (this.deleteUnsubscribe) {
-      this.deleteUnsubscribe();
+      this.eventBus.off(this.deleteUnsubscribe);
     }
     if (this.replyCreatedUnsubscribe) {
-      this.replyCreatedUnsubscribe();
+      this.eventBus.off(this.replyCreatedUnsubscribe);
     }
 
     // Stop orchestrators

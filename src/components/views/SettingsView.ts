@@ -19,6 +19,7 @@ import { NWCSettingsSection } from '../settings/NWCSettingsSection';
 import { PrivacySettingsSection } from '../settings/PrivacySettingsSection';
 import { ListSettingsSection } from '../settings/ListSettingsSection';
 import { CacheSettingsSection } from '../settings/CacheSettingsSection';
+import { UISettingsSection } from '../settings/UISettingsSection';
 
 export class SettingsView extends View {
   private container: HTMLElement;
@@ -33,6 +34,7 @@ export class SettingsView extends View {
   private privacySettingsSection: PrivacySettingsSection;
   private listSettingsSection: ListSettingsSection;
   private cacheSettingsSection: CacheSettingsSection;
+  private uiSettingsSection: UISettingsSection;
 
   constructor() {
     super();
@@ -54,6 +56,7 @@ export class SettingsView extends View {
     this.privacySettingsSection = new PrivacySettingsSection();
     this.listSettingsSection = new ListSettingsSection();
     this.cacheSettingsSection = new CacheSettingsSection();
+    this.uiSettingsSection = new UISettingsSection();
 
     this.render();
   }
@@ -108,6 +111,12 @@ export class SettingsView extends View {
           'Configure NDK cache sizes and clear cache data.',
           false
         )}
+
+        ${this.uiSettingsSection.renderAccordionSection(
+          'UI Settings',
+          'Configure UI behavior and experimental view navigation features.',
+          false
+        )}
       </div>
     `;
 
@@ -124,6 +133,7 @@ export class SettingsView extends View {
     this.privacySettingsSection.mount(this.container);
     this.listSettingsSection.mount(this.container);
     this.cacheSettingsSection.mount(this.container);
+    this.uiSettingsSection.mount(this.container);
 
     // Initialize and mount sync status badge
     const badgeContainer = this.container.querySelector('#sync-status-badge-container');
@@ -166,6 +176,7 @@ export class SettingsView extends View {
     this.privacySettingsSection.unmount();
     this.listSettingsSection.unmount();
     this.cacheSettingsSection.unmount();
+    this.uiSettingsSection.unmount();
 
     // Cleanup sync status badge
     if (this.syncStatusBadge) {

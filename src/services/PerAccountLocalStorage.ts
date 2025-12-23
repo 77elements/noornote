@@ -20,6 +20,7 @@ export const StorageKeys = {
   USER_EVENT_IDS: 'noornote_user_event_ids_map',
   USER_EVENT_ANCESTRY: 'noornote_user_event_ancestry_map',
   ZAP_DEFAULTS: 'noornote_zap_defaults_map',
+  VIEW_TABS_RIGHT_PANE: 'noornote_view_tabs_right_pane_map',
 
   // List storage (per-account)
   BOOKMARKS: 'noornote_bookmarks_map',

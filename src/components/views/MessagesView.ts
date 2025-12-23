@@ -64,8 +64,9 @@ export class MessagesView extends View {
     this.render();
     this.setupEventListeners();
     this.setupInfiniteScroll();
-    this.loadInitialData();
 
+    // IMPORTANT: Setup event listeners BEFORE loadInitialData()
+    // because dmService.start() may emit events immediately if already running
     // Listen for fetch progress updates (for progress bar)
     this.subscriptionIds.push(
       this.eventBus.on('dm:fetch-progress', (data: { current: number; total: number }) => {
@@ -79,6 +80,9 @@ export class MessagesView extends View {
         this.handleFetchComplete();
       })
     );
+
+    // Call loadInitialData AFTER event listeners are setup
+    this.loadInitialData();
 
     // Listen for badge updates (mark all read/unread) - only update badges, not full refresh
     this.subscriptionIds.push(

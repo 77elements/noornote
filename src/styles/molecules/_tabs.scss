@@ -13,6 +13,19 @@
 .tabs {
   display: flex;
   gap: calc($gap / 2);
+
+  // Scrollable variant for many tabs
+  &--scrollable {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    @include custom-scrollbar;
+
+    .tab {
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+  }
 }
 
 // ========================================

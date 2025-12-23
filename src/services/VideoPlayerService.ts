@@ -30,15 +30,20 @@ export class VideoPlayerService {
     const handleLoadedData = () => {
       // Ensure video has loaded enough data
       if (video.readyState >= 2) { // HAVE_CURRENT_DATA or higher
-        const canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
 
-        const ctx = canvas.getContext('2d');
-        if (ctx && canvas.width > 0 && canvas.height > 0) {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const posterUrl = canvas.toDataURL('image/jpeg', 0.8);
-          video.poster = posterUrl;
+          const ctx = canvas.getContext('2d');
+          if (ctx && canvas.width > 0 && canvas.height > 0) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const posterUrl = canvas.toDataURL('image/jpeg', 0.8);
+            video.poster = posterUrl;
+          }
+        } catch (error) {
+          // CORS error when video is from different origin - skip poster generation
+          // This is expected behavior for cross-origin videos without CORS headers
         }
       }
 
