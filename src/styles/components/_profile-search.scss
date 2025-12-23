@@ -130,20 +130,6 @@
       font-size: 14px;
     }
   }
-
-  // Circular close button style
-  .tab__close {
-    width: 20px;
-    height: 20px;
-    background: rgba($color-3, 0.5);
-    border-radius: 50%;
-    font-size: 16px;
-    line-height: 1;
-
-    &:hover {
-      background: rgba($color-3, 0.8);
-    }
-  }
 }
 
 // SearchResultsView - Results display

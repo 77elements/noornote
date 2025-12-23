@@ -70,6 +70,12 @@ export class SettingsView extends View {
         <h1 class="settings-title">Settings</h1>
         <div id="sync-status-badge-container" class="sync-status-container"></div>
 
+        ${this.uiSettingsSection.renderAccordionSection(
+          'UI Settings',
+          'Configure UI behavior and experimental view navigation features.',
+          false
+        )}
+
         ${this.relaySettingsSection.renderAccordionSection(
           'Relays settings',
           'Configure Nostr relay connections for storing and distributing events.',
@@ -111,12 +117,6 @@ export class SettingsView extends View {
           'Configure NDK cache sizes and clear cache data.',
           false
         )}
-
-        ${this.uiSettingsSection.renderAccordionSection(
-          'UI Settings',
-          'Configure UI behavior and experimental view navigation features.',
-          false
-        )}
       </div>
     `;
 
@@ -124,6 +124,7 @@ export class SettingsView extends View {
     this.bindAccordionListeners();
 
     // Mount section content
+    this.uiSettingsSection.mount(this.container);
     this.relaySettingsSection.mount(this.container);
     if (this.keySignerSection) {
       this.keySignerSection.mount(this.container);
@@ -133,7 +134,6 @@ export class SettingsView extends View {
     this.privacySettingsSection.mount(this.container);
     this.listSettingsSection.mount(this.container);
     this.cacheSettingsSection.mount(this.container);
-    this.uiSettingsSection.mount(this.container);
 
     // Initialize and mount sync status badge
     const badgeContainer = this.container.querySelector('#sync-status-badge-container');

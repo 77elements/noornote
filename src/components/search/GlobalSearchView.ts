@@ -12,7 +12,7 @@ import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
 import { SystemLogger } from '../system/SystemLogger';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
-import { deactivateAllTabs, switchTabWithContent } from '../../helpers/TabsHelper';
+import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export class GlobalSearchView {
@@ -305,34 +305,15 @@ export class GlobalSearchView {
     // Check if tab already exists
     if (this.tabElement && tabsContainer.contains(this.tabElement)) return;
 
-    // Create new tab button with close icon
-    const searchTab = document.createElement('button');
-    searchTab.className = 'tab tab--closable';
-    searchTab.setAttribute('data-tab', 'search-results');
-
-    searchTab.innerHTML = `
-      <span class="tab__label">Search Results</span>
-      <button class="tab__close" aria-label="Close search" title="Close search">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-width="1"/>
-          <path d="M4.5 4.5l5 5M9.5 4.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </button>
-    `;
-
-    // Close button handler
-    const closeBtn = searchTab.querySelector('.tab__close');
-    closeBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.closeSearchTab();
-    });
+    // Create new tab button using TabsHelper
+    const searchTab = createClosableTab(
+      'search-results',
+      'Search Results',
+      () => this.closeSearchTab()
+    );
 
     // Tab click handler
-    searchTab.addEventListener('click', (e) => {
-      // Ignore clicks on close button
-      if ((e.target as HTMLElement).closest('.tab__close')) {
-        return;
-      }
+    searchTab.addEventListener('click', () => {
       this.activateSearchTab();
     });
 

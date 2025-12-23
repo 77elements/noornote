@@ -26,7 +26,7 @@ import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager'
 import { DMBadgeManager } from './managers/DMBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
-import { deactivateAllTabs, switchTabWithContent } from '../../helpers/TabsHelper';
+import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
@@ -292,33 +292,13 @@ export class MainLayout {
     const contentBody = this.element.querySelector('.secondary-content-body');
     if (!sidebarTabs || !contentBody) return;
 
-    // Create tab button
-    const tabButton = document.createElement('button');
-    tabButton.className = 'tab tab--closable';
-    tabButton.dataset.tab = tab.id;
-
-    // Profile picture (if available)
-    if (tab.profilePicUrl) {
-      const profilePic = document.createElement('img');
-      profilePic.className = 'profile-pic profile-pic--mini';
-      profilePic.src = tab.profilePicUrl;
-      profilePic.alt = 'Profile';
-      tabButton.appendChild(profilePic);
-    }
-
-    const labelSpan = document.createElement('span');
-    labelSpan.className = 'tab__label';
-    labelSpan.textContent = tab.label;
-    tabButton.appendChild(labelSpan);
-
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'tab__close';
-    closeBtn.innerHTML = '×';
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      this.viewTabManager?.closeTab(tab.id);
-    });
-    tabButton.appendChild(closeBtn);
+    // Create tab button using TabsHelper
+    const tabButton = createClosableTab(
+      tab.id,
+      tab.label,
+      () => this.viewTabManager?.closeTab(tab.id),
+      tab.profilePicUrl
+    );
 
     sidebarTabs.appendChild(tabButton);
 

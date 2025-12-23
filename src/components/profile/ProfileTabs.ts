@@ -3,7 +3,7 @@
  * Manages switching between timeline and search results views
  */
 
-import { switchTab } from '../../helpers/TabsHelper';
+import { switchTab, createClosableTab } from '../../helpers/TabsHelper';
 
 export type TabType = 'timeline' | 'search';
 
@@ -71,17 +71,15 @@ export class ProfileTabs {
     const existingSearchTab = this.container.querySelector('[data-tab="search"]');
     if (existingSearchTab) return;
 
-    // Add search tab
+    // Add search tab using TabsHelper
     const tabsList = this.container.querySelector('.tabs');
     if (!tabsList) return;
 
-    const searchTab = document.createElement('button');
-    searchTab.className = 'tab';
-    searchTab.dataset.tab = 'search';
-    searchTab.innerHTML = `
-      Search Results
-      <span class="tab__close" title="Close search">×</span>
-    `;
+    const searchTab = createClosableTab(
+      'search',
+      'Search Results',
+      () => this.onCloseSearch()
+    );
 
     tabsList.appendChild(searchTab);
 

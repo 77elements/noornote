@@ -51,7 +51,7 @@ export class UISettingsSection extends SettingsSection {
 
         <div class="form__info">
           <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
-            When enabled, clicking on notes, profiles, notifications, or messages will open them as tabs in the right sidebar instead of the main view.
+            When enabled, clicking on notes, profiles, notifications, or messages will open as tabs in the right pane instead of the main view.
           </p>
           <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6);">
             • Single click: Open in new tab or switch to existing tab<br>

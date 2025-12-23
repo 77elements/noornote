@@ -109,3 +109,56 @@ export function getActiveTabId(container: HTMLElement): string | null {
   const activeTab = container.querySelector('.tab--active') as HTMLElement | null;
   return activeTab?.dataset.tab ?? null;
 }
+
+/**
+ * Create a closable tab button element
+ * @param tabId - The data-tab value
+ * @param label - Tab label text
+ * @param onClose - Callback when close button is clicked
+ * @param profilePicUrl - Optional profile picture URL
+ * @returns Tab button element
+ */
+export function createClosableTab(
+  tabId: string,
+  label: string,
+  onClose: () => void,
+  profilePicUrl?: string
+): HTMLButtonElement {
+  const tabButton = document.createElement('button');
+  tabButton.className = 'tab tab--closable';
+  tabButton.dataset.tab = tabId;
+
+  // Profile picture (if provided)
+  if (profilePicUrl) {
+    const profilePic = document.createElement('img');
+    profilePic.className = 'profile-pic profile-pic--mini';
+    profilePic.src = profilePicUrl;
+    profilePic.alt = 'Profile';
+    tabButton.appendChild(profilePic);
+  }
+
+  // Label
+  const labelSpan = document.createElement('span');
+  labelSpan.className = 'tab__label';
+  labelSpan.textContent = label;
+  tabButton.appendChild(labelSpan);
+
+  // Close button
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'tab__close';
+  closeBtn.setAttribute('aria-label', 'Close tab');
+  closeBtn.setAttribute('title', 'Close tab');
+  closeBtn.innerHTML = `
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="7" cy="7" r="6.5" stroke="currentColor" stroke-width="1"/>
+      <path d="M4.5 4.5l5 5M9.5 4.5l-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+  `;
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    onClose();
+  });
+  tabButton.appendChild(closeBtn);
+
+  return tabButton;
+}
