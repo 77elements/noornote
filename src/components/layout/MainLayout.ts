@@ -730,6 +730,8 @@ export class MainLayout {
       systemLogTab.addEventListener('click', () => {
         console.log('[TAB CLICK] system-log');
         switchTabWithContent(secondaryContent, 'system-log');
+        // Notify ViewTabManager that a non-view tab was activated
+        this.viewTabManager?.deactivateCurrentViewTab();
       });
     }
   }
@@ -1339,11 +1341,15 @@ export class MainLayout {
         // Deactivate all tabs and activate clicked tab (scoped to secondary-content only)
         deactivateAllTabs(secondaryContent);
         this.currentListView?.activate();
+        // Notify ViewTabManager that a non-view tab was activated
+        this.viewTabManager?.deactivateCurrentViewTab();
       });
 
       // Activate the new tab (scoped to secondary-content only)
       deactivateAllTabs(secondaryContent);
       this.currentListView.activate();
+      // Notify ViewTabManager that a non-view tab was activated
+      this.viewTabManager?.deactivateCurrentViewTab();
 
       // Render content
       this.currentListView.renderContent();
@@ -1365,6 +1371,8 @@ export class MainLayout {
       const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
       if (secondaryContent) {
         switchTabWithContent(secondaryContent, 'system-log');
+        // Notify ViewTabManager that a non-view tab was activated
+        this.viewTabManager?.deactivateCurrentViewTab();
       }
     }
   }

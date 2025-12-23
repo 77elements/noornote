@@ -148,6 +148,19 @@ export class ViewTabManager {
   }
 
   /**
+   * Deactivate current view tab (called when switching to non-view tab like System Log or List)
+   */
+  public deactivateCurrentViewTab(): void {
+    // Pause current tab
+    const currentTab = this.tabs.get(this.activeTabId || '');
+    if (currentTab && typeof currentTab.viewInstance.pause === 'function') {
+      currentTab.viewInstance.pause();
+    }
+
+    this.activeTabId = null;
+  }
+
+  /**
    * Get active tab
    */
   public getActiveTab(): ViewTab | null {
