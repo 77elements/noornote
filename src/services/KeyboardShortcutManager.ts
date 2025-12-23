@@ -68,7 +68,7 @@ export class KeyboardShortcutManager {
 
       console.log('[KeyboardShortcutManager] Listening for Tauri global shortcuts');
     } catch (error) {
-      console.warn('[KeyboardShortcutManager] Not in Tauri environment, falling back to browser shortcuts');
+      console.warn('[KeyboardShortcutManager] Using browser shortcuts (focus-aware)');
       // Fallback to browser keyboard events for development
       this.setupBrowserShortcuts();
     }
