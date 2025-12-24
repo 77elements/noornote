@@ -142,6 +142,18 @@ export class ListSyncManager<T> {
   }
 
   /**
+   * Restore folder data from file (if adapter supports it)
+   * Only applicable to lists with folder organization (Bookmarks, Tribes)
+   *
+   * Should be called BEFORE restoreFromFile() to ensure folder structure exists
+   */
+  async restoreFolderDataFromFile(): Promise<void> {
+    if (this.adapter.restoreFolderDataFromFile) {
+      await this.adapter.restoreFolderDataFromFile();
+    }
+  }
+
+  /**
    * Button 4: "Restore from local file"
    *
    * File → Browser

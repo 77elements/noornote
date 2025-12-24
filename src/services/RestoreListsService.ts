@@ -84,10 +84,7 @@ export class RestoreListsService {
     // Step 2: Try local file
     try {
       // Restore folder data before file restore (for Bookmarks/Tribes with folders)
-      const adapter = (listSyncManager as any).adapter;
-      if (adapter && typeof adapter.restoreFolderDataFromFile === 'function') {
-        await adapter.restoreFolderDataFromFile();
-      }
+      await listSyncManager.restoreFolderDataFromFile();
 
       const restored = await listSyncManager.restoreFromFile();
       if (restored) {

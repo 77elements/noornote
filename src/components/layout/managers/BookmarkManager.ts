@@ -1233,7 +1233,7 @@ export class BookmarkManager {
       ToastService.show('Restoring from file...', 'info');
 
       // Restore folder data first (before items)
-      await this.adapter.restoreFolderDataFromFile();
+      await this.listSyncManager.restoreFolderDataFromFile();
 
       // Then restore bookmark items
       await this.listSyncManager.restoreFromFile();
