@@ -12,16 +12,13 @@
  *
  * @purpose Folder CRUD, item assignment, ordering
  * @used-by BookmarkSecondaryManager
+ * @pattern Wrapper around GenericFolderService
  */
 
-import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { GenericFolderService, type Folder, type RootOrderItem } from './GenericFolderService';
+import { StorageKeys } from './PerAccountLocalStorage';
 
-export interface BookmarkFolder {
-  id: string;           // Unique identifier (will be d-tag in NIP-51)
-  name: string;         // Display name (will be title-tag in NIP-51)
-  createdAt: number;    // Timestamp
-  order: number;        // Position in root view
-}
+export interface BookmarkFolder extends Folder {}
 
 export interface FolderAssignment {
   bookmarkId: string;   // Event ID
@@ -29,17 +26,19 @@ export interface FolderAssignment {
   order: number;        // Position within folder/root
 }
 
-export interface RootOrderItem {
-  type: 'folder' | 'bookmark';
-  id: string;
-}
-
 export class BookmarkFolderService {
   private static instance: BookmarkFolderService;
-  private storage: PerAccountLocalStorage;
+  private genericService: GenericFolderService<'bookmarkId', 'bookmark'>;
 
   private constructor() {
-    this.storage = PerAccountLocalStorage.getInstance();
+    this.genericService = new GenericFolderService({
+      folderStorageKey: StorageKeys.BOOKMARK_FOLDERS,
+      assignmentStorageKey: StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
+      rootOrderStorageKey: StorageKeys.BOOKMARK_ROOT_ORDER,
+      itemsStorageKey: StorageKeys.BOOKMARKS,
+      itemType: 'bookmark',
+      itemIdField: 'bookmarkId'
+    });
   }
 
   public static getInstance(): BookmarkFolderService {
@@ -54,170 +53,51 @@ export class BookmarkFolderService {
   // ========================================
 
   public getFolders(): BookmarkFolder[] {
-    const folders = this.storage.get<BookmarkFolder[]>(StorageKeys.BOOKMARK_FOLDERS, []);
-    return folders.sort((a, b) => a.order - b.order);
+    return this.genericService.getFolders();
   }
 
   public getFolder(folderId: string): BookmarkFolder | null {
-    const folders = this.getFolders();
-    return folders.find(f => f.id === folderId) || null;
+    return this.genericService.getFolder(folderId);
   }
 
   public createFolder(name: string): BookmarkFolder {
-    const folders = this.getFolders();
-
-    // Generate unique ID
-    const id = `folder_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-
-    // Get max order for new folder
-    const maxOrder = folders.reduce((max, f) => Math.max(max, f.order), -1);
-
-    const folder: BookmarkFolder = {
-      id,
-      name,
-      createdAt: Math.floor(Date.now() / 1000),
-      order: maxOrder + 1
-    };
-
-    folders.push(folder);
-    this.saveFolders(folders);
-
-    return folder;
+    return this.genericService.createFolder(name);
   }
 
   public renameFolder(folderId: string, newName: string): void {
-    const folders = this.getFolders();
-    const folder = folders.find(f => f.id === folderId);
-    if (folder) {
-      folder.name = newName;
-      this.saveFolders(folders);
-    }
+    this.genericService.renameFolder(folderId, newName);
   }
 
   public deleteFolder(folderId: string): string[] {
-    // Get all bookmarks in this folder before deletion
-    const assignments = this.getAssignments();
-    const affectedBookmarkIds = assignments
-      .filter(a => a.folderId === folderId)
-      .map(a => a.bookmarkId);
-
-    // Move all bookmarks from folder to root
-    const updatedAssignments = assignments.map(a => {
-      if (a.folderId === folderId) {
-        return { ...a, folderId: '' };
-      }
-      return a;
-    });
-    this.saveAssignments(updatedAssignments);
-
-    // Re-order root items
-    this.reorderItems('');
-
-    // Delete folder
-    const folders = this.getFolders().filter(f => f.id !== folderId);
-    this.saveFolders(folders);
-
-    return affectedBookmarkIds;
-  }
-
-  private saveFolders(folders: BookmarkFolder[]): void {
-    this.storage.set(StorageKeys.BOOKMARK_FOLDERS, folders);
+    return this.genericService.deleteFolder(folderId);
   }
 
   // ========================================
   // Bookmark-to-Folder Assignments
   // ========================================
 
-  private getAssignments(): FolderAssignment[] {
-    return this.storage.get<FolderAssignment[]>(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
-  }
-
-  private saveAssignments(assignments: FolderAssignment[]): void {
-    this.storage.set(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, assignments);
-  }
-
   public getBookmarkFolder(bookmarkId: string): string {
-    const assignments = this.getAssignments();
-    const assignment = assignments.find(a => a.bookmarkId === bookmarkId);
-    return assignment?.folderId || '';
+    return this.genericService.getItemFolder(bookmarkId);
   }
 
   public getBookmarksInFolder(folderId: string): string[] {
-    const assignments = this.getAssignments();
-    return assignments
-      .filter(a => a.folderId === folderId)
-      .sort((a, b) => a.order - b.order)
-      .map(a => a.bookmarkId);
+    return this.genericService.getItemsInFolder(folderId);
   }
 
   public getFolderItemCount(folderId: string): number {
-    const assignments = this.getAssignments();
-    return assignments.filter(a => a.folderId === folderId).length;
+    return this.genericService.getFolderItemCount(folderId);
   }
 
   public moveBookmarkToFolder(bookmarkId: string, targetFolderId: string, explicitOrder?: number): void {
-    const assignments = this.getAssignments();
-    const existing = assignments.find(a => a.bookmarkId === bookmarkId);
-
-    if (existing) {
-      const oldFolderId = existing.folderId;
-      existing.folderId = targetFolderId;
-
-      if (explicitOrder !== undefined) {
-        existing.order = explicitOrder;
-      } else {
-        // Get max order in target folder
-        const maxOrder = assignments
-          .filter(a => a.folderId === targetFolderId && a.bookmarkId !== bookmarkId)
-          .reduce((max, a) => Math.max(max, a.order), -1);
-        existing.order = maxOrder + 1;
-      }
-
-      this.saveAssignments(assignments);
-
-      // Reorder old folder
-      this.reorderItems(oldFolderId);
-    } else {
-      // Create new assignment
-      const order = explicitOrder !== undefined
-        ? explicitOrder
-        : assignments
-            .filter(a => a.folderId === targetFolderId)
-            .reduce((max, a) => Math.max(max, a.order), -1) + 1;
-
-      assignments.push({
-        bookmarkId,
-        folderId: targetFolderId,
-        order
-      });
-      this.saveAssignments(assignments);
-    }
+    this.genericService.moveItemToFolder(bookmarkId, targetFolderId, explicitOrder);
   }
 
   public ensureBookmarkAssignment(bookmarkId: string, explicitOrder?: number): void {
-    const assignments = this.getAssignments();
-    const existing = assignments.find(a => a.bookmarkId === bookmarkId);
-
-    if (!existing) {
-      // Add to root with specified order or next available
-      const order = explicitOrder !== undefined
-        ? explicitOrder
-        : assignments
-            .filter(a => a.folderId === '')
-            .reduce((max, a) => Math.max(max, a.order), -1) + 1;
-
-      assignments.push({
-        bookmarkId,
-        folderId: '',
-        order
-      });
-      this.saveAssignments(assignments);
-    }
+    this.genericService.ensureItemAssignment(bookmarkId, explicitOrder);
   }
 
   public removeBookmarkAssignment(bookmarkId: string): void {
-    const assignments = this.getAssignments().filter(a => a.bookmarkId !== bookmarkId);
-    this.saveAssignments(assignments);
+    this.genericService.removeItemAssignment(bookmarkId);
   }
 
   // ========================================
@@ -225,68 +105,15 @@ export class BookmarkFolderService {
   // ========================================
 
   public reorderItems(folderId: string): void {
-    const assignments = this.getAssignments();
-    const itemsInFolder = assignments
-      .filter(a => a.folderId === folderId)
-      .sort((a, b) => a.order - b.order);
-
-    // Renumber to fill gaps
-    itemsInFolder.forEach((item, index) => {
-      item.order = index;
-    });
-
-    this.saveAssignments(assignments);
+    this.genericService.reorderItems(folderId);
   }
 
   public moveItemToPosition(bookmarkId: string, newOrder: number): void {
-    const assignments = this.getAssignments();
-    const item = assignments.find(a => a.bookmarkId === bookmarkId);
-    if (!item) return;
-
-    const folderId = item.folderId;
-    const itemsInFolder = assignments
-      .filter(a => a.folderId === folderId)
-      .sort((a, b) => a.order - b.order);
-
-    // Remove from current position
-    const currentIndex = itemsInFolder.findIndex(a => a.bookmarkId === bookmarkId);
-    if (currentIndex === -1) return;
-
-    itemsInFolder.splice(currentIndex, 1);
-
-    // Insert at new position
-    const insertIndex = Math.min(newOrder, itemsInFolder.length);
-    itemsInFolder.splice(insertIndex, 0, item);
-
-    // Renumber all
-    itemsInFolder.forEach((a, index) => {
-      a.order = index;
-    });
-
-    this.saveAssignments(assignments);
+    this.genericService.moveItemToPosition(bookmarkId, newOrder);
   }
 
   public moveFolderToPosition(folderId: string, newOrder: number): void {
-    const folders = this.getFolders();
-    const folder = folders.find(f => f.id === folderId);
-    if (!folder) return;
-
-    // Remove from current position
-    const currentIndex = folders.findIndex(f => f.id === folderId);
-    if (currentIndex === -1) return;
-
-    folders.splice(currentIndex, 1);
-
-    // Insert at new position
-    const insertIndex = Math.min(newOrder, folders.length);
-    folders.splice(insertIndex, 0, folder);
-
-    // Renumber all
-    folders.forEach((f, index) => {
-      f.order = index;
-    });
-
-    this.saveFolders(folders);
+    this.genericService.moveFolderToPosition(folderId, newOrder);
   }
 
   // ========================================
@@ -294,81 +121,35 @@ export class BookmarkFolderService {
   // ========================================
 
   public hasRootOrder(): boolean {
-    const order = this.storage.get<RootOrderItem[]>(StorageKeys.BOOKMARK_ROOT_ORDER, []);
-    return order.length > 0;
+    return this.genericService.hasRootOrder();
   }
 
   public clearRootOrder(): void {
-    this.storage.remove(StorageKeys.BOOKMARK_ROOT_ORDER);
+    this.genericService.clearRootOrder();
   }
 
   public clearAssignments(): void {
-    this.storage.remove(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS);
+    this.genericService.clearAssignments();
   }
 
-  public getRootOrder(): RootOrderItem[] {
-    const order = this.storage.get<RootOrderItem[]>(StorageKeys.BOOKMARK_ROOT_ORDER, []);
-    if (order.length === 0) {
-      // Build initial order from existing data
-      return this.buildInitialRootOrder();
-    }
-    return order;
+  public getRootOrder(): RootOrderItem<'bookmark'>[] {
+    return this.genericService.getRootOrder();
   }
 
-  private buildInitialRootOrder(): RootOrderItem[] {
-    const folders = this.getFolders();
-    const rootBookmarkIds = this.getBookmarksInFolder('');
-
-    const order: RootOrderItem[] = [];
-
-    // Add bookmarks in reverse order (newest first) for initial display
-    // User can reorder later via drag & drop
-    const reversedBookmarkIds = [...rootBookmarkIds].reverse();
-    reversedBookmarkIds.forEach(id => {
-      order.push({ type: 'bookmark', id });
-    });
-
-    // Add folders
-    folders.forEach(f => {
-      order.push({ type: 'folder', id: f.id });
-    });
-
-    this.saveRootOrder(order);
-    return order;
-  }
-
-  public saveRootOrder(order: RootOrderItem[]): void {
-    this.storage.set(StorageKeys.BOOKMARK_ROOT_ORDER, order);
+  public saveRootOrder(order: RootOrderItem<'bookmark'>[]): void {
+    this.genericService.saveRootOrder(order);
   }
 
   public addToRootOrder(type: 'folder' | 'bookmark', id: string): void {
-    const order = this.getRootOrder();
-    // Check if already exists
-    if (!order.some(item => item.type === type && item.id === id)) {
-      // Add at beginning (newest first)
-      order.unshift({ type, id });
-      this.saveRootOrder(order);
-    }
+    this.genericService.addToRootOrder(type, id);
   }
 
   public removeFromRootOrder(type: 'folder' | 'bookmark', id: string): void {
-    const order = this.getRootOrder().filter(
-      item => !(item.type === type && item.id === id)
-    );
-    this.saveRootOrder(order);
+    this.genericService.removeFromRootOrder(type, id);
   }
 
   public moveInRootOrder(type: 'folder' | 'bookmark', id: string, newIndex: number): void {
-    const order = this.getRootOrder();
-    const currentIndex = order.findIndex(item => item.type === type && item.id === id);
-
-    if (currentIndex === -1) return;
-
-    const [item] = order.splice(currentIndex, 1);
-    const insertIndex = Math.min(newIndex, order.length);
-    order.splice(insertIndex, 0, item);
-
-    this.saveRootOrder(order);
+    this.genericService.moveInRootOrder(type, id, newIndex);
   }
 
   // ========================================
@@ -380,24 +161,7 @@ export class BookmarkFolderService {
    * Returns the number of removed orphans
    */
   public cleanupOrphanedAssignments(): number {
-    // Get existing bookmark IDs from storage
-    const bookmarkItems = this.storage.get<{ id: string }[]>(StorageKeys.BOOKMARKS, []);
-    const existingBookmarkIds = new Set(bookmarkItems.map(item => item.id));
-
-    // Get all assignments
-    const assignments = this.getAssignments();
-    const originalCount = assignments.length;
-
-    // Filter to keep only assignments with existing bookmarks
-    const cleanedAssignments = assignments.filter(a => existingBookmarkIds.has(a.bookmarkId));
-
-    const removedCount = originalCount - cleanedAssignments.length;
-
-    if (removedCount > 0) {
-      this.saveAssignments(cleanedAssignments);
-    }
-
-    return removedCount;
+    return this.genericService.cleanupOrphanedAssignments();
   }
 
   // ========================================
@@ -409,15 +173,11 @@ export class BookmarkFolderService {
     titleTag: string;
     bookmarkIds: string[];
   } {
-    const folder = this.getFolder(folderId);
-    if (!folder) throw new Error(`Folder not found: ${folderId}`);
-
-    const bookmarkIds = this.getBookmarksInFolder(folderId);
-
+    const result = this.genericService.exportFolderAsNip51(folderId);
     return {
-      dTag: folder.id,
-      titleTag: folder.name,
-      bookmarkIds
+      dTag: result.dTag,
+      titleTag: result.titleTag,
+      bookmarkIds: result.itemIds
     };
   }
 }

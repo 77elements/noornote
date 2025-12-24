@@ -24,6 +24,7 @@ import { RestoreListsService } from '../../../services/RestoreListsService';
 import { SyncConfirmationModal } from '../../modals/SyncConfirmationModal';
 import { renderListSyncButtons } from '../../../helpers/ListSyncButtonsHelper';
 import { NewFolderModal } from '../../modals/NewFolderModal';
+import { EditFolderModal } from '../../modals/EditFolderModal';
 import { TribeMemberCard } from '../../tribes/TribeMemberCard';
 import { FolderCard, type FolderData } from '../../bookmarks/FolderCard';
 import { UpNavigator } from '../../bookmarks/UpNavigator';
