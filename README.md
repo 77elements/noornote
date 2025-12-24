@@ -71,26 +71,6 @@ If the app crashes, check the log files:
 
 **Recommended:** Use NoorSigner for best security and convenience.
 
-## Build from Source
-
-### Requirements
-- Node.js 18+
-- Rust (for Tauri)
-- Platform-specific dependencies (see [Tauri prerequisites](https://tauri.app/start/prerequisites/))
-
-### Development
-```bash
-git clone https://github.com/77elements/noornote.git
-cd noornote
-npm install
-npm run tauri:dev
-```
-
-### Production Build
-```bash
-npm run tauri build
-```
-
 ## NIPs Supported
 
 | NIP | Description | Kind(s) |
@@ -121,6 +101,108 @@ npm run tauri build
 | [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) | Polls | 1068, 1018 |
 | [NIP-96](https://github.com/nostr-protocol/nips/blob/master/96.md) | HTTP file storage | 24242 |
 | [NIP-98](https://github.com/nostr-protocol/nips/blob/master/98.md) | HTTP auth | 27235 |
+
+## Build from Source
+
+Complete guide for building NoorNote and NoorSigner from source on all supported platforms.
+
+### System Requirements
+
+**All Platforms:**
+- Node.js 20+
+- Rust 1.70+ (install via [rustup](https://rustup.rs/))
+- Go 1.24+ (for NoorSigner)
+
+**Linux:**
+```bash
+# Debian/Ubuntu
+sudo apt install libwebkit2gtk-4.1-dev libgtk-3-dev libsoup-3.0-dev \
+  libjavascriptcoregtk-4.1-dev librsvg2-dev patchelf libsecret-1-dev
+
+# Fedora/RHEL
+sudo dnf install webkit2gtk4.1-devel gtk3-devel libsoup3-devel \
+  javascriptcoregtk4.1-devel librsvg2-devel patchelf libsecret-devel
+
+# Arch Linux
+sudo pacman -S webkit2gtk-4.1 gtk3 libsoup3 librsvg patchelf libsecret
+```
+
+**macOS:**
+- Xcode Command Line Tools: `xcode-select --install`
+
+### Step 1: Clone Repositories
+
+```bash
+# Clone NoorNote
+git clone https://github.com/77elements/noornote.git
+cd noornote
+
+# Clone NoorSigner (sibling directory)
+cd ..
+git clone https://github.com/77elements/noorsigner.git
+```
+
+### Step 2: Build NoorSigner
+
+```bash
+cd noorsigner
+go build -o noorsigner -ldflags="-s -w" .
+```
+
+**Cross-compile for other architectures (optional):**
+```bash
+# Linux ARM64
+GOOS=linux GOARCH=arm64 go build -o noorsigner-aarch64-unknown-linux-gnu -ldflags="-s -w" .
+
+# macOS ARM64 (Apple Silicon)
+GOOS=darwin GOARCH=arm64 go build -o noorsigner-aarch64-apple-darwin -ldflags="-s -w" .
+```
+
+### Step 3: Setup NoorSigner Binary
+
+```bash
+cd ../noornote
+mkdir -p src-tauri/binaries
+
+# Copy appropriate binary
+# Linux x64:
+cp ../noorsigner/noorsigner src-tauri/binaries/noorsigner-x86_64-unknown-linux-gnu
+# Linux ARM64:
+cp ../noorsigner/noorsigner-aarch64-unknown-linux-gnu src-tauri/binaries/
+# macOS ARM64:
+cp ../noorsigner/noorsigner-aarch64-apple-darwin src-tauri/binaries/
+```
+
+### Step 4: Build NoorNote
+
+**Development Mode:**
+```bash
+npm install
+npm run tauri:dev
+```
+
+**Production Build:**
+```bash
+npm run tauri build
+```
+
+Build artifacts will be in `src-tauri/target/release/bundle/`:
+- **Linux:** `.deb`, `.rpm`, `.tar.gz`
+- **macOS:** `.dmg`, `.app`
+
+### Troubleshooting
+
+**Error: `noorsigner-*` binary not found**
+- Ensure Step 2-3 completed successfully
+- Verify binary exists: `ls -la src-tauri/binaries/`
+
+**Linux: webkit2gtk errors**
+- Install system dependencies (see System Requirements)
+- Try: `sudo ldconfig` after installing libs
+
+**macOS: Code signing errors**
+- Development builds don't need signing
+- For distribution: see [Tauri signing docs](https://v2.tauri.app/distribute/sign/macos/)
 
 ## Tech Stack
 
