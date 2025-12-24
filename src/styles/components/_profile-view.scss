@@ -84,6 +84,17 @@
 
 .profile-avatar-wrapper {
   margin-bottom: $gap;
+  display: flex;
+  align-items: flex-start;
+  gap: $gap;
+  position: relative;
+
+  // "Follows you" badge positioned next to avatar
+  .follows-you-badge {
+    position: absolute;
+    top: 55px;
+    left: 120px;
+  }
 }
 
 .profile-meta {
@@ -291,11 +302,9 @@
 
 // Follows You Badge
 .follows-you-badge {
-  display: inline-flex;
+  display: inline-box;
   align-items: center;
   padding: calc($gap / 4) calc($gap / 2);
-  background: $color-1;
-  border-radius: 4px;
   font-size: 12px;
   color: $color-3;
   font-weight: 500;

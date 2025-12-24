@@ -232,11 +232,11 @@ export class ProfileView extends View {
     if (followerEl) {
       // Show count with "+" while loading, pulse effect
       if (this.isLoadingFollowers) {
-        followerEl.textContent = this.followerCount > 0 ? `${this.followerCount}+` : '...';
+        followerEl.textContent = this.followerCount > 0 ? `${this.followerCount.toLocaleString('en-US')}+` : '...';
         followerEl.classList.add('pulsate');
       } else {
         // Final count, no pulse, no "+"
-        followerEl.textContent = `${this.followerCount}`;
+        followerEl.textContent = this.followerCount.toLocaleString('en-US');
         followerEl.classList.remove('pulsate');
       }
     }
@@ -309,6 +309,7 @@ export class ProfileView extends View {
         <div class="profile-info">
           <div class="profile-avatar-wrapper">
             <img src="${this.escapeHtml(picture)}" alt="${this.escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
+            ${this.followsYou ? '<div class="follows-you-badge">Follows you</div>' : ''}
           </div>
 
           <div class="profile-meta">
@@ -352,14 +353,13 @@ export class ProfileView extends View {
               ${this.renderEditButton()}
               ${this.renderFollowButton()}
               <div class="stat-item stat-item--clickable" id="following-count-link">
-                <strong>${this.followingCount}</strong>
+                <strong>${this.followingCount.toLocaleString('en-US')}</strong>
                 <span>Following</span>
               </div>
               <div class="stat-item">
-                <strong id="followers-count">${this.followerCount || '...'}</strong>
+                <strong id="followers-count">${this.followerCount ? this.followerCount.toLocaleString('en-US') : '...'}</strong>
                 <span>Followers</span>
               </div>
-              ${this.followsYou ? '<div class="follows-you-badge">Follows you</div>' : ''}
               ${this.renderMuteButton()}
             </div>
           </div>
