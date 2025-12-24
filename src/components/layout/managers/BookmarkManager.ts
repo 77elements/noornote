@@ -35,6 +35,7 @@ import { ProfileMountsService } from '../../../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../../../services/orchestration/ProfileMountsOrchestrator';
 import type { BookmarkItem } from '../../../services/storage/BookmarkFileStorage';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { applyFolderAssignments } from '../../../helpers/FolderAssignmentHelper';
 
 interface BookmarkWithEvent extends BookmarkItem {
   event?: NostrEvent;
@@ -178,43 +179,13 @@ export class BookmarkManager {
         'Bookmarks',
         async (syncResult) => {
           // After relay sync: create folders from categories and assign bookmarks
-          if (syncResult.categoryAssignments && syncResult.categoryAssignments.size > 0) {
-            const existingFolders = this.folderService.getFolders();
-
-            // Collect categories that have items (skip empty string = root)
-            const categoriesWithItems = new Set<string>();
-            for (const [, categoryName] of syncResult.categoryAssignments) {
-              if (categoryName !== '') {
-                categoriesWithItems.add(categoryName);
-              }
-            }
-
-            // Create folders for new categories
-            for (const categoryName of categoriesWithItems) {
-              const existingFolder = existingFolders.find(f => f.name === categoryName);
-              if (!existingFolder) {
-                this.folderService.createFolder(categoryName);
-                console.log(`[BookmarkManager] Created folder from relay: "${categoryName}"`);
-              }
-            }
-
-            // Assign bookmarks to their categories from relay
-            const updatedFolders = this.folderService.getFolders();
-            for (const [bookmarkId, categoryName] of syncResult.categoryAssignments) {
-              if (categoryName === '') {
-                // Root - ensure assignment exists
-                this.folderService.ensureBookmarkAssignment(bookmarkId);
-              } else {
-                // Find folder by name and move bookmark there
-                const folder = updatedFolders.find(f => f.name === categoryName);
-                if (folder) {
-                  this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
-                }
-              }
-            }
-
-            console.log(`[BookmarkManager] Restored ${categoriesWithItems.size} folders from relays`);
-          }
+          await applyFolderAssignments(
+            syncResult.categoryAssignments!,
+            this.folderService,
+            (bookmarkId, folderId) => this.folderService.moveBookmarkToFolder(bookmarkId, folderId),
+            (bookmarkId) => this.folderService.ensureBookmarkAssignment(bookmarkId),
+            'BookmarkManager'
+          );
         }
       );
 

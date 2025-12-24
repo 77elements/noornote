@@ -30,6 +30,7 @@ import { UpNavigator } from '../../bookmarks/UpNavigator';
 import { UserProfileService } from '../../../services/UserProfileService';
 import type { TribeMember } from '../../../services/storage/TribeFileStorage';
 import type { UserProfile } from '../../../services/UserProfileService';
+import { applyFolderAssignments } from '../../../helpers/FolderAssignmentHelper';
 
 interface MemberWithProfile extends TribeMember {
   profile?: UserProfile;
@@ -169,43 +170,13 @@ export class TribeManager {
         'Tribes',
         async (syncResult) => {
           // After relay sync: create folders from categories and assign members
-          if (syncResult.categoryAssignments && syncResult.categoryAssignments.size > 0) {
-            const existingFolders = this.folderService.getFolders();
-
-            // Collect categories that have items (skip empty string = root)
-            const categoriesWithItems = new Set<string>();
-            for (const [, categoryName] of syncResult.categoryAssignments) {
-              if (categoryName !== '') {
-                categoriesWithItems.add(categoryName);
-              }
-            }
-
-            // Create folders for new categories
-            for (const categoryName of categoriesWithItems) {
-              const existingFolder = existingFolders.find(f => f.name === categoryName);
-              if (!existingFolder) {
-                this.folderService.createFolder(categoryName);
-                console.log(`[TribeManager] Created tribe from relay: "${categoryName}"`);
-              }
-            }
-
-            // Assign members to their categories from relay
-            const updatedFolders = this.folderService.getFolders();
-            for (const [memberPubkey, categoryName] of syncResult.categoryAssignments) {
-              if (categoryName === '') {
-                // Root - ensure assignment exists
-                this.folderService.ensureMemberAssignment(memberPubkey);
-              } else {
-                // Find folder by name and move member there
-                const folder = updatedFolders.find(f => f.name === categoryName);
-                if (folder) {
-                  this.folderService.moveMemberToFolder(memberPubkey, folder.id);
-                }
-              }
-            }
-
-            console.log(`[TribeManager] Restored ${categoriesWithItems.size} tribes from relays`);
-          }
+          await applyFolderAssignments(
+            syncResult.categoryAssignments!,
+            this.folderService,
+            (memberPubkey, folderId) => this.folderService.moveMemberToFolder(memberPubkey, folderId),
+            (memberPubkey) => this.folderService.ensureMemberAssignment(memberPubkey),
+            'TribeManager'
+          );
         }
       );
 
