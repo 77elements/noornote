@@ -1,7 +1,7 @@
 mod key_signer;
 
 use tauri::{Emitter, RunEvent, WindowEvent};
-use tauri_plugin_global_shortcut::{Code, Modifiers, Shortcut, ShortcutState, GlobalShortcutExt};
+use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 use tauri_plugin_log::{Target, TargetKind};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -94,26 +94,4 @@ pub fn run() {
         app_handle.exit(0);
       }
     });
-}
-
-fn register_global_shortcuts(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-  let handle = app.handle();
-
-  // Register shortcuts - ignore errors if already registered by system/other apps
-  // On Windows, Win+Enter is used by Narrator, so it may fail
-  let shortcuts = [
-    Shortcut::new(Some(Modifiers::SUPER), Code::Enter),
-    Shortcut::new(Some(Modifiers::SUPER), Code::KeyK),
-    Shortcut::new(Some(Modifiers::SUPER), Code::ArrowLeft),
-    Shortcut::new(Some(Modifiers::SUPER), Code::ArrowRight),
-  ];
-
-  for shortcut in shortcuts {
-    if let Err(e) = handle.global_shortcut().register(shortcut) {
-      eprintln!("Warning: Failed to register shortcut {:?}: {}", shortcut, e);
-      // Continue with other shortcuts instead of crashing
-    }
-  }
-
-  Ok(())
 }
