@@ -144,31 +144,52 @@ git clone https://github.com/77elements/noorsigner.git
 
 ### Step 2: Build NoorSigner
 
+Build NoorSigner for your platform. **Choose ONE** based on your system:
+
+**Linux x64:**
 ```bash
 cd noorsigner
-go build -o noorsigner -ldflags="-s -w" .
+GOOS=linux GOARCH=amd64 go build -o noorsigner-x86_64-unknown-linux-gnu -ldflags="-s -w" .
 ```
 
-**Cross-compile for other architectures (optional):**
+**Linux ARM64:**
 ```bash
-# Linux ARM64
+cd noorsigner
 GOOS=linux GOARCH=arm64 go build -o noorsigner-aarch64-unknown-linux-gnu -ldflags="-s -w" .
+```
 
-# macOS ARM64 (Apple Silicon)
+**macOS Intel (x86_64):**
+```bash
+cd noorsigner
+GOOS=darwin GOARCH=amd64 go build -o noorsigner-x86_64-apple-darwin -ldflags="-s -w" .
+```
+
+**macOS Apple Silicon (ARM64):**
+```bash
+cd noorsigner
 GOOS=darwin GOARCH=arm64 go build -o noorsigner-aarch64-apple-darwin -ldflags="-s -w" .
 ```
 
-### Step 3: Setup NoorSigner Binary
+### Step 3: Copy NoorSigner Binary
+
+Copy the binary you just built to NoorNote's binaries folder. **Use the command matching your platform from Step 2:**
 
 ```bash
 cd ../noornote
 mkdir -p src-tauri/binaries
+```
 
-# Copy appropriate binary
+Then **one** of these:
+```bash
 # Linux x64:
-cp ../noorsigner/noorsigner src-tauri/binaries/noorsigner-x86_64-unknown-linux-gnu
+cp ../noorsigner/noorsigner-x86_64-unknown-linux-gnu src-tauri/binaries/
+
 # Linux ARM64:
 cp ../noorsigner/noorsigner-aarch64-unknown-linux-gnu src-tauri/binaries/
+
+# macOS Intel:
+cp ../noorsigner/noorsigner-x86_64-apple-darwin src-tauri/binaries/
+
 # macOS ARM64:
 cp ../noorsigner/noorsigner-aarch64-apple-darwin src-tauri/binaries/
 ```
