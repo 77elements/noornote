@@ -46,7 +46,7 @@ export class FollowerCountService {
     onUpdate?: (count: number, relay: string) => void
   ): Promise<number> {
     // Fetch from relays sequentially (no cache)
-    this.systemLogger.info('FollowerCount', 'Fetching follower counts...');
+    this.systemLogger.success('FollowerCount', 'Fetching follower counts...');
 
     const relays = [
       ...this.relayConfig.getReadRelays(),
@@ -57,41 +57,55 @@ export class FollowerCountService {
     // De-duplicate relay URLs
     const uniqueRelays = [...new Set(relays)];
 
-    this.systemLogger.info('FollowerCount', `Querying ${uniqueRelays.length} relays`);
+    this.systemLogger.info('FollowerCount', `Querying ${uniqueRelays.length} relays in parallel batches`);
 
     // Global follower set (deduplicated across all relays)
     const followers = new Set<string>();
-    let relayIndex = 0;
+    const BATCH_SIZE = 3; // Query 3 relays at once
 
-    // Query each relay sequentially (with pagination)
-    for (const relay of uniqueRelays) {
-      relayIndex++;
-      const previousCount = followers.size;
+    // Process relays in batches
+    for (let i = 0; i < uniqueRelays.length; i += BATCH_SIZE) {
+      const batch = uniqueRelays.slice(i, i + BATCH_SIZE);
+      const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
+      const totalBatches = Math.ceil(uniqueRelays.length / BATCH_SIZE);
 
-      try {
-        this.systemLogger.info('FollowerCount', `[${relayIndex}/${uniqueRelays.length}] Fetching from ${relay}...`);
+      this.systemLogger.info('FollowerCount', `Batch ${batchNumber}/${totalBatches}: Querying ${batch.join(', ')}...`);
 
-        const relayFollowers = await this.queryRelayWithPagination(relay, pubkey);
-
-        // Add to global set (automatic deduplication)
-        relayFollowers.forEach(pubkey => followers.add(pubkey));
-
-        const currentCount = followers.size;
-        const newFollowers = currentCount - previousCount;
-
-        this.systemLogger.info(
-          'FollowerCount',
-          `[${relayIndex}/${uniqueRelays.length}] ✓ ${relay} returned ${relayFollowers.length} followers (+${newFollowers} new, ${relayFollowers.length - newFollowers} duplicates) → Total: ${currentCount}`
-        );
-
-        // Update UI after each relay
-        if (onUpdate) {
-          onUpdate(currentCount, relay);
+      // Query all relays in batch in parallel
+      const batchPromises = batch.map(async (relay) => {
+        try {
+          const relayFollowers = await this.queryRelayWithPagination(relay, pubkey);
+          return { relay, followers: relayFollowers, success: true };
+        } catch (error) {
+          this.systemLogger.error('FollowerCount', `✗ ${relay} failed: ${error}`);
+          return { relay, followers: [], success: false };
         }
+      });
 
-      } catch (error) {
-        this.systemLogger.error('FollowerCount', `[${relayIndex}/${uniqueRelays.length}] ✗ ${relay} failed: ${error}`);
-        // Continue with next relay
+      // Wait for all relays in batch to complete
+      const batchResults = await Promise.all(batchPromises);
+
+      // Process results from batch
+      batchResults.forEach(result => {
+        if (result.success) {
+          const previousCount = followers.size;
+
+          // Add to global set (automatic deduplication)
+          result.followers.forEach(pubkey => followers.add(pubkey));
+
+          const currentCount = followers.size;
+          const newFollowers = currentCount - previousCount;
+
+          this.systemLogger.info(
+            'FollowerCount',
+            `✓ ${result.relay} returned ${result.followers.length} followers (+${newFollowers} new, ${result.followers.length - newFollowers} duplicates) → Total: ${currentCount}`
+          );
+        }
+      });
+
+      // Update UI after each batch completes
+      if (onUpdate) {
+        onUpdate(followers.size, batch[batch.length - 1]);
       }
     }
 
