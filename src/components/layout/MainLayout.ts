@@ -18,10 +18,10 @@ import { WalletBalanceDisplay } from '../ui/WalletBalanceDisplay';
 import { SearchSpotlight } from '../navigation/SearchSpotlight';
 import { KeyboardShortcutManager } from '../../services/KeyboardShortcutManager';
 import { GlobalSearchView } from '../search/GlobalSearchView';
-import { BookmarkSecondaryManager } from './managers/BookmarkSecondaryManager';
-import { FollowListSecondaryManager } from './managers/FollowListSecondaryManager';
-import { MuteListSecondaryManager } from './managers/MuteListSecondaryManager';
-import { TribeSecondaryManager } from './managers/TribeSecondaryManager';
+import { BookmarkManager } from './managers/BookmarkManager';
+import { FollowListManager } from './managers/FollowListManager';
+import { MuteListManager } from './managers/MuteListManager';
+import { TribeManager } from './managers/TribeManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
@@ -47,10 +47,10 @@ export class MainLayout {
   private authStateUnsubscribe: (() => void) | null = null;
   private walletBalanceDisplay: WalletBalanceDisplay | null = null;
   private globalSearchView: GlobalSearchView | null = null;
-  private bookmarkManager: BookmarkSecondaryManager | null = null;
-  private followManager: FollowListSecondaryManager | null = null;
-  private muteManager: MuteListSecondaryManager | null = null;
-  private tribeManager: TribeSecondaryManager | null = null;
+  private bookmarkManager: BookmarkManager | null = null;
+  private followManager: FollowListManager | null = null;
+  private muteManager: MuteListManager | null = null;
+  private tribeManager: TribeManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
   private currentListView: ListViewPartial | null = null;
@@ -125,10 +125,10 @@ export class MainLayout {
    */
   private initializeManagers(): void {
     // Initialize list managers
-    this.bookmarkManager = new BookmarkSecondaryManager(this.element);
-    this.followManager = new FollowListSecondaryManager(this.element);
-    this.muteManager = new MuteListSecondaryManager(this.element);
-    this.tribeManager = new TribeSecondaryManager(this.element);
+    this.bookmarkManager = new BookmarkManager(this.element);
+    this.followManager = new FollowListManager(this.element);
+    this.muteManager = new MuteListManager(this.element);
+    this.tribeManager = new TribeManager(this.element);
 
     // Initialize NotificationsBadgeManager
     const badgeElement = this.element.querySelector('.notifications-badge') as HTMLElement;

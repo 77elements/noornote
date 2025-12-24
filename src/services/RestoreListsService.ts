@@ -1,17 +1,23 @@
 /**
  * RestoreListsService
- * Cascading restore logic for lists (Follows, Bookmarks, Mutes)
+ * Cascading restore logic for ALL lists (Follows, Bookmarks, Mutes, Tribes)
  *
- * Priority:
+ * Sync Mode Behavior:
+ * - Manual Mode: Only read browser storage, no auto-restore
+ * - Easy Mode:   Cascading restore (browser → file → relays)
+ *
+ * Priority (Easy Mode):
  * 1. Browser storage (localStorage) - fastest, session state
  * 2. Local file (~/.noornote/*.json) - offline, has folder structure
  * 3. Relays - network, NIP-51 events
  *
- * @purpose Restore empty lists from local file or relays
- * @used-by BookmarkSecondaryManager, MuteListSecondaryManager, FollowListSecondaryManager
+ * @purpose Restore empty lists from local file or relays based on sync mode
+ * @used-by BookmarkManager, MuteListManager, FollowListManager, TribeManager
  */
 
 import { ListSyncManager, type SyncFromRelaysResult } from './sync/ListSyncManager';
+import { getListSyncMode } from '../helpers/ListSyncButtonsHelper';
+import { SystemLogger } from '../components/system/SystemLogger';
 
 export interface RestoreResult {
   source: 'browser' | 'file' | 'relays' | 'empty';
@@ -20,8 +26,11 @@ export interface RestoreResult {
 
 export class RestoreListsService {
   private static instance: RestoreListsService;
+  private systemLogger: SystemLogger;
 
-  private constructor() {}
+  private constructor() {
+    this.systemLogger = SystemLogger.getInstance();
+  }
 
   public static getInstance(): RestoreListsService {
     if (!RestoreListsService.instance) {
@@ -31,13 +40,12 @@ export class RestoreListsService {
   }
 
   /**
-   * Restore a list using cascading logic
+   * Restore a list using cascading logic (respects sync mode)
    *
    * @param listSyncManager - The list's sync manager
    * @param getBrowserItems - Function to get current browser items
    * @param setBrowserItems - Function to set browser items
-   * @param listName - Name for logging (e.g., 'bookmarks', 'mutes', 'follows')
-   * @param beforeFileRestore - Optional callback before file restore (e.g., restore folder data)
+   * @param listName - Name for logging (e.g., 'Bookmarks', 'Mutes', 'Follows', 'Tribes')
    * @param afterRelaySync - Optional callback after relay sync (e.g., create folders from categories)
    * @returns RestoreResult with source and item count
    */
@@ -46,36 +54,54 @@ export class RestoreListsService {
     getBrowserItems: () => T[],
     _setBrowserItems: (items: T[]) => void,
     listName: string,
-    beforeFileRestore?: () => Promise<void>,
     afterRelaySync?: (result: SyncFromRelaysResult<T>) => Promise<void>
   ): Promise<RestoreResult> {
+    const syncMode = getListSyncMode();
+
+    // Manual Mode: Only read browser storage, no auto-restore
+    if (syncMode === 'manual') {
+      const items = getBrowserItems();
+      if (items.length > 0) {
+        this.systemLogger.info('RestoreListsService', `${listName}: Manual Mode - using browser storage (${items.length} items)`);
+        return { source: 'browser', itemCount: items.length };
+      } else {
+        this.systemLogger.info('RestoreListsService', `${listName}: Manual Mode - browser storage empty, no auto-restore`);
+        return { source: 'empty', itemCount: 0 };
+      }
+    }
+
+    // Easy Mode: Cascading restore (browser → file → relays)
+    this.systemLogger.info('RestoreListsService', `${listName}: Easy Mode - starting cascading restore...`);
+
     // Step 1: Check browser storage
     let items = getBrowserItems();
     if (items.length > 0) {
       return { source: 'browser', itemCount: items.length };
     }
 
-    console.log(`[RestoreListsService] ${listName}: Browser storage empty, trying local file...`);
+    this.systemLogger.info('RestoreListsService', `${listName}: Browser storage empty, trying local file...`);
 
     // Step 2: Try local file
     try {
-      if (beforeFileRestore) {
-        await beforeFileRestore();
+      // Restore folder data before file restore (for Bookmarks/Tribes with folders)
+      const adapter = (listSyncManager as any).adapter;
+      if (adapter && typeof adapter.restoreFolderDataFromFile === 'function') {
+        await adapter.restoreFolderDataFromFile();
       }
 
       const restored = await listSyncManager.restoreFromFile();
       if (restored) {
         items = getBrowserItems();
         if (items.length > 0) {
-          console.log(`[RestoreListsService] ${listName}: Restored ${items.length} items from local file`);
+          this.systemLogger.info('RestoreListsService', `${listName}: Restored ${items.length} items from local file`);
           return { source: 'file', itemCount: items.length };
         }
       }
     } catch (_error) {
-      console.warn(`[RestoreListsService] ${listName}: Failed to restore from local file:`, _error);
+      this.systemLogger.warn('RestoreListsService', `${listName}: Failed to restore from local file`, _error);
     }
 
-    console.log(`[RestoreListsService] ${listName}: Local file empty, trying relays...`);
+    this.systemLogger.info('RestoreListsService', `${listName}: Local file empty, trying relays...`);
 
     // Step 3: Try relays
     try {
@@ -91,16 +117,16 @@ export class RestoreListsService {
 
         items = getBrowserItems();
         if (items.length > 0) {
-          console.log(`[RestoreListsService] ${listName}: Restored ${items.length} items from relays`);
+          this.systemLogger.info('RestoreListsService', `${listName}: Restored ${items.length} items from relays`);
           return { source: 'relays', itemCount: items.length };
         }
       }
     } catch (_error) {
-      console.warn(`[RestoreListsService] ${listName}: Failed to fetch from relays:`, _error);
+      this.systemLogger.warn('RestoreListsService', `${listName}: Failed to fetch from relays`, _error);
     }
 
     // Step 4: List is truly empty
-    console.log(`[RestoreListsService] ${listName}: List is empty (no data in browser, file, or relays)`);
+    this.systemLogger.info('RestoreListsService', `${listName}: List is empty (no data in browser, file, or relays)`);
     return { source: 'empty', itemCount: 0 };
   }
 }

@@ -1,7 +1,7 @@
 /**
- * @abstract BaseListSecondaryManager
+ * @abstract BaseListManager
  * @purpose Base class for list sidebar managers with common sync/infinite scroll logic
- * @used-by MuteListSecondaryManager, FollowListSecondaryManager, BookmarkSecondaryManager
+ * @used-by MuteListManager, FollowListManager, BookmarkManager
  *
  * Provides:
  * - Common browser storage initialization
@@ -19,7 +19,7 @@ import { InfiniteScroll } from '../../ui/InfiniteScroll';
 import { switchTabWithContent } from '../../../helpers/TabsHelper';
 import { renderListSyncButtons } from '../../../helpers/ListSyncButtonsHelper';
 
-export abstract class BaseListSecondaryManager<TItem, TWithProfile> {
+export abstract class BaseListManager<TItem, TWithProfile> {
   protected eventBus: EventBus;
   protected authService: AuthService;
   protected listSyncManager: ListSyncManager<TItem>;

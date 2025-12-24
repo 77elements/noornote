@@ -58,6 +58,12 @@ export interface ListStorageAdapter<T> {
   setFileItems(items: T[]): Promise<void>;
 
   /**
+   * Restore folder data from file to per-account storage (optional)
+   * Only applicable to lists that use folder organization (Bookmarks, Tribes)
+   */
+  restoreFolderDataFromFile?(): Promise<void>;
+
+  /**
    * Relay Storage Operations (Remote: User's Write-Relays)
    *
    * fetchFromRelays returns items AND metadata about whether content was empty

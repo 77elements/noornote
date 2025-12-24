@@ -1,5 +1,5 @@
 /**
- * MuteListSecondaryManager
+ * MuteListManager
  * Manages mute list tab in secondary-content sidebar
  * Uses ListSyncManager for Browser ↔ File ↔ Relay synchronization
  * Implements infinite scroll for large lists
@@ -9,7 +9,7 @@
  * @used-by MainLayout
  */
 
-import { BaseListSecondaryManager } from './BaseListSecondaryManager';
+import { BaseListManager } from './BaseListManager';
 import { MuteOrchestrator, type MuteStatus } from '../../../services/orchestration/MuteOrchestrator';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { ToastService } from '../../../services/ToastService';
@@ -33,7 +33,7 @@ interface MutedThread {
   content?: string; // Truncated note content
 }
 
-export class MuteListSecondaryManager extends BaseListSecondaryManager<string, MuteItemWithProfile> {
+export class MuteListManager extends BaseListManager<string, MuteItemWithProfile> {
   private muteOrch: MuteOrchestrator;
   private userProfileService: UserProfileService;
   private router: Router;

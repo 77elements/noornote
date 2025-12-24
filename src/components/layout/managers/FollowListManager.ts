@@ -1,5 +1,5 @@
 /**
- * FollowListSecondaryManager
+ * FollowListManager
  * Manages follow list tab in secondary-content sidebar
  * Uses ListSyncManager for Browser ↔ File ↔ Relay synchronization
  * Implements infinite scroll for large lists
@@ -9,7 +9,7 @@
  * @used-by MainLayout
  */
 
-import { BaseListSecondaryManager } from './BaseListSecondaryManager';
+import { BaseListManager } from './BaseListManager';
 import { FollowListOrchestrator } from '../../../services/orchestration/FollowListOrchestrator';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { MutualService } from '../../../services/MutualService';
@@ -40,7 +40,7 @@ interface FollowItemWithProfile {
   isMutual: boolean;
 }
 
-export class FollowListSecondaryManager extends BaseListSecondaryManager<FollowItem, FollowItemWithProfile> {
+export class FollowListManager extends BaseListManager<FollowItem, FollowItemWithProfile> {
   private followOrch: FollowListOrchestrator;
   private userProfileService: UserProfileService;
   private mutualService: MutualService;

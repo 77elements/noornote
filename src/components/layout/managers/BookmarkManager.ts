@@ -1,5 +1,5 @@
 /**
- * BookmarkSecondaryManager
+ * BookmarkManager
  * Manages bookmark grid view with folders and drag & drop support
  *
  * Features:
@@ -41,7 +41,7 @@ interface BookmarkWithEvent extends BookmarkItem {
   isPrivate: boolean;
 }
 
-export class BookmarkSecondaryManager {
+export class BookmarkManager {
   private containerElement: HTMLElement;
   private eventBus: EventBus;
   private authService: AuthService;
@@ -176,10 +176,6 @@ export class BookmarkSecondaryManager {
         () => this.adapter.getBrowserItems(),
         (items) => this.adapter.setBrowserItems(items),
         'Bookmarks',
-        async () => {
-          // Restore folder data before file restore
-          await this.adapter.restoreFolderDataFromFile();
-        },
         async (syncResult) => {
           // After relay sync: create folders from categories and assign bookmarks
           if (syncResult.categoryAssignments && syncResult.categoryAssignments.size > 0) {
@@ -198,7 +194,7 @@ export class BookmarkSecondaryManager {
               const existingFolder = existingFolders.find(f => f.name === categoryName);
               if (!existingFolder) {
                 this.folderService.createFolder(categoryName);
-                console.log(`[BookmarkSecondaryManager] Created folder from relay: "${categoryName}"`);
+                console.log(`[BookmarkManager] Created folder from relay: "${categoryName}"`);
               }
             }
 
@@ -217,7 +213,7 @@ export class BookmarkSecondaryManager {
               }
             }
 
-            console.log(`[BookmarkSecondaryManager] Restored ${categoriesWithItems.size} folders from relays`);
+            console.log(`[BookmarkManager] Restored ${categoriesWithItems.size} folders from relays`);
           }
         }
       );
@@ -1153,7 +1149,7 @@ export class BookmarkSecondaryManager {
 
       const result = await this.listSyncManager.syncFromRelays();
 
-      console.log('[BookmarkSecondaryManager] Sync result:', {
+      console.log('[BookmarkManager] Sync result:', {
         itemCount: result.relayItems.length,
         hasCategoryAssignments: !!result.categoryAssignments,
         categoryAssignmentsSize: result.categoryAssignments?.size || 0,
@@ -1163,7 +1159,7 @@ export class BookmarkSecondaryManager {
       // Helper to apply folder assignments after sync
       const applyFolderAssignments = () => {
         if (!result.categoryAssignments) {
-          console.log('[BookmarkSecondaryManager] No categoryAssignments in result');
+          console.log('[BookmarkManager] No categoryAssignments in result');
           return;
         }
 

@@ -1,5 +1,5 @@
 /**
- * TribeSecondaryManager
+ * TribeManager
  * Manages tribe grid view with folders and drag & drop support
  *
  * Features:
@@ -36,7 +36,7 @@ interface MemberWithProfile extends TribeMember {
   isPrivate: boolean;
 }
 
-export class TribeSecondaryManager {
+export class TribeManager {
   private containerElement: HTMLElement;
   private eventBus: EventBus;
   private authService: AuthService;
@@ -167,9 +167,6 @@ export class TribeSecondaryManager {
         () => this.adapter.getBrowserItems(),
         (items) => this.adapter.setBrowserItems(items),
         'Tribes',
-        async () => {
-          // Restore folder data is not yet implemented for tribes
-        },
         async (syncResult) => {
           // After relay sync: create folders from categories and assign members
           if (syncResult.categoryAssignments && syncResult.categoryAssignments.size > 0) {
@@ -188,7 +185,7 @@ export class TribeSecondaryManager {
               const existingFolder = existingFolders.find(f => f.name === categoryName);
               if (!existingFolder) {
                 this.folderService.createFolder(categoryName);
-                console.log(`[TribeSecondaryManager] Created tribe from relay: "${categoryName}"`);
+                console.log(`[TribeManager] Created tribe from relay: "${categoryName}"`);
               }
             }
 
@@ -207,7 +204,7 @@ export class TribeSecondaryManager {
               }
             }
 
-            console.log(`[TribeSecondaryManager] Restored ${categoriesWithItems.size} tribes from relays`);
+            console.log(`[TribeManager] Restored ${categoriesWithItems.size} tribes from relays`);
           }
         }
       );
