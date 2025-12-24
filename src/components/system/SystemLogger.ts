@@ -45,7 +45,7 @@ const GLOBAL_CATEGORIES = [
 const VIEW_CATEGORIES: Record<string, string[]> = {
   'tv': ['FeedOrchestrator', 'TimelineUI', 'TimelineView'], // Timeline View
   'snv': ['SNV', 'SingleNoteView', 'ThreadOrchestrator', 'ReactionsOrch'], // Single Note View
-  'pv': ['PV', 'ProfileView', 'ProfileOrchestrator', 'TimelineUI', 'FeedOrchestrator'], // Profile View (includes TimelineUI for author filter)
+  'pv': ['PV', 'ProfileView', 'ProfileOrchestrator', 'TimelineUI', 'FeedOrchestrator', 'FollowerCount'], // Profile View (includes TimelineUI for author filter)
   'nv': ['NotificationsView', 'NotificationsOrch', 'ReactionsOrch'], // Notifications View
   'sv': ['SettingsView', 'CacheManager'] // Settings View
 };

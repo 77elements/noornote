@@ -25,6 +25,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { ArticleNotificationService } from '../../services/ArticleNotificationService';
 import { ProfileListsComponent } from '../profile/ProfileListsComponent';
 import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
+import { FollowerCountService } from '../../services/FollowerCountService';
 
 // Shared promise map to prevent duplicate profile loads on rapid navigation
 type ProfileLoadResult = {
@@ -45,6 +46,8 @@ export class ProfileView extends View {
   private eventBus: EventBus;
   private timeline: Timeline | null = null;
   private followingCount: number = 0;
+  private followerCount: number = 0;
+  private isLoadingFollowers: boolean = false;
   private followsYou: boolean = false;
   private isInitialRender: boolean = true; // Track if this is first render
 
@@ -61,6 +64,9 @@ export class ProfileView extends View {
   // Articles carousel component
   private articlesCarousel: ProfileArticlesCarousel | null = null;
 
+  // Follower count service
+  private followerCountService: FollowerCountService;
+
   constructor(npub: string) {
     super(); // Call View base class constructor
     this.npub = npub;
@@ -71,6 +77,7 @@ export class ProfileView extends View {
     this.userService = UserService.getInstance();
     this.appState = AppState.getInstance();
     this.eventBus = EventBus.getInstance();
+    this.followerCountService = FollowerCountService.getInstance();
 
     // Decode npub to pubkey
     try {
@@ -169,6 +176,9 @@ export class ProfileView extends View {
       // Render profile header
       this.renderProfileHeader(profile);
 
+      // Load follower count (async, non-blocking)
+      this.loadFollowerCount();
+
       // Subscribe to profile updates for live avatar/name updates
       this.userProfileService.subscribeToProfile(this.pubkey, (updatedProfile) => {
         this.renderProfileHeader(updatedProfile);
@@ -182,6 +192,53 @@ export class ProfileView extends View {
     } catch (_error) {
       console.error('❌ PV: Failed to load profile', _error);
       this.showError('Failed to load profile');
+    }
+  }
+
+  /**
+   * Load follower count (async, non-blocking)
+   * Updates UI after each relay completes
+   */
+  private async loadFollowerCount(): Promise<void> {
+    this.isLoadingFollowers = true;
+    this.updateFollowerDisplay(); // Start pulsing
+
+    try {
+      const count = await this.followerCountService.getFollowerCount(
+        this.pubkey,
+        (currentCount, relay) => {
+          // Update UI after each relay
+          this.followerCount = currentCount;
+          this.updateFollowerDisplay();
+        }
+      );
+      // Final update
+      this.followerCount = count;
+      this.isLoadingFollowers = false;
+      this.updateFollowerDisplay(); // Stop pulsing, remove "+"
+    } catch (error) {
+      console.error('Failed to load follower count:', error);
+      this.followerCount = 0;
+      this.isLoadingFollowers = false;
+      this.updateFollowerDisplay();
+    }
+  }
+
+  /**
+   * Update follower count display in DOM
+   */
+  private updateFollowerDisplay(): void {
+    const followerEl = this.container.querySelector('#followers-count');
+    if (followerEl) {
+      // Show count with "+" while loading, pulse effect
+      if (this.isLoadingFollowers) {
+        followerEl.textContent = this.followerCount > 0 ? `${this.followerCount}+` : '...';
+        followerEl.classList.add('pulsate');
+      } else {
+        // Final count, no pulse, no "+"
+        followerEl.textContent = `${this.followerCount}`;
+        followerEl.classList.remove('pulsate');
+      }
     }
   }
 
@@ -297,6 +354,10 @@ export class ProfileView extends View {
               <div class="stat-item stat-item--clickable" id="following-count-link">
                 <strong>${this.followingCount}</strong>
                 <span>Following</span>
+              </div>
+              <div class="stat-item">
+                <strong id="followers-count">${this.followerCount || '...'}</strong>
+                <span>Followers</span>
               </div>
               ${this.followsYou ? '<div class="follows-you-badge">Follows you</div>' : ''}
               ${this.renderMuteButton()}

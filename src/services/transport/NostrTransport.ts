@@ -295,6 +295,7 @@ export class NostrTransport {
 
       // Standard fetch using NDK (auto-dedupe, auto-verify)
       // Use ONLY_RELAY when skipCache is true (for relay-specific filtering)
+      // Note: timeout parameter currently not used - NDK waits for all relays
       const eventSet = await this.ndk.fetchEvents(filters, {
         relayUrls: relays,
         closeOnEose: true,
