@@ -476,6 +476,7 @@ export class App {
     window.addEventListener('resize', this.handleResize.bind(this));
     document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
     this.setupExternalLinkHandler();
+    this.setupHashtagClickHandler();
 
     // EventBus: user:login → Create TimelineUI + Start NotificationsOrchestrator
     this.eventBus.on('user:login', this.handleUserLogin.bind(this));
@@ -580,6 +581,21 @@ export class App {
         } catch {
           // External link open failed
         }
+      }
+    });
+  }
+
+  private setupHashtagClickHandler(): void {
+    document.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      const hashtagEl = target.closest('.hashtag');
+
+      if (!hashtagEl) return;
+
+      event.preventDefault();
+      const tag = (hashtagEl as HTMLElement).dataset.tag;
+      if (tag) {
+        this.eventBus.emit('hashtagSearch:start', { hashtag: tag });
       }
     });
   }

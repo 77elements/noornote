@@ -235,6 +235,8 @@ export class NoteStructureBuilder {
         target.tagName === 'VIDEO' ||
         target.closest('a') ||
         target.closest('button') ||
+        target.closest('.note-header') ||
+        target.closest('.hashtag') ||
         target.closest('.quote-box') ||
         target.closest('.reply-indicator')
       ) {

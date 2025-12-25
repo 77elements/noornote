@@ -32,6 +32,7 @@ export class GlobalSearchView {
   private oldestTimestamp: number | null = null;
   private hasMore: boolean = true;
   private isProfileSearch: boolean = false; // Track if this is profile search (no pagination)
+  private currentHashtag: string = ''; // Track current hashtag for subscribe button (Phase 2)
 
   constructor() {
     this.searchOrchestrator = SearchOrchestrator.getInstance();
@@ -63,6 +64,11 @@ export class GlobalSearchView {
       this.performGlobalSearch(data.query);
     });
 
+    // Listen for hashtag search start (NIP-50 relay search for hashtags)
+    this.eventBus.on('hashtagSearch:start', (data: { hashtag: string }) => {
+      this.performHashtagSearch(data.hashtag);
+    });
+
     // Listen for profile search complete (client-side filtered results)
     this.eventBus.on('profileSearch:complete', (data: { query: string; results: NostrEvent[]; meta: string }) => {
       this.displayProfileSearchResults(data.query, data.results, data.meta);
@@ -86,6 +92,7 @@ export class GlobalSearchView {
     if (this.isSearching) return;
 
     this.currentQuery = query;
+    this.currentHashtag = ''; // Clear hashtag (this is global search)
     this.isSearching = true;
     this.currentResults = [];
     this.oldestTimestamp = null;
@@ -121,10 +128,55 @@ export class GlobalSearchView {
   }
 
   /**
+   * Perform hashtag search (NIP-50 relay search with #hashtag query)
+   */
+  private async performHashtagSearch(hashtag: string): Promise<void> {
+    if (this.isSearching) return;
+
+    const query = `#${hashtag}`;
+    this.currentQuery = query;
+    this.currentHashtag = hashtag; // Store for subscribe button (Phase 2)
+    this.isSearching = true;
+    this.currentResults = [];
+    this.oldestTimestamp = null;
+    this.hasMore = true;
+    this.isProfileSearch = false;
+
+    this.showLoading();
+
+    try {
+      const results = await this.searchOrchestrator.search({
+        query,
+        limit: 20
+      });
+
+      // Filter out muted users
+      const filteredResults = await this.filterMutedUsers(results);
+
+      this.currentResults = filteredResults;
+      this.hasMore = results.length === 20;
+
+      if (filteredResults.length > 0) {
+        this.oldestTimestamp = Math.min(...filteredResults.map(e => e.created_at));
+      }
+
+      this.renderResults();
+      this.router.showSecondaryContent('search-results');
+
+    } catch (error) {
+      this.systemLogger.error('GlobalSearchView', 'Hashtag search failed:', error);
+      this.showError('Search failed. Please try again.');
+    } finally {
+      this.isSearching = false;
+    }
+  }
+
+  /**
    * Display profile search results (already filtered client-side)
    */
   private displayProfileSearchResults(query: string, results: NostrEvent[], meta: string): void {
     this.currentQuery = query;
+    this.currentHashtag = ''; // Clear hashtag (this is profile search)
     this.currentResults = results;
     this.isProfileSearch = true;
     this.hasMore = false; // No pagination for profile search (all results already loaded)
@@ -238,10 +290,16 @@ export class GlobalSearchView {
     // Clear container
     this.container.innerHTML = '';
 
+    // Determine title based on search type
+    const isHashtagSearch = this.currentQuery.startsWith('#');
+    const title = isHashtagSearch
+      ? `Posts tagged ${this.currentQuery}`
+      : `Search Results: "${this.currentQuery}"`;
+
     // Create SearchResultsView
     this.searchResultsView = new SearchResultsView(
       {
-        title: `Search Results: "${this.currentQuery}"`,
+        title,
         searchTerms: this.currentQuery,
         meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`
       },
@@ -338,6 +396,7 @@ export class GlobalSearchView {
 
     // Reset state
     this.currentQuery = '';
+    this.currentHashtag = '';
     this.currentResults = [];
     if (this.searchResultsView) {
       this.searchResultsView.destroy();

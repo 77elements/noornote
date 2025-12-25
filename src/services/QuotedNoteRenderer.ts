@@ -191,7 +191,9 @@ export class QuotedNoteRenderer {
         target.tagName === 'A' ||
         target.tagName === 'BUTTON' ||
         target.closest('a') ||
-        target.closest('button')
+        target.closest('button') ||
+        target.closest('.note-header') ||
+        target.closest('.hashtag')
       ) {
         return;
       }
