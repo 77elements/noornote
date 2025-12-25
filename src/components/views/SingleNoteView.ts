@@ -42,6 +42,9 @@ export class SingleNoteView extends View {
   private threadManager?: ThreadManager;
   private liveUpdatesManager?: LiveUpdatesManager;
 
+  // EventBus unsubscribe functions
+  private muteUpdatedUnsubscribe?: () => void;
+
   constructor(noteId: string) {
     super(); // Call View base class constructor
     this.noteId = noteId;
@@ -389,11 +392,11 @@ export class SingleNoteView extends View {
    * Setup listener for mute updates - navigate away if viewed note author is muted
    */
   private setupMuteListener(): void {
-    this.eventBus.on('mute:updated', (data?: { pubkey?: string }) => {
+    this.muteUpdatedUnsubscribe = this.eventBus.on('mute:updated', (data?: { pubkey?: string }) => {
       // Navigate to timeline if viewing the muted user's note
       // Note: data.pubkey may be undefined for bulk mute operations
       if (data?.pubkey && this.currentEvent && this.currentEvent.pubkey === data.pubkey) {
-        this.router.navigateTo('/');
+        this.router.navigate('/');
       }
       // Note: Muted user's replies remain visible until manual page refresh
       // (ThreadManager.loadReplies() requires quotedReposts parameter, not suitable for refresh)
@@ -404,6 +407,11 @@ export class SingleNoteView extends View {
    * Cleanup resources
    */
   public destroy(): void {
+    // Unsubscribe from EventBus
+    if (this.muteUpdatedUnsubscribe) {
+      this.eventBus.off(this.muteUpdatedUnsubscribe);
+    }
+
     // Cleanup managers
     if (this.liveUpdatesManager) {
       this.liveUpdatesManager.destroy();
