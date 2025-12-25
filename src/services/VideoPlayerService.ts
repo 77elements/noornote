@@ -71,7 +71,7 @@ export class VideoPlayerService {
       fsButton.title = 'Fullscreen (Double-click video or press Escape to exit)';
       fsButton.style.cssText = `
         position: absolute;
-        bottom: 50px;
+        top: 10px;
         right: 10px;
         background: rgba(0, 0, 0, 0.7);
         border: none;
