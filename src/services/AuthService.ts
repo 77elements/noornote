@@ -472,6 +472,7 @@ export class AuthService {
       this.extension = window.nostr!;
 
       // Get public key from extension
+      // ***alby browser extention throws non accurate errors + errors behaviour is inconsistant accross mainstream browsers
       const pubkey = await this.extension.getPublicKey();
 
       if (!pubkey) {
@@ -483,6 +484,8 @@ export class AuthService {
 
       // Convert hex pubkey to npub format
       const npub = hexToNpub(pubkey);
+
+      if (!npub) throw Error(`${this.getExtensionName()} extension provided invalid invalid hex pubkey`)
 
       this.currentUser = { npub, pubkey };
       this.authMethod = 'extension';
