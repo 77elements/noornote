@@ -69,7 +69,6 @@
     "dataloader": "^2.2.2",
     "emojilib": "^4.0.2",
     "marked": "^16.4.0",
-    "plyr": "^3.8.3",
     "qrcode": "^1.5.4",
     "tauri-plugin-keyring-api": "^0.1.1"
   },

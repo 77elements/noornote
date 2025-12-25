@@ -8,7 +8,6 @@ import { AuthService } from './services/AuthService';
 import { UserProfileService } from './services/UserProfileService';
 import { SystemLogger } from './components/system/SystemLogger';
 import { CrashLogger } from './services/CrashLogger';
-import 'plyr/dist/plyr.css';
 import './styles/main.scss';
 import './services/AuthStateManager'; // Initialize AuthStateManager and window.isLoggedIn()
 import './services/MutualChangeService'; // Initialize MutualChangeService (auto-starts on login)

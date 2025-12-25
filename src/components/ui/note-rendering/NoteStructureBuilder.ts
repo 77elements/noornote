@@ -163,7 +163,7 @@ export class NoteStructureBuilder {
     const imageClickHandler = getImageClickHandler();
     imageClickHandler.initializeForContainer(noteDiv);
 
-    // Initialize Plyr video players
+    // Initialize video players (native HTML5 with custom fullscreen)
     const videoPlayerService = getVideoPlayerService();
     videoPlayerService.initializeForContainer(noteDiv);
 

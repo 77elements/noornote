@@ -6,21 +6,6 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// Plyr video player customization
-.plyr,
-.plyr * {
-  background-color: transparent !important;
-}
-
-.plyr {
-  --plyr-color-main: #{$color-4};
-
-  // Hide empty poster overlay (when no poster attribute set)
-  .plyr__poster:empty {
-    display: none;
-  }
-}
-
 // Base media container
 .note-media {
   margin: calc($gap * 0.75) 0;
