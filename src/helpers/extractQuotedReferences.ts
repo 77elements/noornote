@@ -20,22 +20,27 @@ export interface QuotedReference {
 export function extractQuotedReferences(text: string): QuotedReference[] {
   const quotes: QuotedReference[] = [];
 
-  // Single regex to catch all nostr references (event, note, nevent, naddr)
-  const nostrRegex = /nostr:(event1[a-z0-9]{58}|note1[a-z0-9]{58}|nevent1[a-z0-9]+|naddr[a-z0-9]+)/gi;
-  const matches = text.match(nostrRegex) || [];
+  // Regex to catch all nostr references (event, note, nevent, naddr)
+  // Matches both "nostr:nevent1..." AND standalone "nevent1..." (optional nostr: prefix)
+  // Uses word boundary to prevent partial matches
+  const nostrRegex = /(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi;
+
+  const matches = Array.from(text.matchAll(nostrRegex));
 
   matches.forEach(match => {
+    const fullMatch = match[0];
+
     // Determine type from the match
     let type = 'unknown';
-    if (match.includes('event1')) type = 'event';
-    else if (match.includes('note1')) type = 'note';
-    else if (match.includes('nevent1')) type = 'nevent';
-    else if (match.includes('naddr')) type = 'addr';
+    if (fullMatch.includes('event1')) type = 'event';
+    else if (fullMatch.includes('note1')) type = 'note';
+    else if (fullMatch.includes('nevent1')) type = 'nevent';
+    else if (fullMatch.includes('naddr')) type = 'addr';
 
     quotes.push({
       type,
-      id: match, // Keep full reference for fetching
-      fullMatch: match
+      id: fullMatch, // Keep full reference for fetching
+      fullMatch: fullMatch
     });
   });
 
