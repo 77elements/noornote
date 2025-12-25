@@ -161,7 +161,6 @@ export class GlobalSearchView {
       }
 
       this.renderResults();
-      this.router.showSecondaryContent('search-results');
 
     } catch (error) {
       this.systemLogger.error('GlobalSearchView', 'Hashtag search failed:', error);
