@@ -61,6 +61,17 @@ export class NotificationsView extends View {
     this.notificationsOrch.onNewNotification((notification) => {
       this.handleNewNotification(notification);
     });
+
+    // Listen for hashtag notification updates
+    this.eventBus.on('hashtag:new-posts', (data: { hashtag: string; count: number; latestEvent: any }) => {
+      const notification: NotificationEvent = {
+        event: data.latestEvent,
+        type: 'hashtag',
+        timestamp: data.latestEvent.created_at,
+        meta: { hashtag: data.hashtag, count: data.count }
+      };
+      this.handleNewNotification(notification);
+    });
   }
 
   /**

@@ -26,12 +26,13 @@ import { EventBus } from '../EventBus';
 import { decodeNip19 } from '../NostrToolsAdapter';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new';
+export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag';
 
 export interface NotificationEvent {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
+  meta?: { hashtag?: string; count?: number }; // For hashtag notifications
 }
 
 export class NotificationsOrchestrator extends Orchestrator {

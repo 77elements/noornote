@@ -654,6 +654,10 @@ export class App {
       const { ArticleNotificationService } = await import('./services/ArticleNotificationService');
       const articleNotifService = ArticleNotificationService.getInstance();
       articleNotifService.startPolling();
+
+      const { HashtagNotificationService } = await import('./services/HashtagNotificationService');
+      const hashtagNotifService = HashtagNotificationService.getInstance();
+      hashtagNotifService.startPolling();
     } catch {
       // Notifications orchestrator start failed
     }

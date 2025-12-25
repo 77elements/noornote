@@ -33,6 +33,9 @@ export const StorageKeys = {
   TRIBE_FOLDERS: 'noornote_tribe_folders_map',
   TRIBE_MEMBER_ASSIGNMENTS: 'noornote_tribe_member_assignments_map',
   TRIBE_ROOT_ORDER: 'noornote_tribe_root_order_map',
+
+  // Notification subscriptions (per-account)
+  HASHTAG_SUBSCRIPTIONS: 'noornote_hashtag_subscriptions_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

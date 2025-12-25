@@ -20,11 +20,15 @@ import { PrivacySettingsSection } from '../settings/PrivacySettingsSection';
 import { ListSettingsSection } from '../settings/ListSettingsSection';
 import { CacheSettingsSection } from '../settings/CacheSettingsSection';
 import { UISettingsSection } from '../settings/UISettingsSection';
+import { HashtagNotificationService } from '../../services/HashtagNotificationService';
+import { EventBus } from '../../services/EventBus';
 
 export class SettingsView extends View {
   private container: HTMLElement;
   private keySignerClient: KeySignerClient | null = null;
   private syncStatusBadge: SyncStatusBadge | null = null;
+  private hashtagService: HashtagNotificationService;
+  private eventBus: EventBus;
 
   // Sections
   private relaySettingsSection: RelaySettingsSection;
@@ -40,6 +44,8 @@ export class SettingsView extends View {
     super();
     this.container = document.createElement('div');
     this.container.className = 'settings-view';
+    this.hashtagService = HashtagNotificationService.getInstance();
+    this.eventBus = EventBus.getInstance();
 
     // Initialize KeySigner client (Tauri only)
     if (PlatformService.getInstance().isTauri) {
@@ -59,6 +65,7 @@ export class SettingsView extends View {
     this.uiSettingsSection = new UISettingsSection();
 
     this.render();
+    this.setupHashtagSubscriptionsListeners();
   }
 
   /**
@@ -117,6 +124,15 @@ export class SettingsView extends View {
           'Configure NDK cache sizes and clear cache data.',
           false
         )}
+
+        <div class="settings-section" style="margin-top: 2rem;">
+          <h3>Hashtag Subscriptions</h3>
+          <p class="settings-section__description" style="margin-bottom: 1rem;">
+            Get notified when new posts are published with these hashtags
+          </p>
+          <div id="hashtag-subscriptions-list"></div>
+          <p class="muted" style="margin-top: 1rem;">Subscribe to hashtags via hashtag search results</p>
+        </div>
       </div>
     `;
 
@@ -141,6 +157,55 @@ export class SettingsView extends View {
       this.syncStatusBadge = new SyncStatusBadge(badgeContainer as HTMLElement);
       this.syncStatusBadge.subscribeToSyncStatus();
     }
+
+    // Render hashtag subscriptions
+    this.renderHashtagSubscriptions();
+  }
+
+  /**
+   * Setup hashtag subscriptions event listeners
+   */
+  private setupHashtagSubscriptionsListeners(): void {
+    // Listen for subscription updates
+    this.eventBus.on('hashtag-subscription:updated', () => {
+      this.renderHashtagSubscriptions();
+    });
+  }
+
+  /**
+   * Render hashtag subscriptions list
+   */
+  private renderHashtagSubscriptions(): void {
+    const listContainer = this.container.querySelector('#hashtag-subscriptions-list');
+    if (!listContainer) return;
+
+    const subscribed = this.hashtagService.getSubscribedHashtags();
+
+    if (subscribed.length === 0) {
+      listContainer.innerHTML = '<p class="muted">No hashtag subscriptions yet</p>';
+      return;
+    }
+
+    listContainer.innerHTML = subscribed.map(hashtag => `
+      <div class="subscription-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border, #333);">
+        <span class="hashtag" style="color: var(--color-4); font-weight: 500;">#${hashtag}</span>
+        <button class="btn btn--small btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
+          Unsubscribe
+        </button>
+      </div>
+    `).join('');
+
+    // Attach unsubscribe handlers
+    const unsubscribeButtons = listContainer.querySelectorAll('[data-action="unsubscribe-hashtag"]');
+    unsubscribeButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const hashtag = (button as HTMLElement).dataset.hashtag;
+        if (hashtag) {
+          this.hashtagService.unsubscribe(hashtag);
+          // Re-render will happen via event listener
+        }
+      });
+    });
   }
 
   /**

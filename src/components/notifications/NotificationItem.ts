@@ -210,6 +210,9 @@ export class NotificationItem {
           <path d="M10 1v4h4M8 9H5M11 12H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`;
 
+      case 'hashtag':
+        return '🏷️';
+
       case 'mutual_unfollow':
         return '⚠️';
 
@@ -236,6 +239,13 @@ export class NotificationItem {
         return amount ? `zapped ${amount.toLocaleString()} sats` : 'zapped your note';
       }
       case 'article': return 'posted a new article';
+      case 'hashtag': {
+        const hashtag = this.options.event.meta?.hashtag || 'unknown';
+        const count = this.options.event.meta?.count || 1;
+        return count === 1
+          ? `New post tagged #${hashtag}`
+          : `${count} new posts tagged #${hashtag}`;
+      }
       case 'mutual_unfollow': return 'stopped following you back';
       case 'mutual_new': return 'started following you back!';
       default: return 'interacted with your note';
@@ -518,6 +528,16 @@ export class NotificationItem {
         router.navigate(`/article/${dTag[1]}`);
         return;
       }
+    }
+
+    // For hashtag notifications, trigger hashtag search
+    if (this.options.type === 'hashtag') {
+      const hashtag = this.options.event.meta?.hashtag;
+      if (hashtag) {
+        const eventBus = EventBus.getInstance();
+        eventBus.emit('hashtagSearch:start', { hashtag });
+      }
+      return;
     }
 
     // For mutual notifications, navigate to profile of the person

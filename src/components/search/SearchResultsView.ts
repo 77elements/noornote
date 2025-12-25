@@ -8,6 +8,8 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
+import { HashtagNotificationService } from '../../services/HashtagNotificationService';
+import { EventBus } from '../../services/EventBus';
 
 export interface SearchResultsConfig {
   title: string;
@@ -15,6 +17,7 @@ export interface SearchResultsConfig {
   meta?: string; // Optional meta info (e.g., "44 matches found")
   showBackLink?: boolean;
   onBackClick?: () => void;
+  hashtag?: string; // For hashtag search subscribe button
 }
 
 export interface SearchResultsCallbacks {
@@ -28,11 +31,17 @@ export class SearchResultsView {
   private callbacks: SearchResultsCallbacks;
   private infiniteScroll?: InfiniteScroll;
   private listElement?: HTMLElement;
+  private hashtagService: HashtagNotificationService;
+  private eventBus: EventBus;
+  private subscribeButton?: HTMLButtonElement;
 
   constructor(config: SearchResultsConfig, callbacks: SearchResultsCallbacks) {
     this.config = config;
     this.callbacks = callbacks;
+    this.hashtagService = HashtagNotificationService.getInstance();
+    this.eventBus = EventBus.getInstance();
     this.container = this.createElement();
+    this.setupEventListeners();
   }
 
   /**
@@ -42,6 +51,18 @@ export class SearchResultsView {
     const container = document.createElement('div');
     container.className = 'search-results';
     return container;
+  }
+
+  /**
+   * Setup event listeners
+   */
+  private setupEventListeners(): void {
+    // Listen for subscription updates to update button state
+    this.eventBus.on('hashtag-subscription:updated', (data: { hashtag: string; subscribed: boolean }) => {
+      if (data.hashtag === this.config.hashtag) {
+        this.updateSubscribeButton();
+      }
+    });
   }
 
   /**
@@ -69,9 +90,32 @@ export class SearchResultsView {
     const header = document.createElement('div');
     header.className = 'search-results__header';
     header.innerHTML = `
-      <h3>${escapeHtml(this.config.title)}</h3>
-      ${this.config.meta ? `<p class="search-results__meta">${escapeHtml(this.config.meta)}</p>` : ''}
+      <div class="search-results__header-content">
+        <h3>${escapeHtml(this.config.title)}</h3>
+        ${this.config.meta ? `<p class="search-results__meta">${escapeHtml(this.config.meta)}</p>` : ''}
+      </div>
     `;
+
+    // Add subscribe button if hashtag is provided
+    if (this.config.hashtag) {
+      const subscribeContainer = document.createElement('div');
+      subscribeContainer.className = 'search-results__subscribe';
+
+      this.subscribeButton = document.createElement('button');
+      this.subscribeButton.className = 'btn btn--secondary';
+      this.updateSubscribeButton();
+
+      this.subscribeButton.addEventListener('click', () => {
+        if (this.config.hashtag) {
+          this.hashtagService.toggle(this.config.hashtag);
+          this.updateSubscribeButton();
+        }
+      });
+
+      subscribeContainer.appendChild(this.subscribeButton);
+      header.appendChild(subscribeContainer);
+    }
+
     this.container.appendChild(header);
 
     // Results list
@@ -99,6 +143,18 @@ export class SearchResultsView {
         this.infiniteScroll.observe(this.listElement);
       }
     }
+  }
+
+  /**
+   * Update subscribe button text and state
+   */
+  private updateSubscribeButton(): void {
+    if (!this.subscribeButton || !this.config.hashtag) return;
+
+    const isSubscribed = this.hashtagService.isSubscribed(this.config.hashtag);
+    this.subscribeButton.textContent = isSubscribed
+      ? `Unsubscribe from #${this.config.hashtag}`
+      : `Subscribe to #${this.config.hashtag}`;
   }
 
   /**

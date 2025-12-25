@@ -300,7 +300,8 @@ export class GlobalSearchView {
       {
         title,
         searchTerms: this.currentQuery,
-        meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`
+        meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`,
+        hashtag: this.currentHashtag || undefined // Pass hashtag for subscribe button
       },
       {
         onNoteClick: (noteId) => this.handleNoteClick(noteId),
