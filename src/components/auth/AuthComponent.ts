@@ -7,6 +7,7 @@
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../system/SystemLogger';
 import { Router } from '../../services/Router';
+import { PlatformService } from '../../services/PlatformService';
 
 // Forward declaration to avoid circular dependency
 interface MainLayoutInterface {
@@ -82,6 +83,9 @@ export class AuthComponent {
     const primaryContent = document.querySelector('.primary-content');
     if (!primaryContent) return;
 
+    // Check platform for conditional rendering
+    const platform = PlatformService.getInstance();
+
     // Check if adding account (from AccountSwitcher)
     const isAddingAccount = sessionStorage.getItem('noornote_add_account') === 'true';
     const pageTitle = isAddingAccount ? 'Add Account' : 'Welcome to NoorNote';
@@ -91,13 +95,13 @@ export class AuthComponent {
         <h1>${pageTitle}</h1>
 
         <section class="auth-section auth-section--primary">
-          <div class="auth-primary-action">
+          <div class="auth-primary-action ${!platform.isTauri ? 'hidden' : ''}">
             <button class="btn btn--large" data-action="use-key-signer">
               🔑 Use NoorSigner
             </button>
             <p class="auth-hint">Secure local key signer</p>
           </div>
-          <div class="auth-primary-action ${this.authService.isExtensionAvailable() === false && 'hidden'}">
+          <div class="auth-primary-action ${platform.isTauri ? 'hidden' : ''}">
             <button class="btn btn--large" data-action="use-browser-ext-signer">
               🔑 Use Browser extension
             </button>
@@ -270,15 +274,15 @@ export class AuthComponent {
       if (result.success && result.npub && result.pubkey){
         this.currentUser = { npub: result.npub, pubkey: result.pubkey };
         this.systemLogger.info('Auth', `Logged in successfully via ${this.authService.getExtensionName()} ${this.authService.getAuthMethod()}`);
-        
+
         if (this.mainLayout) this.mainLayout.setUserStatus(result.npub, result.pubkey);
-        
+
       }
-  
-  
+
+
       this.updateUI();
       this.clearAddAccountFlag();
-  
+
       // Navigate to timeline
       this.router.navigate('/');
     } catch (error) {
