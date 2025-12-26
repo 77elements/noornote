@@ -97,6 +97,12 @@ export class AuthComponent {
             </button>
             <p class="auth-hint">Secure local key signer</p>
           </div>
+          <div class="auth-primary-action ${this.authService.isExtensionAvailable() === false && 'hidden'}">
+            <button class="btn btn--large" data-action="use-browser-ext-signer">
+              🔑 Use Browser extension
+            </button>
+            <p class="auth-hint">Extension handles signing</p>
+          </div>
         </section>
 
         <div class="auth-divider">
@@ -135,6 +141,12 @@ export class AuthComponent {
     const keySignerBtn = primaryContent.querySelector('[data-action="use-key-signer"]');
     if (keySignerBtn) {
       keySignerBtn.addEventListener('click', this.handleKeySignerLogin.bind(this));
+    }
+
+    // Browser Extension button
+    const browserExtBtn = primaryContent.querySelector('[data-action="use-browser-ext-signer"]');
+    if (browserExtBtn) {
+      browserExtBtn.addEventListener('click', this.handleBrowserExtLogin.bind(this));
     }
 
     // Bunker connect button
@@ -239,6 +251,44 @@ export class AuthComponent {
       cancelBtn?.remove();
     }
   }
+
+  /**
+   * Handle Browser Extension login (NIP-07)
+   */
+  private async handleBrowserExtLogin(): Promise<void> {
+    const primaryContent = document.querySelector('.primary-content');
+    const browserExtBtn = primaryContent?.querySelector('[data-action="use-browser-ext-signer"]') as HTMLButtonElement;
+
+    if (!browserExtBtn) return;
+
+    browserExtBtn.disabled = true;
+      browserExtBtn.textContent = 'Waiting Extension';
+
+
+    try {
+      const result = await this.authService.authenticate();
+      if (result.success && result.npub && result.pubkey){
+        this.currentUser = { npub: result.npub, pubkey: result.pubkey };
+        this.systemLogger.info('Auth', `Logged in successfully via ${this.authService.getExtensionName()} ${this.authService.getAuthMethod()}`);
+        
+        if (this.mainLayout) this.mainLayout.setUserStatus(result.npub, result.pubkey);
+        
+      }
+  
+  
+      this.updateUI();
+      this.clearAddAccountFlag();
+  
+      // Navigate to timeline
+      this.router.navigate('/');
+    } catch (error) {
+      console.error('Browser extension login error:', error);
+      this.showError(`${this.authService.getExtensionName()} ${this.authService.getAuthMethod()} error`);
+      browserExtBtn.disabled = false;
+      browserExtBtn.textContent = '🔑 Use Browser extension (Desktop)';
+    }
+  }
+
 
   /**
    * Handle bunker:// login (NIP-46 remote signer)
