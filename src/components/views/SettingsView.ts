@@ -66,6 +66,7 @@ export class SettingsView extends View {
 
     this.render();
     this.setupHashtagSubscriptionsListeners();
+    this.setupHashtagSearchHandler();
   }
 
   /**
@@ -125,13 +126,32 @@ export class SettingsView extends View {
           false
         )}
 
-        <div class="settings-section" style="margin-top: 2rem;">
-          <h3>Hashtag Subscriptions</h3>
-          <p class="settings-section__description" style="margin-bottom: 1rem;">
-            Get notified when new posts are published with these hashtags
-          </p>
-          <div id="hashtag-subscriptions-list"></div>
-          <p class="muted" style="margin-top: 1rem;">Subscribe to hashtags via hashtag search results</p>
+        <div class="settings-section">
+          <div class="settings-section__header">
+            <div class="settings-section__info">
+              <h2 class="settings-section__title">Subscriptions</h2>
+              <p class="settings-section__description">
+                Subscribe to hashtags and get notified when new posts are published.
+              </p>
+            </div>
+            <button class="settings-section__toggle" aria-label="Toggle section">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          <div class="settings-section__content">
+            <div class="subscription-search">
+              <input
+                type="text"
+                id="hashtag-search-input"
+                class="subscription-input"
+                placeholder="Enter hashtag (without #)"
+              />
+              <button id="hashtag-search-btn" class="btn btn--primary">Search</button>
+            </div>
+            <div id="hashtag-subscriptions-list" class="ui-list"></div>
+          </div>
         </div>
       </div>
     `;
@@ -173,6 +193,31 @@ export class SettingsView extends View {
   }
 
   /**
+   * Setup hashtag search handler
+   */
+  private setupHashtagSearchHandler(): void {
+    const searchBtn = this.container.querySelector('#hashtag-search-btn');
+    const searchInput = this.container.querySelector('#hashtag-search-input') as HTMLInputElement;
+
+    if (!searchBtn || !searchInput) return;
+
+    const handleSearch = () => {
+      const hashtag = searchInput.value.trim().replace(/^#/, ''); // Remove leading # if present
+      if (hashtag) {
+        this.eventBus.emit('hashtagSearch:start', { hashtag });
+        searchInput.value = ''; // Clear input after search
+      }
+    };
+
+    searchBtn.addEventListener('click', handleSearch);
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleSearch();
+      }
+    });
+  }
+
+  /**
    * Render hashtag subscriptions list
    */
   private renderHashtagSubscriptions(): void {
@@ -187,8 +232,8 @@ export class SettingsView extends View {
     }
 
     listContainer.innerHTML = subscribed.map(hashtag => `
-      <div class="subscription-item" style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--color-border, #333);">
-        <span class="hashtag" style="color: var(--color-4); font-weight: 500;">#${hashtag}</span>
+      <div class="ui-list__item">
+        <span class="subscription-hashtag">#${hashtag}</span>
         <button class="btn btn--small btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
           Unsubscribe
         </button>

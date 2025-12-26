@@ -1237,3 +1237,51 @@
     }
   }
 }
+
+// ========================================
+// Subscription Settings Section
+// ========================================
+.subscription-search {
+  display: flex;
+  gap: $gap;
+  margin-bottom: $gap * 2;
+  padding-top: $gap;
+  border-top: 1px solid $color-2;
+
+  .subscription-input {
+    flex: 1;
+    padding: calc($gap / 2) $gap;
+    background: $color-2;
+    border: 1px solid $color-3;
+    border-radius: $radius-sm;
+    color: $color-5;
+    font-size: 14px;
+
+    &::placeholder {
+      color: rgba($color-5, 0.4);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $color-4;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Override ui-list__item layout for subscription items
+#hashtag-subscriptions-list .ui-list__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.subscription-hashtag {
+  color: $color-4;
+  font-weight: 500;
+  font-size: 14px;
+}
