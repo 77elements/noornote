@@ -22,8 +22,8 @@ export function extractQuotedReferences(text: string): QuotedReference[] {
 
   // Regex to catch all nostr references (event, note, nevent, naddr)
   // Matches both "nostr:nevent1..." AND standalone "nevent1..." (optional nostr: prefix)
-  // Uses word boundary to prevent partial matches
-  const nostrRegex = /(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi;
+  // Negative lookbehind (?<!\/) prevents matching inside URL paths (e.g., https://example.com/naddr1...)
+  const nostrRegex = /(?<!\/)(?:nostr:)?(event1[023456789acdefghjklmnpqrstuvwxyz]{58}|note1[023456789acdefghjklmnpqrstuvwxyz]{58}|nevent1[023456789acdefghjklmnpqrstuvwxyz]+|naddr1[023456789acdefghjklmnpqrstuvwxyz]+)(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi;
 
   const matches = Array.from(text.matchAll(nostrRegex));
 
