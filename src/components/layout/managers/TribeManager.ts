@@ -21,7 +21,6 @@ import { TribeFolderService } from '../../../services/TribeFolderService';
 import { ListSyncManager } from '../../../services/sync/ListSyncManager';
 import { TribeStorageAdapter } from '../../../services/sync/adapters/TribeStorageAdapter';
 import { RestoreListsService } from '../../../services/RestoreListsService';
-import { SyncConfirmationModal } from '../../modals/SyncConfirmationModal';
 import { renderListSyncButtons } from '../../../helpers/ListSyncButtonsHelper';
 import { NewFolderModal } from '../../modals/NewFolderModal';
 import { EditFolderModal } from '../../modals/EditFolderModal';
@@ -1080,60 +1079,13 @@ export class TribeManager {
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
       ToastService.show('Restoring from file...', 'info');
+      await this.restoreFoldersAndMembers();
+      ToastService.show('Restored from file', 'success');
 
-      const browserItems = this.adapter.getBrowserItems();
-      const fileMembers = await this.adapter.getFileItems();
-      const hasExisting = browserItems.length > 0;
-
-      if (hasExisting) {
-        // Calculate diff
-        const browserPubkeys = new Set(browserItems.map(m => m.pubkey));
-        const filePubkeys = new Set(fileMembers.map(m => m.pubkey));
-
-        const added = fileMembers.filter(m => !browserPubkeys.has(m.pubkey));
-        const removed = browserItems.filter(m => !filePubkeys.has(m.pubkey));
-
-        const modal = new SyncConfirmationModal({
-          listType: 'Tribes',
-          added: added,
-          removed: removed,
-          getDisplayName: async (item) => {
-            const profile = await this.profileService.getUserProfile(item.pubkey);
-            return profile?.name || item.pubkey.slice(0, 8) + '...';
-          },
-          onKeep: async () => {
-            // Merge: Add new items from file, keep existing
-            await this.restoreFoldersAndMembers();
-            ToastService.show('Merged tribes from file', 'success');
-
-            // Reload and re-render
-            this.membersCache.clear();
-            await this.loadMembers();
-            await this.renderCurrentView(container);
-          },
-          onDelete: async () => {
-            // Overwrite: Replace with file content
-            await this.restoreFoldersAndMembers();
-            ToastService.show('Restored from file', 'success');
-
-            // Reload and re-render
-            this.membersCache.clear();
-            await this.loadMembers();
-            await this.renderCurrentView(container);
-          }
-        });
-
-        modal.show();
-      } else {
-        // No browser items - restore directly
-        await this.restoreFoldersAndMembers();
-        ToastService.show('Restored from file', 'success');
-
-        // Reload and re-render
-        this.membersCache.clear();
-        await this.loadMembers();
-        await this.renderCurrentView(container);
-      }
+      // Reload and re-render
+      this.membersCache.clear();
+      await this.loadMembers();
+      await this.renderCurrentView(container);
     } catch (error) {
       console.error('Restore from file failed:', error);
       ToastService.show('Failed to restore from file', 'error');
