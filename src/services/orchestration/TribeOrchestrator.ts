@@ -316,9 +316,12 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
         continue;
       }
 
+      // Add tribes/ prefix for relay publishing
+      const dTagForRelay = set.d === '' ? 'tribes/' : `tribes/${set.d}`;
+
       // Build tags
       const tags: string[][] = [
-        ['d', set.d],
+        ['d', dTagForRelay],
         ['title', set.title || set.d],
         ['client', 'NoorNote']
       ];
@@ -429,10 +432,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     // Create sets map
     const setsMap = new Map<string, TribeSet>();
 
-    // Initialize root set with tribes/ prefix
+    // Initialize root set (no prefix for file storage)
     setsMap.set('', {
       kind: 30000,
-      d: 'tribes/',
+      d: '',
       title: '',
       publicMembers: [],
       privateMembers: []
@@ -441,11 +444,11 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     // Get all folders from FolderService
     const existingFolders = this.folderService.getFolders();
 
-    // Create sets for each folder (tribe) with tribes/ prefix
+    // Create sets for each folder (tribe) (no prefix for file storage)
     for (const folder of existingFolders) {
       setsMap.set(folder.name, {
         kind: 30000,
-        d: `tribes/${folder.name}`,
+        d: folder.name,
         title: folder.name,
         publicMembers: [],
         privateMembers: []
