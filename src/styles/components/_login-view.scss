@@ -37,9 +37,9 @@
 // Primary Action (large button)
 .auth-primary-action {
   text-align: center;
-
+  margin: $gap;
+  
   .auth-hint {
-    margin: $gap 0 0;
     color: $color-3;
     font-size: 14px;
 
