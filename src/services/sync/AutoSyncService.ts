@@ -7,6 +7,7 @@
  *   - Listens to list update events (follow:updated, bookmark:updated, mute:updated)
  *   - On change: 1) Save to file immediately, 2) Publish to relays (debounced)
  *   - On startup: Restore from file or relays if browser empty
+ *   - Offline-aware: Pauses relay sync when offline, resumes when back online
  *
  * @used-by Orchestrators emit events, AutoSyncService reacts
  */
@@ -19,6 +20,8 @@ import { BookmarkStorageAdapter } from './adapters/BookmarkStorageAdapter';
 import { MuteStorageAdapter } from './adapters/MuteStorageAdapter';
 import { RestoreListsService } from '../RestoreListsService';
 import { AuthService } from '../AuthService';
+import { ConnectivityService } from '../ConnectivityService';
+import { SystemLogger } from '../../components/system/SystemLogger';
 import { SyncConfirmationModal } from '../../components/modals/SyncConfirmationModal';
 import { UserProfileService } from '../UserProfileService';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
@@ -36,6 +39,8 @@ export class AutoSyncService {
   private eventBus: EventBus;
   private authService: AuthService;
   private restoreService: RestoreListsService;
+  private connectivityService: ConnectivityService;
+  private systemLogger: SystemLogger;
 
   // Adapters and managers for each list type
   private followAdapter: FollowStorageAdapter;
@@ -64,6 +69,8 @@ export class AutoSyncService {
     this.eventBus = EventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.restoreService = RestoreListsService.getInstance();
+    this.connectivityService = ConnectivityService.getInstance();
+    this.systemLogger = SystemLogger.getInstance();
 
     // Initialize adapters
     this.followAdapter = new FollowStorageAdapter();
@@ -134,10 +141,41 @@ export class AutoSyncService {
       }
     });
 
+    // Listen for connectivity changes
+    this.eventBus.on('connectivity:status', ({ online }: { online: boolean }) => {
+      if (online) {
+        this.handleBackOnline();
+      } else {
+        this.handleWentOffline();
+      }
+    });
+
     // Start periodic sync if already logged in and in Easy Mode
     if (this.authService.getCurrentUser() && isEasyMode()) {
       this.startPeriodicSync();
       // Note: No immediate syncFromRelaysAll() - restoreIfEmpty() handles startup
+    }
+  }
+
+  /**
+   * Handle went offline
+   * Pause periodic sync to prevent unnecessary relay connection attempts
+   */
+  private handleWentOffline(): void {
+    this.stopPeriodicSync();
+    this.systemLogger.info('AutoSyncService', 'Offline detected - periodic relay sync paused');
+  }
+
+  /**
+   * Handle back online
+   * Resume periodic sync and do immediate sync to catch up
+   */
+  private handleBackOnline(): void {
+    if (isEasyMode() && this.authService.getCurrentUser()) {
+      this.startPeriodicSync();
+      this.systemLogger.info('AutoSyncService', 'Back online - resuming periodic sync and catching up');
+      // Sync immediately when back online (catch up with any changes)
+      this.syncFromRelaysAll();
     }
   }
 
@@ -204,16 +242,22 @@ export class AutoSyncService {
 
   /**
    * Sync list to relays
+   * Skips silently if offline
    */
   private async syncToRelays(listType: ListType): Promise<void> {
     if (!this.authService.getCurrentUser()) return;
+
+    if (!this.connectivityService.isOnline()) {
+      this.systemLogger.info('AutoSyncService', `Skipping relay sync for ${listType} - offline`);
+      return;
+    }
 
     try {
       const manager = this.getManagerForListType(listType);
       await manager.syncToRelays();
     } catch (error) {
       console.error(`[AutoSyncService] Failed to sync ${listType} to relays:`, error);
-      // Silent fail - will retry on next change
+      // Silent fail - will retry on next change or when back online
     }
   }
 
@@ -347,10 +391,16 @@ export class AutoSyncService {
   /**
    * Sync all lists from relays (periodic sync)
    * Uses merge strategy - never deletes, only adds
+   * Skips if offline
    */
   private async syncFromRelaysAll(): Promise<void> {
     if (!isEasyMode()) return;
     if (!this.authService.getCurrentUser()) return;
+
+    if (!this.connectivityService.isOnline()) {
+      this.systemLogger.info('AutoSyncService', 'Skipping periodic relay sync - offline');
+      return;
+    }
 
     for (const listType of ['follows', 'bookmarks', 'mutes'] as ListType[]) {
       await this.syncFromRelays(listType);
@@ -360,8 +410,14 @@ export class AutoSyncService {
   /**
    * Sync a single list from relays
    * Auto-merges if only additions, shows modal if removals detected
+   * Skips if offline
    */
   private async syncFromRelays(listType: ListType): Promise<void> {
+    if (!this.connectivityService.isOnline()) {
+      this.systemLogger.info('AutoSyncService', `Skipping relay sync for ${listType} - offline`);
+      return;
+    }
+
     if (this.isSyncing.has(listType)) return;
 
     try {
