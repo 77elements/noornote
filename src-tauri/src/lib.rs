@@ -12,6 +12,7 @@ pub fn run() {
     .plugin(tauri_plugin_fs::init())
     .plugin(tauri_plugin_http::init())
     .plugin(tauri_plugin_shell::init())
+    .plugin(tauri_plugin_deep_link::init())
     // Log plugin for ALL builds (debug + release) - writes to OS log directory
     .plugin(
       tauri_plugin_log::Builder::new()
