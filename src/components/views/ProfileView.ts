@@ -107,6 +107,9 @@ export class ProfileView extends View {
     // Listen for profile updates
     this.setupProfileUpdateListener();
 
+    // Listen for user switches
+    this.setupUserSwitchListener();
+
     this.render();
   }
 
@@ -120,6 +123,17 @@ export class ProfileView extends View {
         // Reload own profile after edit
         this.refreshProfile();
       }
+    });
+  }
+
+  /**
+   * Setup listener for user switches (reload profile view to update Edit button visibility)
+   */
+  private setupUserSwitchListener(): void {
+    this.eventBus.on('user:login', () => {
+      // Reset initial render flag and re-render to update Edit Profile button visibility
+      this.isInitialRender = true;
+      this.render();
     });
   }
 
