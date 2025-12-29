@@ -17,6 +17,8 @@ import { npubToUsername } from '../helpers/npubToUsername';
 import { hexToNpub } from '../helpers/nip19';
 import { UserProfileService } from './UserProfileService';
 import type { MediaContent } from '../helpers/renderMediaContent';
+import { ProfileRecognitionService } from './ProfileRecognitionService';
+import { ProfileBlinker, TextBlinker } from '../helpers/profileBlinking';
 
 export interface QuotedReference {
   type: 'event' | 'note' | 'addr';
@@ -36,10 +38,14 @@ export interface ProcessedContent {
 export class ContentProcessor {
   private static instance: ContentProcessor;
   private userProfileService: UserProfileService;
+  private recognitionService: ProfileRecognitionService;
   private profileCache: Map<string, any> = new Map();
+  // Store blinkers per mention element (keyed by unique element ID)
+  private mentionBlinkers: Map<string, { avatar: ProfileBlinker; name: TextBlinker }> = new Map();
 
   private constructor() {
     this.userProfileService = UserProfileService.getInstance();
+    this.recognitionService = ProfileRecognitionService.getInstance();
   }
 
   static getInstance(): ContentProcessor {
@@ -157,6 +163,7 @@ export class ContentProcessor {
 
   /**
    * Update mentions in DOM after profile loads (progressive enhancement)
+   * Applies profile recognition blinking if needed
    */
   private updateMentionsInDOM(hexPubkey: string, profile: any): void {
     const username = profile.name || profile.display_name;
@@ -166,24 +173,86 @@ export class ContentProcessor {
     const npub = hexToNpub(hexPubkey);
     const picture = profile.picture || '';
 
-    // Find all mention links that point to this profile and have loading placeholder
-    const mentionLinks = document.querySelectorAll(`a[href="/profile/${npub}"][data-loading]`);
+    // Profile Recognition logic
+    const encounter = this.recognitionService.getEncounter(hexPubkey);
+
+    // Update last known metadata if changed
+    if (encounter && (username !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl)) {
+      this.recognitionService.updateLastKnown(hexPubkey, username, picture);
+    }
+
+    // Check if should blink
+    const shouldBlink = encounter && this.recognitionService.hasChangedWithinWindow(hexPubkey);
+
+    // Find all mention links for this profile (both loading and already loaded)
+    const mentionLinks = document.querySelectorAll(`a[href="/profile/${npub}"][data-mention]`);
 
     mentionLinks.forEach((link) => {
       const linkElement = link as HTMLAnchorElement;
-      // Update img src and username text
-      const img = linkElement.querySelector('img');
-      if (img) {
-        img.src = picture;
+      const img = linkElement.querySelector('img') as HTMLImageElement;
+
+      // Get or create text container span (needed for blinking)
+      let nameSpan = linkElement.querySelector('.mention-name') as HTMLElement;
+      if (!nameSpan) {
+        // Wrap existing text node or create new span
+        const textNode = Array.from(linkElement.childNodes).find(node => node.nodeType === Node.TEXT_NODE) as Text | undefined;
+        nameSpan = document.createElement('span');
+        nameSpan.className = 'mention-name';
+        nameSpan.textContent = textNode?.textContent || '';
+
+        if (textNode) {
+          linkElement.replaceChild(nameSpan, textNode);
+        } else {
+          linkElement.appendChild(nameSpan);
+        }
       }
-      // Update text node (after the img)
-      const textNode = Array.from(linkElement.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
-      if (textNode) {
-        textNode.textContent = username;
+
+      // Create a unique ID for this mention element if it doesn't have one
+      if (!linkElement.dataset.mentionId) {
+        linkElement.dataset.mentionId = `mention-${Math.random().toString(36).substr(2, 9)}`;
+      }
+      const mentionId = linkElement.dataset.mentionId;
+
+      if (shouldBlink && encounter && img && nameSpan) {
+        // Get or create blinkers for this mention
+        let blinkers = this.mentionBlinkers.get(mentionId);
+        if (!blinkers) {
+          blinkers = {
+            avatar: new ProfileBlinker(img),
+            name: new TextBlinker(nameSpan)
+          };
+          this.mentionBlinkers.set(mentionId, blinkers);
+        }
+
+        // Start blinking
+        if (!blinkers.avatar.isBlinking()) {
+          blinkers.avatar.start(picture, encounter.firstPictureUrl);
+        }
+        if (!blinkers.name.isBlinking()) {
+          blinkers.name.start(username, encounter.firstName);
+        }
       } else {
-        // Fallback: append username if no text node exists
-        linkElement.appendChild(document.createTextNode(username));
+        // Stop blinking or update normally
+        const blinkers = this.mentionBlinkers.get(mentionId);
+        if (blinkers) {
+          if (blinkers.avatar.isBlinking()) {
+            blinkers.avatar.stop(picture);
+          }
+          if (blinkers.name.isBlinking()) {
+            blinkers.name.stop(username);
+          }
+        } else {
+          // No blinkers, just update directly
+          if (img) {
+            img.src = picture;
+          }
+          if (nameSpan) {
+            nameSpan.textContent = username;
+          }
+        }
       }
+
+      // Remove loading indicator
       linkElement.removeAttribute('data-loading');
     });
   }

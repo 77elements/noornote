@@ -44,6 +44,10 @@ a {
     vertical-align: text-bottom;
     margin-right: 5px;
   }
+
+  .mention-name {
+    transition: opacity 0.3s ease;
+  }
 }
 
 // Modifier: with background (for inline mentions, Analytics Modal, etc.)
