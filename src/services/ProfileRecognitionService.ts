@@ -260,15 +260,17 @@ export class ProfileRecognitionService {
   /**
    * Check if profile has changed within recognition window
    * Returns true if blinking should be active
+   *
+   * Note: Only checks name changes, not picture URLs, because image hosting services
+   * generate unique URLs even for the same image, causing false positives.
    */
   public hasChangedWithinWindow(pubkey: string): boolean {
     const encounter = this.getEncounter(pubkey);
     if (!encounter) return false;
 
-    // Check if metadata actually changed
-    if (encounter.firstName === encounter.lastKnownName &&
-        encounter.firstPictureUrl === encounter.lastKnownPictureUrl) {
-      return false; // No change
+    // Check if name actually changed (ignore picture URL)
+    if (encounter.firstName === encounter.lastKnownName) {
+      return false; // Name hasn't changed, stop blinking
     }
 
     // Get window setting from localStorage (global, not per-account)
