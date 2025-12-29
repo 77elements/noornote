@@ -17,10 +17,13 @@ import { hexToNpub } from '../../../helpers/nip19';
 import { npubToUsername } from '../../../helpers/npubToUsername';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
+import { ProfileRecognitionService } from '../../../services/ProfileRecognitionService';
+import { ProfileBlinker, TextBlinker } from '../../../helpers/profileBlinking';
 
 export class RepostRenderer {
   private static userProfileService = UserProfileService.getInstance();
   private static articlePreviewRenderer = ArticlePreviewRenderer.getInstance();
+  private static recognitionService = ProfileRecognitionService.getInstance();
 
   /**
    * Extract original event ID from repost tags
@@ -68,19 +71,69 @@ export class RepostRenderer {
       usernameSpan.textContent = reposterName;
     }
 
+    // Store blinkers on the header element
+    let avatarBlinker: ProfileBlinker | null = null;
+    let nameBlinker: TextBlinker | null = null;
+
     // Subscribe to profile updates to refresh username AND avatar when loaded
     if (reposterPubkey) {
       RepostRenderer.userProfileService.subscribeToProfile(reposterPubkey, (profile) => {
         const newUsername = profile.display_name || profile.name || reposterNpub;
+        const newPicture = profile.picture || '';
         const usernameEl = repostHeader.querySelector('.reposter-username') as HTMLElement;
         const avatarElement = repostHeader.querySelector('.profile-pic--mini') as HTMLImageElement;
 
-        if (usernameEl) {
-          usernameEl.textContent = newUsername;
+        // Profile Recognition logic
+        const encounter = RepostRenderer.recognitionService.getEncounter(reposterPubkey);
+
+        // Update last known metadata if changed
+        if (encounter && (newUsername !== encounter.lastKnownName || newPicture !== encounter.lastKnownPictureUrl)) {
+          RepostRenderer.recognitionService.updateLastKnown(reposterPubkey, newUsername, newPicture);
         }
 
-        if (avatarElement && profile.picture) {
-          avatarElement.src = profile.picture;
+        // Check if should blink
+        const shouldBlink = encounter && RepostRenderer.recognitionService.hasChangedWithinWindow(reposterPubkey);
+
+        // Update username with blinking
+        if (usernameEl) {
+          if (shouldBlink && encounter) {
+            // Initialize name blinker if needed
+            if (!nameBlinker) {
+              nameBlinker = new TextBlinker(usernameEl);
+            }
+            // Start blinking
+            if (!nameBlinker.isBlinking()) {
+              nameBlinker.start(newUsername, encounter.firstName);
+            }
+          } else {
+            // Stop blinking or just set text
+            if (nameBlinker && nameBlinker.isBlinking()) {
+              nameBlinker.stop(newUsername);
+            } else {
+              usernameEl.textContent = newUsername;
+            }
+          }
+        }
+
+        // Update avatar with blinking
+        if (avatarElement) {
+          if (shouldBlink && encounter) {
+            // Initialize avatar blinker if needed
+            if (!avatarBlinker) {
+              avatarBlinker = new ProfileBlinker(avatarElement);
+            }
+            // Start blinking
+            if (!avatarBlinker.isBlinking()) {
+              avatarBlinker.start(newPicture, encounter.firstPictureUrl);
+            }
+          } else {
+            // Stop blinking or just set image
+            if (avatarBlinker && avatarBlinker.isBlinking()) {
+              avatarBlinker.stop(newPicture);
+            } else if (newPicture) {
+              avatarElement.src = newPicture;
+            }
+          }
         }
       });
 
