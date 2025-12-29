@@ -20,6 +20,7 @@ import { PrivacySettingsSection } from '../settings/PrivacySettingsSection';
 import { ListSettingsSection } from '../settings/ListSettingsSection';
 import { CacheSettingsSection } from '../settings/CacheSettingsSection';
 import { UISettingsSection } from '../settings/UISettingsSection';
+import { ProfileRecognitionSettings } from '../settings/ProfileRecognitionSettings';
 import { HashtagNotificationService } from '../../services/HashtagNotificationService';
 import { EventBus } from '../../services/EventBus';
 
@@ -39,6 +40,7 @@ export class SettingsView extends View {
   private listSettingsSection: ListSettingsSection;
   private cacheSettingsSection: CacheSettingsSection;
   private uiSettingsSection: UISettingsSection;
+  private profileRecognitionSettings: ProfileRecognitionSettings;
 
   constructor() {
     super();
@@ -63,6 +65,7 @@ export class SettingsView extends View {
     this.listSettingsSection = new ListSettingsSection();
     this.cacheSettingsSection = new CacheSettingsSection();
     this.uiSettingsSection = new UISettingsSection();
+    this.profileRecognitionSettings = new ProfileRecognitionSettings();
 
     this.render();
     this.setupHashtagSubscriptionsListeners();
@@ -81,6 +84,12 @@ export class SettingsView extends View {
         ${this.uiSettingsSection.renderAccordionSection(
           'UI Settings',
           'Configure UI behavior and experimental view navigation features.',
+          false
+        )}
+
+        ${this.profileRecognitionSettings.renderAccordionSection(
+          'Profile Recognition',
+          'Help recognize people you follow after they change their profile.',
           false
         )}
 
@@ -161,6 +170,7 @@ export class SettingsView extends View {
 
     // Mount section content
     this.uiSettingsSection.mount(this.container);
+    this.profileRecognitionSettings.mount(this.container);
     this.relaySettingsSection.mount(this.container);
     if (this.keySignerSection) {
       this.keySignerSection.mount(this.container);
@@ -287,6 +297,7 @@ export class SettingsView extends View {
     this.listSettingsSection.unmount();
     this.cacheSettingsSection.unmount();
     this.uiSettingsSection.unmount();
+    this.profileRecognitionSettings.unmount();
 
     // Cleanup sync status badge
     if (this.syncStatusBadge) {

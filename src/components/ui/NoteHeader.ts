@@ -11,6 +11,8 @@ import { hexToNpub } from '../../helpers/nip19';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { NoteMenu } from './NoteMenu';
 import { UserHoverCard } from './UserHoverCard';
+import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
+import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface NoteHeaderOptions {
@@ -27,13 +29,17 @@ export interface NoteHeaderOptions {
 export class NoteHeader {
   private element: HTMLElement;
   private userProfileService: UserProfileService;
+  private recognitionService: ProfileRecognitionService;
   private options: Required<NoteHeaderOptions>;
   private profile: UserProfile | null = null;
   private unsubscribeProfile?: () => void;
   private noteMenu?: NoteMenu;
+  private blinker: ProfileBlinker | null = null;
+  private nameBlinker: TextBlinker | null = null;
 
   constructor(options: NoteHeaderOptions) {
     this.userProfileService = UserProfileService.getInstance();
+    this.recognitionService = ProfileRecognitionService.getInstance();
 
     // Default onClick: Navigate to profile page
     const defaultOnClick = (pubkey: string) => {
@@ -149,19 +155,65 @@ export class NoteHeader {
     const picture = this.profile.picture || '';
 
     const avatarImg = this.element.querySelector('.profile-pic--medium') as HTMLImageElement;
-    const displayNameTrigger = this.element.querySelector('.note-header__display-name-trigger');
+    const displayNameTrigger = this.element.querySelector('.note-header__display-name-trigger') as HTMLElement;
     const handle = this.element.querySelector('.note-header__handle');
     const verification = this.element.querySelector('.note-header__verification');
 
-    // Update avatar
+    // Profile Recognition logic (shared)
+    const encounter = this.recognitionService.getEncounter(this.options.pubkey);
+
+    // Update last known metadata if changed
+    if (encounter && (displayName !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl)) {
+      this.recognitionService.updateLastKnown(this.options.pubkey, displayName, picture);
+    }
+
+    // Check if should blink
+    const shouldBlink = encounter && this.recognitionService.hasChangedWithinWindow(this.options.pubkey);
+
+    // Update avatar with blinking
     if (avatarImg) {
-      avatarImg.src = picture;
+      if (shouldBlink && encounter) {
+        // Initialize blinker if needed
+        if (!this.blinker) {
+          this.blinker = new ProfileBlinker(avatarImg);
+        }
+
+        // Start blinking between current and first encounter
+        if (!this.blinker.isBlinking()) {
+          this.blinker.start(picture, encounter.firstPictureUrl);
+        }
+      } else {
+        // Stop blinking and show current pic
+        if (this.blinker && this.blinker.isBlinking()) {
+          this.blinker.stop(picture);
+        } else {
+          avatarImg.src = picture;
+        }
+      }
+
       avatarImg.alt = displayName;
     }
 
-    // Update display name
+    // Update display name with blinking
     if (displayNameTrigger) {
-      displayNameTrigger.textContent = displayName;
+      if (shouldBlink && encounter) {
+        // Initialize name blinker if needed
+        if (!this.nameBlinker) {
+          this.nameBlinker = new TextBlinker(displayNameTrigger);
+        }
+
+        // Start blinking between current and first encounter
+        if (!this.nameBlinker.isBlinking()) {
+          this.nameBlinker.start(displayName, encounter.firstName);
+        }
+      } else {
+        // Stop blinking and show current name
+        if (this.nameBlinker && this.nameBlinker.isBlinking()) {
+          this.nameBlinker.stop(displayName);
+        } else {
+          displayNameTrigger.textContent = displayName;
+        }
+      }
     }
 
     // Update handle with NIP-05(s) if available - prefer nip05s from tags
@@ -254,6 +306,16 @@ export class NoteHeader {
     // Cleanup NoteMenu
     if (this.noteMenu) {
       this.noteMenu.destroy();
+    }
+    // Cleanup blinker
+    if (this.blinker) {
+      this.blinker.destroy();
+      this.blinker = null;
+    }
+    // Cleanup name blinker
+    if (this.nameBlinker) {
+      this.nameBlinker.destroy();
+      this.nameBlinker = null;
     }
     this.element.remove();
   }

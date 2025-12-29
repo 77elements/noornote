@@ -727,6 +727,15 @@ export class App {
       // Notifications orchestrator start failed
     }
 
+    // Initialize ProfileRecognitionService (auto-loads encounters from file/relays)
+    try {
+      const { ProfileRecognitionService } = await import('./services/ProfileRecognitionService');
+      const profileRecognitionService = ProfileRecognitionService.getInstance();
+      await profileRecognitionService.init();
+    } catch {
+      // Profile recognition service initialization failed
+    }
+
     // Start DM service (fetches historical DMs and starts live subscription)
     try {
       const { DMService } = await import('./services/dm/DMService');
