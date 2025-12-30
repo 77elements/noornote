@@ -26,6 +26,8 @@ import { ArticleNotificationService } from '../../services/ArticleNotificationSe
 import { ProfileListsComponent } from '../profile/ProfileListsComponent';
 import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
 import { FollowerCountService } from '../../services/FollowerCountService';
+import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
+import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
 
 // Shared promise map to prevent duplicate profile loads on rapid navigation
 type ProfileLoadResult = {
@@ -67,6 +69,11 @@ export class ProfileView extends View {
   // Follower count service
   private followerCountService: FollowerCountService;
 
+  // Profile recognition (blinking)
+  private recognitionService: ProfileRecognitionService;
+  private blinker: ProfileBlinker | null = null;
+  private nameBlinker: TextBlinker | null = null;
+
   constructor(npub: string) {
     super(); // Call View base class constructor
     this.npub = npub;
@@ -78,6 +85,7 @@ export class ProfileView extends View {
     this.appState = AppState.getInstance();
     this.eventBus = EventBus.getInstance();
     this.followerCountService = FollowerCountService.getInstance();
+    this.recognitionService = ProfileRecognitionService.getInstance();
 
     // Decode npub to pubkey
     try {
@@ -99,6 +107,9 @@ export class ProfileView extends View {
     // Listen for profile updates
     this.setupProfileUpdateListener();
 
+    // Listen for user switches
+    this.setupUserSwitchListener();
+
     this.render();
   }
 
@@ -112,6 +123,17 @@ export class ProfileView extends View {
         // Reload own profile after edit
         this.refreshProfile();
       }
+    });
+  }
+
+  /**
+   * Setup listener for user switches (reload profile view to update Edit button visibility)
+   */
+  private setupUserSwitchListener(): void {
+    this.eventBus.on('user:login', () => {
+      // Reset initial render flag and re-render to update Edit Profile button visibility
+      this.isInitialRender = true;
+      this.render();
     });
   }
 
@@ -397,16 +419,18 @@ export class ProfileView extends View {
 
       // Setup profile image click handler (zoom to full size)
       this.setupProfileImageClick(picture, banner);
+
+      // Setup profile blinking (initial render)
+      this.setupProfileBlinking(displayName, picture);
     } else {
       // On subsequent renders (profile updates), only update dynamic parts without destroying timeline
 
-      // Update avatar
+      // Update avatar and name with blinking logic
       const avatar = this.container.querySelector('.profile-pic--big') as HTMLImageElement;
-      if (avatar) avatar.src = picture;
-
-      // Update display name
-      const nameEl = this.container.querySelector('.profile-name');
-      if (nameEl) nameEl.textContent = displayName;
+      const nameEl = this.container.querySelector('.profile-name') as HTMLElement;
+      if (avatar && nameEl) {
+        this.updateProfileWithBlinking(avatar, nameEl, displayName, picture);
+      }
 
       // Update NIP-05(s)
       const nip05El = this.container.querySelector('.profile-nip05');
@@ -754,6 +778,82 @@ export class ProfileView extends View {
   }
 
   /**
+   * Setup profile blinking on initial render
+   */
+  private setupProfileBlinking(displayName: string, picture: string): void {
+    const avatar = this.container.querySelector('.profile-pic--big') as HTMLImageElement;
+    const nameEl = this.container.querySelector('.profile-name') as HTMLElement;
+    if (!avatar || !nameEl) return;
+
+    this.updateProfileWithBlinking(avatar, nameEl, displayName, picture);
+  }
+
+  /**
+   * Update avatar and name with blinking logic (for both initial and subsequent renders)
+   */
+  private updateProfileWithBlinking(
+    avatar: HTMLImageElement,
+    nameEl: HTMLElement,
+    currentName: string,
+    currentPicture: string
+  ): void {
+    // Don't apply profile recognition to your own profile
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser && currentUser.pubkey === this.pubkey) {
+      // Just set the image and name directly
+      avatar.src = currentPicture;
+      nameEl.textContent = currentName;
+      return;
+    }
+
+    const encounter = this.recognitionService.getEncounter(this.pubkey);
+
+    // Check if we need to update lastKnown metadata
+    if (encounter && (currentPicture !== encounter.lastKnownPictureUrl || currentName !== encounter.lastKnownName)) {
+      this.recognitionService.updateLastKnown(this.pubkey, currentName, currentPicture);
+    }
+
+    // Determine if blinking should be active
+    const shouldBlink = encounter && this.recognitionService.hasChangedWithinWindow(this.pubkey);
+
+    // Update avatar with blinking
+    if (shouldBlink && encounter) {
+      // Start avatar blinking
+      if (!this.blinker) {
+        this.blinker = new ProfileBlinker(avatar);
+      }
+      if (!this.blinker.isBlinking()) {
+        this.blinker.start(currentPicture, encounter.firstPictureUrl);
+      }
+    } else {
+      // Stop blinking or just set image
+      if (this.blinker && this.blinker.isBlinking()) {
+        this.blinker.stop(currentPicture);
+      } else {
+        avatar.src = currentPicture;
+      }
+    }
+
+    // Update name with blinking
+    if (shouldBlink && encounter) {
+      // Start name blinking
+      if (!this.nameBlinker) {
+        this.nameBlinker = new TextBlinker(nameEl);
+      }
+      if (!this.nameBlinker.isBlinking()) {
+        this.nameBlinker.start(currentName, encounter.firstName);
+      }
+    } else {
+      // Stop blinking or just set text
+      if (this.nameBlinker && this.nameBlinker.isBlinking()) {
+        this.nameBlinker.stop(currentName);
+      } else {
+        nameEl.textContent = currentName;
+      }
+    }
+  }
+
+  /**
    * Escape HTML to prevent XSS
    */
   private escapeHtml(text: string): string {
@@ -780,6 +880,14 @@ export class ProfileView extends View {
    * Cleanup resources (implements View base class)
    */
   public destroy(): void {
+    if (this.blinker) {
+      this.blinker.destroy();
+      this.blinker = null;
+    }
+    if (this.nameBlinker) {
+      this.nameBlinker.destroy();
+      this.nameBlinker = null;
+    }
     if (this.timeline) {
       this.timeline.destroy();
     }

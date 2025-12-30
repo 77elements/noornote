@@ -15,17 +15,20 @@ import type { FetchFromRelaysResult } from '../ListStorageAdapter';
 import { FollowListOrchestrator } from '../../orchestration/FollowListOrchestrator';
 import { AuthService } from '../../AuthService';
 import { StorageKeys, type StorageKey } from '../../PerAccountLocalStorage';
+import { EventBus } from '../../EventBus';
 
 export class FollowStorageAdapter extends BaseListStorageAdapter<FollowItem> {
   private fileStorage: FollowFileStorage;
   private followOrchestrator: FollowListOrchestrator;
   private authService: AuthService;
+  private eventBus: EventBus;
 
   constructor() {
     super();
     this.fileStorage = FollowFileStorage.getInstance();
     this.followOrchestrator = FollowListOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
+    this.eventBus = EventBus.getInstance();
   }
 
   protected getBrowserStorageKey(): string {
@@ -129,5 +132,17 @@ export class FollowStorageAdapter extends BaseListStorageAdapter<FollowItem> {
       console.error('[FollowStorageAdapter] Failed to publish to relays:', error);
       throw error;
     }
+  }
+
+  /**
+   * Override setBrowserItems to emit follow:updated event
+   * This ensures ProfileRecognitionService gets notified of changes from:
+   * - Sync from relays
+   * - Restore from file
+   * - Manual sync operations
+   */
+  override setBrowserItems(items: FollowItem[]): void {
+    super.setBrowserItems(items);
+    this.eventBus.emit('follow:updated');
   }
 }

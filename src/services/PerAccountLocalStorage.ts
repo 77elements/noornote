@@ -36,6 +36,9 @@ export const StorageKeys = {
 
   // Notification subscriptions (per-account)
   HASHTAG_SUBSCRIPTIONS: 'noornote_hashtag_subscriptions_map',
+
+  // Profile recognition (per-account)
+  PROFILE_ENCOUNTERS: 'noornote_profile_encounters_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

@@ -1,6 +1,6 @@
 {
   "name": "noornote",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "High-performance Nostr web client - Light, fast, secure",
   "type": "module",
   "scripts": {
@@ -60,6 +60,7 @@
   "dependencies": {
     "@nostr-dev-kit/ndk": "^2.18.1",
     "@nostr-dev-kit/ndk-cache-dexie": "^2.6.44",
+    "@tauri-apps/plugin-deep-link": "^2.4.5",
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "@tauri-apps/plugin-fs": "^2.4.2",
     "@tauri-apps/plugin-http": "^2.5.2",

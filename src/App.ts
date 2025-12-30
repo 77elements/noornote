@@ -22,6 +22,8 @@ import { PlatformService } from './services/PlatformService';
 import { ConnectivityService } from './services/ConnectivityService';
 import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { AutoSyncService } from './services/sync/AutoSyncService';
+import { decodeNip19 } from './services/NostrToolsAdapter';
+import { hexToNpub } from './helpers/nip19';
 // View type imported for potential future use
 // import type { View } from './components/views/View';
 
@@ -477,6 +479,7 @@ export class App {
     document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
     this.setupExternalLinkHandler();
     this.setupHashtagClickHandler();
+    this.setupDeepLinkHandler();
 
     // EventBus: user:login → Create TimelineUI + Start NotificationsOrchestrator
     this.eventBus.on('user:login', this.handleUserLogin.bind(this));
@@ -502,6 +505,68 @@ export class App {
     });
 
     this.setupTauriCloseHandler();
+  }
+
+  private async setupDeepLinkHandler(): Promise<void> {
+    if (!PlatformService.getInstance().isTauri) return;
+
+    try {
+      const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
+
+      await onOpenUrl((urls) => {
+        if (urls.length === 0) return;
+
+        const url = urls[0];
+
+        try {
+          let nip19String = url;
+          if (url.startsWith('nostr:')) {
+            nip19String = url.slice(6);
+          }
+
+          const decoded = decodeNip19(nip19String);
+
+          switch (decoded.type) {
+            case 'npub': {
+              const npub = nip19String;
+              this.router.navigate(`/profile/${npub}`);
+              break;
+            }
+
+            case 'nprofile': {
+              const pubkeyHex = (decoded.data as any).pubkey;
+              const npub = hexToNpub(pubkeyHex);
+              if (npub) {
+                this.router.navigate(`/profile/${npub}`);
+              }
+              break;
+            }
+
+            case 'note': {
+              const noteId = nip19String;
+              this.router.navigate(`/note/${noteId}`);
+              break;
+            }
+
+            case 'nevent': {
+              const eventId = (decoded.data as any).id;
+              this.router.navigate(`/note/note1${eventId}`);
+              break;
+            }
+
+            case 'naddr': {
+              const naddr = nip19String;
+              this.router.navigate(`/article/${naddr}`);
+              break;
+            }
+          }
+        } catch (error) {
+          this.systemLogger.warn('Deep Link', `Failed to handle nostr: URL: ${url}`);
+        }
+      });
+    } catch (error) {
+      // Deep link handler setup failed
+    }
   }
 
   private async setupTauriCloseHandler(): Promise<void> {
@@ -660,6 +725,15 @@ export class App {
       hashtagNotifService.startPolling();
     } catch {
       // Notifications orchestrator start failed
+    }
+
+    // Initialize ProfileRecognitionService (auto-loads encounters from file/relays)
+    try {
+      const { ProfileRecognitionService } = await import('./services/ProfileRecognitionService');
+      const profileRecognitionService = ProfileRecognitionService.getInstance();
+      await profileRecognitionService.init();
+    } catch {
+      // Profile recognition service initialization failed
     }
 
     // Start DM service (fetches historical DMs and starts live subscription)

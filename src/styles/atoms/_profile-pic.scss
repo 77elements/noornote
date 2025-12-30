@@ -10,6 +10,7 @@
   border-radius: 50%;
   object-fit: cover;
   flex-shrink: 0;
+  transition: opacity 0.3s ease; // For profile recognition blinking
 
   // Mini modifier (18x18px - used in thread context, mute list, etc.)
   &--mini {
