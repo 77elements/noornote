@@ -24,6 +24,7 @@ export class RepostRenderer {
   private static userProfileService = UserProfileService.getInstance();
   private static articlePreviewRenderer = ArticlePreviewRenderer.getInstance();
   private static recognitionService = ProfileRecognitionService.getInstance();
+  private static authService = AuthService.getInstance();
 
   /**
    * Extract original event ID from repost tags
@@ -83,6 +84,10 @@ export class RepostRenderer {
         const usernameEl = repostHeader.querySelector('.reposter-username') as HTMLElement;
         const avatarElement = repostHeader.querySelector('.profile-pic--mini') as HTMLImageElement;
 
+        // Don't apply profile recognition to your own profile
+        const currentUser = RepostRenderer.authService.getCurrentUser();
+        const isOwnProfile = currentUser && currentUser.pubkey === reposterPubkey;
+
         // Profile Recognition logic
         const encounter = RepostRenderer.recognitionService.getEncounter(reposterPubkey);
 
@@ -91,8 +96,8 @@ export class RepostRenderer {
           RepostRenderer.recognitionService.updateLastKnown(reposterPubkey, newUsername, newPicture);
         }
 
-        // Check if should blink
-        const shouldBlink = encounter && RepostRenderer.recognitionService.hasChangedWithinWindow(reposterPubkey);
+        // Check if should blink (but not for own profile)
+        const shouldBlink = !isOwnProfile && encounter && RepostRenderer.recognitionService.hasChangedWithinWindow(reposterPubkey);
 
         // Update username with blinking
         if (usernameEl) {

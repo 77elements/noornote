@@ -13,6 +13,7 @@ import { NoteMenu } from './NoteMenu';
 import { UserHoverCard } from './UserHoverCard';
 import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
 import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
+import { AuthService } from '../../services/AuthService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface NoteHeaderOptions {
@@ -30,6 +31,7 @@ export class NoteHeader {
   private element: HTMLElement;
   private userProfileService: UserProfileService;
   private recognitionService: ProfileRecognitionService;
+  private authService: AuthService;
   private options: Required<NoteHeaderOptions>;
   private profile: UserProfile | null = null;
   private unsubscribeProfile?: () => void;
@@ -40,6 +42,7 @@ export class NoteHeader {
   constructor(options: NoteHeaderOptions) {
     this.userProfileService = UserProfileService.getInstance();
     this.recognitionService = ProfileRecognitionService.getInstance();
+    this.authService = AuthService.getInstance();
 
     // Default onClick: Navigate to profile page
     const defaultOnClick = (pubkey: string) => {
@@ -159,6 +162,10 @@ export class NoteHeader {
     const handle = this.element.querySelector('.note-header__handle');
     const verification = this.element.querySelector('.note-header__verification');
 
+    // Don't apply profile recognition to your own profile
+    const currentUser = this.authService.getCurrentUser();
+    const isOwnProfile = currentUser && currentUser.pubkey === this.options.pubkey;
+
     // Profile Recognition logic (shared)
     const encounter = this.recognitionService.getEncounter(this.options.pubkey);
 
@@ -167,8 +174,8 @@ export class NoteHeader {
       this.recognitionService.updateLastKnown(this.options.pubkey, displayName, picture);
     }
 
-    // Check if should blink
-    const shouldBlink = encounter && this.recognitionService.hasChangedWithinWindow(this.options.pubkey);
+    // Check if should blink (but not for own profile)
+    const shouldBlink = !isOwnProfile && encounter && this.recognitionService.hasChangedWithinWindow(this.options.pubkey);
 
     // Update avatar with blinking
     if (avatarImg) {

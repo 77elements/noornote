@@ -19,6 +19,7 @@ import { UserProfileService } from './UserProfileService';
 import type { MediaContent } from '../helpers/renderMediaContent';
 import { ProfileRecognitionService } from './ProfileRecognitionService';
 import { ProfileBlinker, TextBlinker } from '../helpers/profileBlinking';
+import { AuthService } from './AuthService';
 
 export interface QuotedReference {
   type: 'event' | 'note' | 'addr';
@@ -39,6 +40,7 @@ export class ContentProcessor {
   private static instance: ContentProcessor;
   private userProfileService: UserProfileService;
   private recognitionService: ProfileRecognitionService;
+  private authService: AuthService;
   private profileCache: Map<string, any> = new Map();
   // Store blinkers per mention element (keyed by unique element ID)
   private mentionBlinkers: Map<string, { avatar: ProfileBlinker; name: TextBlinker }> = new Map();
@@ -46,6 +48,7 @@ export class ContentProcessor {
   private constructor() {
     this.userProfileService = UserProfileService.getInstance();
     this.recognitionService = ProfileRecognitionService.getInstance();
+    this.authService = AuthService.getInstance();
   }
 
   static getInstance(): ContentProcessor {
@@ -173,6 +176,10 @@ export class ContentProcessor {
     const npub = hexToNpub(hexPubkey);
     const picture = profile.picture || '';
 
+    // Don't apply profile recognition to your own profile
+    const currentUser = this.authService.getCurrentUser();
+    const isOwnProfile = currentUser && currentUser.pubkey === hexPubkey;
+
     // Profile Recognition logic
     const encounter = this.recognitionService.getEncounter(hexPubkey);
 
@@ -181,8 +188,8 @@ export class ContentProcessor {
       this.recognitionService.updateLastKnown(hexPubkey, username, picture);
     }
 
-    // Check if should blink
-    const shouldBlink = encounter && this.recognitionService.hasChangedWithinWindow(hexPubkey);
+    // Check if should blink (but not for own profile)
+    const shouldBlink = !isOwnProfile && encounter && this.recognitionService.hasChangedWithinWindow(hexPubkey);
 
     // Find all mention links for this profile (both loading and already loaded)
     const mentionLinks = document.querySelectorAll(`a[href="/profile/${npub}"][data-mention]`);

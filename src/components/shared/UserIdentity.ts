@@ -17,6 +17,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { UserHoverCard } from '../ui/UserHoverCard';
 import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
 import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
+import { AuthService } from '../../services/AuthService';
 
 export interface UserIdentityConfig {
   pubkey: string;
@@ -31,6 +32,7 @@ export class UserIdentity {
   private config: UserIdentityConfig;
   private userProfileService: UserProfileService;
   private recognitionService: ProfileRecognitionService;
+  private authService: AuthService;
   private unsubscribe?: () => void;
   private blinker: ProfileBlinker | null = null;
   private nameBlinker: TextBlinker | null = null;
@@ -46,6 +48,7 @@ export class UserIdentity {
 
     this.userProfileService = UserProfileService.getInstance();
     this.recognitionService = ProfileRecognitionService.getInstance();
+    this.authService = AuthService.getInstance();
 
     this.element = this.createElement();
     this.loadIdentity();
@@ -115,6 +118,10 @@ export class UserIdentity {
    * Update UI with username and picture
    */
   private updateUI(username: string, picture: string): void {
+    // Don't apply profile recognition to your own profile
+    const currentUser = this.authService.getCurrentUser();
+    const isOwnProfile = currentUser && currentUser.pubkey === this.config.pubkey;
+
     // Profile Recognition logic (shared between username and avatar)
     const encounter = this.recognitionService.getEncounter(this.config.pubkey);
 
@@ -123,8 +130,8 @@ export class UserIdentity {
       this.recognitionService.updateLastKnown(this.config.pubkey, username, picture);
     }
 
-    // Check if should blink
-    const shouldBlink = encounter && this.recognitionService.hasChangedWithinWindow(this.config.pubkey);
+    // Check if should blink (but not for own profile)
+    const shouldBlink = !isOwnProfile && encounter && this.recognitionService.hasChangedWithinWindow(this.config.pubkey);
 
     // Update username with blinking
     if (this.config.showUsername) {

@@ -797,6 +797,15 @@ export class ProfileView extends View {
     currentName: string,
     currentPicture: string
   ): void {
+    // Don't apply profile recognition to your own profile
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser && currentUser.pubkey === this.pubkey) {
+      // Just set the image and name directly
+      avatar.src = currentPicture;
+      nameEl.textContent = currentName;
+      return;
+    }
+
     const encounter = this.recognitionService.getEncounter(this.pubkey);
 
     // Check if we need to update lastKnown metadata
