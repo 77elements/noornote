@@ -107,3 +107,14 @@
     color: rgba($color-5, 0.6) !important;
   }
 }
+
+// Current date/time display - same style as about link
+.current-datetime-display,
+.datetime-separator {
+  font-size: 12px;
+  color: rgba($color-5, 0.4);
+}
+
+.primary-nav a.about-link {
+  display: inline;
+}
