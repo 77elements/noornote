@@ -30,6 +30,9 @@ import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../.
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
+import dayjs from 'dayjs';
+import calendarSystems from '@calidy/dayjs-calendarsystems';
+import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
 
 export class MainLayout {
   private element: HTMLElement;
@@ -44,6 +47,7 @@ export class MainLayout {
   private authService: AuthService;
   private eventBus: EventBus;
   private cacheSizeUpdateInterval: number | null = null;
+  private dateTimeUpdateInterval: number | null = null;
   private authStateUnsubscribe: (() => void) | null = null;
   private walletBalanceDisplay: WalletBalanceDisplay | null = null;
   private globalSearchView: GlobalSearchView | null = null;
@@ -79,6 +83,8 @@ export class MainLayout {
     this.initializeGlobalSearchView();
     this.setupActiveNavigation();
     this.initializeViewTabManager();
+    this.initializeDateTimeCalendar();
+    this.startDateTimeUpdates();
   }
 
   /**
@@ -834,7 +840,7 @@ export class MainLayout {
               </a>
             </li>
             <li class="about-link-item">
-              <a href="/about" class="about-link">About</a>
+              <span class="current-datetime-display">--</span> <span class="datetime-separator">•</span> <a href="/about" class="about-link">About</a>
             </li>
           </ul>
           <div class="new-post-dropup">
@@ -1263,6 +1269,97 @@ export class MainLayout {
   }
 
   /**
+   * Initialize dayjs calendar system for date/time display
+   */
+  private initializeDateTimeCalendar(): void {
+    dayjs.extend(calendarSystems);
+    dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
+
+    // Listen for calendar system changes
+    this.eventBus.on('settings:calendar-system-changed', () => {
+      this.updateCurrentDateTime();
+    });
+  }
+
+  /**
+   * Start periodic date/time updates
+   */
+  private startDateTimeUpdates(): void {
+    this.updateCurrentDateTime(); // Initial update
+    this.dateTimeUpdateInterval = window.setInterval(() => {
+      this.updateCurrentDateTime();
+    }, 10000); // Update every 10 seconds
+  }
+
+  /**
+   * Update current date/time display in sidebar
+   */
+  private updateCurrentDateTime(): void {
+    const dateTimeDisplay = this.element.querySelector('.current-datetime-display');
+    if (!dateTimeDisplay) return;
+
+    const now = new Date();
+    const storage = PerAccountLocalStorage.getInstance();
+    const calendarSystem = storage.get<string>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
+
+    // Format time (HH:MM)
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const time = `${hours}:${minutes}`;
+
+    // Format date based on calendar system
+    let dateString = '';
+
+    if (calendarSystem === 'gregorian') {
+      // US format: MM/DD/YYYY, HH:MM
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      const year = now.getFullYear();
+      dateString = `${month}/${day}/${year}, ${time}`;
+    } else if (calendarSystem === 'hijri') {
+      // International format: DD. Month YYYY, HH:MM
+      const hijriDate = dayjs(now).toCalendarSystem('hijri');
+      const hijriMonths = [
+        'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
+        'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
+        'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
+      ];
+      const day = hijriDate.date();
+      const month = hijriMonths[hijriDate.month()];
+      const year = hijriDate.year();
+      dateString = `${day}. ${month} ${year}, ${time}`;
+    } else if (calendarSystem === 'both') {
+      // US format | International Hijri format, HH:MM
+      const gregorianMonth = String(now.getMonth() + 1).padStart(2, '0');
+      const gregorianDay = String(now.getDate()).padStart(2, '0');
+      const gregorianYear = now.getFullYear();
+
+      const hijriDate = dayjs(now).toCalendarSystem('hijri');
+      const hijriMonths = [
+        'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
+        'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
+        'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
+      ];
+      const hijriDay = hijriDate.date();
+      const hijriMonth = hijriMonths[hijriDate.month()];
+      const hijriYear = hijriDate.year();
+      dateString = `${gregorianMonth}/${gregorianDay}/${gregorianYear}  |  ${hijriDay}. ${hijriMonth} ${hijriYear}, ${time}`;
+    }
+
+    dateTimeDisplay.textContent = dateString;
+  }
+
+  /**
+   * Stop date/time updates
+   */
+  private stopDateTimeUpdates(): void {
+    if (this.dateTimeUpdateInterval !== null) {
+      clearInterval(this.dateTimeUpdateInterval);
+      this.dateTimeUpdateInterval = null;
+    }
+  }
+
+  /**
    * Show login screen (trigger AuthComponent to display login options)
    */
   public showLoginScreen(): void {
@@ -1382,6 +1479,7 @@ export class MainLayout {
    */
   public destroy(): void {
     this.stopCacheSizeUpdates();
+    this.stopDateTimeUpdates();
 
     // Unsubscribe from auth state
     if (this.authStateUnsubscribe) {

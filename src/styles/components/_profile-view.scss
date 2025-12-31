@@ -383,6 +383,14 @@
   }
 }
 
+.profile-joined-date {
+  text-align: right;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: calc($gap / 2) 0 $gap 0;
+  opacity: 0.8;
+}
+
 .profile-about {
   color: var(--color-text-primary);
   line-height: 1.5;

@@ -58,6 +58,7 @@
     "vitest": "^0.34.0"
   },
   "dependencies": {
+    "@calidy/dayjs-calendarsystems": "^2.0.0",
     "@nostr-dev-kit/ndk": "^2.18.1",
     "@nostr-dev-kit/ndk-cache-dexie": "^2.6.44",
     "@tauri-apps/plugin-deep-link": "^2.4.5",
@@ -68,6 +69,7 @@
     "@tauri-apps/plugin-shell": "^2.3.3",
     "bech32": "^2.0.0",
     "dataloader": "^2.2.2",
+    "dayjs": "^1.11.19",
     "emojilib": "^4.0.2",
     "marked": "^16.4.0",
     "qrcode": "^1.5.4",

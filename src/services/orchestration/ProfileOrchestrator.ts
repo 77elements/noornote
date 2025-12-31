@@ -189,6 +189,42 @@ export class ProfileOrchestrator extends Orchestrator {
   }
 
   /**
+   * Fetch oldest event from user (for "Joined Nostr" date)
+   * Fetches kind:1 text notes and returns the oldest one
+   *
+   * @param pubkey - User's public key
+   * @returns Timestamp of oldest event, or null if no events found
+   */
+  public async fetchOldestEvent(pubkey: string): Promise<number | null> {
+    const relays = this.relayConfig.getReadRelays();
+
+    const filters: NDKFilter[] = [{
+      authors: [pubkey],
+      kinds: [1], // Text notes
+      since: 0,   // From epoch
+      limit: 5000 // Should cover 99% of users (Nostr started late 2022)
+    }];
+
+    try {
+      const events = await this.transport.fetch(relays, filters, 8000);
+
+      if (events.length === 0) {
+        return null;
+      }
+
+      // Find event with smallest created_at timestamp
+      const oldest = events.reduce((min, event) =>
+        event.created_at < min.created_at ? event : min
+      );
+
+      return oldest.created_at;
+    } catch (error) {
+      this.systemLogger.error('ProfileOrchestrator', `Fetch oldest event failed for ${pubkey.slice(0, 8)}: ${error}`);
+      return null;
+    }
+  }
+
+  /**
    * Extract all NIP-05 addresses from event tags (Animestr-style)
    * Tags format: ["nip05", "user@domain.com"]
    */

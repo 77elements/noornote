@@ -28,6 +28,15 @@ import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
 import { FollowerCountService } from '../../services/FollowerCountService';
 import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
 import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
+import { ProfileOrchestrator } from '../../services/orchestration/ProfileOrchestrator';
+import dayjs from 'dayjs';
+import calendarSystems from '@calidy/dayjs-calendarsystems';
+import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+
+// Initialize dayjs calendar system
+dayjs.extend(calendarSystems);
+dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
 
 // Shared promise map to prevent duplicate profile loads on rapid navigation
 type ProfileLoadResult = {
@@ -50,6 +59,8 @@ export class ProfileView extends View {
   private followingCount: number = 0;
   private followerCount: number = 0;
   private isLoadingFollowers: boolean = false;
+  private joinedDate: string | null = null;
+  private isLoadingJoinedDate: boolean = false;
   private followsYou: boolean = false;
   private isInitialRender: boolean = true; // Track if this is first render
 
@@ -66,8 +77,9 @@ export class ProfileView extends View {
   // Articles carousel component
   private articlesCarousel: ProfileArticlesCarousel | null = null;
 
-  // Follower count service
+  // Services
   private followerCountService: FollowerCountService;
+  private profileOrchestrator: ProfileOrchestrator;
 
   // Profile recognition (blinking)
   private recognitionService: ProfileRecognitionService;
@@ -85,6 +97,7 @@ export class ProfileView extends View {
     this.appState = AppState.getInstance();
     this.eventBus = EventBus.getInstance();
     this.followerCountService = FollowerCountService.getInstance();
+    this.profileOrchestrator = ProfileOrchestrator.getInstance();
     this.recognitionService = ProfileRecognitionService.getInstance();
 
     // Decode npub to pubkey
@@ -110,6 +123,9 @@ export class ProfileView extends View {
     // Listen for user switches
     this.setupUserSwitchListener();
 
+    // Listen for calendar system changes
+    this.setupCalendarSystemListener();
+
     this.render();
   }
 
@@ -134,6 +150,18 @@ export class ProfileView extends View {
       // Reset initial render flag and re-render to update Edit Profile button visibility
       this.isInitialRender = true;
       this.render();
+    });
+  }
+
+  /**
+   * Setup listener for calendar system changes (reload joined date with new format)
+   */
+  private setupCalendarSystemListener(): void {
+    this.eventBus.on('settings:calendar-system-changed', () => {
+      // Reload joined date with new calendar format
+      if (this.joinedDate) {
+        this.loadJoinedDate();
+      }
     });
   }
 
@@ -201,6 +229,9 @@ export class ProfileView extends View {
       // Load follower count (async, non-blocking)
       this.loadFollowerCount();
 
+      // Load joined date (async, non-blocking)
+      this.loadJoinedDate();
+
       // Subscribe to profile updates for live avatar/name updates
       this.userProfileService.subscribeToProfile(this.pubkey, (updatedProfile) => {
         this.renderProfileHeader(updatedProfile);
@@ -260,6 +291,88 @@ export class ProfileView extends View {
         // Final count, no pulse, no "+"
         followerEl.textContent = this.followerCount.toLocaleString('en-US');
         followerEl.classList.remove('pulsate');
+      }
+    }
+  }
+
+  /**
+   * Load joined date (async, non-blocking)
+   * Fetches oldest event from user
+   */
+  private async loadJoinedDate(): Promise<void> {
+    this.isLoadingJoinedDate = true;
+    this.updateJoinedDateDisplay();
+
+    try {
+      const oldestTimestamp = await this.profileOrchestrator.fetchOldestEvent(this.pubkey);
+
+      if (oldestTimestamp) {
+        // Format date based on calendar system setting
+        const date = new Date(oldestTimestamp * 1000);
+        const storage = PerAccountLocalStorage.getInstance();
+        const calendarSystem = storage.get<string>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
+
+        if (calendarSystem === 'gregorian') {
+          // US format: "Jan 25, 2023"
+          const month = date.toLocaleDateString('en-US', { month: 'short' });
+          const day = date.getDate();
+          const year = date.getFullYear();
+          this.joinedDate = `${month} ${day}, ${year}`;
+        } else if (calendarSystem === 'hijri') {
+          // International Hijri format: "15. Jumada al-Akhirah 1444"
+          const hijriDate = dayjs(date).toCalendarSystem('hijri');
+          const hijriMonths = [
+            'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
+            'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
+            'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
+          ];
+          const day = hijriDate.date();
+          const month = hijriMonths[hijriDate.month()];
+          const year = hijriDate.year();
+          this.joinedDate = `${day}. ${month} ${year}`;
+        } else if (calendarSystem === 'both') {
+          // Both formats: "Jan 25, 2023 | 15. Jumada al-Akhirah 1444"
+          const gregorianMonth = date.toLocaleDateString('en-US', { month: 'short' });
+          const gregorianDay = date.getDate();
+          const gregorianYear = date.getFullYear();
+
+          const hijriDate = dayjs(date).toCalendarSystem('hijri');
+          const hijriMonths = [
+            'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
+            'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
+            'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
+          ];
+          const hijriDay = hijriDate.date();
+          const hijriMonth = hijriMonths[hijriDate.month()];
+          const hijriYear = hijriDate.year();
+          this.joinedDate = `${gregorianMonth} ${gregorianDay}, ${gregorianYear}  |  ${hijriDay}. ${hijriMonth} ${hijriYear}`;
+        }
+      } else {
+        this.joinedDate = null;
+      }
+
+      this.isLoadingJoinedDate = false;
+      this.updateJoinedDateDisplay();
+    } catch (error) {
+      console.error('Failed to load joined date:', error);
+      this.joinedDate = null;
+      this.isLoadingJoinedDate = false;
+      this.updateJoinedDateDisplay();
+    }
+  }
+
+  /**
+   * Update joined date display in DOM
+   */
+  private updateJoinedDateDisplay(): void {
+    const joinedEl = this.container.querySelector('#profile-joined-date');
+    if (joinedEl) {
+      if (this.isLoadingJoinedDate) {
+        joinedEl.textContent = 'Loading...';
+      } else if (this.joinedDate) {
+        joinedEl.textContent = `Joined Nostr on ${this.joinedDate}`;
+      } else {
+        joinedEl.textContent = '';
       }
     }
   }
@@ -367,6 +480,8 @@ export class ProfileView extends View {
                 <span class="copy-feedback">Copied!</span>
               </div>
             </div>
+
+            <div class="profile-joined-date" id="profile-joined-date"></div>
 
             ${processedAbout ? `<p class="profile-about">${processedAbout}</p>` : ''}
             ${website ? `<p class="profile-website"><a href="${this.escapeHtml(website)}" rel="noopener noreferrer">${this.escapeHtml(website)}</a></p>` : ''}
