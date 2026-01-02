@@ -69,6 +69,7 @@ export class FeedOrchestrator extends Orchestrator {
   private pollingExemptFromMuteFilter: string | undefined = undefined; // Exempt pubkey for ProfileView
   private lastFoundCount: number = 0;
   private polledEventsCache: NostrEvent[] = []; // Cache for new events found during polling
+  private isManualPoll: boolean = false; // Track if this is a manual poll (user clicked link)
 
   private constructor() {
     super('FeedOrchestrator');
@@ -499,10 +500,16 @@ export class FeedOrchestrator extends Orchestrator {
     this.pollingExemptFromMuteFilter = exemptFromMuteFilter;
     this.pollingScheduled = true; // Mark as scheduled immediately
 
-    this.systemLogger.info(
-      'FeedOrchestrator',
-      `Starting to look for new notes in ${delayMs / 1000}s${specificRelay ? ` from ${specificRelay}` : ''}`
-    );
+    // Track manual poll (user clicked link) vs automatic poll
+    this.isManualPoll = delayMs === 0;
+
+    // Log message only for scheduled polls (not manual)
+    if (!this.isManualPoll) {
+      this.systemLogger.info(
+        'FeedOrchestrator',
+        `Starting to look for new notes in ${delayMs / 1000}s${specificRelay ? ` from ${specificRelay}` : ''}`
+      );
+    }
 
     // Start polling after delay (store timeout ID for cancellation)
     this.pollingTimeoutId = window.setTimeout(() => {
@@ -588,7 +595,7 @@ export class FeedOrchestrator extends Orchestrator {
         limit: 100
       }];
 
-      const events = await this.transport.fetch(relays, filters);
+      const events = await this.transport.fetch(relays, filters, 5000, true); // Skip cache for polling
 
       // Cache polled events
 
@@ -639,8 +646,24 @@ export class FeedOrchestrator extends Orchestrator {
         this.polledEventsCache = [];
       }
 
+      // Log manual poll result
+      if (this.isManualPoll) {
+        const relayInfo = this.pollingSpecificRelay ? ` from ${this.pollingSpecificRelay}` : '';
+        const message = filteredEvents.length > 0
+          ? `Looked for new notes. Found ${filteredEvents.length} new note${filteredEvents.length !== 1 ? 's' : ''}. Will look again in ${this.pollingInterval / 1000}s${relayInfo}`
+          : `Looked for new notes. Found no new notes. Will look again in ${this.pollingInterval / 1000}s${relayInfo}`;
+        this.systemLogger.info('FeedOrchestrator', message);
+        this.isManualPoll = false; // Reset flag
+      }
+
     } catch (error) {
       this.systemLogger.error('FeedOrchestrator', `Polling error: ${error}`);
+
+      // Log manual poll error
+      if (this.isManualPoll) {
+        this.systemLogger.info('FeedOrchestrator', `Looked for new notes. Error occurred. Will look again in ${this.pollingInterval / 1000}s`);
+        this.isManualPoll = false; // Reset flag
+      }
     }
   }
 
