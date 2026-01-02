@@ -238,7 +238,8 @@ export class NoteStructureBuilder {
         target.closest('.note-header') ||
         target.closest('.hashtag') ||
         target.closest('.quote-box') ||
-        target.closest('.reply-indicator')
+        target.closest('.reply-indicator') ||
+        target.closest('.thread-context-indicator')
       ) {
         return;
       }
