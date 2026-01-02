@@ -356,7 +356,7 @@ export class Timeline extends View {
       newestTimestamp,
       (info: NewNotesInfo) => this.handleNewNotesDetected(info),
       this.stateManager.getIncludeReplies(),
-      60000, // Start after 60 seconds
+      0, // Poll immediately
       this.stateManager.getSelectedRelay(),
       this.filterAuthorPubkey
     );
