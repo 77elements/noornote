@@ -1130,38 +1130,61 @@ export class BookmarkManager {
       // Helper to apply folder assignments after sync
       const applyFolderAssignments = () => {
         if (!result.categoryAssignments) {
-          console.log('[BookmarkManager] No categoryAssignments in result');
           return;
         }
 
-        // Collect categories that actually have items
-        const categoriesWithItems = new Set<string>();
-        for (const [bookmarkId, categoryName] of result.categoryAssignments) {
-          console.log(`[applyFolderAssignments] Bookmark ${bookmarkId.slice(0, 8)} -> category "${categoryName}"`);
-          if (categoryName !== '') {
-            categoriesWithItems.add(categoryName);
-          }
-        }
-        console.log('[applyFolderAssignments] Categories with items:', Array.from(categoriesWithItems));
-
-        // Create folders only for categories that have items (skip empty ones)
+        const categories = result.categories || [];
         const existingFolders = this.folderService.getFolders();
-        for (const categoryName of categoriesWithItems) {
-          const existingFolder = existingFolders.find(f => f.name === categoryName);
-          if (!existingFolder) {
-            const newFolder = this.folderService.createFolder(categoryName);
-            this.folderService.addToRootOrder('folder', newFolder.id);
+
+        // Build set of folder names from relay
+        const relayFolderNames = new Set(categories.filter(c => c !== ''));
+
+        // Create missing folders from relay
+        for (const categoryName of categories) {
+          if (categoryName === '') continue;
+          if (!existingFolders.find(f => f.name === categoryName)) {
+            this.folderService.createFolder(categoryName);
           }
         }
+
+        const updatedFolders = this.folderService.getFolders();
+
+        // Rebuild rootOrder: relay folders first (in relay order), then local-only folders
+        const currentRootOrder = this.folderService.getRootOrder();
+        const newRootOrder: Array<{type: 'folder' | 'bookmark'; id: string}> = [];
+
+        // Add relay folders in correct order
+        for (const categoryName of categories) {
+          if (categoryName === '') continue;
+          const folder = updatedFolders.find(f => f.name === categoryName);
+          if (folder) {
+            newRootOrder.push({ type: 'folder', id: folder.id });
+          }
+        }
+
+        // Add local-only folders (not in relay) at the end
+        const relayFolderIds = new Set(newRootOrder.map(item => item.id));
+        for (const item of currentRootOrder) {
+          if (item.type === 'folder' && !relayFolderIds.has(item.id)) {
+            newRootOrder.push(item);
+          }
+        }
+
+        // Add bookmarks (preserve from current rootOrder)
+        for (const item of currentRootOrder) {
+          if (item.type === 'bookmark') {
+            newRootOrder.push(item);
+          }
+        }
+
+        // Update rootOrder
+        this.folderService.saveRootOrder(newRootOrder);
 
         // Assign bookmarks to their categories
-        const updatedFolders = this.folderService.getFolders();
         for (const [bookmarkId, categoryName] of result.categoryAssignments) {
           if (categoryName === '') {
-            // Root - ensure assignment exists
             this.folderService.ensureBookmarkAssignment(bookmarkId);
           } else {
-            // Find folder by name and move bookmark there
             const folder = updatedFolders.find(f => f.name === categoryName);
             if (folder) {
               this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);

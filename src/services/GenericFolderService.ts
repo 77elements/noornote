@@ -20,7 +20,6 @@ export interface Folder {
   id: string;
   name: string;
   createdAt: number;
-  order: number;
 }
 
 export interface Assignment<TItemId extends string> {
@@ -68,8 +67,7 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
   // ========================================
 
   public getFolders(): Folder[] {
-    const folders = this.storage.get<Folder[]>(this.config.folderStorageKey, []);
-    return folders.sort((a, b) => a.order - b.order);
+    return this.storage.get<Folder[]>(this.config.folderStorageKey, []);
   }
 
   public getFolder(folderId: string): Folder | null {
@@ -83,14 +81,10 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
     // Generate unique ID
     const id = `folder_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 
-    // Get max order for new folder
-    const maxOrder = folders.reduce((max, f) => Math.max(max, f.order), -1);
-
     const folder: Folder = {
       id,
       name,
-      createdAt: Math.floor(Date.now() / 1000),
-      order: maxOrder + 1
+      createdAt: Math.floor(Date.now() / 1000)
     };
 
     folders.push(folder);
@@ -284,28 +278,6 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
     this.saveAssignments(assignments);
   }
 
-  public moveFolderToPosition(folderId: string, newOrder: number): void {
-    const folders = this.getFolders();
-    const folder = folders.find(f => f.id === folderId);
-    if (!folder) return;
-
-    // Remove from current position
-    const currentIndex = folders.findIndex(f => f.id === folderId);
-    if (currentIndex === -1) return;
-
-    folders.splice(currentIndex, 1);
-
-    // Insert at new position
-    const insertIndex = Math.min(newOrder, folders.length);
-    folders.splice(insertIndex, 0, folder);
-
-    // Renumber all
-    folders.forEach((f, index) => {
-      f.order = index;
-    });
-
-    this.saveFolders(folders);
-  }
 
   // ========================================
   // Root-level ordering (mixed folders + items)

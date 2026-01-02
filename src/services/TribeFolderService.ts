@@ -112,9 +112,6 @@ export class TribeFolderService {
     this.genericService.moveItemToPosition(memberId, newOrder);
   }
 
-  public moveFolderToPosition(folderId: string, newOrder: number): void {
-    this.genericService.moveFolderToPosition(folderId, newOrder);
-  }
 
   // ========================================
   // Root-level ordering (mixed folders + members)

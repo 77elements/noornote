@@ -375,6 +375,35 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     this.systemLogger.info('BookmarkOrchestrator',
       `Published ${totalPublished} bookmark set events + ${deletedCategories.length} deletions to relays`
     );
+
+    // Publish folder order metadata (NIP-78 kind:30078)
+    const folderOrder = setData.metadata.setOrder.filter(d => d !== '');
+    if (folderOrder.length > 0) {
+      const orderTags: string[][] = [
+        ['d', 'noornote:bookmark-folders-order']
+      ];
+
+      for (const dTag of folderOrder) {
+        const coordinate = `30003:${currentUser.pubkey}:${dTag}`;
+        orderTags.push(['a', coordinate]);
+      }
+
+      const orderEvent = {
+        kind: 30078,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: orderTags,
+        content: '',
+        pubkey: currentUser.pubkey
+      };
+
+      const signedOrderEvent = await this.authService.signEvent(orderEvent);
+      if (signedOrderEvent) {
+        await this.transport.publish(writeRelays, signedOrderEvent);
+        this.systemLogger.info('BookmarkOrchestrator',
+          `Published folder order metadata (kind:30078) with ${folderOrder.length} folders`
+        );
+      }
+    }
   }
 
   /**
@@ -512,8 +541,18 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       }
     }
 
-    // Build setOrder (root first, then by folder order)
-    const setOrder = ['', ...existingFolders.map(f => f.name)];
+    // Build setOrder from rootOrder (preserves user's drag & drop arrangement)
+    const rootOrder = this.folderService.getRootOrder();
+    const folderNames: string[] = [];
+    for (const item of rootOrder) {
+      if (item.type === 'folder') {
+        const folder = existingFolders.find(f => f.id === item.id);
+        if (folder) {
+          folderNames.push(folder.name);
+        }
+      }
+    }
+    const setOrder = ['', ...folderNames];
 
     return {
       version: 2,
@@ -555,14 +594,67 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         }
       });
 
+      // Fetch folder order metadata (NIP-78 kind:30078)
+      const orderEvents = await this.transport.fetch(relays, [{
+        authors: [pubkey],
+        kinds: [30078],
+        "#d": ["noornote:bookmark-folders-order"]
+      }], 5000);
+
+      let folderOrder: string[] = [];
+      if (orderEvents.length > 0) {
+        const orderEvent = orderEvents.sort((a, b) => b.created_at - a.created_at)[0];
+        folderOrder = orderEvent.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('30003:'))
+          .map(t => {
+            const parts = t[1].split(':');
+            return parts[2] || '';
+          });
+
+        this.systemLogger.info('BookmarkOrchestrator',
+          `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`
+        );
+      }
+
+      // Build categories array in correct order
+      const categories: string[] = [''];  // Root always first
+
+      if (folderOrder.length > 0) {
+        // Use order from NIP-78 metadata
+        for (const dTag of folderOrder) {
+          if (eventsByDTag.has(dTag)) {
+            categories.push(dTag);
+          }
+        }
+
+        // Add any folders not in metadata (edge case)
+        for (const dTag of eventsByDTag.keys()) {
+          if (dTag !== '' && !categories.includes(dTag)) {
+            categories.push(dTag);
+            this.systemLogger.warn('BookmarkOrchestrator',
+              `Folder "${dTag}" not in order metadata, appending to end`
+            );
+          }
+        }
+      } else {
+        // Fallback: alphabetical order
+        const sortedDTags = Array.from(eventsByDTag.keys())
+          .filter(d => d !== '')
+          .sort();
+        categories.push(...sortedDTags);
+
+        this.systemLogger.info('BookmarkOrchestrator',
+          'No folder order metadata found, using alphabetical fallback'
+        );
+      }
+
       const allItems: BookmarkItem[] = [];
       const categoryAssignments = new Map<string, string>(); // bookmarkId -> categoryName
-      const categories: string[] = [];
       let anyContentWasEmpty = true;
 
-      for (const [categoryName, event] of eventsByDTag) {
-        // Track all categories (including root "")
-        categories.push(categoryName);
+      for (const categoryName of categories) {
+        const event = eventsByDTag.get(categoryName);
+        if (!event) continue;
 
         const hasContent = event.content && event.content.trim() !== '';
         if (hasContent) anyContentWasEmpty = false;
@@ -618,98 +710,6 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     }
   }
 
-  /**
-   * Sync from relays (manual sync)
-   * Fetches all categories and merges with local
-   * Creates folders from relay categories and assigns bookmarks
-   */
-  public override async syncFromRelays(pubkey: string): Promise<{ added: number; total: number }> {
-    const relays = this.getBootstrapRelays();
-    this.systemLogger.info('BookmarkOrchestrator', `Syncing from relays (${relays.length} relays)...`);
-
-    try {
-      const fetchResult = await this.fetchFromRelays(pubkey);
-      const localItems = this.getBrowserItems();
-
-      // Merge (union)
-      const merged = this.mergeItems(localItems, fetchResult.items);
-      const added = merged.length - localItems.length;
-
-      this.setBrowserItems(merged);
-
-      // Create folders only for categories that have items (skip empty sets)
-      const existingFolders = this.folderService.getFolders();
-      const categoryAssignments = fetchResult.categoryAssignments;
-
-      // Collect categories that actually have items
-      const categoriesWithItems = new Set<string>();
-      if (categoryAssignments) {
-        for (const [, categoryName] of categoryAssignments) {
-          if (categoryName !== '') {
-            categoriesWithItems.add(categoryName);
-          }
-        }
-      }
-
-      for (const categoryName of categoriesWithItems) {
-        // Check if folder with this name exists
-        const existingFolder = existingFolders.find(f => f.name === categoryName);
-        if (!existingFolder) {
-          this.folderService.createFolder(categoryName);
-          this.systemLogger.info('BookmarkOrchestrator', `Created folder from relay: "${categoryName}"`);
-        }
-      }
-
-      // Assign bookmarks to their categories from relay, preserving order
-      // BUG FIX: Only assign categories for NEW bookmarks (not in local storage before sync)
-      // Existing bookmarks keep their local folder assignment - user's manual organization takes precedence
-      if (categoryAssignments) {
-        const updatedFolders = this.folderService.getFolders(); // Refresh after creating new folders
-
-        // Build set of local bookmark IDs (before merge) for fast lookup
-        const localBookmarkIds = new Set(localItems.map(item => item.id));
-
-        // Track order per category (Map iteration preserves insertion order from relay)
-        const orderByCategory = new Map<string, number>();
-
-        for (const [bookmarkId, categoryName] of categoryAssignments) {
-          const isNewBookmark = !localBookmarkIds.has(bookmarkId);
-
-          // Get next order for this category
-          const currentOrder = orderByCategory.get(categoryName) ?? 0;
-          orderByCategory.set(categoryName, currentOrder + 1);
-
-          if (isNewBookmark) {
-            // NEW bookmark: assign relay category with preserved order
-            if (categoryName === '') {
-              this.folderService.ensureBookmarkAssignment(bookmarkId, currentOrder);
-            } else {
-              const folder = updatedFolders.find(f => f.name === categoryName);
-              if (folder) {
-                this.folderService.moveBookmarkToFolder(bookmarkId, folder.id, currentOrder);
-              } else {
-                // Folder doesn't exist locally, assign to root
-                this.folderService.ensureBookmarkAssignment(bookmarkId);
-                this.systemLogger.warn('BookmarkOrchestrator',
-                  `Folder "${categoryName}" not found, assigned bookmark ${bookmarkId.slice(0, 8)}... to root`
-                );
-              }
-            }
-          }
-          // EXISTING bookmark: Skip - keep local folder assignment
-        }
-      }
-
-      this.systemLogger.info('BookmarkOrchestrator',
-        `Sync complete: ${added} new items, ${categoriesWithItems.size} categories`
-      );
-
-      return { added, total: merged.length };
-    } catch (error) {
-      this.systemLogger.error('BookmarkOrchestrator', `Sync from relays failed: ${error}`);
-      throw error;
-    }
-  }
 
   /**
    * Fetch bookmarks from relays (read-only wrapper)
