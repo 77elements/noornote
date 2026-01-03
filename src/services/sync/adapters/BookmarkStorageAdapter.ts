@@ -124,15 +124,12 @@ export class BookmarkStorageAdapter extends BaseListStorageAdapter<BookmarkItem>
    * Relay Storage (Remote) - Asynchronous
    * Publishes kind:10003 + kind:30003 events respecting isPrivate flag
    *
-   * Strategy: Same as setFileItems - uses isPrivate flag from browser items,
-   * falls back to existing file location for items without explicit flag.
+   * Strategy: Reads from browser (localStorage) directly, does NOT modify files.
+   * Files are only written on explicit "Save to file" action by user.
    */
-  async publishToRelays(items: BookmarkItem[]): Promise<void> {
+  async publishToRelays(_items: BookmarkItem[]): Promise<void> {
     try {
-      // First, save to files using the same logic as setFileItems
-      await this.setFileItems(items);
-
-      // Then publish via orchestrator (reads from files)
+      // Publish via orchestrator (reads from browser localStorage)
       await this.bookmarkOrchestrator.publishToRelays();
     } catch (error) {
       this.logger.error('BookmarkStorageAdapter', `Failed to publish to relays: ${error}`);

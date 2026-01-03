@@ -18,6 +18,7 @@ import { GenericListOrchestrator } from './GenericListOrchestrator';
 import { bookmarkListConfig, createBookmarkFileStorageWrapper } from './configs/BookmarkListConfig';
 import { BookmarkFolderService } from '../BookmarkFolderService';
 import { toNostrEvents } from '../sync/serializers/BookmarkSerializer';
+import { DeletionService } from '../DeletionService';
 
 // Re-export BookmarkItem for external use
 export type { BookmarkItem };
@@ -37,10 +38,12 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
   private static instance: BookmarkOrchestrator;
   private featureFlagKey = 'noornote_nip51_private_bookmarks_enabled';
   private folderService: BookmarkFolderService;
+  private deletionService: DeletionService;
 
   private constructor() {
     super('BookmarkOrchestrator', bookmarkListConfig, createBookmarkFileStorageWrapper());
     this.folderService = BookmarkFolderService.getInstance();
+    this.deletionService = DeletionService.getInstance();
   }
 
   public static getInstance(): BookmarkOrchestrator {
@@ -284,7 +287,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
    * - Root bookmarks → d: ""
    * - Category "Work" → d: "Work"
    * - Private bookmarks → encrypted in content
-   * - Deleted categories → publish empty event to overwrite
+   * - Deleted categories → NIP-09 kind:5 deletion with a tags
    */
   public override async publishToRelays(): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
@@ -317,9 +320,15 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       `Publishing: ${setData.sets.length} sets, ${deletedCategories.length} deleted categories`
     );
 
-    // First, publish empty events for deleted categories
-    for (const categoryName of deletedCategories) {
-      await this.publishEmptyCategory(categoryName);
+    // First, publish deletion requests for deleted categories (NIP-09)
+    if (deletedCategories.length > 0) {
+      const coordinates = deletedCategories.map(categoryName =>
+        `30003:${currentUser.pubkey}:${categoryName}`
+      );
+      await this.deletionService.deleteByCoordinates(
+        coordinates,
+        'Bookmark folder deleted'
+      );
     }
 
     // Convert to Nostr events using serializer
@@ -404,48 +413,6 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         );
       }
     }
-  }
-
-  /**
-   * Publish an empty event for a category to "delete" it from relays
-   * This overwrites the existing event with an empty one
-   */
-  public async publishEmptyCategory(categoryName: string): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-
-    const writeRelays = this.transport.getWriteRelays();
-    if (writeRelays.length === 0) {
-      throw new Error('No write relays available');
-    }
-
-    // Build empty event with this d-tag
-    const tags: string[][] = [
-      ['d', categoryName],
-      ['title', categoryName],
-      ['client', 'NoorNote']
-    ];
-
-    const event = {
-      kind: 30003,
-      created_at: Math.floor(Date.now() / 1000),
-      tags,
-      content: '',
-      pubkey: currentUser.pubkey
-    };
-
-    const signed = await this.authService.signEvent(event);
-    if (!signed) {
-      throw new Error(`Failed to sign empty event for category: ${categoryName}`);
-    }
-
-    await this.transport.publish(writeRelays, signed);
-
-    this.systemLogger.info('BookmarkOrchestrator',
-      `Published empty event to delete category "${categoryName}" from relays`
-    );
   }
 
   /**
@@ -566,7 +533,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
 
   /**
    * Fetch bookmarks from relays (read-only, no local changes)
-   * Fetches ALL kind:30003 events for the user and extracts categories
+   * Fetches ALL kind:30003 events and filters out deleted ones via kind:5 events
    */
   public override async fetchFromRelays(pubkey: string): Promise<FetchFromRelaysResult<BookmarkItem>> {
     const relays = this.getBootstrapRelays();
@@ -579,20 +546,61 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         limit: 100  // Support up to 100 categories
       }], 10000);
 
-      if (events.length === 0) {
+      // Fetch deletion events (kind:5) to filter out deleted categories
+      const deletionEvents = await this.transport.fetch(relays, [{
+        authors: [pubkey],
+        kinds: [5]
+      }], 5000);
+
+      // Extract deleted coordinates from deletion events
+      const deletedCoordinates = new Set<string>();
+      deletionEvents.forEach(event => {
+        event.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('30003:'))
+          .forEach(t => deletedCoordinates.add(t[1]));
+      });
+
+      if (deletedCoordinates.size > 0) {
+        this.systemLogger.info('BookmarkOrchestrator',
+          `Found ${deletedCoordinates.size} deletion requests for bookmark sets`
+        );
+      }
+
+      if (events.length === 0 && deletedCoordinates.size === 0) {
         this.systemLogger.info('BookmarkOrchestrator', 'No bookmark sets found on relays');
         return { items: [], relayContentWasEmpty: true };
       }
 
-      // Deduplicate by d-tag (keep newest per category)
+      // Deduplicate by d-tag (keep newest per category) and filter out deleted ones
       const eventsByDTag = new Map<string, NostrEvent>();
+      let filteredDeletedCount = 0;
+
       events.forEach(event => {
         const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+
+        // Check if this event is deleted (NIP-09: Client SHOULD hide deleted events)
+        const coordinate = `30003:${pubkey}:${dTag}`;
+        if (deletedCoordinates.has(coordinate)) {
+          filteredDeletedCount++;
+          return; // Skip deleted events
+        }
+
         const existing = eventsByDTag.get(dTag);
         if (!existing || event.created_at > existing.created_at) {
           eventsByDTag.set(dTag, event);
         }
       });
+
+      if (filteredDeletedCount > 0) {
+        this.systemLogger.info('BookmarkOrchestrator',
+          `Filtered out ${filteredDeletedCount} deleted bookmark sets from relay fetch`
+        );
+      }
+
+      if (eventsByDTag.size === 0) {
+        this.systemLogger.info('BookmarkOrchestrator', 'No bookmark sets after filtering deletions');
+        return { items: [], relayContentWasEmpty: true };
+      }
 
       // Fetch folder order metadata (NIP-78 kind:30078)
       const orderEvents = await this.transport.fetch(relays, [{

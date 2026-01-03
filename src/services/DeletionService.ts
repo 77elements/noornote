@@ -20,8 +20,10 @@ import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 
 export interface DeletionOptions {
-  /** Event ID(s) to delete */
-  eventIds: string[];
+  /** Event ID(s) to delete (regular events) */
+  eventIds?: string[];
+  /** Coordinate(s) to delete (parameterized replaceable events) */
+  coordinates?: string[];
   /** Optional: Reason for deletion (shown in content field) */
   reason?: string;
 }
@@ -63,7 +65,7 @@ export class DeletionService {
       return false;
     }
 
-    const { eventIds, reason } = options;
+    const { eventIds, coordinates, reason } = options;
 
     // Validate authentication (redundant check for safety, but AuthGuard already handled UI)
     const currentUser = this.authService.getCurrentUser();
@@ -72,9 +74,9 @@ export class DeletionService {
       return false;
     }
 
-    // Validate event IDs
-    if (!eventIds || eventIds.length === 0) {
-      this.systemLogger.error('DeletionService', 'No event IDs provided for deletion');
+    // Validate that at least one deletion target is provided
+    if ((!eventIds || eventIds.length === 0) && (!coordinates || coordinates.length === 0)) {
+      this.systemLogger.error('DeletionService', 'No event IDs or coordinates provided for deletion');
       return false;
     }
 
@@ -82,10 +84,19 @@ export class DeletionService {
       // Build tags according to NIP-09
       const tags: string[][] = [];
 
-      // Add e tag for each event to delete
-      eventIds.forEach(eventId => {
-        tags.push(['e', eventId]);
-      });
+      // Add e tag for each regular event to delete
+      if (eventIds && eventIds.length > 0) {
+        eventIds.forEach(eventId => {
+          tags.push(['e', eventId]);
+        });
+      }
+
+      // Add a tag for each parameterized replaceable event to delete
+      if (coordinates && coordinates.length > 0) {
+        coordinates.forEach(coordinate => {
+          tags.push(['a', coordinate]);
+        });
+      }
 
       // Build unsigned event
       const unsignedEvent = {
@@ -115,13 +126,14 @@ export class DeletionService {
       // Publish deletion request
       await this.transport.publish(targetRelays, signedEvent);
 
+      const totalItems = (eventIds?.length || 0) + (coordinates?.length || 0);
       this.systemLogger.info(
         'DeletionService',
-        `Deletion request published for ${eventIds.length} event(s) to ${targetRelays.length} relay(s)`
+        `Deletion request published for ${totalItems} item(s) to ${targetRelays.length} relay(s)`
       );
 
       // Show success toast to user
-      ToastService.show('Note deleted successfully', 'success');
+      ToastService.show('Deletion request sent successfully', 'success');
 
       return true;
     } catch (error) {
@@ -195,6 +207,17 @@ export class DeletionService {
   public async deleteEvent(eventId: string, reason?: string): Promise<boolean> {
     return this.deleteEvents({
       eventIds: [eventId],
+      reason
+    });
+  }
+
+  /**
+   * Delete parameterized replaceable events by coordinates (convenience method)
+   * @param coordinates - Array of coordinates in format "kind:pubkey:d-tag"
+   */
+  public async deleteByCoordinates(coordinates: string[], reason?: string): Promise<boolean> {
+    return this.deleteEvents({
+      coordinates,
       reason
     });
   }
