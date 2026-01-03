@@ -275,6 +275,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
    * - Deleted tribes → NIP-09 kind:5 deletion with a tags
    */
   public override async publishToRelays(): Promise<void> {
+
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       throw new Error('User not authenticated');
