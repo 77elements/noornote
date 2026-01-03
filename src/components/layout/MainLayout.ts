@@ -22,6 +22,7 @@ import { BookmarkManager } from './managers/BookmarkManager';
 import { FollowListManager } from './managers/FollowListManager';
 import { MuteListManager } from './managers/MuteListManager';
 import { TribeManager } from './managers/TribeManager';
+import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
@@ -55,6 +56,7 @@ export class MainLayout {
   private followManager: FollowListManager | null = null;
   private muteManager: MuteListManager | null = null;
   private tribeManager: TribeManager | null = null;
+  private nip51InspectorManager: Nip51InspectorManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
   private currentListView: ListViewPartial | null = null;
@@ -135,6 +137,7 @@ export class MainLayout {
     this.followManager = new FollowListManager(this.element);
     this.muteManager = new MuteListManager(this.element);
     this.tribeManager = new TribeManager(this.element);
+    this.nip51InspectorManager = new Nip51InspectorManager(this.element);
 
     // Initialize NotificationsBadgeManager
     const badgeElement = this.element.querySelector('.notifications-badge') as HTMLElement;
@@ -1388,7 +1391,8 @@ export class MainLayout {
       bookmarks: 'List: Bookmarks',
       follows: 'List: Follows',
       mutes: 'List: Muted',
-      tribes: 'List: Tribes'
+      tribes: 'List: Tribes',
+      'nip51-inspector': 'NIP-51 Inspector'
     };
 
     // Map list types to managers
@@ -1396,7 +1400,8 @@ export class MainLayout {
       bookmarks: this.bookmarkManager,
       follows: this.followManager,
       mutes: this.muteManager,
-      tribes: this.tribeManager
+      tribes: this.tribeManager,
+      'nip51-inspector': this.nip51InspectorManager
     };
 
     const manager = managers[listType];

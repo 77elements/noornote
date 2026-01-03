@@ -34,64 +34,30 @@
 
 // ========================================
 // Settings Sections (Accordion)
+// Uses generic .nn-ui-toggle from molecules
 // ========================================
 .settings-section {
-  background: $color-1;
-  border: 1px solid $color-2;
-  border-radius: $radius-sm;
-  overflow: hidden;
-  transition: all 0.2s ease;
-  padding: 0 0 calc($gap);
+  // Settings-specific overrides for .nn-ui-toggle
+  // Note: Both classes are applied in HTML: class="nn-ui-toggle settings-section"
 
-  // BEM elements
-  &__info {
-    flex: 1;
-  }
+  // Settings-specific content padding
+  padding: 0;
 
-  &__title {
-    font-size: 18px;
-    font-weight: 600;
-    color: $color-5;
-    margin-bottom: calc($gap / 4);
-  }
-
-  &__description {
-    font-size: 14px;
-    color: rgba($color-5, 0.6);
-    line-height: 1.4;
-  }
-
-  &__toggle {
-    background: none;
-    border: none;
-    color: $color-5;
-    cursor: pointer;
-    padding: calc($gap / 2);
-    transition: transform 0.2s ease;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: calc($gap / 2);
-    margin-bottom: $gap;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s ease;
-
-    &:hover {
-      background: $color-2;
-    }
-  }
-
-  &__content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
+  .nn-ui-toggle__content {
     padding: 0 calc($gap / 2);
   }
 
+  &.open .nn-ui-toggle__content {
+    padding-bottom: $gap;
+  }
+
+  // Settings-specific header padding
+  .nn-ui-toggle__header {
+    padding: calc($gap / 2);
+    margin-bottom: $gap;
+  }
+
+  // Settings-specific action area
   &__actions {
     margin-top: $gap;
     padding: 0 calc($gap / 2);
@@ -112,21 +78,6 @@
 
     &--error {
       color: #f87171;
-    }
-  }
-
-  // Open state
-  &.open {
-    .settings-section__header {
-      background-color: $color-2;
-    }
-
-    .settings-section__toggle {
-      transform: rotate(180deg);
-    }
-
-    .settings-section__content {
-      max-height: 3000px; // Large enough for content
     }
   }
 }

@@ -79,6 +79,16 @@ export class ListsMenuPartial {
             Tribes
           </a>
         </li>
+        <li>
+          <a href="#" class="primary-nav__sublink" data-list-type="nip51-inspector">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4"></path>
+              <path d="M12 8h.01"></path>
+            </svg>
+            NIP-51 Inspector
+          </a>
+        </li>
       </ul>
     `;
 

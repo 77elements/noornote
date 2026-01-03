@@ -13,7 +13,7 @@
 
 import { createClosableTab } from '../../../helpers/TabsHelper';
 
-export type ListType = 'bookmarks' | 'follows' | 'mutes' | 'tribes';
+export type ListType = 'bookmarks' | 'follows' | 'mutes' | 'tribes' | 'nip51-inspector';
 
 export interface ListViewConfig {
   type: ListType;

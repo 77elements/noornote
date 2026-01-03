@@ -1,0 +1,196 @@
+/**
+ * NIP-51 Inspector Styles
+ * Developer tool for viewing raw NIP-51 list events from relays
+ *
+ * @extends .nn-ui-toggle molecule for group accordions
+ */
+
+@use '../abstracts/variables' as *;
+@use 'sass:color';
+
+.nip51-inspector {
+  padding-bottom: $gap * 2;
+}
+
+.nip51-inspector-header {
+  margin-bottom: $gap * 2;
+
+  h2 {
+    margin-bottom: calc($gap / 2);
+  }
+}
+
+.nip51-inspector-description {
+  font-size: 14px;
+  color: $color-3;
+  line-height: 1.6;
+
+  strong {
+    color: $color-4;
+    font-weight: 600;
+  }
+}
+
+.nip51-inspector-loading,
+.nip51-inspector-error,
+.nip51-inspector-empty {
+  text-align: center;
+  padding: $gap * 3;
+  color: $color-3;
+  font-size: 14px;
+
+  h3 {
+    margin-bottom: calc($gap / 2);
+    color: $color-1;
+  }
+
+  p {
+    margin-top: calc($gap / 2);
+  }
+}
+
+.nip51-inspector-content {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+// Event groups - extends collapsible-section
+.nip51-inspector-group {
+  // Count badge in description
+  &__count {
+    color: $color-4;
+    font-weight: 600;
+  }
+
+  &__empty {
+    padding: $gap * 2;
+    text-align: center;
+    color: $color-3;
+    font-size: 14px;
+  }
+
+  &__events {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+// Individual event items (custom accordion, NOT collapsible-section)
+.nip51-inspector-event {
+  border-bottom: 1px solid color.adjust($color-2, $lightness: 8%);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $gap;
+    cursor: pointer;
+    transition: background 0.2s;
+
+    &:hover {
+      background: color.adjust($color-2, $lightness: 5%);
+    }
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    flex-wrap: wrap;
+  }
+
+  &__id {
+    font-family: monospace;
+    font-size: 13px;
+    color: $color-3;
+    background: color.adjust($color-2, $lightness: 8%);
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+
+  &__dtag {
+    font-size: 13px;
+    color: $color-4;
+    font-weight: 600;
+    background: rgba($color-4, 0.1);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  &__time {
+    font-size: 12px;
+    color: $color-3;
+  }
+
+  &__toggle {
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: $color-3;
+    transition: transform 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      color: $color-1;
+    }
+
+    &--expanded {
+      transform: rotate(180deg);
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  &__summary {
+    padding: 0 $gap calc($gap / 2) $gap;
+  }
+
+  &__tags-summary {
+    font-size: 13px;
+    color: $color-3;
+  }
+
+  &__details {
+    padding: $gap;
+    background: color.adjust($color-2, $lightness: -2%);
+    border-top: 1px solid color.adjust($color-2, $lightness: 8%);
+  }
+
+  &__section {
+    margin-bottom: $gap * 1.5;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+
+    h4 {
+      margin: 0 0 calc($gap / 2) 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: $color-1;
+    }
+
+    pre {
+      background: color.adjust($color-2, $lightness: -5%);
+      border: 1px solid color.adjust($color-2, $lightness: 10%);
+      border-radius: $radius-sm;
+      padding: calc($gap / 2);
+      overflow-x: auto;
+      font-size: 12px;
+      font-family: monospace;
+      line-height: 1.5;
+      margin: 0;
+    }
+  }
+}

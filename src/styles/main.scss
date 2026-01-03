@@ -42,6 +42,7 @@
 @use 'components/profile-search';
 @use 'components/settings-view';
 @use 'components/mute-list-view';
+@use 'components/nip51-inspector';
 @use 'components/interaction-status-line';
 @use 'components/user-identity';
 @use 'components/sync-status-badge';
@@ -95,6 +96,7 @@
 @use 'molecules/messages';
 @use 'molecules/follow-dropdown';
 @use 'molecules/dropdown-menu';
+@use 'molecules/nn-ui-toggle';
 
 // 5. Organisms - Complex UI sections
 @use 'organisms/header';

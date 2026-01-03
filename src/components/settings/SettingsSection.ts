@@ -32,19 +32,19 @@ export abstract class SettingsSection {
     isOpen: boolean = false
   ): string {
     return `
-      <section class="settings-section ${isOpen ? 'open' : ''}" data-section="${this.sectionId}">
-        <div class="settings-section__header">
-          <div class="settings-section__info">
-            <h2 class="settings-section__title">${title}</h2>
-            <p class="settings-section__description">${description}</p>
+      <section class="nn-ui-toggle settings-section ${isOpen ? 'open' : ''}" data-section="${this.sectionId}">
+        <div class="nn-ui-toggle__header">
+          <div class="nn-ui-toggle__info">
+            <h2 class="nn-ui-toggle__title">${title}</h2>
+            <p class="nn-ui-toggle__description">${description}</p>
           </div>
-          <button class="settings-section__toggle" aria-label="Toggle section">
+          <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </button>
         </div>
-        <div class="settings-section__content" id="${this.sectionId}-content">
+        <div class="nn-ui-toggle__content" id="${this.sectionId}-content">
           <!-- Content will be mounted here -->
         </div>
       </section>
