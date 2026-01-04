@@ -552,12 +552,20 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         kinds: [5]
       }], 5000);
 
-      // Extract deleted coordinates from deletion events
-      const deletedCoordinates = new Set<string>();
-      deletionEvents.forEach(event => {
-        event.tags
+      // Extract deleted coordinates with deletion timestamp (coordinate → deletion created_at)
+      // NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp"
+      const deletedCoordinates = new Map<string, number>();
+      deletionEvents.forEach(deletionEvent => {
+        deletionEvent.tags
           .filter(t => t[0] === 'a' && t[1]?.startsWith('30003:'))
-          .forEach(t => deletedCoordinates.add(t[1]));
+          .forEach(t => {
+            const coordinate = t[1];
+            const existingTimestamp = deletedCoordinates.get(coordinate);
+            // Keep newest deletion timestamp if multiple deletions exist
+            if (!existingTimestamp || deletionEvent.created_at > existingTimestamp) {
+              deletedCoordinates.set(coordinate, deletionEvent.created_at);
+            }
+          });
       });
 
       if (deletedCoordinates.size > 0) {
@@ -578,11 +586,12 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       events.forEach(event => {
         const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
 
-        // Check if this event is deleted (NIP-09: Client SHOULD hide deleted events)
+        // Check if this event is deleted (NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp")
         const coordinate = `30003:${pubkey}:${dTag}`;
-        if (deletedCoordinates.has(coordinate)) {
+        const deletionTimestamp = deletedCoordinates.get(coordinate);
+        if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
           filteredDeletedCount++;
-          return; // Skip deleted events
+          return; // Skip events older than deletion
         }
 
         const existing = eventsByDTag.get(dTag);

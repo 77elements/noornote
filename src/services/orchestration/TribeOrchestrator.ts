@@ -381,6 +381,36 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     this.systemLogger.info('TribeOrchestrator',
       `Published ${totalPublished} tribe set events + ${deletedTribes.length} deletions to relays`
     );
+
+    // Publish folder order metadata (NIP-78 kind:30078)
+    const folderOrder = setData.metadata.setOrder.filter(d => d !== '');
+    if (folderOrder.length > 0) {
+      const orderTags: string[][] = [
+        ['d', 'noornote:tribe-folders-order']
+      ];
+
+      for (const tribeName of folderOrder) {
+        // Use "tribes/" prefix for coordinates on relays
+        const coordinate = `30000:${currentUser.pubkey}:tribes/${tribeName}`;
+        orderTags.push(['a', coordinate]);
+      }
+
+      const orderEvent = {
+        kind: 30078,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: orderTags,
+        content: '',
+        pubkey: currentUser.pubkey
+      };
+
+      const signedOrderEvent = await this.authService.signEvent(orderEvent);
+      if (signedOrderEvent) {
+        await this.transport.publish(writeRelays, signedOrderEvent);
+        this.systemLogger.info('TribeOrchestrator',
+          `Published folder order metadata (kind:30078) with ${folderOrder.length} tribes`
+        );
+      }
+    }
   }
 
   /**
@@ -574,21 +604,75 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
         return { items: [], relayContentWasEmpty: true };
       }
 
+      // Fetch folder order metadata (NIP-78 kind:30078)
+      const orderEvents = await this.transport.fetch(relays, [{
+        authors: [pubkey],
+        kinds: [30078],
+        "#d": ["noornote:tribe-folders-order"]
+      }], 5000);
+
+      let folderOrder: string[] = [];
+      if (orderEvents.length > 0) {
+        const orderEvent = orderEvents.sort((a, b) => b.created_at - a.created_at)[0];
+        folderOrder = orderEvent.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
+          .map(t => {
+            const parts = t[1].split(':');
+            // Remove "tribes/" prefix from d-tag: "tribes/Devs" → "Devs"
+            const dTag = parts[2] || '';
+            return dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
+          });
+
+        this.systemLogger.info('TribeOrchestrator',
+          `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`
+        );
+      }
+
+      // Build categories array in correct order (WITH "tribes/" prefix for return value)
+      const categories: string[] = ['tribes/'];  // Root always first
+
+      if (folderOrder.length > 0) {
+        // Use order from NIP-78 metadata
+        for (const tribeName of folderOrder) {
+          const dTag = `tribes/${tribeName}`;
+          if (eventsByDTag.has(dTag)) {
+            categories.push(dTag);
+          }
+        }
+
+        // Add any tribes not in metadata (edge case)
+        for (const dTag of eventsByDTag.keys()) {
+          if (dTag !== 'tribes/' && !categories.includes(dTag)) {
+            categories.push(dTag);
+            this.systemLogger.warn('TribeOrchestrator',
+              `Tribe "${dTag}" not in order metadata, appending to end`
+            );
+          }
+        }
+      } else {
+        // Fallback: alphabetical order
+        const sortedDTags = Array.from(eventsByDTag.keys())
+          .filter(d => d !== 'tribes/')
+          .sort();
+        categories.push(...sortedDTags);
+
+        this.systemLogger.info('TribeOrchestrator',
+          'No folder order metadata found, using alphabetical fallback'
+        );
+      }
+
       const allItems: TribeMember[] = [];
       const categoryAssignments = new Map<string, string>(); // pubkey -> tribeName
-      const categories: string[] = [];
-      let anyContentWasEmpty = true;
 
-      for (const [dTag, event] of eventsByDTag) {
+      for (const dTag of categories) {
+        const event = eventsByDTag.get(dTag);
+        if (!event) continue;
+
         // Remove "tribes/" prefix to get tribe name for category
         // "tribes/" → "" (root), "tribes/Friends" → "Friends"
         const tribeName = dTag === 'tribes/' ? '' : dTag.substring(7); // 7 = length of "tribes/"
 
-        // Track d-tags WITH prefix for relay comparison
-        categories.push(dTag);
-
         const hasContent = event.content && event.content.trim() !== '';
-        if (hasContent) anyContentWasEmpty = false;
 
         // Extract public members from p-tags
         const publicItems = this.config.tagsToItem(
@@ -631,7 +715,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
       return {
         items: Array.from(itemMap.values()),
-        relayContentWasEmpty: anyContentWasEmpty,
+        relayContentWasEmpty: false,
         categoryAssignments,
         categories
       };

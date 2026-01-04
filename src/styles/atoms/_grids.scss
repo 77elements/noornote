@@ -1,0 +1,23 @@
+/**
+ * Grid Layouts
+ * Reusable grid patterns for consistent layouts across the app
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// 3-column responsive grid (default for card layouts)
+.grid-3-col {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: $gap;
+  padding: $gap 0;
+
+  @include tablet-down {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @include mobile-down {
+    grid-template-columns: 1fr;
+  }
+}
