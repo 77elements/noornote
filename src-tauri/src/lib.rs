@@ -1,6 +1,6 @@
 mod key_signer;
 
-use tauri::{Emitter, RunEvent, WindowEvent};
+use tauri::{Emitter, Manager, RunEvent, WindowEvent};
 use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 use tauri_plugin_log::{Target, TargetKind};
 
@@ -51,7 +51,6 @@ pub fn run() {
       // Register global keyboard shortcuts
       // register_global_shortcuts(app)?;
       if cfg!(debug_assertions) {
-        use tauri::Manager;
         let window = app.get_webview_window("main").unwrap();
 
         // Check TAURI_DEV_MODE environment variable
@@ -90,9 +89,32 @@ pub fn run() {
     .build(tauri::generate_context!())
     .expect("error while building tauri application")
     .run(|app_handle, event| {
-      if let RunEvent::WindowEvent { event: WindowEvent::CloseRequested { .. }, .. } = event {
-        // Properly exit the app when window close is requested
-        app_handle.exit(0);
+      match event {
+        RunEvent::WindowEvent { label, event: WindowEvent::CloseRequested { api, .. }, .. } => {
+          // macOS: Minimize window instead of quitting (user must use Cmd+Q or menu to quit)
+          #[cfg(target_os = "macos")]
+          {
+            if let Some(window) = app_handle.get_webview_window(&label) {
+              let _ = window.minimize();
+              api.prevent_close();
+            }
+          }
+
+          // Linux: Exit app when window closes
+          #[cfg(not(target_os = "macos"))]
+          {
+            app_handle.exit(0);
+          }
+        }
+        // macOS: Restore window when dock icon is clicked
+        #[cfg(target_os = "macos")]
+        RunEvent::Reopen { .. } => {
+          if let Some(window) = app_handle.get_webview_window("main") {
+            let _ = window.unminimize();
+            let _ = window.set_focus();
+          }
+        }
+        _ => {}
       }
     });
 }
