@@ -56,6 +56,11 @@
   height: 100%;
   @include custom-scrollbar;
 
+  // Smooth scrolling optimizations (especially for Linux)
+  will-change: scroll-position;
+  contain: layout style paint;
+  -webkit-overflow-scrolling: touch;
+
   > * {
     padding: 0 calc($gap) 0 0;
   }
@@ -67,6 +72,11 @@
   overflow-y: auto; // Independent vertical scroll for manual override
   overflow-x: hidden;
   height: 100%;
+
+  // Smooth scrolling optimizations (especially for Linux)
+  will-change: scroll-position;
+  contain: layout style paint;
+  -webkit-overflow-scrolling: touch;
 
   .secondary-user {
     padding: 0;
