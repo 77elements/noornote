@@ -275,10 +275,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
    * - Deleted tribes → NIP-09 kind:5 deletion with a tags
    */
   public override async publishToRelays(): Promise<void> {
-    console.log('[TribeOrchestrator] publishToRelays START');
-
     const currentUser = this.authService.getCurrentUser();
-    console.log('[TribeOrchestrator] currentUser:', currentUser?.npub?.slice(0, 16));
     if (!currentUser) {
       throw new Error('User not authenticated');
     }
@@ -308,7 +305,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       }
     }
 
-    console.log(`[TribeOrchestrator] Publishing: ${setData.sets.length} sets, ${deletedTribes.length} deleted tribes`);
     this.systemLogger.info('TribeOrchestrator',
       `Publishing: ${setData.sets.length} sets, ${deletedTribes.length} deleted tribes`
     );
@@ -377,7 +373,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       await this.transport.publish(writeRelays, signed);
       totalPublished++;
 
-      console.log(`[TribeOrchestrator] Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`);
       this.systemLogger.info('TribeOrchestrator',
         `Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`
       );
@@ -386,7 +381,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     this.systemLogger.info('TribeOrchestrator',
       `Published ${totalPublished} tribe set events + ${deletedTribes.length} deletions to relays`
     );
-    console.log('[TribeOrchestrator] publishToRelays COMPLETE');
   }
 
   /**
@@ -510,8 +504,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
         limit: 100  // Support up to 100 tribes
       }], 10000);
 
-      console.log(`[TribeOrchestrator] Fetched ${events.length} kind:30000 events from relays`);
-
       // Fetch deletion events (kind:5) to filter out deleted tribes
       const deletionEvents = await this.transport.fetch(relays, [{
         authors: [pubkey],
@@ -534,8 +526,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
           });
       });
 
-      console.log(`[TribeOrchestrator] Found ${deletedCoordinates.size} deletion requests for tribe sets`);
-      console.log('[TribeOrchestrator] Deleted coordinates:', Array.from(deletedCoordinates.keys()));
       if (deletedCoordinates.size > 0) {
         this.systemLogger.info('TribeOrchestrator',
           `Found ${deletedCoordinates.size} deletion requests for tribe sets`
@@ -554,11 +544,8 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       events.forEach(event => {
         const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
 
-        console.log(`[TribeOrchestrator] Processing event with d-tag: "${dTag}"`);
-
         // FILTER: Only process events with d-tag starting with "tribes/"
         if (!dTag.startsWith('tribes/')) {
-          console.log(`[TribeOrchestrator] Skipping non-tribe event: "${dTag}"`);
           return; // Skip non-tribe events (other apps, settings, etc.)
         }
 
@@ -566,7 +553,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
         const coordinate = `30000:${pubkey}:${dTag}`;
         const deletionTimestamp = deletedCoordinates.get(coordinate);
         if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
-          console.log(`[TribeOrchestrator] Filtering deleted tribe: "${dTag}" (event: ${event.created_at}, deletion: ${deletionTimestamp})`);
           filteredDeletedCount++;
           return; // Skip events older than deletion
         }
@@ -578,7 +564,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       });
 
       if (filteredDeletedCount > 0) {
-        console.log(`[TribeOrchestrator] Filtered out ${filteredDeletedCount} deleted tribe sets from relay fetch`);
         this.systemLogger.info('TribeOrchestrator',
           `Filtered out ${filteredDeletedCount} deleted tribe sets from relay fetch`
         );
@@ -635,7 +620,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
         allItems.push(...publicItems, ...privateItems);
 
-        console.log(`[TribeOrchestrator] Fetched tribe "${tribeName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`);
         this.systemLogger.info('TribeOrchestrator',
           `Fetched tribe "${tribeName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`
         );

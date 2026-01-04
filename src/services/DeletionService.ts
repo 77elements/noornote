@@ -127,14 +127,12 @@ export class DeletionService {
       await this.transport.publish(targetRelays, signedEvent);
 
       const totalItems = (eventIds?.length || 0) + (coordinates?.length || 0);
-      console.log(`[DeletionService] Deletion request published for ${totalItems} item(s) to ${targetRelays.length} relay(s)`);
       this.systemLogger.info(
         'DeletionService',
         `Deletion request published for ${totalItems} item(s) to ${targetRelays.length} relay(s)`
       );
 
       // Show success toast to user
-      console.log('[DeletionService] Deletion request sent successfully');
       ToastService.show('Deletion request sent successfully', 'success');
 
       return true;
