@@ -5,6 +5,7 @@
  */
 
 import { Router } from './Router';
+import { ModalService } from './ModalService';
 
 export class KeyboardShortcutManager {
   private static instance: KeyboardShortcutManager;
@@ -33,6 +34,30 @@ export class KeyboardShortcutManager {
   }
 
   /**
+   * Check if shortcuts should be blocked (modal open or focus in input)
+   */
+  private shouldBlockShortcuts(): boolean {
+    // Block if modal is open
+    const modalService = ModalService.getInstance();
+    if (modalService.isOpen()) {
+      return true;
+    }
+
+    // Block if focus is in input/textarea/contenteditable
+    const activeElement = document.activeElement;
+    if (activeElement) {
+      const tagName = activeElement.tagName.toLowerCase();
+      const isEditable = activeElement.getAttribute('contenteditable') === 'true';
+
+      if (tagName === 'input' || tagName === 'textarea' || isEditable) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  /**
    * Setup global keyboard shortcuts via Tauri events
    */
   private async setupGlobalShortcuts(): Promise<void> {
@@ -46,6 +71,11 @@ export class KeyboardShortcutManager {
       // Listen for global shortcuts from Tauri backend (if registered)
       await listen<string>('global-shortcut', (event) => {
         console.log('[KeyboardShortcutManager] Global shortcut received:', event.payload);
+
+        // Block shortcuts if modal is open or focus is in input
+        if (this.shouldBlockShortcuts()) {
+          return;
+        }
 
         switch (event.payload) {
           case 'search':
@@ -82,7 +112,7 @@ export class KeyboardShortcutManager {
     window.addEventListener('keydown', (e: KeyboardEvent) => {
       const isMod = e.metaKey || e.ctrlKey;
 
-      // Cmd+W: Close active closable tab
+      // Cmd+W: Close active closable tab (always allow, even in modals)
       if (isMod && e.key === 'w') {
         e.preventDefault(); // Always prevent default (don't close app window)
         const activeClosableTab = document.querySelector('.tab--closable.tab--active');
@@ -92,6 +122,11 @@ export class KeyboardShortcutManager {
             closeButton.click();
           }
         }
+        return;
+      }
+
+      // Block all other shortcuts if modal is open or focus is in input
+      if (this.shouldBlockShortcuts()) {
         return;
       }
 
