@@ -112,9 +112,6 @@ export class BookmarkFolderService {
     this.genericService.moveItemToPosition(bookmarkId, newOrder);
   }
 
-  public moveFolderToPosition(folderId: string, newOrder: number): void {
-    this.genericService.moveFolderToPosition(folderId, newOrder);
-  }
 
   // ========================================
   // Root-level ordering (mixed folders + bookmarks)

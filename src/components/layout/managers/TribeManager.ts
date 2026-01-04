@@ -247,7 +247,7 @@ export class TribeManager {
       ${this.renderSyncControls()}
       ${this.renderHeader(folder)}
       ${isInFolder ? this.renderBreadcrumb(folder) : ''}
-      <div class="tribe-grid"></div>
+      <div class="grid-3-col"></div>
       ${this.renderSyncControls()}
     `;
 
@@ -258,7 +258,7 @@ export class TribeManager {
     this.bindHeaderButtons(container);
 
     // Render grid content
-    const grid = container.querySelector('.tribe-grid') as HTMLElement;
+    const grid = container.querySelector('.grid-3-col') as HTMLElement;
     await this.renderGridContent(grid);
   }
 
@@ -688,7 +688,7 @@ export class TribeManager {
 
     const itemCount = this.folderService.getFolderItemCount(folderId);
     const message = itemCount > 0
-      ? `Delete tribe "${folder.name}"? ${itemCount} member(s) will be moved to root.`
+      ? `Delete tribe "${folder.name}"? ${itemCount} member(s) will be deleted.`
       : `Delete tribe "${folder.name}"?`;
 
     // Show confirmation modal
@@ -720,7 +720,17 @@ export class TribeManager {
 
       confirmBtn?.addEventListener('click', async () => {
         try {
-          // Delete folder (members are moved to root automatically)
+          // Get members in folder before deletion
+          const memberIds = this.folderService.getMembersInFolder(folderId);
+
+          // Delete all members in this tribe
+          for (const pubkey of memberIds) {
+            await this.tribeOrch.removeMember(pubkey);
+            this.membersCache.delete(pubkey);
+            this.folderService.removeMemberAssignment(pubkey);
+          }
+
+          // Delete folder
           this.folderService.deleteFolder(folderId);
 
           ToastService.show('Tribe deleted', 'success');
@@ -1032,6 +1042,17 @@ export class TribeManager {
 
       const result = await this.listSyncManager.syncFromRelays(currentUser.pubkey);
       const added = result.added || 0;
+
+      // Apply folder assignments from relay categories
+      if (result.categoryAssignments) {
+        await applyFolderAssignments(
+          result.categoryAssignments,
+          this.folderService,
+          (memberPubkey, folderId) => this.folderService.moveMemberToFolder(memberPubkey, folderId),
+          (memberPubkey) => this.folderService.ensureMemberAssignment(memberPubkey),
+          'TribeManager'
+        );
+      }
 
       ToastService.show(`Synced from relays: ${added} new members`, 'success');
 

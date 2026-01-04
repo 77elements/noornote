@@ -207,14 +207,13 @@ export class MuteStorageAdapter extends BaseListStorageAdapter<string> {
   /**
    * Relay Storage (Remote) - Asynchronous
    * Publishes kind:10000 event respecting browser private storage
+   *
+   * Strategy: Reads from browser (localStorage) directly, does NOT modify files.
+   * Files are only written on explicit "Save to file" action by user.
    */
-  async publishToRelays(items: string[]): Promise<void> {
-    console.log('[MuteStorageAdapter] publishToRelays called with', items.length, 'items');
+  async publishToRelays(_items: string[]): Promise<void> {
     try {
-      // First, save to files using the same logic as setFileItems
-      await this.setFileItems(items);
-
-      // Then publish via orchestrator (reads from files)
+      // Publish via orchestrator (reads from browser localStorage)
       await this.muteOrchestrator.publishToRelays();
     } catch (error) {
       console.error('[MuteStorageAdapter] Failed to publish to relays:', error);

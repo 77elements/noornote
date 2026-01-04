@@ -17,6 +17,7 @@ import type { TribeSetData, TribeSet } from '../../types/TribeSetData';
 import { GenericListOrchestrator } from './GenericListOrchestrator';
 import { tribeListConfig, createTribeFileStorageWrapper } from './configs/TribeListConfig';
 import { TribeFolderService } from '../TribeFolderService';
+import { DeletionService } from '../DeletionService';
 
 // Re-export TribeMember for external use
 export type { TribeMember };
@@ -36,10 +37,12 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
   private static instance: TribeOrchestrator;
   private featureFlagKey = 'noornote_nip51_private_tribes_enabled';
   private folderService: TribeFolderService;
+  private deletionService: DeletionService;
 
   private constructor() {
     super('TribeOrchestrator', tribeListConfig, createTribeFileStorageWrapper());
     this.folderService = TribeFolderService.getInstance();
+    this.deletionService = DeletionService.getInstance();
   }
 
   public static getInstance(): TribeOrchestrator {
@@ -266,10 +269,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
    * Publish to relays (manual sync via UI button)
    *
    * NIP-51 Follow Sets:
-   * - Root members → d: ""
-   * - Tribe "Devs" → d: "Devs"
+   * - Root members → d: "tribes/"
+   * - Tribe "Devs" → d: "tribes/Devs"
    * - Private members → encrypted in content
-   * - Deleted tribes → publish empty event to overwrite
+   * - Deleted tribes → NIP-09 kind:5 deletion with a tags
    */
   public override async publishToRelays(): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
@@ -284,11 +287,15 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
     // Build TribeSetData from localStorage
     const setData = this.buildSetDataFromLocalStorage();
-    const localTribes = new Set(setData.sets.map(s => s.d));
+
+    // Build local tribes set WITH "tribes/" prefix for comparison
+    const localTribes = new Set(
+      setData.sets.map(s => s.d === '' ? 'tribes/' : `tribes/${s.d}`)
+    );
 
     // Fetch existing tribes from relays to find deleted ones
     const relayResult = await this.fetchFromRelays(currentUser.pubkey);
-    const relayTribes = new Set(relayResult.categories || []);
+    const relayTribes = new Set(relayResult.categories || []); // Already have "tribes/" prefix
 
     // Find tribes that exist on relays but not locally (deleted)
     const deletedTribes: string[] = [];
@@ -302,9 +309,15 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       `Publishing: ${setData.sets.length} sets, ${deletedTribes.length} deleted tribes`
     );
 
-    // First, publish empty events for deleted tribes
-    for (const tribeName of deletedTribes) {
-      await this.publishEmptyTribe(tribeName);
+    // First, publish deletion requests for deleted tribes (NIP-09)
+    if (deletedTribes.length > 0) {
+      const coordinates = deletedTribes.map(dTag =>
+        `30000:${currentUser.pubkey}:${dTag}`
+      );
+      await this.deletionService.deleteByCoordinates(
+        coordinates,
+        'Tribe deleted'
+      );
     }
 
     // Publish each tribe
@@ -368,52 +381,36 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     this.systemLogger.info('TribeOrchestrator',
       `Published ${totalPublished} tribe set events + ${deletedTribes.length} deletions to relays`
     );
-  }
 
-  /**
-   * Publish an empty event for a tribe to "delete" it from relays
-   * This overwrites the existing event with an empty one
-   * @param dTag - d-tag with tribes/ prefix (e.g., "tribes/Friends")
-   */
-  public async publishEmptyTribe(dTag: string): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('User not authenticated');
+    // Publish folder order metadata (NIP-78 kind:30078)
+    const folderOrder = setData.metadata.setOrder.filter(d => d !== '');
+    if (folderOrder.length > 0) {
+      const orderTags: string[][] = [
+        ['d', 'noornote:tribe-folders-order']
+      ];
+
+      for (const tribeName of folderOrder) {
+        // Use "tribes/" prefix for coordinates on relays
+        const coordinate = `30000:${currentUser.pubkey}:tribes/${tribeName}`;
+        orderTags.push(['a', coordinate]);
+      }
+
+      const orderEvent = {
+        kind: 30078,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: orderTags,
+        content: '',
+        pubkey: currentUser.pubkey
+      };
+
+      const signedOrderEvent = await this.authService.signEvent(orderEvent);
+      if (signedOrderEvent) {
+        await this.transport.publish(writeRelays, signedOrderEvent);
+        this.systemLogger.info('TribeOrchestrator',
+          `Published folder order metadata (kind:30078) with ${folderOrder.length} tribes`
+        );
+      }
     }
-
-    const writeRelays = this.transport.getWriteRelays();
-    if (writeRelays.length === 0) {
-      throw new Error('No write relays available');
-    }
-
-    // Extract tribe name from d-tag for title (remove tribes/ prefix)
-    const tribeName = dTag === 'tribes/' ? '' : dTag.substring(7);
-
-    // Build empty event with this d-tag
-    const tags: string[][] = [
-      ['d', dTag],
-      ['title', tribeName],
-      ['client', 'NoorNote']
-    ];
-
-    const event = {
-      kind: 30000,
-      created_at: Math.floor(Date.now() / 1000),
-      tags,
-      content: '',
-      pubkey: currentUser.pubkey
-    };
-
-    const signed = await this.authService.signEvent(event);
-    if (!signed) {
-      throw new Error(`Failed to sign empty event for tribe: ${tribeName}`);
-    }
-
-    await this.transport.publish(writeRelays, signed);
-
-    this.systemLogger.info('TribeOrchestrator',
-      `Published empty event to delete tribe "${tribeName}" from relays`
-    );
   }
 
   /**
@@ -524,7 +521,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
   /**
    * Fetch tribes from relays (read-only, no local changes)
-   * Fetches ALL kind:30000 events for the user and extracts tribes
+   * Fetches ALL kind:30000 events and filters out deleted ones via kind:5 events
    */
   public override async fetchFromRelays(pubkey: string): Promise<FetchFromRelaysResult<TribeMember>> {
     const relays = this.getBootstrapRelays();
@@ -537,13 +534,43 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
         limit: 100  // Support up to 100 tribes
       }], 10000);
 
-      if (events.length === 0) {
+      // Fetch deletion events (kind:5) to filter out deleted tribes
+      const deletionEvents = await this.transport.fetch(relays, [{
+        authors: [pubkey],
+        kinds: [5]
+      }], 5000);
+
+      // Extract deleted coordinates with deletion timestamp (coordinate → deletion created_at)
+      // NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp"
+      const deletedCoordinates = new Map<string, number>();
+      deletionEvents.forEach(deletionEvent => {
+        deletionEvent.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
+          .forEach(t => {
+            const coordinate = t[1];
+            const existingTimestamp = deletedCoordinates.get(coordinate);
+            // Keep newest deletion timestamp if multiple deletions exist
+            if (!existingTimestamp || deletionEvent.created_at > existingTimestamp) {
+              deletedCoordinates.set(coordinate, deletionEvent.created_at);
+            }
+          });
+      });
+
+      if (deletedCoordinates.size > 0) {
+        this.systemLogger.info('TribeOrchestrator',
+          `Found ${deletedCoordinates.size} deletion requests for tribe sets`
+        );
+      }
+
+      if (events.length === 0 && deletedCoordinates.size === 0) {
         this.systemLogger.info('TribeOrchestrator', 'No tribe sets found on relays');
         return { items: [], relayContentWasEmpty: true };
       }
 
-      // Deduplicate by d-tag (keep newest per tribe)
+      // Deduplicate by d-tag (keep newest per tribe) and filter out deleted ones
       const eventsByDTag = new Map<string, NostrEvent>();
+      let filteredDeletedCount = 0;
+
       events.forEach(event => {
         const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
 
@@ -552,27 +579,100 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
           return; // Skip non-tribe events (other apps, settings, etc.)
         }
 
+        // Check if this event is deleted (NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp")
+        const coordinate = `30000:${pubkey}:${dTag}`;
+        const deletionTimestamp = deletedCoordinates.get(coordinate);
+        if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
+          filteredDeletedCount++;
+          return; // Skip events older than deletion
+        }
+
         const existing = eventsByDTag.get(dTag);
         if (!existing || event.created_at > existing.created_at) {
           eventsByDTag.set(dTag, event);
         }
       });
 
+      if (filteredDeletedCount > 0) {
+        this.systemLogger.info('TribeOrchestrator',
+          `Filtered out ${filteredDeletedCount} deleted tribe sets from relay fetch`
+        );
+      }
+
+      if (eventsByDTag.size === 0) {
+        this.systemLogger.info('TribeOrchestrator', 'No tribe sets after filtering deletions');
+        return { items: [], relayContentWasEmpty: true };
+      }
+
+      // Fetch folder order metadata (NIP-78 kind:30078)
+      const orderEvents = await this.transport.fetch(relays, [{
+        authors: [pubkey],
+        kinds: [30078],
+        "#d": ["noornote:tribe-folders-order"]
+      }], 5000);
+
+      let folderOrder: string[] = [];
+      if (orderEvents.length > 0) {
+        const orderEvent = orderEvents.sort((a, b) => b.created_at - a.created_at)[0];
+        folderOrder = orderEvent.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
+          .map(t => {
+            const parts = t[1].split(':');
+            // Remove "tribes/" prefix from d-tag: "tribes/Devs" → "Devs"
+            const dTag = parts[2] || '';
+            return dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
+          });
+
+        this.systemLogger.info('TribeOrchestrator',
+          `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`
+        );
+      }
+
+      // Build categories array in correct order (WITH "tribes/" prefix for return value)
+      const categories: string[] = ['tribes/'];  // Root always first
+
+      if (folderOrder.length > 0) {
+        // Use order from NIP-78 metadata
+        for (const tribeName of folderOrder) {
+          const dTag = `tribes/${tribeName}`;
+          if (eventsByDTag.has(dTag)) {
+            categories.push(dTag);
+          }
+        }
+
+        // Add any tribes not in metadata (edge case)
+        for (const dTag of eventsByDTag.keys()) {
+          if (dTag !== 'tribes/' && !categories.includes(dTag)) {
+            categories.push(dTag);
+            this.systemLogger.warn('TribeOrchestrator',
+              `Tribe "${dTag}" not in order metadata, appending to end`
+            );
+          }
+        }
+      } else {
+        // Fallback: alphabetical order
+        const sortedDTags = Array.from(eventsByDTag.keys())
+          .filter(d => d !== 'tribes/')
+          .sort();
+        categories.push(...sortedDTags);
+
+        this.systemLogger.info('TribeOrchestrator',
+          'No folder order metadata found, using alphabetical fallback'
+        );
+      }
+
       const allItems: TribeMember[] = [];
       const categoryAssignments = new Map<string, string>(); // pubkey -> tribeName
-      const categories: string[] = [];
-      let anyContentWasEmpty = true;
 
-      for (const [dTag, event] of eventsByDTag) {
+      for (const dTag of categories) {
+        const event = eventsByDTag.get(dTag);
+        if (!event) continue;
+
         // Remove "tribes/" prefix to get tribe name for category
         // "tribes/" → "" (root), "tribes/Friends" → "Friends"
         const tribeName = dTag === 'tribes/' ? '' : dTag.substring(7); // 7 = length of "tribes/"
 
-        // Track d-tags WITH prefix for relay comparison
-        categories.push(dTag);
-
         const hasContent = event.content && event.content.trim() !== '';
-        if (hasContent) anyContentWasEmpty = false;
 
         // Extract public members from p-tags
         const publicItems = this.config.tagsToItem(
@@ -615,7 +715,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
       return {
         items: Array.from(itemMap.values()),
-        relayContentWasEmpty: anyContentWasEmpty,
+        relayContentWasEmpty: false,
         categoryAssignments,
         categories
       };
@@ -625,98 +725,6 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     }
   }
 
-  /**
-   * Sync from relays (manual sync)
-   * Fetches all tribes and merges with local
-   * Creates folders from relay tribes and assigns members
-   */
-  public override async syncFromRelays(pubkey: string): Promise<{ added: number; total: number }> {
-    const relays = this.getBootstrapRelays();
-    this.systemLogger.info('TribeOrchestrator', `Syncing from relays (${relays.length} relays)...`);
-
-    try {
-      const fetchResult = await this.fetchFromRelays(pubkey);
-      const localItems = this.getBrowserItems();
-
-      // Merge (union)
-      const merged = this.mergeItems(localItems, fetchResult.items);
-      const added = merged.length - localItems.length;
-
-      this.setBrowserItems(merged);
-
-      // Create folders only for tribes that have members (skip empty sets)
-      const existingFolders = this.folderService.getFolders();
-      const categoryAssignments = fetchResult.categoryAssignments;
-
-      // Collect tribes that actually have members
-      const tribesWithMembers = new Set<string>();
-      if (categoryAssignments) {
-        for (const [, tribeName] of categoryAssignments) {
-          if (tribeName !== '') {
-            tribesWithMembers.add(tribeName);
-          }
-        }
-      }
-
-      for (const tribeName of tribesWithMembers) {
-        // Check if folder with this name exists
-        const existingFolder = existingFolders.find(f => f.name === tribeName);
-        if (!existingFolder) {
-          this.folderService.createFolder(tribeName);
-          this.systemLogger.info('TribeOrchestrator', `Created tribe from relay: "${tribeName}"`);
-        }
-      }
-
-      // Assign members to their tribes from relay, preserving order
-      // Only assign tribes for NEW members (not in local storage before sync)
-      // Existing members keep their local tribe assignment - user's manual organization takes precedence
-      if (categoryAssignments) {
-        const updatedFolders = this.folderService.getFolders(); // Refresh after creating new folders
-
-        // Build set of local member pubkeys (before merge) for fast lookup
-        const localMemberPubkeys = new Set(localItems.map(item => item.pubkey));
-
-        // Track order per tribe
-        const orderByTribe = new Map<string, number>();
-
-        for (const [memberPubkey, tribeName] of categoryAssignments) {
-          const isNewMember = !localMemberPubkeys.has(memberPubkey);
-
-          // Get next order for this tribe
-          const currentOrder = orderByTribe.get(tribeName) ?? 0;
-          orderByTribe.set(tribeName, currentOrder + 1);
-
-          if (isNewMember) {
-            // NEW member: assign relay tribe with preserved order
-            if (tribeName === '') {
-              this.folderService.ensureMemberAssignment(memberPubkey, currentOrder);
-            } else {
-              const folder = updatedFolders.find(f => f.name === tribeName);
-              if (folder) {
-                this.folderService.moveMemberToFolder(memberPubkey, folder.id, currentOrder);
-              } else {
-                // Folder doesn't exist locally, assign to root
-                this.folderService.ensureMemberAssignment(memberPubkey);
-                this.systemLogger.warn('TribeOrchestrator',
-                  `Tribe "${tribeName}" not found, assigned member ${memberPubkey.slice(0, 8)}... to root`
-                );
-              }
-            }
-          }
-          // EXISTING member: Skip - keep local tribe assignment
-        }
-      }
-
-      this.systemLogger.info('TribeOrchestrator',
-        `Sync complete: ${added} new members, ${tribesWithMembers.size} tribes`
-      );
-
-      return { added, total: merged.length };
-    } catch (error) {
-      this.systemLogger.error('TribeOrchestrator', `Sync from relays failed: ${error}`);
-      throw error;
-    }
-  }
 
   /**
    * Fetch tribes from relays (read-only wrapper)

@@ -80,14 +80,21 @@ export class TribeStorageAdapter extends BaseListStorageAdapter<TribeMember> {
 
   /**
    * Restore folder data from file to per-account storage
-   * (Tribes don't have the same complex folder structure as bookmarks,
-   *  but we keep this for consistency with the adapter interface)
+   * Uses getAllFolderData() to include BOTH public AND private member assignments
    */
   async restoreFolderDataFromFile(): Promise<void> {
     try {
-      // For tribes, we might need to restore tribe folders later
-      // For now, this is a placeholder
-      this.logger.info('TribeStorageAdapter', 'Folder data restoration not yet implemented for tribes');
+      const folderData = await this.fileStorage.getAllFolderData();
+
+      if (folderData.folders.length > 0) {
+        this.perAccountStorage.set(StorageKeys.TRIBE_FOLDERS, folderData.folders);
+      }
+      if (folderData.folderAssignments.length > 0) {
+        this.perAccountStorage.set(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS, folderData.folderAssignments);
+      }
+      if (folderData.rootOrder.length > 0) {
+        this.perAccountStorage.set(StorageKeys.TRIBE_ROOT_ORDER, folderData.rootOrder);
+      }
     } catch (error) {
       this.logger.error('TribeStorageAdapter', `Failed to restore folder data: ${error}`);
     }
@@ -116,15 +123,12 @@ export class TribeStorageAdapter extends BaseListStorageAdapter<TribeMember> {
    * Relay Storage (Remote) - Asynchronous
    * Publishes kind:30000 events respecting isPrivate flag
    *
-   * Strategy: Same as setFileItems - uses isPrivate flag from browser items,
-   * falls back to existing file location for items without explicit flag.
+   * Strategy: Reads from browser (localStorage) directly, does NOT modify files.
+   * Files are only written on explicit "Save to file" action by user.
    */
-  async publishToRelays(items: TribeMember[]): Promise<void> {
+  async publishToRelays(_items: TribeMember[]): Promise<void> {
     try {
-      // First, save to files using the same logic as setFileItems
-      await this.setFileItems(items);
-
-      // Then publish via orchestrator (reads from files)
+      // Publish via orchestrator (reads from browser localStorage)
       await this.tribeOrchestrator.publishToRelays();
     } catch (error) {
       this.logger.error('TribeStorageAdapter', `Failed to publish to relays: ${error}`);

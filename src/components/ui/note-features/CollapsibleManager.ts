@@ -4,10 +4,38 @@
  * Works for ALL note types without analyzing structure
  */
 
+import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
+import { EventBus } from '../../../services/EventBus';
+
 export class CollapsibleManager {
   // Collapsible note thresholds (in viewport height units)
   private static readonly COLLAPSIBLE_HEIGHT_THRESHOLD = 0.40; // 40vh - collapse if taller than this
   private static readonly COLLAPSIBLE_MIN_DIFFERENCE = 0.05;   // 5vh - only collapse if difference is significant
+  private static initialized = false;
+
+  /**
+   * Initialize global event listeners (call once on app start)
+   */
+  static init(): void {
+    if (this.initialized) return;
+    this.initialized = true;
+
+    const eventBus = EventBus.getInstance();
+
+    // Listen for post truncation setting changes
+    eventBus.on('settings:post-truncation-changed', (data: { disabled: boolean }) => {
+      // Update all existing collapsible wrappers
+      const wrappers = document.querySelectorAll('.collapsible-wrapper');
+      const buttons = document.querySelectorAll('.btn--show-more');
+
+      wrappers.forEach((wrapper, index) => {
+        const btn = buttons[index] as HTMLElement;
+        if (btn) {
+          CollapsibleManager.checkAndCollapse(wrapper as HTMLElement, btn);
+        }
+      });
+    });
+  }
 
   /**
    * Setup collapsible for a note
@@ -103,6 +131,18 @@ export class CollapsibleManager {
    * Only collapses if note is significantly taller than threshold
    */
   private static checkAndCollapse(wrapperEl: HTMLElement, btnEl: HTMLElement): void {
+    // Check if post truncation is disabled
+    const storage = PerAccountLocalStorage.getInstance();
+    const isTruncationDisabled = storage.get<boolean>(StorageKeys.DISABLE_POST_TRUNCATION, false);
+
+    if (isTruncationDisabled) {
+      // User disabled truncation - always show full content
+      btnEl.style.display = 'none';
+      wrapperEl.classList.remove('is-collapsed');
+      wrapperEl.classList.remove('is-expanded');
+      return;
+    }
+
     const viewportHeight = window.innerHeight;
     const contentHeight = wrapperEl.scrollHeight;
 
@@ -114,9 +154,13 @@ export class CollapsibleManager {
     if (contentHeight > collapseThreshold + minDifference) {
       btnEl.style.display = 'block';
       wrapperEl.classList.add('is-collapsed');
+      wrapperEl.classList.remove('is-expanded');
+      btnEl.textContent = 'Show More';
     } else {
       // Not worth collapsing - show full height
       btnEl.style.display = 'none';
+      wrapperEl.classList.remove('is-collapsed');
+      wrapperEl.classList.remove('is-expanded');
     }
   }
 }

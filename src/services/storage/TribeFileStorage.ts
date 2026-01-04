@@ -19,6 +19,8 @@
 
 import { BaseFileStorage } from './BaseFileStorage';
 import type { TribeSetData } from '../../types/TribeSetData';
+import type { TribeFolder, MemberAssignment } from '../TribeFolderService';
+import type { RootOrderItem } from '../GenericFolderService';
 
 /**
  * Tribe member with NIP-51 p-tag support
@@ -276,6 +278,69 @@ export class TribeFileStorage {
     }
 
     return members;
+  }
+
+  /**
+   * Get all folder data (folders, assignments, root order)
+   * Used by "Restore from file" to rebuild folder structure
+   */
+  public async getAllFolderData(): Promise<{
+    folders: TribeFolder[];
+    folderAssignments: MemberAssignment[];
+    rootOrder: RootOrderItem[];
+  }> {
+    const data = await this.read();
+
+    const folders: TribeFolder[] = [];
+    const folderAssignments: MemberAssignment[] = [];
+    const rootOrder: RootOrderItem[] = [];
+
+    // Build folders from sets (except root)
+    let folderOrder = 0;
+    for (const set of data.sets) {
+      if (set.d !== '') {
+        const folderId = `folder_${set.d}`;
+        folders.push({
+          id: folderId,
+          name: set.d,
+          createdAt: data.metadata.lastModified,
+          order: folderOrder++
+        });
+        rootOrder.push({ type: 'folder', id: folderId });
+      }
+    }
+
+    // Extract folder assignments for ALL members (public AND private)
+    for (const set of data.sets) {
+      const folderId = set.d === '' ? '' : `folder_${set.d}`;
+      let itemOrder = 0;
+
+      // Process public members
+      for (const member of set.publicMembers) {
+        folderAssignments.push({
+          memberId: member.pubkey,
+          folderId,
+          order: itemOrder++
+        });
+        if (set.d === '') {
+          rootOrder.push({ type: 'member', id: member.pubkey });
+        }
+      }
+
+      // Process private members
+      for (const member of set.privateMembers) {
+        folderAssignments.push({
+          memberId: member.pubkey,
+          folderId,
+          order: itemOrder++
+        });
+        if (set.d === '') {
+          rootOrder.push({ type: 'member', id: member.pubkey });
+        }
+      }
+    }
+
+    return { folders, folderAssignments, rootOrder };
   }
 
   /**

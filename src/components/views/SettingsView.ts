@@ -135,21 +135,21 @@ export class SettingsView extends View {
           false
         )}
 
-        <div class="settings-section">
-          <div class="settings-section__header">
-            <div class="settings-section__info">
-              <h2 class="settings-section__title">Subscriptions</h2>
-              <p class="settings-section__description">
+        <div class="nn-ui-toggle settings-section">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Subscriptions</h2>
+              <p class="nn-ui-toggle__description">
                 Subscribe to hashtags and get notified when new posts are published.
               </p>
             </div>
-            <button class="settings-section__toggle" aria-label="Toggle section">
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
           </div>
-          <div class="settings-section__content">
+          <div class="nn-ui-toggle__content">
             <div class="subscription-search">
               <input
                 type="text"
@@ -267,10 +267,10 @@ export class SettingsView extends View {
    * Bind accordion toggle listeners
    */
   private bindAccordionListeners(): void {
-    const headers = this.container.querySelectorAll('.settings-section__header');
+    const headers = this.container.querySelectorAll('.nn-ui-toggle__header');
     headers.forEach(header => {
       header.addEventListener('click', (e) => {
-        const section = (e.currentTarget as HTMLElement).closest('.settings-section');
+        const section = (e.currentTarget as HTMLElement).closest('.settings-section, .nn-ui-toggle');
         section?.classList.toggle('open');
       });
     });

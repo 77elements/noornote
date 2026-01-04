@@ -1,0 +1,103 @@
+/**
+ * NN UI Toggle Molecule
+ * Generic accordion/toggle component
+ *
+ * @purpose Reusable accordion pattern for any view
+ * @used-by SettingsView, NIP-51 Inspector, etc.
+ *
+ * Pattern:
+ * - .nn-ui-toggle - Container
+ * - .nn-ui-toggle__header - Clickable header
+ * - .nn-ui-toggle__info - Title + description area
+ * - .nn-ui-toggle__title - Title text
+ * - .nn-ui-toggle__description - Optional description
+ * - .nn-ui-toggle__toggle - Toggle button/icon
+ * - .nn-ui-toggle__content - Collapsible content area
+ * - .nn-ui-toggle.open - Open state modifier
+ */
+
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+
+.nn-ui-toggle {
+  background: $color-1;
+  border: 1px solid $color-2;
+  border-radius: $radius-sm;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  margin-bottom: $gap;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: $gap;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s ease;
+
+    &:hover {
+      background: $color-2;
+    }
+  }
+
+  &__info {
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 18px;
+    font-weight: 600;
+    color: $color-5;
+    margin: 0 0 calc($gap / 4) 0;
+  }
+
+  &__description {
+    font-size: 14px;
+    color: rgba($color-5, 0.6);
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  &__toggle {
+    background: none;
+    border: none;
+    color: $color-5;
+    cursor: pointer;
+    padding: calc($gap / 2);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+  }
+
+  &__content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0 $gap;
+  }
+
+  // Open state
+  &.open {
+    .nn-ui-toggle__header {
+      background-color: $color-2;
+    }
+
+    .nn-ui-toggle__toggle {
+      transform: rotate(180deg);
+    }
+
+    .nn-ui-toggle__content {
+      max-height: 5000px; // Large enough for most content
+      padding-bottom: $gap;
+    }
+  }
+}

@@ -7,22 +7,6 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// Bookmark grid container
-.bookmark-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: $gap;
-  padding: $gap 0;
-
-  @include tablet-down {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  @include mobile-down {
-    grid-template-columns: 1fr;
-  }
-}
-
 // Header with New Folder button
 .bookmark-header {
   display: flex;

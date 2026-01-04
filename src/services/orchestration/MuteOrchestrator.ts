@@ -560,15 +560,52 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
       const events = await this.transport.fetch(relays, [{
         authors: [currentUser.pubkey],
         kinds: [10000],
-        limit: 1
+        limit: 10
       }], 5000);
 
-      if (events.length === 0) {
+      // Fetch deletion events (kind:5) to filter out deleted mute lists
+      const deletionEvents = await this.transport.fetch(relays, [{
+        authors: [currentUser.pubkey],
+        kinds: [5]
+      }], 5000);
+
+      // Extract deleted coordinate with deletion timestamp
+      // NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp"
+      let deletionTimestamp: number | undefined;
+      deletionEvents.forEach(deletionEvent => {
+        deletionEvent.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('10000:'))
+          .forEach(t => {
+            const coordinate = t[1];
+            const expectedCoordinate = `10000:${currentUser.pubkey}`;
+            if (coordinate === expectedCoordinate) {
+              // Keep newest deletion timestamp if multiple deletions exist
+              if (!deletionTimestamp || deletionEvent.created_at > deletionTimestamp) {
+                deletionTimestamp = deletionEvent.created_at;
+              }
+            }
+          });
+      });
+
+      // Filter out deleted events (events older than deletion timestamp)
+      let validEvents = events;
+      if (deletionTimestamp !== undefined) {
+        validEvents = events.filter(event => event.created_at >= deletionTimestamp);
+        const filteredCount = events.length - validEvents.length;
+        if (filteredCount > 0) {
+          this.systemLogger.info('MuteOrchestrator',
+            `Filtered out ${filteredCount} deleted mute list(s) (older than deletion at ${deletionTimestamp})`
+          );
+        }
+      }
+
+      if (validEvents.length === 0) {
         this.systemLogger.info('MuteOrchestrator', 'No remote mute list found');
         return { items: [], relayContentWasEmpty: true };
       }
 
-      const remoteEvent = events[0];
+      // Get newest event
+      const remoteEvent = validEvents.sort((a, b) => b.created_at - a.created_at)[0];
 
       // Check if content was empty (mixed-client edge case - see LIST-MANAGEMENT-SPEC.md)
       const relayContentWasEmpty = !remoteEvent.content || remoteEvent.content.trim() === '';
@@ -612,15 +649,51 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
       const events = await this.transport.fetch(relays, [{
         authors: [currentUser.pubkey],
         kinds: [10000],
-        limit: 1
+        limit: 10
       }], 5000);
 
-      if (events.length === 0) {
+      // Fetch deletion events (kind:5) to filter out deleted mute lists
+      const deletionEvents = await this.transport.fetch(relays, [{
+        authors: [currentUser.pubkey],
+        kinds: [5]
+      }], 5000);
+
+      // Extract deleted coordinate with deletion timestamp
+      // NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp"
+      let deletionTimestamp: number | undefined;
+      deletionEvents.forEach(deletionEvent => {
+        deletionEvent.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('10000:'))
+          .forEach(t => {
+            const coordinate = t[1];
+            const expectedCoordinate = `10000:${currentUser.pubkey}`;
+            if (coordinate === expectedCoordinate) {
+              if (!deletionTimestamp || deletionEvent.created_at > deletionTimestamp) {
+                deletionTimestamp = deletionEvent.created_at;
+              }
+            }
+          });
+      });
+
+      // Filter out deleted events (events older than deletion timestamp)
+      let validEvents = events;
+      if (deletionTimestamp !== undefined) {
+        validEvents = events.filter(event => event.created_at >= deletionTimestamp);
+        const filteredCount = events.length - validEvents.length;
+        if (filteredCount > 0) {
+          this.systemLogger.info('MuteOrchestrator',
+            `Filtered out ${filteredCount} deleted mute list(s) (older than deletion at ${deletionTimestamp})`
+          );
+        }
+      }
+
+      if (validEvents.length === 0) {
         this.systemLogger.info('MuteOrchestrator', 'No remote mute list found');
         return;
       }
 
-      const remoteEvent = events[0];
+      // Get newest event
+      const remoteEvent = validEvents.sort((a, b) => b.created_at - a.created_at)[0];
 
       // Get local browser storage
       const localItems = this.getBrowserItems();

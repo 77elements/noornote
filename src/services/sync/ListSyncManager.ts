@@ -165,6 +165,10 @@ export class ListSyncManager<T> {
   async restoreFromFile(): Promise<boolean> {
     if (PlatformService.getInstance().isTauri) {
       // Tauri: Use native file storage
+      // First restore folder structure (if available)
+      await this.restoreFolderDataFromFile();
+
+      // Then restore items
       const fileItems = await this.adapter.getFileItems();
       this.adapter.setBrowserItems(fileItems);
       return true;

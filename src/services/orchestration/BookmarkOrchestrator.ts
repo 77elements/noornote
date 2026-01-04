@@ -18,6 +18,7 @@ import { GenericListOrchestrator } from './GenericListOrchestrator';
 import { bookmarkListConfig, createBookmarkFileStorageWrapper } from './configs/BookmarkListConfig';
 import { BookmarkFolderService } from '../BookmarkFolderService';
 import { toNostrEvents } from '../sync/serializers/BookmarkSerializer';
+import { DeletionService } from '../DeletionService';
 
 // Re-export BookmarkItem for external use
 export type { BookmarkItem };
@@ -37,10 +38,12 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
   private static instance: BookmarkOrchestrator;
   private featureFlagKey = 'noornote_nip51_private_bookmarks_enabled';
   private folderService: BookmarkFolderService;
+  private deletionService: DeletionService;
 
   private constructor() {
     super('BookmarkOrchestrator', bookmarkListConfig, createBookmarkFileStorageWrapper());
     this.folderService = BookmarkFolderService.getInstance();
+    this.deletionService = DeletionService.getInstance();
   }
 
   public static getInstance(): BookmarkOrchestrator {
@@ -284,7 +287,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
    * - Root bookmarks → d: ""
    * - Category "Work" → d: "Work"
    * - Private bookmarks → encrypted in content
-   * - Deleted categories → publish empty event to overwrite
+   * - Deleted categories → NIP-09 kind:5 deletion with a tags
    */
   public override async publishToRelays(): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
@@ -317,9 +320,15 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       `Publishing: ${setData.sets.length} sets, ${deletedCategories.length} deleted categories`
     );
 
-    // First, publish empty events for deleted categories
-    for (const categoryName of deletedCategories) {
-      await this.publishEmptyCategory(categoryName);
+    // First, publish deletion requests for deleted categories (NIP-09)
+    if (deletedCategories.length > 0) {
+      const coordinates = deletedCategories.map(categoryName =>
+        `30003:${currentUser.pubkey}:${categoryName}`
+      );
+      await this.deletionService.deleteByCoordinates(
+        coordinates,
+        'Bookmark folder deleted'
+      );
     }
 
     // Convert to Nostr events using serializer
@@ -375,48 +384,35 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     this.systemLogger.info('BookmarkOrchestrator',
       `Published ${totalPublished} bookmark set events + ${deletedCategories.length} deletions to relays`
     );
-  }
 
-  /**
-   * Publish an empty event for a category to "delete" it from relays
-   * This overwrites the existing event with an empty one
-   */
-  public async publishEmptyCategory(categoryName: string): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) {
-      throw new Error('User not authenticated');
+    // Publish folder order metadata (NIP-78 kind:30078)
+    const folderOrder = setData.metadata.setOrder.filter(d => d !== '');
+    if (folderOrder.length > 0) {
+      const orderTags: string[][] = [
+        ['d', 'noornote:bookmark-folders-order']
+      ];
+
+      for (const dTag of folderOrder) {
+        const coordinate = `30003:${currentUser.pubkey}:${dTag}`;
+        orderTags.push(['a', coordinate]);
+      }
+
+      const orderEvent = {
+        kind: 30078,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: orderTags,
+        content: '',
+        pubkey: currentUser.pubkey
+      };
+
+      const signedOrderEvent = await this.authService.signEvent(orderEvent);
+      if (signedOrderEvent) {
+        await this.transport.publish(writeRelays, signedOrderEvent);
+        this.systemLogger.info('BookmarkOrchestrator',
+          `Published folder order metadata (kind:30078) with ${folderOrder.length} folders`
+        );
+      }
     }
-
-    const writeRelays = this.transport.getWriteRelays();
-    if (writeRelays.length === 0) {
-      throw new Error('No write relays available');
-    }
-
-    // Build empty event with this d-tag
-    const tags: string[][] = [
-      ['d', categoryName],
-      ['title', categoryName],
-      ['client', 'NoorNote']
-    ];
-
-    const event = {
-      kind: 30003,
-      created_at: Math.floor(Date.now() / 1000),
-      tags,
-      content: '',
-      pubkey: currentUser.pubkey
-    };
-
-    const signed = await this.authService.signEvent(event);
-    if (!signed) {
-      throw new Error(`Failed to sign empty event for category: ${categoryName}`);
-    }
-
-    await this.transport.publish(writeRelays, signed);
-
-    this.systemLogger.info('BookmarkOrchestrator',
-      `Published empty event to delete category "${categoryName}" from relays`
-    );
   }
 
   /**
@@ -512,8 +508,18 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       }
     }
 
-    // Build setOrder (root first, then by folder order)
-    const setOrder = ['', ...existingFolders.map(f => f.name)];
+    // Build setOrder from rootOrder (preserves user's drag & drop arrangement)
+    const rootOrder = this.folderService.getRootOrder();
+    const folderNames: string[] = [];
+    for (const item of rootOrder) {
+      if (item.type === 'folder') {
+        const folder = existingFolders.find(f => f.id === item.id);
+        if (folder) {
+          folderNames.push(folder.name);
+        }
+      }
+    }
+    const setOrder = ['', ...folderNames];
 
     return {
       version: 2,
@@ -527,7 +533,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
 
   /**
    * Fetch bookmarks from relays (read-only, no local changes)
-   * Fetches ALL kind:30003 events for the user and extracts categories
+   * Fetches ALL kind:30003 events and filters out deleted ones via kind:5 events
    */
   public override async fetchFromRelays(pubkey: string): Promise<FetchFromRelaysResult<BookmarkItem>> {
     const relays = this.getBootstrapRelays();
@@ -540,29 +546,132 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         limit: 100  // Support up to 100 categories
       }], 10000);
 
-      if (events.length === 0) {
+      // Fetch deletion events (kind:5) to filter out deleted categories
+      const deletionEvents = await this.transport.fetch(relays, [{
+        authors: [pubkey],
+        kinds: [5]
+      }], 5000);
+
+      // Extract deleted coordinates with deletion timestamp (coordinate → deletion created_at)
+      // NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp"
+      const deletedCoordinates = new Map<string, number>();
+      deletionEvents.forEach(deletionEvent => {
+        deletionEvent.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('30003:'))
+          .forEach(t => {
+            const coordinate = t[1];
+            const existingTimestamp = deletedCoordinates.get(coordinate);
+            // Keep newest deletion timestamp if multiple deletions exist
+            if (!existingTimestamp || deletionEvent.created_at > existingTimestamp) {
+              deletedCoordinates.set(coordinate, deletionEvent.created_at);
+            }
+          });
+      });
+
+      if (deletedCoordinates.size > 0) {
+        this.systemLogger.info('BookmarkOrchestrator',
+          `Found ${deletedCoordinates.size} deletion requests for bookmark sets`
+        );
+      }
+
+      if (events.length === 0 && deletedCoordinates.size === 0) {
         this.systemLogger.info('BookmarkOrchestrator', 'No bookmark sets found on relays');
         return { items: [], relayContentWasEmpty: true };
       }
 
-      // Deduplicate by d-tag (keep newest per category)
+      // Deduplicate by d-tag (keep newest per category) and filter out deleted ones
       const eventsByDTag = new Map<string, NostrEvent>();
+      let filteredDeletedCount = 0;
+
       events.forEach(event => {
         const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+
+        // Check if this event is deleted (NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp")
+        const coordinate = `30003:${pubkey}:${dTag}`;
+        const deletionTimestamp = deletedCoordinates.get(coordinate);
+        if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
+          filteredDeletedCount++;
+          return; // Skip events older than deletion
+        }
+
         const existing = eventsByDTag.get(dTag);
         if (!existing || event.created_at > existing.created_at) {
           eventsByDTag.set(dTag, event);
         }
       });
 
+      if (filteredDeletedCount > 0) {
+        this.systemLogger.info('BookmarkOrchestrator',
+          `Filtered out ${filteredDeletedCount} deleted bookmark sets from relay fetch`
+        );
+      }
+
+      if (eventsByDTag.size === 0) {
+        this.systemLogger.info('BookmarkOrchestrator', 'No bookmark sets after filtering deletions');
+        return { items: [], relayContentWasEmpty: true };
+      }
+
+      // Fetch folder order metadata (NIP-78 kind:30078)
+      const orderEvents = await this.transport.fetch(relays, [{
+        authors: [pubkey],
+        kinds: [30078],
+        "#d": ["noornote:bookmark-folders-order"]
+      }], 5000);
+
+      let folderOrder: string[] = [];
+      if (orderEvents.length > 0) {
+        const orderEvent = orderEvents.sort((a, b) => b.created_at - a.created_at)[0];
+        folderOrder = orderEvent.tags
+          .filter(t => t[0] === 'a' && t[1]?.startsWith('30003:'))
+          .map(t => {
+            const parts = t[1].split(':');
+            return parts[2] || '';
+          });
+
+        this.systemLogger.info('BookmarkOrchestrator',
+          `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`
+        );
+      }
+
+      // Build categories array in correct order
+      const categories: string[] = [''];  // Root always first
+
+      if (folderOrder.length > 0) {
+        // Use order from NIP-78 metadata
+        for (const dTag of folderOrder) {
+          if (eventsByDTag.has(dTag)) {
+            categories.push(dTag);
+          }
+        }
+
+        // Add any folders not in metadata (edge case)
+        for (const dTag of eventsByDTag.keys()) {
+          if (dTag !== '' && !categories.includes(dTag)) {
+            categories.push(dTag);
+            this.systemLogger.warn('BookmarkOrchestrator',
+              `Folder "${dTag}" not in order metadata, appending to end`
+            );
+          }
+        }
+      } else {
+        // Fallback: alphabetical order
+        const sortedDTags = Array.from(eventsByDTag.keys())
+          .filter(d => d !== '')
+          .sort();
+        categories.push(...sortedDTags);
+
+        this.systemLogger.info('BookmarkOrchestrator',
+          'No folder order metadata found, using alphabetical fallback'
+        );
+      }
+
       const allItems: BookmarkItem[] = [];
       const categoryAssignments = new Map<string, string>(); // bookmarkId -> categoryName
-      const categories: string[] = [];
       let anyContentWasEmpty = true;
 
-      for (const [categoryName, event] of eventsByDTag) {
-        // Track all categories (including root "")
-        categories.push(categoryName);
+      for (const categoryName of categories) {
+        const event = eventsByDTag.get(categoryName);
+        if (!event) continue;
 
         const hasContent = event.content && event.content.trim() !== '';
         if (hasContent) anyContentWasEmpty = false;
@@ -618,98 +727,6 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     }
   }
 
-  /**
-   * Sync from relays (manual sync)
-   * Fetches all categories and merges with local
-   * Creates folders from relay categories and assigns bookmarks
-   */
-  public override async syncFromRelays(pubkey: string): Promise<{ added: number; total: number }> {
-    const relays = this.getBootstrapRelays();
-    this.systemLogger.info('BookmarkOrchestrator', `Syncing from relays (${relays.length} relays)...`);
-
-    try {
-      const fetchResult = await this.fetchFromRelays(pubkey);
-      const localItems = this.getBrowserItems();
-
-      // Merge (union)
-      const merged = this.mergeItems(localItems, fetchResult.items);
-      const added = merged.length - localItems.length;
-
-      this.setBrowserItems(merged);
-
-      // Create folders only for categories that have items (skip empty sets)
-      const existingFolders = this.folderService.getFolders();
-      const categoryAssignments = fetchResult.categoryAssignments;
-
-      // Collect categories that actually have items
-      const categoriesWithItems = new Set<string>();
-      if (categoryAssignments) {
-        for (const [, categoryName] of categoryAssignments) {
-          if (categoryName !== '') {
-            categoriesWithItems.add(categoryName);
-          }
-        }
-      }
-
-      for (const categoryName of categoriesWithItems) {
-        // Check if folder with this name exists
-        const existingFolder = existingFolders.find(f => f.name === categoryName);
-        if (!existingFolder) {
-          this.folderService.createFolder(categoryName);
-          this.systemLogger.info('BookmarkOrchestrator', `Created folder from relay: "${categoryName}"`);
-        }
-      }
-
-      // Assign bookmarks to their categories from relay, preserving order
-      // BUG FIX: Only assign categories for NEW bookmarks (not in local storage before sync)
-      // Existing bookmarks keep their local folder assignment - user's manual organization takes precedence
-      if (categoryAssignments) {
-        const updatedFolders = this.folderService.getFolders(); // Refresh after creating new folders
-
-        // Build set of local bookmark IDs (before merge) for fast lookup
-        const localBookmarkIds = new Set(localItems.map(item => item.id));
-
-        // Track order per category (Map iteration preserves insertion order from relay)
-        const orderByCategory = new Map<string, number>();
-
-        for (const [bookmarkId, categoryName] of categoryAssignments) {
-          const isNewBookmark = !localBookmarkIds.has(bookmarkId);
-
-          // Get next order for this category
-          const currentOrder = orderByCategory.get(categoryName) ?? 0;
-          orderByCategory.set(categoryName, currentOrder + 1);
-
-          if (isNewBookmark) {
-            // NEW bookmark: assign relay category with preserved order
-            if (categoryName === '') {
-              this.folderService.ensureBookmarkAssignment(bookmarkId, currentOrder);
-            } else {
-              const folder = updatedFolders.find(f => f.name === categoryName);
-              if (folder) {
-                this.folderService.moveBookmarkToFolder(bookmarkId, folder.id, currentOrder);
-              } else {
-                // Folder doesn't exist locally, assign to root
-                this.folderService.ensureBookmarkAssignment(bookmarkId);
-                this.systemLogger.warn('BookmarkOrchestrator',
-                  `Folder "${categoryName}" not found, assigned bookmark ${bookmarkId.slice(0, 8)}... to root`
-                );
-              }
-            }
-          }
-          // EXISTING bookmark: Skip - keep local folder assignment
-        }
-      }
-
-      this.systemLogger.info('BookmarkOrchestrator',
-        `Sync complete: ${added} new items, ${categoriesWithItems.size} categories`
-      );
-
-      return { added, total: merged.length };
-    } catch (error) {
-      this.systemLogger.error('BookmarkOrchestrator', `Sync from relays failed: ${error}`);
-      throw error;
-    }
-  }
 
   /**
    * Fetch bookmarks from relays (read-only wrapper)

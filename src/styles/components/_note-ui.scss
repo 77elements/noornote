@@ -15,6 +15,9 @@
   border-radius: 0.5rem;
   transition: background 0.2s ease;
 
+  // Smooth scrolling optimizations (containment for better rendering performance)
+  contain: layout style;
+
   &:hover {
     background: $color-2;
   }

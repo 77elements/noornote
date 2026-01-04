@@ -17,6 +17,7 @@ export class UISettingsSection extends SettingsSection {
   private storage: PerAccountLocalStorage;
   private eventBus: EventBus;
   private viewTabsSwitch: Switch | null = null;
+  private postTruncationSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
 
   constructor() {
@@ -78,6 +79,21 @@ export class UISettingsSection extends SettingsSection {
           <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6);">
             • Single click: Open in new tab or switch to existing tab<br>
             • Double-click or Cmd+Click: Open additional tabs
+          </p>
+        </div>
+
+        <h3 class="subsection-title" style="margin-top: 2rem;">Content Display</h3>
+        <div class="form__info">
+          <p>Configure how long posts are displayed in the timeline.</p>
+        </div>
+
+        <div class="post-truncation-switch-container" id="post-truncation-switch-container">
+          <!-- Switch will be mounted here -->
+        </div>
+
+        <div class="form__info">
+          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
+            When enabled, long posts will always be displayed in full without "Show More" buttons. This may affect timeline scrolling performance for very long posts.
           </p>
         </div>
       </div>
@@ -144,6 +160,31 @@ export class UISettingsSection extends SettingsSection {
 
       switchContainer.innerHTML = this.viewTabsSwitch.render();
       this.viewTabsSwitch.setupEventListeners(switchContainer as HTMLElement);
+    }
+
+    // Initialize Post Truncation switch
+    const postTruncationContainer = contentContainer.querySelector('#post-truncation-switch-container');
+    if (postTruncationContainer) {
+      const isDisabled = this.storage.get<boolean>(StorageKeys.DISABLE_POST_TRUNCATION, false);
+
+      this.postTruncationSwitch = new Switch({
+        label: 'Disable post truncation',
+        checked: isDisabled,
+        onChange: (checked) => {
+          this.storage.set(StorageKeys.DISABLE_POST_TRUNCATION, checked);
+
+          // Emit event for immediate effect
+          this.eventBus.emit('settings:post-truncation-changed', { disabled: checked });
+
+          ToastService.show(
+            checked ? 'Post truncation disabled - all posts will be shown in full' : 'Post truncation enabled',
+            'success'
+          );
+        }
+      });
+
+      postTruncationContainer.innerHTML = this.postTruncationSwitch.render();
+      this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
     }
   }
 

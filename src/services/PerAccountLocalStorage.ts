@@ -42,6 +42,9 @@ export const StorageKeys = {
 
   // Calendar system preference (per-account)
   CALENDAR_SYSTEM: 'noornote_calendar_system_map',
+
+  // UI preferences (per-account)
+  DISABLE_POST_TRUNCATION: 'noornote_disable_post_truncation_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
