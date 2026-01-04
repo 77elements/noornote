@@ -264,7 +264,7 @@ export class BookmarkManager {
       ${this.renderSyncControls()}
       ${this.renderHeader(folder)}
       ${isInFolder ? this.renderBreadcrumb(folder) : ''}
-      <div class="bookmark-grid"></div>
+      <div class="grid-3-col"></div>
       ${this.renderSyncControls()}
     `;
 
@@ -275,7 +275,7 @@ export class BookmarkManager {
     this.bindHeaderButtons(container);
 
     // Render grid content
-    const grid = container.querySelector('.bookmark-grid') as HTMLElement;
+    const grid = container.querySelector('.grid-3-col') as HTMLElement;
     await this.renderGridContent(grid);
   }
 
@@ -963,7 +963,7 @@ export class BookmarkManager {
           this.folderService.addToRootOrder('folder', folder.id);
 
           // Add folder card to grid at the beginning without full re-render
-          const grid = this.containerElement.querySelector('.bookmark-grid');
+          const grid = this.containerElement.querySelector('.grid-3-col');
           if (grid) {
             const card = this.createFolderCard(folder);
             grid.insertBefore(card, grid.firstChild);

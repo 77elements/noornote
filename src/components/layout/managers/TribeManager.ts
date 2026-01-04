@@ -247,7 +247,7 @@ export class TribeManager {
       ${this.renderSyncControls()}
       ${this.renderHeader(folder)}
       ${isInFolder ? this.renderBreadcrumb(folder) : ''}
-      <div class="tribe-grid"></div>
+      <div class="grid-3-col"></div>
       ${this.renderSyncControls()}
     `;
 
@@ -258,7 +258,7 @@ export class TribeManager {
     this.bindHeaderButtons(container);
 
     // Render grid content
-    const grid = container.querySelector('.tribe-grid') as HTMLElement;
+    const grid = container.querySelector('.grid-3-col') as HTMLElement;
     await this.renderGridContent(grid);
   }
 
