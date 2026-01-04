@@ -22,6 +22,7 @@ import { PlatformService } from './services/PlatformService';
 import { ConnectivityService } from './services/ConnectivityService';
 import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { AutoSyncService } from './services/sync/AutoSyncService';
+import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
 // View type imported for potential future use
@@ -70,6 +71,9 @@ export class App {
 
     // Initialize AutoSyncService to listen for list update events
     AutoSyncService.getInstance();
+
+    // Initialize CollapsibleManager to listen for post truncation setting changes
+    CollapsibleManager.init();
 
     // Check internet connectivity before proceeding
     const connectivityService = ConnectivityService.getInstance();
