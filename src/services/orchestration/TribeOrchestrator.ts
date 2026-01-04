@@ -275,8 +275,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
    * - Deleted tribes → NIP-09 kind:5 deletion with a tags
    */
   public override async publishToRelays(): Promise<void> {
+    console.log('[TribeOrchestrator] publishToRelays START');
 
     const currentUser = this.authService.getCurrentUser();
+    console.log('[TribeOrchestrator] currentUser:', currentUser?.npub?.slice(0, 16));
     if (!currentUser) {
       throw new Error('User not authenticated');
     }
@@ -306,6 +308,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       }
     }
 
+    console.log(`[TribeOrchestrator] Publishing: ${setData.sets.length} sets, ${deletedTribes.length} deleted tribes`);
     this.systemLogger.info('TribeOrchestrator',
       `Publishing: ${setData.sets.length} sets, ${deletedTribes.length} deleted tribes`
     );
@@ -374,6 +377,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       await this.transport.publish(writeRelays, signed);
       totalPublished++;
 
+      console.log(`[TribeOrchestrator] Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`);
       this.systemLogger.info('TribeOrchestrator',
         `Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`
       );
@@ -382,6 +386,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     this.systemLogger.info('TribeOrchestrator',
       `Published ${totalPublished} tribe set events + ${deletedTribes.length} deletions to relays`
     );
+    console.log('[TribeOrchestrator] publishToRelays COMPLETE');
   }
 
   /**

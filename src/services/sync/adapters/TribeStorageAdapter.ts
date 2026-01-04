@@ -127,10 +127,14 @@ export class TribeStorageAdapter extends BaseListStorageAdapter<TribeMember> {
    * Files are only written on explicit "Save to file" action by user.
    */
   async publishToRelays(_items: TribeMember[]): Promise<void> {
+    console.log('[TribeStorageAdapter] publishToRelays START');
     try {
       // Publish via orchestrator (reads from browser localStorage)
+      console.log('[TribeStorageAdapter] Calling orchestrator.publishToRelays()');
       await this.tribeOrchestrator.publishToRelays();
+      console.log('[TribeStorageAdapter] publishToRelays SUCCESS');
     } catch (error) {
+      console.error('[TribeStorageAdapter] publishToRelays ERROR:', error);
       this.logger.error('TribeStorageAdapter', `Failed to publish to relays: ${error}`);
       throw error;
     }

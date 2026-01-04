@@ -37,7 +37,9 @@ const GLOBAL_CATEGORIES = [
   'OutboundRelaysFetcherOrchestrator',
   'PostService',
   'ZapService',
-  'NWCService'
+  'NWCService',
+  'BookmarkOrchestrator',
+  'TribeOrchestrator'
 ];
 
 // View-specific categories mapping (Router viewClass → allowed categories)

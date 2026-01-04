@@ -69,7 +69,29 @@ export class TribeFolderService {
   }
 
   public deleteFolder(folderId: string): string[] {
-    return this.genericService.deleteFolder(folderId);
+    // Tribes have NO root items - members are deleted together with the tribe
+    const affectedMemberIds = this.getMembersInFolder(folderId);
+
+    // Remove all assignments for this folder
+    const allAssignments = this.genericService['getAssignments']();
+    const updatedAssignments = allAssignments.filter(a => a.folderId !== folderId);
+    this.genericService['saveAssignments'](updatedAssignments);
+
+    // Delete folder
+    const folders = this.getFolders().filter(f => f.id !== folderId);
+    this.genericService['saveFolders'](folders);
+
+    // Remove members from root order if they were there
+    const rootOrder = this.getRootOrder();
+    const updatedRootOrder = rootOrder.filter(item => {
+      if (item.type === 'member') {
+        return !affectedMemberIds.includes(item.id);
+      }
+      return item.id !== folderId;
+    });
+    this.saveRootOrder(updatedRootOrder);
+
+    return affectedMemberIds;
   }
 
   // ========================================
