@@ -9,14 +9,14 @@
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { CustomDropdown } from '../ui/CustomDropdown';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from '../../services/PerAccountLocalStorage';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
 
 export class UISettingsSection extends SettingsSection {
   private storage: PerAccountLocalStorage;
   private eventBus: EventBus;
-  private viewTabsSwitch: Switch | null = null;
+  private layoutModeDropdown: CustomDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
 
@@ -63,20 +63,26 @@ export class UISettingsSection extends SettingsSection {
           </p>
         </div>
 
-        <h3 class="subsection-title" style="margin-top: 2rem;">View Navigation</h3>
+        <h3 class="subsection-title" style="margin-top: 2rem;">Layout Mode</h3>
         <div class="form__info">
-          <p>Configure how notes, profiles, and other views are opened in the app.</p>
+          <p>Configure how the app layout behaves when opening notes, profiles, and other views.</p>
         </div>
 
-        <div class="view-tabs-switch-container" id="view-tabs-switch-container">
-          <!-- Switch will be mounted here -->
+        <div class="form-group">
+          <label class="form-label">Layout Mode</label>
+          <div class="layout-mode-dropdown-container">
+            <!-- Layout mode dropdown will be mounted here -->
+          </div>
         </div>
 
         <div class="form__info">
           <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
-            When enabled, clicking on notes, profiles, notifications, or messages will open as tabs in the right pane instead of the main view.
+            • <strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger<br>
+            • <strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane<br>
+            • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space
           </p>
           <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6);">
+            <strong>Right Pane mode click behavior:</strong><br>
             • Single click: Open in new tab or switch to existing tab<br>
             • Double-click or Cmd+Click: Open additional tabs
           </p>
@@ -105,8 +111,8 @@ export class UISettingsSection extends SettingsSection {
    */
   private bindListeners(contentContainer: HTMLElement): void {
     // Calendar system dropdown
-    const dropdownContainer = contentContainer.querySelector('.calendar-system-dropdown-container');
-    if (dropdownContainer) {
+    const calendarDropdownContainer = contentContainer.querySelector('.calendar-system-dropdown-container');
+    if (calendarDropdownContainer) {
       const calendarSystem = this.storage.get<string>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
 
       this.calendarDropdown = new CustomDropdown({
@@ -134,32 +140,41 @@ export class UISettingsSection extends SettingsSection {
         width: '100%',
       });
 
-      dropdownContainer.appendChild(this.calendarDropdown.getElement());
+      calendarDropdownContainer.appendChild(this.calendarDropdown.getElement());
     }
 
-    // Initialize View Tabs switch
-    const switchContainer = contentContainer.querySelector('#view-tabs-switch-container');
-    if (switchContainer) {
-      const isEnabled = this.storage.get<boolean>(StorageKeys.VIEW_TABS_RIGHT_PANE, false);
+    // Layout mode dropdown
+    const layoutModeDropdownContainer = contentContainer.querySelector('.layout-mode-dropdown-container');
+    if (layoutModeDropdownContainer) {
+      const currentMode = this.storage.getLayoutMode();
 
-      this.viewTabsSwitch = new Switch({
-        label: 'Open views in right pane',
-        checked: isEnabled,
-        onChange: (checked) => {
-          this.storage.set(StorageKeys.VIEW_TABS_RIGHT_PANE, checked);
+      this.layoutModeDropdown = new CustomDropdown({
+        options: [
+          { value: 'default', label: 'Default' },
+          { value: 'right-pane', label: 'Right Pane' },
+          { value: 'wide', label: 'Wide Mode' },
+        ],
+        selectedValue: currentMode,
+        onChange: (value) => {
+          const mode = value as LayoutMode;
+          this.storage.setLayoutMode(mode);
 
           // Emit event for immediate effect (no reload needed)
-          this.eventBus.emit('settings:view-tabs-changed', { enabled: checked });
+          this.eventBus.emit('settings:layout-mode-changed', { mode });
 
-          ToastService.show(
-            checked ? 'View tabs enabled' : 'View tabs disabled',
-            'success'
-          );
-        }
+          const labels: Record<LayoutMode, string> = {
+            'default': 'Default layout mode',
+            'right-pane': 'Right pane mode (views as tabs)',
+            'wide': 'Wide mode (hide right pane)',
+          };
+
+          ToastService.show(`Switched to ${labels[mode]}`, 'success');
+        },
+        className: 'layout-mode-dropdown',
+        width: '100%',
       });
 
-      switchContainer.innerHTML = this.viewTabsSwitch.render();
-      this.viewTabsSwitch.setupEventListeners(switchContainer as HTMLElement);
+      layoutModeDropdownContainer.appendChild(this.layoutModeDropdown.getElement());
     }
 
     // Initialize Post Truncation switch
@@ -195,6 +210,11 @@ export class UISettingsSection extends SettingsSection {
     if (this.calendarDropdown) {
       this.calendarDropdown.destroy();
       this.calendarDropdown = null;
+    }
+
+    if (this.layoutModeDropdown) {
+      this.layoutModeDropdown.destroy();
+      this.layoutModeDropdown = null;
     }
   }
 }

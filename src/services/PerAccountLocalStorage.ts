@@ -20,7 +20,7 @@ export const StorageKeys = {
   USER_EVENT_IDS: 'noornote_user_event_ids_map',
   USER_EVENT_ANCESTRY: 'noornote_user_event_ancestry_map',
   ZAP_DEFAULTS: 'noornote_zap_defaults_map',
-  VIEW_TABS_RIGHT_PANE: 'noornote_view_tabs_right_pane_map',
+  VIEW_TABS_RIGHT_PANE: 'noornote_view_tabs_right_pane_map', // DEPRECATED - use LAYOUT_MODE
 
   // List storage (per-account)
   BOOKMARKS: 'noornote_bookmarks_map',
@@ -45,9 +45,12 @@ export const StorageKeys = {
 
   // UI preferences (per-account)
   DISABLE_POST_TRUNCATION: 'noornote_disable_post_truncation_map',
+  LAYOUT_MODE: 'noornote_layout_mode_map', // 'default' | 'right-pane' | 'wide'
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
+
+export type LayoutMode = 'default' | 'right-pane' | 'wide';
 
 export class PerAccountLocalStorage {
   private static instance: PerAccountLocalStorage;
@@ -78,6 +81,42 @@ export class PerAccountLocalStorage {
     if (!pubkey) return defaultValue;
 
     return this.getForPubkey(key, pubkey, defaultValue);
+  }
+
+  /**
+   * Get layout mode with automatic migration from legacy VIEW_TABS_RIGHT_PANE
+   */
+  public getLayoutMode(): LayoutMode {
+    const pubkey = this.getCurrentPubkey();
+    if (!pubkey) return 'default';
+
+    // Check if LAYOUT_MODE already exists
+    const layoutMode = this.getForPubkey<LayoutMode>(StorageKeys.LAYOUT_MODE, pubkey, 'default');
+
+    // If already set to non-default, return it
+    if (layoutMode !== 'default') {
+      return layoutMode;
+    }
+
+    // Migration: Check old VIEW_TABS_RIGHT_PANE setting
+    const legacyRightPaneEnabled = this.getForPubkey<boolean>(StorageKeys.VIEW_TABS_RIGHT_PANE, pubkey, false);
+
+    if (legacyRightPaneEnabled) {
+      // Migrate: true → 'right-pane'
+      const migratedMode: LayoutMode = 'right-pane';
+      this.setForPubkey(StorageKeys.LAYOUT_MODE, pubkey, migratedMode);
+      return migratedMode;
+    }
+
+    // Default case: false → 'default'
+    return 'default';
+  }
+
+  /**
+   * Set layout mode
+   */
+  public setLayoutMode(mode: LayoutMode): void {
+    this.set(StorageKeys.LAYOUT_MODE, mode);
   }
 
   /**

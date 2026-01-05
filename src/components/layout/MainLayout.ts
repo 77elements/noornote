@@ -29,7 +29,7 @@ import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from '../../services/PerAccountLocalStorage';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
@@ -85,6 +85,7 @@ export class MainLayout {
     this.initializeGlobalSearchView();
     this.setupActiveNavigation();
     this.initializeViewTabManager();
+    this.applyLayoutMode();
     this.initializeDateTimeCalendar();
     this.startDateTimeUpdates();
   }
@@ -174,24 +175,24 @@ export class MainLayout {
   }
 
   /**
-   * Initialize ViewTabManager if setting is enabled
+   * Initialize ViewTabManager if layout mode is 'right-pane'
    * Subscribe to EventBus events for tab management
    */
   private initializeViewTabManager(): void {
     const storage = PerAccountLocalStorage.getInstance();
-    const enabled = storage.get<boolean>(StorageKeys.VIEW_TABS_RIGHT_PANE, false);
+    const layoutMode = storage.getLayoutMode();
 
-    // ALWAYS subscribe to setting change event (even if currently disabled)
-    const settingsChangedSub = this.eventBus.on('settings:view-tabs-changed', (data: { enabled: boolean }) => {
-      if (data.enabled && !this.viewTabManager) {
+    // ALWAYS subscribe to layout mode change event (even if currently disabled)
+    const layoutModeChangedSub = this.eventBus.on('settings:layout-mode-changed', (data: { mode: LayoutMode }) => {
+      if (data.mode === 'right-pane' && !this.viewTabManager) {
         // Enable: Initialize manager and event handlers
         this.enableViewTabManager();
-      } else if (!data.enabled && this.viewTabManager) {
+      } else if (data.mode !== 'right-pane' && this.viewTabManager) {
         // Disable: Cleanup manager
         this.disableViewTabManager();
       }
     });
-    this.viewTabEventSubscriptions.push(settingsChangedSub);
+    this.viewTabEventSubscriptions.push(layoutModeChangedSub);
 
     // On logout, close all tabs
     const logoutSub = this.eventBus.on('user:logout', () => {
@@ -199,20 +200,53 @@ export class MainLayout {
     });
     this.viewTabEventSubscriptions.push(logoutSub);
 
-    // On login, re-check setting (user might have enabled it)
+    // On login, re-check layout mode (user might have right-pane enabled)
     const loginSub = this.eventBus.on('user:login', () => {
       const storage = PerAccountLocalStorage.getInstance();
-      const enabled = storage.get<boolean>(StorageKeys.VIEW_TABS_RIGHT_PANE, false);
-      if (enabled && !this.viewTabManager) {
+      const layoutMode = storage.getLayoutMode();
+      if (layoutMode === 'right-pane' && !this.viewTabManager) {
         this.enableViewTabManager();
       }
     });
     this.viewTabEventSubscriptions.push(loginSub);
 
-    // If enabled on init, setup immediately
-    if (enabled) {
+    // If right-pane mode on init, setup immediately
+    if (layoutMode === 'right-pane') {
       this.enableViewTabManager();
     }
+  }
+
+  /**
+   * Apply layout mode CSS class to main-layout element
+   * Subscribe to layout mode changes
+   */
+  private applyLayoutMode(): void {
+    const storage = PerAccountLocalStorage.getInstance();
+    const layoutMode = storage.getLayoutMode();
+
+    // Apply initial layout class
+    this.setLayoutClass(layoutMode);
+
+    // Subscribe to layout mode changes
+    this.eventBus.on('settings:layout-mode-changed', (data: { mode: LayoutMode }) => {
+      this.setLayoutClass(data.mode);
+    });
+  }
+
+  /**
+   * Set layout CSS class based on mode
+   */
+  private setLayoutClass(mode: LayoutMode): void {
+    // Remove all layout mode classes
+    this.element.classList.remove('main-layout--wide', 'main-layout--right-pane');
+
+    // Add appropriate class
+    if (mode === 'wide') {
+      this.element.classList.add('main-layout--wide');
+    } else if (mode === 'right-pane') {
+      this.element.classList.add('main-layout--right-pane');
+    }
+    // 'default' mode = no additional class
   }
 
   /**
@@ -430,14 +464,153 @@ export class MainLayout {
 
   /**
    * Initialize global search view
+   * Mounts in scc (default/right-pane mode) or intercepts events for pcc rendering (wide mode)
    */
   private initializeGlobalSearchView(): void {
+    const storage = PerAccountLocalStorage.getInstance();
+    const layoutMode = storage.getLayoutMode();
+
     this.globalSearchView = new GlobalSearchView();
 
-    // Mount in secondary content
-    const secondaryContent = this.element.querySelector('.secondary-content-body');
-    if (secondaryContent) {
-      secondaryContent.appendChild(this.globalSearchView.getElement());
+    // Mount in secondary content unless wide mode
+    if (layoutMode !== 'wide') {
+      const secondaryContent = this.element.querySelector('.secondary-content-body');
+      if (secondaryContent) {
+        secondaryContent.appendChild(this.globalSearchView.getElement());
+      }
+    }
+
+    // Intercept search events for wide mode to render in pcc
+    this.setupSearchEventInterceptors();
+
+    // Listen for layout mode changes
+    this.eventBus.on('settings:layout-mode-changed', (data: { mode: LayoutMode }) => {
+      if (data.mode === 'wide') {
+        // Unmount from scc (search results will go to pcc via interceptors)
+        if (this.globalSearchView) {
+          const searchElement = this.globalSearchView.getElement();
+          searchElement.remove();
+        }
+      } else {
+        // Mount in scc (default or right-pane mode)
+        const secondaryContent = this.element.querySelector('.secondary-content-body');
+        if (secondaryContent && this.globalSearchView) {
+          const searchElement = this.globalSearchView.getElement();
+          if (!searchElement.parentElement) {
+            secondaryContent.appendChild(searchElement);
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Setup search event interceptors for wide mode
+   * Intercepts search events with HIGH PRIORITY (before GlobalSearchView)
+   * In wide mode: Prevents GlobalSearchView from processing tab creation, renders in pcc instead
+   */
+  private setupSearchEventInterceptors(): void {
+    // NOTE: EventBus processes listeners in registration order
+    // These are registered FIRST (in MainLayout constructor) before GlobalSearchView
+
+    // Intercept global search (Cmd+K → search query) with high priority
+    this.eventBus.on('globalSearch:start', (data: { query: string }) => {
+      const storage = PerAccountLocalStorage.getInstance();
+      const layoutMode = storage.getLayoutMode();
+
+      if (layoutMode === 'wide') {
+        // Wide mode: Render search in primary content
+        this.renderSearchInPrimaryContent('global', data.query);
+        // Emit internal event to trigger GlobalSearchView's search logic
+        this.eventBus.emit('globalSearch:internal', data);
+      }
+      // Default/Right-pane mode: Let GlobalSearchView handle it (via its own listener)
+    });
+
+    // Intercept hashtag search (click on hashtag)
+    this.eventBus.on('hashtagSearch:start', (data: { hashtag: string }) => {
+      const storage = PerAccountLocalStorage.getInstance();
+      const layoutMode = storage.getLayoutMode();
+
+      if (layoutMode === 'wide') {
+        // Wide mode: Render search in primary content
+        this.renderSearchInPrimaryContent('hashtag', data.hashtag);
+        // Emit internal event to trigger GlobalSearchView's search logic
+        this.eventBus.emit('hashtagSearch:internal', data);
+      }
+      // Default/Right-pane mode: Let GlobalSearchView handle it (via its own listener)
+    });
+
+    // Intercept profile search (profile search component)
+    this.eventBus.on('profileSearch:complete', (data: { query: string; results: any[]; meta: string }) => {
+      const storage = PerAccountLocalStorage.getInstance();
+      const layoutMode = storage.getLayoutMode();
+
+      if (layoutMode === 'wide') {
+        // Wide mode: Render search in primary content
+        this.renderSearchInPrimaryContent('profile', data.query);
+        // Emit internal event to trigger GlobalSearchView's display logic
+        this.eventBus.emit('profileSearch:internal', data);
+      }
+      // Default/Right-pane mode: Let GlobalSearchView handle it (via its own listener)
+    });
+  }
+
+  /**
+   * Render search results in primary content (wide mode only)
+   */
+  private renderSearchInPrimaryContent(searchType: 'global' | 'hashtag' | 'profile', query: string): void {
+    const primaryContent = this.element.querySelector('.primary-content');
+    if (!primaryContent) return;
+
+    // Clear primary content
+    primaryContent.innerHTML = '';
+
+    // Create container for search
+    const searchContainer = document.createElement('div');
+    searchContainer.className = 'search-view-primary';
+
+    // Add header with title and back button
+    const header = document.createElement('div');
+    header.className = 'search-view-primary__header';
+
+    const title = searchType === 'hashtag'
+      ? `#${query}`
+      : searchType === 'profile'
+      ? `Profile: ${query}`
+      : `Search: ${query}`;
+
+    header.innerHTML = `
+      <button class="btn btn--icon search-view-primary__back" title="Back to timeline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h2 class="search-view-primary__title">${title}</h2>
+    `;
+
+    // Add content container
+    const content = document.createElement('div');
+    content.className = 'search-view-primary__content';
+
+    searchContainer.appendChild(header);
+    searchContainer.appendChild(content);
+    primaryContent.appendChild(searchContainer);
+
+    // Setup back button
+    const backBtn = header.querySelector('.search-view-primary__back');
+    backBtn?.addEventListener('click', () => {
+      const router = Router.getInstance();
+      router.navigate('/');
+    });
+
+    // Mount GlobalSearchView content in pcc
+    if (this.globalSearchView) {
+      const searchElement = this.globalSearchView.getElement();
+      content.appendChild(searchElement);
+
+      // Ensure search content is visible (remove tab-content class behavior)
+      searchElement.classList.add('tab-content--active');
     }
   }
 
@@ -1375,9 +1548,27 @@ export class MainLayout {
   /**
    * Open a list tab (Bookmarks, Follows, or Muted Users)
    * Replaces any existing list tab
+   * Renders in pcc (Wide) or scc (Default/Right-pane) based on layout mode
    */
   public openListTab(listType: ListType): void {
-    // Close existing list tab if any (without clearing active state yet)
+    const storage = PerAccountLocalStorage.getInstance();
+    const layoutMode = storage.getLayoutMode();
+
+    // Check layout mode and delegate to appropriate renderer
+    if (layoutMode === 'wide') {
+      // Wide mode: Render in primary content (scc is hidden)
+      this.renderListInPrimaryContent(listType);
+    } else {
+      // Default or Right-pane mode: Render in secondary content
+      this.renderListInSecondaryContent(listType);
+    }
+  }
+
+  /**
+   * Render list in secondary content (default/right-pane mode)
+   */
+  private renderListInSecondaryContent(listType: ListType): void {
+    // Close existing list tab if any
     if (this.currentListView) {
       this.currentListView.destroy();
       this.currentListView = null;
@@ -1421,7 +1612,7 @@ export class MainLayout {
       }
     });
 
-    // Insert tab and content into DOM
+    // Insert tab and content into DOM (scc)
     const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
     const tabsContainer = this.element.querySelector('#sidebar-tabs');
     const contentBody = this.element.querySelector('.secondary-content-body');
@@ -1459,7 +1650,79 @@ export class MainLayout {
   }
 
   /**
+   * Render list in primary content (wide mode only)
+   * Replaces timeline/existing content
+   */
+  private renderListInPrimaryContent(listType: ListType): void {
+    const primaryContent = this.element.querySelector('.primary-content');
+    if (!primaryContent) return;
+
+    // Clear primary content
+    primaryContent.innerHTML = '';
+
+    // Map list types to titles
+    const titles: Record<ListType, string> = {
+      bookmarks: 'List: Bookmarks',
+      follows: 'List: Follows',
+      mutes: 'List: Muted',
+      tribes: 'List: Tribes',
+      'nip51-inspector': 'NIP-51 Inspector'
+    };
+
+    // Map list types to managers
+    const managers: Record<ListType, any> = {
+      bookmarks: this.bookmarkManager,
+      follows: this.followManager,
+      mutes: this.muteManager,
+      tribes: this.tribeManager,
+      'nip51-inspector': this.nip51InspectorManager
+    };
+
+    const manager = managers[listType];
+    if (!manager) {
+      console.error(`[MainLayout] No manager found for list type: ${listType}`);
+      return;
+    }
+
+    // Create container for list
+    const listContainer = document.createElement('div');
+    listContainer.className = 'list-view-primary';
+
+    // Add header with title and back button
+    const header = document.createElement('div');
+    header.className = 'list-view-primary__header';
+    header.innerHTML = `
+      <button class="btn btn--icon list-view-primary__back" title="Back to timeline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      <h2 class="list-view-primary__title">${titles[listType]}</h2>
+    `;
+
+    // Add content container
+    const content = document.createElement('div');
+    content.className = 'list-view-primary__content';
+
+    listContainer.appendChild(header);
+    listContainer.appendChild(content);
+    primaryContent.appendChild(listContainer);
+
+    // Setup back button
+    const backBtn = header.querySelector('.list-view-primary__back');
+    backBtn?.addEventListener('click', () => {
+      const router = Router.getInstance();
+      router.navigate('/');
+    });
+
+    // Render list content via manager
+    manager.renderListTab(content);
+  }
+
+  /**
    * Close the current list tab
+   * Only used for right-pane mode (scc)
+   * For default/wide mode, back button navigates to '/'
    */
   public closeListTab(): void {
     if (this.currentListView) {

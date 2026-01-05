@@ -39,6 +39,28 @@
     padding: calc($gap / 4);
     gap: calc($gap / 4);
   }
+
+  // Wide mode: Hide secondary content, expand primary content
+  &--wide {
+    grid-template-columns: 200px 1fr;
+    grid-template-areas: "sidebar primary";
+
+    @include desktop-down {
+      grid-template-columns: 100px 1fr;
+    }
+
+    @include tablet-down {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto 1fr;
+      grid-template-areas:
+        "sidebar"
+        "primary";
+    }
+
+    .secondary-content {
+      display: none;
+    }
+  }
 }
 
 // Layout areas
@@ -389,4 +411,317 @@
 
   // Scrollbar styling - MUST be last to override any conflicting styles
   @include custom-scrollbar;
+}
+
+// List view in primary content (wide mode only)
+.list-view-primary {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    padding: $gap;
+    border-bottom: 1px solid $color-2;
+    flex-shrink: 0;
+  }
+
+  &__back {
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: $color-5;
+    margin: 0;
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    @include custom-scrollbar;
+    padding: $gap;
+
+    // Inherit list styles from secondary-content
+    .list-sync-controls {
+      display: flex;
+      gap: calc($gap / 2);
+      flex-wrap: wrap;
+      padding: $gap 0;
+      border-bottom: 1px solid $color-2;
+    }
+
+    .list-sync-info {
+      padding: calc($gap / 2) 0;
+      margin: 0;
+      font-size: 12px;
+      line-height: 1.4;
+      color: $color-3;
+      text-align: left;
+      border-bottom: 1px solid $color-2;
+    }
+
+    .bookmarks-list,
+    .follows-list,
+    .mutes-list {
+      padding: $gap 0;
+    }
+
+    // Mute sections (Users / Threads)
+    .mute-section {
+      margin-bottom: $gap * 1.5;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      &__header {
+        display: flex;
+        align-items: center;
+        gap: calc($gap / 2);
+        padding: calc($gap / 2) $gap;
+        border-bottom: 1px solid color.adjust($color-2, $lightness: 10%);
+        margin-bottom: calc($gap / 2);
+      }
+
+      &__title {
+        font-size: 13px;
+        font-weight: 600;
+        color: $color-3;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+    }
+
+    // Mute item (same styles as in secondary-content)
+    .mute-item {
+      display: flex;
+      align-items: center;
+      gap: $gap;
+
+      &__content-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: $gap;
+        cursor: pointer;
+      }
+
+      &__avatar {
+        flex-shrink: 0;
+      }
+
+      &__info {
+        flex: 1;
+      }
+
+      &__username {
+        font-weight: 600;
+        color: $color-5;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: calc($gap / 2);
+      }
+
+      &__unmute-btn {
+        flex-shrink: 0;
+      }
+
+      // Thread-specific styles
+      &--thread {
+        .mute-item__content-wrapper {
+          cursor: pointer;
+        }
+      }
+
+      &__thread-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        background: color.adjust($color-2, $lightness: 5%);
+        border-radius: $radius-sm;
+        color: $color-warning;
+        flex-shrink: 0;
+      }
+
+      &__event-id {
+        font-family: monospace;
+        font-size: 13px;
+        color: $color-3;
+        display: flex;
+        align-items: center;
+        gap: calc($gap / 2);
+      }
+
+      &__thread-content {
+        font-size: 13px;
+        color: $color-5;
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        gap: calc($gap / 2);
+        word-break: break-word;
+      }
+    }
+
+    // Follow item (same styles as in secondary-content)
+    .follow-item {
+      display: flex;
+      align-items: center;
+      gap: $gap;
+      padding: $gap 0;
+
+      &__content-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: $gap;
+        cursor: pointer;
+      }
+
+      &__avatar {
+        flex-shrink: 0;
+      }
+
+      &__info {
+        gap: calc($gap / 4);
+      }
+
+      &__username {
+        font-weight: 600;
+        color: $color-5;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: calc($gap / 2);
+      }
+
+      &__petname {
+        font-size: 12px;
+        color: color.adjust($color-5, $lightness: -20%);
+      }
+
+      &__unfollow-btn {
+        flex-shrink: 0;
+      }
+    }
+
+    // Bookmark item (same styles as in secondary-content)
+    .bookmark-item {
+      display: flex;
+      align-items: center;
+      gap: $gap;
+      padding: $gap;
+      border-bottom: 1px solid $color-2;
+      transition: background 0.2s ease;
+
+      &:hover {
+        background: color.adjust($color-2, $lightness: 5%);
+      }
+
+      &__content-wrapper {
+        flex: 1;
+        cursor: pointer;
+      }
+
+      &__author {
+        font-weight: 600;
+        color: $color-5;
+        margin-bottom: calc($gap / 4);
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: calc($gap / 2);
+      }
+
+      &__content {
+        color: $color-5;
+        margin-bottom: calc($gap / 4);
+        font-size: 14px;
+        line-height: 1.4;
+      }
+
+      &__timestamp {
+        font-size: 12px;
+        color: color.adjust($color-5, $lightness: -20%);
+      }
+
+      &__delete {
+        background: none;
+        border: none;
+        padding: calc($gap / 2);
+        cursor: pointer;
+        color: color.adjust($color-5, $lightness: -30%);
+        transition: color 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        &:hover {
+          color: $color-4;
+        }
+
+        svg {
+          display: block;
+        }
+      }
+    }
+  }
+}
+
+// Search view in primary content (wide mode only)
+.search-view-primary {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    padding: $gap;
+    border-bottom: 1px solid $color-2;
+    flex-shrink: 0;
+  }
+
+  &__back {
+    flex-shrink: 0;
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 600;
+    color: $color-5;
+    margin: 0;
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    @include custom-scrollbar;
+    padding: $gap;
+
+    // GlobalSearchView content adapts to primary content
+    .tab-content {
+      display: block;
+      height: 100%;
+      overflow-y: auto;
+      @include custom-scrollbar;
+
+      &.tab-content--active {
+        display: block;
+      }
+    }
+  }
 }
