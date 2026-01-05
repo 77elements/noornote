@@ -2,7 +2,7 @@
  * ViewNavigationController - Central Authority for View Navigation
  *
  * Single Responsibility: Route ALL view navigation requests
- * - Check VIEW_TABS_RIGHT_PANE setting (ONE place)
+ * - Check LAYOUT_MODE setting (ONE place)
  * - Analyze click events (single/double/middle/modifier)
  * - Delegate to Tab System OR Router
  *
@@ -15,7 +15,7 @@
  * @service ViewNavigationController
  */
 
-import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from './PerAccountLocalStorage';
 import { Router } from './Router';
 import { ViewTabManager } from './ViewTabManager';
 
@@ -41,31 +41,32 @@ export class ViewNavigationController {
 
   /**
    * CENTRAL navigation method - called by ALL click handlers
-   * Analyzes event, checks setting, routes appropriately
+   * Analyzes event, checks layout mode, routes appropriately
    */
   public openView(viewType: ViewType, param?: string, event?: MouseEvent): void {
-    // 1. Check setting
-    const tabModeEnabled = this.storage.get<boolean>(StorageKeys.VIEW_TABS_RIGHT_PANE, false);
+    // 1. Check layout mode
+    const layoutMode = this.storage.getLayoutMode();
 
-    if (!tabModeEnabled) {
-      // Route via traditional Router
+    // 2. Only 'right-pane' mode uses tab system
+    if (layoutMode !== 'right-pane') {
+      // Route via traditional Router (for 'default' and 'wide' modes)
       this.navigateViaRouter(viewType, param);
       return;
     }
 
-    // 2. Tab mode enabled - prevent Router navigation
+    // 3. Right-pane mode - prevent Router navigation
     // Don't change URL, don't trigger Router
     event?.preventDefault();
 
-    // 3. Initialize ViewTabManager if not already (lazy init)
+    // 4. Initialize ViewTabManager if not already (lazy init)
     if (!this.viewTabManager) {
       this.viewTabManager = ViewTabManager.getInstance();
     }
 
-    // 4. Analyze click type
+    // 5. Analyze click type
     const clickMode = this.analyzeClickEvent(event);
 
-    // 5. Delegate to ViewTabManager
+    // 6. Delegate to ViewTabManager
     this.openInTabSystem(viewType, param, clickMode);
   }
 
