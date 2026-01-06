@@ -46,10 +46,10 @@ jobs:
           mkdir -p ../src-tauri/binaries
           mv noorsigner-${{ matrix.rust_target }} ../src-tauri/binaries/
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
+          bun-version: latest
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -68,18 +68,18 @@ jobs:
             patchelf \
             libfuse2
 
-      - name: Install npm dependencies
-        run: npm ci
+      - name: Install dependencies
+        run: bun install
 
       # ARM64: Only deb + rpm (linuxdeploy doesn't work reliably on ARM64)
       - name: Build Tauri App (deb + rpm)
         if: matrix.arch == 'arm64'
-        run: npm run tauri build -- --bundles deb,rpm
+        run: bun run tauri build -- --bundles deb,rpm
 
       # AMD64: deb + rpm only
       - name: Build Tauri App (deb + rpm)
         if: matrix.arch == 'amd64'
-        run: npm run tauri build -- --bundles deb,rpm
+        run: bun run tauri build -- --bundles deb,rpm
 
       - name: Get version
         id: version

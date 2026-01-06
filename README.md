@@ -109,7 +109,7 @@ Complete guide for building NoorNote and NoorSigner from source on all supported
 ### System Requirements
 
 **All Platforms:**
-- Node.js 20+
+- Bun latest (install via [bun.sh](https://bun.sh))
 - Rust 1.70+ (install via [rustup](https://rustup.rs/))
 - Go 1.24+ (for NoorSigner)
 
@@ -198,13 +198,13 @@ cp ../noorsigner/noorsigner-aarch64-apple-darwin src-tauri/binaries/
 
 **Development Mode:**
 ```bash
-npm install
-npm run tauri:dev
+bun install
+bun run tauri:dev
 ```
 
 **Production Build:**
 ```bash
-npm run tauri build
+bun run tauri build
 ```
 
 Build artifacts will be in `src-tauri/target/release/bundle/`:
@@ -231,6 +231,7 @@ Build artifacts will be in `src-tauri/target/release/bundle/`:
 - **Desktop:** Tauri 2.0 (Rust)
 - **Nostr:** NDK (Nostr Dev Kit)
 - **Build:** Vite
+- **Package Manager:** Bun
 
 ## License
 
