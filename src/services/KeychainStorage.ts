@@ -22,7 +22,6 @@ const DB_VERSION = 1;
 
 export class KeychainStorage {
   private static readonly SERVICE_NAME = 'noornote';
-  private static readonly KEY_NSEC = 'nsec';
 
   private static dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -107,56 +106,6 @@ export class KeychainStorage {
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve();
     });
-  }
-
-  /**
-   * Save nsec private key
-   */
-  static async saveNsec(nsec: string): Promise<void> {
-    if (this.isTauri()) {
-      try {
-        await setPassword(this.SERVICE_NAME, this.KEY_NSEC, nsec);
-      } catch (_error) {
-        console.error('Failed to save nsec to Keychain:', _error);
-        throw new Error('Failed to save private key to Keychain');
-      }
-    } else {
-      // Browser fallback - IndexedDB (still warn about security)
-      await this.setInIndexedDB(this.KEY_NSEC, nsec);
-      ToastService.show('⚠️ Using IndexedDB. Desktop app recommended for better security.', 'warning');
-    }
-  }
-
-  /**
-   * Load nsec private key
-   */
-  static async loadNsec(): Promise<string | null> {
-    if (this.isTauri()) {
-      try {
-        return await getPassword(this.SERVICE_NAME, this.KEY_NSEC);
-      } catch (_error) {
-        // Key not found in Keychain
-        return null;
-      }
-    } else {
-      // Browser fallback - IndexedDB
-      return this.getFromIndexedDB(this.KEY_NSEC);
-    }
-  }
-
-  /**
-   * Delete nsec private key
-   */
-  static async deleteNsec(): Promise<void> {
-    if (this.isTauri()) {
-      try {
-        await deletePassword(this.SERVICE_NAME, this.KEY_NSEC);
-      } catch (_error) {
-        // Ignore errors (key might not exist)
-      }
-    } else {
-      await this.deleteFromIndexedDB(this.KEY_NSEC);
-    }
   }
 
   /**
@@ -322,15 +271,15 @@ export class KeychainStorage {
    * WARNING: Only use this for complete app reset, NOT for logout
    */
   static async clearAll(): Promise<void> {
-    await this.deleteNsec();
     await this.deleteNWC();
   }
 
   /**
-   * Clear only auth credentials (nsec)
+   * Clear only auth credentials
    * NWC remains persistent across auth sessions
+   * Note: nsec login removed - this method kept for compatibility
    */
   static async clearAuth(): Promise<void> {
-    await this.deleteNsec();
+    // No-op: nsec login removed, but method kept for compatibility
   }
 }

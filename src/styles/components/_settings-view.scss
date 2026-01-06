@@ -789,6 +789,30 @@
   }
 }
 
+.nwc-storage-option {
+  padding-top: $gap;
+  border-top: 1px solid rgba($color-3, 0.2);
+
+  #nwc-storage-info {
+    margin-top: calc($gap / 2);
+    font-size: 13px;
+    line-height: 1.5;
+
+    code {
+      background: rgba($color-3, 0.2);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 12px;
+      word-break: break-all;
+    }
+
+    strong {
+      font-weight: 600;
+    }
+  }
+}
+
 .zap-connected {
   display: flex;
   flex-direction: column;

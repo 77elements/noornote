@@ -352,9 +352,21 @@ export class NWCService {
     this.setConnectionForCurrentUser(null);
     this.setStateForCurrentUser('disconnected');
 
-    // ONLY place where NWC connection may be deleted from KeychainStorage
+    // Delete from both storage locations (one will fail, that's ok)
     try {
+      const pubkey = this.getCurrentUserPubkey();
+      if (pubkey) {
+        // Try encrypted file (Tauri only)
+        const { PlatformService } = await import('./PlatformService');
+        if (PlatformService.getInstance().isTauri) {
+          const { EncryptedFileStorage } = await import('./EncryptedFileStorage');
+          await EncryptedFileStorage.deleteNWC(pubkey);
+        }
+      }
+
+      // Try keychain (always)
       await KeychainStorage.deleteNWC();
+
       this.systemLogger.info('NWCService', '✓ Stored NWC connection removed from secure storage');
     } catch (_error) {
       this.systemLogger.error('NWCService', 'Failed to remove stored connection:', _error);
@@ -539,12 +551,26 @@ export class NWCService {
   }
 
   /**
-   * Save connection to KeychainStorage (per-user)
+   * Save connection to KeychainStorage or EncryptedFile (per-user)
    */
   private async saveConnection(connectionString: string): Promise<void> {
     try {
-      await KeychainStorage.saveNWC(connectionString);
-      this.systemLogger.info('NWCService', 'NWC connection saved to secure storage');
+      const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
+      const { PlatformService } = await import('./PlatformService');
+      const storage = PerAccountLocalStorage.getInstance();
+      const useEncryptedFile = storage.get(StorageKeys.NWC_USE_ENCRYPTED_FILE, false);
+
+      if (useEncryptedFile && PlatformService.getInstance().isTauri) {
+        const { EncryptedFileStorage } = await import('./EncryptedFileStorage');
+        const pubkey = this.getCurrentUserPubkey();
+        if (pubkey) {
+          await EncryptedFileStorage.saveNWC(connectionString, pubkey);
+          this.systemLogger.info('NWCService', 'NWC connection saved to encrypted file');
+        }
+      } else {
+        await KeychainStorage.saveNWC(connectionString);
+        this.systemLogger.info('NWCService', 'NWC connection saved to secure storage');
+      }
     } catch (_error) {
       this.systemLogger.error('NWCService', 'Failed to save connection:', _error);
       throw _error;
@@ -552,7 +578,7 @@ export class NWCService {
   }
 
   /**
-   * Restore connection for current user from KeychainStorage
+   * Restore connection for current user from KeychainStorage or EncryptedFile
    * Called on init and can be called when user changes
    */
   public async restoreConnectionForCurrentUser(): Promise<void> {
@@ -565,7 +591,19 @@ export class NWCService {
     }
 
     try {
-      const stored = await KeychainStorage.loadNWC(pubkey);
+      const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
+      const { PlatformService } = await import('./PlatformService');
+      const storage = PerAccountLocalStorage.getInstance();
+      const useEncryptedFile = storage.get(StorageKeys.NWC_USE_ENCRYPTED_FILE, false);
+
+      let stored: string | null = null;
+
+      if (useEncryptedFile && PlatformService.getInstance().isTauri) {
+        const { EncryptedFileStorage } = await import('./EncryptedFileStorage');
+        stored = await EncryptedFileStorage.loadNWC(pubkey);
+      } else {
+        stored = await KeychainStorage.loadNWC(pubkey);
+      }
 
       if (stored) {
         this.systemLogger.info('NWCService', 'Found stored connection, attempting to reconnect...');
