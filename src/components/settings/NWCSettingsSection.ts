@@ -278,31 +278,10 @@ export class NWCSettingsSection extends SettingsSection {
     } else {
       // Check iCloud (macOS only)
       if (PlatformService.getInstance().isMac) {
-        const iCloudActive = await this.checkICloudKeychain();
-        if (iCloudActive) {
-          infoEl.innerHTML = `⚠️ <strong>iCloud Keychain detected.</strong> Your NWC connection may sync to Apple's cloud. Use encrypted file for local-only storage.`;
-          (infoEl as HTMLElement).style.color = 'var(--color-6)'; // Warning color
-        } else {
-          infoEl.textContent = 'Stored securely in macOS Keychain (local only)';
-          (infoEl as HTMLElement).style.color = '';
-        }
+        infoEl.innerHTML = `Stored securely in macOS Keychain.<br><span class="icloud-warning">Not recommended if you're syncing your keychain to iCloud!</span>`;
       } else {
         infoEl.textContent = 'Stored securely in system keychain';
-        (infoEl as HTMLElement).style.color = '';
       }
-    }
-  }
-
-  /**
-   * Check if iCloud Keychain is active (macOS only)
-   */
-  private async checkICloudKeychain(): Promise<boolean> {
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      return await invoke<boolean>('check_icloud_keychain');
-    } catch (error) {
-      console.warn('[NWCSettings] Failed to check iCloud Keychain:', error);
-      return false; // Assume local if check fails
     }
   }
 
