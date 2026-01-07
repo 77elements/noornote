@@ -33,6 +33,10 @@ import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { CustomDropdown } from '../ui/CustomDropdown';
+import { TribeOrchestrator } from '../../services/orchestration/TribeOrchestrator';
+import { TribeFolderService } from '../../services/TribeFolderService';
+import { ToastService } from '../../services/ToastService';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
@@ -86,6 +90,12 @@ export class ProfileView extends View {
   private blinker: ProfileBlinker | null = null;
   private nameBlinker: TextBlinker | null = null;
 
+  // Tribe dropdown
+  private tribeDropdown: CustomDropdown | null = null;
+  private tribeOrchestrator: TribeOrchestrator;
+  private tribeFolderService: TribeFolderService;
+  private tribeDropdownCleanupHandlers: Array<(e: MouseEvent | KeyboardEvent) => void> = [];
+
   constructor(npub: string) {
     super(); // Call View base class constructor
     this.npub = npub;
@@ -99,6 +109,8 @@ export class ProfileView extends View {
     this.followerCountService = FollowerCountService.getInstance();
     this.profileOrchestrator = ProfileOrchestrator.getInstance();
     this.recognitionService = ProfileRecognitionService.getInstance();
+    this.tribeOrchestrator = TribeOrchestrator.getInstance();
+    this.tribeFolderService = TribeFolderService.getInstance();
 
     // Decode npub to pubkey
     try {
@@ -477,6 +489,7 @@ export class ProfileView extends View {
                     <rect x="3" y="14" width="7" height="7"></rect>
                   </svg>
                 </button>
+                ${this.renderTribeButton()}
                 <span class="copy-feedback">Copied!</span>
               </div>
             </div>
@@ -525,6 +538,9 @@ export class ProfileView extends View {
 
       // Setup QR code button handler
       this.setupQRButton();
+
+      // Setup tribe button handler
+      this.setupTribeButton();
 
       // Setup edit button handler
       this.setupEditButton();
@@ -667,6 +683,35 @@ export class ProfileView extends View {
   }
 
   /**
+   * Render Tribe button (only if logged in and not own profile)
+   */
+  private renderTribeButton(): string {
+    const currentUser = this.authService.getCurrentUser();
+
+    // Don't show if not logged in
+    if (!currentUser) {
+      return '';
+    }
+
+    // Don't show on own profile
+    if (currentUser.pubkey === this.pubkey) {
+      return '';
+    }
+
+    return `
+      <button class="tribe-btn" title="Add to Tribe">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <div class="tribe-dropdown-mount"></div>
+    `;
+  }
+
+  /**
    * Setup follow button event handler
    */
   private setupFollowButton(): void {
@@ -739,6 +784,162 @@ export class ProfileView extends View {
         const qrModal = QRCodeModal.getInstance();
         qrModal.show(this.npub);
       });
+    }
+  }
+
+  /**
+   * Setup tribe button event handler
+   */
+  private setupTribeButton(): void {
+    const tribeButton = this.container.querySelector('.tribe-btn');
+    if (!tribeButton) return;
+
+    tribeButton.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      // Check authentication
+      const isAuthenticated = await AuthGuard.requireAuth();
+      if (!isAuthenticated) return;
+
+      // Get all tribes
+      const folders = this.tribeFolderService.getFolders();
+
+      if (folders.length === 0) {
+        ToastService.show('No tribes found. Create a tribe first in the Tribe view.', 'info');
+        return;
+      }
+
+      // Build dropdown options with placeholder first
+      const options = [
+        { value: '', label: 'Choose a tribe' },
+        ...folders.map(folder => ({
+          value: folder.id,
+          label: folder.name
+        }))
+      ];
+
+      // Show dropdown
+      this.showTribeDropdown(options);
+    });
+  }
+
+  /**
+   * Show tribe selection dropdown
+   */
+  private showTribeDropdown(options: { value: string; label: string }[]): void {
+    // Cleanup existing dropdown and listeners
+    this.cleanupTribeDropdown();
+
+    const dropdownMount = this.container.querySelector('.tribe-dropdown-mount');
+    if (!dropdownMount) return;
+
+    // Create dropdown
+    this.tribeDropdown = new CustomDropdown({
+      options: options,
+      selectedValue: '',
+      onChange: (folderId) => {
+        // Close dropdown if placeholder selected
+        if (!folderId) {
+          this.cleanupTribeDropdown();
+          return;
+        }
+        this.handleTribeSelection(folderId);
+      },
+      className: 'tribe-dropdown',
+      width: '200px'
+    });
+
+    // Mount dropdown
+    dropdownMount.appendChild(this.tribeDropdown.getElement());
+
+    // Auto-open dropdown
+    const trigger = this.tribeDropdown.getElement().querySelector('.custom-dropdown__trigger') as HTMLElement;
+    if (trigger) {
+      trigger.click();
+    }
+
+    // Cleanup dropdown when clicking outside or ESC
+    const cleanupHandler = (e: MouseEvent | KeyboardEvent) => {
+      const dropdownEl = this.tribeDropdown?.getElement();
+      if (!dropdownEl) return;
+
+      const isClickOutside = e instanceof MouseEvent && !dropdownEl.contains(e.target as Node);
+      const isEscape = e instanceof KeyboardEvent && e.key === 'Escape';
+
+      if (isClickOutside || isEscape) {
+        this.cleanupTribeDropdown();
+      }
+    };
+
+    // Store handlers for cleanup
+    this.tribeDropdownCleanupHandlers = [cleanupHandler];
+
+    // Add listeners after a small delay to avoid immediate trigger
+    setTimeout(() => {
+      document.addEventListener('click', cleanupHandler);
+      document.addEventListener('keydown', cleanupHandler);
+    }, 0);
+  }
+
+  /**
+   * Cleanup tribe dropdown and event listeners
+   */
+  private cleanupTribeDropdown(): void {
+    // Remove event listeners
+    this.tribeDropdownCleanupHandlers.forEach(handler => {
+      document.removeEventListener('click', handler);
+      document.removeEventListener('keydown', handler);
+    });
+    this.tribeDropdownCleanupHandlers = [];
+
+    // Destroy dropdown
+    if (this.tribeDropdown) {
+      this.tribeDropdown.destroy();
+      this.tribeDropdown = null;
+    }
+  }
+
+  /**
+   * Handle tribe selection - adds profile user to selected tribe
+   */
+  private async handleTribeSelection(folderId: string): Promise<void> {
+    try {
+      // Get folder details
+      const folder = this.tribeFolderService.getFolder(folderId);
+      if (!folder) {
+        ToastService.show('Tribe not found', 'error');
+        return;
+      }
+
+      // Check if user is already in THIS specific tribe
+      const allMembers = await this.tribeOrchestrator.getAllMembersWithMetadata(this.pubkey);
+      const isInThisTribe = allMembers.some(m => m.pubkey === this.pubkey && m.category === folder.name);
+
+      if (isInThisTribe) {
+        ToastService.show(`User is already in tribe "${folder.name}"`, 'info');
+        return;
+      }
+
+      // Add member to tribe (public member)
+      // IMPORTANT: Use folder.name as category (for NIP-51), but folder.id for FolderService
+      const success = await this.tribeOrchestrator.addMember(
+        this.pubkey,
+        false, // isPrivate = false
+        folder.name, // category = tribe name (for NIP-51)
+        folder.id // folderId for FolderService assignment
+      );
+
+      if (success) {
+        ToastService.show(`Added to tribe "${folder.name}"`, 'success');
+      } else {
+        ToastService.show('Failed to add to tribe', 'error');
+      }
+    } catch (error) {
+      console.error('Failed to add to tribe:', error);
+      ToastService.show('Failed to add to tribe', 'error');
+    } finally {
+      // Cleanup dropdown
+      this.cleanupTribeDropdown();
     }
   }
 
@@ -1003,6 +1204,7 @@ export class ProfileView extends View {
       this.nameBlinker.destroy();
       this.nameBlinker = null;
     }
+    this.cleanupTribeDropdown();
     if (this.timeline) {
       this.timeline.destroy();
     }

@@ -341,8 +341,10 @@ export class TribeManager {
 
       // Get members in this folder
       const memberIds = this.folderService.getMembersInFolder(this.currentFolderId);
-      for (const memberPubkey of memberIds) {
-        const member = this.membersCache.get(memberPubkey);
+      for (const memberId of memberIds) {
+        // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
+        const pubkey = memberId.includes('_') ? memberId.split('_')[0] : memberId;
+        const member = this.membersCache.get(pubkey);
         if (member) {
           const card = await this.createMemberCard(member);
           grid.appendChild(card);
@@ -362,7 +364,9 @@ export class TribeManager {
             renderedIds.add(item.id);
           }
         } else if (item.type === 'member') {
-          const member = this.membersCache.get(item.id);
+          // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
+          const pubkey = item.id.includes('_') ? item.id.split('_')[0] : item.id;
+          const member = this.membersCache.get(pubkey);
           // Only show if in root (no folder assignment)
           const folderId = this.folderService.getMemberFolder(item.id);
           if (member && folderId === '') {
