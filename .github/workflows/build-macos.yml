@@ -48,7 +48,7 @@ jobs:
         run: bun install
 
       - name: Build Tauri App (dmg only)
-        run: bun run tauri build -- --bundles dmg
+        run: bun run tauri build --bundles dmg
 
       - name: Get version from tag
         id: version
