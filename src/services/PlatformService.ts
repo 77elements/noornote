@@ -36,6 +36,12 @@ export class PlatformService {
   /** True if native file dialogs are available (Tauri only) */
   readonly supportsNativeFileDialog: boolean;
 
+  /** True if running on macOS */
+  readonly isMac: boolean;
+
+  /** True if running on Linux */
+  readonly isLinux: boolean;
+
   private constructor() {
     // Detect Tauri environment
     this.isTauri = typeof window !== 'undefined' &&
@@ -51,6 +57,12 @@ export class PlatformService {
 
     // NIP-07 available in browser, and potentially in Tauri if extension installed
     this.supportsNip07 = this.isBrowser || this.hasNip07Extension();
+
+    // OS detection
+    const platform = navigator.platform?.toLowerCase() || '';
+    const userAgent = navigator.userAgent?.toLowerCase() || '';
+    this.isMac = platform.includes('mac') || userAgent.includes('mac');
+    this.isLinux = platform.includes('linux') || userAgent.includes('linux');
   }
 
   public static getInstance(): PlatformService {

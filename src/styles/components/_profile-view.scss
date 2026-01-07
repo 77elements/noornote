@@ -241,6 +241,44 @@
   }
 }
 
+// Tribe button (analog zu .copy-btn/.qr-btn)
+.tribe-btn {
+  background: $color-2;
+  border: 1px solid $color-3;
+  border-radius: 4px;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    color: $color-5;
+    transition: color 0.2s ease;
+  }
+
+  &:hover {
+    background: $color-3;
+    border-color: $color-4;
+  }
+}
+
+// Tribe dropdown mount (absolute positioning to avoid layout shift)
+.tribe-dropdown-mount {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 1000;
+  pointer-events: none;
+
+  .custom-dropdown {
+    pointer-events: all;
+  }
+}
+
 // Copy feedback (standalone)
 .copy-feedback {
   position: absolute;

@@ -21,7 +21,7 @@ import { TribeFolderService } from '../../../services/TribeFolderService';
 import { ListSyncManager } from '../../../services/sync/ListSyncManager';
 import { TribeStorageAdapter } from '../../../services/sync/adapters/TribeStorageAdapter';
 import { RestoreListsService } from '../../../services/RestoreListsService';
-import { renderListSyncButtons } from '../../../helpers/ListSyncButtonsHelper';
+import { renderListSyncButtons, bindSwitchSyncModeLink } from '../../../helpers/ListSyncMode';
 import { NewFolderModal } from '../../modals/NewFolderModal';
 import { EditFolderModal } from '../../modals/EditFolderModal';
 import { TribeMemberCard } from '../../tribes/TribeMemberCard';
@@ -174,7 +174,6 @@ export class TribeManager {
             syncResult.categoryAssignments!,
             this.folderService,
             (memberPubkey, folderId) => this.folderService.moveMemberToFolder(memberPubkey, folderId),
-            (memberPubkey) => this.folderService.ensureMemberAssignment(memberPubkey),
             'TribeManager'
           );
         }
@@ -341,8 +340,10 @@ export class TribeManager {
 
       // Get members in this folder
       const memberIds = this.folderService.getMembersInFolder(this.currentFolderId);
-      for (const memberPubkey of memberIds) {
-        const member = this.membersCache.get(memberPubkey);
+      for (const memberId of memberIds) {
+        // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
+        const pubkey = memberId.includes('_') ? memberId.split('_')[0] : memberId;
+        const member = this.membersCache.get(pubkey);
         if (member) {
           const card = await this.createMemberCard(member);
           grid.appendChild(card);
@@ -362,7 +363,9 @@ export class TribeManager {
             renderedIds.add(item.id);
           }
         } else if (item.type === 'member') {
-          const member = this.membersCache.get(item.id);
+          // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
+          const pubkey = item.id.includes('_') ? item.id.split('_')[0] : item.id;
+          const member = this.membersCache.get(pubkey);
           // Only show if in root (no folder assignment)
           const folderId = this.folderService.getMemberFolder(item.id);
           if (member && folderId === '') {
@@ -424,13 +427,26 @@ export class TribeManager {
   }
 
   /**
+   * Get actual item count for a folder by counting real items in browser storage
+   * More reliable than assignment-based counting
+   */
+  private getActualFolderItemCount(folderId: string): number {
+    // Get all real member pubkeys from browser storage
+    const realMemberPubkeys = new Set(this.adapter.getBrowserItems().map(m => m.pubkey));
+    // Get assigned pubkeys for this folder
+    const assignedPubkeys = this.folderService.getMembersInFolder(folderId);
+    // Count only pubkeys that exist in both
+    return assignedPubkeys.filter(pk => realMemberPubkeys.has(pk)).length;
+  }
+
+  /**
    * Create a folder card
    */
   private createFolderCard(folder: { id: string; name: string }): HTMLElement {
     const folderData: FolderData = {
       id: folder.id,
       name: folder.name,
-      itemCount: this.folderService.getFolderItemCount(folder.id),
+      itemCount: this.getActualFolderItemCount(folder.id),
       isMounted: false // Tribes don't support profile mounting
     };
 
@@ -686,7 +702,7 @@ export class TribeManager {
     const folder = this.folderService.getFolder(folderId);
     if (!folder) return;
 
-    const itemCount = this.folderService.getFolderItemCount(folderId);
+    const itemCount = this.getActualFolderItemCount(folderId);
     const message = itemCount > 0
       ? `Delete tribe "${folder.name}"? ${itemCount} member(s) will be deleted.`
       : `Delete tribe "${folder.name}"?`;
@@ -980,6 +996,8 @@ export class TribeManager {
     container.querySelectorAll('.restore-from-file-btn').forEach(btn => {
       btn.addEventListener('click', () => this.handleRestoreFromFile(container));
     });
+
+    bindSwitchSyncModeLink(container, () => this.renderCurrentView(container));
   }
 
   /**
@@ -1049,7 +1067,6 @@ export class TribeManager {
           result.categoryAssignments,
           this.folderService,
           (memberPubkey, folderId) => this.folderService.moveMemberToFolder(memberPubkey, folderId),
-          (memberPubkey) => this.folderService.ensureMemberAssignment(memberPubkey),
           'TribeManager'
         );
       }

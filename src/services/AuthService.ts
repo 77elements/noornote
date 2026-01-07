@@ -1,16 +1,14 @@
 /**
  * Authentication Service
  * Handles authentication via:
- * 1. Direct nsec input (Keychain/localStorage)
- * 2. Browser extension (NIP-07) - web only
- * 3. Remote signer (NIP-46) - bunker://
+ * 1. Browser extension (NIP-07) - web only
+ * 2. Remote signer (NIP-46) - bunker://
+ * 3. Key Signer (NoorSigner daemon)
  */
 
 import { hexToNpub } from '../helpers/nip19';
 import {
-  getPublicKeyFromPrivate,
   calculateEventHash,
-  finalizeEventSigning,
   decodeNip19,
   type UnsignedEvent
 } from './NostrToolsAdapter';
@@ -41,13 +39,12 @@ declare global {
   }
 }
 
-export type AuthMethod = 'nsec' | 'npub' | 'extension' | 'nip46' | 'key-signer';
-export type InputType = 'nsec' | 'npub' | 'bunker' | 'nip05' | 'unknown';
+export type AuthMethod = 'npub' | 'extension' | 'nip46' | 'key-signer';
+export type InputType = 'npub' | 'bunker' | 'nip05' | 'unknown';
 
 export class AuthService {
   private static instance: AuthService;
   private extension: NostrExtension | null = null;
-  private nsec: string | null = null; // Private key (only when using direct nsec)
   private keySignerManager: KeySignerConnectionManager | null = null; // KeySigner connection manager
   private nip46Manager: Nip46SignerManager | null = null; // NIP-46 remote signer manager
   private currentUser: { npub: string; pubkey: string } | null = null;
@@ -155,10 +152,6 @@ export class AuthService {
   public detectInputType(input: string): InputType {
     const trimmed = input.trim();
 
-    if (trimmed.startsWith('nsec1')) {
-      return 'nsec';
-    }
-
     if (trimmed.startsWith('npub1')) {
       return 'npub';
     }
@@ -182,9 +175,6 @@ export class AuthService {
     const inputType = this.detectInputType(input);
 
     switch (inputType) {
-      case 'nsec':
-        return this.authenticateWithNsec(input);
-
       case 'npub':
         return this.authenticateWithNpub(input);
 
@@ -200,7 +190,7 @@ export class AuthService {
       default:
         return {
           success: false,
-          error: 'Invalid input. Please enter npub, nsec, or bunker:// URI'
+          error: 'Invalid input. Please enter npub or bunker:// URI'
         };
     }
   }
@@ -275,59 +265,6 @@ export class AuthService {
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Invalid npub key'
-      };
-    }
-  }
-
-  /**
-   * Authenticate with direct nsec input
-   */
-  public async authenticateWithNsec(nsec: string): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
-    try {
-      // Validate nsec format (should start with 'nsec1')
-      if (!nsec.startsWith('nsec1')) {
-        return {
-          success: false,
-          error: 'Invalid nsec format. Must start with nsec1'
-        };
-      }
-
-      // Convert nsec to hex private key
-      const decoded = decodeNip19(nsec);
-      if (decoded.type !== 'nsec') {
-        return {
-          success: false,
-          error: 'Invalid nsec key format'
-        };
-      }
-      const privateKey = decoded.data as string;
-
-      // Derive public key from private key
-      const pubkey = getPublicKeyFromPrivate(privateKey);
-      const npub = hexToNpub(pubkey);
-
-      // Store nsec in Keychain (or localStorage fallback)
-      await KeychainStorage.saveNsec(nsec);
-
-      // Store in memory for signing
-      this.nsec = nsec;
-      this.currentUser = { npub, pubkey };
-      this.authMethod = 'nsec';
-      this.saveSession();
-
-      // Emit login event for NIP-65 relay list fetching
-      this.eventBus.emit('user:login', { npub, pubkey });
-
-      return {
-        success: true,
-        npub,
-        pubkey
-      };
-    } catch (error) {
-      console.error('nsec authentication failed:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Invalid nsec key'
       };
     }
   }
@@ -550,11 +487,10 @@ export class AuthService {
     // Clear session first
     this.currentUser = null;
     this.extension = null;
-    this.nsec = null;
     this.authMethod = null;
     this.isReadOnly = false;
 
-    // Clear only auth credentials (nsec), NWC remains persistent
+    // Clear auth credentials (no longer used for nsec, but kept for compatibility)
     await KeychainStorage.clearAuth();
 
     this.clearSession();
@@ -702,13 +638,13 @@ export class AuthService {
 
   /**
    * Sign a Nostr event
-   * Uses nsec (direct), browser extension, key signer, or NIP-46 bunker depending on auth method
+   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    * Automatically adds 'client' tag to all events
    */
   public async signEvent(event: any): Promise<any> {
     // Block signing in read-only mode
     if (this.isReadOnly) {
-      throw new Error('Cannot sign events in read-only mode (npub login). Please login with nsec for write access.');
+      throw new Error('Cannot sign events in read-only mode (npub login). Please use KeySigner or browser extension for write access.');
     }
 
     // Add client tag to all events (unless already present)
@@ -722,17 +658,7 @@ export class AuthService {
     }
 
     try {
-      if (this.authMethod === 'nsec' && this.nsec) {
-        // Direct nsec signing using nostr-tools
-        const decoded = decodeNip19(this.nsec);
-        if (decoded.type !== 'nsec') {
-          throw new Error('Invalid nsec key in session');
-        }
-        const privateKey = decoded.data as string;
-
-        // Use adapter to finalize event signing
-        return finalizeEventSigning(event, privateKey, this.currentUser!.pubkey);
-      } else if (this.authMethod === 'extension' && this.extension) {
+      if (this.authMethod === 'extension' && this.extension) {
         // Browser extension signing
         const signedEvent = await this.extension.signEvent(event);
         return signedEvent;
@@ -783,7 +709,7 @@ export class AuthService {
 
   /**
    * NIP-44 encrypt plaintext for a recipient
-   * Uses nsec, browser extension, key signer, or NIP-46 bunker depending on auth method
+   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    */
   public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
     if (this.isReadOnly) {
@@ -791,11 +717,7 @@ export class AuthService {
     }
 
     try {
-      if (this.authMethod === 'nsec' && this.nsec) {
-        // Use nostr-tools for direct encryption
-        const { nip44Encrypt } = await import('./NostrToolsAdapter');
-        return nip44Encrypt(plaintext, recipientPubkey, this.nsec);
-      } else if (this.authMethod === 'extension' && this.extension?.nip44) {
+      if (this.authMethod === 'extension' && this.extension?.nip44) {
         return await this.extension.nip44.encrypt(recipientPubkey, plaintext);
       } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
         const keySigner = this.keySignerManager.getClient();
@@ -816,7 +738,7 @@ export class AuthService {
 
   /**
    * NIP-44 decrypt ciphertext from a sender
-   * Uses nsec, browser extension, key signer, or NIP-46 bunker depending on auth method
+   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    */
   public async nip44Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
     if (this.isReadOnly) {
@@ -824,11 +746,7 @@ export class AuthService {
     }
 
     try {
-      if (this.authMethod === 'nsec' && this.nsec) {
-        // Use nostr-tools for direct decryption
-        const { nip44Decrypt } = await import('./NostrToolsAdapter');
-        return nip44Decrypt(ciphertext, senderPubkey, this.nsec);
-      } else if (this.authMethod === 'extension' && this.extension?.nip44) {
+      if (this.authMethod === 'extension' && this.extension?.nip44) {
         return await this.extension.nip44.decrypt(senderPubkey, ciphertext);
       } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
         const keySigner = this.keySignerManager.getClient();
@@ -849,7 +767,7 @@ export class AuthService {
 
   /**
    * NIP-04 encrypt plaintext for a recipient (legacy)
-   * Uses nsec, browser extension, key signer, or NIP-46 bunker depending on auth method
+   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    */
   public async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
     if (this.isReadOnly) {
@@ -857,10 +775,7 @@ export class AuthService {
     }
 
     try {
-      if (this.authMethod === 'nsec' && this.nsec) {
-        const { nip04 } = await import('./NostrToolsAdapter');
-        return await nip04.encrypt(this.nsec, recipientPubkey, plaintext);
-      } else if (this.authMethod === 'extension' && this.extension?.nip04) {
+      if (this.authMethod === 'extension' && this.extension?.nip04) {
         return await this.extension.nip04.encrypt(recipientPubkey, plaintext);
       } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
         const keySigner = this.keySignerManager.getClient();
@@ -881,7 +796,7 @@ export class AuthService {
 
   /**
    * NIP-04 decrypt ciphertext from a sender (legacy)
-   * Uses nsec, browser extension, key signer, or NIP-46 bunker depending on auth method
+   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    */
   public async nip04Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
     if (this.isReadOnly) {
@@ -889,10 +804,7 @@ export class AuthService {
     }
 
     try {
-      if (this.authMethod === 'nsec' && this.nsec) {
-        const { nip04 } = await import('./NostrToolsAdapter');
-        return await nip04.decrypt(this.nsec, senderPubkey, ciphertext);
-      } else if (this.authMethod === 'extension' && this.extension?.nip04) {
+      if (this.authMethod === 'extension' && this.extension?.nip04) {
         return await this.extension.nip04.decrypt(senderPubkey, ciphertext);
       } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
         const keySigner = this.keySignerManager.getClient();
@@ -974,11 +886,7 @@ export class AuthService {
             this.authMethod = sessionData.authMethod;
             this.isReadOnly = sessionData.isReadOnly || false;
 
-            // Restore auth method specific state (await for proper initialization)
-            if (this.authMethod === 'nsec') {
-              await this.restoreNsecFromKeychain();
-            }
-
+            // Restore NIP-46 session if needed
             if (this.authMethod === 'nip46') {
               await this.restoreNip46Session();
             }
@@ -994,24 +902,6 @@ export class AuthService {
       }
     } catch (error) {
       console.warn('Failed to load session:', error);
-      this.clearSession();
-    }
-  }
-
-  /**
-   * Restore nsec from Keychain after session load
-   */
-  private async restoreNsecFromKeychain(): Promise<void> {
-    try {
-      const nsec = await KeychainStorage.loadNsec();
-      if (nsec) {
-        this.nsec = nsec;
-      } else {
-        // nsec not found in Keychain - clear session
-        this.clearSession();
-      }
-    } catch (error) {
-      console.warn('Failed to restore nsec from Keychain:', error);
       this.clearSession();
     }
   }
@@ -1053,7 +943,6 @@ export class AuthService {
     }
     this.currentUser = null;
     this.extension = null;
-    this.nsec = null;
     if (this.nip46Manager) {
       this.nip46Manager.cleanup();
       this.nip46Manager = null;
@@ -1141,7 +1030,6 @@ export class AuthService {
     // Clear session
     this.currentUser = null;
     this.extension = null;
-    this.nsec = null;
     this.authMethod = null;
     this.isReadOnly = false;
 

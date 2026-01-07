@@ -40,6 +40,13 @@
         { "path": "$HOME/.noornote/**/*" }
       ]
     },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [
+        { "path": "$HOME/.noornote" },
+        { "path": "$HOME/.noornote/**/*" }
+      ]
+    },
     "http:default",
     "http:allow-fetch",
     {

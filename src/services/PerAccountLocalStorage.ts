@@ -46,6 +46,9 @@ export const StorageKeys = {
   // UI preferences (per-account)
   DISABLE_POST_TRUNCATION: 'noornote_disable_post_truncation_map',
   LAYOUT_MODE: 'noornote_layout_mode_map', // 'default' | 'right-pane' | 'wide'
+
+  // NWC storage preference (per-account)
+  NWC_USE_ENCRYPTED_FILE: 'noornote_nwc_use_encrypted_file_map', // boolean: true = encrypted file, false = keychain
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

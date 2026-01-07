@@ -23,7 +23,7 @@ import { ListSyncManager } from '../../../services/sync/ListSyncManager';
 import { BookmarkStorageAdapter } from '../../../services/sync/adapters/BookmarkStorageAdapter';
 import { RestoreListsService } from '../../../services/RestoreListsService';
 import { SyncConfirmationModal } from '../../modals/SyncConfirmationModal';
-import { renderListSyncButtons } from '../../../helpers/ListSyncButtonsHelper';
+import { renderListSyncButtons, bindSwitchSyncModeLink } from '../../../helpers/ListSyncMode';
 import { NewFolderModal } from '../../modals/NewFolderModal';
 import { NewBookmarkModal } from '../../modals/NewBookmarkModal';
 import { EditBookmarkModal } from '../../modals/EditBookmarkModal';
@@ -85,6 +85,11 @@ export class BookmarkManager {
       this.refreshIfActive();
     });
 
+    // Handle relay sync complete from AutoSyncService (Easy Mode)
+    this.eventBus.on('bookmark:relay-sync-complete', (data: { categoryAssignments: Map<string, string>; categories: string[] }) => {
+      this.handleRelaySyncComplete(data.categoryAssignments, data.categories);
+    });
+
     this.eventBus.on('user:logout', () => {
       this.currentFolderId = '';
       this.bookmarksCache.clear();
@@ -108,6 +113,75 @@ export class BookmarkManager {
     if (listTab && listTab.classList.contains('tab-content--active')) {
       this.renderBookmarksTab(listTab as HTMLElement);
     }
+  }
+
+  /**
+   * Handle relay sync complete from AutoSyncService (Easy Mode)
+   * Applies folder assignments and rootOrder, then refreshes UI
+   */
+  private handleRelaySyncComplete(categoryAssignments: Map<string, string>, categories: string[]): void {
+    if (!categoryAssignments || categoryAssignments.size === 0) {
+      return;
+    }
+
+    const existingFolders = this.folderService.getFolders();
+
+    // Create missing folders from relay
+    for (const categoryName of categories) {
+      if (categoryName === '') continue;
+      if (!existingFolders.find(f => f.name === categoryName)) {
+        this.folderService.createFolder(categoryName);
+      }
+    }
+
+    const updatedFolders = this.folderService.getFolders();
+
+    // Rebuild rootOrder: relay folders first (in relay order), then local-only folders
+    const currentRootOrder = this.folderService.getRootOrder();
+    const newRootOrder: Array<{type: 'folder' | 'bookmark'; id: string}> = [];
+
+    // Add relay folders in correct order
+    for (const categoryName of categories) {
+      if (categoryName === '') continue;
+      const folder = updatedFolders.find(f => f.name === categoryName);
+      if (folder) {
+        newRootOrder.push({ type: 'folder', id: folder.id });
+      }
+    }
+
+    // Add local-only folders (not in relay) at the end
+    const relayFolderIds = new Set(newRootOrder.map(item => item.id));
+    for (const item of currentRootOrder) {
+      if (item.type === 'folder' && !relayFolderIds.has(item.id)) {
+        newRootOrder.push(item);
+      }
+    }
+
+    // Add root bookmarks from relay categoryAssignments
+    for (const [bookmarkId, categoryName] of categoryAssignments) {
+      if (categoryName === '') {
+        newRootOrder.push({ type: 'bookmark', id: bookmarkId });
+      }
+    }
+
+    // Update rootOrder
+    this.folderService.saveRootOrder(newRootOrder);
+
+    // Assign bookmarks to their categories
+    for (const [bookmarkId, categoryName] of categoryAssignments) {
+      if (categoryName === '') {
+        this.folderService.moveBookmarkToFolder(bookmarkId, '');
+      } else {
+        const folder = updatedFolders.find(f => f.name === categoryName);
+        if (folder) {
+          this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
+        }
+      }
+    }
+
+    // Clear cache and refresh UI
+    this.bookmarksCache.clear();
+    this.refreshIfActive();
   }
 
   /**
@@ -183,7 +257,6 @@ export class BookmarkManager {
             syncResult.categoryAssignments!,
             this.folderService,
             (bookmarkId, folderId) => this.folderService.moveBookmarkToFolder(bookmarkId, folderId),
-            (bookmarkId) => this.folderService.ensureBookmarkAssignment(bookmarkId),
             'BookmarkManager'
           );
         }
@@ -459,6 +532,19 @@ export class BookmarkManager {
   /**
    * Create a folder card
    */
+  /**
+   * Get actual item count for a folder by counting real items in browser storage
+   * More reliable than assignment-based counting
+   */
+  private getActualFolderItemCount(folderId: string): number {
+    // Get all real bookmark IDs from browser storage
+    const realBookmarkIds = new Set(this.adapter.getBrowserItems().map(b => b.id));
+    // Get assigned IDs for this folder
+    const assignedIds = this.folderService.getBookmarksInFolder(folderId);
+    // Count only IDs that exist in both
+    return assignedIds.filter(id => realBookmarkIds.has(id)).length;
+  }
+
   private createFolderCard(folder: { id: string; name: string }): HTMLElement {
     const currentUser = this.authService.getCurrentUser();
     const isLoggedIn = !!currentUser;
@@ -466,7 +552,7 @@ export class BookmarkManager {
     const folderData: FolderData = {
       id: folder.id,
       name: folder.name,
-      itemCount: this.folderService.getFolderItemCount(folder.id),
+      itemCount: this.getActualFolderItemCount(folder.id),
       isMounted: isLoggedIn ? this.profileMountsService.isMounted(folder.name) : false
     };
 
@@ -945,7 +1031,7 @@ export class BookmarkManager {
         const folderCard = this.containerElement.querySelector(`[data-folder-id="${targetFolderId}"]`);
         const countEl = folderCard?.querySelector('.folder-card__count');
         if (countEl) {
-          const newCount = this.folderService.getFolderItemCount(targetFolderId);
+          const newCount = this.getActualFolderItemCount(targetFolderId);
           countEl.textContent = `${newCount} ${newCount === 1 ? 'item' : 'items'}`;
         }
       }
@@ -1070,6 +1156,8 @@ export class BookmarkManager {
     container.querySelectorAll('.restore-from-file-btn').forEach(btn => {
       btn.addEventListener('click', () => this.handleRestoreFromFile(container));
     });
+
+    bindSwitchSyncModeLink(container, () => this.renderCurrentView(container));
   }
 
   private bindHeaderButtons(container: HTMLElement): void {

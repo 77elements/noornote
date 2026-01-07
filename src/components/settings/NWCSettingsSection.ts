@@ -9,6 +9,12 @@
 import { SettingsSection } from './SettingsSection';
 import { NWCService } from '../../services/NWCService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
+import { Switch } from '../ui/Switch';
+import { PlatformService } from '../../services/PlatformService';
+import { AuthService } from '../../services/AuthService';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { KeychainStorage } from '../../services/KeychainStorage';
+import { ToastService } from '../../services/ToastService';
 
 interface ZapDefaults {
   amount: number;
@@ -24,6 +30,7 @@ export class NWCSettingsSection extends SettingsSection {
   private exchangeRateService: ExchangeRateService;
   private zapDefaults: ZapDefaults;
   private fiatCurrencySettings: FiatCurrencySettings;
+  private storageSwitch?: Switch;
 
   constructor() {
     super('zaps');
@@ -38,7 +45,6 @@ export class NWCSettingsSection extends SettingsSection {
    */
   private async loadZapDefaults(): Promise<ZapDefaults> {
     try {
-      const { KeychainStorage } = await import('../../services/KeychainStorage');
       const stored = await KeychainStorage.loadZapDefaults();
       if (stored) {
         return stored;
@@ -55,7 +61,6 @@ export class NWCSettingsSection extends SettingsSection {
    */
   private async saveZapDefaults(): Promise<void> {
     try {
-      const { KeychainStorage } = await import('../../services/KeychainStorage');
       await KeychainStorage.saveZapDefaults(this.zapDefaults.amount, this.zapDefaults.comment);
     } catch (error) {
       console.warn('Failed to save zap defaults:', error);
@@ -67,7 +72,6 @@ export class NWCSettingsSection extends SettingsSection {
    */
   private async loadFiatCurrencySettings(): Promise<FiatCurrencySettings> {
     try {
-      const { KeychainStorage } = await import('../../services/KeychainStorage');
       const stored = await KeychainStorage.loadFiatCurrency();
       if (stored) {
         return { currency: stored };
@@ -84,7 +88,6 @@ export class NWCSettingsSection extends SettingsSection {
    */
   private async saveFiatCurrencySettings(): Promise<void> {
     try {
-      const { KeychainStorage } = await import('../../services/KeychainStorage');
       await KeychainStorage.saveFiatCurrency(this.fiatCurrencySettings.currency);
 
       window.dispatchEvent(new CustomEvent('fiat-currency-changed', {
@@ -151,6 +154,11 @@ export class NWCSettingsSection extends SettingsSection {
             />
             <button class="btn btn--medium" id="nwc-connect-btn">Connect Wallet</button>
             <div class="nwc-status" id="nwc-status"></div>
+
+            <div class="nwc-storage-option">
+              <div id="nwc-storage-switch-container"></div>
+              <p class="form__info" id="nwc-storage-info"></p>
+            </div>
           </div>
         </div>
       `;
@@ -206,16 +214,119 @@ export class NWCSettingsSection extends SettingsSection {
               <div class="settings-section__action-feedback" id="zap-save-message"></div>
             </div>
           </div>
+
+          <div class="nwc-storage-option">
+            <div id="nwc-storage-switch-container"></div>
+            <p class="form__info" id="nwc-storage-info"></p>
+          </div>
         </div>
       `;
     }
   }
 
   /**
+   * Setup NWC storage switch (Keychain vs Encrypted File)
+   */
+  private async setupStorageSwitch(contentContainer: HTMLElement): Promise<void> {
+    // Only show in Tauri (not browser)
+    if (!PlatformService.getInstance().isTauri) {
+      return;
+    }
+
+    const container = contentContainer.querySelector('#nwc-storage-switch-container');
+    if (!container) return;
+
+    const storage = PerAccountLocalStorage.getInstance();
+    const useEncryptedFile = storage.get(StorageKeys.NWC_USE_ENCRYPTED_FILE, false);
+
+    this.storageSwitch = new Switch({
+      label: 'Store in encrypted file (instead of Keychain)',
+      checked: useEncryptedFile,
+      onChange: async (checked) => {
+        storage.set(StorageKeys.NWC_USE_ENCRYPTED_FILE, checked);
+        await this.updateStorageInfo(contentContainer, checked);
+
+        // If switching WITH existing NWC connection: migrate
+        if (this.nwcService.isConnected()) {
+          await this.migrateNWCStorage(checked);
+        }
+      }
+    });
+
+    container.innerHTML = this.storageSwitch.render();
+    this.storageSwitch.setupEventListeners(container as HTMLElement);
+
+    await this.updateStorageInfo(contentContainer, useEncryptedFile);
+  }
+
+  /**
+   * Update storage info text (shows file path or iCloud warning)
+   */
+  private async updateStorageInfo(contentContainer: HTMLElement, useEncryptedFile: boolean): Promise<void> {
+    const infoEl = contentContainer.querySelector('#nwc-storage-info');
+    if (!infoEl) return;
+
+    if (useEncryptedFile) {
+      // Show file path
+      const { EncryptedFileStorage } = await import('../../services/EncryptedFileStorage');
+      const auth = AuthService.getInstance();
+      const user = auth.getCurrentUser();
+      if (user) {
+        const path = await EncryptedFileStorage.getDisplayPath(user.pubkey);
+        infoEl.innerHTML = `📁 Stored at: <code>${path}</code>`;
+      }
+    } else {
+      // Check iCloud (macOS only)
+      if (PlatformService.getInstance().isMac) {
+        infoEl.innerHTML = `Stored securely in macOS Keychain.<br><span class="icloud-warning">Not recommended if you're syncing your keychain to iCloud!</span>`;
+      } else {
+        infoEl.textContent = 'Stored securely in system keychain';
+      }
+    }
+  }
+
+  /**
+   * Migrate NWC between storage methods
+   */
+  private async migrateNWCStorage(toEncryptedFile: boolean): Promise<void> {
+    const auth = AuthService.getInstance();
+    const user = auth.getCurrentUser();
+    if (!user) return;
+
+    try {
+      if (toEncryptedFile) {
+        // Keychain → File
+        const nwc = await KeychainStorage.loadNWC(user.pubkey);
+        if (nwc) {
+          const { EncryptedFileStorage } = await import('../../services/EncryptedFileStorage');
+          await EncryptedFileStorage.saveNWC(nwc, user.pubkey);
+          await KeychainStorage.deleteNWC(user.pubkey);
+          ToastService.show('NWC migrated to encrypted file', 'success');
+        }
+      } else {
+        // File → Keychain
+        const { EncryptedFileStorage } = await import('../../services/EncryptedFileStorage');
+        const nwc = await EncryptedFileStorage.loadNWC(user.pubkey);
+        if (nwc) {
+          await KeychainStorage.saveNWC(nwc, user.pubkey);
+          await EncryptedFileStorage.deleteNWC(user.pubkey);
+          ToastService.show('NWC migrated to Keychain', 'success');
+        }
+      }
+    } catch (error) {
+      ToastService.show('Failed to migrate NWC storage', 'error');
+      console.error('[NWCSettings] Migration error:', error);
+    }
+  }
+
+  /**
    * Bind event listeners
    */
-  private bindListeners(contentContainer: HTMLElement): void {
+  private async bindListeners(contentContainer: HTMLElement): Promise<void> {
     const isConnected = this.nwcService.isConnected();
+
+    // Setup storage switch (both connected and disconnected states)
+    await this.setupStorageSwitch(contentContainer);
 
     if (!isConnected) {
       // Connect button

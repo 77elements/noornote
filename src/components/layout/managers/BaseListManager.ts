@@ -17,7 +17,7 @@ import { ListSyncManager } from '../../../services/sync/ListSyncManager';
 import { SyncConfirmationModal } from '../../modals/SyncConfirmationModal';
 import { InfiniteScroll } from '../../ui/InfiniteScroll';
 import { switchTabWithContent } from '../../../helpers/TabsHelper';
-import { renderListSyncButtons } from '../../../helpers/ListSyncButtonsHelper';
+import { renderListSyncButtons, bindSwitchSyncModeLink } from '../../../helpers/ListSyncMode';
 
 export abstract class BaseListManager<TItem, TWithProfile> {
   protected eventBus: EventBus;
@@ -327,6 +327,9 @@ export abstract class BaseListManager<TItem, TWithProfile> {
         await this.handleRestoreFromFile(container);
       });
     });
+
+    // Switch sync mode link
+    bindSwitchSyncModeLink(container, () => this.renderListTab(container));
   }
 
   /**

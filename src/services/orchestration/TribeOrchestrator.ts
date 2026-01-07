@@ -109,8 +109,12 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
   /**
    * Add a tribe member (public or private)
    * Writes to browserItems (localStorage)
+   * @param pubkey - User pubkey
+   * @param isPrivate - Whether to add as private member
+   * @param category - Tribe name (for NIP-51 d-tag)
+   * @param folderId - Folder ID (for FolderService UI assignment)
    */
-  public async addMember(pubkey: string, isPrivate: boolean, category: string = ''): Promise<boolean> {
+  public async addMember(pubkey: string, isPrivate: boolean, category: string = '', folderId?: string): Promise<boolean> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       throw new Error('User not authenticated');
@@ -119,15 +123,19 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     try {
       const browserItems = this.getBrowserItems();
 
-      if (browserItems.some(m => m.pubkey === pubkey)) {
-        return true; // Already a member
+      // Check if already in THIS specific tribe (category)
+      if (browserItems.some(m => m.pubkey === pubkey && m.category === category)) {
+        return true; // Already in this specific tribe
       }
 
       // Security: Only allow private members if feature is enabled
       const canBePrivate = isPrivate && this.isPrivateTribesEnabled();
 
+      // Create unique ID: pubkey + category (allows same user in multiple tribes)
+      const uniqueId = category ? `${pubkey}_${category}` : pubkey;
+
       const item: TribeMember = {
-        id: pubkey,
+        id: uniqueId,
         pubkey: pubkey,
         relay: '',
         addedAt: Math.floor(Date.now() / 1000),
@@ -137,13 +145,16 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
       await this.addItem(item);
 
-      // Keep folderService in sync for UI
-      if (category === '') {
-        this.folderService.ensureMemberAssignment(pubkey);
+      // Keep folderService in sync for UI (use uniqueId, not pubkey)
+      // Use folderId if provided, otherwise fall back to category
+      const targetFolderId = folderId || category;
+
+      if (targetFolderId === '') {
+        this.folderService.ensureMemberAssignment(uniqueId);
       } else {
         // Move to specified folder
-        this.folderService.ensureMemberAssignment(pubkey); // Create assignment first
-        this.folderService.moveMemberToFolder(pubkey, category);
+        this.folderService.ensureMemberAssignment(uniqueId); // Create assignment first
+        this.folderService.moveMemberToFolder(uniqueId, targetFolderId);
       }
 
       this.systemLogger.info('TribeOrchestrator',

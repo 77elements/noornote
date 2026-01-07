@@ -18,6 +18,7 @@ export class VideoPlayerService {
 
   /**
    * Toggle CSS fullscreen for video
+   * Moves video to body to escape CSS containment in .primary-content
    */
   private toggleFullscreen(video: HTMLVideoElement): void {
     const fsButton = (video as any)._fsButton;
@@ -29,9 +30,46 @@ export class VideoPlayerService {
         fsButton.classList.remove('video-fullscreen-btn-active');
       }
       document.body.style.overflow = '';
+
+      // Move video back to original position
+      const originalParent = (video as any)._originalParent;
+      const originalNextSibling = (video as any)._originalNextSibling;
+      const originalButtonParent = (video as any)._originalButtonParent;
+
+      if (originalParent) {
+        if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
+          originalParent.insertBefore(video, originalNextSibling);
+        } else {
+          originalParent.appendChild(video);
+        }
+
+        // Move button back to wrapper
+        if (fsButton && originalButtonParent) {
+          originalButtonParent.appendChild(fsButton);
+        }
+
+        // Clean up stored references
+        delete (video as any)._originalParent;
+        delete (video as any)._originalNextSibling;
+        delete (video as any)._originalButtonParent;
+      }
+
       this.fullscreenVideo = null;
     } else {
       // Enter fullscreen
+      // Store original positions before moving
+      (video as any)._originalParent = video.parentElement;
+      (video as any)._originalNextSibling = video.nextSibling;
+      (video as any)._originalButtonParent = fsButton ? fsButton.parentElement : null;
+
+      // Move video to end of body (escapes CSS containment)
+      document.body.appendChild(video);
+
+      // Move button to body as well (so it stays visible with video)
+      if (fsButton) {
+        document.body.appendChild(fsButton);
+      }
+
       video.classList.add('video-fullscreen-mode');
       if (fsButton) {
         fsButton.classList.add('video-fullscreen-btn-active');

@@ -45,6 +45,7 @@ export class MessagesView extends View {
   private subscriptionIds: string[] = [];
   private progressBar: ProgressBarHelper | null = null;
   private isFetchingDMs: boolean = false;
+  private menuElement: HTMLElement | null = null;
 
   constructor() {
     super();
@@ -127,20 +128,6 @@ export class MessagesView extends View {
               <circle cx="8" cy="14" r="1.5" />
             </svg>
           </button>
-          <div class="dropdown-menu messages-view__menu" style="display: none;">
-            <button class="dropdown-menu-item" data-action="mark-all-read">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                <path d="M2 8l4 4 8-8"/>
-              </svg>
-              Mark all read
-            </button>
-            <button class="dropdown-menu-item" data-action="mark-all-unread">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                <circle cx="8" cy="8" r="6"/>
-              </svg>
-              Mark all unread
-            </button>
-          </div>
         </div>
       </div>
       <div class="messages-view__tabs">
@@ -189,21 +176,6 @@ export class MessagesView extends View {
     menuTrigger?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.toggleMenu();
-    });
-
-    // Setup menu items
-    const menu = this.container.querySelector('.messages-view__menu');
-    menu?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const target = e.target as HTMLElement;
-      const menuItem = target.closest('.dropdown-menu-item') as HTMLElement;
-      if (menuItem) {
-        const action = menuItem.dataset.action;
-        if (action) {
-          this.handleMenuAction(action);
-          this.closeMenu();
-        }
-      }
     });
 
     // Setup tab click handlers using TabsHelper
@@ -520,6 +492,49 @@ export class MessagesView extends View {
   }
 
   /**
+   * Create the dropdown menu
+   */
+  private createMenu(): HTMLElement {
+    const menu = document.createElement('div');
+    menu.className = 'dropdown-menu messages-view__menu';
+    menu.style.display = 'none';
+
+    menu.innerHTML = `
+      <button class="dropdown-menu-item" data-action="mark-all-read">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M2 8l4 4 8-8"/>
+        </svg>
+        Mark all read
+      </button>
+      <button class="dropdown-menu-item" data-action="mark-all-unread">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="8" cy="8" r="6"/>
+        </svg>
+        Mark all unread
+      </button>
+    `;
+
+    // Setup menu click handler
+    menu.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const target = e.target as HTMLElement;
+      const menuItem = target.closest('.dropdown-menu-item') as HTMLElement;
+      if (menuItem) {
+        const action = menuItem.dataset.action;
+        if (action) {
+          this.handleMenuAction(action);
+          this.closeMenu();
+        }
+      }
+    });
+
+    // Append to body for proper positioning
+    document.body.appendChild(menu);
+
+    return menu;
+  }
+
+  /**
    * Render error state
    */
   private renderError(list: HTMLElement): void {
@@ -549,10 +564,12 @@ export class MessagesView extends View {
    * Open menu
    */
   private openMenu(): void {
-    const menu = this.container.querySelector('.messages-view__menu') as HTMLElement;
-    if (!menu) return;
+    // Create menu if it doesn't exist
+    if (!this.menuElement) {
+      this.menuElement = this.createMenu();
+    }
 
-    menu.style.display = 'block';
+    this.menuElement.style.display = 'block';
     this.menuOpen = true;
     this.positionMenu();
 
@@ -566,9 +583,8 @@ export class MessagesView extends View {
    * Close menu
    */
   private closeMenu(): void {
-    const menu = this.container.querySelector('.messages-view__menu') as HTMLElement;
-    if (menu) {
-      menu.style.display = 'none';
+    if (this.menuElement) {
+      this.menuElement.style.display = 'none';
     }
     this.menuOpen = false;
     document.removeEventListener('click', this.outsideClickHandler);
@@ -579,16 +595,16 @@ export class MessagesView extends View {
    */
   private positionMenu(): void {
     const trigger = this.container.querySelector('.messages-view__menu-trigger') as HTMLElement;
-    const menu = this.container.querySelector('.messages-view__menu') as HTMLElement;
-    if (!trigger || !menu) return;
+    if (!trigger || !this.menuElement) return;
 
     const triggerRect = trigger.getBoundingClientRect();
-    const menuRect = menu.getBoundingClientRect();
+    const menuRect = this.menuElement.getBoundingClientRect();
 
     // Position below trigger, aligned to right
-    menu.style.position = 'fixed';
-    menu.style.top = `${triggerRect.bottom + 4}px`;
-    menu.style.left = `${triggerRect.right - menuRect.width}px`;
+    this.menuElement.style.position = 'fixed';
+    this.menuElement.style.top = `${triggerRect.bottom + 4}px`;
+    this.menuElement.style.left = `${triggerRect.right - menuRect.width}px`;
+    this.menuElement.style.zIndex = '1000';
   }
 
   /**
@@ -623,6 +639,11 @@ export class MessagesView extends View {
    */
   public destroy(): void {
     this.closeMenu();
+    // Remove menu from DOM
+    if (this.menuElement) {
+      this.menuElement.remove();
+      this.menuElement = null;
+    }
     this.infiniteScroll.destroy();
     this.progressBar?.reset();
     this.subscriptionIds.forEach(id => this.eventBus.off(id));
