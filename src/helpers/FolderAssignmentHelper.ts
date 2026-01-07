@@ -19,15 +19,13 @@ export interface FolderService {
  *
  * @param categoryAssignments - Map of itemId → categoryName from relay
  * @param folderService - Service with getFolders() and createFolder()
- * @param moveToFolder - Function to move item to folder (itemId, folderId)
- * @param ensureAssignment - Function to ensure item has root assignment (itemId)
+ * @param moveToFolder - Function to move item to folder (itemId, folderId) - use '' for root
  * @param logCategory - Category name for SystemLogger (e.g., 'BookmarkManager', 'TribeManager')
  */
 export async function applyFolderAssignments(
   categoryAssignments: Map<string, string>,
   folderService: FolderService,
   moveToFolder: (itemId: string, folderId: string) => void,
-  ensureAssignment: (itemId: string) => void,
   logCategory: string
 ): Promise<void> {
   if (!categoryAssignments || categoryAssignments.size === 0) {
@@ -58,8 +56,8 @@ export async function applyFolderAssignments(
   const updatedFolders = folderService.getFolders();
   for (const [itemId, categoryName] of categoryAssignments) {
     if (categoryName === '') {
-      // Root - ensure assignment exists
-      ensureAssignment(itemId);
+      // Root - move to root (folderId = '')
+      moveToFolder(itemId, '');
     } else {
       // Find folder by name and move item there
       const folder = updatedFolders.find(f => f.name === categoryName);

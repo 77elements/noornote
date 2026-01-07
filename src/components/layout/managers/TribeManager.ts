@@ -174,7 +174,6 @@ export class TribeManager {
             syncResult.categoryAssignments!,
             this.folderService,
             (memberPubkey, folderId) => this.folderService.moveMemberToFolder(memberPubkey, folderId),
-            (memberPubkey) => this.folderService.ensureMemberAssignment(memberPubkey),
             'TribeManager'
           );
         }
@@ -428,13 +427,26 @@ export class TribeManager {
   }
 
   /**
+   * Get actual item count for a folder by counting real items in browser storage
+   * More reliable than assignment-based counting
+   */
+  private getActualFolderItemCount(folderId: string): number {
+    // Get all real member pubkeys from browser storage
+    const realMemberPubkeys = new Set(this.adapter.getBrowserItems().map(m => m.pubkey));
+    // Get assigned pubkeys for this folder
+    const assignedPubkeys = this.folderService.getMembersInFolder(folderId);
+    // Count only pubkeys that exist in both
+    return assignedPubkeys.filter(pk => realMemberPubkeys.has(pk)).length;
+  }
+
+  /**
    * Create a folder card
    */
   private createFolderCard(folder: { id: string; name: string }): HTMLElement {
     const folderData: FolderData = {
       id: folder.id,
       name: folder.name,
-      itemCount: this.folderService.getFolderItemCount(folder.id),
+      itemCount: this.getActualFolderItemCount(folder.id),
       isMounted: false // Tribes don't support profile mounting
     };
 
@@ -690,7 +702,7 @@ export class TribeManager {
     const folder = this.folderService.getFolder(folderId);
     if (!folder) return;
 
-    const itemCount = this.folderService.getFolderItemCount(folderId);
+    const itemCount = this.getActualFolderItemCount(folderId);
     const message = itemCount > 0
       ? `Delete tribe "${folder.name}"? ${itemCount} member(s) will be deleted.`
       : `Delete tribe "${folder.name}"?`;
@@ -1053,7 +1065,6 @@ export class TribeManager {
           result.categoryAssignments,
           this.folderService,
           (memberPubkey, folderId) => this.folderService.moveMemberToFolder(memberPubkey, folderId),
-          (memberPubkey) => this.folderService.ensureMemberAssignment(memberPubkey),
           'TribeManager'
         );
       }

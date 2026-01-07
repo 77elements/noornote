@@ -426,14 +426,32 @@ export class AutoSyncService {
       const manager = this.getManagerForListType(listType);
       const result = await manager.syncFromRelays();
 
-      // Nothing changed
+      // Nothing changed in terms of IDs - but folder assignments may have changed
       if (result.diff.added.length === 0 && result.diff.removed.length === 0) {
+        // Still apply folder assignments for bookmarks (categories may have changed)
+        if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
+          // Emit special event for BookmarkManager to handle full sync (including rootOrder)
+          this.eventBus.emit('bookmark:relay-sync-complete', {
+            categoryAssignments: result.categoryAssignments,
+            categories: result.categories || []
+          });
+          await this.saveToFile(listType);
+        }
         return;
       }
 
       // Only additions - auto-merge silently
       if (result.diff.added.length > 0 && result.diff.removed.length === 0) {
         await manager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+
+        // Bookmarks: Emit event for full sync handling (including rootOrder)
+        if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
+          this.eventBus.emit('bookmark:relay-sync-complete', {
+            categoryAssignments: result.categoryAssignments,
+            categories: result.categories || []
+          });
+        }
+
         await this.saveToFile(listType);
         this.eventBus.emit(this.getEventNameForListType(listType));
         return;
@@ -450,6 +468,15 @@ export class AutoSyncService {
           onKeep: async () => {
             // Keep local items + add new from relay
             await manager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+
+            // Bookmarks: Emit event for full sync handling (including rootOrder)
+            if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
+              this.eventBus.emit('bookmark:relay-sync-complete', {
+                categoryAssignments: result.categoryAssignments,
+                categories: result.categories || []
+              });
+            }
+
             await this.saveToFile(listType);
             this.eventBus.emit(this.getEventNameForListType(listType));
             ToastService.show(`${this.getDisplayNameForListType(listType)}: Merged ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
@@ -457,6 +484,15 @@ export class AutoSyncService {
           onDelete: async () => {
             // Replace with relay items
             await manager.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
+
+            // Bookmarks: Emit event for full sync handling (including rootOrder)
+            if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
+              this.eventBus.emit('bookmark:relay-sync-complete', {
+                categoryAssignments: result.categoryAssignments,
+                categories: result.categories || []
+              });
+            }
+
             await this.saveToFile(listType);
             this.eventBus.emit(this.getEventNameForListType(listType));
             ToastService.show(`${this.getDisplayNameForListType(listType)}: Synced from relays (removed ${result.diff.removed.length})`, 'success');
