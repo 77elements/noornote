@@ -1,5 +1,5 @@
 /**
- * ListSyncButtonsHelper
+ * ListSyncMode
  * Renders sync control buttons for list views (Follows, Bookmarks, Mutes)
  *
  * @purpose Centralized rendering of sync buttons based on sync mode
@@ -7,6 +7,7 @@
  */
 
 import { EventBus } from '../services/EventBus';
+import { ToastService } from '../services/ToastService';
 
 export type ListSyncMode = 'manual' | 'easy';
 
@@ -47,6 +48,34 @@ export function isEasyMode(): boolean {
  * Manual Mode: 4 buttons (Sync from Relays, Sync to Relays, Save to File, Restore from File)
  * Easy Mode: 1 button (Save to File - manual backup option)
  */
+/**
+ * Switch sync mode and show toast notification
+ * @returns The new mode
+ */
+export function switchSyncMode(): ListSyncMode {
+  const currentMode = getListSyncMode();
+  const newMode = currentMode === 'easy' ? 'manual' : 'easy';
+  setListSyncMode(newMode);
+  return newMode;
+}
+
+/**
+ * Bind click handler for switch sync mode links
+ * @param container - Container element to search for links
+ * @param onSwitch - Callback after mode is switched (for re-rendering)
+ */
+export function bindSwitchSyncModeLink(container: HTMLElement, onSwitch: () => void): void {
+  container.querySelectorAll('.switch-sync-mode-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const newMode = switchSyncMode();
+      const modeLabel = newMode === 'easy' ? 'Easy Mode' : 'Manual Mode';
+      ToastService.show(`Switched to ${modeLabel}`, 'success');
+      onSwitch();
+    });
+  });
+}
+
 export function renderListSyncButtons(): string {
   const mode = getListSyncMode();
 
@@ -58,7 +87,7 @@ export function renderListSyncButtons(): string {
         </button>
       </div>
       <p class="list-sync-info list-sync-info--easy">
-        Easy Mode: Changes are automatically synced to your local backup and relays.
+        Easy Mode: Changes are automatically synced to your local backup and relays. <a href="#" class="switch-sync-mode-link">Switch to manual mode</a>
       </p>
     `;
   }
@@ -80,7 +109,7 @@ export function renderListSyncButtons(): string {
       </button>
     </div>
     <p class="list-sync-info">
-      This list is stored in 3 places: on your hard drive - in the NoorNote app - on the relays. You can use the buttons up there to control how the list stays synced across those three.
+      This list is stored in 3 places: on your hard drive - in the NoorNote app - on the relays. You can use the buttons up there to control how the list stays synced across those three. <a href="#" class="switch-sync-mode-link">Switch to easy mode</a>
     </p>
   `;
 }

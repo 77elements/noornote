@@ -16,7 +16,7 @@
  */
 
 import { ListSyncManager, type SyncFromRelaysResult } from './sync/ListSyncManager';
-import { getListSyncMode } from '../helpers/ListSyncButtonsHelper';
+import { getListSyncMode } from '../helpers/ListSyncMode';
 import { SystemLogger } from '../components/system/SystemLogger';
 
 export interface RestoreResult {

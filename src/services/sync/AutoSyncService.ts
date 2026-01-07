@@ -26,7 +26,7 @@ import { SyncConfirmationModal } from '../../components/modals/SyncConfirmationM
 import { UserProfileService } from '../UserProfileService';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { renderUserMention } from '../../helpers/UserMentionHelper';
-import { isEasyMode } from '../../helpers/ListSyncButtonsHelper';
+import { isEasyMode } from '../../helpers/ListSyncMode';
 import type { FollowItem } from '../storage/FollowFileStorage';
 import type { BookmarkItem } from '../storage/BookmarkFileStorage';
 import type { MuteItem } from '../../types/BaseListItem';

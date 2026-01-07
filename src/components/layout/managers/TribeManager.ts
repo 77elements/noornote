@@ -21,7 +21,7 @@ import { TribeFolderService } from '../../../services/TribeFolderService';
 import { ListSyncManager } from '../../../services/sync/ListSyncManager';
 import { TribeStorageAdapter } from '../../../services/sync/adapters/TribeStorageAdapter';
 import { RestoreListsService } from '../../../services/RestoreListsService';
-import { renderListSyncButtons } from '../../../helpers/ListSyncButtonsHelper';
+import { renderListSyncButtons, bindSwitchSyncModeLink } from '../../../helpers/ListSyncMode';
 import { NewFolderModal } from '../../modals/NewFolderModal';
 import { EditFolderModal } from '../../modals/EditFolderModal';
 import { TribeMemberCard } from '../../tribes/TribeMemberCard';
@@ -996,6 +996,8 @@ export class TribeManager {
     container.querySelectorAll('.restore-from-file-btn').forEach(btn => {
       btn.addEventListener('click', () => this.handleRestoreFromFile(container));
     });
+
+    bindSwitchSyncModeLink(container, () => this.renderCurrentView(container));
   }
 
   /**

@@ -12,7 +12,7 @@ import {
   getListSyncMode,
   setListSyncMode,
   type ListSyncMode
-} from '../../helpers/ListSyncButtonsHelper';
+} from '../../helpers/ListSyncMode';
 
 export class ListSettingsSection extends SettingsSection {
   private currentMode: ListSyncMode;

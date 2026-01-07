@@ -23,7 +23,7 @@ import { ListSyncManager } from '../../../services/sync/ListSyncManager';
 import { BookmarkStorageAdapter } from '../../../services/sync/adapters/BookmarkStorageAdapter';
 import { RestoreListsService } from '../../../services/RestoreListsService';
 import { SyncConfirmationModal } from '../../modals/SyncConfirmationModal';
-import { renderListSyncButtons } from '../../../helpers/ListSyncButtonsHelper';
+import { renderListSyncButtons, bindSwitchSyncModeLink } from '../../../helpers/ListSyncMode';
 import { NewFolderModal } from '../../modals/NewFolderModal';
 import { NewBookmarkModal } from '../../modals/NewBookmarkModal';
 import { EditBookmarkModal } from '../../modals/EditBookmarkModal';
@@ -1156,6 +1156,8 @@ export class BookmarkManager {
     container.querySelectorAll('.restore-from-file-btn').forEach(btn => {
       btn.addEventListener('click', () => this.handleRestoreFromFile(container));
     });
+
+    bindSwitchSyncModeLink(container, () => this.renderCurrentView(container));
   }
 
   private bindHeaderButtons(container: HTMLElement): void {
