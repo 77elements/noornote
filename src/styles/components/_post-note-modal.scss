@@ -5,7 +5,14 @@
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
-  min-height: 400px;
+
+  // When poll is active, reduce textarea height
+  &:has(#poll-creator-container:not(:empty)) {
+    .textarea {
+      min-height: 100px;
+      max-height: 120px;
+    }
+  }
 }
 
 // Quote preview in post modal

@@ -90,6 +90,7 @@ export class PostNoteModal {
       title: 'New Note',
       content: modalContent,
       width: '650px',
+      height: 'auto',
       showCloseButton: true,
       closeOnOverlay: false,
       closeOnEsc: true
@@ -162,6 +163,7 @@ export class PostNoteModal {
       <div class="post-note-modal">
         ${this.renderTabs()}
         ${this.renderEditor()}
+        <div id="poll-creator-container"></div>
         ${this.renderActions()}
       </div>
     `;
@@ -260,9 +262,6 @@ export class PostNoteModal {
           </div>
         </div>
       </div>
-      <div id="poll-creator-container">
-        <!-- Poll creator will be inserted here -->
-      </div>
     `;
   }
 
@@ -351,10 +350,22 @@ export class PostNoteModal {
           isNSFW: this.isNSFW
         });
 
+        // Add poll preview if poll is configured
+        const pollPreviewHtml = this.renderPollPreview();
+        if (pollPreviewHtml) {
+          previewContainer.innerHTML += pollPreviewHtml;
+        }
+
         actions.parentNode?.insertBefore(previewContainer, actions);
 
         // Render quoted notes in preview
         this.renderQuotedNotesInPreview(previewContainer);
+      }
+
+      // Toggle poll-creator visibility based on tab
+      const pollContainer = modal.querySelector('#poll-creator-container') as HTMLElement;
+      if (pollContainer) {
+        pollContainer.style.display = this.currentTab === 'edit' ? '' : 'none';
       }
     }
   }
@@ -628,6 +639,61 @@ export class PostNoteModal {
         }
       }
     }
+  }
+
+  /**
+   * Render poll preview for Preview tab
+   * Shows poll as it will appear after posting (non-interactive)
+   */
+  private renderPollPreview(): string {
+    if (!this.pollData) return '';
+
+    const validOptions = this.pollData.options.filter(o => o.label.trim());
+    if (validOptions.length < 2) return '';
+
+    // Meta-Info (Multiple Choice, End Date)
+    let metaHtml = '';
+    if (this.pollData.multipleChoice || this.pollData.endDate) {
+      metaHtml = '<div class="nip88-poll__meta">';
+      if (this.pollData.multipleChoice) {
+        metaHtml += '<span class="nip88-poll__meta-item">Multiple choice allowed</span>';
+      }
+      if (this.pollData.endDate) {
+        const endDate = new Date(this.pollData.endDate * 1000);
+        metaHtml += `<span class="nip88-poll__meta-item">Ends ${endDate.toLocaleDateString()}</span>`;
+      }
+      metaHtml += '</div>';
+    }
+
+    // Options (as preview, not clickable)
+    const optionsHtml = validOptions.map(option => `
+      <div class="nip88-poll__option nip88-poll__option--preview">
+        <span class="nip88-poll__option-label">${this.escapeHtml(option.label)}</span>
+        <span class="nip88-poll__option-stats">
+          <span class="nip88-poll__option-count">0 votes</span>
+          <span class="nip88-poll__option-percentage">0%</span>
+        </span>
+        <span class="nip88-poll__option-bar" style="width: 0%"></span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="nip88-poll nip88-poll--preview">
+        ${metaHtml}
+        <div class="nip88-poll__options">
+          ${optionsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   /**
