@@ -16,18 +16,30 @@ import { BookmarkOrchestrator } from '../../orchestration/BookmarkOrchestrator';
 import { AuthService } from '../../AuthService';
 import { SystemLogger } from '../../../components/system/SystemLogger';
 import { StorageKeys, type StorageKey } from '../../PerAccountLocalStorage';
+import { EventBus } from '../../EventBus';
 
 export class BookmarkStorageAdapter extends BaseListStorageAdapter<BookmarkItem> {
   private fileStorage: BookmarkFileStorage;
   private bookmarkOrchestrator: BookmarkOrchestrator;
   private authService: AuthService;
   private logger = SystemLogger.getInstance();
+  private eventBus: EventBus;
 
   constructor() {
     super();
     this.fileStorage = BookmarkFileStorage.getInstance();
     this.bookmarkOrchestrator = BookmarkOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
+    this.eventBus = EventBus.getInstance();
+  }
+
+  /**
+   * Override setBrowserItems to emit bookmark:updated event
+   * Triggers Easy Mode sync for: folder moves, add/remove, category changes
+   */
+  override setBrowserItems(items: BookmarkItem[]): void {
+    super.setBrowserItems(items);
+    this.eventBus.emit('bookmark:updated');
   }
 
   protected getBrowserStorageKey(): string {

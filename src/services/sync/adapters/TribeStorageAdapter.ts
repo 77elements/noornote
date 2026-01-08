@@ -16,18 +16,30 @@ import { TribeOrchestrator } from '../../orchestration/TribeOrchestrator';
 import { AuthService } from '../../AuthService';
 import { SystemLogger } from '../../../components/system/SystemLogger';
 import { StorageKeys, type StorageKey } from '../../PerAccountLocalStorage';
+import { EventBus } from '../../EventBus';
 
 export class TribeStorageAdapter extends BaseListStorageAdapter<TribeMember> {
   private fileStorage: TribeFileStorage;
   private tribeOrchestrator: TribeOrchestrator;
   private authService: AuthService;
   private logger = SystemLogger.getInstance();
+  private eventBus: EventBus;
 
   constructor() {
     super();
     this.fileStorage = TribeFileStorage.getInstance();
     this.tribeOrchestrator = TribeOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
+    this.eventBus = EventBus.getInstance();
+  }
+
+  /**
+   * Override setBrowserItems to emit tribe:updated event
+   * Triggers Easy Mode sync for: folder moves, add/remove, category changes
+   */
+  override setBrowserItems(items: TribeMember[]): void {
+    super.setBrowserItems(items);
+    this.eventBus.emit('tribe:updated');
   }
 
   protected getBrowserStorageKey(): string {

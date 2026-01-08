@@ -742,6 +742,8 @@ export class BookmarkManager {
             if (targetIndex !== -1) {
               this.folderService.moveItemToPosition(draggedId, targetIndex);
               grid.insertBefore(draggedCard, dropTarget);
+              // Trigger Easy Mode sync for reorder
+              this.eventBus.emit('bookmark:updated');
             }
           } else {
             // Root level - use root order
@@ -751,6 +753,8 @@ export class BookmarkManager {
             if (targetIndex !== -1) {
               this.folderService.moveInRootOrder(draggedType as 'folder' | 'bookmark', draggedId, targetIndex);
               grid.insertBefore(draggedCard, dropTarget);
+              // Trigger Easy Mode sync for reorder
+              this.eventBus.emit('bookmark:updated');
             }
           }
         }

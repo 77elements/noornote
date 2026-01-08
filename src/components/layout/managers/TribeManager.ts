@@ -606,6 +606,8 @@ export class TribeManager {
             if (targetIndex !== -1) {
               this.folderService.moveItemToPosition(draggedId, targetIndex);
               grid.insertBefore(draggedCard, dropTarget);
+              // Trigger Easy Mode sync for reorder
+              this.eventBus.emit('tribe:updated');
             }
           } else {
             // Root level - use root order
@@ -615,6 +617,8 @@ export class TribeManager {
             if (targetIndex !== -1) {
               this.folderService.moveInRootOrder(draggedType as 'folder' | 'member', draggedId, targetIndex);
               grid.insertBefore(draggedCard, dropTarget);
+              // Trigger Easy Mode sync for reorder
+              this.eventBus.emit('tribe:updated');
             }
           }
         }
@@ -777,12 +781,24 @@ export class TribeManager {
    */
   private async moveMemberToFolder(memberPubkey: string, targetFolderId: string): Promise<void> {
     try {
+      // Get target folder name for category
+      const targetFolder = targetFolderId ? this.folderService.getFolder(targetFolderId) : null;
+      const targetCategoryName = targetFolder?.name || '';
+
+      // Update folder assignment
       this.folderService.moveMemberToFolder(memberPubkey, targetFolderId);
 
-      const targetName = targetFolderId === ''
-        ? 'root'
-        : this.folderService.getFolder(targetFolderId)?.name || 'tribe';
+      // Update category in browser storage (triggers tribe:updated for Easy Mode sync)
+      const currentItems = this.adapter.getBrowserItems();
+      const updatedItems = currentItems.map(item => {
+        if (item.pubkey === memberPubkey) {
+          return { ...item, category: targetCategoryName };
+        }
+        return item;
+      });
+      this.adapter.setBrowserItems(updatedItems);
 
+      const targetName = targetFolderId === '' ? 'root' : targetFolder?.name || 'tribe';
       ToastService.show(`Moved to ${targetName}`, 'success');
 
       // Re-render
