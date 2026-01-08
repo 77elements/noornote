@@ -1,6 +1,9 @@
 /**
  * NIP88PollRenderer - Renders poll options for kind:1068 (NIP-88) poll events
  * Displays poll options with vote counts and allows voting
+ *
+ * Cross-view sync: After voting, all poll containers with matching pollEventId
+ * are updated across all views (TV, SNV, PV) via EventBus
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -9,8 +12,44 @@ import { PollOrchestrator } from '../../../services/orchestration/PollOrchestrat
 import { PollVoteService } from '../../../services/PollVoteService';
 import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../system/SystemLogger';
+import { EventBus } from '../../../services/EventBus';
+
+// Store pollData by eventId for cross-view updates
+const pollDataCache = new Map<string, PollData>();
 
 export class NIP88PollRenderer {
+  private static eventBus = EventBus.getInstance();
+  private static listenerSetup = false;
+
+  /**
+   * Setup global listener for poll:voted events (once)
+   */
+  private static setupGlobalListener(): void {
+    if (this.listenerSetup) return;
+    this.listenerSetup = true;
+
+    this.eventBus.on('poll:voted', (data: { pollEventId: string; results: any }) => {
+      this.updateAllPollContainers(data.pollEventId, data.results);
+    });
+  }
+
+  /**
+   * Update all poll containers with matching pollEventId across all views
+   */
+  private static updateAllPollContainers(pollEventId: string, results: any): void {
+    const pollData = pollDataCache.get(pollEventId);
+    if (!pollData) return;
+
+    // Find all poll containers for this poll
+    const containers = document.querySelectorAll(
+      `.nip88-poll[data-poll-event-id="${pollEventId}"]`
+    );
+
+    containers.forEach(container => {
+      this.updatePollResults(container as HTMLElement, results, pollData);
+    });
+  }
+
   /**
    * Render NIP-88 poll (kind:1068)
    * Takes pollData extracted by PollProcessor
@@ -18,6 +57,12 @@ export class NIP88PollRenderer {
    */
   static async render(noteElement: HTMLElement, pollData: PollData, event: NostrEvent): Promise<void> {
     if (!pollData || pollData.options.length === 0) return;
+
+    // Setup global listener for cross-view updates
+    this.setupGlobalListener();
+
+    // Cache pollData for cross-view updates
+    pollDataCache.set(event.id, pollData);
 
     // Get services
     const pollOrchestrator = PollOrchestrator.getInstance();
@@ -34,6 +79,7 @@ export class NIP88PollRenderer {
     // Create poll container
     const pollContainer = document.createElement('div');
     pollContainer.className = 'nip88-poll';
+    pollContainer.dataset.pollEventId = event.id; // Store for cross-view updates
 
     // Add poll metadata (multiple choice, end date)
     if (pollData.multipleChoice || pollData.endDate) {
@@ -153,7 +199,7 @@ export class NIP88PollRenderer {
     pollEventId: string,
     optionId: string,
     pollData: PollData,
-    pollContainer: HTMLElement,
+    _pollContainer: HTMLElement,
     _event: NostrEvent
   ): Promise<void> {
     const voteService = PollVoteService.getInstance();
@@ -187,7 +233,8 @@ export class NIP88PollRenderer {
           currentUser.pubkey
         );
 
-        this.updatePollResults(pollContainer, results, pollData);
+        // Emit event to update ALL poll containers across all views
+        this.eventBus.emit('poll:voted', { pollEventId, results });
       } catch (error) {
         systemLogger.error('NIP88PollRenderer', `Failed to refresh poll results: ${error}`);
       }
