@@ -49,6 +49,9 @@ export const StorageKeys = {
 
   // NWC storage preference (per-account)
   NWC_USE_ENCRYPTED_FILE: 'noornote_nwc_use_encrypted_file_map', // boolean: true = encrypted file, false = keychain
+
+  // Relay list cache (per-account) - NIP-65 kind:10002
+  RELAY_LIST: 'noornote_relay_list_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
