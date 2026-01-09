@@ -298,27 +298,25 @@ export class NWCService {
   }
 
   /**
-   * Test NWC connection by sending get_info request
-   * Uses direct WebSocket instead of NDK relay pool
+   * Execute NWC request with WebSocket connection management
+   * Centralizes: connect, encrypt, sign, send, decrypt flow
    */
-  private async testConnection(connection: NWCConnection): Promise<boolean> {
+  private async executeNwcRequest<T>(
+    connection: NWCConnection,
+    method: string,
+    params: Record<string, unknown> = {},
+    timeoutMs: number = 10000
+  ): Promise<{ result?: T; error?: { message: string } }> {
     let ws: WebSocket | null = null;
 
     try {
-      // Connect to NWC relay via direct WebSocket
       ws = await this.connectToNwcRelay(connection.relay);
 
-      // Create get_info request
-      const content = JSON.stringify({
-        method: 'get_info'
-      });
-
-      // Encrypt content with NIP-04
+      const content = JSON.stringify({ method, params });
       const appSecretKey = this.hexToBytes(connection.secret);
       const appPubkey = getPublicKeyFromPrivate(appSecretKey);
       const encryptedContent = await nip04.encrypt(connection.secret, connection.walletPubkey, content);
 
-      // Create NWC request event (kind 23194)
       const event = finalizeEvent({
         kind: 23194,
         created_at: Math.floor(Date.now() / 1000),
@@ -326,19 +324,25 @@ export class NWCService {
         content: encryptedContent
       }, appSecretKey);
 
-      // Send request and wait for response
-      const response = await this.sendNwcRequest(ws, event, connection.walletPubkey, appPubkey, 5000);
-
-      // Decrypt and validate response
+      const response = await this.sendNwcRequest(ws, event, connection.walletPubkey, appPubkey, timeoutMs);
       const decrypted = await nip04.decrypt(connection.secret, connection.walletPubkey, response.content);
-      const result = JSON.parse(decrypted);
 
-      return !!result.result;
-    } catch (_error) {
-      this.systemLogger.error('NWCService', 'Test connection failed:', _error);
-      return false;
+      return JSON.parse(decrypted);
     } finally {
       ws?.close();
+    }
+  }
+
+  /**
+   * Test NWC connection by sending get_info request
+   */
+  private async testConnection(connection: NWCConnection): Promise<boolean> {
+    try {
+      const response = await this.executeNwcRequest(connection, 'get_info', {}, 5000);
+      return !!response.result;
+    } catch (error) {
+      this.systemLogger.error('NWCService', 'Test connection failed:', error);
+      return false;
     }
   }
 
@@ -406,148 +410,75 @@ export class NWCService {
   }
 
   /**
-   * Get wallet balance via NWC
-   * Uses direct WebSocket instead of NDK relay pool
+   * Get wallet balance via NWC (returns millisatoshis)
    */
   public async getBalance(): Promise<number | null> {
     const connection = this.getConnectionForCurrentUser();
-    if (!connection) {
-      return null;
-    }
-
-    let ws: WebSocket | null = null;
+    if (!connection) return null;
 
     try {
-      // Connect to NWC relay via direct WebSocket
-      ws = await this.connectToNwcRelay(connection.relay);
+      const response = await this.executeNwcRequest<{ balance: number }>(connection, 'get_balance');
 
-      // Create get_balance request
-      const content = JSON.stringify({
-        method: 'get_balance',
-        params: {}
-      });
-
-      // Encrypt content with NIP-04
-      const appSecretKey = this.hexToBytes(connection.secret);
-      const appPubkey = getPublicKeyFromPrivate(appSecretKey);
-      const encryptedContent = await nip04.encrypt(connection.secret, connection.walletPubkey, content);
-
-      // Create NWC request event (kind 23194)
-      const event = finalizeEvent({
-        kind: 23194,
-        created_at: Math.floor(Date.now() / 1000),
-        tags: [['p', connection.walletPubkey]],
-        content: encryptedContent
-      }, appSecretKey);
-
-      // Send request and wait for response
-      const response = await this.sendNwcRequest(ws, event, connection.walletPubkey, appPubkey, 10000);
-
-      // Decrypt response
-      const decrypted = await nip04.decrypt(connection.secret, connection.walletPubkey, response.content);
-      const result = JSON.parse(decrypted);
-
-      if (result.error) {
-        this.systemLogger.error('NWCService', 'Get balance failed:', result.error.message);
+      if (response.error) {
+        this.systemLogger.error('NWCService', 'Get balance failed:', response.error.message);
         return null;
       }
 
-      if (result.result && typeof result.result.balance === 'number') {
-        // Balance is returned in millisatoshis
-        return result.result.balance;
-      }
-
+      return response.result?.balance ?? null;
+    } catch (error) {
+      this.systemLogger.error('NWCService', 'Get balance failed:', error);
       return null;
-    } catch (_error) {
-      this.systemLogger.error('NWCService', 'Get balance failed:', _error);
-      return null;
-    } finally {
-      ws?.close();
     }
   }
 
   /**
    * Pay Lightning invoice via NWC
-   * Uses direct WebSocket instead of NDK relay pool
    */
   public async payInvoice(invoice: string): Promise<PayInvoiceResult> {
     const connection = this.getConnectionForCurrentUser();
     if (!connection) {
-      return {
-        success: false,
-        error: 'Not connected to NWC wallet'
-      };
+      return { success: false, error: 'Not connected to NWC wallet' };
     }
-
-    let ws: WebSocket | null = null;
 
     try {
-      // Connect to NWC relay via direct WebSocket
-      ws = await this.connectToNwcRelay(connection.relay);
-
-      // Create pay_invoice request
-      const content = JSON.stringify({
-        method: 'pay_invoice',
-        params: {
-          invoice
-        }
-      });
-
-      // Encrypt content with NIP-04
-      const appSecretKey = this.hexToBytes(connection.secret);
-      const appPubkey = getPublicKeyFromPrivate(appSecretKey);
-      const encryptedContent = await nip04.encrypt(connection.secret, connection.walletPubkey, content);
-
-      // Create NWC request event (kind 23194)
-      const event = finalizeEvent({
-        kind: 23194,
-        created_at: Math.floor(Date.now() / 1000),
-        tags: [['p', connection.walletPubkey]],
-        content: encryptedContent
-      }, appSecretKey);
-
       this.systemLogger.info('NWCService', 'Sending pay_invoice request...');
 
-      // Send request and wait for response (30s timeout for payments)
-      const response = await this.sendNwcRequest(ws, event, connection.walletPubkey, appPubkey, 30000);
+      const response = await this.executeNwcRequest<{ preimage: string; amount?: number; fees_paid?: number }>(
+        connection,
+        'pay_invoice',
+        { invoice },
+        30000 // 30s timeout for payments
+      );
 
-      // Decrypt response
-      const decrypted = await nip04.decrypt(connection.secret, connection.walletPubkey, response.content);
-      const result = JSON.parse(decrypted);
-
-      if (result.error) {
-        this.systemLogger.error('NWCService', 'Payment failed:', result.error.message);
-        return {
-          success: false,
-          error: result.error.message || 'Payment failed'
-        };
+      if (response.error) {
+        this.systemLogger.error('NWCService', 'Payment failed:', response.error.message);
+        return { success: false, error: response.error.message || 'Payment failed' };
       }
 
-      if (result.result) {
-        // Format payment info for readable log
-        const amount = result.result.amount ? Math.floor(result.result.amount / 1000) : 0;
-        const fees = result.result.fees_paid ? Math.floor(result.result.fees_paid / 1000) : 0;
+      if (response.result) {
+        const amount = response.result.amount ? Math.floor(response.result.amount / 1000) : 0;
+        const fees = response.result.fees_paid ? Math.floor(response.result.fees_paid / 1000) : 0;
         this.systemLogger.info('NWCService', `${amount} Sats sent, ${fees} Sats fees paid`);
 
-        return {
-          success: true,
-          preimage: result.result.preimage
-        };
+        return { success: true, preimage: response.result.preimage };
       }
 
-      return {
-        success: false,
-        error: 'Invalid response'
-      };
-    } catch (_error) {
-      this.systemLogger.error('NWCService', 'Payment failed:', _error);
-      return {
-        success: false,
-        error: _error instanceof Error ? _error.message : 'Unknown error'
-      };
-    } finally {
-      ws?.close();
+      return { success: false, error: 'Invalid response' };
+    } catch (error) {
+      this.systemLogger.error('NWCService', 'Payment failed:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
+  }
+
+  /**
+   * Check if encrypted file storage should be used
+   */
+  private async shouldUseEncryptedFile(): Promise<boolean> {
+    const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
+    const { PlatformService } = await import('./PlatformService');
+    const storage = PerAccountLocalStorage.getInstance();
+    const useEncryptedFile = storage.get(StorageKeys.NWC_USE_ENCRYPTED_FILE, false);
+    return useEncryptedFile && PlatformService.getInstance().isTauri;
   }
 
   /**
@@ -555,12 +486,7 @@ export class NWCService {
    */
   private async saveConnection(connectionString: string): Promise<void> {
     try {
-      const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
-      const { PlatformService } = await import('./PlatformService');
-      const storage = PerAccountLocalStorage.getInstance();
-      const useEncryptedFile = storage.get(StorageKeys.NWC_USE_ENCRYPTED_FILE, false);
-
-      if (useEncryptedFile && PlatformService.getInstance().isTauri) {
+      if (await this.shouldUseEncryptedFile()) {
         const { EncryptedFileStorage } = await import('./EncryptedFileStorage');
         const pubkey = this.getCurrentUserPubkey();
         if (pubkey) {
@@ -571,9 +497,9 @@ export class NWCService {
         await KeychainStorage.saveNWC(connectionString);
         this.systemLogger.info('NWCService', 'NWC connection saved to secure storage');
       }
-    } catch (_error) {
-      this.systemLogger.error('NWCService', 'Failed to save connection:', _error);
-      throw _error;
+    } catch (error) {
+      this.systemLogger.error('NWCService', 'Failed to save connection:', error);
+      throw error;
     }
   }
 
@@ -586,47 +512,37 @@ export class NWCService {
     if (!pubkey) return;
 
     // Already loaded for this user?
-    if (this.connections.has(pubkey)) {
-      return;
-    }
+    if (this.connections.has(pubkey)) return;
 
     try {
-      const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
-      const { PlatformService } = await import('./PlatformService');
-      const storage = PerAccountLocalStorage.getInstance();
-      const useEncryptedFile = storage.get(StorageKeys.NWC_USE_ENCRYPTED_FILE, false);
-
       let stored: string | null = null;
 
-      if (useEncryptedFile && PlatformService.getInstance().isTauri) {
+      if (await this.shouldUseEncryptedFile()) {
         const { EncryptedFileStorage } = await import('./EncryptedFileStorage');
         stored = await EncryptedFileStorage.loadNWC(pubkey);
       } else {
         stored = await KeychainStorage.loadNWC(pubkey);
       }
 
-      if (stored) {
-        this.systemLogger.info('NWCService', 'Found stored connection, attempting to reconnect...');
+      if (!stored) return;
 
-        // Parse and store connection
-        const connection = this.parseConnectionString(stored);
-        this.connections.set(pubkey, connection);
+      this.systemLogger.info('NWCService', 'Found stored connection, attempting to reconnect...');
 
-        // Test connection
-        const isValid = await this.testConnection(connection);
+      const connection = this.parseConnectionString(stored);
+      this.connections.set(pubkey, connection);
 
-        if (isValid) {
-          this.states.set(pubkey, 'connected');
-          this.systemLogger.info('NWCService', 'Auto-reconnected to NWC wallet');
-          window.dispatchEvent(new CustomEvent('nwc-connection-restored'));
-        } else {
-          // Keep connection but mark as error
-          this.states.set(pubkey, 'error');
-          this.systemLogger.warn('NWCService', 'Failed to auto-reconnect (relay offline?), but connection kept.');
-        }
+      const isValid = await this.testConnection(connection);
+
+      if (isValid) {
+        this.states.set(pubkey, 'connected');
+        this.systemLogger.info('NWCService', 'Auto-reconnected to NWC wallet');
+        window.dispatchEvent(new CustomEvent('nwc-connection-restored'));
+      } else {
+        this.states.set(pubkey, 'error');
+        this.systemLogger.warn('NWCService', 'Failed to auto-reconnect (relay offline?), but connection kept.');
       }
-    } catch (_error) {
-      this.systemLogger.error('NWCService', 'Failed to restore connection:', _error);
+    } catch (error) {
+      this.systemLogger.error('NWCService', 'Failed to restore connection:', error);
     }
   }
 
