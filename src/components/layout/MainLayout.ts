@@ -120,13 +120,10 @@ export class MainLayout {
    * Setup keyboard shortcuts
    */
   private setupKeyboardShortcuts(): void {
-    console.log('[MainLayout] Setting up keyboard shortcuts');
     this.keyboardShortcutManager = KeyboardShortcutManager.getInstance();
     this.keyboardShortcutManager.registerSearchModalCallback(() => {
-      console.log('[MainLayout] Search modal callback triggered');
       this.openSearchModal();
     });
-    console.log('[MainLayout] Keyboard shortcuts setup complete');
   }
 
   /**
@@ -456,13 +453,6 @@ export class MainLayout {
   }
 
   /**
-   * Initialize search modal
-   */
-  private initializeSearchModal(): void {
-    this.searchSpotlight = new SearchSpotlight();
-  }
-
-  /**
    * Initialize global search view
    * Mounts in scc (default/right-pane mode) or intercepts events for pcc rendering (wide mode)
    */
@@ -676,9 +666,9 @@ export class MainLayout {
    */
   private openSearchModal(): void {
     if (!this.searchSpotlight) {
-      this.initializeSearchModal();
+      this.searchSpotlight = new SearchSpotlight();
     }
-    this.searchSpotlight?.open();
+    this.searchSpotlight.open();
   }
 
 
@@ -910,7 +900,6 @@ export class MainLayout {
 
     if (systemLogTab && secondaryContent) {
       systemLogTab.addEventListener('click', () => {
-        console.log('[TAB CLICK] system-log');
         switchTabWithContent(secondaryContent, 'system-log');
         // Notify ViewTabManager that a non-view tab was activated
         this.viewTabManager?.deactivateCurrentViewTab();
@@ -1164,8 +1153,6 @@ export class MainLayout {
    * Shows instruction modal, then opens terminal for NoorSigner add-account
    */
   private handleAddAccount(): void {
-    console.log('[MainLayout] handleAddAccount called');
-
     const authMethod = this.authService.getAuthMethod();
 
     if (authMethod === 'key-signer') {
@@ -1468,6 +1455,15 @@ export class MainLayout {
   }
 
   /**
+   * Hijri month names (shared across date formatting)
+   */
+  private static readonly HIJRI_MONTHS = [
+    'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
+    'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
+    'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
+  ];
+
+  /**
    * Update current date/time display in sidebar
    */
   private updateCurrentDateTime(): void {
@@ -1495,13 +1491,8 @@ export class MainLayout {
     } else if (calendarSystem === 'hijri') {
       // International format: DD. Month YYYY, HH:MM
       const hijriDate = dayjs(now).toCalendarSystem('hijri');
-      const hijriMonths = [
-        'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
-        'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
-        'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
-      ];
       const day = hijriDate.date();
-      const month = hijriMonths[hijriDate.month()];
+      const month = MainLayout.HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
       dateString = `${day}. ${month} ${year}, ${time}`;
     } else if (calendarSystem === 'both') {
@@ -1511,13 +1502,8 @@ export class MainLayout {
       const gregorianYear = now.getFullYear();
 
       const hijriDate = dayjs(now).toCalendarSystem('hijri');
-      const hijriMonths = [
-        'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
-        'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
-        'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
-      ];
       const hijriDay = hijriDate.date();
-      const hijriMonth = hijriMonths[hijriDate.month()];
+      const hijriMonth = MainLayout.HIJRI_MONTHS[hijriDate.month()];
       const hijriYear = hijriDate.year();
       dateString = `${gregorianMonth}/${gregorianDay}/${gregorianYear}  |  ${hijriDay}. ${hijriMonth} ${hijriYear}, ${time}`;
     }
