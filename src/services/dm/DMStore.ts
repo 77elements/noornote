@@ -338,37 +338,30 @@ export class DMStore {
    * Mark all conversations as read
    */
   public async markAllAsRead(): Promise<void> {
-    await this.init();
-
     const now = Math.floor(Date.now() / 1000);
-
-    return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readwrite');
-      const store = tx.objectStore(CONVERSATIONS_STORE);
-      const request = store.openCursor();
-
-      request.onsuccess = () => {
-        const cursor = request.result;
-        if (cursor) {
-          const conversation = cursor.value as DMConversation;
-          if (conversation.unreadCount > 0) {
-            conversation.unreadCount = 0;
-            conversation.lastReadAt = now;
-            cursor.update(conversation);
-          }
-          cursor.continue();
-        }
-      };
-
-      tx.oncomplete = () => resolve();
-      tx.onerror = () => reject(tx.error);
-    });
+    await this.updateAllConversations(
+      (c) => c.unreadCount > 0,
+      (c) => { c.unreadCount = 0; c.lastReadAt = now; }
+    );
   }
 
   /**
    * Mark all conversations as unread (set unread count to 1)
    */
   public async markAllAsUnread(): Promise<void> {
+    await this.updateAllConversations(
+      (c) => c.unreadCount === 0,
+      (c) => { c.unreadCount = 1; c.lastReadAt = 0; }
+    );
+  }
+
+  /**
+   * Helper to update all conversations matching a condition
+   */
+  private async updateAllConversations(
+    shouldUpdate: (conversation: DMConversation) => boolean,
+    update: (conversation: DMConversation) => void
+  ): Promise<void> {
     await this.init();
 
     return new Promise((resolve, reject) => {
@@ -380,10 +373,8 @@ export class DMStore {
         const cursor = request.result;
         if (cursor) {
           const conversation = cursor.value as DMConversation;
-          if (conversation.unreadCount === 0) {
-            conversation.unreadCount = 1;
-            // Reset lastReadAt to 0 so future historical messages count as unread
-            conversation.lastReadAt = 0;
+          if (shouldUpdate(conversation)) {
+            update(conversation);
             cursor.update(conversation);
           }
           cursor.continue();
