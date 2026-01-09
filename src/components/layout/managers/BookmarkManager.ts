@@ -108,10 +108,21 @@ export class BookmarkManager {
     });
   }
 
+  private getBookmarksTabContainer(): HTMLElement | null {
+    return this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
+  }
+
+  private refreshCurrentView(): void {
+    const container = this.getBookmarksTabContainer();
+    if (container) {
+      this.renderCurrentView(container);
+    }
+  }
+
   private refreshIfActive(): void {
-    const listTab = this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
-    if (listTab && listTab.classList.contains('tab-content--active')) {
-      this.renderBookmarksTab(listTab as HTMLElement);
+    const listTab = this.getBookmarksTabContainer();
+    if (listTab?.classList.contains('tab-content--active')) {
+      this.renderBookmarksTab(listTab);
     }
   }
 
@@ -124,6 +135,20 @@ export class BookmarkManager {
       return;
     }
 
+    this.applyRelayFolderAssignments(categoryAssignments, categories, true);
+    this.bookmarksCache.clear();
+    this.refreshIfActive();
+  }
+
+  /**
+   * Apply folder assignments from relay sync
+   * Shared logic for both Easy Mode sync and manual sync from relays
+   */
+  private applyRelayFolderAssignments(
+    categoryAssignments: Map<string, string>,
+    categories: string[],
+    includeRootBookmarks: boolean
+  ): void {
     const existingFolders = this.folderService.getFolders();
 
     // Create missing folders from relay
@@ -157,10 +182,20 @@ export class BookmarkManager {
       }
     }
 
-    // Add root bookmarks from relay categoryAssignments
-    for (const [bookmarkId, categoryName] of categoryAssignments) {
-      if (categoryName === '') {
-        newRootOrder.push({ type: 'bookmark', id: bookmarkId });
+    // Add bookmarks to rootOrder
+    if (includeRootBookmarks) {
+      // Add root bookmarks from relay categoryAssignments
+      for (const [bookmarkId, categoryName] of categoryAssignments) {
+        if (categoryName === '') {
+          newRootOrder.push({ type: 'bookmark', id: bookmarkId });
+        }
+      }
+    } else {
+      // Preserve bookmarks from current rootOrder
+      for (const item of currentRootOrder) {
+        if (item.type === 'bookmark') {
+          newRootOrder.push(item);
+        }
       }
     }
 
@@ -170,7 +205,11 @@ export class BookmarkManager {
     // Assign bookmarks to their categories
     for (const [bookmarkId, categoryName] of categoryAssignments) {
       if (categoryName === '') {
-        this.folderService.moveBookmarkToFolder(bookmarkId, '');
+        if (includeRootBookmarks) {
+          this.folderService.moveBookmarkToFolder(bookmarkId, '');
+        } else {
+          this.folderService.ensureBookmarkAssignment(bookmarkId);
+        }
       } else {
         const folder = updatedFolders.find(f => f.name === categoryName);
         if (folder) {
@@ -178,10 +217,6 @@ export class BookmarkManager {
         }
       }
     }
-
-    // Clear cache and refresh UI
-    this.bookmarksCache.clear();
-    this.refreshIfActive();
   }
 
   /**
@@ -587,9 +622,9 @@ export class BookmarkManager {
     if (result.error) {
       ToastService.show(result.error, 'error');
       // Re-render to reset checkbox state
-      const container = this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
+      const container = this.getBookmarksTabContainer();
       if (container) {
-        this.renderCurrentView(container as HTMLElement);
+        this.renderCurrentView(container);
       }
       return;
     }
@@ -772,20 +807,20 @@ export class BookmarkManager {
   // Navigation
   // ========================================
 
-  private navigateToFolder(folderId: string): void {
+  private navigateTo(folderId: string): void {
     this.currentFolderId = folderId;
-    const container = this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
+    const container = this.getBookmarksTabContainer();
     if (container) {
-      this.renderCurrentView(container as HTMLElement);
+      this.renderCurrentView(container);
     }
   }
 
+  private navigateToFolder(folderId: string): void {
+    this.navigateTo(folderId);
+  }
+
   private navigateToRoot(): void {
-    this.currentFolderId = '';
-    const container = this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
-    if (container) {
-      this.renderCurrentView(container as HTMLElement);
-    }
+    this.navigateTo('');
   }
 
   // ========================================
@@ -870,12 +905,7 @@ export class BookmarkManager {
           }
 
           ToastService.show('Bookmark updated', 'success');
-
-          // Refresh view
-          const container = this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
-          if (container) {
-            this.renderCurrentView(container as HTMLElement);
-          }
+          this.refreshCurrentView();
         } catch (error) {
           console.error('Failed to update bookmark:', error);
           ToastService.show('Failed to update bookmark', 'error');
@@ -918,12 +948,7 @@ export class BookmarkManager {
           }
 
           ToastService.show('Folder renamed', 'success');
-
-          // Refresh view
-          const container = this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
-          if (container) {
-            this.renderCurrentView(container as HTMLElement);
-          }
+          this.refreshCurrentView();
         } catch (error) {
           console.error('Failed to rename folder:', error);
           ToastService.show('Failed to rename folder', 'error');
@@ -972,12 +997,7 @@ export class BookmarkManager {
       }
 
       ToastService.show('Folder deleted, bookmarks moved to root', 'success');
-
-      // Refresh view
-      const container = this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
-      if (container) {
-        this.renderCurrentView(container as HTMLElement);
-      }
+      this.refreshCurrentView();
     } catch (error) {
       console.error('Failed to delete folder:', error);
       ToastService.show('Failed to delete folder', 'error');
@@ -1124,12 +1144,7 @@ export class BookmarkManager {
           }
 
           ToastService.show('Bookmark created', 'success');
-
-          // Refresh view
-          const container = this.containerElement.querySelector('[data-tab-content="list-bookmarks"]');
-          if (container) {
-            this.renderCurrentView(container as HTMLElement);
-          }
+          this.refreshCurrentView();
         } catch (error) {
           console.error('Failed to create bookmark:', error);
           ToastService.show('Failed to create bookmark', 'error');
@@ -1212,76 +1227,13 @@ export class BookmarkManager {
 
       const result = await this.listSyncManager.syncFromRelays();
 
-      console.log('[BookmarkManager] Sync result:', {
-        itemCount: result.relayItems.length,
-        hasCategoryAssignments: !!result.categoryAssignments,
-        categoryAssignmentsSize: result.categoryAssignments?.size || 0,
-        categories: result.categories
-      });
-
-      // Helper to apply folder assignments after sync
-      const applyFolderAssignments = () => {
-        if (!result.categoryAssignments) {
-          return;
-        }
-
-        const categories = result.categories || [];
-        const existingFolders = this.folderService.getFolders();
-
-        // Build set of folder names from relay
-        const relayFolderNames = new Set(categories.filter(c => c !== ''));
-
-        // Create missing folders from relay
-        for (const categoryName of categories) {
-          if (categoryName === '') continue;
-          if (!existingFolders.find(f => f.name === categoryName)) {
-            this.folderService.createFolder(categoryName);
-          }
-        }
-
-        const updatedFolders = this.folderService.getFolders();
-
-        // Rebuild rootOrder: relay folders first (in relay order), then local-only folders
-        const currentRootOrder = this.folderService.getRootOrder();
-        const newRootOrder: Array<{type: 'folder' | 'bookmark'; id: string}> = [];
-
-        // Add relay folders in correct order
-        for (const categoryName of categories) {
-          if (categoryName === '') continue;
-          const folder = updatedFolders.find(f => f.name === categoryName);
-          if (folder) {
-            newRootOrder.push({ type: 'folder', id: folder.id });
-          }
-        }
-
-        // Add local-only folders (not in relay) at the end
-        const relayFolderIds = new Set(newRootOrder.map(item => item.id));
-        for (const item of currentRootOrder) {
-          if (item.type === 'folder' && !relayFolderIds.has(item.id)) {
-            newRootOrder.push(item);
-          }
-        }
-
-        // Add bookmarks (preserve from current rootOrder)
-        for (const item of currentRootOrder) {
-          if (item.type === 'bookmark') {
-            newRootOrder.push(item);
-          }
-        }
-
-        // Update rootOrder
-        this.folderService.saveRootOrder(newRootOrder);
-
-        // Assign bookmarks to their categories
-        for (const [bookmarkId, categoryName] of result.categoryAssignments) {
-          if (categoryName === '') {
-            this.folderService.ensureBookmarkAssignment(bookmarkId);
-          } else {
-            const folder = updatedFolders.find(f => f.name === categoryName);
-            if (folder) {
-              this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
-            }
-          }
+      const applyAssignments = () => {
+        if (result.categoryAssignments) {
+          this.applyRelayFolderAssignments(
+            result.categoryAssignments,
+            result.categories || [],
+            false
+          );
         }
       };
 
@@ -1293,14 +1245,14 @@ export class BookmarkManager {
           getDisplayName: (item) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-            applyFolderAssignments();
-            ToastService.show(`Merged bookmarks from relays`, 'success');
+            applyAssignments();
+            ToastService.show('Merged bookmarks from relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
           onDelete: async () => {
             await this.listSyncManager.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
-            applyFolderAssignments();
+            applyAssignments();
             ToastService.show('Synced from relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
@@ -1310,8 +1262,8 @@ export class BookmarkManager {
         await modal.show();
       } else {
         await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-        applyFolderAssignments();
-        ToastService.show(`Synced from relays`, 'success');
+        applyAssignments();
+        ToastService.show('Synced from relays', 'success');
         await this.loadBookmarks();
         this.renderCurrentView(container);
       }
