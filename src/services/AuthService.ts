@@ -610,12 +610,8 @@ export class AuthService {
         // Don't resolve - user cancelled logout
       });
 
-      // Modal onClose handler (X, ESC, click-outside) - treat as cancel
-      const onModalClose = () => {
-        // Don't resolve - user cancelled logout
-      };
-
       // Show modal (with close handlers enabled)
+      // Note: onClose not needed - modal closing without button click = cancel (no resolve)
       modalService.show({
         title: 'Quit NoorNote & Key Signer?',
         content,
@@ -623,8 +619,7 @@ export class AuthService {
         height: 'auto',
         closeOnOverlay: true,
         closeOnEsc: true,
-        showCloseButton: true,
-        onClose: onModalClose
+        showCloseButton: true
       });
     });
   }
@@ -709,116 +704,75 @@ export class AuthService {
 
   /**
    * NIP-44 encrypt plaintext for a recipient
-   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    */
   public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    if (this.isReadOnly) {
-      throw new Error('Cannot encrypt in read-only mode (npub login)');
-    }
-
-    try {
-      if (this.authMethod === 'extension' && this.extension?.nip44) {
-        return await this.extension.nip44.encrypt(recipientPubkey, plaintext);
-      } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
-        const keySigner = this.keySignerManager.getClient();
-        if (!keySigner) {
-          throw new Error('KeySigner client not available');
-        }
-        return await keySigner.nip44Encrypt(plaintext, recipientPubkey);
-      } else if (this.authMethod === 'nip46' && this.nip46Manager) {
-        return await this.nip46Manager.nip44Encrypt(plaintext, recipientPubkey);
-      } else {
-        throw new Error('No encryption method available');
-      }
-    } catch (error) {
-      console.error('NIP-44 encryption error:', error);
-      throw error;
-    }
+    return this.performCryptoOperation('nip44', 'encrypt', plaintext, recipientPubkey);
   }
 
   /**
    * NIP-44 decrypt ciphertext from a sender
-   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    */
   public async nip44Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
-    if (this.isReadOnly) {
-      throw new Error('Cannot decrypt in read-only mode (npub login)');
-    }
-
-    try {
-      if (this.authMethod === 'extension' && this.extension?.nip44) {
-        return await this.extension.nip44.decrypt(senderPubkey, ciphertext);
-      } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
-        const keySigner = this.keySignerManager.getClient();
-        if (!keySigner) {
-          throw new Error('KeySigner client not available');
-        }
-        return await keySigner.nip44Decrypt(ciphertext, senderPubkey);
-      } else if (this.authMethod === 'nip46' && this.nip46Manager) {
-        return await this.nip46Manager.nip44Decrypt(ciphertext, senderPubkey);
-      } else {
-        throw new Error('No decryption method available');
-      }
-    } catch (error) {
-      console.error('NIP-44 decryption error:', error);
-      throw error;
-    }
+    return this.performCryptoOperation('nip44', 'decrypt', ciphertext, senderPubkey);
   }
 
   /**
    * NIP-04 encrypt plaintext for a recipient (legacy)
-   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    */
   public async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    if (this.isReadOnly) {
-      throw new Error('Cannot encrypt in read-only mode (npub login)');
-    }
-
-    try {
-      if (this.authMethod === 'extension' && this.extension?.nip04) {
-        return await this.extension.nip04.encrypt(recipientPubkey, plaintext);
-      } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
-        const keySigner = this.keySignerManager.getClient();
-        if (!keySigner) {
-          throw new Error('KeySigner client not available');
-        }
-        return await keySigner.nip04Encrypt(plaintext, recipientPubkey);
-      } else if (this.authMethod === 'nip46' && this.nip46Manager) {
-        return await this.nip46Manager.nip04Encrypt(plaintext, recipientPubkey);
-      } else {
-        throw new Error('No encryption method available');
-      }
-    } catch (error) {
-      console.error('NIP-04 encryption error:', error);
-      throw error;
-    }
+    return this.performCryptoOperation('nip04', 'encrypt', plaintext, recipientPubkey);
   }
 
   /**
    * NIP-04 decrypt ciphertext from a sender (legacy)
-   * Uses browser extension, key signer, or NIP-46 bunker depending on auth method
    */
   public async nip04Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
+    return this.performCryptoOperation('nip04', 'decrypt', ciphertext, senderPubkey);
+  }
+
+  /**
+   * Unified crypto operation handler for NIP-04/NIP-44 encrypt/decrypt
+   * Routes to appropriate signer based on auth method
+   */
+  private async performCryptoOperation(
+    nip: 'nip04' | 'nip44',
+    operation: 'encrypt' | 'decrypt',
+    data: string,
+    pubkey: string
+  ): Promise<string> {
     if (this.isReadOnly) {
-      throw new Error('Cannot decrypt in read-only mode (npub login)');
+      throw new Error(`Cannot ${operation} in read-only mode (npub login)`);
     }
 
+    const operationName = `${nip.toUpperCase()} ${operation}`;
+
     try {
-      if (this.authMethod === 'extension' && this.extension?.nip04) {
-        return await this.extension.nip04.decrypt(senderPubkey, ciphertext);
-      } else if (this.authMethod === 'key-signer' && this.keySignerManager) {
+      // Extension
+      if (this.authMethod === 'extension' && this.extension?.[nip]) {
+        return await this.extension[nip]![operation](pubkey, data);
+      }
+
+      // KeySigner
+      if (this.authMethod === 'key-signer' && this.keySignerManager) {
         const keySigner = this.keySignerManager.getClient();
         if (!keySigner) {
           throw new Error('KeySigner client not available');
         }
-        return await keySigner.nip04Decrypt(ciphertext, senderPubkey);
-      } else if (this.authMethod === 'nip46' && this.nip46Manager) {
-        return await this.nip46Manager.nip04Decrypt(ciphertext, senderPubkey);
-      } else {
-        throw new Error('No decryption method available');
+        const methodName = `${nip}${operation.charAt(0).toUpperCase()}${operation.slice(1)}` as
+          'nip44Encrypt' | 'nip44Decrypt' | 'nip04Encrypt' | 'nip04Decrypt';
+        return await keySigner[methodName](data, pubkey);
       }
+
+      // NIP-46 remote signer
+      if (this.authMethod === 'nip46' && this.nip46Manager) {
+        const methodName = `${nip}${operation.charAt(0).toUpperCase()}${operation.slice(1)}` as
+          'nip44Encrypt' | 'nip44Decrypt' | 'nip04Encrypt' | 'nip04Decrypt';
+        return await this.nip46Manager[methodName](data, pubkey);
+      }
+
+      throw new Error(`No ${operation}ion method available`);
     } catch (error) {
-      console.error('NIP-04 decryption error:', error);
+      console.error(`${operationName} error:`, error);
       throw error;
     }
   }
