@@ -25,8 +25,6 @@ import { AutoSyncService } from './services/sync/AutoSyncService';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
-// View type imported for potential future use
-// import type { View } from './components/views/View';
 
 export class App {
   private appElement: HTMLElement | null = null;
@@ -80,7 +78,6 @@ export class App {
     const isOnline = await connectivityService.checkConnectivity();
 
     if (!isOnline) {
-      // Show offline overlay and stop initialization
       OfflineOverlay.getInstance().show();
       return;
     }
@@ -98,29 +95,23 @@ export class App {
     if (!isLoggedIn) {
       targetPath = '/login';
     } else if (lastURL && lastURL !== '/login') {
-      targetPath = lastURL; // Restore last visited page
+      targetPath = lastURL;
     } else {
-      targetPath = '/'; // Default to timeline
+      targetPath = '/';
     }
 
     this.router.navigate(targetPath);
 
     // Set focus to enable keyboard shortcuts immediately after app load
-    // Without this, keyboard events won't fire until user clicks somewhere
     this.setInitialFocus();
   }
 
-  /**
-   * Set initial focus for Tauri window to enable keyboard shortcuts
-   */
   private async setInitialFocus(): Promise<void> {
     try {
-      // Try to focus Tauri window
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
       const window = getCurrentWindow();
       await window.setFocus();
-    } catch (error) {
-      // Fallback for non-Tauri environments (browser)
+    } catch {
       setTimeout(() => {
         document.body.focus();
         document.body.tabIndex = -1;
@@ -128,22 +119,17 @@ export class App {
     }
   }
 
-  /**
-   * Wait for auth to be ready (either logged in or confirmed not logged in)
-   */
   private waitForAuthReady(): Promise<void> {
     return new Promise((resolve) => {
-      // If already logged in, resolve immediately
       if (this.authService.hasValidSession()) {
         resolve();
         return;
       }
 
-      // Otherwise wait for login event or timeout
       const timeout = setTimeout(() => {
         this.eventBus.off(subscriptionId);
         resolve();
-      }, 1000); // 1 second timeout for auto-login
+      }, 1000);
 
       const subscriptionId = this.eventBus.on('user:login', () => {
         clearTimeout(timeout);
@@ -153,168 +139,66 @@ export class App {
     });
   }
 
+  /**
+   * Helper to register a route with consistent state/mount pattern
+   */
+  private registerRoute(
+    path: string,
+    viewName: string,
+    viewType: string,
+    shortcut: string,
+    requiresAuth: boolean = false,
+    stateExtras?: Record<string, unknown>,
+    paramHandler?: (params: Record<string, string | undefined>) => string | undefined
+  ): void {
+    this.router.register(
+      path,
+      (params) => {
+        const state: Record<string, unknown> = { currentView: viewName, ...stateExtras };
+
+        // Handle parameterized routes
+        let param: string | undefined;
+        if (paramHandler) {
+          param = paramHandler(params);
+          if (viewName === 'single-note') state.currentNoteId = param;
+          else if (viewName === 'profile') state.currentProfileNpub = param;
+          else if (viewName === 'article') state.currentArticleNaddr = param;
+          else if (viewName === 'conversation') state.params = { pubkey: param };
+        }
+
+        this.appState.setState('view', state);
+        this.mountPrimaryContent(viewType, param);
+      },
+      shortcut,
+      requiresAuth
+    );
+  }
+
   private setupRoutes(): void {
-    // Login/Welcome Screen (public route)
-    this.router.register(
-      '/login',
-      () => {
-        this.appState.setState('view', { currentView: 'login' });
-        this.mountPrimaryContent('not-logged-in');
-        this.mountSecondaryContent('debug-log');
-      },
-      'login-view'
-    );
+    // Public routes
+    this.registerRoute('/login', 'login', 'not-logged-in', 'login-view');
+    this.registerRoute('/about', 'about', 'about', 'abv');
+    this.registerRoute('/articles', 'articles', 'articles', 'atv');
 
-    // Timeline View (requires authentication)
-    this.router.register(
-      '/',
-      () => {
-        this.appState.setState('view', { currentView: 'timeline' });
-        this.mountPrimaryContent('timeline');
-        this.mountSecondaryContent('debug-log');
-      },
-      'tv',
-      true // requiresAuth
-    );
+    // Parameterized routes (public)
+    this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false, {},
+      (params) => params.noteId ?? '');
+    this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false, {},
+      (params) => params.npub ?? '');
+    this.registerRoute('/article/:naddr', 'article', 'article', 'av', false, {},
+      (params) => params.naddr);
 
-    this.router.register('/note/:noteId', (params) => {
-      this.systemLogger.info('Router', 'Single Note View ready');
-      const noteId = params.noteId ?? '';
-      this.appState.setState('view', {
-        currentView: 'single-note',
-        currentNoteId: noteId
-      });
-      this.mountPrimaryContent('single-note', noteId);
-      this.mountSecondaryContent('debug-log');
-    }, 'snv');
+    // Authenticated routes
+    this.registerRoute('/', 'timeline', 'timeline', 'tv', true);
+    this.registerRoute('/notifications', 'notifications', 'notifications', 'nv', true);
+    this.registerRoute('/settings', 'settings', 'settings', 'sv', true);
+    this.registerRoute('/messages', 'messages', 'messages', 'mv', true);
+    this.registerRoute('/write-article', 'write-article', 'write-article', 'aev', true);
+    this.registerRoute('/tribes', 'tribes', 'tribes', 'tribes-view', true);
 
-    // Profile View route
-    this.router.register('/profile/:npub', (params) => {
-      const npub = params.npub ?? '';
-      this.appState.setState('view', {
-        currentView: 'profile',
-        currentProfileNpub: npub
-      });
-      this.mountPrimaryContent('profile', npub);
-      this.mountSecondaryContent('debug-log');
-    }, 'pv');
-
-    // Article View route
-    this.router.register('/article/:naddr', (params) => {
-      this.appState.setState('view', {
-        currentView: 'article',
-        currentArticleNaddr: params.naddr
-      });
-      this.mountPrimaryContent('article', params.naddr);
-      this.mountSecondaryContent('debug-log');
-    }, 'av');
-
-    this.router.register(
-      '/notifications',
-      () => {
-        this.appState.setState('view', {
-          currentView: 'notifications'
-        });
-        this.mountPrimaryContent('notifications');
-        this.mountSecondaryContent('debug-log');
-      },
-      'nv',
-      true
-    );
-
-    this.router.register(
-      '/settings',
-      () => {
-        this.appState.setState('view', {
-          currentView: 'settings'
-        });
-        this.mountPrimaryContent('settings');
-        this.mountSecondaryContent('debug-log');
-      },
-      'sv',
-      true
-    );
-
-    // About View (Imprint + Privacy) - no auth required
-    this.router.register(
-      '/about',
-      () => {
-        this.appState.setState('view', {
-          currentView: 'about'
-        });
-        this.mountPrimaryContent('about');
-        this.mountSecondaryContent('debug-log');
-      },
-      'abv',
-      false
-    );
-
-    // Messages View (NIP-17 DMs) - requires authentication
-    this.router.register(
-      '/messages',
-      () => {
-        this.appState.setState('view', {
-          currentView: 'messages'
-        });
-        this.mountPrimaryContent('messages');
-        this.mountSecondaryContent('debug-log');
-      },
-      'mv',
-      true
-    );
-
-    // Conversation View (single DM thread) - requires authentication
-    this.router.register('/messages/:pubkey', (params) => {
-      this.appState.setState('view', {
-        currentView: 'conversation',
-        params: { pubkey: params.pubkey }
-      });
-      this.mountPrimaryContent('conversation', params.pubkey);
-      this.mountSecondaryContent('debug-log');
-    }, 'cv', true);
-
-    // Write Article View (requires authentication)
-    this.router.register(
-      '/write-article',
-      () => {
-        this.appState.setState('view', {
-          currentView: 'write-article'
-        });
-        this.mountPrimaryContent('write-article');
-        this.mountSecondaryContent('debug-log');
-      },
-      'aev', // Article Editor View
-      true
-    );
-
-    // Articles Timeline View
-    this.router.register(
-      '/articles',
-      () => {
-        this.appState.setState('view', {
-          currentView: 'articles'
-        });
-        this.mountPrimaryContent('articles');
-        this.mountSecondaryContent('debug-log');
-      },
-      'atv', // Article Timeline View
-      false // No auth required to view
-    );
-
-    // Tribes View (curated user lists)
-    this.router.register(
-      '/tribes',
-      () => {
-        this.appState.setState('view', {
-          currentView: 'tribes'
-        });
-        this.mountPrimaryContent('tribes');
-        this.mountSecondaryContent('debug-log');
-      },
-      'tribes-view', // Tribes View
-      true // Requires authentication
-    );
-
+    // Parameterized routes (authenticated)
+    this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true, {},
+      (params) => params.pubkey);
   }
 
   private async mountPrimaryContent(viewType: string, param?: string): Promise<void> {
@@ -335,65 +219,51 @@ export class App {
 
     primaryContent.innerHTML = '';
 
-    // Mount View Component based on route
     switch (viewType) {
-      case 'not-logged-in': {
-        // MainLayout: Show login screen
+      case 'not-logged-in':
         if (this.mainLayout) {
           this.mainLayout.showLoginScreen();
         }
         break;
-      }
 
-      case 'timeline': {
-        // TimelineUI: Reuse instance or create new
+      case 'timeline':
         if (!this.timelineUI) {
           const currentUser = this.authService.getCurrentUser();
           if (currentUser) {
             this.timelineUI = new Timeline(currentUser.pubkey);
           }
         }
-
         if (this.timelineUI) {
           primaryContent.appendChild(this.timelineUI.getElement());
           this.viewLifecycleManager.onViewMount(this.timelineUI);
         }
         break;
-      }
 
-      case 'single-note': {
-        // SingleNoteView: New instance per note
+      case 'single-note':
         if (param) {
           const snv = new SingleNoteView(param);
           primaryContent.appendChild(snv.getElement());
         }
         break;
-      }
 
-      case 'profile': {
-        // ProfileView: Reuse instance if same npub, else create new
+      case 'profile':
         if (param) {
           if (!this.profileView || this.profileView.getNpub() !== param) {
             this.profileView = new ProfileView(param);
           }
-
           primaryContent.appendChild(this.profileView.getElement());
           this.viewLifecycleManager.onViewMount(this.profileView);
         }
         break;
-      }
 
-      case 'article': {
-        // ArticleView: New instance per article
+      case 'article':
         if (param) {
           const articleView = new ArticleView(param);
           primaryContent.appendChild(articleView.getElement());
         }
         break;
-      }
 
       case 'notifications': {
-        // NotificationsView: Dynamic import + new instance
         const { NotificationsView } = await import('./components/views/NotificationsView');
         const notificationsView = new NotificationsView();
         primaryContent.appendChild(notificationsView.getElement());
@@ -401,21 +271,18 @@ export class App {
       }
 
       case 'settings': {
-        // SettingsView: New instance
         const settingsView = new SettingsView();
         primaryContent.appendChild(settingsView.getElement());
         break;
       }
 
       case 'about': {
-        // AboutView: Imprint and Privacy Policy
         const aboutView = new AboutView();
         primaryContent.appendChild(aboutView.getElement());
         break;
       }
 
       case 'write-article': {
-        // ArticleEditorView: Full-page article editor
         const { ArticleEditorView } = await import('./components/views/ArticleEditorView');
         const articleEditor = new ArticleEditorView();
         primaryContent.appendChild(articleEditor.getElement());
@@ -423,7 +290,6 @@ export class App {
       }
 
       case 'articles': {
-        // ArticleTimelineView: Article feed
         const { ArticleTimelineView } = await import('./components/views/ArticleTimelineView');
         const articleTimeline = new ArticleTimelineView();
         primaryContent.appendChild(articleTimeline.getElement());
@@ -431,7 +297,6 @@ export class App {
       }
 
       case 'tribes': {
-        // TribeView: Curated user lists with filtered timeline
         const { TribeView } = await import('./components/views/TribeView');
         const tribeView = new TribeView();
         primaryContent.appendChild(tribeView.getElement());
@@ -439,7 +304,6 @@ export class App {
       }
 
       case 'mute-list': {
-        // MuteListView: New instance
         const { MuteListView } = await import('./components/views/MuteListView');
         const muteListView = new MuteListView();
         primaryContent.appendChild(await muteListView.render());
@@ -447,33 +311,28 @@ export class App {
       }
 
       case 'messages': {
-        // MessagesView: DM conversations list
         const { MessagesView } = await import('./components/views/MessagesView');
         const messagesView = new MessagesView();
         primaryContent.appendChild(messagesView.getElement());
         break;
       }
 
-      case 'conversation': {
-        // ConversationView: Single DM thread
+      case 'conversation':
         if (param) {
           const { ConversationView } = await import('./components/views/ConversationView');
           const conversationView = new ConversationView(param);
           primaryContent.appendChild(conversationView.getElement());
         }
         break;
-      }
     }
   }
 
-  private mountSecondaryContent(_contentType: string): void {
-    // Debug logger is already mounted in MainLayout
-  }
+  // Intentionally empty - debug logger is mounted in MainLayout
+  private mountSecondaryContent(_contentType: string): void {}
 
   private setupUI(): void {
     if (!this.appElement) return;
 
-    // Mount MainLayout (Sidebar + Primary/Secondary Content Areas)
     this.mainLayout = new MainLayout();
     this.appElement.appendChild(this.mainLayout.getElement());
   }
@@ -485,10 +344,8 @@ export class App {
     this.setupHashtagClickHandler();
     this.setupDeepLinkHandler();
 
-    // EventBus: user:login → Create TimelineUI + Start NotificationsOrchestrator
     this.eventBus.on('user:login', this.handleUserLogin.bind(this));
 
-    // EventBus: relays:updated → Recreate TimelineUI with new relay config
     this.eventBus.on('relays:updated', () => {
       const authService = AuthService.getInstance();
       const currentUser = authService.getCurrentUser();
@@ -499,7 +356,6 @@ export class App {
       }
     });
 
-    // EventBus: user:logout → Destroy TimelineUI + Navigate to Login
     this.eventBus.on('user:logout', () => {
       if (this.timelineUI) {
         this.timelineUI.destroy();
@@ -529,47 +385,38 @@ export class App {
           }
 
           const decoded = decodeNip19(nip19String);
+          const type = decoded.type;
 
-          switch (decoded.type) {
-            case 'npub': {
-              const npub = nip19String;
+          // Profile types: npub, nprofile
+          if (type === 'npub' || type === 'nprofile') {
+            const npub = type === 'npub'
+              ? nip19String
+              : hexToNpub((decoded.data as { pubkey: string }).pubkey);
+            if (npub) {
               this.router.navigate(`/profile/${npub}`);
-              break;
             }
-
-            case 'nprofile': {
-              const pubkeyHex = (decoded.data as any).pubkey;
-              const npub = hexToNpub(pubkeyHex);
-              if (npub) {
-                this.router.navigate(`/profile/${npub}`);
-              }
-              break;
-            }
-
-            case 'note': {
-              const noteId = nip19String;
-              this.router.navigate(`/note/${noteId}`);
-              break;
-            }
-
-            case 'nevent': {
-              const eventId = (decoded.data as any).id;
-              this.router.navigate(`/note/note1${eventId}`);
-              break;
-            }
-
-            case 'naddr': {
-              const naddr = nip19String;
-              this.router.navigate(`/article/${naddr}`);
-              break;
-            }
+            return;
           }
-        } catch (error) {
+
+          // Note types: note, nevent
+          if (type === 'note' || type === 'nevent') {
+            const noteId = type === 'note'
+              ? nip19String
+              : `note1${(decoded.data as { id: string }).id}`;
+            this.router.navigate(`/note/${noteId}`);
+            return;
+          }
+
+          // Article type: naddr
+          if (type === 'naddr') {
+            this.router.navigate(`/article/${nip19String}`);
+          }
+        } catch {
           this.systemLogger.warn('Deep Link', `Failed to handle nostr: URL: ${url}`);
         }
       });
-    } catch (error) {
-      // Deep link handler setup failed
+    } catch {
+      // Deep link handler setup failed - expected in non-Tauri environments
     }
   }
 
@@ -580,76 +427,71 @@ export class App {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
       const appWindow = getCurrentWindow();
 
-      // Tauri Window Close: Ask user if NoorSigner daemon should stop
       await appWindow.onCloseRequested(async (event) => {
         const authMethod = this.authService.getAuthMethod();
 
-        if (authMethod === 'key-signer') {
-          event.preventDefault();
+        if (authMethod !== 'key-signer') return;
 
-          const keySignerClient = KeySignerClient.getInstance();
-          const isDaemonRunning = await keySignerClient.isRunning();
+        event.preventDefault();
 
-          if (isDaemonRunning) {
-            // ModalService: Confirm daemon stop
-            const modalService = ModalService.getInstance();
-            const shouldStopDaemon = await modalService.confirm({
-              title: 'Stop NoorSigner Daemon?',
-              message: 'The NoorSigner daemon is currently running. Do you want to stop it when closing the app?',
-              confirmText: 'Stop Daemon',
-              cancelText: 'Keep Running',
-              confirmDestructive: false
-            });
+        const keySignerClient = KeySignerClient.getInstance();
+        const isDaemonRunning = await keySignerClient.isRunning();
 
-            if (shouldStopDaemon) {
-              try {
-                await keySignerClient.stopDaemon();
-              } catch (error) {
-                // Daemon stop failed
-              }
-            }
+        if (!isDaemonRunning) {
+          await appWindow.close();
+          return;
+        }
 
-            await appWindow.close();
-          } else {
-            await appWindow.close();
+        const modalService = ModalService.getInstance();
+        const shouldStopDaemon = await modalService.confirm({
+          title: 'Stop NoorSigner Daemon?',
+          message: 'The NoorSigner daemon is currently running. Do you want to stop it when closing the app?',
+          confirmText: 'Stop Daemon',
+          cancelText: 'Keep Running',
+          confirmDestructive: false
+        });
+
+        if (shouldStopDaemon) {
+          try {
+            await keySignerClient.stopDaemon();
+          } catch {
+            // Daemon stop failed - continue closing anyway
           }
         }
+
+        await appWindow.close();
       });
-    } catch (error) {
-      // Tauri close handler setup failed
+    } catch {
+      // Tauri close handler setup failed - expected in non-Tauri environments
     }
   }
 
-  private handleResize(): void {
-    // CSS handles layout
-  }
+  // Intentionally empty - CSS handles responsive layout
+  private handleResize(): void {}
 
-  private handleVisibilityChange(): void {
-    // No performance optimizations needed - subscriptions are lightweight
-  }
+  // Intentionally empty - subscriptions are lightweight, no pause needed
+  private handleVisibilityChange(): void {}
 
   private setupExternalLinkHandler(): void {
     document.addEventListener('click', async (event) => {
       const target = event.target as HTMLElement;
       const anchor = target.closest('a');
-
       if (!anchor) return;
 
       const href = anchor.getAttribute('href');
+      if (!href || (!href.startsWith('http://') && !href.startsWith('https://'))) return;
 
-      if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
-        event.preventDefault();
+      event.preventDefault();
 
-        try {
-          if (PlatformService.getInstance().isTauri) {
-            const { open } = await import('@tauri-apps/plugin-shell');
-            await open(href);
-          } else {
-            window.open(href, '_blank', 'noopener,noreferrer');
-          }
-        } catch {
-          // External link open failed
+      try {
+        if (PlatformService.getInstance().isTauri) {
+          const { open } = await import('@tauri-apps/plugin-shell');
+          await open(href);
+        } else {
+          window.open(href, '_blank', 'noopener,noreferrer');
         }
+      } catch {
+        // External link open failed
       }
     });
   }
@@ -658,7 +500,6 @@ export class App {
     document.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
       const hashtagEl = target.closest('.hashtag');
-
       if (!hashtagEl) return;
 
       event.preventDefault();
@@ -669,19 +510,27 @@ export class App {
     });
   }
 
+  /**
+   * Helper to run async initialization tasks that can fail silently
+   */
+  private async runSilent(fn: () => Promise<void>): Promise<void> {
+    try {
+      await fn();
+    } catch {
+      // Initialization failed - non-critical
+    }
+  }
+
   private async handleUserLogin(data: { npub: string; pubkey: string }): Promise<void> {
     // Only navigate if we're actually on /login page (user manually logged in)
-    // Skip navigation on auto-login during reload (App.initialize handles that)
     const currentPath = this.router.getCurrentPath();
     const lastURL = this.router.getLastURL();
 
     if (currentPath === '/login' && (!lastURL || lastURL === '/login')) {
-      // Real login scenario - redirect to timeline
       this.router.navigate('/');
     }
 
     // Check if localStorage has data from a different user (handles cross-session account switch)
-    // For in-session switches, Timeline handles cache clearing via its own user:login listener
     const lastLoggedInPubkey = localStorage.getItem('noornote_last_logged_in_pubkey');
     if (lastLoggedInPubkey && lastLoggedInPubkey !== data.pubkey) {
       const { CacheManager } = await import('./services/CacheManager');
@@ -689,13 +538,13 @@ export class App {
     }
     localStorage.setItem('noornote_last_logged_in_pubkey', data.pubkey);
 
-    // Create TimelineUI if not exists (Timeline self-manages user switches via EventBus)
+    // Create TimelineUI if not exists
     if (!this.timelineUI) {
       this.timelineUI = new Timeline(data.pubkey);
     }
 
     // Load follow list into AppState (for mention autocomplete)
-    try {
+    await this.runSilent(async () => {
       const { UserService } = await import('./services/UserService');
       const { MentionProfileCache } = await import('./services/MentionProfileCache');
 
@@ -704,52 +553,37 @@ export class App {
 
       const followingPubkeys = await userService.getUserFollowing(data.pubkey);
 
-      this.appState.setState('user', {
-        followingPubkeys
-      });
+      this.appState.setState('user', { followingPubkeys });
 
-      // Preload profiles in background (non-blocking, makes mentions instant)
+      // Preload profiles in background (non-blocking)
       mentionCache.preloadProfiles(followingPubkeys).catch(() => {});
-    } catch {
-      // Follow list load failed
-    }
+    });
 
     // Start notification services
-    try {
+    await this.runSilent(async () => {
       const { NotificationsOrchestrator } = await import('./services/orchestration/NotificationsOrchestrator');
       const notificationsOrch = NotificationsOrchestrator.getInstance();
       await notificationsOrch.start();
 
       const { ArticleNotificationService } = await import('./services/ArticleNotificationService');
-      const articleNotifService = ArticleNotificationService.getInstance();
-      articleNotifService.startPolling();
+      ArticleNotificationService.getInstance().startPolling();
 
       const { HashtagNotificationService } = await import('./services/HashtagNotificationService');
-      const hashtagNotifService = HashtagNotificationService.getInstance();
-      hashtagNotifService.startPolling();
-    } catch {
-      // Notifications orchestrator start failed
-    }
+      HashtagNotificationService.getInstance().startPolling();
+    });
 
-    // Initialize ProfileRecognitionService (auto-loads encounters from file/relays)
-    try {
+    // Initialize ProfileRecognitionService
+    await this.runSilent(async () => {
       const { ProfileRecognitionService } = await import('./services/ProfileRecognitionService');
-      const profileRecognitionService = ProfileRecognitionService.getInstance();
-      await profileRecognitionService.init();
-    } catch {
-      // Profile recognition service initialization failed
-    }
+      await ProfileRecognitionService.getInstance().init();
+    });
 
-    // Start DM service (fetches historical DMs and starts live subscription)
-    try {
+    // Start DM service
+    await this.runSilent(async () => {
       const { DMService } = await import('./services/dm/DMService');
-      const dmService = DMService.getInstance();
-      await dmService.start();
-    } catch {
-      // DM service start failed
-    }
+      await DMService.getInstance().start();
+    });
   }
-
 }
 
 // Global type declarations for Vite environment variables
