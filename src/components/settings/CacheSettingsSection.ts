@@ -33,15 +33,8 @@ const DEFAULT_CONFIG: NDKCacheConfig = {
 const STORAGE_KEY = 'ndk_cache_config';
 
 export class CacheSettingsSection extends SettingsSection {
-  private toastService: ToastService;
-  private errorService: ErrorService;
-  private modalService: ModalService;
-
   constructor() {
     super('cache-settings');
-    this.toastService = ToastService.getInstance();
-    this.errorService = ErrorService.getInstance();
-    this.modalService = ModalService.getInstance();
   }
 
   /**
@@ -238,70 +231,53 @@ export class CacheSettingsSection extends SettingsSection {
   }
 
   /**
+   * Get numeric input value from container
+   */
+  private getInputValue(contentContainer: HTMLElement, id: string): number {
+    const input = contentContainer.querySelector(`#${id}`) as HTMLInputElement;
+    return parseInt(input.value, 10);
+  }
+
+  /**
    * Handle save configuration
    */
   private handleSaveConfig(contentContainer: HTMLElement): void {
-    // Notifications cache size
-    const notificationsCacheSize = parseInt(
-      (contentContainer.querySelector('#notifications-cache-size') as HTMLInputElement).value,
-      10
-    );
-
+    const notificationsCacheSize = this.getInputValue(contentContainer, 'notifications-cache-size');
     if (isNaN(notificationsCacheSize) || notificationsCacheSize < 10 || notificationsCacheSize > 1000) {
       this.showMessage(contentContainer, 'Invalid notifications cache size (must be between 10-1000)', 'error');
       return;
     }
 
-    // NDK cache sizes
-    const profileCacheSize = parseInt(
-      (contentContainer.querySelector('#profile-cache-size') as HTMLInputElement).value,
-      10
-    );
-    const eventCacheSize = parseInt(
-      (contentContainer.querySelector('#event-cache-size') as HTMLInputElement).value,
-      10
-    );
-    const eventTagsCacheSize = parseInt(
-      (contentContainer.querySelector('#event-tags-cache-size') as HTMLInputElement).value,
-      10
-    );
-    const zapperCacheSize = parseInt(
-      (contentContainer.querySelector('#zapper-cache-size') as HTMLInputElement).value,
-      10
-    );
-    const nip05CacheSize = parseInt(
-      (contentContainer.querySelector('#nip05-cache-size') as HTMLInputElement).value,
-      10
-    );
+    const profileCacheSize = this.getInputValue(contentContainer, 'profile-cache-size');
+    const eventCacheSize = this.getInputValue(contentContainer, 'event-cache-size');
+    const eventTagsCacheSize = this.getInputValue(contentContainer, 'event-tags-cache-size');
+    const zapperCacheSize = this.getInputValue(contentContainer, 'zapper-cache-size');
+    const nip05CacheSize = this.getInputValue(contentContainer, 'nip05-cache-size');
     const saveSig = (contentContainer.querySelector('#save-sig') as HTMLInputElement).checked;
 
-    // Validation
+    const isInvalidSize = (val: number, min: number): boolean => isNaN(val) || val < min;
     if (
-      isNaN(profileCacheSize) || profileCacheSize < 1000 ||
-      isNaN(eventCacheSize) || eventCacheSize < 1000 ||
-      isNaN(eventTagsCacheSize) || eventTagsCacheSize < 1000 ||
-      isNaN(zapperCacheSize) || zapperCacheSize < 50 ||
-      isNaN(nip05CacheSize) || nip05CacheSize < 100
+      isInvalidSize(profileCacheSize, 1000) ||
+      isInvalidSize(eventCacheSize, 1000) ||
+      isInvalidSize(eventTagsCacheSize, 1000) ||
+      isInvalidSize(zapperCacheSize, 50) ||
+      isInvalidSize(nip05CacheSize, 100)
     ) {
       this.showMessage(contentContainer, 'Invalid cache size values', 'error');
       return;
     }
 
-    // Save notifications cache size
-    const notificationsCacheService = NotificationsCacheService.getInstance();
-    notificationsCacheService.setLimit(notificationsCacheSize);
+    NotificationsCacheService.getInstance().setLimit(notificationsCacheSize);
 
-    // Save NDK cache config
-    const config: NDKCacheConfig = {
+    this.saveConfig({
       profileCacheSize,
       eventCacheSize,
       eventTagsCacheSize,
       zapperCacheSize,
       nip05CacheSize,
       saveSig
-    };
+    });
 
-    this.saveConfig(config);
     this.showMessage(
       contentContainer,
       'Configuration saved! Reload the app for NDK cache changes to take effect.',
@@ -310,31 +286,26 @@ export class CacheSettingsSection extends SettingsSection {
   }
 
   /**
-   * Handle clear selected tables
+   * Show confirmation modal and execute action on confirm
    */
-  private async handleClearSelected(contentContainer: HTMLElement): Promise<void> {
-    const checkboxes = contentContainer.querySelectorAll(
-      '.cache-table-checkbox:checked'
-    ) as NodeListOf<HTMLInputElement>;
+  private showConfirmationModal(
+    title: string,
+    bodyHtml: string,
+    confirmLabel: string,
+    onConfirm: () => Promise<void>
+  ): void {
+    const modalService = ModalService.getInstance();
 
-    if (checkboxes.length === 0) {
-      this.toastService.show('Please select at least one table to clear', 'warning');
-      return;
-    }
-
-    const tableNames = Array.from(checkboxes).map(cb => cb.value);
-
-    // Show confirmation modal
-    this.modalService.show({
-      title: 'Clear Selected Cache Tables?',
+    modalService.show({
+      title,
       content: `
         <div style="padding: 1rem 0;">
-          <p style="margin-bottom: 1rem;">This will clear ${tableNames.length} table(s): ${tableNames.join(', ')}.</p>
+          ${bodyHtml}
           <p style="color: rgba(255, 100, 100, 0.8);">This action cannot be undone.</p>
         </div>
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
           <button class="btn" data-action="cancel">Cancel</button>
-          <button class="btn btn--danger" data-action="confirm">Clear Tables</button>
+          <button class="btn btn--danger" data-action="confirm">${confirmLabel}</button>
         </div>
       `,
       width: '500px',
@@ -342,82 +313,71 @@ export class CacheSettingsSection extends SettingsSection {
       closeOnEsc: true
     });
 
-    // Setup modal button handlers
     setTimeout(() => {
-      const cancelBtn = document.querySelector('[data-action="cancel"]');
-      const confirmBtn = document.querySelector('[data-action="confirm"]');
-
-      cancelBtn?.addEventListener('click', () => {
-        this.modalService.hide();
+      document.querySelector('[data-action="cancel"]')?.addEventListener('click', () => {
+        modalService.hide();
       });
 
-      confirmBtn?.addEventListener('click', async () => {
-        this.modalService.hide();
+      document.querySelector('[data-action="confirm"]')?.addEventListener('click', async () => {
+        modalService.hide();
+        await onConfirm();
+      });
+    }, 100);
+  }
 
+  /**
+   * Handle clear selected tables
+   */
+  private handleClearSelected(contentContainer: HTMLElement): void {
+    const checkboxes = contentContainer.querySelectorAll(
+      '.cache-table-checkbox:checked'
+    ) as NodeListOf<HTMLInputElement>;
+
+    if (checkboxes.length === 0) {
+      ToastService.getInstance().show('Please select at least one table to clear', 'warning');
+      return;
+    }
+
+    const tableNames = Array.from(checkboxes).map(cb => cb.value);
+
+    this.showConfirmationModal(
+      'Clear Selected Cache Tables?',
+      `<p style="margin-bottom: 1rem;">This will clear ${tableNames.length} table(s): ${tableNames.join(', ')}.</p>`,
+      'Clear Tables',
+      async () => {
         try {
-          // Import db from NDK cache adapter
           const { db } = await import('@nostr-dev-kit/ndk-cache-dexie');
 
-          // Clear selected tables
           for (const tableName of tableNames) {
             if ((db as any)[tableName]) {
               await (db as any)[tableName].clear();
             }
           }
 
-          // Uncheck all checkboxes
           checkboxes.forEach(cb => cb.checked = false);
-
-          this.toastService.show(`Successfully cleared ${tableNames.length} cache table(s)`, 'success');
+          ToastService.getInstance().show(`Successfully cleared ${tableNames.length} cache table(s)`, 'success');
         } catch (error) {
-          this.errorService.handleError(error, 'Failed to clear cache tables');
+          ErrorService.getInstance().handleError(error, 'Failed to clear cache tables');
         }
-      });
-    }, 100);
+      }
+    );
   }
 
   /**
    * Handle clear all cache (delete entire database)
    */
-  private async handleClearAll(): Promise<void> {
-    // Show confirmation modal
-    this.modalService.show({
-      title: 'Clear All Cache & Reload?',
-      content: `
-        <div style="padding: 1rem 0;">
-          <p style="margin-bottom: 1rem;">This will clear all safe cache tables and reload the app.</p>
-          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-bottom: 1rem;">
-            Excludes: Unpublished events and decrypted messages (protected from accidental deletion).
-          </p>
-          <p style="color: rgba(255, 100, 100, 0.8);">This action cannot be undone.</p>
-        </div>
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-          <button class="btn" data-action="cancel">Cancel</button>
-          <button class="btn btn--danger" data-action="confirm">Clear Cache & Reload</button>
-        </div>
-      `,
-      width: '500px',
-      closeOnBackdrop: true,
-      closeOnEsc: true
-    });
-
-    // Setup modal button handlers
-    setTimeout(() => {
-      const cancelBtn = document.querySelector('[data-action="cancel"]');
-      const confirmBtn = document.querySelector('[data-action="confirm"]');
-
-      cancelBtn?.addEventListener('click', () => {
-        this.modalService.hide();
-      });
-
-      confirmBtn?.addEventListener('click', async () => {
-        this.modalService.hide();
-
+  private handleClearAll(): void {
+    this.showConfirmationModal(
+      'Clear All Cache & Reload?',
+      `<p style="margin-bottom: 1rem;">This will clear all safe cache tables and reload the app.</p>
+       <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-bottom: 1rem;">
+         Excludes: Unpublished events and decrypted messages (protected from accidental deletion).
+       </p>`,
+      'Clear Cache & Reload',
+      async () => {
         try {
-          // Import db from NDK cache adapter
           const { db } = await import('@nostr-dev-kit/ndk-cache-dexie');
 
-          // Clear all safe tables (exclude unpublishedEvents, decryptedEvents, eventRelays)
           await Promise.all([
             db.events.clear(),
             db.profiles.clear(),
@@ -427,17 +387,13 @@ export class CacheSettingsSection extends SettingsSection {
             db.relayStatus.clear()
           ]);
 
-          this.toastService.show('Cache cleared successfully. Reloading...', 'success');
-
-          // Reload after short delay
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+          ToastService.getInstance().show('Cache cleared successfully. Reloading...', 'success');
+          setTimeout(() => window.location.reload(), 1000);
         } catch (error) {
-          this.errorService.handleError(error, 'Failed to clear cache');
+          ErrorService.getInstance().handleError(error, 'Failed to clear cache');
         }
-      });
-    }, 100);
+      }
+    );
   }
 
   /**
