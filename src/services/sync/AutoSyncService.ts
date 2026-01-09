@@ -35,6 +35,21 @@ import type { MuteItem } from '../../types/BaseListItem';
 
 type ListType = 'follows' | 'bookmarks' | 'mutes' | 'tribes';
 
+// Mapping tables for list type lookups
+const LIST_DISPLAY_NAMES: Record<ListType, string> = {
+  follows: 'Follows',
+  bookmarks: 'Bookmarks',
+  mutes: 'Mutes',
+  tribes: 'Tribes'
+};
+
+const LIST_EVENT_NAMES: Record<ListType, string> = {
+  follows: 'follow:updated',
+  bookmarks: 'bookmark:updated',
+  mutes: 'mute:updated',
+  tribes: 'tribe:updated'
+};
+
 export class AutoSyncService {
   private static instance: AutoSyncService;
 
@@ -360,16 +375,25 @@ export class AutoSyncService {
    * Get display name for list type (for toasts)
    */
   private getDisplayNameForListType(listType: ListType): string {
-    switch (listType) {
-      case 'follows':
-        return 'Follows';
-      case 'bookmarks':
-        return 'Bookmarks';
-      case 'mutes':
-        return 'Mutes';
-      case 'tribes':
-        return 'Tribes';
+    return LIST_DISPLAY_NAMES[listType];
+  }
+
+  /**
+   * Emit bookmark category sync event and save to file
+   * Consolidates the repeated bookmark sync completion logic
+   */
+  private async emitBookmarkSyncAndSave(
+    listType: ListType,
+    categoryAssignments: Map<string, string[]> | undefined,
+    categories: string[] | undefined
+  ): Promise<void> {
+    if (listType === 'bookmarks' && categoryAssignments && categoryAssignments.size > 0) {
+      this.eventBus.emit('bookmark:relay-sync-complete', {
+        categoryAssignments,
+        categories: categories || []
+      });
     }
+    await this.saveToFile(listType);
   }
 
   /**
@@ -446,12 +470,7 @@ export class AutoSyncService {
       if (result.diff.added.length === 0 && result.diff.removed.length === 0) {
         // Still apply folder assignments for bookmarks (categories may have changed)
         if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
-          // Emit special event for BookmarkManager to handle full sync (including rootOrder)
-          this.eventBus.emit('bookmark:relay-sync-complete', {
-            categoryAssignments: result.categoryAssignments,
-            categories: result.categories || []
-          });
-          await this.saveToFile(listType);
+          await this.emitBookmarkSyncAndSave(listType, result.categoryAssignments, result.categories);
         }
         return;
       }
@@ -459,16 +478,7 @@ export class AutoSyncService {
       // Only additions - auto-merge silently
       if (result.diff.added.length > 0 && result.diff.removed.length === 0) {
         await manager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-
-        // Bookmarks: Emit event for full sync handling (including rootOrder)
-        if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
-          this.eventBus.emit('bookmark:relay-sync-complete', {
-            categoryAssignments: result.categoryAssignments,
-            categories: result.categories || []
-          });
-        }
-
-        await this.saveToFile(listType);
+        await this.emitBookmarkSyncAndSave(listType, result.categoryAssignments, result.categories);
         this.eventBus.emit(this.getEventNameForListType(listType));
         return;
       }
@@ -482,34 +492,14 @@ export class AutoSyncService {
           getDisplayName: this.getDisplayNameResolver(listType),
           renderItemHtml: this.getItemHtmlRenderer(listType),
           onKeep: async () => {
-            // Keep local items + add new from relay
             await manager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-
-            // Bookmarks: Emit event for full sync handling (including rootOrder)
-            if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
-              this.eventBus.emit('bookmark:relay-sync-complete', {
-                categoryAssignments: result.categoryAssignments,
-                categories: result.categories || []
-              });
-            }
-
-            await this.saveToFile(listType);
+            await this.emitBookmarkSyncAndSave(listType, result.categoryAssignments, result.categories);
             this.eventBus.emit(this.getEventNameForListType(listType));
             ToastService.show(`${this.getDisplayNameForListType(listType)}: Merged ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
           },
           onDelete: async () => {
-            // Replace with relay items
             await manager.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
-
-            // Bookmarks: Emit event for full sync handling (including rootOrder)
-            if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
-              this.eventBus.emit('bookmark:relay-sync-complete', {
-                categoryAssignments: result.categoryAssignments,
-                categories: result.categories || []
-              });
-            }
-
-            await this.saveToFile(listType);
+            await this.emitBookmarkSyncAndSave(listType, result.categoryAssignments, result.categories);
             this.eventBus.emit(this.getEventNameForListType(listType));
             ToastService.show(`${this.getDisplayNameForListType(listType)}: Synced from relays (removed ${result.diff.removed.length})`, 'success');
           }
@@ -569,42 +559,36 @@ export class AutoSyncService {
   }
 
   /**
+   * Render a user mention with avatar for the given pubkey
+   */
+  private async renderUserMentionWithAvatar(pubkey: string): Promise<string> {
+    const userProfileService = UserProfileService.getInstance();
+    const profile = await userProfileService.getUserProfile(pubkey);
+    const username = extractDisplayName(profile);
+    const avatarUrl = profile?.picture || '';
+    return renderUserMention(pubkey, { username, avatarUrl });
+  }
+
+  /**
    * Get HTML renderer for sync confirmation modal (for mentions with avatar)
    */
   private getItemHtmlRenderer(listType: ListType): (item: FollowItem | BookmarkItem | MuteItem | TribeMember) => Promise<string> {
-    const userProfileService = UserProfileService.getInstance();
-
     return async (item: FollowItem | BookmarkItem | MuteItem | TribeMember): Promise<string> => {
       try {
         switch (listType) {
-          case 'follows': {
-            const followItem = item as FollowItem;
-            const profile = await userProfileService.getUserProfile(followItem.pubkey);
-            const username = extractDisplayName(profile);
-            const avatarUrl = profile?.picture || '';
-            return renderUserMention(followItem.pubkey, { username, avatarUrl });
-          }
+          case 'follows':
+            return this.renderUserMentionWithAvatar((item as FollowItem).pubkey);
+          case 'tribes':
+            return this.renderUserMentionWithAvatar((item as TribeMember).pubkey);
           case 'mutes': {
             const muteItem = item as MuteItem;
             if (muteItem.type === 'user') {
-              const profile = await userProfileService.getUserProfile(muteItem.id);
-              const username = extractDisplayName(profile);
-              const avatarUrl = profile?.picture || '';
-              return renderUserMention(muteItem.id, { username, avatarUrl });
+              return this.renderUserMentionWithAvatar(muteItem.id);
             }
-            // Thread mute - no HTML, just text
             return 'Thread: ' + muteItem.id.slice(0, 12) + '...';
-          }
-          case 'tribes': {
-            const tribeItem = item as TribeMember;
-            const profile = await userProfileService.getUserProfile(tribeItem.pubkey);
-            const username = extractDisplayName(profile);
-            const avatarUrl = profile?.picture || '';
-            return renderUserMention(tribeItem.pubkey, { username, avatarUrl });
           }
           case 'bookmarks':
           default:
-            // Bookmarks don't have user mentions, return empty to use text fallback
             return '';
         }
       } catch {
@@ -617,16 +601,7 @@ export class AutoSyncService {
    * Get event name for list type
    */
   private getEventNameForListType(listType: ListType): string {
-    switch (listType) {
-      case 'follows':
-        return 'follow:updated';
-      case 'bookmarks':
-        return 'bookmark:updated';
-      case 'mutes':
-        return 'mute:updated';
-      case 'tribes':
-        return 'tribe:updated';
-    }
+    return LIST_EVENT_NAMES[listType];
   }
 
   /**
