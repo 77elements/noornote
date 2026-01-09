@@ -95,11 +95,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
         return { public: false, private: false };
       }
 
-      if (item.isPrivate) {
-        return { public: false, private: true };
-      } else {
-        return { public: true, private: false };
-      }
+      return {
+        public: !item.isPrivate,
+        private: item.isPrivate || false
+      };
     } catch (error) {
       this.systemLogger.error('TribeOrchestrator', `Failed to check member status: ${error}`);
       return { public: false, private: false };
@@ -196,22 +195,30 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
   }
 
   /**
+   * Ensure browser items are loaded (from file if empty)
+   */
+  private async ensureBrowserItemsLoaded(): Promise<TribeMember[]> {
+    const browserItems = this.getBrowserItems();
+    if (browserItems.length > 0) {
+      return browserItems;
+    }
+
+    const fileItems = await this.fileStorage.getAllItems();
+    if (fileItems.length > 0) {
+      this.setBrowserItems(fileItems);
+      return fileItems;
+    }
+
+    return [];
+  }
+
+  /**
    * Get all tribe members (merged public + private)
    */
   public async getAllMembers(_pubkey: string): Promise<string[]> {
     try {
-      const browserItems = this.getBrowserItems();
-
-      // If empty, try to load from files
-      if (browserItems.length === 0) {
-        const fileItems = await this.fileStorage.getAllItems();
-        if (fileItems.length > 0) {
-          this.setBrowserItems(fileItems);
-          return fileItems.map(item => item.pubkey);
-        }
-      }
-
-      const memberPubkeys = browserItems.map(item => item.pubkey);
+      const items = await this.ensureBrowserItemsLoaded();
+      const memberPubkeys = items.map(item => item.pubkey);
 
       this.systemLogger.info('TribeOrchestrator',
         `Loaded ${memberPubkeys.length} members from browserItems`
@@ -229,22 +236,8 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
    */
   public async getAllMembersWithMetadata(_pubkey: string): Promise<MemberWithMetadata[]> {
     try {
-      const browserItems = this.getBrowserItems();
-
-      // If empty, try to load from files
-      if (browserItems.length === 0) {
-        const fileItems = await this.fileStorage.getAllItems();
-        if (fileItems.length > 0) {
-          this.setBrowserItems(fileItems);
-          return fileItems.map(item => ({
-            pubkey: item.pubkey,
-            isPrivate: item.isPrivate || false,
-            category: item.category
-          }));
-        }
-      }
-
-      const result = browserItems.map(item => ({
+      const items = await this.ensureBrowserItemsLoaded();
+      const result = items.map(item => ({
         pubkey: item.pubkey,
         isPrivate: item.isPrivate || false,
         category: item.category
@@ -466,21 +459,25 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     // Track which items have been assigned (to catch orphans)
     const assignedItemIds = new Set<string>();
 
+    // Helper to add member to set
+    const addMemberToSet = (set: TribeSet, item: TribeMember): void => {
+      const memberTag = { pubkey: item.pubkey, relay: item.relay };
+      if (item.isPrivate) {
+        set.privateMembers.push(memberTag);
+      } else {
+        set.publicMembers.push(memberTag);
+      }
+    };
+
     // Process each folder IN ORDER from FolderService
     for (const folder of existingFolders) {
       const set = setsMap.get(folder.name)!;
-      // getMembersInFolder returns pubkeys sorted by order field
       const sortedMemberIds = this.folderService.getMembersInFolder(folder.id);
 
       for (const memberId of sortedMemberIds) {
         const item = itemMap.get(memberId);
         if (item) {
-          const memberTag = { pubkey: item.pubkey, relay: item.relay };
-          if (item.isPrivate) {
-            set.privateMembers.push(memberTag);
-          } else {
-            set.publicMembers.push(memberTag);
-          }
+          addMemberToSet(set, item);
           assignedItemIds.add(memberId);
         }
       }
@@ -493,12 +490,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     for (const memberId of sortedRootMemberIds) {
       const item = itemMap.get(memberId);
       if (item) {
-        const memberTag = { pubkey: item.pubkey, relay: item.relay };
-        if (item.isPrivate) {
-          rootSet.privateMembers.push(memberTag);
-        } else {
-          rootSet.publicMembers.push(memberTag);
-        }
+        addMemberToSet(rootSet, item);
         assignedItemIds.add(memberId);
       }
     }
@@ -506,13 +498,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     // Handle orphaned items (in browserItems but not in FolderService) - add to root
     for (const item of allItems) {
       if (!assignedItemIds.has(item.pubkey)) {
-        const memberTag = { pubkey: item.pubkey, relay: item.relay };
-        if (item.isPrivate) {
-          rootSet.privateMembers.push(memberTag);
-        } else {
-          rootSet.publicMembers.push(memberTag);
-        }
-        // Also ensure FolderService knows about this item
+        addMemberToSet(rootSet, item);
         this.folderService.ensureMemberAssignment(item.pubkey);
       }
     }
@@ -736,11 +722,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     }
   }
 
-
   /**
    * Fetch tribes from relays (read-only wrapper)
    */
   public async fetchTribesFromRelays(pubkey: string): Promise<FetchFromRelaysResult<TribeMember>> {
-    return await this.fetchFromRelays(pubkey);
+    return this.fetchFromRelays(pubkey);
   }
 }
