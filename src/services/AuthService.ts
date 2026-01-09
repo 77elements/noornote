@@ -682,13 +682,13 @@ export class AuthService {
         return event;
       } else if (this.authMethod === 'nip46' && this.nip46Manager?.isAvailable()) {
         // NIP-46 remote signer
-        // Set pubkey before signing
+        // Set pubkey before signing (bunker calculates id internally)
         event.pubkey = this.currentUser!.pubkey;
 
         // Sign via manager - returns signature string
         const signature = await this.nip46Manager.signEvent(event);
 
-        // Calculate event hash
+        // Calculate event hash (same as bunker calculated)
         event.id = calculateEventHash(event as UnsignedEvent);
         event.sig = signature;
 
