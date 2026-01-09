@@ -66,6 +66,9 @@ export class NotificationsOrchestrator extends Orchestrator {
   /** Map of user event ID -> ancestry (root/parent IDs) for muted thread checking */
   private userEventAncestry: Map<string, { rootId: string | null; parentId: string | null }> = new Map();
 
+  /** Cached RelayConfig instance (lazy-loaded) */
+  private relayConfig: any = null;
+
   private constructor() {
     super('NotificationsOrchestrator');
     this.transport = NostrTransport.getInstance();
@@ -136,9 +139,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     // Step 3: Subscribe to new notifications (real-time)
     const now = Math.floor(Date.now() / 1000);
-    const { RelayConfig } = await import('../RelayConfig');
-    const relayConfig = RelayConfig.getInstance();
-    const relays = await relayConfig.getReadRelays();
+    const relays = await this.getReadRelays();
 
     // Filter 1: Direct mentions/tags (#p filter)
     const ptagFilter: NDKFilter = {
@@ -200,10 +201,7 @@ export class NotificationsOrchestrator extends Orchestrator {
    */
   private async fetchInitialNotifications(userPubkey: string): Promise<void> {
     try {
-      const { RelayConfig } = await import('../RelayConfig');
-      const relayConfig = RelayConfig.getInstance();
-      const relays = await relayConfig.getReadRelays();
-
+      const relays = await this.getReadRelays();
       this.systemLogger.info('NotificationsOrchestrator', '📥 Fetching last 100 notifications from relays');
 
       // Build filter for last 100 notifications
@@ -245,7 +243,6 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Emit badge update after initial notifications are loaded
       this.eventBus.emit('notifications:badge-update');
     } catch (error) {
-      console.error('🔔 [fetchInitialNotifications] ERROR:', error);
       this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch initial notifications:', error);
     }
   }
@@ -274,10 +271,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return;
 
-      const { RelayConfig } = await import('../RelayConfig');
-      const relayConfig = RelayConfig.getInstance();
-      const relays = await relayConfig.getReadRelays();
-
+      const relays = await this.getReadRelays();
       this.systemLogger.info('NotificationsOrchestrator', `📥 Fetching new notifications (since: ${since})`);
 
       // Build filter for new notifications
@@ -338,10 +332,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return [];
 
-      const { RelayConfig } = await import('../RelayConfig');
-      const relayConfig = RelayConfig.getInstance();
-      const relays = await relayConfig.getReadRelays();
-
+      const relays = await this.getReadRelays();
       this.systemLogger.info('NotificationsOrchestrator', `📥 Fetching ${limit} older notifications (until: ${until})`);
 
       // Build filter for older notifications
@@ -420,8 +411,6 @@ export class NotificationsOrchestrator extends Orchestrator {
       return;
     }
 
-    // Cache event
-
     // Detect notification type
     const type = this.getNotificationType(event);
 
@@ -447,10 +436,7 @@ export class NotificationsOrchestrator extends Orchestrator {
    */
   private async fetchAndStoreUserEvents(userPubkey: string): Promise<void> {
     try {
-      const { RelayConfig } = await import('../RelayConfig');
-      const relayConfig = RelayConfig.getInstance();
-      const relays = await relayConfig.getReadRelays();
-
+      const relays = await this.getReadRelays();
       const userEvents = await this.transport.fetch(relays, [{
         authors: [userPubkey],
         kinds: [1, 30023], // notes + long-form articles
@@ -573,6 +559,17 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Get read relays (lazy-loads RelayConfig)
+   */
+  private async getReadRelays(): Promise<string[]> {
+    if (!this.relayConfig) {
+      const { RelayConfig } = await import('../RelayConfig');
+      this.relayConfig = RelayConfig.getInstance();
+    }
+    return this.relayConfig.getReadRelays();
+  }
+
+  /**
    * Load user event ancestry from per-account storage into memory
    */
   private loadUserEventAncestry(): void {
@@ -617,8 +614,7 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Get last seen timestamp from per-account storage
    */
   private getLastSeenTimestamp(): number | null {
-    const stored = this.perAccountStorage.get<number | null>(StorageKeys.NOTIFICATIONS_LAST_SEEN, null);
-    return stored;
+    return this.perAccountStorage.get<number | null>(StorageKeys.NOTIFICATIONS_LAST_SEEN, null);
   }
 
   /**
