@@ -89,16 +89,23 @@ export class GlobalSearchView {
    * Perform global search (NIP-50 relay, no auto-load)
    */
   private async performGlobalSearch(query: string): Promise<void> {
+    await this.executeSearch(query, '');
+  }
+
+  /**
+   * Perform hashtag search (NIP-50 relay search with #hashtag query)
+   */
+  private async performHashtagSearch(hashtag: string): Promise<void> {
+    await this.executeSearch(`#${hashtag}`, hashtag);
+  }
+
+  /**
+   * Execute search with given query and optional hashtag context
+   */
+  private async executeSearch(query: string, hashtag: string): Promise<void> {
     if (this.isSearching) return;
 
-    this.currentQuery = query;
-    this.currentHashtag = ''; // Clear hashtag (this is global search)
-    this.isSearching = true;
-    this.currentResults = [];
-    this.oldestTimestamp = null;
-    this.hasMore = true;
-    this.isProfileSearch = false;
-
+    this.resetSearchState(query, hashtag);
     this.showLoading();
 
     try {
@@ -107,7 +114,6 @@ export class GlobalSearchView {
         limit: 20
       });
 
-      // Filter out muted users
       const filteredResults = await this.filterMutedUsers(results);
 
       this.currentResults = filteredResults;
@@ -118,7 +124,6 @@ export class GlobalSearchView {
       }
 
       this.renderResults();
-
     } catch (error) {
       this.systemLogger.error('GlobalSearchView', 'Search failed:', error);
       this.showError('Search failed. Please try again.');
@@ -128,46 +133,16 @@ export class GlobalSearchView {
   }
 
   /**
-   * Perform hashtag search (NIP-50 relay search with #hashtag query)
+   * Reset search state for a new search
    */
-  private async performHashtagSearch(hashtag: string): Promise<void> {
-    if (this.isSearching) return;
-
-    const query = `#${hashtag}`;
+  private resetSearchState(query: string, hashtag: string): void {
     this.currentQuery = query;
-    this.currentHashtag = hashtag; // Store for subscribe button (Phase 2)
+    this.currentHashtag = hashtag;
     this.isSearching = true;
     this.currentResults = [];
     this.oldestTimestamp = null;
     this.hasMore = true;
     this.isProfileSearch = false;
-
-    this.showLoading();
-
-    try {
-      const results = await this.searchOrchestrator.search({
-        query,
-        limit: 20
-      });
-
-      // Filter out muted users
-      const filteredResults = await this.filterMutedUsers(results);
-
-      this.currentResults = filteredResults;
-      this.hasMore = results.length === 20;
-
-      if (filteredResults.length > 0) {
-        this.oldestTimestamp = Math.min(...filteredResults.map(e => e.created_at));
-      }
-
-      this.renderResults();
-
-    } catch (error) {
-      this.systemLogger.error('GlobalSearchView', 'Hashtag search failed:', error);
-      this.showError('Search failed. Please try again.');
-    } finally {
-      this.isSearching = false;
-    }
   }
 
   /**
@@ -175,24 +150,14 @@ export class GlobalSearchView {
    */
   private displayProfileSearchResults(query: string, results: NostrEvent[], meta: string): void {
     this.currentQuery = query;
-    this.currentHashtag = ''; // Clear hashtag (this is profile search)
+    this.currentHashtag = '';
     this.currentResults = results;
     this.isProfileSearch = true;
-    this.hasMore = false; // No pagination for profile search (all results already loaded)
+    this.hasMore = false;
 
-    // Destroy previous SearchResultsView if exists
-    if (this.searchResultsView) {
-      this.searchResultsView.destroy();
-      this.searchResultsView = null;
-    }
-
-    // Clear container
-    this.container.innerHTML = '';
-
-    // Activate search tab
+    this.clearSearchResultsView();
     this.activateSearchTab();
 
-    // Create SearchResultsView
     this.searchResultsView = new SearchResultsView(
       {
         title: `Profile Search: "${query}"`,
@@ -201,14 +166,11 @@ export class GlobalSearchView {
       },
       {
         onNoteClick: (noteId) => this.handleNoteClick(noteId),
-        onLoadMore: () => {} // No pagination for profile search
+        onLoadMore: () => {}
       }
     );
 
-    // Render results
     this.searchResultsView.render(results);
-
-    // Append to container
     this.container.appendChild(this.searchResultsView.getElement());
   }
 
@@ -280,28 +242,19 @@ export class GlobalSearchView {
    * Render search results
    */
   private renderResults(): void {
-    // Destroy previous SearchResultsView if exists
-    if (this.searchResultsView) {
-      this.searchResultsView.destroy();
-      this.searchResultsView = null;
-    }
+    this.clearSearchResultsView();
 
-    // Clear container
-    this.container.innerHTML = '';
-
-    // Determine title based on search type
     const isHashtagSearch = this.currentQuery.startsWith('#');
     const title = isHashtagSearch
       ? `Posts tagged ${this.currentQuery}`
       : `Search Results: "${this.currentQuery}"`;
 
-    // Create SearchResultsView
     this.searchResultsView = new SearchResultsView(
       {
         title,
         searchTerms: this.currentQuery,
         meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`,
-        hashtag: this.currentHashtag || undefined // Pass hashtag for subscribe button
+        hashtag: this.currentHashtag || undefined
       },
       {
         onNoteClick: (noteId) => this.handleNoteClick(noteId),
@@ -309,18 +262,25 @@ export class GlobalSearchView {
       }
     );
 
-    // Render results
     this.searchResultsView.render(this.currentResults);
-
-    // Append to container
     this.container.appendChild(this.searchResultsView.getElement());
   }
 
   /**
-   * Handle note click (navigate to SNV)
+   * Clear existing SearchResultsView and container
+   */
+  private clearSearchResultsView(): void {
+    if (this.searchResultsView) {
+      this.searchResultsView.destroy();
+      this.searchResultsView = null;
+    }
+    this.container.innerHTML = '';
+  }
+
+  /**
+   * Handle note click - navigate to Single Note View
    */
   private handleNoteClick(noteId: string): void {
-    // Navigate to SNV
     const nevent = encodeNevent(noteId);
     this.router.navigate(`/note/${nevent}`);
   }
@@ -384,26 +344,18 @@ export class GlobalSearchView {
    * Close search tab and switch to System Logs
    */
   private closeSearchTab(): void {
-    // Remove tab button
     if (this.tabElement) {
       this.tabElement.remove();
       this.tabElement = null;
     }
 
-    // Clear and hide container
-    this.container.innerHTML = '';
+    this.clearSearchResultsView();
     this.container.classList.remove('tab-content--active');
 
-    // Reset state
     this.currentQuery = '';
     this.currentHashtag = '';
     this.currentResults = [];
-    if (this.searchResultsView) {
-      this.searchResultsView.destroy();
-      this.searchResultsView = null;
-    }
 
-    // Switch to System Logs tab
     const secondaryContent = document.querySelector('.secondary-content');
     if (secondaryContent) {
       switchTabWithContent(secondaryContent as HTMLElement, 'system-log');
@@ -439,12 +391,9 @@ export class GlobalSearchView {
 
         // Filter reposts (Kind 6) where the original author is muted
         if (event.kind === 6) {
-          const repostedAuthorTag = event.tags.find(tag => tag[0] === 'p');
-          if (repostedAuthorTag && repostedAuthorTag[1]) {
-            const repostedAuthorPubkey = repostedAuthorTag[1];
-            if (mutedSet.has(repostedAuthorPubkey)) {
-              return false;
-            }
+          const repostedAuthorPubkey = event.tags.find(tag => tag[0] === 'p')?.[1];
+          if (repostedAuthorPubkey && mutedSet.has(repostedAuthorPubkey)) {
+            return false;
           }
         }
 
