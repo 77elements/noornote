@@ -8,7 +8,7 @@
 
 import NDK, { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 import NDKCacheDexie from '@nostr-dev-kit/ndk-cache-dexie';
-import type { NDKEvent, NDKFilter, NDKSubscription, NDKRelaySet } from '@nostr-dev-kit/ndk';
+import type { NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { NDKCacheAdapterDexieOptions } from '@nostr-dev-kit/ndk-cache-dexie';
 import { RelayConfig } from '../RelayConfig';
@@ -130,27 +130,25 @@ export class NostrTransport {
    * Forwards events to EventBus for ConnectivityService
    */
   private setupRelayEventListeners(): void {
-    this.ndk.pool.relays.forEach((relay, url) => {
-      relay.on('disconnect', () => {
-        this.eventBus.emit('relay:error', { url });
-      });
-
-      relay.on('connect', () => {
-        this.eventBus.emit('relay:connected', { url });
-      });
-    });
-
-    // Also listen for new relays added to pool
-    this.ndk.pool.on('relay:connect', (relay: any) => {
-      this.eventBus.emit('relay:connected', { url: relay.url });
-
-      // Setup disconnect listener for new relay
+    const setupRelayListeners = (relay: NDKRelay): void => {
       relay.on('disconnect', () => {
         this.eventBus.emit('relay:error', { url: relay.url });
       });
+      relay.on('connect', () => {
+        this.eventBus.emit('relay:connected', { url: relay.url });
+      });
+    };
+
+    // Setup listeners for existing relays
+    this.ndk.pool.relays.forEach(setupRelayListeners);
+
+    // Listen for new relays added to pool
+    this.ndk.pool.on('relay:connect', (relay: NDKRelay) => {
+      this.eventBus.emit('relay:connected', { url: relay.url });
+      setupRelayListeners(relay);
     });
 
-    this.ndk.pool.on('relay:disconnect', (relay: any) => {
+    this.ndk.pool.on('relay:disconnect', (relay: NDKRelay) => {
       this.eventBus.emit('relay:error', { url: relay.url });
     });
   }
@@ -399,22 +397,6 @@ export class NostrTransport {
     // Convert NostrEvent to NDKEvent
     const ndkEvent = new (await import('@nostr-dev-kit/ndk')).NDKEvent(this.ndk, event);
 
-    // Track publish results per relay
-    const publishSuccesses: string[] = [];
-    const publishFailures: Map<string, string> = new Map();
-
-    // Listen for per-relay success/failure events
-    const onRelayPublished = (relay: any) => {
-      publishSuccesses.push(relay.url);
-    };
-
-    const onRelayPublishFailed = (relay: any, _error: Error) => {
-      publishFailures.set(relay.url, _error.message);
-    };
-
-    ndkEvent.on('relay:published', onRelayPublished);
-    ndkEvent.on('relay:publish:failed', onRelayPublishFailed);
-
     try {
       // Publish to specified relays with timeout
       const publishPromise = ndkEvent.publish(
@@ -453,10 +435,6 @@ export class NostrTransport {
     } catch (error) {
       this.systemLogger.error('NostrTransport', `Publish error: ${error}`);
       throw error;
-    } finally {
-      // Clean up event listeners
-      ndkEvent.off('relay:published', onRelayPublished);
-      ndkEvent.off('relay:publish:failed', onRelayPublishFailed);
     }
   }
 
@@ -554,14 +532,8 @@ export class NostrTransport {
       return;
     }
 
-    this.systemLogger.info('NostrTransport', `Closing live subscription ${subId}`);
-
-    // Close the subscription (closes all relay connections)
     subscription.closer.close();
-
-    // Remove from tracking map
     this.subscriptions.delete(subId);
-
     this.systemLogger.info('NostrTransport', `Live subscription ${subId} closed`);
   }
 
@@ -569,20 +541,9 @@ export class NostrTransport {
    * Cleanup all live subscriptions
    */
   public unsubscribeAll(): void {
-    this.systemLogger.info(
-      'NostrTransport',
-      `Closing all ${this.subscriptions.size} live subscriptions`
-    );
-
-    // Close all subscriptions
-    this.subscriptions.forEach((subscription, subId) => {
-      subscription.closer.close();
-      this.systemLogger.info('NostrTransport', `Closed subscription ${subId}`);
-    });
-
-    // Clear tracking map
+    const count = this.subscriptions.size;
+    this.subscriptions.forEach((subscription) => subscription.closer.close());
     this.subscriptions.clear();
-
-    this.systemLogger.info('NostrTransport', 'All live subscriptions closed');
+    this.systemLogger.info('NostrTransport', `Closed all ${count} live subscriptions`);
   }
 }
