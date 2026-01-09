@@ -9,6 +9,9 @@ import { EventBus } from '../../services/EventBus';
 import { UserSearchService, type UserSearchResult } from '../../services/UserSearchService';
 import { hexToNpub } from '../../helpers/nip19';
 
+/** Prefixes that bypass user search */
+const SPECIAL_INPUT_PREFIXES = ['/', 'http', 'npub1', 'nevent1'] as const;
+
 export class SearchSpotlight {
   private element: HTMLElement;
   private router: Router;
@@ -172,8 +175,18 @@ export class SearchSpotlight {
 
     this.isOpen = false;
     this.element.remove();
+    this.cancelPendingSearch();
 
-    // Cancel any pending search
+    if (this.inputElement) {
+      this.inputElement.value = '';
+    }
+
+    this.selectedSuggestionIndex = -1;
+    this.userResults = [];
+  }
+
+  /** Cancel any pending search operation */
+  private cancelPendingSearch(): void {
     if (this.currentSearchController) {
       this.currentSearchController.abort();
       this.currentSearchController = null;
@@ -182,13 +195,6 @@ export class SearchSpotlight {
       clearTimeout(this.searchDebounceTimer);
       this.searchDebounceTimer = null;
     }
-
-    if (this.inputElement) {
-      this.inputElement.value = '';
-    }
-
-    this.selectedSuggestionIndex = -1;
-    this.userResults = [];
   }
 
   public toggle(): void {
@@ -199,32 +205,19 @@ export class SearchSpotlight {
     }
   }
 
-  /**
-   * Debounced user search (300ms delay)
-   */
-  private debouncedUserSearch(): void {
-    // Clear previous timer
-    if (this.searchDebounceTimer) {
-      clearTimeout(this.searchDebounceTimer);
-    }
+  /** Check if input starts with a special prefix that bypasses user search */
+  private isSpecialInput(query: string): boolean {
+    return SPECIAL_INPUT_PREFIXES.some(prefix => query.startsWith(prefix));
+  }
 
-    // Cancel previous search
-    if (this.currentSearchController) {
-      this.currentSearchController.abort();
-    }
+  /** Debounced user search (300ms delay) */
+  private debouncedUserSearch(): void {
+    this.cancelPendingSearch();
 
     const query = this.inputElement?.value.trim() || '';
 
-    // Clear results if query too short
-    if (query.length < 2) {
-      this.userResults = [];
-      this.isSearchingUsers = false;
-      this.updateUserSuggestions();
-      return;
-    }
-
-    // Skip user search for special inputs
-    if (query.startsWith('/') || query.startsWith('http') || query.startsWith('npub1') || query.startsWith('nevent1')) {
+    // Clear results if query too short or special input
+    if (query.length < 2 || this.isSpecialInput(query)) {
       this.userResults = [];
       this.isSearchingUsers = false;
       this.updateUserSuggestions();
@@ -265,34 +258,26 @@ export class SearchSpotlight {
     });
   }
 
-  /**
-   * Update user suggestions display
-   */
+  /** Update user suggestions display */
   private updateUserSuggestions(): void {
     if (!this.userSuggestionsElement) return;
 
     const query = this.inputElement?.value.trim() || '';
 
-    // Hide if no query or special input
-    if (query.length < 2 || query.startsWith('/') || query.startsWith('http') || query.startsWith('npub1') || query.startsWith('nevent1')) {
+    // Hide if no query, too short, or special input
+    if (query.length < 2 || this.isSpecialInput(query)) {
       this.userSuggestionsElement.innerHTML = '';
       return;
     }
 
-    // Loading state
-    if (this.isSearchingUsers && this.userResults.length === 0) {
-      this.userSuggestionsElement.innerHTML = `
-        <div class="search-spotlight__user-section">
-          <div class="search-spotlight__user-header">Users</div>
-          <div class="search-spotlight__user-loading">Searching...</div>
-        </div>
-      `;
-      return;
-    }
-
-    // No results
-    if (!this.isSearchingUsers && this.userResults.length === 0) {
-      this.userSuggestionsElement.innerHTML = '';
+    // No results state
+    if (this.userResults.length === 0) {
+      this.userSuggestionsElement.innerHTML = this.isSearchingUsers
+        ? `<div class="search-spotlight__user-section">
+            <div class="search-spotlight__user-header">Users</div>
+            <div class="search-spotlight__user-loading">Searching...</div>
+          </div>`
+        : '';
       return;
     }
 
@@ -337,42 +322,40 @@ export class SearchSpotlight {
   }
 
   private async navigateToInputURL(): Promise<void> {
-    if (!this.inputElement) return;
-
-    let input = this.inputElement.value.trim();
+    const input = this.inputElement?.value.trim();
     if (!input) return;
 
-    // Check if input is external URL
-    if (input.startsWith('http://') || input.startsWith('https://')) {
+    const route = this.resolveInputRoute(input);
+
+    if (route === null) {
+      // External URL - open in system browser
       await this.openExternalURL(input);
-      this.close();
-      return;
+    } else if (route) {
+      // Internal route
+      this.router.navigate(route);
+    } else {
+      // No route resolved - treat as full-text search
+      this.eventBus.emit('globalSearch:start', { query: input });
     }
 
-    // Check if input is npub format
-    if (input.startsWith('npub1') && input.length === 63) {
-      this.router.navigate(`/profile/${input}`);
-      this.close();
-      return;
-    }
-
-    // Check if input is nevent format
-    if (input.startsWith('nevent1')) {
-      this.router.navigate(`/note/${input}`);
-      this.close();
-      return;
-    }
-
-    // Check if input is internal route (starts with /)
-    if (input.startsWith('/')) {
-      this.router.navigate(input);
-      this.close();
-      return;
-    }
-
-    // Otherwise, treat as full-text search query
-    this.eventBus.emit('globalSearch:start', { query: input });
     this.close();
+  }
+
+  /** Resolve input to an internal route, null for external URL, or empty string for search */
+  private resolveInputRoute(input: string): string | null {
+    if (input.startsWith('http://') || input.startsWith('https://')) {
+      return null; // External URL
+    }
+    if (input.startsWith('npub1') && input.length === 63) {
+      return `/profile/${input}`;
+    }
+    if (input.startsWith('nevent1')) {
+      return `/note/${input}`;
+    }
+    if (input.startsWith('/')) {
+      return input;
+    }
+    return ''; // Empty string signals search query
   }
 
   /**
@@ -554,12 +537,7 @@ export class SearchSpotlight {
     if (this.escHandler) {
       document.removeEventListener('keydown', this.escHandler, { capture: true });
     }
-    if (this.searchDebounceTimer) {
-      clearTimeout(this.searchDebounceTimer);
-    }
-    if (this.currentSearchController) {
-      this.currentSearchController.abort();
-    }
+    this.cancelPendingSearch();
     this.element.remove();
   }
 }
