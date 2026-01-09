@@ -241,13 +241,11 @@ export class PostNoteModal {
       textareaSelector: '[data-textarea]'
     });
 
-    // Check if post can be submitted (content OR poll, plus relays)
     const validation = ContentValidationManager.validate({
       content: this.content,
       selectedRelays: this.selectedRelays,
       pollData: this.pollData
     });
-    const isPostDisabled = !validation.isValid;
 
     return `
       <div class="post-note-actions">
@@ -258,7 +256,7 @@ export class PostNoteModal {
           </div>
           <div class="post-note-actions-right">
             <button class="btn btn--passive" data-action="cancel">Cancel</button>
-            <button class="btn" data-action="post" ${isPostDisabled ? 'disabled' : ''}>Post</button>
+            <button class="btn" data-action="post" ${validation.isValid ? '' : 'disabled'}>Post</button>
           </div>
         </div>
       </div>
@@ -284,7 +282,6 @@ export class PostNoteModal {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
     }
 
-    // Setup mention autocomplete
     this.mentionAutocomplete = new MentionAutocomplete({
       textareaSelector: '[data-textarea]',
       onMentionInserted: (_npub, username) => {
@@ -293,9 +290,6 @@ export class PostNoteModal {
     });
     this.mentionAutocomplete.init();
 
-    // NSFW switch is set up dynamically when media is uploaded
-
-    // Setup event handler manager (tab switching, textarea, action buttons)
     this.eventHandlerManager = new ModalEventHandlerManager({
       modalSelector: '.post-note-modal',
       textareaSelector: '[data-textarea]',
@@ -504,28 +498,17 @@ export class PostNoteModal {
    * Handle post button click
    */
   private async handlePost(): Promise<void> {
-    // Validate content before posting
     const validation = ContentValidationManager.validate({
       content: this.content,
       selectedRelays: this.selectedRelays,
       pollData: this.pollData
     });
 
-    if (!validation.isValid) {
-      return;
-    }
+    if (!validation.isValid) return;
+    if (!AuthGuard.requireAuth('create a post')) return;
 
-    // Check authentication before posting (Write Event)
-    if (!AuthGuard.requireAuth('create a post')) {
-      return;
-    }
+    this.toolbar?.hideEmojiPicker();
 
-    // Hide emoji picker if open
-    if (this.toolbar) {
-      this.toolbar.hideEmojiPicker();
-    }
-
-    // Temporarily hide modal to allow extension popup to appear
     const modalContainer = document.querySelector('.modal') as HTMLElement;
     let originalDisplay = '';
     if (modalContainer) {
@@ -534,11 +517,8 @@ export class PostNoteModal {
     }
 
     try {
-      // Extract quoted event data if present
       const quotedRefs = extractQuotedReferences(this.content);
       let quotedEvent: { eventId: string; authorPubkey: string; relayHint?: string } | undefined;
-
-      // Also track quoted articles (naddr) separately
       let quotedArticle: { addressableId: string; authorPubkey: string; relayHint?: string } | undefined;
 
       if (quotedRefs.length > 0) {
@@ -549,7 +529,6 @@ export class PostNoteModal {
           const decoded = decodeNip19(cleanRef);
 
           if (decoded.type === 'nevent') {
-            // NORMAL NOTE: Use q-tag with event ID
             const neventData = decoded.data as { id: string; author?: string; relays?: string[] };
             quotedEvent = {
               eventId: neventData.id,
@@ -557,7 +536,6 @@ export class PostNoteModal {
               relayHint: neventData.relays?.[0]
             };
           } else if (decoded.type === 'naddr') {
-            // LONG-FORM ARTICLE: Use a-tag with addressable identifier
             const naddrData = decoded.data as { kind: number; pubkey: string; identifier: string; relays?: string[] };
             const addressableId = `${naddrData.kind}:${naddrData.pubkey}:${naddrData.identifier}`;
             quotedArticle = {
@@ -577,43 +555,41 @@ export class PostNoteModal {
         contentWarning: this.isNSFW,
         pollData: this.pollData || undefined,
         quotedEvent,
-        quotedArticle // LONG-FORM ARTICLES: Use a-tag instead of q-tag
+        quotedArticle
       });
 
       if (success) {
-        // If this was a quoted repost, update stats for the quoted note
-        if (quotedEvent && quotedEvent.eventId) {
+        if (quotedEvent?.eventId) {
           StatsUpdateService.getInstance().clearCacheOnly(quotedEvent.eventId);
         }
-        // If this was a quoted article, update stats for the article
-        if (quotedArticle && quotedArticle.addressableId) {
+        if (quotedArticle?.addressableId) {
           StatsUpdateService.getInstance().clearCacheOnly(quotedArticle.addressableId);
         }
 
         this.draftContent = '';
         this.cleanup();
         this.modalService.hide();
-        this.systemLogger.success('PostService', '✓ Note posted successfully');
+        this.systemLogger.success('PostService', 'Note posted successfully');
       } else {
-        if (modalContainer) {
-          modalContainer.style.display = originalDisplay;
-        }
-        const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
-        if (postBtn) {
-          postBtn.disabled = false;
-          postBtn.textContent = 'Post';
-        }
+        this.restoreModalAfterError(modalContainer, originalDisplay);
       }
     } catch (error) {
       console.error('Post error:', error);
-      if (modalContainer) {
-        modalContainer.style.display = originalDisplay;
-      }
-      const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
-      if (postBtn) {
-        postBtn.disabled = false;
-        postBtn.textContent = 'Post';
-      }
+      this.restoreModalAfterError(modalContainer, originalDisplay);
+    }
+  }
+
+  /**
+   * Restore modal state after a failed post attempt
+   */
+  private restoreModalAfterError(modalContainer: HTMLElement | null, originalDisplay: string): void {
+    if (modalContainer) {
+      modalContainer.style.display = originalDisplay;
+    }
+    const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
+    if (postBtn) {
+      postBtn.disabled = false;
+      postBtn.textContent = 'Post';
     }
   }
 
@@ -643,7 +619,6 @@ export class PostNoteModal {
 
   /**
    * Render poll preview for Preview tab
-   * Shows poll as it will appear after posting (non-interactive)
    */
   private renderPollPreview(): string {
     if (!this.pollData) return '';
@@ -651,21 +626,18 @@ export class PostNoteModal {
     const validOptions = this.pollData.options.filter(o => o.label.trim());
     if (validOptions.length < 2) return '';
 
-    // Meta-Info (Multiple Choice, End Date)
-    let metaHtml = '';
-    if (this.pollData.multipleChoice || this.pollData.endDate) {
-      metaHtml = '<div class="nip88-poll__meta">';
-      if (this.pollData.multipleChoice) {
-        metaHtml += '<span class="nip88-poll__meta-item">Multiple choice allowed</span>';
-      }
-      if (this.pollData.endDate) {
-        const endDate = new Date(this.pollData.endDate * 1000);
-        metaHtml += `<span class="nip88-poll__meta-item">Ends ${endDate.toLocaleDateString()}</span>`;
-      }
-      metaHtml += '</div>';
+    const metaItems: string[] = [];
+    if (this.pollData.multipleChoice) {
+      metaItems.push('<span class="nip88-poll__meta-item">Multiple choice allowed</span>');
     }
+    if (this.pollData.endDate) {
+      const endDate = new Date(this.pollData.endDate * 1000);
+      metaItems.push(`<span class="nip88-poll__meta-item">Ends ${endDate.toLocaleDateString()}</span>`);
+    }
+    const metaHtml = metaItems.length > 0
+      ? `<div class="nip88-poll__meta">${metaItems.join('')}</div>`
+      : '';
 
-    // Options (as preview, not clickable)
     const optionsHtml = validOptions.map(option => `
       <div class="nip88-poll__option nip88-poll__option--preview">
         <span class="nip88-poll__option-label">${this.escapeHtml(option.label)}</span>
@@ -700,30 +672,20 @@ export class PostNoteModal {
    * Cleanup sub-components
    */
   private cleanup(): void {
-    if (this.relaySelector) {
-      this.relaySelector.destroy();
-      this.relaySelector = null;
-    }
+    this.relaySelector?.destroy();
+    this.relaySelector = null;
 
-    if (this.toolbar) {
-      this.toolbar.destroy();
-      this.toolbar = null;
-    }
+    this.toolbar?.destroy();
+    this.toolbar = null;
 
-    if (this.nsfwSwitch) {
-      this.nsfwSwitch.destroy();
-      this.nsfwSwitch = null;
-    }
+    this.nsfwSwitch?.destroy();
+    this.nsfwSwitch = null;
 
-    if (this.pollCreator) {
-      this.pollCreator.destroy();
-      this.pollCreator = null;
-    }
+    this.pollCreator?.destroy();
+    this.pollCreator = null;
 
-    if (this.mentionAutocomplete) {
-      this.mentionAutocomplete.destroy();
-      this.mentionAutocomplete = null;
-    }
+    this.mentionAutocomplete?.destroy();
+    this.mentionAutocomplete = null;
 
     this.pollData = null;
   }
