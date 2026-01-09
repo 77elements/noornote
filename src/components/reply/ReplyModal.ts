@@ -138,9 +138,7 @@ export class ReplyModal {
       return null;
     }
 
-    const event = result.events[0];
-
-    return event;
+    return result.events[0];
   }
 
   /**
@@ -544,7 +542,7 @@ export class ReplyModal {
     }
 
     try {
-      this.systemLogger.info('ReplyModal', '📤 Calling PostService.createReply...');
+      this.systemLogger.info('ReplyModal', 'Calling PostService.createReply...');
       const replyEvent = await this.postService.createReply({
         content: this.content,
         parentEvent: this.parentEvent,
@@ -552,39 +550,39 @@ export class ReplyModal {
         contentWarning: this.isNSFW
       });
 
-      this.systemLogger.info('ReplyModal', `📥 Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`);
+      this.systemLogger.info('ReplyModal', `Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`);
 
       if (replyEvent) {
         // Update parent note's reply count (cache invalidation + optimistic UI update)
         this.statsUpdateService.clearCacheOnly(this.parentEvent.id);
 
         // Emit event for optimistic UI update (SingleNoteView listens to this)
-        this.systemLogger.info('ReplyModal', `🔔 Emitting reply:created event for ${replyEvent.id.slice(0, 8)}`);
+        this.systemLogger.info('ReplyModal', `Emitting reply:created event for ${replyEvent.id.slice(0, 8)}`);
         this.eventBus.emit('reply:created', replyEvent);
 
         this.cleanup();
         this.modalService.hide();
-        this.systemLogger.success('PostService', '✓ Reply posted successfully');
+        this.systemLogger.success('PostService', 'Reply posted successfully');
       } else {
-        if (modalContainer) {
-          modalContainer.style.display = originalDisplay;
-        }
-        const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
-        if (postBtn) {
-          postBtn.disabled = false;
-          postBtn.textContent = 'Reply';
-        }
+        this.restoreModalState(modalContainer, originalDisplay);
       }
     } catch (error) {
       console.error('Reply error:', error);
-      if (modalContainer) {
-        modalContainer.style.display = originalDisplay;
-      }
-      const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
-      if (postBtn) {
-        postBtn.disabled = false;
-        postBtn.textContent = 'Reply';
-      }
+      this.restoreModalState(modalContainer, originalDisplay);
+    }
+  }
+
+  /**
+   * Restore modal state after failed post attempt
+   */
+  private restoreModalState(modalContainer: HTMLElement | null, originalDisplay: string): void {
+    if (modalContainer) {
+      modalContainer.style.display = originalDisplay;
+    }
+    const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
+    if (postBtn) {
+      postBtn.disabled = false;
+      postBtn.textContent = 'Reply';
     }
   }
 
