@@ -45,6 +45,7 @@ export class NotificationItem {
     // UserIdentity is created in createElement() - no need for loadProfile()
     this.attachISL();
     this.loadZapsList();
+    this.loadResolvedPreview();
   }
 
   /**
@@ -94,9 +95,6 @@ export class NotificationItem {
       });
       identityContainer.appendChild(this.userIdentity.getElement());
     }
-
-    // Load resolved preview asynchronously
-    this.loadResolvedPreview();
 
     return item;
   }
