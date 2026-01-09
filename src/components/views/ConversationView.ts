@@ -204,6 +204,10 @@ export class ConversationView extends View {
     document.removeEventListener('click', this.outsideClickHandler);
   }
 
+  private static readonly MUTE_ICON = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+
   /**
    * Create the mute menu dropdown
    */
@@ -212,47 +216,39 @@ export class ConversationView extends View {
     menu.className = 'note-menu-dropdown';
     menu.style.display = 'none';
 
-    const muteOrch = MuteOrchestrator.getInstance();
-    const privateMutesEnabled = muteOrch.isPrivateMutesEnabled();
+    const privateMutesEnabled = MuteOrchestrator.getInstance().isPrivateMutesEnabled();
 
-    const muteIcon = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
+    menu.innerHTML = privateMutesEnabled
+      ? this.createMuteMenuItems(['mute-privately', 'mute-publicly'])
+      : this.createMuteMenuItems(['mute-publicly']);
 
-    menu.innerHTML = privateMutesEnabled ? `
-      <button class="note-menu-item note-menu-item--danger" data-action="mute-privately">
-        ${muteIcon}
-        Mute user privately
-      </button>
-      <button class="note-menu-item note-menu-item--danger" data-action="mute-publicly">
-        ${muteIcon}
-        Mute user publicly
-      </button>
-    ` : `
-      <button class="note-menu-item note-menu-item--danger" data-action="mute-publicly">
-        ${muteIcon}
-        Mute user
-      </button>
-    `;
-
-    // Setup menu item click handlers
     menu.addEventListener('click', (e) => {
       e.stopPropagation();
-      const target = e.target as HTMLElement;
-      const item = target.closest('.note-menu-item') as HTMLElement;
+      const item = (e.target as HTMLElement).closest('.note-menu-item') as HTMLElement;
       if (!item) return;
 
-      const action = item.dataset.action;
       this.closeMenu();
-
-      if (action === 'mute-privately') {
-        this.muteUser(true);
-      } else if (action === 'mute-publicly') {
-        this.muteUser(false);
-      }
+      this.muteUser(item.dataset.action === 'mute-privately');
     });
 
     return menu;
+  }
+
+  /**
+   * Create mute menu item buttons
+   */
+  private createMuteMenuItems(actions: string[]): string {
+    const labels: Record<string, string> = {
+      'mute-privately': 'Mute user privately',
+      'mute-publicly': actions.length > 1 ? 'Mute user publicly' : 'Mute user'
+    };
+
+    return actions.map(action => `
+      <button class="note-menu-item note-menu-item--danger" data-action="${action}">
+        ${ConversationView.MUTE_ICON}
+        ${labels[action]}
+      </button>
+    `).join('');
   }
 
   /**
@@ -341,14 +337,21 @@ export class ConversationView extends View {
   }
 
   /**
+   * Get messages container element
+   */
+  private get messagesContainer(): HTMLElement | null {
+    return this.container.querySelector('.conversation-view__messages');
+  }
+
+  /**
    * Render messages list
    */
   private renderMessages(): void {
-    const messagesContainer = this.container.querySelector('.conversation-view__messages');
-    if (!messagesContainer) return;
+    const container = this.messagesContainer;
+    if (!container) return;
 
     if (this.messages.length === 0) {
-      messagesContainer.innerHTML = `
+      container.innerHTML = `
         <div class="conversation-view__empty">
           <p>No messages yet</p>
           <p class="text-muted">Send a message to start the conversation</p>
@@ -357,21 +360,20 @@ export class ConversationView extends View {
       return;
     }
 
-    messagesContainer.innerHTML = this.messages.map(msg => this.renderMessage(msg)).join('');
+    container.innerHTML = this.messages.map(msg => this.renderMessage(msg)).join('');
   }
 
   /**
    * Render a single message
    */
   private renderMessage(message: DMMessage): string {
-    const isOwn = message.isMine;
-    const time = this.formatTime(message.createdAt);
+    const messageClass = message.isMine ? 'message--own' : 'message--other';
 
     return `
-      <div class="message ${isOwn ? 'message--own' : 'message--other'}">
+      <div class="message ${messageClass}">
         <div class="message__content">${escapeHtml(message.content)}</div>
         <div class="message__meta">
-          <span class="message__time">${time}</span>
+          <span class="message__time">${this.formatTime(message.createdAt)}</span>
         </div>
       </div>
     `;
@@ -414,9 +416,9 @@ export class ConversationView extends View {
    * Scroll to bottom of messages
    */
   private scrollToBottom(): void {
-    const messagesContainer = this.container.querySelector('.conversation-view__messages');
-    if (messagesContainer) {
-      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    const container = this.messagesContainer;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
     }
   }
 
@@ -424,10 +426,10 @@ export class ConversationView extends View {
    * Render error state
    */
   private renderError(): void {
-    const messagesContainer = this.container.querySelector('.conversation-view__messages');
-    if (!messagesContainer) return;
+    const container = this.messagesContainer;
+    if (!container) return;
 
-    messagesContainer.innerHTML = `
+    container.innerHTML = `
       <div class="conversation-view__error">
         <p>Failed to load messages</p>
         <button class="btn btn--medium" onclick="location.reload()">Retry</button>
