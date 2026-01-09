@@ -11,13 +11,14 @@
 import { SettingsSection } from './SettingsSection';
 import { RelayConfig, type RelayInfo, type RelayType } from '../../services/RelayConfig';
 import { RelayListOrchestrator } from '../../services/orchestration/RelayListOrchestrator';
-import { AuthService } from '../../services/AuthService';
+import { AuthService, type User } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
 import { RelayHealthMonitor } from '../../services/RelayHealthMonitor';
 import { EventBus } from '../../services/EventBus';
 import { SystemLogger } from '../system/SystemLogger';
+import { NostrTransport } from '../../services/transport/NostrTransport';
 
 interface LocalRelaySettings {
   enabled: boolean;
@@ -212,7 +213,7 @@ export class RelaySettingsSection extends SettingsSection {
       return '<div class="health-summary-empty">No relays configured</div>';
     }
 
-    const healthPercentage = summary.total > 0 ? Math.round((summary.healthy / summary.total) * 100) : 0;
+    const healthPercentage = Math.round((summary.healthy / summary.total) * 100);
     const healthClass = healthPercentage >= 80 ? 'good' : healthPercentage >= 50 ? 'warning' : 'critical';
 
     return `
@@ -245,7 +246,7 @@ export class RelaySettingsSection extends SettingsSection {
           <span class="relay-health-indicator ${isConnected ? 'connected' : 'disconnected'}"></span>
           <div class="relay-url">
             ${relay.url}
-            ${latency !== null && latency !== undefined ? `<span class="relay-latency">${latency}ms</span>` : ''}
+            ${latency != null ? `<span class="relay-latency">${latency}ms</span>` : ''}
           </div>
         </div>
 
@@ -361,10 +362,7 @@ export class RelaySettingsSection extends SettingsSection {
     const url = btn.dataset.url;
     const type = btn.dataset.type as RelayType;
 
-    if (!url || !type) return;
-
-    const relay = this.tempRelays.find(r => r.url === url);
-
+    const relay = url && type ? this.tempRelays.find(r => r.url === url) : null;
     if (!relay) return;
 
     if (relay.types.includes(type)) {
@@ -480,36 +478,46 @@ export class RelaySettingsSection extends SettingsSection {
   }
 
   /**
+   * Get current user and write relays for publishing, or null if unavailable
+   */
+  private getPublishContext(): { user: User; writeRelays: string[] } | null {
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      console.warn('No user logged in, skipping publish');
+      return null;
+    }
+
+    const writeRelays = this.relayConfig.getWriteRelays();
+    if (writeRelays.length === 0) {
+      console.warn('No write relays available for publishing');
+      return null;
+    }
+
+    return { user, writeRelays };
+  }
+
+  /**
    * Publish relay list to network as NIP-65 (kind:10002)
    */
   private async publishRelayList(): Promise<void> {
-    try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) {
-        console.warn('No user logged in, skipping relay list publish');
-        return;
-      }
+    const context = this.getPublishContext();
+    if (!context) return;
 
+    try {
       const relayTags = RelayListOrchestrator.relayInfosToTags(this.tempRelays);
       const unsignedEvent = {
         kind: 10002,
         created_at: Math.floor(Date.now() / 1000),
         tags: relayTags,
         content: '',
-        pubkey: currentUser.pubkey
+        pubkey: context.user.pubkey
       };
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
-      const publishRelays = this.relayConfig.getWriteRelays();
-      if (publishRelays.length === 0) {
-        console.warn('No write relays available for publishing');
-        return;
-      }
-
       await this.relayListOrchestrator.publishRelayList(
         this.tempRelays,
-        publishRelays,
+        context.writeRelays,
         signedEvent
       );
 
@@ -525,42 +533,29 @@ export class RelaySettingsSection extends SettingsSection {
    */
   private async publishDMRelayList(): Promise<void> {
     const systemLogger = SystemLogger.getInstance();
+    const context = this.getPublishContext();
+    if (!context) return;
+
+    const inboxRelays = this.tempRelays.filter(r => r.types.includes('inbox'));
+    if (inboxRelays.length === 0) {
+      systemLogger.info('RelaySettings', 'No DM inbox relays configured, skipping kind:10050 publish');
+      return;
+    }
 
     try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) {
-        systemLogger.warn('RelaySettings', 'No user logged in, skipping DM relay list publish');
-        return;
-      }
-
-      const inboxRelays = this.tempRelays.filter(r => r.types.includes('inbox'));
-
-      if (inboxRelays.length === 0) {
-        systemLogger.info('RelaySettings', 'No DM inbox relays configured, skipping kind:10050 publish');
-        return;
-      }
-
       const relayTags = inboxRelays.map(r => ['relay', r.url]);
-
       const unsignedEvent = {
         kind: 10050,
         created_at: Math.floor(Date.now() / 1000),
         tags: relayTags,
         content: '',
-        pubkey: currentUser.pubkey
+        pubkey: context.user.pubkey
       };
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
-      const publishRelays = this.relayConfig.getWriteRelays();
-      if (publishRelays.length === 0) {
-        systemLogger.warn('RelaySettings', 'No write relays available for publishing DM relay list');
-        return;
-      }
-
-      const { NostrTransport } = await import('../../services/transport/NostrTransport');
       const transport = NostrTransport.getInstance();
-      await transport.publish(publishRelays, signedEvent);
+      await transport.publish(context.writeRelays, signedEvent);
 
       const relayUrls = inboxRelays.map(r => r.url).join(', ');
       systemLogger.info('RelaySettings', `Published kind:10050 DM relay list with ${inboxRelays.length} relays: ${relayUrls}`);
