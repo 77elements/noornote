@@ -18,7 +18,7 @@
  */
 
 import { BaseFileStorage, type BaseFileData } from './BaseFileStorage';
-import type { BookmarkSetData } from '../../types/BookmarkSetData';
+import type { BookmarkSetData, BookmarkTag } from '../../types/BookmarkSetData';
 import {
   createEmptyBookmarkSetData,
   migrateFromOldFormat,
@@ -99,33 +99,33 @@ class BookmarkSetStorage extends BaseFileStorage<BookmarkSetData> {
   public override async read(): Promise<BookmarkSetData> {
     const rawData = await super.read();
 
-    // Check if it's old format and needs migration
     if (isOldFormat(rawData)) {
       this.logger.info(this.getLoggerName(), 'Migrating from old format to BookmarkSetData');
       const migrated = migrateFromOldFormat(rawData as unknown as BookmarkListData);
-      // Save migrated data
       await this.write(migrated);
       return migrated;
     }
 
-    // Check if it's new format
     if (isNewFormat(rawData)) {
       return rawData;
     }
 
-    // Unknown format, return empty
     this.logger.warn(this.getLoggerName(), 'Unknown format, returning empty data');
     return this.getDefaultData();
   }
 }
 
 /**
- * Legacy storage for reading old public file (migration only)
+ * Legacy storage for reading old bookmark files (migration only)
  * Read-only - never creates files
  */
-class LegacyPublicBookmarkStorage extends BaseFileStorage<BookmarkListData> {
+class LegacyBookmarkStorage extends BaseFileStorage<BookmarkListData> {
+  constructor(private fileName: string, private loggerName: string) {
+    super();
+  }
+
   protected getFileName(): string {
-    return 'bookmarks-public.json';
+    return this.fileName;
   }
 
   protected getDefaultData(): BookmarkListData {
@@ -133,33 +133,9 @@ class LegacyPublicBookmarkStorage extends BaseFileStorage<BookmarkListData> {
   }
 
   protected getLoggerName(): string {
-    return 'LegacyPublicBookmarkStorage';
+    return this.loggerName;
   }
 
-  // Override to skip file creation - read-only for migration
-  protected override async ensureFileExists(): Promise<void> {
-    // Do nothing - never create legacy files
-  }
-}
-
-/**
- * Legacy storage for reading old private file (migration only)
- * Read-only - never creates files
- */
-class LegacyPrivateBookmarkStorage extends BaseFileStorage<BookmarkListData> {
-  protected getFileName(): string {
-    return 'bookmarks-private.json';
-  }
-
-  protected getDefaultData(): BookmarkListData {
-    return { items: [], lastModified: Math.floor(Date.now() / 1000) };
-  }
-
-  protected getLoggerName(): string {
-    return 'LegacyPrivateBookmarkStorage';
-  }
-
-  // Override to skip file creation - read-only for migration
   protected override async ensureFileExists(): Promise<void> {
     // Do nothing - never create legacy files
   }
@@ -171,14 +147,14 @@ class LegacyPrivateBookmarkStorage extends BaseFileStorage<BookmarkListData> {
 export class BookmarkFileStorage {
   private static instance: BookmarkFileStorage;
   private storage: BookmarkSetStorage;
-  private legacyPublic: LegacyPublicBookmarkStorage;
-  private legacyPrivate: LegacyPrivateBookmarkStorage;
+  private legacyPublic: LegacyBookmarkStorage;
+  private legacyPrivate: LegacyBookmarkStorage;
   private migrated = false;
 
   private constructor() {
     this.storage = new BookmarkSetStorage();
-    this.legacyPublic = new LegacyPublicBookmarkStorage();
-    this.legacyPrivate = new LegacyPrivateBookmarkStorage();
+    this.legacyPublic = new LegacyBookmarkStorage('bookmarks-public.json', 'LegacyPublicBookmarkStorage');
+    this.legacyPrivate = new LegacyBookmarkStorage('bookmarks-private.json', 'LegacyPrivateBookmarkStorage');
   }
 
   public static getInstance(): BookmarkFileStorage {
@@ -194,7 +170,6 @@ export class BookmarkFileStorage {
   public async initialize(): Promise<void> {
     await this.storage.initialize();
 
-    // Check if we need to migrate from legacy files
     if (!this.migrated) {
       await this.migrateFromLegacyIfNeeded();
       this.migrated = true;
@@ -212,18 +187,15 @@ export class BookmarkFileStorage {
       const publicData = await this.legacyPublic.read();
       const privateData = await this.legacyPrivate.read();
 
-      // Check if legacy files have data
       const hasLegacyData = publicData.items.length > 0 || privateData.items.length > 0;
 
       if (hasLegacyData) {
-        // Check if new file is empty or doesn't exist
         const currentData = await this.storage.read();
         const newFileEmpty = currentData.sets.length <= 1 &&
           currentData.sets[0]?.publicTags.length === 0 &&
           currentData.sets[0]?.privateTags.length === 0;
 
         if (newFileEmpty) {
-          // Merge legacy data and migrate
           const mergedLegacy: BookmarkListData = {
             items: [
               ...publicData.items.map(i => ({ ...i, isPrivate: false })),
@@ -241,8 +213,7 @@ export class BookmarkFileStorage {
           console.log('[BookmarkFileStorage] Migrated from legacy two-file format');
         }
       }
-    } catch (e) {
-      // Legacy files don't exist or can't be read, that's fine
+    } catch {
       console.log('[BookmarkFileStorage] No legacy files to migrate');
     }
   }
@@ -251,7 +222,6 @@ export class BookmarkFileStorage {
    * Read bookmark data (new format)
    */
   public async read(): Promise<BookmarkSetData> {
-    // Ensure initialization (triggers legacy migration if needed)
     await this.initialize();
     return await this.storage.read();
   }
@@ -260,7 +230,6 @@ export class BookmarkFileStorage {
    * Write bookmark data (new format)
    */
   public async write(data: BookmarkSetData): Promise<void> {
-    // Ensure initialization
     await this.initialize();
     data.metadata.lastModified = Math.floor(Date.now() / 1000);
     await this.storage.write(data);
@@ -291,30 +260,7 @@ export class BookmarkFileStorage {
    * @deprecated Use write() instead
    */
   public async writePublic(data: BookmarkListData): Promise<void> {
-    // Read current data, update public items, write back
-    const currentData = await this.read();
-
-    // Remove all public items from all sets
-    for (const set of currentData.sets) {
-      set.publicTags = [];
-    }
-
-    // Add items from legacy format
-    for (const item of data.items) {
-      const assignment = data.folderAssignments?.find(a => a.bookmarkId === item.id);
-      const folder = data.folders?.find(f => f.id === assignment?.folderId);
-      const setName = folder?.name || '';
-
-      let set = currentData.sets.find(s => s.d === setName);
-      if (!set) {
-        set = { kind: 30003, d: setName, title: setName, publicTags: [], privateTags: [] };  // d-tag = title-tag
-        currentData.sets.push(set);
-        currentData.metadata.setOrder.push(setName);
-      }
-      set.publicTags.push({ type: item.type, value: item.value });
-    }
-
-    await this.write(currentData);
+    await this.writeLegacyData(data, false);
   }
 
   /**
@@ -322,12 +268,22 @@ export class BookmarkFileStorage {
    * @deprecated Use write() instead
    */
   public async writePrivate(data: BookmarkListData): Promise<void> {
-    // Read current data, update private items, write back
+    await this.writeLegacyData(data, true);
+  }
+
+  /**
+   * Common implementation for writePublic and writePrivate
+   */
+  private async writeLegacyData(data: BookmarkListData, isPrivate: boolean): Promise<void> {
     const currentData = await this.read();
 
-    // Remove all private items from all sets
+    // Clear the appropriate tags from all sets
     for (const set of currentData.sets) {
-      set.privateTags = [];
+      if (isPrivate) {
+        set.privateTags = [];
+      } else {
+        set.publicTags = [];
+      }
     }
 
     // Add items from legacy format
@@ -338,11 +294,13 @@ export class BookmarkFileStorage {
 
       let set = currentData.sets.find(s => s.d === setName);
       if (!set) {
-        set = { kind: 30003, d: setName, title: setName, publicTags: [], privateTags: [] };  // d-tag = title-tag
+        set = { kind: 30003, d: setName, title: setName, publicTags: [], privateTags: [] };
         currentData.sets.push(set);
         currentData.metadata.setOrder.push(setName);
       }
-      set.privateTags.push({ type: item.type, value: item.value });
+
+      const targetTags = isPrivate ? set.privateTags : set.publicTags;
+      targetTags.push({ type: item.type, value: item.value });
     }
 
     await this.write(currentData);
@@ -353,40 +311,25 @@ export class BookmarkFileStorage {
    */
   private setDataToLegacyFormat(data: BookmarkSetData, privateOnly: boolean): BookmarkListData {
     const items: BookmarkItem[] = [];
-    const folders: BookmarkFolder[] = [];
     const folderAssignments: FolderAssignment[] = [];
     const rootOrder: RootOrderItem[] = [];
 
-    // Build folders from sets (except root)
-    let folderOrder = 0;
-    for (const set of data.sets) {
-      if (set.d !== '') {
-        const folderId = `folder_${set.d}`;
-        folders.push({
-          id: folderId,
-          name: set.d,
-          createdAt: data.metadata.lastModified,
-          order: folderOrder++
-        });
-        rootOrder.push({ type: 'folder', id: folderId });
-      }
-    }
+    const { folders, folderRootOrder } = this.extractFolders(data);
+    rootOrder.push(...folderRootOrder);
 
-    // Extract items
     let itemOrder = 0;
     for (const set of data.sets) {
       const tags = privateOnly ? set.privateTags : set.publicTags;
       const folderId = set.d === '' ? '' : `folder_${set.d}`;
 
       for (const tag of tags) {
-        const item: BookmarkItem = {
+        items.push({
           id: tag.value,
           type: tag.type,
           value: tag.value,
           addedAt: data.metadata.lastModified,
           isPrivate: privateOnly
-        };
-        items.push(item);
+        });
 
         folderAssignments.push({
           bookmarkId: tag.value,
@@ -410,21 +353,15 @@ export class BookmarkFileStorage {
   }
 
   /**
-   * Get folder data for ALL bookmarks (public AND private)
-   * Used by restoreFolderDataFromFile to restore folder assignments correctly
+   * Extract folders from BookmarkSetData
    */
-  public async getAllFolderData(): Promise<{
+  private extractFolders(data: BookmarkSetData): {
     folders: BookmarkFolder[];
-    folderAssignments: FolderAssignment[];
-    rootOrder: RootOrderItem[];
-  }> {
-    const data = await this.read();
-
+    folderRootOrder: RootOrderItem[];
+  } {
     const folders: BookmarkFolder[] = [];
-    const folderAssignments: FolderAssignment[] = [];
-    const rootOrder: RootOrderItem[] = [];
+    const folderRootOrder: RootOrderItem[] = [];
 
-    // Build folders from sets (except root)
     let folderOrder = 0;
     for (const set of data.sets) {
       if (set.d !== '') {
@@ -435,29 +372,37 @@ export class BookmarkFileStorage {
           createdAt: data.metadata.lastModified,
           order: folderOrder++
         });
-        rootOrder.push({ type: 'folder', id: folderId });
+        folderRootOrder.push({ type: 'folder', id: folderId });
       }
     }
+
+    return { folders, folderRootOrder };
+  }
+
+  /**
+   * Get folder data for ALL bookmarks (public AND private)
+   * Used by restoreFolderDataFromFile to restore folder assignments correctly
+   */
+  public async getAllFolderData(): Promise<{
+    folders: BookmarkFolder[];
+    folderAssignments: FolderAssignment[];
+    rootOrder: RootOrderItem[];
+  }> {
+    const data = await this.read();
+
+    const folderAssignments: FolderAssignment[] = [];
+    const rootOrder: RootOrderItem[] = [];
+
+    const { folders, folderRootOrder } = this.extractFolders(data);
+    rootOrder.push(...folderRootOrder);
 
     // Extract folder assignments for ALL items (public AND private)
     for (const set of data.sets) {
       const folderId = set.d === '' ? '' : `folder_${set.d}`;
-      let itemOrder = 0;  // Reset order for each folder
+      let itemOrder = 0;
 
-      // Process public tags
-      for (const tag of set.publicTags) {
-        folderAssignments.push({
-          bookmarkId: tag.value,
-          folderId,
-          order: itemOrder++
-        });
-        if (set.d === '') {
-          rootOrder.push({ type: 'bookmark', id: tag.value });
-        }
-      }
-
-      // Process private tags
-      for (const tag of set.privateTags) {
+      const allTags = [...set.publicTags, ...set.privateTags];
+      for (const tag of allTags) {
         folderAssignments.push({
           bookmarkId: tag.value,
           folderId,
@@ -478,38 +423,30 @@ export class BookmarkFileStorage {
   public async getAllBookmarks(): Promise<BookmarkItem[]> {
     const data = await this.read();
     const items: BookmarkItem[] = [];
+    const seenValues = new Set<string>();
 
     for (const set of data.sets) {
-      const category = set.d;  // d-tag = category
+      const category = set.d;
 
-      // Add public items
-      for (const tag of set.publicTags) {
-        if (!items.some(i => i.value === tag.value)) {
-          items.push({
-            id: tag.value,
-            type: tag.type,
-            value: tag.value,
-            addedAt: data.metadata.lastModified,
-            isPrivate: false,
-            category,
-            description: tag.description
-          });
+      const addItems = (tags: BookmarkTag[], isPrivate: boolean): void => {
+        for (const tag of tags) {
+          if (!seenValues.has(tag.value)) {
+            seenValues.add(tag.value);
+            items.push({
+              id: tag.value,
+              type: tag.type,
+              value: tag.value,
+              addedAt: data.metadata.lastModified,
+              isPrivate,
+              category,
+              description: tag.description
+            });
+          }
         }
-      }
-      // Add private items
-      for (const tag of set.privateTags) {
-        if (!items.some(i => i.value === tag.value)) {
-          items.push({
-            id: tag.value,
-            type: tag.type,
-            value: tag.value,
-            addedAt: data.metadata.lastModified,
-            isPrivate: true,
-            category,
-            description: tag.description
-          });
-        }
-      }
+      };
+
+      addItems(set.publicTags, false);
+      addItems(set.privateTags, true);
     }
 
     return items;
