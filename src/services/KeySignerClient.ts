@@ -4,13 +4,12 @@
  */
 
 import { PlatformService } from './PlatformService';
+import { decodeNip19 } from './NostrToolsAdapter';
 
-interface SignRequest {
+interface SignerRequest {
   id: string;
   method: string;
-  event_json?: string;
-  npub?: string;
-  password?: string;
+  [key: string]: unknown;
 }
 
 interface SignResponse {
@@ -114,81 +113,119 @@ export class KeySignerClient {
   }
 
   /**
+   * Ensure we're running in Tauri
+   */
+  private ensureTauri(): void {
+    if (!PlatformService.getInstance().isTauri) {
+      throw new Error('KeySigner is only available in Tauri desktop app');
+    }
+  }
+
+  /**
+   * Build a request object with auto-incrementing ID
+   */
+  private buildRequest(method: string, params?: Record<string, unknown>): SignerRequest {
+    return {
+      id: `req-${++this.requestId}`,
+      method,
+      ...params,
+    };
+  }
+
+  /**
+   * Execute a Tauri invoke with timeout
+   */
+  private async invokeWithTimeout(request: SignerRequest): Promise<string> {
+    const { invoke } = await import('@tauri-apps/api/core');
+
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('KeySigner request timeout')), this.timeout);
+    });
+
+    const invokePromise = invoke('key_signer_request', {
+      request: JSON.stringify(request),
+    });
+
+    return Promise.race([invokePromise, timeoutPromise]) as Promise<string>;
+  }
+
+  /**
+   * Handle connection errors with proper state management
+   */
+  private handleConnectionError(errorMessage: string): never {
+    if (this.isTransientError(errorMessage)) {
+      this.consecutiveFailures++;
+      this.connectionState = 'reconnecting';
+      console.log(`[KeySigner] Transient connection error (attempt ${this.consecutiveFailures}/${this.MAX_RETRY_ATTEMPTS}):`, errorMessage);
+      throw new Error('KeySigner connection temporarily lost. Reconnecting...');
+    }
+
+    this.connectionState = 'disconnected';
+
+    if (errorMessage.includes('timeout')) {
+      console.error('[KeySigner] Request timeout - daemon may be unresponsive');
+      throw new Error('KeySigner daemon is not responding. Please restart the daemon.');
+    }
+
+    if (errorMessage.includes('No such file or directory') || errorMessage.includes('os error 2')) {
+      const now = Date.now();
+      if (now - this.lastSocketErrorTime > this.SOCKET_ERROR_THROTTLE) {
+        console.log('[KeySigner] Socket not found - daemon is not running');
+        this.lastSocketErrorTime = now;
+      }
+      throw new Error('KeySigner daemon is not running. Please log in again.');
+    }
+
+    if (errorMessage.includes('Connection refused')) {
+      console.error('[KeySigner] Connection refused - daemon crashed or stopped');
+      throw new Error('KeySigner daemon connection failed. Please restart the daemon.');
+    }
+
+    console.error('[KeySigner] Request failed:', errorMessage);
+    throw new Error(`KeySigner error: ${errorMessage}`);
+  }
+
+  /**
    * Send request to key signer daemon with timeout
    * Uses NoorSigner protocol: {id, method, event_json}
    */
   private async sendRequest(method: string, eventJson?: string): Promise<SignResponse> {
-    const request: SignRequest = {
-      id: `req-${++this.requestId}`,
-      method,
-      event_json: eventJson,
-    };
+    this.ensureTauri();
 
-    // Check if running in Tauri
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
-    }
+    const request = this.buildRequest(method, eventJson ? { event_json: eventJson } : undefined);
 
     try {
-      // Use Tauri command to communicate with Unix socket
-      const { invoke } = await import('@tauri-apps/api/core');
-
-      // Wrap invoke in timeout promise
-      const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('KeySigner request timeout')), this.timeout);
-      });
-
-      const invokePromise = invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      });
-
-      const responseStr = await Promise.race([invokePromise, timeoutPromise]) as string;
+      const responseStr = await this.invokeWithTimeout(request);
       const response: SignResponse = JSON.parse(responseStr);
 
       if (response.error) {
         throw new Error(`KeySigner error: ${response.error}`);
       }
 
-      // Success - reset failure counter and mark as connected
       this.consecutiveFailures = 0;
       this.connectionState = 'connected';
 
       return response;
     } catch (_error) {
-      // Enhanced error handling with specific error types
       const errorMessage = _error instanceof Error ? _error.message : String(_error);
+      this.handleConnectionError(errorMessage);
+    }
+  }
 
-      // Check if it's a transient error (broken pipe, connection reset)
-      if (this.isTransientError(errorMessage)) {
-        this.consecutiveFailures++;
-        this.connectionState = 'reconnecting';
-        console.log(`[KeySigner] Transient connection error (attempt ${this.consecutiveFailures}/${this.MAX_RETRY_ATTEMPTS}):`, errorMessage);
-        throw new Error('KeySigner connection temporarily lost. Reconnecting...');
-      }
+  /**
+   * Send a custom request with arbitrary parameters
+   */
+  private async sendCustomRequest<T>(method: string, params?: Record<string, unknown>): Promise<T> {
+    this.ensureTauri();
 
-      // Permanent errors
-      if (errorMessage.includes('timeout')) {
-        console.error('[KeySigner] Request timeout - daemon may be unresponsive');
-        this.connectionState = 'disconnected';
-        throw new Error('KeySigner daemon is not responding. Please restart the daemon.');
-      } else if (errorMessage.includes('No such file or directory') || errorMessage.includes('os error 2')) {
-        // Throttle socket error logging
-        const now = Date.now();
-        if (now - this.lastSocketErrorTime > this.SOCKET_ERROR_THROTTLE) {
-          console.log('[KeySigner] Socket not found - daemon is not running');
-          this.lastSocketErrorTime = now;
-        }
-        this.connectionState = 'disconnected';
-        throw new Error('KeySigner daemon is not running. Please log in again.');
-      } else if (errorMessage.includes('Connection refused')) {
-        console.error('[KeySigner] Connection refused - daemon crashed or stopped');
-        this.connectionState = 'disconnected';
-        throw new Error('KeySigner daemon connection failed. Please restart the daemon.');
-      } else {
-        console.error('[KeySigner] Request failed:', error);
-        this.connectionState = 'disconnected';
-        throw new Error(`KeySigner error: ${errorMessage}`);
-      }
+    const request = this.buildRequest(method, params);
+
+    try {
+      const responseStr = await this.invokeWithTimeout(request);
+      return JSON.parse(responseStr) as T;
+    } catch (_error) {
+      const errorMessage = _error instanceof Error ? _error.message : String(_error);
+      throw new Error(`${method} failed: ${errorMessage}`);
     }
   }
 
@@ -207,9 +244,7 @@ export class KeySignerClient {
    */
   public async getPubkey(): Promise<string> {
     const npub = await this.getNpub();
-    // Convert npub to hex pubkey
-    const { nip19 } = await import('nostr-tools');
-    const decoded = nip19.decode(npub);
+    const decoded = decodeNip19(npub);
     if (decoded.type === 'npub') {
       return decoded.data as string;
     }
@@ -229,134 +264,58 @@ export class KeySignerClient {
    * Encrypt plaintext using NIP-44 (for recipient)
    */
   public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    const request = {
-      id: `req-${++this.requestId}`,
-      method: 'nip44_encrypt',
+    const response = await this.sendCustomRequest<SignResponse>('nip44_encrypt', {
       plaintext,
       recipient_pubkey: recipientPubkey,
-    };
-
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    });
+    if (response.error) {
+      throw new Error(`NIP-44 encrypt error: ${response.error}`);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const responseStr = await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      }) as string;
-      const response: SignResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(`NIP-44 encrypt error: ${response.error}`);
-      }
-
-      return response.signature || '';
-    } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
-      throw new Error(`NIP-44 encrypt failed: ${errorMessage}`);
-    }
+    return response.signature || '';
   }
 
   /**
    * Decrypt NIP-44 payload (from sender)
    */
   public async nip44Decrypt(payload: string, senderPubkey: string): Promise<string> {
-    const request = {
-      id: `req-${++this.requestId}`,
-      method: 'nip44_decrypt',
+    const response = await this.sendCustomRequest<SignResponse>('nip44_decrypt', {
       payload,
       sender_pubkey: senderPubkey,
-    };
-
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    });
+    if (response.error) {
+      throw new Error(`NIP-44 decrypt error: ${response.error}`);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const responseStr = await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      }) as string;
-      const response: SignResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(`NIP-44 decrypt error: ${response.error}`);
-      }
-
-      return response.signature || '';
-    } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
-      throw new Error(`NIP-44 decrypt failed: ${errorMessage}`);
-    }
+    return response.signature || '';
   }
 
   /**
    * Encrypt plaintext using NIP-04 (for recipient)
-   * NIP-04 is deprecated but widely compatible (Jumble, Mutable.top)
+   * NIP-04 is deprecated but widely compatible
    */
   public async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    const request = {
-      id: `req-${++this.requestId}`,
-      method: 'nip04_encrypt',
+    const response = await this.sendCustomRequest<SignResponse>('nip04_encrypt', {
       plaintext,
       recipient_pubkey: recipientPubkey,
-    };
-
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    });
+    if (response.error) {
+      throw new Error(`NIP-04 encrypt error: ${response.error}`);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const responseStr = await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      }) as string;
-      const response: SignResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(`NIP-04 encrypt error: ${response.error}`);
-      }
-
-      return response.signature || '';
-    } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
-      throw new Error(`NIP-04 encrypt failed: ${errorMessage}`);
-    }
+    return response.signature || '';
   }
 
   /**
    * Decrypt NIP-04 payload (from sender)
-   * NIP-04 is deprecated but widely compatible (Jumble, Mutable.top)
+   * NIP-04 is deprecated but widely compatible
    */
   public async nip04Decrypt(payload: string, senderPubkey: string): Promise<string> {
-    const request = {
-      id: `req-${++this.requestId}`,
-      method: 'nip04_decrypt',
+    const response = await this.sendCustomRequest<SignResponse>('nip04_decrypt', {
       payload,
       sender_pubkey: senderPubkey,
-    };
-
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    });
+    if (response.error) {
+      throw new Error(`NIP-04 decrypt error: ${response.error}`);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const responseStr = await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      }) as string;
-      const response: SignResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(`NIP-04 decrypt error: ${response.error}`);
-      }
-
-      return response.signature || '';
-    } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
-      throw new Error(`NIP-04 decrypt failed: ${errorMessage}`);
-    }
+    return response.signature || '';
   }
 
   /**
@@ -434,8 +393,7 @@ export class KeySignerClient {
 
     try {
       const { invoke } = await import('@tauri-apps/api/core');
-      const isValid: boolean = await invoke('check_trust_session');
-      return isValid;
+      return await invoke<boolean>('check_trust_session');
     } catch (error) {
       console.error('Failed to check trust session:', error);
       return false;
@@ -453,71 +411,46 @@ export class KeySignerClient {
   }
 
   /**
-   * Launch NoorSigner daemon (via Tauri command)
+   * Launch NoorSigner with specified mode
    */
-  public async launchDaemon(): Promise<void> {
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner launch is only available in Tauri desktop app');
-    }
+  private async launchSigner(mode: 'daemon' | 'init'): Promise<void> {
+    this.ensureTauri();
 
     try {
       const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('launch_key_signer', { mode: 'daemon' });
+      await invoke('launch_key_signer', { mode });
     } catch (error) {
-      console.error('Failed to launch KeySigner daemon:', error);
+      console.error(`Failed to launch KeySigner ${mode}:`, error);
       throw error;
     }
+  }
+
+  /**
+   * Launch NoorSigner daemon (via Tauri command)
+   */
+  public async launchDaemon(): Promise<void> {
+    return this.launchSigner('daemon');
   }
 
   /**
    * Launch NoorSigner init (first-time setup)
    */
   public async launchInit(): Promise<void> {
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner init is only available in Tauri desktop app');
-    }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('launch_key_signer', { mode: 'init' });
-    } catch (error) {
-      console.error('Failed to launch KeySigner init:', error);
-      throw error;
-    }
+    return this.launchSigner('init');
   }
 
   /**
    * List all accounts stored in NoorSigner
    */
   public async listAccounts(): Promise<{ accounts: KeySignerAccount[]; activePubkey: string }> {
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    const response = await this.sendCustomRequest<ListAccountsResponse>('list_accounts');
+    if (response.error) {
+      throw new Error(response.error);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const request = {
-        id: `req-${++this.requestId}`,
-        method: 'list_accounts',
-      };
-
-      const responseStr = await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      }) as string;
-      const response: ListAccountsResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      return {
-        accounts: response.accounts || [],
-        activePubkey: response.active_pubkey || '',
-      };
-    } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
-      throw new Error(`Failed to list accounts: ${errorMessage}`);
-    }
+    return {
+      accounts: response.accounts || [],
+      activePubkey: response.active_pubkey || '',
+    };
   }
 
   /**
@@ -525,40 +458,20 @@ export class KeySignerClient {
    * Requires password for the target account
    */
   public async switchAccount(npub: string, password: string): Promise<{ pubkey: string; npub: string }> {
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    const response = await this.sendCustomRequest<SwitchAccountResponse>('switch_account', {
+      npub,
+      password,
+    });
+    if (response.error) {
+      throw new Error(response.error);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const request = {
-        id: `req-${++this.requestId}`,
-        method: 'switch_account',
-        npub,
-        password,
-      };
-
-      const responseStr = await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      }) as string;
-      const response: SwitchAccountResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      if (!response.success) {
-        throw new Error('Account switch failed');
-      }
-
-      return {
-        pubkey: response.pubkey || '',
-        npub: response.npub || '',
-      };
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      throw new Error(errorMessage);
+    if (!response.success) {
+      throw new Error('Account switch failed');
     }
+    return {
+      pubkey: response.pubkey || '',
+      npub: response.npub || '',
+    };
   }
 
   /**
@@ -569,41 +482,21 @@ export class KeySignerClient {
     password: string,
     setActive = false
   ): Promise<{ pubkey: string; npub: string }> {
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    const response = await this.sendCustomRequest<AddAccountResponse>('add_account', {
+      nsec,
+      password,
+      set_active: setActive,
+    });
+    if (response.error) {
+      throw new Error(response.error);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const request = {
-        id: `req-${++this.requestId}`,
-        method: 'add_account',
-        nsec,
-        password,
-        set_active: setActive,
-      };
-
-      const responseStr = (await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      })) as string;
-      const response: AddAccountResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      if (!response.success) {
-        throw new Error('Failed to add account');
-      }
-
-      return {
-        pubkey: response.pubkey || '',
-        npub: response.npub || '',
-      };
-    } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
-      throw new Error(errorMessage);
+    if (!response.success) {
+      throw new Error('Failed to add account');
     }
+    return {
+      pubkey: response.pubkey || '',
+      npub: response.npub || '',
+    };
   }
 
   /**
@@ -611,33 +504,14 @@ export class KeySignerClient {
    * Note: Cannot remove the currently active account
    */
   public async removeAccount(pubkey: string, password: string): Promise<boolean> {
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    const response = await this.sendCustomRequest<RemoveAccountResponse>('remove_account', {
+      pubkey,
+      password,
+    });
+    if (response.error) {
+      throw new Error(response.error);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const request = {
-        id: `req-${++this.requestId}`,
-        method: 'remove_account',
-        pubkey,
-        password,
-      };
-
-      const responseStr = (await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      })) as string;
-      const response: RemoveAccountResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      return response.success || false;
-    } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
-      throw new Error(errorMessage);
-    }
+    return response.success || false;
   }
 
   /**
@@ -648,35 +522,15 @@ export class KeySignerClient {
     npub: string;
     isUnlocked: boolean;
   }> {
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    const response = await this.sendCustomRequest<ActiveAccountResponse>('get_active_account');
+    if (response.error) {
+      throw new Error(response.error);
     }
-
-    try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      const request = {
-        id: `req-${++this.requestId}`,
-        method: 'get_active_account',
-      };
-
-      const responseStr = (await invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      })) as string;
-      const response: ActiveAccountResponse = JSON.parse(responseStr);
-
-      if (response.error) {
-        throw new Error(response.error);
-      }
-
-      return {
-        pubkey: response.pubkey || '',
-        npub: response.npub || '',
-        isUnlocked: response.is_unlocked || false,
-      };
-    } catch (_error) {
-      const errorMessage = _error instanceof Error ? _error.message : String(_error);
-      throw new Error(errorMessage);
-    }
+    return {
+      pubkey: response.pubkey || '',
+      npub: response.npub || '',
+      isUnlocked: response.is_unlocked || false,
+    };
   }
 
   /**
