@@ -397,7 +397,7 @@ export class TribeManager {
     }
 
     // Check empty state
-    if (grid.children.length === 0 || (this.currentFolderId === '' && grid.children.length === 0)) {
+    if (grid.children.length === 0) {
       grid.innerHTML = `
         <div class="tribes-empty-state" style="grid-column: 1 / -1;">
           <p>No tribe members yet</p>
@@ -634,14 +634,15 @@ export class TribeManager {
 
   private navigateToFolder(folderId: string): void {
     this.currentFolderId = folderId;
-    const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-    if (container) {
-      this.renderCurrentView(container as HTMLElement);
-    }
+    this.rerenderCurrentView();
   }
 
   private navigateToRoot(): void {
     this.currentFolderId = '';
+    this.rerenderCurrentView();
+  }
+
+  private rerenderCurrentView(): void {
     const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
     if (container) {
       this.renderCurrentView(container as HTMLElement);
@@ -662,12 +663,7 @@ export class TribeManager {
       this.folderService.removeMemberAssignment(pubkey);
 
       ToastService.show('Member removed', 'success');
-
-      // Re-render
-      const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-      if (container) {
-        this.renderCurrentView(container as HTMLElement);
-      }
+      this.rerenderCurrentView();
     } catch (error) {
       console.error('Failed to delete member:', error);
       ToastService.show('Failed to remove member', 'error');
@@ -687,12 +683,7 @@ export class TribeManager {
       onSave: (newName: string) => {
         this.folderService.renameFolder(folderId, newName);
         ToastService.show('Tribe renamed', 'success');
-
-        // Re-render
-        const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-        if (container) {
-          this.renderCurrentView(container as HTMLElement);
-        }
+        this.rerenderCurrentView();
       }
     });
 
@@ -761,12 +752,7 @@ export class TribeManager {
           }
 
           this.modalService.hide();
-
-          // Re-render
-          const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-          if (container) {
-            this.renderCurrentView(container as HTMLElement);
-          }
+          this.rerenderCurrentView();
         } catch (error) {
           console.error('Failed to delete tribe:', error);
           ToastService.show('Failed to delete tribe', 'error');
@@ -800,12 +786,7 @@ export class TribeManager {
 
       const targetName = targetFolderId === '' ? 'root' : targetFolder?.name || 'tribe';
       ToastService.show(`Moved to ${targetName}`, 'success');
-
-      // Re-render
-      const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-      if (container) {
-        this.renderCurrentView(container as HTMLElement);
-      }
+      this.rerenderCurrentView();
     } catch (error) {
       console.error('Failed to move member:', error);
       ToastService.show('Failed to move member', 'error');
@@ -818,14 +799,9 @@ export class TribeManager {
   private createNewTribe(): void {
     const modal = new NewFolderModal({
       onConfirm: (name: string) => {
-        const folder = this.folderService.createFolder(name);
+        this.folderService.createFolder(name);
         ToastService.show('Tribe created', 'success');
-
-        // Re-render (stay in root)
-        const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-        if (container) {
-          this.renderCurrentView(container as HTMLElement);
-        }
+        this.rerenderCurrentView();
       }
     });
 
@@ -979,10 +955,7 @@ export class TribeManager {
 
         // Re-render if we're in the target tribe or root
         if (this.currentFolderId === tribeId || this.currentFolderId === '') {
-          const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-          if (container) {
-            this.renderCurrentView(container as HTMLElement);
-          }
+          this.rerenderCurrentView();
         }
       } else {
         ToastService.show('No members added', 'error');
@@ -1150,24 +1123,20 @@ export class TribeManager {
    * Restore folders and members from file (creates folder structure from categories)
    */
   private async restoreFoldersAndMembers(): Promise<void> {
-    // Restore tribe members from file
     await this.listSyncManager.restoreFromFile();
 
-    // Apply category assignments from restored items
     const restoredItems = this.adapter.getBrowserItems();
     const existingFolders = this.folderService.getFolders();
 
-    // Create folders for categories that don't exist yet
-    const categories = new Set<string>();
-    for (const item of restoredItems) {
-      if (item.category && item.category !== '') {
-        categories.add(item.category);
-      }
-    }
+    // Collect unique categories and create missing folders
+    const categories = new Set(
+      restoredItems
+        .map(item => item.category)
+        .filter((cat): cat is string => !!cat && cat !== '')
+    );
 
     for (const categoryName of categories) {
-      const existingFolder = existingFolders.find(f => f.name === categoryName);
-      if (!existingFolder) {
+      if (!existingFolders.some(f => f.name === categoryName)) {
         const newFolder = this.folderService.createFolder(categoryName);
         this.folderService.addToRootOrder('folder', newFolder.id);
       }
@@ -1176,19 +1145,13 @@ export class TribeManager {
     // Assign members to their categories
     const updatedFolders = this.folderService.getFolders();
     for (const item of restoredItems) {
+      this.folderService.ensureMemberAssignment(item.pubkey);
+
       const categoryName = item.category || '';
-      if (categoryName === '') {
-        // Root - ensure assignment exists
-        this.folderService.ensureMemberAssignment(item.pubkey);
-      } else {
-        // Find folder by name and move member there
+      if (categoryName !== '') {
         const folder = updatedFolders.find(f => f.name === categoryName);
         if (folder) {
-          this.folderService.ensureMemberAssignment(item.pubkey);
           this.folderService.moveMemberToFolder(item.pubkey, folder.id);
-        } else {
-          // Folder not found - assign to root
-          this.folderService.ensureMemberAssignment(item.pubkey);
         }
       }
     }
