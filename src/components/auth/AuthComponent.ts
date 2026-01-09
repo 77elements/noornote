@@ -171,20 +171,47 @@ export class AuthComponent {
   }
 
   /**
+   * Handle successful login - common flow for all auth methods
+   */
+  private handleLoginSuccess(npub: string, pubkey: string, method: string): void {
+    this.currentUser = { npub, pubkey };
+    this.systemLogger.info('Auth', `Logged in successfully via ${method}`);
+
+    if (this.mainLayout) {
+      this.mainLayout.setUserStatus(npub, pubkey);
+    }
+
+    this.updateUI();
+    this.clearAddAccountFlag();
+    this.router.navigate('/');
+  }
+
+  /**
+   * Reset button to original state
+   */
+  private resetButton(btn: HTMLButtonElement | null, text: string): void {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = text;
+    }
+  }
+
+  /**
    * Handle NoorSigner login
    */
   private async handleKeySignerLogin(): Promise<void> {
     const primaryContent = document.querySelector('.primary-content');
     const keySignerBtn = primaryContent?.querySelector('[data-action="use-key-signer"]') as HTMLButtonElement;
-
     if (!keySignerBtn) return;
 
+    const originalText = '🔑 Use NoorSigner';
     keySignerBtn.disabled = true;
     keySignerBtn.textContent = 'Launching daemon...';
 
     // Add cancel button
     const authSection = keySignerBtn.closest('.auth-section');
     let cancelBtn: HTMLButtonElement | null = null;
+    let userCancelled = false;
 
     if (authSection) {
       cancelBtn = document.createElement('button');
@@ -193,26 +220,16 @@ export class AuthComponent {
       cancelBtn.style.marginTop = '0.5rem';
       cancelBtn.setAttribute('data-action', 'cancel-keysigner');
       authSection.querySelector('.auth-primary-action')?.appendChild(cancelBtn);
-    }
 
-    // Flag to track if user cancelled
-    let userCancelled = false;
-
-    // Cancel button handler
-    const handleCancel = async () => {
-      userCancelled = true;
-      await this.authService.cancelKeySignerLogin();
-      keySignerBtn.disabled = false;
-      keySignerBtn.textContent = '🔑 Use NoorSigner';
-      cancelBtn?.remove();
-    };
-
-    if (cancelBtn) {
-      cancelBtn.addEventListener('click', handleCancel);
+      cancelBtn.addEventListener('click', async () => {
+        userCancelled = true;
+        await this.authService.cancelKeySignerLogin();
+        this.resetButton(keySignerBtn, originalText);
+        cancelBtn?.remove();
+      });
     }
 
     try {
-      // Show waiting message
       setTimeout(() => {
         if (keySignerBtn.textContent === 'Launching daemon...' && !userCancelled) {
           keySignerBtn.textContent = '⏳ Waiting for password...';
@@ -220,38 +237,21 @@ export class AuthComponent {
       }, 2000);
 
       const result = await this.authService.authenticateWithKeySigner();
-
-      // Remove cancel button after completion
       cancelBtn?.remove();
 
-      if (userCancelled) {
-        return;
-      }
+      if (userCancelled) return;
 
       if (result.success && result.npub && result.pubkey) {
-        this.currentUser = { npub: result.npub, pubkey: result.pubkey };
-        this.systemLogger.info('Auth', 'Logged in successfully via NoorSigner');
-
-        if (this.mainLayout) {
-          this.mainLayout.setUserStatus(result.npub, result.pubkey);
-        }
-
-        this.updateUI();
-        this.clearAddAccountFlag();
-
-        // Navigate to timeline
-        this.router.navigate('/');
+        this.handleLoginSuccess(result.npub, result.pubkey, 'NoorSigner');
       } else {
         this.systemLogger.error('Auth', 'NoorSigner login failed');
         this.showError(result.error || 'NoorSigner authentication failed');
-        keySignerBtn.disabled = false;
-        keySignerBtn.textContent = '🔑 Use NoorSigner';
+        this.resetButton(keySignerBtn, originalText);
       }
     } catch (error) {
       console.error('NoorSigner login error:', error);
       this.showError('Unexpected error during NoorSigner authentication');
-      keySignerBtn.disabled = false;
-      keySignerBtn.textContent = '🔑 Use NoorSigner';
+      this.resetButton(keySignerBtn, originalText);
       cancelBtn?.remove();
     }
   }
@@ -262,37 +262,24 @@ export class AuthComponent {
   private async handleBrowserExtLogin(): Promise<void> {
     const primaryContent = document.querySelector('.primary-content');
     const browserExtBtn = primaryContent?.querySelector('[data-action="use-browser-ext-signer"]') as HTMLButtonElement;
-
     if (!browserExtBtn) return;
 
+    const originalText = '🔑 Use Browser extension';
     browserExtBtn.disabled = true;
-      browserExtBtn.textContent = 'Waiting Extension';
-
+    browserExtBtn.textContent = 'Waiting Extension';
 
     try {
       const result = await this.authService.authenticate();
-      if (result.success && result.npub && result.pubkey){
-        this.currentUser = { npub: result.npub, pubkey: result.pubkey };
-        this.systemLogger.info('Auth', `Logged in successfully via ${this.authService.getExtensionName()} ${this.authService.getAuthMethod()}`);
-
-        if (this.mainLayout) this.mainLayout.setUserStatus(result.npub, result.pubkey);
-
+      if (result.success && result.npub && result.pubkey) {
+        const method = `${this.authService.getExtensionName()} ${this.authService.getAuthMethod()}`;
+        this.handleLoginSuccess(result.npub, result.pubkey, method);
       }
-
-
-      this.updateUI();
-      this.clearAddAccountFlag();
-
-      // Navigate to timeline
-      this.router.navigate('/');
     } catch (error) {
       console.error('Browser extension login error:', error);
       this.showError(`${this.authService.getExtensionName()} ${this.authService.getAuthMethod()} error`);
-      browserExtBtn.disabled = false;
-      browserExtBtn.textContent = '🔑 Use Browser extension (Desktop)';
+      this.resetButton(browserExtBtn, originalText);
     }
   }
-
 
   /**
    * Handle bunker:// login (NIP-46 remote signer)
@@ -301,7 +288,6 @@ export class AuthComponent {
     const primaryContent = document.querySelector('.primary-content');
     const bunkerInput = primaryContent?.querySelector('[data-input="bunker"]') as HTMLInputElement;
     const bunkerBtn = primaryContent?.querySelector('[data-action="connect-bunker"]') as HTMLButtonElement;
-
     if (!bunkerInput || !bunkerBtn) return;
 
     const bunkerUri = bunkerInput.value.trim();
@@ -309,12 +295,12 @@ export class AuthComponent {
       this.showError('Please enter a bunker:// URI');
       return;
     }
-
     if (!bunkerUri.startsWith('bunker://')) {
       this.showError('Invalid bunker URI. Must start with bunker://');
       return;
     }
 
+    const originalText = 'Connect';
     bunkerBtn.disabled = true;
     bunkerBtn.textContent = 'Connecting...';
 
@@ -322,27 +308,16 @@ export class AuthComponent {
       const result = await this.authService.authenticateWithBunker(bunkerUri);
 
       if (result.success && result.npub && result.pubkey) {
-        this.currentUser = { npub: result.npub, pubkey: result.pubkey };
-        this.systemLogger.info('Auth', 'Logged in successfully via bunker');
-
-        if (this.mainLayout) {
-          this.mainLayout.setUserStatus(result.npub, result.pubkey);
-        }
-
-        this.updateUI();
-        this.clearAddAccountFlag();
-        this.router.navigate('/');
+        this.handleLoginSuccess(result.npub, result.pubkey, 'bunker');
       } else {
         this.systemLogger.error('Auth', 'Bunker login failed');
         this.showError(result.error || 'Bunker connection failed');
-        bunkerBtn.disabled = false;
-        bunkerBtn.textContent = 'Connect';
+        this.resetButton(bunkerBtn, originalText);
       }
     } catch (error) {
       console.error('Bunker login error:', error);
       this.showError('Unexpected error during bunker connection');
-      bunkerBtn.disabled = false;
-      bunkerBtn.textContent = 'Connect';
+      this.resetButton(bunkerBtn, originalText);
     }
   }
 
@@ -370,28 +345,17 @@ export class AuthComponent {
   }
 
   /**
-   * Show error message
+   * Show error message (auto-removes after 5 seconds)
    */
   private showError(message: string): void {
-    const existingError = this.element.querySelector('.auth-error');
-    if (existingError) {
-      existingError.remove();
-    }
+    this.element.querySelector('.auth-error')?.remove();
 
     const errorElement = document.createElement('div');
     errorElement.className = 'auth-error';
-    errorElement.innerHTML = `
-      <p class="error">${message}</p>
-    `;
-
+    errorElement.innerHTML = `<p class="error">${message}</p>`;
     this.element.appendChild(errorElement);
 
-    // Remove error after 5 seconds
-    setTimeout(() => {
-      if (errorElement.parentNode) {
-        errorElement.remove();
-      }
-    }, 5000);
+    setTimeout(() => errorElement.remove(), 5000);
   }
 
   /**
