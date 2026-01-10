@@ -27,4 +27,6 @@ export interface TribeSetData {
     setOrder: string[];      // Order of d-tags for UI
     lastModified: number;
   };
+  // Top-level lastModified for BaseFileData compatibility
+  lastModified: number;
 }

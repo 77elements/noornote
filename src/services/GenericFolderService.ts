@@ -10,7 +10,7 @@
  * @pattern Template pattern with config-based initialization
  */
 
-import { PerAccountLocalStorage } from './PerAccountLocalStorage';
+import { PerAccountLocalStorage, type StorageKey } from './PerAccountLocalStorage';
 
 // ========================================
 // Generic Interfaces
@@ -22,7 +22,7 @@ export interface Folder {
   createdAt: number;
 }
 
-export interface Assignment<TItemId extends string> {
+export interface Assignment<_TItemId extends string> {
   [key: string]: string | number;  // Allow dynamic property names
   folderId: string;
   order: number;
@@ -67,7 +67,7 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
   // ========================================
 
   public getFolders(): Folder[] {
-    return this.storage.get<Folder[]>(this.config.folderStorageKey, []);
+    return this.storage.get<Folder[]>(this.config.folderStorageKey as StorageKey, []);
   }
 
   public getFolder(folderId: string): Folder | null {
@@ -129,7 +129,7 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
   }
 
   private saveFolders(folders: Folder[]): void {
-    this.storage.set(this.config.folderStorageKey, folders);
+    this.storage.set(this.config.folderStorageKey as StorageKey, folders);
   }
 
   // ========================================
@@ -137,11 +137,11 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
   // ========================================
 
   private getAssignments(): Assignment<TItemId>[] {
-    return this.storage.get<Assignment<TItemId>[]>(this.config.assignmentStorageKey, []);
+    return this.storage.get<Assignment<TItemId>[]>(this.config.assignmentStorageKey as StorageKey, []);
   }
 
   private saveAssignments(assignments: Assignment<TItemId>[]): void {
-    this.storage.set(this.config.assignmentStorageKey, assignments);
+    this.storage.set(this.config.assignmentStorageKey as StorageKey, assignments);
   }
 
   private getItemIdFromAssignment(assignment: Assignment<TItemId>): string {
@@ -284,20 +284,20 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
   // ========================================
 
   public hasRootOrder(): boolean {
-    const order = this.storage.get<RootOrderItem<TItemType>[]>(this.config.rootOrderStorageKey, []);
+    const order = this.storage.get<RootOrderItem<TItemType>[]>(this.config.rootOrderStorageKey as StorageKey, []);
     return order.length > 0;
   }
 
   public clearRootOrder(): void {
-    this.storage.remove(this.config.rootOrderStorageKey);
+    this.storage.remove(this.config.rootOrderStorageKey as StorageKey);
   }
 
   public clearAssignments(): void {
-    this.storage.remove(this.config.assignmentStorageKey);
+    this.storage.remove(this.config.assignmentStorageKey as StorageKey);
   }
 
   public getRootOrder(): RootOrderItem<TItemType>[] {
-    const order = this.storage.get<RootOrderItem<TItemType>[]>(this.config.rootOrderStorageKey, []);
+    const order = this.storage.get<RootOrderItem<TItemType>[]>(this.config.rootOrderStorageKey as StorageKey, []);
     if (order.length === 0) {
       // Build initial order from existing data
       return this.buildInitialRootOrder();
@@ -328,7 +328,7 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
   }
 
   public saveRootOrder(order: RootOrderItem<TItemType>[]): void {
-    this.storage.set(this.config.rootOrderStorageKey, order);
+    this.storage.set(this.config.rootOrderStorageKey as StorageKey, order);
   }
 
   public addToRootOrder(type: 'folder' | TItemType, id: string): void {
@@ -355,6 +355,8 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
     if (currentIndex === -1) return;
 
     const [item] = order.splice(currentIndex, 1);
+    if (!item) return;
+
     const insertIndex = Math.min(newIndex, order.length);
     order.splice(insertIndex, 0, item);
 
@@ -371,7 +373,7 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
    */
   public cleanupOrphanedAssignments(): number {
     // Get existing item IDs from storage
-    const items = this.storage.get<{ id: string }[]>(this.config.itemsStorageKey, []);
+    const items = this.storage.get<{ id: string }[]>(this.config.itemsStorageKey as StorageKey, []);
     const existingItemIds = new Set(items.map(item => item.id));
 
     // Get all assignments

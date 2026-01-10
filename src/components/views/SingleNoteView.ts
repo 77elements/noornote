@@ -42,8 +42,8 @@ export class SingleNoteView extends View {
   private threadManager?: ThreadManager;
   private liveUpdatesManager?: LiveUpdatesManager;
 
-  // EventBus unsubscribe functions
-  private muteUpdatedUnsubscribe?: () => void;
+  // EventBus subscription IDs
+  private muteUpdatedSubscriptionId?: string;
 
   constructor(noteId: string) {
     super();
@@ -118,11 +118,15 @@ export class SingleNoteView extends View {
     }
 
     const event = result.events[0];
+    if (!event) {
+      this.systemLogger.warn('SNV', `Note not found (${noteId.slice(0, 8)})`);
+      return null;
+    }
 
     let authorPubkey = event.pubkey;
     if (event.kind === 6) {
       const pTag = event.tags.find(tag => tag[0] === 'p');
-      if (pTag) authorPubkey = pTag[1];
+      if (pTag?.[1]) authorPubkey = pTag[1];
     }
 
     const profileService = UserProfileService.getInstance();
@@ -173,11 +177,15 @@ export class SingleNoteView extends View {
 
     this.container.appendChild(snvWrapper);
 
-    this.currentNoteId = event.id;
+    const eventId = event.id;
+    const eventPubkey = event.pubkey;
+    if (!eventId || !eventPubkey) return;
+
+    this.currentNoteId = eventId;
     this.currentEvent = event;
 
-    this.initializeManagers(event.id, event.pubkey, repliesContainer);
-    this.loadZapsList(event.id, event.pubkey, noteElement);
+    this.initializeManagers(eventId, eventPubkey, repliesContainer);
+    this.loadZapsList(eventId, eventPubkey, noteElement);
 
     if (this.threadManager) {
       const quotedReposts = await this.threadManager.fetchQuotedReposts();
@@ -262,10 +270,11 @@ export class SingleNoteView extends View {
     const searchState = this.appState.getState('profileSearch');
     const cameFromSearch = searchState.navigatedToSNV && searchState.isActive;
 
-    if (cameFromSearch && searchState.pubkeyHex) {
+    const pubkeyHex = searchState.pubkeyHex;
+    if (cameFromSearch && pubkeyHex) {
       footer.appendChild(this.createBackButton('← Back to Search Results', () => {
         this.appState.setState('profileSearch', { navigatedToSNV: false });
-        const npub = encodeNpub(searchState.pubkeyHex);
+        const npub = encodeNpub(pubkeyHex);
         this.router.navigate(`/profile/${npub}`);
       }));
     } else {
@@ -290,7 +299,7 @@ export class SingleNoteView extends View {
   }
 
   private setupMuteListener(): void {
-    this.muteUpdatedUnsubscribe = this.eventBus.on('mute:updated', (data?: { pubkey?: string }) => {
+    this.muteUpdatedSubscriptionId = this.eventBus.on('mute:updated', (data?: { pubkey?: string }) => {
       if (data?.pubkey && this.currentEvent?.pubkey === data.pubkey) {
         this.router.navigate('/');
       }
@@ -298,8 +307,8 @@ export class SingleNoteView extends View {
   }
 
   public destroy(): void {
-    if (this.muteUpdatedUnsubscribe) {
-      this.eventBus.off(this.muteUpdatedUnsubscribe);
+    if (this.muteUpdatedSubscriptionId) {
+      this.eventBus.off(this.muteUpdatedSubscriptionId);
     }
 
     this.liveUpdatesManager?.destroy();

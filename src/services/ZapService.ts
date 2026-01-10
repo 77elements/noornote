@@ -122,13 +122,15 @@ export class ZapService {
 
     const defaults = await this.getZapDefaults();
 
-    return this.sendZap({
+    const zapRequest: ZapRequest = {
       noteId,
       authorPubkey,
       amount: defaults.amount,
-      comment: defaults.comment,
-      articleEventId
-    });
+      comment: defaults.comment
+    };
+    if (articleEventId) zapRequest.articleEventId = articleEventId;
+
+    return this.sendZap(zapRequest);
   }
 
   /**
@@ -144,13 +146,11 @@ export class ZapService {
     const connectionError = this.checkNWCConnection();
     if (connectionError) return connectionError;
 
-    return this.sendZap({
-      noteId,
-      authorPubkey,
-      amount,
-      comment,
-      articleEventId
-    });
+    const zapRequest: ZapRequest = { noteId, authorPubkey, amount };
+    if (comment) zapRequest.comment = comment;
+    if (articleEventId) zapRequest.articleEventId = articleEventId;
+
+    return this.sendZap(zapRequest);
   }
 
   /**
@@ -240,12 +240,13 @@ export class ZapService {
       }
     });
 
-    return {
+    const result: ZapResult = {
       success: true,
       invoice,
-      preimage: paymentResult.preimage,
-      amount: request.amount // Return amount for ISL optimistic update
+      amount: request.amount
     };
+    if (paymentResult.preimage) result.preimage = paymentResult.preimage;
+    return result;
   }
 
   /**
@@ -259,27 +260,36 @@ export class ZapService {
       let profile = await this.userProfileService.getUserProfile(pubkey);
 
       // Step 2: Check if profile exists AND has lud16/lud06
-      if (!profile || (!profile.lud16 && !profile.lud06)) {
+      let lightningProfile: ProfileWithLightning | null = null;
+      if (profile) {
+        lightningProfile = { pubkey: profile.pubkey };
+        if (profile.lud16) lightningProfile.lud16 = profile.lud16;
+        if (profile.lud06) lightningProfile.lud06 = profile.lud06;
+        if (profile.name) lightningProfile.name = profile.name;
+        if (profile.display_name) lightningProfile.display_name = profile.display_name;
+      }
+
+      if (!lightningProfile || (!lightningProfile.lud16 && !lightningProfile.lud06)) {
         this.systemLogger.info('ZapService', 'No profile or lud16/lud06 found in standard relays, trying user\'s outbound relays...');
 
         // FALLBACK: Fetch profile from user's outbound relays
-        profile = await this.fetchProfileFromUserRelays(pubkey);
+        lightningProfile = await this.fetchProfileFromUserRelays(pubkey);
 
-        if (!profile || (!profile.lud16 && !profile.lud06)) {
+        if (!lightningProfile || (!lightningProfile.lud16 && !lightningProfile.lud06)) {
           this.systemLogger.warn('ZapService', 'No lud16/lud06 found in user\'s relays either');
           return null;
         }
 
-        this.systemLogger.info('ZapService', `Found lud16/lud06 in user's relays: ${profile.lud16 || profile.lud06}`);
+        this.systemLogger.info('ZapService', `Found lud16/lud06 in user's relays: ${lightningProfile.lud16 || lightningProfile.lud06}`);
       } else {
-        this.systemLogger.info('ZapService', `Profile found in standard relays: lud16=${profile.lud16}, lud06=${profile.lud06}`);
+        this.systemLogger.info('ZapService', `Profile found in standard relays: lud16=${lightningProfile.lud16}, lud06=${lightningProfile.lud06}`);
       }
 
       // Step 3: Get zap endpoint (callback + lnurl)
-      const zapEndpoint = await this.getZapEndpoint({
-        lud16: profile.lud16,
-        lud06: profile.lud06
-      });
+      const zapOptions: { lud16?: string; lud06?: string } = {};
+      if (lightningProfile.lud16) zapOptions.lud16 = lightningProfile.lud16;
+      if (lightningProfile.lud06) zapOptions.lud06 = lightningProfile.lud06;
+      const zapEndpoint = await this.getZapEndpoint(zapOptions);
 
       if (!zapEndpoint) {
         this.systemLogger.warn('ZapService', 'No valid zap endpoint found');
@@ -302,13 +312,14 @@ export class ZapService {
     try {
       // Step 1: Fetch user's outbound relays (Kind 10002)
       const userRelays = await this.outboundRelaysFetcher.discoverUserRelays([pubkey]);
+      const firstRelay = userRelays[0];
 
-      if (userRelays.length === 0 || userRelays[0].writeRelays.length === 0) {
+      if (!firstRelay || firstRelay.writeRelays.length === 0) {
         this.systemLogger.warn('ZapService', 'No outbound relays found for user');
         return null;
       }
 
-      const writeRelays = userRelays[0].writeRelays;
+      const writeRelays = firstRelay.writeRelays;
       this.systemLogger.info('ZapService', `Found ${writeRelays.length} outbound relays`);
 
       // Step 2: Fetch Kind 0 (profile) from user's outbound relays
@@ -350,6 +361,10 @@ export class ZapService {
 
       // Step 3: Parse profile content
       const latestProfile = profiles.sort((a, b) => b.created_at - a.created_at)[0];
+      if (!latestProfile) {
+        this.systemLogger.warn('ZapService', 'No profile found after sort');
+        return null;
+      }
       const profileData = JSON.parse(latestProfile.content);
 
       this.systemLogger.info('ZapService', `Profile fetched from user's relays`);
@@ -540,14 +555,17 @@ export class ZapService {
           }],
           {
             onEvent: (event: NostrEvent) => {
+              const eventId = event.id;
+              if (!eventId) return;
+
               // Security: Verify signature before processing (external source)
               const verification = verificationService.verifyEvent(event);
               if (!verification.valid) {
-                this.systemLogger.warn('ZapService', `Rejected invalid zap receipt ${event.id.slice(0, 8)}: ${verification.error}`);
+                this.systemLogger.warn('ZapService', `Rejected invalid zap receipt ${eventId.slice(0, 8)}: ${verification.error}`);
                 return;
               }
 
-              this.systemLogger.info('ZapService', `Received zap receipt event ${event.id.slice(0, 8)}`);
+              this.systemLogger.info('ZapService', `Received zap receipt event ${eventId.slice(0, 8)}`);
               // Extract bolt11 invoice from zap receipt
               const boltTag = event.tags.find(tag => tag[0] === 'bolt11');
               if (boltTag && boltTag[1] === invoice) {

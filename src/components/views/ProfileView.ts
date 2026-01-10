@@ -41,7 +41,7 @@ import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
-dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
+dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
 
 // Shared promise map to prevent duplicate profile loads on rapid navigation
 type ProfileLoadResult = {
@@ -267,7 +267,7 @@ export class ProfileView extends View {
     try {
       const count = await this.followerCountService.getFollowerCount(
         this.pubkey,
-        (currentCount, relay) => {
+        (currentCount, _relay) => {
           // Update UI after each relay
           this.followerCount = currentCount;
           this.updateFollowerDisplay();
@@ -347,7 +347,7 @@ export class ProfileView extends View {
     }
 
     // Format Hijri date
-    const hijriDate = dayjs(date).toCalendarSystem('hijri');
+    const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
     const hijriFormatted = `${hijriDate.date()}. ${HIJRI_MONTHS[hijriDate.month()]} ${hijriDate.year()}`;
 
     if (calendarSystem === 'hijri') {
@@ -411,7 +411,7 @@ export class ProfileView extends View {
     const about = profile.about || '';
     const website = profile.website || '';
     const banner = profile.banner || '';
-    const picture = profile.picture || this.userProfileService.getProfilePicture(this.pubkey);
+    const picture = profile.picture || this.userProfileService.getProfilePicture(this.pubkey) || '';
     // Multiple NIP-05: prefer nip05s from tags, fallback to single nip05 from content
     const nip05s = profile.nip05s && profile.nip05s.length > 0
       ? profile.nip05s
@@ -620,7 +620,7 @@ export class ProfileView extends View {
 
     editBtn.addEventListener('click', async () => {
       // Check authentication with AuthGuard
-      const isAuthenticated = await AuthGuard.requireAuth();
+      const isAuthenticated = AuthGuard.requireAuth('edit profile');
       if (!isAuthenticated) return;
 
       // Open profile edit modal
@@ -778,7 +778,7 @@ export class ProfileView extends View {
       e.preventDefault();
 
       // Check authentication
-      const isAuthenticated = await AuthGuard.requireAuth();
+      const isAuthenticated = AuthGuard.requireAuth('add to tribe');
       if (!isAuthenticated) return;
 
       // Get all tribes
