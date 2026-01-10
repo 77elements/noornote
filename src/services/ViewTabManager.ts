@@ -86,7 +86,7 @@ export class ViewTabManager {
     const tab: ViewTab = {
       id: tabId,
       type,
-      param,
+      ...(param !== undefined && { param }),
       label,
       viewInstance,
       isActive: true
@@ -117,10 +117,12 @@ export class ViewTabManager {
 
       if (currentIndex !== -1) {
         // Try next tab (right), or previous (left), or system-log
-        if (currentIndex < allTabs.length - 1) {
-          nextTabId = allTabs[currentIndex + 1].id;
-        } else if (currentIndex > 0) {
-          nextTabId = allTabs[currentIndex - 1].id;
+        const nextTab = allTabs[currentIndex + 1];
+        const prevTab = allTabs[currentIndex - 1];
+        if (currentIndex < allTabs.length - 1 && nextTab) {
+          nextTabId = nextTab.id;
+        } else if (currentIndex > 0 && prevTab) {
+          nextTabId = prevTab.id;
         } else {
           nextTabId = 'system-log';
         }
@@ -282,8 +284,10 @@ export class ViewTabManager {
   /**
    * Fetch and update tab label + profile pic asynchronously
    * Updates placeholder with username/note preview + avatar
+   * @unused Reserved for future network-based label fetching (currently using extractProfileDataFromView)
    */
-  private async fetchAndUpdateLabel(tab: ViewTab): Promise<void> {
+  // @ts-expect-error Reserved for future use
+  private async _fetchAndUpdateLabel(tab: ViewTab): Promise<void> {
     let finalLabel = tab.label;
     let pubkey: string | undefined;
     let profilePicUrl: string | undefined;
@@ -296,7 +300,7 @@ export class ViewTabManager {
           pubkey = noteEvent.pubkey;
           const profile = await this.userProfileService.getUserProfile(noteEvent.pubkey);
           profilePicUrl = profile.picture;
-          const preview = noteEvent.content.split('\n')[0].substring(0, 30);
+          const preview = (noteEvent.content.split('\n')[0] ?? '').substring(0, 30);
           finalLabel = `@${profile.username || 'unknown'}: ${preview}...`;
         }
       } else if (tab.type === 'profile') {
@@ -317,8 +321,8 @@ export class ViewTabManager {
 
       // Update tab state
       tab.label = finalLabel;
-      tab.pubkey = pubkey;
-      tab.profilePicUrl = profilePicUrl;
+      if (pubkey !== undefined) tab.pubkey = pubkey;
+      if (profilePicUrl !== undefined) tab.profilePicUrl = profilePicUrl;
 
       // Emit event for MainLayout to update label + profile pic
       this.eventBus.emit('view-tab:label-updated', {
@@ -346,7 +350,8 @@ export class ViewTabManager {
         5000 // 5s timeout
       );
 
-      return events.length > 0 ? events[0] : null;
+      const firstEvent = events[0];
+      return firstEvent !== undefined ? firstEvent : null;
     } catch (error) {
       console.warn('Failed to fetch note event:', error);
       return null;

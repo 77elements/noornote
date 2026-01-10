@@ -404,6 +404,10 @@ export class MuteListView extends View {
     }
   }
 
+  public getElement(): HTMLElement {
+    return this.container;
+  }
+
   public destroy(): void {
     this.container.remove();
   }

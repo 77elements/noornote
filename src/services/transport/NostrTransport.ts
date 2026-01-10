@@ -8,7 +8,7 @@
 
 import NDK, { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 import NDKCacheDexie from '@nostr-dev-kit/ndk-cache-dexie';
-import type { NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
+import type { NDKCacheAdapter, NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { NDKCacheAdapterDexieOptions } from '@nostr-dev-kit/ndk-cache-dexie';
 import { RelayConfig } from '../RelayConfig';
@@ -70,10 +70,9 @@ export class NostrTransport {
     const cacheConfig = getNDKCacheConfig();
     this.ndk = new NDK({
       explicitRelayUrls: this.relayConfig.getReadRelays(),
-      cacheAdapter: new NDKCacheDexie(cacheConfig),
+      cacheAdapter: new NDKCacheDexie(cacheConfig) as unknown as NDKCacheAdapter,
       enableOutboxModel: false, // Disable for now, can enable later for performance
-      autoConnectUserRelays: false, // We manage relays explicitly via RelayConfig
-      autoFetchUserMutelist: false // We manage mute list explicitly via MuteOrchestrator
+      autoConnectUserRelays: false // We manage relays explicitly via RelayConfig
     });
 
     this.systemLogger.info('NostrTransport', 'NDK initialized, ready to connect');

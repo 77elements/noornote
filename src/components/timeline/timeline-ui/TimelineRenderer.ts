@@ -55,7 +55,7 @@ export class TimelineRenderer {
       }
     } catch (error) {
       console.error('❌ Error rendering notes:', error);
-      console.error('Stack trace:', error.stack);
+      if (error instanceof Error) console.error('Stack trace:', error.stack);
       // Show error state - no fallback needed, NoteUI is single source of truth
       this.uiStateHandler.showErrorState('Failed to render timeline events');
     }

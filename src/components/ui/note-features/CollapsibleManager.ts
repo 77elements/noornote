@@ -23,7 +23,7 @@ export class CollapsibleManager {
     const eventBus = EventBus.getInstance();
 
     // Listen for post truncation setting changes
-    eventBus.on('settings:post-truncation-changed', (data: { disabled: boolean }) => {
+    eventBus.on('settings:post-truncation-changed', (_data: { disabled: boolean }) => {
       // Update all existing collapsible wrappers
       const wrappers = document.querySelectorAll('.collapsible-wrapper');
       const buttons = document.querySelectorAll('.btn--show-more');

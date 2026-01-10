@@ -30,8 +30,8 @@ export function renderNoteContent(content: ProcessedNoteContent, event?: NostrEv
     ${renderMediaContent({
       media: content.media,
       isNSFW,
-      eventId: event?.id,
-      authorPubkey: event?.pubkey
+      ...(event?.id && { eventId: event.id }),
+      ...(event?.pubkey && { authorPubkey: event.pubkey })
     })}
     ${renderQuotedReferencesPlaceholder(content.quotedReferences)}
   `;

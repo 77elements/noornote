@@ -72,12 +72,20 @@ export class SignatureVerificationService {
         this.failureCount++;
 
         // Double-check: Recalculate ID to provide detailed error message
-        const calculatedId = calculateEventHash(event);
+        // Cast to UnsignedEvent fields which calculateEventHash needs
+        const calculatedId = calculateEventHash({
+          kind: event.kind ?? 1,
+          tags: event.tags,
+          content: event.content,
+          created_at: event.created_at,
+          pubkey: event.pubkey
+        });
         const isIdMismatch = calculatedId !== event.id;
+        const eventIdPrefix = event.id?.slice(0, 8) ?? 'unknown';
 
         this.systemLogger.warn(
           'SignatureVerificationService',
-          `⚠️ Invalid ${isIdMismatch ? 'event ID' : 'signature'} for event ${event.id.slice(0, 8)} from pubkey ${event.pubkey.slice(0, 8)}`
+          `⚠️ Invalid ${isIdMismatch ? 'event ID' : 'signature'} for event ${eventIdPrefix} from pubkey ${event.pubkey.slice(0, 8)}`
         );
 
         return {
@@ -87,11 +95,12 @@ export class SignatureVerificationService {
         };
       }
 
-      // Event is cryptographically valid
-      return {
-        valid: true,
-        calculatedId: event.id // Already verified to be correct
-      };
+      // Event is cryptographically valid - id is guaranteed to exist after successful verification
+      const result: VerificationResult = { valid: true };
+      if (event.id) {
+        result.calculatedId = event.id;
+      }
+      return result;
     } catch (error) {
       this.failureCount++;
       this.systemLogger.error('SignatureVerificationService', `Verification error: ${error}`);
@@ -113,7 +122,11 @@ export class SignatureVerificationService {
 
     for (const event of events) {
       const result = this.verifyEvent(event);
-      results.set(event.id, result);
+      // Use calculated ID from result if available, otherwise use event.id or skip
+      const eventId = result.calculatedId ?? event.id;
+      if (eventId) {
+        results.set(eventId, result);
+      }
     }
 
     return results;

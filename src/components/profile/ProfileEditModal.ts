@@ -109,7 +109,7 @@ export class ProfileEditModal {
 
   private renderBannerUploader(): string {
     this.bannerUploader = new ImageUploader({
-      currentUrl: this.currentProfile.banner,
+      ...(this.currentProfile.banner && { currentUrl: this.currentProfile.banner }),
       onUploadSuccess: (url) => {
         this.currentProfile.banner = url;
         this.markAsChanged();
@@ -127,7 +127,7 @@ export class ProfileEditModal {
 
   private renderAvatarUploader(): string {
     this.avatarUploader = new ImageUploader({
-      currentUrl: this.currentProfile.picture,
+      ...(this.currentProfile.picture && { currentUrl: this.currentProfile.picture }),
       onUploadSuccess: (url) => {
         this.currentProfile.picture = url;
         this.markAsChanged();
@@ -265,8 +265,10 @@ export class ProfileEditModal {
   }
 
   private handleInputChange(input: HTMLInputElement | HTMLTextAreaElement): void {
-    const fieldName = input.getAttribute('data-input') as keyof ProfileMetadata;
-    this.currentProfile[fieldName] = input.value;
+    const fieldName = input.getAttribute('data-input');
+    if (fieldName && fieldName in this.currentProfile) {
+      (this.currentProfile as Record<string, string>)[fieldName] = input.value;
+    }
     this.markAsChanged();
   }
 

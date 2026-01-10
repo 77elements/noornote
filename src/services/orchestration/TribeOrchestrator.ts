@@ -237,11 +237,16 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
   public async getAllMembersWithMetadata(_pubkey: string): Promise<MemberWithMetadata[]> {
     try {
       const items = await this.ensureBrowserItemsLoaded();
-      const result = items.map(item => ({
-        pubkey: item.pubkey,
-        isPrivate: item.isPrivate || false,
-        category: item.category
-      }));
+      const result: MemberWithMetadata[] = items.map(item => {
+        const member: MemberWithMetadata = {
+          pubkey: item.pubkey,
+          isPrivate: item.isPrivate || false
+        };
+        if (item.category !== undefined) {
+          member.category = item.category;
+        }
+        return member;
+      });
 
       this.systemLogger.info('TribeOrchestrator',
         `Loaded ${result.length} members with metadata from browserItems`
@@ -351,12 +356,17 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       // Build encrypted content for private members
       let content = '';
       if (set.privateMembers.length > 0) {
-        const privateItems: TribeMember[] = set.privateMembers.map(m => ({
-          id: m.pubkey,
-          pubkey: m.pubkey,
-          relay: m.relay,
-          isPrivate: true
-        }));
+        const privateItems: TribeMember[] = set.privateMembers.map(m => {
+          const member: TribeMember = {
+            id: m.pubkey,
+            pubkey: m.pubkey,
+            isPrivate: true
+          };
+          if (m.relay !== undefined) {
+            member.relay = m.relay;
+          }
+          return member;
+        });
         content = await this.encryptPrivateItems(privateItems, currentUser.pubkey);
       }
 
@@ -461,7 +471,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
     // Helper to add member to set
     const addMemberToSet = (set: TribeSet, item: TribeMember): void => {
-      const memberTag = { pubkey: item.pubkey, relay: item.relay };
+      const memberTag: { pubkey: string; relay?: string } = { pubkey: item.pubkey };
+      if (item.relay !== undefined) {
+        memberTag.relay = item.relay;
+      }
       if (item.isPrivate) {
         set.privateMembers.push(memberTag);
       } else {
@@ -505,14 +518,16 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
     // Build setOrder (root first, then by folder order)
     const setOrder = ['', ...existingFolders.map(f => f.name)];
+    const now = Math.floor(Date.now() / 1000);
 
     return {
       version: 1,
       sets: Array.from(setsMap.values()),
       metadata: {
         setOrder,
-        lastModified: Math.floor(Date.now() / 1000)
-      }
+        lastModified: now
+      },
+      lastModified: now
     };
   }
 
@@ -545,6 +560,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
           .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
           .forEach(t => {
             const coordinate = t[1];
+            if (!coordinate) return;
             const existingTimestamp = deletedCoordinates.get(coordinate);
             // Keep newest deletion timestamp if multiple deletions exist
             if (!existingTimestamp || deletionEvent.created_at > existingTimestamp) {
@@ -610,19 +626,25 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
       let folderOrder: string[] = [];
       if (orderEvents.length > 0) {
-        const orderEvent = orderEvents.sort((a, b) => b.created_at - a.created_at)[0];
-        folderOrder = orderEvent.tags
-          .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
-          .map(t => {
-            const parts = t[1].split(':');
-            // Remove "tribes/" prefix from d-tag: "tribes/Devs" → "Devs"
-            const dTag = parts[2] || '';
-            return dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
-          });
+        const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);
+        const orderEvent = sortedOrderEvents[0];
+        if (orderEvent) {
+          folderOrder = orderEvent.tags
+            .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
+            .map(t => {
+              const tagValue = t[1];
+              if (!tagValue) return '';
+              const parts = tagValue.split(':');
+              // Remove "tribes/" prefix from d-tag: "tribes/Devs" → "Devs"
+              const dTag = parts[2] || '';
+              return dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
+            })
+            .filter(d => d !== '');
 
-        this.systemLogger.info('TribeOrchestrator',
-          `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`
-        );
+          this.systemLogger.info('TribeOrchestrator',
+            `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`
+          );
+        }
       }
 
       // Build categories array in correct order (WITH "tribes/" prefix for return value)

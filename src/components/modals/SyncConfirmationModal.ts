@@ -82,8 +82,11 @@ export class SyncConfirmationModal<T> {
     this.resolvedAddedItems = await Promise.all(
       added.map(async item => {
         const name = await Promise.resolve(getDisplayName(item));
-        const html = renderItemHtml ? await Promise.resolve(renderItemHtml(item)) : undefined;
-        return { name, html };
+        const result: ResolvedItem = { name };
+        if (renderItemHtml) {
+          result.html = await Promise.resolve(renderItemHtml(item));
+        }
+        return result;
       })
     );
 
@@ -91,8 +94,11 @@ export class SyncConfirmationModal<T> {
     this.resolvedRemovedItems = await Promise.all(
       removed.map(async item => {
         const name = await Promise.resolve(getDisplayName(item));
-        const html = renderItemHtml ? await Promise.resolve(renderItemHtml(item)) : undefined;
-        return { name, html };
+        const result: ResolvedItem = { name };
+        if (renderItemHtml) {
+          result.html = await Promise.resolve(renderItemHtml(item));
+        }
+        return result;
       })
     );
   }

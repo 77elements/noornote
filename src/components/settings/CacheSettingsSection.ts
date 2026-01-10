@@ -309,7 +309,7 @@ export class CacheSettingsSection extends SettingsSection {
         </div>
       `,
       width: '500px',
-      closeOnBackdrop: true,
+      closeOnOverlay: true,
       closeOnEsc: true
     });
 
@@ -334,7 +334,7 @@ export class CacheSettingsSection extends SettingsSection {
     ) as NodeListOf<HTMLInputElement>;
 
     if (checkboxes.length === 0) {
-      ToastService.getInstance().show('Please select at least one table to clear', 'warning');
+      ToastService.show('Please select at least one table to clear', 'warning');
       return;
     }
 
@@ -355,9 +355,9 @@ export class CacheSettingsSection extends SettingsSection {
           }
 
           checkboxes.forEach(cb => cb.checked = false);
-          ToastService.getInstance().show(`Successfully cleared ${tableNames.length} cache table(s)`, 'success');
+          ToastService.show(`Successfully cleared ${tableNames.length} cache table(s)`, 'success');
         } catch (error) {
-          ErrorService.getInstance().handleError(error, 'Failed to clear cache tables');
+          ErrorService.handle(error, 'CacheSettingsSection.handleClearSelected', true, 'Failed to clear cache tables');
         }
       }
     );
@@ -387,10 +387,10 @@ export class CacheSettingsSection extends SettingsSection {
             db.relayStatus.clear()
           ]);
 
-          ToastService.getInstance().show('Cache cleared successfully. Reloading...', 'success');
+          ToastService.show('Cache cleared successfully. Reloading...', 'success');
           setTimeout(() => window.location.reload(), 1000);
         } catch (error) {
-          ErrorService.getInstance().handleError(error, 'Failed to clear cache');
+          ErrorService.handle(error, 'CacheSettingsSection.handleClearAll', true, 'Failed to clear cache');
         }
       }
     );

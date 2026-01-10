@@ -58,6 +58,7 @@ export function npubToUsername(
 function npubToUsernameSimple(npub: string): string {
   try {
     const hexPubkey = npubToHex(npub);
+    if (!hexPubkey) return npub;
 
     // Try to get cached username (synchronous)
     const userProfileService = UserProfileService.getInstance();
@@ -87,6 +88,7 @@ function npubToUsernameSimple(npub: string): string {
 function npubToUsernameHTMLSingle(npub: string, profileResolver: ProfileResolver): string {
   try {
     const hexPubkey = npubToHex(npub);
+    if (!hexPubkey) return npub;
     const profile = profileResolver(hexPubkey);
     const username = profile?.display_name || profile?.name || npub;
     const escapedUsername = escapeHtml(username);
@@ -139,6 +141,7 @@ function npubToUsernameHTMLMulti(
     try {
       const npub = nprofileToNpub(nprofile);
       const hexPubkey = npubToHex(npub);
+      if (!hexPubkey) return fullMatch;
       const profile = profileResolver(hexPubkey);
 
       if (profile?.name || profile?.display_name) {
@@ -171,6 +174,7 @@ function npubToUsernameHTMLMulti(
 
     try {
       const hexPubkey = npubToHex(npub);
+      if (!hexPubkey) return fullMatch;
       const profile = profileResolver(hexPubkey);
 
       if (profile?.name || profile?.display_name) {

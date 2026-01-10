@@ -104,8 +104,9 @@ export class FollowerCountService {
       });
 
       // Update UI after each batch completes
-      if (onUpdate) {
-        onUpdate(followers.size, batch[batch.length - 1]);
+      const lastRelay = batch[batch.length - 1];
+      if (onUpdate && lastRelay) {
+        onUpdate(followers.size, lastRelay);
       }
     }
 

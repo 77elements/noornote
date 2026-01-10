@@ -13,9 +13,9 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 interface OldBookmarkFileData {
   items: BookmarkItem[];
-  folders?: BookmarkFolder[];
-  folderAssignments?: { bookmarkId: string; folderId: string; order: number }[];
-  rootOrder?: { type: 'folder' | 'bookmark'; id: string }[];
+  folders?: BookmarkFolder[] | undefined;
+  folderAssignments?: { bookmarkId: string; folderId: string; order: number }[] | undefined;
+  rootOrder?: { type: 'folder' | 'bookmark'; id: string }[] | undefined;
   lastModified: number;
 }
 
@@ -78,7 +78,8 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
   }
 
   const addItemToSet = (set: BookmarkSet, item: BookmarkItem) => {
-    const tag: BookmarkTag = { type: item.type, value: item.value, description: item.description };
+    const tag: BookmarkTag = { type: item.type, value: item.value };
+    if (item.description !== undefined) tag.description = item.description;
     (item.isPrivate ? set.privateTags : set.publicTags).push(tag);
   };
 
@@ -166,8 +167,10 @@ export function fromNostrEvents(
 
       const publicTags: BookmarkTag[] = [];
       for (const tag of event.tags) {
-        if (['e', 'a', 't', 'r'].includes(tag[0]) && tag[1]) {
-          const bookmarkTag: BookmarkTag = { type: tag[0] as 'e' | 'a' | 't' | 'r', value: tag[1] };
+        const tagType = tag[0];
+        const tagValue = tag[1];
+        if (tagType && tagValue && ['e', 'a', 't', 'r'].includes(tagType)) {
+          const bookmarkTag: BookmarkTag = { type: tagType as 'e' | 'a' | 't' | 'r', value: tagValue };
           if (tag[2]) bookmarkTag.description = tag[2];
           publicTags.push(bookmarkTag);
         }
@@ -258,7 +261,7 @@ export function removeBookmark(data: BookmarkSetData, value: string): void {
 }
 
 export function moveBookmark(data: BookmarkSetData, value: string, targetDTag: string): void {
-  let foundTag: BookmarkTag | null = null;
+  let foundTag: BookmarkTag | undefined;
   let wasPrivate = false;
 
   for (const set of data.sets) {
@@ -296,7 +299,8 @@ export function deleteSet(data: BookmarkSetData, dTag: string): void {
   const set = data.sets.find(s => s.d === dTag);
   if (!set) return;
 
-  const rootSet = data.sets.find(s => s.d === '') || data.sets[0];
+  const rootSet = data.sets.find(s => s.d === '');
+  if (!rootSet) return;
   rootSet.publicTags.push(...set.publicTags);
   rootSet.privateTags.push(...set.privateTags);
 

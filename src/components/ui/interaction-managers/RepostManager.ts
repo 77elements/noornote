@@ -167,9 +167,14 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
         });
       } else {
         // For regular notes, use nevent encoding
+        const eventId = unwrappedEvent.id;
+        if (!eventId) {
+          ToastService.show('Invalid event', 'error');
+          return;
+        }
         const { encodeNevent } = await import('../../../helpers/encodeNevent');
         reference = encodeNevent(
-          unwrappedEvent.id,
+          eventId,
           writeRelays,
           unwrappedEvent.pubkey
         );

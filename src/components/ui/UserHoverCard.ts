@@ -9,7 +9,7 @@ import { ProfileFollowManager } from '../profile/ProfileFollowManager';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { hexToNpub, npubToHex } from '../../helpers/nip19';
-import type { UserProfile } from '../../types/UserProfile';
+import type { UserProfile } from '../../services/UserProfileService';
 
 export class UserHoverCard {
   private static instance: UserHoverCard | null = null;
@@ -167,15 +167,16 @@ export class UserHoverCard {
 
     // Render follow button
     const actionsContainer = this.card.querySelector('.user-hover-card__actions');
-    if (actionsContainer) {
+    if (actionsContainer && this.card) {
+      const card = this.card;
       const followManager = new ProfileFollowManager(pubkey);
       await followManager.checkFollowStatus();
       actionsContainer.innerHTML = followManager.renderFollowButton();
-      followManager.setupFollowButton(this.card, () => {
+      followManager.setupFollowButton(card, () => {
         // Re-render button when follow state changes
-        if (actionsContainer) {
+        if (actionsContainer && card.isConnected) {
           actionsContainer.innerHTML = followManager.renderFollowButton();
-          followManager.setupFollowButton(this.card, () => {});
+          followManager.setupFollowButton(card, () => {});
         }
       });
     }

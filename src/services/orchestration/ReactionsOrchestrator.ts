@@ -314,7 +314,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
       if (!match) return 0;
 
-      const amount = parseInt(match[2]);
+      const amount = parseInt(match[2]!);
       const multiplier = match[3]?.toLowerCase();
 
       // Convert to millisats
@@ -456,7 +456,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     const sub = await this.transport.subscribe(relays, filters, {
       onEvent: (event: NostrEvent) => {
-        if (seenReplyIds.has(event.id)) return;
+        if (!event.id || seenReplyIds.has(event.id)) return;
 
         // Verify the event actually references our note
         const referencesNote = isArticle
@@ -495,7 +495,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     const sub = await this.transport.subscribe(relays, filters, {
       onEvent: (event: NostrEvent) => {
-        if (seenZapIds.has(event.id)) return;
+        if (!event.id || seenZapIds.has(event.id)) return;
 
         const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
         if (bolt11Tag?.[1]) {

@@ -210,12 +210,18 @@ export class TribeManager {
       // Process in sorted order (newest first)
       for (let i = 0; i < sortedMembers.length; i++) {
         const member = sortedMembers[i];
+        if (!member) continue;
         const profile = profiles[i];
-        this.membersCache.set(member.pubkey, {
-          ...member,
-          profile: profile || undefined,
+        const memberWithProfile: MemberWithProfile = {
+          id: member.id,
+          pubkey: member.pubkey,
           isPrivate: (member as TribeMember & { isPrivate?: boolean }).isPrivate || false
-        });
+        };
+        if (member.relay) memberWithProfile.relay = member.relay;
+        if (member.addedAt) memberWithProfile.addedAt = member.addedAt;
+        if (member.category) memberWithProfile.category = member.category;
+        if (profile) memberWithProfile.profile = profile;
+        this.membersCache.set(member.pubkey, memberWithProfile);
 
         // Ensure folder assignment exists
         this.folderService.ensureMemberAssignment(member.pubkey);
@@ -342,7 +348,7 @@ export class TribeManager {
       const memberIds = this.folderService.getMembersInFolder(this.currentFolderId);
       for (const memberId of memberIds) {
         // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
-        const pubkey = memberId.includes('_') ? memberId.split('_')[0] : memberId;
+        const pubkey = memberId.includes('_') ? memberId.split('_')[0] ?? memberId : memberId;
         const member = this.membersCache.get(pubkey);
         if (member) {
           const card = await this.createMemberCard(member);
@@ -364,7 +370,7 @@ export class TribeManager {
           }
         } else if (item.type === 'member') {
           // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
-          const pubkey = item.id.includes('_') ? item.id.split('_')[0] : item.id;
+          const pubkey = item.id.includes('_') ? item.id.split('_')[0] ?? item.id : item.id;
           const member = this.membersCache.get(pubkey);
           // Only show if in root (no folder assignment)
           const folderId = this.folderService.getMemberFolder(item.id);
@@ -678,7 +684,6 @@ export class TribeManager {
     if (!folder) return;
 
     const modal = new EditFolderModal({
-      folderId: folder.id,
       currentName: folder.name,
       onSave: (newName: string) => {
         this.folderService.renameFolder(folderId, newName);
@@ -1047,8 +1052,8 @@ export class TribeManager {
     try {
       ToastService.show('Syncing from relays...', 'info');
 
-      const result = await this.listSyncManager.syncFromRelays(currentUser.pubkey);
-      const added = result.added || 0;
+      const result = await this.listSyncManager.syncFromRelays();
+      const added = result.diff.added.length;
 
       // Apply folder assignments from relay categories
       if (result.categoryAssignments) {

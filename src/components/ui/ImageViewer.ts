@@ -46,7 +46,7 @@ export class ImageViewer {
   private isDragging: boolean = false;
   private dragStart = { x: 0, y: 0 };
   private imagePosition = { x: 0, y: 0 };
-  private sourceEvent?: { eventId: string; authorPubkey: string; isNSFW: boolean };
+  private sourceEvent: { eventId: string; authorPubkey: string; isNSFW: boolean } | undefined;
 
   // Bound event handlers for proper cleanup
   private boundMouseMove: ((e: MouseEvent) => void) | null = null;
@@ -131,6 +131,10 @@ export class ImageViewer {
    */
   private async download(): Promise<void> {
     const imageUrl = this.images[this.currentIndex];
+    if (!imageUrl) {
+      ToastService.show('No image to download', 'error');
+      return;
+    }
     const defaultFileName = imageUrl.split('/').pop() || 'image.jpg';
 
     try {
@@ -318,8 +322,9 @@ export class ImageViewer {
     if (!this.container) return;
 
     const img = this.container.querySelector('.image-viewer__image') as HTMLImageElement;
-    if (img) {
-      img.src = this.images[this.currentIndex];
+    const currentSrc = this.images[this.currentIndex];
+    if (img && currentSrc) {
+      img.src = currentSrc;
       img.style.transform = `scale(${this.zoomLevel}) translate(${this.imagePosition.x}px, ${this.imagePosition.y}px)`;
     }
 

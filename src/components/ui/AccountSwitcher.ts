@@ -97,9 +97,11 @@ export class AccountSwitcher {
         this.updateDisplay();
 
         // Also update account storage with profile info
+        const displayName = profile.name || profile.display_name;
+        const avatarUrl = profile.picture;
         this.accountStorage.updateAccount(this.options.pubkey, {
-          displayName: profile.name || profile.display_name,
-          avatarUrl: profile.picture
+          ...(displayName && { displayName }),
+          ...(avatarUrl && { avatarUrl })
         });
       }
     );
@@ -211,7 +213,7 @@ export class AccountSwitcher {
         .map(acc => ({
           pubkey: acc.pubkey,
           npub: acc.npub,
-          displayName: acc.displayName,
+          ...(acc.displayName && { displayName: acc.displayName }),
           authMethod: 'nip46'
         }));
     }
@@ -324,7 +326,7 @@ export class AccountSwitcher {
 
     const modal = new KeySignerPasswordModal({
       npub: account.npub,
-      displayName: account.displayName,
+      ...(account.displayName && { displayName: account.displayName }),
       onSuccess: async () => {
         // NoorSigner has switched accounts - now re-authenticate to update AuthService
         await this.authService.authenticateWithKeySigner();

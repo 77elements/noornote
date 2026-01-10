@@ -53,8 +53,12 @@ export class Timeline extends View {
   constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
     this.userPubkey = userPubkey;
-    this.filterAuthorPubkey = filterAuthorPubkey;
-    this.tribePubkeys = tribePubkeys;
+    if (filterAuthorPubkey !== undefined) {
+      this.filterAuthorPubkey = filterAuthorPubkey;
+    }
+    if (tribePubkeys !== undefined) {
+      this.tribePubkeys = tribePubkeys;
+    }
     this.feedOrchestrator = FeedOrchestrator.getInstance();
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
@@ -422,13 +426,19 @@ export class Timeline extends View {
       }
 
       // Use FeedOrchestrator for loading
-      const result = await this.feedOrchestrator.loadInitialFeed({
+      const feedRequest: Parameters<typeof this.feedOrchestrator.loadInitialFeed>[0] = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
-        timeWindowHours: 1, // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
-        specificRelay: this.stateManager.getSelectedRelay() || undefined,
-        exemptFromMuteFilter: this.filterAuthorPubkey // Don't filter profile user's notes in ProfileView
-      });
+        timeWindowHours: 1 // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
+      };
+      const selectedRelay = this.stateManager.getSelectedRelay();
+      if (selectedRelay) {
+        feedRequest.specificRelay = selectedRelay;
+      }
+      if (this.filterAuthorPubkey) {
+        feedRequest.exemptFromMuteFilter = this.filterAuthorPubkey; // Don't filter profile user's notes in ProfileView
+      }
+      const result = await this.feedOrchestrator.loadInitialFeed(feedRequest);
 
       this.stateManager.setEvents(result.events);
 

@@ -521,8 +521,8 @@ export class PostNoteModal {
       let quotedEvent: { eventId: string; authorPubkey: string; relayHint?: string } | undefined;
       let quotedArticle: { addressableId: string; authorPubkey: string; relayHint?: string } | undefined;
 
-      if (quotedRefs.length > 0) {
-        const ref = quotedRefs[0];
+      const ref = quotedRefs[0];
+      if (ref) {
         const cleanRef = ref.id.replace(/^nostr:/, '');
 
         try {
@@ -530,18 +530,20 @@ export class PostNoteModal {
 
           if (decoded.type === 'nevent') {
             const neventData = decoded.data as { id: string; author?: string; relays?: string[] };
+            const relayHint = neventData.relays?.[0];
             quotedEvent = {
               eventId: neventData.id,
               authorPubkey: neventData.author || '',
-              relayHint: neventData.relays?.[0]
+              ...(relayHint ? { relayHint } : {})
             };
           } else if (decoded.type === 'naddr') {
             const naddrData = decoded.data as { kind: number; pubkey: string; identifier: string; relays?: string[] };
             const addressableId = `${naddrData.kind}:${naddrData.pubkey}:${naddrData.identifier}`;
+            const relayHint = naddrData.relays?.[0];
             quotedArticle = {
               addressableId,
               authorPubkey: naddrData.pubkey,
-              relayHint: naddrData.relays?.[0]
+              ...(relayHint ? { relayHint } : {})
             };
           }
         } catch (error) {
@@ -553,9 +555,9 @@ export class PostNoteModal {
         content: this.content,
         relays: Array.from(this.selectedRelays),
         contentWarning: this.isNSFW,
-        pollData: this.pollData || undefined,
-        quotedEvent,
-        quotedArticle
+        ...(this.pollData ? { pollData: this.pollData } : {}),
+        ...(quotedEvent ? { quotedEvent } : {}),
+        ...(quotedArticle ? { quotedArticle } : {})
       });
 
       if (success) {

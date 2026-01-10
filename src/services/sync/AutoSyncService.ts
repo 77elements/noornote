@@ -31,7 +31,6 @@ import { isEasyMode } from '../../helpers/ListSyncMode';
 import type { FollowItem } from '../storage/FollowFileStorage';
 import type { BookmarkItem } from '../storage/BookmarkFileStorage';
 import type { TribeMember } from '../storage/TribeFileStorage';
-import type { MuteItem } from '../../types/BaseListItem';
 
 type ListType = 'follows' | 'bookmarks' | 'mutes' | 'tribes';
 
@@ -67,7 +66,7 @@ export class AutoSyncService {
 
   private followSyncManager: ListSyncManager<FollowItem>;
   private bookmarkSyncManager: ListSyncManager<BookmarkItem>;
-  private muteSyncManager: ListSyncManager<MuteItem>;
+  private muteSyncManager: ListSyncManager<string>;
   private tribeSyncManager: ListSyncManager<TribeMember>;
 
   // Debounce timers for relay sync
@@ -318,10 +317,13 @@ export class AutoSyncService {
     }
 
     // Browser is empty - use RestoreListsService cascading restore
-    const result = await this.restoreService.restoreIfEmpty(
+    // Type assertion needed because adapters return different item types per list
+    type ListItem = FollowItem | BookmarkItem | string | TribeMember;
+    const result = await this.restoreService.restoreIfEmpty<ListItem>(
       manager,
-      () => adapter.getBrowserItems(),
-      (items) => adapter.setBrowserItems(items),
+      () => adapter.getBrowserItems() as ListItem[],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (items) => (adapter as any).setBrowserItems(items),
       this.getDisplayNameForListType(listType)
     );
 
@@ -341,17 +343,18 @@ export class AutoSyncService {
 
   /**
    * Get the sync manager for a list type
+   * Note: MuteStorageAdapter uses string[] (pubkeys) not MuteItem[]
    */
-  private getManagerForListType(listType: ListType): ListSyncManager<FollowItem | BookmarkItem | MuteItem | TribeMember> {
+  private getManagerForListType(listType: ListType): ListSyncManager<FollowItem | BookmarkItem | string | TribeMember> {
     switch (listType) {
       case 'follows':
-        return this.followSyncManager as ListSyncManager<FollowItem | BookmarkItem | MuteItem | TribeMember>;
+        return this.followSyncManager as ListSyncManager<FollowItem | BookmarkItem | string | TribeMember>;
       case 'bookmarks':
-        return this.bookmarkSyncManager as ListSyncManager<FollowItem | BookmarkItem | MuteItem | TribeMember>;
+        return this.bookmarkSyncManager as ListSyncManager<FollowItem | BookmarkItem | string | TribeMember>;
       case 'mutes':
-        return this.muteSyncManager as ListSyncManager<FollowItem | BookmarkItem | MuteItem | TribeMember>;
+        return this.muteSyncManager as ListSyncManager<FollowItem | BookmarkItem | string | TribeMember>;
       case 'tribes':
-        return this.tribeSyncManager as ListSyncManager<FollowItem | BookmarkItem | MuteItem | TribeMember>;
+        return this.tribeSyncManager as ListSyncManager<FollowItem | BookmarkItem | string | TribeMember>;
     }
   }
 
@@ -384,7 +387,7 @@ export class AutoSyncService {
    */
   private async emitBookmarkSyncAndSave(
     listType: ListType,
-    categoryAssignments: Map<string, string[]> | undefined,
+    categoryAssignments: Map<string, string> | undefined,
     categories: string[] | undefined
   ): Promise<void> {
     if (listType === 'bookmarks' && categoryAssignments && categoryAssignments.size > 0) {
@@ -516,11 +519,12 @@ export class AutoSyncService {
 
   /**
    * Get display name resolver for sync confirmation modal
+   * Note: For mutes, items are strings (pubkeys), not MuteItem objects
    */
-  private getDisplayNameResolver(listType: ListType): (item: FollowItem | BookmarkItem | MuteItem | TribeMember) => Promise<string> {
+  private getDisplayNameResolver(listType: ListType): (item: FollowItem | BookmarkItem | string | TribeMember) => Promise<string> {
     const userProfileService = UserProfileService.getInstance();
 
-    return async (item: FollowItem | BookmarkItem | MuteItem | TribeMember): Promise<string> => {
+    return async (item: FollowItem | BookmarkItem | string | TribeMember): Promise<string> => {
       try {
         switch (listType) {
           case 'follows': {
@@ -534,13 +538,10 @@ export class AutoSyncService {
             return bookmarkItem.id.slice(0, 12) + '...';
           }
           case 'mutes': {
-            const muteItem = item as MuteItem;
-            if (muteItem.type === 'user') {
-              const profile = await userProfileService.getUserProfile(muteItem.id);
-              return extractDisplayName(profile);
-            }
-            // Thread mute
-            return 'Thread: ' + muteItem.id.slice(0, 12) + '...';
+            // Mute items are strings (pubkeys) from MuteStorageAdapter
+            const pubkey = item as string;
+            const profile = await userProfileService.getUserProfile(pubkey);
+            return extractDisplayName(profile);
           }
           case 'tribes': {
             const tribeItem = item as TribeMember;
@@ -552,7 +553,10 @@ export class AutoSyncService {
         }
       } catch {
         // Fallback to ID
-        const id = (item as FollowItem | TribeMember).pubkey || (item as BookmarkItem | MuteItem).id;
+        if (typeof item === 'string') {
+          return item.slice(0, 12) + '...';
+        }
+        const id = (item as FollowItem | TribeMember).pubkey || (item as BookmarkItem).id;
         return id?.slice(0, 12) + '...' || 'Unknown';
       }
     };
@@ -571,9 +575,10 @@ export class AutoSyncService {
 
   /**
    * Get HTML renderer for sync confirmation modal (for mentions with avatar)
+   * Note: For mutes, items are strings (pubkeys), not MuteItem objects
    */
-  private getItemHtmlRenderer(listType: ListType): (item: FollowItem | BookmarkItem | MuteItem | TribeMember) => Promise<string> {
-    return async (item: FollowItem | BookmarkItem | MuteItem | TribeMember): Promise<string> => {
+  private getItemHtmlRenderer(listType: ListType): (item: FollowItem | BookmarkItem | string | TribeMember) => Promise<string> {
+    return async (item: FollowItem | BookmarkItem | string | TribeMember): Promise<string> => {
       try {
         switch (listType) {
           case 'follows':
@@ -581,11 +586,9 @@ export class AutoSyncService {
           case 'tribes':
             return this.renderUserMentionWithAvatar((item as TribeMember).pubkey);
           case 'mutes': {
-            const muteItem = item as MuteItem;
-            if (muteItem.type === 'user') {
-              return this.renderUserMentionWithAvatar(muteItem.id);
-            }
-            return 'Thread: ' + muteItem.id.slice(0, 12) + '...';
+            // Mute items are strings (pubkeys) from MuteStorageAdapter
+            const pubkey = item as string;
+            return this.renderUserMentionWithAvatar(pubkey);
           }
           case 'bookmarks':
           default:

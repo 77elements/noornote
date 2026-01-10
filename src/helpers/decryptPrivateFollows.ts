@@ -136,33 +136,6 @@ export async function decryptPrivateFollows(
           }
         }
       }
-    } else if (authMethod === 'nsec') {
-      // Use nostr-tools for direct nsec decryption (NIP-44 only)
-      if (isNip04) {
-        return [];
-      }
-
-      const { nip44 } = await import('nostr-tools');
-      const { KeychainStorage } = await import('../services/KeychainStorage');
-      const { decodeNip19 } = await import('../services/NostrToolsAdapter');
-
-      const nsec = await KeychainStorage.loadNsec();
-      if (!nsec) {
-        return [];
-      }
-
-      const decoded = decodeNip19(nsec);
-      if (decoded.type !== 'nsec') {
-        return [];
-      }
-      const privateKey = decoded.data as string;
-
-      // NIP-44 conversation key requires hex bytes, not string
-      const privKeyBytes = new Uint8Array(privateKey.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-      const pubKeyBytes = new Uint8Array(authorPubkey.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-
-      const conversationKey = nip44.v2.utils.getConversationKey(privKeyBytes, pubKeyBytes);
-      plaintext = nip44.v2.decrypt(encryptedContent, conversationKey);
     } else {
       return [];
     }
@@ -181,7 +154,7 @@ export async function decryptPrivateFollows(
 
     // Extract pubkeys from ["p", "pubkey"] tags
     const pubkeys = privateTags
-      .filter(tag => Array.isArray(tag) && tag[0] === 'p' && tag[1])
+      .filter((tag): tag is [string, string, ...string[]] => Array.isArray(tag) && tag[0] === 'p' && typeof tag[1] === 'string')
       .map(tag => tag[1]);
 
     return pubkeys;

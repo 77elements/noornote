@@ -132,6 +132,7 @@ export class ProfileRecognitionOrchestrator {
 
       // Get most recent event (should only be one due to replaceable nature)
       const event = events.sort((a, b) => b.created_at - a.created_at)[0];
+      if (!event) return null;
 
       // Parse content
       const encounterData = this.parseContent(event.content);

@@ -9,7 +9,7 @@
  * - Event signing delegation
  */
 
-import { NDKNip46Signer } from '@nostr-dev-kit/ndk';
+import { NDKNip46Signer, NDKUser } from '@nostr-dev-kit/ndk';
 import { hexToNpub } from '../../helpers/nip19';
 
 const NIP46_STORAGE_KEY = 'noornote_nip46_payload';
@@ -114,6 +114,12 @@ export class Nip46SignerManager {
       });
 
       const npub = hexToNpub(pubkey);
+      if (!npub) {
+        return {
+          success: false,
+          error: 'Failed to convert pubkey to npub'
+        };
+      }
 
       // Store signer payload for session restore
       const signerPayload = this.bunkerSigner.toPayload();
@@ -234,7 +240,8 @@ export class Nip46SignerManager {
     if (!this.bunkerSigner) {
       throw new Error('NIP-46 signer not available');
     }
-    return await this.bunkerSigner.encrypt(recipientPubkey, plaintext);
+    const recipient = new NDKUser({ pubkey: recipientPubkey });
+    return await this.bunkerSigner.encrypt(recipient, plaintext);
   }
 
   /**
@@ -247,7 +254,8 @@ export class Nip46SignerManager {
     if (!this.bunkerSigner) {
       throw new Error('NIP-46 signer not available');
     }
-    return await this.bunkerSigner.decrypt(senderPubkey, ciphertext);
+    const sender = new NDKUser({ pubkey: senderPubkey });
+    return await this.bunkerSigner.decrypt(sender, ciphertext);
   }
 
   /**
@@ -260,8 +268,8 @@ export class Nip46SignerManager {
     if (!this.bunkerSigner) {
       throw new Error('NIP-46 signer not available');
     }
-    // NDK's Signer interface supports 'nip04' as third parameter
-    return await this.bunkerSigner.encrypt(recipientPubkey, plaintext, 'nip04');
+    const recipient = new NDKUser({ pubkey: recipientPubkey });
+    return await this.bunkerSigner.encrypt(recipient, plaintext, 'nip04');
   }
 
   /**
@@ -274,8 +282,8 @@ export class Nip46SignerManager {
     if (!this.bunkerSigner) {
       throw new Error('NIP-46 signer not available');
     }
-    // NDK's Signer interface supports 'nip04' as third parameter
-    return await this.bunkerSigner.decrypt(senderPubkey, ciphertext, 'nip04');
+    const sender = new NDKUser({ pubkey: senderPubkey });
+    return await this.bunkerSigner.decrypt(sender, ciphertext, 'nip04');
   }
 
   /**

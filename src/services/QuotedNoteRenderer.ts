@@ -129,12 +129,16 @@ export class QuotedNoteRenderer {
       : this.contentProcessor.processContent(event.content);
 
     // Create header (small size for quotes)
+    const eventId = event.id;
+    if (!eventId) {
+      throw new Error('Event must have an id to create quote box');
+    }
+
     const header = new NoteHeader({
       pubkey: event.pubkey,
-      eventId: event.id,
+      eventId,
       timestamp: event.created_at,
       rawEvent: event,
-      size: 'small',
       showVerification: false,
       showTimestamp: true,
       showMenu: true
@@ -146,7 +150,7 @@ export class QuotedNoteRenderer {
       processedContent.html,
       processedContent.media,
       isNSFW,
-      event.id,
+      eventId,
       event.pubkey
     );
 
@@ -200,7 +204,7 @@ export class QuotedNoteRenderer {
 
       // Navigate to SNV for this quoted note
       const router = Router.getInstance();
-      const nevent = encodeNevent(event.id);
+      const nevent = encodeNevent(eventId);
       router.navigate(`/note/${nevent}`);
     });
 
@@ -214,9 +218,12 @@ export class QuotedNoteRenderer {
    * Create placeholder for muted user's quoted note
    */
   private createMutedPlaceholder(event: NostrEvent): HTMLElement {
+    const eventId = event.id ?? '';
     const placeholder = document.createElement('div');
     placeholder.className = 'quote-muted';
-    placeholder.dataset.eventId = event.id;
+    if (eventId) {
+      placeholder.dataset.eventId = eventId;
+    }
     placeholder.dataset.authorPubkey = event.pubkey;
 
     placeholder.innerHTML = `
@@ -224,7 +231,7 @@ export class QuotedNoteRenderer {
         <span class="quote-muted__icon">🔇</span>
         <div class="quote-muted__text">
           <p>Note from a user you've muted</p>
-          <button class="quote-muted__show-btn" data-event-id="${event.id}">Show temporarily</button>
+          <button class="quote-muted__show-btn" data-event-id="${eventId}">Show temporarily</button>
         </div>
       </div>
     `;
@@ -259,10 +266,14 @@ export class QuotedNoteRenderer {
    * Fetches vote counts via PollOrchestrator and displays results
    */
   private renderPollOptions(quoteBox: HTMLElement, event: NostrEvent): void {
+    const eventId = event.id;
+    if (!eventId) return;
+
+    // Parse poll options from tags, filtering out invalid entries
     const pollOptions = event.tags
-      .filter(tag => tag[0] === 'poll_option')
-      .map(tag => ({ index: tag[1], text: tag[2], voteCount: 0, zapAmount: 0 }))
-      .sort((a, b) => parseInt(a.index) - parseInt(b.index));
+      .filter(tag => tag[0] === 'poll_option' && tag[1] && tag[2])
+      .map(tag => ({ id: tag[1] as string, label: tag[2] as string, voteCount: 0 }))
+      .sort((a, b) => parseInt(a.id) - parseInt(b.id));
 
     if (pollOptions.length === 0) return;
 
@@ -273,9 +284,9 @@ export class QuotedNoteRenderer {
       const optionBtn = document.createElement('button');
       optionBtn.className = 'poll-option';
       optionBtn.disabled = true;
-      optionBtn.dataset.optionIndex = option.index;
+      optionBtn.dataset.optionIndex = option.id;
       optionBtn.innerHTML = `
-        <span class="poll-option-text">${option.text}</span>
+        <span class="poll-option-text">${option.label}</span>
         <span class="poll-option-stats">
           <span class="poll-option-count">Loading...</span>
         </span>
@@ -291,10 +302,10 @@ export class QuotedNoteRenderer {
 
     // Fetch poll results asynchronously
     const pollOrchestrator = PollOrchestrator.getInstance();
-    pollOrchestrator.fetchPollResults(event.id, pollOptions).then(results => {
+    pollOrchestrator.fetchPollResults(eventId, pollOptions).then(results => {
         // Update UI with vote counts
         results.options.forEach(option => {
-          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.index}"]`);
+          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.id}"]`) as HTMLElement | null;
           if (!optionBtn) return;
 
           const countSpan = optionBtn.querySelector('.poll-option-count');
@@ -316,7 +327,7 @@ export class QuotedNoteRenderer {
         console.warn('Failed to fetch poll results:', error);
         // Show error state
         pollOptions.forEach(option => {
-          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.index}"]`);
+          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.id}"]`);
           if (!optionBtn) return;
 
           const countSpan = optionBtn.querySelector('.poll-option-count');

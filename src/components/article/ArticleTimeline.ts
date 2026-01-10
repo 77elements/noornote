@@ -79,7 +79,7 @@ export class ArticleTimeline {
    */
   private async handleLoadMore(): Promise<void> {
     if (this.isLoading || !this.hasMore) {
-      this.infiniteScroll.setComplete();
+      this.infiniteScroll.disconnect();
       return;
     }
 
@@ -95,7 +95,7 @@ export class ArticleTimeline {
       }
 
       if (!this.hasMore) {
-        this.infiniteScroll.setComplete();
+        this.infiniteScroll.disconnect();
       } else {
         this.infiniteScroll.hideLoading();
       }

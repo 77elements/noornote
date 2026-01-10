@@ -11,7 +11,6 @@ import { ThreadContextIndicator } from '../ThreadContextIndicator';
 import { InteractionStatusLine } from '../InteractionStatusLine';
 import { AnalyticsModal } from '../../analytics/AnalyticsModal';
 import { AppState } from '../../../services/AppState';
-import { Router } from '../../../services/Router';
 import { replaceMediaPlaceholders } from '../../../helpers/renderMediaContent';
 import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
 import { getImageClickHandler } from '../../../services/ImageClickHandler';
@@ -43,10 +42,9 @@ export class NoteStructureBuilder {
     const eTags = event.tags.filter(tag => tag[0] === 'e');
     if (eTags.length === 0) return null;
 
-    let selectedTag: string[] | null = null;
-
     // NIP-10: Look for explicit "reply" marker
     const replyTag = eTags.find(tag => tag[3] === 'reply');
+    let selectedTag: string[] | undefined;
     if (replyTag) {
       selectedTag = replyTag;
     } else if (eTags.length === 1) {
@@ -57,8 +55,13 @@ export class NoteStructureBuilder {
       selectedTag = eTags[eTags.length - 1];
     }
 
+    if (!selectedTag) return null;
+
+    const parentEventId = selectedTag[1];
+    if (!parentEventId) return null;
+
     return {
-      parentEventId: selectedTag[1],
+      parentEventId,
       relayHint: selectedTag[2] || null
     };
   }
@@ -107,7 +110,6 @@ export class NoteStructureBuilder {
       eventId: note.id,
       timestamp: note.timestamp,
       rawEvent: note.rawEvent,
-      size: renderOptions.headerSize || 'medium',
       showVerification: true,
       showTimestamp: true,
       showMenu: true
@@ -182,7 +184,7 @@ export class NoteStructureBuilder {
       const replyIndicatorContainer = noteDiv.querySelector('.reply-indicator-container');
       if (replyIndicatorContainer) {
         // For reposts, use the original event ID for thread context
-        const contextNoteId = (note.type === 'repost' && note.repostedEvent)
+        const contextNoteId = (note.type === 'repost' && note.repostedEvent?.id)
           ? note.repostedEvent.id
           : note.id;
 
@@ -196,32 +198,36 @@ export class NoteStructureBuilder {
     // Mount ISL as direct sibling (no container)
     // For reposts, use the original event ID and author for stats (reposts reference original note)
     const islNoteId = extractOriginalNoteId(note.rawEvent);
-    const islAuthorPubkey = note.author.pubkey; // For reposts, this is already the original author
 
-    const isl = new InteractionStatusLine({
-      noteId: islNoteId,
-      authorPubkey: islAuthorPubkey,
-      originalEvent: note.rawEvent, // Pass original event for reposting
-      fetchStats: renderOptions.islFetchStats || false,
-      isLoggedIn: renderOptions.isLoggedIn || false,
-      onAnalytics: () => {
-        // Save ProfileView scroll position BEFORE opening modal
-        const profileView = document.querySelector('.profile-view') as HTMLElement;
+    // Only render ISL if we have a valid note ID
+    if (islNoteId) {
+      const islAuthorPubkey = note.author.pubkey; // For reposts, this is already the original author
 
-        if (profileView) {
-          const scrollPosition = profileView.scrollTop;
-          console.log(`📍 NoteStructureBuilder: Saving ProfileView scroll before Analytics modal: ${scrollPosition}px`);
-          const appState = AppState.getInstance();
-          appState.setState('view', { profileScrollPosition: scrollPosition });
+      const isl = new InteractionStatusLine({
+        noteId: islNoteId,
+        authorPubkey: islAuthorPubkey,
+        originalEvent: note.rawEvent, // Pass original event for reposting
+        fetchStats: renderOptions.islFetchStats || false,
+        isLoggedIn: renderOptions.isLoggedIn || false,
+        onAnalytics: () => {
+          // Save ProfileView scroll position BEFORE opening modal
+          const profileView = document.querySelector('.profile-view') as HTMLElement;
+
+          if (profileView) {
+            const scrollPosition = profileView.scrollTop;
+            console.log(`📍 NoteStructureBuilder: Saving ProfileView scroll before Analytics modal: ${scrollPosition}px`);
+            const appState = AppState.getInstance();
+            appState.setState('view', { profileScrollPosition: scrollPosition });
+          }
+
+          // Open Analytics Modal
+          const analyticsModal = AnalyticsModal.getInstance();
+          analyticsModal.show(islNoteId, note.rawEvent);
         }
-
-        // Open Analytics Modal
-        const analyticsModal = AnalyticsModal.getInstance();
-        analyticsModal.show(islNoteId, note.rawEvent);
-      }
-    });
-    noteDiv.appendChild(isl.getElement());
-    islInstances.set(islNoteId, isl);
+      });
+      noteDiv.appendChild(isl.getElement());
+      islInstances.set(islNoteId, isl);
+    }
 
     // Add click handler to navigate to Single Note View
     noteDiv.addEventListener('mousedown', (e) => {

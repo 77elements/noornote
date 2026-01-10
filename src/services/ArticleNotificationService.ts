@@ -162,6 +162,7 @@ export class ArticleNotificationService {
     // Fetch articles for all subscribed users
     for (const pubkey of pubkeys) {
       const subscription = data.subscriptions[pubkey];
+      if (!subscription) continue;
 
       try {
         const filter = {

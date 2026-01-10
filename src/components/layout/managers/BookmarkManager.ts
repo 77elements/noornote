@@ -327,7 +327,12 @@ export class BookmarkManager {
 
       // Build cache
       const eventMap = new Map<string, NostrEvent>();
-      events.forEach(e => eventMap.set(e.id, e));
+      events.forEach(e => {
+        const eventId = e.id;
+        if (eventId) {
+          eventMap.set(eventId, e);
+        }
+      });
 
       this.bookmarksCache.clear();
 
@@ -337,11 +342,17 @@ export class BookmarkManager {
       // Process in sorted order (newest first)
       for (const bookmark of sortedBookmarks) {
         const event = eventMap.get(bookmark.id);
-        this.bookmarksCache.set(bookmark.id, {
-          ...bookmark,
-          event,
+        const cacheEntry: BookmarkWithEvent = {
+          id: bookmark.id,
+          type: bookmark.type,
+          value: bookmark.value,
           isPrivate: (bookmark as BookmarkItem & { isPrivate?: boolean }).isPrivate || false
-        });
+        };
+        if (bookmark.addedAt !== undefined) cacheEntry.addedAt = bookmark.addedAt;
+        if (bookmark.category !== undefined) cacheEntry.category = bookmark.category;
+        if (bookmark.description !== undefined) cacheEntry.description = bookmark.description;
+        if (event) cacheEntry.event = event;
+        this.bookmarksCache.set(bookmark.id, cacheEntry);
 
         // Ensure folder assignment exists
         this.folderService.ensureBookmarkAssignment(bookmark.id);
@@ -540,11 +551,11 @@ export class BookmarkManager {
       id: bookmark.id,
       type: bookmark.type,
       value: bookmark.value,
-      event: bookmark.event,
       isPrivate: bookmark.isPrivate,
-      folderId: this.folderService.getBookmarkFolder(bookmark.id),
-      description: bookmark.description
+      folderId: this.folderService.getBookmarkFolder(bookmark.id)
     };
+    if (bookmark.event) cardData.event = bookmark.event;
+    if (bookmark.description !== undefined) cardData.description = bookmark.description;
 
     const card = new BookmarkCard(cardData, {
       onDelete: async (eventId: string) => {
@@ -552,12 +563,6 @@ export class BookmarkManager {
       },
       onEdit: (bookmarkId: string) => {
         this.editBookmark(bookmarkId);
-      },
-      onDragStart: (_eventId: string) => {
-        // Drag state tracked internally by setupGridDragDrop
-      },
-      onDragEnd: () => {
-        // Drag state tracked internally by setupGridDragDrop
       }
     });
 
@@ -866,14 +871,19 @@ export class BookmarkManager {
         try {
           // Update in browser storage
           const currentItems = this.adapter.getBrowserItems();
-          const updatedItems = currentItems.map(item => {
+          const updatedItems: BookmarkItem[] = currentItems.map(item => {
             if (item.id === bookmarkId) {
-              return {
+              const updated: BookmarkItem = {
                 ...item,
                 id: newUrl,
-                value: newUrl,
-                description: newDescription || undefined
+                value: newUrl
               };
+              if (newDescription) {
+                updated.description = newDescription;
+              } else {
+                delete updated.description;
+              }
+              return updated;
             }
             return item;
           });
@@ -883,12 +893,17 @@ export class BookmarkManager {
           const cachedBookmark = this.bookmarksCache.get(bookmarkId);
           if (cachedBookmark) {
             this.bookmarksCache.delete(bookmarkId);
-            this.bookmarksCache.set(newUrl, {
-              ...cachedBookmark,
+            const updatedCache: BookmarkWithEvent = {
               id: newUrl,
+              type: cachedBookmark.type,
               value: newUrl,
-              description: newDescription || undefined
-            });
+              isPrivate: cachedBookmark.isPrivate
+            };
+            if (cachedBookmark.addedAt !== undefined) updatedCache.addedAt = cachedBookmark.addedAt;
+            if (cachedBookmark.category !== undefined) updatedCache.category = cachedBookmark.category;
+            if (cachedBookmark.event) updatedCache.event = cachedBookmark.event;
+            if (newDescription) updatedCache.description = newDescription;
+            this.bookmarksCache.set(newUrl, updatedCache);
           }
 
           // Update folder assignment if URL changed
@@ -1116,9 +1131,11 @@ export class BookmarkManager {
             value: url,
             addedAt: Math.floor(Date.now() / 1000),
             isPrivate: false,
-            category: categoryName,
-            description: description || undefined
+            category: categoryName
           };
+          if (description) {
+            bookmarkItem.description = description;
+          }
 
           // Add to browser storage
           const currentItems = this.adapter.getBrowserItems();
@@ -1129,11 +1146,16 @@ export class BookmarkManager {
           this.adapter.setBrowserItems([...currentItems, bookmarkItem]);
 
           // Add to cache
-          this.bookmarksCache.set(url, {
-            ...bookmarkItem,
-            event: undefined,
-            isPrivate: false
-          });
+          const cacheEntry: BookmarkWithEvent = {
+            id: url,
+            type: 'r',
+            value: url,
+            isPrivate: false,
+            category: categoryName
+          };
+          if (bookmarkItem.addedAt !== undefined) cacheEntry.addedAt = bookmarkItem.addedAt;
+          if (description) cacheEntry.description = description;
+          this.bookmarksCache.set(url, cacheEntry);
 
           // Assign to folder
           if (targetFolderId && targetFolderId !== '') {
@@ -1360,7 +1382,11 @@ export class BookmarkManager {
       }
 
       const event = events[0];
-      const snippet = event.content.slice(0, 60);
+      const content = event?.content;
+      if (!content) {
+        return item.id.slice(0, 12) + '...';
+      }
+      const snippet = content.slice(0, 60);
       return snippet || item.id.slice(0, 12) + '...';
     } catch {
       return item.id.slice(0, 12) + '...';

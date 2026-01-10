@@ -38,12 +38,11 @@ export async function renderQuotePreview(nostrRef: string): Promise<HTMLElement>
 
     const events = await transport.fetch(allRelays, [{ ids: [neventData.id], limit: 1 }], 5000);
 
-    if (events.length === 0) {
+    const event = events[0];
+    if (!event) {
       container.innerHTML = '<div class="quote-preview__error">Quoted note not found</div>';
       return container;
     }
-
-    const event = events[0];
 
     // Fetch author profile
     const profileService = UserProfileService.getInstance();

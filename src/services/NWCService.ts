@@ -144,12 +144,11 @@ export class NWCService {
         throw new Error('Missing required parameters (pubkey, relay, or secret)');
       }
 
-      return {
-        walletPubkey,
-        relay,
-        secret,
-        lud16: lud16 || undefined // URL.searchParams.get() auto-decodes %40 to @
-      };
+      const connection: NWCConnection = { walletPubkey, relay, secret };
+      if (lud16) {
+        connection.lud16 = lud16; // URL.searchParams.get() auto-decodes %40 to @
+      }
+      return connection;
     } catch (_error) {
       this.systemLogger.error('NWCService', 'Failed to parse connection string:', _error);
       throw new Error('Invalid NWC connection string format');
@@ -314,7 +313,7 @@ export class NWCService {
 
       const content = JSON.stringify({ method, params });
       const appSecretKey = this.hexToBytes(connection.secret);
-      const appPubkey = getPublicKeyFromPrivate(appSecretKey);
+      const appPubkey = getPublicKeyFromPrivate(connection.secret);
       const encryptedContent = await nip04.encrypt(connection.secret, connection.walletPubkey, content);
 
       const event = finalizeEvent({

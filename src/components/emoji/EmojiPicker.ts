@@ -249,7 +249,9 @@ export class EmojiPicker {
 
     // Render first category
     const firstCategory = EMOJI_CATEGORIES[0];
-    gridContainer.appendChild(this.createEmojiSection(firstCategory.name, firstCategory.emojis));
+    if (firstCategory) {
+      gridContainer.appendChild(this.createEmojiSection(firstCategory.name, firstCategory.emojis));
+    }
 
     container.appendChild(searchInput);
     container.appendChild(tabs);
@@ -330,7 +332,9 @@ export class EmojiPicker {
     }
 
     const category = EMOJI_CATEGORIES[categoryIndex];
-    gridContainer.appendChild(this.createEmojiSection(category.name, category.emojis));
+    if (category) {
+      gridContainer.appendChild(this.createEmojiSection(category.name, category.emojis));
+    }
   }
 
   /**

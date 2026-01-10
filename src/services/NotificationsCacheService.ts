@@ -129,11 +129,15 @@ export class NotificationsCacheService {
     // Merge new events with existing (deduplicate by id)
     const eventMap = new Map<string, NostrEvent>();
 
-    // Add existing events
-    cache.events.forEach(event => eventMap.set(event.id, event));
+    // Add existing events (guard: skip events without id)
+    cache.events.forEach(event => {
+      if (event.id) eventMap.set(event.id, event);
+    });
 
-    // Add/overwrite with new events
-    newEvents.forEach(event => eventMap.set(event.id, event));
+    // Add/overwrite with new events (guard: skip events without id)
+    newEvents.forEach(event => {
+      if (event.id) eventMap.set(event.id, event);
+    });
 
     // Convert to array and sort by created_at DESC (newest first)
     const allEvents = Array.from(eventMap.values())

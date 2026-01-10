@@ -126,7 +126,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       // ProfileView: Direct fetch with limit only (no time window) - gets newest posts regardless of age
       // TimelineView: Time-windowed fetch (default 1h)
-      const filters: NDKFilter[] = isProfileView
+      const filters: NDKFilter<number>[] = isProfileView
         ? [{
             authors: followingPubkeys,
             kinds: [1, 6, 1068],
@@ -187,13 +187,16 @@ export class FeedOrchestrator extends Orchestrator {
             break;
           }
 
-          const loadMoreResult = await this.loadMore({
+          const loadMoreRequest: FeedLoadRequest & { until: number } = {
             followingPubkeys,
             includeReplies,
             until: currentUntil,
-            timeWindowHours: 3, // Load More uses 3h chunks
-            specificRelay
-          });
+            timeWindowHours: 3 // Load More uses 3h chunks
+          };
+          if (specificRelay !== undefined) {
+            loadMoreRequest.specificRelay = specificRelay;
+          }
+          const loadMoreResult = await this.loadMore(loadMoreRequest);
 
           // Merge new events and deduplicate by event ID
           const mergedEvents = [...accumulatedEvents, ...loadMoreResult.events];
@@ -257,7 +260,7 @@ export class FeedOrchestrator extends Orchestrator {
         ? [specificRelay]
         : await this.relayDiscovery.getCombinedRelays(followingPubkeys, isProfileView);
 
-      const filters: NDKFilter[] = [{
+      const filters: NDKFilter<number>[] = [{
         authors: followingPubkeys,
         kinds: [1, 6, 1068],
         until: until - 1,
@@ -330,14 +333,17 @@ export class FeedOrchestrator extends Orchestrator {
         );
 
         // Recursively load the next chunk
-        return await this.loadMore({
+        const recursiveRequest: FeedLoadRequest & { until: number } = {
           followingPubkeys,
           includeReplies,
           until: until - timeWindowSeconds,
           timeWindowHours,
-          specificRelay,
           recursionDepth: recursionDepth + 1
-        });
+        };
+        if (specificRelay !== undefined) {
+          recursiveRequest.specificRelay = specificRelay;
+        }
+        return await this.loadMore(recursiveRequest);
       }
 
       return {
@@ -388,8 +394,9 @@ export class FeedOrchestrator extends Orchestrator {
       const sub = await this.transport.subscribe(relays, filters, {
         onEvent: (event: NostrEvent, _relay: string) => {
           // Deduplicate events
-          if (!eventIds.has(event.id)) {
-            eventIds.add(event.id);
+          const eventId = event.id;
+          if (eventId && !eventIds.has(eventId)) {
+            eventIds.add(eventId);
             events.push(event);
           }
         },

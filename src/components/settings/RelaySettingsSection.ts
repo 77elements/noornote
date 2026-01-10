@@ -11,7 +11,7 @@
 import { SettingsSection } from './SettingsSection';
 import { RelayConfig, type RelayInfo, type RelayType } from '../../services/RelayConfig';
 import { RelayListOrchestrator } from '../../services/orchestration/RelayListOrchestrator';
-import { AuthService, type User } from '../../services/AuthService';
+import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
@@ -480,7 +480,7 @@ export class RelaySettingsSection extends SettingsSection {
   /**
    * Get current user and write relays for publishing, or null if unavailable
    */
-  private getPublishContext(): { user: User; writeRelays: string[] } | null {
+  private getPublishContext(): { user: { npub: string; pubkey: string }; writeRelays: string[] } | null {
     const user = this.authService.getCurrentUser();
     if (!user) {
       console.warn('No user logged in, skipping publish');

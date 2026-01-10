@@ -79,7 +79,7 @@ export class LongFormOrchestrator extends Orchestrator {
 
     try {
       const event = await fetchPromise;
-      if (event) {
+      if (event && event.id) {
         // Store naddr → eventId mapping
         this.naddrToEventId.set(naddrRef, event.id);
       }
@@ -141,7 +141,7 @@ export class LongFormOrchestrator extends Orchestrator {
 
     try {
       const events = await this.transport.fetch(relays, filters, 5000);
-      return events.length > 0 ? events[0] : null;
+      return events[0] ?? null;
     } catch {
       return null;
     }
@@ -186,7 +186,7 @@ export class LongFormOrchestrator extends Orchestrator {
       summary: tags.find(t => t[0] === 'summary')?.[1] || '',
       publishedAt: parseInt(tags.find(t => t[0] === 'published_at')?.[1] || String(event.created_at)),
       identifier: tags.find(t => t[0] === 'd')?.[1] || '',
-      topics: tags.filter(t => t[0] === 't').map(t => t[1])
+      topics: tags.filter(t => t[0] === 't').map(t => t[1]).filter((v): v is string => v !== undefined)
     };
   }
 

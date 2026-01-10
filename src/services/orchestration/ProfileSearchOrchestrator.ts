@@ -98,7 +98,10 @@ export class ProfileSearchOrchestrator extends Orchestrator {
       // Determine date range
       let dateRange = { start: 'N/A', end: 'N/A' };
       if (allNotes.length > 0) {
-        const timestamps = allNotes.map(n => n.created_at).sort((a, b) => a - b);
+        const timestamps = allNotes
+          .map(n => n.created_at)
+          .filter((t): t is number => t !== undefined)
+          .sort((a, b) => a - b);
         const formatDate = (timestamp: number) => {
           const date = new Date(timestamp * 1000);
           const month = date.toLocaleDateString('en-US', { month: 'short' });
@@ -106,14 +109,18 @@ export class ProfileSearchOrchestrator extends Orchestrator {
           const year = date.getFullYear();
           return `${month} ${day}, ${year}`;
         };
-        dateRange = {
-          start: formatDate(timestamps[0]),
-          end: formatDate(timestamps[timestamps.length - 1])
-        };
+        const firstTimestamp = timestamps[0];
+        const lastTimestamp = timestamps[timestamps.length - 1];
+        if (firstTimestamp !== undefined && lastTimestamp !== undefined) {
+          dateRange = {
+            start: formatDate(firstTimestamp),
+            end: formatDate(lastTimestamp)
+          };
+        }
       }
 
       // Sort results by date (newest first)
-      matchingNotes.sort((a, b) => b.created_at - a.created_at);
+      matchingNotes.sort((a, b) => (b.created_at ?? 0) - (a.created_at ?? 0));
 
       const result: SearchResult = {
         events: matchingNotes,
@@ -185,8 +192,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
     const relays = this.transport.getReadRelays();
 
     // Query each chunk
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
+    for (const [i, chunk] of chunks.entries()) {
       const formatDate = (timestamp: number) => {
         const date = new Date(timestamp * 1000);
         return date.toLocaleDateString('en-US', {
@@ -212,8 +218,9 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
         // Deduplicate
         events.forEach(event => {
-          if (!allEvents.has(event.id)) {
-            allEvents.set(event.id, event);
+          const eventId = event.id;
+          if (eventId && !allEvents.has(eventId)) {
+            allEvents.set(eventId, event);
           }
         });
 

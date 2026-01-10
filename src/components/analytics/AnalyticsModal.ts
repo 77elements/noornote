@@ -251,7 +251,7 @@ export class AnalyticsModal {
       const zapMessage = this.extractZapMessage(event);
       const profile = this.getProfile(zapperPubkey, profileMap);
       const bolt11Tag = event.tags.find((tag: string[]) => tag[0] === 'bolt11');
-      const amount = bolt11Tag ? this.parseBolt11Amount(bolt11Tag[1]) : 0;
+      const amount = bolt11Tag?.[1] ? this.parseBolt11Amount(bolt11Tag[1]) : 0;
       totalSats += amount;
 
       const messageHtml = zapMessage ? ` <span class="analytics-modal__zap-message">(${escapeHtml(zapMessage)})</span>` : '';
@@ -374,7 +374,7 @@ export class AnalyticsModal {
   private parseBolt11Amount(invoice: string): number {
     try {
       const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
-      if (!match) return 0;
+      if (!match?.[2]) return 0;
 
       const amount = parseInt(match[2]);
       const multiplier = match[3]?.toLowerCase();
@@ -416,7 +416,7 @@ export class AnalyticsModal {
     let totalZapSats = 0;
     stats.zapEvents.forEach(event => {
       const bolt11Tag = event.tags.find((tag: string[]) => tag[0] === 'bolt11');
-      if (bolt11Tag) {
+      if (bolt11Tag?.[1]) {
         totalZapSats += this.parseBolt11Amount(bolt11Tag[1]);
       }
     });

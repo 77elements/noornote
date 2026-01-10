@@ -19,6 +19,7 @@
 
 import { BaseFileStorage, type BaseFileData } from './BaseFileStorage';
 import type { BookmarkSetData, BookmarkTag } from '../../types/BookmarkSetData';
+import type { BaseListItem } from '../../types/BaseListItem';
 import {
   createEmptyBookmarkSetData,
   migrateFromOldFormat,
@@ -30,12 +31,9 @@ import {
  * Bookmark item with NIP-51 type support
  * category = d-tag value ('' for root, 'Work' for category Work, etc.)
  */
-export interface BookmarkItem {
-  id: string;
+export interface BookmarkItem extends BaseListItem {
   type: 'e' | 'a' | 't' | 'r';
   value: string;
-  addedAt?: number;
-  isPrivate?: boolean;
   category?: string;  // d-tag value, '' = root
   description?: string;  // optional user description for URL bookmarks
 }
@@ -72,21 +70,35 @@ export interface RootOrderItem {
  */
 export interface BookmarkListData extends BaseFileData {
   items: BookmarkItem[];
-  folders?: BookmarkFolder[];
-  folderAssignments?: FolderAssignment[];
-  rootOrder?: RootOrderItem[];
+  folders?: BookmarkFolder[] | undefined;
+  folderAssignments?: FolderAssignment[] | undefined;
+  rootOrder?: RootOrderItem[] | undefined;
+}
+
+/**
+ * Adapter to make BookmarkSetData compatible with BaseFileStorage
+ * Maps metadata.lastModified to/from lastModified for the base class
+ */
+interface BookmarkSetDataWithBase extends BaseFileData {
+  version: 2;
+  sets: BookmarkSetData['sets'];
+  metadata: BookmarkSetData['metadata'];
 }
 
 /**
  * Internal storage class for the new format
  */
-class BookmarkSetStorage extends BaseFileStorage<BookmarkSetData> {
+class BookmarkSetStorage extends BaseFileStorage<BookmarkSetDataWithBase> {
   protected getFileName(): string {
     return 'bookmarks.json';
   }
 
-  protected getDefaultData(): BookmarkSetData {
-    return createEmptyBookmarkSetData();
+  protected getDefaultData(): BookmarkSetDataWithBase {
+    const data = createEmptyBookmarkSetData();
+    return {
+      ...data,
+      lastModified: data.metadata.lastModified
+    };
   }
 
   protected getLoggerName(): string {
@@ -94,15 +106,15 @@ class BookmarkSetStorage extends BaseFileStorage<BookmarkSetData> {
   }
 
   /**
-   * Override read to handle migration from old format
+   * Read bookmark data, handling migration from old format
    */
-  public override async read(): Promise<BookmarkSetData> {
+  public async readBookmarkData(): Promise<BookmarkSetData> {
     const rawData = await super.read();
 
     if (isOldFormat(rawData)) {
-      this.logger.info(this.getLoggerName(), 'Migrating from old format to BookmarkSetData');
+      this.systemLogger.info(this.getLoggerName(), 'Migrating from old format to BookmarkSetData');
       const migrated = migrateFromOldFormat(rawData as unknown as BookmarkListData);
-      await this.write(migrated);
+      await this.writeBookmarkData(migrated);
       return migrated;
     }
 
@@ -110,8 +122,19 @@ class BookmarkSetStorage extends BaseFileStorage<BookmarkSetData> {
       return rawData;
     }
 
-    this.logger.warn(this.getLoggerName(), 'Unknown format, returning empty data');
-    return this.getDefaultData();
+    this.systemLogger.warn(this.getLoggerName(), 'Unknown format, returning empty data');
+    return createEmptyBookmarkSetData();
+  }
+
+  /**
+   * Write BookmarkSetData, syncing lastModified
+   */
+  public async writeBookmarkData(data: BookmarkSetData): Promise<void> {
+    const dataWithBase: BookmarkSetDataWithBase = {
+      ...data,
+      lastModified: data.metadata.lastModified
+    };
+    await super.write(dataWithBase);
   }
 }
 
@@ -190,7 +213,7 @@ export class BookmarkFileStorage {
       const hasLegacyData = publicData.items.length > 0 || privateData.items.length > 0;
 
       if (hasLegacyData) {
-        const currentData = await this.storage.read();
+        const currentData = await this.storage.readBookmarkData();
         const newFileEmpty = currentData.sets.length <= 1 &&
           currentData.sets[0]?.publicTags.length === 0 &&
           currentData.sets[0]?.privateTags.length === 0;
@@ -208,7 +231,7 @@ export class BookmarkFileStorage {
           };
 
           const migrated = migrateFromOldFormat(mergedLegacy);
-          await this.storage.write(migrated);
+          await this.storage.writeBookmarkData(migrated);
 
           console.log('[BookmarkFileStorage] Migrated from legacy two-file format');
         }
@@ -223,7 +246,7 @@ export class BookmarkFileStorage {
    */
   public async read(): Promise<BookmarkSetData> {
     await this.initialize();
-    return await this.storage.read();
+    return await this.storage.readBookmarkData();
   }
 
   /**
@@ -232,7 +255,7 @@ export class BookmarkFileStorage {
   public async write(data: BookmarkSetData): Promise<void> {
     await this.initialize();
     data.metadata.lastModified = Math.floor(Date.now() / 1000);
-    await this.storage.write(data);
+    await this.storage.writeBookmarkData(data);
   }
 
   // ===== Legacy API for backward compatibility =====
@@ -432,15 +455,18 @@ export class BookmarkFileStorage {
         for (const tag of tags) {
           if (!seenValues.has(tag.value)) {
             seenValues.add(tag.value);
-            items.push({
+            const item: BookmarkItem = {
               id: tag.value,
               type: tag.type,
               value: tag.value,
               addedAt: data.metadata.lastModified,
               isPrivate,
-              category,
-              description: tag.description
-            });
+              category
+            };
+            if (tag.description) {
+              item.description = tag.description;
+            }
+            items.push(item);
           }
         }
       };

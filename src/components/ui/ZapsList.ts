@@ -57,7 +57,8 @@ export class ZapsList {
       const username = profile?.display_name || profile?.name || 'Anonymous';
       const avatarUrl = profile?.picture || '';
       const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
-      const amountSats = bolt11Tag ? this.parseBolt11Amount(bolt11Tag[1]) : 0;
+      const bolt11Value = bolt11Tag?.[1];
+      const amountSats = bolt11Value ? this.parseBolt11Amount(bolt11Value) : 0;
 
       zaps.push({
         zapperPubkey,
@@ -81,9 +82,10 @@ export class ZapsList {
   private parseBolt11Amount(invoice: string): number {
     try {
       const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
-      if (!match) return 0;
+      const amountStr = match?.[2];
+      if (!amountStr) return 0;
 
-      const amount = parseInt(match[2]);
+      const amount = parseInt(amountStr);
       const multiplier = match[3]?.toLowerCase();
 
       let millisats = 0;

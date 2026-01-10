@@ -158,9 +158,10 @@ export class MentionAutocomplete {
         this.selectPrevious();
         break;
       case 'Enter':
-        if (this.suggestions.length > 0) {
+        const selected = this.suggestions[this.selectedIndex];
+        if (selected) {
           e.preventDefault();
-          this.insertMention(this.suggestions[this.selectedIndex]);
+          this.insertMention(selected);
         }
         break;
       case 'Escape':
@@ -295,7 +296,10 @@ export class MentionAutocomplete {
       'wordSpacing', 'wordWrap', 'whiteSpace',
       'padding', 'border', 'boxSizing'
     ].forEach(prop => {
-      mirror.style[prop as any] = computedStyle[prop as any];
+      const value = computedStyle[prop as any];
+      if (value !== undefined) {
+        mirror.style[prop as any] = value;
+      }
     });
 
     mirror.style.position = 'absolute';

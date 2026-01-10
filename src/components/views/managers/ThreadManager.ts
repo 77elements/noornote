@@ -157,11 +157,15 @@ export class ThreadManager {
     const rootNodes: ThreadNode[] = [];
 
     replies.forEach(reply => {
-      nodes.set(reply.id, { event: reply, children: [], depth: 0 });
+      const replyId = reply.id;
+      if (!replyId) return;
+      nodes.set(replyId, { event: reply, children: [], depth: 0 });
     });
 
     replies.forEach(reply => {
-      const node = nodes.get(reply.id)!;
+      const replyId = reply.id;
+      if (!replyId) return;
+      const node = nodes.get(replyId)!;
       const parentId = this.extractReplyParentId(reply);
 
       if (!parentId || parentId === rootNoteId) {
@@ -185,9 +189,10 @@ export class ThreadManager {
     if (eTags.length === 0) return null;
 
     const replyTag = eTags.find(tag => tag[3] === 'reply');
-    if (replyTag) return replyTag[1];
+    if (replyTag) return replyTag[1] ?? null;
 
-    return eTags[eTags.length - 1][1];
+    const lastETag = eTags[eTags.length - 1];
+    return lastETag?.[1] ?? null;
   }
 
   private renderThreadedReply(node: ThreadNode, container: Element): void {
@@ -210,7 +215,10 @@ export class ThreadManager {
       depth: 0
     });
 
-    this.config.onLoadZapsList?.(reply.id, reply.pubkey, noteElement);
+    const replyId = reply.id;
+    if (replyId) {
+      this.config.onLoadZapsList?.(replyId, reply.pubkey, noteElement);
+    }
 
     if (depth > 0) {
       noteElement.style.marginLeft = `${depth * 1.5}rem`;
@@ -242,10 +250,13 @@ export class ThreadManager {
   }
 
   public appendLiveReply(reply: NostrEvent): void {
+    const replyId = reply.id;
+    if (!replyId) return;
+
     const repliesContainer = this.getRepliesContainer();
     if (!repliesContainer) return;
 
-    if (this.config.container.querySelector(`[data-reply-id="${reply.id}"]`)) {
+    if (this.config.container.querySelector(`[data-reply-id="${replyId}"]`)) {
       return;
     }
 
@@ -263,8 +274,9 @@ export class ThreadManager {
       const header = repliesContainer.querySelector('.snv-replies__header h3');
       if (header) {
         const match = header.textContent?.match(/\((\d+)\)/);
-        if (match) {
-          const currentCount = parseInt(match[1], 10);
+        const matchedCount = match?.[1];
+        if (matchedCount) {
+          const currentCount = parseInt(matchedCount, 10);
           header.textContent = `Replies & Quotes (${currentCount + 1})`;
         }
       }
@@ -274,7 +286,7 @@ export class ThreadManager {
 
     const replyElement = this.createReplyElement(reply, 0);
     replyElement.classList.add('reply-pending');
-    replyElement.dataset.replyId = reply.id;
+    replyElement.dataset.replyId = replyId;
 
     repliesList.appendChild(replyElement);
     this.updateStatsAfterLiveReply();
@@ -289,6 +301,9 @@ export class ThreadManager {
   }
 
   private async renderQuotedRepost(quoteEvent: NostrEvent, container: Element): Promise<void> {
+    const eventId = quoteEvent.id;
+    if (!eventId) return;
+
     const cleanedEvent = {
       ...quoteEvent,
       content: quoteEvent.content.replace(/nostr:(nevent|note|nprofile|npub)[a-z0-9]+/gi, '').trim()
@@ -296,12 +311,12 @@ export class ThreadManager {
 
     const quoteWrapper = document.createElement('div');
     quoteWrapper.className = 'snv-quoted-repost';
-    quoteWrapper.dataset.eventId = quoteEvent.id;
+    quoteWrapper.dataset.eventId = eventId;
 
     const profile = await this.profileService.getUserProfile(quoteEvent.pubkey);
     const username = profile?.display_name || profile?.name || 'Anonymous';
 
-    const nevent = encodeNevent(quoteEvent.id, [], quoteEvent.pubkey);
+    const nevent = encodeNevent(eventId, [], quoteEvent.pubkey);
 
     const quoteHeader = document.createElement('div');
     quoteHeader.className = 'snv-quoted-repost__header';

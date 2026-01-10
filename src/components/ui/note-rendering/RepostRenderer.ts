@@ -31,7 +31,7 @@ export class RepostRenderer {
    */
   private static extractOriginalEventId(note: ProcessedNote): string | null {
     const eTags = note.rawEvent.tags.filter(tag => tag[0] === 'e');
-    return eTags.length > 0 ? eTags[0][1] : null;
+    return eTags[0]?.[1] ?? null;
   }
 
   /**

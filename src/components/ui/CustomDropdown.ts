@@ -77,7 +77,7 @@ export class CustomDropdown {
     }
 
     const selectedOption = this.options.find(opt => opt.value === this.selectedValue);
-    const selectedLabel = selectedOption ? selectedOption.label : this.options[0].label;
+    const selectedLabel = selectedOption?.label ?? this.options[0]?.label ?? '';
 
     container.innerHTML = `
       <button class="custom-dropdown__trigger" type="button">

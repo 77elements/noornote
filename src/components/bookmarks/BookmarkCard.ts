@@ -182,7 +182,7 @@ export class BookmarkCard {
       }
 
       // Navigate to note if event exists
-      if (event) {
+      if (event?.id) {
         const nevent = encodeNevent(event.id);
         this.router.navigate(`/note/${nevent}`);
       }

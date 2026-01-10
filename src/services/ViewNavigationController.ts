@@ -15,7 +15,7 @@
  * @service ViewNavigationController
  */
 
-import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from './PerAccountLocalStorage';
+import { PerAccountLocalStorage } from './PerAccountLocalStorage';
 import { Router } from './Router';
 import { ViewTabManager } from './ViewTabManager';
 
@@ -109,7 +109,7 @@ export class ViewNavigationController {
   /**
    * Delegate to ViewTabManager (when setting enabled)
    */
-  private openInTabSystem(viewType: ViewType, param?: string, clickMode: 'new-tab' | 'replace-active'): void {
+  private openInTabSystem(viewType: ViewType, param: string | undefined, clickMode: 'new-tab' | 'replace-active'): void {
     if (!this.viewTabManager) return;
 
     const replaceActive = clickMode === 'replace-active';

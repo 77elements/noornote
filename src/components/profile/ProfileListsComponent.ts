@@ -379,6 +379,7 @@ export class ProfileListsComponent {
   private reorderList(fromIndex: number, toIndex: number): void {
     // Reorder in local array
     const [moved] = this.lists.splice(fromIndex, 1);
+    if (!moved) return;
     this.lists.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, moved);
 
     // Update service

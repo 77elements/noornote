@@ -406,8 +406,9 @@ export class ArticleEditorView extends View {
     if (fileInput) {
       fileInput.addEventListener('change', async (e) => {
         const target = e.target as HTMLInputElement;
-        if (target.files && target.files.length > 0) {
-          await this.handleContentImageUpload(target.files[0]);
+        const file = target.files?.[0];
+        if (file) {
+          await this.handleContentImageUpload(file);
           target.value = '';
         }
       });
@@ -498,8 +499,9 @@ export class ArticleEditorView extends View {
 
     fileInput?.addEventListener('change', async (e) => {
       const target = e.target as HTMLInputElement;
-      if (target.files && target.files.length > 0) {
-        await this.handleCoverUpload(target.files[0]);
+      const file = target.files?.[0];
+      if (file) {
+        await this.handleCoverUpload(file);
         target.value = '';
       }
     });
@@ -560,11 +562,14 @@ export class ArticleEditorView extends View {
     fields.forEach(field => {
       field.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-        const fieldName = target.dataset.field as keyof Pick<ArticleEditorView, 'title' | 'content' | 'summary' | 'image' | 'tags' | 'identifier'>;
+        const fieldName = target.dataset.field;
 
-        if (fieldName && fieldName in this) {
-          (this as Record<string, string>)[fieldName] = target.value;
-        }
+        if (fieldName === 'title') this.title = target.value;
+        else if (fieldName === 'content') this.content = target.value;
+        else if (fieldName === 'summary') this.summary = target.value;
+        else if (fieldName === 'image') this.image = target.value;
+        else if (fieldName === 'tags') this.tags = target.value;
+        else if (fieldName === 'identifier') this.identifier = target.value;
 
         this.updateButtonStates();
       });
@@ -709,15 +714,17 @@ export class ArticleEditorView extends View {
     try {
       const topics = this.tags.split(',').map(t => t.trim()).filter(Boolean);
 
-      const articleData = {
+      const articleData: Parameters<typeof this.articleService.publishArticle>[0] = {
         title: this.title,
         content: this.content,
         identifier: this.identifier || ArticleService.generateIdentifier(this.title),
-        summary: this.summary || undefined,
-        image: this.image || undefined,
-        topics: topics.length > 0 ? topics : undefined,
         relays: Array.from(this.selectedRelays)
       };
+
+      // Only add optional properties if they have values (exactOptionalPropertyTypes)
+      if (this.summary) articleData.summary = this.summary;
+      if (this.image) articleData.image = this.image;
+      if (topics.length > 0) articleData.topics = topics;
 
       const naddr = isDraft
         ? await this.articleService.saveDraft(articleData)

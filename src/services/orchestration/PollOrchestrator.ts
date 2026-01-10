@@ -14,14 +14,19 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 
-interface PollOption {
+interface PollOptionInput {
+  id: string;
+  label: string;
+}
+
+interface PollOptionResult {
   id: string;
   label: string;
   voteCount: number;
 }
 
 interface PollResults {
-  options: PollOption[];
+  options: PollOptionResult[];
   totalVotes: number; // Total unique voters
   userVote: string | null; // Current user's vote (option ID), if any
   timestamp: number;
@@ -54,7 +59,7 @@ export class PollOrchestrator extends Orchestrator {
    */
   public async fetchPollResults(
     pollEventId: string,
-    pollOptions: PollOption[],
+    pollOptions: PollOptionInput[],
     currentUserPubkey?: string
   ): Promise<PollResults> {
     // Check cache first
@@ -100,7 +105,7 @@ export class PollOrchestrator extends Orchestrator {
    */
   private aggregateVotes(
     responses: NostrEvent[],
-    pollOptions: PollOption[],
+    pollOptions: PollOptionInput[],
     currentUserPubkey?: string
   ): PollResults {
     // Initialize vote counts
@@ -131,15 +136,17 @@ export class PollOrchestrator extends Orchestrator {
         // Increment vote count for each selected option
         responseTags.forEach(tag => {
           const optionId = tag[1];
-          const current = voteCounts.get(optionId);
-          if (current !== undefined) {
-            voteCounts.set(optionId, current + 1);
+          if (optionId) {
+            const current = voteCounts.get(optionId);
+            if (current !== undefined) {
+              voteCounts.set(optionId, current + 1);
+            }
           }
         });
 
         // Check if this is the current user's vote
         if (currentUserPubkey && pubkey === currentUserPubkey) {
-          userVote = responseTags[0][1]; // Store first response option
+          userVote = responseTags[0]?.[1] ?? null; // Store first response option
         }
       }
     }

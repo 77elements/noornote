@@ -101,9 +101,9 @@ export class PostEditorToolbar {
 
     // Poll button
     const pollBtn = container.querySelector('[data-action="poll"]');
-    if (pollBtn) {
+    if (pollBtn && this.config.onPollToggle) {
       pollBtn.addEventListener('click', () => {
-        this.config.onPollToggle();
+        this.config.onPollToggle?.();
       });
     }
   }
@@ -128,9 +128,10 @@ export class PostEditorToolbar {
     `;
 
     try {
-      if (files.length === 1) {
+      const firstFile = files[0];
+      if (files.length === 1 && firstFile) {
         // Single file upload
-        const result = await this.mediaUploadService.uploadFile(files[0], (progress) => {
+        const result = await this.mediaUploadService.uploadFile(firstFile, (progress) => {
           this.updateUploadProgress(progress);
         });
 

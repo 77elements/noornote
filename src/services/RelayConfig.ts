@@ -149,9 +149,11 @@ export class RelayConfig {
     const existing = this.relays.get(relayInfo.url);
     const relay: RelayInfo = {
       ...relayInfo,
-      errorCount: existing?.errorCount || 0,
-      lastConnected: existing?.lastConnected
+      errorCount: existing?.errorCount || 0
     };
+    if (existing?.lastConnected) {
+      relay.lastConnected = existing.lastConnected;
+    }
 
     this.relays.set(relayInfo.url, relay);
     this.saveToCache();

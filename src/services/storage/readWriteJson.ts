@@ -14,23 +14,26 @@
 
 import { PlatformService } from '../PlatformService';
 
-// Cached Tauri API references (lazy-loaded)
-let tauriApis: {
+// Type for Tauri API references
+type TauriApis = {
   homeDir: typeof import('@tauri-apps/api/path').homeDir;
   readTextFile: typeof import('@tauri-apps/plugin-fs').readTextFile;
   writeTextFile: typeof import('@tauri-apps/plugin-fs').writeTextFile;
   exists: typeof import('@tauri-apps/plugin-fs').exists;
   mkdir: typeof import('@tauri-apps/plugin-fs').mkdir;
-} | null = null;
+};
+
+// Cached Tauri API references (lazy-loaded)
+let tauriApis: TauriApis | null = null;
 
 // Promise for loading (ensures we only load once)
-let loadPromise: Promise<typeof tauriApis> | null = null;
+let loadPromise: Promise<TauriApis> | null = null;
 
 /**
  * Load Tauri APIs (lazy, cached)
  * Throws if not in Tauri environment
  */
-async function ensureTauriApis(): Promise<NonNullable<typeof tauriApis>> {
+async function ensureTauriApis(): Promise<TauriApis> {
   const platform = PlatformService.getInstance();
 
   if (!platform.isTauri) {
@@ -50,15 +53,16 @@ async function ensureTauriApis(): Promise<NonNullable<typeof tauriApis>> {
         import('@tauri-apps/plugin-fs')
       ]);
 
-      tauriApis = {
+      const apis = {
         homeDir: pathMod.homeDir,
         readTextFile: fsMod.readTextFile,
         writeTextFile: fsMod.writeTextFile,
         exists: fsMod.exists,
         mkdir: fsMod.mkdir
       };
+      tauriApis = apis;
 
-      return tauriApis;
+      return apis;
     })();
   }
 

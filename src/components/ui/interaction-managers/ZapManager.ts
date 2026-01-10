@@ -10,7 +10,7 @@ import { AuthGuard } from '../../../services/AuthGuard';
 import { AuthService } from '../../../services/AuthService';
 import { ZapService } from '../../../services/ZapService';
 import { ToastService } from '../../../services/ToastService';
-import { StatsUpdateService } from '../../../services/StatsUpdateService';
+import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
 import { EventBus } from '../../../services/EventBus';
 import { UserProfileService } from '../../../services/UserProfileService';
 
@@ -31,7 +31,7 @@ export class ZapManager {
   private config: ZapManagerConfig;
   private zapService: ZapService;
   private authService: AuthService;
-  private statsUpdateService: StatsUpdateService;
+  private reactionsOrchestrator: ReactionsOrchestrator;
   private eventBus: EventBus;
   private userProfileService: UserProfileService;
   private zapButton: HTMLElement | null = null;
@@ -42,7 +42,7 @@ export class ZapManager {
     this.config = config;
     this.zapService = ZapService.getInstance();
     this.authService = AuthService.getInstance();
-    this.statsUpdateService = StatsUpdateService.getInstance();
+    this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
     this.eventBus = EventBus.getInstance();
     this.userProfileService = UserProfileService.getInstance();
   }
@@ -183,10 +183,10 @@ export class ZapManager {
         this.eventBus.emit('zap:added', { noteId: this.config.noteId });
 
         // Cache invalidation
-        this.statsUpdateService.updateAfterInteraction(this.config.noteId, 'zap', null);
+        this.reactionsOrchestrator.clearCache(this.config.noteId);
       }
     } catch (error) {
-      console.error('❌ Failed to send zap:', error);
+      console.error('Failed to send zap:', error);
       this.updateButtonLoading(false);
     }
   }
@@ -197,10 +197,9 @@ export class ZapManager {
   private async openCustomZapModal(): Promise<void> {
     const { ZapModal } = await import('../../modals/ZapModal');
 
-    const zapModal = new ZapModal({
+    const options = {
       noteId: this.config.noteId,
       authorPubkey: this.config.authorPubkey,
-      articleEventId: this.config.articleEventId,
       onZapSent: (amount: number) => {
         this.zappedAmount = this.zapService.getUserZapAmount(this.config.noteId);
         this.updateButtonState(true);
@@ -214,10 +213,16 @@ export class ZapManager {
         this.eventBus.emit('zap:added', { noteId: this.config.noteId });
 
         // Cache invalidation
-        this.statsUpdateService.updateAfterInteraction(this.config.noteId, 'zap', null);
+        this.reactionsOrchestrator.clearCache(this.config.noteId);
       }
-    });
+    };
 
+    // Conditional property assignment for exactOptionalPropertyTypes
+    if (this.config.articleEventId) {
+      (options as { articleEventId?: string }).articleEventId = this.config.articleEventId;
+    }
+
+    const zapModal = new ZapModal(options);
     zapModal.show();
   }
 

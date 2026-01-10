@@ -13,17 +13,29 @@
  */
 
 import { nip19 } from '@nostr-dev-kit/ndk';
-import type { UnsignedEvent, NostrEvent } from '@nostr-dev-kit/ndk';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { hexToBytes, bytesToHex } from '@noble/hashes/utils';
 
 // Low-level crypto functions from nostr-tools (NDK's peer dependency)
 // NDK uses these internally but doesn't expose them in public API
-import { getPublicKey, finalizeEvent, verifyEvent, nip04, getEventHash, generateSecretKey } from 'nostr-tools';
+import {
+  getPublicKey,
+  finalizeEvent,
+  verifyEvent,
+  nip04,
+  getEventHash,
+  generateSecretKey,
+  type UnsignedEvent as NostrToolsUnsignedEvent,
+  type Event as NostrToolsEvent
+} from 'nostr-tools';
+import type { DecodedResult } from 'nostr-tools/nip19';
 import * as nip44 from 'nostr-tools/nip44';
 
 // ============= TYPE EXPORTS =============
 
-export type { NostrEvent as Event, UnsignedEvent };
+// Export nostr-tools UnsignedEvent as our UnsignedEvent
+export type UnsignedEvent = NostrToolsUnsignedEvent;
+export type { NostrEvent as Event };
 export type { NDKFilter as Filter } from '@nostr-dev-kit/ndk';
 
 // ============= BYTE CONVERSION =============
@@ -45,8 +57,8 @@ export { bytesToHex };
 /**
  * Decode any NIP-19 encoded string (npub/nsec/nevent/naddr/note)
  */
-export function decodeNip19(encoded: string): nip19.DecodeResult {
-  return nip19.decode(encoded);
+export function decodeNip19(encoded: string): DecodedResult {
+  return nip19.decode(encoded) as DecodedResult;
 }
 
 /**
@@ -88,7 +100,7 @@ export function encodeNaddr(params: {
  * Encode hex private key to nsec
  */
 export function encodeNsec(privateKey: string): string {
-  return nip19.nsecEncode(privateKey);
+  return nip19.nsecEncode(hexToBytes(privateKey));
 }
 
 // ============= EVENT SIGNING =============
@@ -97,7 +109,7 @@ export function encodeNsec(privateKey: string): string {
  * Derive public key from private key
  */
 export function getPublicKeyFromPrivate(privateKeyHex: string): string {
-  return getPublicKey(privateKeyHex);
+  return getPublicKey(hexToBytes(privateKeyHex));
 }
 
 /**
@@ -111,7 +123,7 @@ export function calculateEventHash(event: UnsignedEvent): string {
  * Sign event with private key
  */
 export function signEventWithKey(event: UnsignedEvent, privateKeyHex: string): string {
-  const signedEvent = finalizeEvent(event, privateKeyHex);
+  const signedEvent = finalizeEvent(event, hexToBytes(privateKeyHex));
   return signedEvent.sig;
 }
 
@@ -119,7 +131,7 @@ export function signEventWithKey(event: UnsignedEvent, privateKeyHex: string): s
  * Verify event signature
  */
 export function verifyEventSignature(event: NostrEvent): boolean {
-  return verifyEvent(event);
+  return verifyEvent(event as NostrToolsEvent);
 }
 
 /**
@@ -130,7 +142,7 @@ export function finalizeEventSigning(
   privateKeyHex: string,
   _pubkey?: string
 ): NostrEvent {
-  return finalizeEvent(event, privateKeyHex);
+  return finalizeEvent(event, hexToBytes(privateKeyHex)) as NostrEvent;
 }
 
 // ============= NIP-04 & NIP-47 (NWC) =============

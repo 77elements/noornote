@@ -4,7 +4,7 @@
  * Uses NostrTransport for all relay communication
  */
 
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
 import { SystemLogger } from '../components/system/SystemLogger';
@@ -71,7 +71,7 @@ export class UserService {
         const relayFollows = await this.getOtherUserFollowing(currentUser.pubkey);
         if (relayFollows.length > 0) {
           // Cache in browserItems for future use
-          const items = relayFollows.map(pubkey => ({ pubkey, petname: undefined }));
+          const items = relayFollows.map(pubkey => ({ id: pubkey, pubkey }));
           this.followAdapter.setBrowserItems(items);
           return relayFollows;
         }
@@ -107,8 +107,11 @@ export class UserService {
 
       // Extract pubkeys from p-tags
       const followEvent = events[0];
+      if (!followEvent) {
+        return [];
+      }
       const pubkeys = followEvent.tags
-        .filter(tag => tag[0] === 'p' && tag[1])
+        .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'p' && typeof tag[1] === 'string')
         .map(tag => tag[1]);
 
       return pubkeys;
@@ -132,13 +135,12 @@ export class UserService {
     // Silent operation
     // this.systemLogger.info('UserService', `Creating subscription: ${_subscriptionId}`);
 
-    const filters = [{
-      authors: filter.authors,
-      kinds: filter.kinds,
-      ids: filter.ids
-    }];
+    const ndkFilter: NDKFilter = {};
+    if (filter.authors) ndkFilter.authors = filter.authors;
+    if (filter.kinds) ndkFilter.kinds = filter.kinds;
+    if (filter.ids) ndkFilter.ids = filter.ids;
 
-    const sub = await this.transport.subscribe(relays, filters, {
+    const sub = await this.transport.subscribe(relays, [ndkFilter], {
       onEvent: callback
     });
 

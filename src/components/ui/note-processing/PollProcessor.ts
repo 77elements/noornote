@@ -29,18 +29,23 @@ export class PollProcessor {
     // Extract poll data from tags
     const pollData = PollProcessor.extractPollData(event.tags);
 
+    // Build author profile only with defined properties
+    const authorData: ProcessedNote['author'] = { pubkey: event.pubkey };
+    if (authorProfile) {
+      const profile: NonNullable<ProcessedNote['author']['profile']> = {};
+      if (authorProfile.name !== undefined) profile.name = authorProfile.name;
+      if (authorProfile.display_name !== undefined) profile.display_name = authorProfile.display_name;
+      if (authorProfile.picture !== undefined) profile.picture = authorProfile.picture;
+      if (Object.keys(profile).length > 0) {
+        authorData.profile = profile;
+      }
+    }
+
     return {
-      id: event.id,
+      id: event.id ?? '',
       type: 'poll',
       timestamp: event.created_at,
-      author: {
-        pubkey: event.pubkey,
-        profile: authorProfile ? {
-          name: authorProfile.name,
-          display_name: authorProfile.display_name,
-          picture: authorProfile.picture
-        } : undefined
-      },
+      author: authorData,
       content: processedContent,
       pollData,
       rawEvent: event
@@ -62,7 +67,7 @@ export class PollProcessor {
       switch (tagName) {
         case 'option':
           // ['option', id, label]
-          if (values.length >= 2) {
+          if (values.length >= 2 && values[0] && values[1]) {
             options.push({
               id: values[0],
               label: values[1]
@@ -88,11 +93,12 @@ export class PollProcessor {
       }
     });
 
-    return {
+    const result: PollData = {
       options,
-      multipleChoice,
-      endDate,
-      relayUrls: relayUrls.length > 0 ? relayUrls : undefined
+      multipleChoice
     };
+    if (endDate !== undefined) result.endDate = endDate;
+    if (relayUrls.length > 0) result.relayUrls = relayUrls;
+    return result;
   }
 }

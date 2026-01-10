@@ -42,37 +42,46 @@ export class RepostProcessor {
       ? RepostProcessor.contentProcessor.processContentWithTags(originalContent, originalEvent.tags)
       : RepostProcessor.contentProcessor.processContent(originalContent);
 
-    return {
-      id: event.id,
+    // Build profile objects with explicit undefined handling for exactOptionalPropertyTypes
+    const buildProfile = (profile: { name?: string; display_name?: string; picture?: string } | null): { name?: string; display_name?: string; picture?: string } | undefined => {
+      if (!profile) return undefined;
+      const result: { name?: string; display_name?: string; picture?: string } = {};
+      if (profile.name !== undefined) result.name = profile.name;
+      if (profile.display_name !== undefined) result.display_name = profile.display_name;
+      if (profile.picture !== undefined) result.picture = profile.picture;
+      return Object.keys(result).length > 0 ? result : undefined;
+    };
+
+    // Build author/reposter with conditional profile property for exactOptionalPropertyTypes
+    const buildAuthorObject = (pubkey: string, profile: ReturnType<typeof buildProfile>): ProcessedNote['author'] => {
+      if (profile) {
+        return { pubkey, profile };
+      }
+      return { pubkey };
+    };
+
+    const authorProfile = originalAuthorPubkey
+      ? buildProfile(originalAuthorProfile ?? null)
+      : buildProfile(reposterProfile);
+    const authorPubkey = originalAuthorPubkey ?? event.pubkey;
+
+    const reposterProfileObj = buildProfile(reposterProfile);
+
+    const result: ProcessedNote = {
+      id: event.id ?? '',
       type: 'repost',
       timestamp: event.created_at,
-      author: originalAuthorPubkey ? {
-        pubkey: originalAuthorPubkey,
-        profile: originalAuthorProfile ? {
-          name: originalAuthorProfile.name,
-          display_name: originalAuthorProfile.display_name,
-          picture: originalAuthorProfile.picture
-        } : undefined
-      } : {
-        pubkey: event.pubkey,
-        profile: reposterProfile ? {
-          name: reposterProfile.name,
-          display_name: reposterProfile.display_name,
-          picture: reposterProfile.picture
-        } : undefined
-      },
-      reposter: {
-        pubkey: event.pubkey,
-        profile: reposterProfile ? {
-          name: reposterProfile.name,
-          display_name: reposterProfile.display_name,
-          picture: reposterProfile.picture
-        } : undefined
-      },
+      author: buildAuthorObject(authorPubkey, authorProfile),
+      reposter: buildAuthorObject(event.pubkey, reposterProfileObj),
       content: processedContent,
-      rawEvent: event,
-      repostedEvent: originalEvent || undefined
+      rawEvent: event
     };
+
+    if (originalEvent) {
+      result.repostedEvent = originalEvent;
+    }
+
+    return result;
   }
 
 
@@ -80,7 +89,7 @@ export class RepostProcessor {
    * Extract original author pubkey from repost tags
    */
   private static extractOriginalAuthorPubkey(event: NostrEvent): string | null {
-    const pTags = event.tags.filter(tag => tag[0] === 'p');
-    return pTags.length > 0 ? pTags[0][1] : null;
+    const pTag = event.tags.find(tag => tag[0] === 'p');
+    return pTag?.[1] ?? null;
   }
 }

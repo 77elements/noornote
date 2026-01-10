@@ -22,11 +22,8 @@ const WINDOW_OPTIONS = [
 ];
 
 export class ProfileRecognitionSettings extends SettingsSection {
-  private toastService: ToastService;
-
   constructor() {
     super('profile-recognition-settings');
-    this.toastService = ToastService.getInstance();
   }
 
   /**
@@ -140,7 +137,7 @@ export class ProfileRecognitionSettings extends SettingsSection {
             message = `Profile Recognition set to ${value} day${value > 1 ? 's' : ''}`;
           }
 
-          this.toastService.show(message, 'success');
+          ToastService.show(message, 'success');
         }
       });
     });

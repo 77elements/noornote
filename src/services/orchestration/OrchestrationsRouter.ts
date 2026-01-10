@@ -18,13 +18,17 @@
  * @used-by All Orchestrators (Feed, Reactions, Thread, Profile, etc.)
  */
 
-import type { NostrEvent, NDKFilter, NDKSubscription } from '@nostr-dev-kit/ndk';
+import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from '../transport/NostrTransport';
 import { Orchestrator } from './Orchestrator';
 import { SystemLogger } from '../../components/system/SystemLogger';
 
+interface SubCloser {
+  close: () => void;
+}
+
 interface Subscription {
-  sub: Sub;
+  sub: SubCloser;
   filters: NDKFilter[];
   orchestrators: Set<string>; // Orchestrator names interested in this subscription
 }
@@ -92,11 +96,11 @@ export class OrchestrationsRouter {
    * @param relays - Optional relay list (defaults to read relays)
    * @returns Subscription ID for cleanup
    */
-  public subscribe(
+  public async subscribe(
     filters: NDKFilter[],
     orchestratorName: string,
     relays?: string[]
-  ): string {
+  ): Promise<string> {
     const relayList = relays || this.transport.getReadRelays();
     const subscriptionId = this.generateSubscriptionId(filters, relayList);
 

@@ -152,6 +152,8 @@ export class ZapStatsService {
 
     // Process incoming zaps - find who zapped us
     for (const zap of incomingZaps) {
+      // Skip events without ID
+      if (!zap.id) continue;
       // Deduplicate by event ID
       if (seenEventIds.has(zap.id)) continue;
       seenEventIds.add(zap.id);
@@ -186,6 +188,8 @@ export class ZapStatsService {
 
       // Process outgoing zaps - find where we are the zapper
       for (const zap of outgoingZaps) {
+        // Skip events without ID
+        if (!zap.id) continue;
         // Deduplicate by event ID
         if (seenEventIds.has(zap.id)) continue;
         seenEventIds.add(zap.id);
@@ -242,7 +246,7 @@ export class ZapStatsService {
 
       const invoice = bolt11Tag[1];
       const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
-      if (!match) return 0;
+      if (!match || !match[2]) return 0;
 
       const amount = parseInt(match[2]);
       const multiplier = match[3]?.toLowerCase();

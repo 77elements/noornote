@@ -117,8 +117,11 @@ export class NotificationItem {
     const zapsContainer = this.element.querySelector('.notification-item__zaps');
     if (!zapsContainer) return;
 
+    const eventId = this.options.event.id;
+    if (!eventId) return;
+
     // Fetch stats to get zap events
-    const stats = await this.reactionsOrch.getDetailedStats(this.options.event.id);
+    const stats = await this.reactionsOrch.getDetailedStats(eventId);
 
     if (stats && stats.zapEvents && stats.zapEvents.length > 0) {
       this.zapsList = new ZapsList(stats.zapEvents);
@@ -136,9 +139,12 @@ export class NotificationItem {
     const islContainer = this.element.querySelector('.notification-item__isl');
     if (!islContainer || !currentUser) return;
 
+    const noteId = this.options.event.id;
+    if (!noteId) return;
+
     // Create ISL with the notification event
     this.isl = new InteractionStatusLine({
-      noteId: this.options.event.id,
+      noteId,
       authorPubkey: this.options.event.pubkey,
       fetchStats: true,
       isLoggedIn: true,
@@ -242,8 +248,9 @@ export class NotificationItem {
       }
       case 'article': return 'posted a new article';
       case 'hashtag': {
-        const hashtag = this.options.event.meta?.hashtag || 'unknown';
-        const count = this.options.event.meta?.count || 1;
+        const meta = (this.options.event as NostrEvent & { meta?: { hashtag?: string; count?: number } }).meta;
+        const hashtag = meta?.hashtag || 'unknown';
+        const count = meta?.count || 1;
         return count === 1
           ? `New post tagged #${hashtag}`
           : `${count} new posts tagged #${hashtag}`;
@@ -270,10 +277,10 @@ export class NotificationItem {
     // Format: lnbc[amount][multiplier]...
     // Example: lnbc10n... = 1000 sats (n = nano-bitcoin = 0.1 sat)
     const match = invoice.match(/lnbc(\d+)([munp]?)/);
-    if (!match) return null;
+    if (!match || !match[1]) return null;
 
     const amount = parseInt(match[1]);
-    const multiplier = match[2];
+    const multiplier = match[2] || '';
 
     // Convert to sats
     const multipliers: Record<string, number> = {
@@ -284,7 +291,7 @@ export class NotificationItem {
       'p': 0.0001    // pico-BTC
     };
 
-    return Math.floor(amount * (multipliers[multiplier] || 1));
+    return Math.floor(amount * (multipliers[multiplier] ?? 1));
   }
 
   /**
@@ -355,9 +362,11 @@ export class NotificationItem {
             const profiles = new Map();
             const pTags = originalEvent.tags?.filter((t: string[]) => t[0] === 'p') || [];
             for (const tag of pTags) {
+              const tagPubkey = tag[1];
+              if (!tagPubkey) continue;
               try {
-                const profile = await this.userProfileService.getUserProfile(tag[1]);
-                profiles.set(tag[1], profile);
+                const profile = await this.userProfileService.getUserProfile(tagPubkey);
+                profiles.set(tagPubkey, profile);
               } catch {}
             }
 
@@ -507,7 +516,8 @@ export class NotificationItem {
 
     // For hashtag notifications, trigger hashtag search
     if (type === 'hashtag') {
-      const hashtag = this.options.event.meta?.hashtag;
+      const meta = (this.options.event as NostrEvent & { meta?: { hashtag?: string } }).meta;
+      const hashtag = meta?.hashtag;
       if (hashtag) {
         const eventBus = EventBus.getInstance();
         eventBus.emit('hashtagSearch:start', { hashtag });

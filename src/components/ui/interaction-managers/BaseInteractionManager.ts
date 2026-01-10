@@ -57,11 +57,10 @@ export abstract class BaseInteractionManager<TConfig extends BaseInteractionConf
   /**
    * Update stats after successful interaction
    */
-  protected updateStats(interactionType: 'like' | 'repost' | 'zap', zapAmount?: number): void {
+  protected updateStats(interactionType: 'like' | 'repost'): void {
     this.statsUpdateService.updateAfterInteraction(
       this.config.noteId,
-      interactionType,
-      zapAmount || null
+      interactionType
     );
 
     if (this.config.onStatsUpdate) {

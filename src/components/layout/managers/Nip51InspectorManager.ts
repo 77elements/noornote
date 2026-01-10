@@ -26,7 +26,6 @@ interface GroupedEvents {
 }
 
 export class Nip51InspectorManager {
-  private containerElement: HTMLElement;
   private authService: AuthService;
   private transport: NostrTransport;
   private relayConfig: RelayConfig;
@@ -38,8 +37,7 @@ export class Nip51InspectorManager {
     metadata: []
   };
 
-  constructor(containerElement: HTMLElement) {
-    this.containerElement = containerElement;
+  constructor(_containerElement: HTMLElement) {
     this.authService = AuthService.getInstance();
     this.transport = NostrTransport.getInstance();
     this.relayConfig = RelayConfig.getInstance();
@@ -229,6 +227,9 @@ export class Nip51InspectorManager {
    * Render a single event item
    */
   private renderEventItem(event: NostrEvent, kind: number, index: number): string {
+    const eventId = event.id;
+    if (!eventId) return '';
+
     const timestamp = new Date(event.created_at * 1000).toLocaleString();
     const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
     const tagCount = event.tags.length;
@@ -238,10 +239,10 @@ export class Nip51InspectorManager {
     const keyTags = this.extractKeyTags(event, kind);
 
     return `
-      <div class="nip51-inspector-event" data-event-id="${event.id}">
+      <div class="nip51-inspector-event" data-event-id="${eventId}">
         <div class="nip51-inspector-event__header">
           <div class="nip51-inspector-event__meta">
-            <span class="nip51-inspector-event__id" title="${event.id}">${event.id.slice(0, 8)}...${event.id.slice(-8)}</span>
+            <span class="nip51-inspector-event__id" title="${eventId}">${eventId.slice(0, 8)}...${eventId.slice(-8)}</span>
             ${dTag ? `<span class="nip51-inspector-event__dtag">${this.escapeHtml(dTag)}</span>` : ''}
             <span class="nip51-inspector-event__time">${timestamp}</span>
           </div>

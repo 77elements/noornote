@@ -7,6 +7,7 @@
  */
 
 import { hexToNpub } from '../helpers/nip19';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import {
   calculateEventHash,
   decodeNip19,
@@ -33,11 +34,8 @@ export interface NostrExtension {
   };
 }
 
-declare global {
-  interface Window {
-    nostr?: NostrExtension;
-  }
-}
+// NOTE: Window.nostr is already declared by @nostr-dev-kit/ndk
+// We use our NostrExtension interface internally with compatible but more permissive types
 
 export type AuthMethod = 'npub' | 'extension' | 'nip46' | 'key-signer';
 export type InputType = 'npub' | 'bunker' | 'nip05' | 'unknown';

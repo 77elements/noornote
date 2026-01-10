@@ -143,6 +143,10 @@ export class SingleNoteView extends View {
   private async renderNote(event: NostrEvent): Promise<void> {
     if (event.kind === 6) {
       const originalNoteId = extractOriginalNoteId(event);
+      if (!originalNoteId) {
+        this.showError('Could not extract original note ID from repost');
+        return;
+      }
       const originalEvent = await this.fetchNote(originalNoteId);
 
       if (!originalEvent) {

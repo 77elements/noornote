@@ -91,12 +91,13 @@ export class ReplyModal {
     // If parent event not provided, fetch from relays
     if (!parentEvent) {
       this.systemLogger.info('ReplyModal', `Fetching parent event from relays...`);
-      parentEvent = await this.fetchParentEvent(parentNoteId);
+      const fetchedEvent = await this.fetchParentEvent(parentNoteId);
 
-      if (!parentEvent) {
+      if (!fetchedEvent) {
         this.systemLogger.error('ReplyModal', `Parent event not found: ${parentNoteId}`);
         return;
       }
+      parentEvent = fetchedEvent;
     }
 
     this.parentEvent = parentEvent;
@@ -138,7 +139,7 @@ export class ReplyModal {
       return null;
     }
 
-    return result.events[0];
+    return result.events[0] ?? null;
   }
 
   /**
@@ -218,13 +219,13 @@ export class ReplyModal {
     if (!this.parentEvent) return '';
 
     // Render parent note using NoteUI (with header, without ISL)
+    // Setting islFetchStats=false and isLoggedIn=false hides the ISL
     const noteElement = NoteUI.createNoteElement(this.parentEvent, {
       collapsible: false,
-      islFetchStats: false, // No stats needed
-      isLoggedIn: false,    // No interactions needed
-      headerSize: 'normal',
-      depth: 0,
-      showISL: false        // Hide ISL for parent note preview
+      islFetchStats: false,
+      isLoggedIn: false,
+      headerSize: 'medium',
+      depth: 0
     });
 
     return `
@@ -552,9 +553,11 @@ export class ReplyModal {
 
       this.systemLogger.info('ReplyModal', `Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`);
 
-      if (replyEvent) {
+      if (replyEvent && replyEvent.id) {
         // Update parent note's reply count (cache invalidation + optimistic UI update)
-        this.statsUpdateService.clearCacheOnly(this.parentEvent.id);
+        if (this.parentEvent?.id) {
+          this.statsUpdateService.clearCacheOnly(this.parentEvent.id);
+        }
 
         // Emit event for optimistic UI update (SingleNoteView listens to this)
         this.systemLogger.info('ReplyModal', `Emitting reply:created event for ${replyEvent.id.slice(0, 8)}`);

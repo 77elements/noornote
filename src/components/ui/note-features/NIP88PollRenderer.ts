@@ -57,12 +57,16 @@ export class NIP88PollRenderer {
    */
   static async render(noteElement: HTMLElement, pollData: PollData, event: NostrEvent): Promise<void> {
     if (!pollData || pollData.options.length === 0) return;
+    if (!event.id) return; // Skip if event has no ID
+
+    // Capture eventId after the guard to ensure it's a string (for closures)
+    const eventId = event.id;
 
     // Setup global listener for cross-view updates
     this.setupGlobalListener();
 
     // Cache pollData for cross-view updates
-    pollDataCache.set(event.id, pollData);
+    pollDataCache.set(eventId, pollData);
 
     // Get services
     const pollOrchestrator = PollOrchestrator.getInstance();
@@ -79,7 +83,7 @@ export class NIP88PollRenderer {
     // Create poll container
     const pollContainer = document.createElement('div');
     pollContainer.className = 'nip88-poll';
-    pollContainer.dataset.pollEventId = event.id; // Store for cross-view updates
+    pollContainer.dataset.pollEventId = eventId; // Store for cross-view updates
 
     // Add poll metadata (multiple choice, end date)
     if (pollData.multipleChoice || pollData.endDate) {
@@ -137,11 +141,10 @@ export class NIP88PollRenderer {
         // Add vote handler
         optionBtn.addEventListener('click', async () => {
           await this.handleVote(
-            event.id,
+            eventId,
             option.id,
             pollData,
-            pollContainer,
-            event
+            pollContainer
           );
         });
       }
@@ -181,7 +184,7 @@ export class NIP88PollRenderer {
     // Fetch and display vote counts
     try {
       const results = await pollOrchestrator.fetchPollResults(
-        event.id,
+        eventId,
         pollData.options,
         currentUser?.pubkey
       );
@@ -199,8 +202,7 @@ export class NIP88PollRenderer {
     pollEventId: string,
     optionId: string,
     pollData: PollData,
-    _pollContainer: HTMLElement,
-    _event: NostrEvent
+    _pollContainer: HTMLElement
   ): Promise<void> {
     const voteService = PollVoteService.getInstance();
     const pollOrchestrator = PollOrchestrator.getInstance();

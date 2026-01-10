@@ -165,7 +165,7 @@ export class QuoteOrchestrator extends Orchestrator {
         const events = await this.transport.fetch(relayHints, [filter], 5000);
 
         if (events.length > 0) {
-          return events[0];
+          return events[0] ?? null;
         }
       } catch (error) {
         this.systemLogger.warn('QuoteOrchestrator', `Relay hints fetch failed: ${error}`);
@@ -179,7 +179,7 @@ export class QuoteOrchestrator extends Orchestrator {
       const events = await this.transport.fetch(standardRelays, [filter], 5000);
 
       if (events.length > 0) {
-        return events[0];
+        return events[0] ?? null;
       }
     } catch (error) {
       this.systemLogger.error('QuoteOrchestrator', `Stage 1 fetch failed: ${error}`);
@@ -192,7 +192,7 @@ export class QuoteOrchestrator extends Orchestrator {
       const events = await this.transport.fetch(outboundRelays, [filter], 10000);
 
       if (events.length > 0) {
-        return events[0];
+        return events[0] ?? null;
       }
     } catch (error) {
       this.systemLogger.error('QuoteOrchestrator', `Stage 2 fetch failed: ${error}`);

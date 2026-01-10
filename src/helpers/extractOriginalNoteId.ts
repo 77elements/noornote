@@ -9,7 +9,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
-export function extractOriginalNoteId(event: NostrEvent): string {
+export function extractOriginalNoteId(event: NostrEvent): string | undefined {
   // For regular notes (not reposts), return their ID
   if (event.kind !== 6) {
     return event.id;
@@ -19,8 +19,9 @@ export function extractOriginalNoteId(event: NostrEvent): string {
 
   // Try e-tags first (most common)
   const eTags = event.tags.filter(tag => tag[0] === 'e');
-  if (eTags.length > 0) {
-    return eTags[0][1];
+  const firstETagValue = eTags[0]?.[1];
+  if (firstETagValue) {
+    return firstETagValue;
   }
 
   // Try parsing embedded event (legacy format)

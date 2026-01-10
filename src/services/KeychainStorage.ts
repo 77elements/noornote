@@ -10,7 +10,6 @@
  */
 
 import { setPassword, getPassword, deletePassword } from 'tauri-plugin-keyring-api';
-import { ToastService } from './ToastService';
 import { PlatformService } from './PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { AuthService } from './AuthService';

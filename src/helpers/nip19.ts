@@ -111,13 +111,14 @@ export function extractPubkeysFromText(text: string): string[] {
 
   for (const match of matches) {
     try {
-      const nip19 = match[1]; // Capture group without "nostr:" prefix
+      const nip19Id = match[1]; // Capture group without "nostr:" prefix
+      if (!nip19Id) continue;
 
-      if (nip19.startsWith('npub')) {
-        const hex = npubToHex(nip19);
+      if (nip19Id.startsWith('npub')) {
+        const hex = npubToHex(nip19Id);
         if (hex) pubkeys.add(hex);
-      } else if (nip19.startsWith('nprofile')) {
-        const decoded = decodeNip19(nip19);
+      } else if (nip19Id.startsWith('nprofile')) {
+        const decoded = decodeNip19(nip19Id);
         if (decoded.type === 'nprofile') {
           const pubkeyHex = (decoded.data as any).pubkey;
           pubkeys.add(pubkeyHex);

@@ -7,7 +7,7 @@
 import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
 import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
 import { AuthService } from '../../services/AuthService';
-import { SearchResultsView } from './SearchResultsView';
+import { SearchResultsView, SearchResultsConfig } from './SearchResultsView';
 import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
 import { SystemLogger } from '../system/SystemLogger';
@@ -166,7 +166,7 @@ export class GlobalSearchView {
       },
       {
         onNoteClick: (noteId) => this.handleNoteClick(noteId),
-        onLoadMore: () => {}
+        onLoadMore: async () => {}
       }
     );
 
@@ -249,13 +249,17 @@ export class GlobalSearchView {
       ? `Posts tagged ${this.currentQuery}`
       : `Search Results: "${this.currentQuery}"`;
 
+    const config: SearchResultsConfig = {
+      title,
+      searchTerms: this.currentQuery,
+      meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`
+    };
+    if (this.currentHashtag) {
+      config.hashtag = this.currentHashtag;
+    }
+
     this.searchResultsView = new SearchResultsView(
-      {
-        title,
-        searchTerms: this.currentQuery,
-        meta: `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`,
-        hashtag: this.currentHashtag || undefined
-      },
+      config,
       {
         onNoteClick: (noteId) => this.handleNoteClick(noteId),
         onLoadMore: () => this.loadMoreResults()

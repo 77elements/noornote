@@ -202,8 +202,9 @@ export class NotificationsView extends View {
 
       // Get oldest timestamp from current notifications
       const allNotifications = this.notificationsOrch.getNotifications();
-      if (allNotifications.length > 0) {
-        const oldestTimestamp = allNotifications[allNotifications.length - 1].timestamp;
+      const oldestNotification = allNotifications[allNotifications.length - 1];
+      if (oldestNotification) {
+        const oldestTimestamp = oldestNotification.timestamp;
 
         // Fetch older notifications from relays
         await this.notificationsOrch.fetchOlderNotifications(oldestTimestamp, this.BATCH_SIZE);

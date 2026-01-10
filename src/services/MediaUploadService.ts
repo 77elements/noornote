@@ -307,7 +307,9 @@ export class MediaUploadService {
     const results: UploadResult[] = [];
 
     for (let i = 0; i < files.length; i++) {
-      const result = await this.uploadFile(files[i], (progress) => {
+      const file = files[i];
+      if (!file) continue;
+      const result = await this.uploadFile(file, (progress) => {
         onProgress?.(i, progress, files.length);
       });
       results.push(result);

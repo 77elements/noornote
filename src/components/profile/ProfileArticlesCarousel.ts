@@ -26,7 +26,6 @@ export class ProfileArticlesCarousel {
   private articles: ArticleCardData[] = [];
   private transport: NostrTransport;
   private userProfileService: UserProfileService;
-  private currentIndex: number = 0;
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;

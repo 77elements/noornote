@@ -327,9 +327,6 @@ export class App {
     }
   }
 
-  // Intentionally empty - debug logger is mounted in MainLayout
-  private mountSecondaryContent(_contentType: string): void {}
-
   private setupUI(): void {
     if (!this.appElement) return;
 
@@ -377,9 +374,10 @@ export class App {
         if (urls.length === 0) return;
 
         const url = urls[0];
+        if (!url) return;
 
         try {
-          let nip19String = url;
+          let nip19String: string = url;
           if (url.startsWith('nostr:')) {
             nip19String = url.slice(6);
           }

@@ -193,6 +193,7 @@ export class DMStore {
           const lastReadAt = existing?.lastReadAt || 0;
           const shouldIncrementUnread = !message.isMine && message.createdAt > lastReadAt;
 
+          const subject = message.subject || existing?.subject;
           const conversation: DMConversation = {
             pubkey: message.conversationWith,
             lastMessageAt: isNewer ? message.createdAt : existing!.lastMessageAt,
@@ -201,7 +202,7 @@ export class DMStore {
               ? (existing?.unreadCount || 0) + 1
               : (existing?.unreadCount || 0),
             lastReadAt: lastReadAt,
-            subject: message.subject || existing?.subject
+            ...(subject && { subject })
           };
 
           conversationsStore.put(conversation);

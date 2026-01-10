@@ -14,8 +14,9 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export function getAddressableIdentifier(event: NostrEvent): string | null {
+  const kind = event.kind;
   // Only addressable events (kinds 30000-39999) have addressable identifiers
-  if (event.kind < 30000 || event.kind > 39999) {
+  if (kind === undefined || kind < 30000 || kind > 39999) {
     return null;
   }
 
@@ -26,6 +27,6 @@ export function getAddressableIdentifier(event: NostrEvent): string | null {
   }
 
   // Build addressable identifier: "kind:pubkey:d-tag"
-  const identifier = `${event.kind}:${event.pubkey}:${dTag[1]}`;
+  const identifier = `${kind}:${event.pubkey}:${dTag[1]}`;
   return identifier;
 }

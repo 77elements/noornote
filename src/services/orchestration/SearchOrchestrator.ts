@@ -91,7 +91,7 @@ export class SearchOrchestrator extends Orchestrator {
     const { query, limit = 20, authors, extensions } = options;
 
     // Build search filter (NIP-50)
-    const filter: Filter = {
+    const filter: NDKFilter = {
       kinds: [1], // Only short text notes
       limit
     };
@@ -128,7 +128,8 @@ export class SearchOrchestrator extends Orchestrator {
     // Get search relays (hardcoded + user relays)
     const searchRelays = this.getSearchRelays();
 
-    const authorInfo = authors ? ` (author: ${authors[0].slice(0, 8)}...)` : '';
+    const firstAuthor = authors?.[0];
+    const authorInfo = firstAuthor ? ` (author: ${firstAuthor.slice(0, 8)}...)` : '';
     this.systemLogger.info('SearchOrchestrator', `🔍 Searching for: "${query}"${authorInfo} on ${searchRelays.length} relays`);
 
     // Fetch events from search relays
@@ -157,7 +158,7 @@ export class SearchOrchestrator extends Orchestrator {
     options: SearchOptions,
     until?: number
   ): Promise<NostrEvent[]> {
-    const filter: Filter = {
+    const filter: NDKFilter = {
       kinds: [1],
       limit: options.limit || 20
     };
@@ -201,7 +202,7 @@ export class SearchOrchestrator extends Orchestrator {
       return [];
     }
 
-    const filter: Filter = {
+    const filter: NDKFilter = {
       kinds: [0], // Profile metadata
       limit
     };
