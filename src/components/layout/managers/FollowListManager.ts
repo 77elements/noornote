@@ -274,7 +274,7 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
             Sort by:
             <a href="#" class="follows-sort-controls__sort-date follows-sort-controls__link--disabled ${this.currentSort === 'date' ? 'active' : ''}">Date</a>
             /
-            <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort === 'zaps' ? 'active' : ''}">Zaps</a>
+            <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort !== 'date' ? 'active' : ''}">Zaps</a>
           </span>
           <input type="text"
                  class="follows-sort-controls__search ${this.isFullyLoaded ? '' : 'follows-sort-controls__search--disabled'}"
@@ -544,7 +544,7 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
 
       // Check mutual status for this batch
       const batchWithMutualStatus = await this.mutualService.checkMutualStatusBatch(
-        batch.map(item => ({ pubkey: item.pubkey }))
+        batch.map(item => ({ id: item.pubkey, pubkey: item.pubkey }))
       );
 
       // Update items with mutual status

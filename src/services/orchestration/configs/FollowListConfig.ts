@@ -69,13 +69,16 @@ export const followListConfig: ListConfig<FollowItem> = {
     const items: FollowItem[] = [];
 
     tags.forEach(tag => {
-      if (tag[0] === 'p' && tag[1]) {
-        items.push({
-          pubkey: tag[1],
-          relay: tag[2] || undefined,
-          petname: tag[3] || undefined,
+      const pubkey = tag[1];
+      if (tag[0] === 'p' && pubkey) {
+        const item: FollowItem = {
+          id: pubkey,
+          pubkey,
           addedAt: timestamp
-        });
+        };
+        if (tag[2]) item.relay = tag[2];
+        if (tag[3]) item.petname = tag[3];
+        items.push(item);
       }
     });
 
@@ -95,6 +98,7 @@ export const followListConfig: ListConfig<FollowItem> = {
     const { decryptPrivateFollows } = await import('../../../helpers/decryptPrivateFollows');
     const pubkeys = await decryptPrivateFollows(content, pubkey);
     return pubkeys.map(pk => ({
+      id: pk,
       pubkey: pk,
       addedAt: Math.floor(Date.now() / 1000)
     }));

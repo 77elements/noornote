@@ -15,8 +15,10 @@ import { BaseFileStorage, type BaseFileData } from './BaseFileStorage';
 
 /**
  * Follow item with NIP-02 metadata
+ * Note: `id` is always equal to `pubkey` (for BaseListItem compatibility)
  */
 export interface FollowItem {
+  id: string;          // Same as pubkey (for BaseListItem compatibility)
   pubkey: string;
   relay?: string;      // NIP-02: Optional relay hint
   petname?: string;    // NIP-02: Optional local nickname
@@ -133,11 +135,11 @@ export class FollowFileStorage {
     const data = await this.readPublic();
 
     // Check if already following
-    const existingIndex = data.items.findIndex(f => f.pubkey === item.pubkey);
-    if (existingIndex >= 0) {
+    const existing = data.items.find(f => f.pubkey === item.pubkey);
+    if (existing) {
       // Update metadata if provided
-      if (item.relay !== undefined) data.items[existingIndex].relay = item.relay;
-      if (item.petname !== undefined) data.items[existingIndex].petname = item.petname;
+      if (item.relay !== undefined) existing.relay = item.relay;
+      if (item.petname !== undefined) existing.petname = item.petname;
     } else {
       // Add new follow
       item.addedAt = Math.floor(Date.now() / 1000);
@@ -154,11 +156,11 @@ export class FollowFileStorage {
     const data = await this.readPrivate();
 
     // Check if already following
-    const existingIndex = data.items.findIndex(f => f.pubkey === item.pubkey);
-    if (existingIndex >= 0) {
+    const existing = data.items.find(f => f.pubkey === item.pubkey);
+    if (existing) {
       // Update metadata if provided
-      if (item.relay !== undefined) data.items[existingIndex].relay = item.relay;
-      if (item.petname !== undefined) data.items[existingIndex].petname = item.petname;
+      if (item.relay !== undefined) existing.relay = item.relay;
+      if (item.petname !== undefined) existing.petname = item.petname;
     } else {
       // Add new follow
       item.addedAt = Math.floor(Date.now() / 1000);
@@ -223,19 +225,19 @@ export class FollowFileStorage {
     let updated = false;
 
     // Update in public list if exists
-    const publicIndex = publicData.items.findIndex(f => f.pubkey === pubkey);
-    if (publicIndex >= 0) {
-      if (relay !== undefined) publicData.items[publicIndex].relay = relay;
-      if (petname !== undefined) publicData.items[publicIndex].petname = petname;
+    const publicItem = publicData.items.find(f => f.pubkey === pubkey);
+    if (publicItem) {
+      if (relay !== undefined) publicItem.relay = relay;
+      if (petname !== undefined) publicItem.petname = petname;
       await this.writePublic(publicData);
       updated = true;
     }
 
     // Update in private list if exists
-    const privateIndex = privateData.items.findIndex(f => f.pubkey === pubkey);
-    if (privateIndex >= 0) {
-      if (relay !== undefined) privateData.items[privateIndex].relay = relay;
-      if (petname !== undefined) privateData.items[privateIndex].petname = petname;
+    const privateItem = privateData.items.find(f => f.pubkey === pubkey);
+    if (privateItem) {
+      if (relay !== undefined) privateItem.relay = relay;
+      if (petname !== undefined) privateItem.petname = petname;
       await this.writePrivate(privateData);
       updated = true;
     }

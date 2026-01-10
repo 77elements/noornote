@@ -165,28 +165,31 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
 
       // Extract public follows with NIP-02 metadata
       let publicFollows: FollowItem[] = [];
-      if (kind3Events.length > 0) {
-        const followEvent = kind3Events[0];
-
+      const followEvent = kind3Events[0];
+      if (followEvent) {
         publicFollows = followEvent.tags
-          .filter(tag => tag[0] === 'p' && tag[1])
-          .map(tag => ({
-            pubkey: tag[1],
-            relay: tag[2] || undefined,
-            petname: tag[3] || undefined,
-            addedAt: followEvent.created_at
-          }));
+          .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'p' && typeof tag[1] === 'string')
+          .map(tag => {
+            const item: FollowItem = {
+              id: tag[1],
+              pubkey: tag[1],
+              addedAt: followEvent.created_at
+            };
+            if (tag[2]) item.relay = tag[2];
+            if (tag[3]) item.petname = tag[3];
+            return item;
+          });
       }
 
       // Extract private follows from kind:30000
       let privateFollows: FollowItem[] = [];
-      if (this.isPrivateFollowsEnabled() && kind30000Events.length > 0) {
-        const privateListEvent = kind30000Events[0];
-
+      const privateListEvent = kind30000Events[0];
+      if (this.isPrivateFollowsEnabled() && privateListEvent) {
         try {
           const { parsePrivateFollowListEvent } = await import('../../helpers/parsePrivateFollowListEvent');
           const privatePubkeys = await parsePrivateFollowListEvent(privateListEvent, pubkey);
           privateFollows = privatePubkeys.map(pk => ({
+            id: pk,
             pubkey: pk,
             addedAt: privateListEvent.created_at,
             isPrivate: true
@@ -228,6 +231,7 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
    */
   public async addFollow(pubkey: string, isPrivate: boolean): Promise<void> {
     await this.addItem({
+      id: pubkey,
       pubkey,
       addedAt: Math.floor(Date.now() / 1000),
       isPrivate
@@ -348,6 +352,10 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
       }
 
       const kind3Event = kind3Events[0];
+      if (!kind3Event) {
+        this.systemLogger.warn('FollowListOrchestrator', 'No kind:3 event found for migration');
+        return false;
+      }
 
       // Check if content field contains encrypted data
       if (!kind3Event.content || kind3Event.content.trim() === '') {
@@ -357,13 +365,17 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
 
       // Extract public follows from tags
       const publicFollows: FollowItem[] = kind3Event.tags
-        .filter(tag => tag[0] === 'p' && tag[1])
-        .map(tag => ({
-          pubkey: tag[1],
-          relay: tag[2] || undefined,
-          petname: tag[3] || undefined,
-          addedAt: kind3Event.created_at
-        }));
+        .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'p' && typeof tag[1] === 'string')
+        .map(tag => {
+          const item: FollowItem = {
+            id: tag[1],
+            pubkey: tag[1],
+            addedAt: kind3Event.created_at
+          };
+          if (tag[2]) item.relay = tag[2];
+          if (tag[3]) item.petname = tag[3];
+          return item;
+        });
 
       // Decrypt legacy private follows from content
       let legacyPrivatePubkeys: string[] = [];
@@ -381,6 +393,7 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
       }
 
       const legacyPrivateFollows: FollowItem[] = legacyPrivatePubkeys.map(pk => ({
+        id: pk,
         pubkey: pk,
         addedAt: kind3Event.created_at,
         isPrivate: true
