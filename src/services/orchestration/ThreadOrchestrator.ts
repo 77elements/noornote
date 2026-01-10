@@ -82,7 +82,7 @@ export class ThreadOrchestrator extends Orchestrator {
     try {
       const replies = await fetchPromise;
       this.repliesMetaCache.set(noteId, {
-        replyIds: replies.map(r => r.id),
+        replyIds: replies.map(r => r.id).filter((id): id is string => id !== undefined),
         lastUpdated: Date.now()
       });
       return replies;
@@ -153,12 +153,13 @@ export class ThreadOrchestrator extends Orchestrator {
       const relays = this.transport.getReadRelays();
       const events = await this.transport.fetch(relays, [{ ids: [noteId] }], 5000);
 
-      if (events.length === 0) {
+      const firstEvent = events[0];
+      if (events.length === 0 || !firstEvent) {
         return this.emptyThreadContext();
       }
 
       const chain: ThreadContextItem[] = [];
-      let noteToProcess = events[0];
+      let noteToProcess: NostrEvent = firstEvent;
       const maxDepth = 50;
 
       for (let depth = 0; depth < maxDepth; depth++) {
@@ -167,11 +168,11 @@ export class ThreadOrchestrator extends Orchestrator {
         if (chain.some(item => item.eventId === parentId)) break;
 
         const parentEvents = await this.transport.fetch(relays, [{ ids: [parentId] }], 5000);
-        if (parentEvents.length === 0) break;
-
         const parentNote = parentEvents[0];
+        if (parentEvents.length === 0 || !parentNote) break;
+
         chain.push({
-          eventId: parentNote.id,
+          eventId: parentNote.id ?? '',
           content: parentNote.content,
           pubkey: parentNote.pubkey,
           createdAt: parentNote.created_at,
@@ -181,16 +182,16 @@ export class ThreadOrchestrator extends Orchestrator {
         noteToProcess = parentNote;
       }
 
-      if (chain.length === 0) {
+      const directParent = chain[0];
+      if (chain.length === 0 || !directParent) {
         return this.emptyThreadContext();
       }
 
-      const directParent = chain[0];
       const root = chain[chain.length - 1];
       const parents = chain.slice(1, -1);
 
       return {
-        root: chain.length > 1 ? root : null,
+        root: chain.length > 1 && root ? root : null,
         parents,
         directParent,
         hasSkippedReplies: parents.length > 0
@@ -206,11 +207,13 @@ export class ThreadOrchestrator extends Orchestrator {
     if (eTags.length === 0) return null;
 
     const replyTag = eTags.find(tag => tag[3] === 'reply');
-    if (replyTag) return replyTag[1];
+    if (replyTag) return replyTag[1] ?? null;
 
-    if (eTags.length === 1) return eTags[0][1];
+    const firstTag = eTags[0];
+    if (eTags.length === 1 && firstTag) return firstTag[1] ?? null;
 
-    return eTags[eTags.length - 1][1];
+    const lastTag = eTags[eTags.length - 1];
+    return lastTag?.[1] ?? null;
   }
 
   public clearCache(noteId: string): void {
@@ -243,7 +246,7 @@ export class ThreadOrchestrator extends Orchestrator {
         this.systemLogger.info(this.LOG_TAG, `New live reply for ${noteId}: ${event.id}`);
 
         const cached = this.repliesMetaCache.get(noteId);
-        if (cached) {
+        if (cached && event.id) {
           cached.replyIds.push(event.id);
           cached.lastUpdated = Date.now();
         }
