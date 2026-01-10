@@ -19,7 +19,8 @@
     "tauri": "tauri",
     "tauri:dev": "TAURI_DEV_MODE=wide tauri dev",
     "tauri:dev:clean": "TAURI_DEV_MODE=clean tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "prepare": "husky"
   },
   "keywords": [
     "nostr",
@@ -50,6 +51,7 @@
     "eslint": "^8.50.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^9.1.7",
     "prettier": "^3.0.3",
     "rollup-plugin-visualizer": "^5.9.2",
     "sass-embedded": "^1.93.2",
