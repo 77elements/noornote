@@ -34,6 +34,7 @@ import { getViewNavigationController } from '../../services/ViewNavigationContro
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
+import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
 export class MainLayout {
   private element: HTMLElement;
@@ -1455,15 +1456,6 @@ export class MainLayout {
   }
 
   /**
-   * Hijri month names (shared across date formatting)
-   */
-  private static readonly HIJRI_MONTHS = [
-    'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
-    'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
-    'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
-  ];
-
-  /**
    * Update current date/time display in sidebar
    */
   private updateCurrentDateTime(): void {
@@ -1492,7 +1484,7 @@ export class MainLayout {
       // International format: DD. Month YYYY, HH:MM
       const hijriDate = dayjs(now).toCalendarSystem('hijri');
       const day = hijriDate.date();
-      const month = MainLayout.HIJRI_MONTHS[hijriDate.month()];
+      const month = HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
       dateString = `${day}. ${month} ${year}, ${time}`;
     } else if (calendarSystem === 'both') {
@@ -1503,7 +1495,7 @@ export class MainLayout {
 
       const hijriDate = dayjs(now).toCalendarSystem('hijri');
       const hijriDay = hijriDate.date();
-      const hijriMonth = MainLayout.HIJRI_MONTHS[hijriDate.month()];
+      const hijriMonth = HIJRI_MONTHS[hijriDate.month()];
       const hijriYear = hijriDate.year();
       dateString = `${gregorianMonth}/${gregorianDay}/${gregorianYear}  |  ${hijriDay}. ${hijriMonth} ${hijriYear}, ${time}`;
     }

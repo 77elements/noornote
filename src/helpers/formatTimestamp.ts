@@ -30,7 +30,7 @@ type CalendarSystem = 'gregorian' | 'hijri' | 'both';
 /**
  * Hijri month names (English transliteration)
  */
-const HIJRI_MONTHS = [
+export const HIJRI_MONTHS = [
   'Muharram',
   'Safar',
   "Rabi' al-Awwal",

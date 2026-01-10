@@ -37,6 +37,7 @@ import { CustomDropdown } from '../ui/CustomDropdown';
 import { TribeOrchestrator } from '../../services/orchestration/TribeOrchestrator';
 import { TribeFolderService } from '../../services/TribeFolderService';
 import { ToastService } from '../../services/ToastService';
+import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
@@ -48,13 +49,6 @@ type ProfileLoadResult = {
   following: string[];
 };
 const loadingProfiles: Map<string, Promise<ProfileLoadResult>> = new Map();
-
-// Hijri calendar month names (reusable constant)
-const HIJRI_MONTHS = [
-  'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
-  'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
-  'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
-];
 
 export class ProfileView extends View {
   private container: HTMLElement;
