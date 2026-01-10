@@ -13,7 +13,6 @@ import { SystemLogger } from '../../components/system/SystemLogger';
 import { PlatformService } from '../PlatformService';
 import { AuthService } from '../AuthService';
 
-// Tauri APIs
 let tauriHomeDir: typeof import('@tauri-apps/api/path').homeDir | null = null;
 let tauriReadTextFile: typeof import('@tauri-apps/plugin-fs').readTextFile | null = null;
 let tauriWriteTextFile: typeof import('@tauri-apps/plugin-fs').writeTextFile | null = null;
@@ -39,7 +38,7 @@ export interface DebugLogEntry {
   data: Record<string, unknown>;
 }
 
-const MAX_LOG_ENTRIES = 200; // More entries for thorough debugging
+const MAX_LOG_ENTRIES = 200;
 const LOG_FILE_NAME = 'mutual-check-debug.log';
 
 export class MutualCheckDebugLog {
@@ -60,14 +59,15 @@ export class MutualCheckDebugLog {
     return MutualCheckDebugLog.instance;
   }
 
-  /**
-   * Initialize file path
-   */
+  private getLocalTime(): string {
+    return new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' });
+  }
+
   private async initialize(): Promise<void> {
     if (this.initialized) return;
 
     if (!platform.isTauri || !tauriHomeDir || !tauriMkdir || !tauriExists) {
-      return; // Silently skip in browser
+      return;
     }
 
     try {
@@ -78,8 +78,7 @@ export class MutualCheckDebugLog {
       const homePath = await tauriHomeDir();
       const userDir = `${homePath}/.noornote/${user.npub}`;
 
-      const dirExists = await tauriExists(userDir);
-      if (!dirExists) {
+      if (!(await tauriExists(userDir))) {
         await tauriMkdir(userDir, { recursive: true });
       }
 
@@ -90,25 +89,16 @@ export class MutualCheckDebugLog {
     }
   }
 
-  /**
-   * Start a new check session (generates unique checkId)
-   */
   public startCheck(): string {
     this.currentCheckId = `check-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     return this.currentCheckId;
   }
 
-  /**
-   * Log an event
-   */
-  public async log(
-    event: string,
-    data: Record<string, unknown>
-  ): Promise<void> {
+  public async log(event: string, data: Record<string, unknown>): Promise<void> {
     await this.initialize();
 
     if (!this.filePath || !tauriReadTextFile || !tauriWriteTextFile) {
-      return; // Silently skip if not available
+      return;
     }
 
     const entry: DebugLogEntry = {
@@ -119,34 +109,26 @@ export class MutualCheckDebugLog {
     };
 
     try {
-      // Read existing logs
       let logs: DebugLogEntry[] = [];
       try {
         const content = await tauriReadTextFile(this.filePath);
         logs = JSON.parse(content);
       } catch {
-        // File doesn't exist or is invalid - start fresh
         logs = [];
       }
 
-      // Append new entry
       logs.push(entry);
 
-      // Keep only last MAX_LOG_ENTRIES
       if (logs.length > MAX_LOG_ENTRIES) {
         logs = logs.slice(-MAX_LOG_ENTRIES);
       }
 
-      // Write back
       await tauriWriteTextFile(this.filePath, JSON.stringify(logs, null, 2));
     } catch (error) {
       this.systemLogger.error('MutualCheckDebugLog', `Write failed: ${error}`);
     }
   }
 
-  /**
-   * Log check start with full details
-   */
   public async logCheckStart(
     snapshotCount: number,
     followsCount: number,
@@ -158,13 +140,10 @@ export class MutualCheckDebugLog {
       previousSnapshotTimestamp: snapshotTimestamp ? new Date(snapshotTimestamp).toISOString() : null,
       previousSnapshotPubkeys: snapshotPubkeys || [],
       currentFollowsCount: followsCount,
-      localTime: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
+      localTime: this.getLocalTime()
     });
   }
 
-  /**
-   * Log relay fetch results
-   */
   public async logRelayFetch(
     followsChecked: number,
     mutualsFound: number,
@@ -181,9 +160,6 @@ export class MutualCheckDebugLog {
     });
   }
 
-  /**
-   * Log comparison details
-   */
   public async logComparison(
     previousPubkeys: string[],
     currentPubkeys: string[],
@@ -197,15 +173,11 @@ export class MutualCheckDebugLog {
       newMutualCount: newMutualPubkeys.length,
       unfollowPubkeys,
       newMutualPubkeys,
-      // Show what changed in detail
       removedFromMutuals: unfollowPubkeys,
       addedToMutuals: newMutualPubkeys
     });
   }
 
-  /**
-   * Log check complete with full details
-   */
   public async logCheckComplete(
     unfollows: string[],
     newMutuals: string[],
@@ -220,36 +192,27 @@ export class MutualCheckDebugLog {
       totalChanges: unfollows.length + newMutuals.length,
       durationMs,
       currentMutualCount,
-      localTime: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
+      localTime: this.getLocalTime()
     });
   }
 
-  /**
-   * Log unfollow detection with context
-   */
   public async logUnfollowDetected(pubkey: string, wasInSnapshot: boolean): Promise<void> {
     await this.log('UNFOLLOW_DETECTED', {
       pubkey,
       wasInPreviousSnapshot: wasInSnapshot,
       detectionTime: new Date().toISOString(),
-      localTime: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
+      localTime: this.getLocalTime()
     });
   }
 
-  /**
-   * Log new mutual detection
-   */
   public async logNewMutualDetected(pubkey: string): Promise<void> {
     await this.log('NEW_MUTUAL_DETECTED', {
       pubkey,
       detectionTime: new Date().toISOString(),
-      localTime: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
+      localTime: this.getLocalTime()
     });
   }
 
-  /**
-   * Log notification injection with full event details
-   */
   public async logNotificationInjected(
     pubkey: string,
     type: 'mutual_unfollow' | 'mutual_new',
@@ -260,13 +223,10 @@ export class MutualCheckDebugLog {
       notificationType: type,
       syntheticEventId,
       injectionTime: new Date().toISOString(),
-      localTime: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
+      localTime: this.getLocalTime()
     });
   }
 
-  /**
-   * Log snapshot update with before/after comparison
-   */
   public async logSnapshotUpdate(
     previousCount: number,
     newCount: number,
@@ -283,56 +243,33 @@ export class MutualCheckDebugLog {
     });
   }
 
-  /**
-   * Log individual mutual status check result
-   */
-  public async logMutualStatusCheck(
-    pubkey: string,
-    isMutual: boolean,
-    followsBack: boolean
-  ): Promise<void> {
-    await this.log('MUTUAL_STATUS_CHECK', {
-      pubkey,
-      isMutual,
-      followsBack
-    });
+  public async logMutualStatusCheck(pubkey: string, isMutual: boolean, followsBack: boolean): Promise<void> {
+    await this.log('MUTUAL_STATUS_CHECK', { pubkey, isMutual, followsBack });
   }
 
-  /**
-   * Log error with full context
-   */
   public async logError(message: string, details?: Record<string, unknown>): Promise<void> {
     await this.log('ERROR', {
       message,
       errorTime: new Date().toISOString(),
-      localTime: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
+      localTime: this.getLocalTime(),
       ...details
     });
   }
 
-  /**
-   * Log scheduler event
-   */
   public async logSchedulerEvent(
     event: 'SCHEDULER_START' | 'SCHEDULER_STOP' | 'CHECK_DUE' | 'CHECK_NOT_DUE',
     details?: Record<string, unknown>
   ): Promise<void> {
     await this.log(event, {
       schedulerTime: new Date().toISOString(),
-      localTime: new Date().toLocaleString('de-DE', { timeZone: 'Europe/Berlin' }),
+      localTime: this.getLocalTime(),
       ...details
     });
   }
 
-  /**
-   * Read all logs (for debugging via console)
-   */
   public async readLogs(): Promise<DebugLogEntry[]> {
     await this.initialize();
-
-    if (!this.filePath || !tauriReadTextFile) {
-      return [];
-    }
+    if (!this.filePath || !tauriReadTextFile) return [];
 
     try {
       const content = await tauriReadTextFile(this.filePath);
@@ -342,22 +279,13 @@ export class MutualCheckDebugLog {
     }
   }
 
-  /**
-   * Get file path for manual inspection
-   */
   public getFilePath(): string | null {
     return this.filePath;
   }
 
-  /**
-   * Clear all logs (for debugging)
-   */
   public async clearLogs(): Promise<void> {
     await this.initialize();
-
-    if (!this.filePath || !tauriWriteTextFile) {
-      return;
-    }
+    if (!this.filePath || !tauriWriteTextFile) return;
 
     try {
       await tauriWriteTextFile(this.filePath, JSON.stringify([], null, 2));
@@ -368,7 +296,6 @@ export class MutualCheckDebugLog {
   }
 }
 
-// Debug helper for DevTools console
 if (typeof window !== 'undefined') {
   (window as any).__MUTUAL_CHECK_DEBUG_LOG__ = {
     readLogs: async () => {
@@ -377,9 +304,7 @@ if (typeof window !== 'undefined') {
       console.log('=== Mutual Check Debug Logs ===');
       console.log(`File: ${log.getFilePath()}`);
       console.log(`Entries: ${logs.length}`);
-      console.log('');
 
-      // Group by checkId for easier reading
       const byCheckId = new Map<string, DebugLogEntry[]>();
       logs.forEach(entry => {
         const existing = byCheckId.get(entry.checkId) || [];
@@ -410,7 +335,6 @@ if (typeof window !== 'undefined') {
         return null;
       }
 
-      // Find the last CHECK_COMPLETE
       const lastComplete = [...logs].reverse().find(l => l.event === 'CHECK_COMPLETE');
       if (lastComplete) {
         console.log('=== Last Check ===');
@@ -418,7 +342,6 @@ if (typeof window !== 'undefined') {
         console.log('Time:', lastComplete.timestamp);
         console.log('Data:', lastComplete.data);
 
-        // Find all entries for this checkId
         const checkLogs = logs.filter(l => l.checkId === lastComplete.checkId);
         console.log('\n=== Full Check Log ===');
         checkLogs.forEach(entry => {
