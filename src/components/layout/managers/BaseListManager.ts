@@ -46,45 +46,13 @@ export abstract class BaseListManager<TItem, TWithProfile> {
   /**
    * Abstract methods - must be implemented by subclasses
    */
-
-  /**
-   * Get the event name for this list type (e.g., 'follow:updated')
-   */
   protected abstract getEventName(): string;
-
-  /**
-   * Get the tab data attribute value (e.g., 'list-follows')
-   */
   protected abstract getTabDataAttribute(): string;
-
-  /**
-   * Get the list container class name (e.g., 'follows-list')
-   */
   protected abstract getListContainerClass(): string;
-
-  /**
-   * Get the list type for sync confirmation modal (e.g., 'Follows')
-   */
   protected abstract getListType(): string;
-
-  /**
-   * Get display name for sync confirmation modal
-   */
   protected abstract getDisplayNameForSync(item: TItem): string | Promise<string>;
-
-  /**
-   * Fetch all items with profiles (implementation-specific)
-   */
   protected abstract getAllItemsWithProfiles(): Promise<TWithProfile[]>;
-
-  /**
-   * Render a batch of items (implementation-specific HTML)
-   */
   protected abstract renderBatch(listElement: HTMLElement, batch: TWithProfile[]): void | Promise<void>;
-
-  /**
-   * Handle item removal (implementation-specific logic)
-   */
   protected abstract handleRemoveItem(item: TWithProfile, itemElement: HTMLElement): Promise<void>;
 
   /**
@@ -93,36 +61,33 @@ export abstract class BaseListManager<TItem, TWithProfile> {
    * Files are ONLY restored on explicit user button click
    */
   protected async initializeBrowserStorage(): Promise<void> {
-    // NO automatic operations - browser storage is the source of truth on startup
     this.isInitialized = true;
+  }
+
+  /**
+   * Reset batch loading state
+   */
+  private resetBatchState(): void {
+    this.allItemsWithProfiles = [];
+    this.currentOffset = 0;
+    this.hasMore = true;
+    this.isLoading = false;
   }
 
   /**
    * Setup event listeners
    */
   protected setupEventListeners(): void {
-    this.eventBus.on(this.getEventName(), () => {
-      this.refreshListIfActive();
-    });
-
+    this.eventBus.on(this.getEventName(), () => this.refreshListIfActive());
     this.eventBus.on('user:logout', () => {
       this.refreshListIfActive();
       this.switchToSystemLogsTab();
     });
-
-    // On user switch, clear cached data and refresh if active
     this.eventBus.on('user:login', () => {
-      this.allItemsWithProfiles = [];
-      this.currentOffset = 0;
-      this.hasMore = true;
-      this.isLoading = false;
+      this.resetBatchState();
       this.refreshListIfActive();
     });
-
-    // Re-render when sync mode changes (Manual <-> Easy)
-    this.eventBus.on('list-sync-mode:changed', () => {
-      this.refreshListIfActive();
-    });
+    this.eventBus.on('list-sync-mode:changed', () => this.refreshListIfActive());
   }
 
   /**
@@ -130,7 +95,7 @@ export abstract class BaseListManager<TItem, TWithProfile> {
    */
   protected refreshListIfActive(): void {
     const listTab = this.containerElement.querySelector(`[data-tab-content="${this.getTabDataAttribute()}"]`);
-    if (listTab && listTab.classList.contains('tab-content--active')) {
+    if (listTab?.classList.contains('tab-content--active')) {
       this.renderListTab(listTab as HTMLElement).catch(err => {
         console.error(`Failed to refresh ${this.getListType()}:`, err);
       });
@@ -150,7 +115,6 @@ export abstract class BaseListManager<TItem, TWithProfile> {
   protected async handleLoadMore(): Promise<void> {
     const list = this.containerElement.querySelector(`.${this.getListContainerClass()}`);
     if (!list || this.isLoading || !this.hasMore) return;
-
     await this.loadBatch(list as HTMLElement);
   }
 
@@ -162,13 +126,11 @@ export abstract class BaseListManager<TItem, TWithProfile> {
 
     this.isLoading = true;
 
-    // Show loading indicator (only for subsequent batches)
-    if (this.currentOffset > 0 && this.infiniteScroll) {
-      this.infiniteScroll.showLoading();
+    if (this.currentOffset > 0) {
+      this.infiniteScroll?.showLoading();
     }
 
     try {
-      // Get next batch
       const batch = this.allItemsWithProfiles.slice(
         this.currentOffset,
         this.currentOffset + this.BATCH_SIZE
@@ -176,19 +138,12 @@ export abstract class BaseListManager<TItem, TWithProfile> {
 
       if (batch.length === 0) {
         this.hasMore = false;
-        if (this.infiniteScroll) {
-          this.infiniteScroll.hideLoading();
-        }
         return;
       }
 
-      // Render batch
       await this.renderBatch(listElement, batch);
-
-      // Update offset
       this.currentOffset += batch.length;
 
-      // Check if there are more items
       if (this.currentOffset >= this.allItemsWithProfiles.length) {
         this.hasMore = false;
       }
@@ -196,9 +151,7 @@ export abstract class BaseListManager<TItem, TWithProfile> {
       console.error('Failed to load batch:', error);
     } finally {
       this.isLoading = false;
-      if (this.infiniteScroll) {
-        this.infiniteScroll.hideLoading();
-      }
+      this.infiniteScroll?.hideLoading();
     }
   }
 
@@ -206,20 +159,14 @@ export abstract class BaseListManager<TItem, TWithProfile> {
    * Render list tab content (common structure)
    */
   protected async renderListTab(container: HTMLElement): Promise<void> {
-    // Initialize browser storage from file on first render
     await this.initializeBrowserStorage();
 
-    // Clean up existing infinite scroll
     if (this.infiniteScroll) {
       this.infiniteScroll.destroy();
       this.infiniteScroll = null;
     }
 
-    // Reset batch loading state
-    this.allItemsWithProfiles = [];
-    this.currentOffset = 0;
-    this.hasMore = true;
-    this.isLoading = false;
+    this.resetBatchState();
 
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -233,14 +180,12 @@ export abstract class BaseListManager<TItem, TWithProfile> {
         return;
       }
 
-      // Show loading state
       container.innerHTML = `
         <div class="${this.getListContainerClass()}-loading">
           Loading ${this.getListType().toLowerCase()}...
         </div>
       `;
 
-      // Fetch all items with profiles (implementation-specific)
       const itemsWithProfiles = await this.getAllItemsWithProfiles();
 
       if (itemsWithProfiles.length === 0) {
@@ -253,26 +198,21 @@ export abstract class BaseListManager<TItem, TWithProfile> {
         return;
       }
 
-      // Store all items for batch loading
       this.allItemsWithProfiles = itemsWithProfiles;
 
-      // Render container with controls and empty list
       container.innerHTML = `
         ${this.renderControlButtons()}
         <div class="${this.getListContainerClass()}"></div>
         ${this.renderControlButtons()}
       `;
 
-      // Bind sync button handlers
       this.bindSyncButtons(container);
 
       const list = container.querySelector(`.${this.getListContainerClass()}`);
       if (!list) return;
 
-      // Load first batch
       await this.loadBatch(list as HTMLElement);
 
-      // Setup infinite scroll if there are more items
       if (this.hasMore) {
         this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
           loadingMessage: `Loading more ${this.getListType().toLowerCase()}...`
@@ -297,38 +237,22 @@ export abstract class BaseListManager<TItem, TWithProfile> {
   }
 
   /**
+   * Bind a sync button by class name
+   */
+  private bindButton(container: HTMLElement, className: string, handler: () => Promise<void>): void {
+    container.querySelectorAll(`.${className}`).forEach(btn => {
+      btn.addEventListener('click', handler);
+    });
+  }
+
+  /**
    * Bind sync button handlers
    */
   protected bindSyncButtons(container: HTMLElement): void {
-    // Sync from Relays buttons
-    container.querySelectorAll('.sync-from-relays-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        await this.handleSyncFromRelays(container);
-      });
-    });
-
-    // Sync to Relays buttons
-    container.querySelectorAll('.sync-to-relays-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        await this.handleSyncToRelays();
-      });
-    });
-
-    // Save to File buttons
-    container.querySelectorAll('.save-to-file-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        await this.handleSaveToFile();
-      });
-    });
-
-    // Restore from File buttons
-    container.querySelectorAll('.restore-from-file-btn').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        await this.handleRestoreFromFile(container);
-      });
-    });
-
-    // Switch sync mode link
+    this.bindButton(container, 'sync-from-relays-btn', () => this.handleSyncFromRelays(container));
+    this.bindButton(container, 'sync-to-relays-btn', () => this.handleSyncToRelays());
+    this.bindButton(container, 'save-to-file-btn', () => this.handleSaveToFile());
+    this.bindButton(container, 'restore-from-file-btn', () => this.handleRestoreFromFile(container));
     bindSwitchSyncModeLink(container, () => this.renderListTab(container));
   }
 
@@ -342,7 +266,6 @@ export abstract class BaseListManager<TItem, TWithProfile> {
       const result = await this.listSyncManager.syncFromRelays();
 
       if (result.requiresConfirmation) {
-        // Browser has MORE items than relay → Show confirmation modal
         const modal = new SyncConfirmationModal({
           listType: this.getListType(),
           added: result.diff.added,
@@ -362,7 +285,6 @@ export abstract class BaseListManager<TItem, TWithProfile> {
 
         await modal.show();
       } else {
-        // Browser has LESS/EQUAL items → Auto-merge
         await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
         ToastService.show(`Synced ${result.diff.added.length} new ${this.getListType().toLowerCase()}${result.diff.added.length !== 1 ? 's' : ''} from relays`, 'success');
         await this.renderListTab(container);
@@ -389,8 +311,6 @@ export abstract class BaseListManager<TItem, TWithProfile> {
 
   /**
    * Handle Save to File (Browser → File)
-   * - Tauri: Saves to ~/.noornote/*.json
-   * - Browser: Downloads as JSON file
    */
   protected async handleSaveToFile(): Promise<void> {
     try {
@@ -405,8 +325,6 @@ export abstract class BaseListManager<TItem, TWithProfile> {
 
   /**
    * Handle Restore from File (File → Browser)
-   * - Tauri: Reads from ~/.noornote/*.json
-   * - Browser: Opens file picker dialog
    */
   protected async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
@@ -442,6 +360,5 @@ export abstract class BaseListManager<TItem, TWithProfile> {
       this.infiniteScroll.destroy();
       this.infiniteScroll = null;
     }
-    // EventBus listeners are cleaned up automatically
   }
 }
