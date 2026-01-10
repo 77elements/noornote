@@ -13,7 +13,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { BookmarkItem } from '../storage/BookmarkFileStorage';
 import { BookmarkFileStorage } from '../storage/BookmarkFileStorage';
 import type { FetchFromRelaysResult } from '../sync/ListStorageAdapter';
-import type { BookmarkSetData, BookmarkSet } from '../../types/BookmarkSetData';
+import type { BookmarkSetData, BookmarkSet, BookmarkTag } from '../../types/BookmarkSetData';
 import { GenericListOrchestrator } from './GenericListOrchestrator';
 import { bookmarkListConfig, createBookmarkFileStorageWrapper } from './configs/BookmarkListConfig';
 import { BookmarkFolderService } from '../BookmarkFolderService';
@@ -96,7 +96,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         return { public: false, private: false };
       }
 
-      return { public: !item.isPrivate, private: item.isPrivate }
+      return { public: !item.isPrivate, private: item.isPrivate ?? false }
     } catch (error) {
       this.systemLogger.error('BookmarkOrchestrator', `Failed to check bookmark status: ${error}`);
       return { public: false, private: false };
@@ -338,8 +338,11 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     let totalPublished = 0;
 
     for (let i = 0; i < events.length; i++) {
-      const { tags, content } = events[i];
+      const eventData = events[i];
       const set = setData.sets[i];
+      if (!eventData || !set) continue;
+
+      const { tags, content } = eventData;
 
       // Skip empty sets (except root)
       if (set.publicTags.length === 0 && set.privateTags.length === 0 && set.d !== '') {
@@ -446,7 +449,8 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
 
     // Helper to add item to set's public/private tags
     const addItemToSet = (set: BookmarkSet, item: BookmarkItem): void => {
-      const tag = { type: item.type, value: item.value, description: item.description };
+      const tag: BookmarkTag = { type: item.type, value: item.value };
+      if (item.description) tag.description = item.description;
       if (item.isPrivate) {
         set.privateTags.push(tag);
       } else {
@@ -598,10 +602,11 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       }], 5000);
 
       let folderOrder: string[] = [];
-      if (orderEvents.length > 0) {
-        const orderEvent = orderEvents.sort((a, b) => b.created_at - a.created_at)[0];
+      const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);
+      const orderEvent = sortedOrderEvents[0];
+      if (orderEvent) {
         folderOrder = orderEvent.tags
-          .filter(t => t[0] === 'a' && t[1]?.startsWith('30003:'))
+          .filter((t): t is [string, string, ...string[]] => t[0] === 'a' && !!t[1]?.startsWith('30003:'))
           .map(t => {
             const parts = t[1].split(':');
             return parts[2] || '';
