@@ -315,13 +315,6 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
           throw new Error('No encryption support available in browser extension');
         }
       }
-    } else if (authMethod === 'nsec') {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser?.privateKey) {
-        throw new Error('No private key available for encryption');
-      }
-      const { nip04 } = await import('../NostrToolsAdapter');
-      return await nip04.encrypt(currentUser.privateKey, pubkey, plaintext);
     } else {
       throw new Error(`Auth method not supported for encryption: ${authMethod}`);
     }
@@ -350,12 +343,11 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
         limit: 1
       }], 5000);
 
-      if (events.length === 0) {
+      const event = events[0];
+      if (!event) {
         this.systemLogger.info(this.name, 'No remote list found');
         return { items: [], relayContentWasEmpty: true };
       }
-
-      const event = events[0];
 
       // Check if content was empty (mixed-client edge case - see LIST-MANAGEMENT-SPEC.md)
       const relayContentWasEmpty = !event.content || event.content.trim() === '';
@@ -444,13 +436,6 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
         if (!plaintext && window.nostr?.nip04?.decrypt) {
           plaintext = await window.nostr.nip04.decrypt(event.pubkey, event.content);
         }
-      } else if (authMethod === 'nsec') {
-        const currentUser = this.authService.getCurrentUser();
-        if (!currentUser?.privateKey) {
-          throw new Error('No private key available for decryption');
-        }
-        const { nip04 } = await import('../NostrToolsAdapter');
-        plaintext = await nip04.decrypt(currentUser.privateKey, event.pubkey, event.content);
       }
 
       if (!plaintext) {
