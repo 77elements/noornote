@@ -302,7 +302,8 @@ export class DMService {
   private async processGiftWrap(wrapEvent: NostrEvent): Promise<void> {
     try {
       // Check if already processed
-      if (await this.dmStore.hasMessage(wrapEvent.id)) {
+      const wrapId = wrapEvent.id;
+      if (!wrapId || await this.dmStore.hasMessage(wrapId)) {
         return;
       }
 
@@ -332,17 +333,17 @@ export class DMService {
 
       // Create message record
       const message: DMMessage = {
-        id: rumor.id || wrapEvent.id,
+        id: rumor.id || wrapId,
         pubkey: rumor.pubkey,
         content: rumor.content,
         createdAt: rumor.created_at,
         conversationWith,
-        replyTo,
-        subject,
         isMine: rumor.pubkey === currentUser.pubkey,
-        wrapId: wrapEvent.id,
+        wrapId,
         format: 'nip17'
       };
+      if (replyTo) message.replyTo = replyTo;
+      if (subject) message.subject = subject;
 
       // Store message
       await this.dmStore.saveMessage(message);
@@ -365,7 +366,8 @@ export class DMService {
   private async processLegacyDM(event: NostrEvent): Promise<void> {
     try {
       // Check if already processed
-      if (await this.dmStore.hasMessage(event.id)) {
+      const eventId = event.id;
+      if (!eventId || await this.dmStore.hasMessage(eventId)) {
         return;
       }
 
@@ -377,38 +379,39 @@ export class DMService {
 
       // Get the conversation partner from p-tag
       const pTag = event.tags.find(t => t[0] === 'p');
-      if (!pTag) {
-        // No p-tag - malformed DM
+      const recipientPubkey = pTag?.[1];
+      if (!recipientPubkey) {
+        // No p-tag or empty - malformed DM
         return;
       }
 
-      const conversationWith = isMine ? pTag[1] : event.pubkey;
+      const conversationWith = isMine ? recipientPubkey : event.pubkey;
 
       // Decrypt the content using NIP-04
       let decryptedContent: string;
       try {
         // For received messages, decrypt with sender's pubkey
         // For sent messages, decrypt with recipient's pubkey
-        const decryptPubkey = isMine ? pTag[1] : event.pubkey;
+        const decryptPubkey = isMine ? recipientPubkey : event.pubkey;
         decryptedContent = await this.authService.nip04Decrypt(event.content, decryptPubkey);
       } catch (decryptError) {
         // Decryption failed - could be corrupted or not meant for us
         // Only log during live subscription, not during batch fetch
         if (!this.isFetchingHistorical) {
-          this.systemLogger.warn('DMService', `Failed to decrypt legacy DM ${event.id.slice(0, 8)}`);
+          this.systemLogger.warn('DMService', `Failed to decrypt legacy DM ${eventId.slice(0, 8)}`);
         }
         return;
       }
 
       // Create message record
       const message: DMMessage = {
-        id: event.id,
+        id: eventId,
         pubkey: event.pubkey,
         content: decryptedContent,
         createdAt: event.created_at,
         conversationWith,
         isMine,
-        wrapId: event.id, // Use event ID as wrapId for dedup
+        wrapId: eventId, // Use event ID as wrapId for dedup
         format: 'legacy'
       };
 
@@ -543,17 +546,18 @@ export class DMService {
       // Step 6: Store message locally with selfWrap.id as wrapId
       // This ensures that when the self-copy comes back from the relay,
       // hasMessage(selfWrap.id) returns true and it's skipped as duplicate
+      const wrapId = selfWrap?.id ?? recipientWrap.id ?? `local-${Date.now()}`;
       const message: DMMessage = {
         id: `local-${Date.now()}`,
         pubkey: currentUser.pubkey,
         content,
         createdAt: now,
         conversationWith: recipientPubkey,
-        replyTo,
         isMine: true,
-        wrapId: selfWrap?.id || recipientWrap.id,
+        wrapId,
         format: 'nip17' // We always send NIP-17
       };
+      if (replyTo) message.replyTo = replyTo;
 
       await this.dmStore.saveMessage(message);
 
@@ -691,9 +695,10 @@ export class DMService {
 
       const events = await this.transport.fetch(relays, [filter], 5000);
 
-      if (events.length > 0) {
-        const dmRelays = events[0].tags
-          .filter(t => t[0] === 'relay')
+      const event = events[0];
+      if (event) {
+        const dmRelays = event.tags
+          .filter((t): t is [string, string, ...string[]] => t[0] === 'relay' && typeof t[1] === 'string')
           .map(t => t[1]);
 
         if (dmRelays.length > 0) {
@@ -720,8 +725,9 @@ export class DMService {
     if (!currentUser) return null;
 
     for (const tag of tags) {
-      if (tag[0] === 'p' && tag[1] !== currentUser.pubkey) {
-        return tag[1];
+      const pubkey = tag[1];
+      if (tag[0] === 'p' && pubkey && pubkey !== currentUser.pubkey) {
+        return pubkey;
       }
     }
 
