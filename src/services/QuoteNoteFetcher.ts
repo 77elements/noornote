@@ -74,9 +74,9 @@ export class QuoteNoteFetcher {
   }
 
   /**
-   * Clear cache (delegates to QuoteOrchestrator)
+   * Clear cache (no-op: QuoteOrchestrator has no cache)
    */
   public clearCache(): void {
-    this.orchestrator.clearCache();
+    // QuoteOrchestrator does not cache - always fetches fresh
   }
 }

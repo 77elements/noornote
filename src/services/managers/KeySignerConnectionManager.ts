@@ -77,6 +77,11 @@ export class KeySignerConnectionManager {
         const { hexToNpub } = await import('../../helpers/nip19');
         const npub = await hexToNpub(pubkey);
 
+        if (!npub) {
+          this.keySigner = null;
+          return { success: false, error: 'Failed to convert pubkey to npub' };
+        }
+
         this.startDaemonPolling();
 
         return { success: true, npub, pubkey };
@@ -146,6 +151,11 @@ export class KeySignerConnectionManager {
 
       const { hexToNpub } = await import('../../helpers/nip19');
       const npub = await hexToNpub(pubkey);
+
+      if (!npub) {
+        this.keySigner = null;
+        return { success: false, error: 'Failed to convert pubkey to npub' };
+      }
 
       this.startDaemonPolling();
 
@@ -263,30 +273,28 @@ export class KeySignerConnectionManager {
       const { ModalService } = await import('../ModalService');
       const modalService = ModalService.getInstance();
 
-      return new Promise((resolve) => {
-        modalService.confirm({
-          title: 'Stop NoorSigner Daemon?',
-          message: 'Do you want to stop the NoorSigner daemon process? This will end all active signing sessions.',
-          confirmText: 'Stop Daemon',
-          cancelText: 'Keep Running',
-          confirmButtonClass: 'btn btn--danger',
-          onConfirm: async () => {
-            try {
-              await this.keySigner!.stopDaemon();
-              this.logger.success('KeySigner', 'Daemon stopped successfully');
-              resolve(true);
-            } catch (_error) {
-              this.logger.error('KeySigner', `Failed to stop daemon: ${_error}`);
-              const { ToastService } = await import('../ToastService');
-              ToastService.show('Failed to stop daemon', 'error');
-              resolve(false);
-            }
-          },
-          onCancel: () => {
-            resolve(false);
-          }
-        });
+      const confirmed = await modalService.confirm({
+        title: 'Stop NoorSigner Daemon?',
+        message: 'Do you want to stop the NoorSigner daemon process? This will end all active signing sessions.',
+        confirmText: 'Stop Daemon',
+        cancelText: 'Keep Running',
+        confirmDestructive: true
       });
+
+      if (!confirmed) {
+        return false;
+      }
+
+      try {
+        await this.keySigner!.stopDaemon();
+        this.logger.success('KeySigner', 'Daemon stopped successfully');
+        return true;
+      } catch (_error) {
+        this.logger.error('KeySigner', `Failed to stop daemon: ${_error}`);
+        const { ToastService } = await import('../ToastService');
+        ToastService.show('Failed to stop daemon', 'error');
+        return false;
+      }
     } catch (_error) {
       this.logger.error('KeySigner', `Error checking daemon status: ${_error}`);
       return false;

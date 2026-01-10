@@ -90,6 +90,7 @@ export class PostNoteModal {
       title: 'New Note',
       content: modalContent,
       width: '650px',
+      height: 'auto',
       showCloseButton: true,
       closeOnOverlay: false,
       closeOnEsc: true
@@ -162,6 +163,7 @@ export class PostNoteModal {
       <div class="post-note-modal">
         ${this.renderTabs()}
         ${this.renderEditor()}
+        <div id="poll-creator-container"></div>
         ${this.renderActions()}
       </div>
     `;
@@ -239,13 +241,11 @@ export class PostNoteModal {
       textareaSelector: '[data-textarea]'
     });
 
-    // Check if post can be submitted (content OR poll, plus relays)
     const validation = ContentValidationManager.validate({
       content: this.content,
       selectedRelays: this.selectedRelays,
       pollData: this.pollData
     });
-    const isPostDisabled = !validation.isValid;
 
     return `
       <div class="post-note-actions">
@@ -256,12 +256,9 @@ export class PostNoteModal {
           </div>
           <div class="post-note-actions-right">
             <button class="btn btn--passive" data-action="cancel">Cancel</button>
-            <button class="btn" data-action="post" ${isPostDisabled ? 'disabled' : ''}>Post</button>
+            <button class="btn" data-action="post" ${validation.isValid ? '' : 'disabled'}>Post</button>
           </div>
         </div>
-      </div>
-      <div id="poll-creator-container">
-        <!-- Poll creator will be inserted here -->
       </div>
     `;
   }
@@ -285,7 +282,6 @@ export class PostNoteModal {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
     }
 
-    // Setup mention autocomplete
     this.mentionAutocomplete = new MentionAutocomplete({
       textareaSelector: '[data-textarea]',
       onMentionInserted: (_npub, username) => {
@@ -294,9 +290,6 @@ export class PostNoteModal {
     });
     this.mentionAutocomplete.init();
 
-    // NSFW switch is set up dynamically when media is uploaded
-
-    // Setup event handler manager (tab switching, textarea, action buttons)
     this.eventHandlerManager = new ModalEventHandlerManager({
       modalSelector: '.post-note-modal',
       textareaSelector: '[data-textarea]',
@@ -351,10 +344,22 @@ export class PostNoteModal {
           isNSFW: this.isNSFW
         });
 
+        // Add poll preview if poll is configured
+        const pollPreviewHtml = this.renderPollPreview();
+        if (pollPreviewHtml) {
+          previewContainer.innerHTML += pollPreviewHtml;
+        }
+
         actions.parentNode?.insertBefore(previewContainer, actions);
 
         // Render quoted notes in preview
         this.renderQuotedNotesInPreview(previewContainer);
+      }
+
+      // Toggle poll-creator visibility based on tab
+      const pollContainer = modal.querySelector('#poll-creator-container') as HTMLElement;
+      if (pollContainer) {
+        pollContainer.style.display = this.currentTab === 'edit' ? '' : 'none';
       }
     }
   }
@@ -493,28 +498,17 @@ export class PostNoteModal {
    * Handle post button click
    */
   private async handlePost(): Promise<void> {
-    // Validate content before posting
     const validation = ContentValidationManager.validate({
       content: this.content,
       selectedRelays: this.selectedRelays,
       pollData: this.pollData
     });
 
-    if (!validation.isValid) {
-      return;
-    }
+    if (!validation.isValid) return;
+    if (!AuthGuard.requireAuth('create a post')) return;
 
-    // Check authentication before posting (Write Event)
-    if (!AuthGuard.requireAuth('create a post')) {
-      return;
-    }
+    this.toolbar?.hideEmojiPicker();
 
-    // Hide emoji picker if open
-    if (this.toolbar) {
-      this.toolbar.hideEmojiPicker();
-    }
-
-    // Temporarily hide modal to allow extension popup to appear
     const modalContainer = document.querySelector('.modal') as HTMLElement;
     let originalDisplay = '';
     if (modalContainer) {
@@ -523,36 +517,33 @@ export class PostNoteModal {
     }
 
     try {
-      // Extract quoted event data if present
       const quotedRefs = extractQuotedReferences(this.content);
       let quotedEvent: { eventId: string; authorPubkey: string; relayHint?: string } | undefined;
-
-      // Also track quoted articles (naddr) separately
       let quotedArticle: { addressableId: string; authorPubkey: string; relayHint?: string } | undefined;
 
-      if (quotedRefs.length > 0) {
-        const ref = quotedRefs[0];
+      const ref = quotedRefs[0];
+      if (ref) {
         const cleanRef = ref.id.replace(/^nostr:/, '');
 
         try {
           const decoded = decodeNip19(cleanRef);
 
           if (decoded.type === 'nevent') {
-            // NORMAL NOTE: Use q-tag with event ID
             const neventData = decoded.data as { id: string; author?: string; relays?: string[] };
+            const relayHint = neventData.relays?.[0];
             quotedEvent = {
               eventId: neventData.id,
               authorPubkey: neventData.author || '',
-              relayHint: neventData.relays?.[0]
+              ...(relayHint ? { relayHint } : {})
             };
           } else if (decoded.type === 'naddr') {
-            // LONG-FORM ARTICLE: Use a-tag with addressable identifier
             const naddrData = decoded.data as { kind: number; pubkey: string; identifier: string; relays?: string[] };
             const addressableId = `${naddrData.kind}:${naddrData.pubkey}:${naddrData.identifier}`;
+            const relayHint = naddrData.relays?.[0];
             quotedArticle = {
               addressableId,
               authorPubkey: naddrData.pubkey,
-              relayHint: naddrData.relays?.[0]
+              ...(relayHint ? { relayHint } : {})
             };
           }
         } catch (error) {
@@ -564,45 +555,29 @@ export class PostNoteModal {
         content: this.content,
         relays: Array.from(this.selectedRelays),
         contentWarning: this.isNSFW,
-        pollData: this.pollData || undefined,
-        quotedEvent,
-        quotedArticle // LONG-FORM ARTICLES: Use a-tag instead of q-tag
+        ...(this.pollData ? { pollData: this.pollData } : {}),
+        ...(quotedEvent ? { quotedEvent } : {}),
+        ...(quotedArticle ? { quotedArticle } : {})
       });
 
       if (success) {
-        // If this was a quoted repost, update stats for the quoted note
-        if (quotedEvent && quotedEvent.eventId) {
+        if (quotedEvent?.eventId) {
           StatsUpdateService.getInstance().clearCacheOnly(quotedEvent.eventId);
         }
-        // If this was a quoted article, update stats for the article
-        if (quotedArticle && quotedArticle.addressableId) {
+        if (quotedArticle?.addressableId) {
           StatsUpdateService.getInstance().clearCacheOnly(quotedArticle.addressableId);
         }
 
         this.draftContent = '';
         this.cleanup();
         this.modalService.hide();
-        this.systemLogger.success('PostService', '✓ Note posted successfully');
+        this.systemLogger.success('PostService', 'Note posted successfully');
       } else {
-        if (modalContainer) {
-          modalContainer.style.display = originalDisplay;
-        }
-        const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
-        if (postBtn) {
-          postBtn.disabled = false;
-          postBtn.textContent = 'Post';
-        }
+        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post');
       }
     } catch (error) {
       console.error('Post error:', error);
-      if (modalContainer) {
-        modalContainer.style.display = originalDisplay;
-      }
-      const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
-      if (postBtn) {
-        postBtn.disabled = false;
-        postBtn.textContent = 'Post';
-      }
+      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post');
     }
   }
 
@@ -631,33 +606,74 @@ export class PostNoteModal {
   }
 
   /**
+   * Render poll preview for Preview tab
+   */
+  private renderPollPreview(): string {
+    if (!this.pollData) return '';
+
+    const validOptions = this.pollData.options.filter(o => o.label.trim());
+    if (validOptions.length < 2) return '';
+
+    const metaItems: string[] = [];
+    if (this.pollData.multipleChoice) {
+      metaItems.push('<span class="nip88-poll__meta-item">Multiple choice allowed</span>');
+    }
+    if (this.pollData.endDate) {
+      const endDate = new Date(this.pollData.endDate * 1000);
+      metaItems.push(`<span class="nip88-poll__meta-item">Ends ${endDate.toLocaleDateString()}</span>`);
+    }
+    const metaHtml = metaItems.length > 0
+      ? `<div class="nip88-poll__meta">${metaItems.join('')}</div>`
+      : '';
+
+    const optionsHtml = validOptions.map(option => `
+      <div class="nip88-poll__option nip88-poll__option--preview">
+        <span class="nip88-poll__option-label">${this.escapeHtml(option.label)}</span>
+        <span class="nip88-poll__option-stats">
+          <span class="nip88-poll__option-count">0 votes</span>
+          <span class="nip88-poll__option-percentage">0%</span>
+        </span>
+        <span class="nip88-poll__option-bar" style="width: 0%"></span>
+      </div>
+    `).join('');
+
+    return `
+      <div class="nip88-poll nip88-poll--preview">
+        ${metaHtml}
+        <div class="nip88-poll__options">
+          ${optionsHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
    * Cleanup sub-components
    */
   private cleanup(): void {
-    if (this.relaySelector) {
-      this.relaySelector.destroy();
-      this.relaySelector = null;
-    }
+    this.relaySelector?.destroy();
+    this.relaySelector = null;
 
-    if (this.toolbar) {
-      this.toolbar.destroy();
-      this.toolbar = null;
-    }
+    this.toolbar?.destroy();
+    this.toolbar = null;
 
-    if (this.nsfwSwitch) {
-      this.nsfwSwitch.destroy();
-      this.nsfwSwitch = null;
-    }
+    this.nsfwSwitch?.destroy();
+    this.nsfwSwitch = null;
 
-    if (this.pollCreator) {
-      this.pollCreator.destroy();
-      this.pollCreator = null;
-    }
+    this.pollCreator?.destroy();
+    this.pollCreator = null;
 
-    if (this.mentionAutocomplete) {
-      this.mentionAutocomplete.destroy();
-      this.mentionAutocomplete = null;
-    }
+    this.mentionAutocomplete?.destroy();
+    this.mentionAutocomplete = null;
 
     this.pollData = null;
   }

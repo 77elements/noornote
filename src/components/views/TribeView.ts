@@ -57,7 +57,12 @@ export class TribeView extends View {
     }
 
     // Set first tribe as current
-    this.currentTribeId = this.tribes[0].id;
+    const firstTribe = this.tribes[0];
+    if (!firstTribe) {
+      this.container.innerHTML = '<div class="tribe-view__error">No tribes found. Create one in the sidebar.</div>';
+      return;
+    }
+    this.currentTribeId = firstTribe.id;
 
     // Build header with tabs and edit link
     const header = document.createElement('div');
@@ -74,6 +79,7 @@ export class TribeView extends View {
     // Tribe tabs (in root order)
     for (let i = 0; i < this.tribes.length; i++) {
       const tribe = this.tribes[i];
+      if (!tribe) continue;
       const isActive = i === 0; // First tribe is active
       const tab = this.createTab(tribe.id, tribe.name, isActive);
       tabs.appendChild(tab);
@@ -195,7 +201,7 @@ export class TribeView extends View {
   /**
    * Pause timeline when navigating away
    */
-  public pause(): void {
+  public override pause(): void {
     if (this.timeline) {
       this.timeline.pause();
     }
@@ -204,7 +210,7 @@ export class TribeView extends View {
   /**
    * Resume timeline when navigating back
    */
-  public resume(): void {
+  public override resume(): void {
     if (this.timeline) {
       this.timeline.resume();
     }

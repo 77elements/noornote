@@ -26,6 +26,7 @@ export class ISLStatsUpdater {
     events.forEach(event => {
       // Extract original note ID (for reposts, gets the reposted note ID)
       const noteIdForStats = extractOriginalNoteId(event);
+      if (!noteIdForStats) return;
 
       const cachedStats = this.statsService.getCachedStats(noteIdForStats);
       if (cachedStats) {

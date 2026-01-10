@@ -27,12 +27,15 @@ export interface NoteHeaderOptions {
   onClick?: (pubkey: string) => void;
 }
 
+/** Internal options type with defaults applied (rawEvent remains optional) */
+type ResolvedNoteHeaderOptions = Required<Omit<NoteHeaderOptions, 'rawEvent'>> & Pick<NoteHeaderOptions, 'rawEvent'>;
+
 export class NoteHeader {
   private element: HTMLElement;
   private userProfileService: UserProfileService;
   private recognitionService: ProfileRecognitionService;
   private authService: AuthService;
-  private options: Required<NoteHeaderOptions>;
+  private options: ResolvedNoteHeaderOptions;
   private profile: UserProfile | null = null;
   private unsubscribeProfile?: () => void;
   private noteMenu?: NoteMenu;
@@ -56,7 +59,6 @@ export class NoteHeader {
       showTimestamp: true,
       showMenu: true,
       onClick: defaultOnClick,
-      rawEvent: undefined,
       ...options
     };
 
@@ -104,11 +106,14 @@ export class NoteHeader {
 
     // Create and mount NoteMenu if enabled
     if (this.options.showMenu) {
-      this.noteMenu = new NoteMenu({
+      const menuOptions: { eventId: string; authorPubkey: string; rawEvent?: NostrEvent } = {
         eventId: this.options.eventId,
-        authorPubkey: this.options.pubkey,
-        rawEvent: this.options.rawEvent
-      });
+        authorPubkey: this.options.pubkey
+      };
+      if (this.options.rawEvent) {
+        menuOptions.rawEvent = this.options.rawEvent;
+      }
+      this.noteMenu = new NoteMenu(menuOptions);
 
       const menuContainer = header.querySelector('.note-header__menu-container');
       if (menuContainer) {
@@ -159,8 +164,8 @@ export class NoteHeader {
 
     const avatarImg = this.element.querySelector('.profile-pic--medium') as HTMLImageElement;
     const displayNameTrigger = this.element.querySelector('.note-header__display-name-trigger') as HTMLElement;
-    const handle = this.element.querySelector('.note-header__handle');
-    const verification = this.element.querySelector('.note-header__verification');
+    const handle = this.element.querySelector('.note-header__handle') as HTMLElement | null;
+    const verification = this.element.querySelector('.note-header__verification') as HTMLElement | null;
 
     // Don't apply profile recognition to your own profile
     const currentUser = this.authService.getCurrentUser();

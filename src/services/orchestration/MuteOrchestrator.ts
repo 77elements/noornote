@@ -49,13 +49,6 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
     return MuteOrchestrator.instance;
   }
 
-  // Required Orchestrator abstract methods
-  public override onui(_data: any): void {}
-  public override onopen(_relay: string): void {}
-  public override onmessage(_relay: string, _event: NostrEvent): void {}
-  public override onerror(_relay: string, _error: Error): void {}
-  public override onclose(_relay: string): void {}
-
   /**
    * Run one-time migration from old 4-key format to new unified format
    * IMPORTANT: Only runs when user is logged in, otherwise data would be lost!
@@ -66,11 +59,9 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
     if (!currentUser) {
       // Schedule migration for when user logs in
       const eventBus = EventBus.getInstance();
-      const handler = () => {
+      eventBus.once('user:login', () => {
         this.runMigrationIfNeeded();
-        eventBus.off('user:login', handler);
-      };
-      eventBus.on('user:login', handler);
+      });
       return;
     }
 
@@ -149,6 +140,7 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
   /**
    * Check if a user is muted
    * Reads from browserItems (localStorage)
+   * @param _userPubkey - Unused, kept for API compatibility
    */
   public async isMuted(targetPubkey: string, _userPubkey?: string): Promise<MuteStatus> {
     if (this.temporaryUnmutes.has(targetPubkey)) {
@@ -255,6 +247,7 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
   /**
    * Get all muted users (merged public + private)
    * Reads from browserItems (localStorage)
+   * @param _pubkey - Unused, kept for API compatibility
    */
   public async getAllMutedUsers(_pubkey?: string): Promise<string[]> {
     try {
@@ -273,40 +266,10 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
   /**
    * Get all muted users with their status (public/private/both)
    * Reads from browserItems (localStorage)
+   * @param _pubkey - Unused, kept for API compatibility
    */
   public async getAllMutedUsersWithStatus(_pubkey?: string): Promise<Map<string, MuteStatus>> {
-    const result = new Map<string, MuteStatus>();
-
-    try {
-      const browserItems = this.getBrowserItems();
-
-      // Filter user mutes only
-      const userMutes = browserItems.filter(item => item.type === 'user');
-
-      userMutes.forEach(item => {
-        const existing = result.get(item.id);
-
-        if (existing) {
-          // Already exists, update status
-          if (item.isPrivate) {
-            existing.private = true;
-          } else {
-            existing.public = true;
-          }
-        } else {
-          // New entry
-          result.set(item.id, {
-            public: !item.isPrivate,
-            private: !!item.isPrivate
-          });
-        }
-      });
-
-      return result;
-    } catch (error) {
-      this.systemLogger.error('MuteOrchestrator', `Failed to fetch muted users with status: ${error}`);
-      return result;
-    }
+    return this.getMutedItemsWithStatus('user');
   }
 
   // ===== Thread Muting Methods (Hell Thread Protection) =====
@@ -433,7 +396,7 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
     await this.ensureEventIdsCacheLoaded();
 
     // Check 1: Note itself muted
-    if (this.mutedEventIds.has(event.id)) {
+    if (event.id && this.mutedEventIds.has(event.id)) {
       return true;
     }
 
@@ -473,38 +436,38 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
    * Get all muted threads with their status (public/private)
    */
   public async getAllMutedThreadsWithStatus(): Promise<Map<string, MuteStatus>> {
+    return this.getMutedItemsWithStatus('thread');
+  }
+
+  /**
+   * Generic helper: Get muted items with status by type
+   */
+  private getMutedItemsWithStatus(type: 'user' | 'thread'): Map<string, MuteStatus> {
     const result = new Map<string, MuteStatus>();
 
     try {
-      const browserItems = this.getBrowserItems();
+      const items = this.getBrowserItems().filter(item => item.type === type);
 
-      // Filter thread mutes only
-      const threadMutes = browserItems.filter(item => item.type === 'thread');
-
-      threadMutes.forEach(item => {
+      for (const item of items) {
         const existing = result.get(item.id);
-
         if (existing) {
-          // Already exists, update status
           if (item.isPrivate) {
             existing.private = true;
           } else {
             existing.public = true;
           }
         } else {
-          // New entry
           result.set(item.id, {
             public: !item.isPrivate,
             private: !!item.isPrivate
           });
         }
-      });
-
-      return result;
+      }
     } catch (error) {
-      this.systemLogger.error('MuteOrchestrator', `Failed to fetch muted threads with status: ${error}`);
-      return result;
+      this.systemLogger.error('MuteOrchestrator', `Failed to get muted ${type}s with status: ${error}`);
     }
+
+    return result;
   }
 
   // ===== NIP-10 Thread Tag Helpers =====
@@ -518,10 +481,11 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
 
     // NIP-10: Look for explicit "root" marker
     const rootTag = eTags.find(tag => tag[3] === 'root');
-    if (rootTag) return rootTag[1];
+    if (rootTag) return rootTag[1] ?? null;
 
     // NIP-10 deprecated positional: first e-tag is root (only if multiple)
-    if (eTags.length > 1) return eTags[0][1];
+    const firstTag = eTags[0];
+    if (eTags.length > 1 && firstTag) return firstTag[1] ?? null;
 
     return null;
   }
@@ -535,14 +499,70 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
 
     // NIP-10: Look for explicit "reply" marker
     const replyTag = eTags.find(tag => tag[3] === 'reply');
-    if (replyTag) return replyTag[1];
+    if (replyTag) return replyTag[1] ?? null;
 
     // NIP-10 deprecated positional
-    if (eTags.length === 1) return eTags[0][1];
-    return eTags[eTags.length - 1][1]; // Last e-tag = parent
+    const firstTag = eTags[0];
+    if (eTags.length === 1 && firstTag) return firstTag[1] ?? null;
+
+    const lastTag = eTags[eTags.length - 1];
+    return lastTag?.[1] ?? null; // Last e-tag = parent
   }
 
   // ===== Relay Sync Methods =====
+
+  /**
+   * Fetch mute list events from relays, filtering out deleted ones (NIP-09)
+   * Returns newest valid event or null if none found
+   */
+  private async fetchMuteListEventFromRelays(pubkey: string): Promise<NostrEvent | null> {
+    const relays = this.getBootstrapRelays();
+
+    const events = await this.transport.fetch(relays, [{
+      authors: [pubkey],
+      kinds: [10000],
+      limit: 10
+    }], 5000);
+
+    const deletionEvents = await this.transport.fetch(relays, [{
+      authors: [pubkey],
+      kinds: [5]
+    }], 5000);
+
+    // Find newest deletion timestamp for kind:10000
+    let deletionTimestamp: number | undefined;
+    const expectedCoordinate = `10000:${pubkey}`;
+
+    for (const deletionEvent of deletionEvents) {
+      for (const tag of deletionEvent.tags) {
+        if (tag[0] === 'a' && tag[1] === expectedCoordinate) {
+          if (!deletionTimestamp || deletionEvent.created_at > deletionTimestamp) {
+            deletionTimestamp = deletionEvent.created_at;
+          }
+        }
+      }
+    }
+
+    // Filter out deleted events
+    let validEvents = events;
+    if (deletionTimestamp !== undefined) {
+      validEvents = events.filter(event => event.created_at >= deletionTimestamp);
+      const filteredCount = events.length - validEvents.length;
+      if (filteredCount > 0) {
+        this.systemLogger.info('MuteOrchestrator',
+          `Filtered out ${filteredCount} deleted mute list(s) (older than deletion at ${deletionTimestamp})`
+        );
+      }
+    }
+
+    if (validEvents.length === 0) {
+      this.systemLogger.info('MuteOrchestrator', 'No remote mute list found');
+      return null;
+    }
+
+    // Return newest event
+    return validEvents.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
+  }
 
   /**
    * Fetch mutes from relays (read-only, no local changes)
@@ -556,75 +576,27 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
     }
 
     try {
-      const relays = this.getBootstrapRelays();
-      const events = await this.transport.fetch(relays, [{
-        authors: [currentUser.pubkey],
-        kinds: [10000],
-        limit: 10
-      }], 5000);
-
-      // Fetch deletion events (kind:5) to filter out deleted mute lists
-      const deletionEvents = await this.transport.fetch(relays, [{
-        authors: [currentUser.pubkey],
-        kinds: [5]
-      }], 5000);
-
-      // Extract deleted coordinate with deletion timestamp
-      // NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp"
-      let deletionTimestamp: number | undefined;
-      deletionEvents.forEach(deletionEvent => {
-        deletionEvent.tags
-          .filter(t => t[0] === 'a' && t[1]?.startsWith('10000:'))
-          .forEach(t => {
-            const coordinate = t[1];
-            const expectedCoordinate = `10000:${currentUser.pubkey}`;
-            if (coordinate === expectedCoordinate) {
-              // Keep newest deletion timestamp if multiple deletions exist
-              if (!deletionTimestamp || deletionEvent.created_at > deletionTimestamp) {
-                deletionTimestamp = deletionEvent.created_at;
-              }
-            }
-          });
-      });
-
-      // Filter out deleted events (events older than deletion timestamp)
-      let validEvents = events;
-      if (deletionTimestamp !== undefined) {
-        validEvents = events.filter(event => event.created_at >= deletionTimestamp);
-        const filteredCount = events.length - validEvents.length;
-        if (filteredCount > 0) {
-          this.systemLogger.info('MuteOrchestrator',
-            `Filtered out ${filteredCount} deleted mute list(s) (older than deletion at ${deletionTimestamp})`
-          );
-        }
-      }
-
-      if (validEvents.length === 0) {
-        this.systemLogger.info('MuteOrchestrator', 'No remote mute list found');
+      const remoteEvent = await this.fetchMuteListEventFromRelays(currentUser.pubkey);
+      if (!remoteEvent) {
         return { items: [], relayContentWasEmpty: true };
       }
 
-      // Get newest event
-      const remoteEvent = validEvents.sort((a, b) => b.created_at - a.created_at)[0];
-
-      // Check if content was empty (mixed-client edge case - see LIST-MANAGEMENT-SPEC.md)
       const relayContentWasEmpty = !remoteEvent.content || remoteEvent.content.trim() === '';
 
       // Extract remote public mutes (users only)
       const remotePublicMutes = remoteEvent.tags
-        .filter(tag => tag[0] === 'p' && tag[1])
+        .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'p' && !!tag[1])
         .map(tag => tag[1]);
 
       // Extract remote private mutes (if enabled)
       let remotePrivateMutes: string[] = [];
-      if (this.isPrivateMutesEnabled() && remoteEvent.content && !relayContentWasEmpty) {
+      if (this.isPrivateMutesEnabled() && !relayContentWasEmpty) {
         const decrypted = await this.decryptPrivateItems(remoteEvent, currentUser.pubkey);
         remotePrivateMutes = decrypted
-          .filter(item => item.type === 'user')
-          .map(item => item.id);
+          .filter(item => item.type === 'user' && item.id)
+          .map(item => item.id) as string[];
       }
 
-      // Merge and return
       return {
         items: [...new Set([...remotePublicMutes, ...remotePrivateMutes])],
         relayContentWasEmpty
@@ -637,63 +609,19 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
 
   /**
    * Sync mute list from relays with smart merge
+   * Note: Different signature from base class - this is MuteOrchestrator-specific
    */
-  public override async syncFromRelays(options: { autoRepublish?: boolean } = {}): Promise<void> {
+  public async syncMutesFromRelays(options: { autoRepublish?: boolean } = {}): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       return;
     }
 
     try {
-      const relays = this.getBootstrapRelays();
-      const events = await this.transport.fetch(relays, [{
-        authors: [currentUser.pubkey],
-        kinds: [10000],
-        limit: 10
-      }], 5000);
-
-      // Fetch deletion events (kind:5) to filter out deleted mute lists
-      const deletionEvents = await this.transport.fetch(relays, [{
-        authors: [currentUser.pubkey],
-        kinds: [5]
-      }], 5000);
-
-      // Extract deleted coordinate with deletion timestamp
-      // NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp"
-      let deletionTimestamp: number | undefined;
-      deletionEvents.forEach(deletionEvent => {
-        deletionEvent.tags
-          .filter(t => t[0] === 'a' && t[1]?.startsWith('10000:'))
-          .forEach(t => {
-            const coordinate = t[1];
-            const expectedCoordinate = `10000:${currentUser.pubkey}`;
-            if (coordinate === expectedCoordinate) {
-              if (!deletionTimestamp || deletionEvent.created_at > deletionTimestamp) {
-                deletionTimestamp = deletionEvent.created_at;
-              }
-            }
-          });
-      });
-
-      // Filter out deleted events (events older than deletion timestamp)
-      let validEvents = events;
-      if (deletionTimestamp !== undefined) {
-        validEvents = events.filter(event => event.created_at >= deletionTimestamp);
-        const filteredCount = events.length - validEvents.length;
-        if (filteredCount > 0) {
-          this.systemLogger.info('MuteOrchestrator',
-            `Filtered out ${filteredCount} deleted mute list(s) (older than deletion at ${deletionTimestamp})`
-          );
-        }
-      }
-
-      if (validEvents.length === 0) {
-        this.systemLogger.info('MuteOrchestrator', 'No remote mute list found');
+      const remoteEvent = await this.fetchMuteListEventFromRelays(currentUser.pubkey);
+      if (!remoteEvent) {
         return;
       }
-
-      // Get newest event
-      const remoteEvent = validEvents.sort((a, b) => b.created_at - a.created_at)[0];
 
       // Get local browser storage
       const localItems = this.getBrowserItems();
@@ -718,10 +646,12 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
       }
 
       // Convert remote tags to MuteItems
-      const remoteItems: MuteItem[] = remoteTags.map(tag => ({
-        id: tag[1],
-        type: tag[0] === 'p' ? 'user' : 'thread',
-        addedAt: remoteEvent.created_at
+      const remoteItems: MuteItem[] = remoteTags
+        .filter(tag => tag[1] !== undefined)
+        .map(tag => ({
+          id: tag[1]!,
+          type: tag[0] === 'p' ? 'user' as const : 'thread' as const,
+          addedAt: remoteEvent.created_at
       }));
 
       // Count new items

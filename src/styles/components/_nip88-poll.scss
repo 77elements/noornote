@@ -112,4 +112,19 @@
     transition: width 0.3s ease;
     z-index: 1;
   }
+
+  // Preview mode (in PostNoteModal)
+  &--preview {
+    opacity: 0.9;
+
+    .nip88-poll__option--preview {
+      cursor: default;
+      pointer-events: none;
+
+      &:hover {
+        border-color: $color-2;
+        background: $color-1;
+      }
+    }
+  }
 }

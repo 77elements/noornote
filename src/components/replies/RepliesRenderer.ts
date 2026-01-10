@@ -53,7 +53,7 @@ export class RepliesRenderer {
     this.noteId = options.noteId;
     this.noteAuthor = options.noteAuthor;
     this.updateISL = options.updateISL !== false; // Default true
-    this.onLoadZapsList = options.onLoadZapsList;
+    if (options.onLoadZapsList) this.onLoadZapsList = options.onLoadZapsList;
 
     this.threadOrchestrator = ThreadOrchestrator.getInstance();
     this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
@@ -173,7 +173,9 @@ export class RepliesRenderer {
 
     // Create nodes for all replies
     replies.forEach(reply => {
-      nodes.set(reply.id, {
+      const replyId = reply.id;
+      if (!replyId) return;
+      nodes.set(replyId, {
         event: reply,
         children: [],
         depth: 0
@@ -182,7 +184,9 @@ export class RepliesRenderer {
 
     // Build parent-child relationships
     replies.forEach(reply => {
-      const node = nodes.get(reply.id)!;
+      const replyId = reply.id;
+      if (!replyId) return;
+      const node = nodes.get(replyId)!;
       const parentId = this.extractReplyParentId(reply);
 
       if (!parentId || parentId === rootNoteId) {
@@ -246,10 +250,11 @@ export class RepliesRenderer {
 
     // NIP-10: Look for explicit "reply" marker
     const replyTag = eTags.find(tag => tag[3] === 'reply');
-    if (replyTag) return replyTag[1];
+    if (replyTag?.[1]) return replyTag[1];
 
     // NIP-10 deprecated: last e-tag is the replied-to note
-    return eTags[eTags.length - 1][1];
+    const lastTag = eTags[eTags.length - 1];
+    return lastTag?.[1] ?? null;
   }
 
   /**
@@ -280,14 +285,15 @@ export class RepliesRenderer {
     });
 
     // Load zaps list for this reply (if callback provided)
-    if (this.onLoadZapsList) {
-      this.onLoadZapsList(reply.id, reply.pubkey, noteElement);
+    const replyId = reply.id;
+    if (this.onLoadZapsList && replyId) {
+      this.onLoadZapsList(replyId, reply.pubkey, noteElement);
     }
 
     // Wrap in reply container with depth-based indentation
     const replyWrapper = document.createElement('div');
     replyWrapper.className = 'snv-reply';
-    replyWrapper.dataset.eventId = reply.id;
+    if (replyId) replyWrapper.dataset.eventId = replyId;
     replyWrapper.dataset.depth = String(depth);
     replyWrapper.appendChild(noteElement);
 
@@ -298,7 +304,10 @@ export class RepliesRenderer {
    * Render a quoted repost as a special comment
    */
   private async renderQuotedRepost(quoteEvent: NostrEvent, container: Element): Promise<void> {
-    this.systemLogger.info('RepliesRenderer', `🎨 Rendering quoted repost: ${quoteEvent.id.slice(0, 8)}`);
+    const quoteEventId = quoteEvent.id;
+    if (!quoteEventId) return;
+
+    this.systemLogger.info('RepliesRenderer', `🎨 Rendering quoted repost: ${quoteEventId.slice(0, 8)}`);
 
     // Remove nostr:nevent/note links from content
     const cleanedEvent = {
@@ -309,7 +318,7 @@ export class RepliesRenderer {
     // Create wrapper for quote
     const quoteWrapper = document.createElement('div');
     quoteWrapper.className = 'snv-quoted-repost';
-    quoteWrapper.dataset.eventId = quoteEvent.id;
+    quoteWrapper.dataset.eventId = quoteEventId;
 
     // Fetch author's profile for header
     const profileService = UserProfileService.getInstance();
@@ -317,7 +326,7 @@ export class RepliesRenderer {
     const username = profile?.display_name || profile?.name || 'Anonymous';
 
     // Convert hex ID to nevent for navigation link
-    const nevent = encodeNevent(quoteEvent.id, [], quoteEvent.pubkey);
+    const nevent = encodeNevent(quoteEventId, [], quoteEvent.pubkey);
 
     // Create "quoted this note:" header with clickable username
     const quoteHeader = document.createElement('div');

@@ -110,7 +110,7 @@ export class ReactionsOrchestrator extends Orchestrator {
         quotedReposts: 0,
         likes: 0,
         zaps: 0,
-        zapAmount: 0
+        lastUpdated: Date.now()
       };
     }
 
@@ -226,14 +226,10 @@ export class ReactionsOrchestrator extends Orchestrator {
    * Calculate total zaps in sats from zap events
    */
   private calculateTotalZaps(zapEvents: NostrEvent[]): number {
-    let totalSats = 0;
-    zapEvents.forEach(event => {
+    return zapEvents.reduce((total, event) => {
       const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
-      if (bolt11Tag && bolt11Tag[1]) {
-        totalSats += this.parseBolt11Amount(bolt11Tag[1]);
-      }
-    });
-    return totalSats;
+      return bolt11Tag?.[1] ? total + this.parseBolt11Amount(bolt11Tag[1]) : total;
+    }, 0);
   }
 
   /**
@@ -318,7 +314,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
       if (!match) return 0;
 
-      const amount = parseInt(match[2]);
+      const amount = parseInt(match[2]!);
       const multiplier = match[3]?.toLowerCase();
 
       // Convert to millisats
@@ -339,6 +335,26 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Build NDK filters for fetching interaction events
+   * Handles both normal notes (#e tag) and long-form articles (#a and #e tags)
+   */
+  private buildFilters(kinds: number[], noteId: string, articleEventId?: string): NDKFilter[] {
+    const filters: NDKFilter[] = [];
+    const isArticle = this.isLongFormArticle(noteId);
+
+    if (isArticle) {
+      filters.push({ kinds, '#a': [noteId] });
+      if (articleEventId) {
+        filters.push({ kinds, '#e': [articleEventId] });
+      }
+    } else {
+      filters.push({ kinds, '#e': [noteId] });
+    }
+
+    return filters;
+  }
+
+  /**
    * Fetch reaction events (kind 7) - returns full events for Analytics Modal
    * Per NIP-25: ALL content values are valid (emojis, +, -, custom emoji)
    *
@@ -346,38 +362,23 @@ export class ReactionsOrchestrator extends Orchestrator {
    * LONG-FORM ARTICLES: Search BOTH #a and #e tags (some clients use event ID)
    */
   private async fetchReactionEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
-    return new Promise(async (resolve) => {
-      const reactions: NostrEvent[] = [];
-      const seenAuthors = new Set<string>();
-      const relays = this.transport.getReadRelays();
+    const reactions: NostrEvent[] = [];
+    const seenAuthors = new Set<string>();
+    const relays = this.transport.getReadRelays();
+    const filters = this.buildFilters([7], noteId, articleEventId);
 
-      const isArticle = this.isLongFormArticle(noteId);
-
-      // Build filters based on note type
-      const filters: NDKFilter[] = [];
-
-      if (isArticle) {
-        // LONG-FORM ARTICLE: Search both #a (addressable) and #e (event ID)
-        filters.push({ kinds: [7], '#a': [noteId] });
-        if (articleEventId) {
-          filters.push({ kinds: [7], '#e': [articleEventId] });
+    const sub = await this.transport.subscribe(relays, filters, {
+      onEvent: (event: NostrEvent) => {
+        // Only store one reaction per author (latest one)
+        // Accept ALL reactions per NIP-25 (any emoji or content value)
+        if (!seenAuthors.has(event.pubkey)) {
+          reactions.push(event);
+          seenAuthors.add(event.pubkey);
         }
-      } else {
-        // NORMAL NOTE: Search #e tag only (unchanged)
-        filters.push({ kinds: [7], '#e': [noteId] });
       }
+    });
 
-      const sub = await this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          // Only store one reaction per author (latest one)
-          // Accept ALL reactions per NIP-25 (any emoji or content value)
-          if (!seenAuthors.has(event.pubkey)) {
-            reactions.push(event);
-            seenAuthors.add(event.pubkey);
-          }
-        }
-      });
-
+    return new Promise((resolve) => {
       setTimeout(() => {
         sub.close();
         resolve(reactions);
@@ -394,49 +395,43 @@ export class ReactionsOrchestrator extends Orchestrator {
    * LONG-FORM ARTICLES: Search BOTH #a and #e tags, #q uses event ID
    */
   private async fetchRepostEvents(noteId: string, articleEventId?: string): Promise<{ regular: NostrEvent[]; quoted: NostrEvent[] }> {
-    return new Promise(async (resolve) => {
-      const regular: NostrEvent[] = [];
-      const quoted: NostrEvent[] = [];
-      const regularAuthors = new Set<string>();
-      const quotedAuthors = new Set<string>();
-      const relays = this.transport.getReadRelays();
+    const regular: NostrEvent[] = [];
+    const quoted: NostrEvent[] = [];
+    const regularAuthors = new Set<string>();
+    const quotedAuthors = new Set<string>();
+    const relays = this.transport.getReadRelays();
 
-      const isArticle = this.isLongFormArticle(noteId);
+    const isArticle = this.isLongFormArticle(noteId);
 
-      const filters: NDKFilter[] = [];
+    // Build filters - reposts need special handling for #q tag
+    const filters: NDKFilter[] = this.buildFilters([6], noteId, articleEventId);
 
-      if (isArticle) {
-        // LONG-FORM ARTICLE: Search both #a and #e for regular reposts
-        filters.push({ kinds: [6], '#a': [noteId] });
-        if (articleEventId) {
-          filters.push({ kinds: [6], '#e': [articleEventId] });
-          // Quoted reposts use #q tag with event ID
-          filters.push({ kinds: [1], '#q': [articleEventId] });
-        }
-      } else {
-        // NORMAL NOTE: Search #e and #q tags only (unchanged)
-        filters.push({ kinds: [6], '#e': [noteId] });
-        filters.push({ kinds: [1], '#q': [noteId] });
+    // Add quoted repost filters (#q tag)
+    if (isArticle) {
+      if (articleEventId) {
+        filters.push({ kinds: [1], '#q': [articleEventId] });
       }
+    } else {
+      filters.push({ kinds: [1], '#q': [noteId] });
+    }
 
-      const sub = await this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          if (event.kind === 6) {
-            // Regular repost
-            if (!regularAuthors.has(event.pubkey)) {
-              regularAuthors.add(event.pubkey);
-              regular.push(event);
-            }
-          } else if (event.kind === 1) {
-            // Quoted repost (kind:1 with 'q' tag)
-            if (!quotedAuthors.has(event.pubkey)) {
-              quotedAuthors.add(event.pubkey);
-              quoted.push(event);
-            }
+    const sub = await this.transport.subscribe(relays, filters, {
+      onEvent: (event: NostrEvent) => {
+        if (event.kind === 6) {
+          if (!regularAuthors.has(event.pubkey)) {
+            regularAuthors.add(event.pubkey);
+            regular.push(event);
+          }
+        } else if (event.kind === 1) {
+          if (!quotedAuthors.has(event.pubkey)) {
+            quotedAuthors.add(event.pubkey);
+            quoted.push(event);
           }
         }
-      });
+      }
+    });
 
+    return new Promise((resolve) => {
       setTimeout(() => {
         sub.close();
         resolve({ regular, quoted });
@@ -453,53 +448,32 @@ export class ReactionsOrchestrator extends Orchestrator {
    * LONG-FORM ARTICLES: Search BOTH #a and #e tags
    */
   private async fetchReplyEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
-    return new Promise(async (resolve) => {
-      const replies: NostrEvent[] = [];
-      const seenReplyIds = new Set<string>(); // Deduplicate by event ID
-      const relays = this.transport.getReadRelays();
+    const replies: NostrEvent[] = [];
+    const seenReplyIds = new Set<string>();
+    const relays = this.transport.getReadRelays();
+    const isArticle = this.isLongFormArticle(noteId);
+    const filters = this.buildFilters([1], noteId, articleEventId);
 
-      const isArticle = this.isLongFormArticle(noteId);
+    const sub = await this.transport.subscribe(relays, filters, {
+      onEvent: (event: NostrEvent) => {
+        if (!event.id || seenReplyIds.has(event.id)) return;
 
-      // Build filters based on note type
-      const filters: NDKFilter[] = [];
+        // Verify the event actually references our note
+        const referencesNote = isArticle
+          ? event.tags.some(tag =>
+              (tag[0] === 'a' && tag[1] === noteId) ||
+              (articleEventId && tag[0] === 'e' && tag[1] === articleEventId)
+            )
+          : event.tags.some(tag => tag[0] === 'e' && tag[1] === noteId);
 
-      if (isArticle) {
-        // LONG-FORM ARTICLE: Search both #a and #e
-        filters.push({ kinds: [1], '#a': [noteId] });
-        if (articleEventId) {
-          filters.push({ kinds: [1], '#e': [articleEventId] });
+        if (referencesNote) {
+          replies.push(event);
+          seenReplyIds.add(event.id);
         }
-      } else {
-        // NORMAL NOTE: Search #e tag only (unchanged)
-        filters.push({ kinds: [1], '#e': [noteId] });
       }
+    });
 
-      const sub = await this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          // ANY kind:1 that references our note via tag is a reply (direct or nested)
-          if (!seenReplyIds.has(event.id)) {
-            // Verify the event actually references our note
-            let referencesNote = false;
-
-            if (isArticle) {
-              // LONG-FORM ARTICLE: Check both #a and #e tags
-              referencesNote = event.tags.some(tag =>
-                (tag[0] === 'a' && tag[1] === noteId) ||
-                (articleEventId && tag[0] === 'e' && tag[1] === articleEventId)
-              );
-            } else {
-              // NORMAL NOTE: Check #e tag only (unchanged)
-              referencesNote = event.tags.some(tag => tag[0] === 'e' && tag[1] === noteId);
-            }
-
-            if (referencesNote) {
-              replies.push(event);
-              seenReplyIds.add(event.id);
-            }
-          }
-        }
-      });
-
+    return new Promise((resolve) => {
       setTimeout(() => {
         sub.close();
         resolve(replies);
@@ -514,40 +488,24 @@ export class ReactionsOrchestrator extends Orchestrator {
    * LONG-FORM ARTICLES: Search BOTH #a and #e tags
    */
   private async fetchZapEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
-    return new Promise(async (resolve) => {
-      const zaps: NostrEvent[] = [];
-      const seenZapIds = new Set<string>(); // Deduplicate by event ID
-      const relays = this.transport.getReadRelays();
+    const zaps: NostrEvent[] = [];
+    const seenZapIds = new Set<string>();
+    const relays = this.transport.getReadRelays();
+    const filters = this.buildFilters([9735], noteId, articleEventId);
 
-      const isArticle = this.isLongFormArticle(noteId);
+    const sub = await this.transport.subscribe(relays, filters, {
+      onEvent: (event: NostrEvent) => {
+        if (!event.id || seenZapIds.has(event.id)) return;
 
-      // Build filters based on note type
-      const filters: NDKFilter[] = [];
-
-      if (isArticle) {
-        // LONG-FORM ARTICLE: Search both #a and #e
-        filters.push({ kinds: [9735], '#a': [noteId] });
-        if (articleEventId) {
-          filters.push({ kinds: [9735], '#e': [articleEventId] });
+        const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
+        if (bolt11Tag?.[1]) {
+          zaps.push(event);
+          seenZapIds.add(event.id);
         }
-      } else {
-        // NORMAL NOTE: Search #e tag only (unchanged)
-        filters.push({ kinds: [9735], '#e': [noteId] });
       }
+    });
 
-      const sub = await this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent) => {
-          // Store all zap events with valid bolt11 tags (deduplicate by event ID)
-          if (!seenZapIds.has(event.id)) {
-            const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
-            if (bolt11Tag && bolt11Tag[1]) {
-              zaps.push(event);
-              seenZapIds.add(event.id);
-            }
-          }
-        }
-      });
-
+    return new Promise((resolve) => {
       setTimeout(() => {
         sub.close();
         resolve(zaps);
@@ -586,28 +544,21 @@ export class ReactionsOrchestrator extends Orchestrator {
 
   /**
    * Validate note ID format
-   * Returns true for valid 64-char hex strings or naddr identifiers
+   * Returns true for valid 64-char hex strings, naddr identifiers, or addressable identifiers
    * Returns false for synthetic IDs (e.g., "mutual-mutual_unfollow-...")
    */
   private isValidNoteId(noteId: string): boolean {
     if (!noteId) return false;
 
     // Valid 64-char hex string (event ID)
-    if (/^[a-f0-9]{64}$/i.test(noteId)) {
-      return true;
-    }
+    if (/^[a-f0-9]{64}$/i.test(noteId)) return true;
 
     // Valid naddr (long-form article identifier, bech32 encoded)
-    if (noteId.startsWith('naddr1')) {
-      return true;
-    }
+    if (noteId.startsWith('naddr1')) return true;
 
     // Valid addressable identifier (kind:pubkey:d-tag format for long-form articles)
-    if (this.isLongFormArticle(noteId)) {
-      return true;
-    }
-
-    return false;
+    // isLongFormArticle checks for colon presence
+    return this.isLongFormArticle(noteId);
   }
 
   /**

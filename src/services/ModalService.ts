@@ -17,6 +17,14 @@ export interface ModalConfig {
   onClose?: () => void;
 }
 
+export interface ConfirmConfig {
+  title: string;
+  message: string;
+  confirmText?: string;        // default: 'Confirm'
+  cancelText?: string;         // default: 'Cancel'
+  confirmDestructive?: boolean; // default: false - if true, confirm button styled as destructive
+}
+
 export class ModalService {
   private static instance: ModalService | null = null;
   private container: HTMLElement | null = null;
@@ -140,6 +148,51 @@ export class ModalService {
    */
   public isOpen(): boolean {
     return this.isVisible;
+  }
+
+  /**
+   * Show a confirmation dialog and return a promise that resolves to true/false
+   */
+  public confirm(config: ConfirmConfig): Promise<boolean> {
+    return new Promise((resolve) => {
+      const confirmText = config.confirmText || 'Confirm';
+      const cancelText = config.cancelText || 'Cancel';
+      const confirmClass = config.confirmDestructive ? 'btn-danger' : 'btn-primary';
+
+      const content = document.createElement('div');
+      content.className = 'modal-confirm';
+      content.innerHTML = `
+        <p class="modal-confirm__message">${this.escapeHtml(config.message)}</p>
+        <div class="modal-confirm__actions">
+          <button class="btn btn-secondary modal-confirm__cancel">${this.escapeHtml(cancelText)}</button>
+          <button class="btn ${confirmClass} modal-confirm__confirm">${this.escapeHtml(confirmText)}</button>
+        </div>
+      `;
+
+      const cancelBtn = content.querySelector('.modal-confirm__cancel');
+      const confirmBtn = content.querySelector('.modal-confirm__confirm');
+
+      cancelBtn?.addEventListener('click', () => {
+        this.hide();
+        resolve(false);
+      });
+
+      confirmBtn?.addEventListener('click', () => {
+        this.hide();
+        resolve(true);
+      });
+
+      this.show({
+        title: config.title,
+        content,
+        width: '400px',
+        height: 'auto',
+        showCloseButton: true,
+        closeOnOverlay: true,
+        closeOnEsc: true,
+        onClose: () => resolve(false)
+      });
+    });
   }
 
   /**

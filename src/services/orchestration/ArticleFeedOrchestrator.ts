@@ -48,6 +48,13 @@ export class ArticleFeedOrchestrator extends Orchestrator {
     return ArticleFeedOrchestrator.instance;
   }
 
+  // Abstract method stubs (not using router pattern)
+  public onui(_data: unknown): void {}
+  public onopen(_relay: string): void {}
+  public onmessage(_relay: string, _event: NostrEvent): void {}
+  public onerror(_relay: string, _error: Error): void {}
+  public onclose(_relay: string): void {}
+
   /**
    * Load initial articles
    */
@@ -108,8 +115,8 @@ export class ArticleFeedOrchestrator extends Orchestrator {
       const articlesToReturn = uniqueArticles.slice(0, this.PAGE_SIZE);
 
       // Update oldest timestamp for next page
-      if (articlesToReturn.length > 0) {
-        const oldest = articlesToReturn[articlesToReturn.length - 1];
+      const oldest = articlesToReturn[articlesToReturn.length - 1];
+      if (oldest) {
         this.oldestTimestamp = (oldest.created_at || 0) - 1;
       }
 

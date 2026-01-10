@@ -29,6 +29,45 @@ export interface NoteMenuOptions {
   rawEvent?: NostrEvent;
 }
 
+// Reusable SVG icons
+const ICONS = {
+  copy: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M5 5v-1a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1" stroke="currentColor" stroke-width="1.5"/>
+  </svg>`,
+  bookmark: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 2h10a1 1 0 0 1 1 1v11l-6-3-6 3V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  tribe: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  code: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M5 6l-3 2 3 2M11 6l3 2-3 2M10 2l-4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  trash: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  report: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 2v6M8 11v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <circle cx="8" cy="13.5" r="0.5" fill="currentColor"/>
+  </svg>`,
+  mute: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  muteThread: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 2l12 12M3 12l-1 3 3-1 7-7M12 4a2 2 0 0 0-3-3L4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  notification: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v3l-1 2h11l-1-2V6A4.5 4.5 0 0 0 8 1.5zM6.5 12a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`,
+  link: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M6.5 9.5l3-3M9 6.5l2.5-2.5a2.121 2.121 0 1 1 3 3L12 9.5m-2.5 0L7 12a2.121 2.121 0 1 1-3-3l2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`
+} as const;
+
 export class NoteMenu {
   private triggerElement: HTMLElement;
   private menuElement: HTMLElement;
@@ -97,75 +136,67 @@ export class NoteMenu {
     const articleNotifService = ArticleNotificationService.getInstance();
     const isSubscribedToArticles = articleNotifService.isSubscribed(this.options.authorPubkey);
 
-    // Bookmark icon SVG
-    const bookmarkIcon = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M3 2h10a1 1 0 0 1 1 1v11l-6-3-6 3V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
+    // Build bookmark buttons based on private bookmarks setting
+    const bookmarkButtons = privateBookmarksEnabled ? `
+      <button class="note-menu-item" data-action="bookmark-public">
+        ${ICONS.bookmark}
+        ${isPublicBookmarked ? 'Remove Public Bookmark' : 'Public Bookmark'}
+      </button>
+      <button class="note-menu-item" data-action="bookmark-private">
+        ${ICONS.bookmark}
+        ${isPrivateBookmarked ? 'Remove Private Bookmark' : 'Private Bookmark'}
+      </button>
+    ` : `
+      <button class="note-menu-item" data-action="bookmark-public">
+        ${ICONS.bookmark}
+        ${isPublicBookmarked ? 'Remove Bookmark' : 'Bookmark'}
+      </button>
+    `;
 
-    // Mute thread icon SVG (conversation bubble with slash)
-    const muteThreadIcon = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M2 2l12 12M3 12l-1 3 3-1 7-7M12 4a2 2 0 0 0-3-3L4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
-
-    // Tribe icon SVG (users group)
-    const tribeIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
-      <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>`;
+    // Build mute user buttons based on private mutes setting
+    const muteUserButtons = privateMutesEnabled ? `
+      <button class="note-menu-item note-menu-item--danger" data-action="mute-user-privately">
+        ${ICONS.mute}
+        Mute user privately
+      </button>
+      <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
+        ${ICONS.mute}
+        Mute user publicly
+      </button>
+    ` : `
+      <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
+        ${ICONS.mute}
+        Mute user
+      </button>
+    `;
 
     menu.innerHTML = `
       <button class="note-menu-item" data-action="copy-event-id">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="2" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M5 5v-1a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1" stroke="currentColor" stroke-width="1.5"/>
-        </svg>
+        ${ICONS.copy}
         Copy event ID
       </button>
 
       <button class="note-menu-item" data-action="copy-user-id">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="2" y="2" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M5 5v-1a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1" stroke="currentColor" stroke-width="1.5"/>
-        </svg>
+        ${ICONS.copy}
         Copy user ID
       </button>
 
       <button class="note-menu-item" data-action="copy-share-link">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M6.5 9.5l3-3M9 6.5l2.5-2.5a2.121 2.121 0 1 1 3 3L12 9.5m-2.5 0L7 12a2.121 2.121 0 1 1-3-3l2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        ${ICONS.link}
         Copy share link
       </button>
 
-      ${privateBookmarksEnabled ? `
-        <button class="note-menu-item" data-action="bookmark-public">
-          ${bookmarkIcon}
-          ${isPublicBookmarked ? 'Remove Public Bookmark' : 'Public Bookmark'}
-        </button>
-        <button class="note-menu-item" data-action="bookmark-private">
-          ${bookmarkIcon}
-          ${isPrivateBookmarked ? 'Remove Private Bookmark' : 'Private Bookmark'}
-        </button>
-      ` : `
-        <button class="note-menu-item" data-action="bookmark-public">
-          ${bookmarkIcon}
-          ${isPublicBookmarked ? 'Remove Bookmark' : 'Bookmark'}
-        </button>
-      `}
+      ${bookmarkButtons}
 
       ${!isOwnNote ? `
         <button class="note-menu-item" data-action="add-author-to-tribe">
-          ${tribeIcon}
+          ${ICONS.tribe}
           Add author to Tribe
         </button>
       ` : ''}
 
       <button class="note-menu-item" data-action="view-raw-event">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M5 6l-3 2 3 2M11 6l3 2-3 2M10 2l-4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        ${ICONS.code}
         View raw event
       </button>
 
@@ -173,57 +204,30 @@ export class NoteMenu {
 
       ${isOwnNote ? `
         <button class="note-menu-item note-menu-item--danger" data-action="delete-note">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          ${ICONS.trash}
           Delete note
         </button>
         <div class="note-menu-divider"></div>
       ` : ''}
 
       <button class="note-menu-item note-menu-item--danger" data-action="report">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8 2v6M8 11v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-          <circle cx="8" cy="13.5" r="0.5" fill="currentColor"/>
-        </svg>
+        ${ICONS.report}
         Report
       </button>
 
-      ${privateMutesEnabled ? `
-        <button class="note-menu-item note-menu-item--danger" data-action="mute-user-privately">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Mute user privately
-        </button>
-        <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Mute user publicly
-        </button>
-      ` : `
-        <button class="note-menu-item note-menu-item--danger" data-action="mute-user-publicly">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-          Mute user
-        </button>
-      `}
+      ${muteUserButtons}
 
       <div class="note-menu-divider"></div>
 
       <button class="note-menu-item note-menu-item--warning" data-action="toggle-mute-thread">
-        ${muteThreadIcon}
+        ${ICONS.muteThread}
         ${isThreadMuted ? 'Unmute thread' : 'Mute thread'}
       </button>
 
       <div class="note-menu-divider"></div>
 
       <button class="note-menu-item" data-action="toggle-article-notifications">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v3l-1 2h11l-1-2V6A4.5 4.5 0 0 0 8 1.5zM6.5 12a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        ${ICONS.notification}
         ${isSubscribedToArticles ? 'Stop article notifications' : 'Notify on new articles'}
       </button>
     `;
@@ -422,10 +426,10 @@ export class NoteMenu {
         this.reportNote();
         break;
       case 'mute-user-privately':
-        this.muteUserPrivately();
+        this.muteUser(true);
         break;
       case 'mute-user-publicly':
-        this.muteUserPublicly();
+        this.muteUser(false);
         break;
       case 'toggle-mute-thread':
         this.toggleMuteThread();
@@ -498,10 +502,10 @@ export class NoteMenu {
   }
 
   /**
-   * Mute user privately (NIP-51 encrypted mute list)
+   * Mute user (NIP-51 mute list)
+   * @param isPrivate - true for encrypted mute list, false for public
    */
-  private async muteUserPrivately(): Promise<void> {
-    // AuthGuard check
+  private async muteUser(isPrivate: boolean): Promise<void> {
     if (!AuthGuard.requireAuth('mute user')) {
       return;
     }
@@ -509,54 +513,18 @@ export class NoteMenu {
     const muteOrch = MuteOrchestrator.getInstance();
 
     try {
-      await muteOrch.muteUser(this.options.authorPubkey, true);
-      ToastService.show('User muted privately', 'success');
+      await muteOrch.muteUser(this.options.authorPubkey, isPrivate);
+      ToastService.show(isPrivate ? 'User muted privately' : 'User muted publicly', 'success');
 
       // Refresh muted users in orchestrators
-      const feedOrch = FeedOrchestrator.getInstance();
-      const notifOrch = NotificationsOrchestrator.getInstance();
       await Promise.all([
-        feedOrch.refreshMutedUsers(),
-        notifOrch.refreshMutedUsers()
+        FeedOrchestrator.getInstance().refreshMutedUsers(),
+        NotificationsOrchestrator.getInstance().refreshMutedUsers()
       ]);
 
-      // Notify feed to refresh
-      const eventBus = EventBus.getInstance();
-      eventBus.emit('mute:updated', {});
+      EventBus.getInstance().emit('mute:updated', {});
     } catch (error) {
-      console.error('Failed to mute user privately:', error);
-      ToastService.show('Failed to mute user', 'error');
-    }
-  }
-
-  /**
-   * Mute user publicly (NIP-51 public mute list)
-   */
-  private async muteUserPublicly(): Promise<void> {
-    // AuthGuard check
-    if (!AuthGuard.requireAuth('mute user')) {
-      return;
-    }
-
-    const muteOrch = MuteOrchestrator.getInstance();
-
-    try {
-      await muteOrch.muteUser(this.options.authorPubkey, false);
-      ToastService.show('User muted publicly', 'success');
-
-      // Refresh muted users in orchestrators
-      const feedOrch = FeedOrchestrator.getInstance();
-      const notifOrch = NotificationsOrchestrator.getInstance();
-      await Promise.all([
-        feedOrch.refreshMutedUsers(),
-        notifOrch.refreshMutedUsers()
-      ]);
-
-      // Notify feed to refresh
-      const eventBus = EventBus.getInstance();
-      eventBus.emit('mute:updated', {});
-    } catch (error) {
-      console.error('Failed to mute user publicly:', error);
+      console.error(`Failed to mute user ${isPrivate ? 'privately' : 'publicly'}:`, error);
       ToastService.show('Failed to mute user', 'error');
     }
   }

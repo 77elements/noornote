@@ -115,8 +115,7 @@ export class NotificationsView extends View {
     if (this.isLoading || !this.hasMoreNotifications) return;
 
     // Log to SystemLogger when InfiniteScroll triggers (not initial load)
-    const isInitialLoad = this.currentOffset === 0;
-    if (!isInitialLoad) {
+    if (!this.isInitialLoad()) {
       this.systemLogger.info('NotificationsView', '⏳ Loading older notifications...');
     }
 
@@ -182,9 +181,7 @@ export class NotificationsView extends View {
     }
 
     // Show loading indicator + log based on whether this is initial load
-    const isInitialLoad = this.currentOffset === 0;
-    if (isInitialLoad) {
-      // Initial load - show generic loading message
+    if (this.isInitialLoad()) {
       this.systemLogger.info('NotificationsView', '⏳ Loading notifications...');
     }
     this.showLoadingIndicator();
@@ -199,15 +196,15 @@ export class NotificationsView extends View {
 
     // If no notifications in memory AND we haven't loaded everything, fetch older from relays
     if (notifications.length === 0 && this.hasMoreNotifications) {
-      // Log to SystemLogger (local) - fetch triggered (only if NOT initial load)
-      if (!isInitialLoad) {
+      if (!this.isInitialLoad()) {
         this.systemLogger.info('NotificationsView', '⏳ Fetching older notifications...');
       }
 
       // Get oldest timestamp from current notifications
       const allNotifications = this.notificationsOrch.getNotifications();
-      if (allNotifications.length > 0) {
-        const oldestTimestamp = allNotifications[allNotifications.length - 1].timestamp;
+      const oldestNotification = allNotifications[allNotifications.length - 1];
+      if (oldestNotification) {
+        const oldestTimestamp = oldestNotification.timestamp;
 
         // Fetch older notifications from relays
         await this.notificationsOrch.fetchOlderNotifications(oldestTimestamp, this.BATCH_SIZE);
@@ -229,7 +226,7 @@ export class NotificationsView extends View {
     this.hasMoreNotifications = (this.currentOffset + notifications.length) < totalCount;
 
     // Show empty state if first batch and no notifications
-    if (notifications.length === 0 && this.currentOffset === 0) {
+    if (notifications.length === 0 && this.isInitialLoad()) {
       list.innerHTML = '<div class="notifications-view__empty">No notifications yet</div>';
       this.isLoading = false;
       return;
@@ -245,15 +242,7 @@ export class NotificationsView extends View {
     // Extract all unique pubkeys from this batch
     const pubkeys = new Set<string>();
     notifications.forEach(notification => {
-      // For zaps, extract author from P tag
-      if (notification.type === 'zap') {
-        const pTag = notification.event.tags.find(t => t[0] === 'P');
-        if (pTag && pTag[1]) {
-          pubkeys.add(pTag[1]);
-        }
-      } else {
-        pubkeys.add(notification.event.pubkey);
-      }
+      pubkeys.add(this.extractPubkey(notification));
     });
 
     // Batch-fetch ALL profiles BEFORE rendering
@@ -302,9 +291,7 @@ export class NotificationsView extends View {
     const list = this.container.querySelector('.notifications-view__list');
     if (!list) return;
 
-    // Determine message based on whether this is initial load
-    const isInitialLoad = this.currentOffset === 0;
-    const message = isInitialLoad
+    const message = this.isInitialLoad()
       ? 'Loading notifications...'
       : 'Loading older notifications...';
 
@@ -322,6 +309,26 @@ export class NotificationsView extends View {
 
     this.loadingIndicator.remove();
     this.loadingIndicator = null;
+  }
+
+  /**
+   * Check if this is the initial load (no notifications loaded yet)
+   */
+  private isInitialLoad(): boolean {
+    return this.currentOffset === 0;
+  }
+
+  /**
+   * Extract pubkey from notification (handles zap P tag extraction)
+   */
+  private extractPubkey(notification: NotificationEvent): string {
+    if (notification.type === 'zap') {
+      const pTag = notification.event.tags.find(t => t[0] === 'P');
+      if (pTag && pTag[1]) {
+        return pTag[1];
+      }
+    }
+    return notification.event.pubkey;
   }
 
   /**
@@ -387,13 +394,8 @@ export class NotificationsView extends View {
     this.cacheService.addNotifications(allNotifications);
 
     // Only add if current tab matches (or "all" tab is active)
-    const shouldShow = this.activeTab === 'all' ||
-      (this.activeTab === 'mentions' && notification.type === 'mention') ||
-      (this.activeTab === 'reactions' && notification.type === 'reaction') ||
-      (this.activeTab === 'zaps' && notification.type === 'zap') ||
-      (this.activeTab === 'replies' && notification.type === 'reply');
-
-    if (!shouldShow) return;
+    const filterType = this.getNotificationTypeFromTab();
+    if (filterType && notification.type !== filterType) return;
 
     const list = this.container.querySelector('.notifications-view__list');
     if (!list) return;
@@ -404,18 +406,8 @@ export class NotificationsView extends View {
       emptyState.remove();
     }
 
-    // Fetch profile BEFORE rendering (like batch does)
-    let pubkey = notification.event.pubkey;
-
-    // For zaps, extract author from P tag
-    if (notification.type === 'zap') {
-      const pTag = notification.event.tags.find(t => t[0] === 'P');
-      if (pTag && pTag[1]) {
-        pubkey = pTag[1];
-      }
-    }
-
-    // Fetch profile (don't wait - UserProfileService will handle caching)
+    // Fetch profile before rendering
+    const pubkey = this.extractPubkey(notification);
     await this.userProfileService.getUserProfile(pubkey);
 
     // Create new item and prepend (newest first)

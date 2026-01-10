@@ -244,11 +244,14 @@ export class EmojiPicker {
 
     // Render frequently used (if any)
     if (this.frequentlyUsed.length > 0) {
-      gridContainer.appendChild(this.createFrequentlyUsedSection());
+      gridContainer.appendChild(this.createEmojiSection('Frequently Used', this.frequentlyUsed));
     }
 
     // Render first category
-    gridContainer.appendChild(this.createCategorySection(0));
+    const firstCategory = EMOJI_CATEGORIES[0];
+    if (firstCategory) {
+      gridContainer.appendChild(this.createEmojiSection(firstCategory.name, firstCategory.emojis));
+    }
 
     container.appendChild(searchInput);
     container.appendChild(tabs);
@@ -258,48 +261,22 @@ export class EmojiPicker {
   }
 
   /**
-   * Create frequently used section
+   * Create emoji section with title and grid
    */
-  private createFrequentlyUsedSection(): HTMLElement {
+  private createEmojiSection(title: string, emojis: string[]): HTMLElement {
     const section = document.createElement('div');
     section.className = 'emoji-picker-category';
 
-    const title = document.createElement('div');
-    title.className = 'emoji-picker-category-title';
-    title.textContent = 'Frequently Used';
-    section.appendChild(title);
+    const titleEl = document.createElement('div');
+    titleEl.className = 'emoji-picker-category-title';
+    titleEl.textContent = title;
+    section.appendChild(titleEl);
 
     const grid = document.createElement('div');
     grid.className = 'emoji-picker-grid';
 
-    this.frequentlyUsed.forEach(emoji => {
-      const btn = this.createEmojiButton(emoji);
-      grid.appendChild(btn);
-    });
-
-    section.appendChild(grid);
-    return section;
-  }
-
-  /**
-   * Create category section
-   */
-  private createCategorySection(categoryIndex: number): HTMLElement {
-    const category = EMOJI_CATEGORIES[categoryIndex];
-    const section = document.createElement('div');
-    section.className = 'emoji-picker-category';
-
-    const title = document.createElement('div');
-    title.className = 'emoji-picker-category-title';
-    title.textContent = category.name;
-    section.appendChild(title);
-
-    const grid = document.createElement('div');
-    grid.className = 'emoji-picker-grid';
-
-    category.emojis.forEach(emoji => {
-      const btn = this.createEmojiButton(emoji);
-      grid.appendChild(btn);
+    emojis.forEach(emoji => {
+      grid.appendChild(this.createEmojiButton(emoji));
     });
 
     section.appendChild(grid);
@@ -334,36 +311,29 @@ export class EmojiPicker {
     // Update active tab
     const tabs = this.container.querySelectorAll('.tab');
     tabs.forEach((tab, index) => {
-      if (index === categoryIndex) {
-        tab.classList.add('tab--active');
-      } else {
-        tab.classList.remove('tab--active');
-      }
+      tab.classList.toggle('tab--active', index === categoryIndex);
     });
 
     // Auto-scroll tab into view
     const activeTab = tabs[categoryIndex] as HTMLElement;
-    const tabsContainer = this.container.querySelector('.tabs') as HTMLElement;
-    if (activeTab && tabsContainer) {
-      // Use scrollIntoView for reliable scrolling
-      activeTab.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center'
-      });
+    if (activeTab) {
+      activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
     }
 
     // Re-render grid
     const gridContainer = this.container.querySelector('.emoji-picker-grid-container');
-    if (gridContainer) {
-      gridContainer.innerHTML = '';
+    if (!gridContainer) return;
 
-      // Add frequently used if available
-      if (this.frequentlyUsed.length > 0 && categoryIndex === 0) {
-        gridContainer.appendChild(this.createFrequentlyUsedSection());
-      }
+    gridContainer.innerHTML = '';
 
-      gridContainer.appendChild(this.createCategorySection(categoryIndex));
+    // Add frequently used if on first category
+    if (this.frequentlyUsed.length > 0 && categoryIndex === 0) {
+      gridContainer.appendChild(this.createEmojiSection('Frequently Used', this.frequentlyUsed));
+    }
+
+    const category = EMOJI_CATEGORIES[categoryIndex];
+    if (category) {
+      gridContainer.appendChild(this.createEmojiSection(category.name, category.emojis));
     }
   }
 
@@ -399,26 +369,10 @@ export class EmojiPicker {
 
     // Render search results
     gridContainer.innerHTML = '';
-    const section = document.createElement('div');
-    section.className = 'emoji-picker-category';
-
-    const title = document.createElement('div');
-    title.className = 'emoji-picker-category-title';
-    title.textContent = searchResults.length > 0
+    const title = searchResults.length > 0
       ? `Search results for "${query}"`
       : `No results for "${query}"`;
-    section.appendChild(title);
-
-    const grid = document.createElement('div');
-    grid.className = 'emoji-picker-grid';
-
-    searchResults.forEach(emoji => {
-      const btn = this.createEmojiButton(emoji);
-      grid.appendChild(btn);
-    });
-
-    section.appendChild(grid);
-    gridContainer.appendChild(section);
+    gridContainer.appendChild(this.createEmojiSection(title, searchResults));
   }
 
   /**

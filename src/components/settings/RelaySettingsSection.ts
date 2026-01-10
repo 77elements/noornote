@@ -4,6 +4,8 @@
  *
  * @purpose Configure Nostr relay connections (public + local relay gateway)
  * @used-by SettingsView
+ *
+ * Listens to 'relays:loaded' event to update UI when account changes
  */
 
 import { SettingsSection } from './SettingsSection';
@@ -16,6 +18,7 @@ import { Switch } from '../ui/Switch';
 import { RelayHealthMonitor } from '../../services/RelayHealthMonitor';
 import { EventBus } from '../../services/EventBus';
 import { SystemLogger } from '../system/SystemLogger';
+import { NostrTransport } from '../../services/transport/NostrTransport';
 
 interface LocalRelaySettings {
   enabled: boolean;
@@ -32,9 +35,8 @@ export class RelaySettingsSection extends SettingsSection {
   private eventBus: EventBus;
   private localRelaySwitch: Switch | null = null;
   private localRelaySettings: LocalRelaySettings;
-  private tempRelays: RelayInfo[];  // Temporary state for unsaved changes (public relays)
-  private readonly storageKey = 'noornote_local_relay';
-  private readonly publicRelaysStorageKey = 'noornote_public_relays';
+  private tempRelays: RelayInfo[];
+  private readonly localRelayStorageKey = 'noornote_local_relay';
 
   constructor() {
     super('relay-settings');
@@ -47,10 +49,11 @@ export class RelaySettingsSection extends SettingsSection {
 
     // Load settings
     this.localRelaySettings = this.loadLocalRelaySettings();
-    this.tempRelays = this.loadPublicRelays();
+    this.tempRelays = this.loadRelaysFromConfig();
 
-    // Setup health update listener
+    // Setup listeners
     this.setupHealthUpdateListener();
+    this.setupRelaysLoadedListener();
   }
 
   /**
@@ -63,7 +66,24 @@ export class RelaySettingsSection extends SettingsSection {
   }
 
   /**
-   * Update health indicators in the UI (called when health metrics change)
+   * Setup listener for relays:loaded event (account switch)
+   * Re-loads tempRelays and re-renders UI when relays are loaded
+   */
+  private setupRelaysLoadedListener(): void {
+    this.eventBus.on('relays:loaded', () => {
+      this.tempRelays = this.loadRelaysFromConfig();
+      // Re-render if section is currently mounted
+      const contentContainer = document.querySelector('.relay-settings')?.parentElement;
+      if (contentContainer) {
+        contentContainer.innerHTML = this.renderContent();
+        this.bindListeners(contentContainer as HTMLElement);
+        this.updateHealthSummary();
+      }
+    });
+  }
+
+  /**
+   * Update health indicators in the UI
    */
   private updateHealthIndicators(): void {
     const relayItems = document.querySelectorAll('.relay-item');
@@ -79,7 +99,6 @@ export class RelaySettingsSection extends SettingsSection {
       }
     });
 
-    // Update health summary
     this.updateHealthSummary();
   }
 
@@ -99,7 +118,7 @@ export class RelaySettingsSection extends SettingsSection {
    */
   private loadLocalRelaySettings(): LocalRelaySettings {
     try {
-      const stored = localStorage.getItem(this.storageKey);
+      const stored = localStorage.getItem(this.localRelayStorageKey);
       if (stored) {
         return JSON.parse(stored);
       }
@@ -107,7 +126,6 @@ export class RelaySettingsSection extends SettingsSection {
       console.warn('Failed to load local relay settings:', error);
     }
 
-    // Default: Local relay disabled
     return {
       enabled: false,
       mode: 'test',
@@ -120,41 +138,18 @@ export class RelaySettingsSection extends SettingsSection {
    */
   private saveLocalRelaySettings(): void {
     try {
-      localStorage.setItem(this.storageKey, JSON.stringify(this.localRelaySettings));
+      localStorage.setItem(this.localRelayStorageKey, JSON.stringify(this.localRelaySettings));
     } catch (error) {
       console.warn('Failed to save local relay settings:', error);
     }
   }
 
   /**
-   * Load public relays from storage
-   * These are the relays configured by the user, separate from what's actually active
-   * Priority: localStorage > RelayConfig (from NIP-65) > defaults
+   * Load relays from RelayConfig (per-account via PerAccountLocalStorage)
+   * Excludes localhost relays (handled separately)
    */
-  private loadPublicRelays(): RelayInfo[] {
-    try {
-      const stored = localStorage.getItem(this.publicRelaysStorageKey);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.warn('Failed to load public relays:', error);
-    }
-
-    // If no stored public relays, use current RelayConfig (excluding localhost)
-    // This will include NIP-65 relays if user logged in
+  private loadRelaysFromConfig(): RelayInfo[] {
     return this.relayConfig.getAllRelays().filter(r => !r.url.includes('localhost'));
-  }
-
-  /**
-   * Save public relays to storage
-   */
-  private savePublicRelays(relays: RelayInfo[]): void {
-    try {
-      localStorage.setItem(this.publicRelaysStorageKey, JSON.stringify(relays));
-    } catch (error) {
-      console.warn('Failed to save public relays:', error);
-    }
   }
 
   /**
@@ -165,7 +160,7 @@ export class RelaySettingsSection extends SettingsSection {
     if (!contentContainer) return;
 
     // Reload temp state to ensure we have latest relays
-    this.tempRelays = this.loadPublicRelays();
+    this.tempRelays = this.loadRelaysFromConfig();
 
     contentContainer.innerHTML = this.renderContent();
     this.bindListeners(contentContainer);
@@ -178,7 +173,6 @@ export class RelaySettingsSection extends SettingsSection {
    * Render relay settings content
    */
   private renderContent(): string {
-    // Health summary will be updated async after mount
     return `
       <div class="relay-settings">
         <!-- Health Summary -->
@@ -202,48 +196,6 @@ export class RelaySettingsSection extends SettingsSection {
           ${this.tempRelays.map(relay => this.renderRelayItem(relay)).join('')}
         </div>
 
-        <!-- Local backup relay - HIDDEN: Development feature, not for end users
-        <div class="local-relay-section">
-          <h3 class="local-relay-title">Local Relay (Optional)</h3>
-          <p class="local-relay-description">
-            When enabled, Noornote connects ONLY to your local relay at <code>${this.localRelaySettings.url}</code>.
-            The local relay itself syncs with the public relays above (for reads always, for writes only in PROXY mode).
-            See <code>relay/README.md</code> for setup.
-          </p>
-
-          <div class="local-relay-controls">
-            <div class="local-relay-enable" id="local-relay-switch-container">
-            </div>
-
-            <div class="local-relay-mode">
-              <label>Local Relay Mode:</label>
-              <div class="mode-switch">
-                <button
-                  class="mode-btn ${this.localRelaySettings.mode === 'test' ? 'active' : ''}"
-                  data-mode="test"
-                >
-                  TEST (writes local only)
-                </button>
-                <button
-                  class="mode-btn ${this.localRelaySettings.mode === 'proxy' ? 'active' : ''}"
-                  data-mode="proxy"
-                >
-                  PROXY (writes forwarded)
-                </button>
-              </div>
-            </div>
-
-            <div class="local-relay-command">
-              <label>Start local relay with:</label>
-              <code class="restart-command">
-                1. colima start<br>
-                2. cd relay && ./scripts/${this.localRelaySettings.mode}-mode.sh
-              </code>
-            </div>
-          </div>
-        </div>
-        -->
-
         <!-- Save button -->
         <div class="settings-section__actions">
           <button class="btn btn--medium" id="save-relay-settings-btn">Save Settings</button>
@@ -261,7 +213,7 @@ export class RelaySettingsSection extends SettingsSection {
       return '<div class="health-summary-empty">No relays configured</div>';
     }
 
-    const healthPercentage = summary.total > 0 ? Math.round((summary.healthy / summary.total) * 100) : 0;
+    const healthPercentage = Math.round((summary.healthy / summary.total) * 100);
     const healthClass = healthPercentage >= 80 ? 'good' : healthPercentage >= 50 ? 'warning' : 'critical';
 
     return `
@@ -294,7 +246,7 @@ export class RelaySettingsSection extends SettingsSection {
           <span class="relay-health-indicator ${isConnected ? 'connected' : 'disconnected'}"></span>
           <div class="relay-url">
             ${relay.url}
-            ${latency !== null && latency !== undefined ? `<span class="relay-latency">${latency}ms</span>` : ''}
+            ${latency != null ? `<span class="relay-latency">${latency}ms</span>` : ''}
           </div>
         </div>
 
@@ -362,28 +314,6 @@ export class RelaySettingsSection extends SettingsSection {
       btn.addEventListener('click', (e) => this.handleRemoveRelay(e, contentContainer));
     });
 
-    // Local relay mode buttons
-    const modeButtons = contentContainer.querySelectorAll('.mode-btn');
-    modeButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => this.handleLocalRelayModeChange(e, contentContainer));
-    });
-
-    // Local relay enable switch
-    const switchContainer = contentContainer.querySelector('#local-relay-switch-container');
-    if (switchContainer) {
-      this.localRelaySwitch = new Switch({
-        label: `Use local relay as gateway (${this.localRelaySettings.url})`,
-        checked: this.localRelaySettings.enabled,
-        onChange: (checked) => {
-          this.localRelaySettings.enabled = checked;
-          this.saveLocalRelaySettings();
-        }
-      });
-
-      switchContainer.innerHTML = this.localRelaySwitch.render();
-      this.localRelaySwitch.setupEventListeners(switchContainer as HTMLElement);
-    }
-
     // Save button
     const saveBtn = contentContainer.querySelector('#save-relay-settings-btn');
     saveBtn?.addEventListener('click', () => this.handleSave(contentContainer));
@@ -398,23 +328,19 @@ export class RelaySettingsSection extends SettingsSection {
 
     if (!url) return;
 
-    // Validate URL
     if (!url.startsWith('wss://') && !url.startsWith('ws://')) {
       ToastService.show('Relay URL must start with wss:// or ws://', 'error');
       return;
     }
 
-    // Normalize URL: remove trailing slash
     url = url.replace(/\/$/, '');
 
-    // Check for duplicates (compare normalized URLs)
     const normalizedExisting = this.tempRelays.map(r => r.url.replace(/\/$/, ''));
     if (normalizedExisting.includes(url)) {
       ToastService.show('This relay is already in your list', 'error');
       return;
     }
 
-    // Add relay to temporary state
     this.tempRelays.push({
       url,
       types: ['read', 'write'],
@@ -423,27 +349,22 @@ export class RelaySettingsSection extends SettingsSection {
       isActive: true
     });
 
-    // Clear input and re-render
     input.value = '';
     contentContainer.innerHTML = this.renderContent();
     this.bindListeners(contentContainer);
   }
 
   /**
-   * Handle toggle relay type (Read/Write/DM Inbox)
+   * Handle toggle relay type
    */
   private handleToggleRelayType(e: Event): void {
     const btn = e.currentTarget as HTMLElement;
     const url = btn.dataset.url;
     const type = btn.dataset.type as RelayType;
 
-    if (!url || !type) return;
-
-    const relay = this.tempRelays.find(r => r.url === url);
-
+    const relay = url && type ? this.tempRelays.find(r => r.url === url) : null;
     if (!relay) return;
 
-    // Toggle type
     if (relay.types.includes(type)) {
       relay.types = relay.types.filter(t => t !== type);
       btn.classList.remove('active');
@@ -451,8 +372,6 @@ export class RelaySettingsSection extends SettingsSection {
       relay.types.push(type);
       btn.classList.add('active');
     }
-
-    // Don't re-render to avoid re-binding event listeners multiple times
   }
 
   /**
@@ -464,7 +383,6 @@ export class RelaySettingsSection extends SettingsSection {
 
     if (!url) return;
 
-    // Show confirmation modal
     this.modalService.show({
       title: 'Remove Relay',
       content: `
@@ -485,7 +403,6 @@ export class RelaySettingsSection extends SettingsSection {
       closeOnEsc: true
     });
 
-    // Setup modal button handlers
     setTimeout(() => {
       const cancelBtn = document.querySelector('[data-action="cancel"]');
       const confirmBtn = document.querySelector('[data-action="confirm"]');
@@ -504,39 +421,9 @@ export class RelaySettingsSection extends SettingsSection {
   }
 
   /**
-   * Handle local relay mode change (TEST ↔ PROXY)
-   */
-  private handleLocalRelayModeChange(e: Event, contentContainer: HTMLElement): void {
-    const btn = e.currentTarget as HTMLElement;
-    const mode = btn.dataset.mode as 'test' | 'proxy';
-
-    if (!mode) return;
-
-    this.localRelaySettings.mode = mode;
-
-    // Save immediately to localStorage so it persists
-    this.saveLocalRelaySettings();
-
-    // Update command display
-    const commandEl = contentContainer.querySelector('.restart-command');
-    if (commandEl) {
-      commandEl.innerHTML = `
-        1. colima start<br>
-        2. cd relay && ./scripts/${mode}-mode.sh
-      `;
-    }
-
-    // Update active button
-    const modeButtons = contentContainer.querySelectorAll('.mode-btn');
-    modeButtons.forEach(btn => btn.classList.remove('active'));
-    btn.classList.add('active');
-  }
-
-  /**
    * Handle save settings
    */
   private async handleSave(contentContainer: HTMLElement): Promise<void> {
-    // Get current user
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       this.showMessage(contentContainer, 'Please log in to save relay settings', 'error');
@@ -544,10 +431,7 @@ export class RelaySettingsSection extends SettingsSection {
     }
 
     try {
-      // Save public relays to localStorage
-      this.savePublicRelays(this.tempRelays);
-
-      // Save local relay settings to localStorage
+      // Save local relay settings
       this.saveLocalRelaySettings();
 
       // Clear all existing relays from RelayConfig
@@ -556,25 +440,20 @@ export class RelaySettingsSection extends SettingsSection {
         this.relayConfig.removeRelay(relay.url);
       });
 
-      // Determine what relays to activate in RelayConfig
+      // Add relays to RelayConfig (saves to per-account cache automatically)
       if (this.localRelaySettings.enabled) {
-        // Local relay mode (TEST/PROXY):
-        // - Read from public relays (Timeline fetches from there)
-        // - Write ONLY to local relay (Posts go only to local)
-
-        // Add public relays for READ only
+        // Local relay mode: Read from public, write to local
         this.tempRelays.forEach(relay => {
           this.relayConfig.addRelay({
             ...relay,
-            types: ['read'] // Only read from public relays
+            types: ['read']
           });
         });
 
-        // Add local relay for WRITE only
         this.relayConfig.addRelay({
           url: this.localRelaySettings.url,
           name: 'Local Relay',
-          types: ['write', 'inbox'], // Only write to local relay
+          types: ['write', 'inbox'],
           isPaid: false,
           requiresAuth: false,
           isActive: true
@@ -599,102 +478,89 @@ export class RelaySettingsSection extends SettingsSection {
   }
 
   /**
+   * Get current user and write relays for publishing, or null if unavailable
+   */
+  private getPublishContext(): { user: { npub: string; pubkey: string }; writeRelays: string[] } | null {
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      console.warn('No user logged in, skipping publish');
+      return null;
+    }
+
+    const writeRelays = this.relayConfig.getWriteRelays();
+    if (writeRelays.length === 0) {
+      console.warn('No write relays available for publishing');
+      return null;
+    }
+
+    return { user, writeRelays };
+  }
+
+  /**
    * Publish relay list to network as NIP-65 (kind:10002)
    */
   private async publishRelayList(): Promise<void> {
-    try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) {
-        console.warn('No user logged in, skipping relay list publish');
-        return;
-      }
+    const context = this.getPublishContext();
+    if (!context) return;
 
-      // Create unsigned kind:10002 event
+    try {
       const relayTags = RelayListOrchestrator.relayInfosToTags(this.tempRelays);
       const unsignedEvent = {
         kind: 10002,
         created_at: Math.floor(Date.now() / 1000),
         tags: relayTags,
         content: '',
-        pubkey: currentUser.pubkey
+        pubkey: context.user.pubkey
       };
 
-      // Sign event with browser extension
       const signedEvent = await this.authService.signEvent(unsignedEvent);
-
-      // Publish to current write relays
-      const publishRelays = this.relayConfig.getWriteRelays();
-      if (publishRelays.length === 0) {
-        console.warn('No write relays available for publishing');
-        return;
-      }
 
       await this.relayListOrchestrator.publishRelayList(
         this.tempRelays,
-        publishRelays,
+        context.writeRelays,
         signedEvent
       );
 
       console.log('Relay list published successfully');
     } catch (error) {
       console.error('Failed to publish relay list:', error);
-      throw error; // Re-throw to be caught by handleSave
+      throw error;
     }
   }
 
   /**
    * Publish DM relay list to network as NIP-17 (kind:10050)
-   * Only publishes if there are relays with 'inbox' type
    */
   private async publishDMRelayList(): Promise<void> {
     const systemLogger = SystemLogger.getInstance();
+    const context = this.getPublishContext();
+    if (!context) return;
+
+    const inboxRelays = this.tempRelays.filter(r => r.types.includes('inbox'));
+    if (inboxRelays.length === 0) {
+      systemLogger.info('RelaySettings', 'No DM inbox relays configured, skipping kind:10050 publish');
+      return;
+    }
 
     try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) {
-        systemLogger.warn('RelaySettings', 'No user logged in, skipping DM relay list publish');
-        return;
-      }
-
-      // Get relays marked as inbox
-      const inboxRelays = this.tempRelays.filter(r => r.types.includes('inbox'));
-
-      if (inboxRelays.length === 0) {
-        systemLogger.info('RelaySettings', 'No DM inbox relays configured, skipping kind:10050 publish');
-        return;
-      }
-
-      // Create relay tags for kind:10050 - format: ["relay", "wss://relay.example.com"]
       const relayTags = inboxRelays.map(r => ['relay', r.url]);
-
       const unsignedEvent = {
         kind: 10050,
         created_at: Math.floor(Date.now() / 1000),
         tags: relayTags,
         content: '',
-        pubkey: currentUser.pubkey
+        pubkey: context.user.pubkey
       };
 
-      // Sign event
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
-      // Publish to current write relays
-      const publishRelays = this.relayConfig.getWriteRelays();
-      if (publishRelays.length === 0) {
-        systemLogger.warn('RelaySettings', 'No write relays available for publishing DM relay list');
-        return;
-      }
-
-      // Import NostrTransport for publishing
-      const { NostrTransport } = await import('../../services/transport/NostrTransport');
       const transport = NostrTransport.getInstance();
-      await transport.publish(publishRelays, signedEvent);
+      await transport.publish(context.writeRelays, signedEvent);
 
       const relayUrls = inboxRelays.map(r => r.url).join(', ');
       systemLogger.info('RelaySettings', `Published kind:10050 DM relay list with ${inboxRelays.length} relays: ${relayUrls}`);
     } catch (error) {
       systemLogger.error('RelaySettings', 'Failed to publish DM relay list:', error);
-      // Don't throw - DM relay list is optional, main relay list is more important
     }
   }
 
@@ -718,7 +584,6 @@ export class RelaySettingsSection extends SettingsSection {
    * Unmount section and cleanup
    */
   public unmount(): void {
-    // Cleanup if needed
     if (this.localRelaySwitch) {
       this.localRelaySwitch = null;
     }

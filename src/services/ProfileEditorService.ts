@@ -104,8 +104,9 @@ export class ProfileEditorService {
       const cleanedMetadata = this.cleanMetadata(metadataWithoutNip05s);
 
       // Set primary NIP-05 in content (for compatibility with other clients)
-      if (nip05s.length > 0) {
-        cleanedMetadata.nip05 = nip05s[0];
+      const primaryNip05 = nip05s[0];
+      if (primaryNip05) {
+        cleanedMetadata.nip05 = primaryNip05;
       }
 
       // Build tags - duplicate all profile fields as tags (Animestr-style)

@@ -23,14 +23,15 @@ import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocal
 
 // Initialize dayjs with calendar systems plugin
 dayjs.extend(calendarSystems);
-dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
+// Cast 'hijri' as any because the plugin defines its own types
+dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
 
 type CalendarSystem = 'gregorian' | 'hijri' | 'both';
 
 /**
  * Hijri month names (English transliteration)
  */
-const HIJRI_MONTHS = [
+export const HIJRI_MONTHS = [
   'Muharram',
   'Safar',
   "Rabi' al-Awwal",
@@ -95,7 +96,7 @@ function getCalendarSystem(): CalendarSystem {
  */
 function formatAbsoluteDate(
   date: Date,
-  now: Date,
+  _now: Date,
   time: string,
   includeYear: boolean,
   calendarSystem: CalendarSystem
@@ -130,7 +131,7 @@ function formatGregorianDate(date: Date, time: string, includeYear: boolean): st
  * Format Hijri date using Day.js calendar plugin
  */
 function formatHijriDate(date: Date, time: string, includeYear: boolean): string {
-  const hijriDate = dayjs(date).toCalendarSystem('hijri');
+  const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
   const day = hijriDate.date();
   const month = HIJRI_MONTHS[hijriDate.month()];
   const year = hijriDate.year();
@@ -150,7 +151,7 @@ function formatBothDates(date: Date, time: string, includeYear: boolean): string
   const gregorianMonth = getMonthShort(date);
   const gregorianYear = date.getFullYear();
 
-  const hijriDate = dayjs(date).toCalendarSystem('hijri');
+  const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
   const hijriDay = hijriDate.date();
   const hijriMonth = HIJRI_MONTHS[hijriDate.month()];
   const hijriYear = hijriDate.year();
@@ -189,7 +190,7 @@ function getMonthShort(date: Date): string {
   } catch {
     // Fallback: Manual month names if Intl is unavailable
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months[date.getMonth()];
+    return months[date.getMonth()] ?? 'Jan';
   }
 }
 
@@ -208,8 +209,8 @@ function isSameDay(date1: Date, date2: Date, calendarSystem: CalendarSystem): bo
 
   // For Hijri mode, use Islamic calendar comparison
   if (calendarSystem === 'hijri') {
-    const hijri1 = dayjs(date1).toCalendarSystem('hijri');
-    const hijri2 = dayjs(date2).toCalendarSystem('hijri');
+    const hijri1 = dayjs(date1).toCalendarSystem('hijri' as any);
+    const hijri2 = dayjs(date2).toCalendarSystem('hijri' as any);
     return (
       hijri1.year() === hijri2.year() &&
       hijri1.month() === hijri2.month() &&
@@ -231,8 +232,8 @@ function isSameYear(date1: Date, date2: Date, calendarSystem: CalendarSystem): b
 
   // For Hijri mode, use Islamic calendar comparison
   if (calendarSystem === 'hijri') {
-    const hijri1 = dayjs(date1).toCalendarSystem('hijri');
-    const hijri2 = dayjs(date2).toCalendarSystem('hijri');
+    const hijri1 = dayjs(date1).toCalendarSystem('hijri' as any);
+    const hijri2 = dayjs(date2).toCalendarSystem('hijri' as any);
     return hijri1.year() === hijri2.year();
   }
 

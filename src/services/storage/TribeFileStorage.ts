@@ -39,6 +39,7 @@ export interface TribeMember {
  * Create empty TribeSetData
  */
 function createEmptyTribeSetData(): TribeSetData {
+  const now = Math.floor(Date.now() / 1000);
   return {
     version: 1,
     sets: [
@@ -52,8 +53,9 @@ function createEmptyTribeSetData(): TribeSetData {
     ],
     metadata: {
       setOrder: [''],
-      lastModified: Math.floor(Date.now() / 1000)
-    }
+      lastModified: now
+    },
+    lastModified: now
   };
 }
 
@@ -112,7 +114,9 @@ export class TribeFileStorage {
    */
   public async write(data: TribeSetData): Promise<void> {
     await this.initialize();
-    data.metadata.lastModified = Math.floor(Date.now() / 1000);
+    const now = Math.floor(Date.now() / 1000);
+    data.metadata.lastModified = now;
+    data.lastModified = now;
     await this.storage.write(data);
   }
 
@@ -169,10 +173,9 @@ export class TribeFileStorage {
         currentData.sets.push(set);
         currentData.metadata.setOrder.push(setName);
       }
-      set.publicMembers.push({
-        pubkey: item.pubkey,
-        relay: item.relay
-      });
+      const memberTag: { pubkey: string; relay?: string } = { pubkey: item.pubkey };
+      if (item.relay) memberTag.relay = item.relay;
+      set.publicMembers.push(memberTag);
     }
 
     await this.write(currentData);
@@ -205,10 +208,9 @@ export class TribeFileStorage {
         currentData.sets.push(set);
         currentData.metadata.setOrder.push(setName);
       }
-      set.privateMembers.push({
-        pubkey: item.pubkey,
-        relay: item.relay
-      });
+      const memberTag: { pubkey: string; relay?: string } = { pubkey: item.pubkey };
+      if (item.relay) memberTag.relay = item.relay;
+      set.privateMembers.push(memberTag);
     }
 
     await this.write(currentData);
@@ -227,27 +229,29 @@ export class TribeFileStorage {
       // Add public members
       for (const member of set.publicMembers) {
         if (!members.some(m => m.pubkey === member.pubkey)) {
-          members.push({
+          const tribeMember: TribeMember = {
             id: member.pubkey,
             pubkey: member.pubkey,
-            relay: member.relay,
             addedAt: data.metadata.lastModified,
             isPrivate: false,
             category
-          });
+          };
+          if (member.relay) tribeMember.relay = member.relay;
+          members.push(tribeMember);
         }
       }
       // Add private members
       for (const member of set.privateMembers) {
         if (!members.some(m => m.pubkey === member.pubkey)) {
-          members.push({
+          const tribeMember: TribeMember = {
             id: member.pubkey,
             pubkey: member.pubkey,
-            relay: member.relay,
             addedAt: data.metadata.lastModified,
             isPrivate: true,
             category
-          });
+          };
+          if (member.relay) tribeMember.relay = member.relay;
+          members.push(tribeMember);
         }
       }
     }
@@ -266,14 +270,15 @@ export class TribeFileStorage {
       const category = set.d;
 
       for (const member of memberTags) {
-        members.push({
+        const tribeMember: TribeMember = {
           id: member.pubkey,
           pubkey: member.pubkey,
-          relay: member.relay,
           addedAt: data.metadata.lastModified,
           isPrivate: privateOnly,
           category
-        });
+        };
+        if (member.relay) tribeMember.relay = member.relay;
+        members.push(tribeMember);
       }
     }
 
@@ -287,24 +292,22 @@ export class TribeFileStorage {
   public async getAllFolderData(): Promise<{
     folders: TribeFolder[];
     folderAssignments: MemberAssignment[];
-    rootOrder: RootOrderItem[];
+    rootOrder: RootOrderItem<'member'>[];
   }> {
     const data = await this.read();
 
     const folders: TribeFolder[] = [];
     const folderAssignments: MemberAssignment[] = [];
-    const rootOrder: RootOrderItem[] = [];
+    const rootOrder: RootOrderItem<'member'>[] = [];
 
     // Build folders from sets (except root)
-    let folderOrder = 0;
     for (const set of data.sets) {
       if (set.d !== '') {
         const folderId = `folder_${set.d}`;
         folders.push({
           id: folderId,
           name: set.d,
-          createdAt: data.metadata.lastModified,
-          order: folderOrder++
+          createdAt: data.metadata.lastModified
         });
         rootOrder.push({ type: 'folder', id: folderId });
       }

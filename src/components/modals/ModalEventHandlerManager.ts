@@ -156,4 +156,22 @@ export class ModalEventHandlerManager {
   public destroy(): void {
     this.modal = null;
   }
+
+  /**
+   * Restore modal state after a failed post/reply attempt
+   */
+  public static restoreAfterError(
+    modalContainer: HTMLElement | null,
+    originalDisplay: string,
+    buttonText: string
+  ): void {
+    if (modalContainer) {
+      modalContainer.style.display = originalDisplay;
+    }
+    const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
+    if (postBtn) {
+      postBtn.disabled = false;
+      postBtn.textContent = buttonText;
+    }
+  }
 }

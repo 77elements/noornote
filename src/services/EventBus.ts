@@ -62,6 +62,8 @@ export class EventBus {
    */
   public off(subscriptionId: string): void {
     const eventName = subscriptionId.split('_')[0];
+    if (!eventName) return;
+
     const subscriptions = this.events.get(eventName);
 
     if (subscriptions) {

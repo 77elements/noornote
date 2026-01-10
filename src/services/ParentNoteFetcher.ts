@@ -105,6 +105,7 @@ export class ParentNoteFetcher {
       }
 
       const parentEvent = result.events[0];
+      if (!parentEvent) return null;
       const parentAuthorPubkey = parentEvent.pubkey;
 
       // Get parent author profile
@@ -112,7 +113,7 @@ export class ParentNoteFetcher {
 
       // Extract display name and avatar
       const displayName = parentProfile.display_name || parentProfile.name || 'Anonymous';
-      const avatarUrl = parentProfile.picture || this.userProfileService.getProfilePicture(parentAuthorPubkey);
+      const avatarUrl = parentProfile.picture ?? this.userProfileService.getProfilePicture(parentAuthorPubkey) ?? '';
 
       return {
         displayName,

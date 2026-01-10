@@ -12,6 +12,10 @@ import { NoteRendererFactory } from './note-rendering/NoteRendererFactory';
 import { NoteStructureBuilder } from './note-rendering/NoteStructureBuilder';
 import { CollapsibleManager } from './note-features/CollapsibleManager';
 import { FallbackElementFactory } from './note-factories/FallbackElementFactory';
+import { InteractionStatusLine } from './InteractionStatusLine';
+
+// Import types for internal use
+import type { NoteUIOptions } from './types/NoteTypes';
 
 // Re-export types from central location
 export type {
@@ -60,7 +64,7 @@ export class NoteUI {
     try {
       // Check if we've exceeded maximum nesting depth
       if (opts.depth! > NoteUI.MAX_NESTING_DEPTH) {
-        console.warn(`⚠️ Max nesting depth (${NoteUI.MAX_NESTING_DEPTH}) reached for note ${event.id.slice(0, 8)}`);
+        console.warn(`⚠️ Max nesting depth (${NoteUI.MAX_NESTING_DEPTH}) reached for note ${event.id?.slice(0, 8) ?? 'unknown'}`);
         return FallbackElementFactory.createMaxDepthElement(event);
       }
 

@@ -53,8 +53,12 @@ export class Timeline extends View {
   constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
     this.userPubkey = userPubkey;
-    this.filterAuthorPubkey = filterAuthorPubkey;
-    this.tribePubkeys = tribePubkeys;
+    if (filterAuthorPubkey !== undefined) {
+      this.filterAuthorPubkey = filterAuthorPubkey;
+    }
+    if (tribePubkeys !== undefined) {
+      this.tribePubkeys = tribePubkeys;
+    }
     this.feedOrchestrator = FeedOrchestrator.getInstance();
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
@@ -339,30 +343,38 @@ export class Timeline extends View {
    * Restart polling for new notes (called when link is clicked)
    */
   private restartPolling(): void {
-    const newestTimestamp = this.stateManager.getNewestTimestamp();
-    if (newestTimestamp === 0 || this.stateManager.getFollowingPubkeys().length === 0) {
-      return;
-    }
-
     // Hide link immediately
     if (this.lookForNotesLink) {
       this.lookForNotesLink.style.display = 'none';
     }
 
-    // Stop and restart polling
+    // Stop and restart polling immediately
     this.feedOrchestrator.stopPolling();
+    this.doStartPolling(0);
+
+    // Schedule link to reappear after 60s
+    this.scheduleLookForNotesLinkVisibility();
+  }
+
+  /**
+   * Start polling with the given initial delay
+   * Centralizes polling configuration to avoid duplication
+   */
+  private doStartPolling(initialDelayMs: number): void {
+    const newestTimestamp = this.stateManager.getNewestTimestamp();
+    if (newestTimestamp === 0 || this.stateManager.getFollowingPubkeys().length === 0) {
+      return;
+    }
+
     this.feedOrchestrator.startPolling(
       this.stateManager.getFollowingPubkeys(),
       newestTimestamp,
       (info: NewNotesInfo) => this.handleNewNotesDetected(info),
       this.stateManager.getIncludeReplies(),
-      0, // Poll immediately
+      initialDelayMs,
       this.stateManager.getSelectedRelay(),
       this.filterAuthorPubkey
     );
-
-    // Schedule link to reappear after 60s
-    this.scheduleLookForNotesLinkVisibility();
   }
 
   /**
@@ -390,12 +402,6 @@ export class Timeline extends View {
         // TribeView: show notes from tribe members
         this.stateManager.setFollowingPubkeys(this.tribePubkeys);
         console.log(`📱 TIMELINE UI: Loading notes from ${this.tribePubkeys.length} tribe members`);
-
-        if (this.tribePubkeys.length === 0) {
-          this.uiStateHandler.hideSkeletonLoaders();
-          this.uiStateHandler.showError('No members in this tribe. Add some members to see their notes.');
-          return;
-        }
       } else if (this.filterAuthorPubkey) {
         // ProfileView: show only this author's notes
         this.stateManager.setFollowingPubkeys([this.filterAuthorPubkey]);
@@ -420,13 +426,19 @@ export class Timeline extends View {
       }
 
       // Use FeedOrchestrator for loading
-      const result = await this.feedOrchestrator.loadInitialFeed({
+      const feedRequest: Parameters<typeof this.feedOrchestrator.loadInitialFeed>[0] = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
-        timeWindowHours: 1, // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
-        specificRelay: this.stateManager.getSelectedRelay() || undefined,
-        exemptFromMuteFilter: this.filterAuthorPubkey // Don't filter profile user's notes in ProfileView
-      });
+        timeWindowHours: 1 // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
+      };
+      const selectedRelay = this.stateManager.getSelectedRelay();
+      if (selectedRelay) {
+        feedRequest.specificRelay = selectedRelay;
+      }
+      if (this.filterAuthorPubkey) {
+        feedRequest.exemptFromMuteFilter = this.filterAuthorPubkey; // Don't filter profile user's notes in ProfileView
+      }
+      const result = await this.feedOrchestrator.loadInitialFeed(feedRequest);
 
       this.stateManager.setEvents(result.events);
 
@@ -452,39 +464,29 @@ export class Timeline extends View {
    * Start polling for new notes
    */
   private startNewNotesPolling(): void {
-    const newestTimestamp = this.stateManager.getNewestTimestamp();
-    if (newestTimestamp === 0 || this.stateManager.getFollowingPubkeys().length === 0) {
-      return;
-    }
-
-    // Start polling via FeedOrchestrator
-    this.feedOrchestrator.startPolling(
-      this.stateManager.getFollowingPubkeys(),
-      newestTimestamp,
-      (info: NewNotesInfo) => this.handleNewNotesDetected(info),
-      this.stateManager.getIncludeReplies(), // Respect timeline view setting
-      60000, // Start after 60 seconds
-      this.stateManager.getSelectedRelay(), // Poll only from this relay (if relay-filtered)
-      this.filterAuthorPubkey // Don't filter profile user's notes in ProfileView
-    );
-
-    // Show "Look for new notes" link after 10s
+    this.doStartPolling(60000); // Start after 60 seconds
     this.scheduleLookForNotesLinkVisibility();
+  }
+
+  /**
+   * Clear "Look for new notes" link timeout
+   */
+  private clearLookForNotesTimeout(): void {
+    if (this.lookForNotesLinkTimeout !== null) {
+      clearTimeout(this.lookForNotesLinkTimeout);
+      this.lookForNotesLinkTimeout = null;
+    }
   }
 
   /**
    * Schedule "Look for new notes" link to appear after 10s
    */
   private scheduleLookForNotesLinkVisibility(): void {
-    // Clear any existing timeout
-    if (this.lookForNotesLinkTimeout !== null) {
-      clearTimeout(this.lookForNotesLinkTimeout);
-    }
+    this.clearLookForNotesTimeout();
 
     // Show link after 10s (if RefreshButton is still hidden)
     this.lookForNotesLinkTimeout = window.setTimeout(() => {
       if (this.lookForNotesLink && this.refreshButton) {
-        // Only show link if RefreshButton is hidden
         const refreshButtonVisible = this.refreshButton.getElement().style.display !== 'none';
         if (!refreshButtonVisible) {
           this.lookForNotesLink.style.display = 'block';
@@ -497,14 +499,10 @@ export class Timeline extends View {
    * Handle new notes detected
    */
   private handleNewNotesDetected(info: NewNotesInfo): void {
-    // Silent operation - UI updates via RefreshButton
     if (this.refreshButton) {
       this.refreshButton.update(info.count, info.authorPubkeys);
     }
   }
-
-
-
 
   /**
    * Save view state (implements View base class)
@@ -532,12 +530,7 @@ export class Timeline extends View {
    */
   public override pause(): void {
     this.lifecycleManager.pause();
-
-    // Clear "Look for new notes" link timeout and hide link
-    if (this.lookForNotesLinkTimeout !== null) {
-      clearTimeout(this.lookForNotesLinkTimeout);
-      this.lookForNotesLinkTimeout = null;
-    }
+    this.clearLookForNotesTimeout();
     if (this.lookForNotesLink) {
       this.lookForNotesLink.style.display = 'none';
     }
@@ -567,22 +560,14 @@ export class Timeline extends View {
     this.islStatsUpdater.updateFromCache(this.stateManager.getEvents());
   }
 
-
   /**
    * Cleanup resources
    */
   public destroy(): void {
-    // Unsubscribe from user login events
     if (this.userLoginSubscriptionId) {
       this.eventBus.off(this.userLoginSubscriptionId);
     }
-
-    // Clear "Look for new notes" link timeout
-    if (this.lookForNotesLinkTimeout !== null) {
-      clearTimeout(this.lookForNotesLinkTimeout);
-      this.lookForNotesLinkTimeout = null;
-    }
-
+    this.clearLookForNotesTimeout();
     this.lifecycleManager.destroy();
     this.element.remove();
   }

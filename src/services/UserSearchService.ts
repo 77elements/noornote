@@ -150,14 +150,14 @@ export class UserSearchService {
       // Convert to UserSearchResult, mark if following
       const results: UserSearchResult[] = remoteProfiles
         .filter(p => !this.followPubkeys.has(p.pubkey)) // Exclude already-shown follows
-        .map(p => ({
-          pubkey: p.pubkey,
-          name: p.name,
-          displayName: p.display_name,
-          picture: p.picture,
-          nip05: p.nip05,
-          isFollowing: false
-        }));
+        .map(p => {
+          const result: UserSearchResult = { pubkey: p.pubkey, isFollowing: false };
+          if (p.name) result.name = p.name;
+          if (p.display_name) result.displayName = p.display_name;
+          if (p.picture) result.picture = p.picture;
+          if (p.nip05) result.nip05 = p.nip05;
+          return result;
+        });
 
       return results;
     } catch {
@@ -182,14 +182,12 @@ export class UserSearchService {
    * Convert UserProfile to UserSearchResult
    */
   private profileToSearchResult(profile: UserProfile, isFollowing: boolean): UserSearchResult {
-    return {
-      pubkey: profile.pubkey,
-      name: profile.name,
-      displayName: profile.display_name,
-      picture: profile.picture,
-      nip05: profile.nip05,
-      isFollowing
-    };
+    const result: UserSearchResult = { pubkey: profile.pubkey, isFollowing };
+    if (profile.name) result.name = profile.name;
+    if (profile.display_name) result.displayName = profile.display_name;
+    if (profile.picture) result.picture = profile.picture;
+    if (profile.nip05) result.nip05 = profile.nip05;
+    return result;
   }
 
   /**

@@ -13,7 +13,6 @@ import { AuthService } from './AuthService';
 import { NostrTransport } from './transport/NostrTransport';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { ErrorService } from './ErrorService';
-import { decodeNip19 } from './NostrToolsAdapter';
 import { ToastService } from './ToastService';
 import type { PollData } from '../components/poll/PollCreator';
 import { RelayConfig } from './RelayConfig';
@@ -329,35 +328,46 @@ export class PostService {
 
     // Get relay hint for parent event (first write relay as default)
     const writeRelays = relayConfig.getWriteRelays();
-    const relayHint = writeRelays.length > 0 ? writeRelays[0] : '';
+    const relayHint = writeRelays[0] ?? '';
 
     // Check if parent event has a "root" marker e-tag
     const parentRootTag = parentEvent.tags.find(
       tag => tag[0] === 'e' && tag[3] === 'root'
     );
 
+    // Extract parent event id and pubkey with guards for strict mode
+    const parentId = parentEvent.id;
+    const parentPubkey = parentEvent.pubkey;
+
+    if (!parentId || !parentPubkey) {
+      // Should never happen with valid events, but satisfies strict mode
+      return { eTags, pTags };
+    }
+
     if (parentRootTag) {
       // Parent is a reply → Use its root as our root
       const rootEventId = parentRootTag[1];
-      const rootRelayHint = parentRootTag[2] || '';
-      const rootPubkey = parentRootTag[4] || '';
+      if (rootEventId) {
+        const rootRelayHint = parentRootTag[2] || '';
+        const rootPubkey = parentRootTag[4] || '';
 
-      // Add root e-tag
-      eTags.push(['e', rootEventId, rootRelayHint, 'root', rootPubkey]);
+        // Add root e-tag
+        eTags.push(['e', rootEventId, rootRelayHint, 'root', rootPubkey]);
 
-      // Add parent as reply e-tag
-      eTags.push(['e', parentEvent.id, relayHint, 'reply', parentEvent.pubkey]);
+        // Add parent as reply e-tag
+        eTags.push(['e', parentId, relayHint, 'reply', parentPubkey]);
+      }
     } else {
       // Parent IS the root → Add parent as root
-      eTags.push(['e', parentEvent.id, relayHint, 'root', parentEvent.pubkey]);
+      eTags.push(['e', parentId, relayHint, 'root', parentPubkey]);
     }
 
     // NIP-10: Build p-tags (all participants in thread)
     // Add parent author first
-    pTags.push(['p', parentEvent.pubkey]);
+    pTags.push(['p', parentPubkey]);
 
     // Add all p-tags from parent event (avoid duplicates)
-    const seenPubkeys = new Set<string>([parentEvent.pubkey]);
+    const seenPubkeys = new Set<string>([parentPubkey]);
 
     parentEvent.tags.forEach(tag => {
       if (tag[0] === 'p' && tag[1] && !seenPubkeys.has(tag[1])) {

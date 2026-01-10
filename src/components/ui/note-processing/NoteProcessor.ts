@@ -17,6 +17,7 @@ export class NoteProcessor {
    * SYNCHRONOUS - routes to specialized processor
    */
   static process(event: NostrEvent): ProcessedNote {
+    const eventId = event.id ?? 'unknown';
     try {
       switch (event.kind) {
         case 1:
@@ -32,17 +33,17 @@ export class NoteProcessor {
           return TextNoteProcessor.process(event);
       }
     } catch (error) {
-      console.error(`❌ ERROR processing note ${event.id.slice(0, 8)}:`, error);
-      return NoteProcessor.createFallbackNote(event);
+      console.error(`❌ ERROR processing note ${eventId.slice(0, 8)}:`, error);
+      return NoteProcessor.createFallbackNote(event, eventId);
     }
   }
 
   /**
    * Create fallback note when processing fails
    */
-  private static createFallbackNote(event: NostrEvent): ProcessedNote {
+  private static createFallbackNote(event: NostrEvent, eventId: string): ProcessedNote {
     return {
-      id: event.id,
+      id: eventId,
       type: 'original',
       timestamp: event.created_at,
       author: { pubkey: event.pubkey },

@@ -14,6 +14,15 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { renderUserMention, setupUserMentionHandlers, type UserMentionProfile } from '../../helpers/UserMentionHelper';
 
+// Shared modal dimensions for consistent sizing
+const MODAL_CONFIG = {
+  title: 'Analytics',
+  width: '40%',
+  height: '40%',
+  maxWidth: '90%',
+  maxHeight: '50%'
+} as const;
+
 export class AnalyticsModal {
   private static instance: AnalyticsModal | null = null;
   private orchestrator: ReactionsOrchestrator;
@@ -48,44 +57,17 @@ export class AnalyticsModal {
     }
 
     // Show loading state first
-    const loadingContent = this.renderLoadingContent();
-    this.modalService.show({
-      title: 'Analytics',
-      content: loadingContent,
-      width: '40%',
-      height: '40%',
-      maxWidth: '90%',
-      maxHeight: '50%'
-    });
+    this.modalService.show({ ...MODAL_CONFIG, content: this.renderLoadingContent() });
 
     // Fetch detailed stats
     try {
       const stats = await this.orchestrator.getDetailedStats(noteId);
-      const statsContent = await this.renderStatsContent(noteId, stats, rawEvent);
-
-      // Update modal with stats content
-      this.modalService.show({
-        title: 'Analytics',
-        content: statsContent,
-        width: '40%',
-        height: '40%',
-        maxWidth: '90%',
-        maxHeight: '50%'
-      });
-
-      // Update ISL stats in the DOM (Profile View, Timeline)
+      const statsContent = await this.renderStatsContent(stats, rawEvent);
+      this.modalService.show({ ...MODAL_CONFIG, content: statsContent });
       this.updateISLInDOM(noteId, stats);
     } catch (error) {
-      console.error('❌ Failed to fetch analytics:', error);
-      const errorContent = this.renderErrorContent('Failed to load analytics data');
-      this.modalService.show({
-        title: 'Analytics',
-        content: errorContent,
-        width: '40%',
-        height: '40%',
-        maxWidth: '90%',
-        maxHeight: '50%'
-      });
+      console.error('Failed to fetch analytics:', error);
+      this.modalService.show({ ...MODAL_CONFIG, content: this.renderErrorContent('Failed to load analytics data') });
     }
   }
 
@@ -107,40 +89,96 @@ export class AnalyticsModal {
   private renderErrorContent(message: string): string {
     return `
       <div class="modal__error">
-        <p>❌ ${escapeHtml(message)}</p>
+        <p>${escapeHtml(message)}</p>
       </div>
     `;
   }
 
   /**
+   * Render an empty section with consistent styling
+   */
+  private renderEmptySection(title: string, emptyMessage: string): string {
+    return `
+      <div class="analytics-modal__section">
+        <h2>${title}</h2>
+        <div class="analytics-modal__separator"></div>
+        <p class="analytics-modal__empty">${emptyMessage}</p>
+      </div>
+    `;
+  }
+
+  /**
+   * Render a section with content
+   */
+  private renderSection(title: string, content: string, listClass = 'analytics-modal__list'): string {
+    return `
+      <div class="analytics-modal__section">
+        <h2>${title}</h2>
+        <div class="analytics-modal__separator"></div>
+        <div class="${listClass}">${content}</div>
+      </div>
+    `;
+  }
+
+  /**
+   * Extract zapper pubkey from zap event (reads description tag for actual zapper)
+   */
+  private extractZapperPubkey(event: NostrEvent): string {
+    const descTag = event.tags.find((tag: string[]) => tag[0] === 'description');
+    if (descTag && descTag[1]) {
+      try {
+        const zapRequest = JSON.parse(descTag[1]);
+        if (zapRequest.pubkey) {
+          return zapRequest.pubkey;
+        }
+      } catch {
+        // Parse error, use fallback
+      }
+    }
+    return event.pubkey;
+  }
+
+  /**
+   * Extract zap message from zap event description
+   */
+  private extractZapMessage(event: NostrEvent): string {
+    const descTag = event.tags.find((tag: string[]) => tag[0] === 'description');
+    if (descTag && descTag[1]) {
+      try {
+        const zapRequest = JSON.parse(descTag[1]);
+        return zapRequest.content || '';
+      } catch {
+        // Parse error
+      }
+    }
+    return '';
+  }
+
+  /**
+   * Render a note link (for replies and quoted reposts)
+   */
+  private renderNoteLink(event: NostrEvent, profile: UserMentionProfile): string {
+    return `<span class="user-mention" data-pubkey="${event.pubkey}"><a href="#" class="mention-link mention-link--bg" data-note-id="${event.id}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl}" alt="" />${escapeHtml(profile.username)}</a></span>`;
+  }
+
+  /**
+   * Get profile from map with fallback
+   */
+  private getProfile(pubkey: string, profileMap: Map<string, UserMentionProfile>): UserMentionProfile {
+    return profileMap.get(pubkey) || { username: 'Anonymous', avatarUrl: '' };
+  }
+
+  /**
    * Render stats content
    */
-  private async renderStatsContent(_noteId: string, stats: DetailedStats, rawEvent?: NostrEvent): Promise<HTMLElement> {
-    // Fetch all usernames in parallel
+  private async renderStatsContent(stats: DetailedStats, rawEvent?: NostrEvent): Promise<HTMLElement> {
+    // Collect all pubkeys for profile fetching
     const allPubkeys = new Set<string>();
     stats.replyEvents.forEach(e => allPubkeys.add(e.pubkey));
     stats.repostEvents.forEach(e => allPubkeys.add(e.pubkey));
     stats.quotedEvents.forEach(e => allPubkeys.add(e.pubkey));
     stats.reactionEvents.forEach(e => allPubkeys.add(e.pubkey));
-
-    // For zaps, extract actual zapper pubkey from description tag
-    stats.zapEvents.forEach(e => {
-      const descTag = e.tags.find((tag: string[]) => tag[0] === 'description');
-      if (descTag && descTag[1]) {
-        try {
-          const zapRequest = JSON.parse(descTag[1]);
-          if (zapRequest.pubkey) {
-            allPubkeys.add(zapRequest.pubkey);
-          } else {
-            allPubkeys.add(e.pubkey);
-          }
-        } catch (err) {
-          allPubkeys.add(e.pubkey);
-        }
-      } else {
-        allPubkeys.add(e.pubkey);
-      }
-    });
+    stats.zapEvents.forEach(e => allPubkeys.add(this.extractZapperPubkey(e)));
 
     // Fetch all profiles and build profile map
     const profileMap = new Map<string, UserMentionProfile>();
@@ -188,28 +226,15 @@ export class AnalyticsModal {
    */
   private renderRepliesSection(replyEvents: NostrEvent[], profileMap: Map<string, UserMentionProfile>): string {
     if (replyEvents.length === 0) {
-      return `
-        <div class="analytics-modal__section">
-          <h2>Replies (0)</h2>
-          <div class="analytics-modal__separator"></div>
-          <p class="analytics-modal__empty">No replies yet</p>
-        </div>
-      `;
+      return this.renderEmptySection('Replies (0)', 'No replies yet');
     }
 
     const userLinks = replyEvents.map(event => {
-      const profile = profileMap.get(event.pubkey) || { username: 'Anonymous', avatarUrl: '' };
-      // Note link - navigates to the reply note
-      return `<span class="user-mention" data-pubkey="${event.pubkey}"><a href="#" class="mention-link mention-link--bg" data-note-id="${event.id}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl}" alt="" />${escapeHtml(profile.username)}</a></span>`;
+      const profile = this.getProfile(event.pubkey, profileMap);
+      return this.renderNoteLink(event, profile);
     }).join(' ');
 
-    return `
-      <div class="analytics-modal__section">
-        <h2>Replies (${replyEvents.length})</h2>
-        <div class="analytics-modal__separator"></div>
-        <div class="analytics-modal__list">${userLinks}</div>
-      </div>
-    `;
+    return this.renderSection(`Replies (${replyEvents.length})`, userLinks);
   }
 
   /**
@@ -217,59 +242,29 @@ export class AnalyticsModal {
    */
   private renderZapsSection(zapEvents: NostrEvent[], profileMap: Map<string, UserMentionProfile>): string {
     if (zapEvents.length === 0) {
-      return `
-        <div class="analytics-modal__section">
-          <h2>Zaps (0): 0 Sats</h2>
-          <div class="analytics-modal__separator"></div>
-          <p class="analytics-modal__empty">No zaps yet</p>
-        </div>
-      `;
+      return this.renderEmptySection('Zaps (0): 0 Sats', 'No zaps yet');
     }
 
     let totalSats = 0;
     const zapItems = zapEvents.map(event => {
-      // Extract actual zapper pubkey from description tag (zap request)
-      const descTag = event.tags.find((tag: string[]) => tag[0] === 'description');
-      let zapperPubkey = event.pubkey;
-      let zapMessage = '';
-
-      if (descTag && descTag[1]) {
-        try {
-          const zapRequest = JSON.parse(descTag[1]);
-          if (zapRequest.pubkey) {
-            zapperPubkey = zapRequest.pubkey;
-          }
-          zapMessage = zapRequest.content || '';
-        } catch (e) {
-          // Use fallback pubkey
-        }
-      }
-
-      const profile = profileMap.get(zapperPubkey) || { username: 'Anonymous', avatarUrl: '' };
+      const zapperPubkey = this.extractZapperPubkey(event);
+      const zapMessage = this.extractZapMessage(event);
+      const profile = this.getProfile(zapperPubkey, profileMap);
       const bolt11Tag = event.tags.find((tag: string[]) => tag[0] === 'bolt11');
-      const amount = bolt11Tag ? this.parseBolt11Amount(bolt11Tag[1]) : 0;
+      const amount = bolt11Tag?.[1] ? this.parseBolt11Amount(bolt11Tag[1]) : 0;
       totalSats += amount;
 
       const messageHtml = zapMessage ? ` <span class="analytics-modal__zap-message">(${escapeHtml(zapMessage)})</span>` : '';
-      const formattedAmount = this.formatNumber(amount);
 
       return `
         <div class="analytics-modal__zap-item">
           ${renderUserMention(zapperPubkey, profile)}:
-          <span class="analytics-modal__zap-amount">${formattedAmount} Sats</span>${messageHtml}
+          <span class="analytics-modal__zap-amount">${this.formatNumber(amount)} Sats</span>${messageHtml}
         </div>
       `;
     }).join('');
 
-    const formattedTotal = this.formatNumber(totalSats);
-
-    return `
-      <div class="analytics-modal__section">
-        <h2>Zaps (${zapEvents.length}): ${formattedTotal} Sats</h2>
-        <div class="analytics-modal__separator"></div>
-        <div class="analytics-modal__zap-list">${zapItems}</div>
-      </div>
-    `;
+    return this.renderSection(`Zaps (${zapEvents.length}): ${this.formatNumber(totalSats)} Sats`, zapItems, 'analytics-modal__zap-list');
   }
 
   /**
@@ -277,27 +272,15 @@ export class AnalyticsModal {
    */
   private renderRepostsSection(repostEvents: NostrEvent[], profileMap: Map<string, UserMentionProfile>): string {
     if (repostEvents.length === 0) {
-      return `
-        <div class="analytics-modal__section">
-          <h2>Reposts (0)</h2>
-          <div class="analytics-modal__separator"></div>
-          <p class="analytics-modal__empty">No reposts yet</p>
-        </div>
-      `;
+      return this.renderEmptySection('Reposts (0)', 'No reposts yet');
     }
 
     const userLinks = repostEvents.map(event => {
-      const profile = profileMap.get(event.pubkey) || { username: 'Anonymous', avatarUrl: '' };
+      const profile = this.getProfile(event.pubkey, profileMap);
       return renderUserMention(event.pubkey, profile);
     }).join(' ');
 
-    return `
-      <div class="analytics-modal__section">
-        <h2>Reposts (${repostEvents.length})</h2>
-        <div class="analytics-modal__separator"></div>
-        <div class="analytics-modal__list">${userLinks}</div>
-      </div>
-    `;
+    return this.renderSection(`Reposts (${repostEvents.length})`, userLinks);
   }
 
   /**
@@ -305,28 +288,15 @@ export class AnalyticsModal {
    */
   private renderQuotedRepostsSection(quotedEvents: NostrEvent[], profileMap: Map<string, UserMentionProfile>): string {
     if (quotedEvents.length === 0) {
-      return `
-        <div class="analytics-modal__section">
-          <h2>Quoted Reposts (0)</h2>
-          <div class="analytics-modal__separator"></div>
-          <p class="analytics-modal__empty">No quoted reposts yet</p>
-        </div>
-      `;
+      return this.renderEmptySection('Quoted Reposts (0)', 'No quoted reposts yet');
     }
 
     const userLinks = quotedEvents.map(event => {
-      const profile = profileMap.get(event.pubkey) || { username: 'Anonymous', avatarUrl: '' };
-      // Note link - navigates to the quote note
-      return `<span class="user-mention" data-pubkey="${event.pubkey}"><a href="#" class="mention-link mention-link--bg" data-note-id="${event.id}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl}" alt="" />${escapeHtml(profile.username)}</a></span>`;
+      const profile = this.getProfile(event.pubkey, profileMap);
+      return this.renderNoteLink(event, profile);
     }).join(' ');
 
-    return `
-      <div class="analytics-modal__section">
-        <h2>Quoted Reposts (${quotedEvents.length})</h2>
-        <div class="analytics-modal__separator"></div>
-        <div class="analytics-modal__list">${userLinks}</div>
-      </div>
-    `;
+    return this.renderSection(`Quoted Reposts (${quotedEvents.length})`, userLinks);
   }
 
   /**
@@ -334,32 +304,22 @@ export class AnalyticsModal {
    */
   private renderLikesSection(reactionEvents: NostrEvent[], profileMap: Map<string, UserMentionProfile>): string {
     if (reactionEvents.length === 0) {
-      return `
-        <div class="analytics-modal__section">
-          <h2>Likes (0)</h2>
-          <div class="analytics-modal__separator"></div>
-          <p class="analytics-modal__empty">No likes yet</p>
-        </div>
-      `;
+      return this.renderEmptySection('Likes (0)', 'No likes yet');
     }
 
     // Group by emoji
     const emojiGroups = new Map<string, NostrEvent[]>();
     reactionEvents.forEach(event => {
-      let emoji = event.content || '❤️';
-      if (emoji === '+') {
-        emoji = '❤️';
-      }
-      if (!emojiGroups.has(emoji)) {
-        emojiGroups.set(emoji, []);
-      }
-      emojiGroups.get(emoji)!.push(event);
+      const emoji = (event.content === '+' || !event.content) ? '\u2764\uFE0F' : event.content;
+      const group = emojiGroups.get(emoji) || [];
+      group.push(event);
+      emojiGroups.set(emoji, group);
     });
 
     // Render each emoji group
     const groupsHtml = Array.from(emojiGroups.entries()).map(([emoji, events]) => {
       const userLinks = events.map(event => {
-        const profile = profileMap.get(event.pubkey) || { username: 'Anonymous', avatarUrl: '' };
+        const profile = this.getProfile(event.pubkey, profileMap);
         return renderUserMention(event.pubkey, profile);
       }).join(' ');
 
@@ -414,7 +374,7 @@ export class AnalyticsModal {
   private parseBolt11Amount(invoice: string): number {
     try {
       const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
-      if (!match) return 0;
+      if (!match?.[2]) return 0;
 
       const amount = parseInt(match[2]);
       const multiplier = match[3]?.toLowerCase();
@@ -456,7 +416,7 @@ export class AnalyticsModal {
     let totalZapSats = 0;
     stats.zapEvents.forEach(event => {
       const bolt11Tag = event.tags.find((tag: string[]) => tag[0] === 'bolt11');
-      if (bolt11Tag) {
+      if (bolt11Tag?.[1]) {
         totalZapSats += this.parseBolt11Amount(bolt11Tag[1]);
       }
     });

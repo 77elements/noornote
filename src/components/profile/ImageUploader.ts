@@ -109,8 +109,9 @@ export class ImageUploader {
     // Handle file selection
     this.fileInput.addEventListener('change', (e) => {
       const target = e.target as HTMLInputElement;
-      if (target.files && target.files.length > 0) {
-        this.handleFileUpload(target.files[0]);
+      const file = target.files?.[0];
+      if (file) {
+        this.handleFileUpload(file);
       }
     });
   }

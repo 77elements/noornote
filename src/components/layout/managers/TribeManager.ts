@@ -210,12 +210,18 @@ export class TribeManager {
       // Process in sorted order (newest first)
       for (let i = 0; i < sortedMembers.length; i++) {
         const member = sortedMembers[i];
+        if (!member) continue;
         const profile = profiles[i];
-        this.membersCache.set(member.pubkey, {
-          ...member,
-          profile: profile || undefined,
+        const memberWithProfile: MemberWithProfile = {
+          id: member.id,
+          pubkey: member.pubkey,
           isPrivate: (member as TribeMember & { isPrivate?: boolean }).isPrivate || false
-        });
+        };
+        if (member.relay) memberWithProfile.relay = member.relay;
+        if (member.addedAt) memberWithProfile.addedAt = member.addedAt;
+        if (member.category) memberWithProfile.category = member.category;
+        if (profile) memberWithProfile.profile = profile;
+        this.membersCache.set(member.pubkey, memberWithProfile);
 
         // Ensure folder assignment exists
         this.folderService.ensureMemberAssignment(member.pubkey);
@@ -342,7 +348,7 @@ export class TribeManager {
       const memberIds = this.folderService.getMembersInFolder(this.currentFolderId);
       for (const memberId of memberIds) {
         // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
-        const pubkey = memberId.includes('_') ? memberId.split('_')[0] : memberId;
+        const pubkey = memberId.includes('_') ? memberId.split('_')[0] ?? memberId : memberId;
         const member = this.membersCache.get(pubkey);
         if (member) {
           const card = await this.createMemberCard(member);
@@ -364,7 +370,7 @@ export class TribeManager {
           }
         } else if (item.type === 'member') {
           // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
-          const pubkey = item.id.includes('_') ? item.id.split('_')[0] : item.id;
+          const pubkey = item.id.includes('_') ? item.id.split('_')[0] ?? item.id : item.id;
           const member = this.membersCache.get(pubkey);
           // Only show if in root (no folder assignment)
           const folderId = this.folderService.getMemberFolder(item.id);
@@ -397,7 +403,7 @@ export class TribeManager {
     }
 
     // Check empty state
-    if (grid.children.length === 0 || (this.currentFolderId === '' && grid.children.length === 0)) {
+    if (grid.children.length === 0) {
       grid.innerHTML = `
         <div class="tribes-empty-state" style="grid-column: 1 / -1;">
           <p>No tribe members yet</p>
@@ -606,6 +612,8 @@ export class TribeManager {
             if (targetIndex !== -1) {
               this.folderService.moveItemToPosition(draggedId, targetIndex);
               grid.insertBefore(draggedCard, dropTarget);
+              // Trigger Easy Mode sync for reorder
+              this.eventBus.emit('tribe:updated');
             }
           } else {
             // Root level - use root order
@@ -615,6 +623,8 @@ export class TribeManager {
             if (targetIndex !== -1) {
               this.folderService.moveInRootOrder(draggedType as 'folder' | 'member', draggedId, targetIndex);
               grid.insertBefore(draggedCard, dropTarget);
+              // Trigger Easy Mode sync for reorder
+              this.eventBus.emit('tribe:updated');
             }
           }
         }
@@ -630,14 +640,15 @@ export class TribeManager {
 
   private navigateToFolder(folderId: string): void {
     this.currentFolderId = folderId;
-    const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-    if (container) {
-      this.renderCurrentView(container as HTMLElement);
-    }
+    this.rerenderCurrentView();
   }
 
   private navigateToRoot(): void {
     this.currentFolderId = '';
+    this.rerenderCurrentView();
+  }
+
+  private rerenderCurrentView(): void {
     const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
     if (container) {
       this.renderCurrentView(container as HTMLElement);
@@ -658,12 +669,7 @@ export class TribeManager {
       this.folderService.removeMemberAssignment(pubkey);
 
       ToastService.show('Member removed', 'success');
-
-      // Re-render
-      const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-      if (container) {
-        this.renderCurrentView(container as HTMLElement);
-      }
+      this.rerenderCurrentView();
     } catch (error) {
       console.error('Failed to delete member:', error);
       ToastService.show('Failed to remove member', 'error');
@@ -678,17 +684,11 @@ export class TribeManager {
     if (!folder) return;
 
     const modal = new EditFolderModal({
-      folderId: folder.id,
       currentName: folder.name,
       onSave: (newName: string) => {
         this.folderService.renameFolder(folderId, newName);
         ToastService.show('Tribe renamed', 'success');
-
-        // Re-render
-        const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-        if (container) {
-          this.renderCurrentView(container as HTMLElement);
-        }
+        this.rerenderCurrentView();
       }
     });
 
@@ -757,12 +757,7 @@ export class TribeManager {
           }
 
           this.modalService.hide();
-
-          // Re-render
-          const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-          if (container) {
-            this.renderCurrentView(container as HTMLElement);
-          }
+          this.rerenderCurrentView();
         } catch (error) {
           console.error('Failed to delete tribe:', error);
           ToastService.show('Failed to delete tribe', 'error');
@@ -777,19 +772,26 @@ export class TribeManager {
    */
   private async moveMemberToFolder(memberPubkey: string, targetFolderId: string): Promise<void> {
     try {
+      // Get target folder name for category
+      const targetFolder = targetFolderId ? this.folderService.getFolder(targetFolderId) : null;
+      const targetCategoryName = targetFolder?.name || '';
+
+      // Update folder assignment
       this.folderService.moveMemberToFolder(memberPubkey, targetFolderId);
 
-      const targetName = targetFolderId === ''
-        ? 'root'
-        : this.folderService.getFolder(targetFolderId)?.name || 'tribe';
+      // Update category in browser storage (triggers tribe:updated for Easy Mode sync)
+      const currentItems = this.adapter.getBrowserItems();
+      const updatedItems = currentItems.map(item => {
+        if (item.pubkey === memberPubkey) {
+          return { ...item, category: targetCategoryName };
+        }
+        return item;
+      });
+      this.adapter.setBrowserItems(updatedItems);
 
+      const targetName = targetFolderId === '' ? 'root' : targetFolder?.name || 'tribe';
       ToastService.show(`Moved to ${targetName}`, 'success');
-
-      // Re-render
-      const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-      if (container) {
-        this.renderCurrentView(container as HTMLElement);
-      }
+      this.rerenderCurrentView();
     } catch (error) {
       console.error('Failed to move member:', error);
       ToastService.show('Failed to move member', 'error');
@@ -802,14 +804,9 @@ export class TribeManager {
   private createNewTribe(): void {
     const modal = new NewFolderModal({
       onConfirm: (name: string) => {
-        const folder = this.folderService.createFolder(name);
+        this.folderService.createFolder(name);
         ToastService.show('Tribe created', 'success');
-
-        // Re-render (stay in root)
-        const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-        if (container) {
-          this.renderCurrentView(container as HTMLElement);
-        }
+        this.rerenderCurrentView();
       }
     });
 
@@ -963,10 +960,7 @@ export class TribeManager {
 
         // Re-render if we're in the target tribe or root
         if (this.currentFolderId === tribeId || this.currentFolderId === '') {
-          const container = this.containerElement.querySelector('[data-tab-content="list-tribes"]');
-          if (container) {
-            this.renderCurrentView(container as HTMLElement);
-          }
+          this.rerenderCurrentView();
         }
       } else {
         ToastService.show('No members added', 'error');
@@ -1058,8 +1052,8 @@ export class TribeManager {
     try {
       ToastService.show('Syncing from relays...', 'info');
 
-      const result = await this.listSyncManager.syncFromRelays(currentUser.pubkey);
-      const added = result.added || 0;
+      const result = await this.listSyncManager.syncFromRelays();
+      const added = result.diff.added.length;
 
       // Apply folder assignments from relay categories
       if (result.categoryAssignments) {
@@ -1134,24 +1128,20 @@ export class TribeManager {
    * Restore folders and members from file (creates folder structure from categories)
    */
   private async restoreFoldersAndMembers(): Promise<void> {
-    // Restore tribe members from file
     await this.listSyncManager.restoreFromFile();
 
-    // Apply category assignments from restored items
     const restoredItems = this.adapter.getBrowserItems();
     const existingFolders = this.folderService.getFolders();
 
-    // Create folders for categories that don't exist yet
-    const categories = new Set<string>();
-    for (const item of restoredItems) {
-      if (item.category && item.category !== '') {
-        categories.add(item.category);
-      }
-    }
+    // Collect unique categories and create missing folders
+    const categories = new Set(
+      restoredItems
+        .map(item => item.category)
+        .filter((cat): cat is string => !!cat && cat !== '')
+    );
 
     for (const categoryName of categories) {
-      const existingFolder = existingFolders.find(f => f.name === categoryName);
-      if (!existingFolder) {
+      if (!existingFolders.some(f => f.name === categoryName)) {
         const newFolder = this.folderService.createFolder(categoryName);
         this.folderService.addToRootOrder('folder', newFolder.id);
       }
@@ -1160,19 +1150,13 @@ export class TribeManager {
     // Assign members to their categories
     const updatedFolders = this.folderService.getFolders();
     for (const item of restoredItems) {
+      this.folderService.ensureMemberAssignment(item.pubkey);
+
       const categoryName = item.category || '';
-      if (categoryName === '') {
-        // Root - ensure assignment exists
-        this.folderService.ensureMemberAssignment(item.pubkey);
-      } else {
-        // Find folder by name and move member there
+      if (categoryName !== '') {
         const folder = updatedFolders.find(f => f.name === categoryName);
         if (folder) {
-          this.folderService.ensureMemberAssignment(item.pubkey);
           this.folderService.moveMemberToFolder(item.pubkey, folder.id);
-        } else {
-          // Folder not found - assign to root
-          this.folderService.ensureMemberAssignment(item.pubkey);
         }
       }
     }

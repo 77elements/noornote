@@ -126,7 +126,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       // ProfileView: Direct fetch with limit only (no time window) - gets newest posts regardless of age
       // TimelineView: Time-windowed fetch (default 1h)
-      const filters: NDKFilter[] = isProfileView
+      const filters: NDKFilter<number>[] = isProfileView
         ? [{
             authors: followingPubkeys,
             kinds: [1, 6, 1068],
@@ -187,13 +187,16 @@ export class FeedOrchestrator extends Orchestrator {
             break;
           }
 
-          const loadMoreResult = await this.loadMore({
+          const loadMoreRequest: FeedLoadRequest & { until: number } = {
             followingPubkeys,
             includeReplies,
             until: currentUntil,
-            timeWindowHours: 3, // Load More uses 3h chunks
-            specificRelay
-          });
+            timeWindowHours: 3 // Load More uses 3h chunks
+          };
+          if (specificRelay !== undefined) {
+            loadMoreRequest.specificRelay = specificRelay;
+          }
+          const loadMoreResult = await this.loadMore(loadMoreRequest);
 
           // Merge new events and deduplicate by event ID
           const mergedEvents = [...accumulatedEvents, ...loadMoreResult.events];
@@ -238,6 +241,7 @@ export class FeedOrchestrator extends Orchestrator {
    */
   public async loadMore(request: FeedLoadRequest & { until: number }): Promise<FeedLoadResult> {
     const { followingPubkeys, includeReplies, until, timeWindowHours = 3, specificRelay, recursionDepth = 0, exemptFromMuteFilter } = request;
+    const isProfileView = followingPubkeys.length === 1;
 
     this.systemLogger.info(
       'FeedOrchestrator',
@@ -252,12 +256,11 @@ export class FeedOrchestrator extends Orchestrator {
       // Determine relays to fetch from
       // ProfileView (single author): Use author's NIP-65 relays for better content discovery
       // TimelineView (multiple authors): Use standard relays only (performance)
-      const isProfileView = followingPubkeys.length === 1;
       const relays = specificRelay
         ? [specificRelay]
         : await this.relayDiscovery.getCombinedRelays(followingPubkeys, isProfileView);
 
-      const filters: NDKFilter[] = [{
+      const filters: NDKFilter<number>[] = [{
         authors: followingPubkeys,
         kinds: [1, 6, 1068],
         until: until - 1,
@@ -292,7 +295,6 @@ export class FeedOrchestrator extends Orchestrator {
       // Timeline View: up to 7 days back from current 'until'
       // Profile View: max 3 recursive attempts to find events
       if (filteredEvents.length === 0) {
-        const isProfileView = followingPubkeys.length === 1; // ProfileView = single author
         const now = Math.floor(Date.now() / 1000);
         const timeSinceUntil = now - until;
         const hoursSinceUntil = timeSinceUntil / 3600;
@@ -331,14 +333,17 @@ export class FeedOrchestrator extends Orchestrator {
         );
 
         // Recursively load the next chunk
-        return await this.loadMore({
+        const recursiveRequest: FeedLoadRequest & { until: number } = {
           followingPubkeys,
           includeReplies,
           until: until - timeWindowSeconds,
           timeWindowHours,
-          specificRelay,
           recursionDepth: recursionDepth + 1
-        });
+        };
+        if (specificRelay !== undefined) {
+          recursiveRequest.specificRelay = specificRelay;
+        }
+        return await this.loadMore(recursiveRequest);
       }
 
       return {
@@ -389,8 +394,9 @@ export class FeedOrchestrator extends Orchestrator {
       const sub = await this.transport.subscribe(relays, filters, {
         onEvent: (event: NostrEvent, _relay: string) => {
           // Deduplicate events
-          if (!eventIds.has(event.id)) {
-            eventIds.add(event.id);
+          const eventId = event.id;
+          if (eventId && !eventIds.has(eventId)) {
+            eventIds.add(eventId);
             events.push(event);
           }
         },
@@ -672,12 +678,8 @@ export class FeedOrchestrator extends Orchestrator {
    */
   private async loadMutedUsers(): Promise<void> {
     try {
-      const authService = await import('../AuthService').then(m => m.AuthService);
-      const currentUser = authService.getInstance().getCurrentUser();
-
-      if (!currentUser) {
-        return;
-      }
+      const currentUser = AuthService.getInstance().getCurrentUser();
+      if (!currentUser) return;
 
       const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(currentUser.pubkey);
       this.mutedPubkeys = new Set(mutedPubkeys);
@@ -691,6 +693,15 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
+   * Check if a pubkey is temporarily unmuted
+   */
+  private isTemporarilyUnmuted(pubkey: string, muteOrch: MuteOrchestrator): boolean {
+    const currentUser = AuthService.getInstance().getCurrentUser();
+    if (!currentUser) return false;
+    return (muteOrch as any).temporaryUnmutes?.has(pubkey) ?? false;
+  }
+
+  /**
    * Filter out events from muted users
    * Also filters reposts (Kind 6) where the reposted author is muted
    * Respects temporary unmutes
@@ -701,8 +712,6 @@ export class FeedOrchestrator extends Orchestrator {
       return events;
     }
 
-    // Import MuteOrchestrator dynamically to check temporary unmutes
-    const { MuteOrchestrator } = await import('./MuteOrchestrator');
     const muteOrch = MuteOrchestrator.getInstance();
 
     return events.filter(event => {
@@ -713,37 +722,15 @@ export class FeedOrchestrator extends Orchestrator {
 
       // Filter direct posts from muted users (unless temporarily unmuted)
       if (this.mutedPubkeys.has(event.pubkey)) {
-        // Check if temporarily unmuted
-        const authService = this.authService || AuthService.getInstance();
-        const currentUser = authService.getCurrentUser();
-        if (currentUser) {
-          // Use synchronous check via internal Set
-          const isTempUnmuted = (muteOrch as any).temporaryUnmutes?.has(event.pubkey);
-          if (isTempUnmuted) {
-            return true; // Allow event from temporarily unmuted user
-          }
-        }
-        return false;
+        return this.isTemporarilyUnmuted(event.pubkey, muteOrch);
       }
 
       // Filter reposts (Kind 6) where the original author is muted
       if (event.kind === 6) {
-        // Find 'p' tag (original author)
         const repostedAuthorTag = event.tags.find(tag => tag[0] === 'p');
-        if (repostedAuthorTag && repostedAuthorTag[1]) {
-          const repostedAuthorPubkey = repostedAuthorTag[1];
-          if (this.mutedPubkeys.has(repostedAuthorPubkey)) {
-            // Check if temporarily unmuted
-            const authService = this.authService || AuthService.getInstance();
-            const currentUser = authService.getCurrentUser();
-            if (currentUser) {
-              const isTempUnmuted = (muteOrch as any).temporaryUnmutes?.has(repostedAuthorPubkey);
-              if (isTempUnmuted) {
-                return true; // Allow repost from temporarily unmuted user
-              }
-            }
-            return false;
-          }
+        const repostedAuthorPubkey = repostedAuthorTag?.[1];
+        if (repostedAuthorPubkey && this.mutedPubkeys.has(repostedAuthorPubkey)) {
+          return this.isTemporarilyUnmuted(repostedAuthorPubkey, muteOrch);
         }
       }
 

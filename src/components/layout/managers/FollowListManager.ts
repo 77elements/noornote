@@ -274,7 +274,7 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
             Sort by:
             <a href="#" class="follows-sort-controls__sort-date follows-sort-controls__link--disabled ${this.currentSort === 'date' ? 'active' : ''}">Date</a>
             /
-            <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort === 'zaps' ? 'active' : ''}">Zaps</a>
+            <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort !== 'date' ? 'active' : ''}">Zaps</a>
           </span>
           <input type="text"
                  class="follows-sort-controls__search ${this.isFullyLoaded ? '' : 'follows-sort-controls__search--disabled'}"
@@ -462,23 +462,20 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
 
     modal.style.display = 'flex';
 
-    // Setup click handlers and hover cards for user mentions
     setupUserMentionHandlers(modal);
 
-    // Event listeners
+    const closeModal = (): void => {
+      modal.style.display = 'none';
+    };
+
     modal.querySelector('.mutual-changes-modal__mark-seen')?.addEventListener('click', async () => {
       await this.mutualChangeDetector.markAsSeen();
-      modal.style.display = 'none';
+      closeModal();
       ToastService.show('Changes marked as seen', 'success');
     });
 
-    modal.querySelector('.mutual-changes-modal__close')?.addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
-
-    modal.querySelector('.mutual-changes-modal__backdrop')?.addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
+    modal.querySelector('.mutual-changes-modal__close')?.addEventListener('click', closeModal);
+    modal.querySelector('.mutual-changes-modal__backdrop')?.addEventListener('click', closeModal);
   }
 
   /**
@@ -547,7 +544,7 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
 
       // Check mutual status for this batch
       const batchWithMutualStatus = await this.mutualService.checkMutualStatusBatch(
-        batch.map(item => ({ pubkey: item.pubkey }))
+        batch.map(item => ({ id: item.pubkey, pubkey: item.pubkey }))
       );
 
       // Update items with mutual status
@@ -588,69 +585,73 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
    * Render batch of follow items with mutual badge and zap stats
    */
   protected renderBatch(listElement: HTMLElement, batch: FollowItemWithProfile[]): void {
+    const sentinel = listElement.querySelector('.infinite-scroll-sentinel');
+
     for (const item of batch) {
-      // Skip if filter is active and item is mutual
       if (this.showOnlyNonMutuals && item.isMutual) {
         continue;
       }
 
-      const username = extractDisplayName(item.profile);
-      const npub = hexToNpub(item.pubkey);
-      const avatarUrl = item.profile?.picture || '';
+      const followItemDiv = this.createFollowItemElement(item);
 
-      const mutualBadgeClass = item.isMutual ? 'mutual-badge--yes' : 'mutual-badge--no';
-      const mutualBadgeText = item.isMutual ? 'Mutual' : 'Not following back';
-
-      // Zap badge - loading or actual values
-      const zapBadgeHtml = this.renderZapBadge(item.pubkey);
-
-      const followItemDiv = document.createElement('div');
-      followItemDiv.className = 'ui-list__item follow-item';
-      followItemDiv.dataset.pubkey = item.pubkey;
-      followItemDiv.innerHTML = `
-        <div class="follow-item__content-wrapper">
-          <div class="follow-item__avatar">
-            <img class="profile-pic profile-pic--medium" src="${avatarUrl}" alt="${username}" />
-          </div>
-          <div class="follow-item__info">
-            <div class="follow-item__username">
-              ${this.escapeHtml(username)}
-              ${item.isPrivate ? '<span class="private-badge">🔒 Private</span>' : ''}
-              ${this.renderArticleNotifLabel(item.pubkey)}
-            </div>
-            <div class="follow-item__badges">
-              <span class="mutual-badge ${mutualBadgeClass}">${mutualBadgeText}</span>
-              ${zapBadgeHtml}
-            </div>
-            ${item.petname ? `<div class="follow-item__petname">${this.escapeHtml(item.petname)}</div>` : ''}
-          </div>
-        </div>
-        <button class="follow-item__unfollow-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
-          Disconnect
-        </button>
-      `;
-
-      // Click on content wrapper navigates to profile
-      const contentWrapper = followItemDiv.querySelector('.follow-item__content-wrapper');
-      contentWrapper?.addEventListener('click', () => {
-        this.router.navigate(`/profile/${npub}`);
-      });
-
-      // Click on unfollow button removes follow
-      const unfollowBtn = followItemDiv.querySelector('.follow-item__unfollow-btn');
-      unfollowBtn?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await this.handleRemoveItem(item, followItemDiv);
-      });
-
-      // Insert before sentinel (if it exists)
-      const sentinel = listElement.querySelector('.infinite-scroll-sentinel');
       if (sentinel) {
         listElement.insertBefore(followItemDiv, sentinel);
       } else {
         listElement.appendChild(followItemDiv);
       }
     }
+  }
+
+  /**
+   * Create a follow item DOM element with event handlers
+   */
+  private createFollowItemElement(item: FollowItemWithProfile): HTMLElement {
+    const username = extractDisplayName(item.profile);
+    const npub = hexToNpub(item.pubkey);
+    const avatarUrl = item.profile?.picture || '';
+
+    const mutualBadgeClass = item.isMutual ? 'mutual-badge--yes' : 'mutual-badge--no';
+    const mutualBadgeText = item.isMutual ? 'Mutual' : 'Not following back';
+    const zapBadgeHtml = this.renderZapBadge(item.pubkey);
+
+    const followItemDiv = document.createElement('div');
+    followItemDiv.className = 'ui-list__item follow-item';
+    followItemDiv.dataset.pubkey = item.pubkey;
+    followItemDiv.innerHTML = `
+      <div class="follow-item__content-wrapper">
+        <div class="follow-item__avatar">
+          <img class="profile-pic profile-pic--medium" src="${avatarUrl}" alt="${username}" />
+        </div>
+        <div class="follow-item__info">
+          <div class="follow-item__username">
+            ${this.escapeHtml(username)}
+            ${item.isPrivate ? '<span class="private-badge">🔒 Private</span>' : ''}
+            ${this.renderArticleNotifLabel(item.pubkey)}
+          </div>
+          <div class="follow-item__badges">
+            <span class="mutual-badge ${mutualBadgeClass}">${mutualBadgeText}</span>
+            ${zapBadgeHtml}
+          </div>
+          ${item.petname ? `<div class="follow-item__petname">${this.escapeHtml(item.petname)}</div>` : ''}
+        </div>
+      </div>
+      <button class="follow-item__unfollow-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
+        Disconnect
+      </button>
+    `;
+
+    const contentWrapper = followItemDiv.querySelector('.follow-item__content-wrapper');
+    contentWrapper?.addEventListener('click', () => {
+      this.router.navigate(`/profile/${npub}`);
+    });
+
+    const unfollowBtn = followItemDiv.querySelector('.follow-item__unfollow-btn');
+    unfollowBtn?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await this.handleRemoveItem(item, followItemDiv);
+    });
+
+    return followItemDiv;
   }
 
   /**
@@ -697,26 +698,23 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
   }
 
   /**
-   * Re-render list (for filter toggle)
+   * Re-render list (for filter toggle and sorting)
    */
   private reRenderList(container: HTMLElement): void {
     const list = container.querySelector('.follows-list');
     if (!list) return;
 
-    // Clear list (keep sentinel)
     const sentinel = list.querySelector('.infinite-scroll-sentinel');
     list.innerHTML = '';
     if (sentinel) {
       list.appendChild(sentinel);
     }
 
-    // Re-render all loaded items with filter
     for (const item of this.allItemsWithProfiles.slice(0, this.currentOffset)) {
       if (this.showOnlyNonMutuals && item.isMutual) {
         continue;
       }
 
-      // Username filter (case insensitive)
       if (this.usernameFilter) {
         const username = extractDisplayName(item.profile).toLowerCase();
         if (!username.includes(this.usernameFilter)) {
@@ -724,54 +722,7 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
         }
       }
 
-      const username = extractDisplayName(item.profile);
-      const npub = hexToNpub(item.pubkey);
-      const avatarUrl = item.profile?.picture || '';
-
-      const mutualBadgeClass = item.isMutual ? 'mutual-badge--yes' : 'mutual-badge--no';
-      const mutualBadgeText = item.isMutual ? 'Mutual' : 'Not following back';
-
-      // Zap badge
-      const zapBadgeHtml = this.renderZapBadge(item.pubkey);
-
-      const followItemDiv = document.createElement('div');
-      followItemDiv.className = 'ui-list__item follow-item';
-      followItemDiv.dataset.pubkey = item.pubkey;
-      followItemDiv.innerHTML = `
-        <div class="follow-item__content-wrapper">
-          <div class="follow-item__avatar">
-            <img class="profile-pic profile-pic--medium" src="${avatarUrl}" alt="${username}" />
-          </div>
-          <div class="follow-item__info">
-            <div class="follow-item__username">
-              ${this.escapeHtml(username)}
-              ${item.isPrivate ? '<span class="private-badge">🔒 Private</span>' : ''}
-              ${this.renderArticleNotifLabel(item.pubkey)}
-            </div>
-            <div class="follow-item__badges">
-              <span class="mutual-badge ${mutualBadgeClass}">${mutualBadgeText}</span>
-              ${zapBadgeHtml}
-            </div>
-            ${item.petname ? `<div class="follow-item__petname">${this.escapeHtml(item.petname)}</div>` : ''}
-          </div>
-        </div>
-        <button class="follow-item__unfollow-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
-          Disconnect
-        </button>
-      `;
-
-      // Click on content wrapper navigates to profile
-      const contentWrapper = followItemDiv.querySelector('.follow-item__content-wrapper');
-      contentWrapper?.addEventListener('click', () => {
-        this.router.navigate(`/profile/${npub}`);
-      });
-
-      // Click on unfollow button removes follow
-      const unfollowBtn = followItemDiv.querySelector('.follow-item__unfollow-btn');
-      unfollowBtn?.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        await this.handleRemoveItem(item, followItemDiv);
-      });
+      const followItemDiv = this.createFollowItemElement(item);
 
       if (sentinel) {
         list.insertBefore(followItemDiv, sentinel);
@@ -782,18 +733,37 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
   }
 
   /**
-   * Update stats display
+   * Update stats display (mutual count and percentage only)
    */
   private updateStats(container: HTMLElement): void {
-    const percentage = this.totalFollowing > 0
-      ? Math.round((this.mutualCount / this.totalFollowing) * 100)
-      : 0;
+    const percentage = this.calculateMutualPercentage();
 
     const countEl = container.querySelector('.mutual-count');
     const percentEl = container.querySelector('.mutual-percentage');
 
     if (countEl) countEl.textContent = String(this.mutualCount);
     if (percentEl) percentEl.textContent = String(percentage);
+  }
+
+  /**
+   * Update full stats header including total following count
+   */
+  private updateStatsHeader(container: HTMLElement): void {
+    const percentage = this.calculateMutualPercentage();
+    const statsEl = container.querySelector('.follows-stats');
+
+    if (statsEl) {
+      statsEl.innerHTML = `Following: ${this.totalFollowing} | Mutuals: <span class="mutual-count">${this.mutualCount}</span> (<span class="mutual-percentage">${percentage}</span>%)`;
+    }
+  }
+
+  /**
+   * Calculate mutual percentage
+   */
+  private calculateMutualPercentage(): number {
+    return this.totalFollowing > 0
+      ? Math.round((this.mutualCount / this.totalFollowing) * 100)
+      : 0;
   }
 
   /**
@@ -805,7 +775,6 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
     if (!currentUser) return;
 
     try {
-      // Remove from browser storage (localStorage)
       const currentItems = this.listSyncManager['adapter'].getBrowserItems();
       const updatedItems = currentItems.filter((f: FollowItem) => f.pubkey !== item.pubkey);
       this.listSyncManager['adapter'].setBrowserItems(updatedItems);
@@ -814,25 +783,15 @@ export class FollowListManager extends BaseListManager<FollowItem, FollowItemWit
 
       itemElement.remove();
 
-      // Update cached list and stats
       if (item.isMutual) {
         this.mutualCount--;
       }
       this.totalFollowing--;
       this.allItemsWithProfiles = this.allItemsWithProfiles.filter(f => f.pubkey !== item.pubkey);
 
-      // Update stats display
       const container = this.containerElement.querySelector('[data-tab-content="list-follows"]') as HTMLElement;
       if (container) {
-        this.updateStats(container);
-        // Update total in header
-        const statsEl = container.querySelector('.follows-stats');
-        if (statsEl) {
-          const percentage = this.totalFollowing > 0
-            ? Math.round((this.mutualCount / this.totalFollowing) * 100)
-            : 0;
-          statsEl.innerHTML = `Following: ${this.totalFollowing} | Mutuals: <span class="mutual-count">${this.mutualCount}</span> (<span class="mutual-percentage">${percentage}</span>%)`;
-        }
+        this.updateStatsHeader(container);
       }
 
       this.eventBus.emit('follow:updated', {});

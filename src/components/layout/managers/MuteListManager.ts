@@ -38,7 +38,6 @@ export class MuteListManager extends BaseListManager<string, MuteItemWithProfile
   private userProfileService: UserProfileService;
   private router: Router;
   private mutedThreads: MutedThread[] = [];
-  private adapter: MuteStorageAdapter;
 
   constructor(containerElement: HTMLElement) {
     const adapter = new MuteStorageAdapter();
@@ -46,7 +45,6 @@ export class MuteListManager extends BaseListManager<string, MuteItemWithProfile
 
     super(containerElement, listSyncManager);
 
-    this.adapter = adapter;
     this.muteOrch = MuteOrchestrator.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
@@ -129,11 +127,12 @@ export class MuteListManager extends BaseListManager<string, MuteItemWithProfile
 
         const eventMap = new Map(events.map(e => [e.id, e.content]));
 
-        this.mutedThreads = threadEntries.map(([eventId, status]) => ({
-          eventId,
-          status,
-          content: eventMap.get(eventId)
-        }));
+        this.mutedThreads = threadEntries.map(([eventId, status]) => {
+          const content = eventMap.get(eventId);
+          const thread: MutedThread = { eventId, status };
+          if (content !== undefined) thread.content = content;
+          return thread;
+        });
       } catch {
         // Fallback: no content
         this.mutedThreads = threadEntries.map(([eventId, status]) => ({

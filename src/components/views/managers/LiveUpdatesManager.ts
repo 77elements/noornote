@@ -133,8 +133,9 @@ export class LiveUpdatesManager {
       const rootTag = eTags.find(tag => tag[3] === 'root') || eTags[0];
       const isInCurrentThread = rootTag && rootTag[1] === this.config.noteId;
 
-      if (isInCurrentThread) {
-        this.systemLogger.info('LiveUpdatesManager', `🔔 Reply created event received for thread: ${replyEvent.id.slice(0, 8)}`);
+      const replyId = replyEvent.id;
+      if (isInCurrentThread && replyId) {
+        this.systemLogger.info('LiveUpdatesManager', `🔔 Reply created event received for thread: ${replyId.slice(0, 8)}`);
         if (this.config.onLiveReply) {
           this.config.onLiveReply(replyEvent);
         }

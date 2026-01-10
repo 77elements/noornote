@@ -72,14 +72,19 @@ export class ListSyncManager<T> {
     // Browser has more items (removed.length > 0) → needs confirmation
     const requiresConfirmation = diff.removed.length > 0;
 
-    return {
+    const result: SyncFromRelaysResult<T> = {
       requiresConfirmation,
       diff,
       relayItems,
-      relayContentWasEmpty: preservePrivateItems, // Use combined flag for downstream handling
-      categoryAssignments: fetchResult.categoryAssignments,
-      categories: fetchResult.categories
+      relayContentWasEmpty: preservePrivateItems // Use combined flag for downstream handling
     };
+    if (fetchResult.categoryAssignments) {
+      result.categoryAssignments = fetchResult.categoryAssignments;
+    }
+    if (fetchResult.categories) {
+      result.categories = fetchResult.categories;
+    }
+    return result;
   }
 
   /**

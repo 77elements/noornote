@@ -67,6 +67,7 @@ export class RelayListOrchestrator extends Orchestrator {
 
       // Parse most recent relay list
       const event = events[0];
+      if (!event) return null;
       const relayInfos = this.parseRelayListEvent(event);
 
       // Silent operation - RelayConfig logs "✓ Loaded X relays from NIP-65"
@@ -117,7 +118,7 @@ export class RelayListOrchestrator extends Orchestrator {
     const relayInfos: RelayInfo[] = [];
 
     event.tags.forEach(tag => {
-      if (tag[0] === 'r') {
+      if (tag[0] === 'r' && tag[1]) {
         const url = tag[1];
         const marker = tag[2]; // "read", "write", or undefined (both)
 

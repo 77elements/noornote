@@ -126,7 +126,7 @@ export class ZapModal {
     const amountInput = document.getElementById('zap-amount') as HTMLInputElement;
     const commentInput = document.getElementById('zap-comment') as HTMLInputElement;
     const cancelBtn = document.getElementById('zap-cancel-btn');
-    const sendBtn = document.getElementById('zap-send-btn');
+    const sendBtn = document.getElementById('zap-send-btn') as HTMLButtonElement | null;
 
     if (!amountInput || !commentInput || !cancelBtn || !sendBtn) {
       this.systemLogger.error('ZapModal', 'Failed to find modal elements');

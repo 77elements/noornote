@@ -30,7 +30,7 @@ function getYouTubeVideoId(url: string): string | null {
   ];
   for (const pattern of patterns) {
     const match = url.match(pattern);
-    if (match) return match[1].trim();
+    if (match && match[1]) return match[1].trim();
   }
   return null;
 }
@@ -148,8 +148,8 @@ export function replaceMediaPlaceholders(
   let lastMatchEnd = 0;
 
   matches.forEach((match, _idx) => {
-    const index = parseInt(match[1]);
-    const matchStart = match.index!;
+    const index = parseInt(match[1] ?? '0');
+    const matchStart = match.index ?? 0;
     const matchEnd = matchStart + match[0].length;
 
     // Check if this placeholder is consecutive (only whitespace/newlines/br tags between)
@@ -180,14 +180,16 @@ export function replaceMediaPlaceholders(
   groups.forEach(group => {
     if (group.length === 1) {
       // Single media - render inline
-      const index = group[0];
+      const index = group[0]!;
+      const mediaItem = media[index];
+      if (!mediaItem) return;
       const placeholder = `__MEDIA_${index}__`;
-      const mediaHtml = renderSingleMedia(media[index], index, isNSFW);
+      const mediaHtml = renderSingleMedia(mediaItem, index, isNSFW);
       const wrappedMedia = `<div class="note-media-inline"${dataAttr}>${mediaHtml}</div>`;
       result = result.replace(placeholder, wrappedMedia);
     } else {
       // Multiple consecutive media - render as grid
-      const groupMedia = group.map(i => media[i]);
+      const groupMedia = group.map(i => media[i]).filter((m): m is MediaContent => m !== undefined);
       const imageCount = groupMedia.filter(m => m.type === 'image').length;
 
       // Determine grid modifier
@@ -203,7 +205,7 @@ export function replaceMediaPlaceholders(
       }
 
       const mediaHtml = groupMedia.map((item, idx) =>
-        renderSingleMedia(item, group[idx], isNSFW)
+        renderSingleMedia(item, group[idx] ?? idx, isNSFW)
       ).join('');
 
       const wrapper = isNSFW ? `note-media nsfw-media${gridModifier}` : `note-media${gridModifier}`;

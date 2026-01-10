@@ -406,8 +406,9 @@ export class ArticleEditorView extends View {
     if (fileInput) {
       fileInput.addEventListener('change', async (e) => {
         const target = e.target as HTMLInputElement;
-        if (target.files && target.files.length > 0) {
-          await this.handleContentImageUpload(target.files[0]);
+        const file = target.files?.[0];
+        if (file) {
+          await this.handleContentImageUpload(file);
           target.value = '';
         }
       });
@@ -471,26 +472,11 @@ export class ArticleEditorView extends View {
   private async handleContentImageUpload(file: File): Promise<void> {
     if (!file.type.startsWith('image/')) return;
 
-    const textarea = this.container.querySelector('.article-editor-content') as HTMLTextAreaElement;
-    if (!textarea) return;
-
     try {
       const result = await this.mediaUploadService.uploadFile(file);
 
       if (result.success && result.url) {
-        const start = textarea.selectionStart;
-        const before = this.content.slice(0, start);
-        const after = this.content.slice(start);
-
-        const insertion = `![](${result.url})\n`;
-        this.content = before + insertion + after;
-        textarea.value = this.content;
-
-        const newPos = start + insertion.length;
-        textarea.setSelectionRange(newPos, newPos);
-        textarea.focus();
-
-        this.updateButtonStates();
+        this.insertAtCursor(`![](${result.url})\n`);
         this.systemLogger.info('ArticleEditorView', 'Image uploaded and inserted');
       }
     } catch (_error) {
@@ -513,8 +499,9 @@ export class ArticleEditorView extends View {
 
     fileInput?.addEventListener('change', async (e) => {
       const target = e.target as HTMLInputElement;
-      if (target.files && target.files.length > 0) {
-        await this.handleCoverUpload(target.files[0]);
+      const file = target.files?.[0];
+      if (file) {
+        await this.handleCoverUpload(file);
         target.value = '';
       }
     });
@@ -575,28 +562,14 @@ export class ArticleEditorView extends View {
     fields.forEach(field => {
       field.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-        const fieldName = target.dataset.field as string;
+        const fieldName = target.dataset.field;
 
-        switch (fieldName) {
-          case 'title':
-            this.title = target.value;
-            break;
-          case 'content':
-            this.content = target.value;
-            break;
-          case 'summary':
-            this.summary = target.value;
-            break;
-          case 'image':
-            this.image = target.value;
-            break;
-          case 'tags':
-            this.tags = target.value;
-            break;
-          case 'identifier':
-            this.identifier = target.value;
-            break;
-        }
+        if (fieldName === 'title') this.title = target.value;
+        else if (fieldName === 'content') this.content = target.value;
+        else if (fieldName === 'summary') this.summary = target.value;
+        else if (fieldName === 'image') this.image = target.value;
+        else if (fieldName === 'tags') this.tags = target.value;
+        else if (fieldName === 'identifier') this.identifier = target.value;
 
         this.updateButtonStates();
       });
@@ -667,27 +640,20 @@ export class ArticleEditorView extends View {
   }
 
   /**
-   * Handle media uploaded (from footer toolbar)
+   * Insert text at the current cursor position in the content textarea
    */
-  private handleMediaUploaded(url: string): void {
+  private insertAtCursor(text: string): void {
     const textarea = this.container.querySelector('.article-editor-content') as HTMLTextAreaElement;
     if (!textarea) return;
 
-    // Insert at cursor position or append
     const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
     const before = this.content.slice(0, start);
-    const after = this.content.slice(end);
+    const after = this.content.slice(textarea.selectionEnd);
 
-    // Determine if it's an image
-    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
-    const insertion = isImage ? `\n![](${url})\n` : `\n${url}\n`;
-
-    this.content = before + insertion + after;
+    this.content = before + text + after;
     textarea.value = this.content;
 
-    // Move cursor after insertion
-    const newPos = start + insertion.length;
+    const newPos = start + text.length;
     textarea.setSelectionRange(newPos, newPos);
     textarea.focus();
 
@@ -695,25 +661,19 @@ export class ArticleEditorView extends View {
   }
 
   /**
+   * Handle media uploaded (from footer toolbar)
+   */
+  private handleMediaUploaded(url: string): void {
+    const isImage = /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(url);
+    const insertion = isImage ? `\n![](${url})\n` : `\n${url}\n`;
+    this.insertAtCursor(insertion);
+  }
+
+  /**
    * Handle emoji selected
    */
   private handleEmojiSelected(emoji: string): void {
-    const textarea = this.container.querySelector('.article-editor-content') as HTMLTextAreaElement;
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const before = this.content.slice(0, start);
-    const after = this.content.slice(end);
-
-    this.content = before + emoji + after;
-    textarea.value = this.content;
-
-    const newPos = start + emoji.length;
-    textarea.setSelectionRange(newPos, newPos);
-    textarea.focus();
-
-    this.updateButtonStates();
+    this.insertAtCursor(emoji);
   }
 
   /**
@@ -752,34 +712,25 @@ export class ArticleEditorView extends View {
     }
 
     try {
-      // Parse tags
-      const topics = this.tags
-        .split(',')
-        .map(t => t.trim())
-        .filter(t => t.length > 0);
+      const topics = this.tags.split(',').map(t => t.trim()).filter(Boolean);
+
+      const articleData: Parameters<typeof this.articleService.publishArticle>[0] = {
+        title: this.title,
+        content: this.content,
+        identifier: this.identifier || ArticleService.generateIdentifier(this.title),
+        relays: Array.from(this.selectedRelays)
+      };
+
+      // Only add optional properties if they have values (exactOptionalPropertyTypes)
+      if (this.summary) articleData.summary = this.summary;
+      if (this.image) articleData.image = this.image;
+      if (topics.length > 0) articleData.topics = topics;
 
       const naddr = isDraft
-        ? await this.articleService.saveDraft({
-            title: this.title,
-            content: this.content,
-            identifier: this.identifier || ArticleService.generateIdentifier(this.title),
-            summary: this.summary || undefined,
-            image: this.image || undefined,
-            topics: topics.length > 0 ? topics : undefined,
-            relays: Array.from(this.selectedRelays)
-          })
-        : await this.articleService.publishArticle({
-            title: this.title,
-            content: this.content,
-            identifier: this.identifier || ArticleService.generateIdentifier(this.title),
-            summary: this.summary || undefined,
-            image: this.image || undefined,
-            topics: topics.length > 0 ? topics : undefined,
-            relays: Array.from(this.selectedRelays)
-          });
+        ? await this.articleService.saveDraft(articleData)
+        : await this.articleService.publishArticle(articleData);
 
       if (naddr && !isDraft) {
-        // Navigate to the published article
         this.router.navigate(`/article/${naddr}`);
       }
     } finally {

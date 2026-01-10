@@ -95,30 +95,6 @@ export async function encryptPrivateFollows(
         throw new Error(`Encryption failed: NIP-44 (${nip44Error}), NIP-04 (${nip04Error})`);
       }
     }
-  } else if (authMethod === 'nsec') {
-    // Use nostr-tools for direct nsec encryption (NIP-44 only, no NIP-04 fallback)
-    const { nip44 } = await import('nostr-tools');
-    const { KeychainStorage } = await import('../services/KeychainStorage');
-    const { decodeNip19 } = await import('../services/NostrToolsAdapter');
-
-    const nsec = await KeychainStorage.loadNsec();
-    if (!nsec) {
-      throw new Error('No nsec found in keychain');
-    }
-
-    const decoded = decodeNip19(nsec);
-    if (decoded.type !== 'nsec') {
-      throw new Error('Invalid nsec in keychain');
-    }
-    const privateKey = decoded.data as string;
-
-    // NIP-44 conversation key requires hex bytes, not string
-    const privKeyBytes = new Uint8Array(privateKey.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-    const pubKeyBytes = new Uint8Array(authorPubkey.match(/.{1,2}/g)!.map(byte => parseInt(byte, 16)));
-
-    const conversationKey = nip44.v2.utils.getConversationKey(privKeyBytes, pubKeyBytes);
-    const encrypted = nip44.v2.encrypt(plaintext, conversationKey);
-    return encrypted;
   } else {
     throw new Error('No auth method available for NIP-44 encryption');
   }

@@ -7,6 +7,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { NotificationType } from '../../services/orchestration/NotificationsOrchestrator';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
+import { EventBus } from '../../services/EventBus';
 import { hexToNpub } from '../../helpers/nip19';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { ZapsList } from '../ui/ZapsList';
@@ -44,6 +45,7 @@ export class NotificationItem {
     // UserIdentity is created in createElement() - no need for loadProfile()
     this.attachISL();
     this.loadZapsList();
+    this.loadResolvedPreview();
   }
 
   /**
@@ -94,26 +96,32 @@ export class NotificationItem {
       identityContainer.appendChild(this.userIdentity.getElement());
     }
 
-    // Load resolved preview asynchronously
-    this.loadResolvedPreview();
-
     return item;
+  }
+
+  /**
+   * Check if notification type is a text-based notification (mention, reply, thread-reply)
+   * These types show ISL, zaps list, and context line
+   */
+  private isTextNotification(): boolean {
+    const type = this.options.type;
+    return type === 'mention' || type === 'reply' || type === 'thread-reply';
   }
 
   /**
    * Load and display zaps list
    */
   private async loadZapsList(): Promise<void> {
-    // Only load for mentions, replies, and thread-replies (same as ISL)
-    if (this.options.type !== 'mention' && this.options.type !== 'reply' && this.options.type !== 'thread-reply') {
-      return;
-    }
+    if (!this.isTextNotification()) return;
 
     const zapsContainer = this.element.querySelector('.notification-item__zaps');
     if (!zapsContainer) return;
 
+    const eventId = this.options.event.id;
+    if (!eventId) return;
+
     // Fetch stats to get zap events
-    const stats = await this.reactionsOrch.getDetailedStats(this.options.event.id);
+    const stats = await this.reactionsOrch.getDetailedStats(eventId);
 
     if (stats && stats.zapEvents && stats.zapEvents.length > 0) {
       this.zapsList = new ZapsList(stats.zapEvents);
@@ -125,18 +133,18 @@ export class NotificationItem {
    * Attach ISL (Interaction Status Line) to mentions and replies
    */
   private attachISL(): void {
-    // Only attach ISL for mentions, replies, and thread-replies (not reactions/zaps/reposts)
-    if (this.options.type !== 'mention' && this.options.type !== 'reply' && this.options.type !== 'thread-reply') {
-      return;
-    }
+    if (!this.isTextNotification()) return;
 
     const currentUser = this.authService.getCurrentUser();
     const islContainer = this.element.querySelector('.notification-item__isl');
     if (!islContainer || !currentUser) return;
 
+    const noteId = this.options.event.id;
+    if (!noteId) return;
+
     // Create ISL with the notification event
     this.isl = new InteractionStatusLine({
-      noteId: this.options.event.id,
+      noteId,
       authorPubkey: this.options.event.pubkey,
       fetchStats: true,
       isLoggedIn: true,
@@ -240,8 +248,9 @@ export class NotificationItem {
       }
       case 'article': return 'posted a new article';
       case 'hashtag': {
-        const hashtag = this.options.event.meta?.hashtag || 'unknown';
-        const count = this.options.event.meta?.count || 1;
+        const meta = (this.options.event as NostrEvent & { meta?: { hashtag?: string; count?: number } }).meta;
+        const hashtag = meta?.hashtag || 'unknown';
+        const count = meta?.count || 1;
         return count === 1
           ? `New post tagged #${hashtag}`
           : `${count} new posts tagged #${hashtag}`;
@@ -268,10 +277,10 @@ export class NotificationItem {
     // Format: lnbc[amount][multiplier]...
     // Example: lnbc10n... = 1000 sats (n = nano-bitcoin = 0.1 sat)
     const match = invoice.match(/lnbc(\d+)([munp]?)/);
-    if (!match) return null;
+    if (!match || !match[1]) return null;
 
     const amount = parseInt(match[1]);
-    const multiplier = match[2];
+    const multiplier = match[2] || '';
 
     // Convert to sats
     const multipliers: Record<string, number> = {
@@ -282,7 +291,7 @@ export class NotificationItem {
       'p': 0.0001    // pico-BTC
     };
 
-    return Math.floor(amount * (multipliers[multiplier] || 1));
+    return Math.floor(amount * (multipliers[multiplier] ?? 1));
   }
 
   /**
@@ -353,9 +362,11 @@ export class NotificationItem {
             const profiles = new Map();
             const pTags = originalEvent.tags?.filter((t: string[]) => t[0] === 'p') || [];
             for (const tag of pTags) {
+              const tagPubkey = tag[1];
+              if (!tagPubkey) continue;
               try {
-                const profile = await this.userProfileService.getUserProfile(tag[1]);
-                profiles.set(tag[1], profile);
+                const profile = await this.userProfileService.getUserProfile(tagPubkey);
+                profiles.set(tagPubkey, profile);
               } catch {}
             }
 
@@ -381,61 +392,9 @@ export class NotificationItem {
       return;
     }
 
-    // For reactions, fetch the liked note content
-    if (this.options.type === 'reaction') {
-      try {
-        const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e');
-        if (!eTag || !eTag[1]) return;
-
-        const originalEvent = await this.fetchOriginalNote(eTag[1]);
-        if (originalEvent && originalEvent.content) {
-          const maxLength = 100;
-          const content = originalEvent.content;
-          const truncated = content.length > maxLength ? content.slice(0, maxLength) + '...' : content;
-
-          // Update preview in DOM
-          const previewElement = this.element.querySelector('.notification-item__preview');
-          if (previewElement) {
-            previewElement.textContent = truncated;
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to fetch liked note:', error);
-        // Hide loading placeholder on error
-        const previewElement = this.element.querySelector('.notification-item__preview');
-        if (previewElement) {
-          previewElement.textContent = '';
-        }
-      }
-      return;
-    }
-
-    // For zaps, fetch the zapped note content
-    if (this.options.type === 'zap') {
-      try {
-        const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e');
-        if (!eTag || !eTag[1]) return;
-
-        const originalEvent = await this.fetchOriginalNote(eTag[1]);
-        if (originalEvent && originalEvent.content) {
-          const maxLength = 100;
-          const content = originalEvent.content;
-          const truncated = content.length > maxLength ? content.slice(0, maxLength) + '...' : content;
-
-          // Update preview in DOM
-          const previewElement = this.element.querySelector('.notification-item__preview');
-          if (previewElement) {
-            previewElement.textContent = truncated;
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to fetch zapped note:', error);
-        // Hide loading placeholder on error
-        const previewElement = this.element.querySelector('.notification-item__preview');
-        if (previewElement) {
-          previewElement.textContent = '';
-        }
-      }
+    // For reactions and zaps, fetch the referenced note content
+    if (this.options.type === 'reaction' || this.options.type === 'zap') {
+      await this.loadReferencedNotePreview();
       return;
     }
 
@@ -485,6 +444,39 @@ export class NotificationItem {
   }
 
   /**
+   * Load referenced note preview for reactions and zaps
+   */
+  private async loadReferencedNotePreview(): Promise<void> {
+    const previewElement = this.element.querySelector('.notification-item__preview');
+    if (!previewElement) return;
+
+    try {
+      const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e');
+      if (!eTag || !eTag[1]) return;
+
+      const originalEvent = await this.fetchOriginalNote(eTag[1]);
+      if (originalEvent && originalEvent.content) {
+        const maxLength = 100;
+        const content = originalEvent.content;
+        previewElement.textContent = content.length > maxLength
+          ? content.slice(0, maxLength) + '...'
+          : content;
+      }
+    } catch (error) {
+      console.warn('Failed to fetch referenced note:', error);
+      previewElement.textContent = '';
+    }
+  }
+
+  /**
+   * Get the referenced note ID from event tags (for zaps, reactions)
+   */
+  private getReferencedNoteId(): string | null {
+    const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e');
+    return eTag?.[1] || null;
+  }
+
+  /**
    * Handle notification click (navigate to note)
    */
   private handleClick(e: MouseEvent): void {
@@ -495,44 +487,37 @@ export class NotificationItem {
     }
 
     const router = Router.getInstance();
+    const type = this.options.type;
 
-    // For zaps, navigate to zapped event (extract from #e tag)
-    if (this.options.type === 'zap') {
-      const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e');
-      if (eTag && eTag[1]) {
-        router.navigate(`/note/${eTag[1]}`);
-        return;
+    // For zaps and reactions, navigate to referenced event
+    if (type === 'zap' || type === 'reaction') {
+      const noteId = this.getReferencedNoteId();
+      if (noteId) {
+        router.navigate(`/note/${noteId}`);
       }
+      return;
     }
 
-    // For reactions, navigate to reacted event
-    if (this.options.type === 'reaction') {
-      const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e');
-      if (eTag && eTag[1]) {
-        router.navigate(`/note/${eTag[1]}`);
-        return;
-      }
-    }
-
-    // For reposts, navigate to original note (using extractOriginalNoteId helper)
-    if (this.options.type === 'repost') {
+    // For reposts, navigate to original note
+    if (type === 'repost') {
       const originalNoteId = extractOriginalNoteId(this.options.event);
       router.navigate(`/note/${originalNoteId}`);
       return;
     }
 
     // For articles, navigate to article view with naddr
-    if (this.options.type === 'article') {
+    if (type === 'article') {
       const dTag = this.options.event.tags.find((t: string[]) => t[0] === 'd');
       if (dTag && dTag[1]) {
         router.navigate(`/article/${dTag[1]}`);
-        return;
       }
+      return;
     }
 
     // For hashtag notifications, trigger hashtag search
-    if (this.options.type === 'hashtag') {
-      const hashtag = this.options.event.meta?.hashtag;
+    if (type === 'hashtag') {
+      const meta = (this.options.event as NostrEvent & { meta?: { hashtag?: string } }).meta;
+      const hashtag = meta?.hashtag;
       if (hashtag) {
         const eventBus = EventBus.getInstance();
         eventBus.emit('hashtagSearch:start', { hashtag });
@@ -540,8 +525,8 @@ export class NotificationItem {
       return;
     }
 
-    // For mutual notifications, navigate to profile of the person
-    if (this.options.type === 'mutual_unfollow' || this.options.type === 'mutual_new') {
+    // For mutual notifications, navigate to profile
+    if (type === 'mutual_unfollow' || type === 'mutual_new') {
       const npub = hexToNpub(this.options.event.pubkey);
       router.navigate(`/profile/${npub}`);
       return;

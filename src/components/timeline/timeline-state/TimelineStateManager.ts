@@ -104,7 +104,8 @@ export class TimelineStateManager {
    * Get oldest event
    */
   getOldestEvent(): NostrEvent | null {
-    return this.events.length > 0 ? this.events[this.events.length - 1] : null;
+    if (this.events.length === 0) return null;
+    return this.events[this.events.length - 1] ?? null;
   }
 
   /**

@@ -17,6 +17,19 @@ import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
 import { EventBus } from '../../services/EventBus';
 
+type ListType = 'follows' | 'bookmarks' | 'tribes' | 'mutes';
+
+interface PrivacySectionConfig {
+  id: ListType;
+  title: string;
+  listName: string;
+  switchLabel: string;
+  description: string;
+  viewButtonLabel: string;
+  isEnabled: () => boolean;
+  setEnabled: (enabled: boolean) => void;
+}
+
 export class PrivacySettingsSection extends SettingsSection {
   private followListOrch: FollowListOrchestrator;
   private bookmarkOrch: BookmarkOrchestrator;
@@ -24,13 +37,10 @@ export class PrivacySettingsSection extends SettingsSection {
   private muteOrch: MuteOrchestrator;
   private authService: AuthService;
   private modalService: ModalService;
-  private privateFollowsSwitch: Switch | null = null;
-  private privateBookmarksSwitch: Switch | null = null;
-  private privateTribesSwitch: Switch | null = null;
-  private privateMutesSwitch: Switch | null = null;
+  private switches: Map<ListType, Switch> = new Map();
 
   constructor() {
-    super('privacy-settings'); // Combined section ID
+    super('privacy-settings');
     this.followListOrch = FollowListOrchestrator.getInstance();
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
     this.tribeOrch = TribeOrchestrator.getInstance();
@@ -39,9 +49,6 @@ export class PrivacySettingsSection extends SettingsSection {
     this.modalService = ModalService.getInstance();
   }
 
-  /**
-   * Mount section content into the DOM
-   */
   public mount(parentContainer: HTMLElement): void {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
@@ -50,386 +57,169 @@ export class PrivacySettingsSection extends SettingsSection {
     this.bindListeners(contentContainer);
   }
 
-  /**
-   * Render privacy settings content
-   */
+  private getSectionConfigs(): PrivacySectionConfig[] {
+    return [
+      {
+        id: 'follows',
+        title: 'Follow Lists',
+        listName: 'follow lists',
+        switchLabel: 'Use private follow lists (NIP-51)',
+        description: 'Private follow lists (NIP-51) allow you to follow users without publicly revealing who you follow. Your follow list is encrypted and only you can see it.',
+        viewButtonLabel: 'View Follows',
+        isEnabled: () => this.followListOrch.isPrivateFollowsEnabled(),
+        setEnabled: (enabled) => this.followListOrch.setPrivateFollowsEnabled(enabled)
+      },
+      {
+        id: 'bookmarks',
+        title: 'Bookmark List',
+        listName: 'bookmarks',
+        switchLabel: 'Use private bookmarks (NIP-51)',
+        description: 'Private bookmarks (NIP-51) allow you to bookmark notes without publicly revealing what you bookmarked. Your bookmarks are encrypted and only you can see them.',
+        viewButtonLabel: 'View Bookmarks',
+        isEnabled: () => this.bookmarkOrch.isPrivateBookmarksEnabled(),
+        setEnabled: (enabled) => this.bookmarkOrch.setPrivateBookmarksEnabled(enabled)
+      },
+      {
+        id: 'tribes',
+        title: 'Tribes',
+        listName: 'tribes',
+        switchLabel: 'Use private tribes (NIP-51)',
+        description: 'Private tribes (NIP-51 kind:30000) allow you to create curated user lists without publicly revealing who you added. Your tribe members are encrypted and only you can see them.',
+        viewButtonLabel: 'View Tribes',
+        isEnabled: () => this.tribeOrch.isPrivateTribesEnabled(),
+        setEnabled: (enabled) => this.tribeOrch.setPrivateTribesEnabled(enabled)
+      },
+      {
+        id: 'mutes',
+        title: 'Mute List',
+        listName: 'mutes',
+        switchLabel: 'Use private mutes (NIP-51)',
+        description: 'Private mutes (NIP-51) allow you to mute users without publicly revealing who you muted. Your mute list is encrypted and only you can see it.',
+        viewButtonLabel: 'View Muted Users',
+        isEnabled: () => this.muteOrch.isPrivateMutesEnabled(),
+        setEnabled: (enabled) => this.muteOrch.setPrivateMutesEnabled(enabled)
+      }
+    ];
+  }
+
   private renderContent(): string {
-    return `
-      <div class="privacy-settings">
-        ${this.renderFollowLists()}
-        ${this.renderBookmarks()}
-        ${this.renderTribes()}
-        ${this.renderMutes()}
-      </div>
-    `;
+    const sections = this.getSectionConfigs()
+      .map(config => this.renderPrivacySubsection(config))
+      .join('');
+
+    return `<div class="privacy-settings">${sections}</div>`;
   }
 
-  /**
-   * Render follow lists subsection
-   */
-  private renderFollowLists(): string {
-    const isEnabled = this.followListOrch.isPrivateFollowsEnabled();
-
+  private renderPrivacySubsection(config: PrivacySectionConfig): string {
     return `
       <div class="privacy-subsection">
-        <h3 class="subsection-title">Follow Lists</h3>
-        <div class="follow-lists-settings">
+        <h3 class="subsection-title">${config.title}</h3>
+        <div class="${config.id}-settings">
           <div class="form__info">
-            <p>Private follow lists (NIP-51) allow you to follow users without publicly revealing who you follow. Your follow list is encrypted and only you can see it.</p>
-            <p class="follow-lists-warning">⚠️ <strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see notes from your private follows.</p>
+            <p>${config.description}</p>
+            <p class="${config.id}-warning"><strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private ${config.listName}.</p>
           </div>
 
-          <div class="private-follows-switch-container" id="private-follows-switch-container">
-            <!-- Switch will be mounted here -->
+          <div class="private-${config.id}-switch-container" id="private-${config.id}-switch-container">
           </div>
-
-          <!-- HIDDEN: Migration tools - not ready for end users
-          <div class="follow-lists-migration ${isEnabled ? '' : 'hidden'}" id="migration-section">
-            <h4 class="migration-title">Migration Tools</h4>
-            <div class="form__info">Move your follows between public (kind:3 tags) and private (encrypted content) lists.</div>
-
-            <div class="migration-buttons">
-              <button class="btn btn--medium" id="migrate-to-private-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                </svg>
-                All Public Follows → Private
-              </button>
-
-              <button class="btn btn--medium" id="migrate-to-public-btn">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                  <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
-                </svg>
-                All Private Follows → Public
-              </button>
-            </div>
-          </div>
-          -->
 
           <div class="settings-section__actions">
-            <button class="btn btn--medium" id="view-follows-btn">View Follows</button>
+            <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
           </div>
         </div>
       </div>
     `;
   }
 
-  /**
-   * Render bookmarks subsection
-   */
-  private renderBookmarks(): string {
-    return `
-      <div class="privacy-subsection">
-        <h3 class="subsection-title">Bookmark List</h3>
-        <div class="bookmarks-settings">
-          <div class="form__info">
-            <p>Private bookmarks (NIP-51) allow you to bookmark notes without publicly revealing what you bookmarked. Your bookmarks are encrypted and only you can see them.</p>
-            <p class="bookmarks-warning">⚠️ <strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private bookmarks.</p>
-          </div>
-
-          <div class="private-bookmarks-switch-container" id="private-bookmarks-switch-container">
-            <!-- Switch will be mounted here -->
-          </div>
-
-          <div class="settings-section__actions">
-            <button class="btn btn--medium" id="view-bookmarks-btn">View Bookmarks</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  /**
-   * Render tribes subsection
-   */
-  private renderTribes(): string {
-    return `
-      <div class="privacy-subsection">
-        <h3 class="subsection-title">Tribes</h3>
-        <div class="tribes-settings">
-          <div class="form__info">
-            <p>Private tribes (NIP-51 kind:30000) allow you to create curated user lists without publicly revealing who you added. Your tribe members are encrypted and only you can see them.</p>
-            <p class="tribes-warning">⚠️ <strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private tribe members.</p>
-          </div>
-
-          <div class="private-tribes-switch-container" id="private-tribes-switch-container">
-            <!-- Switch will be mounted here -->
-          </div>
-
-          <div class="settings-section__actions">
-            <button class="btn btn--medium" id="view-tribes-btn">View Tribes</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  /**
-   * Render mutes subsection
-   */
-  private renderMutes(): string {
-    const isPrivateMutesEnabled = this.muteOrch.isPrivateMutesEnabled();
-    const encryptionMethod = this.muteOrch.getEncryptionMethod();
-
-    return `
-      <div class="privacy-subsection">
-        <h3 class="subsection-title">Mute List</h3>
-        <div class="mutes-settings">
-          <div class="form__info">
-            <p>Private mutes (NIP-51) allow you to mute users without publicly revealing who you muted. Your mute list is encrypted and only you can see it.</p>
-            <p class="mutes-warning">⚠️ <strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private mutes.</p>
-          </div>
-
-          <div class="private-mutes-switch-container" id="private-mutes-switch-container">
-            <!-- Switch will be mounted here -->
-          </div>
-
-          <!-- HIDDEN: Encryption method selection - not ready for end users
-          <div class="mutes-encryption-method ${isPrivateMutesEnabled ? '' : 'hidden'}" id="mutes-encryption-method">
-            <h4 class="encryption-method-title" style="font-size: 0.9rem; margin: 1rem 0 0.5rem 0; color: var(--text-secondary);">Encryption Method</h4>
-            <div class="encryption-method-options" style="display: flex; flex-direction: column; gap: 0.75rem; margin-left: 0.5rem;">
-              <label class="encryption-method-option" style="display: flex; align-items: start; gap: 0.5rem; cursor: pointer;">
-                <input
-                  type="radio"
-                  name="mute-encryption-method"
-                  value="nip04"
-                  ${encryptionMethod === 'nip04' ? 'checked' : ''}
-                  style="margin-top: 0.2rem;"
-                />
-                <div style="flex: 1;">
-                  <div style="font-weight: 500;">NIP-04 (Compatible)</div>
-                  <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                    Works with all clients (Jumble, Mutable.top). Uses AES-256-CBC encryption.
-                  </div>
-                </div>
-              </label>
-
-              <label class="encryption-method-option" style="display: flex; align-items: start; gap: 0.5rem; cursor: pointer;">
-                <input
-                  type="radio"
-                  name="mute-encryption-method"
-                  value="nip44"
-                  ${encryptionMethod === 'nip44' ? 'checked' : ''}
-                  style="margin-top: 0.2rem;"
-                />
-                <div style="flex: 1;">
-                  <div style="font-weight: 500;">NIP-44 (More Secure)</div>
-                  <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">
-                    Modern standard with better security. May not work with older clients.
-                  </div>
-                </div>
-              </label>
-            </div>
-            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.75rem 0 0 0.5rem; font-style: italic;">
-              💡 Choose NIP-04 if you want to view your mutes in Jumble or other clients.
-            </p>
-          </div>
-          -->
-
-          <div class="settings-section__actions">
-            <button class="btn btn--medium" id="view-mutes-btn">View Muted Users</button>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  /**
-   * Bind event listeners
-   */
   private bindListeners(contentContainer: HTMLElement): void {
-    this.bindFollowListsListeners(contentContainer);
-    this.bindBookmarksListeners(contentContainer);
-    this.bindTribesListeners(contentContainer);
-    this.bindMutesListeners(contentContainer);
+    for (const config of this.getSectionConfigs()) {
+      this.bindSectionListeners(contentContainer, config);
+    }
+
+    this.bindFollowsMigrationListeners(contentContainer);
+    this.bindMutesEncryptionListeners(contentContainer);
   }
 
-  /**
-   * Bind follow lists event listeners
-   */
-  private bindFollowListsListeners(contentContainer: HTMLElement): void {
-    const switchContainer = contentContainer.querySelector('#private-follows-switch-container');
+  private bindSectionListeners(contentContainer: HTMLElement, config: PrivacySectionConfig): void {
+    const switchContainer = contentContainer.querySelector(`#private-${config.id}-switch-container`);
     if (!switchContainer) return;
 
-    const isEnabled = this.followListOrch.isPrivateFollowsEnabled();
-
-    this.privateFollowsSwitch = new Switch({
-      label: 'Use private follow lists (NIP-51)',
-      checked: isEnabled,
+    const switchComponent = new Switch({
+      label: config.switchLabel,
+      checked: config.isEnabled(),
       onChange: (checked) => {
-        this.followListOrch.setPrivateFollowsEnabled(checked);
-
-        const migrationSection = contentContainer.querySelector('#migration-section');
-        if (migrationSection) {
-          if (checked) {
-            migrationSection.classList.remove('hidden');
-          } else {
-            migrationSection.classList.add('hidden');
-          }
-        }
-
+        config.setEnabled(checked);
+        this.handleSectionToggle(contentContainer, config.id, checked);
         ToastService.show(
-          checked ? 'Private follows enabled' : 'Private follows disabled',
+          `Private ${config.listName} ${checked ? 'enabled' : 'disabled'}`,
           'success'
         );
       }
     });
 
-    switchContainer.innerHTML = this.privateFollowsSwitch.render();
-    this.privateFollowsSwitch.setupEventListeners(switchContainer as HTMLElement);
+    this.switches.set(config.id, switchComponent);
+    switchContainer.innerHTML = switchComponent.render();
+    switchComponent.setupEventListeners(switchContainer as HTMLElement);
 
-    const migrateToPrivateBtn = contentContainer.querySelector('#migrate-to-private-btn');
-    const migrateToPublicBtn = contentContainer.querySelector('#migrate-to-public-btn');
-
-    migrateToPrivateBtn?.addEventListener('click', () => this.handleMigrateToPrivate());
-    migrateToPublicBtn?.addEventListener('click', () => this.handleMigrateToPublic());
-
-    // Bind button to open Follows list in MainLayout
-    const viewFollowsBtn = contentContainer.querySelector('#view-follows-btn');
-    viewFollowsBtn?.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: 'follows' });
+    const viewBtn = contentContainer.querySelector(`#view-${config.id}-btn`);
+    viewBtn?.addEventListener('click', () => {
+      EventBus.getInstance().emit('list:open', { listType: config.id });
     });
   }
 
-  /**
-   * Bind bookmarks event listeners
-   */
-  private bindBookmarksListeners(contentContainer: HTMLElement): void {
-    const switchContainer = contentContainer.querySelector('#private-bookmarks-switch-container');
-    if (!switchContainer) return;
-
-    this.privateBookmarksSwitch = new Switch({
-      label: 'Use private bookmarks (NIP-51)',
-      checked: this.bookmarkOrch.isPrivateBookmarksEnabled(),
-      onChange: async (checked) => {
-        this.bookmarkOrch.setPrivateBookmarksEnabled(checked);
-
-        ToastService.show(
-          checked ? 'Private bookmarks enabled' : 'Private bookmarks disabled',
-          'success'
-        );
-      }
-    });
-
-    switchContainer.innerHTML = this.privateBookmarksSwitch.render();
-    this.privateBookmarksSwitch.setupEventListeners(switchContainer as HTMLElement);
-
-    // Bind button to open Bookmarks list in MainLayout
-    const viewBookmarksBtn = contentContainer.querySelector('#view-bookmarks-btn');
-    viewBookmarksBtn?.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: 'bookmarks' });
-    });
+  private handleSectionToggle(contentContainer: HTMLElement, sectionId: ListType, enabled: boolean): void {
+    if (sectionId === 'follows') {
+      contentContainer.querySelector('#migration-section')?.classList.toggle('hidden', !enabled);
+    } else if (sectionId === 'mutes') {
+      contentContainer.querySelector('#mutes-encryption-method')?.classList.toggle('hidden', !enabled);
+    }
   }
 
-  /**
-   * Bind tribes event listeners
-   */
-  private bindTribesListeners(contentContainer: HTMLElement): void {
-    const switchContainer = contentContainer.querySelector('#private-tribes-switch-container');
-    if (!switchContainer) return;
-
-    this.privateTribesSwitch = new Switch({
-      label: 'Use private tribes (NIP-51)',
-      checked: this.tribeOrch.isPrivateTribesEnabled(),
-      onChange: async (checked) => {
-        this.tribeOrch.setPrivateTribesEnabled(checked);
-
-        ToastService.show(
-          checked ? 'Private tribes enabled' : 'Private tribes disabled',
-          'success'
-        );
-      }
-    });
-
-    switchContainer.innerHTML = this.privateTribesSwitch.render();
-    this.privateTribesSwitch.setupEventListeners(switchContainer as HTMLElement);
-
-    // Bind button to open Tribes list in MainLayout
-    const viewTribesBtn = contentContainer.querySelector('#view-tribes-btn');
-    viewTribesBtn?.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: 'tribes' });
-    });
+  private bindFollowsMigrationListeners(contentContainer: HTMLElement): void {
+    contentContainer.querySelector('#migrate-to-private-btn')?.addEventListener('click', () => this.handleMigration('private'));
+    contentContainer.querySelector('#migrate-to-public-btn')?.addEventListener('click', () => this.handleMigration('public'));
   }
 
-  /**
-   * Bind mutes event listeners
-   */
-  private bindMutesListeners(contentContainer: HTMLElement): void {
-    const switchContainer = contentContainer.querySelector('#private-mutes-switch-container');
-    if (!switchContainer) return;
-
-    this.privateMutesSwitch = new Switch({
-      label: 'Use private mutes (NIP-51)',
-      checked: this.muteOrch.isPrivateMutesEnabled(),
-      onChange: async (checked) => {
-        this.muteOrch.setPrivateMutesEnabled(checked);
-
-        // Show/hide encryption method selector
-        const encryptionMethodSection = contentContainer.querySelector('#mutes-encryption-method');
-        if (encryptionMethodSection) {
-          if (checked) {
-            encryptionMethodSection.classList.remove('hidden');
-          } else {
-            encryptionMethodSection.classList.add('hidden');
-          }
-        }
-
-        ToastService.show(
-          checked ? 'Private mutes enabled' : 'Private mutes disabled',
-          'success'
-        );
-      }
-    });
-
-    switchContainer.innerHTML = this.privateMutesSwitch.render();
-    this.privateMutesSwitch.setupEventListeners(switchContainer as HTMLElement);
-
-    // Bind encryption method radio buttons
+  private bindMutesEncryptionListeners(contentContainer: HTMLElement): void {
     const encryptionRadios = contentContainer.querySelectorAll('input[name="mute-encryption-method"]');
     encryptionRadios.forEach(radio => {
       radio.addEventListener('change', (event) => {
         const target = event.target as HTMLInputElement;
         const method = target.value as 'nip04' | 'nip44';
-
         this.muteOrch.setEncryptionMethod(method);
-
-        ToastService.show(
-          `Encryption method set to ${method.toUpperCase()}`,
-          'success'
-        );
+        ToastService.show(`Encryption method set to ${method.toUpperCase()}`, 'success');
       });
-    });
-
-    // Bind button to open Mutes list in MainLayout
-    const viewMutesBtn = contentContainer.querySelector('#view-mutes-btn');
-    viewMutesBtn?.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: 'mutes' });
     });
   }
 
-  /**
-   * Handle migrate to private (kind:3 → kind:30000)
-   */
-  private async handleMigrateToPrivate(): Promise<void> {
+  private async handleMigration(direction: 'private' | 'public'): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       ToastService.show('Please log in to migrate follow lists', 'error');
       return;
     }
 
+    const isToPrivate = direction === 'private';
+    const title = isToPrivate ? 'Move Follows to Private List' : 'Move Follows to Public List';
+    const warning = isToPrivate
+      ? 'This operation is irreversible without using the reverse migration tool.'
+      : 'Everyone will be able to see who you follow after this operation.';
+    const sourceKind = isToPrivate ? 'kind:3' : 'kind:30000';
+    const targetKind = isToPrivate ? 'kind:30000' : 'kind:3';
+    const sourceType = isToPrivate ? 'public' : 'private';
+    const targetType = isToPrivate ? 'private' : 'public';
+
     this.modalService.show({
-      title: 'Move Follows to Private List',
+      title,
       content: `
         <div style="padding: 1rem 0;">
           <p>This will:</p>
           <ul style="margin: 1rem 0; padding-left: 1.5rem;">
-            <li>Encrypt all your current public follows (kind:3)</li>
-            <li>Store them in a private follow list (kind:30000)</li>
-            <li>Clear your public follow list</li>
+            <li>${isToPrivate ? 'Encrypt' : 'Decrypt'} all your current ${sourceType} follows (${sourceKind})</li>
+            <li>Store them in a ${targetType} follow list (${targetKind})</li>
+            <li>Clear your ${sourceType} follow list</li>
           </ul>
-          <p><strong>Warning:</strong> This operation is irreversible without using the reverse migration tool.</p>
+          <p><strong>Warning:</strong> ${warning}</p>
         </div>
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
           <button class="btn" data-action="cancel">Cancel</button>
@@ -443,26 +233,22 @@ export class PrivacySettingsSection extends SettingsSection {
     });
 
     setTimeout(() => {
-      const cancelBtn = document.querySelector('[data-action="cancel"]');
-      const confirmBtn = document.querySelector('[data-action="confirm"]');
-
-      cancelBtn?.addEventListener('click', () => {
+      document.querySelector('[data-action="cancel"]')?.addEventListener('click', () => {
         this.modalService.hide();
       });
 
-      confirmBtn?.addEventListener('click', async () => {
+      document.querySelector('[data-action="confirm"]')?.addEventListener('click', async () => {
         this.modalService.hide();
 
         try {
-          const success = await this.followListOrch.migrateToPrivate(
-            currentUser.pubkey
-          );
+          const migrateMethod = isToPrivate
+            ? this.followListOrch.migrateToPrivate.bind(this.followListOrch)
+            : this.followListOrch.migrateToPublic.bind(this.followListOrch);
 
-          if (success) {
-            ToastService.show('Follows migrated to private list', 'success');
-          } else {
-            ToastService.show('Migration failed', 'error');
-          }
+          const success = await migrateMethod(currentUser.pubkey);
+          const message = `Follows migrated to ${targetType} list`;
+
+          ToastService.show(success ? message : 'Migration failed', success ? 'success' : 'error');
         } catch (error) {
           ToastService.show('Migration error: ' + error, 'error');
         }
@@ -470,82 +256,7 @@ export class PrivacySettingsSection extends SettingsSection {
     }, 0);
   }
 
-  /**
-   * Handle migrate to public (kind:30000 → kind:3)
-   */
-  private async handleMigrateToPublic(): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) {
-      ToastService.show('Please log in to migrate follow lists', 'error');
-      return;
-    }
-
-    this.modalService.show({
-      title: 'Move Follows to Public List',
-      content: `
-        <div style="padding: 1rem 0;">
-          <p>This will:</p>
-          <ul style="margin: 1rem 0; padding-left: 1.5rem;">
-            <li>Decrypt all your current private follows (kind:30000)</li>
-            <li>Store them in a public follow list (kind:3)</li>
-            <li>Clear your private follow list</li>
-          </ul>
-          <p><strong>Warning:</strong> Everyone will be able to see who you follow after this operation.</p>
-        </div>
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-          <button class="btn" data-action="cancel">Cancel</button>
-          <button class="btn" data-action="confirm">Migrate</button>
-        </div>
-      `,
-      width: '500px',
-      showCloseButton: true,
-      closeOnOverlay: true,
-      closeOnEsc: true
-    });
-
-    setTimeout(() => {
-      const cancelBtn = document.querySelector('[data-action="cancel"]');
-      const confirmBtn = document.querySelector('[data-action="confirm"]');
-
-      cancelBtn?.addEventListener('click', () => {
-        this.modalService.hide();
-      });
-
-      confirmBtn?.addEventListener('click', async () => {
-        this.modalService.hide();
-
-        try {
-          const success = await this.followListOrch.migrateToPublic(
-            currentUser.pubkey
-          );
-
-          if (success) {
-            ToastService.show('Follows migrated to public list', 'success');
-          } else {
-            ToastService.show('Migration failed', 'error');
-          }
-        } catch (error) {
-          ToastService.show('Migration error: ' + error, 'error');
-        }
-      });
-    }, 0);
-  }
-
-  /**
-   * Unmount section and cleanup
-   */
   public unmount(): void {
-    if (this.privateFollowsSwitch) {
-      this.privateFollowsSwitch = null;
-    }
-    if (this.privateBookmarksSwitch) {
-      this.privateBookmarksSwitch = null;
-    }
-    if (this.privateTribesSwitch) {
-      this.privateTribesSwitch = null;
-    }
-    if (this.privateMutesSwitch) {
-      this.privateMutesSwitch = null;
-    }
+    this.switches.clear();
   }
 }

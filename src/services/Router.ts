@@ -73,31 +73,46 @@ export class Router {
     const isAuthRequired = typeof requiresAuth === 'boolean' ? requiresAuth : false;
     const legacyUnauthHandler = typeof requiresAuth === 'function' ? requiresAuth : undefined;
 
-    this.routes.push({
+    // Build route object with conditional optional properties (exactOptionalPropertyTypes)
+    const route: Route = {
       pattern: regex,
-      viewClass: viewClass,
-      requiresAuth: isAuthRequired,
       handler: (matches: Record<string, string>) => {
         // Map captured groups to param names
         const params: Record<string, string> = {};
         Object.keys(matches).forEach((key, index) => {
-          if (paramNames[index]) {
-            params[paramNames[index]] = matches[key];
+          const paramName = paramNames[index];
+          const matchValue = matches[key];
+          if (paramName && matchValue) {
+            params[paramName] = matchValue;
           }
         });
         handler(params);
-      },
-      unauthenticatedHandler: legacyUnauthHandler ? (matches: Record<string, string>) => {
+      }
+    };
+
+    // Only add optional properties if they have values
+    if (viewClass) {
+      route.viewClass = viewClass;
+    }
+    if (isAuthRequired) {
+      route.requiresAuth = isAuthRequired;
+    }
+    if (legacyUnauthHandler) {
+      route.unauthenticatedHandler = (matches: Record<string, string>) => {
         // Map captured groups to param names
         const params: Record<string, string> = {};
         Object.keys(matches).forEach((key, index) => {
-          if (paramNames[index]) {
-            params[paramNames[index]] = matches[key];
+          const paramName = paramNames[index];
+          const matchValue = matches[key];
+          if (paramName && matchValue) {
+            params[paramName] = matchValue;
           }
         });
         legacyUnauthHandler(params);
-      } : undefined
-    });
+      };
+    }
+
+    this.routes.push(route);
   }
 
   /**
@@ -156,7 +171,9 @@ export class Router {
       this.isNavigatingHistory = true;
       this.historyIndex--;
       const path = this.history[this.historyIndex];
-      this.navigate(path);
+      if (path) {
+        this.navigate(path);
+      }
       this.isNavigatingHistory = false;
     }
   }
@@ -169,7 +186,9 @@ export class Router {
       this.isNavigatingHistory = true;
       this.historyIndex++;
       const path = this.history[this.historyIndex];
-      this.navigate(path);
+      if (path) {
+        this.navigate(path);
+      }
       this.isNavigatingHistory = false;
     }
   }
@@ -255,7 +274,10 @@ export class Router {
         // Extract params (skip first match which is full string)
         const params: Record<string, string> = {};
         for (let i = 1; i < match.length; i++) {
-          params[i.toString()] = match[i];
+          const matchValue = match[i];
+          if (matchValue !== undefined) {
+            params[i.toString()] = matchValue;
+          }
         }
 
         // Check if route requires authentication

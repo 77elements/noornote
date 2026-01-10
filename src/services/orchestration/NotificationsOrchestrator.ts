@@ -66,6 +66,9 @@ export class NotificationsOrchestrator extends Orchestrator {
   /** Map of user event ID -> ancestry (root/parent IDs) for muted thread checking */
   private userEventAncestry: Map<string, { rootId: string | null; parentId: string | null }> = new Map();
 
+  /** Cached RelayConfig instance (lazy-loaded) */
+  private relayConfig: any = null;
+
   private constructor() {
     super('NotificationsOrchestrator');
     this.transport = NostrTransport.getInstance();
@@ -136,9 +139,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     // Step 3: Subscribe to new notifications (real-time)
     const now = Math.floor(Date.now() / 1000);
-    const { RelayConfig } = await import('../RelayConfig');
-    const relayConfig = RelayConfig.getInstance();
-    const relays = await relayConfig.getReadRelays();
+    const relays = await this.getReadRelays();
 
     // Filter 1: Direct mentions/tags (#p filter)
     const ptagFilter: NDKFilter = {
@@ -200,10 +201,7 @@ export class NotificationsOrchestrator extends Orchestrator {
    */
   private async fetchInitialNotifications(userPubkey: string): Promise<void> {
     try {
-      const { RelayConfig } = await import('../RelayConfig');
-      const relayConfig = RelayConfig.getInstance();
-      const relays = await relayConfig.getReadRelays();
-
+      const relays = await this.getReadRelays();
       this.systemLogger.info('NotificationsOrchestrator', '📥 Fetching last 100 notifications from relays');
 
       // Build filter for last 100 notifications
@@ -245,7 +243,6 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Emit badge update after initial notifications are loaded
       this.eventBus.emit('notifications:badge-update');
     } catch (error) {
-      console.error('🔔 [fetchInitialNotifications] ERROR:', error);
       this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch initial notifications:', error);
     }
   }
@@ -274,10 +271,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return;
 
-      const { RelayConfig } = await import('../RelayConfig');
-      const relayConfig = RelayConfig.getInstance();
-      const relays = await relayConfig.getReadRelays();
-
+      const relays = await this.getReadRelays();
       this.systemLogger.info('NotificationsOrchestrator', `📥 Fetching new notifications (since: ${since})`);
 
       // Build filter for new notifications
@@ -338,10 +332,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return [];
 
-      const { RelayConfig } = await import('../RelayConfig');
-      const relayConfig = RelayConfig.getInstance();
-      const relays = await relayConfig.getReadRelays();
-
+      const relays = await this.getReadRelays();
       this.systemLogger.info('NotificationsOrchestrator', `📥 Fetching ${limit} older notifications (until: ${until})`);
 
       // Build filter for older notifications
@@ -420,8 +411,6 @@ export class NotificationsOrchestrator extends Orchestrator {
       return;
     }
 
-    // Cache event
-
     // Detect notification type
     const type = this.getNotificationType(event);
 
@@ -447,10 +436,7 @@ export class NotificationsOrchestrator extends Orchestrator {
    */
   private async fetchAndStoreUserEvents(userPubkey: string): Promise<void> {
     try {
-      const { RelayConfig } = await import('../RelayConfig');
-      const relayConfig = RelayConfig.getInstance();
-      const relays = await relayConfig.getReadRelays();
-
+      const relays = await this.getReadRelays();
       const userEvents = await this.transport.fetch(relays, [{
         authors: [userPubkey],
         kinds: [1, 30023], // notes + long-form articles
@@ -463,15 +449,19 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Store ancestry (root/parent) for each user event (for muted thread checking)
       const ancestryMap: Record<string, { rootId: string | null; parentId: string | null }> = {};
       for (const event of userEvents) {
+        if (!event.id) continue;
+
         const eTags = event.tags.filter(t => t[0] === 'e');
 
         // Extract root ID (NIP-10: "root" marker or first e-tag if multiple)
         const rootTag = eTags.find(t => t[3] === 'root');
-        const rootId = rootTag ? rootTag[1] : (eTags.length > 1 ? eTags[0][1] : null);
+        const firstETag = eTags[0];
+        const rootId = rootTag?.[1] ?? (eTags.length > 1 && firstETag ? firstETag[1] : null) ?? null;
 
         // Extract parent ID (NIP-10: "reply" marker or last e-tag)
         const replyTag = eTags.find(t => t[3] === 'reply');
-        const parentId = replyTag ? replyTag[1] : (eTags.length > 0 ? eTags[eTags.length - 1][1] : null);
+        const lastETag = eTags[eTags.length - 1];
+        const parentId = replyTag?.[1] ?? (eTags.length > 0 && lastETag ? lastETag[1] : null) ?? null;
 
         ancestryMap[event.id] = { rootId, parentId };
         this.userEventAncestry.set(event.id, { rootId, parentId });
@@ -573,6 +563,17 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Get read relays (lazy-loads RelayConfig)
+   */
+  private async getReadRelays(): Promise<string[]> {
+    if (!this.relayConfig) {
+      const { RelayConfig } = await import('../RelayConfig');
+      this.relayConfig = RelayConfig.getInstance();
+    }
+    return this.relayConfig.getReadRelays();
+  }
+
+  /**
    * Load user event ancestry from per-account storage into memory
    */
   private loadUserEventAncestry(): void {
@@ -596,9 +597,8 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     // Get the e-tag from the notification (points to user's event)
     const eTag = event.tags.find(t => t[0] === 'e');
-    if (!eTag) return false;
-
-    const targetEventId = eTag[1];
+    const targetEventId = eTag?.[1];
+    if (!targetEventId) return false;
 
     // Check if target event itself is muted
     if (this.mutedEventIds.has(targetEventId)) return true;
@@ -617,8 +617,7 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Get last seen timestamp from per-account storage
    */
   private getLastSeenTimestamp(): number | null {
-    const stored = this.perAccountStorage.get<number | null>(StorageKeys.NOTIFICATIONS_LAST_SEEN, null);
-    return stored;
+    return this.perAccountStorage.get<number | null>(StorageKeys.NOTIFICATIONS_LAST_SEEN, null);
   }
 
   /**
@@ -631,6 +630,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     for (const match of mentions) {
       try {
         const nip19 = match[1];
+        if (!nip19) continue;
 
         if (nip19.startsWith('npub')) {
           const decoded = decodeNip19(nip19);
@@ -671,9 +671,11 @@ export class NotificationsOrchestrator extends Orchestrator {
       // 2. An 'e' tag with marker 'root' pointing to user's event AND no other 'reply' marker
       const replyTag = event.tags.find(t => t[0] === 'e' && t[3] === 'reply');
       const rootTag = event.tags.find(t => t[0] === 'e' && t[3] === 'root');
+      const replyTargetId = replyTag?.[1];
+      const rootTargetId = rootTag?.[1];
 
-      const isDirectReplyToUser = (replyTag && userEventIds.includes(replyTag[1])) ||
-                                  (rootTag && userEventIds.includes(rootTag[1]) && !replyTag);
+      const isDirectReplyToUser = (replyTargetId && userEventIds.includes(replyTargetId)) ||
+                                  (rootTargetId && userEventIds.includes(rootTargetId) && !replyTag);
 
       // Priority 1: Direct reply to user's own event
       if (isDirectReplyToUser) return 'reply';
@@ -718,7 +720,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Get the notification (it was just added)
       const notification = this.notifications.find(n => n.event.id === event.id);
       if (notification) {
-        this.systemLogger.info('NotificationsOrchestrator', `🔔 New ${notification.type}: ${event.id.slice(0, 8)}...`);
+        this.systemLogger.info('NotificationsOrchestrator', `🔔 New ${notification.type}: ${event.id?.slice(0, 8) ?? 'unknown'}...`);
 
         // Trigger callback for real-time updates
         if (this.onNewNotificationCallback) {
@@ -768,7 +770,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     if (this.mutedEventIds.size === 0) return false;
 
     // Check 1: Event itself is muted
-    if (this.mutedEventIds.has(event.id)) return true;
+    if (event.id && this.mutedEventIds.has(event.id)) return true;
 
     // Extract e-tags for parent/root check
     const eTags = event.tags.filter(tag => tag[0] === 'e');
@@ -776,12 +778,14 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     // Check 2: Root is muted (NIP-10: "root" marker or first e-tag)
     const rootTag = eTags.find(tag => tag[3] === 'root');
-    const rootId = rootTag ? rootTag[1] : (eTags.length > 1 ? eTags[0][1] : null);
+    const firstETag = eTags[0];
+    const rootId = rootTag?.[1] ?? (eTags.length > 1 && firstETag ? firstETag[1] : null);
     if (rootId && this.mutedEventIds.has(rootId)) return true;
 
     // Check 3: Parent is muted (NIP-10: "reply" marker or last e-tag)
     const replyTag = eTags.find(tag => tag[3] === 'reply');
-    const parentId = replyTag ? replyTag[1] : eTags[eTags.length - 1][1];
+    const lastETag = eTags[eTags.length - 1];
+    const parentId = replyTag?.[1] ?? lastETag?.[1];
     if (parentId && this.mutedEventIds.has(parentId)) return true;
 
     return false;

@@ -36,69 +36,30 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
     return FollowListOrchestrator.instance;
   }
 
-  /**
-   * Check if NIP-51 private follows feature is enabled
-   */
   public isPrivateFollowsEnabled(): boolean {
-    try {
-      const stored = localStorage.getItem(this.featureFlagKey);
-      return stored === 'true';
-    } catch {
-      return false;
-    }
+    return localStorage.getItem(this.featureFlagKey) === 'true';
   }
 
-  /**
-   * Enable/disable NIP-51 private follows feature
-   */
   public setPrivateFollowsEnabled(enabled: boolean): void {
-    try {
-      localStorage.setItem(this.featureFlagKey, enabled.toString());
-    } catch (error) {
-      console.error('Failed to save NIP-51 feature flag:', error);
-    }
+    localStorage.setItem(this.featureFlagKey, enabled.toString());
   }
 
-  /**
-   * Check if migration to file storage is complete
-   */
   private isMigrated(): boolean {
-    try {
-      const stored = localStorage.getItem(this.migrationFlagKey);
-      return stored === 'true';
-    } catch {
-      return false;
-    }
+    return localStorage.getItem(this.migrationFlagKey) === 'true';
   }
 
-  /**
-   * Mark migration as complete
-   */
   private setMigrated(): void {
-    try {
-      localStorage.setItem(this.migrationFlagKey, 'true');
-    } catch (error) {
-      this.systemLogger.error('FollowListOrchestrator', `Failed to save migration flag: ${error}`);
-    }
+    localStorage.setItem(this.migrationFlagKey, 'true');
   }
 
-  /**
-   * Check if follow list is currently syncing
-   */
   public isSyncInProgress(): boolean {
     return this.isSyncing;
   }
 
-  /**
-   * Get last synced follow count
-   */
   public getLastSyncedFollowCount(): number {
     return this.lastSyncedFollowCount;
   }
 
-  /**
-   * Get last sync timestamp
-   */
   public getLastSyncTimestamp(): number {
     return this.lastSyncTimestamp;
   }
@@ -204,28 +165,31 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
 
       // Extract public follows with NIP-02 metadata
       let publicFollows: FollowItem[] = [];
-      if (kind3Events.length > 0) {
-        const followEvent = kind3Events[0];
-
+      const followEvent = kind3Events[0];
+      if (followEvent) {
         publicFollows = followEvent.tags
-          .filter(tag => tag[0] === 'p' && tag[1])
-          .map(tag => ({
-            pubkey: tag[1],
-            relay: tag[2] || undefined,
-            petname: tag[3] || undefined,
-            addedAt: followEvent.created_at
-          }));
+          .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'p' && typeof tag[1] === 'string')
+          .map(tag => {
+            const item: FollowItem = {
+              id: tag[1],
+              pubkey: tag[1],
+              addedAt: followEvent.created_at
+            };
+            if (tag[2]) item.relay = tag[2];
+            if (tag[3]) item.petname = tag[3];
+            return item;
+          });
       }
 
       // Extract private follows from kind:30000
       let privateFollows: FollowItem[] = [];
-      if (this.isPrivateFollowsEnabled() && kind30000Events.length > 0) {
-        const privateListEvent = kind30000Events[0];
-
+      const privateListEvent = kind30000Events[0];
+      if (this.isPrivateFollowsEnabled() && privateListEvent) {
         try {
           const { parsePrivateFollowListEvent } = await import('../../helpers/parsePrivateFollowListEvent');
           const privatePubkeys = await parsePrivateFollowListEvent(privateListEvent, pubkey);
           privateFollows = privatePubkeys.map(pk => ({
+            id: pk,
             pubkey: pk,
             addedAt: privateListEvent.created_at,
             isPrivate: true
@@ -257,37 +221,25 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
 
   /**
    * Fetch follows from relays (read-only, no local changes)
-   * Wrapper for GenericListOrchestrator.fetchFromRelays()
    */
   public async fetchFollowsFromRelays(pubkey: string): Promise<FetchFromRelaysResult<FollowItem>> {
-    return await this.fetchFromRelays(pubkey);
-  }
-
-  /**
-   * Sync from relays (manual sync)
-   * Wrapper for GenericListOrchestrator.syncFromRelays()
-   */
-  public override async syncFromRelays(pubkey: string): Promise<{ added: number; total: number }> {
-    return await super.syncFromRelays(pubkey);
+    return this.fetchFromRelays(pubkey);
   }
 
   /**
    * Add follow (browser storage only)
-   * Wrapper for GenericListOrchestrator.addItem()
    */
   public async addFollow(pubkey: string, isPrivate: boolean): Promise<void> {
-    const item: FollowItem = {
+    await this.addItem({
+      id: pubkey,
       pubkey,
       addedAt: Math.floor(Date.now() / 1000),
-      isPrivate: isPrivate
-    };
-
-    await this.addItem(item);
+      isPrivate
+    });
   }
 
   /**
    * Remove follow (browser storage only)
-   * Wrapper for GenericListOrchestrator.removeItem()
    */
   public async removeFollow(pubkey: string): Promise<void> {
     await this.removeItem(pubkey);
@@ -295,10 +247,9 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
 
   /**
    * Get all follows with their status (public/private/both)
-   * Wrapper for GenericListOrchestrator.getAllItemsWithStatus()
    */
   public async getAllFollowsWithStatus(): Promise<Map<string, { public: boolean; private: boolean }>> {
-    return await this.getAllItemsWithStatus();
+    return this.getAllItemsWithStatus();
   }
 
   /**
@@ -376,13 +327,7 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
 
       return true;
     } catch (error) {
-      console.error('❌ FollowListOrchestrator: Failed to publish follow list');
-      console.error('Error type:', typeof error);
-      console.error('Error object:', error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-      }
+      this.systemLogger.error('FollowListOrchestrator', `Failed to publish follow list: ${error}`);
       throw error;
     }
   }
@@ -407,6 +352,10 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
       }
 
       const kind3Event = kind3Events[0];
+      if (!kind3Event) {
+        this.systemLogger.warn('FollowListOrchestrator', 'No kind:3 event found for migration');
+        return false;
+      }
 
       // Check if content field contains encrypted data
       if (!kind3Event.content || kind3Event.content.trim() === '') {
@@ -416,13 +365,17 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
 
       // Extract public follows from tags
       const publicFollows: FollowItem[] = kind3Event.tags
-        .filter(tag => tag[0] === 'p' && tag[1])
-        .map(tag => ({
-          pubkey: tag[1],
-          relay: tag[2] || undefined,
-          petname: tag[3] || undefined,
-          addedAt: kind3Event.created_at
-        }));
+        .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'p' && typeof tag[1] === 'string')
+        .map(tag => {
+          const item: FollowItem = {
+            id: tag[1],
+            pubkey: tag[1],
+            addedAt: kind3Event.created_at
+          };
+          if (tag[2]) item.relay = tag[2];
+          if (tag[3]) item.petname = tag[3];
+          return item;
+        });
 
       // Decrypt legacy private follows from content
       let legacyPrivatePubkeys: string[] = [];
@@ -440,6 +393,7 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
       }
 
       const legacyPrivateFollows: FollowItem[] = legacyPrivatePubkeys.map(pk => ({
+        id: pk,
         pubkey: pk,
         addedAt: kind3Event.created_at,
         isPrivate: true
@@ -460,58 +414,40 @@ export class FollowListOrchestrator extends GenericListOrchestrator<FollowItem> 
   }
 
   /**
-   * Migrate public follows → private follows
+   * Migrate all follows to private
    */
   public async migrateToPrivate(pubkey: string): Promise<boolean> {
-    try {
-      const followList = await this.getCombinedFollowList(pubkey);
-
-      if (followList.length === 0) {
-        throw new Error('No follows to migrate');
-      }
-
-      // Mark all as private
-      const privateFollows = followList.map(f => ({ ...f, isPrivate: true }));
-
-      // Publish (skip validation)
-      await this.publishFollowList([], privateFollows, true);
-
-      this.systemLogger.info('FollowListOrchestrator',
-        `Migrated ${followList.length} follows to private`
-      );
-
-      return true;
-    } catch (error) {
-      this.systemLogger.error('FollowListOrchestrator', `Migration failed: ${error}`);
-      throw error;
-    }
+    return this.migrateFollowsPrivacy(pubkey, true);
   }
 
   /**
-   * Migrate private follows → public follows
+   * Migrate all follows to public
    */
   public async migrateToPublic(pubkey: string): Promise<boolean> {
-    try {
-      const followList = await this.getCombinedFollowList(pubkey);
+    return this.migrateFollowsPrivacy(pubkey, false);
+  }
 
-      if (followList.length === 0) {
-        throw new Error('No follows to migrate');
-      }
+  /**
+   * Internal helper: migrate all follows to specified privacy setting
+   */
+  private async migrateFollowsPrivacy(pubkey: string, toPrivate: boolean): Promise<boolean> {
+    const followList = await this.getCombinedFollowList(pubkey);
 
-      // Mark all as public
-      const publicFollows = followList.map(f => ({ ...f, isPrivate: false }));
-
-      // Publish (skip validation)
-      await this.publishFollowList(publicFollows, [], true);
-
-      this.systemLogger.info('FollowListOrchestrator',
-        `Migrated ${followList.length} follows to public`
-      );
-
-      return true;
-    } catch (error) {
-      this.systemLogger.error('FollowListOrchestrator', `Migration failed: ${error}`);
-      throw error;
+    if (followList.length === 0) {
+      throw new Error('No follows to migrate');
     }
+
+    const migratedFollows = followList.map(f => ({ ...f, isPrivate: toPrivate }));
+    const publicFollows = toPrivate ? [] : migratedFollows;
+    const privateFollows = toPrivate ? migratedFollows : [];
+
+    await this.publishFollowList(publicFollows, privateFollows, true);
+
+    const visibility = toPrivate ? 'private' : 'public';
+    this.systemLogger.info('FollowListOrchestrator',
+      `Migrated ${followList.length} follows to ${visibility}`
+    );
+
+    return true;
   }
 }

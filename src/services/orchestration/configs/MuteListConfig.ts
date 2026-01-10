@@ -152,13 +152,6 @@ export const muteListConfig: ListConfig<MuteItem> = {
         }
         throw new Error('No encryption available');
       }
-    } else if (authMethod === 'nsec') {
-      const currentUser = authService.getCurrentUser();
-      if (!currentUser?.privateKey) {
-        throw new Error('No private key available');
-      }
-      const { nip04 } = await import('../../NostrToolsAdapter');
-      return await nip04.encrypt(currentUser.privateKey, pubkey, plaintext);
     }
 
     throw new Error(`Unsupported auth method: ${authMethod}`);
@@ -197,12 +190,6 @@ export const muteListConfig: ListConfig<MuteItem> = {
         }
         if (!plaintext && window.nostr?.nip04?.decrypt) {
           plaintext = await window.nostr.nip04.decrypt(pubkey, content);
-        }
-      } else if (authMethod === 'nsec') {
-        const currentUser = authService.getCurrentUser();
-        if (currentUser?.privateKey) {
-          const { nip04 } = await import('../../NostrToolsAdapter');
-          plaintext = await nip04.decrypt(currentUser.privateKey, pubkey, content);
         }
       }
 

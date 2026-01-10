@@ -96,11 +96,11 @@ export class InteractionStatusLine {
       this.zapManager = new ZapManager({
         noteId: this.config.noteId,
         authorPubkey: this.config.authorPubkey,
-        articleEventId: this.config.articleEventId, // LONG-FORM ARTICLES ONLY
         onStatsUpdate: (amount: number) => {
           this.updateStats({ zaps: this.stats.zaps + amount });
         },
-        onCustomZap: this.config.onZap
+        ...(this.config.articleEventId && { articleEventId: this.config.articleEventId }),
+        ...(this.config.onZap && { onCustomZap: this.config.onZap })
       });
     }
 
@@ -112,20 +112,23 @@ export class InteractionStatusLine {
         onStatsUpdate: () => {
           this.updateStats({ likes: this.stats.likes + 1 });
         },
-        onLike: this.config.onLike
+        ...(this.config.onLike && { onLike: this.config.onLike })
       });
     }
 
-    // Initialize RepostManager
-    this.repostManager = new RepostManager({
-      noteId: this.config.noteId,
-      originalEvent: this.config.originalEvent,
-      onStatsUpdate: () => {
-        this.updateStats({ reposts: this.stats.reposts + 1 });
-      },
-      onRepost: this.config.onRepost,
-      onQuote: this.config.onReply
-    });
+    // Initialize RepostManager (requires authorPubkey)
+    if (this.config.authorPubkey) {
+      this.repostManager = new RepostManager({
+        noteId: this.config.noteId,
+        authorPubkey: this.config.authorPubkey,
+        onStatsUpdate: () => {
+          this.updateStats({ reposts: this.stats.reposts + 1 });
+        },
+        ...(this.config.originalEvent && { originalEvent: this.config.originalEvent }),
+        ...(this.config.onRepost && { onRepost: this.config.onRepost }),
+        ...(this.config.onReply && { onQuote: this.config.onReply })
+      });
+    }
   }
 
   /**

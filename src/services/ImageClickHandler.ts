@@ -98,15 +98,18 @@ export class ImageClickHandler {
 
     // Open image viewer
     const viewer = getImageViewer();
-    viewer.open({
+    const options: Parameters<typeof viewer.open>[0] = {
       images: imageUrls,
-      initialIndex: imageIndex,
-      sourceEvent: eventId && authorPubkey ? {
+      initialIndex: imageIndex
+    };
+    if (eventId && authorPubkey) {
+      options.sourceEvent = {
         eventId,
         authorPubkey,
         isNSFW: isNSFWAttr === 'true'
-      } : undefined
-    });
+      };
+    }
+    viewer.open(options);
   }
 }
 

@@ -37,16 +37,16 @@ import { CustomDropdown } from '../ui/CustomDropdown';
 import { TribeOrchestrator } from '../../services/orchestration/TribeOrchestrator';
 import { TribeFolderService } from '../../services/TribeFolderService';
 import { ToastService } from '../../services/ToastService';
+import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
-dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
+dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
 
 // Shared promise map to prevent duplicate profile loads on rapid navigation
 type ProfileLoadResult = {
   profile: UserProfile;
   following: string[];
-  followEvent: any;
 };
 const loadingProfiles: Map<string, Promise<ProfileLoadResult>> = new Map();
 
@@ -225,13 +225,9 @@ export class ProfileView extends View {
 
       this.followingCount = following.length;
 
-      // Check if this profile user follows the logged-in user
+      // Check follow relationships (only for other profiles when logged in)
       if (currentUser && this.pubkey !== currentUser.pubkey) {
         this.followsYou = following.includes(currentUser.pubkey);
-      }
-
-      // Check if current user follows this profile
-      if (currentUser && this.pubkey !== currentUser.pubkey) {
         await this.followManager.checkFollowStatus();
       }
 
@@ -271,7 +267,7 @@ export class ProfileView extends View {
     try {
       const count = await this.followerCountService.getFollowerCount(
         this.pubkey,
-        (currentCount, relay) => {
+        (currentCount, _relay) => {
           // Update UI after each relay
           this.followerCount = currentCount;
           this.updateFollowerDisplay();
@@ -324,41 +320,8 @@ export class ProfileView extends View {
         const storage = PerAccountLocalStorage.getInstance();
         const calendarSystem = storage.get<string>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
 
-        if (calendarSystem === 'gregorian') {
-          // US format: "Jan 25, 2023"
-          const month = date.toLocaleDateString('en-US', { month: 'short' });
-          const day = date.getDate();
-          const year = date.getFullYear();
-          this.joinedDate = `${month} ${day}, ${year}`;
-        } else if (calendarSystem === 'hijri') {
-          // International Hijri format: "15. Jumada al-Akhirah 1444"
-          const hijriDate = dayjs(date).toCalendarSystem('hijri');
-          const hijriMonths = [
-            'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
-            'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
-            'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
-          ];
-          const day = hijriDate.date();
-          const month = hijriMonths[hijriDate.month()];
-          const year = hijriDate.year();
-          this.joinedDate = `${day}. ${month} ${year}`;
-        } else if (calendarSystem === 'both') {
-          // Both formats: "Jan 25, 2023 | 15. Jumada al-Akhirah 1444"
-          const gregorianMonth = date.toLocaleDateString('en-US', { month: 'short' });
-          const gregorianDay = date.getDate();
-          const gregorianYear = date.getFullYear();
-
-          const hijriDate = dayjs(date).toCalendarSystem('hijri');
-          const hijriMonths = [
-            'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
-            'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
-            'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
-          ];
-          const hijriDay = hijriDate.date();
-          const hijriMonth = hijriMonths[hijriDate.month()];
-          const hijriYear = hijriDate.year();
-          this.joinedDate = `${gregorianMonth} ${gregorianDay}, ${gregorianYear}  |  ${hijriDay}. ${hijriMonth} ${hijriYear}`;
-        }
+        // Format date(s) based on calendar system
+        this.joinedDate = this.formatJoinedDate(date, calendarSystem);
       } else {
         this.joinedDate = null;
       }
@@ -371,6 +334,28 @@ export class ProfileView extends View {
       this.isLoadingJoinedDate = false;
       this.updateJoinedDateDisplay();
     }
+  }
+
+  /**
+   * Format joined date based on calendar system
+   */
+  private formatJoinedDate(date: Date, calendarSystem: string): string {
+    const gregorianFormatted = `${date.toLocaleDateString('en-US', { month: 'short' })} ${date.getDate()}, ${date.getFullYear()}`;
+
+    if (calendarSystem === 'gregorian') {
+      return gregorianFormatted;
+    }
+
+    // Format Hijri date
+    const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
+    const hijriFormatted = `${hijriDate.date()}. ${HIJRI_MONTHS[hijriDate.month()]} ${hijriDate.year()}`;
+
+    if (calendarSystem === 'hijri') {
+      return hijriFormatted;
+    }
+
+    // 'both' - show both formats
+    return `${gregorianFormatted}  |  ${hijriFormatted}`;
   }
 
   /**
@@ -399,11 +384,7 @@ export class ProfileView extends View {
         this.userService.getUserFollowing(this.pubkey)
       ]);
 
-      return {
-        profile,
-        following,
-        followEvent: null
-      };
+      return { profile, following };
     } finally {
       // Remove from loading map after completion (success or error)
       loadingProfiles.delete(this.pubkey);
@@ -430,7 +411,7 @@ export class ProfileView extends View {
     const about = profile.about || '';
     const website = profile.website || '';
     const banner = profile.banner || '';
-    const picture = profile.picture || this.userProfileService.getProfilePicture(this.pubkey);
+    const picture = profile.picture || this.userProfileService.getProfilePicture(this.pubkey) || '';
     // Multiple NIP-05: prefer nip05s from tags, fallback to single nip05 from content
     const nip05s = profile.nip05s && profile.nip05s.length > 0
       ? profile.nip05s
@@ -639,7 +620,7 @@ export class ProfileView extends View {
 
     editBtn.addEventListener('click', async () => {
       // Check authentication with AuthGuard
-      const isAuthenticated = await AuthGuard.requireAuth();
+      const isAuthenticated = AuthGuard.requireAuth('edit profile');
       if (!isAuthenticated) return;
 
       // Open profile edit modal
@@ -662,8 +643,7 @@ export class ProfileView extends View {
     const muteButton = this.muteManager.renderMuteButton();
 
     // Add article notification checkbox (only if logged in and not own profile)
-    const authService = AuthService.getInstance();
-    const currentUser = authService.getCurrentUser();
+    const currentUser = this.authService.getCurrentUser();
 
     if (!currentUser || this.pubkey === currentUser.pubkey) {
       return muteButton;
@@ -798,7 +778,7 @@ export class ProfileView extends View {
       e.preventDefault();
 
       // Check authentication
-      const isAuthenticated = await AuthGuard.requireAuth();
+      const isAuthenticated = AuthGuard.requireAuth('add to tribe');
       if (!isAuthenticated) return;
 
       // Get all tribes
@@ -1067,9 +1047,7 @@ export class ProfileView extends View {
    * Save view state (implements View base class)
    */
   public override saveState(): void {
-    // ProfileView has its own scroll container (.profile-view)
     const position = this.container.scrollTop;
-    console.log(`💾 ProfileView: Saving scroll position: ${position}px`);
     this.appState.setState('view', { profileScrollPosition: position });
   }
 
@@ -1077,19 +1055,12 @@ export class ProfileView extends View {
    * Restore view state (implements View base class)
    */
   public override restoreState(): void {
-    // ProfileView has its own scroll container (.profile-view)
     const savedPosition = this.appState.getState('view').profileScrollPosition;
-
-    console.log(`📜 ProfileView: Attempting to restore scroll position: ${savedPosition}px`);
-
     if (savedPosition !== undefined && savedPosition !== null) {
       // Use setTimeout to ensure DOM is fully rendered before scrolling
       setTimeout(() => {
         this.container.scrollTop = savedPosition;
-        console.log(`✅ ProfileView: Scroll position restored to ${savedPosition}px`);
       }, 0);
-    } else {
-      console.log(`❌ ProfileView: Cannot restore scroll - position: ${savedPosition}`);
     }
   }
 

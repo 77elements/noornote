@@ -38,6 +38,14 @@ export interface ZapResult {
   amount?: number; // Amount in sats (for optimistic UI update)
 }
 
+interface ProfileWithLightning {
+  pubkey: string;
+  lud16?: string;
+  lud06?: string;
+  name?: string;
+  display_name?: string;
+}
+
 export class ZapService {
   private static instance: ZapService;
   private nwcService: NWCService;
@@ -75,37 +83,58 @@ export class ZapService {
   }
 
   /**
-   * Send quick zap with default amount and comment from settings
-   * @param noteId - Note ID or addressable identifier for articles
-   * @param authorPubkey - Author's pubkey
-   * @param articleEventId - LONG-FORM ARTICLES ONLY: Event ID for proper tagging
+   * Fetch with timeout wrapper
    */
-  public async sendQuickZap(noteId: string, authorPubkey: string, articleEventId?: string): Promise<ZapResult> {
-    // Check NWC connection
+  private async fetchWithTimeout(url: string, timeoutMs: number = 10000): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error(`Fetch timeout (${timeoutMs / 1000}s)`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Check NWC connection and show error if not connected
+   */
+  private checkNWCConnection(): ZapResult | null {
     if (!this.nwcService.isConnected()) {
       ToastService.show('Please connect Lightning Wallet', 'error');
       return { success: false, error: 'NWC not connected' };
     }
+    return null;
+  }
 
-    // Get defaults from Keychain/localStorage
+  /**
+   * Send quick zap with default amount and comment from settings
+   */
+  public async sendQuickZap(noteId: string, authorPubkey: string, articleEventId?: string): Promise<ZapResult> {
+    const connectionError = this.checkNWCConnection();
+    if (connectionError) return connectionError;
+
     const defaults = await this.getZapDefaults();
 
-    return this.sendZap({
+    const zapRequest: ZapRequest = {
       noteId,
       authorPubkey,
       amount: defaults.amount,
-      comment: defaults.comment,
-      articleEventId
-    });
+      comment: defaults.comment
+    };
+    if (articleEventId) zapRequest.articleEventId = articleEventId;
+
+    return this.sendZap(zapRequest);
   }
 
   /**
    * Send custom zap with specified amount and comment
-   * @param noteId - Note ID or addressable identifier for articles
-   * @param authorPubkey - Author's pubkey
-   * @param amount - Amount in sats
-   * @param comment - Optional comment
-   * @param articleEventId - LONG-FORM ARTICLES ONLY: Event ID for proper tagging
    */
   public async sendCustomZap(
     noteId: string,
@@ -114,19 +143,14 @@ export class ZapService {
     comment?: string,
     articleEventId?: string
   ): Promise<ZapResult> {
-    // Check NWC connection
-    if (!this.nwcService.isConnected()) {
-      ToastService.show('Please connect Lightning Wallet', 'error');
-      return { success: false, error: 'NWC not connected' };
-    }
+    const connectionError = this.checkNWCConnection();
+    if (connectionError) return connectionError;
 
-    return this.sendZap({
-      noteId,
-      authorPubkey,
-      amount,
-      comment,
-      articleEventId
-    });
+    const zapRequest: ZapRequest = { noteId, authorPubkey, amount };
+    if (comment) zapRequest.comment = comment;
+    if (articleEventId) zapRequest.articleEventId = articleEventId;
+
+    return this.sendZap(zapRequest);
   }
 
   /**
@@ -216,12 +240,13 @@ export class ZapService {
       }
     });
 
-    return {
+    const result: ZapResult = {
       success: true,
       invoice,
-      preimage: paymentResult.preimage,
-      amount: request.amount // Return amount for ISL optimistic update
+      amount: request.amount
     };
+    if (paymentResult.preimage) result.preimage = paymentResult.preimage;
+    return result;
   }
 
   /**
@@ -235,27 +260,36 @@ export class ZapService {
       let profile = await this.userProfileService.getUserProfile(pubkey);
 
       // Step 2: Check if profile exists AND has lud16/lud06
-      if (!profile || (!profile.lud16 && !profile.lud06)) {
+      let lightningProfile: ProfileWithLightning | null = null;
+      if (profile) {
+        lightningProfile = { pubkey: profile.pubkey };
+        if (profile.lud16) lightningProfile.lud16 = profile.lud16;
+        if (profile.lud06) lightningProfile.lud06 = profile.lud06;
+        if (profile.name) lightningProfile.name = profile.name;
+        if (profile.display_name) lightningProfile.display_name = profile.display_name;
+      }
+
+      if (!lightningProfile || (!lightningProfile.lud16 && !lightningProfile.lud06)) {
         this.systemLogger.info('ZapService', 'No profile or lud16/lud06 found in standard relays, trying user\'s outbound relays...');
 
         // FALLBACK: Fetch profile from user's outbound relays
-        profile = await this.fetchProfileFromUserRelays(pubkey);
+        lightningProfile = await this.fetchProfileFromUserRelays(pubkey);
 
-        if (!profile || (!profile.lud16 && !profile.lud06)) {
+        if (!lightningProfile || (!lightningProfile.lud16 && !lightningProfile.lud06)) {
           this.systemLogger.warn('ZapService', 'No lud16/lud06 found in user\'s relays either');
           return null;
         }
 
-        this.systemLogger.info('ZapService', `Found lud16/lud06 in user's relays: ${profile.lud16 || profile.lud06}`);
+        this.systemLogger.info('ZapService', `Found lud16/lud06 in user's relays: ${lightningProfile.lud16 || lightningProfile.lud06}`);
       } else {
-        this.systemLogger.info('ZapService', `Profile found in standard relays: lud16=${profile.lud16}, lud06=${profile.lud06}`);
+        this.systemLogger.info('ZapService', `Profile found in standard relays: lud16=${lightningProfile.lud16}, lud06=${lightningProfile.lud06}`);
       }
 
       // Step 3: Get zap endpoint (callback + lnurl)
-      const zapEndpoint = await this.getZapEndpoint({
-        lud16: profile.lud16,
-        lud06: profile.lud06
-      });
+      const zapOptions: { lud16?: string; lud06?: string } = {};
+      if (lightningProfile.lud16) zapOptions.lud16 = lightningProfile.lud16;
+      if (lightningProfile.lud06) zapOptions.lud06 = lightningProfile.lud06;
+      const zapEndpoint = await this.getZapEndpoint(zapOptions);
 
       if (!zapEndpoint) {
         this.systemLogger.warn('ZapService', 'No valid zap endpoint found');
@@ -274,42 +308,50 @@ export class ZapService {
    * FALLBACK: Fetch profile from user's outbound relays (Kind 10002 → Kind 0)
    * Only called when lud16/lud06 is missing from standard relay profile
    */
-  private async fetchProfileFromUserRelays(pubkey: string): Promise<any> {
+  private async fetchProfileFromUserRelays(pubkey: string): Promise<ProfileWithLightning | null> {
     try {
       // Step 1: Fetch user's outbound relays (Kind 10002)
       const userRelays = await this.outboundRelaysFetcher.discoverUserRelays([pubkey]);
+      const firstRelay = userRelays[0];
 
-      if (userRelays.length === 0 || userRelays[0].writeRelays.length === 0) {
+      if (!firstRelay || firstRelay.writeRelays.length === 0) {
         this.systemLogger.warn('ZapService', 'No outbound relays found for user');
         return null;
       }
 
-      const writeRelays = userRelays[0].writeRelays;
+      const writeRelays = firstRelay.writeRelays;
       this.systemLogger.info('ZapService', `Found ${writeRelays.length} outbound relays`);
 
       // Step 2: Fetch Kind 0 (profile) from user's outbound relays
       const profiles: NostrEvent[] = [];
 
-      await new Promise<void>(async (resolve) => {
-        const sub = await this.nostrTransport.subscribe(
-          writeRelays,
-          [{ kinds: [0], authors: [pubkey], limit: 1 }],
-          {
-            onEvent: (event: NostrEvent) => {
-              profiles.push(event);
-            },
-            onEose: () => {
-              sub.close();
-              resolve();
-            }
+      const sub = await this.nostrTransport.subscribe(
+        writeRelays,
+        [{ kinds: [0], authors: [pubkey], limit: 1 }],
+        {
+          onEvent: (event: NostrEvent) => {
+            profiles.push(event);
+          },
+          onEose: () => {
+            sub.close();
           }
-        );
+        }
+      );
 
-        // Timeout after 5 seconds
-        setTimeout(() => {
+      // Wait for profile or timeout after 5 seconds
+      await new Promise<void>((resolve) => {
+        const timeoutId = setTimeout(() => {
           sub.close();
           resolve();
         }, 5000);
+
+        const checkInterval = setInterval(() => {
+          if (profiles.length > 0) {
+            clearTimeout(timeoutId);
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 100);
       });
 
       if (profiles.length === 0) {
@@ -319,6 +361,10 @@ export class ZapService {
 
       // Step 3: Parse profile content
       const latestProfile = profiles.sort((a, b) => b.created_at - a.created_at)[0];
+      if (!latestProfile) {
+        this.systemLogger.warn('ZapService', 'No profile found after sort');
+        return null;
+      }
       const profileData = JSON.parse(latestProfile.content);
 
       this.systemLogger.info('ZapService', `Profile fetched from user's relays`);
@@ -365,37 +411,22 @@ export class ZapService {
         return null;
       }
 
-      // Fetch LNURL pay request with 10-second timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      // Fetch LNURL pay request
+      const res = await this.fetchWithTimeout(lnurl);
 
-      try {
-        const res = await fetch(lnurl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (!res.ok) {
-          throw new Error(`LNURL fetch failed: ${res.status}`);
-        }
-
-        const body = await res.json();
-
-        // CRITICAL: Check for Nostr support (NIP-57 requirement)
-        if (body.allowsNostr && body.nostrPubkey) {
-          return {
-            callback: body.callback,
-            lnurl,
-          };
-        } else {
-          this.systemLogger.warn('ZapService', 'LNURL does not support Nostr zaps (allowsNostr or nostrPubkey missing)');
-          return null;
-        }
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          throw new Error('LNURL fetch timeout (10s)');
-        }
-        throw fetchError;
+      if (!res.ok) {
+        throw new Error(`LNURL fetch failed: ${res.status}`);
       }
+
+      const body = await res.json();
+
+      // CRITICAL: Check for Nostr support (NIP-57 requirement)
+      if (body.allowsNostr && body.nostrPubkey) {
+        return { callback: body.callback, lnurl };
+      }
+
+      this.systemLogger.warn('ZapService', 'LNURL does not support Nostr zaps (allowsNostr or nostrPubkey missing)');
+      return null;
     } catch (error) {
       this.systemLogger.error('ZapService', 'Failed to get zap endpoint', error);
       return null;
@@ -449,9 +480,8 @@ export class ZapService {
         pubkey: currentUser.pubkey
       };
 
-      // Sign event with browser extension
-      const signedEvent = await this.authService.signEvent(unsignedEvent);
-      return signedEvent;
+      // Sign event
+      return this.authService.signEvent(unsignedEvent);
     } catch (error) {
       this.systemLogger.error('ZapService', 'Failed to create zap request event', error);
       ErrorService.handle(
@@ -473,44 +503,28 @@ export class ZapService {
     amountSats: number
   ): Promise<string | null> {
     try {
-      // Build callback URL with query parameters
       const amountMillisats = amountSats * 1000;
       const nostrParam = encodeURIComponent(JSON.stringify(zapRequestEvent));
-
       const callbackUrl = `${lnurl}?amount=${amountMillisats}&nostr=${nostrParam}`;
 
-      // Fetch invoice from LNURL server with 10-second timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const response = await this.fetchWithTimeout(callbackUrl);
 
-      try {
-        const response = await fetch(callbackUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-          throw new Error(`LNURL server error: ${response.status}`);
-        }
-
-        const data = await response.json();
-
-        if (data.status === 'ERROR') {
-          throw new Error(data.reason || 'LNURL server returned error');
-        }
-
-        if (!data.pr) {
-          throw new Error('No invoice (pr) in LNURL response');
-        }
-
-        return data.pr; // Lightning invoice
-      } catch (fetchError) {
-        clearTimeout(timeoutId);
-        if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-          throw new Error('Invoice fetch timeout (10s)');
-        }
-        throw fetchError;
+      if (!response.ok) {
+        throw new Error(`LNURL server error: ${response.status}`);
       }
-    } catch (error) {
-      // Silent error - already handled by UI
+
+      const data = await response.json();
+
+      if (data.status === 'ERROR') {
+        throw new Error(data.reason || 'LNURL server returned error');
+      }
+
+      if (!data.pr) {
+        throw new Error('No invoice (pr) in LNURL response');
+      }
+
+      return data.pr;
+    } catch {
       return null;
     }
   }
@@ -541,14 +555,17 @@ export class ZapService {
           }],
           {
             onEvent: (event: NostrEvent) => {
+              const eventId = event.id;
+              if (!eventId) return;
+
               // Security: Verify signature before processing (external source)
               const verification = verificationService.verifyEvent(event);
               if (!verification.valid) {
-                this.systemLogger.warn('ZapService', `Rejected invalid zap receipt ${event.id.slice(0, 8)}: ${verification.error}`);
+                this.systemLogger.warn('ZapService', `Rejected invalid zap receipt ${eventId.slice(0, 8)}: ${verification.error}`);
                 return;
               }
 
-              this.systemLogger.info('ZapService', `Received zap receipt event ${event.id.slice(0, 8)}`);
+              this.systemLogger.info('ZapService', `Received zap receipt event ${eventId.slice(0, 8)}`);
               // Extract bolt11 invoice from zap receipt
               const boltTag = event.tags.find(tag => tag[0] === 'bolt11');
               if (boltTag && boltTag[1] === invoice) {

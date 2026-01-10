@@ -111,7 +111,7 @@ export class EncryptedFileStorage {
     // XOR each byte with corresponding key byte (cycling through key)
     const encrypted = new Uint8Array(textBytes.length);
     for (let i = 0; i < textBytes.length; i++) {
-      encrypted[i] = textBytes[i] ^ keyBytes[i % keyBytes.length];
+      encrypted[i] = textBytes[i]! ^ keyBytes[i % keyBytes.length]!;
     }
 
     // Convert to base64 for storage
@@ -129,7 +129,7 @@ export class EncryptedFileStorage {
     // XOR each byte with corresponding key byte (same operation as encryption)
     const decrypted = new Uint8Array(encrypted.length);
     for (let i = 0; i < encrypted.length; i++) {
-      decrypted[i] = encrypted[i] ^ keyBytes[i % keyBytes.length];
+      decrypted[i] = encrypted[i]! ^ keyBytes[i % keyBytes.length]!;
     }
 
     // Convert back to string
@@ -143,7 +143,7 @@ export class EncryptedFileStorage {
     let binary = '';
     const len = buffer.byteLength;
     for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(buffer[i]);
+      binary += String.fromCharCode(buffer[i]!);
     }
     return btoa(binary);
   }

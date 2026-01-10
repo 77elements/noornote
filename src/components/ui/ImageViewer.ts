@@ -46,11 +46,14 @@ export class ImageViewer {
   private isDragging: boolean = false;
   private dragStart = { x: 0, y: 0 };
   private imagePosition = { x: 0, y: 0 };
-  private sourceEvent?: { eventId: string; authorPubkey: string; isNSFW: boolean };
+  private sourceEvent: { eventId: string; authorPubkey: string; isNSFW: boolean } | undefined;
+
+  // Bound event handlers for proper cleanup
+  private boundMouseMove: ((e: MouseEvent) => void) | null = null;
+  private boundMouseUp: (() => void) | null = null;
 
   constructor() {
     this.handleKeyDown = this.handleKeyDown.bind(this);
-    this.handleBackgroundClick = this.handleBackgroundClick.bind(this);
   }
 
   /**
@@ -79,27 +82,22 @@ export class ImageViewer {
   }
 
   /**
-   * Navigate to next image
+   * Navigate to image at given index, resetting zoom state
    */
-  private next(): void {
-    if (this.currentIndex < this.images.length - 1) {
-      this.currentIndex++;
-      this.zoomLevel = 1;
-      this.imagePosition = { x: 0, y: 0 };
-      this.updateImage();
-    }
+  private navigateTo(index: number): void {
+    if (index < 0 || index >= this.images.length || index === this.currentIndex) return;
+    this.currentIndex = index;
+    this.zoomLevel = 1;
+    this.imagePosition = { x: 0, y: 0 };
+    this.updateImage();
   }
 
-  /**
-   * Navigate to previous image
-   */
+  private next(): void {
+    this.navigateTo(this.currentIndex + 1);
+  }
+
   private previous(): void {
-    if (this.currentIndex > 0) {
-      this.currentIndex--;
-      this.zoomLevel = 1;
-      this.imagePosition = { x: 0, y: 0 };
-      this.updateImage();
-    }
+    this.navigateTo(this.currentIndex - 1);
   }
 
   /**
@@ -133,6 +131,10 @@ export class ImageViewer {
    */
   private async download(): Promise<void> {
     const imageUrl = this.images[this.currentIndex];
+    if (!imageUrl) {
+      ToastService.show('No image to download', 'error');
+      return;
+    }
     const defaultFileName = imageUrl.split('/').pop() || 'image.jpg';
 
     try {
@@ -320,8 +322,9 @@ export class ImageViewer {
     if (!this.container) return;
 
     const img = this.container.querySelector('.image-viewer__image') as HTMLImageElement;
-    if (img) {
-      img.src = this.images[this.currentIndex];
+    const currentSrc = this.images[this.currentIndex];
+    if (img && currentSrc) {
+      img.src = currentSrc;
       img.style.transform = `scale(${this.zoomLevel}) translate(${this.imagePosition.x}px, ${this.imagePosition.y}px)`;
     }
 
@@ -395,7 +398,7 @@ export class ImageViewer {
       }
     });
 
-    document.addEventListener('mousemove', (e: MouseEvent) => {
+    this.boundMouseMove = (e: MouseEvent) => {
       if (this.isDragging && this.zoomLevel > 1) {
         this.imagePosition = {
           x: e.clientX - this.dragStart.x,
@@ -403,16 +406,19 @@ export class ImageViewer {
         };
         this.updateImage();
       }
-    });
+    };
 
-    document.addEventListener('mouseup', () => {
+    this.boundMouseUp = () => {
       if (this.isDragging) {
         this.isDragging = false;
         if (img) {
           img.style.cursor = this.zoomLevel > 1 ? 'grab' : 'default';
         }
       }
-    });
+    };
+
+    document.addEventListener('mousemove', this.boundMouseMove);
+    document.addEventListener('mouseup', this.boundMouseUp);
   }
 
   /**
@@ -424,9 +430,8 @@ export class ImageViewer {
     // Click on content area (but not on image or controls) closes viewer
     const content = this.container?.querySelector('.image-viewer__content');
     content?.addEventListener('click', (e: Event) => {
-      // Only close if clicked directly on content (not on child elements like image/controls)
       if (e.target === content) {
-        this.handleBackgroundClick();
+        this.close();
       }
     });
   }
@@ -436,6 +441,14 @@ export class ImageViewer {
    */
   private detachEventListeners(): void {
     document.removeEventListener('keydown', this.handleKeyDown);
+    if (this.boundMouseMove) {
+      document.removeEventListener('mousemove', this.boundMouseMove);
+      this.boundMouseMove = null;
+    }
+    if (this.boundMouseUp) {
+      document.removeEventListener('mouseup', this.boundMouseUp);
+      this.boundMouseUp = null;
+    }
   }
 
   /**
@@ -465,12 +478,6 @@ export class ImageViewer {
     }
   }
 
-  /**
-   * Handle background click to close
-   */
-  private handleBackgroundClick(): void {
-    this.close();
-  }
 }
 
 // Singleton instance

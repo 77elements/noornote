@@ -54,14 +54,18 @@ export class MentionProfileCache {
 
           if (!username) return;
 
-          suggestions.push({
+          const npub = hexToNpub(pubkey);
+          if (!npub) return;
+
+          const suggestion: MentionSuggestion = {
             pubkey,
-            npub: hexToNpub(pubkey),
+            npub,
             username,
             displayName,
-            picture: profile.picture || '',
-            nip05: profile.nip05
-          });
+            picture: profile.picture || ''
+          };
+          if (profile.nip05) suggestion.nip05 = profile.nip05;
+          suggestions.push(suggestion);
         });
 
         suggestions.sort((a, b) => a.username.localeCompare(b.username));

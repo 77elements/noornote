@@ -170,19 +170,20 @@ export class UserSearchInput {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
-        this.selectNext();
+        this.navigateSelection('next');
         break;
       case 'ArrowUp':
         e.preventDefault();
-        this.selectPrevious();
+        this.navigateSelection('previous');
         break;
-      case 'Enter':
+      case 'Enter': {
         e.preventDefault();
         const selectedUser = this.userResults[this.selectedIndex];
-        if (this.selectedIndex >= 0 && selectedUser) {
+        if (selectedUser) {
           this.selectUser(selectedUser);
         }
         break;
+      }
       case 'Escape':
         e.preventDefault();
         this.hideDropdown();
@@ -276,23 +277,13 @@ export class UserSearchInput {
   private renderDropdown(): void {
     if (!this.dropdownElement) return;
 
-    // Loading state
-    if (this.isSearching && this.userResults.length === 0) {
+    // Loading or empty state
+    if (this.userResults.length === 0) {
+      const message = this.isSearching ? 'Searching...' : 'No users found';
       this.dropdownElement.innerHTML = `
         <div class="search-spotlight__user-section">
           <div class="search-spotlight__user-header">Users</div>
-          <div class="search-spotlight__user-loading">Searching...</div>
-        </div>
-      `;
-      return;
-    }
-
-    // No results
-    if (!this.isSearching && this.userResults.length === 0) {
-      this.dropdownElement.innerHTML = `
-        <div class="search-spotlight__user-section">
-          <div class="search-spotlight__user-header">Users</div>
-          <div class="search-spotlight__user-loading">No users found</div>
+          <div class="search-spotlight__user-loading">${message}</div>
         </div>
       `;
       return;
@@ -338,20 +329,14 @@ export class UserSearchInput {
   }
 
   /**
-   * Select next suggestion
+   * Navigate selection in dropdown
    */
-  private selectNext(): void {
+  private navigateSelection(direction: 'next' | 'previous'): void {
     if (this.userResults.length === 0) return;
-    this.selectedIndex = Math.min(this.selectedIndex + 1, this.userResults.length - 1);
-    this.renderDropdown();
-  }
-
-  /**
-   * Select previous suggestion
-   */
-  private selectPrevious(): void {
-    if (this.userResults.length === 0) return;
-    this.selectedIndex = Math.max(this.selectedIndex - 1, 0);
+    const maxIndex = this.userResults.length - 1;
+    this.selectedIndex = direction === 'next'
+      ? Math.min(this.selectedIndex + 1, maxIndex)
+      : Math.max(this.selectedIndex - 1, 0);
     this.renderDropdown();
   }
 
@@ -395,10 +380,7 @@ export class UserSearchInput {
     this.hideDropdown();
     this.userResults = [];
 
-    // Callback
-    if (this.options.onUserSelected) {
-      this.options.onUserSelected(user.pubkey, user);
-    }
+    this.options.onUserSelected?.(user.pubkey, user);
   }
 
   /**
@@ -418,9 +400,7 @@ export class UserSearchInput {
       this.selectedUserElement.style.display = 'none';
     }
 
-    if (this.options.onSelectionCleared) {
-      this.options.onSelectionCleared();
-    }
+    this.options.onSelectionCleared?.();
   }
 
   /**

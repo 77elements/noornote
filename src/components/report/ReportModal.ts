@@ -75,7 +75,7 @@ export class ReportModal {
    * Render modal content
    */
   private renderContent(options: ReportModalOptions): HTMLElement {
-    const username = this.userProfileService.getUsername(options.reportedPubkey);
+    const username = this.userProfileService.getUsername(options.reportedPubkey) ?? 'Unknown';
     const reportTypes = ReportService.getReportTypes();
 
     const container = document.createElement('div');
@@ -202,7 +202,7 @@ export class ReportModal {
 
     const reportType = selectedRadio.value as ReportType;
     const textarea = modal.querySelector('.report-modal__textarea') as HTMLTextAreaElement;
-    const reason = textarea?.value.trim() || undefined;
+    const reason = textarea?.value.trim();
 
     const submitBtn = modal.querySelector('.btn--submit') as HTMLButtonElement;
 
@@ -213,12 +213,17 @@ export class ReportModal {
     }
 
     try {
-      const result = await this.reportService.createReport({
+      const reportOptions: Parameters<typeof this.reportService.createReport>[0] = {
         type: reportType,
-        reason,
-        reportedPubkey: this.currentOptions.reportedPubkey,
-        reportedEventId: this.currentOptions.reportedEventId
-      });
+        reportedPubkey: this.currentOptions.reportedPubkey
+      };
+      if (reason) {
+        reportOptions.reason = reason;
+      }
+      if (this.currentOptions.reportedEventId) {
+        reportOptions.reportedEventId = this.currentOptions.reportedEventId;
+      }
+      const result = await this.reportService.createReport(reportOptions);
 
       if (result.success) {
         this.systemLogger.info('ReportModal', 'Report submitted successfully');

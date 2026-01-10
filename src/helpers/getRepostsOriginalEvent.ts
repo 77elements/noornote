@@ -45,8 +45,9 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
       const relays = RelayConfig.getInstance().getReadRelays();
 
       const events = await transport.fetch(relays, [{ ids: [eTag[1]] }]);
-      if (events.length > 0) {
-        return events[0];
+      const originalEvent = events[0];
+      if (originalEvent) {
+        return originalEvent;
       }
     } catch (error) {
       console.warn('[getRepostsOriginalEvent] Failed to fetch original note via e-tag:', error);

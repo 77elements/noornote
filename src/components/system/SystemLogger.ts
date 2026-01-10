@@ -120,12 +120,12 @@ export class SystemLogger {
     // Setup scroll detection for both sections
     const globalContent = container.querySelector('.system-logger__global-content');
     if (globalContent) {
-      globalContent.addEventListener('scroll', () => this.handleGlobalScroll());
+      globalContent.addEventListener('scroll', () => this.handleScroll('global'));
     }
 
     const pageContent = container.querySelector('.system-logger__page-content');
     if (pageContent) {
-      pageContent.addEventListener('scroll', () => this.handlePageScroll());
+      pageContent.addEventListener('scroll', () => this.handleScroll('page'));
     }
 
     return container;
@@ -206,31 +206,21 @@ export class SystemLogger {
    * Deduplicates repeated logs by incrementing count instead of creating new entries
    */
   public log(level: LogLevel, category: string, message: string, data?: any): void {
-    // Determine if this is a global or page log
     const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
-
-    // Normalize message for deduplication (remove dynamic parts like #26, IDs, etc.)
     const normalizedMessage = this.normalizeMessageForDeduplication(message);
+    const logs = logCategory === 'global' ? this.globalLogs : this.pageLogs;
 
     // Check if similar log already exists (category + normalized message match)
-    const logs = logCategory === 'global' ? this.globalLogs : this.pageLogs;
     const existingLog = logs.find(log =>
       log.category === category &&
-      this.normalizeMessageForDeduplication(log.message) === normalizedMessage &&
-      log.level === level
+      log.level === level &&
+      this.normalizeMessageForDeduplication(log.message) === normalizedMessage
     );
 
     if (existingLog) {
-      // Increment counter for duplicate log
       existingLog.count = (existingLog.count || 1) + 1;
-      existingLog.timestamp = Date.now(); // Update timestamp to latest occurrence
-
-      // Re-render to show updated count
-      if (logCategory === 'global') {
-        this.renderGlobalLogs();
-      } else {
-        this.renderPageLogs();
-      }
+      existingLog.timestamp = Date.now();
+      this.renderLogs(logCategory);
       return;
     }
 
@@ -245,27 +235,34 @@ export class SystemLogger {
       count: 1
     };
 
-    // Add to appropriate log array
-    if (logCategory === 'global') {
-      this.globalLogs.push(entry);
-      // Keep only last N global logs
-      if (this.globalLogs.length > this.maxGlobalLogs) {
-        this.globalLogs = this.globalLogs.slice(-this.maxGlobalLogs);
+    // Add to appropriate log array and render
+    this.addAndRenderLog(entry, logCategory);
+  }
+
+  /**
+   * Add log entry to array and render
+   */
+  private addAndRenderLog(entry: LogEntry, logCategory: LogCategory): void {
+    const isGlobal = logCategory === 'global';
+    const logs = isGlobal ? this.globalLogs : this.pageLogs;
+    const maxLogs = isGlobal ? this.maxGlobalLogs : this.maxPageLogs;
+    const autoScroll = isGlobal ? this.globalAutoScroll : this.pageAutoScroll;
+
+    logs.push(entry);
+
+    // Keep only last N logs
+    if (logs.length > maxLogs) {
+      if (isGlobal) {
+        this.globalLogs = this.globalLogs.slice(-maxLogs);
+      } else {
+        this.pageLogs = this.pageLogs.slice(-maxLogs);
       }
-      this.renderGlobalLogs();
-      if (this.globalAutoScroll) {
-        this.scrollGlobalToBottom();
-      }
-    } else {
-      this.pageLogs.push(entry);
-      // Keep only last N page logs
-      if (this.pageLogs.length > this.maxPageLogs) {
-        this.pageLogs = this.pageLogs.slice(-this.maxPageLogs);
-      }
-      this.renderPageLogs();
-      if (this.pageAutoScroll) {
-        this.scrollPageToBottom();
-      }
+    }
+
+    this.renderLogs(logCategory);
+
+    if (autoScroll) {
+      this.scrollToBottom(logCategory);
     }
   }
 
@@ -293,6 +290,17 @@ export class SystemLogger {
   }
 
   /**
+   * Render logs by category
+   */
+  private renderLogs(logCategory: LogCategory): void {
+    if (logCategory === 'global') {
+      this.renderGlobalLogs();
+    } else {
+      this.renderPageLogs();
+    }
+  }
+
+  /**
    * Render global logs to UI
    */
   private renderGlobalLogs(): void {
@@ -301,8 +309,6 @@ export class SystemLogger {
 
     logsContainer.innerHTML = this.globalLogs.map(entry => this.renderLogEntry(entry)).join('');
   }
-
-
 
   /**
    * Render page logs to UI (filtered by current Router view)
@@ -376,56 +382,27 @@ export class SystemLogger {
   }
 
   /**
-   * Scroll global section to bottom
+   * Scroll a section to bottom by type
    */
-  private scrollGlobalToBottom(): void {
-    const content = this.element.querySelector('.system-logger__global-content');
+  private scrollToBottom(section: 'global' | 'page'): void {
+    const content = this.element.querySelector(`.system-logger__${section}-content`);
     if (content) {
       content.scrollTop = content.scrollHeight;
     }
   }
 
   /**
-   * Scroll page section to bottom
+   * Handle scroll events for a section - toggles auto-scroll based on position
    */
-  private scrollPageToBottom(): void {
-    const content = this.element.querySelector('.system-logger__page-content');
-    if (content) {
-      content.scrollTop = content.scrollHeight;
-    }
-  }
-
-  /**
-   * Handle global section scroll events
-   */
-  private handleGlobalScroll(): void {
-    const content = this.element.querySelector('.system-logger__global-content');
+  private handleScroll(section: 'global' | 'page'): void {
+    const content = this.element.querySelector(`.system-logger__${section}-content`);
     if (!content) return;
 
     const isAtBottom = content.scrollTop + content.clientHeight >= content.scrollHeight - 10;
+    const autoScrollKey = section === 'global' ? 'globalAutoScroll' : 'pageAutoScroll';
 
-    // Toggle auto-scroll based on scroll position
-    if (isAtBottom && !this.globalAutoScroll) {
-      this.globalAutoScroll = true; // Re-enable if user scrolled back to bottom
-    } else if (!isAtBottom && this.globalAutoScroll) {
-      this.globalAutoScroll = false; // Disable if user scrolled up
-    }
-  }
-
-  /**
-   * Handle page section scroll events
-   */
-  private handlePageScroll(): void {
-    const content = this.element.querySelector('.system-logger__page-content');
-    if (!content) return;
-
-    const isAtBottom = content.scrollTop + content.clientHeight >= content.scrollHeight - 10;
-
-    // Toggle auto-scroll based on scroll position
-    if (isAtBottom && !this.pageAutoScroll) {
-      this.pageAutoScroll = true; // Re-enable if user scrolled back to bottom
-    } else if (!isAtBottom && this.pageAutoScroll) {
-      this.pageAutoScroll = false; // Disable if user scrolled up
+    if (isAtBottom !== this[autoScrollKey]) {
+      this[autoScrollKey] = isAtBottom;
     }
   }
 
@@ -449,23 +426,17 @@ export class SystemLogger {
 
   /**
    * Remove specific log entry by message (for clearing resolved errors)
-   * @param category - Log category to filter
-   * @param message - Exact message to remove
    */
   public removeLog(category: string, message: string): void {
-    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
+    const isGlobal = GLOBAL_CATEGORIES.includes(category);
+    const filterFn = (entry: LogEntry) => !(entry.category === category && entry.message === message);
 
-    if (logCategory === 'global') {
-      this.globalLogs = this.globalLogs.filter(
-        entry => !(entry.category === category && entry.message === message)
-      );
-      this.renderGlobalLogs();
+    if (isGlobal) {
+      this.globalLogs = this.globalLogs.filter(filterFn);
     } else {
-      this.pageLogs = this.pageLogs.filter(
-        entry => !(entry.category === category && entry.message === message)
-      );
-      this.renderPageLogs();
+      this.pageLogs = this.pageLogs.filter(filterFn);
     }
+    this.renderLogs(isGlobal ? 'global' : 'page');
   }
 
   /**

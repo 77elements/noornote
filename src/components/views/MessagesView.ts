@@ -262,27 +262,22 @@ export class MessagesView extends View {
    */
   private async updateBadgeCounts(): Promise<void> {
     const counts = await this.dmService.getUnreadCountsSplit();
+    this.updateBadge('known', counts.known);
+    this.updateBadge('unknown', counts.unknown);
+  }
 
-    // Update known badge
-    const knownBadge = this.container.querySelector('[data-badge="known"]') as HTMLElement;
-    if (knownBadge) {
-      if (counts.known > 0) {
-        knownBadge.textContent = counts.known.toString();
-        knownBadge.style.display = 'inline-flex';
-      } else {
-        knownBadge.style.display = 'none';
-      }
-    }
+  /**
+   * Update a single badge element
+   */
+  private updateBadge(type: TabFilter, count: number): void {
+    const badge = this.container.querySelector(`[data-badge="${type}"]`) as HTMLElement;
+    if (!badge) return;
 
-    // Update unknown badge
-    const unknownBadge = this.container.querySelector('[data-badge="unknown"]') as HTMLElement;
-    if (unknownBadge) {
-      if (counts.unknown > 0) {
-        unknownBadge.textContent = counts.unknown.toString();
-        unknownBadge.style.display = 'inline-flex';
-      } else {
-        unknownBadge.style.display = 'none';
-      }
+    if (count > 0) {
+      badge.textContent = count.toString();
+      badge.style.display = 'inline-flex';
+    } else {
+      badge.style.display = 'none';
     }
   }
 
@@ -548,16 +543,11 @@ export class MessagesView extends View {
     `;
   }
 
-
   /**
    * Toggle menu visibility
    */
   private toggleMenu(): void {
-    if (this.menuOpen) {
-      this.closeMenu();
-    } else {
-      this.openMenu();
-    }
+    this.menuOpen ? this.closeMenu() : this.openMenu();
   }
 
   /**

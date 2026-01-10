@@ -206,9 +206,12 @@ export class SearchResultsView {
     `;
 
     // Setup click handler
+    const noteId = note.id;
+    if (!noteId) return item;
+
     const viewBtn = item.querySelector('.search-results__view-btn');
     viewBtn?.addEventListener('click', () => {
-      this.callbacks.onNoteClick(note.id);
+      this.callbacks.onNoteClick(noteId);
     });
 
     return item;

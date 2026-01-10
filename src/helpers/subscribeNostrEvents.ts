@@ -104,24 +104,45 @@ export function subscribeNostrEvents(
 
   // Subscribe via NostrTransport
   const transport = NostrTransport.getInstance();
-  const sub = transport.subscribe(relays, [filter], {
-    onEvent,
-    onEose
-  });
 
-  // Auto-close timer
+  // Track subscription state
+  let subCloser: { close: () => void } | null = null;
+  let isUnsubscribed = false;
   let autoCloseTimer: number | undefined;
-  if (autoCloseAfterMs !== undefined && autoCloseAfterMs > 0) {
-    autoCloseTimer = window.setTimeout(() => {
-      sub.close();
-    }, autoCloseAfterMs);
+
+  // Build callbacks object - only include onEose if defined
+  const callbacks: { onEvent: (event: NostrEvent, relay: string) => void; onEose?: () => void } = {
+    onEvent: (event: NostrEvent, _relay: string) => onEvent(event)
+  };
+  if (onEose !== undefined) {
+    callbacks.onEose = onEose;
   }
+
+  // Start subscription (async)
+  transport.subscribe(relays, [filter], callbacks).then((closer) => {
+    if (isUnsubscribed) {
+      // Already unsubscribed before subscription started
+      closer.close();
+      return;
+    }
+    subCloser = closer;
+
+    // Set up auto-close timer after subscription is established
+    if (autoCloseAfterMs !== undefined && autoCloseAfterMs > 0) {
+      autoCloseTimer = window.setTimeout(() => {
+        closer.close();
+      }, autoCloseAfterMs);
+    }
+  });
 
   // Return unsubscribe function
   return () => {
+    isUnsubscribed = true;
     if (autoCloseTimer) {
       clearTimeout(autoCloseTimer);
     }
-    sub.close();
+    if (subCloser) {
+      subCloser.close();
+    }
   };
 }

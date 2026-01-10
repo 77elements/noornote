@@ -1,7 +1,6 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type PluginOption } from 'vite';
 import { resolve } from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
-import * as sassEmbedded from 'sass-embedded';
 
 export default defineConfig({
   // Base URL for assets
@@ -70,11 +69,6 @@ export default defineConfig({
   // CSS configuration
   css: {
     devSourcemap: true,
-    preprocessorOptions: {
-      scss: {
-        implementation: sassEmbedded, // Use modern sass-embedded (no deprecation warnings)
-      },
-    },
   },
 
   // TypeScript path resolution
@@ -92,13 +86,13 @@ export default defineConfig({
   // Plugin configuration
   plugins: [
     // Bundle analyzer for development
-    process.env.ANALYZE && visualizer({
+    ...(process.env.ANALYZE ? [visualizer({
       filename: 'dist/bundle-analysis.html',
       open: true,
       gzipSize: true,
       brotliSize: true,
-    }),
-  ].filter(Boolean),
+    }) as PluginOption] : []),
+  ],
 
   // Environment variables
   define: {

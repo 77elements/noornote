@@ -2,12 +2,18 @@
  * Relay Configuration Service
  * Manages user's relay settings and preferences
  * Fetches user's relay list (NIP-65) on login
+ *
+ * Storage: Per-account via PerAccountLocalStorage
+ * - On login: Load from cache first, fetch from relays if no cache
+ * - On logout: Clear memory, keep cache for next login
+ * - Emits 'relays:loaded' after loading (for UI updates)
  */
 
 import { EventBus } from './EventBus';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { UserProfileService } from './UserProfileService';
 import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
+import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 export type RelayType = 'read' | 'write' | 'inbox';
 
@@ -25,15 +31,15 @@ export interface RelayInfo {
 export class RelayConfig {
   private static instance: RelayConfig;
   private relays: Map<string, RelayInfo> = new Map();
-  private storageKey = 'noornote_relay_config';
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
+  private perAccountStorage: PerAccountLocalStorage;
 
   private constructor() {
     this.eventBus = EventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
+    this.perAccountStorage = PerAccountLocalStorage.getInstance();
 
-    this.loadFromStorage();
     this.initializeDefaultRelays();
     this.setupLoginListener();
   }
@@ -46,10 +52,9 @@ export class RelayConfig {
   }
 
   /**
-   * Initialize with aggregator relays for new users
+   * Initialize with aggregator relays for new users / logged out state
    */
   private initializeDefaultRelays(): void {
-    // Only add default relays if user hasn't configured any yet
     if (this.relays.size === 0) {
       const aggregatorUrls = this.getAggregatorRelays();
       aggregatorUrls.forEach(url => {
@@ -62,7 +67,6 @@ export class RelayConfig {
         };
         this.relays.set(url, relay);
       });
-      this.saveToStorage();
     }
   }
 
@@ -73,7 +77,6 @@ export class RelayConfig {
     return Array.from(this.relays.values())
       .filter(relay => relay.isActive && relay.types.includes(type))
       .sort((a, b) => {
-        // Prioritize free relays for reliability, then paid relays
         if (a.isPaid === b.isPaid) return 0;
         return a.isPaid ? 1 : -1;
       });
@@ -81,22 +84,18 @@ export class RelayConfig {
 
   /**
    * Get read relays for timeline loading
-   * In TEST mode: Returns public relays + local relay
    */
   public getReadRelays(): string[] {
     const readRelays = this.getRelaysByType('read')
       .map(relay => relay.url);
 
-    // Check if local relay is enabled - if so, also read from it
     const localRelaySettings = this.loadLocalRelaySettings();
     if (localRelaySettings.enabled) {
-      // Add local relay for reading (to see posts written to it)
       if (!readRelays.includes(localRelaySettings.url)) {
         readRelays.push(localRelaySettings.url);
       }
     }
 
-    // Add aggregator relays for better event discovery
     const aggregatorRelays = this.getAggregatorRelays();
     for (const aggregator of aggregatorRelays) {
       if (!readRelays.includes(aggregator)) {
@@ -150,12 +149,14 @@ export class RelayConfig {
     const existing = this.relays.get(relayInfo.url);
     const relay: RelayInfo = {
       ...relayInfo,
-      errorCount: existing?.errorCount || 0,
-      lastConnected: existing?.lastConnected
+      errorCount: existing?.errorCount || 0
     };
+    if (existing?.lastConnected) {
+      relay.lastConnected = existing.lastConnected;
+    }
 
     this.relays.set(relayInfo.url, relay);
-    this.saveToStorage();
+    this.saveToCache();
   }
 
   /**
@@ -163,7 +164,7 @@ export class RelayConfig {
    */
   public removeRelay(url: string): void {
     this.relays.delete(url);
-    this.saveToStorage();
+    this.saveToCache();
   }
 
   /**
@@ -178,7 +179,7 @@ export class RelayConfig {
       } else if (error) {
         relay.errorCount = (relay.errorCount || 0) + 1;
       }
-      this.saveToStorage();
+      this.saveToCache();
     }
   }
 
@@ -191,7 +192,6 @@ export class RelayConfig {
 
   /**
    * Get aggregator relays that index events from many other relays
-   * Always included in read queries for better event discovery
    */
   public getAggregatorRelays(): string[] {
     return [
@@ -199,14 +199,12 @@ export class RelayConfig {
       'wss://relay.snort.social',
       'wss://nos.lol',
       'wss://relay.primal.net',
-      // 'wss://relay.nostr.band', // Unmaintained, frequent WebSocket connection errors
       'wss://purplepag.es'
     ];
   }
 
   /**
    * Get user-configured read relays (excludes aggregator relays)
-   * Used for relay filter dropdown in Timeline
    */
   public getUserReadRelays(): string[] {
     const aggregators = new Set(this.getAggregatorRelays());
@@ -214,7 +212,6 @@ export class RelayConfig {
       .map(relay => relay.url)
       .filter(url => !aggregators.has(url));
 
-    // Check if local relay is enabled
     const localRelaySettings = this.loadLocalRelaySettings();
     if (localRelaySettings.enabled && !readRelays.includes(localRelaySettings.url)) {
       readRelays.push(localRelaySettings.url);
@@ -228,45 +225,47 @@ export class RelayConfig {
    */
   public getFallbackFollowing(): string[] {
     return [
-      'npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m', // jack
-      'npub12rv5lskctqxxs2c8rf2zlzc7xx3qpvzs3w4etgemauy9thegr43sf485vg', // fiatjaf
-      'npub1az9xj85cmxv8e9j9y80lvqp97crsqdu2fpu3srwthd99qfu9qsgstam8y8', // vitor
-      'npub1g53mukxnjkcmr94fhryzkqutdz2ukq4ks0gvy5af25rgmwsl4ngq43drvk'  // odell
+      'npub1sg6plzptd64u62a878hep2kev88swjh3tw00gjsfl8f237lmu63q0uf63m',
+      'npub12rv5lskctqxxs2c8rf2zlzc7xx3qpvzs3w4etgemauy9thegr43sf485vg',
+      'npub1az9xj85cmxv8e9j9y80lvqp97crsqdu2fpu3srwthd99qfu9qsgstam8y8',
+      'npub1g53mukxnjkcmr94fhryzkqutdz2ukq4ks0gvy5af25rgmwsl4ngq43drvk'
     ];
   }
 
   /**
-   * Load configuration from localStorage
+   * Load relay list from per-account cache
+   * Returns true if cache was loaded, false if empty
    */
-  private loadFromStorage(): void {
+  private loadFromCache(): boolean {
     try {
-      const stored = localStorage.getItem(this.storageKey);
-      if (stored) {
-        const data = JSON.parse(stored);
-        this.relays = new Map(Object.entries(data.relays || {}));
+      const cached = this.perAccountStorage.get<RelayInfo[]>(StorageKeys.RELAY_LIST, []);
+      if (cached.length > 0) {
+        this.relays.clear();
+        cached.forEach(relay => {
+          this.relays.set(relay.url, relay);
+        });
+        return true;
       }
     } catch (error) {
-      // Failed to load relay config from storage
+      // Failed to load from cache
     }
+    return false;
   }
 
   /**
-   * Save configuration to localStorage
+   * Save relay list to per-account cache
    */
-  private saveToStorage(): void {
+  private saveToCache(): void {
     try {
-      const data = {
-        relays: Object.fromEntries(this.relays),
-        lastUpdated: new Date().toISOString()
-      };
-      localStorage.setItem(this.storageKey, JSON.stringify(data));
+      const relayArray = Array.from(this.relays.values());
+      this.perAccountStorage.set(StorageKeys.RELAY_LIST, relayArray);
     } catch (error) {
-      // Failed to save relay config to storage
+      // Failed to save to cache
     }
   }
 
   /**
-   * Reset to default configuration
+   * Reset to default configuration (memory only)
    */
   public resetToDefaults(): void {
     this.relays.clear();
@@ -274,18 +273,39 @@ export class RelayConfig {
   }
 
   /**
-   * Setup listener for user login to fetch NIP-65 relay list
+   * Setup listener for user login/logout
    */
   private setupLoginListener(): void {
     this.eventBus.on('user:login', async (data: { npub: string; pubkey: string }) => {
-      await this.fetchAndLoadRelayList(data.pubkey);
+      await this.loadRelayListForUser(data.pubkey);
     });
 
     this.eventBus.on('user:logout', () => {
-      this.systemLogger.info('RelayConfig', 'User logged out, resetting relays to defaults');
+      this.systemLogger.info('RelayConfig', 'User logged out, resetting to defaults');
       this.resetToDefaults();
       this.eventBus.emit('relays:updated');
+      this.eventBus.emit('relays:loaded');
     });
+  }
+
+  /**
+   * Load relay list for user: cache-first, then fetch from relays if needed
+   * Emits 'relays:loaded' when done (for UI updates)
+   */
+  private async loadRelayListForUser(pubkey: string): Promise<void> {
+    // 1. Try to load from per-account cache first (synchronous)
+    if (this.loadFromCache()) {
+      this.systemLogger.info(
+        'RelayConfig',
+        `✓ Loaded ${this.relays.size} relays from cache`
+      );
+      this.eventBus.emit('relays:loaded');
+      return;
+    }
+
+    // 2. No cache - fetch from relays (async)
+    await this.fetchAndLoadRelayList(pubkey);
+    this.eventBus.emit('relays:loaded');
   }
 
   /**
@@ -294,16 +314,14 @@ export class RelayConfig {
   private async fetchAndLoadRelayList(pubkey: string): Promise<void> {
     const relayListOrchestrator = RelayListOrchestrator.getInstance();
 
-    // Get username for logging
     const profileService = UserProfileService.getInstance();
-    const username = profileService.getUsername(pubkey);
+    const username = profileService.getUsername(pubkey) || pubkey.slice(0, 8) + '...';
 
-    // Use bootstrap relays from config/relays.json
     const bootstrapRelays = this.getBootstrapRelays();
 
     this.systemLogger.info(
       'RelayConfig',
-      `Fetching ${username}'s relay list`
+      `Fetching ${username}'s relay list from relays`
     );
 
     const relayInfos = await relayListOrchestrator.fetchRelayList(
@@ -314,26 +332,22 @@ export class RelayConfig {
     if (!relayInfos || relayInfos.length === 0) {
       this.systemLogger.info(
         'RelayConfig',
-        'No relay list found, using defaults'
+        'No relay list found on relays, using defaults'
       );
       return;
     }
 
-    // Clear existing relays and load NIP-65 relay list
     this.relays.clear();
     relayInfos.forEach(relay => {
       this.relays.set(relay.url, relay);
     });
 
-    this.saveToStorage();
+    this.saveToCache();
 
     this.systemLogger.info(
       'RelayConfig',
       `✓ Loaded ${relayInfos.length} relays from NIP-65`
     );
-
-    // Don't emit 'relays:updated' on initial load (only on manual changes in Settings)
-    // This prevents unnecessary Timeline refresh during login
   }
 
   /**

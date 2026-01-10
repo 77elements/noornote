@@ -7,17 +7,26 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { PollOrchestrator } from '../../../services/orchestration/PollOrchestrator';
 
+interface LocalPollOption {
+  id: string;
+  label: string;
+  voteCount: number;
+}
+
 export class PollRenderer {
   /**
    * Render poll options for kind 6969 poll events
    * Fetches vote counts via PollOrchestrator and displays results
    */
   static render(noteElement: HTMLElement, event: NostrEvent): void {
+    const eventId = event.id;
+    if (!eventId) return;
+
     // Extract poll options from tags
-    const pollOptions = event.tags
-      .filter(tag => tag[0] === 'poll_option')
-      .map(tag => ({ index: tag[1], text: tag[2], voteCount: 0, zapAmount: 0 }))
-      .sort((a, b) => parseInt(a.index) - parseInt(b.index));
+    const pollOptions: LocalPollOption[] = event.tags
+      .filter(tag => tag[0] === 'poll_option' && tag[1] !== undefined && tag[2] !== undefined)
+      .map(tag => ({ id: tag[1] as string, label: tag[2] as string, voteCount: 0 }))
+      .sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10));
 
     if (pollOptions.length === 0) return;
 
@@ -30,9 +39,9 @@ export class PollRenderer {
       const optionBtn = document.createElement('button');
       optionBtn.className = 'poll-option';
       optionBtn.disabled = true;
-      optionBtn.dataset.optionIndex = option.index;
+      optionBtn.dataset.optionIndex = option.id;
       optionBtn.innerHTML = `
-        <span class="poll-option-text">${option.text}</span>
+        <span class="poll-option-text">${option.label}</span>
         <span class="poll-option-stats">
           <span class="poll-option-count">Loading...</span>
         </span>
@@ -50,11 +59,11 @@ export class PollRenderer {
 
     // Fetch poll results asynchronously
     const pollOrchestrator = PollOrchestrator.getInstance();
-    pollOrchestrator.fetchPollResults(event.id, pollOptions).then(results => {
+    pollOrchestrator.fetchPollResults(eventId, pollOptions).then(results => {
         // Update UI with vote counts
         results.options.forEach(option => {
-          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.index}"]`);
-          if (!optionBtn) return;
+          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.id}"]`);
+          if (!(optionBtn instanceof HTMLElement)) return;
 
           const countSpan = optionBtn.querySelector('.poll-option-count');
           if (!countSpan) return;
@@ -75,7 +84,7 @@ export class PollRenderer {
         console.warn('Failed to fetch poll results:', error);
         // Show error state
         pollOptions.forEach(option => {
-          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.index}"]`);
+          const optionBtn = pollContainer.querySelector(`[data-option-index="${option.id}"]`);
           if (!optionBtn) return;
 
           const countSpan = optionBtn.querySelector('.poll-option-count');

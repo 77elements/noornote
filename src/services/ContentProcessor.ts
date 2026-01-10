@@ -84,7 +84,7 @@ export class ContentProcessor {
     // NON-BLOCKING: Trigger profile fetch for ALL p-tags in background
     const mentionTags = tags.filter(tag => tag[0] === 'p');
     if (mentionTags.length > 0) {
-      const mentionPubkeys = mentionTags.map(tag => tag[1]);
+      const mentionPubkeys = mentionTags.map(tag => tag[1]).filter((p): p is string => !!p);
       this.userProfileService.getUserProfiles(mentionPubkeys).then(profiles => {
         profiles.forEach((profile, pubkey) => {
           this.profileCache.set(pubkey, profile);

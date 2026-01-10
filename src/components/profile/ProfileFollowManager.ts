@@ -226,6 +226,7 @@ export class ProfileFollowManager {
 
       if (!currentItems.some(item => item.pubkey === this.targetPubkey)) {
         const newItem: FollowItem = {
+          id: this.targetPubkey,
           pubkey: this.targetPubkey,
           addedAt: Math.floor(Date.now() / 1000),
           isPrivate: type === 'private'  // Store private status in browser item

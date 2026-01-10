@@ -34,13 +34,14 @@ import { getViewNavigationController } from '../../services/ViewNavigationContro
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
+import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
 export class MainLayout {
   private element: HTMLElement;
   private systemLogger: SystemLogger;
   private userStatus: AccountSwitcher | null = null;
   private searchSpotlight: SearchSpotlight | null = null;
-  private keyboardShortcutManager: KeyboardShortcutManager;
+  private keyboardShortcutManager!: KeyboardShortcutManager;
   private authComponent: any = null; // Store reference to trigger logout
   private cacheManager: CacheManager;
   private appState: AppState;
@@ -120,13 +121,10 @@ export class MainLayout {
    * Setup keyboard shortcuts
    */
   private setupKeyboardShortcuts(): void {
-    console.log('[MainLayout] Setting up keyboard shortcuts');
     this.keyboardShortcutManager = KeyboardShortcutManager.getInstance();
     this.keyboardShortcutManager.registerSearchModalCallback(() => {
-      console.log('[MainLayout] Search modal callback triggered');
       this.openSearchModal();
     });
-    console.log('[MainLayout] Keyboard shortcuts setup complete');
   }
 
   /**
@@ -412,7 +410,7 @@ export class MainLayout {
   /**
    * Update view tab label + profile pic
    */
-  private updateViewTabLabel(tabId: string, label: string, pubkey?: string, profilePicUrl?: string): void {
+  private updateViewTabLabel(tabId: string, label: string, _pubkey?: string, profilePicUrl?: string): void {
     const tabButton = this.element.querySelector(`[data-tab="${tabId}"]`) as HTMLElement;
     if (!tabButton) return;
 
@@ -453,13 +451,6 @@ export class MainLayout {
       this.walletBalanceDisplay = new WalletBalanceDisplay();
       walletBalanceContainer.appendChild(this.walletBalanceDisplay.getElement());
     }
-  }
-
-  /**
-   * Initialize search modal
-   */
-  private initializeSearchModal(): void {
-    this.searchSpotlight = new SearchSpotlight();
   }
 
   /**
@@ -676,9 +667,9 @@ export class MainLayout {
    */
   private openSearchModal(): void {
     if (!this.searchSpotlight) {
-      this.initializeSearchModal();
+      this.searchSpotlight = new SearchSpotlight();
     }
-    this.searchSpotlight?.open();
+    this.searchSpotlight.open();
   }
 
 
@@ -761,7 +752,7 @@ export class MainLayout {
       });
     }
 
-    const notificationsLink = this.element.querySelector('.sidebar .notifications-link');
+    const notificationsLink = this.element.querySelector('.sidebar .notifications-link') as HTMLElement | null;
     if (notificationsLink) {
       const handleNotifications = (e: MouseEvent) => {
         e.preventDefault();
@@ -769,10 +760,10 @@ export class MainLayout {
         navController.openView('notifications', undefined, e);
       };
       notificationsLink.addEventListener('click', handleNotifications);
-      notificationsLink.addEventListener('auxclick', handleNotifications); // Middle-click
+      notificationsLink.addEventListener('auxclick', handleNotifications as EventListener); // Middle-click
     }
 
-    const messagesLink = this.element.querySelector('.sidebar a[href="/messages"]');
+    const messagesLink = this.element.querySelector('.sidebar a[href="/messages"]') as HTMLElement | null;
     if (messagesLink) {
       const handleMessages = (e: MouseEvent) => {
         e.preventDefault();
@@ -780,7 +771,7 @@ export class MainLayout {
         navController.openView('messages', undefined, e);
       };
       messagesLink.addEventListener('click', handleMessages);
-      messagesLink.addEventListener('auxclick', handleMessages); // Middle-click
+      messagesLink.addEventListener('auxclick', handleMessages as EventListener); // Middle-click
     }
 
     const settingsLink = this.element.querySelector('.sidebar a[href="/settings"]');
@@ -810,7 +801,7 @@ export class MainLayout {
       });
     }
 
-    const profileLink = this.element.querySelector('.sidebar .profile-link');
+    const profileLink = this.element.querySelector('.sidebar .profile-link') as HTMLElement | null;
     if (profileLink) {
       const handleProfile = (e: MouseEvent) => {
         e.preventDefault();
@@ -821,7 +812,7 @@ export class MainLayout {
         }
       };
       profileLink.addEventListener('click', handleProfile);
-      profileLink.addEventListener('auxclick', handleProfile); // Middle-click
+      profileLink.addEventListener('auxclick', handleProfile as EventListener); // Middle-click
     }
 
     const searchLink = this.element.querySelector('.sidebar .search-link');
@@ -910,7 +901,6 @@ export class MainLayout {
 
     if (systemLogTab && secondaryContent) {
       systemLogTab.addEventListener('click', () => {
-        console.log('[TAB CLICK] system-log');
         switchTabWithContent(secondaryContent, 'system-log');
         // Notify ViewTabManager that a non-view tab was activated
         this.viewTabManager?.deactivateCurrentViewTab();
@@ -1164,8 +1154,6 @@ export class MainLayout {
    * Shows instruction modal, then opens terminal for NoorSigner add-account
    */
   private handleAddAccount(): void {
-    console.log('[MainLayout] handleAddAccount called');
-
     const authMethod = this.authService.getAuthMethod();
 
     if (authMethod === 'key-signer') {
@@ -1322,7 +1310,7 @@ export class MainLayout {
         </div>
       `,
       width: '500px',
-      closeOnBackdrop: true,
+      closeOnOverlay: true,
       closeOnEsc: true
     });
 
@@ -1365,7 +1353,7 @@ export class MainLayout {
         } catch (error) {
           console.error('Failed to clear cache:', error);
           const { ToastService } = await import('../../services/ToastService');
-          ToastService.getInstance().show('Failed to clear cache', 'error');
+          ToastService.show('Failed to clear cache', 'error');
         }
       });
     }, 100);
@@ -1449,7 +1437,7 @@ export class MainLayout {
    */
   private initializeDateTimeCalendar(): void {
     dayjs.extend(calendarSystems);
-    dayjs.registerCalendarSystem('hijri', new HijriCalendarSystem());
+    dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
 
     // Listen for calendar system changes
     this.eventBus.on('settings:calendar-system-changed', () => {
@@ -1494,14 +1482,9 @@ export class MainLayout {
       dateString = `${month}/${day}/${year}, ${time}`;
     } else if (calendarSystem === 'hijri') {
       // International format: DD. Month YYYY, HH:MM
-      const hijriDate = dayjs(now).toCalendarSystem('hijri');
-      const hijriMonths = [
-        'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
-        'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
-        'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
-      ];
+      const hijriDate = dayjs(now).toCalendarSystem('hijri' as any);
       const day = hijriDate.date();
-      const month = hijriMonths[hijriDate.month()];
+      const month = HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
       dateString = `${day}. ${month} ${year}, ${time}`;
     } else if (calendarSystem === 'both') {
@@ -1510,14 +1493,9 @@ export class MainLayout {
       const gregorianDay = String(now.getDate()).padStart(2, '0');
       const gregorianYear = now.getFullYear();
 
-      const hijriDate = dayjs(now).toCalendarSystem('hijri');
-      const hijriMonths = [
-        'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' ath-Thani",
-        'Jumada al-Ula', 'Jumada al-Akhirah', 'Rajab', "Sha'ban",
-        'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'
-      ];
+      const hijriDate = dayjs(now).toCalendarSystem('hijri' as any);
       const hijriDay = hijriDate.date();
-      const hijriMonth = hijriMonths[hijriDate.month()];
+      const hijriMonth = HIJRI_MONTHS[hijriDate.month()];
       const hijriYear = hijriDate.year();
       dateString = `${gregorianMonth}/${gregorianDay}/${gregorianYear}  |  ${hijriDay}. ${hijriMonth} ${hijriYear}, ${time}`;
     }

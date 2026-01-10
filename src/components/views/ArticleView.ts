@@ -48,12 +48,12 @@ export class ArticleView {
       // Fetch the article
       const event = await this.orchestrator.fetchAddressableEvent(this.naddrRef);
 
-      if (!event) {
+      if (!event || !event.id) {
         this.showError('Article not found');
         return;
       }
 
-      this.renderArticle(event);
+      this.renderArticle(event as NostrEvent & { id: string });
     } catch (_error) {
       console.error('❌ ArticleView: Failed to load article', _error);
       this.showError('Failed to load article');
@@ -63,7 +63,7 @@ export class ArticleView {
   /**
    * Render the loaded article
    */
-  private renderArticle(event: NostrEvent): void {
+  private renderArticle(event: NostrEvent & { id: string }): void {
     const metadata = LongFormOrchestrator.extractArticleMetadata(event);
 
     // Create article structure with replies container
@@ -88,7 +88,6 @@ export class ArticleView {
         eventId: event.id,
         timestamp: metadata.publishedAt,
         rawEvent: event,
-        size: 'medium',
         showVerification: true,
         showTimestamp: true,
         showMenu: true
@@ -234,9 +233,7 @@ export class ArticleView {
       // Configure marked for security and link handling
       marked.setOptions({
         breaks: true,        // Convert \n to <br>
-        gfm: true,          // GitHub Flavored Markdown
-        headerIds: false,   // Don't add IDs to headers (security)
-        mangle: false       // Don't mangle email addresses
+        gfm: true           // GitHub Flavored Markdown
       });
 
       // Parse markdown to HTML

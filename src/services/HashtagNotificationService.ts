@@ -13,7 +13,6 @@ import { SearchOrchestrator } from './orchestration/SearchOrchestrator';
 import { EventBus } from './EventBus';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -153,6 +152,7 @@ export class HashtagNotificationService {
 
     for (const hashtag of subscribed) {
       const subscription = data.subscriptions[hashtag];
+      if (!subscription) continue;
 
       try {
         const results = await this.searchOrchestrator.search({
@@ -165,7 +165,7 @@ export class HashtagNotificationService {
 
         if (newPosts.length > 0) {
           // System log: New posts found
-          this.systemLogger.info('HashtagNotificationService', `✨ Found ${newPosts.length} new posts for #${hashtag}`);
+          this.systemLogger.info('HashtagNotificationService', `Found ${newPosts.length} new posts for #${hashtag}`);
 
           // Update last seen
           subscription.lastSeenTimestamp = Math.max(...newPosts.map(e => e.created_at));

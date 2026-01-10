@@ -134,9 +134,14 @@ export class AccountStorageService {
     const accounts = this.getAccounts();
     const index = accounts.findIndex(a => a.pubkey === pubkey);
 
-    if (index >= 0) {
+    const existing = accounts[index];
+    if (index >= 0 && existing) {
       accounts[index] = {
-        ...accounts[index],
+        pubkey: existing.pubkey,
+        npub: existing.npub,
+        authMethod: existing.authMethod,
+        addedAt: existing.addedAt,
+        lastUsedAt: existing.lastUsedAt,
         ...updates
       };
       this.saveAccounts(accounts);

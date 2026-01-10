@@ -45,11 +45,9 @@ export class MuteListView extends View {
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
 
-    // Initialize ListSyncManager with MuteStorageAdapter
     const adapter = new MuteStorageAdapter();
     this.listSyncManager = new ListSyncManager(adapter);
 
-    // Initialize browser storage from files on first load
     this.initializeBrowserStorage();
   }
 
@@ -58,17 +56,11 @@ export class MuteListView extends View {
    * This prevents overwriting user changes (like unmutes) when navigating back to this view
    */
   private async initializeBrowserStorage(): Promise<void> {
-    try {
-      // Check if browser storage already has data
-      const browserKey = 'noornote_mutes_browser_v2';
-      const existingData = localStorage.getItem(browserKey);
+    const browserKey = 'noornote_mutes_browser_v2';
+    const existingData = localStorage.getItem(browserKey);
 
-      if (!existingData || existingData === '[]') {
-        // Only restore from file if browser storage is empty
-        await this.listSyncManager.restoreFromFile();
-      }
-    } catch (_error) {
-      console.error('[MuteListView] Failed to initialize browser storage:', _error);
+    if (!existingData || existingData === '[]') {
+      await this.listSyncManager.restoreFromFile().catch(() => {});
     }
   }
 
@@ -105,10 +97,8 @@ export class MuteListView extends View {
     `;
 
     this.loadMuteList();
-    this.bindSyncFromRelaysButton();
-    this.bindSyncToRelaysButton();
-    this.bindSaveToFileButton();
-    this.bindRestoreFromFileButton();
+    this.bindSyncButtons();
+    this.bindFileButtons();
 
     return this.container;
   }
@@ -121,7 +111,6 @@ export class MuteListView extends View {
     }
 
     try {
-      // Load muted users with profiles
       const mutedUsersMap = await this.muteOrch.getAllMutedUsersWithStatus(currentUser.pubkey);
       this.mutedUsers = await Promise.all(
         Array.from(mutedUsersMap.entries()).map(async ([pubkey, status]) => ({
@@ -131,7 +120,6 @@ export class MuteListView extends View {
         }))
       );
 
-      // Load muted threads
       const mutedThreadsMap = await this.muteOrch.getAllMutedThreadsWithStatus();
       this.mutedThreads = Array.from(mutedThreadsMap.entries()).map(([eventId, status]) => ({
         eventId,
@@ -139,8 +127,7 @@ export class MuteListView extends View {
       }));
 
       this.renderMuteList();
-    } catch (_error) {
-      console.error('Failed to load mute list:', _error);
+    } catch {
       this.renderError('Failed to load mute list. Please try again.');
     }
   }
@@ -165,103 +152,105 @@ export class MuteListView extends View {
       return;
     }
 
-    // Build sections HTML
     let sectionsHtml = '';
 
-    // Users Section
     if (hasUsers) {
-      const userItems = this.mutedUsers
-        .map(({ pubkey, profile, status }) => {
-          const username = extractDisplayName(profile);
-          const npub = hexToNpub(pubkey);
-          const avatarUrl = profile.picture || '';
-          const lockIcon = status.private ? '<span class="mute-list-item__badge mute-list-item__badge--private">🔒</span>' : '';
-
-          return `
-            <div class="mute-list-item" data-pubkey="${pubkey}">
-              <div class="mute-list-item__info">
-                <span class="user-mention" data-pubkey="${pubkey}">
-                  <a href="/profile/${npub}" class="mention-link mention-link--bg" data-profile-pubkey="${pubkey}">
-                    <img class="profile-pic profile-pic--mini" src="${avatarUrl}" alt="${username}" />${username}</a></span>${lockIcon}
-              </div>
-              <button class="btn btn--passive btn--small unmute-user-btn" data-pubkey="${pubkey}">
-                Unmute
-              </button>
-            </div>
-          `;
-        })
-        .join('');
-
-      sectionsHtml += `
-        <div class="mute-list-section">
-          <div class="mute-list-section__header">
-            <h3 class="mute-list-section__title">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
-                <path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-              Muted Users
-              <span class="mute-list-section__count">${this.mutedUsers.length}</span>
-            </h3>
-          </div>
-          <div class="mute-list-items">
-            ${userItems}
-          </div>
-        </div>
-      `;
+      sectionsHtml += this.renderUsersSection();
     }
 
-    // Threads Section
     if (hasThreads) {
-      const threadItems = this.mutedThreads
-        .map(({ eventId, status }) => {
-          const lockIcon = status.private ? '<span class="mute-list-item__badge mute-list-item__badge--private">🔒</span>' : '';
-          const shortId = eventId.slice(0, 8) + '...' + eventId.slice(-8);
-
-          return `
-            <div class="mute-list-item mute-list-item--thread" data-event-id="${eventId}">
-              <div class="mute-list-item__info">
-                <div class="mute-list-item__thread-icon">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 3h12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 3v-3H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <span class="mute-list-item__event-id" title="${eventId}">${shortId}${lockIcon}</span>
-              </div>
-              <button class="btn btn--passive btn--small unmute-thread-btn" data-event-id="${eventId}">
-                Unmute
-              </button>
-            </div>
-          `;
-        })
-        .join('');
-
-      sectionsHtml += `
-        <div class="mute-list-section">
-          <div class="mute-list-section__header">
-            <h3 class="mute-list-section__title">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 3h12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 3v-3H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Muted Threads
-              <span class="mute-list-section__count">${this.mutedThreads.length}</span>
-            </h3>
-            <p class="mute-list-section__description">Threads you muted to stop notifications from replies.</p>
-          </div>
-          <div class="mute-list-items">
-            ${threadItems}
-          </div>
-        </div>
-      `;
+      sectionsHtml += this.renderThreadsSection();
     }
 
     content.innerHTML = sectionsHtml;
 
-    // Setup hover cards for user mentions
     setupUserMentionHandlers(content as HTMLElement);
+    this.bindUnmuteListeners();
+  }
 
-    this.bindUnmuteUserListeners();
-    this.bindUnmuteThreadListeners();
+  private renderUsersSection(): string {
+    const userItems = this.mutedUsers
+      .map(({ pubkey, profile, status }) => {
+        const username = extractDisplayName(profile);
+        const npub = hexToNpub(pubkey);
+        const avatarUrl = profile.picture || '';
+        const lockIcon = status.private ? '<span class="mute-list-item__badge mute-list-item__badge--private">🔒</span>' : '';
+
+        return `
+          <div class="mute-list-item" data-pubkey="${pubkey}">
+            <div class="mute-list-item__info">
+              <span class="user-mention" data-pubkey="${pubkey}">
+                <a href="/profile/${npub}" class="mention-link mention-link--bg" data-profile-pubkey="${pubkey}">
+                  <img class="profile-pic profile-pic--mini" src="${avatarUrl}" alt="${username}" />${username}</a></span>${lockIcon}
+            </div>
+            <button class="btn btn--passive btn--small unmute-user-btn" data-pubkey="${pubkey}">
+              Unmute
+            </button>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <div class="mute-list-section">
+        <div class="mute-list-section__header">
+          <h3 class="mute-list-section__title">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            Muted Users
+            <span class="mute-list-section__count">${this.mutedUsers.length}</span>
+          </h3>
+        </div>
+        <div class="mute-list-items">
+          ${userItems}
+        </div>
+      </div>
+    `;
+  }
+
+  private renderThreadsSection(): string {
+    const threadItems = this.mutedThreads
+      .map(({ eventId, status }) => {
+        const lockIcon = status.private ? '<span class="mute-list-item__badge mute-list-item__badge--private">🔒</span>' : '';
+        const shortId = eventId.slice(0, 8) + '...' + eventId.slice(-8);
+
+        return `
+          <div class="mute-list-item mute-list-item--thread" data-event-id="${eventId}">
+            <div class="mute-list-item__info">
+              <div class="mute-list-item__thread-icon">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M2 3h12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 3v-3H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <span class="mute-list-item__event-id" title="${eventId}">${shortId}${lockIcon}</span>
+            </div>
+            <button class="btn btn--passive btn--small unmute-thread-btn" data-event-id="${eventId}">
+              Unmute
+            </button>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <div class="mute-list-section">
+        <div class="mute-list-section__header">
+          <h3 class="mute-list-section__title">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M2 3h12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 3v-3H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Muted Threads
+            <span class="mute-list-section__count">${this.mutedThreads.length}</span>
+          </h3>
+          <p class="mute-list-section__description">Threads you muted to stop notifications from replies.</p>
+        </div>
+        <div class="mute-list-items">
+          ${threadItems}
+        </div>
+      </div>
+    `;
   }
 
   private renderError(message: string): void {
@@ -275,180 +264,126 @@ export class MuteListView extends View {
     `;
   }
 
-  private bindUnmuteUserListeners(): void {
-    const unmuteButtons = this.container.querySelectorAll('.unmute-user-btn');
-
-    unmuteButtons.forEach(btn => {
+  private bindUnmuteListeners(): void {
+    this.container.querySelectorAll('.unmute-user-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.preventDefault();
-        const target = e.currentTarget as HTMLElement;
-        const pubkey = target.dataset.pubkey;
+        const pubkey = (e.currentTarget as HTMLElement).dataset.pubkey;
+        if (pubkey) await this.handleUnmuteUser(pubkey);
+      });
+    });
 
-        if (!pubkey) return;
-
-        await this.handleUnmuteUser(pubkey);
+    this.container.querySelectorAll('.unmute-thread-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const eventId = (e.currentTarget as HTMLElement).dataset.eventId;
+        if (eventId) await this.handleUnmuteThread(eventId);
       });
     });
   }
 
-  private bindUnmuteThreadListeners(): void {
-    const unmuteButtons = this.container.querySelectorAll('.unmute-thread-btn');
-
-    unmuteButtons.forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const target = e.currentTarget as HTMLElement;
-        const eventId = target.dataset.eventId;
-
-        if (!eventId) return;
-
-        await this.handleUnmuteThread(eventId);
-      });
-    });
+  private bindSyncButtons(): void {
+    this.bindButton('#sync-from-relays-btn', () => this.handleSyncFromRelays());
+    this.bindButton('#sync-to-relays-btn', () => this.handleSyncToRelays());
   }
 
-  /**
-   * Button 1: Sync from Relays (Relay → Browser)
-   * Phase 1: Fetch + Compare
-   * Phase 2: Show modal if needed
-   * Phase 3: Apply after user decision
-   */
-  private bindSyncFromRelaysButton(): void {
-    const syncBtn = this.container.querySelector('#sync-from-relays-btn');
-    if (!syncBtn) return;
-
-    syncBtn.addEventListener('click', async () => {
-      try {
-        ToastService.show('Fetching from relays...', 'info');
-
-        // Phase 1: Fetch + Compare (NO changes to browser storage yet)
-        const result = await this.listSyncManager.syncFromRelays();
-
-        if (result.requiresConfirmation) {
-          // Browser has MORE items than relay → Show confirmation modal
-          const modal = new SyncConfirmationModal({
-            listType: 'Mute List',
-            added: result.diff.added,
-            removed: result.diff.removed,
-            getDisplayName: (pubkey: string) => {
-              const user = this.mutedUsers.find(u => u.pubkey === pubkey);
-              return user ? extractDisplayName(user.profile) : pubkey.slice(0, 8) + '...';
-            },
-            onKeep: async () => {
-              // User chose "Beibehalten" → Merge strategy
-              await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-              ToastService.show(`Merged ${result.diff.added.length} new mutes (kept ${result.diff.removed.length} local mutes)`, 'success');
-              await this.loadMuteList();
-            },
-            onDelete: async () => {
-              // User chose "Hier auch löschen" → Overwrite strategy
-              await this.listSyncManager.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
-              ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
-              await this.loadMuteList();
-            }
-          });
-
-          modal.show();
-        } else {
-          // Browser has LESS/EQUAL items → Auto-merge
-          await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-          ToastService.show(`Synced ${result.diff.added.length} new mute${result.diff.added.length > 1 ? 's' : ''} from relays`, 'success');
-          await this.loadMuteList();
-        }
-      } catch (_error) {
-        console.error('Failed to sync from relays:', _error);
-        ToastService.show('Failed to sync from relays', 'error');
-      }
-    });
+  private bindFileButtons(): void {
+    this.bindButton('#save-to-file-btn', () => this.handleSaveToFile());
+    this.bindButton('#restore-from-file-btn', () => this.handleRestoreFromFile());
   }
 
-  /**
-   * Button 2: Sync to Relays (Browser → Relay)
-   * Always overwrites relay list with browser list
-   */
-  private bindSyncToRelaysButton(): void {
-    const syncBtn = this.container.querySelector('#sync-to-relays-btn');
-    if (!syncBtn) return;
-
-    syncBtn.addEventListener('click', async () => {
-      try {
-        ToastService.show('Publishing to relays...', 'info');
-        await this.listSyncManager.syncToRelays();
-        ToastService.show('Mute list published successfully', 'success');
-      } catch (_error) {
-        console.error('Failed to publish to relays:', _error);
-        ToastService.show('Failed to publish to relays', 'error');
-      }
-    });
+  private bindButton(selector: string, handler: () => Promise<void>): void {
+    const btn = this.container.querySelector(selector);
+    if (btn) {
+      btn.addEventListener('click', handler);
+    }
   }
 
-  /**
-   * Button 3: Save to File (Browser → File)
-   * Always overwrites file with browser list
-   */
-  private bindSaveToFileButton(): void {
-    const saveBtn = this.container.querySelector('#save-to-file-btn');
-    if (!saveBtn) return;
+  private async handleSyncFromRelays(): Promise<void> {
+    try {
+      ToastService.show('Fetching from relays...', 'info');
+      const result = await this.listSyncManager.syncFromRelays();
 
-    saveBtn.addEventListener('click', async () => {
-      try {
-        ToastService.show('Saving to file...', 'info');
-        await this.listSyncManager.saveToFile();
-        ToastService.show('Saved to local file', 'success');
-      } catch (_error) {
-        console.error('Failed to save to file:', _error);
-        ToastService.show('Failed to save to file', 'error');
-      }
-    });
-  }
-
-  /**
-   * Button 4: Restore from File (File → Browser)
-   */
-  private bindRestoreFromFileButton(): void {
-    const restoreBtn = this.container.querySelector('#restore-from-file-btn');
-    if (!restoreBtn) return;
-
-    restoreBtn.addEventListener('click', async () => {
-      try {
-        ToastService.show('Restoring from file...', 'info');
-        await this.listSyncManager.restoreFromFile();
-        ToastService.show('Restored from local file', 'success');
+      if (result.requiresConfirmation) {
+        const modal = new SyncConfirmationModal({
+          listType: 'Mute List',
+          added: result.diff.added,
+          removed: result.diff.removed,
+          getDisplayName: (pubkey: string) => {
+            const user = this.mutedUsers.find(u => u.pubkey === pubkey);
+            return user ? extractDisplayName(user.profile) : pubkey.slice(0, 8) + '...';
+          },
+          onKeep: async () => {
+            await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+            ToastService.show(`Merged ${result.diff.added.length} new mutes (kept ${result.diff.removed.length} local mutes)`, 'success');
+            await this.loadMuteList();
+          },
+          onDelete: async () => {
+            await this.listSyncManager.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
+            ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.loadMuteList();
+          }
+        });
+        modal.show();
+      } else {
+        await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+        ToastService.show(`Synced ${result.diff.added.length} new mute${result.diff.added.length > 1 ? 's' : ''} from relays`, 'success');
         await this.loadMuteList();
-      } catch (_error) {
-        console.error('Failed to restore from file:', _error);
-        ToastService.show('Failed to restore from file', 'error');
       }
-    });
+    } catch {
+      ToastService.show('Failed to sync from relays', 'error');
+    }
+  }
+
+  private async handleSyncToRelays(): Promise<void> {
+    try {
+      ToastService.show('Publishing to relays...', 'info');
+      await this.listSyncManager.syncToRelays();
+      ToastService.show('Mute list published successfully', 'success');
+    } catch {
+      ToastService.show('Failed to publish to relays', 'error');
+    }
+  }
+
+  private async handleSaveToFile(): Promise<void> {
+    try {
+      ToastService.show('Saving to file...', 'info');
+      await this.listSyncManager.saveToFile();
+      ToastService.show('Saved to local file', 'success');
+    } catch {
+      ToastService.show('Failed to save to file', 'error');
+    }
+  }
+
+  private async handleRestoreFromFile(): Promise<void> {
+    try {
+      ToastService.show('Restoring from file...', 'info');
+      await this.listSyncManager.restoreFromFile();
+      ToastService.show('Restored from local file', 'success');
+      await this.loadMuteList();
+    } catch {
+      ToastService.show('Failed to restore from file', 'error');
+    }
   }
 
   private async handleUnmuteUser(pubkey: string): Promise<void> {
     try {
-      // Unmute from both public and private lists atomically
       await this.muteOrch.unmuteUserCompletely(pubkey);
       ToastService.show('User unmuted', 'success');
 
-      // Remove from local list
       this.mutedUsers = this.mutedUsers.filter(u => u.pubkey !== pubkey);
       this.renderMuteList();
 
-      // Refresh feed orchestrators
       const { FeedOrchestrator } = await import('../../services/orchestration/FeedOrchestrator');
       const { NotificationsOrchestrator } = await import('../../services/orchestration/NotificationsOrchestrator');
 
-      const feedOrch = FeedOrchestrator.getInstance();
-      const notifOrch = NotificationsOrchestrator.getInstance();
-
       await Promise.all([
-        feedOrch.refreshMutedUsers(),
-        notifOrch.refreshMutedUsers()
+        FeedOrchestrator.getInstance().refreshMutedUsers(),
+        NotificationsOrchestrator.getInstance().refreshMutedUsers()
       ]);
 
-      // Notify timeline to refresh (show unmuted user's posts again)
-      const eventBus = EventBus.getInstance();
-      eventBus.emit('mute:updated', {});
-    } catch (_error) {
-      console.error('Failed to unmute user:', _error);
+      EventBus.getInstance().emit('mute:updated', {});
+    } catch {
       ToastService.show('Failed to unmute user', 'error');
     }
   }
@@ -458,18 +393,19 @@ export class MuteListView extends View {
       await this.muteOrch.unmuteThread(eventId);
       ToastService.show('Thread unmuted', 'success');
 
-      // Remove from local list
       this.mutedThreads = this.mutedThreads.filter(t => t.eventId !== eventId);
       this.renderMuteList();
 
-      // Notify UI to refresh
       const eventBus = EventBus.getInstance();
       eventBus.emit('mute:thread:updated', { eventId });
       eventBus.emit('mute:updated', {});
-    } catch (_error) {
-      console.error('Failed to unmute thread:', _error);
+    } catch {
       ToastService.show('Failed to unmute thread', 'error');
     }
+  }
+
+  public getElement(): HTMLElement {
+    return this.container;
   }
 
   public destroy(): void {

@@ -61,7 +61,7 @@ if (originalSrcDescriptor && originalSrcDescriptor.set) {
       }
       // Silently ignore empty/null/undefined values
     },
-    get: originalSrcDescriptor.get,
+    ...(originalSrcDescriptor.get && { get: originalSrcDescriptor.get }),
     configurable: true
   });
 }

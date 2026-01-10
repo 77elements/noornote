@@ -98,32 +98,18 @@ export class ProfileOrchestrator extends Orchestrator {
     try {
       const events = await this.transport.fetch(relays, filters, 4000);
 
-      if (events.length === 0) {
+      const event = events[0];
+      if (!event) {
         return null;
       }
 
       // Parse most recent profile metadata
-      const event = events[0];
       const metadata = JSON.parse(event.content);
 
       // Extract multiple NIP-05 addresses from tags (Animestr-style)
       const nip05s = this.extractNip05sFromTags(event.tags);
 
-      return {
-        pubkey,
-        name: metadata.name,
-        display_name: metadata.display_name,
-        username: metadata.username,
-        picture: metadata.picture,
-        about: metadata.about,
-        nip05: metadata.nip05,
-        nip05s: nip05s.length > 0 ? nip05s : undefined,
-        lud06: metadata.lud06,
-        lud16: metadata.lud16,
-        website: metadata.website,
-        banner: metadata.banner,
-        lastUpdated: Date.now()
-      };
+      return this.buildProfile(pubkey, metadata, nip05s);
     } catch (error) {
       this.systemLogger.error('ProfileOrchestrator', `Fetch profile failed for ${pubkey.slice(0, 8)}: ${error}`);
       return null;
@@ -161,21 +147,7 @@ export class ProfileOrchestrator extends Orchestrator {
           const metadata = JSON.parse(event.content);
           // Extract multiple NIP-05 addresses from tags (Animestr-style)
           const nip05s = this.extractNip05sFromTags(event.tags);
-          profiles.set(pubkey, {
-            pubkey,
-            name: metadata.name,
-            display_name: metadata.display_name,
-            username: metadata.username,
-            picture: metadata.picture,
-            about: metadata.about,
-            nip05: metadata.nip05,
-            nip05s: nip05s.length > 0 ? nip05s : undefined,
-            lud06: metadata.lud06,
-            lud16: metadata.lud16,
-            website: metadata.website,
-            banner: metadata.banner,
-            lastUpdated: Date.now()
-          });
+          profiles.set(pubkey, this.buildProfile(pubkey, metadata, nip05s));
         } catch (error) {
           this.systemLogger.error('ProfileOrchestrator', `Parse error for ${pubkey.slice(0, 8)}: ${error}`);
         }
@@ -232,8 +204,32 @@ export class ProfileOrchestrator extends Orchestrator {
     if (!tags || !Array.isArray(tags)) return [];
 
     return tags
-      .filter(tag => tag[0] === 'nip05' && tag[1])
+      .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'nip05' && typeof tag[1] === 'string')
       .map(tag => tag[1]);
+  }
+
+  /**
+   * Build a Profile object from metadata, ensuring proper types for exactOptionalPropertyTypes
+   */
+  private buildProfile(pubkey: string, metadata: Record<string, unknown>, nip05s: string[]): Profile {
+    const profile: Profile = {
+      pubkey,
+      lastUpdated: Date.now()
+    };
+
+    if (typeof metadata.name === 'string') profile.name = metadata.name;
+    if (typeof metadata.display_name === 'string') profile.display_name = metadata.display_name;
+    if (typeof metadata.username === 'string') profile.username = metadata.username;
+    if (typeof metadata.picture === 'string') profile.picture = metadata.picture;
+    if (typeof metadata.about === 'string') profile.about = metadata.about;
+    if (typeof metadata.nip05 === 'string') profile.nip05 = metadata.nip05;
+    if (nip05s.length > 0) profile.nip05s = nip05s;
+    if (typeof metadata.lud06 === 'string') profile.lud06 = metadata.lud06;
+    if (typeof metadata.lud16 === 'string') profile.lud16 = metadata.lud16;
+    if (typeof metadata.website === 'string') profile.website = metadata.website;
+    if (typeof metadata.banner === 'string') profile.banner = metadata.banner;
+
+    return profile;
   }
 
   // Orchestrator interface implementations (unused for now, required by base class)

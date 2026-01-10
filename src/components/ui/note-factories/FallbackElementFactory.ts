@@ -13,9 +13,10 @@ export class FallbackElementFactory {
    * Create fallback element when note processing fails
    */
   static createErrorElement(event: NostrEvent, _error: any): HTMLElement {
+    const eventId = event.id;
     const errorDiv = document.createElement('div');
     errorDiv.className = 'note-card note-card--error';
-    errorDiv.dataset.eventId = event.id;
+    if (eventId) errorDiv.dataset.eventId = eventId;
 
     errorDiv.innerHTML = `
       <div class="note-error">
@@ -24,7 +25,7 @@ export class FallbackElementFactory {
           <span class="error-message">Note can't be rendered</span>
         </div>
         <div class="error-details">
-          <small>ID: ${event.id.slice(0, 12)}... | Kind: ${event.kind}</small>
+          <small>ID: ${eventId?.slice(0, 12) ?? 'unknown'}... | Kind: ${event.kind}</small>
         </div>
       </div>
     `;
@@ -36,26 +37,29 @@ export class FallbackElementFactory {
    * Create element when max nesting depth is reached
    */
   static createMaxDepthElement(event: NostrEvent): HTMLElement {
+    const eventId = event.id;
     const maxDepthDiv = document.createElement('div');
     maxDepthDiv.className = 'quote-max-depth';
-    maxDepthDiv.dataset.eventId = event.id;
+    if (eventId) maxDepthDiv.dataset.eventId = eventId;
 
     maxDepthDiv.innerHTML = `
       <div class="max-depth-content">
         <span class="depth-icon">📄</span>
         <span class="depth-text">Quoted note (max depth reached)</span>
-        <small class="depth-id">ID: ${event.id.slice(0, 12)}...</small>
+        <small class="depth-id">ID: ${eventId?.slice(0, 12) ?? 'unknown'}...</small>
       </div>
     `;
 
     // Make it clickable to view full note in new context
-    maxDepthDiv.style.cursor = 'pointer';
-    maxDepthDiv.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const router = Router.getInstance();
-      const nevent = encodeNevent(event.id);
-      router.navigate(`/note/${nevent}`);
-    });
+    if (eventId) {
+      maxDepthDiv.style.cursor = 'pointer';
+      maxDepthDiv.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const router = Router.getInstance();
+        const nevent = encodeNevent(eventId);
+        router.navigate(`/note/${nevent}`);
+      });
+    }
 
     return maxDepthDiv;
   }

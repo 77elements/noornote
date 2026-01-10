@@ -43,7 +43,9 @@ export class TimelineEventHandler {
     this.uiStateHandler = uiStateHandler;
     this.refreshButton = refreshButton;
     this.element = element;
-    this.filterAuthorPubkey = filterAuthorPubkey;
+    if (filterAuthorPubkey) {
+      this.filterAuthorPubkey = filterAuthorPubkey;
+    }
     this.appState = AppState.getInstance();
     this.onAppendEvents = callbacks.onAppendEvents;
     this.onPrependEvents = callbacks.onPrependEvents;
@@ -172,14 +174,21 @@ export class TimelineEventHandler {
       }
 
       // Use FeedOrchestrator for load more
-      const result = await this.feedOrchestrator.loadMore({
+      // Build request object, only adding optional properties if they have values
+      const loadMoreRequest: Parameters<typeof this.feedOrchestrator.loadMore>[0] = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
         until: oldestEvent.created_at,
-        timeWindowHours: this.filterAuthorPubkey ? 720 : 3, // ProfileView: 30 days, TimelineView: 3 hours
-        specificRelay: this.stateManager.getSelectedRelay() || undefined,
-        exemptFromMuteFilter: this.filterAuthorPubkey // Don't filter profile user's notes in ProfileView
-      });
+        timeWindowHours: this.filterAuthorPubkey ? 720 : 3 // ProfileView: 30 days, TimelineView: 3 hours
+      };
+      const selectedRelay = this.stateManager.getSelectedRelay();
+      if (selectedRelay) {
+        loadMoreRequest.specificRelay = selectedRelay;
+      }
+      if (this.filterAuthorPubkey) {
+        loadMoreRequest.exemptFromMuteFilter = this.filterAuthorPubkey; // Don't filter profile user's notes in ProfileView
+      }
+      const result = await this.feedOrchestrator.loadMore(loadMoreRequest);
 
       // Add events with deduplication
       const uniqueNewEvents = this.stateManager.addEvents(result.events);
@@ -189,8 +198,8 @@ export class TimelineEventHandler {
         this.onAppendEvents(uniqueNewEvents);
       } else {
         console.log('⚠️ No unique events to add (all were duplicates)');
-        console.log(`🔍 EXISTING IDs:`, this.stateManager.getEvents().slice(0, 5).map(e => e.id.slice(0, 8)));
-        console.log(`🔍 NEW IDs:`, result.events.slice(0, 5).map(e => e.id.slice(0, 8)));
+        console.log(`🔍 EXISTING IDs:`, this.stateManager.getEvents().slice(0, 5).map(e => e.id?.slice(0, 8)));
+        console.log(`🔍 NEW IDs:`, result.events.slice(0, 5).map(e => e.id?.slice(0, 8)));
       }
 
       this.stateManager.setHasMore(result.hasMore);

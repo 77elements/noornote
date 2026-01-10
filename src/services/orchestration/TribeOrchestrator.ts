@@ -95,11 +95,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
         return { public: false, private: false };
       }
 
-      if (item.isPrivate) {
-        return { public: false, private: true };
-      } else {
-        return { public: true, private: false };
-      }
+      return {
+        public: !item.isPrivate,
+        private: item.isPrivate || false
+      };
     } catch (error) {
       this.systemLogger.error('TribeOrchestrator', `Failed to check member status: ${error}`);
       return { public: false, private: false };
@@ -196,22 +195,30 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
   }
 
   /**
+   * Ensure browser items are loaded (from file if empty)
+   */
+  private async ensureBrowserItemsLoaded(): Promise<TribeMember[]> {
+    const browserItems = this.getBrowserItems();
+    if (browserItems.length > 0) {
+      return browserItems;
+    }
+
+    const fileItems = await this.fileStorage.getAllItems();
+    if (fileItems.length > 0) {
+      this.setBrowserItems(fileItems);
+      return fileItems;
+    }
+
+    return [];
+  }
+
+  /**
    * Get all tribe members (merged public + private)
    */
   public async getAllMembers(_pubkey: string): Promise<string[]> {
     try {
-      const browserItems = this.getBrowserItems();
-
-      // If empty, try to load from files
-      if (browserItems.length === 0) {
-        const fileItems = await this.fileStorage.getAllItems();
-        if (fileItems.length > 0) {
-          this.setBrowserItems(fileItems);
-          return fileItems.map(item => item.pubkey);
-        }
-      }
-
-      const memberPubkeys = browserItems.map(item => item.pubkey);
+      const items = await this.ensureBrowserItemsLoaded();
+      const memberPubkeys = items.map(item => item.pubkey);
 
       this.systemLogger.info('TribeOrchestrator',
         `Loaded ${memberPubkeys.length} members from browserItems`
@@ -229,26 +236,17 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
    */
   public async getAllMembersWithMetadata(_pubkey: string): Promise<MemberWithMetadata[]> {
     try {
-      const browserItems = this.getBrowserItems();
-
-      // If empty, try to load from files
-      if (browserItems.length === 0) {
-        const fileItems = await this.fileStorage.getAllItems();
-        if (fileItems.length > 0) {
-          this.setBrowserItems(fileItems);
-          return fileItems.map(item => ({
-            pubkey: item.pubkey,
-            isPrivate: item.isPrivate || false,
-            category: item.category
-          }));
+      const items = await this.ensureBrowserItemsLoaded();
+      const result: MemberWithMetadata[] = items.map(item => {
+        const member: MemberWithMetadata = {
+          pubkey: item.pubkey,
+          isPrivate: item.isPrivate || false
+        };
+        if (item.category !== undefined) {
+          member.category = item.category;
         }
-      }
-
-      const result = browserItems.map(item => ({
-        pubkey: item.pubkey,
-        isPrivate: item.isPrivate || false,
-        category: item.category
-      }));
+        return member;
+      });
 
       this.systemLogger.info('TribeOrchestrator',
         `Loaded ${result.length} members with metadata from browserItems`
@@ -358,12 +356,17 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       // Build encrypted content for private members
       let content = '';
       if (set.privateMembers.length > 0) {
-        const privateItems: TribeMember[] = set.privateMembers.map(m => ({
-          id: m.pubkey,
-          pubkey: m.pubkey,
-          relay: m.relay,
-          isPrivate: true
-        }));
+        const privateItems: TribeMember[] = set.privateMembers.map(m => {
+          const member: TribeMember = {
+            id: m.pubkey,
+            pubkey: m.pubkey,
+            isPrivate: true
+          };
+          if (m.relay !== undefined) {
+            member.relay = m.relay;
+          }
+          return member;
+        });
         content = await this.encryptPrivateItems(privateItems, currentUser.pubkey);
       }
 
@@ -466,21 +469,28 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     // Track which items have been assigned (to catch orphans)
     const assignedItemIds = new Set<string>();
 
+    // Helper to add member to set
+    const addMemberToSet = (set: TribeSet, item: TribeMember): void => {
+      const memberTag: { pubkey: string; relay?: string } = { pubkey: item.pubkey };
+      if (item.relay !== undefined) {
+        memberTag.relay = item.relay;
+      }
+      if (item.isPrivate) {
+        set.privateMembers.push(memberTag);
+      } else {
+        set.publicMembers.push(memberTag);
+      }
+    };
+
     // Process each folder IN ORDER from FolderService
     for (const folder of existingFolders) {
       const set = setsMap.get(folder.name)!;
-      // getMembersInFolder returns pubkeys sorted by order field
       const sortedMemberIds = this.folderService.getMembersInFolder(folder.id);
 
       for (const memberId of sortedMemberIds) {
         const item = itemMap.get(memberId);
         if (item) {
-          const memberTag = { pubkey: item.pubkey, relay: item.relay };
-          if (item.isPrivate) {
-            set.privateMembers.push(memberTag);
-          } else {
-            set.publicMembers.push(memberTag);
-          }
+          addMemberToSet(set, item);
           assignedItemIds.add(memberId);
         }
       }
@@ -493,12 +503,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     for (const memberId of sortedRootMemberIds) {
       const item = itemMap.get(memberId);
       if (item) {
-        const memberTag = { pubkey: item.pubkey, relay: item.relay };
-        if (item.isPrivate) {
-          rootSet.privateMembers.push(memberTag);
-        } else {
-          rootSet.publicMembers.push(memberTag);
-        }
+        addMemberToSet(rootSet, item);
         assignedItemIds.add(memberId);
       }
     }
@@ -506,27 +511,23 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     // Handle orphaned items (in browserItems but not in FolderService) - add to root
     for (const item of allItems) {
       if (!assignedItemIds.has(item.pubkey)) {
-        const memberTag = { pubkey: item.pubkey, relay: item.relay };
-        if (item.isPrivate) {
-          rootSet.privateMembers.push(memberTag);
-        } else {
-          rootSet.publicMembers.push(memberTag);
-        }
-        // Also ensure FolderService knows about this item
+        addMemberToSet(rootSet, item);
         this.folderService.ensureMemberAssignment(item.pubkey);
       }
     }
 
     // Build setOrder (root first, then by folder order)
     const setOrder = ['', ...existingFolders.map(f => f.name)];
+    const now = Math.floor(Date.now() / 1000);
 
     return {
       version: 1,
       sets: Array.from(setsMap.values()),
       metadata: {
         setOrder,
-        lastModified: Math.floor(Date.now() / 1000)
-      }
+        lastModified: now
+      },
+      lastModified: now
     };
   }
 
@@ -559,6 +560,7 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
           .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
           .forEach(t => {
             const coordinate = t[1];
+            if (!coordinate) return;
             const existingTimestamp = deletedCoordinates.get(coordinate);
             // Keep newest deletion timestamp if multiple deletions exist
             if (!existingTimestamp || deletionEvent.created_at > existingTimestamp) {
@@ -624,19 +626,25 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
       let folderOrder: string[] = [];
       if (orderEvents.length > 0) {
-        const orderEvent = orderEvents.sort((a, b) => b.created_at - a.created_at)[0];
-        folderOrder = orderEvent.tags
-          .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
-          .map(t => {
-            const parts = t[1].split(':');
-            // Remove "tribes/" prefix from d-tag: "tribes/Devs" → "Devs"
-            const dTag = parts[2] || '';
-            return dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
-          });
+        const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);
+        const orderEvent = sortedOrderEvents[0];
+        if (orderEvent) {
+          folderOrder = orderEvent.tags
+            .filter(t => t[0] === 'a' && t[1]?.startsWith('30000:'))
+            .map(t => {
+              const tagValue = t[1];
+              if (!tagValue) return '';
+              const parts = tagValue.split(':');
+              // Remove "tribes/" prefix from d-tag: "tribes/Devs" → "Devs"
+              const dTag = parts[2] || '';
+              return dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
+            })
+            .filter(d => d !== '');
 
-        this.systemLogger.info('TribeOrchestrator',
-          `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`
-        );
+          this.systemLogger.info('TribeOrchestrator',
+            `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`
+          );
+        }
       }
 
       // Build categories array in correct order (WITH "tribes/" prefix for return value)
@@ -736,11 +744,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     }
   }
 
-
   /**
    * Fetch tribes from relays (read-only wrapper)
    */
   public async fetchTribesFromRelays(pubkey: string): Promise<FetchFromRelaysResult<TribeMember>> {
-    return await this.fetchFromRelays(pubkey);
+    return this.fetchFromRelays(pubkey);
   }
 }

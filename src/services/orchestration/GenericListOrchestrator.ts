@@ -183,6 +183,36 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
     }
   }
 
+  // ===== Helpers =====
+
+  /**
+   * Separate items into public and private lists
+   */
+  protected separateByPrivacy(items: T[]): { publicItems: T[]; privateItems: T[] } {
+    const publicItems = items.filter(item => !item.isPrivate);
+    const privateItems = items.filter(item => item.isPrivate);
+    return { publicItems, privateItems };
+  }
+
+  /**
+   * Wrap a promise with a timeout
+   */
+  protected withTimeout<R>(fn: () => Promise<R>, timeoutMs: number, errorMsg: string): Promise<R> {
+    return Promise.race([
+      fn(),
+      new Promise<R>((_, reject) =>
+        setTimeout(() => reject(new Error(errorMsg)), timeoutMs)
+      )
+    ]);
+  }
+
+  /**
+   * Get bootstrap relays for fetching
+   */
+  protected getBootstrapRelays(): string[] {
+    return this.relayConfig.getAggregatorRelays();
+  }
+
   // ===== Relay Operations =====
 
   /**
@@ -206,12 +236,7 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
       throw new Error('No write relays available');
     }
 
-    // Read from browser storage
-    const browserItems = this.getBrowserItems();
-
-    // Separate public and private items
-    const publicItems = browserItems.filter(item => !item.isPrivate);
-    const privateItems = browserItems.filter(item => item.isPrivate);
+    const { publicItems, privateItems } = this.separateByPrivacy(this.getBrowserItems());
 
     // Build public tags
     const publicTags = publicItems.flatMap(item => this.config.itemToTags(item));
@@ -271,19 +296,10 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
       if (!nip46Manager?.isAvailable()) {
         throw new Error('NIP-46 remote signer not available');
       }
-      // Add timeout for NIP-46 RPC operations (remote signer may not respond)
-      const encryptWithTimeout = <R>(fn: () => Promise<R>, timeoutMs: number = 15000): Promise<R> => {
-        return Promise.race([
-          fn(),
-          new Promise<R>((_, reject) =>
-            setTimeout(() => reject(new Error('NIP-46 encrypt timeout')), timeoutMs)
-          )
-        ]);
-      };
       try {
-        return await encryptWithTimeout(() => nip46Manager.nip44Encrypt(plaintext, pubkey));
+        return await this.withTimeout(() => nip46Manager.nip44Encrypt(plaintext, pubkey), 15000, 'NIP-46 encrypt timeout');
       } catch {
-        return await encryptWithTimeout(() => nip46Manager.nip04Encrypt(plaintext, pubkey));
+        return await this.withTimeout(() => nip46Manager.nip04Encrypt(plaintext, pubkey), 15000, 'NIP-46 encrypt timeout');
       }
     } else if (authMethod === 'extension') {
       try {
@@ -299,13 +315,6 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
           throw new Error('No encryption support available in browser extension');
         }
       }
-    } else if (authMethod === 'nsec') {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser?.privateKey) {
-        throw new Error('No private key available for encryption');
-      }
-      const { nip04 } = await import('../NostrToolsAdapter');
-      return await nip04.encrypt(currentUser.privateKey, pubkey, plaintext);
     } else {
       throw new Error(`Auth method not supported for encryption: ${authMethod}`);
     }
@@ -334,12 +343,11 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
         limit: 1
       }], 5000);
 
-      if (events.length === 0) {
+      const event = events[0];
+      if (!event) {
         this.systemLogger.info(this.name, 'No remote list found');
         return { items: [], relayContentWasEmpty: true };
       }
-
-      const event = events[0];
 
       // Check if content was empty (mixed-client edge case - see LIST-MANAGEMENT-SPEC.md)
       const relayContentWasEmpty = !event.content || event.content.trim() === '';
@@ -414,19 +422,10 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
         if (!nip46Manager?.isAvailable()) {
           throw new Error('NIP-46 remote signer not available');
         }
-        // Add timeout for NIP-46 RPC operations (remote signer may not respond)
-        const decryptWithTimeout = <R>(fn: () => Promise<R>, timeoutMs: number = 10000): Promise<R> => {
-          return Promise.race([
-            fn(),
-            new Promise<R>((_, reject) =>
-              setTimeout(() => reject(new Error('NIP-46 decrypt timeout')), timeoutMs)
-            )
-          ]);
-        };
         try {
-          plaintext = await decryptWithTimeout(() => nip46Manager.nip44Decrypt(event.content, event.pubkey));
+          plaintext = await this.withTimeout(() => nip46Manager.nip44Decrypt(event.content, event.pubkey), 10000, 'NIP-46 decrypt timeout');
         } catch {
-          plaintext = await decryptWithTimeout(() => nip46Manager.nip04Decrypt(event.content, event.pubkey));
+          plaintext = await this.withTimeout(() => nip46Manager.nip04Decrypt(event.content, event.pubkey), 10000, 'NIP-46 decrypt timeout');
         }
       } else if (authMethod === 'extension') {
         if (window.nostr?.nip44?.decrypt) {
@@ -437,13 +436,6 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
         if (!plaintext && window.nostr?.nip04?.decrypt) {
           plaintext = await window.nostr.nip04.decrypt(event.pubkey, event.content);
         }
-      } else if (authMethod === 'nsec') {
-        const currentUser = this.authService.getCurrentUser();
-        if (!currentUser?.privateKey) {
-          throw new Error('No private key available for decryption');
-        }
-        const { nip04 } = await import('../NostrToolsAdapter');
-        plaintext = await nip04.decrypt(currentUser.privateKey, event.pubkey, event.content);
       }
 
       if (!plaintext) {
@@ -528,12 +520,7 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
    * Reads from BROWSER storage and writes to files
    */
   public async saveToFile(): Promise<void> {
-    const browserItems = this.getBrowserItems();
-
-    // Separate public and private
-    const publicItems = browserItems.filter(item => !item.isPrivate);
-    const privateItems = browserItems.filter(item => item.isPrivate);
-
+    const { publicItems, privateItems } = this.separateByPrivacy(this.getBrowserItems());
     const timestamp = Math.floor(Date.now() / 1000);
 
     await this.fileStorage.writePublic({
@@ -562,14 +549,5 @@ export class GenericListOrchestrator<T extends BaseListItem> extends Orchestrato
     this.systemLogger.info(this.name,
       `Restored ${allItems.length} items from files to browser`
     );
-  }
-
-  // ===== Helpers =====
-
-  /**
-   * Get bootstrap relays for fetching
-   */
-  protected getBootstrapRelays(): string[] {
-    return this.relayConfig.getAggregatorRelays();
   }
 }

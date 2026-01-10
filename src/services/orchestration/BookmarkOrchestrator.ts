@@ -13,7 +13,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { BookmarkItem } from '../storage/BookmarkFileStorage';
 import { BookmarkFileStorage } from '../storage/BookmarkFileStorage';
 import type { FetchFromRelaysResult } from '../sync/ListStorageAdapter';
-import type { BookmarkSetData, BookmarkSet } from '../../types/BookmarkSetData';
+import type { BookmarkSetData, BookmarkSet, BookmarkTag } from '../../types/BookmarkSetData';
 import { GenericListOrchestrator } from './GenericListOrchestrator';
 import { bookmarkListConfig, createBookmarkFileStorageWrapper } from './configs/BookmarkListConfig';
 import { BookmarkFolderService } from '../BookmarkFolderService';
@@ -96,11 +96,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         return { public: false, private: false };
       }
 
-      if (item.isPrivate) {
-        return { public: false, private: true };
-      } else {
-        return { public: true, private: false };
-      }
+      return { public: !item.isPrivate, private: item.isPrivate ?? false }
     } catch (error) {
       this.systemLogger.error('BookmarkOrchestrator', `Failed to check bookmark status: ${error}`);
       return { public: false, private: false };
@@ -184,13 +180,9 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       const browserItems = this.getBrowserItems();
       const result = new Map<string, { public: boolean; private: boolean }>();
 
-      browserItems.forEach(item => {
-        if (item.isPrivate) {
-          result.set(item.id, { public: false, private: true });
-        } else {
-          result.set(item.id, { public: true, private: false });
-        }
-      });
+      for (const item of browserItems) {
+        result.set(item.id, { public: !item.isPrivate, private: item.isPrivate || false });
+      }
 
       return result;
     } catch (error) {
@@ -309,12 +301,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     const relayCategories = new Set(relayResult.categories || []);
 
     // Find categories that exist on relays but not locally (deleted)
-    const deletedCategories: string[] = [];
-    for (const relayCategory of relayCategories) {
-      if (!localCategories.has(relayCategory)) {
-        deletedCategories.push(relayCategory);
-      }
-    }
+    const deletedCategories = [...relayCategories].filter(cat => !localCategories.has(cat));
 
     this.systemLogger.info('BookmarkOrchestrator',
       `Publishing: ${setData.sets.length} sets, ${deletedCategories.length} deleted categories`
@@ -351,8 +338,11 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     let totalPublished = 0;
 
     for (let i = 0; i < events.length; i++) {
-      const { tags, content } = events[i];
+      const eventData = events[i];
       const set = setData.sets[i];
+      if (!eventData || !set) continue;
+
+      const { tags, content } = eventData;
 
       // Skip empty sets (except root)
       if (set.publicTags.length === 0 && set.privateTags.length === 0 && set.d !== '') {
@@ -457,21 +447,26 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     // Track which items have been assigned (to catch orphans)
     const assignedItemIds = new Set<string>();
 
+    // Helper to add item to set's public/private tags
+    const addItemToSet = (set: BookmarkSet, item: BookmarkItem): void => {
+      const tag: BookmarkTag = { type: item.type, value: item.value };
+      if (item.description) tag.description = item.description;
+      if (item.isPrivate) {
+        set.privateTags.push(tag);
+      } else {
+        set.publicTags.push(tag);
+      }
+    };
+
     // Process each folder IN ORDER from FolderService
     for (const folder of existingFolders) {
       const set = setsMap.get(folder.name)!;
-      // getBookmarksInFolder returns IDs sorted by order field
       const sortedBookmarkIds = this.folderService.getBookmarksInFolder(folder.id);
 
       for (const bookmarkId of sortedBookmarkIds) {
         const item = itemMap.get(bookmarkId);
         if (item) {
-          const tag = { type: item.type, value: item.value, description: item.description };
-          if (item.isPrivate) {
-            set.privateTags.push(tag);
-          } else {
-            set.publicTags.push(tag);
-          }
+          addItemToSet(set, item);
           assignedItemIds.add(bookmarkId);
         }
       }
@@ -484,12 +479,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     for (const bookmarkId of sortedRootBookmarkIds) {
       const item = itemMap.get(bookmarkId);
       if (item) {
-        const tag = { type: item.type, value: item.value, description: item.description };
-        if (item.isPrivate) {
-          rootSet.privateTags.push(tag);
-        } else {
-          rootSet.publicTags.push(tag);
-        }
+        addItemToSet(rootSet, item);
         assignedItemIds.add(bookmarkId);
       }
     }
@@ -497,13 +487,7 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     // Handle orphaned items (in browserItems but not in FolderService) - add to root
     for (const item of allItems) {
       if (!assignedItemIds.has(item.id)) {
-        const tag = { type: item.type, value: item.value, description: item.description };
-        if (item.isPrivate) {
-          rootSet.privateTags.push(tag);
-        } else {
-          rootSet.publicTags.push(tag);
-        }
-        // Also ensure FolderService knows about this item
+        addItemToSet(rootSet, item);
         this.folderService.ensureBookmarkAssignment(item.id);
       }
     }
@@ -552,21 +536,20 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
         kinds: [5]
       }], 5000);
 
-      // Extract deleted coordinates with deletion timestamp (coordinate → deletion created_at)
+      // Extract deleted coordinates with deletion timestamp (coordinate -> deletion created_at)
       // NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp"
       const deletedCoordinates = new Map<string, number>();
-      deletionEvents.forEach(deletionEvent => {
-        deletionEvent.tags
-          .filter(t => t[0] === 'a' && t[1]?.startsWith('30003:'))
-          .forEach(t => {
-            const coordinate = t[1];
-            const existingTimestamp = deletedCoordinates.get(coordinate);
-            // Keep newest deletion timestamp if multiple deletions exist
-            if (!existingTimestamp || deletionEvent.created_at > existingTimestamp) {
-              deletedCoordinates.set(coordinate, deletionEvent.created_at);
-            }
-          });
-      });
+      for (const deletionEvent of deletionEvents) {
+        for (const tag of deletionEvent.tags) {
+          if (tag[0] !== 'a' || !tag[1]?.startsWith('30003:')) continue;
+          const coordinate = tag[1];
+          const existingTimestamp = deletedCoordinates.get(coordinate);
+          // Keep newest deletion timestamp if multiple deletions exist
+          if (!existingTimestamp || deletionEvent.created_at > existingTimestamp) {
+            deletedCoordinates.set(coordinate, deletionEvent.created_at);
+          }
+        }
+      }
 
       if (deletedCoordinates.size > 0) {
         this.systemLogger.info('BookmarkOrchestrator',
@@ -583,22 +566,22 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       const eventsByDTag = new Map<string, NostrEvent>();
       let filteredDeletedCount = 0;
 
-      events.forEach(event => {
+      for (const event of events) {
         const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
 
-        // Check if this event is deleted (NIP-09: For replaceable events, delete "all versions up to the deletion event timestamp")
+        // Check if this event is deleted (NIP-09: delete "all versions up to the deletion event timestamp")
         const coordinate = `30003:${pubkey}:${dTag}`;
         const deletionTimestamp = deletedCoordinates.get(coordinate);
         if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
           filteredDeletedCount++;
-          return; // Skip events older than deletion
+          continue; // Skip events older than deletion
         }
 
         const existing = eventsByDTag.get(dTag);
         if (!existing || event.created_at > existing.created_at) {
           eventsByDTag.set(dTag, event);
         }
-      });
+      }
 
       if (filteredDeletedCount > 0) {
         this.systemLogger.info('BookmarkOrchestrator',
@@ -619,10 +602,11 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       }], 5000);
 
       let folderOrder: string[] = [];
-      if (orderEvents.length > 0) {
-        const orderEvent = orderEvents.sort((a, b) => b.created_at - a.created_at)[0];
+      const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);
+      const orderEvent = sortedOrderEvents[0];
+      if (orderEvent) {
         folderOrder = orderEvent.tags
-          .filter(t => t[0] === 'a' && t[1]?.startsWith('30003:'))
+          .filter((t): t is [string, string, ...string[]] => t[0] === 'a' && !!t[1]?.startsWith('30003:'))
           .map(t => {
             const parts = t[1].split(':');
             return parts[2] || '';
@@ -681,22 +665,22 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
           event.tags.filter(t => t[0] !== 'd' && t[0] !== 'title'),
           event.created_at
         );
-        publicItems.forEach(item => {
+        for (const item of publicItems) {
           item.isPrivate = false;
-          item.category = categoryName;  // Set category directly on item
+          item.category = categoryName;
           categoryAssignments.set(item.id, categoryName);
-        });
+        }
 
         // Extract private items from encrypted content
         let privateItems: BookmarkItem[] = [];
         if (hasContent) {
           try {
             privateItems = await this.decryptPrivateItems(event, pubkey);
-            privateItems.forEach(item => {
+            for (const item of privateItems) {
               item.isPrivate = true;
-              item.category = categoryName;  // Set category directly on item
+              item.category = categoryName;
               categoryAssignments.set(item.id, categoryName);
-            });
+            }
           } catch (error) {
             this.systemLogger.error('BookmarkOrchestrator',
               `Failed to decrypt private items for category "${categoryName}": ${error}`
@@ -712,11 +696,13 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
       }
 
       // Deduplicate by ID
-      const itemMap = new Map<string, BookmarkItem>();
-      allItems.forEach(item => itemMap.set(this.config.getItemId(item), item));
+      const dedupeMap = new Map<string, BookmarkItem>();
+      for (const item of allItems) {
+        dedupeMap.set(this.config.getItemId(item), item);
+      }
 
       return {
-        items: Array.from(itemMap.values()),
+        items: Array.from(dedupeMap.values()),
         relayContentWasEmpty: anyContentWasEmpty,
         categoryAssignments,
         categories
@@ -727,11 +713,10 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
     }
   }
 
-
   /**
    * Fetch bookmarks from relays (read-only wrapper)
    */
   public async fetchBookmarksFromRelays(pubkey: string): Promise<FetchFromRelaysResult<BookmarkItem>> {
-    return await this.fetchFromRelays(pubkey);
+    return this.fetchFromRelays(pubkey);
   }
 }

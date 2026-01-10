@@ -205,10 +205,9 @@ export class DeletionService {
    * Delete a single event (convenience method)
    */
   public async deleteEvent(eventId: string, reason?: string): Promise<boolean> {
-    return this.deleteEvents({
-      eventIds: [eventId],
-      reason
-    });
+    const options: DeletionOptions = { eventIds: [eventId] };
+    if (reason !== undefined) options.reason = reason;
+    return this.deleteEvents(options);
   }
 
   /**
@@ -216,9 +215,8 @@ export class DeletionService {
    * @param coordinates - Array of coordinates in format "kind:pubkey:d-tag"
    */
   public async deleteByCoordinates(coordinates: string[], reason?: string): Promise<boolean> {
-    return this.deleteEvents({
-      coordinates,
-      reason
-    });
+    const options: DeletionOptions = { coordinates };
+    if (reason !== undefined) options.reason = reason;
+    return this.deleteEvents(options);
   }
 }
