@@ -571,25 +571,11 @@ export class PostNoteModal {
         this.modalService.hide();
         this.systemLogger.success('PostService', 'Note posted successfully');
       } else {
-        this.restoreModalAfterError(modalContainer, originalDisplay);
+        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post');
       }
     } catch (error) {
       console.error('Post error:', error);
-      this.restoreModalAfterError(modalContainer, originalDisplay);
-    }
-  }
-
-  /**
-   * Restore modal state after a failed post attempt
-   */
-  private restoreModalAfterError(modalContainer: HTMLElement | null, originalDisplay: string): void {
-    if (modalContainer) {
-      modalContainer.style.display = originalDisplay;
-    }
-    const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
-    if (postBtn) {
-      postBtn.disabled = false;
-      postBtn.textContent = 'Post';
+      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post');
     }
   }
 

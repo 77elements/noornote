@@ -564,25 +564,11 @@ export class ReplyModal {
         this.modalService.hide();
         this.systemLogger.success('PostService', 'Reply posted successfully');
       } else {
-        this.restoreModalState(modalContainer, originalDisplay);
+        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Reply');
       }
     } catch (error) {
       console.error('Reply error:', error);
-      this.restoreModalState(modalContainer, originalDisplay);
-    }
-  }
-
-  /**
-   * Restore modal state after failed post attempt
-   */
-  private restoreModalState(modalContainer: HTMLElement | null, originalDisplay: string): void {
-    if (modalContainer) {
-      modalContainer.style.display = originalDisplay;
-    }
-    const postBtn = document.querySelector('[data-action="post"]') as HTMLButtonElement;
-    if (postBtn) {
-      postBtn.disabled = false;
-      postBtn.textContent = 'Reply';
+      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Reply');
     }
   }
 
