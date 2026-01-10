@@ -59,11 +59,9 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
     if (!currentUser) {
       // Schedule migration for when user logs in
       const eventBus = EventBus.getInstance();
-      const handler = () => {
+      eventBus.once('user:login', () => {
         this.runMigrationIfNeeded();
-        eventBus.off('user:login', handler);
-      };
-      eventBus.on('user:login', handler);
+      });
       return;
     }
 
@@ -398,7 +396,7 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
     await this.ensureEventIdsCacheLoaded();
 
     // Check 1: Note itself muted
-    if (this.mutedEventIds.has(event.id)) {
+    if (event.id && this.mutedEventIds.has(event.id)) {
       return true;
     }
 
@@ -483,10 +481,11 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
 
     // NIP-10: Look for explicit "root" marker
     const rootTag = eTags.find(tag => tag[3] === 'root');
-    if (rootTag) return rootTag[1];
+    if (rootTag) return rootTag[1] ?? null;
 
     // NIP-10 deprecated positional: first e-tag is root (only if multiple)
-    if (eTags.length > 1) return eTags[0][1];
+    const firstTag = eTags[0];
+    if (eTags.length > 1 && firstTag) return firstTag[1] ?? null;
 
     return null;
   }
@@ -500,11 +499,14 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
 
     // NIP-10: Look for explicit "reply" marker
     const replyTag = eTags.find(tag => tag[3] === 'reply');
-    if (replyTag) return replyTag[1];
+    if (replyTag) return replyTag[1] ?? null;
 
     // NIP-10 deprecated positional
-    if (eTags.length === 1) return eTags[0][1];
-    return eTags[eTags.length - 1][1]; // Last e-tag = parent
+    const firstTag = eTags[0];
+    if (eTags.length === 1 && firstTag) return firstTag[1] ?? null;
+
+    const lastTag = eTags[eTags.length - 1];
+    return lastTag?.[1] ?? null; // Last e-tag = parent
   }
 
   // ===== Relay Sync Methods =====
@@ -559,7 +561,7 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
     }
 
     // Return newest event
-    return validEvents.sort((a, b) => b.created_at - a.created_at)[0];
+    return validEvents.sort((a, b) => b.created_at - a.created_at)[0] ?? null;
   }
 
   /**
@@ -583,7 +585,7 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
 
       // Extract remote public mutes (users only)
       const remotePublicMutes = remoteEvent.tags
-        .filter(tag => tag[0] === 'p' && tag[1])
+        .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'p' && !!tag[1])
         .map(tag => tag[1]);
 
       // Extract remote private mutes (if enabled)
@@ -591,8 +593,8 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
       if (this.isPrivateMutesEnabled() && !relayContentWasEmpty) {
         const decrypted = await this.decryptPrivateItems(remoteEvent, currentUser.pubkey);
         remotePrivateMutes = decrypted
-          .filter(item => item.type === 'user')
-          .map(item => item.id);
+          .filter(item => item.type === 'user' && item.id)
+          .map(item => item.id) as string[];
       }
 
       return {
@@ -607,8 +609,9 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
 
   /**
    * Sync mute list from relays with smart merge
+   * Note: Different signature from base class - this is MuteOrchestrator-specific
    */
-  public override async syncFromRelays(options: { autoRepublish?: boolean } = {}): Promise<void> {
+  public async syncMutesFromRelays(options: { autoRepublish?: boolean } = {}): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       return;
@@ -643,10 +646,12 @@ export class MuteOrchestrator extends GenericListOrchestrator<MuteItem> {
       }
 
       // Convert remote tags to MuteItems
-      const remoteItems: MuteItem[] = remoteTags.map(tag => ({
-        id: tag[1],
-        type: tag[0] === 'p' ? 'user' : 'thread',
-        addedAt: remoteEvent.created_at
+      const remoteItems: MuteItem[] = remoteTags
+        .filter(tag => tag[1] !== undefined)
+        .map(tag => ({
+          id: tag[1]!,
+          type: tag[0] === 'p' ? 'user' as const : 'thread' as const,
+          addedAt: remoteEvent.created_at
       }));
 
       // Count new items
