@@ -17,8 +17,7 @@ import { AuthService } from '../../../services/AuthService';
 import { ToastService } from '../../../services/ToastService';
 import { BookmarkOrchestrator } from '../../../services/orchestration/BookmarkOrchestrator';
 import { BookmarkFolderService } from '../../../services/BookmarkFolderService';
-import { NostrTransport } from '../../../services/transport/NostrTransport';
-import { RelayConfig } from '../../../services/RelayConfig';
+import { NoteService } from '../../../services/NoteService';
 import { ListSyncManager } from '../../../services/sync/ListSyncManager';
 import { BookmarkStorageAdapter } from '../../../services/sync/adapters/BookmarkStorageAdapter';
 import { RestoreListsService } from '../../../services/RestoreListsService';
@@ -48,8 +47,7 @@ export class BookmarkManager {
   private authService: AuthService;
   private bookmarkOrch: BookmarkOrchestrator;
   private folderService: BookmarkFolderService;
-  private transport: NostrTransport;
-  private relayConfig: RelayConfig;
+  private noteService: NoteService;
   private listSyncManager: ListSyncManager<BookmarkItem>;
   private adapter: BookmarkStorageAdapter;
   private profileMountsService: ProfileMountsService;
@@ -69,8 +67,7 @@ export class BookmarkManager {
     this.authService = AuthService.getInstance();
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
     this.folderService = BookmarkFolderService.getInstance();
-    this.transport = NostrTransport.getInstance();
-    this.relayConfig = RelayConfig.getInstance();
+    this.noteService = NoteService.getInstance();
 
     this.adapter = new BookmarkStorageAdapter();
     this.listSyncManager = new ListSyncManager(this.adapter);
@@ -315,24 +312,13 @@ export class BookmarkManager {
         return timeB - timeA; // DESC - newest first
       });
 
-      // Fetch events from relays (only for 'e' type bookmarks - event references)
+      // Fetch events via NoteService (only for 'e' type bookmarks - event references)
       // Other types like 'r' (URLs), 't' (hashtags), 'a' (replaceable events) are not fetchable by ID
-      const relays = this.relayConfig.getAllRelays().map(r => r.url);
       const eventBookmarks = sortedBookmarks.filter(b => b.type === 'e');
-      const events = eventBookmarks.length > 0
-        ? await this.transport.fetch(relays, [{
-            ids: eventBookmarks.map(b => b.id)
-          }], 5000)
-        : [];
-
-      // Build cache
-      const eventMap = new Map<string, NostrEvent>();
-      events.forEach(e => {
-        const eventId = e.id;
-        if (eventId) {
-          eventMap.set(eventId, e);
-        }
-      });
+      const eventIds = eventBookmarks.map(b => b.id);
+      const eventMap = eventIds.length > 0
+        ? await this.noteService.getNotes(eventIds)
+        : new Map<string, NostrEvent>();
 
       this.bookmarksCache.clear();
 
@@ -1061,6 +1047,9 @@ export class BookmarkManager {
       const targetName = targetFolderId === '' ? 'root' : targetFolder?.name || 'folder';
       ToastService.show(`Moved to ${targetName}`, 'success');
 
+      // Trigger Easy Mode sync
+      this.eventBus.emit('bookmark:updated');
+
       // Just remove the card from DOM - it's now in a different folder/root
       const card = this.containerElement.querySelector(`[data-bookmark-id="${bookmarkId}"]`);
       card?.remove();
@@ -1095,6 +1084,9 @@ export class BookmarkManager {
           }
 
           ToastService.show(`Folder "${name}" created`, 'success');
+
+          // Trigger Easy Mode sync
+          this.eventBus.emit('bookmark:updated');
         } catch (error) {
           console.error('Failed to create folder:', error);
           ToastService.show('Failed to create folder', 'error');
@@ -1166,6 +1158,10 @@ export class BookmarkManager {
           }
 
           ToastService.show('Bookmark created', 'success');
+
+          // Trigger Easy Mode sync
+          this.eventBus.emit('bookmark:updated');
+
           this.refreshCurrentView();
         } catch (error) {
           console.error('Failed to create bookmark:', error);
@@ -1374,15 +1370,13 @@ export class BookmarkManager {
 
   private async getDisplayNameForSync(item: BookmarkItem): Promise<string> {
     try {
-      const relays = this.relayConfig.getAllRelays().map(r => r.url);
-      const events = await this.transport.fetch(relays, [{ ids: [item.id] }], 3000);
+      const event = await this.noteService.getNote(item.id);
 
-      if (events.length === 0) {
+      if (!event) {
         return item.id.slice(0, 12) + '...';
       }
 
-      const event = events[0];
-      const content = event?.content;
+      const content = event.content;
       if (!content) {
         return item.id.slice(0, 12) + '...';
       }

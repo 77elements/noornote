@@ -12,13 +12,13 @@
 import { BaseListManager } from './BaseListManager';
 import { MuteOrchestrator, type MuteStatus } from '../../../services/orchestration/MuteOrchestrator';
 import { UserProfileService } from '../../../services/UserProfileService';
+import { NoteService } from '../../../services/NoteService';
 import { ToastService } from '../../../services/ToastService';
 import { Router } from '../../../services/Router';
 import { hexToNpub } from '../../../helpers/nip19';
 import { extractDisplayName } from '../../../helpers/extractDisplayName';
 import { ListSyncManager } from '../../../services/sync/ListSyncManager';
 import { MuteStorageAdapter } from '../../../services/sync/adapters/MuteStorageAdapter';
-import { NostrTransport } from '../../../services/transport/NostrTransport';
 import type { UserProfile } from '../../../services/UserProfileService';
 
 interface MuteItemWithProfile {
@@ -114,23 +114,18 @@ export class MuteListManager extends BaseListManager<string, MuteItemWithProfile
     const threadsMap = await this.muteOrch.getAllMutedThreadsWithStatus();
     const threadEntries = Array.from(threadsMap.entries());
 
-    // Fetch event content for threads
+    // Fetch event content for threads via NoteService
     if (threadEntries.length > 0) {
-      const transport = NostrTransport.getInstance();
+      const noteService = NoteService.getInstance();
       const eventIds = threadEntries.map(([id]) => id);
 
       try {
-        const events = await transport.fetch(transport.getReadRelays(), [{
-          ids: eventIds,
-          kinds: [1]
-        }], 5000);
-
-        const eventMap = new Map(events.map(e => [e.id, e.content]));
+        const events = await noteService.getNotes(eventIds);
 
         this.mutedThreads = threadEntries.map(([eventId, status]) => {
-          const content = eventMap.get(eventId);
+          const event = events.get(eventId);
           const thread: MutedThread = { eventId, status };
-          if (content !== undefined) thread.content = content;
+          if (event?.content !== undefined) thread.content = event.content;
           return thread;
         });
       } catch {

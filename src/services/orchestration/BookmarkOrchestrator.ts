@@ -622,13 +622,12 @@ export class BookmarkOrchestrator extends GenericListOrchestrator<BookmarkItem> 
 
       if (folderOrder.length > 0) {
         // Use order from NIP-78 metadata
+        // Include ALL folders from metadata, even empty ones (no kind:30003 event)
         for (const dTag of folderOrder) {
-          if (eventsByDTag.has(dTag)) {
-            categories.push(dTag);
-          }
+          categories.push(dTag);
         }
 
-        // Add any folders not in metadata (edge case)
+        // Add any folders not in metadata (edge case - have content but not in order)
         for (const dTag of eventsByDTag.keys()) {
           if (dTag !== '' && !categories.includes(dTag)) {
             categories.push(dTag);
