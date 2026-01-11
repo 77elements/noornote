@@ -9,8 +9,8 @@
  * Architecture:
  * - Fetches events by ID (note, nevent, hex)
  * - Delegates addressable events (naddr) to LongFormOrchestrator
- * - NO CACHE (always fetches fresh)
- * - Two-stage fetch: standard relays → outbound relays fallback
+ * - Uses NoteService cache (cache-first, then relay fetch)
+ * - Three-stage fetch: cache → standard relays → outbound relays fallback
  * - Silent logging (only errors)
  */
 
@@ -20,6 +20,7 @@ import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
+import { NoteService } from '../NoteService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 
 export class QuoteOrchestrator extends Orchestrator {
@@ -27,6 +28,7 @@ export class QuoteOrchestrator extends Orchestrator {
   private transport: NostrTransport;
   private relayDiscovery: OutboundRelaysOrchestrator;
   private longFormOrch: LongFormOrchestrator;
+  private noteService: NoteService;
   private systemLogger: SystemLogger;
 
   /** In-flight fetches to prevent duplicate requests */
@@ -37,6 +39,7 @@ export class QuoteOrchestrator extends Orchestrator {
     this.transport = NostrTransport.getInstance();
     this.relayDiscovery = OutboundRelaysOrchestrator.getInstance();
     this.longFormOrch = LongFormOrchestrator.getInstance();
+    this.noteService = NoteService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }
 
@@ -148,54 +151,64 @@ export class QuoteOrchestrator extends Orchestrator {
   }
 
   /**
-   * Fetch event by ID with three-stage strategy
-   * Stage 0: Try relay hints first (from nevent)
-   * Stage 1: Try standard relays
-   * Stage 2: If not found, try standard + outbound relays
+   * Fetch event by ID with four-stage strategy
+   * Stage 0: Check NoteService cache first
+   * Stage 1: Try relay hints (from nevent)
+   * Stage 2: Try standard relays
+   * Stage 3: If not found, try standard + outbound relays
    */
   private async fetchEventById(eventId: string, relayHints: string[] = []): Promise<NostrEvent | null> {
+    // Stage 0: Check NoteService cache first
+    const cached = this.noteService.getCachedNote(eventId);
+    if (cached) {
+      return cached;
+    }
+
     const filter: NDKFilter = {
       ids: [eventId],
       limit: 1
     };
 
-    // Stage 0: Try relay hints first (highest priority)
+    // Stage 1: Try relay hints first (highest priority)
     if (relayHints.length > 0) {
       try {
         const events = await this.transport.fetch(relayHints, [filter], 5000);
-
-        if (events.length > 0) {
-          return events[0] ?? null;
+        const event = events[0];
+        if (event) {
+          this.noteService.registerNote(event);
+          return event;
         }
       } catch (error) {
         this.systemLogger.warn('QuoteOrchestrator', `Relay hints fetch failed: ${error}`);
       }
     }
 
-    // Stage 1: Try standard relays
+    // Stage 2: Try standard relays
     const standardRelays = this.transport.getReadRelays();
 
     try {
       const events = await this.transport.fetch(standardRelays, [filter], 5000);
-
-      if (events.length > 0) {
-        return events[0] ?? null;
+      const event = events[0];
+      if (event) {
+        this.noteService.registerNote(event);
+        return event;
       }
     } catch (error) {
-      this.systemLogger.error('QuoteOrchestrator', `Stage 1 fetch failed: ${error}`);
+      this.systemLogger.error('QuoteOrchestrator', `Stage 2 fetch failed: ${error}`);
     }
 
-    // Stage 2: Not found on standard relays, try with outbound relays
+    // Stage 3: Not found on standard relays, try with outbound relays
     try {
       const outboundRelays = await this.relayDiscovery.getCombinedRelays([], true);
 
       const events = await this.transport.fetch(outboundRelays, [filter], 10000);
-
-      if (events.length > 0) {
-        return events[0] ?? null;
+      const event = events[0];
+      if (event) {
+        this.noteService.registerNote(event);
+        return event;
       }
     } catch (error) {
-      this.systemLogger.error('QuoteOrchestrator', `Stage 2 fetch failed: ${error}`);
+      this.systemLogger.error('QuoteOrchestrator', `Stage 3 fetch failed: ${error}`);
     }
 
     return null;
