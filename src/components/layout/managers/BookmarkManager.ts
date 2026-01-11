@@ -316,9 +316,11 @@ export class BookmarkManager {
       // Other types like 'r' (URLs), 't' (hashtags), 'a' (replaceable events) are not fetchable by ID
       const eventBookmarks = sortedBookmarks.filter(b => b.type === 'e');
       const eventIds = eventBookmarks.map(b => b.id);
+      console.log('[DEBUG loadBookmarks] eventBookmarks count:', eventBookmarks.length, 'eventIds:', eventIds);
       const eventMap = eventIds.length > 0
         ? await this.noteService.getNotes(eventIds)
         : new Map<string, NostrEvent>();
+      console.log('[DEBUG loadBookmarks] eventMap size:', eventMap.size, 'of', eventIds.length, 'requested');
 
       this.bookmarksCache.clear();
 
@@ -326,8 +328,10 @@ export class BookmarkManager {
       const isFirstInit = !this.folderService.hasRootOrder();
 
       // Process in sorted order (newest first)
+      let eventsFound = 0;
       for (const bookmark of sortedBookmarks) {
         const event = eventMap.get(bookmark.id);
+        if (event) eventsFound++;
         const cacheEntry: BookmarkWithEvent = {
           id: bookmark.id,
           type: bookmark.type,
@@ -343,6 +347,7 @@ export class BookmarkManager {
         // Ensure folder assignment exists
         this.folderService.ensureBookmarkAssignment(bookmark.id);
       }
+      console.log('[DEBUG loadBookmarks] bookmarksCache size:', this.bookmarksCache.size, 'eventsFound:', eventsFound);
 
       // On first init, build root order from sorted bookmarks (newest first)
       if (isFirstInit) {
@@ -1370,18 +1375,25 @@ export class BookmarkManager {
 
   private async getDisplayNameForSync(item: BookmarkItem): Promise<string> {
     try {
+      // 1. Check bookmarksCache
+      const cached = this.bookmarksCache.get(item.id);
+      if (cached?.event?.content) {
+        return cached.event.content.slice(0, 60) || item.id.slice(0, 12) + '...';
+      }
+
+      // 2. Check NoteService cache
+      const cachedNote = this.noteService.getCachedNote(item.id);
+      if (cachedNote?.content) {
+        return cachedNote.content.slice(0, 60) || item.id.slice(0, 12) + '...';
+      }
+
+      // 3. Fetch via NoteService
       const event = await this.noteService.getNote(item.id);
-
-      if (!event) {
-        return item.id.slice(0, 12) + '...';
+      if (event?.content) {
+        return event.content.slice(0, 60) || item.id.slice(0, 12) + '...';
       }
 
-      const content = event.content;
-      if (!content) {
-        return item.id.slice(0, 12) + '...';
-      }
-      const snippet = content.slice(0, 60);
-      return snippet || item.id.slice(0, 12) + '...';
+      return item.id.slice(0, 12) + '...';
     } catch {
       return item.id.slice(0, 12) + '...';
     }

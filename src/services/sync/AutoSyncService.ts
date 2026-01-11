@@ -25,6 +25,7 @@ import { ConnectivityService } from '../ConnectivityService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { SyncConfirmationModal } from '../../components/modals/SyncConfirmationModal';
 import { UserProfileService } from '../UserProfileService';
+import { NoteService } from '../NoteService';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { renderUserMention } from '../../helpers/UserMentionHelper';
 import { isEasyMode } from '../../helpers/ListSyncMode';
@@ -534,7 +535,12 @@ export class AutoSyncService {
           }
           case 'bookmarks': {
             const bookmarkItem = item as BookmarkItem;
-            // For bookmarks, just show truncated ID
+            // Fetch note content via NoteService
+            const noteService = NoteService.getInstance();
+            const event = await noteService.getNote(bookmarkItem.id);
+            if (event?.content) {
+              return event.content.slice(0, 60) || bookmarkItem.id.slice(0, 12) + '...';
+            }
             return bookmarkItem.id.slice(0, 12) + '...';
           }
           case 'mutes': {
