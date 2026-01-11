@@ -3,10 +3,10 @@
  * Resolves user pubkeys to usernames, profile pictures, and metadata
  * Uses ProfileOrchestrator for fetching
  *
- * MINIMAL CACHE STRATEGY:
+ * LRU CACHE STRATEGY:
  * - Memory-only cache (no localStorage)
- * - No TTL (fresh on every app start)
- * - Background fetching for performance
+ * - LRU eviction when cache exceeds MAX_CACHE_SIZE
+ * - Fresh on every app start
  */
 
 import { ProfileOrchestrator } from './orchestration/ProfileOrchestrator';
@@ -31,7 +31,9 @@ export interface UserProfile {
 export class UserProfileService {
   private static instance: UserProfileService;
 
-  // NO CACHING - removed all cache Maps
+  /** LRU Cache for profiles */
+  private profileCache: Map<string, UserProfile> = new Map();
+  private readonly MAX_CACHE_SIZE = 500;
 
   private orchestrator: ProfileOrchestrator;
   private fetchingProfiles: Map<string, Promise<UserProfile>> = new Map();
@@ -53,25 +55,73 @@ export class UserProfileService {
   }
 
   /**
+   * Add profile to LRU cache
+   * Moves to end if exists, evicts oldest if full
+   */
+  private addToCache(pubkey: string, profile: UserProfile): void {
+    // Delete first to move to end (LRU: most recent at end)
+    if (this.profileCache.has(pubkey)) {
+      this.profileCache.delete(pubkey);
+    }
+
+    // Evict oldest entries if cache is full
+    while (this.profileCache.size >= this.MAX_CACHE_SIZE) {
+      const oldestKey = this.profileCache.keys().next().value;
+      if (oldestKey) {
+        this.profileCache.delete(oldestKey);
+      }
+    }
+
+    this.profileCache.set(pubkey, profile);
+  }
+
+  /**
+   * Get from cache and mark as recently used
+   */
+  private getFromCache(pubkey: string): UserProfile | null {
+    const profile = this.profileCache.get(pubkey);
+    if (profile) {
+      // Move to end (mark as recently used)
+      this.profileCache.delete(pubkey);
+      this.profileCache.set(pubkey, profile);
+      return profile;
+    }
+    return null;
+  }
+
+  /**
    * Get username ONLY (lightweight, fast)
    * Returns cached username or null if not yet loaded
-   * Triggers background fetch if not in cache
    */
-  public getUsername(_pubkey: string): string | null {
-    // NO CACHE - always return null
-    // Use subscribeToProfile() instead
+  public getUsername(pubkey: string): string | null {
+    const cached = this.profileCache.get(pubkey);
+    if (cached) {
+      return cached.display_name || cached.name || cached.username || null;
+    }
     return null;
   }
 
   /**
    * Get profile picture ONLY (lightweight, fast)
    * Returns cached picture or null if not yet loaded
-   * Triggers background fetch if not in cache
    */
-  public getProfilePicture(_pubkey: string): string | null {
-    // NO CACHE - always return null
-    // Use subscribeToProfile() instead
-    return null;
+  public getProfilePicture(pubkey: string): string | null {
+    const cached = this.profileCache.get(pubkey);
+    return cached?.picture || null;
+  }
+
+  /**
+   * Check if profile is cached (without fetching)
+   */
+  public hasProfile(pubkey: string): boolean {
+    return this.profileCache.has(pubkey);
+  }
+
+  /**
+   * Get cached profile (without fetching)
+   */
+  public getCachedProfile(pubkey: string): UserProfile | null {
+    return this.getFromCache(pubkey);
   }
 
   /**
@@ -79,7 +129,11 @@ export class UserProfileService {
    * Returns cached profile or fetches from relays
    */
   public async getUserProfile(pubkey: string): Promise<UserProfile> {
-    // NO CACHE - always fetch fresh from relays
+    // Check cache first
+    const cached = this.getFromCache(pubkey);
+    if (cached) {
+      return cached;
+    }
 
     // Deduplication: if already fetching, wait for that request
     if (this.fetchingProfiles.has(pubkey)) {
@@ -102,7 +156,10 @@ export class UserProfileService {
       // Clear any previous failure on success
       this.failedFetches.delete(pubkey);
 
-      // NO CACHING - just notify subscribers and return
+      // Add to cache
+      this.addToCache(pubkey, profile);
+
+      // Notify subscribers
       this.notifyProfileUpdate(pubkey, profile);
       return profile;
     } catch (error) {
@@ -126,20 +183,39 @@ export class UserProfileService {
    * Fetch multiple user profiles efficiently
    */
   public async getUserProfiles(pubkeys: string[]): Promise<Map<string, UserProfile>> {
-    // NO CACHE - always fetch all
-    try {
-      const fetchedProfiles = await this.fetchMultipleProfilesFromRelays(pubkeys);
-      return fetchedProfiles;
-    } catch (error) {
-      console.warn('Failed to fetch user profiles:', error);
+    const result = new Map<string, UserProfile>();
+    const toFetch: string[] = [];
 
-      // Return default profiles for all on error
-      const profiles = new Map<string, UserProfile>();
-      pubkeys.forEach(pubkey => {
-        profiles.set(pubkey, this.getDefaultProfile(pubkey));
-      });
-      return profiles;
+    // Check cache first
+    for (const pubkey of pubkeys) {
+      const cached = this.getFromCache(pubkey);
+      if (cached) {
+        result.set(pubkey, cached);
+      } else {
+        toFetch.push(pubkey);
+      }
     }
+
+    // Fetch missing profiles
+    if (toFetch.length > 0) {
+      try {
+        const fetchedProfiles = await this.fetchMultipleProfilesFromRelays(toFetch);
+        fetchedProfiles.forEach((profile, pubkey) => {
+          this.addToCache(pubkey, profile);
+          result.set(pubkey, profile);
+        });
+      } catch (error) {
+        console.warn('Failed to fetch user profiles:', error);
+        // Return default profiles for missing
+        toFetch.forEach(pubkey => {
+          if (!result.has(pubkey)) {
+            result.set(pubkey, this.getDefaultProfile(pubkey));
+          }
+        });
+      }
+    }
+
+    return result;
   }
 
   /**
@@ -197,10 +273,17 @@ export class UserProfileService {
 
     this.profileUpdateCallbacks.get(pubkey)!.add(callback);
 
-    // NO CACHE - always fetch
-    this.getUserProfile(pubkey).then(callback).catch(() => {
-      // Silent fail
-    });
+    // Check cache first, fetch only if not cached
+    const cached = this.getFromCache(pubkey);
+    if (cached) {
+      // Immediate callback with cached data
+      callback(cached);
+    } else {
+      // Fetch from relays
+      this.getUserProfile(pubkey).then(callback).catch(() => {
+        // Silent fail
+      });
+    }
 
     // Return unsubscribe function
     return () => {
@@ -225,10 +308,27 @@ export class UserProfileService {
   }
 
   /**
-   * Clear all cached profiles (NO-OP - no cache exists)
+   * Invalidate cached profile (e.g., after profile edit)
+   */
+  public invalidateProfile(pubkey: string): void {
+    this.profileCache.delete(pubkey);
+  }
+
+  /**
+   * Clear all cached profiles
    */
   public clearCache(): void {
-    // NO CACHE - nothing to clear
-    console.log('UserProfileService: No cache to clear');
+    this.profileCache.clear();
+    this.failedFetches.clear();
+  }
+
+  /**
+   * Get cache stats (for debugging)
+   */
+  public getCacheStats(): { size: number; maxSize: number } {
+    return {
+      size: this.profileCache.size,
+      maxSize: this.MAX_CACHE_SIZE
+    };
   }
 }

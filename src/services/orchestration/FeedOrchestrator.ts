@@ -53,6 +53,9 @@ export class FeedOrchestrator extends Orchestrator {
   private systemLogger: SystemLogger;
   private mutedPubkeys: Set<string> = new Set();
 
+  /** Loaded notes cache - shared across components */
+  private loadedNotes: Map<string, NostrEvent> = new Map();
+
   /** Registered callbacks for event updates */
   private callbacks: Set<FeedCallback> = new Set();
 
@@ -100,6 +103,31 @@ export class FeedOrchestrator extends Orchestrator {
    */
   public unregisterCallback(callback: FeedCallback): void {
     this.callbacks.delete(callback);
+  }
+
+  /**
+   * Get a loaded note by event ID (without fetching)
+   */
+  public getLoadedNote(eventId: string): NostrEvent | null {
+    return this.loadedNotes.get(eventId) || null;
+  }
+
+  /**
+   * Check if a note is loaded
+   */
+  public hasLoadedNote(eventId: string): boolean {
+    return this.loadedNotes.has(eventId);
+  }
+
+  /**
+   * Register notes (for external components to add notes to cache)
+   */
+  public registerNotes(events: NostrEvent[]): void {
+    for (const event of events) {
+      if (event.id && !this.loadedNotes.has(event.id)) {
+        this.loadedNotes.set(event.id, event);
+      }
+    }
   }
 
   /**
@@ -217,14 +245,18 @@ export class FeedOrchestrator extends Orchestrator {
           }
         }
 
+        const resultEvents = accumulatedEvents.slice(0, 50);
+        this.registerNotes(resultEvents);
         return {
-          events: accumulatedEvents.slice(0, 50),
+          events: resultEvents,
           hasMore: accumulatedEvents.length > 0
         };
       }
 
+      const resultEvents = filteredEvents.slice(0, 50);
+      this.registerNotes(resultEvents);
       return {
-        events: filteredEvents.slice(0, 50), // Limit to 50
+        events: resultEvents,
         hasMore: true
       };
     } catch (error) {
@@ -346,8 +378,10 @@ export class FeedOrchestrator extends Orchestrator {
         return await this.loadMore(recursiveRequest);
       }
 
+      const resultEvents = filteredEvents.slice(0, 50);
+      this.registerNotes(resultEvents);
       return {
-        events: filteredEvents.slice(0, 50),
+        events: resultEvents,
         hasMore: true // Always more history on Nostr
       };
     } catch (error) {
@@ -451,7 +485,8 @@ export class FeedOrchestrator extends Orchestrator {
    * Clear cache (for refresh)
    */
   public clearCache(): void {
-    this.systemLogger.info('FeedOrchestrator', 'Feed cache cleared (via EventCacheOrchestrator)');
+    this.loadedNotes.clear();
+    this.systemLogger.info('FeedOrchestrator', 'Feed cache cleared');
   }
 
   // Orchestrator interface implementations (unused for now, but required by base class)
@@ -748,6 +783,7 @@ export class FeedOrchestrator extends Orchestrator {
   public override destroy(): void {
     this.stopPolling();
     this.callbacks.clear();
+    this.loadedNotes.clear();
     super.destroy();
     this.systemLogger.info('FeedOrchestrator', 'Destroyed');
   }
