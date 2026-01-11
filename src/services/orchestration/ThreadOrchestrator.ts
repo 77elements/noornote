@@ -17,6 +17,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { MuteOrchestrator } from './MuteOrchestrator';
+import { NoteService } from '../NoteService';
 import { AuthService } from '../AuthService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 
@@ -39,6 +40,7 @@ export class ThreadOrchestrator extends Orchestrator {
   private static instance: ThreadOrchestrator;
   private transport: NostrTransport;
   private muteOrchestrator: MuteOrchestrator;
+  private noteService: NoteService;
   private authService: AuthService;
   private systemLogger: SystemLogger;
 
@@ -55,6 +57,7 @@ export class ThreadOrchestrator extends Orchestrator {
     super('ThreadOrchestrator');
     this.transport = NostrTransport.getInstance();
     this.muteOrchestrator = MuteOrchestrator.getInstance();
+    this.noteService = NoteService.getInstance();
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.systemLogger.info(this.LOG_TAG, 'Initialized');
@@ -112,6 +115,10 @@ export class ThreadOrchestrator extends Orchestrator {
       }
 
       actualReplies.sort((a, b) => a.created_at - b.created_at);
+
+      // Register replies in NoteService for later reuse
+      this.noteService.registerNotes(actualReplies);
+
       return actualReplies;
     } catch (error) {
       this.systemLogger.error(this.LOG_TAG, `Fetch replies failed: ${error}`);
@@ -150,11 +157,10 @@ export class ThreadOrchestrator extends Orchestrator {
 
   private async fetchParentChainFromRelays(noteId: string): Promise<ThreadContext> {
     try {
-      const relays = this.transport.getReadRelays();
-      const events = await this.transport.fetch(relays, [{ ids: [noteId] }], 5000);
+      // Try NoteService cache first, then fetch
+      const firstEvent = await this.noteService.getNote(noteId);
 
-      const firstEvent = events[0];
-      if (events.length === 0 || !firstEvent) {
+      if (!firstEvent) {
         return this.emptyThreadContext();
       }
 
@@ -167,9 +173,9 @@ export class ThreadOrchestrator extends Orchestrator {
         if (!parentId || parentId === noteToProcess.id) break;
         if (chain.some(item => item.eventId === parentId)) break;
 
-        const parentEvents = await this.transport.fetch(relays, [{ ids: [parentId] }], 5000);
-        const parentNote = parentEvents[0];
-        if (parentEvents.length === 0 || !parentNote) break;
+        // Try NoteService cache first, then fetch
+        const parentNote = await this.noteService.getNote(parentId);
+        if (!parentNote) break;
 
         chain.push({
           eventId: parentNote.id ?? '',

@@ -18,6 +18,7 @@ import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { MuteOrchestrator } from './MuteOrchestrator';
+import { NoteService } from '../NoteService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
@@ -50,11 +51,9 @@ export class FeedOrchestrator extends Orchestrator {
   private transport: NostrTransport;
   private relayDiscovery: OutboundRelaysOrchestrator;
   private muteOrchestrator: MuteOrchestrator;
+  private noteService: NoteService;
   private systemLogger: SystemLogger;
   private mutedPubkeys: Set<string> = new Set();
-
-  /** Loaded notes cache - shared across components */
-  private loadedNotes: Map<string, NostrEvent> = new Map();
 
   /** Registered callbacks for event updates */
   private callbacks: Set<FeedCallback> = new Set();
@@ -79,6 +78,7 @@ export class FeedOrchestrator extends Orchestrator {
     this.transport = NostrTransport.getInstance();
     this.relayDiscovery = OutboundRelaysOrchestrator.getInstance();
     this.muteOrchestrator = MuteOrchestrator.getInstance();
+    this.noteService = NoteService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.systemLogger.info('FeedOrchestrator', 'Feed Orchestrator at your service');
     this.loadMutedUsers();
@@ -107,27 +107,26 @@ export class FeedOrchestrator extends Orchestrator {
 
   /**
    * Get a loaded note by event ID (without fetching)
+   * Delegates to NoteService
    */
   public getLoadedNote(eventId: string): NostrEvent | null {
-    return this.loadedNotes.get(eventId) || null;
+    return this.noteService.getCachedNote(eventId);
   }
 
   /**
    * Check if a note is loaded
+   * Delegates to NoteService
    */
   public hasLoadedNote(eventId: string): boolean {
-    return this.loadedNotes.has(eventId);
+    return this.noteService.hasNote(eventId);
   }
 
   /**
    * Register notes (for external components to add notes to cache)
+   * Delegates to NoteService
    */
   public registerNotes(events: NostrEvent[]): void {
-    for (const event of events) {
-      if (event.id && !this.loadedNotes.has(event.id)) {
-        this.loadedNotes.set(event.id, event);
-      }
-    }
+    this.noteService.registerNotes(events);
   }
 
   /**
@@ -483,9 +482,10 @@ export class FeedOrchestrator extends Orchestrator {
 
   /**
    * Clear cache (for refresh)
+   * Note: Only clears NoteService cache, not other caches
    */
   public clearCache(): void {
-    this.loadedNotes.clear();
+    this.noteService.clearCache();
     this.systemLogger.info('FeedOrchestrator', 'Feed cache cleared');
   }
 
@@ -783,7 +783,6 @@ export class FeedOrchestrator extends Orchestrator {
   public override destroy(): void {
     this.stopPolling();
     this.callbacks.clear();
-    this.loadedNotes.clear();
     super.destroy();
     this.systemLogger.info('FeedOrchestrator', 'Destroyed');
   }

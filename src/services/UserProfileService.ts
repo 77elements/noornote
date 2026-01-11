@@ -1,5 +1,5 @@
 /**
- * User Profile Service
+ * User Profile Service (also exported as ProfileService)
  * Resolves user pubkeys to usernames, profile pictures, and metadata
  * Uses ProfileOrchestrator for fetching
  *
@@ -332,3 +332,6 @@ export class UserProfileService {
     };
   }
 }
+
+/** Alias for UserProfileService (microservice naming convention) */
+export const ProfileService = UserProfileService;
