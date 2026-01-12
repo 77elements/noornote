@@ -25,6 +25,7 @@ import { AuthService } from '../AuthService';
 import { EventBus } from '../EventBus';
 import { decodeNip19 } from '../NostrToolsAdapter';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
+import { NoteService } from '../NoteService';
 
 export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag';
 
@@ -69,6 +70,9 @@ export class NotificationsOrchestrator extends Orchestrator {
   /** Cached RelayConfig instance (lazy-loaded) */
   private relayConfig: any = null;
 
+  /** NoteService for caching kind 1 events */
+  private noteService: NoteService;
+
   private constructor() {
     super('NotificationsOrchestrator');
     this.transport = NostrTransport.getInstance();
@@ -77,6 +81,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.authService = AuthService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.perAccountStorage = PerAccountLocalStorage.getInstance();
+    this.noteService = NoteService.getInstance();
 
     this.systemLogger.info('NotificationsOrchestrator', '🔔 Notifications Orchestrator initialized');
   }
@@ -437,6 +442,11 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       // Sort by timestamp (newest first)
       this.notifications.sort((a, b) => b.timestamp - a.timestamp);
+
+      // Register kind 1 events in NoteService for cache reuse
+      if (event.kind === 1) {
+        this.noteService.registerNote(event);
+      }
     }
   }
 

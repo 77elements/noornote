@@ -13,6 +13,7 @@ import { SearchOrchestrator } from './orchestration/SearchOrchestrator';
 import { EventBus } from './EventBus';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { NoteService } from './NoteService';
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -34,6 +35,7 @@ export class HashtagNotificationService {
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
   private storage: PerAccountLocalStorage;
+  private noteService: NoteService;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
   private isPollingStarted = false;
 
@@ -42,6 +44,7 @@ export class HashtagNotificationService {
     this.eventBus = EventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
+    this.noteService = NoteService.getInstance();
   }
 
   public static getInstance(): HashtagNotificationService {
@@ -223,6 +226,9 @@ export class HashtagNotificationService {
             }
           }
         }
+
+        // Register all found notes in NoteService for cache reuse
+        this.noteService.registerNotes(allResults);
 
         // Filter: only posts newer than lastSeenTimestamp
         const newPosts = allResults.filter(e => e.created_at > subscription.lastSeenTimestamp);
