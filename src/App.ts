@@ -565,7 +565,10 @@ export class App {
 
       const { ArticleNotificationService } = await import('./services/ArticleNotificationService');
       ArticleNotificationService.getInstance().startPolling();
+    });
 
+    // Start hashtag notification polling (separate block to avoid being blocked by above)
+    await this.runSilent(async () => {
       const { HashtagNotificationService } = await import('./services/HashtagNotificationService');
       HashtagNotificationService.getInstance().startPolling();
     });

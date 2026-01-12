@@ -24,6 +24,7 @@ export interface NotificationItemOptions {
   event: NostrEvent;
   type: NotificationType;
   timestamp: number;
+  meta?: { hashtag?: string; count?: number };
 }
 
 export class NotificationItem {
@@ -248,9 +249,8 @@ export class NotificationItem {
       }
       case 'article': return 'posted a new article';
       case 'hashtag': {
-        const meta = (this.options.event as NostrEvent & { meta?: { hashtag?: string; count?: number } }).meta;
-        const hashtag = meta?.hashtag || 'unknown';
-        const count = meta?.count || 1;
+        const hashtag = this.options.meta?.hashtag || 'unknown';
+        const count = this.options.meta?.count || 1;
         return count === 1
           ? `New post tagged #${hashtag}`
           : `${count} new posts tagged #${hashtag}`;
@@ -516,8 +516,7 @@ export class NotificationItem {
 
     // For hashtag notifications, trigger hashtag search
     if (type === 'hashtag') {
-      const meta = (this.options.event as NostrEvent & { meta?: { hashtag?: string } }).meta;
-      const hashtag = meta?.hashtag;
+      const hashtag = this.options.meta?.hashtag;
       if (hashtag) {
         const eventBus = EventBus.getInstance();
         eventBus.emit('hashtagSearch:start', { hashtag });

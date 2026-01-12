@@ -140,6 +140,13 @@
     margin-bottom: $gap;
   }
 
+  &__header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: $gap;
+  }
+
   &__meta {
     font-size: 14px;
     color: var(--color-text-secondary);
