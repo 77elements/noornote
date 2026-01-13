@@ -160,8 +160,18 @@ export class TribeView extends View {
    * Update timeline based on selected tribe
    */
   private async updateTimeline(userPubkey: string): Promise<void> {
-    // Get pubkeys for selected tribe
-    const tribePubkeys = this.tribeFolderService.getMembersInFolder(this.currentTribeId);
+    // Get member IDs for selected tribe (format: "pubkey" or "pubkey_category")
+    const memberIds = this.tribeFolderService.getMembersInFolder(this.currentTribeId);
+
+    // Extract pure pubkeys from unique IDs (remove "_category" suffix if present)
+    const tribePubkeys = memberIds.map(id => {
+      const underscoreIndex = id.indexOf('_');
+      // If underscore exists and the part before it is a valid 64-char hex, extract it
+      if (underscoreIndex === 64) {
+        return id.substring(0, 64);
+      }
+      return id;
+    });
 
     // Destroy existing timeline
     if (this.timeline) {

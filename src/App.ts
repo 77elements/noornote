@@ -226,18 +226,12 @@ export class App {
         }
         break;
 
-      case 'timeline':
-        if (!this.timelineUI) {
-          const currentUser = this.authService.getCurrentUser();
-          if (currentUser) {
-            this.timelineUI = new Timeline(currentUser.pubkey);
-          }
-        }
-        if (this.timelineUI) {
-          primaryContent.appendChild(this.timelineUI.getElement());
-          this.viewLifecycleManager.onViewMount(this.timelineUI);
-        }
+      case 'timeline': {
+        const { TimelineView } = await import('./components/views/TimelineView');
+        const timelineView = new TimelineView();
+        primaryContent.appendChild(timelineView.getElement());
         break;
+      }
 
       case 'single-note':
         if (param) {
