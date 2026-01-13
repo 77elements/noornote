@@ -660,13 +660,11 @@ export class TribeManager {
    */
   private async deleteMember(pubkey: string): Promise<void> {
     try {
+      // TribeOrchestrator.removeMember handles both browser storage and folder assignments
       await this.tribeOrch.removeMember(pubkey);
 
-      // Remove from cache
+      // Remove from local cache
       this.membersCache.delete(pubkey);
-
-      // Remove from folder service
-      this.folderService.removeMemberAssignment(pubkey);
 
       ToastService.show('Member removed', 'success');
       this.rerenderCurrentView();
@@ -736,14 +734,14 @@ export class TribeManager {
 
       confirmBtn?.addEventListener('click', async () => {
         try {
-          // Get members in folder before deletion
-          const memberIds = this.folderService.getMembersInFolder(folderId);
+          // Get member pubkeys in folder (extracts pure pubkeys from member IDs)
+          const pubkeys = this.folderService.getMemberPubkeysInFolder(folderId);
 
           // Delete all members in this tribe
-          for (const pubkey of memberIds) {
+          // TribeOrchestrator.removeMember handles both browser storage and folder assignments
+          for (const pubkey of pubkeys) {
             await this.tribeOrch.removeMember(pubkey);
             this.membersCache.delete(pubkey);
-            this.folderService.removeMemberAssignment(pubkey);
           }
 
           // Delete folder

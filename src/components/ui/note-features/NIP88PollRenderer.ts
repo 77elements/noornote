@@ -13,6 +13,7 @@ import { PollVoteService } from '../../../services/PollVoteService';
 import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../system/SystemLogger';
 import { EventBus } from '../../../services/EventBus';
+import { RelayConfig } from '../../../services/RelayConfig';
 
 // Store pollData by eventId for cross-view updates
 const pollDataCache = new Map<string, PollData>();
@@ -126,7 +127,7 @@ export class NIP88PollRenderer {
       optionBtn.className = 'nip88-poll__option';
       optionBtn.dataset.optionId = option.id;
       optionBtn.innerHTML = `
-        <span class="nip88-poll__option-label">${this.escapeHtml(option.label)}</span>
+        <span class="nip88-poll__option-label">${this.renderOptionLabel(option.label)}</span>
         <span class="nip88-poll__option-stats">
           <span class="nip88-poll__option-count">0 votes</span>
           <span class="nip88-poll__option-percentage">0%</span>
@@ -212,10 +213,11 @@ export class NIP88PollRenderer {
     const currentUser = authService.getCurrentUser();
     if (!currentUser) return;
 
-    // Determine relays (use poll's relay tags or defaults)
-    const relays = pollData.relayUrls && pollData.relayUrls.length > 0
-      ? pollData.relayUrls
-      : ['wss://relay.damus.io', 'wss://relay.primal.net'];
+    // Combine poll's relay tags with aggregator relays for better reach
+    const relayConfig = RelayConfig.getInstance();
+    const aggregatorRelays = relayConfig.getAggregatorRelays();
+    const pollRelays = pollData.relayUrls || [];
+    const relays = [...new Set([...pollRelays, ...aggregatorRelays])];
 
     // Cast vote
     const success = await voteService.castVote({
@@ -297,5 +299,24 @@ export class NIP88PollRenderer {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * Check if text is an image URL
+   */
+  private static isImageUrl(text: string): boolean {
+    // Same pattern as extractMedia.ts
+    const imageRegex = /^https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s]*)?$/i;
+    return imageRegex.test(text.trim());
+  }
+
+  /**
+   * Render option label - as image if it's an image URL, otherwise as text
+   */
+  private static renderOptionLabel(label: string): string {
+    if (this.isImageUrl(label)) {
+      return `<img src="${this.escapeHtml(label)}" alt="Poll option" class="nip88-poll__option-image" loading="lazy">`;
+    }
+    return this.escapeHtml(label);
   }
 }

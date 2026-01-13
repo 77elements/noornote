@@ -199,7 +199,8 @@ export class RelayConfig {
       'wss://relay.snort.social',
       'wss://nos.lol',
       'wss://relay.primal.net',
-      'wss://purplepag.es'
+      'wss://purplepag.es',
+      'wss://relay.mostr.pub'
     ];
   }
 
