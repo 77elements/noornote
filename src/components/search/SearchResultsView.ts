@@ -89,20 +89,27 @@ export class SearchResultsView {
     // Results header
     const header = document.createElement('div');
     header.className = 'search-results__header';
-    header.innerHTML = `
-      <div class="search-results__header-content">
-        <h3>${escapeHtml(this.config.title)}</h3>
-        ${this.config.meta ? `<p class="search-results__meta">${escapeHtml(this.config.meta)}</p>` : ''}
-      </div>
-    `;
+
+    // Title
+    const title = document.createElement('h3');
+    title.textContent = this.config.title;
+    header.appendChild(title);
+
+    // Row with meta (left) and subscribe button (right)
+    const headerRow = document.createElement('div');
+    headerRow.className = 'search-results__header-row';
+
+    if (this.config.meta) {
+      const meta = document.createElement('span');
+      meta.className = 'search-results__meta';
+      meta.textContent = this.config.meta;
+      headerRow.appendChild(meta);
+    }
 
     // Add subscribe button if hashtag is provided
     if (this.config.hashtag) {
-      const subscribeContainer = document.createElement('div');
-      subscribeContainer.className = 'search-results__subscribe';
-
       this.subscribeButton = document.createElement('button');
-      this.subscribeButton.className = 'btn btn--secondary';
+      this.subscribeButton.className = 'btn btn--medium';
       this.updateSubscribeButton();
 
       this.subscribeButton.addEventListener('click', () => {
@@ -112,10 +119,10 @@ export class SearchResultsView {
         }
       });
 
-      subscribeContainer.appendChild(this.subscribeButton);
-      header.appendChild(subscribeContainer);
+      headerRow.appendChild(this.subscribeButton);
     }
 
+    header.appendChild(headerRow);
     this.container.appendChild(header);
 
     // Results list

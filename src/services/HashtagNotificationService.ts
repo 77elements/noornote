@@ -13,15 +13,19 @@ import { SearchOrchestrator } from './orchestration/SearchOrchestrator';
 import { EventBus } from './EventBus';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { NoteService } from './NoteService';
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+export interface HashtagSubscription {
+  subscribedAt: number;
+  lastSeenTimestamp: number; // Unix timestamp of last seen post
+  includeWithoutHash: boolean; // Also search for term without # prefix
+}
+
 interface StorageData {
   subscriptions: {
-    [hashtag: string]: {
-      subscribedAt: number;
-      lastSeenTimestamp: number; // Unix timestamp of last seen post
-    };
+    [hashtag: string]: HashtagSubscription;
   };
 }
 
@@ -31,6 +35,7 @@ export class HashtagNotificationService {
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
   private storage: PerAccountLocalStorage;
+  private noteService: NoteService;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
   private isPollingStarted = false;
 
@@ -39,6 +44,7 @@ export class HashtagNotificationService {
     this.eventBus = EventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
+    this.noteService = NoteService.getInstance();
   }
 
   public static getInstance(): HashtagNotificationService {
@@ -65,7 +71,8 @@ export class HashtagNotificationService {
     if (!(hashtag in data.subscriptions)) {
       data.subscriptions[hashtag] = {
         subscribedAt: Date.now(),
-        lastSeenTimestamp: Math.floor(Date.now() / 1000)
+        lastSeenTimestamp: Math.floor(Date.now() / 1000),
+        includeWithoutHash: false
       };
       this.saveData(data);
       this.eventBus.emit('hashtag-subscription:updated', { hashtag, subscribed: true });
@@ -104,6 +111,43 @@ export class HashtagNotificationService {
   public getSubscribedHashtags(): string[] {
     const data = this.loadData();
     return Object.keys(data.subscriptions);
+  }
+
+  /**
+   * Get subscription details for a hashtag
+   */
+  public getSubscription(hashtag: string): HashtagSubscription | null {
+    const data = this.loadData();
+    return data.subscriptions[hashtag] || null;
+  }
+
+  /**
+   * Get all subscriptions with details
+   */
+  public getAllSubscriptions(): { hashtag: string; subscription: HashtagSubscription }[] {
+    const data = this.loadData();
+    return Object.entries(data.subscriptions).map(([hashtag, subscription]) => ({
+      hashtag,
+      subscription: {
+        ...subscription,
+        // Ensure includeWithoutHash has a default for old subscriptions
+        includeWithoutHash: subscription.includeWithoutHash ?? false
+      }
+    }));
+  }
+
+  /**
+   * Set includeWithoutHash flag for a subscription
+   */
+  public setIncludeWithoutHash(hashtag: string, include: boolean): void {
+    const data = this.loadData();
+    const subscription = data.subscriptions[hashtag];
+
+    if (subscription) {
+      subscription.includeWithoutHash = include;
+      this.saveData(data);
+      this.eventBus.emit('hashtag-subscription:updated', { hashtag, includeWithoutHash: include });
+    }
   }
 
   /**
@@ -154,18 +198,45 @@ export class HashtagNotificationService {
       const subscription = data.subscriptions[hashtag];
       if (!subscription) continue;
 
+      // Ensure includeWithoutHash has a default for old subscriptions
+      const includeWithoutHash = subscription.includeWithoutHash ?? false;
+
       try {
-        const results = await this.searchOrchestrator.search({
+        // Search for #hashtag
+        const hashtagResults = await this.searchOrchestrator.search({
           query: `#${hashtag}`,
           limit: 10
         });
 
+        let allResults = [...hashtagResults];
+
+        // If includeWithoutHash is enabled, also search for the term without #
+        if (includeWithoutHash) {
+          const termResults = await this.searchOrchestrator.search({
+            query: hashtag,
+            limit: 10
+          });
+
+          // Merge and deduplicate by event ID
+          const seenIds = new Set(allResults.map(e => e.id));
+          for (const event of termResults) {
+            if (!seenIds.has(event.id)) {
+              allResults.push(event);
+              seenIds.add(event.id);
+            }
+          }
+        }
+
+        // Register all found notes in NoteService for cache reuse
+        this.noteService.registerNotes(allResults);
+
         // Filter: only posts newer than lastSeenTimestamp
-        const newPosts = results.filter(e => e.created_at > subscription.lastSeenTimestamp);
+        const newPosts = allResults.filter(e => e.created_at > subscription.lastSeenTimestamp);
 
         if (newPosts.length > 0) {
           // System log: New posts found
-          this.systemLogger.info('HashtagNotificationService', `Found ${newPosts.length} new posts for #${hashtag}`);
+          const searchType = includeWithoutHash ? `#${hashtag} + "${hashtag}"` : `#${hashtag}`;
+          this.systemLogger.info('HashtagNotificationService', `Found ${newPosts.length} new posts for ${searchType}`);
 
           // Update last seen
           subscription.lastSeenTimestamp = Math.max(...newPosts.map(e => e.created_at));

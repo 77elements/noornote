@@ -23,9 +23,26 @@ export class NotificationsCacheService {
   private limitKey = 'noornote_notifications_cache_limit'; // Global setting, not per-user
   private defaultLimit = 100;
   private perAccountStorage: PerAccountLocalStorage;
+  // Bump this version to force cache clear (e.g., after fixing hashtag notification caching bug)
+  private static readonly CACHE_VERSION = 2;
+  private static readonly CACHE_VERSION_KEY = 'noornote_notifications_cache_version';
 
   private constructor() {
     this.perAccountStorage = PerAccountLocalStorage.getInstance();
+    this.runMigrations();
+  }
+
+  /**
+   * Run one-time migrations (e.g., clear cache after bug fixes)
+   */
+  private runMigrations(): void {
+    const storedVersion = parseInt(localStorage.getItem(NotificationsCacheService.CACHE_VERSION_KEY) || '0', 10);
+
+    if (storedVersion < NotificationsCacheService.CACHE_VERSION) {
+      // Clear notifications cache to fix hashtag notifications being re-classified as mentions
+      this.perAccountStorage.remove(StorageKeys.NOTIFICATIONS_CACHE);
+      localStorage.setItem(NotificationsCacheService.CACHE_VERSION_KEY, NotificationsCacheService.CACHE_VERSION.toString());
+    }
   }
 
   public static getInstance(): NotificationsCacheService {

@@ -16,9 +16,6 @@
   margin: 0 auto;
 }
 
-.settings-container {
-}
-
 // Settings title (standalone)
 .settings-title {
   font-size: 32px;
@@ -85,8 +82,6 @@
 // ========================================
 // Relay Settings
 // ========================================
-.relay-settings {
-}
 
 // Relay Health Summary
 .relay-health-summary {
@@ -392,8 +387,6 @@
 // ========================================
 // Media Settings
 // ========================================
-.media-settings {
-}
 
 .media-subsection {
   margin-bottom: $gap * 2;
@@ -406,9 +399,6 @@
 // ========================================
 // Media Server Subsection
 // ========================================
-.media-server-settings {
-  // No extra padding needed, already in media-settings
-}
 
 .media-server-info {
   margin-bottom: $gap;
@@ -510,9 +500,6 @@
 // ========================================
 // Sensitive Media Subsection
 // ========================================
-.sensitive-media-settings {
-  // No extra padding needed
-}
 
 .sensitive-media-info {
   margin-bottom: $gap;
@@ -534,8 +521,6 @@
 // ========================================
 // Follow Lists Settings
 // ========================================
-.follow-lists-settings {
-}
 
 .follow-lists-info {
   margin-bottom: $gap;
@@ -1264,4 +1249,15 @@
   color: $color-4;
   font-weight: 500;
   font-size: 14px;
+}
+
+.subscription-row {
+  flex-wrap: wrap;
+  gap: calc($gap / 2);
+}
+
+.subscription-actions {
+  display: flex;
+  align-items: center;
+  gap: $gap;
 }

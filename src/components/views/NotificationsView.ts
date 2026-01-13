@@ -5,7 +5,7 @@
 
 import { View } from './View';
 import { NotificationsOrchestrator, type NotificationType, type NotificationEvent } from '../../services/orchestration/NotificationsOrchestrator';
-import { NotificationItem } from '../notifications/NotificationItem';
+import { NotificationItem, type NotificationItemOptions } from '../notifications/NotificationItem';
 import { EventBus } from '../../services/EventBus';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -57,19 +57,8 @@ export class NotificationsView extends View {
     // Load cached notifications first (instant), then fetch new ones
     this.loadFromCacheAndFetch();
 
-    // Listen for real-time updates
+    // Listen for real-time updates (includes hashtag notifications via NotificationsOrchestrator)
     this.notificationsOrch.onNewNotification((notification) => {
-      this.handleNewNotification(notification);
-    });
-
-    // Listen for hashtag notification updates
-    this.eventBus.on('hashtag:new-posts', (data: { hashtag: string; count: number; latestEvent: any }) => {
-      const notification: NotificationEvent = {
-        event: data.latestEvent,
-        type: 'hashtag',
-        timestamp: data.latestEvent.created_at,
-        meta: { hashtag: data.hashtag, count: data.count }
-      };
       this.handleNewNotification(notification);
     });
   }
@@ -257,11 +246,15 @@ export class NotificationsView extends View {
     // Now render notification items (profiles are already cached)
     const sentinel = list.querySelector('.infinite-scroll-sentinel');
     notifications.forEach(notification => {
-      const item = new NotificationItem({
+      const itemOptions: NotificationItemOptions = {
         event: notification.event,
         type: notification.type,
         timestamp: notification.timestamp
-      });
+      };
+      if (notification.meta) {
+        itemOptions.meta = notification.meta;
+      }
+      const item = new NotificationItem(itemOptions);
 
       this.notificationItems.push(item);
 
@@ -411,11 +404,15 @@ export class NotificationsView extends View {
     await this.userProfileService.getUserProfile(pubkey);
 
     // Create new item and prepend (newest first)
-    const item = new NotificationItem({
+    const itemOptions: NotificationItemOptions = {
       event: notification.event,
       type: notification.type,
       timestamp: notification.timestamp
-    });
+    };
+    if (notification.meta) {
+      itemOptions.meta = notification.meta;
+    }
+    const item = new NotificationItem(itemOptions);
 
     this.notificationItems.unshift(item);
     list.prepend(item.getElement());

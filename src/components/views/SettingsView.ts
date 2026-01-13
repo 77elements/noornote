@@ -23,6 +23,7 @@ import { UISettingsSection } from '../settings/UISettingsSection';
 import { ProfileRecognitionSettings } from '../settings/ProfileRecognitionSettings';
 import { HashtagNotificationService } from '../../services/HashtagNotificationService';
 import { EventBus } from '../../services/EventBus';
+import { ToastService } from '../../services/ToastService';
 
 export class SettingsView extends View {
   private container: HTMLElement;
@@ -138,7 +139,7 @@ export class SettingsView extends View {
         <div class="nn-ui-toggle settings-section">
           <div class="nn-ui-toggle__header">
             <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Subscriptions</h2>
+              <h2 class="nn-ui-toggle__title">Hashtag Subscriptions</h2>
               <p class="nn-ui-toggle__description">
                 Subscribe to hashtags and get notified when new posts are published.
               </p>
@@ -234,19 +235,36 @@ export class SettingsView extends View {
     const listContainer = this.container.querySelector('#hashtag-subscriptions-list');
     if (!listContainer) return;
 
-    const subscribed = this.hashtagService.getSubscribedHashtags();
+    const subscriptions = this.hashtagService.getAllSubscriptions();
 
-    if (subscribed.length === 0) {
+    if (subscriptions.length === 0) {
       listContainer.innerHTML = '<p class="muted">No hashtag subscriptions yet</p>';
       return;
     }
 
-    listContainer.innerHTML = subscribed.map(hashtag => `
-      <div class="ui-list__item">
+    listContainer.innerHTML = subscriptions.map(({ hashtag, subscription }) => `
+      <div class="ui-list__item subscription-row">
         <span class="subscription-hashtag">#${hashtag}</span>
-        <button class="btn btn--small btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
-          Unsubscribe
-        </button>
+        <div class="subscription-actions">
+          <div class="switch-container">
+            <label class="switch-label" title="Also search for '${hashtag}' without #">
+              <span class="switch-text">also ${hashtag}</span>
+              <div class="switch-toggle">
+                <input
+                  type="checkbox"
+                  class="switch-input"
+                  data-action="toggle-include-without-hash"
+                  data-hashtag="${hashtag}"
+                  ${subscription.includeWithoutHash ? 'checked' : ''}
+                />
+                <span class="switch-slider"></span>
+              </div>
+            </label>
+          </div>
+          <button class="btn btn--small btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
+            Unsubscribe
+          </button>
+        </div>
       </div>
     `).join('');
 
@@ -258,6 +276,22 @@ export class SettingsView extends View {
         if (hashtag) {
           this.hashtagService.unsubscribe(hashtag);
           // Re-render will happen via event listener
+        }
+      });
+    });
+
+    // Attach toggle handlers for includeWithoutHash
+    const toggleInputs = listContainer.querySelectorAll('[data-action="toggle-include-without-hash"]');
+    toggleInputs.forEach(input => {
+      input.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        const hashtag = target.dataset.hashtag;
+        if (hashtag) {
+          this.hashtagService.setIncludeWithoutHash(hashtag, target.checked);
+          const msg = target.checked
+            ? `Now also searching for "${hashtag}" without #`
+            : `Only searching for #${hashtag}`;
+          ToastService.show(msg, 'success');
         }
       });
     });

@@ -49,20 +49,15 @@ export class TribeView extends View {
     }
 
     // Load tribes in root order
-    this.tribes = this.getTribesInRootOrder();
+    this.tribes = this.tribeFolderService.getFoldersInRootOrder();
 
-    if (this.tribes.length === 0) {
+    if (this.tribes.length === 0 || !this.tribes[0]) {
       this.container.innerHTML = '<div class="tribe-view__error">No tribes found. Create one in the sidebar.</div>';
       return;
     }
 
     // Set first tribe as current
-    const firstTribe = this.tribes[0];
-    if (!firstTribe) {
-      this.container.innerHTML = '<div class="tribe-view__error">No tribes found. Create one in the sidebar.</div>';
-      return;
-    }
-    this.currentTribeId = firstTribe.id;
+    this.currentTribeId = this.tribes[0].id;
 
     // Build header with tabs and edit link
     const header = document.createElement('div');
@@ -109,26 +104,6 @@ export class TribeView extends View {
   }
 
   /**
-   * Get tribes sorted by root order
-   */
-  private getTribesInRootOrder(): TribeFolder[] {
-    const allFolders = this.tribeFolderService.getFolders();
-    const rootOrder = this.tribeFolderService.getRootOrder();
-
-    // Extract folder IDs from root order (only folders, not members)
-    const folderOrder = rootOrder
-      .filter(item => item.type === 'folder')
-      .map(item => item.id);
-
-    // Sort folders according to root order
-    const orderedFolders = folderOrder
-      .map(id => allFolders.find(f => f.id === id))
-      .filter((f): f is TribeFolder => f !== undefined);
-
-    return orderedFolders;
-  }
-
-  /**
    * Create a tab button
    */
   private createTab(tribeId: string, name: string, isActive: boolean): HTMLElement {
@@ -160,8 +135,8 @@ export class TribeView extends View {
    * Update timeline based on selected tribe
    */
   private async updateTimeline(userPubkey: string): Promise<void> {
-    // Get pubkeys for selected tribe
-    const tribePubkeys = this.tribeFolderService.getMembersInFolder(this.currentTribeId);
+    // Get member pubkeys for selected tribe
+    const tribePubkeys = this.tribeFolderService.getMemberPubkeysInFolder(this.currentTribeId);
 
     // Destroy existing timeline
     if (this.timeline) {
