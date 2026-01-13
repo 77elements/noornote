@@ -158,7 +158,7 @@ export class MainLayout {
     const listsMenuContainer = this.element.querySelector('.primary-nav');
     if (listsMenuContainer) {
       // Insert after Settings link (before Cache link)
-      const cacheLink = listsMenuContainer.querySelector('.clear-cache-link')?.parentElement;
+      const cacheLink = listsMenuContainer.querySelector('.primary-nav__link--cache')?.parentElement;
       if (cacheLink) {
         listsMenuContainer.insertBefore(this.listsMenu.createElement(), cacheLink);
       } else {
@@ -616,7 +616,7 @@ export class MainLayout {
 
     // Set Timeline as active by default (it's the default route)
     // Will be updated by router:view-changed event when navigating
-    const homeLink = this.element.querySelector('.primary-nav .home-link');
+    const homeLink = this.element.querySelector('.primary-nav .primary-nav__link--home');
     homeLink?.classList.add('is-active');
   }
 
@@ -630,15 +630,15 @@ export class MainLayout {
 
     // Map viewClass abbreviations to nav selectors
     const viewToSelector: Record<string, string> = {
-      'tv': '.home-link',           // Timeline View
-      'pv': '.profile-link',        // Profile View
-      'nv': '.notifications-link',  // Notifications View
-      'atv': 'a[href="/articles"]', // Articles Timeline View
-      'av': 'a[href="/articles"]',  // Article View (single)
-      'aev': 'a[href="/articles"]', // Article Editor View
-      'mv': 'a[href="/messages"]',  // Messages View
-      'cv': 'a[href="/messages"]',  // Conversation View
-      'sv': 'a[href="/settings"]'   // Settings View
+      'tv': '.primary-nav__link--home',           // Timeline View
+      'pv': '.primary-nav__link--profile',        // Profile View
+      'nv': '.primary-nav__link--notifications',  // Notifications View
+      'atv': '.primary-nav__link--articles',      // Articles Timeline View
+      'av': '.primary-nav__link--articles',       // Article View (single)
+      'aev': '.primary-nav__link--articles',      // Article Editor View
+      'mv': '.primary-nav__link--messages',       // Messages View
+      'cv': '.primary-nav__link--messages',       // Conversation View
+      'sv': '.primary-nav__link--settings'        // Settings View
     };
 
     const selector = viewToSelector[viewClass];
@@ -703,7 +703,7 @@ export class MainLayout {
       }
 
       // Update profile link in sidebar
-      const profileLink = this.element.querySelector('.sidebar .profile-link') as HTMLAnchorElement;
+      const profileLink = this.element.querySelector('.sidebar .primary-nav__link--profile') as HTMLAnchorElement;
       if (profileLink) {
         profileLink.href = `/profile/${data.npub}`;
       }
@@ -737,7 +737,7 @@ export class MainLayout {
    * Setup navigation links to use router instead of page reload
    */
   private setupNavigationLinks(): void {
-    const homeLink = this.element.querySelector('.sidebar .home-link');
+    const homeLink = this.element.querySelector('.sidebar .primary-nav__link--home');
     if (homeLink) {
       homeLink.addEventListener('click', (e) => {
         e.preventDefault();
@@ -752,7 +752,7 @@ export class MainLayout {
       });
     }
 
-    const notificationsLink = this.element.querySelector('.sidebar .notifications-link') as HTMLElement | null;
+    const notificationsLink = this.element.querySelector('.sidebar .primary-nav__link--notifications') as HTMLElement | null;
     if (notificationsLink) {
       const handleNotifications = (e: MouseEvent) => {
         e.preventDefault();
@@ -801,7 +801,7 @@ export class MainLayout {
       });
     }
 
-    const profileLink = this.element.querySelector('.sidebar .profile-link') as HTMLElement | null;
+    const profileLink = this.element.querySelector('.sidebar .primary-nav__link--profile') as HTMLElement | null;
     if (profileLink) {
       const handleProfile = (e: MouseEvent) => {
         e.preventDefault();
@@ -815,7 +815,7 @@ export class MainLayout {
       profileLink.addEventListener('auxclick', handleProfile as EventListener); // Middle-click
     }
 
-    const searchLink = this.element.querySelector('.sidebar .search-link');
+    const searchLink = this.element.querySelector('.sidebar .primary-nav__link--search');
     if (searchLink) {
       searchLink.addEventListener('click', (e) => {
         e.preventDefault();
@@ -823,7 +823,7 @@ export class MainLayout {
       });
     }
 
-    const clearCacheLink = this.element.querySelector('.sidebar .clear-cache-link');
+    const clearCacheLink = this.element.querySelector('.sidebar .primary-nav__link--cache');
     if (clearCacheLink) {
       clearCacheLink.addEventListener('click', (e) => {
         e.preventDefault();
@@ -854,37 +854,65 @@ export class MainLayout {
 
   /**
    * Scroll timeline to top
+   * Handles both TimelineView (with tabs) and fallback to primary-content
    */
   private scrollToTop(): void {
+    // TimelineView has its own scrollable container
+    const timelineViewScroll = this.element.querySelector('.timeline-view__timeline');
+    if (timelineViewScroll) {
+      timelineViewScroll.scrollTo({ top: 0, behavior: 'smooth' });
+      this.appState.setState('timeline', { scrollPosition: 0 });
+      return;
+    }
+
+    // Fallback to primary-content for other views
     const primaryContent = this.element.querySelector('.primary-content');
     if (primaryContent) {
       primaryContent.scrollTo({ top: 0, behavior: 'smooth' });
-      // Reset scroll position in CSM
       this.appState.setState('timeline', { scrollPosition: 0 });
     }
   }
 
   /**
    * Setup scroll listener for scroll-to-top button visibility
+   * Handles both TimelineView (with tabs) and fallback to primary-content
    */
   private setupScrollListener(): void {
     // Wait for element to be mounted
     setTimeout(() => {
-      const primaryContent = this.element.querySelector('.primary-content');
       const scrollToTopBtn = this.element.querySelector('.scroll-to-top-btn') as HTMLElement;
+      if (!scrollToTopBtn) return;
 
-      if (primaryContent && scrollToTopBtn) {
-        primaryContent.addEventListener('scroll', () => {
-          const currentView = this.appState.getState('view').currentView;
-          const scrollPosition = primaryContent.scrollTop;
+      // Handler to check scroll position and show/hide button
+      const handleScroll = (scrollContainer: Element) => {
+        const currentView = this.appState.getState('view').currentView;
+        const scrollPosition = scrollContainer.scrollTop;
 
-          // Show button if in timeline and scrolled down (> 100px)
-          if (currentView === 'timeline' && scrollPosition > 100) {
-            scrollToTopBtn.style.display = 'inline-block';
-          } else {
-            scrollToTopBtn.style.display = 'none';
-          }
-        });
+        // Show button if in timeline and scrolled down (> 100px)
+        if (currentView === 'timeline' && scrollPosition > 100) {
+          scrollToTopBtn.style.display = 'inline-block';
+        } else {
+          scrollToTopBtn.style.display = 'none';
+        }
+      };
+
+      // Listen to primary-content scroll (covers most cases)
+      const primaryContent = this.element.querySelector('.primary-content');
+      if (primaryContent) {
+        primaryContent.addEventListener('scroll', () => handleScroll(primaryContent));
+      }
+
+      // Use MutationObserver to attach listener when TimelineView is rendered
+      const observer = new MutationObserver(() => {
+        const timelineViewScroll = this.element.querySelector('.timeline-view__timeline');
+        if (timelineViewScroll && !(timelineViewScroll as HTMLElement).dataset.scrollListenerAttached) {
+          (timelineViewScroll as HTMLElement).dataset.scrollListenerAttached = 'true';
+          timelineViewScroll.addEventListener('scroll', () => handleScroll(timelineViewScroll));
+        }
+      });
+
+      if (primaryContent) {
+        observer.observe(primaryContent, { childList: true, subtree: true });
       }
     }, 100);
   }
@@ -926,12 +954,12 @@ export class MainLayout {
           </div>
           <ul class="primary-nav">
             <li>
-              <a href="/" class="home-link" title="Scroll to top">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a href="/" class="primary-nav__link primary-nav__link--home" title="Scroll to top">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
                   <polyline points="9 22 9 12 15 12 15 22"></polyline>
                 </svg>
-                Timeline
+                <span class="primary-nav__item-desc">Timeline</span>
                 <svg class="scroll-to-top-btn" viewBox="0 0 176 248" fill="currentColor" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0">
                   <path d="M173.5,117.5 C155.833,118.167 138.167,118.833 120.5,119.5C120.5,146.167 120.5,172.833 120.5,199.5C98.5,199.5 76.5,199.5 54.5,199.5C54.5,172.833 54.5,146.167 54.5,119.5C36.8333,118.833 19.1667,118.167 1.5,117.5C29.9251,78.3137 58.5918,39.3137 87.5,0.5C116.408,39.3137 145.075,78.3137 173.5,117.5 Z"/>
                   <path d="M54.5,211.5 C76.5,211.5 98.5,211.5 120.5,211.5C120.5,215.5 120.5,219.5 120.5,223.5C98.5,223.5 76.5,223.5 54.5,223.5C54.5,219.5 54.5,215.5 54.5,211.5 Z"/>
@@ -940,73 +968,73 @@ export class MainLayout {
               </a>
             </li>
             <li>
-              <a href="/profile" class="profile-link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a href="/profile" class="primary-nav__link primary-nav__link--profile">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                   <circle cx="12" cy="7" r="4"></circle>
                 </svg>
-                Profile
+                <span class="primary-nav__item-desc">Profile</span>
               </a>
             </li>
             <li>
-              <a href="/notifications" class="notifications-link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a href="/notifications" class="primary-nav__link primary-nav__link--notifications">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
                 </svg>
-                Notifications
+                <span class="primary-nav__item-desc">Notifications</span>
                 <span class="notifications-badge"></span>
               </a>
             </li>
             <li>
-              <a href="/articles">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a href="/articles" class="primary-nav__link primary-nav__link--articles">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                   <polyline points="14 2 14 8 20 8"/>
                   <line x1="16" y1="13" x2="8" y2="13"/>
                   <line x1="16" y1="17" x2="8" y2="17"/>
                 </svg>
-                Articles
+                <span class="primary-nav__item-desc">Articles</span>
               </a>
             </li>
             <li>
-              <a href="/messages">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a href="/messages" class="primary-nav__link primary-nav__link--messages">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                   <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
-                Messages
+                <span class="primary-nav__item-desc">Messages</span>
                 <span class="badge dm-badge" style="display: none"></span>
               </a>
             </li>
             <li>
-              <a href="/settings">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a href="/settings" class="primary-nav__link primary-nav__link--settings">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
                   <circle cx="12" cy="12" r="3"></circle>
                 </svg>
-                Settings
+                <span class="primary-nav__item-desc">Settings</span>
               </a>
             </li>
             <li>
-              <a href="#" class="search-link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a href="#" class="primary-nav__link primary-nav__link--search">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="11" cy="11" r="8"></circle>
                   <path d="m21 21-4.35-4.35"></path>
                 </svg>
-                Search
+                <span class="primary-nav__item-desc">Search</span>
               </a>
             </li>
             <li>
-              <a href="#" class="clear-cache-link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <a href="#" class="primary-nav__link primary-nav__link--cache">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                 </svg>
-                Cache <span class="cache-size-display">--</span>
+                <span class="primary-nav__item-desc">Cache <span class="cache-size-display">--</span></span>
               </a>
             </li>
-            <li class="about-link-item">
-              <span class="current-datetime-display">--</span> <span class="datetime-separator">•</span> <a href="/about" class="about-link">About</a>
+            <li class="primary-nav__item--about">
+              <span class="current-datetime-display">--</span> <span class="datetime-separator">•</span> <a href="/about" class="primary-nav__link--about">About</a>
             </li>
           </ul>
           <div class="new-post-dropup">
@@ -1133,7 +1161,7 @@ export class MainLayout {
     }
 
     // Update profile link href (event listener is set up in setupNavigationLinks)
-    const profileLink = this.element.querySelector('.sidebar .profile-link') as HTMLAnchorElement;
+    const profileLink = this.element.querySelector('.sidebar .primary-nav__link--profile') as HTMLAnchorElement;
     if (profileLink) {
       profileLink.href = `/profile/${npub}`;
     }
@@ -1246,7 +1274,7 @@ export class MainLayout {
     }
 
     // Reset profile link on logout (event listener remains in setupNavigationLinks)
-    const profileLink = this.element.querySelector('.sidebar .profile-link') as HTMLAnchorElement;
+    const profileLink = this.element.querySelector('.sidebar .primary-nav__link--profile') as HTMLAnchorElement;
     if (profileLink) {
       profileLink.href = '/profile';
     }
