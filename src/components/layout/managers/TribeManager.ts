@@ -439,8 +439,8 @@ export class TribeManager {
   private getActualFolderItemCount(folderId: string): number {
     // Get all real member pubkeys from browser storage
     const realMemberPubkeys = new Set(this.adapter.getBrowserItems().map(m => m.pubkey));
-    // Get assigned pubkeys for this folder
-    const assignedPubkeys = this.folderService.getMembersInFolder(folderId);
+    // Get pure pubkeys assigned to this folder (extracts from uniqueId format)
+    const assignedPubkeys = this.folderService.getMemberPubkeysInFolder(folderId);
     // Count only pubkeys that exist in both
     return assignedPubkeys.filter(pk => realMemberPubkeys.has(pk)).length;
   }
@@ -928,11 +928,15 @@ export class TribeManager {
 
       const isPrivate = this.tribeOrch.isPrivateTribesEnabled();
 
+      // Get folder name for NIP-51 category (tribeId is folder UUID)
+      const folder = this.folderService.getFolder(tribeId);
+      const categoryName = folder?.name || '';
+
       let added = 0;
       const addedPubkeys: string[] = [];
       for (const pubkey of pubkeys) {
         try {
-          await this.tribeOrch.addMember(pubkey, isPrivate, tribeId);
+          await this.tribeOrch.addMember(pubkey, isPrivate, categoryName, tribeId);
           addedPubkeys.push(pubkey);
           added++;
         } catch (error) {
