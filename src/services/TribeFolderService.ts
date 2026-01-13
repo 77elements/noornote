@@ -172,6 +172,51 @@ export class TribeFolderService {
   }
 
   // ========================================
+  // Utility Methods
+  // ========================================
+
+  /**
+   * Get all folders sorted by root order
+   * Returns folders in the order they appear in the root order list
+   */
+  public getFoldersInRootOrder(): TribeFolder[] {
+    const allFolders = this.getFolders();
+    const rootOrder = this.getRootOrder();
+
+    // Extract folder IDs from root order (only folders, not members)
+    const folderOrder = rootOrder
+      .filter(item => item.type === 'folder')
+      .map(item => item.id);
+
+    // Sort folders according to root order
+    return folderOrder
+      .map(id => allFolders.find(f => f.id === id))
+      .filter((f): f is TribeFolder => f !== undefined);
+  }
+
+  /**
+   * Extract pubkey from member ID
+   * Member IDs can be "pubkey" or "pubkey_category" format
+   * Returns the 64-char hex pubkey portion
+   */
+  public extractPubkeyFromMemberId(memberId: string): string {
+    const underscoreIndex = memberId.indexOf('_');
+    // If underscore exists at position 64, it's "pubkey_category" format
+    if (underscoreIndex === 64) {
+      return memberId.substring(0, 64);
+    }
+    return memberId;
+  }
+
+  /**
+   * Get member pubkeys for a folder (extracts pure pubkeys from member IDs)
+   */
+  public getMemberPubkeysInFolder(folderId: string): string[] {
+    const memberIds = this.getMembersInFolder(folderId);
+    return memberIds.map(id => this.extractPubkeyFromMemberId(id));
+  }
+
+  // ========================================
   // Cleanup
   // ========================================
 

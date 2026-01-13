@@ -151,6 +151,25 @@ export class QuoteOrchestrator extends Orchestrator {
   }
 
   /**
+   * Fetch from relays with timeout wrapper
+   * Returns event if found and registers it in NoteService cache
+   */
+  private async fetchFromRelays(relays: string[], filter: NDKFilter, timeout: number): Promise<NostrEvent | null> {
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('Relay timeout')), timeout)
+    );
+    const events = await Promise.race([
+      this.transport.fetch(relays, [filter], timeout),
+      timeoutPromise
+    ]);
+    const event = events[0];
+    if (event) {
+      this.noteService.registerNote(event);
+    }
+    return event ?? null;
+  }
+
+  /**
    * Fetch event by ID with four-stage strategy
    * Stage 0: Check NoteService cache first
    * Stage 1: Try relay hints (from nevent)
@@ -164,48 +183,22 @@ export class QuoteOrchestrator extends Orchestrator {
       return cached;
     }
 
-    const filter: NDKFilter = {
-      ids: [eventId],
-      limit: 1
-    };
+    const filter: NDKFilter = { ids: [eventId], limit: 1 };
 
     // Stage 1: Try relay hints first (highest priority)
     if (relayHints.length > 0) {
       try {
-        // Explicit timeout wrapper - NDK timeout doesn't always work for connection failures
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Relay hints timeout')), 5000)
-        );
-        const events = await Promise.race([
-          this.transport.fetch(relayHints, [filter], 5000),
-          timeoutPromise
-        ]);
-        const event = events[0];
-        if (event) {
-          this.noteService.registerNote(event);
-          return event;
-        }
+        const event = await this.fetchFromRelays(relayHints, filter, 5000);
+        if (event) return event;
       } catch {
         // Relay hints failed, continue to standard relays
       }
     }
 
     // Stage 2: Try standard relays
-    const standardRelays = this.transport.getReadRelays();
-
     try {
-      const timeout2 = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Standard relays timeout')), 5000)
-      );
-      const events = await Promise.race([
-        this.transport.fetch(standardRelays, [filter], 5000),
-        timeout2
-      ]);
-      const event = events[0];
-      if (event) {
-        this.noteService.registerNote(event);
-        return event;
-      }
+      const event = await this.fetchFromRelays(this.transport.getReadRelays(), filter, 5000);
+      if (event) return event;
     } catch {
       // Standard relays failed, continue to outbound relays
     }
@@ -213,19 +206,8 @@ export class QuoteOrchestrator extends Orchestrator {
     // Stage 3: Not found on standard relays, try with outbound relays
     try {
       const outboundRelays = await this.relayDiscovery.getCombinedRelays([], true);
-
-      const timeout3 = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Outbound relays timeout')), 10000)
-      );
-      const events = await Promise.race([
-        this.transport.fetch(outboundRelays, [filter], 10000),
-        timeout3
-      ]);
-      const event = events[0];
-      if (event) {
-        this.noteService.registerNote(event);
-        return event;
-      }
+      const event = await this.fetchFromRelays(outboundRelays, filter, 10000);
+      if (event) return event;
     } catch {
       // Outbound relays failed
     }

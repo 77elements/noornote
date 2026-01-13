@@ -13,7 +13,7 @@
 
 import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
-import { TribeFolderService, type TribeFolder } from '../../services/TribeFolderService';
+import { TribeFolderService } from '../../services/TribeFolderService';
 import { EventBus } from '../../services/EventBus';
 import { AuthService } from '../../services/AuthService';
 
@@ -154,7 +154,7 @@ export class TimelineView extends View {
     });
 
     // Get tribes in root order
-    const tribes = this.getTribesInRootOrder();
+    const tribes = this.tribeFolderService.getFoldersInRootOrder();
 
     // Add tribe tabs
     tribes.forEach(tribe => {
@@ -164,26 +164,6 @@ export class TimelineView extends View {
         name: tribe.name
       });
     });
-  }
-
-  /**
-   * Get tribes sorted by root order
-   */
-  private getTribesInRootOrder(): TribeFolder[] {
-    const allFolders = this.tribeFolderService.getFolders();
-    const rootOrder = this.tribeFolderService.getRootOrder();
-
-    // Extract folder IDs from root order (only folders, not members)
-    const folderOrder = rootOrder
-      .filter(item => item.type === 'folder')
-      .map(item => item.id);
-
-    // Sort folders according to root order
-    const orderedFolders = folderOrder
-      .map(id => allFolders.find(f => f.id === id))
-      .filter((f): f is TribeFolder => f !== undefined);
-
-    return orderedFolders;
   }
 
   /**
@@ -216,23 +196,10 @@ export class TimelineView extends View {
    * Update timeline based on selected tab
    */
   private async updateTimeline(): Promise<void> {
-    // Determine filter pubkeys
-    let filterPubkeys: string[] | undefined;
-
-    if (this.currentTabId !== 'timeline') {
-      // Tribe tab: filter by tribe members
-      const memberIds = this.tribeFolderService.getMembersInFolder(this.currentTabId);
-
-      // Extract pure pubkeys from unique IDs (remove "_category" suffix if present)
-      filterPubkeys = memberIds.map(id => {
-        const underscoreIndex = id.indexOf('_');
-        if (underscoreIndex === 64) {
-          return id.substring(0, 64);
-        }
-        return id;
-      });
-    }
-    // else: Timeline tab - no filter (shows all follows)
+    // Determine filter pubkeys (undefined = all follows, array = specific tribe members)
+    const filterPubkeys = this.currentTabId !== 'timeline'
+      ? this.tribeFolderService.getMemberPubkeysInFolder(this.currentTabId)
+      : undefined;
 
     // Destroy existing timeline
     if (this.timeline) {
