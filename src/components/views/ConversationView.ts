@@ -19,7 +19,10 @@ import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator'
 import { NotificationsOrchestrator } from '../../services/orchestration/NotificationsOrchestrator';
 import { ToastService } from '../../services/ToastService';
 import { AuthGuard } from '../../services/AuthGuard';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { ContentProcessor } from '../../services/ContentProcessor';
+import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
+import { replaceMediaPlaceholders } from '../../helpers/renderMediaContent';
+import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 
 export class ConversationView extends View {
   private container: HTMLElement;
@@ -28,6 +31,8 @@ export class ConversationView extends View {
   private eventBus: EventBus;
   private router: Router;
   private systemLogger: SystemLogger;
+  private contentProcessor: ContentProcessor;
+  private quotedNoteRenderer: QuotedNoteRenderer;
   private partnerPubkey: string;
   private messages: DMMessage[] = [];
   private isSending: boolean = false;
@@ -48,6 +53,8 @@ export class ConversationView extends View {
     this.eventBus = EventBus.getInstance();
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
+    this.contentProcessor = ContentProcessor.getInstance();
+    this.quotedNoteRenderer = QuotedNoteRenderer.getInstance();
     this.outsideClickHandler = () => this.closeMenu();
 
     this.render();
@@ -344,7 +351,7 @@ export class ConversationView extends View {
   }
 
   /**
-   * Render messages list
+   * Render messages list (DOM-based for proper content processing)
    */
   private renderMessages(): void {
     const container = this.messagesContainer;
@@ -360,23 +367,53 @@ export class ConversationView extends View {
       return;
     }
 
-    container.innerHTML = this.messages.map(msg => this.renderMessage(msg)).join('');
+    container.innerHTML = '';
+    this.messages.forEach(msg => {
+      const messageEl = this.renderMessage(msg);
+      container.appendChild(messageEl);
+    });
   }
 
   /**
-   * Render a single message
+   * Render a single message with full content processing
+   * Handles: links, media, npub mentions, hashtags, quoted notes
    */
-  private renderMessage(message: DMMessage): string {
-    const messageClass = message.isMine ? 'message--own' : 'message--other';
+  private renderMessage(message: DMMessage): HTMLElement {
+    const messageEl = document.createElement('div');
+    messageEl.className = `message ${message.isMine ? 'message--own' : 'message--other'}`;
 
-    return `
-      <div class="message ${messageClass}">
-        <div class="message__content">${escapeHtml(message.content)}</div>
-        <div class="message__meta">
-          <span class="message__time">${this.formatTime(message.createdAt)}</span>
-        </div>
+    // Process content through ContentProcessor
+    const processed = this.contentProcessor.processContent(message.content);
+
+    // Replace media placeholders with actual media elements
+    const htmlWithMedia = replaceMediaPlaceholders(
+      processed.html,
+      processed.media,
+      false, // isNSFW - DMs don't have content warnings
+      message.id,
+      message.isMine ? 'self' : this.partnerPubkey
+    );
+
+    messageEl.innerHTML = `
+      <div class="message__content">${htmlWithMedia}</div>
+      <div class="message__quotes"></div>
+      <div class="message__meta">
+        <span class="message__time">${this.formatTime(message.createdAt)}</span>
       </div>
     `;
+
+    // Render quoted notes if any
+    if (processed.quotedReferences.length > 0) {
+      const quotesContainer = messageEl.querySelector('.message__quotes');
+      if (quotesContainer) {
+        this.quotedNoteRenderer.renderQuotedNotes(processed.quotedReferences, quotesContainer, false);
+      }
+    }
+
+    // Setup hover cards for user mentions
+    setupUserMentionHandlers(messageEl);
+
+    return messageEl;
   }
 
   /**
