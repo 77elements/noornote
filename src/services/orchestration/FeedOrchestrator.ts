@@ -144,12 +144,7 @@ export class FeedOrchestrator extends Orchestrator {
     );
 
     try {
-      // Determine relays to fetch from
-      // ProfileView (single author): Use author's NIP-65 relays for better content discovery
-      // TimelineView (multiple authors): Use standard relays only (performance)
-      const relays = specificRelay
-        ? [specificRelay]
-        : await this.relayDiscovery.getCombinedRelays(followingPubkeys, isProfileView);
+      const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, isProfileView);
 
       // ProfileView: Direct fetch with limit only (no time window) - gets newest posts regardless of age
       // TimelineView: Time-windowed fetch (default 1h)
@@ -157,7 +152,7 @@ export class FeedOrchestrator extends Orchestrator {
         ? [{
             authors: followingPubkeys,
             kinds: [1, 6, 1068],
-            limit: 50 // Get latest 50 posts, no matter how old
+            limit: 50
           }]
         : [{
             authors: followingPubkeys,
@@ -166,24 +161,8 @@ export class FeedOrchestrator extends Orchestrator {
             since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
           }];
 
-      // ProfileView: Use subscription (persistent connection) instead of one-time fetch
-      // Timeline: Use fetch (faster for multiple authors)
-      // Skip cache when filtering by specific relay (to get only events from that relay)
-      const events = isProfileView
-        ? await this.fetchViaSubscription(relays, filters)
-        : await this.transport.fetch(relays, filters, 5000, !!specificRelay);
-
-      // Deduplicate events
-      const uniqueEvents = Array.from(
-        new Map(events.map(e => [e.id, e])).values()
-      );
-
-      // Filter replies and muted users
-      let filteredEvents = includeReplies ? uniqueEvents : this.filterReplies(uniqueEvents);
-      filteredEvents = await this.filterMutedUsers(filteredEvents, exemptFromMuteFilter);
-
-      // Sort by timestamp (newest first)
-      filteredEvents.sort((a, b) => b.created_at - a.created_at);
+      const events = await this.fetchEvents(relays, filters, isProfileView, !!specificRelay);
+      const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter);
 
       this.systemLogger.info(
         'FeedOrchestrator',
@@ -280,16 +259,10 @@ export class FeedOrchestrator extends Orchestrator {
     );
 
     try {
-      // Build time window
       const timeWindowSeconds = timeWindowHours * 3600;
       const since = until - timeWindowSeconds;
 
-      // Determine relays to fetch from
-      // ProfileView (single author): Use author's NIP-65 relays for better content discovery
-      // TimelineView (multiple authors): Use standard relays only (performance)
-      const relays = specificRelay
-        ? [specificRelay]
-        : await this.relayDiscovery.getCombinedRelays(followingPubkeys, isProfileView);
+      const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, isProfileView);
 
       const filters: NDKFilter<number>[] = [{
         authors: followingPubkeys,
@@ -299,23 +272,8 @@ export class FeedOrchestrator extends Orchestrator {
         limit: 50
       }];
 
-      // ProfileView: Use subscription, Timeline: Use fetch
-      // Skip cache when filtering by specific relay (to get only events from that relay)
-      const events = isProfileView
-        ? await this.fetchViaSubscription(relays, filters)
-        : await this.transport.fetch(relays, filters, 5000, !!specificRelay);
-
-      // Deduplicate events
-      const uniqueEvents = Array.from(
-        new Map(events.map(e => [e.id, e])).values()
-      );
-
-      // Filter replies and muted users
-      let filteredEvents = includeReplies ? uniqueEvents : this.filterReplies(uniqueEvents);
-      filteredEvents = await this.filterMutedUsers(filteredEvents, exemptFromMuteFilter);
-
-      // Sort by timestamp
-      filteredEvents.sort((a, b) => b.created_at - a.created_at);
+      const events = await this.fetchEvents(relays, filters, isProfileView, !!specificRelay);
+      const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter);
 
       this.systemLogger.info(
         'FeedOrchestrator',
@@ -481,6 +439,61 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
+   * Process events: deduplicate, filter replies/muted users, sort by timestamp
+   * Consolidates the common event processing pattern used across loadInitialFeed, loadMore, and poll
+   */
+  private async processEvents(
+    events: NostrEvent[],
+    includeReplies: boolean,
+    exemptFromMuteFilter?: string
+  ): Promise<NostrEvent[]> {
+    // Deduplicate events by ID
+    const uniqueEvents = Array.from(
+      new Map(events.map(e => [e.id, e])).values()
+    );
+
+    // Filter replies if needed
+    let filteredEvents = includeReplies ? uniqueEvents : this.filterReplies(uniqueEvents);
+
+    // Filter muted users
+    filteredEvents = await this.filterMutedUsers(filteredEvents, exemptFromMuteFilter);
+
+    // Sort by timestamp (newest first)
+    filteredEvents.sort((a, b) => b.created_at - a.created_at);
+
+    return filteredEvents;
+  }
+
+  /**
+   * Get relays for fetching based on request parameters
+   */
+  private async getRelaysForRequest(
+    followingPubkeys: string[],
+    specificRelay?: string,
+    isProfileView: boolean = false
+  ): Promise<string[]> {
+    if (specificRelay) {
+      return [specificRelay];
+    }
+    return await this.relayDiscovery.getCombinedRelays(followingPubkeys, isProfileView);
+  }
+
+  /**
+   * Fetch events using appropriate method (subscription for ProfileView, fetch for Timeline)
+   */
+  private async fetchEvents(
+    relays: string[],
+    filters: NDKFilter<number>[],
+    isProfileView: boolean,
+    skipCache: boolean
+  ): Promise<NostrEvent[]> {
+    if (isProfileView) {
+      return await this.fetchViaSubscription(relays, filters);
+    }
+    return await this.transport.fetch(relays, filters, 5000, skipCache);
+  }
+
+  /**
    * Clear cache (for refresh)
    * Note: Only clears NoteService cache, not other caches
    */
@@ -637,16 +650,11 @@ export class FeedOrchestrator extends Orchestrator {
       }];
 
       const events = await this.transport.fetch(relays, filters, 5000, true); // Skip cache for polling
-
-      // Cache polled events
-
-      // Filter replies and muted users
-      let filteredEvents = this.pollingIncludeReplies ? events : this.filterReplies(events);
-      filteredEvents = await this.filterMutedUsers(filteredEvents, this.pollingExemptFromMuteFilter);
+      const filteredEvents = await this.processEvents(events, this.pollingIncludeReplies, this.pollingExemptFromMuteFilter);
 
       if (filteredEvents.length > 0) {
-        // Cache polled events for later retrieval
-        this.polledEventsCache = filteredEvents.sort((a, b) => b.created_at - a.created_at);
+        // Cache polled events for later retrieval (already sorted by processEvents)
+        this.polledEventsCache = filteredEvents;
 
         // Only log when count changes - compact format
         // Only log if currently in Timeline view (not SNV, Profile, etc.)

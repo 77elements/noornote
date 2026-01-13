@@ -171,6 +171,9 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
   /**
    * Remove a tribe member (public or private)
    * Writes to browserItems (localStorage)
+   *
+   * Note: Members can have IDs in format "pubkey" or "pubkey_category"
+   * This method removes ALL entries matching the pubkey (from all tribes)
    */
   public async removeMember(pubkey: string): Promise<boolean> {
     const currentUser = this.authService.getCurrentUser();
@@ -179,12 +182,25 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
     }
 
     try {
-      await this.removeItem(pubkey);
+      const browserItems = this.getBrowserItems();
 
-      // Remove folder assignment
-      this.folderService.removeMemberAssignment(pubkey);
+      // Find all items with this pubkey (could be in multiple tribes with different IDs)
+      const itemsToRemove = browserItems.filter(item => item.pubkey === pubkey);
 
-      this.systemLogger.info('TribeOrchestrator', `Removed member (local): ${pubkey.slice(0, 8)}...`);
+      if (itemsToRemove.length === 0) {
+        return false;
+      }
+
+      // Remove all matching items from browser storage
+      const updatedItems = browserItems.filter(item => item.pubkey !== pubkey);
+      this.setBrowserItems(updatedItems);
+
+      // Remove folder assignments for all matching IDs
+      for (const item of itemsToRemove) {
+        this.folderService.removeMemberAssignment(item.id);
+      }
+
+      this.systemLogger.info('TribeOrchestrator', `Removed member from ${itemsToRemove.length} tribe(s): ${pubkey.slice(0, 8)}...`);
 
       this.eventBus.emit('tribe:updated', {});
       return true;
