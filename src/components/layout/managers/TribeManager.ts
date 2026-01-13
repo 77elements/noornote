@@ -215,23 +215,22 @@ export class TribeManager {
         const memberWithProfile: MemberWithProfile = {
           id: member.id,
           pubkey: member.pubkey,
-          isPrivate: (member as TribeMember & { isPrivate?: boolean }).isPrivate || false
+          isPrivate: false // Private tribes not yet implemented
         };
         if (member.relay) memberWithProfile.relay = member.relay;
         if (member.addedAt) memberWithProfile.addedAt = member.addedAt;
         if (member.category) memberWithProfile.category = member.category;
         if (profile) memberWithProfile.profile = profile;
         this.membersCache.set(member.pubkey, memberWithProfile);
-
-        // Ensure folder assignment exists
-        this.folderService.ensureMemberAssignment(member.pubkey);
+        // Note: Folder assignments are created by TribeOrchestrator.addMember(), not here
+        // Calling ensureMemberAssignment here caused race conditions with event timing
       }
 
       // On first init, build root order from sorted members (newest first)
       if (isFirstInit) {
         const rootOrder: Array<{ type: 'folder' | 'member'; id: string }> = [];
         for (const member of sortedMembers) {
-          rootOrder.push({ type: 'member', id: member.pubkey });
+          rootOrder.push({ type: 'member', id: member.id });
         }
         this.folderService.saveRootOrder(rootOrder);
       }
@@ -347,8 +346,7 @@ export class TribeManager {
       // Get members in this folder
       const memberIds = this.folderService.getMembersInFolder(this.currentFolderId);
       for (const memberId of memberIds) {
-        // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
-        const pubkey = memberId.includes('_') ? memberId.split('_')[0] ?? memberId : memberId;
+        const pubkey = this.folderService.extractPubkeyFromMemberId(memberId);
         const member = this.membersCache.get(pubkey);
         if (member) {
           const card = await this.createMemberCard(member);
@@ -369,11 +367,10 @@ export class TribeManager {
             renderedIds.add(item.id);
           }
         } else if (item.type === 'member') {
-          // Extract pubkey from uniqueId (format: "pubkey_category" or just "pubkey")
-          const pubkey = item.id.includes('_') ? item.id.split('_')[0] ?? item.id : item.id;
+          const pubkey = this.folderService.extractPubkeyFromMemberId(item.id);
           const member = this.membersCache.get(pubkey);
-          // Only show if in root (no folder assignment)
           const folderId = this.folderService.getMemberFolder(item.id);
+          // Only show if in root (no folder assignment)
           if (member && folderId === '') {
             const card = await this.createMemberCard(member);
             grid.appendChild(card);
@@ -392,12 +389,13 @@ export class TribeManager {
         }
       }
 
-      for (const [memberPubkey, member] of this.membersCache) {
-        const folderId = this.folderService.getMemberFolder(memberPubkey);
-        if (folderId === '' && !renderedIds.has(memberPubkey)) {
+      for (const [, member] of this.membersCache) {
+        const memberId = member.id;
+        const folderId = this.folderService.getMemberFolder(memberId);
+        if (folderId === '' && !renderedIds.has(memberId)) {
           const card = await this.createMemberCard(member);
           grid.appendChild(card);
-          this.folderService.addToRootOrder('member', memberPubkey);
+          this.folderService.addToRootOrder('member', memberId);
         }
       }
     }
@@ -422,7 +420,7 @@ export class TribeManager {
     const card = new TribeMemberCard({
       pubkey: member.pubkey,
       isPrivate: member.isPrivate,
-      folderId: this.folderService.getMemberFolder(member.pubkey)
+      folderId: this.folderService.getMemberFolder(member.id)
     }, {
       onDelete: async (pubkey: string) => {
         await this.deleteMember(pubkey);
@@ -924,8 +922,6 @@ export class TribeManager {
         return;
       }
 
-      const isPrivate = this.tribeOrch.isPrivateTribesEnabled();
-
       // Get folder name for NIP-51 category (tribeId is folder UUID)
       const folder = this.folderService.getFolder(tribeId);
       const categoryName = folder?.name || '';
@@ -934,7 +930,8 @@ export class TribeManager {
       const addedPubkeys: string[] = [];
       for (const pubkey of pubkeys) {
         try {
-          await this.tribeOrch.addMember(pubkey, isPrivate, categoryName, tribeId);
+          // Private tribes not yet implemented - always add as public
+          await this.tribeOrch.addMember(pubkey, false, categoryName, tribeId);
           addedPubkeys.push(pubkey);
           added++;
         } catch (error) {
@@ -951,9 +948,7 @@ export class TribeManager {
             this.membersCache.set(pubkey, {
               ...browserItem,
               profile: profile || undefined,
-              isPrivate: this.tribeOrch.isPrivateTribesEnabled()
-                ? (browserItem.isPrivate || false)
-                : false
+              isPrivate: false // Private tribes not yet implemented
             });
           }
         }
@@ -1149,16 +1144,16 @@ export class TribeManager {
       }
     }
 
-    // Assign members to their categories
+    // Assign members to their categories (use item.id which includes category)
     const updatedFolders = this.folderService.getFolders();
     for (const item of restoredItems) {
-      this.folderService.ensureMemberAssignment(item.pubkey);
+      this.folderService.ensureMemberAssignment(item.id);
 
       const categoryName = item.category || '';
       if (categoryName !== '') {
         const folder = updatedFolders.find(f => f.name === categoryName);
         if (folder) {
-          this.folderService.moveMemberToFolder(item.pubkey, folder.id);
+          this.folderService.moveMemberToFolder(item.id, folder.id);
         }
       }
     }

@@ -232,6 +232,18 @@ export class GenericFolderService<TItemId extends string, TItemType extends stri
     this.saveAssignments(assignments);
   }
 
+  /**
+   * Remove all assignments where itemId starts with the given prefix
+   * Handles orphaned assignments with various ID formats (pubkey, pubkey_category, pubkey_folder_name)
+   */
+  public removeItemAssignmentsByPrefix(prefix: string): void {
+    const assignments = this.getAssignments().filter(a => {
+      const itemId = this.getItemIdFromAssignment(a);
+      return !itemId.startsWith(prefix);
+    });
+    this.saveAssignments(assignments);
+  }
+
   // ========================================
   // Ordering
   // ========================================

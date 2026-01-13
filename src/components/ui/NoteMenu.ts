@@ -696,22 +696,16 @@ export class NoteMenu {
     const tribeFolderService = TribeFolderService.getInstance();
 
     try {
-      // Check if tribe uses private members
-      const isPrivate = tribeOrch.isPrivateTribesEnabled();
-
-      // Add member to tribe
-      await tribeOrch.addMember(this.options.authorPubkey, isPrivate, tribeFolderId);
-
-      // Get tribe name for toast message
+      // Get tribe folder to get the name (for NIP-51 category)
       const tribes = tribeFolderService.getFolders();
       const tribe = tribes.find(t => t.id === tribeFolderId);
-      const tribeName = tribe ? tribe.name : 'Tribe';
+      const tribeName = tribe ? tribe.name : '';
+
+      // Add member to tribe as public (private tribes not supported via NoteMenu)
+      // Note: addMember already emits 'tribe:updated', no need to emit again
+      await tribeOrch.addMember(this.options.authorPubkey, false, tribeName, tribeFolderId);
 
       ToastService.show(`Author added to ${tribeName}`, 'success');
-
-      // Notify tribe list to refresh
-      const eventBus = EventBus.getInstance();
-      eventBus.emit('tribe:updated', {});
     } catch (error) {
       console.error('Failed to add author to tribe:', error);
       ToastService.show('Failed to add author to tribe', 'error');

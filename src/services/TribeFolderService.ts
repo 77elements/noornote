@@ -122,6 +122,14 @@ export class TribeFolderService {
     this.genericService.removeItemAssignment(memberId);
   }
 
+  /**
+   * Remove all assignments where memberId starts with the given pubkey
+   * Handles orphaned assignments with various ID formats (pubkey, pubkey_category, pubkey_folder_name)
+   */
+  public removeMemberAssignmentsByPubkey(pubkey: string): void {
+    this.genericService.removeItemAssignmentsByPrefix(pubkey);
+  }
+
   // ========================================
   // Ordering
   // ========================================
