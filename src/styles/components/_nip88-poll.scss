@@ -82,6 +82,14 @@
     font-weight: 500;
   }
 
+  &__option-image {
+    display: block;
+    max-width: 80%;
+    height: auto;
+    border-radius: calc($gap / 4);
+    pointer-events: none; // Allow clicks to pass through to button
+  }
+
   &__option-stats {
     position: relative;
     z-index: 2;
