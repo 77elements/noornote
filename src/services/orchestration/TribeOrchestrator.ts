@@ -187,20 +187,23 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
       // Find all items with this pubkey (could be in multiple tribes with different IDs)
       const itemsToRemove = browserItems.filter(item => item.pubkey === pubkey);
 
-      if (itemsToRemove.length === 0) {
-        return false;
-      }
-
       // Remove all matching items from browser storage
       const updatedItems = browserItems.filter(item => item.pubkey !== pubkey);
       this.setBrowserItems(updatedItems);
 
-      // Remove folder assignments for all matching IDs
+      // Remove folder assignments - both by item.id from browser items
+      // AND by pubkey prefix (handles orphaned assignments with different ID formats)
+      const removedIds = new Set<string>();
+
       for (const item of itemsToRemove) {
         this.folderService.removeMemberAssignment(item.id);
+        removedIds.add(item.id);
       }
 
-      this.systemLogger.info('TribeOrchestrator', `Removed member from ${itemsToRemove.length} tribe(s): ${pubkey.slice(0, 8)}...`);
+      // Also remove any assignments where memberId starts with pubkey (catches orphaned entries)
+      this.folderService.removeMemberAssignmentsByPubkey(pubkey);
+
+      this.systemLogger.info('TribeOrchestrator', `Removed member: ${pubkey.slice(0, 8)}...`);
 
       this.eventBus.emit('tribe:updated', {});
       return true;
@@ -450,10 +453,10 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
   private buildSetDataFromLocalStorage(): TribeSetData {
     const allItems = this.getBrowserItems();
 
-    // Build item lookup map (pubkey -> item)
+    // Build item lookup map (id -> item) - id can be "pubkey" or "pubkey_category"
     const itemMap = new Map<string, TribeMember>();
     for (const item of allItems) {
-      itemMap.set(item.pubkey, item);
+      itemMap.set(item.id, item);
     }
 
     // Create sets map
@@ -526,9 +529,9 @@ export class TribeOrchestrator extends GenericListOrchestrator<TribeMember> {
 
     // Handle orphaned items (in browserItems but not in FolderService) - add to root
     for (const item of allItems) {
-      if (!assignedItemIds.has(item.pubkey)) {
+      if (!assignedItemIds.has(item.id)) {
         addMemberToSet(rootSet, item);
-        this.folderService.ensureMemberAssignment(item.pubkey);
+        this.folderService.ensureMemberAssignment(item.id);
       }
     }
 

@@ -66,6 +66,15 @@ export class NotificationItem {
     const needsContext = this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply';
     const contextHtml = needsContext ? '<div class="thread-context-item"><span class="thread-context-content">Loading...</span></div>' : '';
 
+    // For hashtag notifications, add footer with search and unsubscribe links
+    const hashtag = this.options.meta?.hashtag;
+    const hashtagFooterHtml = this.options.type === 'hashtag' && hashtag
+      ? `<div class="notification-item__footer">
+          <a href="#" class="notification-item__footer-link notification-item__footer-link--search" data-hashtag="${hashtag}">Open notes tagged #${hashtag}</a>
+          <a href="#" class="notification-item__footer-link notification-item__footer-link--unsubscribe" data-hashtag="${hashtag}">Unsubscribe from #${hashtag}</a>
+        </div>`
+      : '';
+
     item.innerHTML = `
       <div class="notification-item__icon">${icon}</div>
       <div class="notification-item__content">
@@ -80,6 +89,7 @@ export class NotificationItem {
         ${preview ? `<div class="notification-item__preview">${this.escapeHtml(preview)}</div>` : ''}
         <div class="notification-item__zaps"></div>
         <div class="notification-item__isl"></div>
+        ${hashtagFooterHtml}
       </div>
     `;
 
@@ -97,7 +107,59 @@ export class NotificationItem {
       identityContainer.appendChild(this.userIdentity.getElement());
     }
 
+    // Setup hashtag footer link handlers
+    this.setupHashtagFooterLinks(item);
+
     return item;
+  }
+
+  /**
+   * Setup click handlers for hashtag footer links
+   */
+  private setupHashtagFooterLinks(item: HTMLElement): void {
+    // Search link - opens hashtag search in scc
+    const searchLink = item.querySelector('.notification-item__footer-link--search');
+    if (searchLink) {
+      searchLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const hashtag = (searchLink as HTMLElement).dataset.hashtag;
+        if (hashtag) {
+          const eventBus = EventBus.getInstance();
+          eventBus.emit('hashtagSearch:start', { hashtag });
+        }
+      });
+    }
+
+    // Subscribe/Unsubscribe toggle link
+    const toggleLink = item.querySelector('.notification-item__footer-link--unsubscribe') as HTMLElement;
+    if (toggleLink) {
+      toggleLink.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const hashtag = toggleLink.dataset.hashtag;
+        if (hashtag) {
+          const { HashtagNotificationService } = await import('../../services/HashtagNotificationService');
+          const hashtagService = HashtagNotificationService.getInstance();
+          const { ToastService } = await import('../../services/ToastService');
+
+          const isSubscribed = hashtagService.isSubscribed(hashtag);
+          if (isSubscribed) {
+            hashtagService.unsubscribe(hashtag);
+            toggleLink.textContent = `Subscribe to #${hashtag}`;
+            toggleLink.classList.remove('notification-item__footer-link--unsubscribe');
+            toggleLink.classList.add('notification-item__footer-link--subscribe');
+            ToastService.show(`Unsubscribed from #${hashtag}`, 'success');
+          } else {
+            hashtagService.subscribe(hashtag);
+            toggleLink.textContent = `Unsubscribe from #${hashtag}`;
+            toggleLink.classList.remove('notification-item__footer-link--subscribe');
+            toggleLink.classList.add('notification-item__footer-link--unsubscribe');
+            ToastService.show(`Subscribed to #${hashtag}`, 'success');
+          }
+        }
+      });
+    }
   }
 
   /**
@@ -514,13 +576,9 @@ export class NotificationItem {
       return;
     }
 
-    // For hashtag notifications, trigger hashtag search
+    // For hashtag notifications, navigate directly to the post
     if (type === 'hashtag') {
-      const hashtag = this.options.meta?.hashtag;
-      if (hashtag) {
-        const eventBus = EventBus.getInstance();
-        eventBus.emit('hashtagSearch:start', { hashtag });
-      }
+      router.navigate(`/note/${this.options.event.id}`);
       return;
     }
 

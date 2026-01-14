@@ -128,7 +128,60 @@
     }
   }
 
-  a {
+  // Link styling (BEM element)
+  &__link {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    grid-gap: calc($gap / 2);
+    align-items: center;
+    padding: calc($gap / 2);
+    color: $color-5;
+    text-decoration: none;
+    transition: $transition-colors;
+    border-radius: $radius-sm;
+    font-weight: 500;
+    position: relative;
+
+    &:hover,
+    &:active,
+    &:focus,
+    &.is-active {
+      background: rgba($color-4, 0.1);
+      color: $color-4;
+      text-decoration: none;
+    }
+
+    // Home link has 3 columns (icon, text, scroll-to-top)
+    &--home {
+      grid-template-columns: 20px 1fr 20px;
+    }
+
+    // Notifications link has 3 columns (icon, text, badge)
+    &--notifications {
+      grid-template-columns: 20px 1fr auto;
+    }
+
+    // Messages link has 3 columns (icon, text, badge)
+    &--messages {
+      grid-template-columns: 20px 1fr auto;
+    }
+  }
+
+  // Icon styling (BEM element)
+  &__item-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  // Description text styling (BEM element)
+  &__item-desc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Legacy support for non-BEM a tags (e.g., sublinks)
+  a:not([class*="primary-nav__"]) {
     display: block;
     padding: calc($gap / 2);
     color: $color-5;
@@ -172,7 +225,7 @@
     }
   }
 
-  // Notifications badge (green dot)
+  // Notifications badge (green dot) - grid item
   .notifications-badge {
     display: none; // Hidden by default, shown via JS when unread notifications exist
     min-width: 20px;
@@ -181,13 +234,8 @@
     background: $color-6; // Soft Mint Green
     color: $color-1; // Black text
     border-radius: 10px;
-    position: absolute;
-    top: 11px;
-    right: 2px;
     font-size: 11px;
     font-weight: 600;
-    align-items: center;
-    justify-content: center;
     line-height: 20px;
     text-align: center;
   }
@@ -251,8 +299,11 @@
   }
 
   &__sublink {
-    display: block;
-    padding: calc($gap / 2) calc($gap / 2) calc($gap / 2) calc($gap * 2.5);
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    grid-gap: calc($gap / 2);
+    align-items: center;
+    padding: calc($gap / 2) calc($gap / 2) calc($gap / 2) $gap;
     color: $color-5;
     text-decoration: none;
     transition: $transition-colors;
@@ -260,18 +311,25 @@
     font-weight: 400;
     font-size: 14px;
 
-    svg {
-      width: 16px;
-      height: 16px;
-      vertical-align: text-bottom;
-      margin-right: calc($gap / 2);
-    }
-
     &:hover,
+    &:active,
+    &:focus,
     &.is-active {
       background: rgba($color-4, 0.1);
       color: $color-4;
+      text-decoration: none;
     }
+  }
+
+  &__sublink-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  &__sublink-desc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 

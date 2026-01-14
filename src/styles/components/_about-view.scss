@@ -91,13 +91,13 @@
 }
 
 // Sidebar About link - small and subtle
-.about-link-item {
+.primary-nav__item--about {
   margin-top: calc($gap / 2);
   padding-top: calc($gap / 2);
   border-top: 1px solid rgba($color-5, 0.1);
 }
 
-.about-link {
+.primary-nav__link--about {
   font-size: 12px !important;
   color: rgba($color-5, 0.4) !important;
   text-decoration: none;
