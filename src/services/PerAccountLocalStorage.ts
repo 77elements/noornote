@@ -56,7 +56,7 @@ export const StorageKeys = {
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
 
-export type LayoutMode = 'default' | 'right-pane' | 'wide';
+export type LayoutMode = 'default' | 'right-pane' | 'wide' | 'phone';
 
 export class PerAccountLocalStorage {
   private static instance: PerAccountLocalStorage;
@@ -97,11 +97,17 @@ export class PerAccountLocalStorage {
     if (!pubkey) return 'default';
 
     // Check if LAYOUT_MODE already exists
-    const layoutMode = this.getForPubkey<LayoutMode>(StorageKeys.LAYOUT_MODE, pubkey, 'default');
+    const layoutMode = this.getForPubkey<string>(StorageKeys.LAYOUT_MODE, pubkey, 'default');
+
+    // Migration: 'mobile' was renamed to 'phone' in v0.3.8
+    if (layoutMode === 'mobile') {
+      this.setForPubkey(StorageKeys.LAYOUT_MODE, pubkey, 'phone');
+      return 'phone';
+    }
 
     // If already set to non-default, return it
     if (layoutMode !== 'default') {
-      return layoutMode;
+      return layoutMode as LayoutMode;
     }
 
     // Migration: Check old VIEW_TABS_RIGHT_PANE setting

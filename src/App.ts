@@ -535,6 +535,11 @@ export class App {
     if (this.timelineUI && lastLoggedInPubkey && lastLoggedInPubkey !== data.pubkey) {
       this.timelineUI.destroy();
       this.timelineUI = null;
+
+      // Re-mount timeline if currently on timeline route
+      if (currentPath === '/' || currentPath === '/timeline') {
+        this.mountPrimaryContent('timeline');
+      }
     }
 
     // Load follow list into AppState (for mention autocomplete)
