@@ -144,3 +144,31 @@
   color: #ef4444; // Red
   font-size: 20px; // Emoji reactions slightly bigger
 }
+
+// Hashtag notification footer
+.notification-item__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: $gap;
+  margin-top: calc($gap / 4);
+}
+
+.notification-item__footer-link {
+  font-size: 12px;
+  color: rgba($color-5, 0.5);
+  text-decoration: none;
+  transition: $transition-colors;
+
+  &:hover {
+    color: $color-4;
+    text-decoration: none;
+  }
+
+  &--unsubscribe:hover {
+    color: $color-error;
+  }
+
+  &--subscribe:hover {
+    color: $color-6;
+  }
+}
