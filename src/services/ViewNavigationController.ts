@@ -15,7 +15,7 @@
  * @service ViewNavigationController
  */
 
-import { PerAccountLocalStorage } from './PerAccountLocalStorage';
+import { LayoutService } from './LayoutService';
 import { Router } from './Router';
 import { ViewTabManager } from './ViewTabManager';
 
@@ -23,12 +23,12 @@ export type ViewType = 'single-note' | 'profile' | 'notifications' | 'messages';
 
 export class ViewNavigationController {
   private static instance: ViewNavigationController;
-  private storage: PerAccountLocalStorage;
+  private layoutService: LayoutService;
   private router: Router;
   private viewTabManager: ViewTabManager | null = null;
 
   private constructor() {
-    this.storage = PerAccountLocalStorage.getInstance();
+    this.layoutService = LayoutService.getInstance();
     this.router = Router.getInstance();
   }
 
@@ -44,12 +44,9 @@ export class ViewNavigationController {
    * Analyzes event, checks layout mode, routes appropriately
    */
   public openView(viewType: ViewType, param?: string, event?: MouseEvent): void {
-    // 1. Check layout mode
-    const layoutMode = this.storage.getLayoutMode();
-
-    // 2. Only 'right-pane' mode uses tab system
-    if (layoutMode !== 'right-pane') {
-      // Route via traditional Router (for 'default' and 'wide' modes)
+    // Only 'right-pane' mode uses tab system
+    if (!this.layoutService.isRightPane()) {
+      // Route via traditional Router (for 'default', 'wide', 'mobile' modes)
       this.navigateViaRouter(viewType, param);
       return;
     }

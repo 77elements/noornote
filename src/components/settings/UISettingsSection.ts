@@ -10,11 +10,13 @@ import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { CustomDropdown } from '../ui/CustomDropdown';
 import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from '../../services/PerAccountLocalStorage';
+import { LayoutService } from '../../services/LayoutService';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
 
 export class UISettingsSection extends SettingsSection {
   private storage: PerAccountLocalStorage;
+  private layoutService: LayoutService;
   private eventBus: EventBus;
   private layoutModeDropdown: CustomDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
@@ -23,6 +25,7 @@ export class UISettingsSection extends SettingsSection {
   constructor() {
     super('ui-settings');
     this.storage = PerAccountLocalStorage.getInstance();
+    this.layoutService = LayoutService.getInstance();
     this.eventBus = EventBus.getInstance();
   }
 
@@ -79,7 +82,8 @@ export class UISettingsSection extends SettingsSection {
           <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
             • <strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger<br>
             • <strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane<br>
-            • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space
+            • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space<br>
+            • <strong>Phone:</strong> Single-column layout (390px width) for phone development and testing
           </p>
           <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6);">
             <strong>Right Pane mode click behavior:</strong><br>
@@ -146,26 +150,25 @@ export class UISettingsSection extends SettingsSection {
     // Layout mode dropdown
     const layoutModeDropdownContainer = contentContainer.querySelector('.layout-mode-dropdown-container');
     if (layoutModeDropdownContainer) {
-      const currentMode = this.storage.getLayoutMode();
+      const currentMode = this.layoutService.getCurrentMode();
 
       this.layoutModeDropdown = new CustomDropdown({
         options: [
           { value: 'default', label: 'Default' },
           { value: 'right-pane', label: 'Right Pane' },
           { value: 'wide', label: 'Wide Mode' },
+          { value: 'phone', label: 'Phone' },
         ],
         selectedValue: currentMode,
-        onChange: (value) => {
+        onChange: async (value) => {
           const mode = value as LayoutMode;
-          this.storage.setLayoutMode(mode);
-
-          // Emit event for immediate effect (no reload needed)
-          this.eventBus.emit('settings:layout-mode-changed', { mode });
+          await this.layoutService.setMode(mode);
 
           const labels: Record<LayoutMode, string> = {
             'default': 'Default layout mode',
             'right-pane': 'Right pane mode (views as tabs)',
             'wide': 'Wide mode (hide right pane)',
+            'phone': 'Phone layout (390px width)',
           };
 
           ToastService.show(`Switched to ${labels[mode]}`, 'success');

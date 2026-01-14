@@ -81,6 +81,9 @@ export class TimelineView extends View {
    * Render the view
    */
   private async render(): Promise<void> {
+    // Wait for auth service to initialize (handles session restore)
+    await this.authService.waitForInitialization();
+
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       this.container.innerHTML = '<div class="timeline-view__error">Please login to view timeline</div>';

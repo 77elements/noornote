@@ -29,7 +29,8 @@ import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
-import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from '../../services/PerAccountLocalStorage';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { LayoutService } from '../../services/LayoutService';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
@@ -63,6 +64,7 @@ export class MainLayout {
   private currentListView: ListViewPartial | null = null;
   private viewTabManager: ViewTabManager | null = null;
   private viewTabEventSubscriptions: string[] = [];
+  private layoutService: LayoutService;
 
   constructor() {
     this.element = this.createElement();
@@ -72,7 +74,9 @@ export class MainLayout {
     this.authStateManager = AuthStateManager.getInstance();
     this.authService = AuthService.getInstance();
     this.eventBus = EventBus.getInstance();
+    this.layoutService = LayoutService.getInstance();
     this.setupNavigationLinks();
+    this.setupMobileSidebar();
     this.setupScrollListener();
     this.setupTabSwitching();
     this.setupMentionLinks();
@@ -86,7 +90,6 @@ export class MainLayout {
     this.initializeGlobalSearchView();
     this.setupActiveNavigation();
     this.initializeViewTabManager();
-    this.applyLayoutMode();
     this.initializeDateTimeCalendar();
     this.startDateTimeUpdates();
   }
@@ -177,11 +180,8 @@ export class MainLayout {
    * Subscribe to EventBus events for tab management
    */
   private initializeViewTabManager(): void {
-    const storage = PerAccountLocalStorage.getInstance();
-    const layoutMode = storage.getLayoutMode();
-
     // ALWAYS subscribe to layout mode change event (even if currently disabled)
-    const layoutModeChangedSub = this.eventBus.on('settings:layout-mode-changed', (data: { mode: LayoutMode }) => {
+    const layoutModeChangedSub = this.eventBus.on('layout:changed', (data: { mode: string }) => {
       if (data.mode === 'right-pane' && !this.viewTabManager) {
         // Enable: Initialize manager and event handlers
         this.enableViewTabManager();
@@ -200,51 +200,17 @@ export class MainLayout {
 
     // On login, re-check layout mode (user might have right-pane enabled)
     const loginSub = this.eventBus.on('user:login', () => {
-      const storage = PerAccountLocalStorage.getInstance();
-      const layoutMode = storage.getLayoutMode();
-      if (layoutMode === 'right-pane' && !this.viewTabManager) {
+      this.layoutService.refresh();
+      if (this.layoutService.isRightPane() && !this.viewTabManager) {
         this.enableViewTabManager();
       }
     });
     this.viewTabEventSubscriptions.push(loginSub);
 
     // If right-pane mode on init, setup immediately
-    if (layoutMode === 'right-pane') {
+    if (this.layoutService.isRightPane()) {
       this.enableViewTabManager();
     }
-  }
-
-  /**
-   * Apply layout mode CSS class to main-layout element
-   * Subscribe to layout mode changes
-   */
-  private applyLayoutMode(): void {
-    const storage = PerAccountLocalStorage.getInstance();
-    const layoutMode = storage.getLayoutMode();
-
-    // Apply initial layout class
-    this.setLayoutClass(layoutMode);
-
-    // Subscribe to layout mode changes
-    this.eventBus.on('settings:layout-mode-changed', (data: { mode: LayoutMode }) => {
-      this.setLayoutClass(data.mode);
-    });
-  }
-
-  /**
-   * Set layout CSS class based on mode
-   */
-  private setLayoutClass(mode: LayoutMode): void {
-    // Remove all layout mode classes
-    this.element.classList.remove('main-layout--wide', 'main-layout--right-pane');
-
-    // Add appropriate class
-    if (mode === 'wide') {
-      this.element.classList.add('main-layout--wide');
-    } else if (mode === 'right-pane') {
-      this.element.classList.add('main-layout--right-pane');
-    }
-    // 'default' mode = no additional class
   }
 
   /**
@@ -458,13 +424,10 @@ export class MainLayout {
    * Mounts in scc (default/right-pane mode) or intercepts events for pcc rendering (wide mode)
    */
   private initializeGlobalSearchView(): void {
-    const storage = PerAccountLocalStorage.getInstance();
-    const layoutMode = storage.getLayoutMode();
-
     this.globalSearchView = new GlobalSearchView();
 
-    // Mount in secondary content unless wide mode
-    if (layoutMode !== 'wide') {
+    // Mount in secondary content unless wide/mobile mode
+    if (this.layoutService.isSecondaryVisible()) {
       const secondaryContent = this.element.querySelector('.secondary-content-body');
       if (secondaryContent) {
         secondaryContent.appendChild(this.globalSearchView.getElement());
@@ -475,8 +438,8 @@ export class MainLayout {
     this.setupSearchEventInterceptors();
 
     // Listen for layout mode changes
-    this.eventBus.on('settings:layout-mode-changed', (data: { mode: LayoutMode }) => {
-      if (data.mode === 'wide') {
+    this.eventBus.on('layout:changed', (data: { mode: string }) => {
+      if (data.mode === 'wide' || data.mode === 'mobile') {
         // Unmount from scc (search results will go to pcc via interceptors)
         if (this.globalSearchView) {
           const searchElement = this.globalSearchView.getElement();
@@ -506,11 +469,8 @@ export class MainLayout {
 
     // Intercept global search (Cmd+K → search query) with high priority
     this.eventBus.on('globalSearch:start', (data: { query: string }) => {
-      const storage = PerAccountLocalStorage.getInstance();
-      const layoutMode = storage.getLayoutMode();
-
-      if (layoutMode === 'wide') {
-        // Wide mode: Render search in primary content
+      if (!this.layoutService.isSecondaryVisible()) {
+        // Wide/Mobile mode: Render search in primary content
         this.renderSearchInPrimaryContent('global', data.query);
         // Emit internal event to trigger GlobalSearchView's search logic
         this.eventBus.emit('globalSearch:internal', data);
@@ -520,11 +480,8 @@ export class MainLayout {
 
     // Intercept hashtag search (click on hashtag)
     this.eventBus.on('hashtagSearch:start', (data: { hashtag: string }) => {
-      const storage = PerAccountLocalStorage.getInstance();
-      const layoutMode = storage.getLayoutMode();
-
-      if (layoutMode === 'wide') {
-        // Wide mode: Render search in primary content
+      if (!this.layoutService.isSecondaryVisible()) {
+        // Wide/Mobile mode: Render search in primary content
         this.renderSearchInPrimaryContent('hashtag', data.hashtag);
         // Emit internal event to trigger GlobalSearchView's search logic
         this.eventBus.emit('hashtagSearch:internal', data);
@@ -534,11 +491,8 @@ export class MainLayout {
 
     // Intercept profile search (profile search component)
     this.eventBus.on('profileSearch:complete', (data: { query: string; results: any[]; meta: string }) => {
-      const storage = PerAccountLocalStorage.getInstance();
-      const layoutMode = storage.getLayoutMode();
-
-      if (layoutMode === 'wide') {
-        // Wide mode: Render search in primary content
+      if (!this.layoutService.isSecondaryVisible()) {
+        // Wide/Mobile mode: Render search in primary content
         this.renderSearchInPrimaryContent('profile', data.query);
         // Emit internal event to trigger GlobalSearchView's display logic
         this.eventBus.emit('profileSearch:internal', data);
@@ -836,6 +790,40 @@ export class MainLayout {
   }
 
   /**
+   * Setup mobile sidebar hamburger menu and overlay
+   */
+  private setupMobileSidebar(): void {
+    const hamburger = this.element.querySelector('.mobile-header__hamburger');
+    const overlay = this.element.querySelector('.sidebar-overlay');
+    const sidebar = this.element.querySelector('.sidebar');
+
+    if (!hamburger || !overlay || !sidebar) return;
+
+    // Toggle sidebar on hamburger click
+    hamburger.addEventListener('click', () => {
+      sidebar.classList.toggle('sidebar--open');
+      overlay.classList.toggle('sidebar-overlay--visible');
+    });
+
+    // Close sidebar on overlay click
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('sidebar--open');
+      overlay.classList.remove('sidebar-overlay--visible');
+    });
+
+    // Close sidebar when clicking a nav link (in mobile mode)
+    const navLinks = sidebar.querySelectorAll('.primary-nav__link, .primary-nav__link--about');
+    navLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        if (this.layoutService.isPhone()) {
+          sidebar.classList.remove('sidebar--open');
+          overlay.classList.remove('sidebar-overlay--visible');
+        }
+      });
+    });
+  }
+
+  /**
    * Handle home link click - scroll to top if in timeline, otherwise navigate
    */
   private handleHomeClick(): void {
@@ -944,6 +932,15 @@ export class MainLayout {
     const layout = document.createElement('div');
     layout.className = 'main-layout';
     layout.innerHTML = `
+      <header class="mobile-header">
+        <button class="mobile-header__hamburger" aria-label="Open menu">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 12h18M3 6h18M3 18h18"/>
+          </svg>
+        </button>
+        <span class="mobile-header__title">NoorNote</span>
+      </header>
+      <div class="sidebar-overlay"></div>
       <aside class="sidebar">
         <div class="sidebar-content">
           <div class="sidebar-header">
@@ -1557,12 +1554,9 @@ export class MainLayout {
    * Renders in pcc (Wide) or scc (Default/Right-pane) based on layout mode
    */
   public openListTab(listType: ListType): void {
-    const storage = PerAccountLocalStorage.getInstance();
-    const layoutMode = storage.getLayoutMode();
-
     // Check layout mode and delegate to appropriate renderer
-    if (layoutMode === 'wide') {
-      // Wide mode: Render in primary content (scc is hidden)
+    if (!this.layoutService.isSecondaryVisible()) {
+      // Wide/Mobile mode: Render in primary content (scc is hidden)
       this.renderListInPrimaryContent(listType);
     } else {
       // Default or Right-pane mode: Render in secondary content
