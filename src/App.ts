@@ -11,7 +11,7 @@ import { ProfileView } from './components/views/ProfileView';
 import { ArticleView } from './components/views/ArticleView';
 import { SettingsView } from './components/views/SettingsView';
 import { AboutView } from './components/views/AboutView';
-import { Timeline } from './components/timeline/Timeline';
+import type { TimelineView } from './components/views/TimelineView';
 import { AuthService } from './services/AuthService';
 import { SystemLogger } from './components/system/SystemLogger';
 import { EventBus } from './services/EventBus';
@@ -41,7 +41,7 @@ export class App {
   private viewLifecycleManager: ViewLifecycleManager;
 
   // View Components (reused instances)
-  private timelineUI: Timeline | null = null;
+  private timelineUI: TimelineView | null = null;
   private profileView: ProfileView | null = null;
 
   constructor() {
@@ -227,9 +227,12 @@ export class App {
         break;
 
       case 'timeline': {
-        const { TimelineView } = await import('./components/views/TimelineView');
-        const timelineView = new TimelineView();
-        primaryContent.appendChild(timelineView.getElement());
+        if (!this.timelineUI) {
+          const { TimelineView } = await import('./components/views/TimelineView');
+          this.timelineUI = new TimelineView();
+        }
+        primaryContent.appendChild(this.timelineUI.getElement());
+        this.viewLifecycleManager.onViewMount(this.timelineUI);
         break;
       }
 
@@ -338,11 +341,9 @@ export class App {
     this.eventBus.on('user:login', this.handleUserLogin.bind(this));
 
     this.eventBus.on('relays:updated', () => {
-      const authService = AuthService.getInstance();
-      const currentUser = authService.getCurrentUser();
-      if (currentUser && this.timelineUI) {
+      if (this.timelineUI) {
         this.timelineUI.destroy();
-        this.timelineUI = new Timeline(currentUser.pubkey);
+        this.timelineUI = null;
         this.mountPrimaryContent('timeline');
       }
     });
@@ -530,9 +531,10 @@ export class App {
     }
     localStorage.setItem('noornote_last_logged_in_pubkey', data.pubkey);
 
-    // Create TimelineUI if not exists
-    if (!this.timelineUI) {
-      this.timelineUI = new Timeline(data.pubkey);
+    // Reset TimelineUI on account switch (different user)
+    if (this.timelineUI && lastLoggedInPubkey && lastLoggedInPubkey !== data.pubkey) {
+      this.timelineUI.destroy();
+      this.timelineUI = null;
     }
 
     // Load follow list into AppState (for mention autocomplete)

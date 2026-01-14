@@ -259,4 +259,22 @@ export class TimelineView extends View {
       this.timeline.resume();
     }
   }
+
+  /**
+   * Save view state (scroll position)
+   */
+  public override saveState(): void {
+    if (this.timeline) {
+      this.timeline.saveState();
+    }
+  }
+
+  /**
+   * Restore view state (scroll position)
+   */
+  public override restoreState(): void {
+    if (this.timeline) {
+      this.timeline.restoreState();
+    }
+  }
 }
