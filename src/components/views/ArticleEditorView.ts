@@ -57,7 +57,7 @@ export class ArticleEditorView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'article-editor-view';
+    this.container.className = 'view-content view-content--article-editor';
     this.router = Router.getInstance();
     this.articleService = ArticleService.getInstance();
     this.relayConfig = RelayConfig.getInstance();

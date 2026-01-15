@@ -47,7 +47,7 @@ export class ConversationView extends View {
 
     this.partnerPubkey = partnerPubkey;
     this.container = document.createElement('div');
-    this.container.className = 'conversation-view';
+    this.container.className = 'view-content view-content--conversation';
     this.dmService = DMService.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.eventBus = EventBus.getInstance();

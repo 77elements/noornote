@@ -46,7 +46,7 @@ export class SettingsView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'settings-view';
+    this.container.className = 'view-content view-content--settings';
     this.hashtagService = HashtagNotificationService.getInstance();
     this.eventBus = EventBus.getInstance();
 

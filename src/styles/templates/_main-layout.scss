@@ -178,10 +178,6 @@ html.layout--phone {
     .primary-content {
       height: calc(100vh - 48px);
       padding: 0;
-
-      > * {
-        padding: 0 $gap;
-      }
     }
   }
 }
@@ -205,10 +201,6 @@ html.layout--phone {
   will-change: scroll-position;
   contain: layout style paint;
   -webkit-overflow-scrolling: touch;
-
-  > * {
-    padding: 0 calc($gap) 0 0;
-  }
 }
 
 .secondary-content {

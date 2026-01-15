@@ -6,16 +6,6 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 
-// ========================================
-// Settings Container
-// ========================================
-.settings-view {
-  width: 100%;
-  height: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
 // Settings title (standalone)
 .settings-title {
   font-size: 32px;
@@ -904,10 +894,6 @@
 // Responsive
 // ========================================
 @media (max-width: 768px) {
-  .settings-view {
-    padding: $gap;
-  }
-
   .relay-item {
     flex-direction: column;
     align-items: stretch;

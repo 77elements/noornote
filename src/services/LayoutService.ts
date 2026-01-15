@@ -7,6 +7,11 @@
  * - Emits 'layout:changed' event for reactive updates
  * - Handles Tauri window resize for phone mode
  *
+ * Platform Priority:
+ * - Desktop (≥992px): User preference applies
+ * - Tablet (768-991px): Forces 'wide' mode
+ * - Phone (<768px): Forces 'phone' mode
+ *
  * @service LayoutService
  * @purpose Centralize layout mode logic, reduce scattered getLayoutMode() calls
  */
@@ -15,18 +20,26 @@ import { PerAccountLocalStorage, type LayoutMode } from './PerAccountLocalStorag
 import { EventBus } from './EventBus';
 import { PlatformService } from './PlatformService';
 
+type ScreenSize = 'desktop' | 'tablet' | 'phone';
+
 export class LayoutService {
   private static instance: LayoutService;
   private storage: PerAccountLocalStorage;
   private eventBus: EventBus;
-  private currentMode: LayoutMode = 'default';
+  private userPreference: LayoutMode = 'default';
+  private effectiveMode: LayoutMode = 'default';
+  private currentScreenSize: ScreenSize = 'desktop';
   private previousWindowWidth: number | null = null;
+  private resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   private constructor() {
     this.storage = PerAccountLocalStorage.getInstance();
     this.eventBus = EventBus.getInstance();
-    this.currentMode = this.storage.getLayoutMode();
+    this.userPreference = this.storage.getLayoutMode();
+    this.currentScreenSize = this.detectScreenSize();
+    this.effectiveMode = this.calculateEffectiveMode();
     this.applyLayoutClass();
+    this.setupResizeListener();
   }
 
   public static getInstance(): LayoutService {
@@ -37,42 +50,69 @@ export class LayoutService {
   }
 
   /**
-   * Get current layout mode
+   * Get current effective layout mode (after platform priority applied)
    */
   public getCurrentMode(): LayoutMode {
-    return this.currentMode;
+    return this.effectiveMode;
   }
 
   /**
-   * Set layout mode
+   * Get user's preferred mode (ignoring platform constraints)
+   */
+  public getUserPreference(): LayoutMode {
+    return this.userPreference;
+  }
+
+  /**
+   * Get current screen size category
+   */
+  public getScreenSize(): ScreenSize {
+    return this.currentScreenSize;
+  }
+
+  /**
+   * Check if user preference is being overridden by platform
+   */
+  public isForced(): boolean {
+    return this.userPreference !== this.effectiveMode;
+  }
+
+  /**
+   * Set user's preferred layout mode
    * - Updates storage
+   * - Recalculates effective mode
    * - Applies CSS class
    * - Emits event
    * - Handles window resize for phone
    */
   public async setMode(mode: LayoutMode): Promise<void> {
-    const previousMode = this.currentMode;
-    this.currentMode = mode;
+    const previousMode = this.effectiveMode;
+    this.userPreference = mode;
     this.storage.setLayoutMode(mode);
+
+    // Recalculate effective mode based on platform
+    this.effectiveMode = this.calculateEffectiveMode();
     this.applyLayoutClass();
 
     // Handle window resize for phone mode
     if (PlatformService.getInstance().isTauri) {
-      await this.handleWindowResize(previousMode, mode);
+      await this.handleWindowResize(previousMode, this.effectiveMode);
     }
 
     // Emit event for components that need to react
-    this.eventBus.emit('layout:changed', { mode, previousMode });
+    this.eventBus.emit('layout:changed', { mode: this.effectiveMode, previousMode });
 
     // Also emit legacy event for backward compatibility during migration
-    this.eventBus.emit('settings:layout-mode-changed', { mode });
+    this.eventBus.emit('settings:layout-mode-changed', { mode: this.effectiveMode });
   }
 
   /**
    * Refresh mode from storage (e.g., after account switch)
    */
   public refresh(): void {
-    this.currentMode = this.storage.getLayoutMode();
+    this.userPreference = this.storage.getLayoutMode();
+    this.currentScreenSize = this.detectScreenSize();
+    this.effectiveMode = this.calculateEffectiveMode();
     this.applyLayoutClass();
   }
 
@@ -80,28 +120,28 @@ export class LayoutService {
    * Check if current mode is phone
    */
   public isPhone(): boolean {
-    return this.currentMode === 'phone';
+    return this.effectiveMode === 'phone';
   }
 
   /**
    * Check if current mode is wide
    */
   public isWide(): boolean {
-    return this.currentMode === 'wide';
+    return this.effectiveMode === 'wide';
   }
 
   /**
    * Check if current mode is right-pane
    */
   public isRightPane(): boolean {
-    return this.currentMode === 'right-pane';
+    return this.effectiveMode === 'right-pane';
   }
 
   /**
    * Check if current mode is default
    */
   public isDefault(): boolean {
-    return this.currentMode === 'default';
+    return this.effectiveMode === 'default';
   }
 
   /**
@@ -109,7 +149,7 @@ export class LayoutService {
    * (Hidden in 'wide' and 'phone' modes)
    */
   public isSecondaryVisible(): boolean {
-    return this.currentMode !== 'wide' && this.currentMode !== 'phone';
+    return this.effectiveMode !== 'wide' && this.effectiveMode !== 'phone';
   }
 
   /**
@@ -117,7 +157,43 @@ export class LayoutService {
    * (Hidden in 'phone' mode)
    */
   public isSidebarVisible(): boolean {
-    return this.currentMode !== 'phone';
+    return this.effectiveMode !== 'phone';
+  }
+
+  /**
+   * Detect screen size from CSS pseudo-element
+   * Reads html::after { content: 'desktop' | 'tablet' | 'phone' }
+   */
+  private detectScreenSize(): ScreenSize {
+    try {
+      const content = getComputedStyle(document.documentElement, '::after').content;
+      // CSS content comes with quotes: '"desktop"' or "'desktop'"
+      const size = content.replace(/['"]/g, '') as ScreenSize;
+      if (size === 'desktop' || size === 'tablet' || size === 'phone') {
+        return size;
+      }
+    } catch {
+      // Fallback to desktop
+    }
+    return 'desktop';
+  }
+
+  /**
+   * Calculate effective mode based on platform priority
+   * - Desktop: User preference
+   * - Tablet: Force wide
+   * - Phone: Force phone
+   */
+  private calculateEffectiveMode(): LayoutMode {
+    switch (this.currentScreenSize) {
+      case 'phone':
+        return 'phone';
+      case 'tablet':
+        return 'wide';
+      case 'desktop':
+      default:
+        return this.userPreference;
+    }
   }
 
   /**
@@ -132,7 +208,46 @@ export class LayoutService {
     layoutClasses.forEach(cls => html.classList.remove(cls));
 
     // Add current layout class
-    html.classList.add(`layout--${this.currentMode}`);
+    html.classList.add(`layout--${this.effectiveMode}`);
+  }
+
+  /**
+   * Setup window resize listener for responsive platform detection
+   */
+  private setupResizeListener(): void {
+    window.addEventListener('resize', () => {
+      // Debounce resize events
+      if (this.resizeDebounceTimer) {
+        clearTimeout(this.resizeDebounceTimer);
+      }
+      this.resizeDebounceTimer = setTimeout(() => {
+        this.handleScreenSizeChange();
+      }, 150);
+    });
+  }
+
+  /**
+   * Handle screen size change (e.g., window resize)
+   */
+  private async handleScreenSizeChange(): Promise<void> {
+    const newScreenSize = this.detectScreenSize();
+    if (newScreenSize === this.currentScreenSize) return;
+
+    const previousMode = this.effectiveMode;
+    this.currentScreenSize = newScreenSize;
+    this.effectiveMode = this.calculateEffectiveMode();
+
+    if (this.effectiveMode !== previousMode) {
+      this.applyLayoutClass();
+
+      // Emit event for components that need to react
+      this.eventBus.emit('layout:changed', {
+        mode: this.effectiveMode,
+        previousMode,
+        screenSize: this.currentScreenSize,
+        forced: this.isForced()
+      });
+    }
   }
 
   /**

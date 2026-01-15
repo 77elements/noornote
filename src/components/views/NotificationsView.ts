@@ -35,7 +35,7 @@ export class NotificationsView extends View {
     super();
 
     this.container = document.createElement('div');
-    this.container.className = 'notifications-view';
+    this.container.className = 'view-content view-content--notifications';
     this.notificationsOrch = NotificationsOrchestrator.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.eventBus = EventBus.getInstance();

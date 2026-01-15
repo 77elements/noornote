@@ -100,7 +100,7 @@ export class ProfileView extends View {
     super(); // Call View base class constructor
     this.npub = npub;
     this.container = document.createElement('div');
-    this.container.className = 'profile-view';
+    this.container.className = 'view-content view-content--profile';
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.userService = UserService.getInstance();

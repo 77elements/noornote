@@ -51,7 +51,7 @@ export class MessagesView extends View {
     super();
 
     this.container = document.createElement('div');
-    this.container.className = 'messages-view';
+    this.container.className = 'view-content view-content--messages';
     this.dmService = DMService.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.eventBus = EventBus.getInstance();

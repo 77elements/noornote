@@ -19,8 +19,8 @@ export class ScrollPositionManager {
    * Save current scroll position to CSM
    */
   save(): void {
-    // Scroll is on .primary-content (parent container)
-    const scrollContainer = this.container.parentElement;
+    // Scroll is on .primary-content (not direct parent)
+    const scrollContainer = this.container.closest('.primary-content');
     if (scrollContainer) {
       this.appState.setState('timeline', { scrollPosition: scrollContainer.scrollTop });
     }
@@ -30,8 +30,8 @@ export class ScrollPositionManager {
    * Restore saved scroll position from CSM
    */
   restore(): void {
-    // Scroll is on .primary-content (parent container)
-    const scrollContainer = this.container.parentElement;
+    // Scroll is on .primary-content (not direct parent)
+    const scrollContainer = this.container.closest('.primary-content');
     const savedPosition = this.appState.getState('timeline').scrollPosition;
 
     if (scrollContainer && savedPosition > 0) {

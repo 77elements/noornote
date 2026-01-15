@@ -33,7 +33,7 @@ export class TribeView extends View {
     this.eventBus = EventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.container = document.createElement('div');
-    this.container.className = 'tribe-view';
+    this.container.className = 'view-content view-content--tribe';
     this.render();
   }
 

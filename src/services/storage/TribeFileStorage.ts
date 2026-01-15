@@ -115,7 +115,11 @@ export class TribeFileStorage {
   public async write(data: TribeSetData): Promise<void> {
     await this.initialize();
     const now = Math.floor(Date.now() / 1000);
-    data.metadata.lastModified = now;
+    if (!data.metadata) {
+      data.metadata = { setOrder: [], lastModified: now };
+    } else {
+      data.metadata.lastModified = now;
+    }
     data.lastModified = now;
     await this.storage.write(data);
   }
@@ -130,7 +134,7 @@ export class TribeFileStorage {
     const items = this.extractMembers(data, false);
     return {
       items,
-      lastModified: data.metadata.lastModified
+      lastModified: data.metadata?.lastModified || data.lastModified || Math.floor(Date.now() / 1000)
     };
   }
 
@@ -142,7 +146,7 @@ export class TribeFileStorage {
     const items = this.extractMembers(data, true);
     return {
       items,
-      lastModified: data.metadata.lastModified
+      lastModified: data.metadata?.lastModified || data.lastModified || Math.floor(Date.now() / 1000)
     };
   }
 
@@ -222,6 +226,7 @@ export class TribeFileStorage {
   public async getAllMembers(): Promise<TribeMember[]> {
     const data = await this.read();
     const members: TribeMember[] = [];
+    const addedAt = data.metadata?.lastModified || data.lastModified || Math.floor(Date.now() / 1000);
 
     for (const set of data.sets) {
       const category = set.d;  // d-tag = category
@@ -232,7 +237,7 @@ export class TribeFileStorage {
           const tribeMember: TribeMember = {
             id: member.pubkey,
             pubkey: member.pubkey,
-            addedAt: data.metadata.lastModified,
+            addedAt,
             isPrivate: false,
             category
           };
@@ -246,7 +251,7 @@ export class TribeFileStorage {
           const tribeMember: TribeMember = {
             id: member.pubkey,
             pubkey: member.pubkey,
-            addedAt: data.metadata.lastModified,
+            addedAt,
             isPrivate: true,
             category
           };
@@ -264,6 +269,7 @@ export class TribeFileStorage {
    */
   private extractMembers(data: TribeSetData, privateOnly: boolean): TribeMember[] {
     const members: TribeMember[] = [];
+    const addedAt = data.metadata?.lastModified || data.lastModified || Math.floor(Date.now() / 1000);
 
     for (const set of data.sets) {
       const memberTags = privateOnly ? set.privateMembers : set.publicMembers;
@@ -273,7 +279,7 @@ export class TribeFileStorage {
         const tribeMember: TribeMember = {
           id: member.pubkey,
           pubkey: member.pubkey,
-          addedAt: data.metadata.lastModified,
+          addedAt,
           isPrivate: privateOnly,
           category
         };
@@ -295,6 +301,7 @@ export class TribeFileStorage {
     rootOrder: RootOrderItem<'member'>[];
   }> {
     const data = await this.read();
+    const createdAt = data.metadata?.lastModified || data.lastModified || Math.floor(Date.now() / 1000);
 
     const folders: TribeFolder[] = [];
     const folderAssignments: MemberAssignment[] = [];
@@ -307,7 +314,7 @@ export class TribeFileStorage {
         folders.push({
           id: folderId,
           name: set.d,
-          createdAt: data.metadata.lastModified
+          createdAt
         });
         rootOrder.push({ type: 'folder', id: folderId });
       }

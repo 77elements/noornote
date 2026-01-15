@@ -14,7 +14,7 @@ export class AboutView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'about-view';
+    this.container.className = 'view-content view-content--about';
     this.render();
   }
 

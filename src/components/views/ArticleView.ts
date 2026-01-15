@@ -25,7 +25,7 @@ export class ArticleView {
   constructor(naddrRef: string) {
     this.naddrRef = naddrRef;
     this.container = document.createElement('div');
-    this.container.className = 'article-view-container';
+    this.container.className = 'view-content view-content--article';
     this.orchestrator = LongFormOrchestrator.getInstance();
     this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
 

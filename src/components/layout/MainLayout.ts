@@ -1700,9 +1700,10 @@ export class MainLayout {
       <h2 class="list-view-primary__title">${titles[listType]}</h2>
     `;
 
-    // Add content container
+    // Add content container with data-tab-content for manager selectors
     const content = document.createElement('div');
     content.className = 'list-view-primary__content';
+    content.dataset.tabContent = `list-${listType}`;
 
     listContainer.appendChild(header);
     listContainer.appendChild(content);

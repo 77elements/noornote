@@ -6,15 +6,6 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-.profile-view {
-  width: 100%;
-  height: 100%;
-  overflow-y: auto;
-
-  // Scrollbar styling - MUST be last
-  @include custom-scrollbar;
-}
-
 // Profile Header Section
 .profile-header {
   position: relative;

@@ -42,7 +42,7 @@ export class TimelineView extends View {
     this.eventBus = EventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.container = document.createElement('div');
-    this.container.className = 'timeline-view';
+    this.container.className = 'view-content view-content--timeline';
     this.setupUserLoginListener();
     this.render();
   }

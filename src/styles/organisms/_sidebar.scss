@@ -8,17 +8,8 @@
 
 .sidebar {
   @include card-base;
-  padding: $gap;
   overflow-y: auto;
   background-color: var(--color-surface);
-
-  @include desktop-down {
-    padding: $gap;
-  }
-
-  @include tablet-down {
-    padding: calc($gap / 2);
-  }
 
   // Scrollbar styling - MUST be last to override any conflicting styles
   @include custom-scrollbar;
@@ -28,6 +19,11 @@
   display: block;
   position: relative;
   height: 100%;
+  padding: $gap;
+
+  @include tablet-down {
+    padding: calc($gap / 2);
+  }
 }
 
 // Sidebar header (logo)
