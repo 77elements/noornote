@@ -246,9 +246,19 @@ export class AutoSyncService {
 
   /**
    * Save list to local file immediately
+   * Protection: Won't save if browser storage is empty (prevents overwriting file with empty data)
    */
   private async saveToFile(listType: ListType): Promise<void> {
     try {
+      const adapter = this.getAdapterForListType(listType);
+      const browserItems = adapter.getBrowserItems();
+
+      // Don't save empty browser storage to file (prevents accidental data loss)
+      if (browserItems.length === 0) {
+        this.systemLogger.warn('ListAutoSync', `${listType} save skipped (browser empty)`);
+        return;
+      }
+
       const manager = this.getManagerForListType(listType);
       await manager.saveToFile(listType);
       this.systemLogger.info('ListAutoSync', `${listType} saved to file`);
@@ -327,6 +337,19 @@ export class AutoSyncService {
     // Check if browser already has items
     const browserItems = adapter.getBrowserItems();
     if (browserItems.length > 0) {
+      // Browser has data - check if file needs backup (migration for existing users)
+      try {
+        const fileItems = await adapter.getFileItems();
+        if (fileItems.length === 0) {
+          // File is empty but browser has data - create backup
+          this.systemLogger.info('ListAutoSync', `${listType} file empty, creating backup from browser (${browserItems.length} items)`);
+          await manager.saveToFile(listType);
+        }
+      } catch {
+        // File read failed - create backup
+        this.systemLogger.info('ListAutoSync', `${listType} file missing, creating backup from browser`);
+        await manager.saveToFile(listType);
+      }
       return { source: 'browser', itemCount: browserItems.length };
     }
 
