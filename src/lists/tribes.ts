@@ -621,6 +621,21 @@ export async function restoreFromFile(): Promise<void> {
 }
 
 /**
+ * Restore ONLY folder structure from file (folders, assignments, rootOrder)
+ * Does NOT touch members - used by ListSyncManager before member diff comparison
+ */
+export async function restoreFolderDataOnly(): Promise<void> {
+  const data = await readFromFile();
+  const { folders, assignments, rootOrder } = extractFromSetData(data);
+
+  setFolders(folders);
+  setAssignments(assignments);
+  setRootOrder(rootOrder);
+
+  logger.info('tribes.ts', `Restored folder structure from file: ${folders.length} folders`);
+}
+
+/**
  * Get all members from file (for RestoreListsService)
  */
 export async function getFileMembers(): Promise<TribeMember[]> {
@@ -2644,10 +2659,11 @@ export class TribeStorageAdapter extends BaseListStorageAdapter<TribeMember> {
 
   /**
    * Restore folder data from file to per-account storage
+   * Only restores folder structure (folders, assignments, rootOrder), NOT members
    */
   async restoreFolderDataFromFile(): Promise<void> {
     try {
-      await restoreFromFile();
+      await restoreFolderDataOnly();
     } catch (error) {
       logger.error('TribeStorageAdapter', `Failed to restore folder data: ${error}`);
     }

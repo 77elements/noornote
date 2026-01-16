@@ -174,8 +174,9 @@ export class ListSyncManager<T> {
    * Similar to syncFromRelays() pattern
    */
   async syncFromFile(): Promise<SyncFromFileResult<T>> {
-    // First restore folder structure (if available)
-    await this.restoreFolderDataFromFile();
+    // NOTE: Do NOT restore folder data here - it would overwrite browser
+    // folder assignments before user decides merge vs overwrite.
+    // Folder data is restored in applySyncFromFile() for 'overwrite' only.
 
     const fileItems = await this.adapter.getFileItems();
     const browserItems = this.adapter.getBrowserItems();
@@ -204,6 +205,8 @@ export class ListSyncManager<T> {
     const browserItems = this.adapter.getBrowserItems();
 
     if (strategy === 'overwrite') {
+      // Only restore folder structure on overwrite (replaces everything)
+      await this.restoreFolderDataFromFile();
       this.adapter.setBrowserItems(fileItems);
     } else {
       // Merge: keep all browser items + add new from file
