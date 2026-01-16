@@ -18,7 +18,7 @@ import { ListSyncManager } from './ListSyncManager';
 import { FollowStorageAdapter } from './adapters/FollowStorageAdapter';
 import { BookmarkStorageAdapter } from '../../lists/bookmarks';
 import { MuteStorageAdapter } from '../../lists/mutes';
-import { TribeStorageAdapter } from '../../lists/tribes';
+import { TribeStorageAdapter, applyRelayFetchResult as applyTribeRelayResult } from '../../lists/tribes';
 import { RestoreListsService } from '../RestoreListsService';
 import { AuthService } from '../AuthService';
 import { ConnectivityService } from '../ConnectivityService';
@@ -104,8 +104,7 @@ export class AutoSyncService {
     this.tribeSyncManager = new ListSyncManager(this.tribeAdapter);
 
     this.setupEventListeners();
-    this.systemLogger.info('ListAutoSync', 'AutoSyncService initialized');
-    console.log('[ListAutoSync] AutoSyncService initialized');
+    this.systemLogger.info('ListAutoSync', 'initialized');
   }
 
   public static getInstance(): AutoSyncService {
@@ -121,28 +120,32 @@ export class AutoSyncService {
   private setupEventListeners(): void {
     // Listen to list update events
     this.eventBus.on('follow:updated', () => {
+      this.systemLogger.info('ListAutoSync', 'follow:updated triggered');
       this.handleListChange('follows');
     });
 
     this.eventBus.on('bookmark:updated', () => {
+      this.systemLogger.info('ListAutoSync', 'bookmark:updated triggered');
       this.handleListChange('bookmarks');
     });
 
     this.eventBus.on('bookmark:order-changed', () => {
-      console.log('[ListAutoSync] bookmark:order-changed listener triggered');
-      this.systemLogger.info('ListAutoSync', 'bookmark:order-changed listener triggered');
+      this.systemLogger.info('ListAutoSync', 'bookmark:order-changed triggered');
       this.handleListChange('bookmarks');
     });
 
     this.eventBus.on('mute:updated', () => {
+      this.systemLogger.info('ListAutoSync', 'mute:updated triggered');
       this.handleListChange('mutes');
     });
 
     this.eventBus.on('mute:thread:updated', () => {
+      this.systemLogger.info('ListAutoSync', 'mute:thread:updated triggered');
       this.handleListChange('mutes');
     });
 
     this.eventBus.on('tribe:updated', () => {
+      this.systemLogger.info('ListAutoSync', 'tribe:updated triggered');
       this.handleListChange('tribes');
     });
 
@@ -217,22 +220,9 @@ export class AutoSyncService {
    * Only acts if Easy Mode is enabled
    */
   private async handleListChange(listType: ListType): Promise<void> {
-    this.systemLogger.info('ListAutoSync', `${listType} event received`);
-
-    if (!isEasyMode()) {
-      this.systemLogger.info('ListAutoSync', `${listType} skipped (not easy mode)`);
-      return;
-    }
-    if (!this.authService.getCurrentUser()) {
-      this.systemLogger.info('ListAutoSync', `${listType} skipped (no user)`);
-      return;
-    }
-    if (this.isSyncing.has(listType)) {
-      this.systemLogger.info('ListAutoSync', `${listType} skipped (already syncing)`);
-      return;
-    }
-
-    this.systemLogger.info('ListAutoSync', `${listType} processing...`);
+    if (!isEasyMode()) return;
+    if (!this.authService.getCurrentUser()) return;
+    if (this.isSyncing.has(listType)) return;
 
     try {
       this.isSyncing.add(listType);
@@ -406,11 +396,11 @@ export class AutoSyncService {
   }
 
   /**
-   * Emit bookmark category sync event and save to file
-   * Consolidates the repeated bookmark sync completion logic
+   * Apply sync result with folder assignments (bookmarks & tribes) and save to file
    */
-  private async emitBookmarkSyncAndSave(
+  private async applySyncResultAndSave(
     listType: ListType,
+    relayItems: (FollowItem | BookmarkItem | string | TribeMember)[],
     categoryAssignments: Map<string, string> | undefined,
     categories: string[] | undefined
   ): Promise<void> {
@@ -419,6 +409,9 @@ export class AutoSyncService {
         categoryAssignments,
         categories: categories || []
       });
+    }
+    if (listType === 'tribes') {
+      applyTribeRelayResult(relayItems as TribeMember[], categoryAssignments, categories);
     }
     await this.saveToFile(listType);
   }
@@ -495,9 +488,9 @@ export class AutoSyncService {
 
       // Nothing changed in terms of IDs - but folder assignments may have changed
       if (result.diff.added.length === 0 && result.diff.removed.length === 0) {
-        // Still apply folder assignments for bookmarks (categories may have changed)
-        if (listType === 'bookmarks' && result.categoryAssignments && result.categoryAssignments.size > 0) {
-          await this.emitBookmarkSyncAndSave(listType, result.categoryAssignments, result.categories);
+        // Still apply folder assignments for bookmarks/tribes (categories may have changed)
+        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments && result.categoryAssignments.size > 0) {
+          await this.applySyncResultAndSave(listType, result.relayItems, result.categoryAssignments, result.categories);
         }
         return;
       }
@@ -505,7 +498,7 @@ export class AutoSyncService {
       // Only additions - auto-merge silently
       if (result.diff.added.length > 0 && result.diff.removed.length === 0) {
         await manager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-        await this.emitBookmarkSyncAndSave(listType, result.categoryAssignments, result.categories);
+        await this.applySyncResultAndSave(listType, result.relayItems, result.categoryAssignments, result.categories);
         this.eventBus.emit(this.getEventNameForListType(listType));
         return;
       }
@@ -520,13 +513,13 @@ export class AutoSyncService {
           renderItemHtml: this.getItemHtmlRenderer(listType),
           onKeep: async () => {
             await manager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-            await this.emitBookmarkSyncAndSave(listType, result.categoryAssignments, result.categories);
+            await this.applySyncResultAndSave(listType, result.relayItems, result.categoryAssignments, result.categories);
             this.eventBus.emit(this.getEventNameForListType(listType));
             ToastService.show(`${this.getDisplayNameForListType(listType)}: Merged ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
           },
           onDelete: async () => {
             await manager.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
-            await this.emitBookmarkSyncAndSave(listType, result.categoryAssignments, result.categories);
+            await this.applySyncResultAndSave(listType, result.relayItems, result.categoryAssignments, result.categories);
             this.eventBus.emit(this.getEventNameForListType(listType));
             ToastService.show(`${this.getDisplayNameForListType(listType)}: Synced from relays (removed ${result.diff.removed.length})`, 'success');
           }
