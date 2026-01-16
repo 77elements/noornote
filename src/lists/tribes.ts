@@ -36,9 +36,11 @@ import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
 import { FolderCard, type FolderData } from '../components/bookmarks/FolderCard';
 import { UpNavigator } from '../components/bookmarks/UpNavigator';
+import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
 import { View } from '../components/views/View';
 import { Timeline } from '../components/timeline/Timeline';
 import { BaseListStorageAdapter } from '../services/sync/adapters/BaseListStorageAdapter';
+import { ListSyncManager } from '../services/sync/ListSyncManager';
 import type { FetchFromRelaysResult as AdapterFetchResult } from '../services/sync/ListStorageAdapter';
 
 const logger = SystemLogger.getInstance();
@@ -595,10 +597,20 @@ export async function saveToFile(): Promise<void> {
 
 /**
  * Restore from file to browser storage
+ * Protection: Won't overwrite browser data with empty file
  */
 export async function restoreFromFile(): Promise<void> {
   const data = await readFromFile();
   const { members, folders, assignments, rootOrder } = extractFromSetData(data);
+
+  // Protection: Don't overwrite browser data with empty file
+  if (members.length === 0) {
+    const browserMembers = getMembers();
+    if (browserMembers.length > 0) {
+      logger.warn('tribes.ts', `Restore aborted: file empty but browser has ${browserMembers.length} members`);
+      throw new Error('File is empty. Use "Sync from Relays" to restore your tribes.');
+    }
+  }
 
   setMembers(members);
   setFolders(folders);
@@ -1197,6 +1209,8 @@ export class TribeManager {
   private authService: AuthService;
   private modalService: ModalService;
   private profileService: UserProfileService;
+  private listSyncManager: ListSyncManager<TribeMember>;
+  private adapter: TribeStorageAdapter;
 
   // View state
   private currentFolderId: string = ''; // '' = root
@@ -1211,6 +1225,8 @@ export class TribeManager {
     this.authService = AuthService.getInstance();
     this.modalService = ModalService.getInstance();
     this.profileService = UserProfileService.getInstance();
+    this.adapter = new TribeStorageAdapter();
+    this.listSyncManager = new ListSyncManager(this.adapter);
 
     this.setupEventListeners();
   }
@@ -2151,21 +2167,47 @@ export class TribeManager {
     }
 
     try {
-      ToastService.show('Syncing from relays...', 'info');
+      ToastService.show('Fetching from relays...', 'info');
+      const result = await this.listSyncManager.syncFromRelays();
 
-      const result = await fetchFromRelays();
-
-      if (result.items.length > 0) {
-        // Apply relay result (replaces all local data with relay data)
-        applyRelayFetchResult(result.items, result.categoryAssignments, result.categories);
-        ToastService.show(`Synced from relays: ${result.items.length} members`, 'success');
+      if (result.requiresConfirmation) {
+        const modal = new SyncConfirmationModal({
+          listType: 'Tribes',
+          added: result.diff.added,
+          removed: result.diff.removed,
+          getDisplayName: async (member: TribeMember) => {
+            const cached = this.membersCache.get(member.pubkey);
+            if (cached?.profile) return cached.profile.display_name || cached.profile.name || member.pubkey.slice(0, 8) + '...';
+            return member.pubkey.slice(0, 8) + '...';
+          },
+          onKeep: async () => {
+            await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+            applyRelayFetchResult(this.adapter.getBrowserItems(), result.categoryAssignments, result.categories);
+            ToastService.show(`Merged ${result.diff.added.length} from relays (kept ${result.diff.removed.length} local)`, 'success');
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          },
+          onDelete: async () => {
+            await this.listSyncManager.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
+            applyRelayFetchResult(result.relayItems, result.categoryAssignments, result.categories);
+            ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          }
+        });
+        modal.show();
+      } else if (result.diff.added.length > 0) {
+        await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+        applyRelayFetchResult(result.relayItems, result.categoryAssignments, result.categories);
+        ToastService.show(`Synced ${result.diff.added.length} member${result.diff.added.length > 1 ? 's' : ''} from relays`, 'success');
+        this.membersCache.clear();
+        await this.loadMembers();
+        await this.renderCurrentView(container);
       } else {
-        ToastService.show('No members found on relays', 'info');
+        ToastService.show('Already up to date with relays', 'info');
       }
-
-      this.membersCache.clear();
-      await this.loadMembers();
-      await this.renderCurrentView(container);
     } catch (error) {
       console.error('Sync from relays failed:', error);
       ToastService.show('Failed to sync from relays', 'error');
@@ -2205,16 +2247,47 @@ export class TribeManager {
    */
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Restoring from file...', 'info');
-      await restoreFromFile();
-      ToastService.show('Restored from file', 'success');
+      ToastService.show('Reading from file...', 'info');
+      const result = await this.listSyncManager.syncFromFile();
 
-      this.membersCache.clear();
-      await this.loadMembers();
-      await this.renderCurrentView(container);
+      if (result.requiresConfirmation) {
+        const modal = new SyncConfirmationModal({
+          listType: 'Tribes (File)',
+          added: result.diff.added,
+          removed: result.diff.removed,
+          getDisplayName: async (member: TribeMember) => {
+            const cached = this.membersCache.get(member.pubkey);
+            if (cached?.profile) return cached.profile.display_name || cached.profile.name || member.pubkey.slice(0, 8) + '...';
+            return member.pubkey.slice(0, 8) + '...';
+          },
+          onKeep: async () => {
+            await this.listSyncManager.applySyncFromFile('merge', result.fileItems);
+            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          },
+          onDelete: async () => {
+            await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          }
+        });
+        modal.show();
+      } else if (result.diff.added.length > 0) {
+        await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+        ToastService.show(`Restored ${result.diff.added.length} member${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
+        this.membersCache.clear();
+        await this.loadMembers();
+        await this.renderCurrentView(container);
+      } else {
+        ToastService.show('File is identical to current list', 'info');
+      }
     } catch (error) {
       console.error('Restore from file failed:', error);
-      ToastService.show('Failed to restore from file', 'error');
+      ToastService.show(`Failed to restore from file: ${error}`, 'error');
     }
   }
 

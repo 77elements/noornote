@@ -2778,49 +2778,74 @@ export class BookmarkManager {
 
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Restoring from file...', 'info');
+      ToastService.show('Reading from file...', 'info');
+      const result = await this.listSyncManager.syncFromFile();
 
-      await this.listSyncManager.restoreFolderDataFromFile();
-
-      await this.listSyncManager.restoreFromFile();
-
-      const restoredItems = this.adapter.getBrowserItems();
-      const existingFolders = this.folderService.getFolders();
-
-      const categories = new Set<string>();
-      for (const item of restoredItems) {
-        if (item.category && item.category !== '') {
-          categories.add(item.category);
-        }
-      }
-
-      for (const categoryName of categories) {
-        const existingFolder = existingFolders.find(f => f.name === categoryName);
-        if (!existingFolder) {
-          const newFolder = this.folderService.createFolder(categoryName);
-          this.folderService.addToRootOrder('folder', newFolder.id);
-        }
-      }
-
-      const updatedFolders = this.folderService.getFolders();
-      for (const item of restoredItems) {
-        const categoryName = item.category || '';
-        if (categoryName === '') {
-          this.folderService.ensureBookmarkAssignment(item.id);
-        } else {
-          const folder = updatedFolders.find(f => f.name === categoryName);
-          if (folder) {
-            this.folderService.moveBookmarkToFolder(item.id, folder.id);
+      const applyFolderAssignments = (items: BookmarkItem[]) => {
+        const existingFolders = this.folderService.getFolders();
+        const categories = new Set<string>();
+        for (const item of items) {
+          if (item.category && item.category !== '') {
+            categories.add(item.category);
           }
         }
-      }
 
-      ToastService.show('Restored from local file', 'success');
-      await this.loadBookmarks();
-      this.renderCurrentView(container);
+        for (const categoryName of categories) {
+          const existingFolder = existingFolders.find(f => f.name === categoryName);
+          if (!existingFolder) {
+            const newFolder = this.folderService.createFolder(categoryName);
+            this.folderService.addToRootOrder('folder', newFolder.id);
+          }
+        }
+
+        const updatedFolders = this.folderService.getFolders();
+        for (const item of items) {
+          const categoryName = item.category || '';
+          if (categoryName === '') {
+            this.folderService.ensureBookmarkAssignment(item.id);
+          } else {
+            const folder = updatedFolders.find(f => f.name === categoryName);
+            if (folder) {
+              this.folderService.moveBookmarkToFolder(item.id, folder.id);
+            }
+          }
+        }
+      };
+
+      if (result.requiresConfirmation) {
+        const modal = new SyncConfirmationModal({
+          listType: 'Bookmarks (File)',
+          added: result.diff.added,
+          removed: result.diff.removed,
+          getDisplayName: (item: BookmarkItem) => this.getDisplayNameForSync(item),
+          onKeep: async () => {
+            await this.listSyncManager.applySyncFromFile('merge', result.fileItems);
+            applyFolderAssignments(this.adapter.getBrowserItems());
+            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          },
+          onDelete: async () => {
+            await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+            applyFolderAssignments(result.fileItems);
+            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          }
+        });
+        modal.show();
+      } else if (result.diff.added.length > 0) {
+        await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+        applyFolderAssignments(result.fileItems);
+        ToastService.show(`Restored ${result.diff.added.length} bookmark${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
+        await this.loadBookmarks();
+        this.renderCurrentView(container);
+      } else {
+        ToastService.show('File is identical to current list', 'info');
+      }
     } catch (error) {
       console.error('Failed to restore from file:', error);
-      ToastService.show('Failed to restore from file', 'error');
+      ToastService.show(`Failed to restore from file: ${error}`, 'error');
     }
   }
 

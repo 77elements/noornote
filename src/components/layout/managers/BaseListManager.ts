@@ -328,18 +328,37 @@ export abstract class BaseListManager<TItem, TWithProfile> {
    */
   protected async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Restoring...', 'info');
-      const success = await this.listSyncManager.restoreFromFile();
+      ToastService.show('Reading from file...', 'info');
+      const result = await this.listSyncManager.syncFromFile();
 
-      if (success) {
-        ToastService.show('Restored successfully', 'success');
+      if (result.requiresConfirmation) {
+        const modal = new SyncConfirmationModal({
+          listType: `${this.getListType()} (File)`,
+          added: result.diff.added,
+          removed: result.diff.removed,
+          getDisplayName: this.getDisplayNameForSync.bind(this),
+          onKeep: async () => {
+            await this.listSyncManager.applySyncFromFile('merge', result.fileItems);
+            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.renderListTab(container);
+          },
+          onDelete: async () => {
+            await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.renderListTab(container);
+          }
+        });
+        modal.show();
+      } else if (result.diff.added.length > 0) {
+        await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+        ToastService.show(`Restored ${result.diff.added.length} item${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
         await this.renderListTab(container);
       } else {
-        ToastService.show('Restore cancelled or failed', 'warning');
+        ToastService.show('File is identical to current list', 'info');
       }
     } catch (error) {
       console.error('Failed to restore from file:', error);
-      ToastService.show('Failed to restore', 'error');
+      ToastService.show(`Failed to restore: ${error}`, 'error');
     }
   }
 

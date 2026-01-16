@@ -523,11 +523,21 @@ function convertFileDataToMuteItems(publicData: MuteListData, privateData: MuteL
 
 /**
  * Restore from files to browser storage
+ * Protection: Won't overwrite browser data with empty file
  */
 export async function restoreFromFile(): Promise<void> {
   const publicData = await readPublicMutesFile();
   const privateData = await readPrivateMutesFile();
   const items = convertFileDataToMuteItems(publicData, privateData);
+
+  // Protection: Don't overwrite browser data with empty file
+  if (items.length === 0) {
+    const browserItems = getMuteItems();
+    if (browserItems.length > 0) {
+      logger.warn('mutes.ts', `Restore aborted: file empty but browser has ${browserItems.length} items`);
+      throw new Error('File is empty. Use "Sync from Relays" to restore your mutes.');
+    }
+  }
 
   setMuteItems(items);
   logger.info('mutes.ts', `Restored from files: ${items.length} items`);
@@ -1228,12 +1238,39 @@ export class MuteListView extends View {
 
   private async handleRestoreFromFile(): Promise<void> {
     try {
-      ToastService.show('Restoring from file...', 'info');
-      await this.listSyncManager.restoreFromFile();
-      ToastService.show('Restored from local file', 'success');
-      await this.loadMuteList();
-    } catch {
-      ToastService.show('Failed to restore from file', 'error');
+      ToastService.show('Reading from file...', 'info');
+      const result = await this.listSyncManager.syncFromFile();
+
+      if (result.requiresConfirmation) {
+        const modal = new SyncConfirmationModal({
+          listType: 'Mute List (File)',
+          added: result.diff.added,
+          removed: result.diff.removed,
+          getDisplayName: (pubkey: string) => {
+            const user = this.mutedUsers.find(u => u.pubkey === pubkey);
+            return user ? extractDisplayName(user.profile) : pubkey.slice(0, 8) + '...';
+          },
+          onKeep: async () => {
+            await this.listSyncManager.applySyncFromFile('merge', result.fileItems);
+            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.loadMuteList();
+          },
+          onDelete: async () => {
+            await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+            ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.loadMuteList();
+          }
+        });
+        modal.show();
+      } else if (result.diff.added.length > 0) {
+        await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+        ToastService.show(`Restored ${result.diff.added.length} mute${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
+        await this.loadMuteList();
+      } else {
+        ToastService.show('File is identical to current list', 'info');
+      }
+    } catch (error) {
+      ToastService.show(`Failed to restore from file: ${error}`, 'error');
     }
   }
 

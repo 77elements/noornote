@@ -35,6 +35,12 @@ export interface SyncFromRelaysResult<T> {
   categories?: string[];
 }
 
+export interface SyncFromFileResult<T> {
+  requiresConfirmation: boolean;
+  diff: SyncDiff<T>;
+  fileItems: T[];
+}
+
 export class ListSyncManager<T> {
   constructor(private adapter: ListStorageAdapter<T>) {}
 
@@ -159,23 +165,67 @@ export class ListSyncManager<T> {
   }
 
   /**
-   * Button 4: "Restore from local file"
+   * Button 4: "Restore from local file" - Phase 1
    *
-   * File → Browser
-   * - Tauri: Read from ~/.noornote/*.json
-   * - Browser: Prompt file upload
+   * File → Browser (with conflict detection)
+   * - Reads file and compares with browser
+   * - Returns diff for confirmation modal if browser would lose items
    *
-   * Returns true if restore was successful, false if cancelled/failed
+   * Similar to syncFromRelays() pattern
+   */
+  async syncFromFile(): Promise<SyncFromFileResult<T>> {
+    // First restore folder structure (if available)
+    await this.restoreFolderDataFromFile();
+
+    const fileItems = await this.adapter.getFileItems();
+    const browserItems = this.adapter.getBrowserItems();
+
+    // Calculate diff (file items are like "relay items" in this context)
+    const diff = this.calculateDiff(browserItems, fileItems, false);
+
+    // Requires confirmation if browser has items that would be lost
+    const requiresConfirmation = diff.removed.length > 0;
+
+    return {
+      requiresConfirmation,
+      diff,
+      fileItems
+    };
+  }
+
+  /**
+   * Button 4: "Restore from local file" - Phase 2
+   *
+   * Apply file restore after user decision
+   * @param strategy 'merge' = keep browser items + add file items
+   *                 'overwrite' = replace browser with file
+   */
+  async applySyncFromFile(strategy: SyncStrategy, fileItems: T[]): Promise<void> {
+    const browserItems = this.adapter.getBrowserItems();
+
+    if (strategy === 'overwrite') {
+      this.adapter.setBrowserItems(fileItems);
+    } else {
+      // Merge: keep all browser items + add new from file
+      const merged = this.mergeItems(browserItems, fileItems);
+      this.adapter.setBrowserItems(merged);
+    }
+  }
+
+  /**
+   * Legacy: Simple restore from file (for backward compatibility)
+   * Use syncFromFile() + applySyncFromFile() for conflict handling
    */
   async restoreFromFile(): Promise<boolean> {
     if (PlatformService.getInstance().isTauri) {
-      // Tauri: Use native file storage
-      // First restore folder structure (if available)
-      await this.restoreFolderDataFromFile();
+      const result = await this.syncFromFile();
 
-      // Then restore items
-      const fileItems = await this.adapter.getFileItems();
-      this.adapter.setBrowserItems(fileItems);
+      // If would lose data, throw error (legacy behavior)
+      if (result.requiresConfirmation) {
+        throw new Error(`File has fewer items than browser. ${result.diff.removed.length} items would be lost.`);
+      }
+
+      await this.applySyncFromFile('overwrite', result.fileItems);
       return true;
     } else {
       // Browser: Prompt file upload and parse JSON
