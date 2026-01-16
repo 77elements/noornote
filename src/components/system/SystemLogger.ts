@@ -39,7 +39,8 @@ const GLOBAL_CATEGORIES = [
   'ZapService',
   'NWCService',
   'BookmarkOrchestrator',
-  'tribes.ts'
+  'tribes.ts',
+  'ListAutoSync'
 ];
 
 // View-specific categories mapping (Router viewClass → allowed categories)

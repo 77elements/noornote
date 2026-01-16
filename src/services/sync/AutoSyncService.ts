@@ -104,6 +104,8 @@ export class AutoSyncService {
     this.tribeSyncManager = new ListSyncManager(this.tribeAdapter);
 
     this.setupEventListeners();
+    this.systemLogger.info('ListAutoSync', 'AutoSyncService initialized');
+    console.log('[ListAutoSync] AutoSyncService initialized');
   }
 
   public static getInstance(): AutoSyncService {
@@ -127,6 +129,8 @@ export class AutoSyncService {
     });
 
     this.eventBus.on('bookmark:order-changed', () => {
+      console.log('[ListAutoSync] bookmark:order-changed listener triggered');
+      this.systemLogger.info('ListAutoSync', 'bookmark:order-changed listener triggered');
       this.handleListChange('bookmarks');
     });
 
@@ -213,9 +217,22 @@ export class AutoSyncService {
    * Only acts if Easy Mode is enabled
    */
   private async handleListChange(listType: ListType): Promise<void> {
-    if (!isEasyMode()) return;
-    if (!this.authService.getCurrentUser()) return;
-    if (this.isSyncing.has(listType)) return; // Prevent sync loops
+    this.systemLogger.info('ListAutoSync', `${listType} event received`);
+
+    if (!isEasyMode()) {
+      this.systemLogger.info('ListAutoSync', `${listType} skipped (not easy mode)`);
+      return;
+    }
+    if (!this.authService.getCurrentUser()) {
+      this.systemLogger.info('ListAutoSync', `${listType} skipped (no user)`);
+      return;
+    }
+    if (this.isSyncing.has(listType)) {
+      this.systemLogger.info('ListAutoSync', `${listType} skipped (already syncing)`);
+      return;
+    }
+
+    this.systemLogger.info('ListAutoSync', `${listType} processing...`);
 
     try {
       this.isSyncing.add(listType);
@@ -244,9 +261,9 @@ export class AutoSyncService {
     try {
       const manager = this.getManagerForListType(listType);
       await manager.saveToFile(listType);
+      this.systemLogger.info('ListAutoSync', `${listType} saved to file`);
     } catch (error) {
-      console.error(`[AutoSyncService] Failed to save ${listType} to file:`, error);
-      // Don't show toast for background saves - too noisy
+      this.systemLogger.error('ListAutoSync', `${listType} save to file failed: ${error}`);
     }
   }
 
@@ -259,6 +276,8 @@ export class AutoSyncService {
     if (existingTimer) {
       clearTimeout(existingTimer);
     }
+
+    this.systemLogger.info('ListAutoSync', `${listType} relay sync scheduled`);
 
     // Schedule new sync
     const timer = setTimeout(async () => {
@@ -277,16 +296,16 @@ export class AutoSyncService {
     if (!this.authService.getCurrentUser()) return;
 
     if (!this.connectivityService.isOnline()) {
-      this.systemLogger.info('AutoSyncService', `Skipping relay sync for ${listType} - offline`);
+      this.systemLogger.info('ListAutoSync', `${listType} relay sync skipped (offline)`);
       return;
     }
 
     try {
       const manager = this.getManagerForListType(listType);
       await manager.syncToRelays();
+      this.systemLogger.info('ListAutoSync', `${listType} synced to relays`);
     } catch (error) {
-      console.error(`[AutoSyncService] Failed to sync ${listType} to relays:`, error);
-      // Silent fail - will retry on next change or when back online
+      this.systemLogger.error('ListAutoSync', `${listType} relay sync failed: ${error}`);
     }
   }
 
