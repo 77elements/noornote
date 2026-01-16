@@ -411,7 +411,12 @@ export class AutoSyncService {
       });
     }
     if (listType === 'tribes') {
-      applyTribeRelayResult(relayItems as TribeMember[], categoryAssignments, categories);
+      const members = relayItems as TribeMember[];
+      this.systemLogger.info('ListAutoSync', `tribes applyResult: ${members.length} members, ${categories?.length || 0} categories, ${categoryAssignments?.size || 0} assignments`);
+      // Log member categories
+      const withCategory = members.filter(m => m.category).length;
+      this.systemLogger.info('ListAutoSync', `tribes members with category: ${withCategory}/${members.length}`);
+      applyTribeRelayResult(members, categoryAssignments, categories);
     }
     await this.saveToFile(listType);
   }
