@@ -66,6 +66,7 @@ export class ProfileView extends View {
   private isLoadingJoinedDate: boolean = false;
   private followsYou: boolean = false;
   private isInitialRender: boolean = true; // Track if this is first render
+  private lastKnownMuteStatus: boolean = false; // Track mute status for change detection
 
   // Managers
   private followManager: ProfileFollowManager;
@@ -133,6 +134,9 @@ export class ProfileView extends View {
     // Listen for calendar system changes
     this.setupCalendarSystemListener();
 
+    // Listen for mute changes (from MuteList or other sources)
+    this.setupMuteChangeListener();
+
     this.render();
   }
 
@@ -173,6 +177,24 @@ export class ProfileView extends View {
   }
 
   /**
+   * Setup listener for mute changes (re-render if this profile's mute status changed)
+   */
+  private setupMuteChangeListener(): void {
+    this.eventBus.on('mute:updated', async () => {
+      // Only re-render if this profile's mute status actually changed
+      const wasMuted = this.lastKnownMuteStatus;
+      const muteStatus = await this.muteManager.checkMuteStatus();
+      const isMuted = muteStatus.public || muteStatus.private;
+
+      if (wasMuted !== isMuted) {
+        this.lastKnownMuteStatus = isMuted;
+        this.isInitialRender = true;
+        this.render();
+      }
+    });
+  }
+
+  /**
    * Refresh profile data (after edit)
    */
   private async refreshProfile(): Promise<void> {
@@ -208,7 +230,10 @@ export class ProfileView extends View {
       // Check if this user is muted (only if logged in)
       if (currentUser) {
         const muteStatus = await this.muteManager.checkMuteStatus();
-        if (muteStatus.public || muteStatus.private) {
+        const isMuted = muteStatus.public || muteStatus.private;
+        this.lastKnownMuteStatus = isMuted;
+
+        if (isMuted) {
           // Show muted profile placeholder
           await this.showMutedProfile();
           return;
@@ -712,7 +737,8 @@ export class ProfileView extends View {
    */
   private setupMuteButton(): void {
     this.muteManager.setupMuteButton(this.container, () => {
-      // Reload profile to show muted state
+      // Force full re-render (mute state changes HTML structure completely)
+      this.isInitialRender = true;
       this.render();
     });
 
