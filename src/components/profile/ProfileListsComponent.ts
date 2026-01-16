@@ -14,10 +14,12 @@
 
 import { ProfileMountsService } from '../../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../../services/orchestration/ProfileMountsOrchestrator';
-import { BookmarkOrchestrator } from '../../services/orchestration/BookmarkOrchestrator';
-import { BookmarkFolderService } from '../../services/BookmarkFolderService';
+import {
+  BookmarkOrchestrator,
+  getBookmarkFolderService,
+  type BookmarkItem
+} from '../../lists/bookmarks';
 import { AuthService } from '../../services/AuthService';
-import type { BookmarkItem } from '../../services/storage/BookmarkFileStorage';
 
 const MAX_ITEMS_COLLAPSED = 5;
 
@@ -33,8 +35,8 @@ export class ProfileListsComponent {
   private isOwnProfile: boolean;
   private profileMountsService: ProfileMountsService;
   private profileMountsOrch: ProfileMountsOrchestrator;
-  private bookmarkOrch: BookmarkOrchestrator;
-  private folderService: BookmarkFolderService;
+  private bookmarkOrch: ReturnType<typeof BookmarkOrchestrator.getInstance>;
+  private folderService: ReturnType<typeof getBookmarkFolderService>;
   private authService: AuthService;
 
   private lists: ProfileListData[] = [];
@@ -47,7 +49,7 @@ export class ProfileListsComponent {
     this.profileMountsService = ProfileMountsService.getInstance();
     this.profileMountsOrch = ProfileMountsOrchestrator.getInstance();
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
-    this.folderService = BookmarkFolderService.getInstance();
+    this.folderService = getBookmarkFolderService();
     this.authService = AuthService.getInstance();
 
     // Check if viewing own profile

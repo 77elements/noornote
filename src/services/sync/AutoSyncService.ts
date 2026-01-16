@@ -16,9 +16,9 @@ import { EventBus } from '../EventBus';
 import { ToastService } from '../ToastService';
 import { ListSyncManager } from './ListSyncManager';
 import { FollowStorageAdapter } from './adapters/FollowStorageAdapter';
-import { BookmarkStorageAdapter } from './adapters/BookmarkStorageAdapter';
-import { MuteStorageAdapter } from './adapters/MuteStorageAdapter';
-import { TribeStorageAdapter } from './adapters/TribeStorageAdapter';
+import { BookmarkStorageAdapter } from '../../lists/bookmarks';
+import { MuteStorageAdapter } from '../../lists/mutes';
+import { TribeStorageAdapter } from '../../lists/tribes';
 import { RestoreListsService } from '../RestoreListsService';
 import { AuthService } from '../AuthService';
 import { ConnectivityService } from '../ConnectivityService';
@@ -30,7 +30,7 @@ import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { renderUserMention } from '../../helpers/UserMentionHelper';
 import { isEasyMode } from '../../helpers/ListSyncMode';
 import type { FollowItem } from '../storage/FollowFileStorage';
-import type { BookmarkItem } from '../storage/BookmarkFileStorage';
+import type { BookmarkItem } from '../../lists/bookmarks';
 import type { TribeMember } from '../../lists/tribes';
 
 type ListType = 'follows' | 'bookmarks' | 'mutes' | 'tribes';
@@ -123,6 +123,10 @@ export class AutoSyncService {
     });
 
     this.eventBus.on('bookmark:updated', () => {
+      this.handleListChange('bookmarks');
+    });
+
+    this.eventBus.on('bookmark:order-changed', () => {
       this.handleListChange('bookmarks');
     });
 

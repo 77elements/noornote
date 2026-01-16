@@ -11,7 +11,7 @@ import { OriginalNoteRenderer } from './OriginalNoteRenderer';
 import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { QuoteOrchestrator } from '../../../services/orchestration/QuoteOrchestrator';
-import { MuteOrchestrator } from '../../../services/orchestration/MuteOrchestrator';
+import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
 import { hexToNpub } from '../../../helpers/nip19';
 import { npubToUsername } from '../../../helpers/npubToUsername';

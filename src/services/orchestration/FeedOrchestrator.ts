@@ -17,7 +17,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
-import { MuteOrchestrator } from './MuteOrchestrator';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { NoteService } from '../NoteService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { AppState } from '../AppState';
@@ -50,7 +50,7 @@ export class FeedOrchestrator extends Orchestrator {
   private static instance: FeedOrchestrator;
   private transport: NostrTransport;
   private relayDiscovery: OutboundRelaysOrchestrator;
-  private muteOrchestrator: MuteOrchestrator;
+  private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private noteService: NoteService;
   private systemLogger: SystemLogger;
   private mutedPubkeys: Set<string> = new Set();
@@ -738,7 +738,7 @@ export class FeedOrchestrator extends Orchestrator {
   /**
    * Check if a pubkey is temporarily unmuted
    */
-  private isTemporarilyUnmuted(pubkey: string, muteOrch: MuteOrchestrator): boolean {
+  private isTemporarilyUnmuted(pubkey: string, muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>): boolean {
     const currentUser = AuthService.getInstance().getCurrentUser();
     if (!currentUser) return false;
     return (muteOrch as any).temporaryUnmutes?.has(pubkey) ?? false;

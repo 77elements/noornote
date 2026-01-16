@@ -12,7 +12,7 @@ import { UserService } from '../../services/UserService';
 import { Timeline } from '../timeline/Timeline';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { ProfileFollowManager } from '../profile/ProfileFollowManager';
-import { ProfileMuteManager } from '../profile/ProfileMuteManager';
+import { ProfileMuteManager } from '../../lists/mutes';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
 import { AppState } from '../../services/AppState';
 import { QRCodeModal } from '../qrcode/QRCodeModal';

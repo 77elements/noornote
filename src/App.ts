@@ -294,14 +294,14 @@ export class App {
       }
 
       case 'tribes': {
-        const { TribeView } = await import('./components/views/TribeView');
+        const { TribeView } = await import('./lists/tribes');
         const tribeView = new TribeView();
         primaryContent.appendChild(tribeView.getElement());
         break;
       }
 
       case 'mute-list': {
-        const { MuteListView } = await import('./components/views/MuteListView');
+        const { MuteListView } = await import('./lists/mutes');
         const muteListView = new MuteListView();
         primaryContent.appendChild(await muteListView.render());
         break;
@@ -354,6 +354,11 @@ export class App {
         this.timelineUI = null;
       }
       this.router.navigate('/login');
+    });
+
+    // AuthGuard emits this when user tries protected action without login
+    this.eventBus.on('auth:login-required', (data: { action: string }) => {
+      this.showLoginRequiredModal(data.action);
     });
 
     this.setupTauriCloseHandler();
@@ -512,6 +517,32 @@ export class App {
     } catch {
       // Initialization failed - non-critical
     }
+  }
+
+  private showLoginRequiredModal(actionDescription: string): void {
+    const modalContent = `
+      <div class="auth-required-modal">
+        <div class="auth-required-modal__icon">🔒</div>
+        <h3>Login Required</h3>
+        <p>Please log in to ${actionDescription}.</p>
+        <div class="auth-required-modal__actions">
+          <button class="btn" data-action="close">OK</button>
+        </div>
+      </div>
+    `;
+
+    const modalService = ModalService.getInstance();
+    modalService.show({
+      title: 'Authentication Required',
+      content: modalContent,
+      width: '400px',
+      showCloseButton: true,
+      closeOnOverlay: true,
+      closeOnEsc: true
+    });
+
+    const closeBtn = document.querySelector('[data-action="close"]');
+    closeBtn?.addEventListener('click', () => modalService.hide());
   }
 
   private async handleUserLogin(data: { npub: string; pubkey: string }): Promise<void> {

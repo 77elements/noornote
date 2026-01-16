@@ -8,8 +8,8 @@
 
 import { SettingsSection } from './SettingsSection';
 import { FollowListOrchestrator } from '../../services/orchestration/FollowListOrchestrator';
-import { BookmarkOrchestrator } from '../../services/orchestration/BookmarkOrchestrator';
-import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
+import { BookmarkOrchestrator } from '../../lists/bookmarks';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
@@ -32,8 +32,8 @@ interface PrivacySectionConfig {
 
 export class PrivacySettingsSection extends SettingsSection {
   private followListOrch: FollowListOrchestrator;
-  private bookmarkOrch: BookmarkOrchestrator;
-  private muteOrch: MuteOrchestrator;
+  private bookmarkOrch: ReturnType<typeof BookmarkOrchestrator.getInstance>;
+  private muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>;
   private authService: AuthService;
   private modalService: ModalService;
   private switches: Map<ListType, Switch> = new Map();

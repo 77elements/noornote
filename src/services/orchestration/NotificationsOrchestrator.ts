@@ -18,7 +18,7 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
-import { MuteOrchestrator } from './MuteOrchestrator';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { MutualChangeStorage } from '../storage/MutualChangeStorage';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { AuthService } from '../AuthService';
@@ -39,7 +39,7 @@ export interface NotificationEvent {
 export class NotificationsOrchestrator extends Orchestrator {
   private static instance: NotificationsOrchestrator;
   private transport: NostrTransport;
-  private muteOrchestrator: MuteOrchestrator;
+  private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private systemLogger: SystemLogger;
   private authService: AuthService;
   private eventBus: EventBus;

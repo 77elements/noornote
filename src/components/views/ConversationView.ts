@@ -14,7 +14,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { EventBus } from '../../services/EventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../system/SystemLogger';
-import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator';
 import { NotificationsOrchestrator } from '../../services/orchestration/NotificationsOrchestrator';
 import { ToastService } from '../../services/ToastService';

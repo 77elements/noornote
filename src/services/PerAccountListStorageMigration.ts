@@ -21,7 +21,7 @@
 
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
-import { BookmarkFolderService } from './BookmarkFolderService';
+import { getBookmarkFolderService } from '../lists/bookmarks';
 
 // Legacy keys
 const LEGACY_KEYS = {
@@ -94,7 +94,7 @@ export class PerAccountListStorageMigration {
     }
 
     // Clean up orphaned folder assignments (assignments referencing non-existent bookmarks)
-    const folderService = BookmarkFolderService.getInstance();
+    const folderService = getBookmarkFolderService();
     const removedOrphans = folderService.cleanupOrphanedAssignments();
     if (removedOrphans > 0) {
       this.logger.info('PerAccountListStorageMigration',
