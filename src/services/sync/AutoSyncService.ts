@@ -31,7 +31,7 @@ import { renderUserMention } from '../../helpers/UserMentionHelper';
 import { isEasyMode } from '../../helpers/ListSyncMode';
 import type { FollowItem } from '../storage/FollowFileStorage';
 import type { BookmarkItem } from '../storage/BookmarkFileStorage';
-import type { TribeMember } from '../storage/TribeFileStorage';
+import type { TribeMember } from '../../lists/tribes';
 
 type ListType = 'follows' | 'bookmarks' | 'mutes' | 'tribes';
 

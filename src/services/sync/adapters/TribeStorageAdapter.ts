@@ -3,39 +3,33 @@
  * @purpose Storage adapter for tribe lists (public + private merged)
  * @used-by ListSyncManager
  *
- * Storage Locations:
- * - Browser: localStorage key 'noornote_tribes_browser' (TribeMember[])
- * - File: ~/.noornote/{npub}/tribes.json
- * - Relays: kind:30000 (Follow Sets) events
+ * Delegates to /src/lists/tribes.ts for actual operations.
  */
 
 import { BaseListStorageAdapter } from './BaseListStorageAdapter';
-import { TribeFileStorage, type TribeMember } from '../../storage/TribeFileStorage';
 import type { FetchFromRelaysResult } from '../ListStorageAdapter';
-import { TribeOrchestrator } from '../../orchestration/TribeOrchestrator';
-import { AuthService } from '../../AuthService';
 import { SystemLogger } from '../../../components/system/SystemLogger';
 import { StorageKeys, type StorageKey } from '../../PerAccountLocalStorage';
 import { EventBus } from '../../EventBus';
 
+// Import from consolidated tribes.ts
+import * as tribes from '../../../lists/tribes';
+import type { TribeMember } from '../../../lists/tribes';
+
+// Re-export TribeMember type for consumers
+export type { TribeMember };
+
 export class TribeStorageAdapter extends BaseListStorageAdapter<TribeMember> {
-  private fileStorage: TribeFileStorage;
-  private tribeOrchestrator: TribeOrchestrator;
-  private authService: AuthService;
   private logger = SystemLogger.getInstance();
   private eventBus: EventBus;
 
   constructor() {
     super();
-    this.fileStorage = TribeFileStorage.getInstance();
-    this.tribeOrchestrator = TribeOrchestrator.getInstance();
-    this.authService = AuthService.getInstance();
     this.eventBus = EventBus.getInstance();
   }
 
   /**
    * Override setBrowserItems to emit tribe:updated event
-   * Triggers Easy Mode sync for: folder moves, add/remove, category changes
    */
   override setBrowserItems(items: TribeMember[]): void {
     super.setBrowserItems(items);
@@ -62,69 +56,46 @@ export class TribeStorageAdapter extends BaseListStorageAdapter<TribeMember> {
   }
 
   /**
-   * File Storage (Persistent Local) - Asynchronous
-   * Reads all tribe members from file with category info
+   * File Storage - read from file
    */
   async getFileItems(): Promise<TribeMember[]> {
     try {
-      // Use getAllMembers() which properly reads the TribeSetData format
-      // and extracts items with their category field
-      return await this.fileStorage.getAllMembers();
+      return await tribes.getFileMembers();
     } catch (error) {
-      this.logger.error('TribeStorageAdapter', `Failed to read from file storage: ${error}`);
+      this.logger.error('TribeStorageAdapter', `Failed to read from file: ${error}`);
       throw error;
     }
   }
 
   /**
-   * File Storage (Persistent Local) - Asynchronous
-   * Writes items to files using TribeSetData format with categories
+   * File Storage - save to file
    */
   async setFileItems(_items: TribeMember[]): Promise<void> {
     try {
-      // Use orchestrator to save in TribeSetData format (with categories)
-      await this.tribeOrchestrator.saveToFile();
+      await tribes.saveToFile();
     } catch (error) {
-      this.logger.error('TribeStorageAdapter', `Failed to write to file storage: ${error}`);
+      this.logger.error('TribeStorageAdapter', `Failed to write to file: ${error}`);
       throw error;
     }
   }
 
   /**
    * Restore folder data from file to per-account storage
-   * Uses getAllFolderData() to include BOTH public AND private member assignments
    */
   async restoreFolderDataFromFile(): Promise<void> {
     try {
-      const folderData = await this.fileStorage.getAllFolderData();
-
-      if (folderData.folders.length > 0) {
-        this.perAccountStorage.set(StorageKeys.TRIBE_FOLDERS, folderData.folders);
-      }
-      if (folderData.folderAssignments.length > 0) {
-        this.perAccountStorage.set(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS, folderData.folderAssignments);
-      }
-      if (folderData.rootOrder.length > 0) {
-        this.perAccountStorage.set(StorageKeys.TRIBE_ROOT_ORDER, folderData.rootOrder);
-      }
+      await tribes.restoreFromFile();
     } catch (error) {
       this.logger.error('TribeStorageAdapter', `Failed to restore folder data: ${error}`);
     }
   }
 
   /**
-   * Relay Storage (Remote) - Asynchronous
-   * Fetches kind:30000 event, returns merged members with metadata
-   * Returns FetchFromRelaysResult to support mixed-client private item handling
+   * Relay Storage - fetch from relays
    */
   async fetchFromRelays(): Promise<FetchFromRelaysResult<TribeMember>> {
     try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) {
-        throw new Error('User not authenticated');
-      }
-
-      return await this.tribeOrchestrator.fetchTribesFromRelays(currentUser.pubkey);
+      return await tribes.fetchFromRelays();
     } catch (error) {
       this.logger.error('TribeStorageAdapter', `Failed to fetch from relays: ${error}`);
       throw error;
@@ -132,16 +103,11 @@ export class TribeStorageAdapter extends BaseListStorageAdapter<TribeMember> {
   }
 
   /**
-   * Relay Storage (Remote) - Asynchronous
-   * Publishes kind:30000 events respecting isPrivate flag
-   *
-   * Strategy: Reads from browser (localStorage) directly, does NOT modify files.
-   * Files are only written on explicit "Save to file" action by user.
+   * Relay Storage - publish to relays
    */
   async publishToRelays(_items: TribeMember[]): Promise<void> {
     try {
-      // Publish via orchestrator (reads from browser localStorage)
-      await this.tribeOrchestrator.publishToRelays();
+      await tribes.publishToRelays();
     } catch (error) {
       this.logger.error('TribeStorageAdapter', `Failed to publish to relays: ${error}`);
       throw error;

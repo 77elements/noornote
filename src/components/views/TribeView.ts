@@ -14,22 +14,21 @@
 
 import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
-import { TribeFolderService, type TribeFolder } from '../../services/TribeFolderService';
 import { EventBus } from '../../services/EventBus';
 import { AuthService } from '../../services/AuthService';
+import * as tribes from '../../lists/tribes';
+import type { TribeFolder } from '../../lists/tribes';
 
 export class TribeView extends View {
   private container: HTMLElement;
   private timeline: Timeline | null = null;
-  private tribeFolderService: TribeFolderService;
   private eventBus: EventBus;
   private authService: AuthService;
   private currentTribeId: string = ''; // Current folder ID
-  private tribes: TribeFolder[] = [];
+  private currentTribes: TribeFolder[] = [];
 
   constructor() {
     super();
-    this.tribeFolderService = TribeFolderService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.container = document.createElement('div');
@@ -49,15 +48,15 @@ export class TribeView extends View {
     }
 
     // Load tribes in root order
-    this.tribes = this.tribeFolderService.getFoldersInRootOrder();
+    this.currentTribes = tribes.getFoldersInRootOrder();
 
-    if (this.tribes.length === 0 || !this.tribes[0]) {
+    if (this.currentTribes.length === 0 || !this.currentTribes[0]) {
       this.container.innerHTML = '<div class="tribe-view__error">No tribes found. Create one in the sidebar.</div>';
       return;
     }
 
     // Set first tribe as current
-    this.currentTribeId = this.tribes[0].id;
+    this.currentTribeId = this.currentTribes[0].id;
 
     // Build header with tabs and edit link
     const header = document.createElement('div');
@@ -72,8 +71,8 @@ export class TribeView extends View {
     tabs.className = 'tabs';
 
     // Tribe tabs (in root order)
-    for (let i = 0; i < this.tribes.length; i++) {
-      const tribe = this.tribes[i];
+    for (let i = 0; i < this.currentTribes.length; i++) {
+      const tribe = this.currentTribes[i];
       if (!tribe) continue;
       const isActive = i === 0; // First tribe is active
       const tab = this.createTab(tribe.id, tribe.name, isActive);
@@ -136,7 +135,7 @@ export class TribeView extends View {
    */
   private async updateTimeline(userPubkey: string): Promise<void> {
     // Get member pubkeys for selected tribe
-    const tribePubkeys = this.tribeFolderService.getMemberPubkeysInFolder(this.currentTribeId);
+    const tribePubkeys = tribes.getMemberPubkeysInFolder(this.currentTribeId);
 
     // Destroy existing timeline
     if (this.timeline) {

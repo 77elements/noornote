@@ -10,17 +10,14 @@
  *
  * @purpose Handle tribe grid rendering, folders, drag & drop, sync operations
  * @used-by MainLayout
+ *
+ * REFACTORED: Now uses /src/lists/tribes.ts instead of scattered services
  */
 
 import { EventBus } from '../../../services/EventBus';
 import { AuthService } from '../../../services/AuthService';
 import { ToastService } from '../../../services/ToastService';
 import { ModalService } from '../../../services/ModalService';
-import { TribeOrchestrator } from '../../../services/orchestration/TribeOrchestrator';
-import { TribeFolderService } from '../../../services/TribeFolderService';
-import { ListSyncManager } from '../../../services/sync/ListSyncManager';
-import { TribeStorageAdapter } from '../../../services/sync/adapters/TribeStorageAdapter';
-import { RestoreListsService } from '../../../services/RestoreListsService';
 import { renderListSyncButtons, bindSwitchSyncModeLink } from '../../../helpers/ListSyncMode';
 import { NewFolderModal } from '../../modals/NewFolderModal';
 import { EditFolderModal } from '../../modals/EditFolderModal';
@@ -28,9 +25,11 @@ import { TribeMemberCard } from '../../tribes/TribeMemberCard';
 import { FolderCard, type FolderData } from '../../bookmarks/FolderCard';
 import { UpNavigator } from '../../bookmarks/UpNavigator';
 import { UserProfileService } from '../../../services/UserProfileService';
-import type { TribeMember } from '../../../services/storage/TribeFileStorage';
 import type { UserProfile } from '../../../services/UserProfileService';
-import { applyFolderAssignments } from '../../../helpers/FolderAssignmentHelper';
+
+// NEW: Import from consolidated tribes.ts
+import * as tribes from '../../../lists/tribes';
+import type { TribeMember, TribeFolder } from '../../../lists/tribes';
 
 interface MemberWithProfile extends TribeMember {
   profile?: UserProfile;
@@ -42,10 +41,6 @@ export class TribeManager {
   private eventBus: EventBus;
   private authService: AuthService;
   private modalService: ModalService;
-  private tribeOrch: TribeOrchestrator;
-  private folderService: TribeFolderService;
-  private listSyncManager: ListSyncManager<TribeMember>;
-  private adapter: TribeStorageAdapter;
   private profileService: UserProfileService;
 
   // View state
@@ -61,12 +56,7 @@ export class TribeManager {
     this.eventBus = EventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.modalService = ModalService.getInstance();
-    this.tribeOrch = TribeOrchestrator.getInstance();
-    this.folderService = TribeFolderService.getInstance();
     this.profileService = UserProfileService.getInstance();
-
-    this.adapter = new TribeStorageAdapter();
-    this.listSyncManager = new ListSyncManager(this.adapter);
 
     this.setupEventListeners();
   }
@@ -161,30 +151,40 @@ export class TribeManager {
     this.isLoading = true;
 
     try {
-      // Use RestoreListsService for cascading restore (browser → file → relays)
-      const restoreService = RestoreListsService.getInstance();
-      const result = await restoreService.restoreIfEmpty(
-        this.listSyncManager,
-        () => this.adapter.getBrowserItems(),
-        (items) => this.adapter.setBrowserItems(items),
-        'Tribes',
-        async (syncResult) => {
-          // After relay sync: create folders from categories and assign members
-          await applyFolderAssignments(
-            syncResult.categoryAssignments!,
-            this.folderService,
-            (memberPubkey, folderId) => this.folderService.moveMemberToFolder(memberPubkey, folderId),
-            'TribeManager'
-          );
-        }
-      );
+      // Check browser storage first
+      let membersFromBrowser = tribes.getMembers();
 
-      if (result.source === 'empty') {
-        this.membersCache.clear();
-        return;
+      // If empty, try to restore from file
+      if (membersFromBrowser.length === 0) {
+        try {
+          const fileMembers = await tribes.getFileMembers();
+          if (fileMembers.length > 0) {
+            await tribes.restoreFromFile();
+            membersFromBrowser = tribes.getMembers();
+          }
+        } catch {
+          // File restore failed, try relays
+        }
       }
 
-      const membersFromBrowser = this.adapter.getBrowserItems();
+      // If still empty, try relays
+      if (membersFromBrowser.length === 0) {
+        try {
+          const relayResult = await tribes.fetchFromRelays();
+          if (relayResult.items.length > 0) {
+            // Apply relay result with folders and assignments
+            tribes.applyRelayFetchResult(
+              relayResult.items,
+              relayResult.categoryAssignments,
+              relayResult.categories
+            );
+            membersFromBrowser = tribes.getMembers();
+          }
+        } catch {
+          // Relay fetch failed, continue with empty
+        }
+      }
+
       if (membersFromBrowser.length === 0) {
         this.membersCache.clear();
         return;
@@ -205,7 +205,7 @@ export class TribeManager {
       this.membersCache.clear();
 
       // Check if this is first initialization (no root order yet)
-      const isFirstInit = !this.folderService.hasRootOrder();
+      const isFirstInit = !tribes.hasRootOrder();
 
       // Process in sorted order (newest first)
       for (let i = 0; i < sortedMembers.length; i++) {
@@ -215,15 +215,13 @@ export class TribeManager {
         const memberWithProfile: MemberWithProfile = {
           id: member.id,
           pubkey: member.pubkey,
-          isPrivate: false // Private tribes not yet implemented
+          isPrivate: member.isPrivate || false
         };
         if (member.relay) memberWithProfile.relay = member.relay;
         if (member.addedAt) memberWithProfile.addedAt = member.addedAt;
         if (member.category) memberWithProfile.category = member.category;
         if (profile) memberWithProfile.profile = profile;
         this.membersCache.set(member.pubkey, memberWithProfile);
-        // Note: Folder assignments are created by TribeOrchestrator.addMember(), not here
-        // Calling ensureMemberAssignment here caused race conditions with event timing
       }
 
       // On first init, build root order from sorted members (newest first)
@@ -232,7 +230,7 @@ export class TribeManager {
         for (const member of sortedMembers) {
           rootOrder.push({ type: 'member', id: member.id });
         }
-        this.folderService.saveRootOrder(rootOrder);
+        tribes.setRootOrder(rootOrder);
       }
     } finally {
       this.isLoading = false;
@@ -244,7 +242,7 @@ export class TribeManager {
    */
   private async renderCurrentView(container: HTMLElement): Promise<void> {
     const isInFolder = this.currentFolderId !== '';
-    const folder = isInFolder ? this.folderService.getFolder(this.currentFolderId) : null;
+    const folder = isInFolder ? tribes.getFolder(this.currentFolderId) : undefined;
 
     // Build HTML structure
     container.innerHTML = `
@@ -276,7 +274,7 @@ export class TribeManager {
   /**
    * Render header with New dropdown button
    */
-  private renderHeader(folder: { id: string; name: string } | null): string {
+  private renderHeader(folder: TribeFolder | undefined): string {
     const title = folder ? folder.name : 'Tribes';
 
     return `
@@ -315,7 +313,7 @@ export class TribeManager {
   /**
    * Render breadcrumb navigation
    */
-  private renderBreadcrumb(folder: { id: string; name: string } | null): string {
+  private renderBreadcrumb(folder: TribeFolder | undefined): string {
     if (!folder) return '';
 
     return `
@@ -338,15 +336,15 @@ export class TribeManager {
       const upNav = new UpNavigator({
         onClick: () => this.navigateToRoot(),
         onDrop: async (memberPubkey) => {
-          await this.moveMemberToFolder(memberPubkey, '');
+          await this.moveMemberToFolderUI(memberPubkey, '');
         }
       });
       grid.appendChild(upNav.render());
 
       // Get members in this folder
-      const memberIds = this.folderService.getMembersInFolder(this.currentFolderId);
+      const memberIds = tribes.getMembersInFolder(this.currentFolderId);
       for (const memberId of memberIds) {
-        const pubkey = this.folderService.extractPubkeyFromMemberId(memberId);
+        const pubkey = tribes.extractPubkeyFromMemberId(memberId);
         const member = this.membersCache.get(pubkey);
         if (member) {
           const card = await this.createMemberCard(member);
@@ -355,21 +353,21 @@ export class TribeManager {
       }
     } else {
       // Root view - mixed folders and members
-      const rootOrder = this.folderService.getRootOrder();
+      const rootOrder = tribes.getRootOrder();
       const renderedIds = new Set<string>();
 
       for (const item of rootOrder) {
         if (item.type === 'folder') {
-          const folder = this.folderService.getFolder(item.id);
+          const folder = tribes.getFolder(item.id);
           if (folder) {
             const card = this.createFolderCard(folder);
             grid.appendChild(card);
             renderedIds.add(item.id);
           }
         } else if (item.type === 'member') {
-          const pubkey = this.folderService.extractPubkeyFromMemberId(item.id);
+          const pubkey = tribes.extractPubkeyFromMemberId(item.id);
           const member = this.membersCache.get(pubkey);
-          const folderId = this.folderService.getMemberFolder(item.id);
+          const folderId = tribes.getMemberFolder(item.id);
           // Only show if in root (no folder assignment)
           if (member && folderId === '') {
             const card = await this.createMemberCard(member);
@@ -380,22 +378,22 @@ export class TribeManager {
       }
 
       // Add any new items not in root order yet
-      const folders = this.folderService.getFolders();
+      const folders = tribes.getFolders();
       for (const folder of folders) {
         if (!renderedIds.has(folder.id)) {
           const card = this.createFolderCard(folder);
           grid.appendChild(card);
-          this.folderService.addToRootOrder('folder', folder.id);
+          tribes.addToRootOrder('folder', folder.id);
         }
       }
 
       for (const [, member] of this.membersCache) {
         const memberId = member.id;
-        const folderId = this.folderService.getMemberFolder(memberId);
+        const folderId = tribes.getMemberFolder(memberId);
         if (folderId === '' && !renderedIds.has(memberId)) {
           const card = await this.createMemberCard(member);
           grid.appendChild(card);
-          this.folderService.addToRootOrder('member', memberId);
+          tribes.addToRootOrder('member', memberId);
         }
       }
     }
@@ -420,7 +418,7 @@ export class TribeManager {
     const card = new TribeMemberCard({
       pubkey: member.pubkey,
       isPrivate: member.isPrivate,
-      folderId: this.folderService.getMemberFolder(member.id)
+      folderId: tribes.getMemberFolder(member.id)
     }, {
       onDelete: async (pubkey: string) => {
         await this.deleteMember(pubkey);
@@ -432,21 +430,17 @@ export class TribeManager {
 
   /**
    * Get actual item count for a folder by counting real items in browser storage
-   * More reliable than assignment-based counting
    */
   private getActualFolderItemCount(folderId: string): number {
-    // Get all real member pubkeys from browser storage
-    const realMemberPubkeys = new Set(this.adapter.getBrowserItems().map(m => m.pubkey));
-    // Get pure pubkeys assigned to this folder (extracts from uniqueId format)
-    const assignedPubkeys = this.folderService.getMemberPubkeysInFolder(folderId);
-    // Count only pubkeys that exist in both
+    const realMemberPubkeys = new Set(tribes.getMembers().map(m => m.pubkey));
+    const assignedPubkeys = tribes.getMemberPubkeysInFolder(folderId);
     return assignedPubkeys.filter(pk => realMemberPubkeys.has(pk)).length;
   }
 
   /**
    * Create a folder card
    */
-  private createFolderCard(folder: { id: string; name: string }): HTMLElement {
+  private createFolderCard(folder: TribeFolder): HTMLElement {
     const folderData: FolderData = {
       id: folder.id,
       name: folder.name,
@@ -458,10 +452,10 @@ export class TribeManager {
       onClick: (folderId) => this.navigateToFolder(folderId),
       onEdit: (folderId) => this.editFolder(folderId),
       onDelete: async (folderId) => {
-        await this.deleteFolder(folderId);
+        await this.deleteFolderUI(folderId);
       },
       onDrop: async (memberPubkey, folderId) => {
-        await this.moveMemberToFolder(memberPubkey, folderId);
+        await this.moveMemberToFolderUI(memberPubkey, folderId);
       },
       onDragStart: (_folderId) => {
         // Drag state tracked internally by setupGridDragDrop
@@ -490,7 +484,6 @@ export class TribeManager {
 
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // Don't drag if clicking delete button
       if (target.closest('.tribe-member-card__delete') || target.closest('.folder-card__delete')) {
         return;
       }
@@ -518,20 +511,17 @@ export class TribeManager {
       const dx = Math.abs(e.clientX - startX);
       const dy = Math.abs(e.clientY - startY);
 
-      // Start dragging after moving 5px
       if (!isDragging && (dx > 5 || dy > 5)) {
         isDragging = true;
         draggedCard.dataset.wasDragging = 'true';
         draggedCard.classList.add('dragging');
 
-        // Create placeholder
         placeholder = document.createElement('div');
         placeholder.className = 'tribe-member-card-placeholder';
         placeholder.style.width = draggedCard.offsetWidth + 'px';
         placeholder.style.height = draggedCard.offsetHeight + 'px';
         draggedCard.parentNode?.insertBefore(placeholder, draggedCard);
 
-        // Make card follow mouse
         draggedCard.style.position = 'fixed';
         draggedCard.style.zIndex = '1000';
         draggedCard.style.width = draggedCard.offsetWidth + 'px';
@@ -542,11 +532,9 @@ export class TribeManager {
         draggedCard.style.left = (e.clientX - offsetX) + 'px';
         draggedCard.style.top = (e.clientY - offsetY) + 'px';
 
-        // Find card under cursor
         const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
         const cardBelow = elemBelow?.closest('.tribe-member-card:not(.dragging), .folder-card:not(.dragging), .up-navigator') as HTMLElement;
 
-        // Remove previous highlights
         grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
 
         if (cardBelow && cardBelow !== placeholder) {
@@ -565,14 +553,12 @@ export class TribeManager {
         return;
       }
 
-      // Find drop target BEFORE restoring pointer events
       const savedDisplay = draggedCard.style.display;
       draggedCard.style.display = 'none';
       const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
       draggedCard.style.display = savedDisplay;
       const dropTarget = elemBelow?.closest('.tribe-member-card, .folder-card, .up-navigator') as HTMLElement;
 
-      // Reset dragged card style
       draggedCard.classList.remove('dragging');
       draggedCard.style.position = '';
       draggedCard.style.zIndex = '';
@@ -581,10 +567,8 @@ export class TribeManager {
       draggedCard.style.top = '';
       draggedCard.style.pointerEvents = '';
 
-      // Remove highlights
       grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
 
-      // Remove placeholder
       placeholder?.remove();
       placeholder = null;
 
@@ -596,32 +580,25 @@ export class TribeManager {
         const isTargetUpNav = dropTarget.classList.contains('up-navigator');
 
         if (isTargetUpNav && isDraggingMember) {
-          // Move member to root (from folder)
-          this.moveMemberToFolder(draggedId, '');
+          this.moveMemberToFolderUI(draggedId, '');
         } else if (isTargetFolder && isDraggingMember && targetId) {
-          // Move member into folder
-          this.moveMemberToFolder(draggedId, targetId);
+          this.moveMemberToFolderUI(draggedId, targetId);
         } else if (targetId && targetId !== draggedId) {
-          // Reorder
           if (this.currentFolderId && isDraggingMember) {
-            // Inside a folder - reorder members within folder
-            const membersInFolder = this.folderService.getMembersInFolder(this.currentFolderId);
+            const membersInFolder = tribes.getMembersInFolder(this.currentFolderId);
             const targetIndex = membersInFolder.findIndex(id => id === targetId);
             if (targetIndex !== -1) {
-              this.folderService.moveItemToPosition(draggedId, targetIndex);
+              tribes.moveItemToPosition(draggedId, targetIndex);
               grid.insertBefore(draggedCard, dropTarget);
-              // Trigger Easy Mode sync for reorder
               this.eventBus.emit('tribe:updated');
             }
           } else {
-            // Root level - use root order
             const draggedType = isDraggingFolder ? 'folder' : 'member';
-            const rootOrder = this.folderService.getRootOrder();
+            const rootOrder = tribes.getRootOrder();
             const targetIndex = rootOrder.findIndex(item => item.id === targetId);
             if (targetIndex !== -1) {
-              this.folderService.moveInRootOrder(draggedType as 'folder' | 'member', draggedId, targetIndex);
+              tribes.moveInRootOrder(draggedType as 'folder' | 'member', draggedId, targetIndex);
               grid.insertBefore(draggedCard, dropTarget);
-              // Trigger Easy Mode sync for reorder
               this.eventBus.emit('tribe:updated');
             }
           }
@@ -658,10 +635,7 @@ export class TribeManager {
    */
   private async deleteMember(pubkey: string): Promise<void> {
     try {
-      // TribeOrchestrator.removeMember handles both browser storage and folder assignments
-      await this.tribeOrch.removeMember(pubkey);
-
-      // Remove from local cache
+      tribes.removeMember(pubkey);
       this.membersCache.delete(pubkey);
 
       ToastService.show('Member removed', 'success');
@@ -676,13 +650,13 @@ export class TribeManager {
    * Edit folder (rename)
    */
   private editFolder(folderId: string): void {
-    const folder = this.folderService.getFolder(folderId);
+    const folder = tribes.getFolder(folderId);
     if (!folder) return;
 
     const modal = new EditFolderModal({
       currentName: folder.name,
       onSave: (newName: string) => {
-        this.folderService.renameFolder(folderId, newName);
+        tribes.renameFolder(folderId, newName);
         ToastService.show('Tribe renamed', 'success');
         this.rerenderCurrentView();
       }
@@ -692,10 +666,10 @@ export class TribeManager {
   }
 
   /**
-   * Delete folder
+   * Delete folder (UI handler with confirmation)
    */
-  private async deleteFolder(folderId: string): Promise<void> {
-    const folder = this.folderService.getFolder(folderId);
+  private async deleteFolderUI(folderId: string): Promise<void> {
+    const folder = tribes.getFolder(folderId);
     if (!folder) return;
 
     const itemCount = this.getActualFolderItemCount(folderId);
@@ -703,7 +677,6 @@ export class TribeManager {
       ? `Delete tribe "${folder.name}"? ${itemCount} member(s) will be deleted.`
       : `Delete tribe "${folder.name}"?`;
 
-    // Show confirmation modal
     this.modalService.show({
       title: 'Delete Tribe',
       content: `
@@ -721,7 +694,6 @@ export class TribeManager {
       closeOnEsc: true
     });
 
-    // Setup modal button handlers
     setTimeout(() => {
       const cancelBtn = document.querySelector('[data-action="cancel"]');
       const confirmBtn = document.querySelector('[data-action="confirm"]');
@@ -732,22 +704,18 @@ export class TribeManager {
 
       confirmBtn?.addEventListener('click', async () => {
         try {
-          // Get member pubkeys in folder (extracts pure pubkeys from member IDs)
-          const pubkeys = this.folderService.getMemberPubkeysInFolder(folderId);
-
-          // Delete all members in this tribe
-          // TribeOrchestrator.removeMember handles both browser storage and folder assignments
+          // Get member pubkeys and delete them
+          const pubkeys = tribes.getMemberPubkeysInFolder(folderId);
           for (const pubkey of pubkeys) {
-            await this.tribeOrch.removeMember(pubkey);
+            tribes.removeMember(pubkey);
             this.membersCache.delete(pubkey);
           }
 
           // Delete folder
-          this.folderService.deleteFolder(folderId);
+          tribes.deleteFolder(folderId);
 
           ToastService.show('Tribe deleted', 'success');
 
-          // Navigate to root if we're in the deleted folder
           if (this.currentFolderId === folderId) {
             this.currentFolderId = '';
           }
@@ -764,26 +732,25 @@ export class TribeManager {
   }
 
   /**
-   * Move member to a different folder
+   * Move member to a different folder (UI handler)
    */
-  private async moveMemberToFolder(memberPubkey: string, targetFolderId: string): Promise<void> {
+  private async moveMemberToFolderUI(memberPubkey: string, targetFolderId: string): Promise<void> {
     try {
-      // Get target folder name for category
-      const targetFolder = targetFolderId ? this.folderService.getFolder(targetFolderId) : null;
+      const targetFolder = targetFolderId ? tribes.getFolder(targetFolderId) : undefined;
       const targetCategoryName = targetFolder?.name || '';
 
       // Update folder assignment
-      this.folderService.moveMemberToFolder(memberPubkey, targetFolderId);
+      tribes.moveMemberToFolder(memberPubkey, targetFolderId);
 
-      // Update category in browser storage (triggers tribe:updated for Easy Mode sync)
-      const currentItems = this.adapter.getBrowserItems();
+      // Update category in browser storage
+      const currentItems = tribes.getMembers();
       const updatedItems = currentItems.map(item => {
-        if (item.pubkey === memberPubkey) {
+        if (item.pubkey === memberPubkey || item.id === memberPubkey) {
           return { ...item, category: targetCategoryName };
         }
         return item;
       });
-      this.adapter.setBrowserItems(updatedItems);
+      tribes.setMembers(updatedItems);
 
       const targetName = targetFolderId === '' ? 'root' : targetFolder?.name || 'tribe';
       ToastService.show(`Moved to ${targetName}`, 'success');
@@ -800,7 +767,7 @@ export class TribeManager {
   private createNewTribe(): void {
     const modal = new NewFolderModal({
       onConfirm: (name: string) => {
-        this.folderService.createFolder(name);
+        tribes.createFolder(name);
         ToastService.show('Tribe created', 'success');
         this.rerenderCurrentView();
       }
@@ -813,8 +780,8 @@ export class TribeManager {
    * Add new member(s) to tribe
    */
   private addNewMember(): void {
-    const tribes = this.folderService.getFolders();
-    const tribeOptions = tribes.map(t =>
+    const allTribes = tribes.getFolders();
+    const tribeOptions = allTribes.map(t =>
       `<option value="${t.id}">${this.escapeHtml(t.name)}</option>`
     ).join('');
 
@@ -838,7 +805,7 @@ export class TribeManager {
         <div class="form-group">
           <label for="tribe-select">Tribe</label>
           <select id="tribe-select" class="input">
-            ${tribes.length === 0 ? '<option value="">No tribes available</option>' : tribeOptions}
+            ${allTribes.length === 0 ? '<option value="">No tribes available</option>' : tribeOptions}
           </select>
         </div>
 
@@ -846,7 +813,7 @@ export class TribeManager {
           <button type="button" class="btn btn--passive" id="tribe-member-cancel-btn">
             Cancel
           </button>
-          <button type="button" class="btn" id="tribe-member-save-btn" ${tribes.length === 0 ? 'disabled' : ''}>
+          <button type="button" class="btn" id="tribe-member-save-btn" ${allTribes.length === 0 ? 'disabled' : ''}>
             Add Members
           </button>
         </div>
@@ -862,7 +829,6 @@ export class TribeManager {
       closeOnEsc: true
     });
 
-    // Setup modal handlers
     setTimeout(async () => {
       const input = document.getElementById('tribe-member-input') as HTMLTextAreaElement;
       const tribeSelect = document.getElementById('tribe-select') as HTMLSelectElement;
@@ -871,7 +837,6 @@ export class TribeManager {
 
       input?.focus();
 
-      // Initialize mention autocomplete
       const { MentionAutocomplete } = await import('../../mentions/MentionAutocomplete');
       const mentionAutocomplete = new MentionAutocomplete({
         textareaSelector: '#tribe-member-input'
@@ -897,7 +862,6 @@ export class TribeManager {
 
       saveBtn?.addEventListener('click', handleSave);
 
-      // Enter key on textarea
       input?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.ctrlKey) {
           handleSave();
@@ -913,7 +877,6 @@ export class TribeManager {
    */
   private async processAddMembers(inputValue: string, tribeId: string): Promise<void> {
     try {
-      // Extract all pubkeys from text (supports @mentions as nostr:npub..., direct npubs, and nprofiles)
       const { extractPubkeysFromText } = await import('../../../helpers/nip19');
       const pubkeys = extractPubkeysFromText(inputValue);
 
@@ -922,16 +885,15 @@ export class TribeManager {
         return;
       }
 
-      // Get folder name for NIP-51 category (tribeId is folder UUID)
-      const folder = this.folderService.getFolder(tribeId);
+      const folder = tribes.getFolder(tribeId);
       const categoryName = folder?.name || '';
 
       let added = 0;
       const addedPubkeys: string[] = [];
+
       for (const pubkey of pubkeys) {
         try {
-          // Private tribes not yet implemented - always add as public
-          await this.tribeOrch.addMember(pubkey, false, categoryName, tribeId);
+          tribes.addMember(pubkey, false, categoryName, tribeId);
           addedPubkeys.push(pubkey);
           added++;
         } catch (error) {
@@ -940,22 +902,20 @@ export class TribeManager {
       }
 
       if (added > 0) {
-        // Load profiles for newly added members and update cache
         for (const pubkey of addedPubkeys) {
           const profile = await this.profileService.getUserProfile(pubkey);
-          const browserItem = this.adapter.getBrowserItems().find(m => m.pubkey === pubkey);
+          const browserItem = tribes.getMember(pubkey);
           if (browserItem) {
             this.membersCache.set(pubkey, {
               ...browserItem,
               profile: profile || undefined,
-              isPrivate: false // Private tribes not yet implemented
+              isPrivate: browserItem.isPrivate || false
             });
           }
         }
 
         ToastService.show(`Added ${added} member(s)`, 'success');
 
-        // Re-render if we're in the target tribe or root
         if (this.currentFolderId === tribeId || this.currentFolderId === '') {
           this.rerenderCurrentView();
         }
@@ -1000,31 +960,26 @@ export class TribeManager {
     const newTribeBtn = container.querySelector('[data-action="new-tribe"]');
     const newMemberBtn = container.querySelector('[data-action="new-member"]');
 
-    // Breadcrumb navigation
     const rootNav = container.querySelector('[data-navigate="root"]');
     rootNav?.addEventListener('click', () => this.navigateToRoot());
 
     if (!newBtn || !dropdown) return;
 
-    // Toggle dropdown
     newBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       dropdown.classList.toggle('bookmark-header__new-dropdown--open');
     });
 
-    // Create new tribe
     newTribeBtn?.addEventListener('click', () => {
       dropdown.classList.remove('bookmark-header__new-dropdown--open');
       this.createNewTribe();
     });
 
-    // Add new member
     newMemberBtn?.addEventListener('click', () => {
       dropdown.classList.remove('bookmark-header__new-dropdown--open');
       this.addNewMember();
     });
 
-    // Close dropdown when clicking outside
     if (this.closeDropdownHandler) {
       document.removeEventListener('click', this.closeDropdownHandler);
     }
@@ -1049,22 +1004,16 @@ export class TribeManager {
     try {
       ToastService.show('Syncing from relays...', 'info');
 
-      const result = await this.listSyncManager.syncFromRelays();
-      const added = result.diff.added.length;
+      const result = await tribes.fetchFromRelays();
 
-      // Apply folder assignments from relay categories
-      if (result.categoryAssignments) {
-        await applyFolderAssignments(
-          result.categoryAssignments,
-          this.folderService,
-          (memberPubkey, folderId) => this.folderService.moveMemberToFolder(memberPubkey, folderId),
-          'TribeManager'
-        );
+      if (result.items.length > 0) {
+        // Apply relay result (replaces all local data with relay data)
+        tribes.applyRelayFetchResult(result.items, result.categoryAssignments, result.categories);
+        ToastService.show(`Synced from relays: ${result.items.length} members`, 'success');
+      } else {
+        ToastService.show('No members found on relays', 'info');
       }
 
-      ToastService.show(`Synced from relays: ${added} new members`, 'success');
-
-      // Reload and re-render
       this.membersCache.clear();
       await this.loadMembers();
       await this.renderCurrentView(container);
@@ -1080,7 +1029,7 @@ export class TribeManager {
   private async handleSyncToRelays(): Promise<void> {
     try {
       ToastService.show('Publishing to relays...', 'info');
-      await this.listSyncManager.syncToRelays();
+      await tribes.publishToRelays();
       ToastService.show('Published to relays', 'success');
     } catch (error) {
       console.error('Publish to relays failed:', error);
@@ -1094,7 +1043,7 @@ export class TribeManager {
   private async handleSaveToFile(): Promise<void> {
     try {
       ToastService.show('Saving to file...', 'info');
-      await this.listSyncManager.saveToFile();
+      await tribes.saveToFile();
       ToastService.show('Saved to file', 'success');
     } catch (error) {
       console.error('Save to file failed:', error);
@@ -1108,54 +1057,15 @@ export class TribeManager {
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
       ToastService.show('Restoring from file...', 'info');
-      await this.restoreFoldersAndMembers();
+      await tribes.restoreFromFile();
       ToastService.show('Restored from file', 'success');
 
-      // Reload and re-render
       this.membersCache.clear();
       await this.loadMembers();
       await this.renderCurrentView(container);
     } catch (error) {
       console.error('Restore from file failed:', error);
       ToastService.show('Failed to restore from file', 'error');
-    }
-  }
-
-  /**
-   * Restore folders and members from file (creates folder structure from categories)
-   */
-  private async restoreFoldersAndMembers(): Promise<void> {
-    await this.listSyncManager.restoreFromFile();
-
-    const restoredItems = this.adapter.getBrowserItems();
-    const existingFolders = this.folderService.getFolders();
-
-    // Collect unique categories and create missing folders
-    const categories = new Set(
-      restoredItems
-        .map(item => item.category)
-        .filter((cat): cat is string => !!cat && cat !== '')
-    );
-
-    for (const categoryName of categories) {
-      if (!existingFolders.some(f => f.name === categoryName)) {
-        const newFolder = this.folderService.createFolder(categoryName);
-        this.folderService.addToRootOrder('folder', newFolder.id);
-      }
-    }
-
-    // Assign members to their categories (use item.id which includes category)
-    const updatedFolders = this.folderService.getFolders();
-    for (const item of restoredItems) {
-      this.folderService.ensureMemberAssignment(item.id);
-
-      const categoryName = item.category || '';
-      if (categoryName !== '') {
-        const folder = updatedFolders.find(f => f.name === categoryName);
-        if (folder) {
-          this.folderService.moveMemberToFolder(item.id, folder.id);
-        }
-      }
     }
   }
 

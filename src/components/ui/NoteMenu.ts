@@ -13,8 +13,6 @@ import { ReportModal } from '../report/ReportModal';
 import { DeleteNoteModal } from '../delete/DeleteNoteModal';
 import { AuthService } from '../../services/AuthService';
 import { BookmarkOrchestrator } from '../../services/orchestration/BookmarkOrchestrator';
-import { TribeOrchestrator } from '../../services/orchestration/TribeOrchestrator';
-import { TribeFolderService } from '../../services/TribeFolderService';
 import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
 import { ArticleNotificationService } from '../../services/ArticleNotificationService';
 import { AuthGuard } from '../../services/AuthGuard';
@@ -22,6 +20,7 @@ import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { ModalService } from '../../services/ModalService';
+import * as tribes from '../../lists/tribes';
 
 export interface NoteMenuOptions {
   eventId: string;
@@ -643,17 +642,16 @@ export class NoteMenu {
       return;
     }
 
-    const tribeFolderService = TribeFolderService.getInstance();
-    const tribes = tribeFolderService.getFolders();
+    const tribeFolders = tribes.getFolders();
 
-    if (tribes.length === 0) {
+    if (tribeFolders.length === 0) {
       ToastService.show('No tribes found. Create a tribe first.', 'info');
       return;
     }
 
     // Build tribe selection list HTML
-    const tribeListHtml = tribes.map(tribe =>
-      `<button class="btn btn--medium" data-tribe-id="${tribe.id}" style="margin: 0.5rem 0; width: 100%;">${tribe.name}</button>`
+    const tribeListHtml = tribeFolders.map(folder =>
+      `<button class="btn btn--medium" data-tribe-id="${folder.id}" style="margin: 0.5rem 0; width: 100%;">${folder.name}</button>`
     ).join('');
 
     const modalService = ModalService.getInstance();
@@ -692,18 +690,14 @@ export class NoteMenu {
    * Perform add author to tribe action
    */
   private async performAddAuthorToTribe(tribeFolderId: string): Promise<void> {
-    const tribeOrch = TribeOrchestrator.getInstance();
-    const tribeFolderService = TribeFolderService.getInstance();
-
     try {
       // Get tribe folder to get the name (for NIP-51 category)
-      const tribes = tribeFolderService.getFolders();
-      const tribe = tribes.find(t => t.id === tribeFolderId);
-      const tribeName = tribe ? tribe.name : '';
+      const folder = tribes.getFolder(tribeFolderId);
+      const tribeName = folder?.name || '';
 
       // Add member to tribe as public (private tribes not supported via NoteMenu)
       // Note: addMember already emits 'tribe:updated', no need to emit again
-      await tribeOrch.addMember(this.options.authorPubkey, false, tribeName, tribeFolderId);
+      await tribes.addMember(this.options.authorPubkey, false, tribeName, tribeFolderId);
 
       ToastService.show(`Author added to ${tribeName}`, 'success');
     } catch (error) {

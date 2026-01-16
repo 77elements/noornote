@@ -1,0 +1,154 @@
+/**
+ * file.ts - Shared Tauri file read/write for all lists
+ *
+ * Provides file-based backup storage in ~/.noornote/{npub}/ directory.
+ * Each list type has its own file (tribes.json, bookmarks.json, etc.)
+ *
+ * Per-account isolation: Files are stored in user-specific directories.
+ */
+
+import { SystemLogger } from '../components/system/SystemLogger';
+import { PlatformService } from '../services/PlatformService';
+import { AuthService } from '../services/AuthService';
+
+// Tauri APIs (dynamically imported to support browser builds)
+let tauriHomeDir: typeof import('@tauri-apps/api/path').homeDir | null = null;
+let tauriReadTextFile: typeof import('@tauri-apps/plugin-fs').readTextFile | null = null;
+let tauriWriteTextFile: typeof import('@tauri-apps/plugin-fs').writeTextFile | null = null;
+let tauriExists: typeof import('@tauri-apps/plugin-fs').exists | null = null;
+let tauriMkdir: typeof import('@tauri-apps/plugin-fs').mkdir | null = null;
+
+const platform = PlatformService.getInstance();
+const logger = SystemLogger.getInstance();
+
+// Load Tauri APIs if available
+if (platform.isTauri) {
+  import('@tauri-apps/api/path').then(mod => { tauriHomeDir = mod.homeDir; });
+  import('@tauri-apps/plugin-fs').then(mod => {
+    tauriReadTextFile = mod.readTextFile;
+    tauriWriteTextFile = mod.writeTextFile;
+    tauriExists = mod.exists;
+    tauriMkdir = mod.mkdir;
+  });
+}
+
+/**
+ * Get current user's npub
+ */
+function getCurrentUserNpub(): string | null {
+  try {
+    const authService = AuthService.getInstance();
+    const user = authService.getCurrentUser();
+    return user?.npub || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Get file path for a list file
+ * Returns: ~/.noornote/{npub}/{filename}
+ */
+export async function getListFilePath(filename: string): Promise<string> {
+  if (!platform.isTauri) {
+    throw new Error('File storage requires Tauri environment');
+  }
+
+  if (!tauriHomeDir) {
+    throw new Error('Tauri path API not loaded');
+  }
+
+  const userNpub = getCurrentUserNpub();
+  if (!userNpub) {
+    throw new Error('File storage requires logged-in user');
+  }
+
+  const homePath = await tauriHomeDir();
+  return `${homePath}/.noornote/${userNpub}/${filename}`;
+}
+
+/**
+ * Ensure directory exists for file path
+ */
+export async function ensureDirectoryExists(filePath: string): Promise<void> {
+  if (!tauriExists || !tauriMkdir) {
+    throw new Error('Tauri fs API not loaded');
+  }
+
+  // Extract directory from file path
+  const lastSlash = filePath.lastIndexOf('/');
+  const dirPath = filePath.substring(0, lastSlash);
+
+  const dirExists = await tauriExists(dirPath);
+  if (!dirExists) {
+    await tauriMkdir(dirPath, { recursive: true });
+    logger.info('file.ts', `Created directory: ${dirPath}`);
+  }
+}
+
+/**
+ * Read JSON data from file
+ * Returns defaultData if file doesn't exist or on error
+ */
+export async function readJsonFile<T>(filename: string, defaultData: T): Promise<T> {
+  try {
+    const filePath = await getListFilePath(filename);
+
+    if (!tauriExists || !tauriReadTextFile) {
+      throw new Error('Tauri fs API not loaded');
+    }
+
+    const fileExists = await tauriExists(filePath);
+    if (!fileExists) {
+      logger.info('file.ts', `File not found, using defaults: ${filename}`);
+      return defaultData;
+    }
+
+    const content = await tauriReadTextFile(filePath);
+    const data: T = JSON.parse(content);
+
+    logger.info('file.ts', `Read: ${filename}`);
+    return data;
+  } catch (error) {
+    logger.error('file.ts', `Failed to read ${filename}: ${error}`);
+    return defaultData;
+  }
+}
+
+/**
+ * Write JSON data to file
+ */
+export async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
+  try {
+    const filePath = await getListFilePath(filename);
+
+    if (!tauriWriteTextFile) {
+      throw new Error('Tauri fs API not loaded');
+    }
+
+    await ensureDirectoryExists(filePath);
+    await tauriWriteTextFile(filePath, JSON.stringify(data, null, 2));
+
+    logger.info('file.ts', `Wrote: ${filename}`);
+  } catch (error) {
+    logger.error('file.ts', `Failed to write ${filename}: ${error}`);
+    throw error;
+  }
+}
+
+/**
+ * Check if file exists
+ */
+export async function fileExists(filename: string): Promise<boolean> {
+  try {
+    const filePath = await getListFilePath(filename);
+
+    if (!tauriExists) {
+      throw new Error('Tauri fs API not loaded');
+    }
+
+    return await tauriExists(filePath);
+  } catch {
+    return false;
+  }
+}
