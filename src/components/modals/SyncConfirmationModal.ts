@@ -112,18 +112,23 @@ export class SyncConfirmationModal<T> {
 
     const { added, removed, listType } = this.options;
 
+    // Determine if this is a file sync or relay sync based on listType
+    const isFileSync = listType.toLowerCase().includes('file');
+    const sourceLabel = isFileSync ? 'file' : 'relay';
+    const cleanListType = listType.replace(/\s*\(File\)\s*/i, '').toLowerCase();
+
     container.innerHTML = `
       <div class="sync-confirmation-modal__content">
         <div class="sync-confirmation-modal__warning">
           <p class="sync-confirmation-modal__message">
-            Your local ${listType.toLowerCase()} list differs from the relay version.
+            Your ${cleanListType} in NoorNote Memory differs from the ${sourceLabel} version.
           </p>
         </div>
 
         ${removed.length > 0 ? `
           <div class="sync-confirmation-modal__section">
             <h3 class="sync-confirmation-modal__section-title">
-              ❌ Removed on relay (${removed.length} item${removed.length > 1 ? 's' : ''})
+              ❌ Only in NoorNote Memory (${removed.length} item${removed.length > 1 ? 's' : ''})
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedRemovedItems)}
@@ -134,7 +139,7 @@ export class SyncConfirmationModal<T> {
         ${added.length > 0 ? `
           <div class="sync-confirmation-modal__section">
             <h3 class="sync-confirmation-modal__section-title">
-              ✅ New on relay (${added.length} item${added.length > 1 ? 's' : ''})
+              ✅ New from ${sourceLabel} (${added.length} item${added.length > 1 ? 's' : ''})
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedAddedItems)}
@@ -143,7 +148,7 @@ export class SyncConfirmationModal<T> {
         ` : ''}
 
         <div class="sync-confirmation-modal__question">
-          <p><strong>What should happen with the ${removed.length} item${removed.length > 1 ? 's' : ''} removed on relay?</strong></p>
+          <p><strong>What should happen with the ${removed.length} item${removed.length > 1 ? 's' : ''} only in NoorNote Memory?</strong></p>
         </div>
 
         <div class="sync-confirmation-modal__actions">
