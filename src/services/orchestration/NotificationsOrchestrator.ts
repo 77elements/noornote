@@ -559,6 +559,21 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Check if all unread notifications are hashtag-only
+   * Used by badge to show different indicator for low-priority hashtag notifications
+   */
+  public hasOnlyHashtagUnread(): boolean {
+    const lastSeen = this.getLastSeenTimestamp();
+    const unread = lastSeen
+      ? this.notifications.filter(n => n.timestamp > lastSeen)
+      : this.notifications;
+
+    if (unread.length === 0) return false;
+
+    return unread.every(n => n.type === 'hashtag');
+  }
+
+  /**
    * Mark notifications as read (update last seen timestamp)
    */
   public markAsRead(): void {
@@ -903,10 +918,12 @@ export class NotificationsOrchestrator extends Orchestrator {
    */
   private handleHashtagNotification(data: { hashtag: string; count: number; latestEvent: NostrEvent }): void {
     // Create a notification with meta info
+    // Use current time for timestamp (not event.created_at) so hashtag notifications
+    // are always considered "new" when received, regardless of when the post was made
     const notification: NotificationEvent = {
       event: data.latestEvent,
       type: 'hashtag',
-      timestamp: data.latestEvent.created_at,
+      timestamp: Math.floor(Date.now() / 1000),
       meta: { hashtag: data.hashtag, count: data.count }
     };
 

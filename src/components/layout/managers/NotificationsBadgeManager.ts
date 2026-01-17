@@ -38,6 +38,7 @@ export class NotificationsBadgeManager {
 
   /**
    * Update notifications badge with unread count
+   * Shows different style for hashtag-only notifications (less important)
    */
   public updateBadgeCount(): void {
     if (!this.badgeElement) return;
@@ -55,8 +56,13 @@ export class NotificationsBadgeManager {
     if (unreadCount > 0) {
       this.badgeElement.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
       this.badgeElement.style.display = 'inline-flex';
+
+      // Check if all unread are hashtag-only (lower priority indicator)
+      const hashtagOnly = this.notificationsOrch.hasOnlyHashtagUnread();
+      this.badgeElement.classList.toggle('notifications-badge--hashtag-only', hashtagOnly);
     } else {
       this.badgeElement.style.display = 'none';
+      this.badgeElement.classList.remove('notifications-badge--hashtag-only');
     }
   }
 

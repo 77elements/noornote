@@ -234,6 +234,14 @@
     font-weight: 600;
     line-height: 20px;
     text-align: center;
+
+    // Hashtag-only notifications: hollow circle (lower priority)
+    &--hashtag-only {
+      background: transparent;
+      border: 1px solid $color-6;
+      color: $color-6;
+      line-height: 18px; // Adjust for border
+    }
   }
 
   // Accordion menu (Lists)
