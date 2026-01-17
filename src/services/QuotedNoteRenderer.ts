@@ -14,7 +14,7 @@ import { ContentProcessor, type QuotedReference } from './ContentProcessor';
 import { replaceMediaPlaceholders } from '../helpers/renderMediaContent';
 import { Router } from './Router';
 import { PollOrchestrator } from './orchestration/PollOrchestrator';
-import { MuteOrchestrator } from './orchestration/MuteOrchestrator';
+import { MuteOrchestrator } from '../lists/mutes';
 import { AuthService } from './AuthService';
 import { escapeHtml } from '../helpers/escapeHtml';
 
@@ -23,7 +23,7 @@ export class QuotedNoteRenderer {
   private quoteFetcher: QuoteNoteFetcher;
   private articleRenderer: ArticlePreviewRenderer;
   private contentProcessor: ContentProcessor;
-  private muteOrchestrator: MuteOrchestrator;
+  private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private authService: AuthService;
 
   private constructor() {

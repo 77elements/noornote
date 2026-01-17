@@ -16,7 +16,7 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
-import { MuteOrchestrator } from './MuteOrchestrator';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { NoteService } from '../NoteService';
 import { AuthService } from '../AuthService';
 import { SystemLogger } from '../../components/system/SystemLogger';
@@ -39,7 +39,7 @@ export interface ThreadContext {
 export class ThreadOrchestrator extends Orchestrator {
   private static instance: ThreadOrchestrator;
   private transport: NostrTransport;
-  private muteOrchestrator: MuteOrchestrator;
+  private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private noteService: NoteService;
   private authService: AuthService;
   private systemLogger: SystemLogger;

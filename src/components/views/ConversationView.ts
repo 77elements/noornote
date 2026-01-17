@@ -14,7 +14,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { EventBus } from '../../services/EventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../system/SystemLogger';
-import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator';
 import { NotificationsOrchestrator } from '../../services/orchestration/NotificationsOrchestrator';
 import { ToastService } from '../../services/ToastService';
@@ -47,7 +47,7 @@ export class ConversationView extends View {
 
     this.partnerPubkey = partnerPubkey;
     this.container = document.createElement('div');
-    this.container.className = 'conversation-view';
+    this.container.className = 'view-content view-content--conversation';
     this.dmService = DMService.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.eventBus = EventBus.getInstance();

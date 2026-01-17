@@ -21,7 +21,6 @@ import { ModalService } from './services/ModalService';
 import { PlatformService } from './services/PlatformService';
 import { ConnectivityService } from './services/ConnectivityService';
 import { OfflineOverlay } from './components/system/OfflineOverlay';
-import { AutoSyncService } from './services/sync/AutoSyncService';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
@@ -66,9 +65,6 @@ export class App {
 
     // Initialize OfflineOverlay early so it can listen for runtime offline events
     OfflineOverlay.getInstance();
-
-    // Initialize AutoSyncService to listen for list update events
-    AutoSyncService.getInstance();
 
     // Initialize CollapsibleManager to listen for post truncation setting changes
     CollapsibleManager.init();
@@ -294,14 +290,14 @@ export class App {
       }
 
       case 'tribes': {
-        const { TribeView } = await import('./components/views/TribeView');
+        const { TribeView } = await import('./lists/tribes');
         const tribeView = new TribeView();
         primaryContent.appendChild(tribeView.getElement());
         break;
       }
 
       case 'mute-list': {
-        const { MuteListView } = await import('./components/views/MuteListView');
+        const { MuteListView } = await import('./lists/mutes');
         const muteListView = new MuteListView();
         primaryContent.appendChild(await muteListView.render());
         break;
@@ -349,11 +345,26 @@ export class App {
     });
 
     this.eventBus.on('user:logout', () => {
+      // Destroy cached views
       if (this.timelineUI) {
         this.timelineUI.destroy();
         this.timelineUI = null;
       }
+      if (this.profileView) {
+        this.profileView.destroy();
+        this.profileView = null;
+      }
+      // Clear primary content immediately before navigation
+      const primaryContent = document.querySelector('.primary-content');
+      if (primaryContent) {
+        primaryContent.innerHTML = '';
+      }
       this.router.navigate('/login');
+    });
+
+    // AuthGuard emits this when user tries protected action without login
+    this.eventBus.on('auth:login-required', (data: { action: string }) => {
+      this.showLoginRequiredModal(data.action);
     });
 
     this.setupTauriCloseHandler();
@@ -512,6 +523,32 @@ export class App {
     } catch {
       // Initialization failed - non-critical
     }
+  }
+
+  private showLoginRequiredModal(actionDescription: string): void {
+    const modalContent = `
+      <div class="auth-required-modal">
+        <div class="auth-required-modal__icon">🔒</div>
+        <h3>Login Required</h3>
+        <p>Please log in to ${actionDescription}.</p>
+        <div class="auth-required-modal__actions">
+          <button class="btn" data-action="close">OK</button>
+        </div>
+      </div>
+    `;
+
+    const modalService = ModalService.getInstance();
+    modalService.show({
+      title: 'Authentication Required',
+      content: modalContent,
+      width: '400px',
+      showCloseButton: true,
+      closeOnOverlay: true,
+      closeOnEsc: true
+    });
+
+    const closeBtn = document.querySelector('[data-action="close"]');
+    closeBtn?.addEventListener('click', () => modalService.hide());
   }
 
   private async handleUserLogin(data: { npub: string; pubkey: string }): Promise<void> {

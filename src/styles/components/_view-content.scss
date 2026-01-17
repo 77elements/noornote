@@ -1,0 +1,26 @@
+/**
+ * View Content - Base styles for all view containers
+ * BEM pattern: .view-content.view-content--{modifier}
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// Base view content styles
+.view-content {
+  width: 100%;
+  height: 100%;
+  padding: 0 $gap 0 0; // Right padding for desktop
+
+  // Phone layout: padding on both sides
+  html.layout--phone & {
+    padding: 0 $gap;
+  }
+}
+
+// Timeline view needs flex layout for scrollable timeline area
+.view-content--timeline {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // Prevent primary-content from scrolling, let child scroll
+}

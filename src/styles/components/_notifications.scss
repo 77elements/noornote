@@ -6,20 +6,8 @@
 @use '../abstracts/variables' as *;
 @use 'sass:color';
 
-// Notifications View Container
-.notifications-view {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  padding: $gap;
-}
-
+// Notifications View child elements
 .notifications-view__header {
-  margin-bottom: $gap;
-}
-
-.notifications-view .tabs {
-  border-bottom: 1px solid $color-2;
   margin-bottom: $gap;
 }
 

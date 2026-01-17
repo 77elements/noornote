@@ -6,12 +6,6 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-.article-editor-view {
-  padding: $gap * 1.5;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
 .article-editor {
   display: flex;
   flex-direction: column;

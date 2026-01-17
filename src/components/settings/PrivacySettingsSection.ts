@@ -7,15 +7,15 @@
  */
 
 import { SettingsSection } from './SettingsSection';
-import { FollowListOrchestrator } from '../../services/orchestration/FollowListOrchestrator';
-import { BookmarkOrchestrator } from '../../services/orchestration/BookmarkOrchestrator';
-import { TribeOrchestrator } from '../../services/orchestration/TribeOrchestrator';
-import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
+import { FollowListOrchestrator } from '../../lists/follows';
+import { BookmarkOrchestrator } from '../../lists/bookmarks';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
 import { EventBus } from '../../services/EventBus';
+import * as tribes from '../../lists/tribes';
 
 type ListType = 'follows' | 'bookmarks' | 'tribes' | 'mutes';
 
@@ -31,10 +31,9 @@ interface PrivacySectionConfig {
 }
 
 export class PrivacySettingsSection extends SettingsSection {
-  private followListOrch: FollowListOrchestrator;
-  private bookmarkOrch: BookmarkOrchestrator;
-  private tribeOrch: TribeOrchestrator;
-  private muteOrch: MuteOrchestrator;
+  private followListOrch: ReturnType<typeof FollowListOrchestrator.getInstance>;
+  private bookmarkOrch: ReturnType<typeof BookmarkOrchestrator.getInstance>;
+  private muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>;
   private authService: AuthService;
   private modalService: ModalService;
   private switches: Map<ListType, Switch> = new Map();
@@ -43,7 +42,6 @@ export class PrivacySettingsSection extends SettingsSection {
     super('privacy-settings');
     this.followListOrch = FollowListOrchestrator.getInstance();
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
-    this.tribeOrch = TribeOrchestrator.getInstance();
     this.muteOrch = MuteOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
     this.modalService = ModalService.getInstance();
@@ -86,8 +84,8 @@ export class PrivacySettingsSection extends SettingsSection {
         switchLabel: 'Use private tribes (NIP-51)',
         description: 'Private tribes (NIP-51 kind:30000) allow you to create curated user lists without publicly revealing who you added. Your tribe members are encrypted and only you can see them.',
         viewButtonLabel: 'View Tribes',
-        isEnabled: () => this.tribeOrch.isPrivateTribesEnabled(),
-        setEnabled: (enabled) => this.tribeOrch.setPrivateTribesEnabled(enabled)
+        isEnabled: () => tribes.isPrivateTribesEnabled(),
+        setEnabled: (enabled) => tribes.setPrivateTribesEnabled(enabled)
       },
       {
         id: 'mutes',

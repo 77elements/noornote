@@ -5,7 +5,7 @@
  */
 
 import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
-import { MuteOrchestrator } from '../../services/orchestration/MuteOrchestrator';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { AuthService } from '../../services/AuthService';
 import { SearchResultsView, SearchResultsConfig } from './SearchResultsView';
 import { Router } from '../../services/Router';
@@ -19,7 +19,7 @@ export class GlobalSearchView {
   private container: HTMLElement;
   private tabElement: HTMLElement | null = null;
   private searchOrchestrator: SearchOrchestrator;
-  private muteOrchestrator: MuteOrchestrator;
+  private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private authService: AuthService;
   private searchResultsView: SearchResultsView | null = null;
   private router: Router;

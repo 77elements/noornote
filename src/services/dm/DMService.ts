@@ -22,7 +22,7 @@ import { DMStore, type DMMessage, type DMConversation } from './DMStore';
 import { EventBus } from '../EventBus';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { FollowCheckService } from '../FollowCheckService';
-import { MuteOrchestrator } from '../orchestration/MuteOrchestrator';
+import { MuteOrchestrator } from '../../lists/mutes';
 import { generateSecretKey, getPublicKey, calculateEventHash } from '../../services/NostrToolsAdapter';
 
 // NIP-17 Kind constants
@@ -43,7 +43,7 @@ export class DMService {
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
   private followCheckService: FollowCheckService;
-  private muteOrchestrator: MuteOrchestrator;
+  private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private subscriptionId: string | null = null;
   private userPubkey: string | null = null;
 

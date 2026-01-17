@@ -13,6 +13,7 @@
 @use 'base/reset';
 @use 'base/typography';
 @use 'base/base';
+@use 'base/screensize';
 
 // 3. Atoms - Smallest UI components
 @use 'atoms/pulsate';
@@ -28,6 +29,7 @@
 @use 'atoms/grids';
 
 // 3.5. Components - Individual UI components
+@use 'components/view-content';
 @use 'components/auth';
 @use 'components/login-view';
 @use 'components/note-ui';

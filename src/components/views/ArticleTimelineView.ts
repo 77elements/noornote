@@ -16,7 +16,7 @@ export class ArticleTimelineView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'article-timeline-view';
+    this.container.className = 'view-content view-content--article-timeline';
     this.render();
   }
 

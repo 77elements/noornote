@@ -18,8 +18,8 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
-import { MuteOrchestrator } from './MuteOrchestrator';
-import { MutualChangeStorage } from '../storage/MutualChangeStorage';
+import { MuteOrchestrator } from '../../lists/mutes';
+import { MutualChangeStorage } from '../../lists/MutualChangeStorage';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { AuthService } from '../AuthService';
 import { EventBus } from '../EventBus';
@@ -27,7 +27,7 @@ import { decodeNip19 } from '../NostrToolsAdapter';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { NoteService } from '../NoteService';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag';
+export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag';
 
 export interface NotificationEvent {
   event: NostrEvent;
@@ -39,7 +39,7 @@ export interface NotificationEvent {
 export class NotificationsOrchestrator extends Orchestrator {
   private static instance: NotificationsOrchestrator;
   private transport: NostrTransport;
-  private muteOrchestrator: MuteOrchestrator;
+  private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private systemLogger: SystemLogger;
   private authService: AuthService;
   private eventBus: EventBus;
@@ -559,6 +559,69 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Check if all unread notifications are hashtag-only
+   * Used by badge to show different indicator for low-priority hashtag notifications
+   */
+  public hasOnlyHashtagUnread(): boolean {
+    const lastSeen = this.getLastSeenTimestamp();
+    const unread = lastSeen
+      ? this.notifications.filter(n => n.timestamp > lastSeen)
+      : this.notifications;
+
+    if (unread.length === 0) return false;
+
+    return unread.every(n => n.type === 'hashtag');
+  }
+
+  /**
+   * Get the highest priority among unread notifications
+   * Priority 1 = highest (pulsing), 2 = normal (solid), 3 = lowest (hollow)
+   * Returns null if no unread notifications
+   */
+  public getHighestUnreadPriority(): 1 | 2 | 3 | null {
+    const lastSeen = this.getLastSeenTimestamp();
+    const unread = lastSeen
+      ? this.notifications.filter(n => n.timestamp > lastSeen)
+      : this.notifications;
+
+    if (unread.length === 0) return null;
+
+    // Default priorities
+    const defaultPriorities: Record<string, 1 | 2 | 3> = {
+      'reply': 1,
+      'quote': 1,
+      'zap': 1,
+      'mention': 2,
+      'repost': 2,
+      'reaction': 2,
+      'article': 2,
+      'mutual_new': 2,
+      'mutual_unfollow': 2,
+      'thread-reply': 3,
+      'hashtag': 3,
+    };
+
+    // Load user's priority settings (or use defaults)
+    const effectivePriorities = this.perAccountStorage.get<Record<string, 1 | 2 | 3>>(
+      StorageKeys.NOTIFICATION_PRIORITIES,
+      defaultPriorities
+    );
+
+    // Find highest priority (lowest number) among unread
+    let highestPriority: 1 | 2 | 3 = 3;
+    for (const notification of unread) {
+      const priority = effectivePriorities[notification.type] || 2;
+      if (priority < highestPriority) {
+        highestPriority = priority;
+      }
+      // Early exit if we found priority 1
+      if (highestPriority === 1) break;
+    }
+
+    return highestPriority;
+  }
+
+  /**
    * Mark notifications as read (update last seen timestamp)
    */
   public markAsRead(): void {
@@ -683,6 +746,13 @@ export class NotificationsOrchestrator extends Orchestrator {
       const hasUserPtag = event.tags.some(t => t[0] === 'p' && t[1] === currentUser.pubkey);
       const hasAnyEtag = event.tags.some(t => t[0] === 'e');
       const userMentionedInContent = this.isUserMentionedInContent(event.content, currentUser.pubkey);
+
+      // Check for quoted repost (q-tag pointing to user's event)
+      const qTag = event.tags.find(t => t[0] === 'q');
+      const quotedEventId = qTag?.[1];
+      if (quotedEventId && userEventIds.includes(quotedEventId)) {
+        return 'quote';
+      }
 
       // Check if this is a direct reply to user's event
       // A direct reply has either:
@@ -903,10 +973,12 @@ export class NotificationsOrchestrator extends Orchestrator {
    */
   private handleHashtagNotification(data: { hashtag: string; count: number; latestEvent: NostrEvent }): void {
     // Create a notification with meta info
+    // Use current time for timestamp (not event.created_at) so hashtag notifications
+    // are always considered "new" when received, regardless of when the post was made
     const notification: NotificationEvent = {
       event: data.latestEvent,
       type: 'hashtag',
-      timestamp: data.latestEvent.created_at,
+      timestamp: Math.floor(Date.now() / 1000),
       meta: { hashtag: data.hashtag, count: data.count }
     };
 

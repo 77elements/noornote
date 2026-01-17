@@ -6,57 +6,51 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-.tribe-view {
+// View child elements
+.tribe-view__header {
+  flex-shrink: 0;
+  padding: $gap;
+  border-bottom: 1px solid $color-2;
+  background: $color-1;
+}
+
+.tribe-view__tabs-container {
   display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap;
+}
 
-  &__header {
-    flex-shrink: 0;
-    padding: $gap;
-    border-bottom: 1px solid $color-2;
-    background: $color-1;
+.tribe-view__edit-link {
+  background: none;
+  border: none;
+  color: $color-4;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  padding: calc($gap / 2) $gap;
+  border-radius: $radius-md;
+  transition: $transition-colors;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba($color-4, 0.1);
+    color: $color-5;
   }
+}
 
-  &__tabs-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $gap;
-  }
+.tribe-view__timeline {
+  flex: 1;
+  overflow-y: auto;
+  @include custom-scrollbar;
+}
 
-  &__edit-link {
-    background: none;
-    border: none;
-    color: $color-4;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    padding: calc($gap / 2) $gap;
-    border-radius: $radius-md;
-    transition: $transition-colors;
-    white-space: nowrap;
-    flex-shrink: 0;
-
-    &:hover {
-      background: rgba($color-4, 0.1);
-      color: $color-5;
-    }
-  }
-
-  &__timeline {
-    flex: 1;
-    overflow-y: auto;
-    @include custom-scrollbar;
-  }
-
-  &__error {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: calc($gap * 4);
-    color: $color-3;
-    text-align: center;
-  }
+.tribe-view__error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc($gap * 4);
+  color: $color-3;
+  text-align: center;
 }

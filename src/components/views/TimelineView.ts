@@ -13,9 +13,9 @@
 
 import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
-import { TribeFolderService } from '../../services/TribeFolderService';
 import { EventBus } from '../../services/EventBus';
 import { AuthService } from '../../services/AuthService';
+import * as tribes from '../../lists/tribes';
 
 type TabType = 'timeline' | 'tribe';
 
@@ -28,7 +28,6 @@ interface TabInfo {
 export class TimelineView extends View {
   private container: HTMLElement;
   private timeline: Timeline | null = null;
-  private tribeFolderService: TribeFolderService;
   private eventBus: EventBus;
   private authService: AuthService;
   private currentTabId: string = 'timeline';
@@ -38,11 +37,10 @@ export class TimelineView extends View {
 
   constructor() {
     super();
-    this.tribeFolderService = TribeFolderService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.container = document.createElement('div');
-    this.container.className = 'timeline-view';
+    this.container.className = 'view-content view-content--timeline';
     this.setupUserLoginListener();
     this.render();
   }
@@ -157,14 +155,14 @@ export class TimelineView extends View {
     });
 
     // Get tribes in root order
-    const tribes = this.tribeFolderService.getFoldersInRootOrder();
+    const tribeFolders = tribes.getFoldersInRootOrder();
 
     // Add tribe tabs
-    tribes.forEach(tribe => {
+    tribeFolders.forEach(folder => {
       this.tabs.push({
         type: 'tribe',
-        id: tribe.id,
-        name: tribe.name
+        id: folder.id,
+        name: folder.name
       });
     });
   }
@@ -201,7 +199,7 @@ export class TimelineView extends View {
   private async updateTimeline(): Promise<void> {
     // Determine filter pubkeys (undefined = all follows, array = specific tribe members)
     const filterPubkeys = this.currentTabId !== 'timeline'
-      ? this.tribeFolderService.getMemberPubkeysInFolder(this.currentTabId)
+      ? tribes.getMemberPubkeysInFolder(this.currentTabId)
       : undefined;
 
     // Destroy existing timeline

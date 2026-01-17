@@ -1,11 +1,20 @@
 /**
  * SyncConfirmationModal
- * Confirms sync operations when local list has MORE items than relay list
- * Shows diff (added/removed items) and asks user whether to keep or delete local-only items
+ * Confirms sync operations when local list differs from source (relay/file)
+ * Shows diff (added/removed/moved items) and asks user whether to keep local or overwrite
  */
 
 import { ModalService } from '../../services/ModalService';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+
+/**
+ * Moved item with folder assignment change
+ */
+export interface MovedItemInfo<T> {
+  item: T;
+  browserFolder: string;  // Current folder name in browser
+  sourceFolder: string;   // Folder name in source (relay/file)
+}
 
 export interface SyncConfirmationOptions<T> {
   /** Name of the list type (e.g., "Bookmarks", "Follows", "Muted Users") */
@@ -14,6 +23,8 @@ export interface SyncConfirmationOptions<T> {
   added: T[];
   /** Items that will be removed (exist locally but not on relay) */
   removed: T[];
+  /** Items with different folder assignments */
+  moved?: MovedItemInfo<T>[];
   /** Function to get displayable name for an item (text only) */
   getDisplayName: (item: T) => string | Promise<string>;
   /** Optional: Function to render item as HTML (for mentions with avatar) */
@@ -29,11 +40,19 @@ interface ResolvedItem {
   html?: string;
 }
 
+interface ResolvedMovedItem {
+  name: string;
+  html?: string;
+  browserFolder: string;
+  sourceFolder: string;
+}
+
 export class SyncConfirmationModal<T> {
   private modalService: ModalService;
   private options: SyncConfirmationOptions<T>;
   private resolvedAddedItems: ResolvedItem[] = [];
   private resolvedRemovedItems: ResolvedItem[] = [];
+  private resolvedMovedItems: ResolvedMovedItem[] = [];
 
   constructor(options: SyncConfirmationOptions<T>) {
     this.modalService = ModalService.getInstance();
@@ -76,7 +95,7 @@ export class SyncConfirmationModal<T> {
    * Resolve display names for all items
    */
   private async resolveDisplayNames(): Promise<void> {
-    const { added, removed, getDisplayName, renderItemHtml } = this.options;
+    const { added, removed, moved, getDisplayName, renderItemHtml } = this.options;
 
     // Resolve added items
     this.resolvedAddedItems = await Promise.all(
@@ -101,6 +120,24 @@ export class SyncConfirmationModal<T> {
         return result;
       })
     );
+
+    // Resolve moved items
+    if (moved && moved.length > 0) {
+      this.resolvedMovedItems = await Promise.all(
+        moved.map(async movedItem => {
+          const name = await Promise.resolve(getDisplayName(movedItem.item));
+          const result: ResolvedMovedItem = {
+            name,
+            browserFolder: movedItem.browserFolder,
+            sourceFolder: movedItem.sourceFolder
+          };
+          if (renderItemHtml) {
+            result.html = await Promise.resolve(renderItemHtml(movedItem.item));
+          }
+          return result;
+        })
+      );
+    }
   }
 
   /**
@@ -110,20 +147,39 @@ export class SyncConfirmationModal<T> {
     const container = document.createElement('div');
     container.className = 'sync-confirmation-modal';
 
-    const { added, removed, listType } = this.options;
+    const { added, removed, moved, listType } = this.options;
+    const movedCount = moved?.length || 0;
+
+    // Determine if this is a file sync or relay sync based on listType
+    const isFileSync = listType.toLowerCase().includes('file');
+    const sourceLabel = isFileSync ? 'file' : 'relay';
+    const cleanListType = listType.replace(/\s*\(File\)\s*/i, '').toLowerCase();
+
+    // Build the question text based on what differs
+    const hasRemoved = removed.length > 0;
+    const hasMoved = movedCount > 0;
+
+    let questionText = '';
+    if (hasRemoved && hasMoved) {
+      questionText = `What should happen with these differences?`;
+    } else if (hasRemoved) {
+      questionText = `What should happen with the ${removed.length} item${removed.length > 1 ? 's' : ''} only in NoorNote Memory?`;
+    } else if (hasMoved) {
+      questionText = `What should happen with the ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders?`;
+    }
 
     container.innerHTML = `
       <div class="sync-confirmation-modal__content">
         <div class="sync-confirmation-modal__warning">
           <p class="sync-confirmation-modal__message">
-            Your local ${listType.toLowerCase()} list differs from the relay version.
+            Your ${cleanListType} in NoorNote Memory differs from the ${sourceLabel} version.
           </p>
         </div>
 
         ${removed.length > 0 ? `
           <div class="sync-confirmation-modal__section">
             <h3 class="sync-confirmation-modal__section-title">
-              ❌ Removed on relay (${removed.length} item${removed.length > 1 ? 's' : ''})
+              ❌ Only in NoorNote Memory (${removed.length} item${removed.length > 1 ? 's' : ''})
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedRemovedItems)}
@@ -131,10 +187,21 @@ export class SyncConfirmationModal<T> {
           </div>
         ` : ''}
 
+        ${movedCount > 0 ? `
+          <div class="sync-confirmation-modal__section">
+            <h3 class="sync-confirmation-modal__section-title">
+              📁 Different folder (${movedCount} item${movedCount > 1 ? 's' : ''})
+            </h3>
+            <div class="sync-confirmation-modal__list">
+              ${this.renderMovedItems(this.resolvedMovedItems, sourceLabel)}
+            </div>
+          </div>
+        ` : ''}
+
         ${added.length > 0 ? `
           <div class="sync-confirmation-modal__section">
             <h3 class="sync-confirmation-modal__section-title">
-              ✅ New on relay (${added.length} item${added.length > 1 ? 's' : ''})
+              ✅ New from ${sourceLabel} (${added.length} item${added.length > 1 ? 's' : ''})
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedAddedItems)}
@@ -143,17 +210,15 @@ export class SyncConfirmationModal<T> {
         ` : ''}
 
         <div class="sync-confirmation-modal__question">
-          <p><strong>What should happen with the ${removed.length} item${removed.length > 1 ? 's' : ''} removed on relay?</strong></p>
+          <p><strong>${questionText}</strong></p>
         </div>
 
         <div class="sync-confirmation-modal__actions">
           <button type="button" class="btn btn--passive" id="sync-keep-btn">
-            Keep and only add
-            <span class="btn__hint">(Merge: Keep ${removed.length} + Add ${added.length})</span>
+            Keep actual state
           </button>
           <button type="button" class="btn btn--danger" id="sync-delete-btn">
-            Delete and add
-            <span class="btn__hint">(Overwrite: Delete ${removed.length} + Add ${added.length})</span>
+            Overwrite with ${sourceLabel} backup
           </button>
         </div>
       </div>
@@ -175,6 +240,40 @@ export class SyncConfirmationModal<T> {
         // Use HTML if available, otherwise escape text
         const content = item.html || this.escapeHtml(item.name);
         return `<div class="sync-confirmation-modal__item">${content}</div>`;
+      })
+      .join('');
+
+    if (remaining > 0) {
+      html += `<div class="sync-confirmation-modal__item sync-confirmation-modal__item--more">+ ${remaining} more...</div>`;
+    }
+
+    return html;
+  }
+
+  /**
+   * Render moved items with folder info
+   */
+  private renderMovedItems(items: ResolvedMovedItem[], sourceLabel: string): string {
+    const maxShow = 10;
+    const itemsToShow = items.slice(0, maxShow);
+    const remaining = items.length - maxShow;
+
+    let html = itemsToShow
+      .map(item => {
+        const content = item.html || this.escapeHtml(item.name);
+        const browserFolderDisplay = item.browserFolder || '(root)';
+        const sourceFolderDisplay = item.sourceFolder || '(root)';
+        return `
+          <div class="sync-confirmation-modal__item sync-confirmation-modal__item--moved">
+            <span class="sync-confirmation-modal__item-name">${content}</span>
+            <span class="sync-confirmation-modal__item-folders">
+              <span class="sync-confirmation-modal__folder sync-confirmation-modal__folder--local">${this.escapeHtml(browserFolderDisplay)}</span>
+              <span class="sync-confirmation-modal__folder-arrow">→</span>
+              <span class="sync-confirmation-modal__folder sync-confirmation-modal__folder--source">${this.escapeHtml(sourceFolderDisplay)}</span>
+              <span class="sync-confirmation-modal__folder-label">(${sourceLabel})</span>
+            </span>
+          </div>
+        `;
       })
       .join('');
 

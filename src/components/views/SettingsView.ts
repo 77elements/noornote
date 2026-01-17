@@ -24,6 +24,7 @@ import { ProfileRecognitionSettings } from '../settings/ProfileRecognitionSettin
 import { HashtagNotificationService } from '../../services/HashtagNotificationService';
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
+import { NotificationPrioritySection } from '../settings/NotificationPrioritySection';
 
 export class SettingsView extends View {
   private container: HTMLElement;
@@ -42,11 +43,12 @@ export class SettingsView extends View {
   private cacheSettingsSection: CacheSettingsSection;
   private uiSettingsSection: UISettingsSection;
   private profileRecognitionSettings: ProfileRecognitionSettings;
+  private notificationPrioritySection: NotificationPrioritySection;
 
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'settings-view';
+    this.container.className = 'view-content view-content--settings';
     this.hashtagService = HashtagNotificationService.getInstance();
     this.eventBus = EventBus.getInstance();
 
@@ -67,6 +69,7 @@ export class SettingsView extends View {
     this.cacheSettingsSection = new CacheSettingsSection();
     this.uiSettingsSection = new UISettingsSection();
     this.profileRecognitionSettings = new ProfileRecognitionSettings();
+    this.notificationPrioritySection = new NotificationPrioritySection();
 
     this.render();
     this.setupHashtagSubscriptionsListeners();
@@ -91,6 +94,12 @@ export class SettingsView extends View {
         ${this.profileRecognitionSettings.renderAccordionSection(
           'Profile Recognition',
           'Help recognize people you follow after they change their profile.',
+          false
+        )}
+
+        ${this.notificationPrioritySection.renderAccordionSection(
+          'Notification Priorities',
+          'Configure which notification types trigger which badge style (pulsing, solid, hollow).',
           false
         )}
 
@@ -172,6 +181,7 @@ export class SettingsView extends View {
     // Mount section content
     this.uiSettingsSection.mount(this.container);
     this.profileRecognitionSettings.mount(this.container);
+    this.notificationPrioritySection.mount(this.container);
     this.relaySettingsSection.mount(this.container);
     if (this.keySignerSection) {
       this.keySignerSection.mount(this.container);
@@ -332,6 +342,7 @@ export class SettingsView extends View {
     this.cacheSettingsSection.unmount();
     this.uiSettingsSection.unmount();
     this.profileRecognitionSettings.unmount();
+    this.notificationPrioritySection.unmount();
 
     // Cleanup sync status badge
     if (this.syncStatusBadge) {

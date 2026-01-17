@@ -9,9 +9,9 @@
  * @used-by MutualChangeDetector
  */
 
-import { SystemLogger } from '../../components/system/SystemLogger';
-import { PlatformService } from '../PlatformService';
-import { AuthService } from '../AuthService';
+import { SystemLogger } from '../components/system/SystemLogger';
+import { PlatformService } from '../services/PlatformService';
+import { AuthService } from '../services/AuthService';
 
 let tauriHomeDir: typeof import('@tauri-apps/api/path').homeDir | null = null;
 let tauriReadTextFile: typeof import('@tauri-apps/plugin-fs').readTextFile | null = null;

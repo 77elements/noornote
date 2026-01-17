@@ -49,7 +49,7 @@ export class SingleNoteView extends View {
     super();
     this.noteId = noteId;
     this.container = document.createElement('div');
-    this.container.className = 'snv-container';
+    this.container.className = 'view-content view-content--single-note';
     this.relayConfig = RelayConfig.getInstance();
     this.threadOrchestrator = ThreadOrchestrator.getInstance();
     this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();

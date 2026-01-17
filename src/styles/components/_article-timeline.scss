@@ -5,26 +5,22 @@
 
 @use '../abstracts/variables' as *;
 
-// View wrapper
-.article-timeline-view {
-  padding: $gap;
+// View child elements
+.article-timeline-view__header {
+  margin-bottom: calc($gap * 1.5);
+}
 
-  &__header {
-    margin-bottom: calc($gap * 1.5);
-  }
+.article-timeline-view__title {
+  font-size: 24px;
+  font-weight: 600;
+  color: $color-5;
+  margin: 0 0 calc($gap / 4) 0;
+}
 
-  &__title {
-    font-size: 24px;
-    font-weight: 600;
-    color: $color-5;
-    margin: 0 0 calc($gap / 4) 0;
-  }
-
-  &__subtitle {
-    font-size: 14px;
-    color: $color-3;
-    margin: 0;
-  }
+.article-timeline-view__subtitle {
+  font-size: 14px;
+  color: $color-3;
+  margin: 0;
 }
 
 // Timeline container

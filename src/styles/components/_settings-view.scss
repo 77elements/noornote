@@ -6,16 +6,6 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 
-// ========================================
-// Settings Container
-// ========================================
-.settings-view {
-  width: 100%;
-  height: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
 // Settings title (standalone)
 .settings-title {
   font-size: 32px;
@@ -904,10 +894,6 @@
 // Responsive
 // ========================================
 @media (max-width: 768px) {
-  .settings-view {
-    padding: $gap;
-  }
-
   .relay-item {
     flex-direction: column;
     align-items: stretch;
@@ -1260,4 +1246,148 @@
   display: flex;
   align-items: center;
   gap: $gap;
+}
+
+// ========================================
+// Notification Priority Settings
+// ========================================
+.notification-priority-settings {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+.priority-zone {
+  background: $color-2;
+  border: 1px solid $color-3;
+  border-radius: $radius-sm;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    padding: $gap;
+    background: rgba($color-3, 0.3);
+    border-bottom: 1px solid $color-3;
+  }
+
+  &__badge {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+
+    // Priority 1: Pulsing (high priority)
+    &--1 {
+      background: $color-6;
+      box-shadow: 0 0 8px rgba($color-6, 0.6);
+      animation: badge-pulse-preview 2s ease-in-out infinite;
+    }
+
+    // Priority 2: Solid (normal)
+    &--2 {
+      background: $color-6;
+    }
+
+    // Priority 3: Hollow (low priority)
+    &--3 {
+      background: transparent;
+      border: 2px solid $color-6;
+    }
+  }
+
+  &__info {
+    flex: 1;
+  }
+
+  &__title {
+    font-size: 14px;
+    font-weight: 600;
+    color: $color-5;
+    margin: 0;
+  }
+
+  &__description {
+    font-size: 12px;
+    color: rgba($color-5, 0.6);
+    margin: calc($gap / 4) 0 0 0;
+  }
+
+  &__items {
+    min-height: 48px;
+    padding: calc($gap / 2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc($gap / 2);
+    transition: background 0.2s ease;
+
+    &--drag-over {
+      background: rgba($color-4, 0.1);
+    }
+  }
+}
+
+.priority-item {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  padding: calc($gap / 2) $gap;
+  background: $color-1;
+  border: 1px solid $color-3;
+  border-radius: $radius-sm;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s ease;
+  // Mobile-friendly: min 44px touch target
+  min-height: 44px;
+
+  &:hover {
+    border-color: $color-4;
+    background: rgba($color-4, 0.05);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &--dragging {
+    opacity: 0.5;
+    border-color: $color-4;
+  }
+
+  &--clone {
+    background: rgba($color-4, 0.2);
+    border-color: $color-4;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    width: 140px;
+  }
+
+  &__handle {
+    color: rgba($color-5, 0.4);
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: 14px;
+    color: $color-5;
+    white-space: nowrap;
+  }
+}
+
+.notification-priority-actions {
+  padding-top: $gap;
+  border-top: 1px solid $color-3;
+}
+
+@keyframes badge-pulse-preview {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba($color-6, 0.6);
+  }
+  50% {
+    transform: scale(1.2);
+    box-shadow: 0 0 12px rgba($color-6, 0.8);
+  }
 }

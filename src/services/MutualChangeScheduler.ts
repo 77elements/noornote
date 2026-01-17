@@ -12,8 +12,8 @@
  */
 
 import { MutualChangeDetector } from './MutualChangeDetector';
-import { MutualChangeStorage } from './storage/MutualChangeStorage';
-import { MutualCheckDebugLog } from './storage/MutualCheckDebugLog';
+import { MutualChangeStorage } from '../lists/MutualChangeStorage';
+import { MutualCheckDebugLog } from '../lists/MutualCheckDebugLog';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { AuthService } from './AuthService';
 

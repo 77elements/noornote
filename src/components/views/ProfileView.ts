@@ -11,8 +11,8 @@ import { AuthService } from '../../services/AuthService';
 import { UserService } from '../../services/UserService';
 import { Timeline } from '../timeline/Timeline';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
-import { ProfileFollowManager } from '../profile/ProfileFollowManager';
-import { ProfileMuteManager } from '../profile/ProfileMuteManager';
+import { ProfileFollowManager } from '../../lists/follows';
+import { ProfileMuteManager } from '../../lists/mutes';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
 import { AppState } from '../../services/AppState';
 import { QRCodeModal } from '../qrcode/QRCodeModal';
@@ -34,9 +34,8 @@ import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { CustomDropdown } from '../ui/CustomDropdown';
-import { TribeOrchestrator } from '../../services/orchestration/TribeOrchestrator';
-import { TribeFolderService } from '../../services/TribeFolderService';
 import { ToastService } from '../../services/ToastService';
+import * as tribes from '../../lists/tribes';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
 // Initialize dayjs calendar system
@@ -67,6 +66,8 @@ export class ProfileView extends View {
   private isLoadingJoinedDate: boolean = false;
   private followsYou: boolean = false;
   private isInitialRender: boolean = true; // Track if this is first render
+  private lastKnownMuteStatus: boolean = false; // Track mute status for change detection
+  private lastKnownFollowStatus: boolean = false; // Track follow status for change detection
 
   // Managers
   private followManager: ProfileFollowManager;
@@ -92,15 +93,13 @@ export class ProfileView extends View {
 
   // Tribe dropdown
   private tribeDropdown: CustomDropdown | null = null;
-  private tribeOrchestrator: TribeOrchestrator;
-  private tribeFolderService: TribeFolderService;
   private tribeDropdownCleanupHandlers: Array<(e: MouseEvent | KeyboardEvent) => void> = [];
 
   constructor(npub: string) {
     super(); // Call View base class constructor
     this.npub = npub;
     this.container = document.createElement('div');
-    this.container.className = 'profile-view';
+    this.container.className = 'view-content view-content--profile';
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.userService = UserService.getInstance();
@@ -109,8 +108,6 @@ export class ProfileView extends View {
     this.followerCountService = FollowerCountService.getInstance();
     this.profileOrchestrator = ProfileOrchestrator.getInstance();
     this.recognitionService = ProfileRecognitionService.getInstance();
-    this.tribeOrchestrator = TribeOrchestrator.getInstance();
-    this.tribeFolderService = TribeFolderService.getInstance();
 
     // Decode npub to pubkey
     try {
@@ -137,6 +134,12 @@ export class ProfileView extends View {
 
     // Listen for calendar system changes
     this.setupCalendarSystemListener();
+
+    // Listen for mute changes (from MuteList or other sources)
+    this.setupMuteChangeListener();
+
+    // Listen for follow changes (from FollowList or other sources)
+    this.setupFollowChangeListener();
 
     this.render();
   }
@@ -178,6 +181,41 @@ export class ProfileView extends View {
   }
 
   /**
+   * Setup listener for mute changes (re-render if this profile's mute status changed)
+   */
+  private setupMuteChangeListener(): void {
+    this.eventBus.on('mute:updated', async () => {
+      // Only re-render if this profile's mute status actually changed
+      const wasMuted = this.lastKnownMuteStatus;
+      const muteStatus = await this.muteManager.checkMuteStatus();
+      const isMuted = muteStatus.public || muteStatus.private;
+
+      if (wasMuted !== isMuted) {
+        this.lastKnownMuteStatus = isMuted;
+        this.isInitialRender = true;
+        this.render();
+      }
+    });
+  }
+
+  /**
+   * Setup listener for follow changes (re-render if this profile's follow status changed)
+   */
+  private setupFollowChangeListener(): void {
+    this.eventBus.on('follow:updated', async () => {
+      // Only re-render if this profile's follow status actually changed
+      const wasFollowing = this.lastKnownFollowStatus;
+      const isFollowing = await this.followManager.checkFollowStatus();
+
+      if (wasFollowing !== isFollowing) {
+        this.lastKnownFollowStatus = isFollowing;
+        this.isInitialRender = true;
+        this.render();
+      }
+    });
+  }
+
+  /**
    * Refresh profile data (after edit)
    */
   private async refreshProfile(): Promise<void> {
@@ -213,7 +251,10 @@ export class ProfileView extends View {
       // Check if this user is muted (only if logged in)
       if (currentUser) {
         const muteStatus = await this.muteManager.checkMuteStatus();
-        if (muteStatus.public || muteStatus.private) {
+        const isMuted = muteStatus.public || muteStatus.private;
+        this.lastKnownMuteStatus = isMuted;
+
+        if (isMuted) {
           // Show muted profile placeholder
           await this.showMutedProfile();
           return;
@@ -228,7 +269,8 @@ export class ProfileView extends View {
       // Check follow relationships (only for other profiles when logged in)
       if (currentUser && this.pubkey !== currentUser.pubkey) {
         this.followsYou = following.includes(currentUser.pubkey);
-        await this.followManager.checkFollowStatus();
+        const isFollowing = await this.followManager.checkFollowStatus();
+        this.lastKnownFollowStatus = isFollowing;
       }
 
       // Render profile header
@@ -717,7 +759,8 @@ export class ProfileView extends View {
    */
   private setupMuteButton(): void {
     this.muteManager.setupMuteButton(this.container, () => {
-      // Reload profile to show muted state
+      // Force full re-render (mute state changes HTML structure completely)
+      this.isInitialRender = true;
       this.render();
     });
 
@@ -782,9 +825,9 @@ export class ProfileView extends View {
       if (!isAuthenticated) return;
 
       // Get all tribes
-      const folders = this.tribeFolderService.getFolders();
+      const tribeFolders = tribes.getFolders();
 
-      if (folders.length === 0) {
+      if (tribeFolders.length === 0) {
         ToastService.show('No tribes found. Create a tribe first in the Tribe view.', 'info');
         return;
       }
@@ -792,7 +835,7 @@ export class ProfileView extends View {
       // Build dropdown options with placeholder first
       const options = [
         { value: '', label: 'Choose a tribe' },
-        ...folders.map(folder => ({
+        ...tribeFolders.map(folder => ({
           value: folder.id,
           label: folder.name
         }))
@@ -885,14 +928,14 @@ export class ProfileView extends View {
   private async handleTribeSelection(folderId: string): Promise<void> {
     try {
       // Get folder details
-      const folder = this.tribeFolderService.getFolder(folderId);
+      const folder = tribes.getFolder(folderId);
       if (!folder) {
         ToastService.show('Tribe not found', 'error');
         return;
       }
 
       // Check if user is already in THIS specific tribe
-      const allMembers = await this.tribeOrchestrator.getAllMembersWithMetadata(this.pubkey);
+      const allMembers = tribes.getMembers();
       const isInThisTribe = allMembers.some(m => m.pubkey === this.pubkey && m.category === folder.name);
 
       if (isInThisTribe) {
@@ -902,18 +945,18 @@ export class ProfileView extends View {
 
       // Add member to tribe (public member)
       // IMPORTANT: Use folder.name as category (for NIP-51), but folder.id for FolderService
-      const success = await this.tribeOrchestrator.addMember(
+      tribes.addMember(
         this.pubkey,
         false, // isPrivate = false
         folder.name, // category = tribe name (for NIP-51)
         folder.id // folderId for FolderService assignment
       );
 
-      if (success) {
-        ToastService.show(`Added to tribe "${folder.name}"`, 'success');
-      } else {
-        ToastService.show('Failed to add to tribe', 'error');
-      }
+      // Explicitly emit event to trigger auto-sync in Easy Mode
+      // (addMember calls setMembers which emits, but being explicit for safety)
+      this.eventBus.emit('tribe:updated');
+
+      ToastService.show(`Added to tribe "${folder.name}"`, 'success');
     } catch (error) {
       console.error('Failed to add to tribe:', error);
       ToastService.show('Failed to add to tribe', 'error');

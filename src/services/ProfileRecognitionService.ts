@@ -16,10 +16,10 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { ProfileEncounterFileStorage, type ProfileEncounter } from './storage/ProfileEncounterFileStorage';
+import { ProfileEncounterFileStorage, type ProfileEncounter } from './ProfileEncounterFileStorage';
 import { EventBus } from './EventBus';
 import { SystemLogger } from '../components/system/SystemLogger';
-import { FollowStorageAdapter } from './sync/adapters/FollowStorageAdapter';
+import { FollowStorageAdapter } from '../lists/follows';
 import { UserProfileService } from './UserProfileService';
 import { ProfileRecognitionOrchestrator } from './orchestration/ProfileRecognitionOrchestrator';
 import { AuthService } from './AuthService';

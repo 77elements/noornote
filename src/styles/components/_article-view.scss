@@ -7,14 +7,6 @@
 @use '../abstracts/mixins' as *;
 @use 'sass:color';
 
-// Article view container
-.article-view-container {
-  max-width: 800px;
-  width: 100%;
-  height: 100%;
-  margin: 0 auto;
-}
-
 // Article content wrapper
 .article-view-content {
   background: $color-1;
