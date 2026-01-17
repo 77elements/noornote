@@ -36,7 +36,7 @@ import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
 import { FolderCard, type FolderData } from '../components/bookmarks/FolderCard';
 import { UpNavigator } from '../components/bookmarks/UpNavigator';
-import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
+import { SyncConfirmationModal, type MovedItemInfo } from '../components/modals/SyncConfirmationModal';
 import { View } from '../components/views/View';
 import { Timeline } from '../components/timeline/Timeline';
 import { PlatformService } from '../services/PlatformService';
@@ -48,10 +48,16 @@ const logger = SystemLogger.getInstance();
 // SYNC TYPES (inlined from ListSyncManager)
 // ============================================================
 
+interface MovedMember {
+  browserItem: TribeMember;
+  sourceItem: TribeMember;
+}
+
 interface SyncDiff {
   added: TribeMember[];
   removed: TribeMember[];
   unchanged: TribeMember[];
+  moved: MovedMember[];
 }
 
 interface SyncFromRelaysResult {
@@ -330,10 +336,15 @@ export function deleteFolder(folderId: string): string[] {
 export function addMember(
   pubkey: string,
   isPrivate: boolean,
-  category: string = '',
+  category: string,
   folderId?: string
 ): boolean {
   requireAuth();
+
+  // Tribes: Members must always have a category (tribe name)
+  if (!category) {
+    throw new Error('Members must be assigned to a tribe');
+  }
 
   const members = getMembers();
 
@@ -360,13 +371,10 @@ export function addMember(
   members.push(member);
   setMembers(members);
 
-  // Create folder assignment
-  const targetFolderId = folderId || category;
+  // Create folder assignment - folder ID is folder_[name], not just the name
+  const targetFolderId = folderId || `folder_${category}`;
   ensureMemberAssignment(uniqueId);
-
-  if (targetFolderId !== '') {
-    moveMemberToFolder(uniqueId, targetFolderId);
-  }
+  moveMemberToFolder(uniqueId, targetFolderId);
 
   logger.info('tribes.ts', `Added ${canBePrivate ? 'private' : 'public'} member: ${pubkey.slice(0, 8)}...`);
   return true;
@@ -795,25 +803,16 @@ function buildSetDataFromBrowser(): TribeSetData {
     }
   }
 
-  // Process root items
-  const rootSet = setsMap.get('');
-  if (!rootSet) return createEmptyTribeSetData();
+  // Tribes: Root members are NOT allowed - skip them (log warning if any exist)
   const rootMemberIds = getMembersInFolder('');
-
-  for (const memberId of rootMemberIds) {
-    const item = itemMap.get(memberId);
-    if (item) {
-      addMemberToSet(rootSet, item);
-      assignedIds.add(memberId);
-    }
+  if (rootMemberIds.length > 0) {
+    logger.warn('tribes.ts', `Skipping ${rootMemberIds.length} root members (not allowed in tribes)`);
   }
 
-  // Handle orphaned items (add to root)
-  for (const item of allMembers) {
-    if (!assignedIds.has(item.id)) {
-      addMemberToSet(rootSet, item);
-      ensureMemberAssignment(item.id);
-    }
+  // Tribes: Orphaned items are NOT allowed - skip them (log warning if any exist)
+  const orphanedItems = allMembers.filter(item => !assignedIds.has(item.id));
+  if (orphanedItems.length > 0) {
+    logger.warn('tribes.ts', `Skipping ${orphanedItems.length} orphaned members (not allowed in tribes)`);
   }
 
   // Build setOrder from rootOrder (respects user's custom folder order)
@@ -864,13 +863,15 @@ function extractFromSetData(data: TribeSetData): {
 
   for (const set of data.sets) {
     const category = set.d;
-    const folderId = category === '' ? '' : `folder_${category}`;
 
-    // Create folder for non-root sets
-    if (category !== '') {
-      folders.push({ id: folderId, name: category, createdAt: timestamp });
-      rootOrder.push({ type: 'folder', id: folderId });
+    // Tribes: Skip root set (members must always be in a tribe)
+    if (category === '') {
+      continue;
     }
+
+    const folderId = `folder_${category}`;
+    folders.push({ id: folderId, name: category, createdAt: timestamp });
+    rootOrder.push({ type: 'folder', id: folderId });
 
     // Process all members (public and private)
     let itemOrder = 0;
@@ -880,7 +881,7 @@ function extractFromSetData(data: TribeSetData): {
     ];
 
     for (const tag of allMemberTags) {
-      const uniqueId = category ? `${tag.pubkey}_${category}` : tag.pubkey;
+      const uniqueId = `${tag.pubkey}_${category}`;
       const member: TribeMember = {
         id: uniqueId,
         pubkey: tag.pubkey,
@@ -892,9 +893,6 @@ function extractFromSetData(data: TribeSetData): {
       members.push(member);
 
       assignments.push({ memberId: uniqueId, folderId, order: itemOrder++ });
-      if (category === '') {
-        rootOrder.push({ type: 'member', id: uniqueId });
-      }
     }
   }
 
@@ -1250,15 +1248,31 @@ export class TribeManager {
 
   // ===== Sync Helper Methods (inlined) =====
 
-  private calculateDiff(browserItems: TribeMember[], relayItems: TribeMember[]): SyncDiff {
-    const browserIds = new Set(browserItems.map(item => item.pubkey));
-    const relayIds = new Set(relayItems.map(item => item.pubkey));
+  private calculateDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): SyncDiff {
+    const browserMap = new Map(browserItems.map(item => [item.pubkey, item]));
+    const sourceMap = new Map(sourceItems.map(item => [item.pubkey, item]));
 
-    const added = relayItems.filter(item => !browserIds.has(item.pubkey));
-    const removed = browserItems.filter(item => !relayIds.has(item.pubkey));
-    const unchanged = browserItems.filter(item => relayIds.has(item.pubkey));
+    const added = sourceItems.filter(item => !browserMap.has(item.pubkey));
+    const removed = browserItems.filter(item => !sourceMap.has(item.pubkey));
 
-    return { added, removed, unchanged };
+    // Items in both - check for category changes
+    const unchanged: TribeMember[] = [];
+    const moved: MovedMember[] = [];
+
+    for (const browserItem of browserItems) {
+      const sourceItem = sourceMap.get(browserItem.pubkey);
+      if (sourceItem) {
+        const browserCategory = browserItem.category || '';
+        const sourceCategory = sourceItem.category || '';
+        if (browserCategory !== sourceCategory) {
+          moved.push({ browserItem, sourceItem });
+        } else {
+          unchanged.push(browserItem);
+        }
+      }
+    }
+
+    return { added, removed, unchanged, moved };
   }
 
   private mergeItems(browserItems: TribeMember[], newItems: TribeMember[]): TribeMember[] {
@@ -1278,7 +1292,7 @@ export class TribeManager {
     const diff = this.calculateDiff(browserItems, fetchResult.items);
 
     const result: SyncFromRelaysResult = {
-      requiresConfirmation: diff.removed.length > 0,
+      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty
@@ -1302,7 +1316,7 @@ export class TribeManager {
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fileItems);
 
-    return { requiresConfirmation: diff.removed.length > 0, diff, fileItems };
+    return { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems };
   }
 
   private downloadAsJson(data: TribeMember[], filename: string): void {
@@ -1609,6 +1623,7 @@ export class TribeManager {
       const rootOrderItems = getRootOrder();
       const renderedIds = new Set<string>();
 
+      // Tribes: Only render folders at root (members must always be in a tribe)
       for (const item of rootOrderItems) {
         if (item.type === 'folder') {
           const folder = getFolder(item.id);
@@ -1617,17 +1632,8 @@ export class TribeManager {
             grid.appendChild(card);
             renderedIds.add(item.id);
           }
-        } else if (item.type === 'member') {
-          const pubkey = extractPubkeyFromMemberId(item.id);
-          const member = this.membersCache.get(pubkey);
-          const folderId = getMemberFolder(item.id);
-          // Only show if in root (no folder assignment)
-          if (member && folderId === '') {
-            const card = await this.createMemberCard(member);
-            grid.appendChild(card);
-            renderedIds.add(item.id);
-          }
         }
+        // Skip 'member' type - tribes don't allow root members
       }
 
       // Add any new items not in root order yet
@@ -1640,15 +1646,7 @@ export class TribeManager {
         }
       }
 
-      for (const [, member] of this.membersCache) {
-        const memberId = member.id;
-        const folderId = getMemberFolder(memberId);
-        if (folderId === '' && !renderedIds.has(memberId)) {
-          const card = await this.createMemberCard(member);
-          grid.appendChild(card);
-          addToRootOrder('member', memberId);
-        }
-      }
+      // Tribes: Members are NEVER shown at root - they must always be in a tribe
     }
 
     // Check empty state
@@ -1989,8 +1987,19 @@ export class TribeManager {
    */
   private async moveMemberToFolderUI(memberPubkey: string, targetFolderId: string): Promise<void> {
     try {
-      const targetFolder = targetFolderId ? getFolder(targetFolderId) : undefined;
-      const targetCategoryName = targetFolder?.name || '';
+      // Tribes: Members must always be in a folder, never at root
+      if (targetFolderId === '') {
+        ToastService.show('Members must be in a tribe', 'error');
+        return;
+      }
+
+      const targetFolder = getFolder(targetFolderId);
+      if (!targetFolder) {
+        ToastService.show('Target tribe not found', 'error');
+        return;
+      }
+
+      const targetCategoryName = targetFolder.name;
 
       // Update folder assignment
       moveMemberToFolder(memberPubkey, targetFolderId);
@@ -2005,8 +2014,7 @@ export class TribeManager {
       });
       setMembers(updatedItems);
 
-      const targetName = targetFolderId === '' ? 'root' : targetFolder?.name || 'tribe';
-      ToastService.show(`Moved to ${targetName}`, 'success');
+      ToastService.show(`Moved to ${targetFolder.name}`, 'success');
       this.rerenderCurrentView();
     } catch (error) {
       console.error('Failed to move member:', error);
@@ -2259,10 +2267,18 @@ export class TribeManager {
       const result = await this.syncFromRelays();
 
       if (result.requiresConfirmation) {
+        // Convert moved items to MovedItemInfo format
+        const movedItems: MovedItemInfo<TribeMember>[] = result.diff.moved.map(m => ({
+          item: m.browserItem,
+          browserFolder: m.browserItem.category || '',
+          sourceFolder: m.sourceItem.category || ''
+        }));
+
         const modal = new SyncConfirmationModal({
           listType: 'Tribes',
           added: result.diff.added,
           removed: result.diff.removed,
+          moved: movedItems,
           getDisplayName: async (member: TribeMember) => {
             const cached = this.membersCache.get(member.pubkey);
             if (cached?.profile) return cached.profile.display_name || cached.profile.name || member.pubkey.slice(0, 8) + '...';
@@ -2343,10 +2359,18 @@ export class TribeManager {
       const result = await this.syncFromFile();
 
       if (result.requiresConfirmation) {
+        // Convert moved items to MovedItemInfo format
+        const movedItems: MovedItemInfo<TribeMember>[] = result.diff.moved.map(m => ({
+          item: m.browserItem,
+          browserFolder: m.browserItem.category || '',
+          sourceFolder: m.sourceItem.category || ''
+        }));
+
         const modal = new SyncConfirmationModal({
           listType: 'Tribes (File)',
           added: result.diff.added,
           removed: result.diff.removed,
+          moved: movedItems,
           getDisplayName: async (member: TribeMember) => {
             const cached = this.membersCache.get(member.pubkey);
             if (cached?.profile) return cached.profile.display_name || cached.profile.name || member.pubkey.slice(0, 8) + '...';

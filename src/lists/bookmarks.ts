@@ -43,7 +43,7 @@ import { encodeNevent } from '../services/NostrToolsAdapter';
 import { formatTimestamp } from '../helpers/formatTimestamp';
 import { applyFolderAssignments } from '../helpers/FolderAssignmentHelper';
 import { renderListSyncButtons, bindSwitchSyncModeLink } from '../helpers/ListSyncMode';
-import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
+import { SyncConfirmationModal, type MovedItemInfo } from '../components/modals/SyncConfirmationModal';
 import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
 import { FolderCard, type FolderData } from '../components/bookmarks/FolderCard';
@@ -1872,12 +1872,21 @@ interface BookmarkWithEvent extends BookmarkItem {
 }
 
 /**
+ * Moved bookmark (different folder assignment)
+ */
+interface MovedBookmark {
+  browserItem: BookmarkItem;
+  sourceItem: BookmarkItem;
+}
+
+/**
  * Sync diff for bookmarks
  */
 interface BookmarkSyncDiff {
   added: BookmarkItem[];
   removed: BookmarkItem[];
   unchanged: BookmarkItem[];
+  moved: MovedBookmark[];
 }
 
 /**
@@ -1937,15 +1946,31 @@ export class BookmarkManager {
 
   // ===== Sync Helper Methods (inlined) =====
 
-  private calculateDiff(browserItems: BookmarkItem[], relayItems: BookmarkItem[]): BookmarkSyncDiff {
-    const browserIds = new Set(browserItems.map(item => item.id));
-    const relayIds = new Set(relayItems.map(item => item.id));
+  private calculateDiff(browserItems: BookmarkItem[], sourceItems: BookmarkItem[]): BookmarkSyncDiff {
+    const browserMap = new Map(browserItems.map(item => [item.id, item]));
+    const sourceMap = new Map(sourceItems.map(item => [item.id, item]));
 
-    const added = relayItems.filter(item => !browserIds.has(item.id));
-    const removed = browserItems.filter(item => !relayIds.has(item.id));
-    const unchanged = browserItems.filter(item => relayIds.has(item.id));
+    const added = sourceItems.filter(item => !browserMap.has(item.id));
+    const removed = browserItems.filter(item => !sourceMap.has(item.id));
 
-    return { added, removed, unchanged };
+    // Items in both - check for category changes
+    const unchanged: BookmarkItem[] = [];
+    const moved: MovedBookmark[] = [];
+
+    for (const browserItem of browserItems) {
+      const sourceItem = sourceMap.get(browserItem.id);
+      if (sourceItem) {
+        const browserCategory = browserItem.category || '';
+        const sourceCategory = sourceItem.category || '';
+        if (browserCategory !== sourceCategory) {
+          moved.push({ browserItem, sourceItem });
+        } else {
+          unchanged.push(browserItem);
+        }
+      }
+    }
+
+    return { added, removed, unchanged, moved };
   }
 
   private mergeItems(browserItems: BookmarkItem[], newItems: BookmarkItem[]): BookmarkItem[] {
@@ -1965,7 +1990,7 @@ export class BookmarkManager {
     const diff = this.calculateDiff(browserItems, fetchResult.items);
 
     const result: BookmarkSyncFromRelaysResult = {
-      requiresConfirmation: diff.removed.length > 0,
+      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty
@@ -1986,7 +2011,7 @@ export class BookmarkManager {
     const fileItems = await this.adapter.getFileItems();
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fileItems);
-    return { requiresConfirmation: diff.removed.length > 0, diff, fileItems };
+    return { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems };
   }
 
   private async syncToRelays(): Promise<void> {
@@ -2988,10 +3013,18 @@ export class BookmarkManager {
       };
 
       if (result.requiresConfirmation) {
+        // Convert moved items to MovedItemInfo format
+        const movedItems: MovedItemInfo<BookmarkItem>[] = result.diff.moved.map(m => ({
+          item: m.browserItem,
+          browserFolder: m.browserItem.category || '',
+          sourceFolder: m.sourceItem.category || ''
+        }));
+
         const modal = new SyncConfirmationModal({
           listType: 'Bookmarks',
           added: result.diff.added,
           removed: result.diff.removed,
+          moved: movedItems,
           getDisplayName: (item) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             await this.applySync('merge', result.relayItems);
@@ -3082,10 +3115,18 @@ export class BookmarkManager {
       };
 
       if (result.requiresConfirmation) {
+        // Convert moved items to MovedItemInfo format
+        const movedItems: MovedItemInfo<BookmarkItem>[] = result.diff.moved.map(m => ({
+          item: m.browserItem,
+          browserFolder: m.browserItem.category || '',
+          sourceFolder: m.sourceItem.category || ''
+        }));
+
         const modal = new SyncConfirmationModal({
           listType: 'Bookmarks (File)',
           added: result.diff.added,
           removed: result.diff.removed,
+          moved: movedItems,
           getDisplayName: (item: BookmarkItem) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             await this.applySync('merge', result.fileItems);
