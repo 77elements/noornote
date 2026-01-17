@@ -870,6 +870,22 @@ class BookmarkFolderServiceImpl {
       bookmarkIds
     };
   }
+
+  // ===== Full Restore =====
+
+  public restoreAllFolderData(
+    folders: BookmarkFolder[],
+    assignments: FolderAssignment[],
+    rootOrder: RootOrderItem<'bookmark'>[]
+  ): void {
+    this.saveFoldersToStorage(folders);
+    this.saveAssignmentsToStorage(assignments.map(a => ({
+      bookmarkId: a.bookmarkId,
+      folderId: a.folderId,
+      order: a.order
+    })));
+    this.saveRootOrderToStorage(rootOrder);
+  }
 }
 
 /**
@@ -2000,13 +2016,6 @@ export class BookmarkManager {
     return result;
   }
 
-  private applySync(strategy: 'merge' | 'overwrite', items: BookmarkItem[]): void {
-    const finalItems = strategy === 'overwrite'
-      ? items
-      : this.mergeItems(this.adapter.getBrowserItems(), items);
-    this.adapter.setBrowserItems(finalItems);
-  }
-
   private async syncFromFile(): Promise<BookmarkSyncFromFileResult> {
     const fileItems = await this.adapter.getFileItems();
     const browserItems = this.adapter.getBrowserItems();
@@ -3002,12 +3011,27 @@ export class BookmarkManager {
 
       const result = await this.syncFromRelays();
 
-      const applyAssignments = () => {
+      // Full overwrite: replace bookmarks AND folder assignments from relay
+      const fullOverwriteFromRelays = () => {
+        this.adapter.setBrowserItems(result.relayItems);
         if (result.categoryAssignments) {
           this.applyRelayFolderAssignments(
             result.categoryAssignments,
             result.categories || [],
-            false
+            true  // Include root bookmarks - full replacement
+          );
+        }
+      };
+
+      // Merge: add new bookmarks with their folder assignments
+      const mergeFromRelays = () => {
+        const merged = this.mergeItems(this.adapter.getBrowserItems(), result.relayItems);
+        this.adapter.setBrowserItems(merged);
+        if (result.categoryAssignments) {
+          this.applyRelayFolderAssignments(
+            result.categoryAssignments,
+            result.categories || [],
+            false  // Don't replace root bookmarks - merge only
           );
         }
       };
@@ -3027,15 +3051,13 @@ export class BookmarkManager {
           moved: movedItems,
           getDisplayName: (item) => this.getDisplayNameForSync(item),
           onKeep: async () => {
-            await this.applySync('merge', result.relayItems);
-            applyAssignments();
+            mergeFromRelays();
             ToastService.show('Merged bookmarks from relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
           onDelete: async () => {
-            await this.applySync('overwrite', result.relayItems);
-            applyAssignments();
+            fullOverwriteFromRelays();
             ToastService.show('Synced from relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
@@ -3044,8 +3066,7 @@ export class BookmarkManager {
 
         await modal.show();
       } else {
-        await this.applySync('merge', result.relayItems);
-        applyAssignments();
+        mergeFromRelays();
         ToastService.show('Synced from relays', 'success');
         await this.loadBookmarks();
         this.renderCurrentView(container);
@@ -3083,30 +3104,29 @@ export class BookmarkManager {
       ToastService.show('Reading from file...', 'info');
       const result = await this.syncFromFile();
 
-      const applyFolderAssignments = (items: BookmarkItem[]) => {
-        const existingFolders = this.folderService.getFolders();
-        const categories = new Set<string>();
-        for (const item of items) {
-          if (item.category && item.category !== '') {
-            categories.add(item.category);
-          }
-        }
+      // Full restore: sets bookmarks AND folder data from file
+      const fullRestoreFromFile = async () => {
+        this.adapter.setBrowserItems(result.fileItems);
+        const folderData = await getAllFolderDataFromFile();
+        this.folderService.restoreAllFolderData(folderData.folders, folderData.folderAssignments, folderData.rootOrder);
+      };
 
-        for (const categoryName of categories) {
-          const existingFolder = existingFolders.find(f => f.name === categoryName);
-          if (!existingFolder) {
-            const newFolder = this.folderService.createFolder(categoryName);
-            this.folderService.addToRootOrder('folder', newFolder.id);
-          }
-        }
+      // Merge: add new bookmarks with their folder assignments
+      const mergeFromFile = async (newItems: BookmarkItem[]) => {
+        if (newItems.length === 0) return;
+        const currentItems = this.adapter.getBrowserItems();
+        const existingIds = new Set(currentItems.map(i => i.id));
+        const itemsToAdd = newItems.filter(i => !existingIds.has(i.id));
+        if (itemsToAdd.length === 0) return;
 
-        const updatedFolders = this.folderService.getFolders();
-        for (const item of items) {
+        this.adapter.setBrowserItems([...currentItems, ...itemsToAdd]);
+
+        for (const item of itemsToAdd) {
           const categoryName = item.category || '';
           if (categoryName === '') {
             this.folderService.ensureBookmarkAssignment(item.id);
           } else {
-            const folder = updatedFolders.find(f => f.name === categoryName);
+            const folder = this.folderService.getFolders().find(f => f.name === categoryName);
             if (folder) {
               this.folderService.moveBookmarkToFolder(item.id, folder.id);
             }
@@ -3129,15 +3149,13 @@ export class BookmarkManager {
           moved: movedItems,
           getDisplayName: (item: BookmarkItem) => this.getDisplayNameForSync(item),
           onKeep: async () => {
-            await this.applySync('merge', result.fileItems);
-            applyFolderAssignments(this.adapter.getBrowserItems());
+            await mergeFromFile(result.diff.added);
             ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
           onDelete: async () => {
-            await this.applySync('overwrite', result.fileItems);
-            applyFolderAssignments(result.fileItems);
+            await fullRestoreFromFile();
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
@@ -3145,8 +3163,7 @@ export class BookmarkManager {
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
-        await this.applySync('overwrite', result.fileItems);
-        applyFolderAssignments(result.fileItems);
+        await fullRestoreFromFile();
         ToastService.show(`Restored ${result.diff.added.length} bookmark${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
         await this.loadBookmarks();
         this.renderCurrentView(container);
