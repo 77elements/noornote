@@ -235,15 +235,34 @@
     line-height: 20px;
     text-align: center;
 
-    // Hashtag-only notifications: hollow circle (lower priority)
+    // Hashtag-only notifications: hollow circle (low priority)
     &--hashtag-only {
       background: transparent;
       border: 1px solid $color-6;
       color: $color-6;
       line-height: 18px; // Adjust for border
     }
-  }
 
+    // High priority notifications: pulsing badge (replies, zaps)
+    &--priority-high {
+      animation: badge-pulse 2s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba($color-6, 0.6);
+    }
+  }
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba($color-6, 0.6);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 12px rgba($color-6, 0.8);
+  }
+}
+
+.primary-nav {
   // Accordion menu (Lists)
   &__item--accordion {
     .primary-nav__accordion-trigger {

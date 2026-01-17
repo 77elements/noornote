@@ -52,11 +52,20 @@ export const StorageKeys = {
 
   // Relay list cache (per-account) - NIP-65 kind:10002
   RELAY_LIST: 'noornote_relay_list_map',
+
+  // Notification priority settings (per-account)
+  NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
 
 export type LayoutMode = 'default' | 'right-pane' | 'wide' | 'phone';
+
+// Notification priority: 1 = highest (pulsing), 2 = medium (solid), 3 = lowest (hollow)
+export type NotificationPriority = 1 | 2 | 3;
+
+// Maps notification type to priority
+export type NotificationPriorityMap = Record<string, NotificationPriority>;
 
 export class PerAccountLocalStorage {
   private static instance: PerAccountLocalStorage;
