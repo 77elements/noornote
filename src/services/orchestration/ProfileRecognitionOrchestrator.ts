@@ -14,7 +14,7 @@
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { SystemLogger } from '../../components/system/SystemLogger';
-import type { ProfileEncounterData } from '../storage/ProfileEncounterFileStorage';
+import type { ProfileEncounterData } from '../ProfileEncounterFileStorage';
 
 const NIP78_KIND = 30078;
 const D_TAG = 'noornote:profile-encounters';

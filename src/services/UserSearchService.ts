@@ -9,7 +9,7 @@
  * @used-by SearchSpotlight
  */
 
-import { FollowStorageAdapter } from './sync/adapters/FollowStorageAdapter';
+import { FollowStorageAdapter } from '../lists/follows';
 import { UserProfileService, type UserProfile } from './UserProfileService';
 import { SearchOrchestrator } from './orchestration/SearchOrchestrator';
 import { extractDisplayName } from '../helpers/extractDisplayName';

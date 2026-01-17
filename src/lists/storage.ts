@@ -9,7 +9,6 @@
 
 import { PerAccountLocalStorage, StorageKeys, type StorageKey } from '../services/PerAccountLocalStorage';
 
-// Re-export StorageKeys for convenience
 export { StorageKeys };
 
 /**
@@ -41,25 +40,28 @@ export function clearList(key: StorageKey): void {
 }
 
 /**
+ * Generic deduplication by a key property
+ */
+function deduplicateByKey<T, K extends keyof T>(items: T[], key: K): T[] {
+  const map = new Map<T[K], T>();
+  for (const item of items) {
+    map.set(item[key], item);
+  }
+  return Array.from(map.values());
+}
+
+/**
  * Deduplicate items by ID
  */
 export function deduplicateById<T extends { id: string }>(items: T[]): T[] {
-  const map = new Map<string, T>();
-  for (const item of items) {
-    map.set(item.id, item);
-  }
-  return Array.from(map.values());
+  return deduplicateByKey(items, 'id');
 }
 
 /**
  * Deduplicate items by pubkey
  */
 export function deduplicateByPubkey<T extends { pubkey: string }>(items: T[]): T[] {
-  const map = new Map<string, T>();
-  for (const item of items) {
-    map.set(item.pubkey, item);
-  }
-  return Array.from(map.values());
+  return deduplicateByKey(items, 'pubkey');
 }
 
 /**

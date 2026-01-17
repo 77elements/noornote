@@ -7,7 +7,7 @@
  */
 
 import { SettingsSection } from './SettingsSection';
-import { FollowListOrchestrator } from '../../services/orchestration/FollowListOrchestrator';
+import { FollowListOrchestrator } from '../../lists/follows';
 import { BookmarkOrchestrator } from '../../lists/bookmarks';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { AuthService } from '../../services/AuthService';
@@ -31,7 +31,7 @@ interface PrivacySectionConfig {
 }
 
 export class PrivacySettingsSection extends SettingsSection {
-  private followListOrch: FollowListOrchestrator;
+  private followListOrch: ReturnType<typeof FollowListOrchestrator.getInstance>;
   private bookmarkOrch: ReturnType<typeof BookmarkOrchestrator.getInstance>;
   private muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>;
   private authService: AuthService;

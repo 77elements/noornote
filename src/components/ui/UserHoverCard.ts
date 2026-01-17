@@ -5,7 +5,7 @@
  */
 
 import { UserProfileService } from '../../services/UserProfileService';
-import { ProfileFollowManager } from '../profile/ProfileFollowManager';
+import { ProfileFollowManager } from '../../lists/follows';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { hexToNpub, npubToHex } from '../../helpers/nip19';

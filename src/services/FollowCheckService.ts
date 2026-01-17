@@ -9,7 +9,7 @@
  * Initializes from file storage on first access if browser is empty.
  */
 
-import { FollowStorageAdapter } from './sync/adapters/FollowStorageAdapter';
+import { FollowStorageAdapter } from '../lists/follows';
 import { AuthService } from './AuthService';
 
 export class FollowCheckService {

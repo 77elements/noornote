@@ -19,7 +19,7 @@ import { SearchSpotlight } from '../navigation/SearchSpotlight';
 import { KeyboardShortcutManager } from '../../services/KeyboardShortcutManager';
 import { GlobalSearchView } from '../search/GlobalSearchView';
 import { BookmarkManager } from '../../lists/bookmarks';
-import { FollowListManager } from './managers/FollowListManager';
+import { FollowListManager } from '../../lists/follows';
 import { MuteListManager } from '../../lists/mutes';
 import { TribeManager } from '../../lists/tribes';
 import { Nip51InspectorManager } from './managers/Nip51InspectorManager';

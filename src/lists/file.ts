@@ -33,16 +33,20 @@ if (platform.isTauri) {
 }
 
 /**
+ * Verify Tauri filesystem APIs are loaded
+ */
+function requireTauriFs(): void {
+  if (!tauriExists || !tauriMkdir || !tauriReadTextFile || !tauriWriteTextFile) {
+    throw new Error('Tauri fs API not loaded');
+  }
+}
+
+/**
  * Get current user's npub
  */
 function getCurrentUserNpub(): string | null {
-  try {
-    const authService = AuthService.getInstance();
-    const user = authService.getCurrentUser();
-    return user?.npub || null;
-  } catch {
-    return null;
-  }
+  const user = AuthService.getInstance().getCurrentUser();
+  return user?.npub ?? null;
 }
 
 /**
@@ -71,17 +75,13 @@ export async function getListFilePath(filename: string): Promise<string> {
  * Ensure directory exists for file path
  */
 export async function ensureDirectoryExists(filePath: string): Promise<void> {
-  if (!tauriExists || !tauriMkdir) {
-    throw new Error('Tauri fs API not loaded');
-  }
+  requireTauriFs();
 
-  // Extract directory from file path
-  const lastSlash = filePath.lastIndexOf('/');
-  const dirPath = filePath.substring(0, lastSlash);
+  const dirPath = filePath.split('/').slice(0, -1).join('/');
+  const dirExists = await tauriExists!(dirPath);
 
-  const dirExists = await tauriExists(dirPath);
   if (!dirExists) {
-    await tauriMkdir(dirPath, { recursive: true });
+    await tauriMkdir!(dirPath, { recursive: true });
     logger.info('file.ts', `Created directory: ${dirPath}`);
   }
 }
@@ -93,18 +93,15 @@ export async function ensureDirectoryExists(filePath: string): Promise<void> {
 export async function readJsonFile<T>(filename: string, defaultData: T): Promise<T> {
   try {
     const filePath = await getListFilePath(filename);
+    requireTauriFs();
 
-    if (!tauriExists || !tauriReadTextFile) {
-      throw new Error('Tauri fs API not loaded');
-    }
-
-    const fileExists = await tauriExists(filePath);
+    const fileExists = await tauriExists!(filePath);
     if (!fileExists) {
       logger.info('file.ts', `File not found, using defaults: ${filename}`);
       return defaultData;
     }
 
-    const content = await tauriReadTextFile(filePath);
+    const content = await tauriReadTextFile!(filePath);
     const data: T = JSON.parse(content);
 
     logger.info('file.ts', `Read: ${filename}`);
@@ -121,13 +118,10 @@ export async function readJsonFile<T>(filename: string, defaultData: T): Promise
 export async function writeJsonFile<T>(filename: string, data: T): Promise<void> {
   try {
     const filePath = await getListFilePath(filename);
-
-    if (!tauriWriteTextFile) {
-      throw new Error('Tauri fs API not loaded');
-    }
+    requireTauriFs();
 
     await ensureDirectoryExists(filePath);
-    await tauriWriteTextFile(filePath, JSON.stringify(data, null, 2));
+    await tauriWriteTextFile!(filePath, JSON.stringify(data, null, 2));
 
     logger.info('file.ts', `Wrote: ${filename}`);
   } catch (error) {
@@ -142,12 +136,9 @@ export async function writeJsonFile<T>(filename: string, data: T): Promise<void>
 export async function fileExists(filename: string): Promise<boolean> {
   try {
     const filePath = await getListFilePath(filename);
+    requireTauriFs();
 
-    if (!tauriExists) {
-      throw new Error('Tauri fs API not loaded');
-    }
-
-    return await tauriExists(filePath);
+    return await tauriExists!(filePath);
   } catch {
     return false;
   }

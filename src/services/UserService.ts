@@ -8,7 +8,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
 import { SystemLogger } from '../components/system/SystemLogger';
-import { FollowStorageAdapter } from './sync/adapters/FollowStorageAdapter';
+import { FollowStorageAdapter } from '../lists/follows';
 import { AuthService } from './AuthService';
 
 export class UserService {

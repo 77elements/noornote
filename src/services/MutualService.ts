@@ -11,8 +11,7 @@
 
 import { AuthService } from './AuthService';
 import { UserService } from './UserService';
-import { FollowStorageAdapter } from './sync/adapters/FollowStorageAdapter';
-import type { FollowItem } from './orchestration/FollowListOrchestrator';
+import { FollowStorageAdapter, type FollowItem } from '../lists/follows';
 
 export interface MutualStatus {
   pubkey: string;

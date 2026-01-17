@@ -24,11 +24,21 @@ import { NoteService } from '../services/NoteService';
 import { DeletionService } from '../services/DeletionService';
 import { UserProfileService } from '../services/UserProfileService';
 import { Router } from '../services/Router';
-import { GenericFolderService, type Folder, type RootOrderItem } from '../services/GenericFolderService';
 import { ProfileMountsService } from '../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../services/orchestration/ProfileMountsOrchestrator';
-import { ListSyncManager } from '../services/sync/ListSyncManager';
-import { RestoreListsService } from '../services/RestoreListsService';
+import { PerAccountLocalStorage, StorageKeys as PerAccountStorageKeys } from '../services/PerAccountLocalStorage';
+
+// Types for folder management (inlined from GenericFolderService)
+export interface Folder {
+  id: string;
+  name: string;
+}
+
+export interface RootOrderItem<T extends string = string> {
+  type: 'folder' | T;
+  id: string;
+}
+
 import { encodeNevent } from '../services/NostrToolsAdapter';
 import { formatTimestamp } from '../helpers/formatTimestamp';
 import { applyFolderAssignments } from '../helpers/FolderAssignmentHelper';
@@ -130,7 +140,9 @@ export interface BookmarkItem {
 /**
  * Bookmark folder (extends generic Folder)
  */
-export interface BookmarkFolder extends Folder {}
+export interface BookmarkFolder extends Folder {
+  createdAt?: number;
+}
 
 /**
  * Folder assignment record
@@ -210,21 +222,12 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
   const assignments = oldData.folderAssignments || [];
   const rootOrder = oldData.rootOrder || [];
 
-  const sets: BookmarkSet[] = [];
   const rootSet = createEmptySet('');
+  const folderSets = new Map(folders.map(f => [f.id, createEmptySet(f.name)]));
+  const itemMap = new Map(oldData.items.map(item => [item.id, item]));
 
-  const folderSets = new Map<string, BookmarkSet>();
-  for (const folder of folders) {
-    folderSets.set(folder.id, createEmptySet(folder.name));
-  }
-
-  const itemMap = new Map<string, BookmarkItem>();
-  for (const item of oldData.items) {
-    itemMap.set(item.id, item);
-  }
-
-  const rootAssignments: typeof assignments = [];
-  const folderAssignmentsMap = new Map<string, typeof assignments>();
+  const rootAssignments: FolderAssignment[] = [];
+  const folderAssignmentsMap = new Map<string, FolderAssignment[]>();
 
   for (const assignment of assignments) {
     if (assignment.folderId && folderSets.has(assignment.folderId)) {
@@ -243,32 +246,29 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
     }
   }
 
-  const addItemToSet = (set: BookmarkSet, item: BookmarkItem) => {
-    const tag: BookmarkTag = { type: item.type, value: item.value };
-    if (item.description !== undefined) tag.description = item.description;
+  const addItemToSet = (set: BookmarkSet, item: BookmarkItem): void => {
+    const tag: BookmarkTag = {
+      type: item.type,
+      value: item.value,
+      ...(item.description !== undefined && { description: item.description })
+    };
     (item.isPrivate ? set.privateTags : set.publicTags).push(tag);
   };
 
-  rootAssignments.sort((a, b) => a.order - b.order);
-  for (const assignment of rootAssignments) {
-    const item = itemMap.get(assignment.bookmarkId);
-    if (item) addItemToSet(rootSet, item);
-  }
-
-  for (const [folderId, folderAssignments] of folderAssignmentsMap) {
-    const set = folderSets.get(folderId)!;
-    folderAssignments.sort((a, b) => a.order - b.order);
-    for (const assignment of folderAssignments) {
+  const processAssignments = (targetSet: BookmarkSet, assignmentList: FolderAssignment[]): void => {
+    assignmentList.sort((a, b) => a.order - b.order);
+    for (const assignment of assignmentList) {
       const item = itemMap.get(assignment.bookmarkId);
-      if (item) addItemToSet(set, item);
+      if (item) addItemToSet(targetSet, item);
     }
+  };
+
+  processAssignments(rootSet, rootAssignments);
+  for (const [folderId, folderAssignments] of folderAssignmentsMap) {
+    processAssignments(folderSets.get(folderId)!, folderAssignments);
   }
 
-  sets.push(rootSet);
-  for (const set of folderSets.values()) {
-    sets.push(set);
-  }
-
+  // Build setOrder from rootOrder, then add any missing folders
   const setOrder: string[] = [''];
   for (const item of rootOrder) {
     if (item.type === 'folder') {
@@ -276,7 +276,6 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
       if (folder) setOrder.push(folder.name);
     }
   }
-
   for (const folder of folders) {
     if (!setOrder.includes(folder.name)) {
       setOrder.push(folder.name);
@@ -285,7 +284,7 @@ export function migrateFromOldFormat(oldData: OldBookmarkFileData): BookmarkSetD
 
   return {
     version: 2,
-    sets,
+    sets: [rootSet, ...folderSets.values()],
     metadata: { setOrder, lastModified: oldData.lastModified }
   };
 }
@@ -312,15 +311,13 @@ export function isNewFormat(data: unknown): data is BookmarkSetData {
  * Get all bookmark values from set data
  */
 export function getAllBookmarkValues(data: BookmarkSetData): string[] {
-  const values: string[] = [];
+  const values = new Set<string>();
   for (const set of data.sets) {
     for (const tag of [...set.publicTags, ...set.privateTags]) {
-      if (!values.includes(tag.value)) {
-        values.push(tag.value);
-      }
+      values.add(tag.value);
     }
   }
-  return values;
+  return Array.from(values);
 }
 
 /**
@@ -425,27 +422,25 @@ export function deleteSetFromData(data: BookmarkSetData, dTag: string): void {
   updateLastModified(data);
 }
 
+const VALID_TAG_TYPES = new Set(['e', 'a', 't', 'r']);
+
 /**
  * Convert tags to items (for relay fetch)
  */
 function tagsToItems(tags: string[][], timestamp: number): BookmarkItem[] {
   const items: BookmarkItem[] = [];
-
   for (const tag of tags) {
-    const tagType = tag[0] as 'e' | 'a' | 't' | 'r';
-    const tagValue = tag[1];
-    if (tagType && tagValue && ['e', 'a', 't', 'r'].includes(tagType)) {
-      const item: BookmarkItem = {
-        id: tagValue,
-        type: tagType,
-        value: tagValue,
-        addedAt: timestamp
-      };
-      if (tag[2]) item.description = tag[2];
-      items.push(item);
-    }
+    const [tagType, tagValue, description] = tag;
+    if (!tagType || !tagValue || !VALID_TAG_TYPES.has(tagType)) continue;
+    const item: BookmarkItem = {
+      id: tagValue,
+      type: tagType as 'e' | 'a' | 't' | 'r',
+      value: tagValue,
+      addedAt: timestamp
+    };
+    if (description) item.description = description;
+    items.push(item);
   }
-
   return items;
 }
 
@@ -530,33 +525,24 @@ export async function writeBookmarkFile(data: BookmarkSetData): Promise<void> {
  * Convert tag to BookmarkItem
  */
 function tagToItem(tag: BookmarkTag, isPrivate: boolean, category: string): BookmarkItem {
-  const item: BookmarkItem = {
+  return {
     id: tag.value,
     type: tag.type,
     value: tag.value,
     isPrivate,
-    category
+    category,
+    ...(tag.description !== undefined && { description: tag.description })
   };
-  if (tag.description !== undefined) item.description = tag.description;
-  return item;
 }
 
 /**
  * Extract all bookmarks from set data as items
  */
 export function extractItemsFromSetData(data: BookmarkSetData): BookmarkItem[] {
-  const items: BookmarkItem[] = [];
-
-  for (const set of data.sets) {
-    for (const tag of set.publicTags) {
-      items.push(tagToItem(tag, false, set.d));
-    }
-    for (const tag of set.privateTags) {
-      items.push(tagToItem(tag, true, set.d));
-    }
-  }
-
-  return items;
+  return data.sets.flatMap(set => [
+    ...set.publicTags.map(tag => tagToItem(tag, false, set.d)),
+    ...set.privateTags.map(tag => tagToItem(tag, true, set.d))
+  ]);
 }
 
 /**
@@ -571,43 +557,28 @@ export function extractFolderDataFromSetData(data: BookmarkSetData): {
   const folderAssignments: FolderAssignment[] = [];
   const rootOrder: RootOrderItem<'bookmark'>[] = [];
 
-  // Create folders from sets (except root)
+  // Process non-root sets (folders)
   for (const set of data.sets) {
-    if (set.d === '') continue;  // Skip root
+    if (set.d === '') continue;
 
-    const folderId = `folder_${set.d}`;  // Deterministic ID from name
-    folders.push({
-      id: folderId,
-      name: set.d,
-      createdAt: data.metadata.lastModified
-    });
-
-    // Add folder to root order
+    const folderId = `folder_${set.d}`;
+    folders.push({ id: folderId, name: set.d, createdAt: data.metadata.lastModified });
     rootOrder.push({ type: 'folder', id: folderId });
 
-    // Create assignments for items in this folder
-    let order = 0;
-    for (const tag of [...set.publicTags, ...set.privateTags]) {
-      folderAssignments.push({
-        bookmarkId: tag.value,
-        folderId: folderId,
-        order: order++
-      });
-    }
+    const allTags = [...set.publicTags, ...set.privateTags];
+    allTags.forEach((tag, order) => {
+      folderAssignments.push({ bookmarkId: tag.value, folderId, order });
+    });
   }
 
-  // Handle root items
+  // Process root set items
   const rootSet = data.sets.find(s => s.d === '');
   if (rootSet) {
-    let order = 0;
-    for (const tag of [...rootSet.publicTags, ...rootSet.privateTags]) {
-      folderAssignments.push({
-        bookmarkId: tag.value,
-        folderId: '',
-        order: order++
-      });
+    const allTags = [...rootSet.publicTags, ...rootSet.privateTags];
+    allTags.forEach((tag, order) => {
+      folderAssignments.push({ bookmarkId: tag.value, folderId: '', order });
       rootOrder.push({ type: 'bookmark', id: tag.value });
-    }
+    });
   }
 
   return { folders, folderAssignments, rootOrder };
@@ -634,26 +605,28 @@ export async function getAllFolderDataFromFile(): Promise<{
 }
 
 // =============================================================================
-// BOOKMARK FOLDER SERVICE
+// BOOKMARK FOLDER SERVICE (self-contained, no external dependencies)
 // =============================================================================
 
 /**
+ * Assignment record for bookmark-to-folder mapping
+ */
+interface BookmarkAssignment {
+  bookmarkId: string;
+  folderId: string;
+  order: number;
+}
+
+/**
  * Bookmark folder service singleton
- * Wraps GenericFolderService for bookmark-specific operations
+ * Manages folders, assignments, and root ordering using PerAccountLocalStorage
  */
 class BookmarkFolderServiceImpl {
   private static instance: BookmarkFolderServiceImpl;
-  private genericService: GenericFolderService<'bookmarkId', 'bookmark'>;
+  private storage: PerAccountLocalStorage;
 
   private constructor() {
-    this.genericService = new GenericFolderService({
-      folderStorageKey: StorageKeys.BOOKMARK_FOLDERS,
-      assignmentStorageKey: StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS,
-      rootOrderStorageKey: StorageKeys.BOOKMARK_ROOT_ORDER,
-      itemsStorageKey: StorageKeys.BOOKMARKS,
-      itemType: 'bookmark',
-      itemIdField: 'bookmarkId'
-    });
+    this.storage = PerAccountLocalStorage.getInstance();
   }
 
   public static getInstance(): BookmarkFolderServiceImpl {
@@ -663,50 +636,239 @@ class BookmarkFolderServiceImpl {
     return BookmarkFolderServiceImpl.instance;
   }
 
-  // Folder CRUD
-  public getFolders(): BookmarkFolder[] { return this.genericService.getFolders(); }
-  public getFolder(folderId: string): BookmarkFolder | null { return this.genericService.getFolder(folderId); }
-  public createFolder(name: string): BookmarkFolder { return this.genericService.createFolder(name); }
-  public renameFolder(folderId: string, newName: string): void { this.genericService.renameFolder(folderId, newName); }
-  public deleteFolder(folderId: string): string[] { return this.genericService.deleteFolder(folderId); }
+  // ===== Storage Helpers =====
 
-  // Bookmark-to-Folder Assignments
-  public getBookmarkFolder(bookmarkId: string): string { return this.genericService.getItemFolder(bookmarkId); }
-  public getBookmarksInFolder(folderId: string): string[] { return this.genericService.getItemsInFolder(folderId); }
-  public getFolderItemCount(folderId: string): number { return this.genericService.getFolderItemCount(folderId); }
+  private getFoldersFromStorage(): BookmarkFolder[] {
+    return this.storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
+  }
+
+  private saveFoldersToStorage(folders: BookmarkFolder[]): void {
+    this.storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, folders);
+  }
+
+  private getAssignmentsFromStorage(): BookmarkAssignment[] {
+    return this.storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
+  }
+
+  private saveAssignmentsToStorage(assignments: BookmarkAssignment[]): void {
+    this.storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, assignments);
+  }
+
+  private getRootOrderFromStorage(): RootOrderItem<'bookmark'>[] {
+    return this.storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
+  }
+
+  private saveRootOrderToStorage(order: RootOrderItem<'bookmark'>[]): void {
+    this.storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, order);
+  }
+
+  // ===== Folder CRUD =====
+
+  public getFolders(): BookmarkFolder[] {
+    return this.getFoldersFromStorage();
+  }
+
+  public getFolder(folderId: string): BookmarkFolder | null {
+    const folders = this.getFoldersFromStorage();
+    return folders.find(f => f.id === folderId) || null;
+  }
+
+  public createFolder(name: string): BookmarkFolder {
+    const folders = this.getFoldersFromStorage();
+    const newFolder: BookmarkFolder = {
+      id: crypto.randomUUID(),
+      name,
+      createdAt: Date.now()
+    };
+    folders.push(newFolder);
+    this.saveFoldersToStorage(folders);
+    this.addToRootOrder('folder', newFolder.id);
+    return newFolder;
+  }
+
+  public renameFolder(folderId: string, newName: string): void {
+    const folders = this.getFoldersFromStorage();
+    const folder = folders.find(f => f.id === folderId);
+    if (folder) {
+      folder.name = newName;
+      this.saveFoldersToStorage(folders);
+    }
+  }
+
+  public deleteFolder(folderId: string): string[] {
+    // Get items in this folder before deleting
+    const itemsInFolder = this.getBookmarksInFolder(folderId);
+
+    // Remove folder
+    const folders = this.getFoldersFromStorage();
+    const filtered = folders.filter(f => f.id !== folderId);
+    this.saveFoldersToStorage(filtered);
+
+    // Remove all assignments for this folder
+    const assignments = this.getAssignmentsFromStorage();
+    const filteredAssignments = assignments.filter(a => a.folderId !== folderId);
+    this.saveAssignmentsToStorage(filteredAssignments);
+
+    // Remove from root order
+    this.removeFromRootOrder('folder', folderId);
+
+    return itemsInFolder;
+  }
+
+  // ===== Bookmark-to-Folder Assignments =====
+
+  public getBookmarkFolder(bookmarkId: string): string {
+    const assignments = this.getAssignmentsFromStorage();
+    const assignment = assignments.find(a => a.bookmarkId === bookmarkId);
+    return assignment?.folderId || '';
+  }
+
+  public getBookmarksInFolder(folderId: string): string[] {
+    const assignments = this.getAssignmentsFromStorage();
+    return assignments
+      .filter(a => a.folderId === folderId)
+      .sort((a, b) => a.order - b.order)
+      .map(a => a.bookmarkId);
+  }
+
+  public getFolderItemCount(folderId: string): number {
+    const assignments = this.getAssignmentsFromStorage();
+    return assignments.filter(a => a.folderId === folderId).length;
+  }
+
   public moveBookmarkToFolder(bookmarkId: string, targetFolderId: string, explicitOrder?: number): void {
-    this.genericService.moveItemToFolder(bookmarkId, targetFolderId, explicitOrder);
-  }
-  public ensureBookmarkAssignment(bookmarkId: string, explicitOrder?: number): void {
-    this.genericService.ensureItemAssignment(bookmarkId, explicitOrder);
-  }
-  public removeBookmarkAssignment(bookmarkId: string): void { this.genericService.removeItemAssignment(bookmarkId); }
+    const assignments = this.getAssignmentsFromStorage();
 
-  // Ordering
-  public reorderItems(folderId: string): void { this.genericService.reorderItems(folderId); }
+    // Remove existing assignment
+    const filtered = assignments.filter(a => a.bookmarkId !== bookmarkId);
+
+    if (targetFolderId) {
+      // Calculate order
+      const folderItems = filtered.filter(a => a.folderId === targetFolderId);
+      const order = explicitOrder ?? (folderItems.length > 0 ? Math.max(...folderItems.map(a => a.order)) + 1 : 0);
+
+      filtered.push({ bookmarkId, folderId: targetFolderId, order });
+    }
+
+    this.saveAssignmentsToStorage(filtered);
+  }
+
+  public ensureBookmarkAssignment(bookmarkId: string, _explicitOrder?: number): void {
+    const assignments = this.getAssignmentsFromStorage();
+    const existing = assignments.find(a => a.bookmarkId === bookmarkId);
+
+    if (!existing) {
+      // Add to root (no folder)
+      this.addToRootOrder('bookmark', bookmarkId);
+    }
+  }
+
+  public removeBookmarkAssignment(bookmarkId: string): void {
+    const assignments = this.getAssignmentsFromStorage();
+    const filtered = assignments.filter(a => a.bookmarkId !== bookmarkId);
+    this.saveAssignmentsToStorage(filtered);
+    this.removeFromRootOrder('bookmark', bookmarkId);
+  }
+
+  // ===== Ordering =====
+
+  public reorderItems(folderId: string): void {
+    const assignments = this.getAssignmentsFromStorage();
+    const folderItems = assignments.filter(a => a.folderId === folderId).sort((a, b) => a.order - b.order);
+
+    folderItems.forEach((item, index) => {
+      item.order = index;
+    });
+
+    this.saveAssignmentsToStorage(assignments);
+  }
+
   public moveItemToPosition(bookmarkId: string, newOrder: number): void {
-    this.genericService.moveItemToPosition(bookmarkId, newOrder);
+    const assignments = this.getAssignmentsFromStorage();
+    const assignment = assignments.find(a => a.bookmarkId === bookmarkId);
+    if (assignment) {
+      assignment.order = newOrder;
+      this.saveAssignmentsToStorage(assignments);
+    }
   }
 
-  // Root-level ordering
-  public hasRootOrder(): boolean { return this.genericService.hasRootOrder(); }
-  public clearRootOrder(): void { this.genericService.clearRootOrder(); }
-  public clearAssignments(): void { this.genericService.clearAssignments(); }
-  public getRootOrder(): RootOrderItem<'bookmark'>[] { return this.genericService.getRootOrder(); }
-  public saveRootOrder(order: RootOrderItem<'bookmark'>[]): void { this.genericService.saveRootOrder(order); }
-  public addToRootOrder(type: 'folder' | 'bookmark', id: string): void { this.genericService.addToRootOrder(type, id); }
-  public removeFromRootOrder(type: 'folder' | 'bookmark', id: string): void { this.genericService.removeFromRootOrder(type, id); }
+  // ===== Root-level ordering =====
+
+  public hasRootOrder(): boolean {
+    const order = this.getRootOrderFromStorage();
+    return order.length > 0;
+  }
+
+  public clearRootOrder(): void {
+    this.saveRootOrderToStorage([]);
+  }
+
+  public clearAssignments(): void {
+    this.saveAssignmentsToStorage([]);
+  }
+
+  public getRootOrder(): RootOrderItem<'bookmark'>[] {
+    return this.getRootOrderFromStorage();
+  }
+
+  public saveRootOrder(order: RootOrderItem<'bookmark'>[]): void {
+    this.saveRootOrderToStorage(order);
+  }
+
+  public addToRootOrder(type: 'folder' | 'bookmark', id: string): void {
+    const order = this.getRootOrderFromStorage();
+    if (!order.some(item => item.type === type && item.id === id)) {
+      order.push({ type, id });
+      this.saveRootOrderToStorage(order);
+    }
+  }
+
+  public removeFromRootOrder(type: 'folder' | 'bookmark', id: string): void {
+    const order = this.getRootOrderFromStorage();
+    const filtered = order.filter(item => !(item.type === type && item.id === id));
+    this.saveRootOrderToStorage(filtered);
+  }
+
   public moveInRootOrder(type: 'folder' | 'bookmark', id: string, newIndex: number): void {
-    this.genericService.moveInRootOrder(type, id, newIndex);
+    const order = this.getRootOrderFromStorage();
+    const currentIndex = order.findIndex(item => item.type === type && item.id === id);
+
+    if (currentIndex !== -1) {
+      const item = order[currentIndex]!;
+      order.splice(currentIndex, 1);
+      order.splice(newIndex, 0, item);
+      this.saveRootOrderToStorage(order);
+    }
   }
 
-  // Cleanup
-  public cleanupOrphanedAssignments(): number { return this.genericService.cleanupOrphanedAssignments(); }
+  // ===== Cleanup =====
 
-  // Export for NIP-51
+  public cleanupOrphanedAssignments(): number {
+    const assignments = this.getAssignmentsFromStorage();
+    const folders = this.getFoldersFromStorage();
+    const folderIds = new Set(folders.map(f => f.id));
+
+    const validAssignments = assignments.filter(a => a.folderId === '' || folderIds.has(a.folderId));
+    const removedCount = assignments.length - validAssignments.length;
+
+    if (removedCount > 0) {
+      this.saveAssignmentsToStorage(validAssignments);
+    }
+
+    return removedCount;
+  }
+
+  // ===== Export for NIP-51 =====
+
   public exportFolderAsNip51(folderId: string): { dTag: string; titleTag: string; bookmarkIds: string[] } {
-    const result = this.genericService.exportFolderAsNip51(folderId);
-    return { dTag: result.dTag, titleTag: result.titleTag, bookmarkIds: result.itemIds };
+    const folder = this.getFolder(folderId);
+    const bookmarkIds = this.getBookmarksInFolder(folderId);
+
+    return {
+      dTag: folder?.name || folderId,
+      titleTag: folder?.name || 'Unnamed Folder',
+      bookmarkIds
+    };
   }
 }
 
@@ -833,11 +995,11 @@ export async function getAllBookmarkIds(): Promise<string[]> {
  */
 export async function getAllBookmarksWithMetadata(): Promise<BookmarkWithMetadata[]> {
   const items = await ensureBrowserBookmarksLoaded();
-  return items.map(item => ({
-    id: item.id,
-    isPrivate: item.isPrivate || false,
-    ...(item.category !== undefined && { category: item.category })
-  }));
+  return items.map(item => {
+    const meta: BookmarkWithMetadata = { id: item.id, isPrivate: item.isPrivate || false };
+    if (item.category !== undefined) meta.category = item.category;
+    return meta;
+  });
 }
 
 /**
@@ -859,8 +1021,11 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
   const assignedItemIds = new Set<string>();
 
   const addItemToSet = (set: BookmarkSet, item: BookmarkItem): void => {
-    const tag: BookmarkTag = { type: item.type, value: item.value };
-    if (item.description) tag.description = item.description;
+    const tag: BookmarkTag = {
+      type: item.type,
+      value: item.value,
+      ...(item.description && { description: item.description })
+    };
     (item.isPrivate ? set.privateTags : set.publicTags).push(tag);
   };
 
@@ -912,11 +1077,10 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
  */
 async function encryptPrivateItems(items: BookmarkItem[], pubkey: string): Promise<string> {
   if (items.length === 0) return '';
-  const tags = items.map(item => item.description
-    ? [item.type, item.value, item.description]
-    : [item.type, item.value]
+  const tags = items.map(item =>
+    item.description ? [item.type, item.value, item.description] : [item.type, item.value]
   );
-  return await encryptContent(JSON.stringify(tags), pubkey);
+  return encryptContent(JSON.stringify(tags), pubkey);
 }
 
 /**
@@ -1391,11 +1555,8 @@ export class BookmarkCard {
       .replace(/^>.*$/gm, '')
       .replace(/https?:\/\/[^\s]+/g, '')
       .trim();
-
-    if (text.length > maxLength) {
-      return text.substring(0, maxLength) + '...';
-    }
-    return text || '(No text content)';
+    if (!text) return '(No text content)';
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
   }
 
   public getElement(): HTMLElement | null {
@@ -1711,6 +1872,36 @@ interface BookmarkWithEvent extends BookmarkItem {
 }
 
 /**
+ * Sync diff for bookmarks
+ */
+interface BookmarkSyncDiff {
+  added: BookmarkItem[];
+  removed: BookmarkItem[];
+  unchanged: BookmarkItem[];
+}
+
+/**
+ * Result from sync from relays
+ */
+interface BookmarkSyncFromRelaysResult {
+  requiresConfirmation: boolean;
+  diff: BookmarkSyncDiff;
+  relayItems: BookmarkItem[];
+  relayContentWasEmpty: boolean;
+  categoryAssignments?: Map<string, string>;
+  categories?: string[];
+}
+
+/**
+ * Result from sync from file
+ */
+interface BookmarkSyncFromFileResult {
+  requiresConfirmation: boolean;
+  diff: BookmarkSyncDiff;
+  fileItems: BookmarkItem[];
+}
+
+/**
  * BookmarkManager - Main UI component for bookmark grid view
  */
 export class BookmarkManager {
@@ -1719,7 +1910,6 @@ export class BookmarkManager {
   private authService: AuthService;
   private folderService: BookmarkFolderServiceImpl;
   private noteService: NoteService;
-  private listSyncManager: ListSyncManager<BookmarkItem>;
   private adapter: BookmarkStorageAdapter;
   private profileMountsService: ProfileMountsService;
   private profileMountsOrch: ProfileMountsOrchestrator;
@@ -1738,13 +1928,73 @@ export class BookmarkManager {
     this.authService = AuthService.getInstance();
     this.folderService = getBookmarkFolderService();
     this.noteService = NoteService.getInstance();
-
     this.adapter = new BookmarkStorageAdapter();
-    this.listSyncManager = new ListSyncManager(this.adapter);
     this.profileMountsService = ProfileMountsService.getInstance();
     this.profileMountsOrch = ProfileMountsOrchestrator.getInstance();
 
     this.setupEventListeners();
+  }
+
+  // ===== Sync Helper Methods (inlined) =====
+
+  private calculateDiff(browserItems: BookmarkItem[], relayItems: BookmarkItem[]): BookmarkSyncDiff {
+    const browserIds = new Set(browserItems.map(item => item.id));
+    const relayIds = new Set(relayItems.map(item => item.id));
+
+    const added = relayItems.filter(item => !browserIds.has(item.id));
+    const removed = browserItems.filter(item => !relayIds.has(item.id));
+    const unchanged = browserItems.filter(item => relayIds.has(item.id));
+
+    return { added, removed, unchanged };
+  }
+
+  private mergeItems(browserItems: BookmarkItem[], newItems: BookmarkItem[]): BookmarkItem[] {
+    const map = new Map<string, BookmarkItem>();
+    browserItems.forEach(item => map.set(item.id, item));
+    newItems.forEach(item => {
+      if (!map.has(item.id)) {
+        map.set(item.id, item);
+      }
+    });
+    return Array.from(map.values());
+  }
+
+  private async syncFromRelays(): Promise<BookmarkSyncFromRelaysResult> {
+    const fetchResult = await this.adapter.fetchFromRelays() as FetchFromRelaysResult;
+    const browserItems = this.adapter.getBrowserItems();
+    const diff = this.calculateDiff(browserItems, fetchResult.items);
+
+    const result: BookmarkSyncFromRelaysResult = {
+      requiresConfirmation: diff.removed.length > 0,
+      diff,
+      relayItems: fetchResult.items,
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty
+    };
+    if (fetchResult.categoryAssignments) result.categoryAssignments = fetchResult.categoryAssignments;
+    if (fetchResult.categories) result.categories = fetchResult.categories;
+    return result;
+  }
+
+  private applySync(strategy: 'merge' | 'overwrite', items: BookmarkItem[]): void {
+    const finalItems = strategy === 'overwrite'
+      ? items
+      : this.mergeItems(this.adapter.getBrowserItems(), items);
+    this.adapter.setBrowserItems(finalItems);
+  }
+
+  private async syncFromFile(): Promise<BookmarkSyncFromFileResult> {
+    const fileItems = await this.adapter.getFileItems();
+    const browserItems = this.adapter.getBrowserItems();
+    const diff = this.calculateDiff(browserItems, fileItems);
+    return { requiresConfirmation: diff.removed.length > 0, diff, fileItems };
+  }
+
+  private async syncToRelays(): Promise<void> {
+    await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+  }
+
+  private async saveToFile(): Promise<void> {
+    await this.adapter.setFileItems(this.adapter.getBrowserItems());
   }
 
   private setupEventListeners(): void {
@@ -1883,34 +2133,53 @@ export class BookmarkManager {
     this.isLoading = true;
 
     try {
-      const restoreService = RestoreListsService.getInstance();
-      const result = await restoreService.restoreIfEmpty(
-        this.listSyncManager,
-        () => this.adapter.getBrowserItems(),
-        (items) => this.adapter.setBrowserItems(items),
-        'Bookmarks',
-        async (syncResult) => {
-          await applyFolderAssignments(
-            syncResult.categoryAssignments!,
-            this.folderService,
-            (bookmarkId, folderId) => this.folderService.moveBookmarkToFolder(bookmarkId, folderId),
-            'BookmarkManager'
-          );
+      // Cascade restore: browser → file → relays
+      let bookmarks = this.adapter.getBrowserItems();
+
+      if (bookmarks.length === 0) {
+        // Try file first
+        try {
+          const fileItems = await this.adapter.getFileItems();
+          if (fileItems.length > 0) {
+            this.adapter.setBrowserItems(fileItems);
+            bookmarks = fileItems;
+            logger.info('BookmarkManager', `Restored ${fileItems.length} bookmarks from file`);
+          }
+        } catch {
+          // File read failed, continue to try relays
         }
-      );
 
-      if (result.source === 'empty') {
+        // If still empty, try relays
+        if (bookmarks.length === 0) {
+          try {
+            const relayResult = await this.adapter.fetchFromRelays() as FetchFromRelaysResult;
+            if (relayResult.items.length > 0) {
+              this.adapter.setBrowserItems(relayResult.items);
+              bookmarks = relayResult.items;
+              logger.info('BookmarkManager', `Restored ${relayResult.items.length} bookmarks from relays`);
+
+              // Apply folder assignments from relay categories
+              if (relayResult.categoryAssignments) {
+                await applyFolderAssignments(
+                  relayResult.categoryAssignments,
+                  this.folderService,
+                  (bookmarkId, folderId) => this.folderService.moveBookmarkToFolder(bookmarkId, folderId),
+                  'BookmarkManager'
+                );
+              }
+            }
+          } catch {
+            // Relay fetch failed, continue with empty
+          }
+        }
+      }
+
+      if (bookmarks.length === 0) {
         this.bookmarksCache.clear();
         return;
       }
 
-      const bookmarksFromBrowser = this.adapter.getBrowserItems();
-      if (bookmarksFromBrowser.length === 0) {
-        this.bookmarksCache.clear();
-        return;
-      }
-
-      const sortedBookmarks = [...bookmarksFromBrowser].sort((a, b) => {
+      const sortedBookmarks = [...bookmarks].sort((a, b) => {
         const timeA = a.addedAt || 0;
         const timeB = b.addedAt || 0;
         return timeB - timeA;
@@ -2706,7 +2975,7 @@ export class BookmarkManager {
     try {
       ToastService.show('Fetching from relays...', 'info');
 
-      const result = await this.listSyncManager.syncFromRelays();
+      const result = await this.syncFromRelays();
 
       const applyAssignments = () => {
         if (result.categoryAssignments) {
@@ -2725,14 +2994,14 @@ export class BookmarkManager {
           removed: result.diff.removed,
           getDisplayName: (item) => this.getDisplayNameForSync(item),
           onKeep: async () => {
-            await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+            await this.applySync('merge', result.relayItems);
             applyAssignments();
             ToastService.show('Merged bookmarks from relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
           onDelete: async () => {
-            await this.listSyncManager.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
+            await this.applySync('overwrite', result.relayItems);
             applyAssignments();
             ToastService.show('Synced from relays', 'success');
             await this.loadBookmarks();
@@ -2742,7 +3011,7 @@ export class BookmarkManager {
 
         await modal.show();
       } else {
-        await this.listSyncManager.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+        await this.applySync('merge', result.relayItems);
         applyAssignments();
         ToastService.show('Synced from relays', 'success');
         await this.loadBookmarks();
@@ -2757,7 +3026,7 @@ export class BookmarkManager {
   private async handleSyncToRelays(): Promise<void> {
     try {
       ToastService.show('Publishing to relays...', 'info');
-      await this.listSyncManager.syncToRelays();
+      await this.syncToRelays();
       ToastService.show('Bookmarks published successfully', 'success');
     } catch (error) {
       console.error('Failed to publish to relays:', error);
@@ -2768,7 +3037,7 @@ export class BookmarkManager {
   private async handleSaveToFile(): Promise<void> {
     try {
       ToastService.show('Saving to file...', 'info');
-      await this.listSyncManager.saveToFile();
+      await this.saveToFile();
       ToastService.show('Saved to local file', 'success');
     } catch (error) {
       console.error('Failed to save to file:', error);
@@ -2779,7 +3048,7 @@ export class BookmarkManager {
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
       ToastService.show('Reading from file...', 'info');
-      const result = await this.listSyncManager.syncFromFile();
+      const result = await this.syncFromFile();
 
       const applyFolderAssignments = (items: BookmarkItem[]) => {
         const existingFolders = this.folderService.getFolders();
@@ -2819,14 +3088,14 @@ export class BookmarkManager {
           removed: result.diff.removed,
           getDisplayName: (item: BookmarkItem) => this.getDisplayNameForSync(item),
           onKeep: async () => {
-            await this.listSyncManager.applySyncFromFile('merge', result.fileItems);
+            await this.applySync('merge', result.fileItems);
             applyFolderAssignments(this.adapter.getBrowserItems());
             ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
           onDelete: async () => {
-            await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+            await this.applySync('overwrite', result.fileItems);
             applyFolderAssignments(result.fileItems);
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
             await this.loadBookmarks();
@@ -2835,7 +3104,7 @@ export class BookmarkManager {
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
-        await this.listSyncManager.applySyncFromFile('overwrite', result.fileItems);
+        await this.applySync('overwrite', result.fileItems);
         applyFolderAssignments(result.fileItems);
         ToastService.show(`Restored ${result.diff.added.length} bookmark${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
         await this.loadBookmarks();
@@ -2850,25 +3119,23 @@ export class BookmarkManager {
   }
 
   private async getDisplayNameForSync(item: BookmarkItem): Promise<string> {
+    const fallback = item.id.slice(0, 12) + '...';
+    const formatContent = (content?: string): string | null =>
+      content ? (content.slice(0, 60) || fallback) : null;
+
     try {
       const cached = this.bookmarksCache.get(item.id);
-      if (cached?.event?.content) {
-        return cached.event.content.slice(0, 60) || item.id.slice(0, 12) + '...';
-      }
+      const cachedResult = formatContent(cached?.event?.content);
+      if (cachedResult) return cachedResult;
 
       const cachedNote = this.noteService.getCachedNote(item.id);
-      if (cachedNote?.content) {
-        return cachedNote.content.slice(0, 60) || item.id.slice(0, 12) + '...';
-      }
+      const cachedNoteResult = formatContent(cachedNote?.content);
+      if (cachedNoteResult) return cachedNoteResult;
 
       const event = await this.noteService.getNote(item.id);
-      if (event?.content) {
-        return event.content.slice(0, 60) || item.id.slice(0, 12) + '...';
-      }
-
-      return item.id.slice(0, 12) + '...';
+      return formatContent(event?.content) || fallback;
     } catch {
-      return item.id.slice(0, 12) + '...';
+      return fallback;
     }
   }
 

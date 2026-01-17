@@ -12,6 +12,7 @@ import { AuthService } from '../services/AuthService';
 import { SystemLogger } from '../components/system/SystemLogger';
 
 const logger = SystemLogger.getInstance();
+const NIP46_TIMEOUT_MS = 15000;
 
 /**
  * Get transport instance
@@ -90,86 +91,142 @@ export async function signEvent(event: {
 
 // ===== Encryption =====
 
+type EncryptFn = (plaintext: string, pubkey: string) => Promise<string>;
+type DecryptFn = (ciphertext: string, pubkey: string) => Promise<string>;
+
+/**
+ * Try NIP-44 encryption first, fall back to NIP-04
+ */
+async function tryEncryptWithFallback(
+  nip44Fn: EncryptFn,
+  nip04Fn: EncryptFn,
+  plaintext: string,
+  pubkey: string
+): Promise<string> {
+  try {
+    return await nip44Fn(plaintext, pubkey);
+  } catch {
+    return await nip04Fn(plaintext, pubkey);
+  }
+}
+
+/**
+ * Try NIP-44 decryption first, fall back to NIP-04
+ */
+async function tryDecryptWithFallback(
+  nip44Fn: DecryptFn | undefined,
+  nip04Fn: DecryptFn | undefined,
+  ciphertext: string,
+  pubkey: string
+): Promise<string | null> {
+  if (nip44Fn) {
+    try {
+      return await nip44Fn(ciphertext, pubkey);
+    } catch {
+      // Fall through to NIP-04
+    }
+  }
+  if (nip04Fn) {
+    return await nip04Fn(ciphertext, pubkey);
+  }
+  return null;
+}
+
+/**
+ * Get NIP-46 manager from AuthService
+ */
+function getNip46Manager(): any {
+  const authService = AuthService.getInstance();
+  const nip46Manager = (authService as any).nip46Manager;
+  if (!nip46Manager?.isAvailable()) {
+    throw new Error('NIP-46 remote signer not available');
+  }
+  return nip46Manager;
+}
+
 /**
  * Encrypt content for private items (NIP-44 with NIP-04 fallback)
  */
 export async function encryptContent(plaintext: string, pubkey: string): Promise<string> {
-  const authService = AuthService.getInstance();
-  const authMethod = authService.getAuthMethod();
+  const authMethod = AuthService.getInstance().getAuthMethod();
 
   if (authMethod === 'key-signer') {
     const { KeySignerClient } = await import('../services/KeySignerClient');
-    const keySignerClient = KeySignerClient.getInstance();
-    try {
-      return await keySignerClient.nip44Encrypt(plaintext, pubkey);
-    } catch {
-      return await keySignerClient.nip04Encrypt(plaintext, pubkey);
-    }
-  } else if (authMethod === 'nip46') {
-    const nip46Manager = (authService as any).nip46Manager;
-    if (!nip46Manager?.isAvailable()) {
-      throw new Error('NIP-46 remote signer not available');
-    }
-    try {
-      return await withTimeout(() => nip46Manager.nip44Encrypt(plaintext, pubkey), 15000);
-    } catch {
-      return await withTimeout(() => nip46Manager.nip04Encrypt(plaintext, pubkey), 15000);
-    }
-  } else if (authMethod === 'extension') {
-    try {
-      if (window.nostr?.nip44?.encrypt) {
-        return await window.nostr.nip44.encrypt(pubkey, plaintext);
-      } else {
-        throw new Error('NIP-44 not available');
-      }
-    } catch {
-      if (window.nostr?.nip04?.encrypt) {
-        return await window.nostr.nip04.encrypt(pubkey, plaintext);
-      } else {
-        throw new Error('No encryption support available in browser extension');
-      }
-    }
-  } else {
-    throw new Error(`Auth method not supported for encryption: ${authMethod}`);
+    const client = KeySignerClient.getInstance();
+    return tryEncryptWithFallback(
+      (p, k) => client.nip44Encrypt(p, k),
+      (p, k) => client.nip04Encrypt(p, k),
+      plaintext,
+      pubkey
+    );
   }
+
+  if (authMethod === 'nip46') {
+    const manager = getNip46Manager();
+    return tryEncryptWithFallback(
+      (p, k) => withTimeout(() => manager.nip44Encrypt(p, k), NIP46_TIMEOUT_MS),
+      (p, k) => withTimeout(() => manager.nip04Encrypt(p, k), NIP46_TIMEOUT_MS),
+      plaintext,
+      pubkey
+    );
+  }
+
+  if (authMethod === 'extension') {
+    if (window.nostr?.nip44?.encrypt) {
+      try {
+        return await window.nostr.nip44.encrypt(pubkey, plaintext);
+      } catch {
+        // Fall through to NIP-04
+      }
+    }
+    if (window.nostr?.nip04?.encrypt) {
+      return await window.nostr.nip04.encrypt(pubkey, plaintext);
+    }
+    throw new Error('No encryption support available in browser extension');
+  }
+
+  throw new Error(`Auth method not supported for encryption: ${authMethod}`);
 }
 
 /**
  * Decrypt content from private items (NIP-44 with NIP-04 fallback)
  */
 export async function decryptContent(ciphertext: string, senderPubkey: string): Promise<string | null> {
-  const authService = AuthService.getInstance();
-  const authMethod = authService.getAuthMethod();
+  const authMethod = AuthService.getInstance().getAuthMethod();
 
   try {
     if (authMethod === 'key-signer') {
       const { KeySignerClient } = await import('../services/KeySignerClient');
-      const keySignerClient = KeySignerClient.getInstance();
-      try {
-        return await keySignerClient.nip44Decrypt(ciphertext, senderPubkey);
-      } catch {
-        return await keySignerClient.nip04Decrypt(ciphertext, senderPubkey);
-      }
-    } else if (authMethod === 'nip46') {
-      const nip46Manager = (authService as any).nip46Manager;
-      if (!nip46Manager?.isAvailable()) {
-        throw new Error('NIP-46 remote signer not available');
-      }
-      try {
-        return await withTimeout(() => nip46Manager.nip44Decrypt(ciphertext, senderPubkey), 10000);
-      } catch {
-        return await withTimeout(() => nip46Manager.nip04Decrypt(ciphertext, senderPubkey), 10000);
-      }
-    } else if (authMethod === 'extension') {
-      if (window.nostr?.nip44?.decrypt) {
-        try {
-          return await window.nostr.nip44.decrypt(senderPubkey, ciphertext);
-        } catch { /* fall through to NIP-04 */ }
-      }
-      if (window.nostr?.nip04?.decrypt) {
-        return await window.nostr.nip04.decrypt(senderPubkey, ciphertext);
-      }
-      return null;
+      const client = KeySignerClient.getInstance();
+      return await tryDecryptWithFallback(
+        (c, k) => client.nip44Decrypt(c, k),
+        (c, k) => client.nip04Decrypt(c, k),
+        ciphertext,
+        senderPubkey
+      );
+    }
+
+    if (authMethod === 'nip46') {
+      const manager = getNip46Manager();
+      return await tryDecryptWithFallback(
+        (c, k) => withTimeout(() => manager.nip44Decrypt(c, k), NIP46_TIMEOUT_MS),
+        (c, k) => withTimeout(() => manager.nip04Decrypt(c, k), NIP46_TIMEOUT_MS),
+        ciphertext,
+        senderPubkey
+      );
+    }
+
+    if (authMethod === 'extension') {
+      return await tryDecryptWithFallback(
+        window.nostr?.nip44?.decrypt
+          ? (c, k) => window.nostr!.nip44!.decrypt(k, c)
+          : undefined,
+        window.nostr?.nip04?.decrypt
+          ? (c, k) => window.nostr!.nip04!.decrypt(k, c)
+          : undefined,
+        ciphertext,
+        senderPubkey
+      );
     }
   } catch (error) {
     logger.error('relays.ts', `Decryption failed: ${error}`);
@@ -179,7 +236,7 @@ export async function decryptContent(ciphertext: string, senderPubkey: string): 
 }
 
 /**
- * Helper: wrap promise with timeout
+ * Wrap promise with timeout
  */
 function withTimeout<T>(fn: () => Promise<T>, timeoutMs: number): Promise<T> {
   return Promise.race([

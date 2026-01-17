@@ -19,7 +19,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { MuteOrchestrator } from '../../lists/mutes';
-import { MutualChangeStorage } from '../storage/MutualChangeStorage';
+import { MutualChangeStorage } from '../../lists/MutualChangeStorage';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { AuthService } from '../AuthService';
 import { EventBus } from '../EventBus';

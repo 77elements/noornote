@@ -11,7 +11,7 @@ import { AuthService } from '../../services/AuthService';
 import { UserService } from '../../services/UserService';
 import { Timeline } from '../timeline/Timeline';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
-import { ProfileFollowManager } from '../profile/ProfileFollowManager';
+import { ProfileFollowManager } from '../../lists/follows';
 import { ProfileMuteManager } from '../../lists/mutes';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
 import { AppState } from '../../services/AppState';
@@ -67,6 +67,7 @@ export class ProfileView extends View {
   private followsYou: boolean = false;
   private isInitialRender: boolean = true; // Track if this is first render
   private lastKnownMuteStatus: boolean = false; // Track mute status for change detection
+  private lastKnownFollowStatus: boolean = false; // Track follow status for change detection
 
   // Managers
   private followManager: ProfileFollowManager;
@@ -137,6 +138,9 @@ export class ProfileView extends View {
     // Listen for mute changes (from MuteList or other sources)
     this.setupMuteChangeListener();
 
+    // Listen for follow changes (from FollowList or other sources)
+    this.setupFollowChangeListener();
+
     this.render();
   }
 
@@ -188,6 +192,23 @@ export class ProfileView extends View {
 
       if (wasMuted !== isMuted) {
         this.lastKnownMuteStatus = isMuted;
+        this.isInitialRender = true;
+        this.render();
+      }
+    });
+  }
+
+  /**
+   * Setup listener for follow changes (re-render if this profile's follow status changed)
+   */
+  private setupFollowChangeListener(): void {
+    this.eventBus.on('follow:updated', async () => {
+      // Only re-render if this profile's follow status actually changed
+      const wasFollowing = this.lastKnownFollowStatus;
+      const isFollowing = await this.followManager.checkFollowStatus();
+
+      if (wasFollowing !== isFollowing) {
+        this.lastKnownFollowStatus = isFollowing;
         this.isInitialRender = true;
         this.render();
       }
@@ -248,7 +269,8 @@ export class ProfileView extends View {
       // Check follow relationships (only for other profiles when logged in)
       if (currentUser && this.pubkey !== currentUser.pubkey) {
         this.followsYou = following.includes(currentUser.pubkey);
-        await this.followManager.checkFollowStatus();
+        const isFollowing = await this.followManager.checkFollowStatus();
+        this.lastKnownFollowStatus = isFollowing;
       }
 
       // Render profile header

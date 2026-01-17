@@ -21,7 +21,6 @@ import { ModalService } from './services/ModalService';
 import { PlatformService } from './services/PlatformService';
 import { ConnectivityService } from './services/ConnectivityService';
 import { OfflineOverlay } from './components/system/OfflineOverlay';
-import { AutoSyncService } from './services/sync/AutoSyncService';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
@@ -66,9 +65,6 @@ export class App {
 
     // Initialize OfflineOverlay early so it can listen for runtime offline events
     OfflineOverlay.getInstance();
-
-    // Initialize AutoSyncService to listen for list update events
-    AutoSyncService.getInstance();
 
     // Initialize CollapsibleManager to listen for post truncation setting changes
     CollapsibleManager.init();

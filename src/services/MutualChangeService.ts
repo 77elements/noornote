@@ -13,7 +13,7 @@
  */
 
 import { EventBus } from './EventBus';
-import { MutualChangeStorage } from './storage/MutualChangeStorage';
+import { MutualChangeStorage } from '../lists/MutualChangeStorage';
 import { MutualChangeScheduler } from './MutualChangeScheduler';
 import { MutualChangeDetector } from './MutualChangeDetector';
 import { SystemLogger } from '../components/system/SystemLogger';
