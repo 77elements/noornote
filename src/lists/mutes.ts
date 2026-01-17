@@ -904,7 +904,7 @@ export class MuteListView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'mute-list-view';
+    this.container.className = 'view-content view-content--mute-list';
     this.muteOrch = MuteOrchestrator.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();

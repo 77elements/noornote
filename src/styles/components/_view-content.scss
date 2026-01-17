@@ -17,3 +17,10 @@
     padding: 0 $gap;
   }
 }
+
+// Timeline view needs flex layout for scrollable timeline area
+.view-content--timeline {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; // Prevent primary-content from scrolling, let child scroll
+}

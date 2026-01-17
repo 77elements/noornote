@@ -91,7 +91,7 @@ export class AuthComponent {
     const pageTitle = isAddingAccount ? 'Add Account' : 'Welcome to NoorNote';
 
     primaryContent.innerHTML = `
-      <div class="auth-login-card">
+      <div class="view-content view-content--login">
         <h1>${pageTitle}</h1>
 
         <section class="auth-section auth-section--primary">

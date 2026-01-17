@@ -345,9 +345,19 @@ export class App {
     });
 
     this.eventBus.on('user:logout', () => {
+      // Destroy cached views
       if (this.timelineUI) {
         this.timelineUI.destroy();
         this.timelineUI = null;
+      }
+      if (this.profileView) {
+        this.profileView.destroy();
+        this.profileView = null;
+      }
+      // Clear primary content immediately before navigation
+      const primaryContent = document.querySelector('.primary-content');
+      if (primaryContent) {
+        primaryContent.innerHTML = '';
       }
       this.router.navigate('/login');
     });
