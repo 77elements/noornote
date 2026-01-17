@@ -1311,6 +1311,34 @@ export class TribeManager {
     }
   }
 
+  /**
+   * Merge new members from file: adds members AND their folder assignments
+   */
+  private async mergeFromFile(newMembers: TribeMember[]): Promise<void> {
+    if (newMembers.length === 0) return;
+
+    // Add members to browser storage
+    const currentMembers = this.adapter.getBrowserItems();
+    const existingPubkeys = new Set(currentMembers.map(m => m.pubkey));
+    const membersToAdd = newMembers.filter(m => !existingPubkeys.has(m.pubkey));
+
+    if (membersToAdd.length === 0) return;
+
+    this.adapter.setBrowserItems([...currentMembers, ...membersToAdd]);
+
+    // Add folder assignments for new members
+    for (const member of membersToAdd) {
+      const folderId = member.category ? `folder_${member.category}` : '';
+      if (folderId) {
+        // Ensure folder exists, then assign member to it
+        const folder = getFolder(folderId);
+        if (folder) {
+          moveMemberToFolder(member.id, folderId);
+        }
+      }
+    }
+  }
+
   private async syncFromFile(): Promise<SyncFromFileResult> {
     const fileItems = await this.adapter.getFileItems();
     const browserItems = this.adapter.getBrowserItems();
@@ -2377,14 +2405,16 @@ export class TribeManager {
             return member.pubkey.slice(0, 8) + '...';
           },
           onKeep: async () => {
-            this.applySync('merge', result.fileItems);
+            // Merge: add new members from file with their folder assignments
+            await this.mergeFromFile(result.diff.added);
             ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
           },
           onDelete: async () => {
-            this.applySync('overwrite', result.fileItems);
+            // Full restore: replace everything with file data
+            await restoreFromFile();
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
             this.membersCache.clear();
             await this.loadMembers();
@@ -2393,7 +2423,8 @@ export class TribeManager {
         });
         modal.show();
       } else if (result.diff.added.length > 0) {
-        this.applySync('overwrite', result.fileItems);
+        // No confirmation needed, but file has new items - do full restore
+        await restoreFromFile();
         ToastService.show(`Restored ${result.diff.added.length} member${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
         this.membersCache.clear();
         await this.loadMembers();

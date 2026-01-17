@@ -168,26 +168,6 @@ export class SyncConfirmationModal<T> {
       questionText = `What should happen with the ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders?`;
     }
 
-    // Build button hints
-    const keepHintParts: string[] = [];
-    const deleteHintParts: string[] = [];
-
-    if (hasRemoved) {
-      keepHintParts.push(`Keep ${removed.length}`);
-      deleteHintParts.push(`Delete ${removed.length}`);
-    }
-    if (hasMoved) {
-      keepHintParts.push(`Keep folder assignments`);
-      deleteHintParts.push(`Use ${sourceLabel} folders`);
-    }
-    if (added.length > 0) {
-      keepHintParts.push(`Add ${added.length}`);
-      deleteHintParts.push(`Add ${added.length}`);
-    }
-
-    const keepHint = keepHintParts.join(' + ');
-    const deleteHint = deleteHintParts.join(' + ');
-
     container.innerHTML = `
       <div class="sync-confirmation-modal__content">
         <div class="sync-confirmation-modal__warning">
@@ -235,12 +215,10 @@ export class SyncConfirmationModal<T> {
 
         <div class="sync-confirmation-modal__actions">
           <button type="button" class="btn btn--passive" id="sync-keep-btn">
-            Keep local
-            <span class="btn__hint">(${keepHint})</span>
+            Keep actual state
           </button>
           <button type="button" class="btn btn--danger" id="sync-delete-btn">
-            Use ${sourceLabel}
-            <span class="btn__hint">(${deleteHint})</span>
+            Overwrite with ${sourceLabel} backup
           </button>
         </div>
       </div>
