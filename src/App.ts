@@ -483,7 +483,7 @@ export class App {
       if (!anchor) return;
 
       const href = anchor.getAttribute('href');
-      if (!href || (!href.startsWith('http://') && !href.startsWith('https://'))) return;
+      if (!href || (!href.startsWith('http://') && !href.startsWith('https://') && !href.startsWith('mailto:'))) return;
 
       event.preventDefault();
 

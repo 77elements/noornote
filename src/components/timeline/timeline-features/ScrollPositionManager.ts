@@ -16,11 +16,24 @@ export class ScrollPositionManager {
   }
 
   /**
+   * Get the actual scrollable container
+   * TimelineView uses .timeline-view__timeline as scroll container
+   */
+  private getScrollContainer(): Element | null {
+    // TimelineView wraps Timeline in .timeline-view__timeline (the scrollable element)
+    const timelineViewContainer = this.container.closest('.timeline-view__timeline');
+    if (timelineViewContainer) {
+      return timelineViewContainer;
+    }
+    // Fallback to .primary-content for other cases
+    return this.container.closest('.primary-content');
+  }
+
+  /**
    * Save current scroll position to CSM
    */
   save(): void {
-    // Scroll is on .primary-content (not direct parent)
-    const scrollContainer = this.container.closest('.primary-content');
+    const scrollContainer = this.getScrollContainer();
     if (scrollContainer) {
       this.appState.setState('timeline', { scrollPosition: scrollContainer.scrollTop });
     }
@@ -30,8 +43,7 @@ export class ScrollPositionManager {
    * Restore saved scroll position from CSM
    */
   restore(): void {
-    // Scroll is on .primary-content (not direct parent)
-    const scrollContainer = this.container.closest('.primary-content');
+    const scrollContainer = this.getScrollContainer();
     const savedPosition = this.appState.getState('timeline').scrollPosition;
 
     if (scrollContainer && savedPosition > 0) {
