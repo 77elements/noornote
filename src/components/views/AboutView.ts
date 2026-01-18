@@ -28,11 +28,15 @@ export class AboutView extends View {
           <p>Am Engeldorfer Berg 11<br>50997 Cologne<br>Germany</p>
           <p>
             Email: <a href="mailto:contact@mslmdvlpmnt.com">contact@mslmdvlpmnt.com</a><br>
-            Phone: +49 157 72456227
+            Phone: +49 1577 2456227
           </p>
+        </section>
+
+        <section class="about-section">
+          <h2>Hire Me</h2>
           <p>
-            VAT ID: DE358875454<br>
-            Tax ID: 219/5337/3919
+            Need help with your web project? I'm available for hire — design, UX, and development. Sats accepted.<br>
+            <a href="https://mslmdvlpmnt.com/" rel="noopener noreferrer">mslmdvlpmnt.com</a> · <a href="/profile/npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0">DM me on Nostr</a>
           </p>
         </section>
 

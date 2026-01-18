@@ -90,12 +90,12 @@
 
 .primary-nav__link--about {
   font-size: 12px !important;
-  color: rgba($color-5, 0.4) !important;
+  color: $color-4 !important;
   text-decoration: none;
   padding: calc($gap / 4) 0 !important;
 
   &:hover {
-    color: rgba($color-5, 0.6) !important;
+    color: $color-5 !important;
   }
 }
 
