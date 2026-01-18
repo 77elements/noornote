@@ -132,12 +132,16 @@
     grid-gap: calc($gap / 2);
     align-items: center;
     padding: calc($gap / 2);
-    color: $color-5;
     text-decoration: none;
     transition: $transition-colors;
     border-radius: $radius-sm;
     font-weight: 500;
     position: relative;
+
+    &:link,
+    &:visited {
+      color: $color-5;
+    }
 
     &:hover,
     &:active,

@@ -1033,11 +1033,11 @@ export class MainLayout {
                 <span class="primary-nav__item-desc">Cache <span class="cache-size-display">--</span></span>
               </a>
             </li>
-            <li class="primary-nav__item--about">
-              <span class="current-datetime-display">--</span>
-              <a href="/about" class="primary-nav__link--about">About</a>
-            </li>
           </ul>
+          <div class="about">
+            <span class="current-datetime-display">--</span>
+            <a href="/about" class="primary-nav__link--about">About</a>
+          </div>
           <div class="new-post-dropup">
             <button class="btn btn--new-post">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
