@@ -3,6 +3,7 @@
  * Navigation and user info
  */
 
+@use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
@@ -33,7 +34,7 @@
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: calc(1.5 * $gap);
-  background: linear-gradient(135deg, $color-3, $color-6);
+  background: linear-gradient(135deg, color.adjust($color-3, $saturation: 40%), color.adjust($color-6, $saturation: 40%));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
