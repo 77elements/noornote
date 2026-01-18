@@ -27,7 +27,6 @@
 - **Thread mention alerts** - Get notified when someone replies to a note you were mentioned in
 - **Local list backups** - Manual NIP-51 list management, never lose your follows, bookmarks, or mutes again
 - **Multiple NIP-05 support** - Add multiple verified addresses to your profile
-- **Safe NWC storage** - Stored in keychain (macOS) or Secret Service (Linux)
 - **Tribes** - Custom user groups with dedicated timeline tabs
 - **Hashtag subscriptions** - Subscribe to hashtags and get notified on new posts
 - **Image reposts** - Share images with automatic source attribution
