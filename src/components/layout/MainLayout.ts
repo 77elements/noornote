@@ -37,6 +37,9 @@ import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
+// Global type declaration for Vite environment variable
+declare const __APP_VERSION__: string;
+
 export class MainLayout {
   private element: HTMLElement;
   private systemLogger: SystemLogger;
@@ -1031,7 +1034,8 @@ export class MainLayout {
               </a>
             </li>
             <li class="primary-nav__item--about">
-              <span class="current-datetime-display">--</span> <span class="datetime-separator">•</span> <a href="/about" class="primary-nav__link--about">About</a>
+              <span class="current-datetime-display">--</span>
+              <a href="/about" class="primary-nav__link--about">About</a>
             </li>
           </ul>
           <div class="new-post-dropup">
@@ -1490,42 +1494,38 @@ export class MainLayout {
     const now = new Date();
     const storage = PerAccountLocalStorage.getInstance();
     const calendarSystem = storage.get<string>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
-
-    // Format time (HH:MM)
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const time = `${hours}:${minutes}`;
+    const version = `v${__APP_VERSION__}`;
 
     // Format date based on calendar system
     let dateString = '';
 
     if (calendarSystem === 'gregorian') {
-      // US format: MM/DD/YYYY, HH:MM
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const day = String(now.getDate()).padStart(2, '0');
+      // International format: DD. Mon. YYYY
+      const day = now.getDate();
+      const month = now.toLocaleString('en-US', { month: 'short' });
       const year = now.getFullYear();
-      dateString = `${month}/${day}/${year}, ${time}`;
+      dateString = `${day}. ${month}. ${year}<br>${version}`;
     } else if (calendarSystem === 'hijri') {
-      // International format: DD. Month YYYY, HH:MM
+      // International format: DD. Month YYYY
       const hijriDate = dayjs(now).toCalendarSystem('hijri' as any);
       const day = hijriDate.date();
       const month = HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
-      dateString = `${day}. ${month} ${year}, ${time}`;
+      dateString = `${day}. ${month} ${year}<br>${version}`;
     } else if (calendarSystem === 'both') {
-      // US format | International Hijri format, HH:MM
-      const gregorianMonth = String(now.getMonth() + 1).padStart(2, '0');
-      const gregorianDay = String(now.getDate()).padStart(2, '0');
+      // International format + Hijri format
+      const gregorianDay = now.getDate();
+      const gregorianMonth = now.toLocaleString('en-US', { month: 'short' });
       const gregorianYear = now.getFullYear();
 
       const hijriDate = dayjs(now).toCalendarSystem('hijri' as any);
       const hijriDay = hijriDate.date();
       const hijriMonth = HIJRI_MONTHS[hijriDate.month()];
       const hijriYear = hijriDate.year();
-      dateString = `${gregorianMonth}/${gregorianDay}/${gregorianYear}  |  ${hijriDay}. ${hijriMonth} ${hijriYear}, ${time}`;
+      dateString = `${gregorianDay}. ${gregorianMonth}. ${gregorianYear}<br>${hijriDay}. ${hijriMonth} ${hijriYear}<br>${version}`;
     }
 
-    dateTimeDisplay.textContent = dateString;
+    dateTimeDisplay.innerHTML = dateString;
   }
 
   /**
