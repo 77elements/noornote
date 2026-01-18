@@ -62,7 +62,7 @@ xattr -cr /Applications/Noornote.app
 
 - **No tracking** - Zero analytics, no data collection
 - **Local-first lists** - Follows, bookmarks, and mutes are stored locally with optional relay sync
-- **Encrypted keys** - Private keys stored in system keychain (macOS) or Secret Service (Linux)
+- **Encrypted local storage** - Sensitive data (nsec, NWC string) stored in encrypted local files
 
 ## Troubleshooting
 
