@@ -56,7 +56,7 @@ xattr -cr /Applications/Noornote.app
 
 ## Screenshot
 
-![NoorNote Timeline](https://image.nostr.build/0e3e21226b4e9970197fde002da17f4f60cdbf896eacb5f73839ee61cd3797e6.jpg)
+![NoorNote Timeline](https://image.nostr.build/5831d6aeb91665e25e241277fb96a7df5596c8f316fe6543c7919cf00f1e71cc.png)
 
 ## Privacy & Security
 
