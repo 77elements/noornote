@@ -121,8 +121,8 @@ export class TimelineView extends View {
 
       // Edit link
       const editLink = document.createElement('button');
-      editLink.className = 'timeline-view__edit-link';
-      editLink.textContent = 'Edit ›';
+      editLink.className = 'timeline-view__edit-link btn btn--mini btn--passive';
+      editLink.textContent = 'Edit tribes';
       editLink.addEventListener('click', () => {
         this.eventBus.emit('list:open', { listType: 'tribes' });
       });

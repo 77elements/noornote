@@ -1,6 +1,6 @@
 # NoorNote
 
-**NoorNote** (Arabic: نور, meaning "light") is a fast, privacy-focused desktop client for [Nostr](https://nostr.com) - the decentralized social protocol.
+**NoorNote** (Arabic: نور, meaning "light") is a fast, feature-rich, privacy-focused desktop client for [Nostr](https://nostr.com) - the decentralized social protocol.
 
 **Available for macOS and Linux.** Windows is not officially supported.
 
@@ -28,6 +28,17 @@
 - **Local list backups** - Manual NIP-51 list management, never lose your follows, bookmarks, or mutes again
 - **Multiple NIP-05 support** - Add multiple verified addresses to your profile
 - **Safe NWC storage** - Stored in keychain (macOS) or Secret Service (Linux)
+- **Tribes** - Custom user groups with dedicated timeline tabs
+- **Hashtag subscriptions** - Subscribe to hashtags and get notified on new posts
+- **Image reposts** - Share images with automatic source attribution
+- **Notification priorities** - Drag & drop to customize notification order
+- **Rich DM content** - Links, media, mentions, and quoted notes in direct messages
+- **Layout modes** - Phone mode and customizable layout options
+- **Bookmark folders on profile** - Mount folders to share them publicly
+- **Mutual change alerts** - Get notified when someone stops following back
+- **Who zapped you most** - Sort follows by zap balance to see top supporters
+- **Hijri calendar** - Islamic date display alongside Gregorian dates
+- **Relay browsing** - Filter timeline to show content from specific relays
 
 ...and many more to come.
 
@@ -93,7 +104,7 @@ If the app crashes, check the log files:
 | [NIP-46](https://github.com/nostr-protocol/nips/blob/master/46.md) | Remote signing (bunker://) | 24133 |
 | [NIP-47](https://github.com/nostr-protocol/nips/blob/master/47.md) | Nostr Wallet Connect | 23194, 23195 |
 | [NIP-50](https://github.com/nostr-protocol/nips/blob/master/50.md) | Search | - |
-| [NIP-51](https://github.com/nostr-protocol/nips/blob/master/51.md) | Lists (bookmarks, mutes, private follows) | 10000, 30000, 30003 |
+| [NIP-51](https://github.com/nostr-protocol/nips/blob/master/51.md) | Lists (bookmarks, mutes, private follows) | 10000, 10003, 30000 |
 | [NIP-56](https://github.com/nostr-protocol/nips/blob/master/56.md) | Reporting | 1984 |
 | [NIP-57](https://github.com/nostr-protocol/nips/blob/master/57.md) | Zaps | 9734, 9735 |
 | [NIP-65](https://github.com/nostr-protocol/nips/blob/master/65.md) | Relay list metadata | 10002 |
