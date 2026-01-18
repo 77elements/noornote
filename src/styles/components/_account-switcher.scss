@@ -71,7 +71,7 @@
     position: absolute;
     top: 100%;
     right: 0;
-    min-width: 200px;
+    width: max-content;
     background-color: $color-2;
     border-radius: $radius-base;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -80,6 +80,14 @@
 
     .ui-list {
       padding: 0;
+    }
+
+    .ui-list__item {
+      white-space: nowrap;
+    }
+
+    .ui-list__item--clickable {
+      color: $color-4;
     }
   }
 
@@ -100,13 +108,7 @@
     font-size: 13px;
   }
 
-  // Account name in list item
-  &__account-name {
-    flex: 1;
-    color: $color-5;
-    font-size: 13px;
-  }
-
+  
   // Active dot indicator
   &__active-dot {
     width: 6px;
