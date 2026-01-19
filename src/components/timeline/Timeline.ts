@@ -46,9 +46,11 @@ export class Timeline extends View {
   private islStatsUpdater: ISLStatsUpdater;
   private scrollPositionManager: ScrollPositionManager;
 
-  // EventBus subscription
+  // EventBus subscriptions
   private eventBus: EventBus;
   private userLoginSubscriptionId?: string;
+  private muteUpdatedSubscriptionId?: string;
+  private noteDeletedSubscriptionId?: string;
 
   constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
@@ -137,7 +139,7 @@ export class Timeline extends View {
    * Setup listener for mute list updates
    */
   private setupMuteListener(): void {
-    this.eventBus.on('mute:updated', async () => {
+    this.muteUpdatedSubscriptionId = this.eventBus.on('mute:updated', async () => {
       // Re-fetch feed with updated mute list
       await this.eventHandler.handleRefreshClick();
     });
@@ -147,7 +149,7 @@ export class Timeline extends View {
    * Setup listener for note deletions
    */
   private setupDeleteListener(): void {
-    this.eventBus.on('note:deleted', (data: { eventId: string }) => {
+    this.noteDeletedSubscriptionId = this.eventBus.on('note:deleted', (data: { eventId: string }) => {
       // Remove note from state
       this.stateManager.removeEvent(data.eventId);
 
@@ -566,6 +568,12 @@ export class Timeline extends View {
   public destroy(): void {
     if (this.userLoginSubscriptionId) {
       this.eventBus.off(this.userLoginSubscriptionId);
+    }
+    if (this.muteUpdatedSubscriptionId) {
+      this.eventBus.off(this.muteUpdatedSubscriptionId);
+    }
+    if (this.noteDeletedSubscriptionId) {
+      this.eventBus.off(this.noteDeletedSubscriptionId);
     }
     this.clearLookForNotesTimeout();
     this.lifecycleManager.destroy();

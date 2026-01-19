@@ -106,10 +106,10 @@ export class TimelineEventHandler {
     await this.handleRefresh();
 
     // Scroll to top so user sees the new notes
-    // (Timeline is inside .primary-content)
-    const primaryContent = this.element.parentElement;
-    if (primaryContent && primaryContent.classList.contains('primary-content')) {
-      primaryContent.scrollTo({ top: 0, behavior: 'smooth' });
+    // Timeline is inside .timeline-view__timeline (scrollable container)
+    const scrollContainer = this.element.parentElement;
+    if (scrollContainer && scrollContainer.classList.contains('timeline-view__timeline')) {
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
       // Reset scroll position in AppState
       this.appState.setState('timeline', { scrollPosition: 0 });
     }
@@ -129,9 +129,6 @@ export class TimelineEventHandler {
       if (uniqueNewEvents.length > 0) {
         // Prepend to DOM
         this.onPrependEvents(uniqueNewEvents);
-
-        // Scroll to top to show new notes
-        this.element.scrollTo({ top: 0, behavior: 'smooth' });
       }
 
       // Update polling timestamp to latest event

@@ -33,6 +33,7 @@ export class RelaySettingsSection extends SettingsSection {
   private modalService: ModalService;
   private healthMonitor: RelayHealthMonitor;
   private eventBus: EventBus;
+  private eventBusSubscriptions: string[] = [];
   private localRelaySwitch: Switch | null = null;
   private localRelaySettings: LocalRelaySettings;
   private tempRelays: RelayInfo[];
@@ -60,9 +61,11 @@ export class RelaySettingsSection extends SettingsSection {
    * Setup listener for relay health updates
    */
   private setupHealthUpdateListener(): void {
-    this.eventBus.on('relay:health:updated', () => {
-      this.updateHealthIndicators();
-    });
+    this.eventBusSubscriptions.push(
+      this.eventBus.on('relay:health:updated', () => {
+        this.updateHealthIndicators();
+      })
+    );
   }
 
   /**
@@ -70,16 +73,18 @@ export class RelaySettingsSection extends SettingsSection {
    * Re-loads tempRelays and re-renders UI when relays are loaded
    */
   private setupRelaysLoadedListener(): void {
-    this.eventBus.on('relays:loaded', () => {
-      this.tempRelays = this.loadRelaysFromConfig();
-      // Re-render if section is currently mounted
-      const contentContainer = document.querySelector('.relay-settings')?.parentElement;
-      if (contentContainer) {
-        contentContainer.innerHTML = this.renderContent();
-        this.bindListeners(contentContainer as HTMLElement);
-        this.updateHealthSummary();
-      }
-    });
+    this.eventBusSubscriptions.push(
+      this.eventBus.on('relays:loaded', () => {
+        this.tempRelays = this.loadRelaysFromConfig();
+        // Re-render if section is currently mounted
+        const contentContainer = document.querySelector('.relay-settings')?.parentElement;
+        if (contentContainer) {
+          contentContainer.innerHTML = this.renderContent();
+          this.bindListeners(contentContainer as HTMLElement);
+          this.updateHealthSummary();
+        }
+      })
+    );
   }
 
   /**
@@ -584,6 +589,9 @@ export class RelaySettingsSection extends SettingsSection {
    * Unmount section and cleanup
    */
   public unmount(): void {
+    this.eventBusSubscriptions.forEach(id => this.eventBus.off(id));
+    this.eventBusSubscriptions = [];
+
     if (this.localRelaySwitch) {
       this.localRelaySwitch = null;
     }

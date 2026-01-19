@@ -200,6 +200,9 @@ export class SingleNoteView extends View {
   }
 
   private initializeManagers(noteId: string, noteAuthor: string, _repliesContainer: HTMLElement): void {
+    // Cleanup existing manager before creating new one (prevents listener leaks on re-render)
+    this.liveUpdatesManager?.destroy();
+
     this.threadManager = new ThreadManager({
       noteId,
       noteAuthor,

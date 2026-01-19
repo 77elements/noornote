@@ -1391,3 +1391,139 @@
     box-shadow: 0 0 12px rgba($color-6, 0.8);
   }
 }
+
+// ========================================
+// Danger Zone Section
+// ========================================
+.danger-zone {
+  &__warning {
+    display: flex;
+    align-items: flex-start;
+    gap: $gap;
+    padding: $gap;
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: $radius-sm;
+    margin-bottom: $gap * 2;
+
+    svg {
+      flex-shrink: 0;
+      color: #f87171;
+      margin-top: 2px;
+    }
+
+    p {
+      font-size: 14px;
+      color: rgba(248, 113, 113, 0.9);
+      line-height: 1.5;
+      margin: 0;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+
+  &__action {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $gap;
+    padding: $gap;
+    background: $color-2;
+    border: 1px solid $color-3;
+    border-radius: $radius-sm;
+
+    &-info {
+      flex: 1;
+
+      h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: $color-5;
+        margin: 0 0 calc($gap / 4) 0;
+      }
+
+      p {
+        font-size: 13px;
+        color: rgba($color-5, 0.6);
+        line-height: 1.4;
+        margin: 0;
+
+        strong {
+          color: #f87171;
+        }
+      }
+    }
+
+    .btn--danger {
+      flex-shrink: 0;
+    }
+  }
+}
+
+// Danger Zone Modal Styles
+.danger-zone-modal {
+  p {
+    font-size: 14px;
+    color: rgba($color-5, 0.9);
+    line-height: 1.5;
+  }
+
+  ul, ol {
+    margin: calc($gap / 2) 0 0 $gap * 1.5;
+    font-size: 14px;
+    color: rgba($color-5, 0.8);
+    line-height: 1.6;
+
+    li {
+      margin-bottom: calc($gap / 4);
+    }
+  }
+
+  &__warning {
+    padding: calc($gap / 2) $gap;
+    background: rgba(248, 113, 113, 0.1);
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    border-radius: $radius-sm;
+    color: rgba(248, 113, 113, 0.9);
+    font-size: 14px;
+    margin-top: $gap;
+
+    &--critical {
+      background: rgba(248, 113, 113, 0.15);
+      border-color: rgba(248, 113, 113, 0.5);
+    }
+  }
+
+  &__recovery {
+    margin-top: $gap;
+    padding: $gap;
+    background: rgba($color-3, 0.3);
+    border-radius: $radius-sm;
+
+    strong {
+      display: block;
+      font-size: 14px;
+      color: $color-5;
+      margin-bottom: calc($gap / 2);
+    }
+
+    ul {
+      margin: 0 0 0 $gap;
+      font-size: 13px;
+      color: rgba($color-5, 0.7);
+    }
+  }
+
+  a {
+    color: $color-4;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
