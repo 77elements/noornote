@@ -34,6 +34,7 @@ export class SearchResultsView {
   private hashtagService: HashtagNotificationService;
   private eventBus: EventBus;
   private subscribeButton?: HTMLButtonElement;
+  private subscriptionUpdatedId?: string;
 
   constructor(config: SearchResultsConfig, callbacks: SearchResultsCallbacks) {
     this.config = config;
@@ -58,7 +59,7 @@ export class SearchResultsView {
    */
   private setupEventListeners(): void {
     // Listen for subscription updates to update button state
-    this.eventBus.on('hashtag-subscription:updated', (data: { hashtag: string; subscribed: boolean }) => {
+    this.subscriptionUpdatedId = this.eventBus.on('hashtag-subscription:updated', (data: { hashtag: string; subscribed: boolean }) => {
       if (data.hashtag === this.config.hashtag) {
         this.updateSubscribeButton();
       }
@@ -273,6 +274,9 @@ export class SearchResultsView {
    * Cleanup
    */
   public destroy(): void {
+    if (this.subscriptionUpdatedId) {
+      this.eventBus.off(this.subscriptionUpdatedId);
+    }
     this.infiniteScroll?.destroy();
     this.container.remove();
   }

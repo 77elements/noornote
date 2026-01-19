@@ -25,6 +25,7 @@ export class GlobalSearchView {
   private router: Router;
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
+  private eventBusSubscriptions: string[] = [];
 
   private currentQuery: string = '';
   private currentResults: NostrEvent[] = [];
@@ -60,29 +61,37 @@ export class GlobalSearchView {
    */
   private setupEventListeners(): void {
     // Listen for global search start (NIP-50 relay search)
-    this.eventBus.on('globalSearch:start', (data: { query: string }) => {
-      this.performGlobalSearch(data.query);
-    });
+    this.eventBusSubscriptions.push(
+      this.eventBus.on('globalSearch:start', (data: { query: string }) => {
+        this.performGlobalSearch(data.query);
+      })
+    );
 
     // Listen for hashtag search start (NIP-50 relay search for hashtags)
-    this.eventBus.on('hashtagSearch:start', (data: { hashtag: string }) => {
-      this.performHashtagSearch(data.hashtag);
-    });
+    this.eventBusSubscriptions.push(
+      this.eventBus.on('hashtagSearch:start', (data: { hashtag: string }) => {
+        this.performHashtagSearch(data.hashtag);
+      })
+    );
 
     // Listen for profile search complete (client-side filtered results)
-    this.eventBus.on('profileSearch:complete', (data: { query: string; results: NostrEvent[]; meta: string }) => {
-      this.displayProfileSearchResults(data.query, data.results, data.meta);
-    });
+    this.eventBusSubscriptions.push(
+      this.eventBus.on('profileSearch:complete', (data: { query: string; results: NostrEvent[]; meta: string }) => {
+        this.displayProfileSearchResults(data.query, data.results, data.meta);
+      })
+    );
 
     // Listen for mute list updates - re-filter current results
-    this.eventBus.on('mute:updated', async () => {
-      if (this.currentResults.length > 0) {
-        // Re-filter current results
-        const filtered = await this.filterMutedUsers(this.currentResults);
-        this.currentResults = filtered;
-        this.renderResults();
-      }
-    });
+    this.eventBusSubscriptions.push(
+      this.eventBus.on('mute:updated', async () => {
+        if (this.currentResults.length > 0) {
+          // Re-filter current results
+          const filtered = await this.filterMutedUsers(this.currentResults);
+          this.currentResults = filtered;
+          this.renderResults();
+        }
+      })
+    );
   }
 
   /**
@@ -420,6 +429,8 @@ export class GlobalSearchView {
    * Cleanup
    */
   public destroy(): void {
+    this.eventBusSubscriptions.forEach(id => this.eventBus.off(id));
+    this.eventBusSubscriptions = [];
     this.searchResultsView?.destroy();
     this.tabElement?.remove();
     this.container.remove();

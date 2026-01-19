@@ -95,6 +95,9 @@ export class ProfileView extends View {
   private tribeDropdown: CustomDropdown | null = null;
   private tribeDropdownCleanupHandlers: Array<(e: MouseEvent | KeyboardEvent) => void> = [];
 
+  // EventBus subscription IDs for cleanup
+  private eventBusSubscriptions: string[] = [];
+
   constructor(npub: string) {
     super(); // Call View base class constructor
     this.npub = npub;
@@ -148,43 +151,46 @@ export class ProfileView extends View {
    * Setup listener for profile updates (after save in ProfileEditModal)
    */
   private setupProfileUpdateListener(): void {
-    this.eventBus.on('profile:updated', (data: { pubkey: string }) => {
+    const id = this.eventBus.on('profile:updated', (data: { pubkey: string }) => {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser && data.pubkey === currentUser.pubkey && this.pubkey === currentUser.pubkey) {
         // Reload own profile after edit
         this.refreshProfile();
       }
     });
+    this.eventBusSubscriptions.push(id);
   }
 
   /**
    * Setup listener for user switches (reload profile view to update Edit button visibility)
    */
   private setupUserSwitchListener(): void {
-    this.eventBus.on('user:login', () => {
+    const id = this.eventBus.on('user:login', () => {
       // Reset initial render flag and re-render to update Edit Profile button visibility
       this.isInitialRender = true;
       this.render();
     });
+    this.eventBusSubscriptions.push(id);
   }
 
   /**
    * Setup listener for calendar system changes (reload joined date with new format)
    */
   private setupCalendarSystemListener(): void {
-    this.eventBus.on('settings:calendar-system-changed', () => {
+    const id = this.eventBus.on('settings:calendar-system-changed', () => {
       // Reload joined date with new calendar format
       if (this.joinedDate) {
         this.loadJoinedDate();
       }
     });
+    this.eventBusSubscriptions.push(id);
   }
 
   /**
    * Setup listener for mute changes (re-render if this profile's mute status changed)
    */
   private setupMuteChangeListener(): void {
-    this.eventBus.on('mute:updated', async () => {
+    const id = this.eventBus.on('mute:updated', async () => {
       // Only re-render if this profile's mute status actually changed
       const wasMuted = this.lastKnownMuteStatus;
       const muteStatus = await this.muteManager.checkMuteStatus();
@@ -196,13 +202,14 @@ export class ProfileView extends View {
         this.render();
       }
     });
+    this.eventBusSubscriptions.push(id);
   }
 
   /**
    * Setup listener for follow changes (re-render if this profile's follow status changed)
    */
   private setupFollowChangeListener(): void {
-    this.eventBus.on('follow:updated', async () => {
+    const id = this.eventBus.on('follow:updated', async () => {
       // Only re-render if this profile's follow status actually changed
       const wasFollowing = this.lastKnownFollowStatus;
       const isFollowing = await this.followManager.checkFollowStatus();
@@ -213,6 +220,7 @@ export class ProfileView extends View {
         this.render();
       }
     });
+    this.eventBusSubscriptions.push(id);
   }
 
   /**
@@ -1210,6 +1218,10 @@ export class ProfileView extends View {
    * Cleanup resources (implements View base class)
    */
   public destroy(): void {
+    // Cleanup EventBus subscriptions
+    this.eventBusSubscriptions.forEach(id => this.eventBus.off(id));
+    this.eventBusSubscriptions = [];
+
     if (this.blinker) {
       this.blinker.destroy();
       this.blinker = null;
