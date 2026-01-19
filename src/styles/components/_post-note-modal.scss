@@ -205,7 +205,7 @@
     left: 50%;
     transform: translate(-50%, -50%);
     background: $overlay-bg;
-    color: white;
+    color: $color-white;
     padding: calc($gap / 2) $gap;
     border-radius: var(--border-radius);
     font-size: var(--font-size-sm);
@@ -280,7 +280,7 @@ svg.upload-progress {
   gap: calc($gap / 2);
   padding: $gap;
   background: var(--color-primary);
-  color: white;
+  color: $color-white;
   border: none;
   border-radius: var(--border-radius);
   font-size: 16px;

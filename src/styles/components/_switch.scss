@@ -78,7 +78,7 @@
     width: 18px;
     left: 3px;
     bottom: 3px;
-    background: white;
+    background: $color-white;
     border-radius: 50%;
     transition: transform 0.3s ease;
   }
@@ -103,7 +103,7 @@
     background: $color-6;
 
     &::before {
-      background: white;
+      background: $color-white;
     }
   }
 }
