@@ -111,8 +111,8 @@
     }
 
     &--error {
-      background: rgba($color-error, 0.2);
-      color: $color-error;
+      background: $color-red-bg;
+      color: $color-red;
     }
   }
 }

@@ -91,16 +91,16 @@
 // Danger (for destructive actions)
 .btn--danger {
   color: white;
-  background-color: $color-error;
-  border-color: $color-error;
+  background-color: $color-red;
+  border-color: $color-red;
 
   &:hover {
-    background-color: color.adjust($color-error, $lightness: -8%);
-    border-color: color.adjust($color-error, $lightness: -12%);
+    background-color: color.adjust($color-red, $lightness: -8%);
+    border-color: color.adjust($color-red, $lightness: -12%);
   }
 
   &:focus {
-    outline-color: $color-error;
+    outline-color: $color-red;
   }
 }
 

@@ -170,8 +170,8 @@
 
 // Article preview error
 .article-preview-error {
-  background: rgba($color-error, 0.1);
-  border: 1px solid rgba($color-error, 0.3);
+  background: $color-red-bg;
+  border: 1px solid $color-red-border;
   border-radius: 8px;
   padding: $gap;
   margin: calc($gap * 0.75) 0;
@@ -180,7 +180,7 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    color: $color-error;
+    color: $color-red;
 
     .error-icon {
       font-size: 20px;

@@ -90,14 +90,14 @@
 
   // Danger actions (Report, Mute User)
   &--danger {
-    color: $color-error;
+    color: $color-red;
 
     svg {
-      color: $color-error;
+      color: $color-red;
     }
 
     &:hover {
-      background: color.adjust($color-error, $alpha: -0.9);
+      background: $color-red-bg;
     }
   }
 

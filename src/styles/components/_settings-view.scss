@@ -64,7 +64,7 @@
     }
 
     &--error {
-      color: $color-error;
+      color: $color-red;
     }
   }
 }
@@ -112,9 +112,9 @@
   }
 
   &--critical {
-    background: rgba($color-error, 0.15);
-    color: $color-error;
-    border: 1px solid rgba($color-error, 0.3);
+    background: $color-red-bg;
+    color: $color-red;
+    border: 1px solid $color-red-border;
   }
 }
 
@@ -209,8 +209,8 @@
   }
 
   &.disconnected {
-    background: $color-error;
-    box-shadow: 0 0 4px rgba($color-error, 0.4);
+    background: $color-red;
+    box-shadow: 0 0 4px rgba($color-red, 0.4);
   }
 }
 
@@ -259,13 +259,13 @@
 .relay-remove-btn {
   background: none;
   border: none;
-  color: rgba($color-error, 0.8);
+  color: rgba($color-red, 0.8);
   cursor: pointer;
   padding: calc($gap / 4);
   transition: all 0.2s ease;
 
   &:hover {
-    color: $color-error;
+    color: $color-red;
     transform: scale(1.1);
   }
 
@@ -647,7 +647,7 @@
 }
 
 .status-stopped .status-dot {
-  background: $color-error;
+  background: $color-red;
 }
 
 .status-text {
@@ -1038,20 +1038,20 @@
     align-items: flex-start;
     gap: $gap;
     padding: $gap;
-    background: rgba($color-error, 0.1);
-    border: 1px solid rgba($color-error, 0.3);
+    background: $color-red-bg;
+    border: 1px solid $color-red-border;
     border-radius: $radius-sm;
     margin-bottom: $gap * 2;
 
     svg {
       flex-shrink: 0;
-      color: $color-error;
+      color: $color-red;
       margin-top: 2px;
     }
 
     p {
       font-size: 14px;
-      color: rgba($color-error, 0.9);
+      color: $color-red;
       line-height: 1.5;
       margin: 0;
     }
@@ -1090,7 +1090,7 @@
         margin: 0;
 
         strong {
-          color: $color-error;
+          color: $color-red;
         }
       }
     }
@@ -1122,16 +1122,16 @@
 
   &__warning {
     padding: calc($gap / 2) $gap;
-    background: rgba($color-error, 0.1);
-    border: 1px solid rgba($color-error, 0.3);
+    background: $color-red-bg;
+    border: 1px solid $color-red-border;
     border-radius: $radius-sm;
-    color: rgba($color-error, 0.9);
+    color: $color-red;
     font-size: 14px;
     margin-top: $gap;
 
     &--critical {
-      background: rgba($color-error, 0.15);
-      border-color: rgba($color-error, 0.5);
+      background: $color-red-bg;
+      border-color: $color-red-border;
     }
   }
 

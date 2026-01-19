@@ -19,8 +19,8 @@
   .auth-error {
     margin-top: $gap;
     padding: $gap;
-    background: rgba($color-error, 0.1);
-    border: 1px solid $color-error;
+    background: $color-red-bg;
+    border: 1px solid $color-red;
     border-radius: 4px;
   }
 }
@@ -81,13 +81,13 @@
 
 // Auth error text (standalone)
 .auth-error-text {
-  color: $color-error;
+  color: $color-red;
   margin: 0;
 }
 
 // No extension error (standalone)
 .no-extension-error {
-  color: $color-error;
+  color: $color-red;
   font-weight: bold;
   margin-bottom: $gap;
 }

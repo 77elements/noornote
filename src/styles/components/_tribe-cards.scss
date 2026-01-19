@@ -110,7 +110,7 @@
     background: none;
     border: none;
     border-radius: $radius-md;
-    color: $color-error;
+    color: $color-red;
     cursor: pointer;
     transition: $transition-colors;
     opacity: 0.6;
@@ -122,7 +122,7 @@
     }
 
     &:hover {
-      background: rgba($color-error, 0.15);
+      background: $color-red-bg;
       opacity: 1;
     }
   }

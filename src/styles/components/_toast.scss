@@ -59,11 +59,11 @@
   }
 
   &--error {
-    border-left: 4px solid $color-error;
+    border-left: 4px solid $color-red;
 
     .toast__icon {
-      color: $color-error;
-      background: rgba($color-error, 0.1);
+      color: $color-red;
+      background: $color-red-bg;
     }
   }
 

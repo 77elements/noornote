@@ -44,8 +44,8 @@
     transition: all 0.2s ease;
 
     &:hover {
-      color: $color-error;
-      background: rgba($color-error, 0.1);
+      color: $color-red;
+      background: $color-red-bg;
     }
   }
 
@@ -94,9 +94,9 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: $color-error;
-      color: $color-error;
-      background: rgba($color-error, 0.05);
+      border-color: $color-red;
+      color: $color-red;
+      background: $color-red-bg;
     }
   }
 

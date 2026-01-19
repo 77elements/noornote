@@ -129,7 +129,7 @@
 }
 
 .notification-item[data-type="reaction"] .notification-item__icon {
-  color: $color-error;
+  color: $color-red;
   font-size: 20px; // Emoji reactions slightly bigger
 }
 
@@ -153,7 +153,7 @@
   }
 
   &--unsubscribe:hover {
-    color: $color-error;
+    color: $color-red;
   }
 
   &--subscribe:hover {

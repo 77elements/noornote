@@ -22,7 +22,9 @@ $color-black: #000000;
 // Semantic Colors
 $color-success: #10b981;
 $color-warning: #f59e0b;
-$color-error: #ef4444;
+$color-red: #ef4444;
+$color-red-bg: rgba($color-red, 0.15);
+$color-red-border: rgba($color-red, 0.5);
 $color-info: #3b82f6;
 
 // ========================================

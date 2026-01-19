@@ -97,7 +97,7 @@
 }
 
 .isl-like:hover {
-  color: $color-error; // Red
+  color: $color-red; // Red
 
   .isl-icon {
     font-size: 0; // Hide original heart
@@ -140,7 +140,7 @@
   }
 
   &.isl-like {
-    color: $color-error;
+    color: $color-red;
 
     .isl-icon {
       font-size: 0;
@@ -154,7 +154,7 @@
     // Keep red color when disabled (already liked)
     &:disabled {
       opacity: 1;
-      color: $color-error;
+      color: $color-red;
     }
   }
 }

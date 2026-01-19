@@ -71,7 +71,7 @@
     }
 
     .thread-context-error {
-      color: rgba($color-error, 0.8);
+      color: rgba($color-red, 0.8);
     }
 
     .thread-context-ellipsis {
@@ -300,12 +300,12 @@
 
 // Error state for note-card
 .note-card--error {
-  background: rgba($color-error, 0.1);
-  border: 1px solid rgba($color-error, 0.3);
+  background: $color-red-bg;
+  border: 1px solid $color-red-border;
   padding: $gap;
   border-radius: 6px;
 
   .note-error {
-    color: $color-error;
+    color: $color-red;
   }
 }

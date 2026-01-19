@@ -121,7 +121,7 @@
   }
 
   &--error {
-    background: rgba($color-error, 0.1);
+    background: $color-red-bg;
     border-left: 3px solid var(--accent-red);
   }
 
@@ -218,7 +218,7 @@
     }
 
     &--error {
-      background: rgba($color-error, 0.15);
+      background: $color-red-bg;
     }
 
     &--success {

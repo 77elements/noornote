@@ -40,8 +40,8 @@
 
   // Error state (red/error)
   &--error {
-    background-color: rgba($color-error, 0.1);
-    color: $color-error;
+    background-color: $color-red-bg;
+    color: $color-red;
   }
 }
 
