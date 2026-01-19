@@ -1,7 +1,6 @@
 /**
  * Messages Molecule
- * Unified styling for success, error, warning, and info messages
- * Used across the application for consistent feedback
+ * Base styling for message/feedback components
  */
 
 @use '../abstracts/variables' as *;
@@ -42,78 +41,6 @@
   }
 }
 
-/* Success message */
-.message-success {
-  @extend .message;
-  background: rgba(#51cf66, 0.1);
-  border: 1px solid rgba(#51cf66, 0.3);
-}
-
-/* Error message variants */
-.message-error {
-  @extend .message;
-  background: rgba(#ff6b6b, 0.1);
-  border: 1px solid rgba(#ff6b6b, 0.3);
-}
-
-.message-warning {
-  @extend .message;
-  background: rgba(#ffa94d, 0.1);
-  border: 1px solid rgba(#ffa94d, 0.3);
-}
-
-.message-info {
-  @extend .message;
-  background: rgba($color-4, 0.1);
-  border: 1px solid rgba($color-4, 0.3);
-}
-
-/* Message with action button */
-.message-with-action {
-  .message-content {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: $gap;
-  }
-
-  .message-action-btn {
-    background: $color-4;
-    color: $color-1;
-    border: none;
-    padding: calc($gap * 0.375) calc($gap * 0.75);
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.2s ease;
-    white-space: nowrap;
-
-    &:hover:not(:disabled) {
-      opacity: 0.8;
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-}
-
-/* Quoted note specific error messages */
-.quote-not-found {
-  @extend .message-info;
-}
-
-.quote-network-error {
-  @extend .message-error;
-  @extend .message-with-action;
-}
-
-.quote-parse-error {
-  @extend .message-warning;
-}
-
 /* Generic quote error fallback */
 .quote-error {
   @extend .message;
@@ -122,6 +49,18 @@
 
   .message-content {
     color: var(--color-text-muted);
+  }
+
+  .quote-error-content {
+    @extend .message-content;
+  }
+
+  .error-icon {
+    @extend .message-icon;
+  }
+
+  .error-text {
+    @extend .message-text;
   }
 }
 
@@ -165,36 +104,5 @@
     &:hover {
       opacity: 0.8;
     }
-  }
-}
-
-/* Rename internal classes to match molecule pattern */
-.quote-not-found,
-.quote-network-error,
-.quote-parse-error,
-.quote-error {
-  .quote-error-content {
-    @extend .message-content;
-  }
-
-  .error-icon {
-    @extend .message-icon;
-  }
-
-  .error-details {
-    @extend .message-content;
-  }
-
-  .error-text {
-    @extend .message-text;
-  }
-
-  .error-id,
-  .error-ref {
-    @extend .message-details;
-  }
-
-  .retry-btn {
-    @extend .message-action-btn;
   }
 }

@@ -120,10 +120,10 @@ export class NotificationPrioritySection extends SettingsSection {
         ${this.renderPriorityZone(3)}
 
         <div class="notification-priority-actions">
-          <button class="btn btn--small btn--passive" data-action="reset-priorities">
+          <button class="btn btn--mini btn--passive" data-action="reset-priorities">
             Reset to Defaults
           </button>
-          <button class="btn btn--small btn--primary" data-action="save-priorities" ${this.hasUnsavedChanges ? '' : 'disabled'}>
+          <button class="btn btn--mini btn--primary" data-action="save-priorities" ${this.hasUnsavedChanges ? '' : 'disabled'}>
             Save
           </button>
         </div>

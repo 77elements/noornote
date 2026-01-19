@@ -32,7 +32,7 @@
   border: 1px solid $color-3;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: $box-shadow;
   z-index: 10001;
 }
 
@@ -160,7 +160,7 @@
   }
 
   .emoji-picker-emoji:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: $surface-tint;
   }
 }
 

@@ -118,7 +118,7 @@
   background: $color-2;
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: $box-shadow;
   z-index: 100;
   padding: calc($gap / 2);
 
@@ -204,7 +204,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.8);
+    background: $overlay-bg;
     color: white;
     padding: calc($gap / 2) $gap;
     border-radius: var(--border-radius);

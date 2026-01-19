@@ -42,17 +42,6 @@ p {
   &:last-child {
     margin-bottom: 0;
   }
-
-  &.lead {
-    font-size: 18px;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-  }
-
-  &.small {
-    font-size: 14px;
-    color: var(--color-text-secondary);
-  }
 }
 
 // Link styles moved to atoms/_links.scss for global consistency
@@ -195,34 +184,6 @@ hr {
   background-color: var(--color-border);
   margin: $gap * 2 0;
 }
-
-// Text utility classes
-.text-xs { font-size: 12px; }
-.text-sm { font-size: 14px; }
-.text-base { font-size: 16px; }
-.text-lg { font-size: 18px; }
-.text-xl { font-size: 20px; }
-.text-2xl { font-size: 24px; }
-.text-3xl { font-size: 30px; }
-
-.font-light { font-weight: 300; }
-.font-normal { font-weight: 400; }
-.font-medium { font-weight: 500; }
-.font-bold { font-weight: 700; }
-
-.text-left { text-align: left; }
-.text-center { text-align: center; }
-.text-right { text-align: right; }
-
-.text-primary { color: var(--color-text-primary); }
-.text-secondary { color: var(--color-text-secondary); }
-.text-tertiary { color: var(--color-text-tertiary); }
-.text-interactive { color: var(--color-text-interactive); }
-.text-accent { color: var(--color-accent); }
-
-.text-truncate { @include text-truncate; }
-.text-truncate-2 { @include text-truncate-lines(2); }
-.text-truncate-3 { @include text-truncate-lines(3); }
 
 // Heading variants
 .heading--sidebar-subheading {

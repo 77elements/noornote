@@ -56,7 +56,7 @@
   background: $color-1;
   border: 1px solid $color-3;
   border-radius: $radius-sm;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: $box-shadow;
   min-width: 200px;
   z-index: 1000;
   opacity: 0;

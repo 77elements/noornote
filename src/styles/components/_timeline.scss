@@ -115,49 +115,6 @@
   margin: 0 auto $gap;
 }
 
-// Timeline empty heading
-.timeline-empty-heading {
-  margin: 0 0 $gap 0;
-  color: $color-4;
-}
-
-// Timeline empty text
-.timeline-empty-text {
-  margin: 0;
-  opacity: 0.8;
-}
-
-// Timeline error heading
-.timeline-error-heading {
-  margin: 0 0 $gap 0;
-  color: $color-error;
-}
-
-// Timeline error text
-.timeline-error-text {
-  margin: 0 0 $gap 0;
-  opacity: 0.8;
-}
-
-// Timeline error button (styles moved to molecules/_buttons.scss if needed)
-.timeline-error-button {
-  background: $color-4;
-  color: $color-1;
-  border: none;
-  padding: calc($gap / 2) $gap;
-  border-radius: 4px;
-  cursor: pointer;
-
-  &:hover {
-    opacity: 0.8;
-  }
-}
-
-// Timeline loading text
-.timeline-loading-text {
-  margin: 0;
-  opacity: 0.8;
-}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }

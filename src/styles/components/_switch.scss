@@ -92,7 +92,7 @@
 // Dark mode adjustments
 @media (prefers-color-scheme: dark) {
   .switch-slider {
-    background: rgba(255, 255, 255, 0.2);
+    background: $surface-tint;
 
     &::before {
       background: $color-1;

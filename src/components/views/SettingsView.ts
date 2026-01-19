@@ -271,7 +271,7 @@ export class SettingsView extends View {
               </div>
             </label>
           </div>
-          <button class="btn btn--small btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
+          <button class="btn btn--mini btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
             Unsubscribe
           </button>
         </div>

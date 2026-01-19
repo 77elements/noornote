@@ -12,7 +12,7 @@
   border: 1px solid rgba($color-4, 0.3);
   border-radius: calc($gap / 2);
   padding: $gap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: $box-shadow;
   z-index: 10000;
   cursor: pointer;
   transition: opacity 0.2s ease;

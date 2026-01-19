@@ -34,14 +34,14 @@
 
   // Synced state (green/success)
   &--synced {
-    background-color: rgba(#10b981, 0.1);
-    color: #10b981;
+    background-color: rgba($color-success, 0.1);
+    color: $color-success;
   }
 
   // Error state (red/error)
   &--error {
-    background-color: rgba(#ef4444, 0.1);
-    color: #ef4444;
+    background-color: rgba($color-error, 0.1);
+    color: $color-error;
   }
 }
 

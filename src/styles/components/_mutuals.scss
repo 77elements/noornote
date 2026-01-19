@@ -17,13 +17,13 @@
   white-space: nowrap;
 
   &--yes {
-    background: rgba(16, 185, 129, 0.15);
-    color: #10b981;
+    background: rgba($color-success, 0.15);
+    color: $color-success;
   }
 
   &--no {
-    background: rgba(156, 163, 175, 0.15);
-    color: #9ca3af;
+    background: rgba($color-3, 0.15);
+    color: $color-3;
   }
 }
 
@@ -35,8 +35,8 @@
   border-radius: 3px;
   font-weight: 600;
   white-space: nowrap;
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
+  background: rgba($color-warning, 0.15);
+  color: $color-warning;
 
   // Loading state with pulsing animation
   &--loading {
@@ -189,7 +189,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  background-color: #10b981;
+  background-color: $color-success;
   border-radius: 50%;
   margin-left: 4px;
   animation: dot-pulse 2s ease-in-out infinite;
@@ -224,7 +224,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: $overlay-bg;
   }
 
   &__content {
@@ -260,11 +260,11 @@
     }
 
     &--positive h4 {
-      color: #10b981;
+      color: $color-success;
     }
 
     &--negative h4 {
-      color: #ef4444;
+      color: $color-error;
     }
   }
 
@@ -284,11 +284,11 @@
     }
 
     &--positive {
-      color: #10b981;
+      color: $color-success;
     }
 
     &--negative {
-      color: #ef4444;
+      color: $color-error;
     }
   }
 

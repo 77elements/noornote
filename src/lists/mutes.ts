@@ -935,13 +935,13 @@ export class MuteListView extends View {
 
         <div class="mute-list-actions">
           <div class="mute-list-actions__group">
-            <button class="btn btn--small" id="sync-from-relays-btn">Sync from Relays</button>
-            <button class="btn btn--small" id="sync-to-relays-btn">Sync to Relays</button>
+            <button class="btn btn--mini" id="sync-from-relays-btn">Sync from Relays</button>
+            <button class="btn btn--mini" id="sync-to-relays-btn">Sync to Relays</button>
           </div>
 
           <div class="mute-list-actions__group">
-            <button class="btn btn--small btn--passive" id="save-to-file-btn">Save to File</button>
-            <button class="btn btn--small btn--passive" id="restore-from-file-btn">Restore from File</button>
+            <button class="btn btn--mini btn--passive" id="save-to-file-btn">Save to File</button>
+            <button class="btn btn--mini btn--passive" id="restore-from-file-btn">Restore from File</button>
           </div>
         </div>
       </div>
@@ -1041,7 +1041,7 @@ export class MuteListView extends View {
               <a href="/profile/${npub}" class="mention-link mention-link--bg" data-profile-pubkey="${pubkey}">
                 <img class="profile-pic profile-pic--mini" src="${avatarUrl}" alt="${username}" />${username}</a></span>${lockIcon}
           </div>
-          <button class="btn btn--passive btn--small unmute-user-btn" data-pubkey="${pubkey}">
+          <button class="btn btn--passive btn--mini unmute-user-btn" data-pubkey="${pubkey}">
             Unmute
           </button>
         </div>
@@ -1082,7 +1082,7 @@ export class MuteListView extends View {
             </div>
             <span class="mute-list-item__event-id" title="${eventId}">${shortId}${lockIcon}</span>
           </div>
-          <button class="btn btn--passive btn--small unmute-thread-btn" data-event-id="${eventId}">
+          <button class="btn btn--passive btn--mini unmute-thread-btn" data-event-id="${eventId}">
             Unmute
           </button>
         </div>
@@ -1597,7 +1597,7 @@ export class MuteListManager {
             </div>
           </div>
         </div>
-        <button class="mute-item__unmute-btn btn btn--passive btn--small" data-pubkey="${item.pubkey}">
+        <button class="mute-item__unmute-btn btn btn--passive btn--mini" data-pubkey="${item.pubkey}">
           Unmute
         </button>
       `;
@@ -1638,7 +1638,7 @@ export class MuteListManager {
             </div>
           </div>
         </div>
-        <button class="mute-item__unmute-btn btn btn--passive btn--small" data-event-id="${thread.eventId}">
+        <button class="mute-item__unmute-btn btn btn--passive btn--mini" data-event-id="${thread.eventId}">
           Unmute
         </button>
       `;

@@ -1,0 +1,266 @@
+/**
+ * Navigation Molecule
+ * Primary navigation styles for sidebar
+ */
+
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// Primary Navigation
+.primary-nav {
+  list-style: none;
+  padding: 0;
+  margin-bottom: $gap;
+
+  li {
+    padding: 0;
+    margin-bottom: calc($gap / 2);
+    border: none;
+    border-radius: 0;
+    cursor: default;
+    transition: none;
+    color: inherit;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+
+  // Link styling (BEM element)
+  &__link {
+    display: grid;
+    grid-template-columns: 20px 1fr;
+    grid-gap: calc($gap / 2);
+    align-items: center;
+    padding: calc($gap / 2);
+    text-decoration: none;
+    transition: $transition-colors;
+    border-radius: $radius-sm;
+    font-weight: 500;
+    position: relative;
+
+    &:link,
+    &:visited {
+      color: $color-5;
+    }
+
+    &:hover,
+    &:active,
+    &:focus,
+    &.is-active {
+      background: rgba($color-4, 0.1);
+      color: $color-4;
+      text-decoration: none;
+    }
+
+    // Home link has 3 columns (icon, text, scroll-to-top)
+    &--home {
+      grid-template-columns: 20px 1fr 20px;
+    }
+
+    // Notifications link has 3 columns (icon, text, badge)
+    &--notifications {
+      grid-template-columns: 20px 1fr auto;
+    }
+
+    // Messages link has 3 columns (icon, text, badge)
+    &--messages {
+      grid-template-columns: 20px 1fr auto;
+    }
+  }
+
+  // Icon styling (BEM element)
+  &__item-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  // Description text styling (BEM element)
+  &__item-desc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  // Legacy support for non-BEM a tags (e.g., sublinks)
+  a:not([class*="primary-nav__"]) {
+    display: block;
+    padding: calc($gap / 2);
+    color: $color-5;
+    text-decoration: none;
+    transition: $transition-colors;
+    border-radius: $radius-sm;
+    font-weight: 500;
+    position: relative;
+
+    > * {
+      display: inline-block;
+      vertical-align: text-bottom;
+
+      &:first-child {
+        margin-right: calc($gap / 2);
+      }
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    &:hover,
+    &.is-active {
+      background: rgba($color-4, 0.1);
+      color: $color-4;
+    }
+  }
+
+  .scroll-to-top-btn {
+    display: none; // Hidden by default, shown via JS
+    width: 20px;
+    height: 20px;
+    color: $color-5;
+    cursor: pointer;
+    transition: $transition-colors;
+
+    &:hover {
+      color: $color-4;
+    }
+  }
+
+  // Notifications badge (green dot) - grid item
+  .notifications-badge {
+    display: none; // Hidden by default, shown via JS when unread notifications exist
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: $color-6; // Soft Mint Green
+    color: $color-1; // Black text
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 20px;
+    text-align: center;
+
+    // Hashtag-only notifications: hollow circle (low priority)
+    &--hashtag-only {
+      background: transparent;
+      border: 1px solid $color-6;
+      color: $color-6;
+      line-height: 18px; // Adjust for border
+    }
+
+    // High priority notifications: pulsing badge (replies, zaps)
+    &--priority-high {
+      animation: badge-pulse 2s ease-in-out infinite;
+      box-shadow: 0 0 8px rgba($color-6, 0.6);
+    }
+  }
+
+  // Accordion menu (Lists)
+  &__item--accordion {
+    .primary-nav__accordion-trigger {
+      display: block;
+      width: 100%;
+      padding: calc($gap / 2);
+      background: none;
+      border: none;
+      color: $color-5;
+      text-align: left;
+      cursor: pointer;
+      transition: $transition-colors;
+      border-radius: $radius-sm;
+      font-weight: 500;
+      font-size: inherit;
+      font-family: inherit;
+
+      svg {
+        width: 20px;
+        height: 20px;
+        vertical-align: text-bottom;
+        display: inline-block;
+
+        &:not(.primary-nav__accordion-icon) {
+          margin-right: calc($gap / 2);
+        }
+
+        &.primary-nav__accordion-icon {
+          margin-right: calc($gap / 4);
+          transition: transform 0.2s ease;
+        }
+      }
+
+      &:hover {
+        background: rgba($color-4, 0.1);
+        color: $color-4;
+      }
+    }
+  }
+
+  &__item--expanded {
+    .primary-nav__accordion-icon {
+      transform: rotate(90deg);
+    }
+
+    .primary-nav__submenu {
+      display: block;
+    }
+  }
+
+  &__submenu {
+    display: none;
+    list-style: none;
+    padding: 0;
+    padding-left: $gap;
+    margin: calc($gap / 4) 0 0 0;
+  }
+
+  &__sublink {
+    display: grid;
+    grid-template-columns: 16px 1fr;
+    grid-gap: calc($gap / 2);
+    align-items: center;
+    padding: calc($gap / 2) calc($gap / 2) calc($gap / 2) $gap;
+    color: $color-5;
+    text-decoration: none;
+    transition: $transition-colors;
+    border-radius: $radius-sm;
+    font-weight: 400;
+    font-size: 14px;
+
+    &:hover,
+    &:active,
+    &:focus,
+    &.is-active {
+      background: rgba($color-4, 0.1);
+      color: $color-4;
+      text-decoration: none;
+    }
+  }
+
+  &__sublink-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  &__sublink-desc {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 8px rgba($color-6, 0.6);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 12px rgba($color-6, 0.8);
+  }
+}
+
+.cache-size-display {
+  font-size: 9px;
+}

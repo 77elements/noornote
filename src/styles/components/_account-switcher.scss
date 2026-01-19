@@ -74,7 +74,7 @@
     width: max-content;
     background-color: $color-2;
     border-radius: $radius-base;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: $box-shadow;
     z-index: 1000;
     overflow: hidden;
 

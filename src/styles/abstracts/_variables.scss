@@ -15,116 +15,84 @@ $color-4: #dc85ad; // Pink (interactive elements only)
 $color-5: #ede2da; // Light Peach (text)
 $color-6: #7dd87d; // Soft Mint Green (status indicators)
 
-// Neutral Colors (Light Theme)
+// Neutral Colors
 $color-white: #ffffff;
-$color-gray-50: #f8fafc;
-$color-gray-100: #f1f5f9;
-$color-gray-200: #e2e8f0;
-$color-gray-300: #cbd5e1;
-$color-gray-400: #94a3b8;
-$color-gray-500: #64748b;
-$color-gray-600: #475569;
-$color-gray-700: #334155;
-$color-gray-800: #1e293b;
-$color-gray-900: #0f172a;
+$color-black: #000000;
 
-// Semantic Colors (only base colors, no variants)
+// Semantic Colors
 $color-success: #10b981;
 $color-warning: #f59e0b;
 $color-error: #ef4444;
 $color-info: #3b82f6;
 
 // ========================================
-// Light Theme Colors
+// Theme Maps
 // ========================================
 $light-theme: (
-  background: $color-1,           // Deep purple background (#4e2a5b)
-  surface: $color-2,              // Medium purple for surfaces
-  surface-elevated: $color-2,     // Medium purple for elevated surfaces
-  text-primary: $color-5,         // Light peach for primary text (default)
-  text-secondary: $color-5,       // Light peach for secondary text
-  text-tertiary: $color-5,        // Light peach for tertiary text
-  text-interactive: $color-4,     // Pink for interactive elements (clickable)
-  accent: $color-3,               // Light purple accent (sparingly used)
-  border: $color-2,               // Medium purple borders
-  border-light: $color-1,         // Deep purple light borders
-  border-focus: $color-4,         // Pink focus for interactive elements
-  shadow: rgba($color-1, 0.3)     // Deep purple shadow
+  background: $color-1,
+  surface: $color-2,
+  surface-elevated: $color-2,
+  text-primary: $color-5,
+  text-secondary: $color-5,
+  text-tertiary: $color-5,
+  text-interactive: $color-4,
+  accent: $color-3,
+  border: $color-2,
+  border-light: $color-1,
+  border-focus: $color-4,
+  shadow: rgba($color-1, 0.3)
 );
 
-// ========================================
-// Dark Theme Colors
-// ========================================
 $dark-theme: (
-  background: $color-1,           // Deep purple background
-  surface: $color-2,              // Medium purple for surfaces
-  surface-elevated: $color-2,     // Medium purple for elevated surfaces
-  text-primary: $color-5,         // Light peach for primary text (default)
-  text-secondary: $color-5,       // Light peach for secondary text
-  text-tertiary: $color-5,        // Light peach for tertiary text
-  text-interactive: $color-4,     // Pink for interactive elements (clickable)
-  accent: $color-3,               // Light purple accent (sparingly used)
-  border: $color-2,               // Medium purple borders
-  border-light: $color-1,         // Deep purple light borders
-  border-focus: $color-4,         // Pink focus for interactive elements
-  shadow: rgba($color-1, 0.5) // Deep purple shadow
+  background: $color-1,
+  surface: $color-2,
+  surface-elevated: $color-2,
+  text-primary: $color-5,
+  text-secondary: $color-5,
+  text-tertiary: $color-5,
+  text-interactive: $color-4,
+  accent: $color-3,
+  border: $color-2,
+  border-light: $color-1,
+  border-focus: $color-4,
+  shadow: rgba($color-1, 0.5)
 );
 
 // ========================================
 // Typography
 // ========================================
-
-// Font Families (System Fonts)
 $font-family-sans: sans-serif;
 $font-family-mono: monospace;
 
-// Font Sizes
-// All font-size declarations use px values directly (no variables)
-// Common sizes: 12px, 14px, 16px (default), 18px, 20px, 24px, 30px, 36px
-
 // ========================================
-// Spacing System - Gap-based (scalable)
+// Spacing System
 // ========================================
-// All spacing derives from $gap - change $gap to scale everything proportionally
-$gap: 1rem;                // 16px - base spacing unit
-// Use: $gap, calc($gap / 2), calc($gap / 4) etc. for all margins, paddings, gaps
+$gap: 1rem; // 16px - base spacing unit
 
 // ========================================
 // Border Radius
 // ========================================
-$radius-none: 0;
 $radius-sm: 0.125rem;      // 2px
 $radius-base: 0.25rem;     // 4px
 $radius-md: 0.375rem;      // 6px
 $radius-lg: 0.5rem;        // 8px
-$radius-xl: 0.75rem;       // 12px
-$radius-2xl: 1rem;         // 16px
-$radius-3xl: 1.5rem;       // 24px
 $radius-full: 9999px;
 
 // ========================================
 // Shadows
 // ========================================
-$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-$shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-$shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-$shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-$shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+$box-shadow: 0 4px 12px rgba($color-black, 0.35);
+$box-hover: 0 10px 15px -3px rgba($color-black, 0.1), 0 4px 6px -2px rgba($color-black, 0.05);
+$overlay-bg: rgba($color-black, 0.5);
+$text-glow: 0 0 10px rgba($color-white, 0.15), 0 0 20px rgba($color-white, 0.1);
+$surface-tint: rgba($color-white, 0.1);
 
 // ========================================
 // Transitions
 // ========================================
 $transition-fast: 150ms ease-in-out;
-$transition-normal: 250ms ease-in-out;
-$transition-slow: 350ms ease-in-out;
-
-// Transition Properties
-$transition-all: all $transition-normal;
+$transition-all: all 250ms ease-in-out;
 $transition-colors: color $transition-fast, background-color $transition-fast, border-color $transition-fast;
-$transition-opacity: opacity $transition-fast;
-$transition-transform: transform $transition-normal;
 
 // ========================================
 // Breakpoints
@@ -136,19 +104,6 @@ $breakpoint-xl: 1280px;
 $breakpoint-2xl: 1536px;
 
 // ========================================
-// Z-Index Scale
+// Layout
 // ========================================
-$z-index-dropdown: 1000;
-$z-index-sticky: 1020;
-$z-index-fixed: 1030;
-$z-index-modal-backdrop: 1040;
-$z-index-modal: 1050;
-$z-index-popover: 1060;
-$z-index-tooltip: 1070;
-$z-index-toast: 1080;
-
-// ========================================
-// Layout Specific
-// ========================================
-$header-height: 60px;
 $main-content-max-width: 1200px;

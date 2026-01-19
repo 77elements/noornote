@@ -44,8 +44,8 @@
     transition: all 0.2s ease;
 
     &:hover {
-      color: #e74c3c;
-      background: rgba(231, 76, 60, 0.1);
+      color: $color-error;
+      background: rgba($color-error, 0.1);
     }
   }
 
@@ -94,9 +94,9 @@
     transition: all 0.2s ease;
 
     &:hover {
-      border-color: #e74c3c;
-      color: #e74c3c;
-      background: rgba(231, 76, 60, 0.05);
+      border-color: $color-error;
+      color: $color-error;
+      background: rgba($color-error, 0.05);
     }
   }
 
@@ -164,8 +164,8 @@
   &__notice {
     width: 100%;
     padding: $gap;
-    background: rgba(255, 152, 0, 0.05);
-    border: 1px solid rgba(255, 152, 0, 0.2);
+    background: rgba($color-warning, 0.05);
+    border: 1px solid rgba($color-warning, 0.2);
     border-radius: calc($gap / 2);
     margin-top: $gap;
     display: flex;

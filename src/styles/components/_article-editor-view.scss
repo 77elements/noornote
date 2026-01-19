@@ -113,7 +113,7 @@
     display: flex;
     align-items: center;
     padding: calc($gap * 0.75) $gap;
-    background: rgba(255, 255, 255, 0.02);
+    background: $surface-tint;
     color: $color-5;
     font-size: 14px;
     font-weight: 500;
@@ -218,7 +218,7 @@
     }
 
     code {
-      background: rgba(255, 255, 255, 0.05);
+      background: $surface-tint;
       padding: 2px 6px;
       border-radius: 4px;
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
@@ -226,7 +226,7 @@
     }
 
     pre {
-      background: rgba(0, 0, 0, 0.3);
+      background: $overlay-bg;
       padding: $gap;
       border-radius: $radius-md;
       overflow-x: auto;

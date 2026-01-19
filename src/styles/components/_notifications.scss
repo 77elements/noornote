@@ -113,23 +113,23 @@
 
 // Type-specific icon colors (matching ISL)
 .notification-item[data-type="reply"] .notification-item__icon {
-  color: #3b82f6; // Blue
+  color: $color-info;
 }
 
 .notification-item[data-type="mention"] .notification-item__icon {
-  color: #3b82f6; // Blue (same as reply)
+  color: $color-info;
 }
 
 .notification-item[data-type="zap"] .notification-item__icon {
-  color: #f59e0b; // Orange
+  color: $color-warning;
 }
 
 .notification-item[data-type="repost"] .notification-item__icon {
-  color: #10b981; // Green
+  color: $color-success;
 }
 
 .notification-item[data-type="reaction"] .notification-item__icon {
-  color: #ef4444; // Red
+  color: $color-error;
   font-size: 20px; // Emoji reactions slightly bigger
 }
 

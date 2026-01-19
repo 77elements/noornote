@@ -45,7 +45,7 @@
     border-radius: 8px;
     padding: $gap;
     min-width: 310px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: $box-shadow;
     margin-right: 10px;
 
     @include mobile-down {
@@ -111,8 +111,8 @@
     }
 
     &--error {
-      background: rgba(#ff4444, 0.2);
-      color: #ff4444;
+      background: rgba($color-error, 0.2);
+      color: $color-error;
     }
   }
 }

@@ -3,9 +3,8 @@
  * Atomic Design Architecture - Modern @use syntax
  */
 
-// 1. Abstracts - Variables, functions, mixins (load first)
+// 1. Abstracts - Variables, mixins (load first)
 @use 'abstracts/variables' as *;
-@use 'abstracts/functions' as *;
 @use 'abstracts/mixins' as *;
 
 // 2. Base - Reset, typography, base elements
@@ -18,9 +17,6 @@
 // 3. Atoms - Smallest UI components
 @use 'atoms/pulsate';
 @use 'atoms/progress-bar';
-@use 'atoms/inputs';
-@use 'atoms/icons';
-@use 'atoms/labels';
 @use 'atoms/links';
 @use 'atoms/profile-pic';
 @use 'atoms/badges';
