@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Base media container
 .note-media {
@@ -153,7 +154,7 @@
     gap: 6px;
     margin-top: calc($gap / 2);
     color: $color-4;
-    font-size: 13px;
+    @extend %small;
     text-decoration: none;
     cursor: pointer;
 
@@ -194,7 +195,7 @@
     color: $color-white;
     padding: calc($gap / 2) $gap;
     border-radius: var(--border-radius);
-    font-size: var(--font-size-sm);
+    @extend %small;
     font-weight: 600;
     pointer-events: none;
     z-index: 1;

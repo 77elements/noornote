@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .custom-dropdown {
   position: relative;
@@ -24,7 +25,6 @@
     border: 1px solid $color-3;
     border-radius: 4px;
     padding: 8px 12px;
-    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     outline: none;
@@ -101,7 +101,6 @@
     color: $color-5;
     cursor: pointer;
     transition: background-color 0.15s ease;
-    font-size: 14px;
     font-weight: 400;
 
     &:hover {
@@ -125,12 +124,12 @@
   .custom-dropdown {
     &__trigger {
       padding: 6px 10px;
-      font-size: 13px;
+      @include small;
     }
 
     &__item {
       padding: calc($gap * 0.375) calc($gap * 0.625);
-      font-size: 13px;
+      @include small;
     }
   }
 }
@@ -139,7 +138,7 @@
   .custom-dropdown {
     &__trigger {
       padding: 4px 8px;
-      font-size: 12px;
+      @include small;
     }
 
     &__arrow {
@@ -150,7 +149,7 @@
 
     &__item {
       padding: calc($gap / 4) calc($gap / 2);
-      font-size: 12px;
+      @include small;
     }
   }
 }

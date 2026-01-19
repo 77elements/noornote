@@ -1,5 +1,6 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .poll-creator {
   background: $color-1;
@@ -20,7 +21,6 @@
     align-items: center;
     gap: calc($gap / 2);
     font-weight: 600;
-    font-size: 14px;
 
     &::after {
       content: '';
@@ -37,7 +37,6 @@
     background: none;
     border: none;
     color: $color-4;
-    font-size: 14px;
     cursor: pointer;
     padding: calc($gap / 4) calc($gap / 2);
     border-radius: calc($gap / 4);
@@ -69,7 +68,6 @@
     border-radius: calc($gap / 4);
     padding: calc($gap / 2);
     color: $color-6;
-    font-size: 14px;
 
     &:focus {
       outline: none;
@@ -104,7 +102,6 @@
     background: none;
     border: 1px dashed $color-3;
     color: $color-5;
-    font-size: 14px;
     padding: calc($gap / 2);
     border-radius: calc($gap / 4);
     cursor: pointer;
@@ -133,7 +130,6 @@
     display: block;
     width: 100%;
     margin-bottom: calc($gap / 2);
-    font-size: 14px;
     color: $color-5;
     font-weight: 500;
   }
@@ -144,7 +140,6 @@
     border: 1px solid $color-2;
     border-radius: calc($gap / 4);
     padding: calc($gap / 2);
-    font-size: 14px;
     color-scheme: dark;
 
     &:focus {
@@ -178,7 +173,6 @@
   }
 
   &__notice-text {
-    font-size: 14px;
     color: $color-5;
     line-height: 1.4;
 
@@ -197,7 +191,6 @@
 
   &__advanced-toggle {
     cursor: pointer;
-    font-size: 14px;
     color: $color-5;
     font-weight: 500;
     user-select: none;
@@ -229,7 +222,7 @@
 
   &__hint {
     display: block;
-    font-size: 12px;
+    @extend %small;
     color: $color-3;
     font-weight: 400;
     margin-top: calc($gap / 4);

@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Header with New Folder button
 .bookmark-header {
@@ -16,7 +17,6 @@
   border-bottom: 1px solid $color-2;
 
   &__title {
-    font-size: 14px;
     font-weight: 600;
     color: $color-5;
   }
@@ -43,7 +43,7 @@
     border: 1px solid $color-2;
     border-radius: $radius-md;
     color: $color-4;
-    font-size: 12px;
+    @extend %small;
     cursor: pointer;
     transition: $transition-colors;
 
@@ -86,7 +86,7 @@
     background: none;
     border: none;
     color: $color-5;
-    font-size: 13px;
+    @extend %small;
     text-align: left;
     cursor: pointer;
     transition: background-color 0.15s ease;
@@ -151,7 +151,7 @@
     }
 
     &-name {
-      font-size: 12px;
+      @extend %small;
       font-weight: 600;
       color: $color-5;
       flex: 1;
@@ -163,7 +163,7 @@
 
   &__content {
     flex: 1;
-    font-size: 13px;
+    @extend %small;
     line-height: 1.4;
     color: $color-5;
     overflow: hidden;
@@ -175,7 +175,7 @@
   &__description {
     display: block;
     margin-top: calc($gap / 4);
-    font-size: 12px;
+    @extend %small;
     color: $color-3;
   }
 
@@ -186,7 +186,7 @@
   }
 
   &__edit {
-    font-size: 11px;
+    @extend %small;
     padding: 2px 8px;
   }
 
@@ -200,7 +200,7 @@
   }
 
   &__timestamp {
-    font-size: 11px;
+    @extend %small;
     color: color.adjust($color-5, $lightness: -30%);
   }
 
@@ -234,14 +234,14 @@
     position: absolute;
     top: calc($gap / 2);
     right: calc($gap / 2);
-    font-size: 10px;
+    @extend %mini;
     color: $color-3;
   }
 
   // External/URL content style
   &__content--external {
     color: $color-4;
-    font-size: 12px;
+    @extend %small;
     word-break: break-all;
   }
 
@@ -253,7 +253,7 @@
 
   &__event-id {
     display: block;
-    font-size: 10px;
+    @extend %mini;
     color: color.adjust($color-3, $lightness: -10%);
     font-family: monospace;
     margin-top: calc($gap / 4);
@@ -270,7 +270,7 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 12px;
+      @extend %small;
     }
   }
 
@@ -284,7 +284,6 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      font-size: 14px;
       font-weight: bold;
       color: $color-1;
     }
@@ -315,7 +314,6 @@
   }
 
   &__name {
-    font-size: 14px;
     font-weight: 600;
     color: $color-5;
     text-align: center;
@@ -323,7 +321,7 @@
   }
 
   &__count {
-    font-size: 11px;
+    @extend %small;
     color: $color-3;
     margin-top: calc($gap / 4);
   }
@@ -394,7 +392,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 10px;
+    @extend %mini;
     color: $color-4;
     cursor: pointer;
     opacity: 0;
@@ -448,13 +446,13 @@
   }
 
   &__label {
-    font-size: 24px;
+    @extend %h1;
     font-weight: 700;
     color: $color-3;
   }
 
   &__hint {
-    font-size: 11px;
+    @extend %small;
     color: color.adjust($color-3, $lightness: -10%);
     margin-top: calc($gap / 4);
   }
@@ -487,7 +485,7 @@
   align-items: center;
   gap: calc($gap / 4);
   padding: calc($gap / 2) 0;
-  font-size: 12px;
+  @extend %small;
   color: $color-3;
 
   &__item {
@@ -519,7 +517,6 @@
   border: 1px solid $color-2;
   border-radius: $radius-md;
   color: $color-5;
-  font-size: 14px;
 
   &:focus {
     outline: none;

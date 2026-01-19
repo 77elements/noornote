@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 @use 'sass:color';
 
 .image-viewer {
@@ -160,7 +161,6 @@
     background-color: color.adjust($color-1, $alpha: -0.2); // 80% opacity
     color: $color-6;
     border-radius: 24px;
-    font-size: 14px;
     font-weight: 500;
     z-index: 2;
   }
@@ -216,7 +216,7 @@
 
     &__counter {
       bottom: $gap;
-      font-size: 12px;
+      @include small;
       padding: calc($gap / 4) calc($gap / 2);
     }
 

@@ -1,5 +1,6 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .post-note-modal {
   display: flex;
@@ -27,7 +28,6 @@
   &__loading,
   &__error {
     color: var(--color-text-secondary);
-    font-size: 14px;
   }
 
   &__error {
@@ -40,12 +40,10 @@
 
   &__author {
     font-weight: 600;
-    font-size: 14px;
     color: var(--color-text);
   }
 
   &__content {
-    font-size: 14px;
     color: var(--color-text-secondary);
     line-height: 1.4;
     max-height: calc(1.4em * 3); // 3 lines
@@ -73,7 +71,6 @@
 }
 
 .relay-selector-label {
-  font-size: 14px;
   font-weight: 500;
   color: var(--color-text-secondary);
   white-space: nowrap;
@@ -93,7 +90,6 @@
   color: var(--color-text);
   cursor: pointer;
   text-align: left;
-  font-size: 14px;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
@@ -145,7 +141,6 @@
   }
 
   span {
-    font-size: 14px;
     color: var(--color-text);
   }
 }
@@ -161,7 +156,7 @@
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   color: var(--color-text);
-  font-size: 16px;
+  @extend %h4;
   line-height: 1.5;
   @include custom-scrollbar;
 
@@ -208,7 +203,7 @@
     color: $color-white;
     padding: calc($gap / 2) $gap;
     border-radius: var(--border-radius);
-    font-size: var(--font-size-sm);
+    @extend %small;
     font-weight: 600;
     pointer-events: none;
   }
@@ -283,7 +278,7 @@ svg.upload-progress {
   color: $color-white;
   border: none;
   border-radius: var(--border-radius);
-  font-size: 16px;
+  @extend %h4;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;

@@ -6,6 +6,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use 'sass:color';
+@use '../base/typography' as *;
 
 // Article preview card (horizontal layout)
 .article-preview-card {
@@ -50,7 +51,7 @@
 
   // Article title
   .article-preview-title {
-    font-size: 18px;
+    @extend %h3;
     font-weight: 600;
     color: $color-5;
     margin: 0 0 calc($gap / 2) 0;
@@ -65,7 +66,6 @@
 
   // Article summary
   .article-preview-summary {
-    font-size: 14px;
     color: rgba($color-5, 0.7);
     margin: 0;
     line-height: 1.5;
@@ -89,11 +89,11 @@
     }
 
     .article-preview-title {
-      font-size: 16px;
+      @include h4;
     }
 
     .article-preview-summary {
-      font-size: 13px;
+      @include small;
     }
   }
 }
@@ -187,7 +187,6 @@
     }
 
     .error-text {
-      font-size: 14px;
     }
   }
 }

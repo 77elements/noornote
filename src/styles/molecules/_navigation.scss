@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Primary Navigation
 .primary-nav {
@@ -137,7 +138,7 @@
     background: $color-6; // Soft Mint Green
     color: $color-1; // Black text
     border-radius: 10px;
-    font-size: 11px;
+    @extend %small;
     font-weight: 600;
     line-height: 20px;
     text-align: center;
@@ -226,7 +227,6 @@
     transition: $transition-colors;
     border-radius: $radius-sm;
     font-weight: 400;
-    font-size: 14px;
 
     &:hover,
     &:active,
@@ -262,5 +262,5 @@
 }
 
 .cache-size-display {
-  font-size: 9px;
+  @extend %mini;
 }

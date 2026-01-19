@@ -5,6 +5,7 @@
 
 @use 'sass:color';
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .user-status {
   display: flex;
@@ -17,14 +18,13 @@
     gap: var(--space-xs);
 
     .user-indicator {
-      font-size: 12px;
+      @extend %small;
       margin-right: 5px;
       color: $color-6; // Soft mint green status indicator
     }
 
     .user-display {
       color: $color-5;
-      font-size: 14px;
       font-weight: 500;
       white-space: nowrap;
       overflow: hidden;

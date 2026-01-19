@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 /* ================================
    Messages View (Conversations List)
@@ -94,7 +95,6 @@
     margin: 0;
     &.text-muted {
       color: $color-3;
-      font-size: 14px;
       margin-top: calc($gap / 2);
     }
   }
@@ -148,7 +148,7 @@
     background: $color-4;
     color: $color-1;
     font-weight: 600;
-    font-size: 18px;
+    @extend %h3;
     flex-shrink: 0;
     cursor: pointer;
   }
@@ -168,7 +168,6 @@
   &__name {
     font-weight: 500;
     color: $color-5;
-    font-size: 15px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -176,14 +175,13 @@
   }
 
   &__time {
-    font-size: 12px;
+    @extend %small;
     color: $color-3;
     flex-shrink: 0;
     margin-left: $gap;
   }
 
   &__preview {
-    font-size: 14px;
     color: $color-3;
     white-space: nowrap;
     overflow: hidden;
@@ -253,14 +251,12 @@
     background: $color-4;
     color: $color-1;
     font-weight: 600;
-    font-size: 14px;
   }
 }
 
 .conversation-view__name {
   font-weight: 500;
   color: $color-5;
-  font-size: 15px;
 }
 
 .conversation-view__menu-trigger {
@@ -291,7 +287,6 @@
   p {
     margin: 0;
     &.text-muted {
-      font-size: 14px;
       margin-top: calc($gap / 2);
     }
   }
@@ -311,7 +306,6 @@
   border: 1px solid $color-2;
   border-radius: 20px;
   padding: calc($gap * 0.75) $gap;
-  font-size: 14px;
   line-height: 1.4;
   background: $color-1;
   color: $color-5;
@@ -377,7 +371,6 @@
   }
 
   &__content {
-    font-size: 14px;
     line-height: 1.4;
     white-space: pre-wrap;
     word-break: break-word;
@@ -392,7 +385,7 @@
   }
 
   &__time {
-    font-size: 11px;
+    @extend %small;
   }
 }
 
@@ -422,7 +415,7 @@
   }
 
   &__label {
-    font-size: 13px;
+    @extend %small;
     font-weight: 500;
     color: $color-3;
   }
@@ -432,7 +425,6 @@
     border: 1px solid $color-2;
     border-radius: $radius-md;
     padding: calc($gap * 0.75) $gap;
-    font-size: 14px;
     line-height: 1.5;
     background: $color-1;
     color: $color-5;
@@ -507,7 +499,7 @@
     border: none;
     color: $color-3;
     cursor: pointer;
-    font-size: 18px;
+    @extend %h3;
     line-height: 1;
     padding: 4px 8px;
     border-radius: 50%;

@@ -102,14 +102,8 @@
   @include font-smoothing;
 }
 
-@mixin heading-xl {
-  @include heading-base;
-  font-size: 36px;
-
-  @include tablet-down {
-    font-size: 30px;
-  }
-}
+// DEPRECATED: Use @extend %h1 from typography instead
+// @mixin heading-xl - removed, use %h1
 
 // ========================================
 // Card Mixins

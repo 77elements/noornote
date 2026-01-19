@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 @use 'sass:color';
 
 .isl {
@@ -25,7 +26,6 @@
   border: none;
   border-radius: 4px;
   color: rgba($color-5, 0.6);
-  font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -73,7 +73,6 @@
 }
 
 .isl-count {
-  font-size: 14px;
   font-weight: 500;
   min-width: 20px;
   text-align: left;
@@ -111,7 +110,6 @@
 
 .isl-analytics {
   justify-self: end; // Push to the right in grid
-  font-size: 14px;
   padding: calc($gap / 4) calc($gap / 2);
 
   &:hover {
@@ -171,7 +169,7 @@
   .zap-amount-badge {
     color: $color-warning;
     font-weight: 600;
-    font-size: 12px;
+    @extend %small;
     margin-left: calc($gap / 4);
     padding: 2px calc($gap / 4);
     background: rgba($color-warning, 0.1);

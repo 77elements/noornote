@@ -6,6 +6,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Base note card (used in all views)
 .note-card {
@@ -31,7 +32,6 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    font-size: 14px;
     color: rgba($color-5, 0.6);
     margin-bottom: calc($gap / 2);
     cursor: pointer;
@@ -62,7 +62,6 @@
     flex-direction: column;
     gap: calc($gap / 4);
     margin-bottom: calc($gap / 2);
-    font-size: 14px;
 
     .thread-context-loading,
     .thread-context-error {
@@ -77,7 +76,7 @@
     .thread-context-ellipsis {
       text-align: left;
       color: rgba($color-5, 0.4);
-      font-size: 16px;
+      @extend %h4;
       line-height: 1;
       padding: calc($gap / 8) 0;
     }
@@ -182,7 +181,6 @@
   background: rgba($color-3, 0.3);
   border: 1px solid rgba($color-4, 0.2);
   border-radius: calc($gap / 2);
-  font-size: 15px;
   color: $color-5;
   text-align: left;
   cursor: not-allowed;
@@ -227,7 +225,6 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 4);
-  font-size: 14px;
   color: rgba($color-5, 0.7);
   white-space: nowrap;
 }
@@ -268,7 +265,6 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  font-size: 14px;
   color: rgba($color-5, 0.7);
   margin: calc($gap * 0.75) 0;
 }

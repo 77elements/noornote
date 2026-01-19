@@ -1,5 +1,6 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Override modal body to prevent scrolling
 .modal__body:has(.reply-modal) {
@@ -25,7 +26,7 @@
 }
 
 .reply-modal-parent-label {
-  font-size: 12px;
+  @extend %small;
   font-weight: 600;
   color: var(--color-text-secondary);
   text-transform: uppercase;

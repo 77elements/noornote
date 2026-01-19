@@ -93,7 +93,6 @@
   height: calc($gap * 1.5);
   border-radius: 50%;
   @include flex-center;
-  font-size: 14px;
   font-weight: bold;
 }
 
@@ -101,7 +100,6 @@
 .toast__message {
   flex: 1;
   color: $color-6;
-  font-size: 14px;
   line-height: 1.4;
   word-wrap: break-word;
 }

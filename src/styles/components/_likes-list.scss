@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .likes-list {
   width: 100%;
@@ -68,13 +69,12 @@
   }
 
   &__emoji {
-    font-size: 16px;
+    @extend %h4;
     line-height: 1;
   }
 
   &__count {
     font-weight: 600;
-    font-size: 14px;
     color: $color-6;
   }
 }

@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .note-header {
   // Ultra-compact mode for very narrow containers
@@ -36,7 +37,7 @@
       }
 
       .note-header__handle {
-        font-size: 11px;
+        @extend %small;
       }
     }
   }

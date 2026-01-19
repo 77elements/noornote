@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .article-editor {
   display: flex;
@@ -28,7 +29,6 @@
     border: 1px solid var(--color-border);
     border-radius: $radius-md;
     color: $color-5;
-    font-size: 14px;
     font-family: inherit;
     cursor: pointer;
     transition: $transition-colors;
@@ -46,7 +46,7 @@
   }
 
   &__title {
-    font-size: 24px;
+    @extend %h1;
     font-weight: 600;
     color: $color-5;
     margin: 0;
@@ -83,14 +83,14 @@
   }
 
   &__label {
-    font-size: 13px;
+    @extend %small;
     font-weight: 500;
     color: $color-5;
   }
 
   &__hint {
     font-weight: 400;
-    font-size: 11px;
+    @extend %small;
     color: rgba($color-5, 0.5);
     margin-left: calc($gap / 2);
   }
@@ -115,7 +115,6 @@
     padding: calc($gap * 0.75) $gap;
     background: $surface-tint;
     color: $color-5;
-    font-size: 14px;
     font-weight: 500;
     cursor: pointer;
     user-select: none;
@@ -188,7 +187,7 @@
   }
 
   &__preview-title {
-    font-size: 28px;
+    @extend %h1;
     font-weight: 700;
     color: $color-5;
     margin: 0 0 $gap;
@@ -196,7 +195,7 @@
   }
 
   &__preview-summary {
-    font-size: 16px;
+    @extend %h4;
     color: rgba($color-5, 0.7);
     margin: 0 0 $gap * 1.5;
     padding-bottom: $gap;
@@ -204,7 +203,6 @@
   }
 
   &__preview-content {
-    font-size: 15px;
     line-height: 1.7;
     color: $color-5;
 
@@ -222,7 +220,7 @@
       padding: 2px 6px;
       border-radius: 4px;
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-      font-size: 13px;
+      @extend %small;
     }
 
     pre {
@@ -284,7 +282,7 @@
     background: rgba($color-4, 0.1);
     color: $color-4;
     border-radius: $radius-sm;
-    font-size: 13px;
+    @extend %small;
   }
 
   // Cover image input with upload button

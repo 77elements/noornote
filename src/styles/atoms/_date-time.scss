@@ -4,8 +4,9 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .date-time {
-  font-size: 12px;
+  @extend %small;
   color: $color-3;
 }

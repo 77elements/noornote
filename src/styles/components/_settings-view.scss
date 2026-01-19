@@ -5,10 +5,11 @@
 
 @use 'sass:color';
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 // Settings title (standalone)
 .settings-title {
-  font-size: 32px;
+  @extend %h1;
   font-weight: 600;
   color: $color-5;
   margin-bottom: $gap;
@@ -55,7 +56,6 @@
     padding: calc($gap / 2) 0 0 0;
     color: $color-6;
     transition: opacity 0.3s ease;
-    font-size: 14px;
     min-height: 1.5em;
     text-align: right;
 
@@ -83,7 +83,6 @@
 }
 
 .health-summary-empty {
-  font-size: 14px;
   color: rgba($color-5, 0.6);
   font-style: italic;
 }
@@ -96,7 +95,6 @@
   display: inline-block;
   padding: calc($gap / 4) calc($gap / 2);
   border-radius: $radius-sm;
-  font-size: 14px;
   font-weight: 600;
 
   &--good {
@@ -123,7 +121,7 @@
 }
 
 .health-warning {
-  font-size: 13px;
+  @extend %small;
   color: rgba($color-warning, 0.9);
   padding: calc($gap / 4) 0;
   line-height: 1.4;
@@ -143,7 +141,6 @@
     border: 1px solid $color-3;
     border-radius: $radius-sm;
     color: $color-5;
-    font-size: 14px;
 
     &:focus {
       outline: none;
@@ -186,7 +183,6 @@
   margin-bottom: calc($gap / 2);
 
   .relay-url {
-    font-size: 14px;
     color: $color-5;
     font-weight: 500;
     display: flex;
@@ -215,7 +211,7 @@
 }
 
 .relay-latency {
-  font-size: 12px;
+  @extend %small;
   color: rgba($color-5, 0.5);
   font-weight: 400;
   margin-left: calc($gap / 4);
@@ -239,7 +235,7 @@
   border: 1px solid $color-4;
   border-radius: $radius-sm;
   color: $color-4;
-  font-size: 13px;
+  @extend %small;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -299,7 +295,6 @@
 
 // Media server info text (standalone)
 .media-server-info-text {
-  font-size: 14px;
   color: rgba($color-5, 0.7);
   line-height: 1.5;
 }
@@ -312,7 +307,6 @@
 // Media server label (standalone)
 .media-server-label {
   display: block;
-  font-size: 14px;
   font-weight: 500;
   color: $color-5;
   margin-bottom: calc($gap / 4);
@@ -326,7 +320,6 @@
   border: 1px solid $color-3;
   border-radius: $radius-sm;
   color: $color-5;
-  font-size: 14px;
 
   &:focus {
     outline: none;
@@ -353,7 +346,6 @@
   border: 1px solid $color-4;
   border-radius: $radius-sm;
   color: $color-4;
-  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -381,7 +373,6 @@
 
 // Sensitive media info text (standalone)
 .sensitive-media-info-text {
-  font-size: 14px;
   color: rgba($color-5, 0.7);
   line-height: 1.5;
 }
@@ -412,7 +403,6 @@
 }
 
 .zap-info {
-  font-size: 14px;
   color: rgba($color-5, 0.8);
   line-height: 1.6;
 }
@@ -423,7 +413,6 @@
   gap: $gap;
 
   label {
-    font-size: 14px;
     font-weight: 500;
     color: $color-5;
   }
@@ -435,7 +424,6 @@
     border: 1px solid $color-2;
     border-radius: $radius-sm;
     color: $color-5;
-    font-size: 14px;
 
     &::placeholder {
       color: rgba($color-5, 0.4);
@@ -448,7 +436,6 @@
   }
 
   .nwc-status {
-    font-size: 14px;
     min-height: 20px;
   }
 }
@@ -459,7 +446,7 @@
 
   #nwc-storage-info {
     margin-top: calc($gap / 2);
-    font-size: 13px;
+    @extend %small;
     line-height: 1.5;
 
     code {
@@ -467,7 +454,7 @@
       padding: 2px 6px;
       border-radius: 3px;
       font-family: monospace;
-      font-size: 12px;
+      @extend %small;
       word-break: break-all;
     }
 
@@ -513,7 +500,7 @@
   }
 
   .wallet-ln-address {
-    font-size: 11px;
+    @extend %small;
     color: rgba($color-5, 0.6);
   }
 }
@@ -535,7 +522,6 @@
   gap: calc($gap / 2);
 
   label {
-    font-size: 14px;
     font-weight: 500;
     color: $color-5;
   }
@@ -547,7 +533,6 @@
     border: 1px solid $color-2;
     border-radius: $radius-sm;
     color: $color-5;
-    font-size: 14px;
 
     &::placeholder {
       color: rgba($color-5, 0.4);
@@ -607,7 +592,7 @@
 }
 
 .subsection-title {
-  font-size: 18px;
+  @extend %h3;
   font-weight: 600;
   color: $color-3;
   margin-bottom: $gap;
@@ -651,7 +636,6 @@
 }
 
 .status-text {
-  font-size: 14px;
   font-weight: 500;
   color: $color-5;
 }
@@ -677,7 +661,6 @@
 }
 
 .setting-label {
-  font-size: 14px;
   font-weight: 500;
   color: $color-5;
   margin-bottom: calc($gap / 4);
@@ -685,7 +668,7 @@
 }
 
 .setting-description {
-  font-size: 12px;
+  @extend %small;
   color: rgba($color-5, 0.6);
   line-height: 1.4;
 }
@@ -698,7 +681,6 @@
   border-radius: $radius-sm;
 
   p {
-    font-size: 14px;
     color: rgba($color-5, 0.7);
     line-height: 1.5;
   }
@@ -710,7 +692,6 @@
 .cache-settings {
 
   .section-help {
-    font-size: 14px;
     color: rgba($color-5, 0.6);
     margin-bottom: $gap * 2;
     line-height: 1.5;
@@ -802,14 +783,13 @@
   }
 
   &__title {
-    font-size: 16px;
+    @extend %h4;
     font-weight: 600;
     color: $color-5;
     margin-bottom: calc($gap / 4);
   }
 
   &__description {
-    font-size: 14px;
     color: rgba($color-5, 0.7);
     line-height: 1.5;
   }
@@ -817,7 +797,7 @@
   &__features {
     margin: calc($gap / 2) 0 0 0;
     padding-left: $gap;
-    font-size: 13px;
+    @extend %small;
     color: rgba($color-5, 0.6);
 
     li {
@@ -843,7 +823,6 @@
     border: 1px solid $color-3;
     border-radius: $radius-sm;
     color: $color-5;
-    font-size: 14px;
 
     &::placeholder {
       color: rgba($color-5, 0.4);
@@ -871,7 +850,6 @@
 .subscription-hashtag {
   color: $color-4;
   font-weight: 500;
-  font-size: 14px;
 }
 
 .subscription-row {
@@ -939,14 +917,13 @@
   }
 
   &__title {
-    font-size: 14px;
     font-weight: 600;
     color: $color-5;
     margin: 0;
   }
 
   &__description {
-    font-size: 12px;
+    @extend %small;
     color: rgba($color-5, 0.6);
     margin: calc($gap / 4) 0 0 0;
   }
@@ -1002,12 +979,10 @@
 
   &__handle {
     color: rgba($color-5, 0.4);
-    font-size: 14px;
     line-height: 1;
   }
 
   &__label {
-    font-size: 14px;
     color: $color-5;
     white-space: nowrap;
   }
@@ -1050,7 +1025,6 @@
     }
 
     p {
-      font-size: 14px;
       color: $color-red;
       line-height: 1.5;
       margin: 0;
@@ -1077,14 +1051,13 @@
       flex: 1;
 
       h4 {
-        font-size: 14px;
         font-weight: 600;
         color: $color-5;
         margin: 0 0 calc($gap / 4) 0;
       }
 
       p {
-        font-size: 13px;
+        @extend %small;
         color: rgba($color-5, 0.6);
         line-height: 1.4;
         margin: 0;
@@ -1104,14 +1077,12 @@
 // Danger Zone Modal Styles
 .danger-zone-modal {
   p {
-    font-size: 14px;
     color: rgba($color-5, 0.9);
     line-height: 1.5;
   }
 
   ul, ol {
     margin: calc($gap / 2) 0 0 $gap * 1.5;
-    font-size: 14px;
     color: rgba($color-5, 0.8);
     line-height: 1.6;
 
@@ -1126,7 +1097,6 @@
     border: 1px solid $color-red-border;
     border-radius: $radius-sm;
     color: $color-red;
-    font-size: 14px;
     margin-top: $gap;
 
     &--critical {
@@ -1143,14 +1113,13 @@
 
     strong {
       display: block;
-      font-size: 14px;
       color: $color-5;
       margin-bottom: calc($gap / 2);
     }
 
     ul {
       margin: 0 0 0 $gap;
-      font-size: 13px;
+      @extend %small;
       color: rgba($color-5, 0.7);
     }
   }

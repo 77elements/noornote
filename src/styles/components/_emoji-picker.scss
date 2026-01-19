@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Overlay (backdrop)
 .emoji-picker-overlay {
@@ -44,7 +45,7 @@
   border-bottom: 1px solid var(--border-color);
   background: var(--surface-elevated-color);
   color: var(--text-primary-color);
-  font-size: var(--font-size-sm);
+  @extend %small;
   outline: none;
 
   &::placeholder {
@@ -109,7 +110,7 @@
 }
 
 .emoji-picker-category-title {
-  font-size: 13px;
+  @extend %small;
   font-weight: 600;
   color: var(--text-secondary-color);
   margin-bottom: calc($gap / 2);

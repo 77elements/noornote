@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Profile Header Section
 .profile-header {
@@ -93,13 +94,12 @@
 }
 
 .profile-name {
-  @include heading-xl;
+  @extend %h1;
   color: $color-5;
   margin: 0 0 calc($gap / 4) 0;
 }
 
 .profile-nip05 {
-  font-size: 14px;
   color: var(--color-text-secondary);
   margin: 0 0 $gap 0;
   word-break: break-all;
@@ -124,7 +124,6 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  font-size: 14px;
   color: $color-5;
 }
 
@@ -145,7 +144,6 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  font-size: 14px;
   color: $color-5;
   font-family: monospace;
   position: relative;
@@ -275,7 +273,7 @@
   position: absolute;
   right: 0;
   top: -24px;
-  font-size: 12px;
+  @extend %small;
   color: $color-4;
   font-weight: 600;
   opacity: 0;
@@ -316,14 +314,13 @@
   }
 
   strong {
-    font-size: 18px;
+    @extend %h3;
     color: $color-5;
     font-weight: 600;
     transition: color 0.2s ease;
   }
 
   span {
-    font-size: 14px;
     color: var(--color-text-secondary);
     transition: color 0.2s ease;
   }
@@ -334,7 +331,7 @@
   display: inline-box;
   align-items: center;
   padding: calc($gap / 4) calc($gap / 2);
-  font-size: 12px;
+  @extend %small;
   color: $color-3;
   font-weight: 500;
   white-space: nowrap;
@@ -386,7 +383,6 @@
   background: transparent;
   border: none;
   color: $color-5;
-  font-size: 14px;
   text-align: left;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -414,7 +410,7 @@
 
 .profile-joined-date {
   text-align: right;
-  font-size: 13px;
+  @extend %small;
   color: var(--color-text-secondary);
   margin: calc($gap / 2) 0 $gap 0;
   opacity: 0.8;
@@ -429,7 +425,6 @@
 }
 
 .profile-website {
-  font-size: 14px;
   margin: calc($gap / 2) 0;
 
   a {
@@ -460,7 +455,7 @@
   &__loading {
     padding: $gap;
     color: $color-3;
-    font-size: 13px;
+    @extend %small;
     text-align: center;
   }
 }
@@ -492,7 +487,6 @@
 }
 
 .profile-list-title {
-  font-size: 14px;
   font-weight: 600;
   color: $color-5;
   margin: 0;
@@ -565,7 +559,7 @@
 
   &__url {
     color: $color-4;
-    font-size: 13px;
+    @extend %small;
     text-decoration: none;
     word-break: break-all;
 
@@ -575,7 +569,7 @@
   }
 
   &__desc {
-    font-size: 12px;
+    @extend %small;
     color: $color-3;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -583,7 +577,7 @@
   }
 
   &__id {
-    font-size: 11px;
+    @extend %small;
     font-family: monospace;
     color: $color-3;
   }
@@ -597,7 +591,7 @@
   border: 1px solid $color-2;
   border-radius: $radius-sm;
   color: $color-4;
-  font-size: 12px;
+  @extend %small;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 
@@ -636,7 +630,7 @@
   }
 
   p {
-    font-size: 16px;
+    @extend %h4;
     color: $color-3;
     margin: 0;
     line-height: 1.6;
@@ -664,7 +658,7 @@
 .profile-loading-text,
 .profile-error-text {
   color: var(--color-text-secondary);
-  font-size: 18px;
+  @extend %h3;
   margin: 0;
 }
 
@@ -679,7 +673,7 @@
   display: inline-flex;
   align-items: center;
   gap: calc($gap / 4);
-  font-size: 12px;
+  @extend %small;
   color: $color-3;
   cursor: pointer;
   margin-left: calc($gap / 2);

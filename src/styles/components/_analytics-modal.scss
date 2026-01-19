@@ -7,6 +7,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Analytics content container
 .analytics-content {
@@ -77,7 +78,6 @@
 .analytics-modal__zap-message {
   color: var(--color-text-secondary);
   font-style: italic;
-  font-size: 14px;
 }
 
 // Emoji group (for likes)
@@ -92,7 +92,7 @@
 
 // Emoji icon
 .analytics-modal__emoji {
-  font-size: 18px;
+  @extend %h3;
   margin-right: calc($gap / 4);
 }
 

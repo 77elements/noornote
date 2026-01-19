@@ -4,13 +4,13 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 @use 'sass:color';
 
 .mute-list-header {
   margin-bottom: $gap * 2;
 
   .mute-list-description {
-    font-size: 14px;
     color: $color-3;
     margin-bottom: $gap;
   }
@@ -39,7 +39,6 @@
   text-align: center;
   padding: $gap * 3;
   color: $color-3;
-  font-size: 14px;
 }
 
 .mute-list-empty {
@@ -52,7 +51,6 @@
   }
 
   p {
-    font-size: 14px;
     color: $color-3;
   }
 }
@@ -79,12 +77,12 @@
 }
 
 .mute-list-item__lock {
-  font-size: 12px;
+  @extend %small;
   opacity: 0.6;
 }
 
 .mute-list-item__badge {
-  font-size: 12px;
+  @extend %small;
   margin-left: 4px;
 
   &--private {
@@ -110,7 +108,7 @@
 
 .mute-list-item__event-id {
   font-family: monospace;
-  font-size: 13px;
+  @extend %small;
   color: $color-3;
 }
 
@@ -144,7 +142,7 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    font-size: 16px;
+    @extend %h4;
     font-weight: 600;
     color: $color-1;
     margin: 0;
@@ -166,12 +164,12 @@
     background: $color-4;
     color: $color-1;
     border-radius: 10px;
-    font-size: 12px;
+    @extend %small;
     font-weight: 600;
   }
 
   &__description {
-    font-size: 13px;
+    @extend %small;
     color: $color-3;
     margin-top: calc($gap / 4);
   }
@@ -183,7 +181,6 @@
     margin-bottom: $gap * 1.5;
 
     p {
-      font-size: 14px;
       line-height: 1.6;
       margin-bottom: calc($gap / 2);
 

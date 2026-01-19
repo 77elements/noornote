@@ -6,6 +6,7 @@
 
 @use 'sass:color';
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 @use '../abstracts/mixins' as *;
 
 .modal {

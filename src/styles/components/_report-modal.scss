@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .report-modal {
   display: flex;
@@ -16,7 +17,6 @@
     background: var(--color-bg-secondary);
     border-radius: var(--border-radius);
     color: var(--color-text-primary);
-    font-size: var(--font-size-base);
     line-height: 1.5;
 
     strong {
@@ -33,7 +33,7 @@
 
   &__section-title {
     margin: 0;
-    font-size: var(--font-size-lg);
+    @extend %h4;
     font-weight: 600;
     color: var(--color-text-primary);
   }
@@ -82,11 +82,10 @@
   &__option-label {
     font-weight: 600;
     color: var(--color-text-primary);
-    font-size: var(--font-size-base);
   }
 
   &__option-description {
-    font-size: var(--font-size-sm);
+    @extend %small;
     color: var(--color-text-secondary);
     line-height: 1.4;
   }
@@ -100,7 +99,6 @@
     border-radius: var(--border-radius);
     color: var(--color-text-primary);
     font-family: inherit;
-    font-size: var(--font-size-base);
     line-height: 1.5;
     resize: vertical;
     transition: border-color 0.2s ease;
@@ -118,7 +116,7 @@
   &__char-count {
     display: flex;
     justify-content: flex-end;
-    font-size: var(--font-size-sm);
+    @extend %small;
     color: var(--color-text-secondary);
   }
 
@@ -142,7 +140,7 @@
     background: var(--color-bg-secondary);
     border-left: 3px solid var(--color-primary);
     border-radius: var(--border-radius);
-    font-size: var(--font-size-sm);
+    @extend %small;
     color: var(--color-text-secondary);
     line-height: 1.5;
 
@@ -171,7 +169,6 @@
 
     p {
       margin: 0;
-      font-size: var(--font-size-base);
       color: var(--color-text-secondary);
       line-height: 1.6;
       max-width: 400px;

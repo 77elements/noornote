@@ -40,7 +40,6 @@
 
   &__title {
     color: $color-5;
-    font-size: 24px;
     font-weight: 600;
     margin: 0 0 $gap 0;
   }
@@ -48,7 +47,6 @@
   &__message {
     color: $color-5;
     opacity: 0.7;
-    font-size: 16px;
     margin: 0 0 $gap * 2 0;
     line-height: 1.5;
   }

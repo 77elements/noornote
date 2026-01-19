@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .sidebar {
   @include card-base;
@@ -30,7 +31,7 @@
 // Sidebar header (logo)
 .sidebar-header {
   font-family: 'Saira', sans-serif;
-  font-size: 32px;
+  @extend %h1;
   font-weight: 700;
   line-height: 1.2;
   margin-bottom: calc(1.5 * $gap);
@@ -91,7 +92,6 @@
     background: none;
     border: none;
     color: $color-5;
-    font-size: 14px;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;

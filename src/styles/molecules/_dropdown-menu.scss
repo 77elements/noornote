@@ -6,6 +6,7 @@
 
 @use '../abstracts/variables' as *;
 @use 'sass:color';
+@use '../base/typography' as *;
 
 // Trigger button (3-dot icon)
 .dropdown-menu-trigger {
@@ -62,7 +63,6 @@
   border: none;
   border-radius: $radius-sm;
   color: $color-5;
-  font-size: 14px;
   text-align: left;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -124,7 +124,7 @@
 // Section header
 .dropdown-menu-header {
   padding: calc($gap / 2) $gap calc($gap / 4) $gap;
-  font-size: 12px;
+  @extend %small;
   font-weight: 600;
   color: rgba($color-5, 0.5);
   text-transform: uppercase;
@@ -139,6 +139,5 @@
 
   .dropdown-menu-item {
     padding: calc($gap * 0.625) calc($gap * 0.875);
-    font-size: 14px;
   }
 }

@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .user-hover-card {
   position: fixed;
@@ -40,7 +41,7 @@
   }
 
   &__name {
-    font-size: 16px;
+    @extend %h4;
     font-weight: 600;
     color: $color-5;
     white-space: nowrap;
@@ -49,7 +50,6 @@
   }
 
   &__username {
-    font-size: 14px;
     color: $color-5;
     opacity: 0.7;
     white-space: nowrap;
@@ -58,7 +58,6 @@
   }
 
   &__bio {
-    font-size: 14px;
     color: $color-5;
     opacity: 0.9;
     line-height: 1.4;

@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Container
 .switch-container {
@@ -23,7 +24,7 @@
 
 // Label text
 .switch-text {
-  font-size: var(--font-size-sm);
+  @extend %small;
   color: var(--text-primary-color);
   font-weight: 500;
 }

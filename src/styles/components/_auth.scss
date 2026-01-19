@@ -4,6 +4,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .auth-component {
   // Compact auth UI for sidebar footer
@@ -53,20 +54,18 @@
 
 // User indicator (standalone)
 .user-indicator {
-  font-size: 12px;
+  @extend %small;
 }
 
 // User npub (standalone)
 .user-npub {
   font-family: monospace;
-  font-size: 14px;
   color: $color-4;
 }
 
 // Auth npub (within auth status)
 .auth-npub {
   font-family: $font-family-mono;
-  font-size: 14px;
   color: $color-4;
   word-break: break-all;
   margin: calc($gap / 2) 0;
@@ -74,7 +73,7 @@
 
 // Auth extension (standalone)
 .auth-extension {
-  font-size: 13px;
+  @extend %small;
   color: $color-5;
   opacity: 0.7;
 }
@@ -139,7 +138,7 @@
   padding: calc($gap * 0.375) calc($gap * 0.75);
   border-radius: 4px;
   cursor: pointer;
-  font-size: 13px;
+  @extend %small;
 
   &:hover {
     background: $color-4;

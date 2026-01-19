@@ -6,35 +6,93 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// Heading styles
-h1, h2, h3, h4, h5, h6 {
+// Base font-size: responsive 13px (mobile) → 18px (large screens)
+body {
+  font-size: clamp(0.8125rem, 2vw, 1.125rem);
+  line-height: 1;
+}
+
+// Heading placeholders for @extend (use outside media queries)
+%heading-base {
   font-weight: 600;
   line-height: 1.25;
-  margin-bottom: calc($gap / 2);
 }
 
-h1 {
-  font-size: 27px;
+%h1 {
+  @extend %heading-base;
+  font-size: clamp(1.5rem, 4vw, 2.25rem);    // 24px → 36px
 }
 
-h2 {
-  font-size: 23px;
+%h2 {
+  @extend %heading-base;
+  font-size: clamp(1.25rem, 3vw, 1.75rem);   // 20px → 28px
 }
 
-h3 {
-  font-size: 21px;
+%h3 {
+  @extend %heading-base;
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem); // 18px → 24px
 }
 
-h4 {
-  font-size: 19px;
+%h4 {
+  @extend %heading-base;
+  font-size: clamp(1rem, 2vw, 1.25rem);      // 16px → 20px
 }
 
-h5, h6 {
-  font-size: 17px;
+%h5 {
+  @extend %heading-base;
+  font-size: clamp(0.875rem, 1.5vw, 1.125rem); // 14px → 18px
+}
+
+%h6 {
+  @extend %h5; // Same as h5
+}
+
+// Heading mixins for use inside media queries
+@mixin h1 { font-size: clamp(1.5rem, 4vw, 2.25rem); }
+@mixin h2 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
+@mixin h3 { font-size: clamp(1.125rem, 2.5vw, 1.5rem); }
+@mixin h4 { font-size: clamp(1rem, 2vw, 1.25rem); }
+@mixin h5 { font-size: clamp(0.875rem, 1.5vw, 1.125rem); }
+@mixin h6 { @include h5; }
+
+// Heading elements + utility classes
+h1, .h1 { @extend %h1; }
+h2, .h2 { @extend %h2; }
+h3, .h3 { @extend %h3; }
+h4, .h4 { @extend %h4; }
+h5, .h5 { @extend %h5; }
+h6, .h6 { @extend %h6; }
+
+// Small text - placeholder for @extend (use outside media queries)
+%small {
+  font-size: clamp(0.6875rem, 1.25vw, 0.9375rem); // 11px → 15px
+}
+
+// Small text - mixin for use inside media queries
+@mixin small {
+  font-size: clamp(0.6875rem, 1.25vw, 0.9375rem); // 11px → 15px
+}
+
+small, .small {
+  @extend %small;
+}
+
+// Mini text - placeholder for @extend (use outside media queries)
+%mini {
+  font-size: clamp(0.5625rem, 1vw, 0.8125rem); // 9px → 13px
+}
+
+// Mini text - mixin for use inside media queries
+@mixin mini {
+  font-size: clamp(0.5625rem, 1vw, 0.8125rem); // 9px → 13px
+}
+
+.mini {
+  @extend %mini;
 }
 
 // Paragraph styles
-p {
+p, li {
   margin-bottom: $gap;
   color: var(--color-text-primary);
   line-height: 1.5;
@@ -42,6 +100,9 @@ p {
   &:last-child {
     margin-bottom: 0;
   }
+}
+li {
+  margin-bottom: calc($gap / 4);
 }
 
 // Link styles moved to atoms/_links.scss for global consistency
@@ -65,14 +126,6 @@ ol {
   list-style-type: decimal;
 }
 
-li {
-  margin-bottom: calc($gap / 4);
-  line-height: 1.5;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
 
 // Definition lists
 dl {
@@ -105,11 +158,6 @@ b {
 em,
 i {
   font-style: italic;
-}
-
-small {
-  font-size: 14px;
-  color: var(--color-text-secondary);
 }
 
 mark {
@@ -152,7 +200,7 @@ pre {
 
 // Blockquotes
 blockquote {
-  font-size: 18px;
+  @extend %h3;
   line-height: 1.5;
   color: var(--color-text-secondary);
   border-left: 4px solid $color-4;

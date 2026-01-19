@@ -9,7 +9,6 @@
 // Base follow button styles
 .follow-btn {
   padding: calc($gap / 2) $gap;
-  font-size: 14px;
   font-weight: 600;
   border-radius: calc($gap / 4);
   border: 1px solid $color-4;
@@ -80,7 +79,6 @@
   background: transparent;
   border: none;
   color: $color-5;
-  font-size: 14px;
   text-align: left;
   cursor: pointer;
   transition: background 0.2s ease;

@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .about-section {
   background: $color-1;
@@ -15,14 +16,12 @@
   margin-bottom: $gap;
 
   h2 {
-    font-size: 20px;
     font-weight: 600;
     color: $color-5;
     margin-bottom: $gap;
   }
 
   h3 {
-    font-size: 16px;
     font-weight: 600;
     color: $color-5;
     margin-top: $gap * 1.5;
@@ -34,7 +33,6 @@
   }
 
   p {
-    font-size: 14px;
     color: rgba($color-5, 0.8);
     line-height: 1.6;
     margin-bottom: calc($gap / 2);
@@ -45,7 +43,6 @@
     padding-left: $gap * 1.5;
 
     li {
-      font-size: 14px;
       color: rgba($color-5, 0.8);
       line-height: 1.6;
       margin-bottom: calc($gap / 4);
@@ -65,7 +62,7 @@
     background: $color-2;
     padding: 2px 6px;
     border-radius: 3px;
-    font-size: 13px;
+    @extend %small;
   }
 
   &--footer {
@@ -76,7 +73,7 @@
 
     p {
       color: rgba($color-5, 0.4);
-      font-size: 13px;
+      @extend %small;
     }
   }
 }
@@ -102,7 +99,7 @@
 // Current date/time display - same style as about link
 .current-datetime-display,
 .datetime-separator {
-  font-size: 12px;
+  @extend %small;
   color: rgba($color-5, 0.4);
 }
 
