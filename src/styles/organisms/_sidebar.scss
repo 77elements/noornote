@@ -41,69 +41,6 @@
   text-shadow: $text-glow;
 }
 
-// Sidebar heading (standalone)
-.sidebar__heading {
-  font-size: 18px;
-  margin-bottom: $gap;
-  color: $color-5;
-
-  @include desktop-down {
-    display: none; // Hide text on smaller screens
-  }
-
-  @include tablet-down {
-    display: block; // Show text on mobile
-  }
-}
-
-// Sidebar text (standalone)
-.sidebar__text {
-  font-size: 14px;
-  color: var(--color-text-secondary);
-  margin-bottom: $gap;
-
-  @include desktop-down {
-    display: none; // Hide text on smaller screens
-  }
-
-  @include tablet-down {
-    display: block; // Show text on mobile
-  }
-}
-
-// Sidebar list (standalone)
-.sidebar__list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 $gap * 1.5 0;
-
-  @include tablet-down {
-    display: flex;
-    gap: calc($gap / 2);
-    overflow-x: auto;
-  }
-}
-
-// Sidebar list item (standalone)
-.sidebar__list-item {
-  padding: calc($gap / 2);
-  margin-bottom: calc($gap / 4);
-  border-radius: $radius-md;
-  cursor: pointer;
-  transition: $transition-colors;
-  color: var(--color-text-interactive); // Pink for interactive elements
-
-  &:hover {
-    background-color: rgba($color-4, 0.1); // Light pink hover background
-    color: var(--color-text-interactive);
-  }
-
-  @include tablet-down {
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-}
-
 // New Post Dropup Container
 .new-post-dropup {
   position: absolute;

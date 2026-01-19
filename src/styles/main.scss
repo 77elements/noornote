@@ -99,19 +99,12 @@
 @use 'molecules/nn-ui-toggle';
 
 // 5. Organisms - Complex UI sections
-@use 'organisms/header';
 @use 'organisms/sidebar';
 @use 'organisms/note-header';
 @use 'organisms/note-menu';
-@use 'organisms/footer';
 
 // 6. Templates - Page-level layouts
 @use 'templates/main-layout';
-@use 'templates/profile-layout';
 
-// 7. Pages - Specific page overrides
-@use 'pages/home';
-@use 'pages/profile';
-
-// 8. Utilities - Helper classes
+// 7. Utilities - Helper classes
 @use 'abstracts/utilities';
