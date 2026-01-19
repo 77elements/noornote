@@ -7,7 +7,7 @@ export class ExchangeRateService {
   private static instance: ExchangeRateService;
   private rates: Map<string, number> = new Map();
   private lastFetch: number = 0;
-  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+  private readonly CACHE_DURATION = 20 * 60 * 1000; // 20 minutes
 
   private constructor() {}
 
