@@ -122,6 +122,36 @@ export class ExchangeRateService {
   }
 
   /**
+   * Get locale for currency
+   */
+  private getLocale(currency: string): string {
+    const locales: { [key: string]: string } = {
+      EUR: 'de-DE',  // Komma
+      USD: 'en-US',  // Punkt
+      GBP: 'en-GB',  // Punkt
+      JPY: 'ja-JP',  // keine Dezimalstellen
+      CNY: 'zh-CN',  // Punkt
+      AUD: 'en-AU',  // Punkt
+      CHF: 'de-CH',  // Komma
+      SAR: 'ar-SA',  // Punkt
+      CAD: 'en-CA',  // Punkt
+      NZD: 'en-NZ',  // Punkt
+      AED: 'ar-AE',  // Punkt
+      ZAR: 'en-ZA'   // Punkt
+    };
+    return locales[currency] || 'en-US';
+  }
+
+  /**
+   * Format amount with locale-specific decimal separator
+   */
+  public formatAmount(amount: number, currency: string, decimals?: number): string {
+    const locale = this.getLocale(currency);
+    const d = decimals ?? (currency === 'JPY' ? 0 : 2);
+    return amount.toLocaleString(locale, { minimumFractionDigits: d, maximumFractionDigits: d });
+  }
+
+  /**
    * Get all available currencies
    */
   public getAvailableCurrencies(): Array<{ code: string; name: string; symbol: string }> {
