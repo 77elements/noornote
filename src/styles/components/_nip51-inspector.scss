@@ -108,7 +108,7 @@
     color: $color-3;
     background: color.adjust($color-2, $lightness: 8%);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: $radius-base;
   }
 
   &__dtag {
@@ -117,7 +117,7 @@
     font-weight: 600;
     background: rgba($color-4, 0.1);
     padding: 2px 8px;
-    border-radius: 4px;
+    border-radius: $radius-base;
   }
 
   &__time {

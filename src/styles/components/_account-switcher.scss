@@ -40,7 +40,7 @@
   &__indicator {
     width: 8px;
     height: 8px;
-    border-radius: 50%;
+    border-radius: $radius-full;
     background-color: $color-6;
   }
 
@@ -113,7 +113,7 @@
   &__active-dot {
     width: 6px;
     height: 6px;
-    border-radius: 50%;
+    border-radius: $radius-full;
     background-color: $color-6;
     flex-shrink: 0;
   }

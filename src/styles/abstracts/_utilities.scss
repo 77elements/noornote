@@ -19,9 +19,9 @@
   border: 0;
 }
 
-// Border radius utilities
-.rounded-sm { border-radius: $radius-sm; }
-.rounded { border-radius: $radius-base; }
-.rounded-md { border-radius: $radius-md; }
-.rounded-lg { border-radius: $radius-lg; }
-.rounded-full { border-radius: $radius-full; }
+// Border radius utilities (placeholders + classes)
+%rounded-sm, .rounded-sm { border-radius: $radius-sm; }
+%rounded, .rounded { border-radius: $radius-base; }
+%rounded-md, .rounded-md { border-radius: $radius-md; }
+%rounded-lg, .rounded-lg { border-radius: $radius-lg; }
+%rounded-full, .rounded-full { border-radius: $radius-full; }

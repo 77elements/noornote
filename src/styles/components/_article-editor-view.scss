@@ -210,7 +210,7 @@
     code {
       background: $surface-tint;
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: $radius-base;
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       @extend %small;
     }

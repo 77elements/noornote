@@ -8,7 +8,7 @@
 .mention-autocomplete {
   background: $color-2;
   border: 1px solid $color-3;
-  border-radius: 8px;
+  border-radius: $radius-lg;
   max-height: 300px;
   overflow-y: auto;
   box-shadow: $box-shadow;
@@ -31,7 +31,7 @@
     .mention-avatar {
       width: 40px;
       height: 40px;
-      border-radius: 50%;
+      border-radius: $radius-full;
       object-fit: cover;
       flex-shrink: 0;
     }

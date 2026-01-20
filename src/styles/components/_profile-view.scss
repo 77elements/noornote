@@ -165,7 +165,7 @@
 .copy-btn {
   background: $color-2;
   border: 1px solid $color-3;
-  border-radius: 4px;
+  border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -208,7 +208,7 @@
 .qr-btn {
   background: $color-2;
   border: 1px solid $color-3;
-  border-radius: 4px;
+  border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -233,7 +233,7 @@
 .tribe-btn {
   background: $color-2;
   border: 1px solid $color-3;
-  border-radius: 4px;
+  border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -644,7 +644,7 @@
   height: 40px;
   border: 3px solid $color-2;
   border-top-color: $color-4;
-  border-radius: 50%;
+  border-radius: $radius-full;
   animation: spin 1s linear infinite;
   margin-bottom: $gap;
 }

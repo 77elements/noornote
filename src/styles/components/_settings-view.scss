@@ -176,7 +176,7 @@
   padding: calc($gap / 2);
   background: $color-1;
   border: 1px solid $color-2;
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   transition: background 0.2s ease;
 
   &:hover {
@@ -204,7 +204,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: $radius-full;
   flex-shrink: 0;
 
   &.connected {
@@ -460,7 +460,7 @@
     code {
       background: rgba($color-3, 0.2);
       padding: 2px 6px;
-      border-radius: 3px;
+      border-radius: $radius-sm;
       font-family: monospace;
       @extend %small;
       word-break: break-all;
@@ -629,7 +629,7 @@
 .status-dot {
   width: 10px;
   height: 10px;
-  border-radius: 50%;
+  border-radius: $radius-full;
   background: $color-3;
 }
 
@@ -838,7 +838,7 @@
   &__badge {
     width: 12px;
     height: 12px;
-    border-radius: 50%;
+    border-radius: $radius-full;
     flex-shrink: 0;
 
     // Priority 1: Pulsing (high priority)

@@ -96,7 +96,7 @@
   @extend %small;
   color: $color-4;
   background: rgba($color-4, 0.2);
-  border-radius: 50%;
+  border-radius: $radius-full;
   display: grid;
   place-items: center;
   font-weight: bold;

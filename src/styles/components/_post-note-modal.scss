@@ -21,7 +21,7 @@
   margin: $gap 0;
   padding: $gap;
   border-left: 3px solid $color-4;
-  border-radius: 4px;
+  border-radius: $radius-base;
   max-width: 100%;
 
   &__loading,

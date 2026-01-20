@@ -176,7 +176,7 @@
 .search-spotlight__user-avatar {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: $radius-full;
   overflow: hidden;
   flex-shrink: 0;
   background: $color-2;

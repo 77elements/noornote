@@ -180,7 +180,7 @@
 
   &::-webkit-scrollbar-thumb {
     background: color.adjust($color-2, $lightness: 15%);
-    border-radius: 4px;
+    border-radius: $radius-base;
   }
 
   &::-webkit-scrollbar-thumb:hover {

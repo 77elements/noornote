@@ -12,7 +12,7 @@
 }
 
 .user-identity__avatar {
-  border-radius: 50%;
+  border-radius: $radius-full;
   object-fit: cover;
   flex-shrink: 0;
   transition: opacity 0.3s ease; // For profile recognition blinking

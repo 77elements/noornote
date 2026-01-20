@@ -44,7 +44,7 @@
     .reply-avatar {
       width: 18px;
       height: 18px;
-      border-radius: 50%;
+      border-radius: $radius-full;
       object-fit: cover;
       background: $color-3;
       flex-shrink: 0;
@@ -99,7 +99,7 @@
   gap: calc($gap / 2);
   padding: 0 calc($gap / 4);
   background: rgba($color-3, 0.3);
-  border-radius: calc($gap / 4);
+  border-radius: $radius-base;
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -180,7 +180,7 @@
   padding: calc($gap / 2) calc($gap * 0.75);
   background: rgba($color-3, 0.3);
   border: 1px solid rgba($color-4, 0.2);
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   color: $color-5;
   text-align: left;
   cursor: not-allowed;
@@ -204,7 +204,7 @@
       rgba($color-4, 0.2) 0%,
       rgba($color-4, 0.1) 100%
     );
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
     transition: width 0.3s ease;
     z-index: 0;
   }
@@ -300,7 +300,7 @@
   background: $color-red-bg;
   border: 1px solid $color-red-border;
   padding: $gap;
-  border-radius: 6px;
+  border-radius: $radius-md;
 
   .note-error {
     color: $color-red;

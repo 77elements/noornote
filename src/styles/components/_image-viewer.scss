@@ -72,7 +72,7 @@
     width: 48px;
     height: 48px;
     border: none;
-    border-radius: 8px;
+    border-radius: $radius-lg;
     background-color: color.adjust($color-1, $alpha: -0.2); // 80% opacity
     color: $color-6;
     cursor: pointer;
@@ -110,7 +110,7 @@
     width: 56px;
     height: 56px;
     border: none;
-    border-radius: 50%;
+    border-radius: $radius-full;
     background-color: color.adjust($color-1, $alpha: -0.2); // 80% opacity
     color: $color-6;
     cursor: pointer;
@@ -160,7 +160,7 @@
     padding: calc($gap / 2) $gap;
     background-color: color.adjust($color-1, $alpha: -0.2); // 80% opacity
     color: $color-6;
-    border-radius: 24px;
+    border-radius: $radius-full;
     font-weight: 500;
     z-index: 2;
   }
