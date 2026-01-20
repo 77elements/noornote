@@ -534,7 +534,7 @@ export class MainLayout {
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
-      <h2 class="search-view-primary__title">${title}</h2>
+      <h1 class="search-view-primary__title">${title}</h1>
     `;
 
     // Add content container
@@ -1697,7 +1697,7 @@ export class MainLayout {
           <path d="M19 12H5M12 19l-7-7 7-7"/>
         </svg>
       </button>
-      <h2 class="list-view-primary__title">${titles[listType]}</h2>
+      <h1 class="list-view-primary__title">${titles[listType]}</h1>
     `;
 
     // Add content container with data-tab-content for manager selectors

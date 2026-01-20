@@ -2286,7 +2286,7 @@ export class BookmarkManager {
 
     return `
       <div class="bookmark-header">
-        <span class="bookmark-header__title">${escapeHtml(title)}</span>
+        <h2 class="bookmark-header__title">${escapeHtml(title)}</h2>
         <div class="bookmark-header__new-dropdown">
             <button class="bookmark-header__new-btn" title="Create new item">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">

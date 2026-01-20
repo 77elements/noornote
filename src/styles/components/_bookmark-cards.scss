@@ -19,10 +19,12 @@
   &__title {
     font-weight: 600;
     color: $color-5;
+    margin: 0;
   }
 
   &__new-dropdown {
     position: relative;
+    align-self: stretch;
 
     &--open {
       .bookmark-header__dropdown-menu {
@@ -38,12 +40,12 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 4);
+    height: 100%;
     padding: calc($gap / 4) calc($gap / 2);
     background: none;
     border: 1px solid $color-2;
     border-radius: $radius-md;
     color: $color-4;
-    @extend %small;
     cursor: pointer;
     transition: $transition-colors;
 
@@ -82,11 +84,10 @@
     align-items: center;
     gap: calc($gap / 2);
     width: 100%;
-    padding: calc($gap / 2) calc($gap * 0.75);
+    padding: $gap;
     background: none;
     border: none;
     color: $color-5;
-    @extend %small;
     text-align: left;
     cursor: pointer;
     transition: background-color 0.15s ease;
