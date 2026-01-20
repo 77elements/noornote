@@ -8,8 +8,8 @@
  * - Handles Tauri window resize for phone mode
  *
  * Platform Priority:
- * - Desktop (≥992px): User preference applies
- * - Tablet (768-991px): Forces 'wide' mode
+ * - Desktop (≥1024px): User preference applies
+ * - Tablet (768-1023px): Forces 'wide' mode
  * - Phone (<768px): Forces 'phone' mode
  *
  * @service LayoutService

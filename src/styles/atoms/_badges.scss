@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 // ========================================
 // Counter Badge (unread counts, notifications)
@@ -18,7 +19,7 @@
   border-radius: 9px;
   background: $color-6;
   color: $color-1;
-  font-size: 11px;
+  @extend %small;
   font-weight: 600;
 }
 
@@ -26,6 +27,6 @@
 // Private Badge (for follows list)
 // ========================================
 .private-badge {
-  font-size: 12px;
+  @extend %small;
   opacity: 0.7;
 }

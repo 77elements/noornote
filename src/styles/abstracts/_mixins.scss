@@ -24,49 +24,11 @@
   }
 }
 
-// Light mode media query
-@mixin light-mode {
-  @media (prefers-color-scheme: light) {
-    @content;
-  }
-}
-
 // ========================================
 // Responsive Mixins
 // ========================================
 
-// Mobile first breakpoints
-@mixin mobile-up {
-  @media (min-width: $breakpoint-sm) {
-    @content;
-  }
-}
-
-@mixin tablet-up {
-  @media (min-width: $breakpoint-md) {
-    @content;
-  }
-}
-
-@mixin desktop-up {
-  @media (min-width: $breakpoint-lg) {
-    @content;
-  }
-}
-
-@mixin desktop-large-up {
-  @media (min-width: $breakpoint-xl) {
-    @content;
-  }
-}
-
-@mixin desktop-xl-up {
-  @media (min-width: $breakpoint-2xl) {
-    @content;
-  }
-}
-
-// Max-width breakpoints
+// Max-width breakpoints (desktop-first)
 @mixin mobile-down {
   @media (max-width: $breakpoint-sm - 1px) {
     @content;
@@ -81,6 +43,19 @@
 
 @mixin desktop-down {
   @media (max-width: $breakpoint-lg - 1px) {
+    @content;
+  }
+}
+
+// Min-width breakpoints (mobile-first)
+@mixin tablet-up {
+  @media (min-width: $breakpoint-md) {
+    @content;
+  }
+}
+
+@mixin desktop-up {
+  @media (min-width: $breakpoint-lg) {
     @content;
   }
 }
@@ -105,32 +80,6 @@
 @mixin flex-column {
   display: flex;
   flex-direction: column;
-}
-
-@mixin flex-column-center {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-// Grid utilities
-@mixin grid-center {
-  display: grid;
-  place-items: center;
-}
-
-@mixin grid-columns($columns, $gap: $gap) {
-  display: grid;
-  grid-template-columns: repeat($columns, 1fr);
-  gap: $gap;
-}
-
-// Container with max-width
-@mixin container($max-width: $main-content-max-width, $padding: $gap) {
-  max-width: $max-width;
-  margin: 0 auto;
-  padding: 0 $padding;
 }
 
 // ========================================
@@ -166,148 +115,8 @@
   @include font-smoothing;
 }
 
-@mixin heading-xl {
-  @include heading-base;
-  font-size: 36px;
-
-  @include tablet-down {
-    font-size: 30px;
-  }
-}
-
-@mixin heading-lg {
-  @include heading-base;
-  font-size: 30px;
-
-  @include tablet-down {
-    font-size: 24px;
-  }
-}
-
-@mixin heading-md {
-  @include heading-base;
-  font-size: 24px;
-
-  @include tablet-down {
-    font-size: 20px;
-  }
-}
-
-@mixin heading-sm {
-  @include heading-base;
-  font-size: 20px;
-
-  @include tablet-down {
-    font-size: 18px;
-  }
-}
-
-// ========================================
-// Button Mixins
-// ========================================
-
-// Base button styles
-@mixin button-base {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: $radius-md;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-  transition: $transition-colors;
-  user-select: none;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  &:focus {
-    outline: 2px solid var(--color-border-focus);
-    outline-offset: 2px;
-  }
-}
-
-// Button sizes
-@mixin button-sm {
-  padding: calc($gap / 2) $gap;
-  font-size: 14px;
-  gap: calc($gap / 2);
-}
-
-@mixin button-md {
-  padding: calc($gap / 2) $gap;
-  gap: calc($gap / 2);
-}
-
-@mixin button-lg {
-  padding: $gap $gap * 1.5;
-  font-size: 18px;
-  gap: calc($gap / 2);
-}
-
-// Button variants
-@mixin button-primary {
-  background-color: $color-4;
-  color: $color-1;
-
-  &:hover:not(:disabled) {
-    opacity: 0.8;
-  }
-}
-
-@mixin button-secondary {
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-surface-elevated);
-    border-color: var(--color-border-focus);
-  }
-}
-
-@mixin button-ghost {
-  background-color: transparent;
-  color: var(--color-text-secondary);
-
-  &:hover:not(:disabled) {
-    background-color: var(--color-surface);
-    color: var(--color-text-primary);
-  }
-}
-
-// ========================================
-// Form Mixins
-// ========================================
-
-// Base input styles
-@mixin input-base {
-  width: 100%;
-  padding: calc($gap / 2) $gap;
-  line-height: 1.5;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: $radius-md;
-  transition: $transition-colors;
-
-  &::placeholder {
-    color: var(--color-text-tertiary);
-  }
-
-  &:focus {
-    outline: none;
-    border-color: var(--color-border-focus);
-    box-shadow: 0 0 0 3px rgba($color-4, 0.1);
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
+// DEPRECATED: Use @extend %h1 from typography instead
+// @mixin heading-xl - removed, use %h1
 
 // ========================================
 // Card Mixins
@@ -317,13 +126,6 @@
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
-}
-
-@mixin card-elevated {
-  @include card-base;
-  background-color: var(--color-surface-elevated);
-  box-shadow: $shadow-md;
 }
 
 @mixin card-interactive {
@@ -332,7 +134,7 @@
   transition: $transition-all;
 
   &:hover {
-    box-shadow: $shadow-lg;
+    box-shadow: $box-hover;
     transform: translateY(-1px);
   }
 }
@@ -340,40 +142,6 @@
 // ========================================
 // Utility Mixins
 // ========================================
-
-// Visually hidden (for accessibility)
-@mixin visually-hidden {
-  position: absolute !important;
-  width: 1px !important;
-  height: 1px !important;
-  padding: 0 !important;
-  margin: -1px !important;
-  overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
-  white-space: nowrap !important;
-  border: 0 !important;
-}
-
-// Focus ring
-@mixin focus-ring {
-  &:focus {
-    outline: 2px solid var(--color-border-focus);
-    outline-offset: 2px;
-  }
-}
-
-// Scroll shadows
-@mixin scroll-shadow {
-  background:
-    linear-gradient(var(--color-surface) 30%, transparent),
-    linear-gradient(transparent, var(--color-surface) 70%) 0 100%,
-    radial-gradient(50% 0, rgba(0,0,0,.2), transparent),
-    radial-gradient(50% 100%, rgba(0,0,0,.2), transparent) 0 100%;
-  background-repeat: no-repeat;
-  background-color: var(--color-surface);
-  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
-  background-attachment: local, local, scroll, scroll;
-}
 
 // Custom scrollbar styling
 @mixin custom-scrollbar {

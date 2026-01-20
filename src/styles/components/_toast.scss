@@ -28,7 +28,7 @@
   background: $color-1;
   border: 1px solid $color-2;
   border-radius: calc($gap / 2);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: $box-shadow;
   pointer-events: auto;
   min-width: 280px;
   max-width: 400px;
@@ -50,29 +50,29 @@
 
   // Type variants
   &--success {
-    border-left: 4px solid #7dd87d; // Green
+    border-left: 4px solid $color-6;
 
     .toast__icon {
-      color: #7dd87d;
-      background: rgba(125, 216, 125, 0.1);
+      color: $color-6;
+      background: rgba($color-6, 0.1);
     }
   }
 
   &--error {
-    border-left: 4px solid #e74c3c; // Red
+    border-left: 4px solid $color-red;
 
     .toast__icon {
-      color: #e74c3c;
-      background: rgba(231, 76, 60, 0.1);
+      color: $color-red;
+      background: $color-red-bg;
     }
   }
 
   &--warning {
-    border-left: 4px solid #ff9800; // Orange
+    border-left: 4px solid $color-warning;
 
     .toast__icon {
-      color: #ff9800;
-      background: rgba(255, 152, 0, 0.1);
+      color: $color-warning;
+      background: rgba($color-warning, 0.1);
     }
   }
 
@@ -93,7 +93,6 @@
   height: calc($gap * 1.5);
   border-radius: 50%;
   @include flex-center;
-  font-size: 14px;
   font-weight: bold;
 }
 
@@ -101,7 +100,6 @@
 .toast__message {
   flex: 1;
   color: $color-6;
-  font-size: 14px;
   line-height: 1.4;
   word-wrap: break-word;
 }

@@ -5,13 +5,22 @@
 
 @use 'sass:color';
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 // Settings title (standalone)
 .settings-title {
-  font-size: 32px;
+  @extend %h1;
   font-weight: 600;
   color: $color-5;
   margin-bottom: $gap;
+}
+
+// Layout mode section - hidden on tablet/phone (below $breakpoint-lg)
+// User can't change layout mode anyway as it's forced to 'wide' or 'phone'
+.layout-mode-section {
+  @media (max-width: $breakpoint-lg - 1px) {
+    display: none;
+  }
 }
 
 // Sync status container
@@ -55,16 +64,15 @@
     padding: calc($gap / 2) 0 0 0;
     color: $color-6;
     transition: opacity 0.3s ease;
-    font-size: 14px;
     min-height: 1.5em;
     text-align: right;
 
     &--success {
-      color: #4ade80;
+      color: $color-success;
     }
 
     &--error {
-      color: #f87171;
+      color: $color-red;
     }
   }
 }
@@ -83,7 +91,6 @@
 }
 
 .health-summary-empty {
-  font-size: 14px;
   color: rgba($color-5, 0.6);
   font-style: italic;
 }
@@ -96,25 +103,24 @@
   display: inline-block;
   padding: calc($gap / 4) calc($gap / 2);
   border-radius: $radius-sm;
-  font-size: 14px;
   font-weight: 600;
 
   &--good {
-    background: rgba(74, 222, 128, 0.15);
-    color: #4ade80;
-    border: 1px solid rgba(74, 222, 128, 0.3);
+    background: rgba($color-success, 0.15);
+    color: $color-success;
+    border: 1px solid rgba($color-success, 0.3);
   }
 
   &--warning {
-    background: rgba(251, 191, 36, 0.15);
-    color: #fbbf24;
-    border: 1px solid rgba(251, 191, 36, 0.3);
+    background: rgba($color-warning, 0.15);
+    color: $color-warning;
+    border: 1px solid rgba($color-warning, 0.3);
   }
 
   &--critical {
-    background: rgba(248, 113, 113, 0.15);
-    color: #f87171;
-    border: 1px solid rgba(248, 113, 113, 0.3);
+    background: $color-red-bg;
+    color: $color-red;
+    border: 1px solid $color-red-border;
   }
 }
 
@@ -123,8 +129,8 @@
 }
 
 .health-warning {
-  font-size: 13px;
-  color: rgba(251, 191, 36, 0.9);
+  @extend %small;
+  color: rgba($color-warning, 0.9);
   padding: calc($gap / 4) 0;
   line-height: 1.4;
 }
@@ -143,7 +149,6 @@
     border: 1px solid $color-3;
     border-radius: $radius-sm;
     color: $color-5;
-    font-size: 14px;
 
     &:focus {
       outline: none;
@@ -186,7 +191,6 @@
   margin-bottom: calc($gap / 2);
 
   .relay-url {
-    font-size: 14px;
     color: $color-5;
     font-weight: 500;
     display: flex;
@@ -204,18 +208,18 @@
   flex-shrink: 0;
 
   &.connected {
-    background: #4ade80;
-    box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
+    background: $color-success;
+    box-shadow: 0 0 6px rgba($color-success, 0.6);
   }
 
   &.disconnected {
-    background: #f87171;
-    box-shadow: 0 0 4px rgba(248, 113, 113, 0.4);
+    background: $color-red;
+    box-shadow: 0 0 4px rgba($color-red, 0.4);
   }
 }
 
 .relay-latency {
-  font-size: 12px;
+  @extend %small;
   color: rgba($color-5, 0.5);
   font-weight: 400;
   margin-left: calc($gap / 4);
@@ -239,7 +243,7 @@
   border: 1px solid $color-4;
   border-radius: $radius-sm;
   color: $color-4;
-  font-size: 13px;
+  @extend %small;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -259,13 +263,13 @@
 .relay-remove-btn {
   background: none;
   border: none;
-  color: rgba(255, 100, 100, 0.8);
+  color: rgba($color-red, 0.8);
   cursor: pointer;
   padding: calc($gap / 4);
   transition: all 0.2s ease;
 
   &:hover {
-    color: rgba(255, 100, 100, 1);
+    color: $color-red;
     transform: scale(1.1);
   }
 
@@ -274,105 +278,6 @@
   }
 }
 
-// ========================================
-// Local Relay Section
-// ========================================
-.local-relay-section {
-  margin-top: $gap * 2;
-}
-
-.local-relay-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: $color-5;
-  margin-bottom: calc($gap / 2);
-}
-
-.local-relay-description {
-  font-size: 14px;
-  color: rgba($color-5, 0.6);
-  line-height: 1.5;
-  margin-bottom: $gap;
-
-  code {
-    padding: calc($gap / 8) calc($gap / 4);
-    border-radius: calc($gap / 4);
-    font-family: 'Courier New', monospace;
-    font-size: 0.85em;
-  }
-}
-
-.local-relay-controls {
-  display: flex;
-  flex-direction: column;
-  gap: $gap;
-}
-
-.local-relay-url,
-.local-relay-mode,
-.local-relay-command,
-.local-relay-enable {
-  label {
-    display: block;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: $color-5;
-    margin-bottom: calc($gap / 4);
-  }
-}
-
-.mode-switch {
-  display: flex;
-  gap: calc($gap / 2);
-}
-
-.mode-btn {
-  padding: calc($gap / 2) $gap;
-  background: transparent;
-  border: 1px solid $color-4;
-  border-radius: $radius-sm;
-  color: $color-4;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: rgba($color-4, 0.1);
-  }
-
-  &.active {
-    background: $color-4;
-    border-color: $color-4;
-    color: $color-1;
-  }
-}
-
-.restart-command {
-  display: block;
-  background: $color-2;
-  border: 1px solid $color-3;
-  border-radius: $radius-sm;
-  padding: $gap;
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  color: $color-4;
-  white-space: nowrap;
-  overflow-x: auto;
-}
-
-.local-relay-enable {
-  label {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-    cursor: pointer;
-
-    input[type="checkbox"] {
-      cursor: pointer;
-    }
-  }
-}
 
 // ========================================
 // Media Settings
@@ -398,7 +303,6 @@
 
 // Media server info text (standalone)
 .media-server-info-text {
-  font-size: 14px;
   color: rgba($color-5, 0.7);
   line-height: 1.5;
 }
@@ -411,7 +315,6 @@
 // Media server label (standalone)
 .media-server-label {
   display: block;
-  font-size: 14px;
   font-weight: 500;
   color: $color-5;
   margin-bottom: calc($gap / 4);
@@ -425,7 +328,6 @@
   border: 1px solid $color-3;
   border-radius: $radius-sm;
   color: $color-5;
-  font-size: 14px;
 
   &:focus {
     outline: none;
@@ -441,23 +343,6 @@
   margin-bottom: $gap;
 }
 
-// Protocol label (standalone)
-.protocol-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 500;
-  color: $color-5;
-  margin-bottom: calc($gap / 4);
-}
-
-// Protocol note (standalone)
-.protocol-note {
-  margin-top: calc($gap / 2);
-  font-size: 13px;
-  color: rgba($color-5, 0.5);
-  font-style: italic;
-}
-
 .protocol-switch {
   display: flex;
   gap: calc($gap / 2);
@@ -469,7 +354,6 @@
   border: 1px solid $color-4;
   border-radius: $radius-sm;
   color: $color-4;
-  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -497,7 +381,6 @@
 
 // Sensitive media info text (standalone)
 .sensitive-media-info-text {
-  font-size: 14px;
   color: rgba($color-5, 0.7);
   line-height: 1.5;
 }
@@ -509,209 +392,14 @@
 // .sensitive-media-save moved to .settings-section__actions
 
 // ========================================
-// Follow Lists Settings
+// Privacy Settings Switch Containers
 // ========================================
 
-.follow-lists-info {
-  margin-bottom: $gap;
-  padding: calc($gap / 2);
-  border-top: 1px solid $color-2;
-}
-
-// Follow lists info text (standalone)
-.follow-lists-info-text {
-  font-size: 14px;
-  color: rgba($color-5, 0.7);
-  line-height: 1.5;
-  margin-bottom: calc($gap / 2);
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-.follow-lists-warning {
-  color: rgba(255, 200, 100, 0.9);
-}
-
-.private-follows-switch-container {
-  margin-bottom: $gap;
-}
-
+.private-follows-switch-container,
 .private-bookmarks-switch-container {
   margin-bottom: $gap;
 }
 
-.follow-lists-migration {
-  margin-top: $gap * 2;
-  margin-bottom: $gap;
-
-  &.hidden {
-    display: none;
-  }
-}
-
-.migration-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: $color-5;
-  margin-top: calc(2 * $gap);
-  margin-bottom: $gap;
-  padding-bottom: calc($gap / 2);
-  border-bottom: 1px solid $color-2;
-}
-
-.migration-description {
-  font-size: 14px;
-  color: rgba($color-5, 0.6);
-  margin-bottom: $gap;
-}
-
-.migration-buttons {
-  display: flex;
-  gap: $gap;
-  flex-wrap: wrap;
-}
-
-// Migration button (standalone)
-.migration-btn {
-  display: flex;
-  align-items: center;
-  gap: calc($gap / 2);
-}
-
-// Save Section styles moved to .settings-section__actions and .settings-section__action-feedback
-
-// ========================================
-// Cache Settings Panel
-// ========================================
-.cache-settings-panel {
-  margin-top: $gap * 2;
-  padding-top: $gap * 2;
-  border-top: 2px solid $color-2;
-}
-
-.cache-stats-grid {
-  padding: $gap 0;
-}
-
-.cache-panel .stat-item {
-  display: block;
-  margin-bottom: calc($gap / 2);
-}
-
-.cache-settings-content {
-  padding: calc($gap / 2);
-}
-
-.cache-settings-header {
-  margin-bottom: $gap * 2;
-}
-
-// Cache settings heading (standalone)
-.cache-settings-heading {
-  font-size: 19px;
-  font-weight: 600;
-  color: $color-5;
-  margin-bottom: calc($gap / 2);
-}
-
-// Cache settings description (standalone)
-.cache-settings-description {
-  font-size: 14px;
-  color: rgba($color-5, 0.7);
-  line-height: 1.5;
-}
-
-.cache-settings-section {
-  margin-bottom: $gap * 2;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-}
-
-// Cache section heading (standalone)
-.cache-section-heading {
-  font-size: 16px;
-  font-weight: 600;
-  color: $color-5;
-  margin-bottom: calc($gap / 2);
-}
-
-// Cache section description (standalone)
-.cache-section-desc {
-  font-size: 14px;
-  color: rgba($color-5, 0.6);
-  margin-bottom: $gap;
-}
-
-.settings-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: $gap;
-}
-
-.setting-item {
-  display: flex;
-  flex-direction: column;
-}
-
-// Setting item label (standalone)
-.setting-item-label {
-  display: block;
-  margin-bottom: calc($gap / 4);
-  cursor: pointer;
-
-  span {
-    display: inline-block;
-  }
-}
-
-// Setting label text (standalone)
-.setting-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: $color-5;
-  display: inline-block;
-}
-
-// Setting help text (standalone)
-.setting-help {
-  font-size: 13px;
-  color: rgba($color-5, 0.5);
-  font-style: italic;
-  display: inline-block;
-}
-
-// Setting input (standalone)
-.setting-input {
-  padding: calc($gap / 2) $gap;
-  background: $color-2;
-  border: 1px solid $color-3;
-  border-radius: $radius-sm;
-  color: $color-5;
-  font-size: 14px;
-  width: 100%;
-
-  &:focus {
-    outline: none;
-    border-color: $color-4;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.cache-settings-actions {
-  margin-top: $gap * 2;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  gap: $gap;
-}
 
 // ========================================
 // Zap Settings
@@ -723,7 +411,6 @@
 }
 
 .zap-info {
-  font-size: 14px;
   color: rgba($color-5, 0.8);
   line-height: 1.6;
 }
@@ -734,7 +421,6 @@
   gap: $gap;
 
   label {
-    font-size: 14px;
     font-weight: 500;
     color: $color-5;
   }
@@ -746,7 +432,6 @@
     border: 1px solid $color-2;
     border-radius: $radius-sm;
     color: $color-5;
-    font-size: 14px;
 
     &::placeholder {
       color: rgba($color-5, 0.4);
@@ -759,7 +444,6 @@
   }
 
   .nwc-status {
-    font-size: 14px;
     min-height: 20px;
   }
 }
@@ -770,7 +454,7 @@
 
   #nwc-storage-info {
     margin-top: calc($gap / 2);
-    font-size: 13px;
+    @extend %small;
     line-height: 1.5;
 
     code {
@@ -778,7 +462,7 @@
       padding: 2px 6px;
       border-radius: 3px;
       font-family: monospace;
-      font-size: 12px;
+      @extend %small;
       word-break: break-all;
     }
 
@@ -824,7 +508,7 @@
   }
 
   .wallet-ln-address {
-    font-size: 11px;
+    @extend %small;
     color: rgba($color-5, 0.6);
   }
 }
@@ -837,11 +521,6 @@
   border-radius: $radius-sm;
 }
 
-.zap-subsection-desc {
-  font-size: 14px;
-  color: rgba($color-5, 0.6);
-  margin-bottom: $gap;
-}
 
 .zap-default-amount,
 .zap-default-comment,
@@ -851,7 +530,6 @@
   gap: calc($gap / 2);
 
   label {
-    font-size: 14px;
     font-weight: 500;
     color: $color-5;
   }
@@ -863,7 +541,6 @@
     border: 1px solid $color-2;
     border-radius: $radius-sm;
     color: $color-5;
-    font-size: 14px;
 
     &::placeholder {
       color: rgba($color-5, 0.4);
@@ -878,14 +555,6 @@
   select {
     cursor: pointer;
   }
-}
-
-.zap-amount-input {
-  max-width: 200px;
-}
-
-.fiat-currency-select {
-  max-width: 300px;
 }
 
 // .zap-save moved to .settings-section__actions
@@ -931,10 +600,9 @@
 }
 
 .subsection-title {
-  font-size: 18px;
+  @extend %h3;
   font-weight: 600;
   color: $color-3;
-  margin-bottom: $gap;
 }
 
 // ========================================
@@ -966,16 +634,15 @@
 }
 
 .status-running .status-dot {
-  background: #4CAF50; // Green
-  box-shadow: 0 0 8px rgba(76, 175, 80, 0.5);
+  background: $color-success;
+  box-shadow: 0 0 8px rgba($color-success, 0.5);
 }
 
 .status-stopped .status-dot {
-  background: #F44336; // Red
+  background: $color-red;
 }
 
 .status-text {
-  font-size: 14px;
   font-weight: 500;
   color: $color-5;
 }
@@ -1001,7 +668,6 @@
 }
 
 .setting-label {
-  font-size: 14px;
   font-weight: 500;
   color: $color-5;
   margin-bottom: calc($gap / 4);
@@ -1009,7 +675,7 @@
 }
 
 .setting-description {
-  font-size: 12px;
+  @extend %small;
   color: rgba($color-5, 0.6);
   line-height: 1.4;
 }
@@ -1022,7 +688,6 @@
   border-radius: $radius-sm;
 
   p {
-    font-size: 14px;
     color: rgba($color-5, 0.7);
     line-height: 1.5;
   }
@@ -1034,17 +699,10 @@
 .cache-settings {
 
   .section-help {
-    font-size: 14px;
     color: rgba($color-5, 0.6);
     margin-bottom: $gap * 2;
     line-height: 1.5;
   }
-}
-
-.settings-divider {
-  border: none;
-  border-top: 1px solid $color-2;
-  margin: $gap * 3 0 $gap * 2 0;
 }
 
 .cache-tables-group {
@@ -1076,39 +734,6 @@
   width: 18px;
   height: 18px;
   flex-shrink: 0;
-}
-
-.cache-table-label {
-  font-size: 14px;
-  color: $color-5;
-  cursor: pointer;
-  user-select: none;
-}
-
-.cache-clear-buttons {
-  display: flex;
-  gap: $gap;
-  flex-wrap: wrap;
-}
-
-.setting-item-label--checkbox {
-  display: flex;
-  align-items: flex-start;
-  gap: calc($gap / 2);
-  cursor: pointer;
-
-  .setting-checkbox {
-    margin-top: calc($gap / 8);
-    cursor: pointer;
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-  }
-
-  .setting-label,
-  .setting-help {
-    cursor: pointer;
-  }
 }
 
 // ========================================
@@ -1165,14 +790,13 @@
   }
 
   &__title {
-    font-size: 16px;
+    @extend %h4;
     font-weight: 600;
     color: $color-5;
     margin-bottom: calc($gap / 4);
   }
 
   &__description {
-    font-size: 14px;
     color: rgba($color-5, 0.7);
     line-height: 1.5;
   }
@@ -1180,7 +804,7 @@
   &__features {
     margin: calc($gap / 2) 0 0 0;
     padding-left: $gap;
-    font-size: 13px;
+    @extend %small;
     color: rgba($color-5, 0.6);
 
     li {
@@ -1206,7 +830,6 @@
     border: 1px solid $color-3;
     border-radius: $radius-sm;
     color: $color-5;
-    font-size: 14px;
 
     &::placeholder {
       color: rgba($color-5, 0.4);
@@ -1234,7 +857,6 @@
 .subscription-hashtag {
   color: $color-4;
   font-weight: 500;
-  font-size: 14px;
 }
 
 .subscription-row {
@@ -1302,14 +924,13 @@
   }
 
   &__title {
-    font-size: 14px;
     font-weight: 600;
     color: $color-5;
     margin: 0;
   }
 
   &__description {
-    font-size: 12px;
+    @extend %small;
     color: rgba($color-5, 0.6);
     margin: calc($gap / 4) 0 0 0;
   }
@@ -1359,18 +980,16 @@
   &--clone {
     background: rgba($color-4, 0.2);
     border-color: $color-4;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: $box-shadow;
     width: 140px;
   }
 
   &__handle {
     color: rgba($color-5, 0.4);
-    font-size: 14px;
     line-height: 1;
   }
 
   &__label {
-    font-size: 14px;
     color: $color-5;
     white-space: nowrap;
   }
@@ -1401,20 +1020,19 @@
     align-items: flex-start;
     gap: $gap;
     padding: $gap;
-    background: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.3);
+    background: $color-red-bg;
+    border: 1px solid $color-red-border;
     border-radius: $radius-sm;
     margin-bottom: $gap * 2;
 
     svg {
       flex-shrink: 0;
-      color: #f87171;
+      color: $color-red;
       margin-top: 2px;
     }
 
     p {
-      font-size: 14px;
-      color: rgba(248, 113, 113, 0.9);
+      color: $color-red;
       line-height: 1.5;
       margin: 0;
     }
@@ -1440,20 +1058,19 @@
       flex: 1;
 
       h4 {
-        font-size: 14px;
         font-weight: 600;
         color: $color-5;
         margin: 0 0 calc($gap / 4) 0;
       }
 
       p {
-        font-size: 13px;
+        @extend %small;
         color: rgba($color-5, 0.6);
         line-height: 1.4;
         margin: 0;
 
         strong {
-          color: #f87171;
+          color: $color-red;
         }
       }
     }
@@ -1467,14 +1084,12 @@
 // Danger Zone Modal Styles
 .danger-zone-modal {
   p {
-    font-size: 14px;
     color: rgba($color-5, 0.9);
     line-height: 1.5;
   }
 
   ul, ol {
     margin: calc($gap / 2) 0 0 $gap * 1.5;
-    font-size: 14px;
     color: rgba($color-5, 0.8);
     line-height: 1.6;
 
@@ -1485,16 +1100,15 @@
 
   &__warning {
     padding: calc($gap / 2) $gap;
-    background: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.3);
+    background: $color-red-bg;
+    border: 1px solid $color-red-border;
     border-radius: $radius-sm;
-    color: rgba(248, 113, 113, 0.9);
-    font-size: 14px;
+    color: $color-red;
     margin-top: $gap;
 
     &--critical {
-      background: rgba(248, 113, 113, 0.15);
-      border-color: rgba(248, 113, 113, 0.5);
+      background: $color-red-bg;
+      border-color: $color-red-border;
     }
   }
 
@@ -1506,14 +1120,13 @@
 
     strong {
       display: block;
-      font-size: 14px;
       color: $color-5;
       margin-bottom: calc($gap / 2);
     }
 
     ul {
       margin: 0 0 0 $gap;
-      font-size: 13px;
+      @extend %small;
       color: rgba($color-5, 0.7);
     }
   }

@@ -4,6 +4,16 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.wallet-balance-container {
+  padding-left: calc($gap / 2);
+
+  @include tablet-up {
+    padding-left: 0;
+  }
+}
 
 .wallet-balance-display {
   display: none; // Hidden by default, shown when NWC connected
@@ -12,12 +22,10 @@
 }
 
 .wallet-balance-content {
-  font-size: 0.95rem;
   color: $color-5;
 }
 
 .wallet-balance-amount {
-  font-weight: 600;
   color: $color-5;
 }
 
@@ -37,7 +45,6 @@
 }
 
 .wallet-balance-fiat-amount {
-  font-weight: 600;
   color: $color-5;
 }
 

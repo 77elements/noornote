@@ -18,6 +18,7 @@
 
 @use 'sass:color';
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .nn-ui-toggle {
   background: $color-1;
@@ -46,14 +47,12 @@
   }
 
   &__title {
-    font-size: 18px;
-    font-weight: 600;
+    @extend %h3;
     color: $color-5;
     margin: 0 0 calc($gap / 4) 0;
   }
 
   &__description {
-    font-size: 14px;
     color: rgba($color-5, 0.6);
     line-height: 1.4;
     margin: 0;

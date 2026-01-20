@@ -6,6 +6,7 @@
 
 @use 'sass:color';
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 @use '../abstracts/mixins' as *;
 
 .modal {
@@ -37,7 +38,7 @@
     background: $color-1;
     border: 1px solid $color-3;
     border-radius: 8px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    box-shadow: $box-shadow;
     width: 100%;
     display: flex;
     flex-direction: column;
@@ -119,6 +120,6 @@
   &__error {
     padding: $gap * 2;
     text-align: center;
-    color: #ff4444;
+    color: $color-red;
   }
 }

@@ -11,7 +11,6 @@
   gap: calc($gap / 2);
   padding: calc($gap / 2) $gap;
   border-radius: 4px;
-  font-size: 0.875rem;
   font-weight: 500;
 
   &__icon {
@@ -34,14 +33,14 @@
 
   // Synced state (green/success)
   &--synced {
-    background-color: rgba(#10b981, 0.1);
-    color: #10b981;
+    background-color: rgba($color-success, 0.1);
+    color: $color-success;
   }
 
   // Error state (red/error)
   &--error {
-    background-color: rgba(#ef4444, 0.1);
-    color: #ef4444;
+    background-color: $color-red-bg;
+    color: $color-red;
   }
 }
 

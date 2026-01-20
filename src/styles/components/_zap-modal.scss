@@ -23,7 +23,6 @@
   }
 
   &__label {
-    font-size: 14px;
     font-weight: 600;
     color: var(--color-text-primary);
   }
@@ -36,7 +35,6 @@
     border-radius: var(--border-radius);
     color: var(--color-text-primary);
     font-family: inherit;
-    font-size: 16px;
     transition: border-color 0.2s ease;
 
     &:focus {

@@ -173,7 +173,7 @@ export class NWCSettingsSection extends SettingsSection {
                 <span class="wallet-connected-text">Lightning Wallet Connected</span>
                 ${lightningAddress ? `<span class="wallet-ln-address">${lightningAddress}</span>` : ''}
               </div>
-              <button class="btn btn--small" id="nwc-disconnect-btn">Disconnect</button>
+              <button class="btn btn--mini" id="nwc-disconnect-btn">Disconnect</button>
             </div>
           </div>
 

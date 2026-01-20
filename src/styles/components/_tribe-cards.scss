@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Tribe member card
 .tribe-member-card {
@@ -22,7 +23,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    box-shadow: $box-shadow;
   }
 
   // Drag states
@@ -79,7 +80,6 @@
   }
 
   &__username {
-    font-size: 14px;
     font-weight: 600;
     color: $color-5;
     white-space: nowrap;
@@ -88,13 +88,13 @@
   }
 
   &__pubkey {
-    font-size: 11px;
+    @extend %small;
     color: $color-3;
     font-family: monospace;
   }
 
   &__nip05 {
-    font-size: 11px;
+    @extend %small;
     color: $color-3;
     white-space: nowrap;
     overflow: hidden;
@@ -110,7 +110,7 @@
     background: none;
     border: none;
     border-radius: $radius-md;
-    color: $color-error;
+    color: $color-red;
     cursor: pointer;
     transition: $transition-colors;
     opacity: 0.6;
@@ -122,7 +122,7 @@
     }
 
     &:hover {
-      background: rgba($color-error, 0.15);
+      background: $color-red-bg;
       opacity: 1;
     }
   }
@@ -132,7 +132,7 @@
     position: absolute;
     top: calc($gap / 2);
     right: calc($gap / 2);
-    font-size: 10px;
+    @extend %mini;
     color: $color-3;
   }
 }

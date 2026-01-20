@@ -5,6 +5,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .timeline {
   min-height: 100%;
@@ -15,22 +16,31 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: $gap 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: calc($gap / 2);
+    padding: calc($gap / 2) 0; // Mobile-first base
     border-bottom: 1px solid $color-2;
     background: $color-1;
 
     .timeline-view-selector {
-      // CustomDropdown component styles in _custom-dropdown.scss
+      // Dropdown takes full width of its grid cell
+      .custom-dropdown {
+        width: 100%;
+      }
     }
 
     .timeline-controls {
       // Refresh button styles moved to molecules/_buttons.scss
-      display: flex;
-      align-items: center;
-      gap: $gap;
+      justify-self: end;
+    }
+
+    @include tablet-up {
+      padding: calc($gap * 0.75) 0;
+    }
+
+    @include desktop-up {
+      padding: $gap 0;
     }
   }
 
@@ -115,111 +125,12 @@
   margin: 0 auto $gap;
 }
 
-// Timeline empty heading
-.timeline-empty-heading {
-  margin: 0 0 $gap 0;
-  color: $color-4;
-}
-
-// Timeline empty text
-.timeline-empty-text {
-  margin: 0;
-  opacity: 0.8;
-}
-
-// Timeline error heading
-.timeline-error-heading {
-  margin: 0 0 $gap 0;
-  color: $color-error;
-}
-
-// Timeline error text
-.timeline-error-text {
-  margin: 0 0 $gap 0;
-  opacity: 0.8;
-}
-
-// Timeline error button (styles moved to molecules/_buttons.scss if needed)
-.timeline-error-button {
-  background: $color-4;
-  color: $color-1;
-  border: none;
-  padding: calc($gap / 2) $gap;
-  border-radius: 4px;
-  cursor: pointer;
-
-  &:hover {
-    opacity: 0.8;
-  }
-}
-
-// Timeline loading text
-.timeline-loading-text {
-  margin: 0;
-  opacity: 0.8;
-}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-// Responsive design
-@include tablet-down {
-  .timeline {
-    .timeline-header {
-      padding: calc($gap * 0.75);
-
-      .timeline-controls {
-        .refresh-btn {
-          padding: calc($gap * 0.375) calc($gap * 0.75);
-          font-size: 13px;
-        }
-      }
-    }
-
-    .timeline-item {
-      padding: calc($gap * 0.75) 0;
-
-      .event-header {
-        margin-bottom: calc($gap * 0.375);
-      }
-
-      .event-content {
-        margin-bottom: calc($gap / 2);
-      }
-    }
-  }
-}
-
-@include mobile-down {
-  .timeline {
-    .timeline-header {
-      padding: calc($gap / 2);
-
-      .timeline-controls {
-        .refresh-btn {
-          padding: calc($gap / 4) calc($gap / 2);
-          font-size: 12px;
-        }
-      }
-    }
-
-    .timeline-item {
-      padding: calc($gap * 0.75) 0;
-
-      .event-header-container {
-        margin-bottom: calc($gap / 2);
-
-        // NoteHeader will adapt to container size automatically
-        // Use small size on mobile
-        .note-header {
-          // The NoteHeader component's container queries will handle this
-        }
-      }
-    }
-  }
-}
 
 /* Quote Box - styled exactly like normal notes */
 .quote-box {
@@ -271,13 +182,12 @@
     }
 
     .depth-text {
-      font-size: 14px;
       font-weight: 500;
       opacity: 0.8;
     }
 
     .depth-id {
-      font-size: 12px;
+      @extend %small;
       opacity: 0.6;
       font-family: monospace;
     }

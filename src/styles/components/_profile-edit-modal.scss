@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Modal container
 .profile-edit-modal {
@@ -118,7 +119,7 @@
 .form-hint {
   display: block;
   margin-top: calc($gap / 4);
-  font-size: 12px;
+  @extend %small;
   color: color.adjust($color-5, $alpha: -0.3);
 }
 
@@ -141,7 +142,6 @@
   border: 1px solid $color-4;
   border-radius: $radius-sm;
   color: $color-1;
-  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -157,7 +157,7 @@
 
   @include mobile-down {
     padding: calc($gap / 3) calc($gap / 2);
-    font-size: 12px;
+    @include small;
 
     svg {
       width: 14px;

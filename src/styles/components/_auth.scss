@@ -4,6 +4,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 .auth-component {
   // Compact auth UI for sidebar footer
@@ -19,8 +20,8 @@
   .auth-error {
     margin-top: $gap;
     padding: $gap;
-    background: rgba(255, 107, 107, 0.1);
-    border: 1px solid #ff6b6b;
+    background: $color-red-bg;
+    border: 1px solid $color-red;
     border-radius: 4px;
   }
 }
@@ -53,20 +54,18 @@
 
 // User indicator (standalone)
 .user-indicator {
-  font-size: 12px;
+  @extend %small;
 }
 
 // User npub (standalone)
 .user-npub {
   font-family: monospace;
-  font-size: 14px;
   color: $color-4;
 }
 
 // Auth npub (within auth status)
 .auth-npub {
   font-family: $font-family-mono;
-  font-size: 14px;
   color: $color-4;
   word-break: break-all;
   margin: calc($gap / 2) 0;
@@ -74,20 +73,20 @@
 
 // Auth extension (standalone)
 .auth-extension {
-  font-size: 13px;
+  @extend %small;
   color: $color-5;
   opacity: 0.7;
 }
 
 // Auth error text (standalone)
 .auth-error-text {
-  color: #ff6b6b;
+  color: $color-red;
   margin: 0;
 }
 
 // No extension error (standalone)
 .no-extension-error {
-  color: #ff6b6b;
+  color: $color-red;
   font-weight: bold;
   margin-bottom: $gap;
 }
@@ -139,7 +138,7 @@
   padding: calc($gap * 0.375) calc($gap * 0.75);
   border-radius: 4px;
   cursor: pointer;
-  font-size: 13px;
+  @extend %small;
 
   &:hover {
     background: $color-4;

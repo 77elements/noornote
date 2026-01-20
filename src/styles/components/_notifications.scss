@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 @use 'sass:color';
 
 // Notifications View child elements
@@ -21,14 +22,13 @@
   text-align: center;
   padding: $gap * 4;
   color: rgba($color-5, 0.5);
-  font-size: 16px;
+  @extend %h4;
 }
 
 .notifications-view__loading {
   text-align: center;
   padding: $gap * 2;
   color: rgba($color-5, 0.6);
-  font-size: 14px;
   font-style: italic;
 }
 
@@ -50,7 +50,7 @@
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  font-size: 18px;
+  @extend %h3;
   padding-top: 2px;
 
   svg {
@@ -90,18 +90,16 @@
 }
 
 .notification-item__action {
-  font-size: 14px;
   color: rgba($color-5, 0.6);
 }
 
 .notification-item__timestamp {
-  font-size: 12px;
+  @extend %small;
   color: rgba($color-5, 0.5);
   white-space: nowrap;
 }
 
 .notification-item__preview {
-  font-size: 14px;
   color: rgba($color-5, 0.8);
   line-height: 1.4;
   overflow: hidden;
@@ -113,23 +111,23 @@
 
 // Type-specific icon colors (matching ISL)
 .notification-item[data-type="reply"] .notification-item__icon {
-  color: #3b82f6; // Blue
+  color: $color-info;
 }
 
 .notification-item[data-type="mention"] .notification-item__icon {
-  color: #3b82f6; // Blue (same as reply)
+  color: $color-info;
 }
 
 .notification-item[data-type="zap"] .notification-item__icon {
-  color: #f59e0b; // Orange
+  color: $color-warning;
 }
 
 .notification-item[data-type="repost"] .notification-item__icon {
-  color: #10b981; // Green
+  color: $color-success;
 }
 
 .notification-item[data-type="reaction"] .notification-item__icon {
-  color: #ef4444; // Red
+  color: $color-red;
   font-size: 20px; // Emoji reactions slightly bigger
 }
 
@@ -142,7 +140,7 @@
 }
 
 .notification-item__footer-link {
-  font-size: 12px;
+  @extend %small;
   color: rgba($color-5, 0.5);
   text-decoration: none;
   transition: $transition-colors;
@@ -153,7 +151,7 @@
   }
 
   &--unsubscribe:hover {
-    color: $color-error;
+    color: $color-red;
   }
 
   &--subscribe:hover {

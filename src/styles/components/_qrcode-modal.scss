@@ -40,7 +40,6 @@
 // npub text below QR code
 .qrcode-modal__npub-text {
   color: $color-5;
-  font-size: 14px;
   font-family: monospace;
   margin: 0;
 }
@@ -48,6 +47,5 @@
 // Instruction text
 .qrcode-modal__instruction {
   color: var(--color-text-secondary);
-  font-size: 14px;
   margin: 0;
 }

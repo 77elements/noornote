@@ -66,30 +66,32 @@ export class UISettingsSection extends SettingsSection {
           </p>
         </div>
 
-        <h3 class="subsection-title" style="margin-top: 2rem;">Layout Mode</h3>
-        <div class="form__info">
-          <p>Configure how the app layout behaves when opening notes, profiles, and other views.</p>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Layout Mode</label>
-          <div class="layout-mode-dropdown-container">
-            <!-- Layout mode dropdown will be mounted here -->
+        <div class="layout-mode-section">
+          <h3 class="subsection-title" style="margin-top: 2rem;">Layout Mode</h3>
+          <div class="form__info">
+            <p>Configure how the app layout behaves when opening notes, profiles, and other views.</p>
           </div>
-        </div>
 
-        <div class="form__info">
-          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
-            • <strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger<br>
-            • <strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane<br>
-            • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space<br>
-            • <strong>Phone:</strong> Single-column layout (390px width) for phone development and testing
-          </p>
-          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6);">
-            <strong>Right Pane mode click behavior:</strong><br>
-            • Single click: Open in new tab or switch to existing tab<br>
-            • Double-click or Cmd+Click: Open additional tabs
-          </p>
+          <div class="form-group">
+            <label class="form-label">Layout Mode</label>
+            <div class="layout-mode-dropdown-container">
+              <!-- Layout mode dropdown will be mounted here -->
+            </div>
+          </div>
+
+          <div class="form__info">
+            <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
+              • <strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger<br>
+              • <strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane<br>
+              • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space<br>
+              • <strong>Phone:</strong> Single-column layout (390px width) for phone development and testing
+            </p>
+            <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6);">
+              <strong>Right Pane mode click behavior:</strong><br>
+              • Single click: Open in new tab or switch to existing tab<br>
+              • Double-click or Cmd+Click: Open additional tabs
+            </p>
+          </div>
         </div>
 
         <h3 class="subsection-title" style="margin-top: 2rem;">Content Display</h3>

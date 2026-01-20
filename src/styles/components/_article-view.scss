@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 @use '../abstracts/mixins' as *;
 @use 'sass:color';
 
@@ -27,27 +28,19 @@
   }
 
   .article-title {
-    font-size: 40px;
+    @extend %h1;
     font-weight: 700;
     line-height: 1.2;
     color: $color-5;
     margin: 0 0 $gap 0;
-
-    @media (max-width: 600px) {
-      font-size: 32px;
-    }
   }
 
   .article-summary {
-    font-size: 20px;
+    @extend %h2;
     line-height: 1.6;
     color: rgba($color-5, 0.8);
     margin: 0 0 calc($gap * 1.5) 0;
     font-style: italic;
-
-    @media (max-width: 600px) {
-      font-size: 18px;
-    }
   }
 
   .article-author-container {
@@ -59,7 +52,7 @@
 
 // Article body (markdown content)
 .article-body {
-  font-size: 18px;
+  @extend %h3;
   line-height: 1.8;
   color: $color-5;
   margin-bottom: calc($gap * 2);
@@ -144,7 +137,7 @@
   }
 
   @media (max-width: 600px) {
-    font-size: 16px;
+    @include h4;
   }
 }
 
@@ -168,7 +161,7 @@
 
   p {
     color: rgba($color-5, 0.7);
-    font-size: 16px;
+    @extend %h4;
   }
 }
 
@@ -186,8 +179,8 @@
   }
 
   p {
-    color: $color-error;
-    font-size: 18px;
+    color: $color-red;
+    @extend %h3;
   }
 }
 

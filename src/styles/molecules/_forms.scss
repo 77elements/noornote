@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // ========================================
 // Input Field
@@ -16,7 +17,6 @@
   border: 1px solid var(--color-border);
   border-radius: $radius-md;
   color: $color-5;
-  font-size: 14px;
   font-family: inherit;
   transition: $transition-colors;
 
@@ -32,7 +32,6 @@
 
   // Modifiers
   &--title {
-    font-size: 18px;
     font-weight: 500;
   }
 
@@ -51,7 +50,6 @@
   border: 1px solid var(--color-border);
   border-radius: $radius-md;
   color: $color-5;
-  font-size: 14px;
   font-family: inherit;
   line-height: 1.6;
   min-height: 200px;
@@ -95,6 +93,7 @@ label {
 // ========================================
 .form__info {
   border-top: 1px solid $color-3;
+  padding-top: $gap;
 }
 
 // ========================================
@@ -102,7 +101,7 @@ label {
 // ========================================
 .form__note {
   margin-top: calc($gap / 2);
-  font-size: 13px;
+  @extend %small;
   color: rgba($color-5, 0.5);
   font-style: italic;
 }
@@ -157,7 +156,6 @@ label {
 
   label {
     display: block;
-    font-size: 14px;
     font-weight: 600;
     color: $color-5;
     margin-bottom: calc($gap / 4);

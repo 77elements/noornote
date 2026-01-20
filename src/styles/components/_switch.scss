@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Container
 .switch-container {
@@ -23,7 +24,7 @@
 
 // Label text
 .switch-text {
-  font-size: var(--font-size-sm);
+  @extend %small;
   color: var(--text-primary-color);
   font-weight: 500;
 }
@@ -78,7 +79,7 @@
     width: 18px;
     left: 3px;
     bottom: 3px;
-    background: white;
+    background: $color-white;
     border-radius: 50%;
     transition: transform 0.3s ease;
   }
@@ -92,7 +93,7 @@
 // Dark mode adjustments
 @media (prefers-color-scheme: dark) {
   .switch-slider {
-    background: rgba(255, 255, 255, 0.2);
+    background: $surface-tint;
 
     &::before {
       background: $color-1;
@@ -103,7 +104,7 @@
     background: $color-6;
 
     &::before {
-      background: white;
+      background: $color-white;
     }
   }
 }

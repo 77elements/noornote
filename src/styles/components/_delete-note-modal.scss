@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .delete-note-modal {
   display: flex;
@@ -22,7 +23,6 @@
     background: var(--color-bg-secondary);
     border-radius: var(--border-radius);
     color: var(--color-text-primary);
-    font-size: var(--font-size-base);
     line-height: 1.5;
     font-weight: 500;
   }
@@ -33,7 +33,7 @@
     background: var(--color-bg-secondary);
     border-left: 3px solid var(--color-warning);
     border-radius: var(--border-radius);
-    font-size: var(--font-size-sm);
+    @extend %small;
     color: var(--color-text-secondary);
     line-height: 1.5;
   }

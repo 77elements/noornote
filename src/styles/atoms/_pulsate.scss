@@ -39,14 +39,4 @@
 
 .pulsate {
   @include pulsate();
-
-  // Modifier for faster pulsing (e.g. urgent loading states)
-  &--fast {
-    @include pulsate(1.5s);
-  }
-
-  // Modifier for slower pulsing (e.g. background processes)
-  &--slow {
-    @include pulsate(4s);
-  }
 }

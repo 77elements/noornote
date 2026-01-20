@@ -4,6 +4,7 @@
  * Purpose-agnostic with modifier classes for size and state
  */
 
+@use 'sass:color';
 @use '../abstracts/variables' as *;
 
 // ========================================
@@ -15,7 +16,6 @@
   background-color: $color-4;
   border: 1px solid $color-4;
   padding: calc($gap / 2) $gap;
-
 
   // Typography
   font-weight: 500;
@@ -56,11 +56,6 @@
 // Size Modifiers
 // ========================================
 
-// Big (default - same as .btn base)
-.btn--big {
-  padding: calc($gap / 2) $gap;
-}
-
 // Medium
 .btn--medium {
   padding: calc($gap / 4) calc($gap / 2);
@@ -69,7 +64,6 @@
 // Mini
 .btn--mini {
   padding: 0 calc($gap / 4);
-  font-size: 14px;
 }
 
 // Large
@@ -81,13 +75,6 @@
 // ========================================
 // State Modifiers
 // ========================================
-
-// Active (default - same as .btn base)
-.btn--active {
-  color: $color-1;
-  background-color: $color-4;
-  border-color: $color-4;
-}
 
 // Passive (inverted)
 .btn--passive {
@@ -102,27 +89,18 @@
 
 // Danger (for destructive actions)
 .btn--danger {
-  color: white;
-  background-color: #dc3545;
-  border-color: #dc3545;
+  color: $color-white;
+  background-color: $color-red;
+  border-color: $color-red;
 
   &:hover {
-    background-color: #c82333;
-    border-color: #bd2130;
+    background-color: color.adjust($color-red, $lightness: -8%);
+    border-color: color.adjust($color-red, $lightness: -12%);
   }
 
   &:focus {
-    outline-color: #dc3545;
+    outline-color: $color-red;
   }
-}
-
-// Hint text inside button
-.btn__hint {
-  display: block;
-  font-size: 11px;
-  font-weight: 400;
-  opacity: 0.7;
-  white-space: nowrap;
 }
 
 // ========================================
@@ -161,11 +139,6 @@
 // Refresh Button Modifier
 // ========================================
 
-// Basic refresh button
-.btn--refresh {
-  // Uses default .btn styles
-}
-
 // Refresh with new notes (with avatars)
 .btn--refresh-new-notes {
   display: flex;
@@ -197,17 +170,8 @@
 
 // Text in refresh button
 .btn--refresh-new-notes__text {
-  font-size: 14px;
   font-weight: 500;
   white-space: nowrap;
-}
-
-// ========================================
-// Clear Cache Button Modifier
-// ========================================
-
-.btn--clear-cache {
-  // Uses default .btn styles
 }
 
 // ========================================

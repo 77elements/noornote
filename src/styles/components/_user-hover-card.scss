@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .user-hover-card {
   position: fixed;
@@ -12,7 +13,7 @@
   border: 1px solid rgba($color-4, 0.3);
   border-radius: calc($gap / 2);
   padding: $gap;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: $box-shadow;
   z-index: 10000;
   cursor: pointer;
   transition: opacity 0.2s ease;
@@ -40,7 +41,7 @@
   }
 
   &__name {
-    font-size: 16px;
+    @extend %h4;
     font-weight: 600;
     color: $color-5;
     white-space: nowrap;
@@ -49,7 +50,6 @@
   }
 
   &__username {
-    font-size: 14px;
     color: $color-5;
     opacity: 0.7;
     white-space: nowrap;
@@ -58,7 +58,6 @@
   }
 
   &__bio {
-    font-size: 14px;
     color: $color-5;
     opacity: 0.9;
     line-height: 1.4;

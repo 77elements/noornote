@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .search-spotlight {
   position: fixed;
@@ -19,7 +20,7 @@
 
   // Larger font for spotlight input
   .input {
-    font-size: 18px;
+    @extend %h3;
   }
 }
 
@@ -34,7 +35,7 @@
   background: $color-1;
   border: 1px solid $color-2;
   border-radius: $radius-md;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: $box-shadow;
   overflow: hidden;
   pointer-events: auto;
 }
@@ -61,7 +62,7 @@
   border: 1px solid transparent;
   border-radius: $radius-sm;
   color: $color-5;
-  font-size: 13px;
+  @extend %small;
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -120,7 +121,6 @@
 
 .search-spotlight__suggestion-text {
   color: $color-5;
-  font-size: 14px;
   font-family: monospace;
 }
 
@@ -128,7 +128,6 @@
   padding: $gap;
   text-align: center;
   color: rgba($color-5, 0.4);
-  font-size: 14px;
 }
 
 // User search suggestions
@@ -142,7 +141,7 @@
 
 .search-spotlight__user-header {
   padding: calc($gap / 4) calc($gap / 2);
-  font-size: 11px;
+  @extend %small;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -152,7 +151,7 @@
 .search-spotlight__user-loading {
   padding: calc($gap / 2);
   color: rgba($color-5, 0.4);
-  font-size: 13px;
+  @extend %small;
 }
 
 .search-spotlight__user-item {
@@ -204,7 +203,6 @@
 }
 
 .search-spotlight__user-name {
-  font-size: 14px;
   font-weight: 500;
   color: $color-5;
   white-space: nowrap;
@@ -213,7 +211,7 @@
 }
 
 .search-spotlight__user-nip05 {
-  font-size: 12px;
+  @extend %small;
   color: rgba($color-5, 0.5);
   white-space: nowrap;
   overflow: hidden;
@@ -222,7 +220,7 @@
 
 .search-spotlight__user-badge {
   padding: 2px 6px;
-  font-size: 10px;
+  @extend %mini;
   font-weight: 600;
   text-transform: uppercase;
   background: rgba($color-4, 0.2);

@@ -48,18 +48,15 @@
   }
 
   &__icon {
-    font-size: 14px;
     line-height: 1;
   }
 
   &__amount {
     font-weight: 600;
-    font-size: 14px;
     color: $color-6;
   }
 
   &__text {
-    font-size: 14px;
     color: var(--color-text-primary);
     max-width: 200px;
     overflow: hidden;

@@ -29,48 +29,5 @@
 .post-item__text {
   margin: 0;
   color: var(--color-text-secondary);
-  font-size: 14px;
   line-height: 1.5;
-}
-
-// Widget containers
-.widget-placeholder {
-  flex: 1;
-  @include flex-column;
-  gap: $gap;
-}
-
-.widget {
-  @include card-base;
-  padding: $gap;
-}
-
-// Widget heading (standalone)
-.widget__heading {
-  margin: 0 0 calc($gap / 2) 0;
-  color: var(--color-text-primary);
-  font-weight: 500;
-}
-
-// Widget list (standalone)
-.widget__list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-// Widget list item (standalone)
-.widget__list-item {
-  padding: calc($gap / 4) 0;
-  color: var(--color-text-interactive); // Pink for interactive elements
-  font-size: 14px;
-  cursor: pointer;
-  transition: $transition-colors;
-
-  &:hover {
-    color: var(--color-text-interactive);
-    background-color: rgba($color-4, 0.1); // Light pink hover background
-    border-radius: $radius-sm;
-    padding-left: calc($gap / 2);
-  }
 }

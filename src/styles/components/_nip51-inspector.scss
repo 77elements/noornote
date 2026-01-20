@@ -7,6 +7,7 @@
 
 @use '../abstracts/variables' as *;
 @use 'sass:color';
+@use '../base/typography' as *;
 
 .nip51-inspector {
   padding-bottom: $gap * 2;
@@ -21,7 +22,6 @@
 }
 
 .nip51-inspector-description {
-  font-size: 14px;
   color: $color-3;
   line-height: 1.6;
 
@@ -37,7 +37,6 @@
   text-align: center;
   padding: $gap * 3;
   color: $color-3;
-  font-size: 14px;
 
   h3 {
     margin-bottom: calc($gap / 2);
@@ -67,7 +66,6 @@
     padding: $gap * 2;
     text-align: center;
     color: $color-3;
-    font-size: 14px;
   }
 
   &__events {
@@ -106,7 +104,7 @@
 
   &__id {
     font-family: monospace;
-    font-size: 13px;
+    @extend %small;
     color: $color-3;
     background: color.adjust($color-2, $lightness: 8%);
     padding: 2px 6px;
@@ -114,7 +112,7 @@
   }
 
   &__dtag {
-    font-size: 13px;
+    @extend %small;
     color: $color-4;
     font-weight: 600;
     background: rgba($color-4, 0.1);
@@ -123,7 +121,7 @@
   }
 
   &__time {
-    font-size: 12px;
+    @extend %small;
     color: $color-3;
   }
 
@@ -157,7 +155,7 @@
   }
 
   &__tags-summary {
-    font-size: 13px;
+    @extend %small;
     color: $color-3;
   }
 
@@ -176,7 +174,6 @@
 
     h4 {
       margin: 0 0 calc($gap / 2) 0;
-      font-size: 14px;
       font-weight: 600;
       color: $color-1;
     }
@@ -187,7 +184,7 @@
       border-radius: $radius-sm;
       padding: calc($gap / 2);
       overflow-x: auto;
-      font-size: 12px;
+      @extend %small;
       font-family: monospace;
       line-height: 1.5;
       margin: 0;

@@ -32,10 +32,6 @@
     width: 24px;
     height: 24px;
   }
-
-  .user-identity__username {
-    font-size: 14px;
-  }
 }
 
 .user-identity--medium {
@@ -43,20 +39,12 @@
     width: 32px;
     height: 32px;
   }
-
-  .user-identity__username {
-    font-size: 15px;
-  }
 }
 
 .user-identity--large {
   .user-identity__avatar {
     width: 48px;
     height: 48px;
-  }
-
-  .user-identity__username {
-    font-size: 16px;
   }
 }
 

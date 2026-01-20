@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 // View child elements
 .article-timeline-view__header {
@@ -11,14 +12,13 @@
 }
 
 .article-timeline-view__title {
-  font-size: 24px;
+  @extend %h1;
   font-weight: 600;
   color: $color-5;
   margin: 0 0 calc($gap / 4) 0;
 }
 
 .article-timeline-view__subtitle {
-  font-size: 14px;
   color: $color-3;
   margin: 0;
 }
@@ -51,21 +51,20 @@
     }
 
     p {
-      font-size: 16px;
+      @extend %h4;
       margin: 0 0 calc($gap / 4) 0;
     }
 
     span {
-      font-size: 14px;
       color: $color-3;
     }
   }
 
   &__error {
     p {
-      font-size: 16px;
+      @extend %h4;
       margin: 0 0 $gap 0;
-      color: $color-error;
+      color: $color-red;
     }
   }
 }
@@ -81,7 +80,7 @@
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: $shadow-lg;
+    box-shadow: $box-hover;
   }
 
   &__image {
@@ -105,7 +104,7 @@
   }
 
   &__title {
-    font-size: 18px;
+    @extend %h3;
     font-weight: 600;
     color: $color-5;
     margin: 0;
@@ -119,7 +118,6 @@
   }
 
   &__summary {
-    font-size: 14px;
     color: $color-5;
     opacity: 0.8;
     margin: 0;
@@ -136,14 +134,14 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    font-size: 13px;
+    @extend %small;
     color: $color-3;
   }
 
   &__author {
     // Uses .mention-link styles from _links.scss
     .mention-link {
-      font-size: 13px;
+      @extend %small;
     }
   }
 
@@ -162,7 +160,7 @@
   }
 
   &__tag {
-    font-size: 12px;
+    @extend %small;
     color: $color-3;
     background: $color-1;
     padding: calc($gap / 8) calc($gap / 2);

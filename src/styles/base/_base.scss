@@ -62,11 +62,6 @@ body {
   width: 100%;
 }
 
-// Focus management
-.js-focus-visible :focus:not(.focus-visible) {
-  outline: none;
-}
-
 // Reduced motion preferences
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -87,38 +82,5 @@ body {
   :root {
     --color-border: currentColor;
     --color-border-light: currentColor;
-  }
-}
-
-// Print styles
-@media print {
-  *,
-  *::before,
-  *::after {
-    background: transparent !important;
-    color: black !important;
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-
-  a,
-  a:visited {
-    text-decoration: underline;
-  }
-
-  img {
-    page-break-inside: avoid;
-  }
-
-  p,
-  h2,
-  h3 {
-    orphans: 3;
-    widows: 3;
-  }
-
-  h2,
-  h3 {
-    page-break-after: avoid;
   }
 }

@@ -69,8 +69,7 @@ export class RefreshButton {
   private async updateContent(): Promise<void> {
     // Update text
     if (this.textSpan) {
-      const plural = this.newNotesCount === 1 ? 'Note' : 'Notes';
-      this.textSpan.textContent = `${this.newNotesCount} new ${plural} - Refresh`;
+      this.textSpan.textContent = `${this.newNotesCount} new`;
     }
 
     // Update avatars
