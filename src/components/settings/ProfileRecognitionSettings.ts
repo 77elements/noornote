@@ -68,21 +68,18 @@ export class ProfileRecognitionSettings extends SettingsSection {
     const optionsHtml = WINDOW_OPTIONS.map(option => {
       const isChecked = option.value === currentWindow;
       return `
-        <div class="radio-option">
-          <label class="radio-label">
-            <input
-              type="radio"
-              name="profile-recognition-window"
-              value="${option.value}"
-              ${isChecked ? 'checked' : ''}
-              class="radio-input"
-            />
-            <span class="radio-label-text">
-              <strong>${option.label}</strong>
-              <span class="radio-description">${option.description}</span>
-            </span>
-          </label>
-        </div>
+        <label class="mode-option${isChecked ? ' mode-option--active' : ''}">
+          <input
+            type="radio"
+            name="profile-recognition-window"
+            value="${option.value}"
+            ${isChecked ? 'checked' : ''}
+          />
+          <div class="mode-option__content">
+            <div class="mode-option__title">${option.label}</div>
+            <div class="mode-option__description">${option.description}</div>
+          </div>
+        </label>
       `;
     }).join('');
 
@@ -98,7 +95,7 @@ export class ProfileRecognitionSettings extends SettingsSection {
           </p>
         </div>
 
-        <div class="radio-group">
+        <div class="mode-options">
           ${optionsHtml}
         </div>
 
@@ -120,10 +117,15 @@ export class ProfileRecognitionSettings extends SettingsSection {
    */
   private bindListeners(contentContainer: HTMLElement): void {
     const radioInputs = contentContainer.querySelectorAll<HTMLInputElement>('input[name="profile-recognition-window"]');
+    const modeOptions = contentContainer.querySelectorAll('.mode-option');
 
     radioInputs.forEach(input => {
       input.addEventListener('change', () => {
         if (input.checked) {
+          // Update active state on all options
+          modeOptions.forEach(opt => opt.classList.remove('mode-option--active'));
+          input.closest('.mode-option')?.classList.add('mode-option--active');
+
           const value = parseInt(input.value, 10);
           this.saveWindow(value);
 

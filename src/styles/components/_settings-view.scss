@@ -753,65 +753,6 @@
   }
 }
 
-.mode-options {
-  display: flex;
-  flex-direction: column;
-  gap: $gap;
-}
-
-.mode-option {
-  display: flex;
-  align-items: flex-start;
-  gap: $gap;
-  padding: $gap;
-  background: $color-2;
-  border: 2px solid $color-3;
-  border-radius: $radius-sm;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    border-color: rgba($color-4, 0.5);
-  }
-
-  &--active {
-    border-color: $color-4;
-    background: rgba($color-4, 0.05);
-  }
-
-  input[type="radio"] {
-    margin-top: calc($gap / 4);
-    cursor: pointer;
-    accent-color: $color-4;
-  }
-
-  &__content {
-    flex: 1;
-  }
-
-  &__title {
-    @extend %h4;
-    font-weight: 600;
-    color: $color-5;
-    margin-bottom: calc($gap / 4);
-  }
-
-  &__description {
-    color: rgba($color-5, 0.7);
-    line-height: 1.5;
-  }
-
-  &__features {
-    margin: calc($gap / 2) 0 0 0;
-    padding-left: $gap;
-    @extend %small;
-    color: rgba($color-5, 0.6);
-
-    li {
-      margin-bottom: calc($gap / 4);
-    }
-  }
-}
 
 // ========================================
 // Subscription Settings Section
