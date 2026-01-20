@@ -102,6 +102,9 @@
     cursor: pointer;
     transition: background-color 0.15s ease;
     font-weight: 400;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 
     &:hover {
       background: color.adjust($color-2, $lightness: 5%);

@@ -253,8 +253,7 @@ export class Timeline extends View {
       options: allOptions,
       selectedValue: 'latest',
       onChange: (value: string) => this.eventHandler.handleViewChange(value),
-      className: 'timeline-view-dropdown',
-      width: '220px' // Wider to accommodate relay URLs
+      className: 'timeline-view-dropdown'
     });
 
     // Register with lifecycle manager for cleanup

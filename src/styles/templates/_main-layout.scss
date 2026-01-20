@@ -20,7 +20,7 @@
 
   // Responsive breakpoints
   @include desktop-down {
-    grid-template-columns: 100px 1fr 1fr;
+    grid-template-columns: 200px 1fr 1fr;
     gap: $gap;
     padding: $gap;
   }
@@ -50,7 +50,7 @@ html.layout--wide .main-layout {
   grid-template-areas: "sidebar primary";
 
   @include desktop-down {
-    grid-template-columns: 100px 1fr;
+    grid-template-columns: 200px 1fr;
   }
 
   @include tablet-down {

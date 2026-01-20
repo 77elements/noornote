@@ -15,6 +15,14 @@
   margin-bottom: $gap;
 }
 
+// Layout mode section - hidden on tablet/phone (below $breakpoint-lg)
+// User can't change layout mode anyway as it's forced to 'wide' or 'phone'
+.layout-mode-section {
+  @media (max-width: $breakpoint-lg - 1px) {
+    display: none;
+  }
+}
+
 // Sync status container
 .sync-status-container {
   margin-bottom: $gap * 2;

@@ -308,7 +308,7 @@ export class SystemLogger {
     const logsContainer = this.element.querySelector('.system-logger__global-logs');
     if (!logsContainer) return;
 
-    logsContainer.innerHTML = this.globalLogs.map(entry => this.renderLogEntry(entry)).join('');
+    logsContainer.innerHTML = `<table class="system-log-table"><tbody>${this.globalLogs.map(entry => this.renderLogEntry(entry)).join('')}</tbody></table>`;
   }
 
   /**
@@ -340,11 +340,11 @@ export class SystemLogger {
     // Only render last 50 visible logs for performance
     const visibleLogs = filteredLogs.slice(-50);
 
-    logsContainer.innerHTML = visibleLogs.map(entry => this.renderLogEntry(entry)).join('');
+    logsContainer.innerHTML = `<table class="system-log-table"><tbody>${visibleLogs.map(entry => this.renderLogEntry(entry)).join('')}</tbody></table>`;
   }
 
   /**
-   * Render individual log entry
+   * Render individual log entry as table row
    */
   private renderLogEntry(entry: LogEntry): string {
     const timestamp = entry.timestamp || Date.now();
@@ -364,12 +364,11 @@ export class SystemLogger {
     const countSuffix = (entry.count && entry.count > 1) ? ` (${entry.count})` : '';
 
     return `
-      <div class="system-log-entry ${levelClass}">
-        <span class="system-log-entry__time">${time}</span>
-        <span class="system-log-entry__category">[${category}]</span>
-        <span class="system-log-entry__message">${this.escapeHtml(entry.message)}${countSuffix}</span>
-        ${dataHtml}
-      </div>
+      <tr class="system-log-entry ${levelClass}">
+        <td class="system-log-entry__time">${time}</td>
+        <td class="system-log-entry__category">[${category}]</td>
+        <td class="system-log-entry__message">${this.escapeHtml(entry.message)}${countSuffix}${dataHtml}</td>
+      </tr>
     `;
   }
 

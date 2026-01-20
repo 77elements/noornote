@@ -30,7 +30,7 @@
   }
 
   &__global-header {
-    padding: var(--space-xs) var(--space-sm);
+    padding: calc($gap / 4) calc($gap / 2);
     @extend %mini;
     font-weight: 600;
     color: var(--text-secondary-color);
@@ -42,7 +42,7 @@
   &__global-content {
     flex: 1;
     overflow-y: auto;
-    padding: var(--space-xs);
+    padding: calc($gap / 4);
     font-family: var(--font-mono);
     @extend %small;
     line-height: 1.5;
@@ -52,9 +52,7 @@
   }
 
   &__global-logs {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    width: 100%;
   }
 
   // Page section (bottom, 50% height)
@@ -67,7 +65,7 @@
   }
 
   &__page-header {
-    padding: var(--space-xs) var(--space-sm);
+    padding: calc($gap / 4) calc($gap / 2);
     @extend %mini;
     font-weight: 600;
     color: var(--text-secondary-color);
@@ -79,7 +77,7 @@
   &__page-content {
     flex: 1;
     overflow-y: auto;
-    padding: var(--space-xs);
+    padding: calc($gap / 4);
     background: var(--surface-color);
     font-family: var(--font-mono);
     @extend %small;
@@ -90,92 +88,81 @@
   }
 
   &__page-logs {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-height: 100%;
+    width: 100%;
   }
 }
 
-.system-log-entry {
-  display: flex;
-  gap: var(--space-xs);
-  padding: var(--space-xs);
-  border-radius: var(--border-radius-sm);
-  word-break: break-all;
+// Table for log entries
+.system-log-table {
+  width: 100%;
+  border-collapse: collapse;
   font-family: var(--font-mono);
+}
 
+.system-log-entry {
+  // Row-level background colors based on log level
   &--info {
     background: var(--surface-elevated-color);
-    border-left: 3px solid var(--accent-blue);
+
+    td:first-child {
+      border-left: 3px solid var(--accent-blue);
+    }
   }
 
   &--debug {
     background: var(--surface-color);
-    border-left: 3px solid var(--text-secondary-color);
     opacity: 0.8;
+
+    td:first-child {
+      border-left: 3px solid var(--text-secondary-color);
+    }
   }
 
   &--warn {
     background: rgba($color-warning, 0.1);
-    border-left: 3px solid var(--accent-yellow);
+
+    td:first-child {
+      border-left: 3px solid var(--accent-yellow);
+    }
   }
 
   &--error {
     background: $color-red-bg;
-    border-left: 3px solid var(--accent-red);
+
+    td:first-child {
+      border-left: 3px solid var(--accent-red);
+    }
   }
 
   &--success {
     background: rgba($color-6, 0.1);
-    border-left: 3px solid $color-6;
+
+    td:first-child {
+      border-left: 3px solid $color-6;
+    }
+  }
+
+  // Table cells
+  td {
+    padding: calc($gap / 4);
+    vertical-align: top;
   }
 
   &__time {
     color: var(--text-secondary-color);
     white-space: nowrap;
-    width: 70px;
-    flex-shrink: 0;
-  }
-
-  &__level {
-    font-weight: 600;
-    white-space: nowrap;
-    width: 60px;
-    flex-shrink: 0;
-
-    .system-log-entry--info & {
-      color: var(--accent-blue);
-    }
-
-    .system-log-entry--debug & {
-      color: var(--text-secondary-color);
-    }
-
-    .system-log-entry--warn & {
-      color: var(--accent-yellow);
-    }
-
-    .system-log-entry--error & {
-      color: var(--accent-red);
-    }
-
-    .system-log-entry--success & {
-      color: $color-6;
-    }
+    width: auto;
   }
 
   &__category {
     color: var(--accent-purple);
     font-weight: 500;
     white-space: nowrap;
-    width: 100px;
-    flex-shrink: 0;
+    width: auto;
   }
 
   &__message {
     color: var(--text-primary-color);
-    flex: 1;
     word-break: break-word;
 
     .system-log-entry--success & {
@@ -184,8 +171,9 @@
   }
 
   &__data {
-    margin: var(--space-xs) 0 0 0;
-    padding: var(--space-xs);
+    display: block;
+    margin: calc($gap / 4) 0 0 0;
+    padding: calc($gap / 4);
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius-sm);
@@ -231,18 +219,36 @@
 @media (max-width: 768px) {
   .system-logger {
     &__header {
-      padding: var(--space-xs) var(--space-sm);
+      padding: calc($gap / 4) calc($gap / 2);
+    }
+  }
+
+  // On mobile, stack cells vertically
+  .system-log-table {
+    display: block;
+
+    tbody {
+      display: block;
     }
   }
 
   .system-log-entry {
-    flex-direction: column;
-    gap: var(--space-xs);
+    display: block;
+    margin-bottom: 2px;
+    padding: calc($gap / 4);
+    border-radius: var(--border-radius-sm);
 
-    &__time,
-    &__level,
+    td {
+      display: block;
+      padding: 0;
+    }
+
+    &__time {
+      margin-bottom: 2px;
+    }
+
     &__category {
-      min-width: auto;
+      margin-bottom: 2px;
     }
   }
 }

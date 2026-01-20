@@ -16,22 +16,23 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-gap: calc($gap / 2);
     padding: $gap 0;
     border-bottom: 1px solid $color-2;
     background: $color-1;
 
     .timeline-view-selector {
-      // CustomDropdown component styles in _custom-dropdown.scss
+      // Dropdown takes full width of its grid cell
+      .custom-dropdown {
+        width: 100%;
+      }
     }
 
     .timeline-controls {
       // Refresh button styles moved to molecules/_buttons.scss
-      display: flex;
-      align-items: center;
-      gap: $gap;
+      justify-self: end;
     }
   }
 

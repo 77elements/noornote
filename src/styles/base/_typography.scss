@@ -6,9 +6,9 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// Base font-size: responsive 13px (mobile) → 18px (large screens)
+// Base font-size: responsive 16px (mobile) → 20px (large screens)
 body {
-  font-size: clamp(0.8125rem, 2vw, 1.125rem);
+  font-size: clamp(1rem, 2vw, 1.25rem);
   line-height: 1;
 }
 

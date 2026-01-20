@@ -15,9 +15,9 @@
 
 .timeline-view__tabs-container {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: $gap;
+  gap: calc($gap / 2);
 }
 
 .timeline-view__edit-link {

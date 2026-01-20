@@ -2,25 +2,27 @@
  * Screen Size Detection
  * CSS pseudo-element readable by JavaScript for platform detection
  *
- * Breakpoints:
- * - Phone: < 768px
- * - Tablet: 768px - 991px
- * - Desktop: >= 992px
+ * Breakpoints (aligned with $breakpoint-md and $breakpoint-lg):
+ * - Phone: < 768px ($breakpoint-md)
+ * - Tablet: 768px - 1023px
+ * - Desktop: >= 1024px ($breakpoint-lg)
  *
  * Usage in JS:
  *   const screenSize = getComputedStyle(document.documentElement, '::after').content;
  *   // Returns: '"phone"', '"tablet"', or '"desktop"'
  */
 
+@use '../abstracts/variables' as *;
+
 html::after {
   display: none;
   content: 'desktop';
 
-  @media (max-width: 991px) {
+  @media (max-width: $breakpoint-lg - 1px) {
     content: 'tablet';
   }
 
-  @media (max-width: 767px) {
+  @media (max-width: $breakpoint-md - 1px) {
     content: 'phone';
   }
 }
