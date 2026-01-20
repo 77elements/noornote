@@ -19,7 +19,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-gap: calc($gap / 2);
-    padding: $gap 0;
+    padding: calc($gap / 2) 0; // Mobile-first base
     border-bottom: 1px solid $color-2;
     background: $color-1;
 
@@ -33,6 +33,14 @@
     .timeline-controls {
       // Refresh button styles moved to molecules/_buttons.scss
       justify-self: end;
+    }
+
+    @include tablet-up {
+      padding: calc($gap * 0.75) 0;
+    }
+
+    @include desktop-up {
+      padding: $gap 0;
     }
   }
 
@@ -123,62 +131,6 @@
   100% { transform: rotate(360deg); }
 }
 
-// Responsive design
-@include tablet-down {
-  .timeline {
-    .timeline-header {
-      padding: calc($gap * 0.75);
-
-      .timeline-controls {
-        .refresh-btn {
-          padding: calc($gap * 0.375) calc($gap * 0.75);
-          @include small;
-        }
-      }
-    }
-
-    .timeline-item {
-      padding: calc($gap * 0.75) 0;
-
-      .event-header {
-        margin-bottom: calc($gap * 0.375);
-      }
-
-      .event-content {
-        margin-bottom: calc($gap / 2);
-      }
-    }
-  }
-}
-
-@include mobile-down {
-  .timeline {
-    .timeline-header {
-      padding: calc($gap / 2);
-
-      .timeline-controls {
-        .refresh-btn {
-          padding: calc($gap / 4) calc($gap / 2);
-          @include small;
-        }
-      }
-    }
-
-    .timeline-item {
-      padding: calc($gap * 0.75) 0;
-
-      .event-header-container {
-        margin-bottom: calc($gap / 2);
-
-        // NoteHeader will adapt to container size automatically
-        // Use small size on mobile
-        .note-header {
-          // The NoteHeader component's container queries will handle this
-        }
-      }
-    }
-  }
-}
 
 /* Quote Box - styled exactly like normal notes */
 .quote-box {

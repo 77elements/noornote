@@ -24,7 +24,7 @@
     color: $color-5;
     border: 1px solid $color-3;
     border-radius: 4px;
-    padding: 8px 12px;
+    padding: 12px;
     font-weight: 500;
     cursor: pointer;
     outline: none;
@@ -126,13 +126,11 @@
 @include tablet-down {
   .custom-dropdown {
     &__trigger {
-      padding: 6px 10px;
-      @include small;
+      padding: 12px;
     }
 
     &__item {
       padding: calc($gap * 0.375) calc($gap * 0.625);
-      @include small;
     }
   }
 }
@@ -140,8 +138,7 @@
 @include mobile-down {
   .custom-dropdown {
     &__trigger {
-      padding: 4px 8px;
-      @include small;
+      padding: 12px;
     }
 
     &__arrow {
@@ -152,7 +149,6 @@
 
     &__item {
       padding: calc($gap / 4) calc($gap / 2);
-      @include small;
     }
   }
 }

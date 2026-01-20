@@ -41,6 +41,10 @@
     font-weight: 500;
     position: relative;
 
+    .layout--phone & {
+      padding: calc($gap / 2);
+    }
+
     &:link,
     &:visited {
       color: $color-5;

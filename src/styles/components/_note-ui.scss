@@ -262,6 +262,7 @@
 
 // Repost header (standalone)
 .repost-header {
+  @extend %small;
   display: flex;
   align-items: center;
   gap: calc($gap / 2);

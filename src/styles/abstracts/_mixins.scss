@@ -28,7 +28,7 @@
 // Responsive Mixins
 // ========================================
 
-// Max-width breakpoints
+// Max-width breakpoints (desktop-first)
 @mixin mobile-down {
   @media (max-width: $breakpoint-sm - 1px) {
     @content;
@@ -43,6 +43,19 @@
 
 @mixin desktop-down {
   @media (max-width: $breakpoint-lg - 1px) {
+    @content;
+  }
+}
+
+// Min-width breakpoints (mobile-first)
+@mixin tablet-up {
+  @media (min-width: $breakpoint-md) {
+    @content;
+  }
+}
+
+@mixin desktop-up {
+  @media (min-width: $breakpoint-lg) {
     @content;
   }
 }

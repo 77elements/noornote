@@ -34,12 +34,17 @@
   @extend %h1;
   font-weight: 700;
   line-height: 1.2;
-  margin-bottom: calc(1.5 * $gap);
+  margin-bottom: $gap;
   background: linear-gradient(135deg, color.adjust($color-3, $saturation: 40%), color.adjust($color-6, $saturation: 40%));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: $text-glow;
+
+  // Hide in phone mode (logo shown in mobile header)
+  .layout--phone & {
+    display: none;
+  }
 }
 
 // New Post Dropup Container
@@ -56,6 +61,10 @@
     align-items: center;
     justify-content: center;
     gap: calc($gap / 2);
+
+    svg {
+      width: 40px;
+    }
 
     .dropup-arrow {
       width: 12px;

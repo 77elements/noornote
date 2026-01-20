@@ -352,8 +352,10 @@ export class SystemLogger {
     const levelClass = `system-log-entry--${entry.level}`;
     const dataHtml = entry.data ? `<pre class="system-log-entry__data">${JSON.stringify(entry.data, null, 2)}</pre>` : '';
 
-    // Abbreviate "Orchestrator" to "Orch." in category names
-    let category = entry.category.replace('Orchestrator', 'Orch.');
+    // Abbreviate long category names
+    let category = entry.category
+      .replace('Orchestrator', 'Orch.')
+      .replace('NostrTransport', 'NostrTrnsp.');
 
     // Truncate if longer than 14 characters
     if (category.length > 14) {

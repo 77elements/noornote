@@ -10,37 +10,39 @@
 
 .main-layout {
   display: grid;
-  grid-template-columns: clamp(200px, 15vw, 250px) 1fr 1fr;
-  grid-template-areas: "sidebar primary secondary";
-  gap: $gap;
-  padding: $gap;
   height: 100vh;
   box-sizing: border-box;
   overflow: hidden;
 
-  // Responsive breakpoints
-  @include desktop-down {
-    grid-template-columns: 200px 1fr 1fr;
-    gap: $gap;
-    padding: $gap;
-  }
+  // Mobile-first: Base (phone)
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr 1fr;
+  grid-template-areas:
+    "sidebar"
+    "primary"
+    "secondary";
+  gap: calc($gap / 4);
+  padding: calc($gap / 4);
 
-  @include tablet-down {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr 1fr;
-    grid-template-areas:
-      "sidebar"
-      "primary"
-      "secondary";
+  // 576px+ (small)
+  @media (min-width: 576px) {
     gap: calc($gap / 2);
     padding: calc($gap / 2);
   }
 
-  @include mobile-down {
-    padding: calc($gap / 4);
-    gap: calc($gap / 4);
+  // 800px+ (2 columns with fluid sidebar)
+  @media (min-width: 800px) {
+    grid-template-columns: clamp(200px, 25vw, 250px) 1fr;
+    grid-template-areas: "sidebar primary";
+    gap: $gap;
+    padding: $gap;
   }
 
+  // 1100px+ (3 columns)
+  @media (min-width: 1100px) {
+    grid-template-columns: clamp(200px, 18vw, 250px) 1fr 1fr;
+    grid-template-areas: "sidebar primary secondary";
+  }
 }
 
 // Layout modes set on <html> element by LayoutService
@@ -50,7 +52,7 @@ html.layout--wide .main-layout {
   grid-template-areas: "sidebar primary";
 
   @include desktop-down {
-    grid-template-columns: 200px 1fr;
+    grid-template-columns: 210px 1fr;
   }
 
   @include tablet-down {
@@ -104,9 +106,16 @@ html.layout--wide .main-layout {
   }
 
   &__title {
+    flex: 1;
+    text-align: center;
+    margin-right: 40px; // Compensate for hamburger width to center text
+    font-family: 'Saira', sans-serif;
     @extend %h3;
-    font-weight: 600;
-    color: $color-5;
+    font-weight: 700;
+    background: linear-gradient(135deg, color.adjust($color-3, $saturation: 40%), color.adjust($color-6, $saturation: 40%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
 }
 
@@ -154,7 +163,7 @@ html.layout--phone {
       top: 0;
       left: 0;
       bottom: 0;
-      width: 280px;
+      width: 230px;
       max-width: 80vw;
       z-index: 200;
       background: $color-1;
