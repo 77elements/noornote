@@ -6,13 +6,15 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// Base font-size: responsive 16px (mobile) → 20px (large screens)
+// Body inherits browser default (16px)
 body {
-  font-size: clamp(1rem, 2vw, 1.25rem);
   line-height: 1;
 }
 
-// Heading placeholders for @extend (use outside media queries)
+// ========================================
+// Headings (fixed sizes, all breakpoints)
+// h1: 27px, h2: 23px, h3: 19px, h4: 16px, h5/h6: 14px
+// ========================================
 %heading-base {
   font-weight: 600;
   line-height: 1.25;
@@ -20,39 +22,39 @@ body {
 
 %h1 {
   @extend %heading-base;
-  font-size: clamp(1.5rem, 4vw, 2.25rem);    // 24px → 36px
+  font-size: 27px;
 }
 
 %h2 {
   @extend %heading-base;
-  font-size: clamp(1.25rem, 3vw, 1.75rem);   // 20px → 28px
+  font-size: 23px;
 }
 
 %h3 {
   @extend %heading-base;
-  font-size: clamp(1.125rem, 2.5vw, 1.5rem); // 18px → 24px
+  font-size: 19px;
 }
 
 %h4 {
   @extend %heading-base;
-  font-size: clamp(1rem, 2vw, 1.25rem);      // 16px → 20px
+  font-size: 16px;
 }
 
 %h5 {
   @extend %heading-base;
-  font-size: clamp(0.875rem, 1.5vw, 1.125rem); // 14px → 18px
+  font-size: 14px;
 }
 
 %h6 {
-  @extend %h5; // Same as h5
+  @extend %h5;
 }
 
 // Heading mixins for use inside media queries
-@mixin h1 { font-size: clamp(1.5rem, 4vw, 2.25rem); }
-@mixin h2 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
-@mixin h3 { font-size: clamp(1.125rem, 2.5vw, 1.5rem); }
-@mixin h4 { font-size: clamp(1rem, 2vw, 1.25rem); }
-@mixin h5 { font-size: clamp(0.875rem, 1.5vw, 1.125rem); }
+@mixin h1 { font-size: 27px; }
+@mixin h2 { font-size: 23px; }
+@mixin h3 { font-size: 19px; }
+@mixin h4 { font-size: 16px; }
+@mixin h5 { font-size: 14px; }
 @mixin h6 { @include h5; }
 
 // Heading elements + utility classes
@@ -63,28 +65,28 @@ h4, .h4 { @extend %h4; }
 h5, .h5 { @extend %h5; }
 h6, .h6 { @extend %h6; }
 
-// Small text - placeholder for @extend (use outside media queries)
+// ========================================
+// Small & Mini text (fixed sizes)
+// Small: 12px, Mini: 9px
+// ========================================
 %small {
-  font-size: clamp(0.6875rem, 1.25vw, 0.9375rem); // 11px → 15px
+  font-size: 12px;
 }
 
-// Small text - mixin for use inside media queries
 @mixin small {
-  font-size: clamp(0.6875rem, 1.25vw, 0.9375rem); // 11px → 15px
+  font-size: 12px;
 }
 
 small, .small {
   @extend %small;
 }
 
-// Mini text - placeholder for @extend (use outside media queries)
 %mini {
-  font-size: clamp(0.5625rem, 1vw, 0.8125rem); // 9px → 13px
+  font-size: 9px;
 }
 
-// Mini text - mixin for use inside media queries
 @mixin mini {
-  font-size: clamp(0.5625rem, 1vw, 0.8125rem); // 9px → 13px
+  font-size: 9px;
 }
 
 .mini {
