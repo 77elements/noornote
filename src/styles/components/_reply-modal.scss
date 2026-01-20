@@ -28,7 +28,6 @@
 .reply-modal-parent-label {
   @extend %small;
   font-weight: 600;
-  color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: calc($gap / 2);

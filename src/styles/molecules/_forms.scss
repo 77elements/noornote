@@ -13,8 +13,8 @@
 .input {
   width: 100%;
   padding: calc($gap * 0.75);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: $color-2;
+  border: 1px solid $color-2;
   border-radius: $radius-md;
   color: $color-5;
   font-family: inherit;
@@ -46,8 +46,8 @@
 .textarea {
   width: 100%;
   padding: $gap;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: $color-2;
+  border: 1px solid $color-2;
   border-radius: $radius-md;
   color: $color-5;
   font-family: inherit;

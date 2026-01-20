@@ -100,7 +100,6 @@
 }
 
 .profile-nip05 {
-  color: var(--color-text-secondary);
   margin: 0 0 $gap 0;
   word-break: break-all;
 }
@@ -321,7 +320,6 @@
   }
 
   span {
-    color: var(--color-text-secondary);
     transition: color 0.2s ease;
   }
 }
@@ -411,13 +409,11 @@
 .profile-joined-date {
   text-align: right;
   @extend %small;
-  color: var(--color-text-secondary);
   margin: calc($gap / 2) 0 $gap 0;
   opacity: 0.8;
 }
 
 .profile-about {
-  color: var(--color-text-primary);
   line-height: 1.5;
   margin: $gap 0;
   white-space: pre-wrap;
@@ -428,7 +424,6 @@
   margin: calc($gap / 2) 0;
 
   a {
-    color: var(--color-text-interactive);
     text-decoration: none;
     transition: $transition-colors;
 
@@ -657,7 +652,6 @@
 // Profile loading/error text (standalone)
 .profile-loading-text,
 .profile-error-text {
-  color: var(--color-text-secondary);
   @extend %h3;
   margin: 0;
 }

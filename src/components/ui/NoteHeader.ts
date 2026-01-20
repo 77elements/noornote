@@ -79,7 +79,7 @@ export class NoteHeader {
 
     // NO whitespace between tags - prevents invisible text nodes causing spacing issues
     // Note: Display name will be populated when profile loads
-    header.innerHTML = `<div class="note-header__avatar"><img class="profile-pic profile-pic--medium" src="" alt="Avatar" loading="lazy" /></div><div class="note-header__info"><div class="note-header__primary-line"><span class="note-header__display-name"><span class="note-header__display-name-trigger"></span></span>${this.options.showVerification ? '<span class="note-header__verification" style="display: none;">✓</span>' : ''}${this.options.showTimestamp ? `<time class="note-header__timestamp">${formatTimestamp(this.options.timestamp)}</time>` : ''}${this.options.showMenu ? '<span class="note-header__menu-container"></span>' : ''}</div><div class="note-header__handle"></div></div>`;
+    header.innerHTML = `<div class="note-header__avatar"><img class="profile-pic profile-pic--medium" src="" alt="Avatar" loading="lazy" /></div><div class="note-header__info"><div class="note-header__primary-line"><h2 class="note-header__display-name h4"><span class="note-header__display-name-trigger"></span></h2>${this.options.showVerification ? '<span class="note-header__verification" style="display: none;">✓</span>' : ''}${this.options.showTimestamp ? `<time class="note-header__timestamp">${formatTimestamp(this.options.timestamp)}</time>` : ''}${this.options.showMenu ? '<span class="note-header__menu-container"></span>' : ''}</div><div class="note-header__handle"></div></div>`;
 
     // User hover card - only on avatar and display name trigger
     const hoverCard = UserHoverCard.getInstance();

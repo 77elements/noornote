@@ -45,7 +45,7 @@ body {
   overflow-x: hidden;
 
   // Background patterns or textures could go here
-  background-color: var(--color-background);
+  background-color: $color-1;
 
   // Improve text rendering
   text-rendering: optimizeLegibility;

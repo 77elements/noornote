@@ -90,6 +90,12 @@ export class TimelineView extends View {
 
     this.userPubkey = currentUser.pubkey;
 
+    // Accessibility: Page heading for screen readers
+    const pageHeading = document.createElement('h1');
+    pageHeading.className = 'visually-hidden';
+    pageHeading.textContent = 'Notes - Timeline';
+    this.container.appendChild(pageHeading);
+
     // Build tabs: Timeline first, then tribes
     this.buildTabs();
 

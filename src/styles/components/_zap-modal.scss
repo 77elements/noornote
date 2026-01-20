@@ -24,26 +24,19 @@
 
   &__label {
     font-weight: 600;
-    color: var(--color-text-primary);
   }
 
   &__input {
     width: 100%;
     padding: $gap;
-    background: var(--color-bg-secondary);
-    border: 1px solid var(--color-border);
-    border-radius: var(--border-radius);
-    color: var(--color-text-primary);
     font-family: inherit;
     transition: border-color 0.2s ease;
 
     &:focus {
       outline: none;
-      border-color: var(--color-primary);
     }
 
     &::placeholder {
-      color: var(--color-text-tertiary);
     }
 
     // Remove spinner for number input

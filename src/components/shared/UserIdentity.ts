@@ -75,8 +75,8 @@ export class UserIdentity {
     }
 
     if (this.config.showUsername) {
-      const username = document.createElement('span');
-      username.className = 'user-identity__username';
+      const username = document.createElement('h2');
+      username.className = 'user-identity__username h5';
       username.textContent = ''; // Empty initially
       container.appendChild(username);
     }

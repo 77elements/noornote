@@ -133,7 +133,6 @@
 @mixin heading-base {
   font-weight: 600;
   line-height: 1.25;
-  color: var(--color-text-primary);
   @include font-smoothing;
 }
 
@@ -145,8 +144,8 @@
 // ========================================
 
 @mixin card-base {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background-color: $color-2;
+  border: 1px solid $color-2;
   border-radius: $radius-lg;
 }
 

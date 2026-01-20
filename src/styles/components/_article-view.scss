@@ -36,7 +36,6 @@
   }
 
   .article-summary {
-    @extend %h2;
     line-height: 1.6;
     color: rgba($color-5, 0.8);
     margin: 0 0 calc($gap * 1.5) 0;
@@ -52,8 +51,6 @@
 
 // Article body (markdown content)
 .article-body {
-  @extend %h3;
-  line-height: 1.8;
   color: $color-5;
   margin-bottom: calc($gap * 2);
 

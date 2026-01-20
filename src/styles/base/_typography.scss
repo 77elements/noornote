@@ -17,7 +17,8 @@ body {
 // ========================================
 %heading-base {
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.5;
+  margin-bottom: $gap;
 }
 
 %h1 {
@@ -96,7 +97,6 @@ small, .small {
 // Paragraph styles
 p, li {
   margin-bottom: $gap;
-  color: var(--color-text-primary);
   line-height: 1.5;
 
   &:last-child {
@@ -136,13 +136,11 @@ dl {
 
 dt {
   font-weight: 600;
-  color: var(--color-text-primary);
   margin-bottom: calc($gap / 4);
 }
 
 dd {
   margin-bottom: $gap;
-  color: var(--color-text-secondary);
   margin-left: $gap;
 
   &:last-child {
@@ -154,7 +152,6 @@ dd {
 strong,
 b {
   font-weight: 600;
-  color: var(--color-text-primary);
 }
 
 em,
@@ -164,7 +161,6 @@ i {
 
 mark {
   background-color: rgba($color-warning, 0.2);
-  color: var(--color-text-primary);
   padding: 0 calc($gap / 4);
   border-radius: $radius-sm;
 }
@@ -173,22 +169,20 @@ mark {
 code {
   font-family: $font-family-mono;
   font-size: 0.875em;
-  background-color: var(--color-surface);
-  color: inherit;
+  background-color: $color-2;
   padding: calc($gap / 4) calc($gap / 2);
   border-radius: $radius-sm;
-  border: 1px solid var(--color-border);
+  border: 1px solid $color-2;
 }
 
 pre {
   font-family: $font-family-mono;
   font-size: 14px;
   line-height: 1.5;
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
+  background-color: $color-2;
   padding: $gap;
   border-radius: $radius-lg;
-  border: 1px solid var(--color-border);
+  border: 1px solid $color-2;
   overflow-x: auto;
   margin-bottom: $gap;
 
@@ -202,10 +196,8 @@ pre {
 
 // Blockquotes
 blockquote {
-  @extend %h3;
   line-height: 1.5;
-  color: var(--color-text-secondary);
-  border-left: 4px solid $color-4;
+  border-left: 4px solid $color-3;
   padding-left: $gap;
   margin: $gap * 1.5 0;
   font-style: italic;
@@ -218,7 +210,6 @@ blockquote {
     display: block;
     font-size: 14px;
     font-style: normal;
-    color: var(--color-text-tertiary);
     margin-top: calc($gap / 2);
 
     &::before {
@@ -231,7 +222,7 @@ blockquote {
 hr {
   border: none;
   height: 1px;
-  background-color: var(--color-border);
+  background-color: $color-2;
   margin: $gap * 2 0;
 }
 

@@ -22,7 +22,6 @@
     flex: 1;
     margin: 0;
     padding: $gap;
-    background: var(--color-bg-secondary);
     border-radius: 8px;
     overflow: auto;
     font-family: 'Courier New', monospace;
@@ -32,7 +31,6 @@
     @include custom-scrollbar;
 
     code {
-      color: var(--color-text-primary);
       white-space: pre;
     }
   }

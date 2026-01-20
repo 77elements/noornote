@@ -42,15 +42,8 @@
   width: 100%;
   padding: $gap;
   border: none;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--surface-elevated-color);
-  color: var(--text-primary-color);
   @extend %small;
   outline: none;
-
-  &::placeholder {
-    color: var(--text-secondary-color);
-  }
 
   &:focus {
     border-bottom-color: $color-6;
@@ -61,8 +54,6 @@
 .emoji-picker-custom .tabs {
   gap: calc($gap / 4);
   padding: calc($gap / 2) $gap;
-  background: var(--surface-elevated-color);
-  border-bottom: 1px solid var(--border-color);
   overflow-x: auto;
   flex-shrink: 0;
 
@@ -75,18 +66,15 @@
 .emoji-picker-custom .tab {
   padding: calc($gap / 2);
   font-size: 24px;
-  border-radius: var(--border-radius-sm);
   border-bottom: none;
   flex-shrink: 0;
   opacity: 0.5;
 
   &:hover {
-    background: var(--surface-color);
     opacity: 1;
   }
 
   &--active {
-    background: var(--surface-color);
     opacity: 1;
     box-shadow: 0 2px 0 $color-6;
   }
@@ -112,7 +100,6 @@
 .emoji-picker-category-title {
   @extend %small;
   font-weight: 600;
-  color: var(--text-secondary-color);
   margin-bottom: calc($gap / 2);
   text-transform: none;
   letter-spacing: 0;
@@ -131,7 +118,6 @@
   padding: 0;
   font-size: 20px;
   cursor: pointer;
-  border-radius: var(--border-radius-sm);
   transition: all 0.2s ease;
   aspect-ratio: 1;
   display: flex;
@@ -139,7 +125,6 @@
   justify-content: center;
 
   &:hover {
-    background: var(--surface-elevated-color);
     transform: scale(1.2);
   }
 
@@ -152,14 +137,6 @@
 
 // Dark mode adjustments
 @media (prefers-color-scheme: dark) {
-  .emoji-picker-search {
-    background: var(--surface-dark-color);
-  }
-
-  .emoji-picker-custom .tabs {
-    background: var(--surface-dark-color);
-  }
-
   .emoji-picker-emoji:hover {
     background: $surface-tint;
   }

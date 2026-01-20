@@ -194,7 +194,6 @@
     background: $overlay-bg;
     color: $color-white;
     padding: calc($gap / 2) $gap;
-    border-radius: var(--border-radius);
     @extend %small;
     font-weight: 600;
     pointer-events: none;

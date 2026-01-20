@@ -43,17 +43,17 @@
     display: flex;
     flex-direction: column;
 
-    // Responsive: Use CSS variables set by ModalService
+    // Responsive
     // Mobile: < 640px
     @include mobile-down {
-      max-width: var(--modal-max-width-mobile, 90%) !important;
-      max-height: var(--modal-max-height-mobile, 50%) !important;
+      max-width: 90% !important;
+      max-height: 50% !important;
     }
 
     // Tablet: 640px - 1023px
     @media (min-width: $breakpoint-sm) and (max-width: $breakpoint-lg - 1px) {
-      max-width: var(--modal-max-width-tablet, 50%) !important;
-      max-height: var(--modal-max-height-tablet, 50%) !important;
+      max-width: 50% !important;
+      max-height: 50% !important;
     }
   }
 
@@ -99,7 +99,6 @@
     align-items: center;
     justify-content: center;
     padding: $gap * 2;
-    color: var(--color-text-secondary);
     gap: $gap;
 
     .loading-spinner {

@@ -11,7 +11,7 @@
 .sidebar {
   @include card-base;
   overflow-y: auto;
-  background-color: var(--color-surface);
+  background-color: $color-2;
 
   // Scrollbar styling - MUST be last to override any conflicting styles
   @include custom-scrollbar;
@@ -80,8 +80,8 @@
     left: 0;
     right: 0;
     margin-bottom: calc($gap / 2);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: $color-2;
+    border: 1px solid $color-2;
     border-radius: $radius-md;
     box-shadow: $box-shadow;
     overflow: hidden;
@@ -119,13 +119,10 @@
     }
 
     &:not(:last-child) {
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid $color-2;
     }
   }
 }
 
 .sidebar-footer {
-  margin-top: auto;
-  padding-top: $gap;
-  border-top: 1px solid var(--color-border);
 }

@@ -33,6 +33,7 @@
     .timeline-controls {
       // Refresh button styles moved to molecules/_buttons.scss
       justify-self: end;
+      align-self: center;
     }
 
     @include tablet-up {
