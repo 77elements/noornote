@@ -9,12 +9,11 @@
 
 .isl {
   display: grid;
-  grid-template-columns: auto auto auto auto auto 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
   align-items: center;
   gap: $gap;
   padding: calc($gap / 2) 0;
-  margin-top: 0;
-  border-top: 1px solid $color-2;
+  margin-top: $gap;
 }
 
 .isl-action {
