@@ -120,13 +120,16 @@ export class GlobalSearchView {
     try {
       const results = await this.searchOrchestrator.search({
         query,
-        limit: 20
+        limit: 50
       });
 
       const filteredResults = await this.filterMutedUsers(results);
 
+      // Sort by created_at descending (newest first)
+      filteredResults.sort((a, b) => b.created_at - a.created_at);
+
       this.currentResults = filteredResults;
-      this.hasMore = results.length >= 20;
+      this.hasMore = results.length >= 50;
 
       if (filteredResults.length > 0) {
         this.oldestTimestamp = Math.min(...filteredResults.map(e => e.created_at));
@@ -194,22 +197,30 @@ export class GlobalSearchView {
     this.searchResultsView?.showLoading();
 
     try {
+      // Use oldestTimestamp - 1 to avoid duplicates (like Jumble does)
       const moreResults = await this.searchOrchestrator.searchPaginated(
         {
           query: this.currentQuery,
-          limit: 20
+          limit: 50
         },
-        this.oldestTimestamp
+        this.oldestTimestamp - 1
       );
 
       // Filter out muted users
       const filteredResults = await this.filterMutedUsers(moreResults);
 
       if (filteredResults.length > 0) {
+        // Sort by created_at descending (newest first)
+        filteredResults.sort((a, b) => b.created_at - a.created_at);
+
         this.currentResults = [...this.currentResults, ...filteredResults];
         this.oldestTimestamp = Math.min(...moreResults.map(e => e.created_at));
-        this.hasMore = moreResults.length >= 20;
+        this.hasMore = moreResults.length >= 50;
         this.searchResultsView?.appendResults(filteredResults);
+
+        // Update meta with new total count
+        const newMeta = `${this.currentResults.length} result${this.currentResults.length !== 1 ? 's' : ''} found`;
+        this.searchResultsView?.updateMeta(newMeta);
       } else {
         this.hasMore = false;
       }

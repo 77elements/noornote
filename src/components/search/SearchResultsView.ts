@@ -146,7 +146,7 @@ export class SearchResultsView {
       // Setup InfiniteScroll if callback provided
       if (this.callbacks.onLoadMore) {
         this.infiniteScroll = new InfiniteScroll(this.callbacks.onLoadMore, {
-          loadingMessage: 'Fetching 20 more results from Relays...'
+          loadingMessage: 'Fetching more results from Relays...'
         });
         this.infiniteScroll.observe(this.listElement);
       }
@@ -257,6 +257,17 @@ export class SearchResultsView {
    */
   public updateConfig(config: Partial<SearchResultsConfig>): void {
     this.config = { ...this.config, ...config };
+  }
+
+  /**
+   * Update meta text in the header
+   */
+  public updateMeta(meta: string): void {
+    this.config.meta = meta;
+    const metaElement = this.container.querySelector('.search-results__meta');
+    if (metaElement) {
+      metaElement.textContent = meta;
+    }
   }
 
   /**
