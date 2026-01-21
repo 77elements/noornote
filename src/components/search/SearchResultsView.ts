@@ -206,21 +206,17 @@ export class SearchResultsView {
     const excerpt = this.createExcerpt(note.content, searchTerms);
 
     item.innerHTML = `
-      ${date}
+      <span class="search-results__date">${date}</span>
       <div class="search-results__excerpt">${excerpt}</div>
-      <button class="search-results__view-btn" data-note-id="${note.id}">
-        View note
-      </button>
     `;
 
-    // Setup click handler
+    // Make entire item clickable
     const noteId = note.id;
-    if (!noteId) return item;
-
-    const viewBtn = item.querySelector('.search-results__view-btn');
-    viewBtn?.addEventListener('click', () => {
-      this.callbacks.onNoteClick(noteId);
-    });
+    if (noteId) {
+      item.addEventListener('click', () => {
+        this.callbacks.onNoteClick(noteId);
+      });
+    }
 
     return item;
   }
