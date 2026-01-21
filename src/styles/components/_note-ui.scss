@@ -130,6 +130,15 @@
       word-break: break-word;
       white-space: pre-wrap;
     }
+
+    // Custom emojis (NIP-30)
+    .custom-emoji {
+      display: inline-block;
+      height: 1.4em;
+      width: auto;
+      vertical-align: middle;
+      margin: 0 0.05em;
+    }
   }
 
   // Collapsible long notes wrapper
