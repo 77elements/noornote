@@ -15,6 +15,7 @@ import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
 import { EventBus } from '../../services/EventBus';
 import { AuthService } from '../../services/AuthService';
+import { SystemLogger } from '../system/SystemLogger';
 import * as tribes from '../../lists/tribes';
 
 type TabType = 'timeline' | 'tribe';
@@ -34,6 +35,8 @@ export class TimelineView extends View {
   private tabs: TabInfo[] = [];
   private userPubkey: string = '';
   private userLoginSubscriptionId: string | null = null;
+  private isRendering: boolean = false;
+  private pendingRerender: boolean = false;
 
   constructor() {
     super();
@@ -64,6 +67,17 @@ export class TimelineView extends View {
    * Re-render entire view (for account switch)
    */
   private rerender(): void {
+    const logger = SystemLogger.getInstance();
+
+    // If currently rendering, mark pending and return
+    if (this.isRendering) {
+      logger.info('TimelineView', 'rerender() deferred - render in progress');
+      this.pendingRerender = true;
+      return;
+    }
+
+    logger.info('TimelineView', 'rerender() called');
+
     // Destroy existing timeline
     if (this.timeline) {
       this.timeline.destroy();
@@ -79,12 +93,19 @@ export class TimelineView extends View {
    * Render the view
    */
   private async render(): Promise<void> {
+    const logger = SystemLogger.getInstance();
+
+    // Prevent parallel render calls
+    this.isRendering = true;
+    this.pendingRerender = false;
+
     // Wait for auth service to initialize (handles session restore)
     await this.authService.waitForInitialization();
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       this.container.innerHTML = '<div class="timeline-view__error">Please login to view timeline</div>';
+      this.isRendering = false;
       return;
     }
 
@@ -145,6 +166,16 @@ export class TimelineView extends View {
 
     // Create initial timeline (all follows)
     await this.updateTimeline();
+
+    // Done rendering
+    this.isRendering = false;
+
+    // If rerender was requested during render, do it now
+    if (this.pendingRerender) {
+      logger.info('TimelineView', 'Processing deferred rerender');
+      this.pendingRerender = false;
+      this.rerender();
+    }
   }
 
   /**
