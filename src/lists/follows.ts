@@ -540,6 +540,40 @@ export async function publishToRelays(): Promise<void> {
 }
 
 // ============================================================
+// SYNC HELPERS (used by FollowStorageAdapter and FollowListManager)
+// ============================================================
+
+function calculateFollowSyncDiff(browserItems: FollowItem[], relayItems: FollowItem[], preservePrivateItems: boolean = false): SyncDiff {
+  const browserIds = new Set(browserItems.map(item => item.pubkey));
+  const relayIds = new Set(relayItems.map(item => item.pubkey));
+
+  const added = relayItems.filter(item => !browserIds.has(item.pubkey));
+  const removed = browserItems.filter(item => {
+    if (!relayIds.has(item.pubkey)) {
+      if (preservePrivateItems && item.isPrivate === true) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  });
+  const unchanged = browserItems.filter(item => relayIds.has(item.pubkey));
+
+  return { added, removed, unchanged };
+}
+
+function mergeFollowItems(browserItems: FollowItem[], newItems: FollowItem[]): FollowItem[] {
+  const map = new Map<string, FollowItem>();
+  browserItems.forEach(item => map.set(item.pubkey, item));
+  newItems.forEach(item => {
+    if (!map.has(item.pubkey)) {
+      map.set(item.pubkey, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+// ============================================================
 // FOLLOW STORAGE ADAPTER (self-contained, no external dependencies)
 // ============================================================
 
@@ -574,6 +608,40 @@ export class FollowStorageAdapter {
 
   async publishToRelays(_items: FollowItem[]): Promise<void> {
     await publishToRelays();
+  }
+
+  // Sync helper methods (for AutoSyncService)
+  async syncFromRelays(): Promise<SyncFromRelaysResult> {
+    const fetchResult = await this.fetchFromRelays();
+    const relayItems = fetchResult.items;
+    const relayContentWasEmpty = fetchResult.relayContentWasEmpty;
+    const decryptionFailed = fetchResult.decryptionFailed || false;
+    const browserItems = this.getBrowserItems();
+
+    const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
+    const diff = calculateFollowSyncDiff(browserItems, relayItems, preservePrivateItems);
+
+    return {
+      requiresConfirmation: diff.removed.length > 0,
+      diff,
+      relayItems,
+      relayContentWasEmpty: preservePrivateItems
+    };
+  }
+
+  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: FollowItem[], relayContentWasEmpty: boolean = false): void {
+    const browserItems = this.getBrowserItems();
+
+    if (strategy === 'overwrite') {
+      if (relayContentWasEmpty) {
+        const localPrivateItems = browserItems.filter(item => item.isPrivate === true);
+        this.setBrowserItems([...relayItems, ...localPrivateItems]);
+      } else {
+        this.setBrowserItems(relayItems);
+      }
+    } else {
+      this.setBrowserItems(mergeFollowItems(browserItems, relayItems));
+    }
   }
 }
 

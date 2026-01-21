@@ -731,13 +731,12 @@ export function applyRelayFetchResult(
     // (unlike Bookmarks where items can exist in root)
   }
 
-  // Set all data
-  setMembers(members);
+  // Set folder structure only (NOT members - that's done by applySyncFromRelays)
   setFolders(newFolders);
   setAssignments(newAssignments);
   setRootOrder(newRootOrder);
 
-  logger.info('tribes.ts', `Applied relay result: ${members.length} members, ${newFolders.length} folders`);
+  logger.info('tribes.ts', `Applied folder structure: ${newFolders.length} folders`);
   // Note: Caller is responsible for emitting tribe:updated if needed
 }
 
@@ -2730,6 +2729,63 @@ export class TribeMemberCard {
 }
 
 // ============================================================
+// SYNC HELPERS (used by TribeStorageAdapter and TribeManager)
+// ============================================================
+
+interface TribeAdapterSyncDiff {
+  added: TribeMember[];
+  removed: TribeMember[];
+  unchanged: TribeMember[];
+  moved: MovedMember[];
+}
+
+export interface TribeAdapterSyncFromRelaysResult {
+  requiresConfirmation: boolean;
+  diff: TribeAdapterSyncDiff;
+  relayItems: TribeMember[];
+  relayContentWasEmpty: boolean;
+  categoryAssignments: Map<string, string> | undefined;
+  categories: string[] | undefined;
+}
+
+function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): TribeAdapterSyncDiff {
+  const browserMap = new Map(browserItems.map(item => [item.pubkey, item]));
+  const sourceMap = new Map(sourceItems.map(item => [item.pubkey, item]));
+
+  const added = sourceItems.filter(item => !browserMap.has(item.pubkey));
+  const removed = browserItems.filter(item => !sourceMap.has(item.pubkey));
+
+  const unchanged: TribeMember[] = [];
+  const moved: MovedMember[] = [];
+
+  for (const browserItem of browserItems) {
+    const sourceItem = sourceMap.get(browserItem.pubkey);
+    if (sourceItem) {
+      const browserCategory = browserItem.category || '';
+      const sourceCategory = sourceItem.category || '';
+      if (browserCategory !== sourceCategory) {
+        moved.push({ browserItem, sourceItem });
+      } else {
+        unchanged.push(browserItem);
+      }
+    }
+  }
+
+  return { added, removed, unchanged, moved };
+}
+
+function mergeTribeItems(browserItems: TribeMember[], newItems: TribeMember[]): TribeMember[] {
+  const map = new Map<string, TribeMember>();
+  browserItems.forEach(item => map.set(item.pubkey, item));
+  newItems.forEach(item => {
+    if (!map.has(item.pubkey)) {
+      map.set(item.pubkey, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+// ============================================================
 // TRIBE STORAGE ADAPTER (self-contained, for AutoSyncService)
 // ============================================================
 
@@ -2794,7 +2850,7 @@ export class TribeStorageAdapter {
   /**
    * Relay Storage - fetch from relays
    */
-  async fetchFromRelays(): Promise<{ items: TribeMember[]; relayContentWasEmpty: boolean }> {
+  async fetchFromRelays(): Promise<{ items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[] }> {
     try {
       return await fetchFromRelays();
     } catch (error) {
@@ -2812,6 +2868,30 @@ export class TribeStorageAdapter {
     } catch (error) {
       logger.error('TribeStorageAdapter', `Failed to publish to relays: ${error}`);
       throw error;
+    }
+  }
+
+  // Sync helper methods (for AutoSyncService)
+  async syncFromRelays(): Promise<TribeAdapterSyncFromRelaysResult> {
+    const fetchResult = await this.fetchFromRelays();
+    const browserItems = this.getBrowserItems();
+    const diff = calculateTribeSyncDiff(browserItems, fetchResult.items);
+
+    return {
+      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
+      diff,
+      relayItems: fetchResult.items,
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
+      categoryAssignments: fetchResult.categoryAssignments,
+      categories: fetchResult.categories
+    };
+  }
+
+  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: TribeMember[]): void {
+    if (strategy === 'overwrite') {
+      this.setBrowserItems(relayItems);
+    } else {
+      this.setBrowserItems(mergeTribeItems(this.getBrowserItems(), relayItems));
     }
   }
 }

@@ -53,6 +53,7 @@ export class SyncConfirmationModal<T> {
   private resolvedAddedItems: ResolvedItem[] = [];
   private resolvedRemovedItems: ResolvedItem[] = [];
   private resolvedMovedItems: ResolvedMovedItem[] = [];
+  private resolvePromise: (() => void) | null = null;
 
   constructor(options: SyncConfirmationOptions<T>) {
     this.modalService = ModalService.getInstance();
@@ -61,6 +62,7 @@ export class SyncConfirmationModal<T> {
 
   /**
    * Show sync confirmation modal
+   * Returns a Promise that resolves when user makes a choice
    */
   public async show(): Promise<void> {
     // Resolve all display names first
@@ -68,27 +70,32 @@ export class SyncConfirmationModal<T> {
 
     const content = this.renderContent();
 
-    this.modalService.show({
-      title: `⚠️ Sync ${this.options.listType}`,
-      content,
-      width: '550px',
-      maxHeight: '600px',
-      showCloseButton: true,
-      closeOnOverlay: true,
-      closeOnEsc: true
-    });
+    // Create a promise that will be resolved when user clicks a button
+    return new Promise<void>((resolve) => {
+      this.resolvePromise = resolve;
 
-    // Setup event handlers
-    setTimeout(() => {
-      this.setupEventHandlers();
-      // Setup mention handlers if HTML rendering is used
-      if (this.options.renderItemHtml) {
-        const modalContent = document.querySelector('.sync-confirmation-modal');
-        if (modalContent) {
-          setupUserMentionHandlers(modalContent as HTMLElement);
+      this.modalService.show({
+        title: `⚠️ Sync ${this.options.listType}`,
+        content,
+        width: '550px',
+        maxHeight: '600px',
+        showCloseButton: true,
+        closeOnOverlay: false,  // Don't allow closing by overlay click
+        closeOnEsc: false       // Don't allow closing by Esc key
+      });
+
+      // Setup event handlers
+      setTimeout(() => {
+        this.setupEventHandlers();
+        // Setup mention handlers if HTML rendering is used
+        if (this.options.renderItemHtml) {
+          const modalContent = document.querySelector('.sync-confirmation-modal');
+          if (modalContent) {
+            setupUserMentionHandlers(modalContent as HTMLElement);
+          }
         }
-      }
-    }, 0);
+      }, 0);
+    });
   }
 
   /**
@@ -293,6 +300,11 @@ export class SyncConfirmationModal<T> {
 
     if (!keepBtn || !deleteBtn) {
       console.error('[SyncConfirmationModal] Failed to find modal buttons');
+      // Resolve anyway to prevent hanging
+      if (this.resolvePromise) {
+        this.resolvePromise();
+        this.resolvePromise = null;
+      }
       return;
     }
 
@@ -300,12 +312,20 @@ export class SyncConfirmationModal<T> {
     keepBtn.addEventListener('click', () => {
       this.modalService.hide();
       this.options.onKeep();
+      if (this.resolvePromise) {
+        this.resolvePromise();
+        this.resolvePromise = null;
+      }
     });
 
     // Delete button (overwrite strategy)
     deleteBtn.addEventListener('click', () => {
       this.modalService.hide();
       this.options.onDelete();
+      if (this.resolvePromise) {
+        this.resolvePromise();
+        this.resolvePromise = null;
+      }
     });
   }
 

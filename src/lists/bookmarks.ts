@@ -895,6 +895,72 @@ export function getBookmarkFolderService(): BookmarkFolderServiceImpl {
   return BookmarkFolderServiceImpl.getInstance();
 }
 
+/**
+ * Apply relay fetch result to browser storage
+ * Creates folders and assignments based on bookmark categories
+ */
+export function applyRelayFetchResult(
+  items: BookmarkItem[],
+  _categoryAssignments: Map<string, string> | undefined,
+  categories: string[] | undefined
+): void {
+  // Build folders from categories (skip empty/root category)
+  const newFolders: BookmarkFolder[] = [];
+  const folderNameToId = new Map<string, string>();
+
+  if (categories) {
+    for (const dTag of categories) {
+      // Skip root category (empty or generic "bookmarks")
+      if (!dTag || dTag === '' || dTag === 'bookmarks') continue;
+
+      // Use category name as folder name
+      const folderName = dTag;
+      const folderId = `folder_${folderName}`;
+      newFolders.push({
+        id: folderId,
+        name: folderName,
+        createdAt: Date.now()
+      });
+      folderNameToId.set(folderName, folderId);
+    }
+  }
+
+  // Build assignments from item categories
+  const newAssignments: BookmarkAssignment[] = [];
+  const newRootOrder: RootOrderItem<'bookmark'>[] = [];
+
+  // Add folders to root order first
+  for (const folder of newFolders) {
+    newRootOrder.push({ type: 'folder', id: folder.id });
+  }
+
+  // Assign items to their folders
+  for (const item of items) {
+    const categoryName = item.category || '';
+    const folderId = folderNameToId.get(categoryName);
+
+    if (folderId) {
+      // Item belongs to a folder
+      newAssignments.push({
+        bookmarkId: item.id,
+        folderId: folderId,
+        order: newAssignments.filter(a => a.folderId === folderId).length
+      });
+    } else {
+      // Item is in root
+      newRootOrder.push({ type: 'bookmark', id: item.id });
+    }
+  }
+
+  // Apply folder structure only (NOT items - that's done by applySyncFromRelays)
+  const storage = PerAccountLocalStorage.getInstance();
+  storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, newFolders);
+  storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, newAssignments);
+  storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, newRootOrder);
+
+  SystemLogger.getInstance().info('bookmarks.ts', `Applied folder structure: ${newFolders.length} folders`);
+}
+
 // =============================================================================
 // RELAY OPERATIONS (NIP-51 kind:30003)
 // =============================================================================
@@ -1348,6 +1414,68 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 }
 
 // =============================================================================
+// SYNC HELPERS (used by BookmarkStorageAdapter and BookmarkManager)
+// =============================================================================
+
+interface BookmarkMovedItem {
+  browserItem: BookmarkItem;
+  sourceItem: BookmarkItem;
+}
+
+interface BookmarkAdapterSyncDiff {
+  added: BookmarkItem[];
+  removed: BookmarkItem[];
+  unchanged: BookmarkItem[];
+  moved: BookmarkMovedItem[];
+}
+
+export interface BookmarkAdapterSyncFromRelaysResult {
+  requiresConfirmation: boolean;
+  diff: BookmarkAdapterSyncDiff;
+  relayItems: BookmarkItem[];
+  relayContentWasEmpty: boolean;
+  categoryAssignments: Map<string, string> | undefined;
+  categories: string[] | undefined;
+}
+
+function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: BookmarkItem[]): BookmarkAdapterSyncDiff {
+  const browserMap = new Map(browserItems.map(item => [item.id, item]));
+  const sourceMap = new Map(sourceItems.map(item => [item.id, item]));
+
+  const added = sourceItems.filter(item => !browserMap.has(item.id));
+  const removed = browserItems.filter(item => !sourceMap.has(item.id));
+
+  const unchanged: BookmarkItem[] = [];
+  const moved: BookmarkMovedItem[] = [];
+
+  for (const browserItem of browserItems) {
+    const sourceItem = sourceMap.get(browserItem.id);
+    if (sourceItem) {
+      const browserCategory = browserItem.category || '';
+      const sourceCategory = sourceItem.category || '';
+      if (browserCategory !== sourceCategory) {
+        moved.push({ browserItem, sourceItem });
+      } else {
+        unchanged.push(browserItem);
+      }
+    }
+  }
+
+  return { added, removed, unchanged, moved };
+}
+
+function mergeBookmarkItems(browserItems: BookmarkItem[], newItems: BookmarkItem[]): BookmarkItem[] {
+  const map = new Map<string, BookmarkItem>();
+  browserItems.forEach(item => map.set(item.id, item));
+  newItems.forEach(item => {
+    if (!map.has(item.id)) {
+      map.set(item.id, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+// =============================================================================
 // BOOKMARK STORAGE ADAPTER (for AutoSyncService / ListSyncManager)
 // =============================================================================
 
@@ -1382,6 +1510,30 @@ export class BookmarkStorageAdapter {
   }
 
   async publishToRelays(_items: BookmarkItem[]): Promise<void> { await publishBookmarksToRelays(); }
+
+  // Sync helper methods (for AutoSyncService)
+  async syncFromRelays(): Promise<BookmarkAdapterSyncFromRelaysResult> {
+    const fetchResult = await this.fetchFromRelays();
+    const browserItems = this.getBrowserItems();
+    const diff = calculateBookmarkSyncDiff(browserItems, fetchResult.items);
+
+    return {
+      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
+      diff,
+      relayItems: fetchResult.items,
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
+      categoryAssignments: fetchResult.categoryAssignments,
+      categories: fetchResult.categories
+    };
+  }
+
+  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: BookmarkItem[]): void {
+    if (strategy === 'overwrite') {
+      this.setBrowserItems(relayItems);
+    } else {
+      this.setBrowserItems(mergeBookmarkItems(this.getBrowserItems(), relayItems));
+    }
+  }
 }
 
 // =============================================================================
