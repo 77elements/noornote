@@ -126,7 +126,7 @@ export class GlobalSearchView {
       const filteredResults = await this.filterMutedUsers(results);
 
       this.currentResults = filteredResults;
-      this.hasMore = results.length === 20;
+      this.hasMore = results.length >= 20;
 
       if (filteredResults.length > 0) {
         this.oldestTimestamp = Math.min(...filteredResults.map(e => e.created_at));
@@ -208,7 +208,7 @@ export class GlobalSearchView {
       if (filteredResults.length > 0) {
         this.currentResults = [...this.currentResults, ...filteredResults];
         this.oldestTimestamp = Math.min(...moreResults.map(e => e.created_at));
-        this.hasMore = moreResults.length === 20;
+        this.hasMore = moreResults.length >= 20;
         this.searchResultsView?.appendResults(filteredResults);
       } else {
         this.hasMore = false;
