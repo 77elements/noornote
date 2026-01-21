@@ -17,6 +17,12 @@ export default defineConfig({
       port: 3000,
       clientPort: 3000,
     },
+    // Prevent browser caching of assets in dev mode
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    },
   },
 
   // Build configuration

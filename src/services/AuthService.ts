@@ -784,10 +784,29 @@ export class AuthService {
 
   /**
    * Restore extension connection for existing session
+   * Includes retry logic for extensions that load after page load (e.g., Alby)
    */
   public async restoreExtensionConnection(): Promise<boolean> {
-    if (!this.currentUser || !this.isExtensionAvailable()) {
+    if (!this.currentUser) {
       return false;
+    }
+
+    // Wait for extension with retries (extensions may load after page load)
+    const maxRetries = 10;
+    const retryDelay = 200; // ms
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      if (this.isExtensionAvailable()) {
+        break;
+      }
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, retryDelay));
+      }
+    }
+
+    if (!this.isExtensionAvailable()) {
+      console.warn('[AuthService] Extension not available after retries');
+      return false; // Don't clear session - extension might become available later
     }
 
     try {
@@ -800,12 +819,13 @@ export class AuthService {
         return true;
       } else {
         // Public key mismatch - clear session
+        console.warn('[AuthService] Extension pubkey mismatch - clearing session');
         this.clearSession();
         return false;
       }
     } catch (error) {
-      console.warn('Failed to restore extension connection:', error);
-      this.clearSession();
+      console.warn('[AuthService] Failed to restore extension connection:', error);
+      // Don't clear session on temporary errors - user can retry
       return false;
     }
   }
@@ -826,9 +846,12 @@ export class AuthService {
             return;
           }
 
-          // Check if session is not too old (7 days for Tauri, web: 24h)
+          // Check if session is not too old (7 days for Tauri, 24h for web/browser)
           const sessionAge = Date.now() - sessionData.timestamp;
-          const maxAge = 7 * 24 * 60 * 60 * 1000; // Tauri: 7 days (web: 24h)
+          const platform = PlatformService.getInstance();
+          const maxAge = platform.isTauri
+            ? 7 * 24 * 60 * 60 * 1000  // Tauri: 7 days
+            : 24 * 60 * 60 * 1000;      // Browser: 24 hours
 
           if (sessionAge < maxAge) {
             this.currentUser = {
@@ -838,9 +861,19 @@ export class AuthService {
             this.authMethod = sessionData.authMethod;
             this.isReadOnly = sessionData.isReadOnly || false;
 
-            // Restore NIP-46 session if needed
+            // Restore signer connections BEFORE emitting login event
             if (this.authMethod === 'nip46') {
               await this.restoreNip46Session();
+            } else if (this.authMethod === 'extension') {
+              // For extension sessions, try to restore connection
+              // This waits for extension to become available (with retries)
+              const restored = await this.restoreExtensionConnection();
+              if (!restored) {
+                console.warn('[AuthService] Extension session could not be restored - extension not available');
+                // Don't emit login event - user will need to re-authenticate
+                // But keep session data in case extension becomes available
+                return;
+              }
             }
 
             // Emit user:login event AFTER restores complete
