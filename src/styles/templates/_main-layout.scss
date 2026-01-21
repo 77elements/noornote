@@ -549,7 +549,17 @@ html.layout--phone {
   }
 
   &__back {
+    display: none; // Hidden on phone (base)
     flex-shrink: 0;
+    color: $color-4;
+
+    @include tablet {
+      display: inline-block; // Show from tablet up
+    }
+
+    svg {
+      display: block;
+    }
   }
 
   &__title {
@@ -810,7 +820,17 @@ html.layout--phone {
   }
 
   &__back {
+    display: none; // Hidden on phone (base)
     flex-shrink: 0;
+    color: $color-4;
+
+    @include tablet {
+      display: inline-block; // Show from tablet up
+    }
+
+    svg {
+      display: block;
+    }
   }
 
   &__title {

@@ -528,14 +528,26 @@ export class MainLayout {
       ? `Profile: ${query}`
       : `Search: ${query}`;
 
-    header.innerHTML = `
-      <button class="btn btn--icon search-view-primary__back" title="Back to timeline">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      <h1 class="search-view-primary__title">${title}</h1>
+    // Create back button with direct event handler
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'btn-icon search-view-primary__back';
+    backBtn.title = 'Back to timeline';
+    backBtn.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
     `;
+    backBtn.addEventListener('click', () => {
+      Router.getInstance().navigate('/');
+    });
+
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'search-view-primary__title';
+    titleEl.textContent = title;
+
+    header.appendChild(backBtn);
+    header.appendChild(titleEl);
 
     // Add content container
     const content = document.createElement('div');
@@ -544,13 +556,6 @@ export class MainLayout {
     searchContainer.appendChild(header);
     searchContainer.appendChild(content);
     primaryContent.appendChild(searchContainer);
-
-    // Setup back button
-    const backBtn = header.querySelector('.search-view-primary__back');
-    backBtn?.addEventListener('click', () => {
-      const router = Router.getInstance();
-      router.navigate('/');
-    });
 
     // Mount GlobalSearchView content in pcc
     if (this.globalSearchView) {
@@ -1691,14 +1696,27 @@ export class MainLayout {
     // Add header with title and back button
     const header = document.createElement('div');
     header.className = 'list-view-primary__header';
-    header.innerHTML = `
-      <button class="btn btn--icon list-view-primary__back" title="Back to timeline">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      <h1 class="list-view-primary__title">${titles[listType]}</h1>
+
+    // Create back button with direct event handler
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'btn-icon list-view-primary__back';
+    backBtn.title = 'Back to timeline';
+    backBtn.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
     `;
+    backBtn.addEventListener('click', () => {
+      Router.getInstance().navigate('/');
+    });
+
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'list-view-primary__title';
+    titleEl.textContent = titles[listType];
+
+    header.appendChild(backBtn);
+    header.appendChild(titleEl);
 
     // Add content container with data-tab-content for manager selectors
     const content = document.createElement('div');
@@ -1708,13 +1726,6 @@ export class MainLayout {
     listContainer.appendChild(header);
     listContainer.appendChild(content);
     primaryContent.appendChild(listContainer);
-
-    // Setup back button
-    const backBtn = header.querySelector('.list-view-primary__back');
-    backBtn?.addEventListener('click', () => {
-      const router = Router.getInstance();
-      router.navigate('/');
-    });
 
     // Render list content via manager
     manager.renderListTab(content);
