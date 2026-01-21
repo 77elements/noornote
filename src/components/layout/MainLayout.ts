@@ -941,13 +941,13 @@ export class MainLayout {
             <path d="M3 12h18M3 6h18M3 18h18"/>
           </svg>
         </button>
-        <span class="mobile-header__title">NoorNote</span>
+        <span class="nn-logo">NoorNote</span>
       </header>
       <div class="sidebar-overlay"></div>
       <aside class="sidebar">
         <div class="sidebar-content">
           <div class="sidebar-header">
-            NoorNote
+            <span class="nn-logo">NoorNote</span>
           </div>
           <div class="wallet-balance-container">
             <!-- WalletBalanceDisplay will be mounted here -->

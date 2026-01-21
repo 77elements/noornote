@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Noornote - High-performance Nostr web client. Light, fast, secure." />
-  <meta name="theme-color" content="#1a1a1a" />
+  <meta name="theme-color" content="#0f0d23" />
 
   <!-- Prevent caching of index.html to always load latest asset hashes -->
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
@@ -18,15 +18,67 @@
   <link rel="manifest" href="/manifest.json" />
 
   <title>Noornote - Light, Fast, Secure Nostr Client</title>
+
+  <!-- Inline styles for loading screen (shown before JS/CSS bundle loads) -->
+  <style>
+    @font-face {
+      font-family: 'Saira';
+      src: url('/fonts/Saira/Saira-Bold.ttf') format('truetype');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @keyframes pulsate {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    body {
+      margin: 0;
+      background-color: #0f0d23;
+      font-family: sans-serif;
+    }
+
+    .loading-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+
+    .loading-logo {
+      margin: 0;
+    }
+
+    .nn-logo {
+      display: inline-block;
+      font-family: 'Saira', sans-serif;
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #b45fd9, #5ef75e);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .loading-text {
+      font-size: 1.25rem;
+      color: #ede2da;
+      margin-top: 1rem;
+      animation: pulsate 2.5s ease-in-out infinite;
+    }
+  </style>
 </head>
 <body>
   <div id="app">
     <!-- App loading state -->
     <div id="loading" class="loading-screen">
-      <div class="loading-content">
-        <h1>نور</h1>
-        <p>Loading Noornote...</p>
-      </div>
+      <h1 class="loading-logo"><span class="nn-logo">NoorNote</span></h1>
+      <p class="loading-text">Loading...</p>
     </div>
   </div>
 

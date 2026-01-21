@@ -84,10 +84,16 @@ html.layout--wide .main-layout {
   border-bottom: 1px solid $color-2;
   z-index: 100;
   align-items: center;
+  justify-content: center;
   padding: 0 $gap;
-  gap: $gap;
+
+  .nn-logo {
+    font-size: 27px;
+  }
 
   &__hamburger {
+    position: absolute;
+    left: $gap;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -109,18 +115,6 @@ html.layout--wide .main-layout {
     }
   }
 
-  &__title {
-    flex: 1;
-    text-align: center;
-    margin-right: 40px; // Compensate for hamburger width to center text
-    font-family: 'Saira', sans-serif;
-    @extend %h3;
-    font-weight: 700;
-    background: linear-gradient(135deg, color.adjust($color-3, $saturation: 40%), color.adjust($color-6, $saturation: 40%));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
 }
 
 // Sidebar overlay - only visible in mobile mode when sidebar is open

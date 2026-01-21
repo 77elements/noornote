@@ -15,6 +15,7 @@
 @use 'base/screensize';
 
 // 3. Atoms - Smallest UI components
+@use 'atoms/nn-logo';
 @use 'atoms/pulsate';
 @use 'atoms/progress-bar';
 @use 'atoms/links';
