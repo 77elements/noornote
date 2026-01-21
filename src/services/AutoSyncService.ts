@@ -604,11 +604,27 @@ export class AutoSyncService {
 
         case 'bookmarks': {
           const bookmarkItem = item as BookmarkItem;
-          const noteService = NoteService.getInstance();
-          const event = await noteService.getNote(bookmarkItem.id);
-          if (event?.content) {
-            return event.content.slice(0, 60) || bookmarkItem.id.slice(0, 12) + '...';
+
+          // Handle different bookmark types
+          if (bookmarkItem.type === 'r') {
+            // URL bookmark - show the URL directly
+            return bookmarkItem.value || bookmarkItem.id;
           }
+
+          if (bookmarkItem.type === 't') {
+            // Hashtag bookmark
+            return `#${bookmarkItem.value || bookmarkItem.id}`;
+          }
+
+          // Event or article bookmark - try to fetch note content
+          if (bookmarkItem.type === 'e' || bookmarkItem.type === 'a') {
+            const noteService = NoteService.getInstance();
+            const event = await noteService.getNote(bookmarkItem.id);
+            if (event?.content) {
+              return event.content.slice(0, 60) || bookmarkItem.id.slice(0, 12) + '...';
+            }
+          }
+
           return bookmarkItem.id.slice(0, 12) + '...';
         }
 
