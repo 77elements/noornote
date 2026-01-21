@@ -98,7 +98,7 @@ export class ConversationView extends View {
       </div>
       <div class="conversation-view__input">
         <textarea
-          class="conversation-view__textarea"
+          class="textarea conversation-view__textarea"
           placeholder="Type a message..."
           rows="1"
         ></textarea>

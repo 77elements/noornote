@@ -86,7 +86,7 @@ export class ZapModal {
           <input
             type="number"
             id="zap-amount"
-            class="zap-modal__input"
+            class="input zap-modal__input"
             value="${defaults.amount}"
             min="1"
             max="1000000"
@@ -99,7 +99,7 @@ export class ZapModal {
           <input
             type="text"
             id="zap-comment"
-            class="zap-modal__input"
+            class="input zap-modal__input"
             placeholder="Great post!"
             maxlength="280"
             value="${defaults.comment}"
