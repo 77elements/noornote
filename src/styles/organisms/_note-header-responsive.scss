@@ -7,66 +7,19 @@
 @use '../base/typography' as *;
 
 .note-header {
-  // Ultra-compact mode for very narrow containers
-  @container (max-width: 250px) {
-    gap: calc($gap / 2);
-
-    .note-header__info {
-      .note-header__primary-line {
-        display: grid;
-        grid-template-columns: 1fr auto;
-        grid-template-rows: auto auto;
-        gap: calc($gap / 4);
-
-        .note-header__display-name {
-          grid-column: 1 / 2;
-          grid-row: 1;
-        }
-
-        .note-header__verification {
-          grid-column: 1 / 2;
-          grid-row: 1;
-          justify-self: end;
-        }
-
-        .note-header__timestamp {
-          grid-column: 2 / 3;
-          grid-row: 2;
-          justify-self: end;
-        }
-      }
-
-      .note-header__handle {
-        @extend %small;
-      }
-    }
-  }
-
   // Compact mode for narrow containers
   @container (max-width: 350px) {
-    .note-header__info {
-      .note-header__primary-line {
-        .note-header__display-name {
-          max-width: 120px;
-        }
-      }
-
-      .note-header__handle {
-        max-width: 150px;
+    .note-header__user {
+      .user-identity__info {
+        max-width: 120px;
       }
     }
   }
 
   // Wide mode adaptations
   @container (min-width: 600px) {
-    .note-header__info {
-      .note-header__primary-line {
-        .note-header__display-name {
-          max-width: 300px;
-        }
-      }
-
-      .note-header__handle {
+    .note-header__user {
+      .user-identity__info {
         max-width: 400px;
       }
     }
@@ -76,22 +29,10 @@
 // Reduced motion preference (Accessibility)
 @media (prefers-reduced-motion: reduce) {
   .note-header {
-    .profile-pic--medium {
-      animation: none;
-    }
-
     .note-header__verification {
       transition: none;
 
       &:hover {
-        transform: none;
-      }
-    }
-
-    &--clickable {
-      transition: none;
-
-      &:active {
         transform: none;
       }
     }

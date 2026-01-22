@@ -566,6 +566,7 @@ html.layout--phone {
     @extend %h1;
     font-weight: 600;
     color: $color-5;
+    margin-bottom: 0;
   }
 
   &__content {
@@ -580,7 +581,7 @@ html.layout--phone {
       display: flex;
       gap: calc($gap / 2);
       flex-wrap: wrap;
-      padding: $gap 0;
+      padding: 0 0 $gap 0;
       border-bottom: 1px solid $color-2;
     }
 
@@ -836,6 +837,7 @@ html.layout--phone {
     @extend %h1;
     font-weight: 600;
     color: $color-5;
+    margin-bottom: 0;
   }
 
   &__content {
