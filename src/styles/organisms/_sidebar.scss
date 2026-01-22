@@ -35,6 +35,8 @@
   overflow-x: hidden;
   @include custom-scrollbar;
   -webkit-overflow-scrolling: touch;
+  // Reserve space for the fixed "New Post" button at the bottom
+  padding-bottom: 70px;
 }
 
 // Sidebar header (logo)
