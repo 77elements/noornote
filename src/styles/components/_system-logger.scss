@@ -26,7 +26,6 @@
 
   &__global-header {
     padding: calc($gap / 4) calc($gap / 2);
-    @extend %mini;
     font-weight: 600;
     flex-shrink: 0;
   }
@@ -57,7 +56,6 @@
 
   &__page-header {
     padding: calc($gap / 4) calc($gap / 2);
-    @extend %mini;
     font-weight: 600;
     flex-shrink: 0;
   }

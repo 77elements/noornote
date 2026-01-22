@@ -92,7 +92,8 @@ export class SearchResultsView {
     header.className = 'search-results__header';
 
     // Title
-    const title = document.createElement('h3');
+    const title = document.createElement('h2');
+    title.className = 'h3';
     title.textContent = this.config.title;
     header.appendChild(title);
 

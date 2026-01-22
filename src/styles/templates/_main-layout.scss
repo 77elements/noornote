@@ -194,7 +194,7 @@ html.layout--phone {
 .sidebar {
   grid-area: sidebar;
   min-width: 0;
-  overflow: hidden; // Sidebar stays fixed, no scroll
+  overflow: hidden;
 }
 
 .primary-content {

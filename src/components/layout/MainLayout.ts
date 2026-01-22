@@ -951,13 +951,14 @@ export class MainLayout {
       <div class="sidebar-overlay"></div>
       <aside class="sidebar">
         <div class="sidebar-content">
-          <div class="sidebar-header">
-            <span class="nn-logo">NoorNote</span>
-          </div>
-          <div class="wallet-balance-container">
-            <!-- WalletBalanceDisplay will be mounted here -->
-          </div>
-          <ul class="primary-nav">
+          <div class="sidebar-scrollable">
+            <div class="sidebar-header">
+              <span class="nn-logo">NoorNote</span>
+            </div>
+            <div class="wallet-balance-container">
+              <!-- WalletBalanceDisplay will be mounted here -->
+            </div>
+            <ul class="primary-nav">
             <li>
               <a href="/" class="primary-nav__link primary-nav__link--home" title="Scroll to top">
                 <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1039,9 +1040,10 @@ export class MainLayout {
               </a>
             </li>
           </ul>
-          <div class="about">
-            <span class="current-datetime-display">--</span>
-            <a href="/about" class="primary-nav__link--about">About</a>
+            <div class="about">
+              <span class="current-datetime-display">--</span>
+              <a href="/about" class="primary-nav__link--about">About</a>
+            </div>
           </div>
           <div class="new-post-dropup">
             <button class="btn btn--new-post">

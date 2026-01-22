@@ -18,7 +18,8 @@
 }
 
 .sidebar-content {
-  display: block;
+  display: flex;
+  flex-direction: column;
   position: relative;
   height: 100%;
   padding: $gap;
@@ -26,6 +27,14 @@
   @include tablet-down {
     padding: calc($gap / 2);
   }
+}
+
+.sidebar-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  @include custom-scrollbar;
+  -webkit-overflow-scrolling: touch;
 }
 
 // Sidebar header (logo)

@@ -132,7 +132,11 @@
 
 // SearchResultsView - Results display
 .search-results {
-  padding: $gap;
+  padding: 0; // No padding on phone
+
+  @include tablet {
+    padding: $gap;
+  }
 
   &__header {
     margin-bottom: $gap;
