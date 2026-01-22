@@ -285,8 +285,8 @@
 // Profile Stats (Following, Relays, Muted)
 .profile-stats {
   display: flex;
-  align-items: center;
-  gap: $gap * 1.5;
+  flex-wrap: wrap;
+  gap: $gap;
   margin: 0;
   padding: calc($gap / 2) 0;
   border-top: 1px solid $color-2;
