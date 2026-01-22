@@ -143,3 +143,37 @@ export async function fileExists(filename: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Upload and parse JSON file via browser file dialog
+ * Used in Web/Mobile mode as alternative to local file reading
+ * @returns Parsed JSON data or null if cancelled/failed
+ */
+export function uploadJsonFile<T>(): Promise<T | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) {
+        resolve(null);
+        return;
+      }
+
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text) as T;
+        logger.info('file.ts', `Uploaded and parsed: ${file.name}`);
+        resolve(data);
+      } catch (error) {
+        logger.error('file.ts', `Failed to parse uploaded file: ${error}`);
+        resolve(null);
+      }
+    };
+
+    input.oncancel = () => resolve(null);
+    input.click();
+  });
+}

@@ -15,7 +15,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { StorageKeys, readList, writeList, deduplicateByPubkey, now } from './storage';
-import { readJsonFile, writeJsonFile } from './file';
+import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
 import {
   fetchEvents, publishEvent, signEvent,
   encryptContent, decryptContent,
@@ -2379,11 +2379,33 @@ export class TribeManager {
 
   /**
    * Restore from file
+   * In Browser/Mobile: shows file upload dialog
+   * In Tauri Desktop: reads from local file
    */
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.syncFromFile();
+      let result: SyncFromFileResult;
+      const isBrowser = PlatformService.getInstance().isBrowser;
+
+      if (isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<TribeMember[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = this.calculateDiff(browserItems, uploadedItems);
+        result = { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.syncFromFile();
+      }
+
+      // Full restore from uploaded/file items
+      const fullRestoreFromItems = (items: TribeMember[]) => {
+        this.adapter.setBrowserItems(items);
+      };
 
       if (result.requiresConfirmation) {
         // Convert moved items to MovedItemInfo format
@@ -2412,8 +2434,12 @@ export class TribeManager {
             await this.renderCurrentView(container);
           },
           onDelete: async () => {
-            // Full restore: replace everything with file data
-            await restoreFromFile();
+            // Full restore: replace everything with file/uploaded data
+            if (isBrowser) {
+              fullRestoreFromItems(result.fileItems);
+            } else {
+              await restoreFromFile();
+            }
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
             this.membersCache.clear();
             await this.loadMembers();
@@ -2423,7 +2449,11 @@ export class TribeManager {
         modal.show();
       } else if (result.diff.added.length > 0) {
         // No confirmation needed, but file has new items - do full restore
-        await restoreFromFile();
+        if (isBrowser) {
+          fullRestoreFromItems(result.fileItems);
+        } else {
+          await restoreFromFile();
+        }
         ToastService.show(`Restored ${result.diff.added.length} member${result.diff.added.length > 1 ? 's' : ''} from file`, 'success');
         this.membersCache.clear();
         await this.loadMembers();

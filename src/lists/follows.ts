@@ -17,7 +17,7 @@
  */
 
 import { StorageKeys, now, deduplicateByPubkey } from './storage';
-import { readJsonFile, writeJsonFile } from './file';
+import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
 import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
@@ -1406,11 +1406,27 @@ export class FollowListManager {
 
   /**
    * Handle Restore from File
+   * In Browser/Mobile: shows file upload dialog
+   * In Tauri Desktop: reads from local file
    */
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.syncFromFile();
+      let result: SyncFromFileResult;
+
+      if (PlatformService.getInstance().isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<FollowItem[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = this.calculateDiff(browserItems, uploadedItems, false);
+        result = { requiresConfirmation: diff.removed.length > 0, diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.syncFromFile();
+      }
 
       if (result.requiresConfirmation) {
         const modal = new SyncConfirmationModal({

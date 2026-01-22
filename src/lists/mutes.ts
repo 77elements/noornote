@@ -16,7 +16,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { StorageKeys, now } from './storage';
-import { readJsonFile, writeJsonFile } from './file';
+import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
 import {
   fetchEvents, publishEvent, signEvent,
   encryptContent, decryptContent,
@@ -1200,8 +1200,22 @@ export class MuteListView extends View {
 
   private async handleRestoreFromFile(): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.adapter.syncFromFile();
+      let result: SyncFromFileResult;
+
+      if (PlatformService.getInstance().isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<string[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = calculateSyncDiff(browserItems, uploadedItems);
+        result = { requiresConfirmation: diff.removed.length > 0, diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.adapter.syncFromFile();
+      }
 
       if (result.requiresConfirmation) {
         const modal = new SyncConfirmationModal({
@@ -1539,8 +1553,22 @@ export class MuteListManager {
 
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.adapter.syncFromFile();
+      let result: SyncFromFileResult;
+
+      if (PlatformService.getInstance().isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<string[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = calculateSyncDiff(browserItems, uploadedItems);
+        result = { requiresConfirmation: diff.removed.length > 0, diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.adapter.syncFromFile();
+      }
 
       if (result.requiresConfirmation) {
         const modal = new SyncConfirmationModal({

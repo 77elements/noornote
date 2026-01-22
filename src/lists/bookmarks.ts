@@ -27,6 +27,7 @@ import { Router } from '../services/Router';
 import { ProfileMountsService } from '../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../services/orchestration/ProfileMountsOrchestrator';
 import { PerAccountLocalStorage, StorageKeys as PerAccountStorageKeys } from '../services/PerAccountLocalStorage';
+import { PlatformService } from '../services/PlatformService';
 
 // Types for folder management (inlined from GenericFolderService)
 export interface Folder {
@@ -51,7 +52,7 @@ import { UpNavigator } from '../components/bookmarks/UpNavigator';
 
 // Shared helpers from /src/lists/
 import { readList, writeList, StorageKeys, now, deduplicateById } from './storage';
-import { readJsonFile, writeJsonFile } from './file';
+import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
 import {
   fetchEvents,
   publishEvent,
@@ -3242,9 +3243,23 @@ export class BookmarkManager {
 
   private async handleSaveToFile(): Promise<void> {
     try {
-      ToastService.show('Saving to file...', 'info');
-      await this.saveToFile();
-      ToastService.show('Saved to local file', 'success');
+      ToastService.show('Saving...', 'info');
+      if (PlatformService.getInstance().isTauri) {
+        await this.saveToFile();
+      } else {
+        const items = this.adapter.getBrowserItems();
+        const json = JSON.stringify(items, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `noornote-bookmarks-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      ToastService.show('Saved successfully', 'success');
     } catch (error) {
       console.error('Failed to save to file:', error);
       ToastService.show('Failed to save to file', 'error');
@@ -3253,14 +3268,31 @@ export class BookmarkManager {
 
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.syncFromFile();
+      let result: BookmarkSyncFromFileResult;
+      const isBrowser = PlatformService.getInstance().isBrowser;
 
-      // Full restore: sets bookmarks AND folder data from file
+      if (isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<BookmarkItem[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = this.calculateDiff(browserItems, uploadedItems);
+        result = { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.syncFromFile();
+      }
+
+      // Full restore: sets bookmarks AND folder data from file (folder data only on Desktop)
       const fullRestoreFromFile = async () => {
         this.adapter.setBrowserItems(result.fileItems);
-        const folderData = await getAllFolderDataFromFile();
-        this.folderService.restoreAllFolderData(folderData.folders, folderData.folderAssignments, folderData.rootOrder);
+        if (!isBrowser) {
+          const folderData = await getAllFolderDataFromFile();
+          this.folderService.restoreAllFolderData(folderData.folders, folderData.folderAssignments, folderData.rootOrder);
+        }
       };
 
       // Merge: add new bookmarks with their folder assignments
