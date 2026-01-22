@@ -71,7 +71,7 @@ export class NotificationsView extends View {
       <div class="notifications-view__header">
         <h1>Notifications</h1>
       </div>
-      <div id="notifications-tabs" class="tabs">
+      <div id="notifications-tabs" class="tabs tabs--scrollable">
         <button class="tab tab--active" data-tab="all">All</button>
         <button class="tab" data-tab="mentions">Mentions</button>
         <button class="tab" data-tab="reactions">Reactions</button>
