@@ -14,11 +14,12 @@ body {
 // ========================================
 // Headings (fixed sizes, all breakpoints)
 // h1: 27px, h2: 23px, h3: 19px, h4: 16px, h5/h6: 14px
+// Placeholders are margin-free (for components)
+// HTML elements get margin (for prose/content)
 // ========================================
 %heading-base {
   font-weight: 600;
   line-height: 1.5;
-  margin-bottom: $gap;
 }
 
 %h1 {
@@ -58,13 +59,13 @@ body {
 @mixin h5 { font-size: 14px; }
 @mixin h6 { @include h5; }
 
-// Heading elements + utility classes
-h1, .h1 { @extend %h1; }
-h2, .h2 { @extend %h2; }
-h3, .h3 { @extend %h3; }
-h4, .h4 { @extend %h4; }
-h5, .h5 { @extend %h5; }
-h6, .h6 { @extend %h6; }
+// Heading elements + utility classes (with margin for prose/content)
+h1, .h1 { @extend %h1; margin-bottom: $gap; }
+h2, .h2 { @extend %h2; margin-bottom: $gap; }
+h3, .h3 { @extend %h3; margin-bottom: $gap; }
+h4, .h4 { @extend %h4; margin-bottom: $gap; }
+h5, .h5 { @extend %h5; margin-bottom: $gap; }
+h6, .h6 { @extend %h6; margin-bottom: $gap; }
 
 // ========================================
 // Small & Mini text (fixed sizes)
