@@ -703,6 +703,12 @@
     margin-bottom: $gap * 2;
     line-height: 1.5;
   }
+
+  // Right-align number inputs
+  input[type="number"] {
+    text-align: right;
+    max-width: 120px;
+  }
 }
 
 .cache-tables-group {
