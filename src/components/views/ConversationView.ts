@@ -61,10 +61,10 @@ export class ConversationView extends View {
     // Listen for new messages in this conversation
     this.subscriptionId = this.eventBus.on('dm:new-message', (data: { message: DMMessage; conversationWith: string }) => {
       if (data.conversationWith === this.partnerPubkey) {
-        // Add new message at the beginning (newest first)
-        this.messages.unshift(data.message);
+        // Add new message at the end (newest at bottom)
+        this.messages.push(data.message);
         this.renderMessages();
-        // No scroll needed - newest messages are already at the top
+        this.scrollToBottom();
       }
     });
   }
@@ -309,13 +309,13 @@ export class ConversationView extends View {
       // Mark conversation as read
       await this.dmService.markAsRead(this.partnerPubkey);
 
-      // Load messages and sort newest first
+      // Load messages and sort oldest first (newest at bottom)
       this.messages = await this.dmService.getMessages(this.partnerPubkey);
-      this.messages.sort((a, b) => b.createdAt - a.createdAt);
+      this.messages.sort((a, b) => a.createdAt - b.createdAt);
 
-      // Render messages
+      // Render messages and scroll to bottom
       this.renderMessages();
-      // No scroll needed - newest messages are already at the top
+      this.scrollToBottom();
     } catch (_error) {
       this.systemLogger.error('ConversationView', 'Failed to load conversation:', _error);
       this.renderError();
@@ -327,6 +327,16 @@ export class ConversationView extends View {
    */
   private get messagesContainer(): HTMLElement | null {
     return this.container.querySelector('.conversation-view__messages');
+  }
+
+  /**
+   * Scroll messages container to bottom
+   */
+  private scrollToBottom(): void {
+    const container = this.messagesContainer;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }
 
   /**
