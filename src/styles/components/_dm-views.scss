@@ -204,6 +204,8 @@
   gap: $gap;
   padding: $gap calc($gap * 1.5);
   border-bottom: 1px solid $color-2;
+  background: $color-1;
+  flex-shrink: 0;
 }
 
 .conversation-view__back-btn {
@@ -298,6 +300,7 @@
   padding: $gap calc($gap * 1.5);
   border-top: 1px solid $color-2;
   background: $color-1;
+  flex-shrink: 0;
 }
 
 .conversation-view__textarea {

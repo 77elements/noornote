@@ -24,3 +24,10 @@
   flex-direction: column;
   overflow: hidden; // Prevent primary-content from scrolling, let child scroll
 }
+
+// Conversation view: fixed header/input with scrollable messages
+.view-content--conversation {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
