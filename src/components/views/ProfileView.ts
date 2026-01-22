@@ -680,7 +680,7 @@ export class ProfileView extends View {
   }
 
   /**
-   * Render Connect/Disconnect button (only if logged in and not own profile)
+   * Render Follow/Unfollow button (only if logged in and not own profile)
    */
   private renderFollowButton(): string {
     return this.followManager.renderFollowButton();

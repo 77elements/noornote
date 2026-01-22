@@ -861,20 +861,20 @@ export class ProfileFollowManager {
       return '';
     }
 
-    // Already following - show disconnect button
+    // Already following - show unfollow button
     if (this.isFollowingState) {
       return `
         <button class="btn btn--passive follow-btn" data-action="unfollow">
-          Disconnect
+          Unfollow
         </button>
       `;
     }
 
-    // Not following - show connect button (with dropdown if private follows enabled)
+    // Not following - show follow button (with dropdown if private follows enabled)
     if (!isPrivateFollowsEnabled()) {
       return `
         <button class="btn follow-btn" data-action="follow">
-          Connect 🫂
+          Follow 🫂
         </button>
       `;
     }
@@ -882,7 +882,7 @@ export class ProfileFollowManager {
     return `
       <div class="follow-dropdown-container">
         <button class="btn follow-btn-dropdown" id="follow-btn-dropdown">
-          Connect 🫂
+          Follow 🫂
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -894,14 +894,14 @@ export class ProfileFollowManager {
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
-            Connect publicly
+            Follow publicly
           </button>
           <button class="follow-dropdown-item" data-action="follow-private">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
-            Connect privately
+            Follow privately
           </button>
         </div>
       </div>
@@ -987,7 +987,7 @@ export class ProfileFollowManager {
 
     try {
       followBtn.disabled = true;
-      followBtn.textContent = 'Connecting...';
+      followBtn.textContent = 'Following...';
 
       followUser(this.targetPubkey, type === 'private');
 
@@ -995,10 +995,10 @@ export class ProfileFollowManager {
       eventBus.emit('follow:updated', {});
       onStateChange();
 
-      ToastService.show(`Connected ${type === 'public' ? 'publicly' : 'privately'} (local)`, 'success');
+      ToastService.show(`Followed ${type === 'public' ? 'publicly' : 'privately'} (local)`, 'success');
     } catch (error) {
-      console.error('Failed to connect:', error);
-      ToastService.show('Failed to connect to user', 'error');
+      console.error('Failed to follow:', error);
+      ToastService.show('Failed to follow user', 'error');
 
       followBtn.disabled = false;
       followBtn.innerHTML = originalHTML;
@@ -1025,7 +1025,7 @@ export class ProfileFollowManager {
 
     try {
       followBtn.disabled = true;
-      followBtn.textContent = 'Disconnecting...';
+      followBtn.textContent = 'Unfollowing...';
 
       unfollowUser(this.targetPubkey);
 
@@ -1033,13 +1033,13 @@ export class ProfileFollowManager {
       eventBus.emit('follow:updated', {});
       onStateChange();
 
-      ToastService.show('Disconnected successfully (local)', 'success');
+      ToastService.show('Unfollowed successfully (local)', 'success');
     } catch (error) {
-      console.error('Failed to disconnect:', error);
-      ToastService.show('Failed to disconnect from user', 'error');
+      console.error('Failed to unfollow:', error);
+      ToastService.show('Failed to unfollow user', 'error');
 
       followBtn.disabled = false;
-      followBtn.textContent = 'Disconnect';
+      followBtn.textContent = 'Unfollow';
     }
   }
 }
@@ -1988,7 +1988,7 @@ export class FollowListManager {
         </div>
       </div>
       <button class="follow-item__unfollow-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
-        Disconnect
+        Unfollow
       </button>
     `;
 
