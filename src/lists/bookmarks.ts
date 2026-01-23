@@ -1477,6 +1477,166 @@ function mergeBookmarkItems(browserItems: BookmarkItem[], newItems: BookmarkItem
 }
 
 // =============================================================================
+// STATE SNAPSHOT COMPARISON (for detecting ANY difference)
+// =============================================================================
+
+/**
+ * Complete bookmark state snapshot for comparison.
+ * Captures: folder order, items per folder (with order), item properties.
+ */
+interface BookmarkStateSnapshot {
+  folderOrder: string[];  // Folder names in order ('' = root always first)
+  itemsByFolder: Map<string, string[]>;  // folder name → ordered item ids
+  itemProperties: Map<string, { isPrivate: boolean; description: string }>;
+}
+
+/**
+ * Create snapshot from browser state (localStorage + folderService)
+ */
+function createBrowserBookmarkSnapshot(): BookmarkStateSnapshot {
+  const folderService = getBookmarkFolderService();
+  const browserItems = readBrowserBookmarks();
+  const folders = folderService.getFolders();
+  const rootOrder = folderService.getRootOrder();
+
+  // Build folder order from rootOrder (folders only)
+  const folderOrder: string[] = [''];  // Root always first
+  for (const item of rootOrder) {
+    if (item.type === 'folder') {
+      const folder = folders.find(f => f.id === item.id);
+      if (folder) folderOrder.push(folder.name);
+    }
+  }
+  // Add any folders not in rootOrder
+  for (const folder of folders) {
+    if (!folderOrder.includes(folder.name)) {
+      folderOrder.push(folder.name);
+    }
+  }
+
+  // Build itemsByFolder with order
+  const itemsByFolder = new Map<string, string[]>();
+  itemsByFolder.set('', []);  // Initialize root
+  for (const folderName of folderOrder) {
+    if (folderName !== '') itemsByFolder.set(folderName, []);
+  }
+
+  // Get items in root order
+  for (const item of rootOrder) {
+    if (item.type === 'bookmark') {
+      const rootItems = itemsByFolder.get('') || [];
+      rootItems.push(item.id);
+      itemsByFolder.set('', rootItems);
+    }
+  }
+
+  // Get items in each folder (from assignments)
+  for (const folder of folders) {
+    const folderItems = folderService.getBookmarksInFolder(folder.id);
+    itemsByFolder.set(folder.name, folderItems);
+  }
+
+  // Build item properties map
+  const itemProperties = new Map<string, { isPrivate: boolean; description: string }>();
+  for (const item of browserItems) {
+    itemProperties.set(item.id, {
+      isPrivate: item.isPrivate || false,
+      description: item.description || ''
+    });
+  }
+
+  return { folderOrder, itemsByFolder, itemProperties };
+}
+
+/**
+ * Create snapshot from relay/file data (items array + categories)
+ */
+function createSourceBookmarkSnapshot(
+  items: BookmarkItem[],
+  categories?: string[]
+): BookmarkStateSnapshot {
+  // Build folder order from categories ('' = root always first)
+  const folderOrder: string[] = categories ? [...categories] : [''];
+  if (!folderOrder.includes('')) folderOrder.unshift('');
+
+  // Group items by category, preserving order within each category
+  const itemsByFolder = new Map<string, string[]>();
+  for (const folderName of folderOrder) {
+    itemsByFolder.set(folderName, []);
+  }
+
+  for (const item of items) {
+    const category = item.category || '';
+    if (!itemsByFolder.has(category)) {
+      itemsByFolder.set(category, []);
+      folderOrder.push(category);
+    }
+    itemsByFolder.get(category)!.push(item.id);
+  }
+
+  // Build item properties map
+  const itemProperties = new Map<string, { isPrivate: boolean; description: string }>();
+  for (const item of items) {
+    itemProperties.set(item.id, {
+      isPrivate: item.isPrivate || false,
+      description: item.description || ''
+    });
+  }
+
+  return { folderOrder, itemsByFolder, itemProperties };
+}
+
+/**
+ * Compare two snapshots for equality
+ */
+function bookmarkSnapshotsAreEqual(a: BookmarkStateSnapshot, b: BookmarkStateSnapshot): boolean {
+  // Compare folder order
+  if (a.folderOrder.length !== b.folderOrder.length) return false;
+  for (let i = 0; i < a.folderOrder.length; i++) {
+    if (a.folderOrder[i] !== b.folderOrder[i]) return false;
+  }
+
+  // Compare items in each folder (with order)
+  for (const [folderName, aItems] of a.itemsByFolder) {
+    const bItems = b.itemsByFolder.get(folderName);
+    if (!bItems) return false;
+    if (aItems.length !== bItems.length) return false;
+    for (let i = 0; i < aItems.length; i++) {
+      if (aItems[i] !== bItems[i]) return false;
+    }
+  }
+
+  // Check for folders in b not in a
+  for (const folderName of b.itemsByFolder.keys()) {
+    if (!a.itemsByFolder.has(folderName)) return false;
+  }
+
+  // Compare item properties
+  if (a.itemProperties.size !== b.itemProperties.size) return false;
+  for (const [itemId, aProps] of a.itemProperties) {
+    const bProps = b.itemProperties.get(itemId);
+    if (!bProps) return false;
+    if (aProps.isPrivate !== bProps.isPrivate) return false;
+    if (aProps.description !== bProps.description) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Check if there's ANY difference between browser and relay/file data.
+ * Returns true if merge modal should be shown.
+ */
+function hasAnyBookmarkDifference(
+  sourceItems: BookmarkItem[],
+  categories?: string[]
+): boolean {
+  const browserSnapshot = createBrowserBookmarkSnapshot();
+  const sourceSnapshot = createSourceBookmarkSnapshot(sourceItems, categories);
+  return !bookmarkSnapshotsAreEqual(browserSnapshot, sourceSnapshot);
+}
+
+// =============================================================================
 // BOOKMARK STORAGE ADAPTER (for AutoSyncService / ListSyncManager)
 // =============================================================================
 
@@ -1519,7 +1679,7 @@ export class BookmarkStorageAdapter {
     const diff = calculateBookmarkSyncDiff(browserItems, fetchResult.items);
 
     return {
-      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
+      requiresConfirmation: hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories),
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
@@ -2159,7 +2319,7 @@ export class BookmarkManager {
     const diff = this.calculateDiff(browserItems, fetchResult.items);
 
     const result: BookmarkSyncFromRelaysResult = {
-      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
+      requiresConfirmation: hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories),
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty
@@ -2173,7 +2333,10 @@ export class BookmarkManager {
     const fileItems = await this.adapter.getFileItems();
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fileItems);
-    return { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems };
+    // Get categories from file for proper folder order comparison
+    const fileData = await readBookmarkFile();
+    const fileCategories = fileData.metadata.setOrder;
+    return { requiresConfirmation: hasAnyBookmarkDifference(fileItems, fileCategories), diff, fileItems };
   }
 
   private async syncToRelays(): Promise<void> {
@@ -3278,7 +3441,8 @@ export class BookmarkManager {
         }
         const browserItems = this.adapter.getBrowserItems();
         const diff = this.calculateDiff(browserItems, uploadedItems);
-        result = { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems: uploadedItems };
+        // For uploaded file, categories are derived from items (no setOrder available)
+        result = { requiresConfirmation: hasAnyBookmarkDifference(uploadedItems), diff, fileItems: uploadedItems };
       } else {
         // Tauri Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');

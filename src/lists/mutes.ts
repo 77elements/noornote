@@ -93,6 +93,34 @@ interface SyncDiff {
   unchanged: string[];
 }
 
+// ============================================================
+// FULL STATE COMPARISON (checks ALL differences)
+// Order is NOT compared - mutes are displayed sorted by addedAt
+// ============================================================
+
+/**
+ * Check if browser and source mute lists are different.
+ * Compares: same pubkeys exist (set comparison)
+ * Does NOT compare order (user can't reorder, displayed by date)
+ */
+function hasMuteDifference(browserItems: string[], sourceItems: string[]): boolean {
+  // Different count = different
+  if (browserItems.length !== sourceItems.length) return true;
+
+  // Set comparison
+  const browserSet = new Set(browserItems);
+  const sourceSet = new Set(sourceItems);
+
+  for (const item of browserSet) {
+    if (!sourceSet.has(item)) return true;
+  }
+  for (const item of sourceSet) {
+    if (!browserSet.has(item)) return true;
+  }
+
+  return false;
+}
+
 /**
  * Result from sync from relays (phase 1)
  */
@@ -803,8 +831,11 @@ export class MuteStorageAdapter {
     const browserItems = this.getBrowserItems();
     const diff = calculateSyncDiff(browserItems, fetchResult.items);
 
+    // Use full state comparison
+    const requiresConfirmation = hasMuteDifference(browserItems, fetchResult.items);
+
     return {
-      requiresConfirmation: diff.removed.length > 0,
+      requiresConfirmation,
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty
@@ -824,7 +855,8 @@ export class MuteStorageAdapter {
     const browserItems = this.getBrowserItems();
     const diff = calculateSyncDiff(browserItems, fileItems);
 
-    return { requiresConfirmation: diff.removed.length > 0, diff, fileItems };
+    // Use full state comparison
+    return { requiresConfirmation: hasMuteDifference(browserItems, fileItems), diff, fileItems };
   }
 
   applySyncFromFile(strategy: 'merge' | 'overwrite', fileItems: string[]): void {
@@ -1211,7 +1243,8 @@ export class MuteListView extends View {
         }
         const browserItems = this.adapter.getBrowserItems();
         const diff = calculateSyncDiff(browserItems, uploadedItems);
-        result = { requiresConfirmation: diff.removed.length > 0, diff, fileItems: uploadedItems };
+        // Use full state comparison
+        result = { requiresConfirmation: hasMuteDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
       } else {
         // Tauri Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
@@ -1559,7 +1592,8 @@ export class MuteListManager {
         }
         const browserItems = this.adapter.getBrowserItems();
         const diff = calculateSyncDiff(browserItems, uploadedItems);
-        result = { requiresConfirmation: diff.removed.length > 0, diff, fileItems: uploadedItems };
+        // Use full state comparison
+        result = { requiresConfirmation: hasMuteDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
       } else {
         // Tauri Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');

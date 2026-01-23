@@ -60,6 +60,175 @@ interface SyncDiff {
   moved: MovedMember[];
 }
 
+// ============================================================
+// FULL STATE COMPARISON (checks ALL 13 cases from docs/features/lists.md)
+// ============================================================
+
+/**
+ * Create canonical snapshot of tribe state for comparison.
+ * Format: { folders: ["A", "B"], members: { "A": [{pubkey, isPrivate}], "B": [...] } }
+ */
+interface TribeStateSnapshot {
+  folderOrder: string[]; // folder names in order
+  membersByFolder: Map<string, { pubkey: string; isPrivate: boolean }[]>; // folder -> members in order
+}
+
+function createBrowserSnapshot(): TribeStateSnapshot {
+  const folders = getFolders();
+  const rootOrder = getRootOrder();
+  const assignments = getAssignments();
+  const members = getMembers();
+
+  // Build folder order from rootOrder
+  const folderOrder: string[] = [];
+  for (const item of rootOrder) {
+    if (item.type === 'folder') {
+      const folder = folders.find(f => f.id === item.id);
+      if (folder) folderOrder.push(folder.name);
+    }
+  }
+
+  // Build members by folder (in order)
+  const membersByFolder = new Map<string, { pubkey: string; isPrivate: boolean }[]>();
+
+  for (const folderName of folderOrder) {
+    const folderId = `folder_${folderName}`;
+    const folderAssignments = assignments
+      .filter(a => a.folderId === folderId)
+      .sort((a, b) => a.order - b.order);
+
+    const folderMembers: { pubkey: string; isPrivate: boolean }[] = [];
+    for (const assignment of folderAssignments) {
+      const member = members.find(m => m.id === assignment.memberId);
+      if (member) {
+        folderMembers.push({ pubkey: member.pubkey, isPrivate: member.isPrivate || false });
+      }
+    }
+    membersByFolder.set(folderName, folderMembers);
+  }
+
+  return { folderOrder, membersByFolder };
+}
+
+function createRelaySnapshot(
+  relayItems: TribeMember[],
+  categories: string[] | undefined
+): TribeStateSnapshot {
+  // Build folder order from categories (skip root "tribes/")
+  const folderOrder: string[] = [];
+  if (categories) {
+    for (const cat of categories) {
+      if (cat === 'tribes/' || cat === '') continue;
+      const name = cat.startsWith('tribes/') ? cat.substring(7) : cat;
+      if (name) folderOrder.push(name);
+    }
+  }
+
+  // Build members by folder (order from relayItems array order)
+  const membersByFolder = new Map<string, { pubkey: string; isPrivate: boolean }[]>();
+
+  // Initialize empty arrays for each folder
+  for (const folderName of folderOrder) {
+    membersByFolder.set(folderName, []);
+  }
+
+  // Add members to their folders (preserving order from relay)
+  for (const item of relayItems) {
+    const folderName = item.category || '';
+    if (!folderName) continue; // Tribes don't allow root items
+
+    const folderMembers = membersByFolder.get(folderName);
+    if (folderMembers) {
+      folderMembers.push({ pubkey: item.pubkey, isPrivate: item.isPrivate || false });
+    }
+  }
+
+  return { folderOrder, membersByFolder };
+}
+
+function snapshotsAreEqual(a: TribeStateSnapshot, b: TribeStateSnapshot): boolean {
+  // Compare folder order
+  if (a.folderOrder.length !== b.folderOrder.length) return false;
+  for (let i = 0; i < a.folderOrder.length; i++) {
+    if (a.folderOrder[i] !== b.folderOrder[i]) return false;
+  }
+
+  // Compare members in each folder
+  for (const folderName of a.folderOrder) {
+    const aMembers = a.membersByFolder.get(folderName) || [];
+    const bMembers = b.membersByFolder.get(folderName) || [];
+
+    if (aMembers.length !== bMembers.length) return false;
+
+    for (let i = 0; i < aMembers.length; i++) {
+      const am = aMembers[i];
+      const bm = bMembers[i];
+      if (!am || !bm) return false;
+      if (am.pubkey !== bm.pubkey) return false;
+      if (am.isPrivate !== bm.isPrivate) return false;
+    }
+  }
+
+  // Check if b has any folders that a doesn't have
+  for (const folderName of b.folderOrder) {
+    if (!a.folderOrder.includes(folderName)) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Check if browser and relay states are different (triggers modal if true)
+ */
+function hasAnyDifference(
+  relayItems: TribeMember[],
+  categories: string[] | undefined
+): boolean {
+  const browserSnapshot = createBrowserSnapshot();
+  const relaySnapshot = createRelaySnapshot(relayItems, categories);
+  return !snapshotsAreEqual(browserSnapshot, relaySnapshot);
+}
+
+/**
+ * Create snapshot from file data (TribeSetData)
+ */
+function createFileSnapshot(data: TribeSetData): TribeStateSnapshot {
+  const folderOrder: string[] = [];
+  const membersByFolder = new Map<string, { pubkey: string; isPrivate: boolean }[]>();
+
+  // Use metadata.setOrder if available, otherwise use set order in file
+  const setOrder = data.metadata?.setOrder || data.sets.map(s => s.d);
+
+  for (const category of setOrder) {
+    if (category === '') continue; // Skip root (Tribes don't allow root items)
+
+    const set = data.sets.find(s => s.d === category);
+    if (!set) continue;
+
+    folderOrder.push(category);
+
+    const members: { pubkey: string; isPrivate: boolean }[] = [];
+    for (const m of set.publicMembers) {
+      members.push({ pubkey: m.pubkey, isPrivate: false });
+    }
+    for (const m of set.privateMembers) {
+      members.push({ pubkey: m.pubkey, isPrivate: true });
+    }
+    membersByFolder.set(category, members);
+  }
+
+  return { folderOrder, membersByFolder };
+}
+
+/**
+ * Check if browser and file states are different
+ */
+function hasAnyDifferenceFromFile(fileData: TribeSetData): boolean {
+  const browserSnapshot = createBrowserSnapshot();
+  const fileSnapshot = createFileSnapshot(fileData);
+  return !snapshotsAreEqual(browserSnapshot, fileSnapshot);
+}
+
 interface SyncFromRelaysResult {
   requiresConfirmation: boolean;
   diff: SyncDiff;
@@ -1290,8 +1459,11 @@ export class TribeManager {
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fetchResult.items);
 
+    // Use full state comparison (checks ALL differences, not just added/removed/moved)
+    const requiresConfirmation = hasAnyDifference(fetchResult.items, fetchResult.categories);
+
     const result: SyncFromRelaysResult = {
-      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
+      requiresConfirmation,
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty
@@ -1327,23 +1499,28 @@ export class TribeManager {
 
     // Add folder assignments for new members
     for (const member of membersToAdd) {
-      const folderId = member.category ? `folder_${member.category}` : '';
-      if (folderId) {
-        // Ensure folder exists, then assign member to it
-        const folder = getFolder(folderId);
-        if (folder) {
-          moveMemberToFolder(member.id, folderId);
+      if (member.category) {
+        const folderId = `folder_${member.category}`;
+        // Create folder if doesn't exist
+        if (!getFolder(folderId)) {
+          createFolder(member.category);
         }
+        moveMemberToFolder(member.id, folderId);
       }
     }
   }
 
   private async syncFromFile(): Promise<SyncFromFileResult> {
-    const fileItems = await this.adapter.getFileItems();
+    // Read full file data for proper comparison
+    const fileData = await readFromFile();
+    const { members: fileItems } = extractFromSetData(fileData);
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fileItems);
 
-    return { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems };
+    // Use full state comparison (checks ALL differences)
+    const requiresConfirmation = hasAnyDifferenceFromFile(fileData);
+
+    return { requiresConfirmation, diff, fileItems };
   }
 
   private downloadAsJson(data: TribeMember[], filename: string): void {
@@ -2318,6 +2495,33 @@ export class TribeManager {
             await this.loadMembers();
             await this.renderCurrentView(container);
           },
+          onMerge: async () => {
+            // True merge: combine both local + relay, then push back to relays
+            // Keep existing folder structure, only add new members with their folders
+            const browserItems = this.adapter.getBrowserItems();
+            const existingPubkeys = new Set(browserItems.map(m => m.pubkey));
+            const newFromRelay = result.relayItems.filter(m => !existingPubkeys.has(m.pubkey));
+
+            if (newFromRelay.length > 0) {
+              this.adapter.setBrowserItems([...browserItems, ...newFromRelay]);
+              // Ensure folders exist for new members and assign them
+              for (const member of newFromRelay) {
+                if (member.category) {
+                  const folderId = `folder_${member.category}`;
+                  if (!getFolder(folderId)) {
+                    createFolder(member.category);
+                  }
+                  moveMemberToFolder(member.id, folderId);
+                }
+              }
+            }
+
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Merged and synced to relays', 'success');
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          },
           onDelete: async () => {
             this.applySync('overwrite', result.relayItems);
             applyRelayFetchResult(result.relayItems, result.categoryAssignments, result.categories);
@@ -2399,7 +2603,7 @@ export class TribeManager {
         }
         const browserItems = this.adapter.getBrowserItems();
         const diff = this.calculateDiff(browserItems, uploadedItems);
-        result = { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems: uploadedItems };
+        result = { requiresConfirmation: diff.added.length > 0 || diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems: uploadedItems };
       } else {
         // Tauri Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
@@ -2433,6 +2637,19 @@ export class TribeManager {
             // Merge: add new members from file with their folder assignments
             await this.mergeFromFile(result.diff.added);
             ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          },
+          onMerge: async () => {
+            // True merge: combine both local + file, then save to file AND relays
+            await this.mergeFromFile(result.diff.added);
+            const mergedItems = this.adapter.getBrowserItems();
+            // Save to file (so Tauri sees the merged result)
+            await this.adapter.setFileItems(mergedItems);
+            // Publish to relays
+            await this.adapter.publishToRelays(mergedItems);
+            ToastService.show('Merged and synced to file + relays', 'success');
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
@@ -2911,8 +3128,11 @@ export class TribeStorageAdapter {
     const browserItems = this.getBrowserItems();
     const diff = calculateTribeSyncDiff(browserItems, fetchResult.items);
 
+    // Use full state comparison (checks ALL differences, not just added/removed/moved)
+    const requiresConfirmation = hasAnyDifference(fetchResult.items, fetchResult.categories);
+
     return {
-      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
+      requiresConfirmation,
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,

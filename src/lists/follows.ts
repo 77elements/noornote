@@ -89,6 +89,58 @@ interface SyncDiff {
   unchanged: FollowItem[];
 }
 
+// ============================================================
+// FULL STATE COMPARISON (checks ALL differences)
+// Order is NOT compared - follows are displayed sorted by addedAt
+// ============================================================
+
+/**
+ * Check if browser and source follow lists are different.
+ * Compares: same pubkeys exist, same properties per pubkey (petname, isPrivate)
+ * Does NOT compare order (user can't reorder, displayed by date)
+ */
+function hasFollowDifference(browserItems: FollowItem[], sourceItems: FollowItem[]): boolean {
+  // Different count = different
+  if (browserItems.length !== sourceItems.length) return true;
+
+  // Build maps for property comparison
+  const browserMap = new Map<string, FollowItem>();
+  for (const item of browserItems) {
+    browserMap.set(item.pubkey, item);
+  }
+
+  const sourceMap = new Map<string, FollowItem>();
+  for (const item of sourceItems) {
+    sourceMap.set(item.pubkey, item);
+  }
+
+  // Check if same pubkeys exist
+  for (const pubkey of browserMap.keys()) {
+    if (!sourceMap.has(pubkey)) return true;
+  }
+  for (const pubkey of sourceMap.keys()) {
+    if (!browserMap.has(pubkey)) return true;
+  }
+
+  // Check if properties match for each pubkey
+  for (const [pubkey, browserItem] of browserMap) {
+    const sourceItem = sourceMap.get(pubkey);
+    if (!sourceItem) return true;
+
+    // Compare petname
+    const browserPetname = browserItem.petname || '';
+    const sourcePetname = sourceItem.petname || '';
+    if (browserPetname !== sourcePetname) return true;
+
+    // Compare isPrivate
+    const browserPrivate = browserItem.isPrivate || false;
+    const sourcePrivate = sourceItem.isPrivate || false;
+    if (browserPrivate !== sourcePrivate) return true;
+  }
+
+  return false;
+}
+
 /**
  * Result from sync from relays (phase 1)
  */
@@ -623,8 +675,11 @@ export class FollowStorageAdapter {
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
     const diff = calculateFollowSyncDiff(browserItems, relayItems, preservePrivateItems);
 
+    // Use full state comparison (checks ALL differences including order and properties)
+    const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
+
     return {
-      requiresConfirmation: diff.removed.length > 0,
+      requiresConfirmation,
       diff,
       relayItems,
       relayContentWasEmpty: preservePrivateItems
@@ -1257,7 +1312,9 @@ export class FollowListManager {
 
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
     const diff = this.calculateDiff(browserItems, relayItems, preservePrivateItems);
-    const requiresConfirmation = diff.removed.length > 0;
+
+    // Use full state comparison (checks ALL differences including order and properties)
+    const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
 
     return {
       requiresConfirmation,
@@ -1293,7 +1350,9 @@ export class FollowListManager {
     const fileItems = await this.adapter.getFileItems();
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fileItems, false);
-    const requiresConfirmation = diff.removed.length > 0;
+
+    // Use full state comparison (checks ALL differences including order and properties)
+    const requiresConfirmation = hasFollowDifference(browserItems, fileItems);
 
     return { requiresConfirmation, diff, fileItems };
   }
@@ -1423,7 +1482,8 @@ export class FollowListManager {
         }
         const browserItems = this.adapter.getBrowserItems();
         const diff = this.calculateDiff(browserItems, uploadedItems, false);
-        result = { requiresConfirmation: diff.removed.length > 0, diff, fileItems: uploadedItems };
+        // Use full state comparison
+        result = { requiresConfirmation: hasFollowDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
       } else {
         // Tauri Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
