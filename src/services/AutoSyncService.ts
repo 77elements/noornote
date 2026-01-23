@@ -5,16 +5,18 @@
  * @purpose Automatically sync lists when changes occur (Easy Mode)
  * @architecture
  *   - Listens to list update events (follow:updated, bookmark:updated, mute:updated, tribe:updated)
- *   - On change: 1) Save to file immediately, 2) Publish to relays (debounced)
+ *   - On change: Publish to relays (debounced). Tauri Desktop: also save to file immediately.
  *   - On startup: Sync from relays 10 seconds after login
  *   - Periodic sync: Every 5 minutes from relays
  *   - Offline-aware: Pauses relay sync when offline, resumes when back online
+ *   - Web/Phone: No file operations (only relay sync)
  */
 
 import { EventBus } from './EventBus';
 import { ToastService } from './ToastService';
 import { AuthService } from './AuthService';
 import { ConnectivityService } from './ConnectivityService';
+import { PlatformService } from './PlatformService';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { UserProfileService } from './UserProfileService';
 import { NoteService } from './NoteService';
@@ -256,8 +258,10 @@ export class AutoSyncService {
     try {
       this.isSyncing.add(listType);
 
-      // 1. Save to file immediately (backup first!)
-      await this.saveToFile(listType);
+      // 1. Save to file immediately (Tauri Desktop only - Web/Phone has no file system)
+      if (PlatformService.getInstance().isTauri) {
+        await this.saveToFile(listType);
+      }
 
       // 2. Sync to relays
       // For mutes: sync immediately (no debounce) to prevent unmute bug
