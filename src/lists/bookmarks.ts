@@ -1261,18 +1261,18 @@ export async function publishBookmarksToRelays(): Promise<void> {
  */
 export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFromRelaysResult> {
   try {
-    // Fetch ALL kind:30003 events (all categories)
+    // Fetch ALL kind:30003 events (skipCache=true for sync)
     const events = await fetchEvents([{
       authors: [pubkey],
       kinds: [30003],
       limit: 100
-    }], 10000);
+    }], 10000, true);
 
-    // Fetch deletion events (kind:5) to filter out deleted categories
+    // Fetch deletion events (kind:5) - also skip cache
     const deletionEvents = await fetchEvents([{
       authors: [pubkey],
       kinds: [5]
-    }], 5000);
+    }], 5000, true);
 
     // Extract deleted coordinates with deletion timestamp
     const deletedCoordinates = new Map<string, number>();
@@ -1326,12 +1326,12 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       return { items: [], relayContentWasEmpty: true };
     }
 
-    // Fetch folder order metadata (NIP-78 kind:30078)
+    // Fetch folder order metadata (NIP-78 kind:30078) - also skip cache
     const orderEvents = await fetchEvents([{
       authors: [pubkey],
       kinds: [30078],
       '#d': ['noornote:bookmark-folders-order']
-    }], 5000);
+    }], 5000, true);
 
     let folderOrder: string[] = [];
     const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);

@@ -393,19 +393,20 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
   try {
     // Fetch both kind:3 (public) and kind:30000 (private) events
+    // skipCache=true for sync operations
     const [kind3Events, kind30000Events] = await Promise.all([
       fetchEvents([{
         authors: [pubkey],
         kinds: [3],
         limit: 1
-      }], 10000),
+      }], 10000, true),
       isPrivateFollowsEnabled()
         ? fetchEvents([{
             authors: [pubkey],
             kinds: [30000],
             '#d': ['private-follows'],
             limit: 1
-          }], 10000)
+          }], 10000, true)
         : Promise.resolve([])
     ]);
 

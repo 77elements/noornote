@@ -328,6 +328,8 @@ export class AutoSyncService {
       return;
     }
 
+    this.systemLogger.info('ListAutoSync', 'Lists in Easy Mode. AutoSync triggered to relays.');
+
     try {
       switch (listType) {
         case 'follows':
@@ -396,7 +398,7 @@ export class AutoSyncService {
       return;
     }
 
-    this.systemLogger.info('ListAutoSync', 'Syncing all lists from relays');
+    this.systemLogger.info('ListAutoSync', 'Lists in Easy Mode. AutoSync triggered from relays.');
 
     for (const listType of ['follows', 'bookmarks', 'mutes', 'tribes'] as ListType[]) {
       await this.syncFromRelays(listType);
@@ -576,11 +578,22 @@ export class AutoSyncService {
       getDisplayName: async (item: unknown) => this.getDisplayName(listType, item),
       renderItemHtml: async (item: unknown) => this.renderItemHtml(listType, item),
       onKeep: async () => {
+        // Keep local state as-is, only add new items from relay (no push back)
         this.applyMerge(listType, result.relayItems);
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
         }
-        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Merged ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
+      },
+      onMerge: async () => {
+        // True merge: combine both local + relay, then push back to relays
+        this.applyMerge(listType, result.relayItems);
+        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
+          await this.applyFolderAssignments(listType, result);
+        }
+        // Push merged state back to relays
+        await this.syncToRelays(listType);
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Merged and synced to relays`, 'success');
       },
       onDelete: async () => {
         this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);

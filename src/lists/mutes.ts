@@ -562,11 +562,12 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   }
 
   try {
+    // skipCache=true for sync operations
     const events = await fetchEvents([{
       authors: [pubkey],
       kinds: [10000],
       limit: 10
-    }], 10000);
+    }], 10000, true);
 
     if (events.length === 0) {
       logger.info('mutes.ts', 'No mute list found on relays');

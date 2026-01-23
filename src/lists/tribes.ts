@@ -290,7 +290,7 @@ export function createFolder(name: string): TribeFolder {
   // Add to root order
   addToRootOrder('folder', id);
 
-  logger.info('tribes.ts', `Created folder: ${name}`);
+  logger.info('Tribes', `Created folder: ${name}`);
   return folder;
 }
 
@@ -300,7 +300,7 @@ export function renameFolder(folderId: string, newName: string): void {
   if (folder) {
     folder.name = newName;
     setFolders(folders);
-    logger.info('tribes.ts', `Renamed folder to: ${newName}`);
+    logger.info('Tribes', `Renamed folder to: ${newName}`);
   }
 }
 
@@ -325,7 +325,7 @@ export function deleteFolder(folderId: string): string[] {
     removeFromRootOrder('member', memberId);
   }
 
-  logger.info('tribes.ts', `Deleted folder with ${memberIds.length} members`);
+  logger.info('Tribes', `Deleted folder with ${memberIds.length} members`);
   return memberIds;
 }
 
@@ -376,7 +376,7 @@ export function addMember(
   ensureMemberAssignment(uniqueId);
   moveMemberToFolder(uniqueId, targetFolderId);
 
-  logger.info('tribes.ts', `Added ${canBePrivate ? 'private' : 'public'} member: ${pubkey.slice(0, 8)}...`);
+  logger.info('Tribes', `Added ${canBePrivate ? 'private' : 'public'} member: ${pubkey.slice(0, 8)}...`);
   return true;
 }
 
@@ -400,7 +400,7 @@ export function removeMember(pubkey: string): boolean {
   // Also remove by pubkey prefix (catches orphaned assignments)
   removeMemberAssignmentsByPubkey(pubkey);
 
-  logger.info('tribes.ts', `Removed member: ${pubkey.slice(0, 8)}...`);
+  logger.info('Tribes', `Removed member: ${pubkey.slice(0, 8)}...`);
   return true;
 }
 
@@ -620,7 +620,7 @@ export async function writeToFile(data: TribeSetData): Promise<void> {
 export async function saveToFile(): Promise<void> {
   const setData = buildSetDataFromBrowser();
   await writeToFile(setData);
-  logger.info('tribes.ts', `Saved to file: ${setData.sets.length} sets`);
+  logger.info('Tribes', `Saved to file: ${setData.sets.length} sets`);
 }
 
 /**
@@ -635,7 +635,7 @@ export async function restoreFromFile(): Promise<void> {
   if (members.length === 0) {
     const browserMembers = getMembers();
     if (browserMembers.length > 0) {
-      logger.warn('tribes.ts', `Restore aborted: file empty but browser has ${browserMembers.length} members`);
+      logger.warn('Tribes', `Restore aborted: file empty but browser has ${browserMembers.length} members`);
       throw new Error('File is empty. Use "Sync from Relays" to restore your tribes.');
     }
   }
@@ -645,7 +645,7 @@ export async function restoreFromFile(): Promise<void> {
   setAssignments(assignments);
   setRootOrder(rootOrder);
 
-  logger.info('tribes.ts', `Restored from file: ${members.length} members`);
+  logger.info('Tribes', `Restored from file: ${members.length} members`);
 }
 
 /**
@@ -660,7 +660,7 @@ export async function restoreFolderDataOnly(): Promise<void> {
   setAssignments(assignments);
   setRootOrder(rootOrder);
 
-  logger.info('tribes.ts', `Restored folder structure from file: ${folders.length} folders`);
+  logger.info('Tribes', `Restored folder structure from file: ${folders.length} folders`);
 }
 
 /**
@@ -736,7 +736,7 @@ export function applyRelayFetchResult(
   setAssignments(newAssignments);
   setRootOrder(newRootOrder);
 
-  logger.info('tribes.ts', `Applied folder structure: ${newFolders.length} folders`);
+  logger.info('Tribes', `Applied folder structure: ${newFolders.length} folders`);
   // Note: Caller is responsible for emitting tribe:updated if needed
 }
 
@@ -805,13 +805,13 @@ function buildSetDataFromBrowser(): TribeSetData {
   // Tribes: Root members are NOT allowed - skip them (log warning if any exist)
   const rootMemberIds = getMembersInFolder('');
   if (rootMemberIds.length > 0) {
-    logger.warn('tribes.ts', `Skipping ${rootMemberIds.length} root members (not allowed in tribes)`);
+    logger.warn('Tribes', `Skipping ${rootMemberIds.length} root members (not allowed in tribes)`);
   }
 
   // Tribes: Orphaned items are NOT allowed - skip them (log warning if any exist)
   const orphanedItems = allMembers.filter(item => !assignedIds.has(item.id));
   if (orphanedItems.length > 0) {
-    logger.warn('tribes.ts', `Skipping ${orphanedItems.length} orphaned members (not allowed in tribes)`);
+    logger.warn('Tribes', `Skipping ${orphanedItems.length} orphaned members (not allowed in tribes)`);
   }
 
   // Build setOrder from rootOrder (respects user's custom folder order)
@@ -912,18 +912,18 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   }
 
   try {
-    // Fetch all kind:30000 events
+    // Fetch all kind:30000 events (skipCache=true to get fresh data for sync)
     const events = await fetchEvents([{
       authors: [pubkey],
       kinds: [30000],
       limit: 100
-    }], 10000);
+    }], 10000, true);
 
-    // Fetch deletion events (kind:5)
+    // Fetch deletion events (kind:5) - also skip cache
     const deletionEvents = await fetchEvents([{
       authors: [pubkey],
       kinds: [5]
-    }], 5000);
+    }], 5000, true);
 
     // Extract deleted coordinates with timestamps
     const deletedCoordinates = new Map<string, number>();
@@ -940,7 +940,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     }
 
     if (events.length === 0 && deletedCoordinates.size === 0) {
-      logger.info('tribes.ts', 'No tribe sets found on relays');
+      logger.info('Tribes', 'No tribe sets found on relays');
       return { items: [], relayContentWasEmpty: true };
     }
 
@@ -967,7 +967,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     }
 
     if (eventsByDTag.size === 0) {
-      logger.info('tribes.ts', 'No tribe sets after filtering');
+      logger.info('Tribes', 'No tribe sets after filtering');
       return { items: [], relayContentWasEmpty: true };
     }
 
@@ -1047,12 +1047,12 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
             categoryAssignments.set(item.pubkey, tribeName);
           }
         } catch (error) {
-          logger.error('tribes.ts', `Failed to decrypt private members: ${error}`);
+          logger.error('Tribes', `Failed to decrypt private members: ${error}`);
         }
       }
 
       allItems.push(...publicItems, ...privateItems);
-      logger.info('tribes.ts', `Fetched tribe "${tribeName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`);
+      logger.info('Tribes', `Fetched tribe "${tribeName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`);
     }
 
     // Deduplicate by pubkey
@@ -1068,7 +1068,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       categories
     };
   } catch (error) {
-    logger.error('tribes.ts', `Failed to fetch from relays: ${error}`);
+    logger.error('Tribes', `Failed to fetch from relays: ${error}`);
     return { items: [], relayContentWasEmpty: true };
   }
 }
@@ -1097,7 +1097,7 @@ export async function publishToRelays(): Promise<void> {
     }
   }
 
-  logger.info('tribes.ts', `Publishing: ${setData.sets.length} sets, ${deletedTribes.length} deleted`);
+  logger.info('Tribes', `Publishing: ${setData.sets.length} sets, ${deletedTribes.length} deleted`);
 
   // Publish deletions
   if (deletedTribes.length > 0) {
@@ -1145,14 +1145,14 @@ export async function publishToRelays(): Promise<void> {
 
     const signed = await signEvent(event);
     if (!signed) {
-      logger.error('tribes.ts', `Failed to sign event for tribe: ${set.d}`);
+      logger.error('Tribes', `Failed to sign event for tribe: ${set.d}`);
       continue;
     }
 
     await publishEvent(signed);
     totalPublished++;
 
-    logger.info('tribes.ts', `Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`);
+    logger.info('Tribes', `Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`);
   }
 
   // Publish folder order metadata (NIP-78)
@@ -1176,11 +1176,11 @@ export async function publishToRelays(): Promise<void> {
     const signedOrderEvent = await signEvent(orderEvent);
     if (signedOrderEvent) {
       await publishEvent(signedOrderEvent);
-      logger.info('tribes.ts', `Published folder order metadata with ${folderOrder.length} tribes`);
+      logger.info('Tribes', `Published folder order metadata with ${folderOrder.length} tribes`);
     }
   }
 
-  logger.info('tribes.ts', `Published ${totalPublished} tribe events to relays`);
+  logger.info('Tribes', `Published ${totalPublished} tribe events to relays`);
 }
 
 // ============================================================
@@ -2336,6 +2336,11 @@ export class TribeManager {
         await this.loadMembers();
         await this.renderCurrentView(container);
       } else {
+        // Even if no diff, ensure assignments are in sync with members
+        applyRelayFetchResult(this.adapter.getBrowserItems(), result.categoryAssignments, result.categories);
+        this.membersCache.clear();
+        await this.loadMembers();
+        await this.renderCurrentView(container);
         ToastService.show('Already up to date with relays', 'info');
       }
     } catch (error) {

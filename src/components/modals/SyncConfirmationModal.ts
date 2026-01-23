@@ -29,9 +29,11 @@ export interface SyncConfirmationOptions<T> {
   getDisplayName: (item: T) => string | Promise<string>;
   /** Optional: Function to render item as HTML (for mentions with avatar) */
   renderItemHtml?: (item: T) => string | Promise<string>;
-  /** Callback when user chooses "Keep local items" (merge strategy) */
+  /** Callback when user chooses "Keep local items" (keep local, ignore relay changes) */
   onKeep: () => void;
-  /** Callback when user chooses "Delete here too" (overwrite strategy) */
+  /** Callback when user chooses "Merge both" (combine local + relay, then sync back) */
+  onMerge?: () => void;
+  /** Callback when user chooses "Overwrite" (replace local with relay) */
   onDelete: () => void;
 }
 
@@ -224,6 +226,11 @@ export class SyncConfirmationModal<T> {
           <button type="button" class="btn btn--passive" id="sync-keep-btn">
             Keep actual state
           </button>
+          ${this.options.onMerge ? `
+          <button type="button" class="btn btn--primary" id="sync-merge-btn">
+            Merge both
+          </button>
+          ` : ''}
           <button type="button" class="btn btn--danger" id="sync-delete-btn">
             Overwrite with ${sourceLabel} backup
           </button>
@@ -296,6 +303,7 @@ export class SyncConfirmationModal<T> {
    */
   private setupEventHandlers(): void {
     const keepBtn = document.getElementById('sync-keep-btn');
+    const mergeBtn = document.getElementById('sync-merge-btn');
     const deleteBtn = document.getElementById('sync-delete-btn');
 
     if (!keepBtn || !deleteBtn) {
@@ -308,7 +316,7 @@ export class SyncConfirmationModal<T> {
       return;
     }
 
-    // Keep button (merge strategy)
+    // Keep button (keep local, ignore relay changes)
     keepBtn.addEventListener('click', () => {
       this.modalService.hide();
       this.options.onKeep();
@@ -318,7 +326,19 @@ export class SyncConfirmationModal<T> {
       }
     });
 
-    // Delete button (overwrite strategy)
+    // Merge button (combine both and sync back to relays)
+    if (mergeBtn && this.options.onMerge) {
+      mergeBtn.addEventListener('click', () => {
+        this.modalService.hide();
+        this.options.onMerge!();
+        if (this.resolvePromise) {
+          this.resolvePromise();
+          this.resolvePromise = null;
+        }
+      });
+    }
+
+    // Delete button (overwrite with relay)
     deleteBtn.addEventListener('click', () => {
       this.modalService.hide();
       this.options.onDelete();
