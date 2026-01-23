@@ -1628,6 +1628,7 @@ export class FollowListManager {
 
       // Render container with sticky header, controls and list
       container.innerHTML = `
+        ${this.renderControlButtons()}
         <div class="follows-header">
           <div class="follows-stats">
             Following: ${this.totalFollowing} | Mutuals: <span class="mutual-count">...</span> (<span class="mutual-percentage">...</span>%)
@@ -1637,7 +1638,6 @@ export class FollowListManager {
             <span class="follows-check-changes__last-check">Last: ${lastCheckText}</span>
           </div>
         </div>
-        ${this.renderControlButtons()}
         <div class="follows-sort-controls">
           <a href="#" class="follows-sort-controls__load-all">Load all</a>
           <span class="follows-sort-controls__sort">

@@ -31,7 +31,13 @@
   }
 }
 
-.nip51-inspector-loading,
+.nip51-inspector-loading {
+  text-align: center;
+  padding: $gap * 3;
+  color: $color-5;
+  animation: pulsate 2.5s ease-in-out infinite;
+}
+
 .nip51-inspector-error,
 .nip51-inspector-empty {
   text-align: center;

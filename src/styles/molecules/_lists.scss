@@ -22,7 +22,9 @@
 .bookmarks-loading,
 .follows-loading,
 .follows-list-loading,
-.mutes-loading {
+.mutes-loading,
+.mute-list-loading,
+.tribes-loading {
   padding: calc($gap * 2);
   text-align: center;
   color: $color-5;

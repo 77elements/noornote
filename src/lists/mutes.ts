@@ -1400,10 +1400,7 @@ export class MuteListManager {
 
   public async renderListTab(content: HTMLElement): Promise<void> {
     content.innerHTML = `
-      <div class="list-loading">
-        <div class="spinner"></div>
-        <p>Loading mute list...</p>
-      </div>
+      <div class="mute-list-loading">Loading mute list...</div>
     `;
 
     try {

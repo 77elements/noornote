@@ -170,6 +170,12 @@ html.layout--phone {
     height: calc(100% - 120px);
     overflow: hidden;
     position: relative;
+
+    @include desktop {
+      .tab-content {
+        padding-right: calc($gap / 2);
+      }
+    }
   }
 
   @include custom-scrollbar;
