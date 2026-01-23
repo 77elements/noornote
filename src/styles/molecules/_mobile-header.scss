@@ -1,0 +1,70 @@
+/**
+ * Mobile Header & Sidebar Overlay
+ * Only visible in phone layout mode
+ */
+
+@use '../abstracts/variables' as *;
+
+// Mobile header (hamburger menu)
+.mobile-header {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  background: $color-1;
+  border-bottom: 1px solid $color-2;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  padding: 0 $gap;
+
+  .nn-logo {
+    font-size: 27px;
+  }
+
+  &__hamburger {
+    position: absolute;
+    left: $gap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: $color-5;
+    padding: 0;
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    &:hover {
+      color: $color-4;
+    }
+  }
+}
+
+// Sidebar overlay - only visible in mobile mode when sidebar is open
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: $overlay-bg;
+  z-index: 199;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+
+  &--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}

@@ -1088,7 +1088,7 @@ export class MainLayout {
       </main>
 
       <aside class="secondary-content">
-        <div class="secondary-user">
+        <div class="user-login-bar">
           <!-- User status will be mounted here -->
         </div>
         <div id="sidebar-tabs" class="tabs">
@@ -1162,7 +1162,7 @@ export class MainLayout {
     });
 
     // Mount in secondary user area
-    const secondaryUser = this.element.querySelector('.secondary-user');
+    const secondaryUser = this.element.querySelector('.user-login-bar');
     if (secondaryUser) {
       secondaryUser.innerHTML = '';
       secondaryUser.appendChild(this.userStatus.getElement());
@@ -1272,7 +1272,7 @@ export class MainLayout {
       this.userStatus = null;
     }
 
-    const secondaryUser = this.element.querySelector('.secondary-user');
+    const secondaryUser = this.element.querySelector('.user-login-bar');
     if (secondaryUser) {
       secondaryUser.innerHTML = '';
       // Re-mount AuthComponent to show Login button again
@@ -1292,9 +1292,9 @@ export class MainLayout {
    * Initialize content areas
    */
   private initializeContent(): void {
-    // Mount auth component in secondary-user (top right - Login/Logout)
+    // Mount auth component in user-login-bar (top right - Login/Logout)
     this.authComponent = new AuthComponent(this);
-    const secondaryUser = this.element.querySelector('.secondary-user');
+    const secondaryUser = this.element.querySelector('.user-login-bar');
     if (secondaryUser) {
       secondaryUser.appendChild(this.authComponent.getElement());
     }
