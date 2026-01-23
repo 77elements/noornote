@@ -1414,7 +1414,7 @@ export class MuteListManager {
           <div class="list-empty">
             <p>No muted users or threads</p>
           </div>
-        ` + renderListSyncButtons();
+        `;
         this.bindSyncButtons(content);
         return;
       }
@@ -1444,8 +1444,6 @@ export class MuteListManager {
           </div>
         `;
       }
-
-      html += renderListSyncButtons();
 
       content.innerHTML = html;
       this.bindSyncButtons(content);

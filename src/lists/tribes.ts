@@ -1544,7 +1544,6 @@ export class TribeManager {
       ${this.renderHeader(folder)}
       ${isInFolder ? this.renderBreadcrumb(folder) : ''}
       <div class="grid-3-col"></div>
-      ${this.renderSyncControls()}
     `;
 
     // Bind sync buttons

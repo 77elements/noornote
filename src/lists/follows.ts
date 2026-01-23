@@ -1611,7 +1611,7 @@ export class FollowListManager {
           <div class="follows-list-empty-state">
             <p>No follows yet</p>
           </div>
-        ` + this.renderControlButtons();
+        `;
         this.bindSyncButtons(container);
         return;
       }
@@ -1656,7 +1656,6 @@ export class FollowListManager {
           </label>
         </div>
         <div class="follows-list"></div>
-        ${this.renderControlButtons()}
         <div class="mutual-changes-modal" style="display: none;"></div>
       `;
 

@@ -8,6 +8,7 @@
 
 import { EventBus } from '../services/EventBus';
 import { ToastService } from '../services/ToastService';
+import { PlatformService } from '../services/PlatformService';
 
 export type ListSyncMode = 'manual' | 'easy';
 
@@ -78,18 +79,34 @@ export function bindSwitchSyncModeLink(container: HTMLElement, onSwitch: () => v
 
 export function renderListSyncButtons(): string {
   const mode = getListSyncMode();
+  const isTauri = PlatformService.getInstance().isTauri;
 
   if (mode === 'easy') {
-    return `
-      <div class="list-sync-controls list-sync-controls--easy">
-        <button class="btn btn--mini btn--passive save-to-file-btn">
-          Save to File
-        </button>
-      </div>
-      <p class="list-sync-info list-sync-info--easy">
-        Easy Mode: Changes are automatically synced to your local backup and relays. <a href="#" class="switch-sync-mode-link">Switch to manual mode</a>
-      </p>
-    `;
+    if (isTauri) {
+      // Desktop: local backup + relays
+      return `
+        <div class="list-sync-controls list-sync-controls--easy">
+          <button class="btn btn--mini btn--passive save-to-file-btn">
+            Backup list to file
+          </button>
+        </div>
+        <p class="list-sync-info list-sync-info--easy">
+          Easy Mode: Changes are automatically synced to your local backup and relays. <a href="#" class="switch-sync-mode-link">Switch to manual mode</a>
+        </p>
+      `;
+    } else {
+      // Web/Phone: relays only
+      return `
+        <div class="list-sync-controls list-sync-controls--easy">
+          <button class="btn btn--mini btn--passive save-to-file-btn">
+            Backup list to file
+          </button>
+        </div>
+        <p class="list-sync-info list-sync-info--easy">
+          Easy Mode: Changes are automatically synced to and from relays. <a href="#" class="switch-sync-mode-link">Switch to manual mode</a>
+        </p>
+      `;
+    }
   }
 
   // Manual Mode (default)

@@ -2420,7 +2420,6 @@ export class BookmarkManager {
       ${this.renderHeader(folder)}
       ${isInFolder ? this.renderBreadcrumb(folder) : ''}
       <div class="grid-3-col"></div>
-      ${this.renderSyncControls()}
     `;
 
     this.bindSyncButtons(container);
