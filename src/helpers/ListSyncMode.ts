@@ -82,31 +82,17 @@ export function renderListSyncButtons(): string {
   const isTauri = PlatformService.getInstance().isTauri;
 
   if (mode === 'easy') {
-    if (isTauri) {
-      // Desktop: local backup + relays
-      return `
-        <div class="list-sync-controls list-sync-controls--easy">
-          <button class="btn btn--mini btn--passive save-to-file-btn">
-            Backup list to file
-          </button>
-        </div>
-        <p class="list-sync-info list-sync-info--easy">
-          Easy Mode: Changes are automatically synced to your local backup and relays. <a href="#" class="switch-sync-mode-link">Switch to manual mode</a>
-        </p>
-      `;
-    } else {
-      // Web/Phone: relays only
-      return `
-        <div class="list-sync-controls list-sync-controls--easy">
-          <button class="btn btn--mini btn--passive save-to-file-btn">
-            Backup list to file
-          </button>
-        </div>
-        <p class="list-sync-info list-sync-info--easy">
-          Easy Mode: Changes are automatically synced to and from relays. <a href="#" class="switch-sync-mode-link">Switch to manual mode</a>
-        </p>
-      `;
-    }
+    const syncText = isTauri
+      ? 'Easy Mode: Changes are automatically synced to your local backup and relays.'
+      : 'Easy Mode: Changes are automatically synced to and from relays.';
+
+    return `
+      <p class="list-sync-info list-sync-info--easy">
+        ${syncText}
+        <br>
+        <a href="#" class="save-to-file-btn">Backup list to file</a> | <a href="#" class="switch-sync-mode-link">Switch to manual mode</a>
+      </p>
+    `;
   }
 
   // Manual Mode (default)

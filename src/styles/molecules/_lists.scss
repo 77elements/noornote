@@ -54,10 +54,13 @@
   padding-bottom: calc($gap / 2);
   margin: 0;
   @extend %small;
-  line-height: 1.4;
   color: $color-3;
   text-align: left;
   border-bottom: 1px solid $color-2;
+
+  &--easy {
+    padding: $gap 0;
+  }
 }
 
 // ========================================
