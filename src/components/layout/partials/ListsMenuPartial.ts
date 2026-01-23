@@ -27,7 +27,7 @@ export class ListsMenuPartial {
 
   constructor(config: ListsMenuConfig) {
     this.config = config;
-    this.easterEggUnlocked = localStorage.getItem(STORAGE_KEY) === 'true';
+    this.easterEggUnlocked = sessionStorage.getItem(STORAGE_KEY) === 'true';
   }
 
   /**
@@ -161,7 +161,7 @@ export class ListsMenuPartial {
    */
   private unlockEasterEgg(): void {
     this.easterEggUnlocked = true;
-    localStorage.setItem(STORAGE_KEY, 'true');
+    sessionStorage.setItem(STORAGE_KEY, 'true');
 
     // Show the menu item
     const nip51Item = this.element?.querySelector('.nip51-inspector-item') as HTMLElement;
