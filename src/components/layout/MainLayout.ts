@@ -172,9 +172,15 @@ export class MainLayout {
       }
     }
 
-    // Listen for list:open events from Settings → Privacy links
-    this.eventBus.on('list:open', (data: { listType: ListType }) => {
-      this.openListTab(data.listType);
+    // Listen for list:open events from Settings → Privacy links and ProfileView
+    this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string }) => {
+      // Check if this is an external user's follows (not current user)
+      const currentUser = this.authService.getCurrentUser();
+      if (data.listType === 'follows' && data.pubkey && currentUser?.pubkey !== data.pubkey) {
+        this.openExternalFollowsTab(data.pubkey);
+      } else {
+        this.openListTab(data.listType);
+      }
     });
   }
 
@@ -1569,6 +1575,133 @@ export class MainLayout {
       // Default or Right-pane mode: Render in secondary content
       this.renderListInSecondaryContent(listType);
     }
+  }
+
+  /**
+   * Open external user's follows tab (read-only view)
+   * Shows follows of another user, not the current user
+   */
+  public openExternalFollowsTab(pubkey: string): void {
+    // Import dynamically to avoid circular dependencies
+    import('../../lists/follows').then(({ ExternalFollowListManager }) => {
+      if (!this.layoutService.isSecondaryVisible()) {
+        this.renderExternalFollowsInPrimaryContent(pubkey, ExternalFollowListManager);
+      } else {
+        this.renderExternalFollowsInSecondaryContent(pubkey, ExternalFollowListManager);
+      }
+    });
+  }
+
+  /**
+   * Render external follows in secondary content
+   */
+  private renderExternalFollowsInSecondaryContent(pubkey: string, ExternalFollowListManager: any): void {
+    // Close existing list tab if any
+    if (this.currentListView) {
+      this.currentListView.destroy();
+      this.currentListView = null;
+    }
+
+    // Clear active state on list sublinks
+    this.clearActiveListSublinks();
+
+    // Create manager instance
+    const externalManager = new ExternalFollowListManager(pubkey);
+
+    // Create new list view
+    this.currentListView = new ListViewPartial({
+      type: 'follows',
+      title: 'Following',
+      onClose: () => this.closeListTab(),
+      onRender: (container) => {
+        externalManager.renderListTab(container);
+      }
+    });
+
+    // Insert tab and content into DOM (scc)
+    const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
+    const tabsContainer = this.element.querySelector('#sidebar-tabs');
+    const contentBody = this.element.querySelector('.secondary-content-body');
+
+    if (secondaryContent && tabsContainer && contentBody) {
+      const tab = this.currentListView.createTab();
+      const content = this.currentListView.createContent();
+
+      tabsContainer.appendChild(tab);
+      contentBody.appendChild(content);
+
+      // Setup tab click handler
+      tab.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.tab__close')) {
+          return;
+        }
+        deactivateAllTabs(secondaryContent);
+        this.currentListView?.activate();
+        this.viewTabManager?.deactivateCurrentViewTab();
+      });
+
+      // Activate the new tab
+      deactivateAllTabs(secondaryContent);
+      this.currentListView.activate();
+      this.viewTabManager?.deactivateCurrentViewTab();
+
+      // Render content
+      this.currentListView.renderContent();
+    }
+  }
+
+  /**
+   * Render external follows in primary content (wide mode)
+   */
+  private renderExternalFollowsInPrimaryContent(pubkey: string, ExternalFollowListManager: any): void {
+    const primaryContent = this.element.querySelector('.primary-content');
+    if (!primaryContent) return;
+
+    primaryContent.innerHTML = '';
+
+    // Create manager instance
+    const externalManager = new ExternalFollowListManager(pubkey);
+
+    // Create container for list
+    const listContainer = document.createElement('div');
+    listContainer.className = 'list-view-primary';
+
+    // Add header with title and back button
+    const header = document.createElement('div');
+    header.className = 'list-view-primary__header';
+
+    const backBtn = document.createElement('button');
+    backBtn.className = 'list-view-primary__back btn btn--passive';
+    backBtn.innerHTML = '← Back';
+    backBtn.addEventListener('click', () => {
+      history.back();
+    });
+
+    const title = document.createElement('h2');
+    title.className = 'list-view-primary__title';
+    title.textContent = 'Following';
+
+    header.appendChild(backBtn);
+    header.appendChild(title);
+
+    // Create content container
+    const contentContainer = document.createElement('div');
+    contentContainer.className = 'list-view-primary__content tab-content tab-content--active';
+
+    listContainer.appendChild(header);
+    listContainer.appendChild(contentContainer);
+    primaryContent.appendChild(listContainer);
+
+    // Render content
+    externalManager.renderListTab(contentContainer);
+  }
+
+  /**
+   * Clear active state on all list sublinks
+   */
+  private clearActiveListSublinks(): void {
+    const sublinks = this.element.querySelectorAll('.lists-menu__sublink');
+    sublinks.forEach(link => link.classList.remove('lists-menu__sublink--active'));
   }
 
   /**

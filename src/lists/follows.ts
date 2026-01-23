@@ -30,6 +30,7 @@ import { switchTabWithContent } from '../helpers/TabsHelper';
 import { renderListSyncButtons, bindSwitchSyncModeLink } from '../helpers/ListSyncMode';
 import { PlatformService } from '../services/PlatformService';
 import { UserProfileService } from '../services/UserProfileService';
+import { UserService } from '../services/UserService';
 import { MutualService } from '../services/MutualService';
 import { MutualChangeDetector } from '../services/MutualChangeDetector';
 import { MutualChangeStorage } from './MutualChangeStorage';
@@ -2346,5 +2347,380 @@ export class FollowListManager {
       return '<span class="article-notif-label">(Article alerts)</span>';
     }
     return '';
+  }
+}
+
+// ============================================================
+// EXTERNAL FOLLOW LIST MANAGER (read-only view for other users)
+// ============================================================
+
+/**
+ * Follow item with profile for external user view
+ */
+interface ExternalFollowItemWithProfile {
+  pubkey: string;
+  profile: UserProfile;
+  isFollowedByMe: boolean;
+}
+
+/**
+ * ExternalFollowListManager
+ * Displays follows of another user (not the current user)
+ * Simplified read-only view without sync features
+ *
+ * Features:
+ * - Total count display
+ * - Filter by name
+ * - Follow button (for users not already followed)
+ *
+ * NOT included:
+ * - Unfollow button (can't unfollow someone else's follows)
+ * - Mutuals display
+ * - Zap stats
+ * - Sort by options
+ * - Load all link
+ * - Sync buttons
+ */
+export class ExternalFollowListManager {
+  private targetPubkey: string;
+  private userService: UserService;
+  private userProfileService: UserProfileService;
+  private authService: AuthService;
+  private router: Router;
+  private containerElement: HTMLElement | null = null;
+  private allItemsWithProfiles: ExternalFollowItemWithProfile[] = [];
+  private currentOffset: number = 0;
+  private hasMore: boolean = true;
+  private isLoading: boolean = false;
+  private infiniteScroll: InfiniteScroll | null = null;
+  private usernameFilter: string = '';
+  private readonly BATCH_SIZE: number = 20;
+
+  constructor(targetPubkey: string) {
+    this.targetPubkey = targetPubkey;
+    this.userService = UserService.getInstance();
+    this.userProfileService = UserProfileService.getInstance();
+    this.authService = AuthService.getInstance();
+    this.router = Router.getInstance();
+  }
+
+  /**
+   * Render list tab content
+   */
+  public async renderListTab(container: HTMLElement): Promise<void> {
+    this.containerElement = container;
+
+    // Reset state
+    this.allItemsWithProfiles = [];
+    this.currentOffset = 0;
+    this.hasMore = true;
+    this.isLoading = false;
+    this.usernameFilter = '';
+
+    // Cleanup existing infinite scroll
+    if (this.infiniteScroll) {
+      this.infiniteScroll.destroy();
+      this.infiniteScroll = null;
+    }
+
+    // Show loading state
+    container.innerHTML = `
+      <div class="follows-list-loading">
+        Loading follows...
+      </div>
+    `;
+
+    try {
+      // Fetch follows from relay
+      const followPubkeys = await this.userService.getUserFollowing(this.targetPubkey);
+
+      if (followPubkeys.length === 0) {
+        container.innerHTML = `
+          <div class="follows-list-empty-state">
+            <p>This user doesn't follow anyone yet</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Get profile of target user for title
+      const targetProfile = await this.userProfileService.getUserProfile(this.targetPubkey);
+      const targetName = extractDisplayName(targetProfile);
+
+      // Get my follows to check which users I already follow
+      const myFollows = new Set(getFollowItems().map(f => f.pubkey));
+
+      // Fetch profiles for all followed users
+      const itemsWithProfiles: ExternalFollowItemWithProfile[] = await Promise.all(
+        followPubkeys.map(async (pubkey) => ({
+          pubkey,
+          profile: await this.userProfileService.getUserProfile(pubkey),
+          isFollowedByMe: myFollows.has(pubkey)
+        }))
+      );
+
+      // Store all items
+      this.allItemsWithProfiles = itemsWithProfiles;
+
+      // Render container
+      container.innerHTML = `
+        <div class="external-follows-header">
+          <div class="external-follows-stats">
+            <strong>${targetName}</strong> follows ${itemsWithProfiles.length} ${itemsWithProfiles.length === 1 ? 'user' : 'users'}
+          </div>
+          <input type="text"
+                 class="external-follows-search"
+                 placeholder="Filter by name..." />
+        </div>
+        <div class="follows-list external-follows-list"></div>
+      `;
+
+      // Bind filter input
+      const searchInput = container.querySelector('.external-follows-search') as HTMLInputElement;
+      searchInput?.addEventListener('input', () => {
+        this.usernameFilter = searchInput.value.toLowerCase();
+        this.reRenderList();
+      });
+
+      const list = container.querySelector('.follows-list');
+      if (!list) return;
+
+      // Load first batch
+      await this.loadBatch(list as HTMLElement);
+
+      // Setup infinite scroll if there are more items
+      if (this.hasMore) {
+        this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
+          loadingMessage: 'Loading more...'
+        });
+        this.infiniteScroll.observe(list as HTMLElement);
+      }
+    } catch (error) {
+      console.error('Failed to load external follows:', error);
+      container.innerHTML = `
+        <div class="follows-list-empty-state">
+          <p>Failed to load follows</p>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * Handle infinite scroll load more
+   */
+  private async handleLoadMore(): Promise<void> {
+    const list = this.containerElement?.querySelector('.follows-list');
+    if (!list || this.isLoading || !this.hasMore) return;
+    await this.loadBatch(list as HTMLElement);
+  }
+
+  /**
+   * Load batch of items
+   */
+  private async loadBatch(listElement: HTMLElement): Promise<void> {
+    if (this.isLoading || !this.hasMore) return;
+
+    this.isLoading = true;
+
+    if (this.currentOffset > 0 && this.infiniteScroll) {
+      this.infiniteScroll.showLoading();
+    }
+
+    try {
+      // Filter items based on username filter
+      const filteredItems = this.usernameFilter
+        ? this.allItemsWithProfiles.filter(item => {
+            const username = extractDisplayName(item.profile).toLowerCase();
+            return username.includes(this.usernameFilter);
+          })
+        : this.allItemsWithProfiles;
+
+      // Get next batch
+      const batch = filteredItems.slice(
+        this.currentOffset,
+        this.currentOffset + this.BATCH_SIZE
+      );
+
+      if (batch.length === 0) {
+        this.hasMore = false;
+        if (this.infiniteScroll) {
+          this.infiniteScroll.hideLoading();
+        }
+        return;
+      }
+
+      // Render batch
+      this.renderBatch(listElement, batch);
+
+      // Update offset
+      this.currentOffset += batch.length;
+
+      // Check if there are more items
+      if (this.currentOffset >= filteredItems.length) {
+        this.hasMore = false;
+      }
+    } finally {
+      this.isLoading = false;
+      if (this.infiniteScroll) {
+        this.infiniteScroll.hideLoading();
+      }
+    }
+  }
+
+  /**
+   * Render batch of items
+   */
+  private renderBatch(listElement: HTMLElement, batch: ExternalFollowItemWithProfile[]): void {
+    const sentinel = listElement.querySelector('.infinite-scroll-sentinel');
+
+    for (const item of batch) {
+      const itemEl = this.createFollowItemElement(item);
+
+      if (sentinel) {
+        listElement.insertBefore(itemEl, sentinel);
+      } else {
+        listElement.appendChild(itemEl);
+      }
+    }
+  }
+
+  /**
+   * Create follow item DOM element
+   */
+  private createFollowItemElement(item: ExternalFollowItemWithProfile): HTMLElement {
+    const username = extractDisplayName(item.profile);
+    const npub = hexToNpub(item.pubkey);
+    const avatarUrl = item.profile?.picture || '';
+    const currentUser = this.authService.getCurrentUser();
+    const isMe = currentUser?.pubkey === item.pubkey;
+
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'ui-list__item follow-item external-follow-item';
+    itemDiv.dataset.pubkey = item.pubkey;
+
+    // Determine button state
+    let buttonHtml = '';
+    if (!isMe && currentUser) {
+      if (item.isFollowedByMe) {
+        buttonHtml = `<span class="external-follow-item__status">Following</span>`;
+      } else {
+        buttonHtml = `
+          <button class="external-follow-item__follow-btn btn btn--medium" data-pubkey="${item.pubkey}">
+            Follow
+          </button>
+        `;
+      }
+    }
+
+    itemDiv.innerHTML = `
+      <div class="follow-item__content-wrapper">
+        <div class="follow-item__avatar">
+          <img class="profile-pic profile-pic--medium" src="${this.escapeHtml(avatarUrl)}" alt="${this.escapeHtml(username)}" />
+        </div>
+        <div class="follow-item__info">
+          <div class="follow-item__username">${this.escapeHtml(username)}</div>
+        </div>
+      </div>
+      ${buttonHtml}
+    `;
+
+    // Navigate to profile on click
+    const contentWrapper = itemDiv.querySelector('.follow-item__content-wrapper');
+    contentWrapper?.addEventListener('click', () => {
+      this.router.navigate(`/profile/${npub}`);
+    });
+
+    // Handle follow button
+    const followBtn = itemDiv.querySelector('.external-follow-item__follow-btn');
+    followBtn?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await this.handleFollow(item, itemDiv);
+    });
+
+    return itemDiv;
+  }
+
+  /**
+   * Handle follow action
+   */
+  private async handleFollow(item: ExternalFollowItemWithProfile, itemElement: HTMLElement): Promise<void> {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return;
+
+    const followBtn = itemElement.querySelector('.external-follow-item__follow-btn') as HTMLButtonElement;
+    if (!followBtn) return;
+
+    try {
+      followBtn.disabled = true;
+      followBtn.textContent = 'Following...';
+
+      // Add follow
+      followUser(item.pubkey, false);
+
+      // Update item state
+      item.isFollowedByMe = true;
+
+      // Replace button with status text
+      followBtn.replaceWith(this.createStatusElement());
+
+      ToastService.show('Followed (local)', 'success');
+      eventBus.emit('follow:updated', {});
+    } catch (error) {
+      console.error('Failed to follow:', error);
+      ToastService.show('Failed to follow', 'error');
+      followBtn.disabled = false;
+      followBtn.textContent = 'Follow';
+    }
+  }
+
+  /**
+   * Create "Following" status element
+   */
+  private createStatusElement(): HTMLElement {
+    const span = document.createElement('span');
+    span.className = 'external-follow-item__status';
+    span.textContent = 'Following';
+    return span;
+  }
+
+  /**
+   * Re-render list (for filter changes)
+   */
+  private reRenderList(): void {
+    const list = this.containerElement?.querySelector('.follows-list');
+    if (!list) return;
+
+    // Clear list but keep sentinel
+    const sentinel = list.querySelector('.infinite-scroll-sentinel');
+    list.innerHTML = '';
+    if (sentinel) {
+      list.appendChild(sentinel);
+    }
+
+    // Reset offset
+    this.currentOffset = 0;
+    this.hasMore = true;
+
+    // Load first batch with filter
+    this.loadBatch(list as HTMLElement);
+  }
+
+  /**
+   * Escape HTML
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
+   * Cleanup
+   */
+  public destroy(): void {
+    if (this.infiniteScroll) {
+      this.infiniteScroll.destroy();
+      this.infiniteScroll = null;
+    }
   }
 }

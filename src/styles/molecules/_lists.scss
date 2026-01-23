@@ -318,3 +318,54 @@
     letter-spacing: 0.05em;
   }
 }
+
+// ========================================
+// External Follows List (read-only view)
+// ========================================
+.external-follows-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc($gap / 2) $gap;
+  padding: $gap 0;
+  border-bottom: 1px solid $color-2;
+}
+
+.external-follows-stats {
+  @extend %small;
+  color: $color-5;
+}
+
+.external-follows-search {
+  flex: 1;
+  min-width: 150px;
+  max-width: 250px;
+  padding: calc($gap / 2);
+  border: 1px solid $color-2;
+  border-radius: $radius-sm;
+  background: transparent;
+  color: $color-5;
+  @extend %small;
+
+  &::placeholder {
+    color: $color-3;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-4;
+  }
+}
+
+.external-follow-item {
+  &__status {
+    @extend %small;
+    color: $color-3;
+    padding: calc($gap / 4) calc($gap / 2);
+  }
+
+  &__follow-btn {
+    flex-shrink: 0;
+  }
+}

@@ -637,7 +637,11 @@ export class ProfileView extends View {
     followingLink.parentNode?.replaceChild(newLink, followingLink);
 
     newLink.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: 'follows' });
+      // Pass pubkey to show this profile's follows (not own follows)
+      EventBus.getInstance().emit('list:open', {
+        listType: 'follows',
+        pubkey: this.pubkey
+      });
     });
   }
 
