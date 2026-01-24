@@ -221,7 +221,8 @@ export class ThreadManager {
     }
 
     if (depth > 0) {
-      noteElement.style.marginLeft = `${depth * 1.5}rem`;
+      const cappedDepth = Math.min(depth, 7);
+      noteElement.style.marginLeft = `${cappedDepth * 1.5}rem`;
       noteElement.classList.add(`reply-depth-${Math.min(depth, 5)}`);
     }
 
