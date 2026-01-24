@@ -203,6 +203,11 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.eventBus.on('hashtag:new-posts', (data: { hashtag: string; count: number; latestEvent: NostrEvent }) => {
       this.handleHashtagNotification(data);
     });
+
+    // Listen for thread mute changes (Hell Thread protection)
+    this.eventBus.on('mute:thread:updated', () => {
+      this.refreshMutedUsers();
+    });
   }
 
   /**
