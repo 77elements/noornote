@@ -25,6 +25,7 @@ import { TribeManager } from '../../lists/tribes';
 import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
+import { HamburgerBadgeManager } from './managers/HamburgerBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
@@ -63,6 +64,7 @@ export class MainLayout {
   private tribeManager: TribeManager | null = null;
   private nip51InspectorManager: Nip51InspectorManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
+  private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
   private currentListView: ListViewPartial | null = null;
   private viewTabManager: ViewTabManager | null = null;
@@ -154,6 +156,12 @@ export class MainLayout {
     const dmBadgeElement = this.element.querySelector('.dm-badge') as HTMLElement;
     if (dmBadgeElement) {
       new DMBadgeManager(dmBadgeElement);
+    }
+
+    // Initialize HamburgerBadgeManager (phone mode notification dot)
+    const hamburgerBadgeElement = this.element.querySelector('.hamburger-badge') as HTMLElement;
+    if (hamburgerBadgeElement) {
+      this.hamburgerBadgeManager = new HamburgerBadgeManager(hamburgerBadgeElement);
     }
 
     // Initialize Lists Menu (Sidebar Accordion)
@@ -951,6 +959,7 @@ export class MainLayout {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12h18M3 6h18M3 18h18"/>
           </svg>
+          <span class="hamburger-badge"></span>
         </button>
         <span class="nn-logo">NoorNote</span>
       </header>
@@ -1911,6 +1920,10 @@ export class MainLayout {
 
     if (this.badgeManager) {
       this.badgeManager.destroy();
+    }
+
+    if (this.hamburgerBadgeManager) {
+      this.hamburgerBadgeManager.destroy();
     }
 
     if (this.userStatus) {
