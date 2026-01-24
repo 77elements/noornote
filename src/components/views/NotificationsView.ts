@@ -61,6 +61,11 @@ export class NotificationsView extends View {
     this.notificationsOrch.onNewNotification((notification) => {
       this.handleNewNotification(notification);
     });
+
+    // Listen for mute-filtered notifications (refresh list when threads are muted)
+    this.eventBus.on('notifications:filtered', () => {
+      this.resetAndReload();
+    });
   }
 
   /**

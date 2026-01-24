@@ -755,9 +755,37 @@ function escapeHtml(text: string): string {
 // MUTE STORAGE ADAPTER (self-contained, no external dependencies)
 // ============================================================
 
+// Prefixes for distinguishing users and threads in string[] format
+const USER_PREFIX = 'p:';
+const THREAD_PREFIX = 'e:';
+
+/**
+ * Encode a MuteItem to a prefixed string for sync operations
+ */
+function encodeMuteItem(item: MuteItem): string {
+  return item.type === 'user' ? `${USER_PREFIX}${item.id}` : `${THREAD_PREFIX}${item.id}`;
+}
+
+/**
+ * Decode a prefixed string back to type and id
+ */
+function decodeMuteItem(encoded: string): { type: 'user' | 'thread'; id: string } | null {
+  if (encoded.startsWith(USER_PREFIX)) {
+    return { type: 'user', id: encoded.slice(USER_PREFIX.length) };
+  }
+  if (encoded.startsWith(THREAD_PREFIX)) {
+    return { type: 'thread', id: encoded.slice(THREAD_PREFIX.length) };
+  }
+  // Legacy format (no prefix) - treat as user pubkey
+  if (encoded.length === 64 && /^[0-9a-f]+$/i.test(encoded)) {
+    return { type: 'user', id: encoded };
+  }
+  return null;
+}
+
 /**
  * Storage adapter for mute sync operations
- * Only exposes USER mutes (not threads) as string[] for compatibility
+ * Supports both users (p:) and threads (e:) via prefixed string format
  */
 export class MuteStorageAdapter {
   getItemId(item: string): string {
@@ -765,28 +793,57 @@ export class MuteStorageAdapter {
   }
 
   getBrowserItems(): string[] {
-    return getAllMutedUsers();
+    const items = getMuteItems();
+    return items.map(encodeMuteItem);
   }
 
   setBrowserItems(items: string[]): void {
     const existingItems = getMuteItems();
-    const existingUserMap = new Map<string, MuteItem>(
-      existingItems.filter(i => i.type === 'user').map(i => [i.id, i])
+    const existingMap = new Map<string, MuteItem>(
+      existingItems.map(i => [encodeMuteItem(i), i])
     );
 
-    const threads = existingItems.filter(i => i.type === 'thread');
-    const users = items.map(pubkey =>
-      existingUserMap.get(pubkey) ?? { type: 'user' as const, id: pubkey, isPrivate: false, addedAt: now() }
-    );
+    const newItems: MuteItem[] = items.map(encoded => {
+      // Preserve existing item properties (isPrivate, addedAt) if available
+      const existing = existingMap.get(encoded);
+      if (existing) return existing;
 
-    setMuteItems([...threads, ...users]);
+      const decoded = decodeMuteItem(encoded);
+      if (!decoded) return null;
+
+      return {
+        type: decoded.type,
+        id: decoded.id,
+        isPrivate: false,
+        addedAt: now()
+      };
+    }).filter((item): item is MuteItem => item !== null);
+
+    setMuteItems(newItems);
   }
 
   async getFileItems(): Promise<string[]> {
     try {
       const publicData = await readPublicMutesFile();
       const privateData = await readPrivateMutesFile();
-      return [...publicData.items, ...privateData.items];
+
+      const items: string[] = [];
+      // Users from items field
+      for (const pubkey of publicData.items) {
+        items.push(`${USER_PREFIX}${pubkey}`);
+      }
+      for (const pubkey of privateData.items) {
+        items.push(`${USER_PREFIX}${pubkey}`);
+      }
+      // Threads from eventIds field
+      for (const eventId of publicData.eventIds) {
+        items.push(`${THREAD_PREFIX}${eventId}`);
+      }
+      for (const eventId of privateData.eventIds) {
+        items.push(`${THREAD_PREFIX}${eventId}`);
+      }
+
+      return items;
     } catch (error) {
       logger.error('MuteStorageAdapter', `Failed to read from file: ${error}`);
       throw error;
@@ -805,11 +862,10 @@ export class MuteStorageAdapter {
   async fetchFromRelays(): Promise<{ items: string[]; relayContentWasEmpty: boolean }> {
     try {
       const result = await fetchFromRelays();
-      const userPubkeys = result.items
-        .filter(item => item.type === 'user')
-        .map(item => item.id);
+      // Encode all items (users AND threads) with prefixes
+      const encodedItems = result.items.map(encodeMuteItem);
 
-      return { items: userPubkeys, relayContentWasEmpty: result.relayContentWasEmpty };
+      return { items: encodedItems, relayContentWasEmpty: result.relayContentWasEmpty };
     } catch (error) {
       logger.error('MuteStorageAdapter', `Failed to fetch from relays: ${error}`);
       throw error;
@@ -831,7 +887,7 @@ export class MuteStorageAdapter {
     const browserItems = this.getBrowserItems();
     const diff = calculateSyncDiff(browserItems, fetchResult.items);
 
-    // Use full state comparison
+    // Use full state comparison (now includes threads)
     const requiresConfirmation = hasMuteDifference(browserItems, fetchResult.items);
 
     return {
@@ -855,7 +911,7 @@ export class MuteStorageAdapter {
     const browserItems = this.getBrowserItems();
     const diff = calculateSyncDiff(browserItems, fileItems);
 
-    // Use full state comparison
+    // Use full state comparison (now includes threads)
     return { requiresConfirmation: hasMuteDifference(browserItems, fileItems), diff, fileItems };
   }
 

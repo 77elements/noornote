@@ -15,6 +15,9 @@ export interface Profile {
 
 export type ProfileResolver = (hexPubkey: string) => Profile | null;
 
+// Threshold for switching to simple mention mode (no profile pics)
+const SIMPLE_MENTION_THRESHOLD = 20;
+
 /**
  * MODE 1 (Simple): npub → username string
  * MODE 2 (HTML Single): npub → <a>@username</a>
@@ -114,13 +117,34 @@ function escapeHtmlAttribute(text: string): string {
 }
 
 /**
- * Build mention HTML with profile picture
+ * Build mention HTML with profile picture (full mode)
  */
 function buildMentionHTML(npub: string, username: string, picture?: string, isLoading = false): string {
   const avatarSrc = picture ? escapeHtmlAttribute(picture) : '';
   const escapedUsername = escapeHtml(username);
   const attrs = isLoading ? 'data-mention data-loading' : 'data-mention';
   return `<a href="/profile/${npub}" ${attrs} class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${avatarSrc}" alt="" />${escapedUsername}</a>`;
+}
+
+/**
+ * Build simple mention HTML without profile picture (for hell threads with many mentions)
+ */
+function buildSimpleMentionHTML(npub: string, username: string): string {
+  const escapedUsername = escapeHtml(username);
+  return `<a href="/profile/${npub}" class="mention-link">@${escapedUsername}</a>`;
+}
+
+/**
+ * Count mentions in text (npub + nprofile)
+ */
+function countMentions(text: string): number {
+  const nprofileRegex = /(nostr:)?(nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi;
+  const npubRegex = /(nostr:)?(npub1[023456789acdefghjklmnpqrstuvwxyz]{58})(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi;
+
+  const nprofileMatches = text.match(nprofileRegex) || [];
+  const npubMatches = text.match(npubRegex) || [];
+
+  return nprofileMatches.length + npubMatches.length;
 }
 
 /**
@@ -131,6 +155,10 @@ function npubToUsernameHTMLMulti(
   profileResolver: ProfileResolver
 ): string {
   let text = htmlText;
+
+  // Count mentions to decide rendering mode
+  const mentionCount = countMentions(text);
+  const useSimpleMode = mentionCount > SIMPLE_MENTION_THRESHOLD;
 
   // Step 1: Handle nprofile (with or without nostr: prefix)
   // Use capturing groups to get full match
@@ -146,10 +174,14 @@ function npubToUsernameHTMLMulti(
 
       if (profile?.name || profile?.display_name) {
         const username = profile.name || profile.display_name;
-        return buildMentionHTML(npub, username!, profile.picture);
+        return useSimpleMode
+          ? buildSimpleMentionHTML(npub, username!)
+          : buildMentionHTML(npub, username!, profile.picture);
       } else {
         // Fallback: show loading placeholder until profile loads
-        return buildMentionHTML(npub, '...', undefined, true);
+        return useSimpleMode
+          ? buildSimpleMentionHTML(npub, '...')
+          : buildMentionHTML(npub, '...', undefined, true);
       }
     } catch (_error) {
       // Fail gracefully - return original text without logging
@@ -179,10 +211,14 @@ function npubToUsernameHTMLMulti(
 
       if (profile?.name || profile?.display_name) {
         const username = profile.name || profile.display_name;
-        return buildMentionHTML(npub, username!, profile.picture);
+        return useSimpleMode
+          ? buildSimpleMentionHTML(npub, username!)
+          : buildMentionHTML(npub, username!, profile.picture);
       } else {
         // Fallback: show loading placeholder until profile loads
-        return buildMentionHTML(npub, '...', undefined, true);
+        return useSimpleMode
+          ? buildSimpleMentionHTML(npub, '...')
+          : buildMentionHTML(npub, '...', undefined, true);
       }
     } catch (_error) {
       // Fail gracefully - return original text without logging

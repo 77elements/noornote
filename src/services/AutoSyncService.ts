@@ -646,8 +646,24 @@ export class AutoSyncService {
         }
 
         case 'mutes': {
-          const pubkey = item as string;
-          const profile = await this.userProfileService.getUserProfile(pubkey);
+          const encoded = item as string;
+          // Handle prefixed format: p:pubkey for users, e:eventid for threads
+          if (encoded.startsWith('p:')) {
+            const pubkey = encoded.slice(2);
+            const profile = await this.userProfileService.getUserProfile(pubkey);
+            return extractDisplayName(profile);
+          }
+          if (encoded.startsWith('e:')) {
+            const eventId = encoded.slice(2);
+            const noteService = NoteService.getInstance();
+            const event = await noteService.getNote(eventId);
+            if (event?.content) {
+              return `Thread: ${event.content.slice(0, 40)}...`;
+            }
+            return `Thread: ${eventId.slice(0, 12)}...`;
+          }
+          // Legacy format (no prefix) - treat as pubkey
+          const profile = await this.userProfileService.getUserProfile(encoded);
           return extractDisplayName(profile);
         }
 
@@ -680,9 +696,24 @@ export class AutoSyncService {
         case 'tribes':
           pubkey = (item as TribeMember).pubkey;
           break;
-        case 'mutes':
-          pubkey = item as string;
+        case 'mutes': {
+          const encoded = item as string;
+          // Handle prefixed format: p:pubkey for users, e:eventid for threads
+          if (encoded.startsWith('p:')) {
+            pubkey = encoded.slice(2);
+          } else if (encoded.startsWith('e:')) {
+            // Threads don't have avatars - return text-only display
+            const eventId = encoded.slice(2);
+            const noteService = NoteService.getInstance();
+            const event = await noteService.getNote(eventId);
+            const content = event?.content?.slice(0, 40) || eventId.slice(0, 12);
+            return `<span class="sync-item-thread">🔇 Thread: ${this.escapeHtml(content)}...</span>`;
+          } else {
+            // Legacy format (no prefix) - treat as pubkey
+            pubkey = encoded;
+          }
           break;
+        }
         case 'bookmarks':
           return ''; // Bookmarks don't have user mentions
       }
@@ -697,6 +728,15 @@ export class AutoSyncService {
     } catch {
       return '';
     }
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 }
 

@@ -898,6 +898,9 @@ export class NotificationsOrchestrator extends Orchestrator {
         !this.isEventInMutedThread(n.event) &&
         !this.isNotificationTargetInMutedThread(n.event)
       );
+
+      // Notify UI to refresh (NotificationsView listens for this)
+      this.eventBus.emit('notifications:filtered');
     }
   }
 
