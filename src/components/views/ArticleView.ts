@@ -13,6 +13,8 @@ import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrche
 import { ReactionsOrchestrator } from '../../services/orchestration/ReactionsOrchestrator';
 import { AnalyticsModal } from '../analytics/AnalyticsModal';
 import { getAddressableIdentifier } from '../../helpers/getAddressableIdentifier';
+import { npubToUsername } from '../../helpers/npubToUsername';
+import { ContentProcessor } from '../../services/ContentProcessor';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
 
@@ -237,10 +239,24 @@ export class ArticleView {
       });
 
       // Parse markdown to HTML
-      const html = marked.parse(content) as string;
+      let html = marked.parse(content) as string;
 
       // Add rel for security - global handler in App.ts opens external links
-      return html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
+      html = html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
+
+      // Convert npub/nprofile mentions to profile links
+      const contentProcessor = ContentProcessor.getInstance();
+      const profileResolver = (hexPubkey: string) => {
+        const profile = contentProcessor.getNonBlockingProfile(hexPubkey);
+        return profile ? {
+          name: profile.name,
+          display_name: profile.display_name,
+          picture: profile.picture
+        } : null;
+      };
+      html = npubToUsername(html, 'html-multi', profileResolver);
+
+      return html;
     } catch (_error) {
       console.error('Failed to render markdown:', _error);
       // Fallback: return escaped plain text

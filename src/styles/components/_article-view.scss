@@ -63,17 +63,6 @@
     }
   }
 
-  // Links
-  a {
-    color: $color-4;
-    text-decoration: underline;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: color.adjust($color-4, $lightness: 10%);
-    }
-  }
-
   // Bold and italic
   strong {
     font-weight: 600;
