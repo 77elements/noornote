@@ -23,6 +23,29 @@ export default defineConfig({
       'Pragma': 'no-cache',
       'Expires': '0',
     },
+    // Proxy for media uploads to bypass CORS in development
+    proxy: {
+      '/proxy/blossom.nostr.build': {
+        target: 'https://blossom.nostr.build',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy\/blossom\.nostr\.build/, ''),
+      },
+      '/proxy/nostr.build': {
+        target: 'https://nostr.build',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy\/nostr\.build/, ''),
+      },
+      '/proxy/blossom.band': {
+        target: 'https://blossom.band',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy\/blossom\.band/, ''),
+      },
+      '/proxy/blossom.primal.net': {
+        target: 'https://blossom.primal.net',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy\/blossom\.primal\.net/, ''),
+      },
+    },
   },
 
   // Build configuration

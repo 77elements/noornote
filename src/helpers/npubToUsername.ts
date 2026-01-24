@@ -128,10 +128,12 @@ function buildMentionHTML(npub: string, username: string, picture?: string, isLo
 
 /**
  * Build simple mention HTML without profile picture (for hell threads with many mentions)
+ * Same as buildMentionHTML but without img and background
  */
-function buildSimpleMentionHTML(npub: string, username: string): string {
+function buildSimpleMentionHTML(npub: string, username: string, isLoading = false): string {
   const escapedUsername = escapeHtml(username);
-  return `<a href="/profile/${npub}" class="mention-link">@${escapedUsername}</a>`;
+  const attrs = isLoading ? 'data-mention data-loading' : 'data-mention';
+  return `<a href="/profile/${npub}" ${attrs} class="mention-link">@${escapedUsername}</a>`;
 }
 
 /**
@@ -178,9 +180,9 @@ function npubToUsernameHTMLMulti(
           ? buildSimpleMentionHTML(npub, username!)
           : buildMentionHTML(npub, username!, profile.picture);
       } else {
-        // Fallback: show loading placeholder until profile loads
+        // Fallback: show loading placeholder, will be updated by ContentProcessor.updateMentionsInDOM
         return useSimpleMode
-          ? buildSimpleMentionHTML(npub, '...')
+          ? buildSimpleMentionHTML(npub, '...', true)
           : buildMentionHTML(npub, '...', undefined, true);
       }
     } catch (_error) {
@@ -215,9 +217,9 @@ function npubToUsernameHTMLMulti(
           ? buildSimpleMentionHTML(npub, username!)
           : buildMentionHTML(npub, username!, profile.picture);
       } else {
-        // Fallback: show loading placeholder until profile loads
+        // Fallback: show loading placeholder, will be updated by ContentProcessor.updateMentionsInDOM
         return useSimpleMode
-          ? buildSimpleMentionHTML(npub, '...')
+          ? buildSimpleMentionHTML(npub, '...', true)
           : buildMentionHTML(npub, '...', undefined, true);
       }
     } catch (_error) {
