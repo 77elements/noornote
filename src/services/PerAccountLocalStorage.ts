@@ -167,16 +167,13 @@ export class PerAccountLocalStorage {
 
   /**
    * Set value for specific pubkey
+   * @throws QuotaExceededError if localStorage is full (caller must handle!)
    */
   public setForPubkey<T>(key: StorageKey, pubkey: string, value: T): void {
-    try {
-      const mapStr = localStorage.getItem(key);
-      const map = mapStr ? JSON.parse(mapStr) as Record<string, T> : {};
-      map[pubkey] = value;
-      localStorage.setItem(key, JSON.stringify(map));
-    } catch (e) {
-      console.error('PerAccountLocalStorage.set failed:', e);
-    }
+    const mapStr = localStorage.getItem(key);
+    const map = mapStr ? JSON.parse(mapStr) as Record<string, T> : {};
+    map[pubkey] = value;
+    localStorage.setItem(key, JSON.stringify(map));
   }
 
   /**
