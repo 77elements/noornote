@@ -56,12 +56,9 @@ export class AppBadgeService {
       try {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         this.tauriWindow = getCurrentWindow();
-        console.log('[AppBadgeService] Tauri window initialized:', !!this.tauriWindow);
-      } catch (err) {
-        console.error('[AppBadgeService] Failed to init Tauri window:', err);
+      } catch {
+        // Tauri API not available
       }
-    } else {
-      console.log('[AppBadgeService] Not in Tauri, skipping dock badge');
     }
   }
 
@@ -127,11 +124,7 @@ export class AppBadgeService {
 
     // Tauri macOS: Update dock badge
     if (this.tauriWindow) {
-      const badgeValue = count > 0 ? count : null;
-      console.log('[AppBadgeService] Setting dock badge:', badgeValue);
-      this.tauriWindow.setBadgeCount(badgeValue).catch((err: Error) => {
-        console.error('[AppBadgeService] setBadgeCount failed:', err);
-      });
+      this.tauriWindow.setBadgeCount(count > 0 ? count : null).catch(() => {});
     }
   }
 
