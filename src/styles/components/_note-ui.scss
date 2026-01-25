@@ -356,40 +356,13 @@
     flex-wrap: wrap;
   }
 
-  &__sender {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 4);
-  }
-
-  &__avatar {
-    width: 24px;
-    height: 24px;
-    border-radius: $radius-full;
-    object-fit: cover;
-    background: $color-3;
-
-    &--placeholder {
-      background: linear-gradient(135deg, $color-3, $color-4);
-    }
-  }
-
-  &__name {
-    color: $color-5;
-    font-weight: 500;
-
-    &:hover {
-      color: $color-4;
-      text-decoration: underline;
-    }
-
-    &--recipient {
-      color: rgba($color-5, 0.8);
-    }
-  }
-
   &__arrow {
     color: rgba($color-5, 0.5);
+  }
+
+  &__anonymous {
+    color: rgba($color-5, 0.6);
+    font-style: italic;
   }
 
   &__message {

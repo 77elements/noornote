@@ -5,8 +5,8 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { UserProfileService } from '../../../services/UserProfileService';
-import { Router } from '../../../services/Router';
-import { encodeNpub } from '../../../services/NostrToolsAdapter';
+import { renderUserMention, setupUserMentionHandlers } from '../../../helpers/UserMentionHelper';
+import { escapeHtml } from '../../../helpers/escapeHtml';
 
 export class ZapReceiptRenderer {
   private static profileService = UserProfileService.getInstance();
@@ -27,16 +27,26 @@ export class ZapReceiptRenderer {
     // Format amount with thousand separators
     const formattedAmount = zapData.amountSats.toLocaleString();
 
-    // Get sender profile
-    const senderProfile = zapData.senderPubkey
-      ? ZapReceiptRenderer.profileService.getCachedProfile(zapData.senderPubkey)
-      : null;
-    const senderName = senderProfile?.display_name || senderProfile?.name || 'Anonymous';
-    const senderPicture = senderProfile?.picture || '';
+    // Get sender profile and render mention
+    let senderMention = '<span class="zap-receipt__anonymous">Anonymous</span>';
+    if (zapData.senderPubkey) {
+      const senderProfile = ZapReceiptRenderer.profileService.getCachedProfile(zapData.senderPubkey);
+      const senderName = senderProfile?.display_name || senderProfile?.name || 'Unknown';
+      const senderAvatar = senderProfile?.picture || '';
+      senderMention = renderUserMention(zapData.senderPubkey, {
+        username: senderName,
+        avatarUrl: senderAvatar
+      }, { withBackground: false });
+    }
 
-    // Get recipient profile
+    // Get recipient profile and render mention
     const recipientProfile = ZapReceiptRenderer.profileService.getCachedProfile(zapData.recipientPubkey);
     const recipientName = recipientProfile?.display_name || recipientProfile?.name || 'Unknown';
+    const recipientAvatar = recipientProfile?.picture || '';
+    const recipientMention = renderUserMention(zapData.recipientPubkey, {
+      username: recipientName,
+      avatarUrl: recipientAvatar
+    }, { withBackground: false });
 
     // Build HTML
     element.innerHTML = `
@@ -46,62 +56,18 @@ export class ZapReceiptRenderer {
           <span class="zap-receipt__amount">${formattedAmount} sats</span>
         </div>
         <div class="zap-receipt__details">
-          <div class="zap-receipt__sender">
-            ${senderPicture ? `<img src="${senderPicture}" alt="" class="zap-receipt__avatar">` : '<div class="zap-receipt__avatar zap-receipt__avatar--placeholder"></div>'}
-            <span class="zap-receipt__name zap-receipt__name--sender" data-pubkey="${zapData.senderPubkey || ''}">${senderName}</span>
-          </div>
+          ${senderMention}
           <span class="zap-receipt__arrow">→</span>
-          <span class="zap-receipt__name zap-receipt__name--recipient" data-pubkey="${zapData.recipientPubkey}">${recipientName}</span>
+          ${recipientMention}
         </div>
-        ${zapData.message ? `<div class="zap-receipt__message">"${ZapReceiptRenderer.escapeHtml(zapData.message)}"</div>` : ''}
+        ${zapData.message ? `<div class="zap-receipt__message">"${escapeHtml(zapData.message)}"</div>` : ''}
       </div>
     `;
 
-    // Add click handlers for profile navigation
-    ZapReceiptRenderer.setupClickHandlers(element);
+    // Setup click handlers and hover cards
+    setupUserMentionHandlers(element);
 
     return element;
-  }
-
-  /**
-   * Setup click handlers for profile links
-   */
-  private static setupClickHandlers(element: HTMLElement): void {
-    const router = Router.getInstance();
-
-    element.querySelectorAll('.zap-receipt__name[data-pubkey]').forEach(el => {
-      const pubkey = (el as HTMLElement).dataset.pubkey;
-      if (pubkey) {
-        (el as HTMLElement).style.cursor = 'pointer';
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const npub = encodeNpub(pubkey);
-          router.navigate(`/profile/${npub}`);
-        });
-      }
-    });
-
-    element.querySelectorAll('.zap-receipt__avatar').forEach(el => {
-      const nameEl = el.nextElementSibling as HTMLElement;
-      const pubkey = nameEl?.dataset.pubkey;
-      if (pubkey) {
-        (el as HTMLElement).style.cursor = 'pointer';
-        el.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const npub = encodeNpub(pubkey);
-          router.navigate(`/profile/${npub}`);
-        });
-      }
-    });
-  }
-
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private static escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   /**
