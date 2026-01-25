@@ -134,7 +134,6 @@
   max-height: 400px;
   overflow-y: auto;
   padding: $gap;
-  @extend %h4;
   line-height: 1.5;
   @include custom-scrollbar;
 
