@@ -11,6 +11,7 @@ import { CrashLogger } from './services/CrashLogger';
 import './styles/main.scss';
 import './services/AuthStateManager'; // Initialize AuthStateManager and window.isLoggedIn()
 import './services/MutualChangeService'; // Initialize MutualChangeService (auto-starts on login)
+import './services/AppBadgeService'; // Initialize AppBadgeService (browser tab + dock badge)
 
 // Track failed image loads (URL → log message for removal)
 const failedImageLogs = new Map<string, string>();
