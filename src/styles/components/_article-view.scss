@@ -11,7 +11,7 @@
 // Article content wrapper
 .article-view-content {
   background: $color-1;
-  border-radius: 8px;
+  border-radius: $radius-lg;
 }
 
 // Article header section
@@ -23,7 +23,7 @@
     height: auto;
     max-height: 400px;
     object-fit: cover;
-    border-radius: 8px 8px 0 0;
+    border-radius: $radius-lg $radius-lg 0 0;
     margin-bottom: $gap;
   }
 
@@ -36,7 +36,6 @@
   }
 
   .article-summary {
-    @extend %h2;
     line-height: 1.6;
     color: rgba($color-5, 0.8);
     margin: 0 0 calc($gap * 1.5) 0;
@@ -52,8 +51,6 @@
 
 // Article body (markdown content)
 .article-body {
-  @extend %h3;
-  line-height: 1.8;
   color: $color-5;
   margin-bottom: calc($gap * 2);
 
@@ -63,17 +60,6 @@
 
     &:last-child {
       margin-bottom: 0;
-    }
-  }
-
-  // Links
-  a {
-    color: $color-4;
-    text-decoration: underline;
-    transition: color 0.2s ease;
-
-    &:hover {
-      color: color.adjust($color-4, $lightness: 10%);
     }
   }
 
@@ -91,7 +77,7 @@
   code {
     background: $color-2;
     padding: calc($gap / 4) calc($gap / 2);
-    border-radius: 4px;
+    border-radius: $radius-base;
     font-family: $font-family-mono;
     font-size: 0.9em;
   }
@@ -99,7 +85,7 @@
   pre {
     background: $color-2;
     padding: $gap;
-    border-radius: 6px;
+    border-radius: $radius-md;
     overflow-x: auto;
     margin: $gap 0;
 
@@ -132,7 +118,7 @@
   img {
     max-width: 100%;
     height: auto;
-    border-radius: 6px;
+    border-radius: $radius-md;
     margin: $gap 0;
   }
 
@@ -155,7 +141,7 @@
     height: 40px;
     border: 4px solid $color-3;
     border-top-color: $color-4;
-    border-radius: 50%;
+    border-radius: $radius-full;
     animation: spin 0.8s linear infinite;
   }
 

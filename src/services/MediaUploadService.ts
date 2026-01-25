@@ -12,6 +12,7 @@
 
 import { AuthService } from './AuthService';
 import { ErrorService } from './ErrorService';
+import { PlatformService } from './PlatformService';
 import { ToastService } from './ToastService';
 import { createMediaUploadAdapter, type MediaUploadAdapter } from './media';
 
@@ -31,6 +32,7 @@ type ProgressCallback = (progress: number) => void;
 export class MediaUploadService {
   private static instance: MediaUploadService;
   private authService: AuthService;
+  private platform: PlatformService;
   private mediaServerStorageKey = 'noornote_media_server';
   private uploadAdapter: MediaUploadAdapter;
 
@@ -40,6 +42,7 @@ export class MediaUploadService {
 
   private constructor() {
     this.authService = AuthService.getInstance();
+    this.platform = PlatformService.getInstance();
     this.uploadAdapter = createMediaUploadAdapter();
   }
 
@@ -56,6 +59,33 @@ export class MediaUploadService {
 
   private mapUploadProgress(adapterPercent: number): number {
     return 20 + Math.round(adapterPercent * 0.7);
+  }
+
+  /**
+   * Convert server URL to proxy URL for browser dev mode
+   * This bypasses CORS by routing through Vite's dev server proxy
+   */
+  private getProxiedUrl(serverUrl: string, path: string): string {
+    // Only use proxy in browser mode with Vite dev server
+    if (!this.platform.isBrowser || !import.meta.env.DEV) {
+      return `${serverUrl}${path}`;
+    }
+
+    // Map known servers to their proxy paths
+    const proxyMap: Record<string, string> = {
+      'https://blossom.nostr.build': '/proxy/blossom.nostr.build',
+      'https://nostr.build': '/proxy/nostr.build',
+      'https://blossom.band': '/proxy/blossom.band',
+      'https://blossom.primal.net': '/proxy/blossom.primal.net',
+    };
+
+    const proxyPath = proxyMap[serverUrl];
+    if (proxyPath) {
+      return `${proxyPath}${path}`;
+    }
+
+    // Fallback: try direct URL (might fail due to CORS)
+    return `${serverUrl}${path}`;
   }
 
   private loadMediaServerSettings(): MediaServerSettings {
@@ -155,6 +185,13 @@ export class MediaUploadService {
       const authHeader = await this.createBlossomAuth(sha256);
 
       onProgress?.(20);
+
+      // Browser mode: Use fetch with proper CORS handling
+      if (this.platform.isBrowser) {
+        return await this.uploadBlossomBrowser(file, serverUrl, authHeader, onProgress);
+      }
+
+      // Tauri mode: Use adapter (CORS bypassed)
       const response = await this.uploadAdapter.upload({
         url: `${serverUrl}/upload`,
         method: 'PUT',
@@ -179,14 +216,79 @@ export class MediaUploadService {
     }
   }
 
-  private async fetchNIP96Config(serverUrl: string): Promise<{ api_url: string } | null> {
+  /**
+   * Browser-specific Blossom upload using fetch
+   * Uses Vite proxy in dev mode to bypass CORS
+   */
+  private async uploadBlossomBrowser(
+    file: File,
+    serverUrl: string,
+    authHeader: string,
+    onProgress?: ProgressCallback
+  ): Promise<UploadResult> {
     try {
-      const response = await fetch(`${serverUrl}/.well-known/nostr/nip96.json`);
+      // Note: fetch doesn't support upload progress, so we use pseudo-progress
+      onProgress?.(30);
+
+      const uploadUrl = this.getProxiedUrl(serverUrl, '/upload');
+
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': authHeader
+        },
+        body: file
+      });
+
+      onProgress?.(90);
+
+      if (response.ok) {
+        const descriptor = await response.json();
+        onProgress?.(100);
+        return { success: true, url: descriptor.url };
+      }
+
+      const errorText = await response.text();
+      return this.errorResult(`Upload failed: ${response.status} ${errorText || response.statusText}`);
+    } catch (error) {
+      console.error('Blossom browser upload error:', error);
+      return this.errorResult(`Upload error: ${error instanceof Error ? error.message : 'Network error - server may not support CORS'}`);
+    }
+  }
+
+  private async fetchNIP96ConfigFromUrl(url: string): Promise<{ api_url: string } | null> {
+    try {
+      const response = await fetch(url);
       if (!response.ok) return null;
       return await response.json();
     } catch (error) {
       console.warn('Failed to fetch NIP-96 config:', error);
       return null;
+    }
+  }
+
+  /**
+   * Convert an API URL to a proxied URL for browser dev mode
+   * Handles both absolute URLs and relative paths
+   */
+  private getProxiedApiUrl(serverUrl: string, apiUrl: string): string {
+    if (!this.platform.isBrowser || !import.meta.env.DEV) {
+      return apiUrl;
+    }
+
+    // If apiUrl is relative, combine with serverUrl
+    if (apiUrl.startsWith('/')) {
+      return this.getProxiedUrl(serverUrl, apiUrl);
+    }
+
+    // If apiUrl is absolute, try to extract server and path
+    try {
+      const url = new URL(apiUrl);
+      const serverBase = `${url.protocol}//${url.host}`;
+      return this.getProxiedUrl(serverBase, url.pathname + url.search);
+    } catch {
+      // If URL parsing fails, return as-is
+      return apiUrl;
     }
   }
 
@@ -222,16 +324,33 @@ export class MediaUploadService {
   ): Promise<UploadResult> {
     try {
       onProgress?.(5);
-      const config = await this.fetchNIP96Config(serverUrl);
+
+      // In browser dev mode, fetch config through proxy
+      const configUrl = this.platform.isBrowser && import.meta.env.DEV
+        ? this.getProxiedUrl(serverUrl, '/.well-known/nostr/nip96.json')
+        : `${serverUrl}/.well-known/nostr/nip96.json`;
+
+      const config = await this.fetchNIP96ConfigFromUrl(configUrl);
       const apiUrl = config?.api_url || `${serverUrl}/upload`;
 
       onProgress?.(10);
       const sha256 = await this.calculateSHA256(file);
 
       onProgress?.(15);
+      // Sign with the original apiUrl (what the server expects)
       const authHeader = await this.createNIP98Auth('POST', apiUrl, sha256);
 
       onProgress?.(20);
+
+      // Browser mode: Use native FormData with XMLHttpRequest
+      // In dev mode, route through proxy to bypass CORS
+      if (this.platform.isBrowser) {
+        // Convert apiUrl to proxied URL for the actual request
+        const proxiedApiUrl = this.getProxiedApiUrl(serverUrl, apiUrl);
+        return await this.uploadNIP96Browser(file, proxiedApiUrl, authHeader, onProgress);
+      }
+
+      // Tauri mode: manual multipart (existing behavior)
       const { body, boundary } = await this.buildMultipartBody(file, {
         content_type: file.type,
         size: file.size.toString()
@@ -265,6 +384,61 @@ export class MediaUploadService {
       console.error('NIP-96 upload error:', error);
       return this.errorResult(`Upload error: ${error instanceof Error ? error.message : error}`);
     }
+  }
+
+  /**
+   * Browser-specific NIP-96 upload using native FormData
+   * Browser sets Content-Type with boundary automatically, avoiding CORS preflight issues
+   */
+  private async uploadNIP96Browser(
+    file: File,
+    apiUrl: string,
+    authHeader: string,
+    onProgress?: ProgressCallback
+  ): Promise<UploadResult> {
+    return new Promise((resolve) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          onProgress?.(this.mapUploadProgress(percent));
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const result = JSON.parse(xhr.responseText);
+            if (result.status === 'success' && result.nip94_event) {
+              const urlTag = result.nip94_event.tags.find((t: string[]) => t[0] === 'url');
+              if (urlTag) {
+                onProgress?.(100);
+                resolve({ success: true, url: urlTag[1] });
+                return;
+              }
+            }
+            resolve(this.errorResult('No URL in upload response'));
+          } catch (e) {
+            resolve(this.errorResult('Failed to parse upload response'));
+          }
+        } else {
+          resolve(this.errorResult(`Upload failed: ${xhr.status} ${xhr.statusText}`));
+        }
+      };
+
+      xhr.onerror = () => {
+        resolve(this.errorResult('Network error - server may not support CORS'));
+      };
+
+      xhr.open('POST', apiUrl);
+      xhr.setRequestHeader('Authorization', authHeader);
+      // DO NOT set Content-Type - browser sets it automatically with correct boundary
+      xhr.send(formData);
+    });
   }
 
   public async uploadFile(file: File, onProgress?: ProgressCallback): Promise<UploadResult> {

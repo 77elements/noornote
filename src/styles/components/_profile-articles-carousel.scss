@@ -30,7 +30,7 @@
     height: 28px;
     padding: 0;
     border: none;
-    border-radius: 4px;
+    border-radius: $radius-base;
     background: $color-4;
     color: $color-1;
     cursor: pointer;
@@ -76,7 +76,7 @@
     flex: 0 0 auto;
     width: 280px;
     background: $color-2;
-    border-radius: 8px;
+    border-radius: $radius-lg;
     overflow: hidden;
     cursor: pointer;
     transition: transform 0.15s ease, box-shadow 0.15s ease;

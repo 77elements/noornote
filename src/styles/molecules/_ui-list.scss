@@ -18,7 +18,7 @@
 // List Item
 // ========================================
 .ui-list__item {
-  padding: $gap;
+  padding: $gap 0;
   border-bottom: 1px solid $color-2;
   transition: background 0.2s ease;
 

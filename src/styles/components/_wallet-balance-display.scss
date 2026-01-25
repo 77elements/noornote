@@ -19,6 +19,8 @@
   display: none; // Hidden by default, shown when NWC connected
   margin-bottom: $gap;
   position: relative;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .wallet-balance-content {

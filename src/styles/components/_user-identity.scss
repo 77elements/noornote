@@ -1,9 +1,11 @@
 /**
  * UserIdentity Component Styles
- * Username + Avatar display with size variants
+ * Avatar + Username + optional NIP-05 handle
+ * Reusable molecule for notes, DMs, and anywhere user info is shown
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .user-identity {
   display: inline-flex;
@@ -12,15 +14,32 @@
 }
 
 .user-identity__avatar {
-  border-radius: 50%;
+  border-radius: $radius-full;
   object-fit: cover;
   flex-shrink: 0;
   transition: opacity 0.3s ease; // For profile recognition blinking
 }
 
+// Info container (username + handle stacked)
+.user-identity__info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0; // Allow text truncation
+  gap: 0;
+}
+
 .user-identity__username {
-  font-weight: 500;
+  @extend %h4;
+  font-weight: 600;
   color: $color-5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-identity__handle {
+  @extend %small;
+  color: $color-3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -31,6 +50,10 @@
   .user-identity__avatar {
     width: 24px;
     height: 24px;
+  }
+
+  .user-identity__username {
+    @include h5;
   }
 }
 

@@ -1,19 +1,13 @@
 /**
  * NoteHeader Component
- * Reusable note header with profile photo, username, verification, and timestamp
- * Container-width independent with flexible layout
- * Default behavior: Click on avatar/username navigates to profile page
+ * Combines UserIdentity (avatar + name + handle) with note-specific data (timestamp + menu)
+ * Uses UserIdentity internally for profile display, eliminating code duplication
  */
 
-import { UserProfileService, UserProfile } from '../../services/UserProfileService';
-import { Router } from '../../services/Router';
-import { hexToNpub } from '../../helpers/nip19';
+import { UserIdentity, UserIdentityConfig } from '../shared/UserIdentity';
+import { UserProfileService } from '../../services/UserProfileService';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { NoteMenu } from './NoteMenu';
-import { UserHoverCard } from './UserHoverCard';
-import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
-import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
-import { AuthService } from '../../services/AuthService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface NoteHeaderOptions {
@@ -24,46 +18,48 @@ export interface NoteHeaderOptions {
   showVerification?: boolean;
   showTimestamp?: boolean;
   showMenu?: boolean;
+  showHandle?: boolean;
   onClick?: (pubkey: string) => void;
 }
 
-/** Internal options type with defaults applied (rawEvent remains optional) */
-type ResolvedNoteHeaderOptions = Required<Omit<NoteHeaderOptions, 'rawEvent'>> & Pick<NoteHeaderOptions, 'rawEvent'>;
+/** Internal options type with defaults applied */
+type ResolvedNoteHeaderOptions = Required<Omit<NoteHeaderOptions, 'rawEvent' | 'onClick'>> & Pick<NoteHeaderOptions, 'rawEvent' | 'onClick'>;
 
 export class NoteHeader {
   private element: HTMLElement;
   private userProfileService: UserProfileService;
-  private recognitionService: ProfileRecognitionService;
-  private authService: AuthService;
   private options: ResolvedNoteHeaderOptions;
-  private profile: UserProfile | null = null;
-  private unsubscribeProfile?: () => void;
+  private userIdentity: UserIdentity;
   private noteMenu?: NoteMenu;
-  private blinker: ProfileBlinker | null = null;
-  private nameBlinker: TextBlinker | null = null;
+  private unsubscribeProfile?: () => void;
 
   constructor(options: NoteHeaderOptions) {
     this.userProfileService = UserProfileService.getInstance();
-    this.recognitionService = ProfileRecognitionService.getInstance();
-    this.authService = AuthService.getInstance();
-
-    // Default onClick: Navigate to profile page
-    const defaultOnClick = (pubkey: string) => {
-      const router = Router.getInstance();
-      const npub = hexToNpub(pubkey);
-      router.navigate(`/profile/${npub}`);
-    };
 
     this.options = {
       showVerification: true,
       showTimestamp: true,
       showMenu: true,
-      onClick: defaultOnClick,
+      showHandle: true,
       ...options
     };
 
+    const identityConfig: UserIdentityConfig = {
+      pubkey: this.options.pubkey,
+      size: 'medium',
+      showAvatar: true,
+      showUsername: true,
+      showHandle: this.options.showHandle,
+      enableHoverCard: true,
+      clickable: true
+    };
+    if (this.options.onClick) {
+      identityConfig.onClick = this.options.onClick;
+    }
+    this.userIdentity = new UserIdentity(identityConfig);
+
     this.element = this.createElement();
-    this.loadProfile();
+    this.setupVerification();
   }
 
   /**
@@ -71,41 +67,37 @@ export class NoteHeader {
    */
   private createElement(): HTMLElement {
     const header = document.createElement('div');
-    header.className = 'note-header note-header--clickable';
-    header.addEventListener('click', (e) => {
-      e.stopPropagation(); // Prevent parent note click handler
-      this.options.onClick(this.options.pubkey);
-    });
+    header.className = 'note-header';
 
-    // NO whitespace between tags - prevents invisible text nodes causing spacing issues
-    // Note: Display name will be populated when profile loads
-    header.innerHTML = `<div class="note-header__avatar"><img class="profile-pic profile-pic--medium" src="" alt="Avatar" loading="lazy" /></div><div class="note-header__info"><div class="note-header__primary-line"><span class="note-header__display-name"><span class="note-header__display-name-trigger"></span></span>${this.options.showVerification ? '<span class="note-header__verification" style="display: none;">✓</span>' : ''}${this.options.showTimestamp ? `<time class="note-header__timestamp">${formatTimestamp(this.options.timestamp)}</time>` : ''}${this.options.showMenu ? '<span class="note-header__menu-container"></span>' : ''}</div><div class="note-header__handle"></div></div>`;
+    // User identity section (avatar + name + handle)
+    const userSection = document.createElement('div');
+    userSection.className = 'note-header__user';
+    userSection.appendChild(this.userIdentity.getElement());
+    header.appendChild(userSection);
 
-    // User hover card - only on avatar and display name trigger
-    const hoverCard = UserHoverCard.getInstance();
-    const avatar = header.querySelector('.note-header__avatar');
-    const displayNameTrigger = header.querySelector('.note-header__display-name-trigger');
+    // Note meta section (timestamp + verification + menu)
+    const metaSection = document.createElement('div');
+    metaSection.className = 'note-header__meta';
 
-    if (avatar) {
-      avatar.addEventListener('mouseenter', () => {
-        hoverCard.show(this.options.pubkey, header);
-      });
-      avatar.addEventListener('mouseleave', () => {
-        hoverCard.hide();
-      });
+    if (this.options.showVerification) {
+      const verification = document.createElement('span');
+      verification.className = 'note-header__verification';
+      verification.style.display = 'none';
+      verification.textContent = '✓';
+      metaSection.appendChild(verification);
     }
 
-    if (displayNameTrigger) {
-      displayNameTrigger.addEventListener('mouseenter', () => {
-        hoverCard.show(this.options.pubkey, header);
-      });
-      displayNameTrigger.addEventListener('mouseleave', () => {
-        hoverCard.hide();
-      });
+    if (this.options.showTimestamp) {
+      const timestamp = document.createElement('time');
+      timestamp.className = 'note-header__timestamp';
+      timestamp.innerHTML = formatTimestamp(this.options.timestamp);
+      metaSection.appendChild(timestamp);
     }
 
-    // Create and mount NoteMenu if enabled
     if (this.options.showMenu) {
+      const menuContainer = document.createElement('span');
+      menuContainer.className = 'note-header__menu-container';
+
       const menuOptions: { eventId: string; authorPubkey: string; rawEvent?: NostrEvent } = {
         eventId: this.options.eventId,
         authorPubkey: this.options.pubkey
@@ -114,148 +106,40 @@ export class NoteHeader {
         menuOptions.rawEvent = this.options.rawEvent;
       }
       this.noteMenu = new NoteMenu(menuOptions);
+      menuContainer.appendChild(this.noteMenu.getTrigger());
 
-      const menuContainer = header.querySelector('.note-header__menu-container');
-      if (menuContainer) {
-        menuContainer.appendChild(this.noteMenu.getTrigger());
-      }
+      metaSection.appendChild(menuContainer);
     }
+
+    header.appendChild(metaSection);
 
     return header;
   }
 
   /**
-   * Load user profile and update display (reactive pattern like nostr-react)
+   * Setup verification badge (subscribes to profile for NIP-05 verification)
    */
-  private async loadProfile(): Promise<void> {
-    // Hide header until profile loads (like Jumble)
-    this.element.style.opacity = '0';
-    this.element.style.pointerEvents = 'none';
+  private setupVerification(): void {
+    if (!this.options.showVerification) return;
 
-    // Subscribe to profile updates (reactive like useProfile hook)
     this.unsubscribeProfile = this.userProfileService.subscribeToProfile(
       this.options.pubkey,
-      (profile: UserProfile) => {
-        this.profile = profile;
-        this.updateDisplay();
-        // Show header when profile loaded
-        this.element.style.opacity = '1';
-        this.element.style.pointerEvents = 'auto';
+      (profile) => {
+        const verification = this.element.querySelector('.note-header__verification') as HTMLElement;
+        if (!verification) return;
+
+        if (this.userProfileService.isVerified(profile)) {
+          const nip05s = profile.nip05s && profile.nip05s.length > 0
+            ? profile.nip05s
+            : (profile.nip05 ? [profile.nip05] : []);
+          verification.style.display = 'inline-flex';
+          verification.setAttribute('title', `Verified: ${nip05s.join(', ')}`);
+        } else {
+          verification.style.display = 'none';
+        }
       }
     );
-
-    // Trigger initial load
-    try {
-      await this.userProfileService.getUserProfile(this.options.pubkey);
-    } catch (error) {
-      console.warn(`Failed to load profile for note header: ${this.options.pubkey}`, error);
-    }
   }
-
-  /**
-   * Update display with loaded profile
-   */
-  private updateDisplay(): void {
-    if (!this.profile) return;
-
-    // Extract display name from profile (no cache, direct from profile object)
-    const displayName = this.profile.display_name || this.profile.name || this.profile.username || 'Anon';
-    const picture = this.profile.picture || '';
-
-    const avatarImg = this.element.querySelector('.profile-pic--medium') as HTMLImageElement;
-    const displayNameTrigger = this.element.querySelector('.note-header__display-name-trigger') as HTMLElement;
-    const handle = this.element.querySelector('.note-header__handle') as HTMLElement | null;
-    const verification = this.element.querySelector('.note-header__verification') as HTMLElement | null;
-
-    // Don't apply profile recognition to your own profile
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser && currentUser.pubkey === this.options.pubkey;
-
-    // Profile Recognition logic (shared)
-    const encounter = this.recognitionService.getEncounter(this.options.pubkey);
-
-    // Update last known metadata if changed
-    if (encounter && (displayName !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl)) {
-      this.recognitionService.updateLastKnown(this.options.pubkey, displayName, picture);
-    }
-
-    // Check if should blink (but not for own profile)
-    const shouldBlink = !isOwnProfile && encounter && this.recognitionService.hasChangedWithinWindow(this.options.pubkey);
-
-    // Update avatar with blinking
-    if (avatarImg) {
-      if (shouldBlink && encounter) {
-        // Initialize blinker if needed
-        if (!this.blinker) {
-          this.blinker = new ProfileBlinker(avatarImg);
-        }
-
-        // Start blinking between current and first encounter
-        if (!this.blinker.isBlinking()) {
-          this.blinker.start(picture, encounter.firstPictureUrl);
-        }
-      } else {
-        // Stop blinking and show current pic
-        if (this.blinker && this.blinker.isBlinking()) {
-          this.blinker.stop(picture);
-        } else {
-          avatarImg.src = picture;
-        }
-      }
-
-      avatarImg.alt = displayName;
-    }
-
-    // Update display name with blinking
-    if (displayNameTrigger) {
-      if (shouldBlink && encounter) {
-        // Initialize name blinker if needed
-        if (!this.nameBlinker) {
-          this.nameBlinker = new TextBlinker(displayNameTrigger);
-        }
-
-        // Start blinking between current and first encounter
-        if (!this.nameBlinker.isBlinking()) {
-          this.nameBlinker.start(displayName, encounter.firstName);
-        }
-      } else {
-        // Stop blinking and show current name
-        if (this.nameBlinker && this.nameBlinker.isBlinking()) {
-          this.nameBlinker.stop(displayName);
-        } else {
-          displayNameTrigger.textContent = displayName;
-        }
-      }
-    }
-
-    // Update handle with NIP-05(s) if available - prefer nip05s from tags
-    if (handle) {
-      const nip05s = this.profile.nip05s && this.profile.nip05s.length > 0
-        ? this.profile.nip05s
-        : (this.profile.nip05 ? [this.profile.nip05] : []);
-
-      if (nip05s.length > 0) {
-        handle.textContent = nip05s.join(', ');
-        handle.style.display = 'block';
-      } else {
-        handle.style.display = 'none';
-      }
-    }
-
-    // Update verification
-    if (verification && this.options.showVerification) {
-      if (this.userProfileService.isVerified(this.profile)) {
-        const nip05sForTitle = this.profile.nip05s && this.profile.nip05s.length > 0
-          ? this.profile.nip05s
-          : (this.profile.nip05 ? [this.profile.nip05] : []);
-        verification.style.display = 'inline-flex';
-        verification.setAttribute('title', `Verified: ${nip05sForTitle.join(', ')}`);
-      } else {
-        verification.style.display = 'none';
-      }
-    }
-  }
-
 
   /**
    * Update timestamp (for live updates)
@@ -263,7 +147,7 @@ export class NoteHeader {
   public updateTimestamp(): void {
     const timestampEl = this.element.querySelector('.note-header__timestamp');
     if (timestampEl && this.options.showTimestamp) {
-      timestampEl.textContent = formatTimestamp(this.options.timestamp);
+      timestampEl.innerHTML = formatTimestamp(this.options.timestamp);
     }
   }
 
@@ -271,14 +155,10 @@ export class NoteHeader {
    * Update options and re-render
    */
   public updateOptions(newOptions: Partial<NoteHeaderOptions>): void {
-    this.options = { ...this.options, ...newOptions };
-
-    // If pubkey changed, reload profile
-    if (newOptions.pubkey && newOptions.pubkey !== this.options.pubkey) {
-      this.profile = null;
-      this.loadProfile();
-    } else {
-      this.updateDisplay();
+    // For now, just update timestamp if that changed
+    if (newOptions.timestamp !== undefined) {
+      this.options.timestamp = newOptions.timestamp;
+      this.updateTimestamp();
     }
   }
 
@@ -290,10 +170,10 @@ export class NoteHeader {
   }
 
   /**
-   * Get current profile
+   * Get current profile from UserIdentity
    */
-  public getProfile(): UserProfile | null {
-    return this.profile;
+  public getProfile() {
+    return this.userIdentity.getProfile();
   }
 
   /**
@@ -311,24 +191,13 @@ export class NoteHeader {
    * Cleanup resources
    */
   public destroy(): void {
-    // Unsubscribe from profile updates
     if (this.unsubscribeProfile) {
       this.unsubscribeProfile();
     }
-    // Cleanup NoteMenu
     if (this.noteMenu) {
       this.noteMenu.destroy();
     }
-    // Cleanup blinker
-    if (this.blinker) {
-      this.blinker.destroy();
-      this.blinker = null;
-    }
-    // Cleanup name blinker
-    if (this.nameBlinker) {
-      this.nameBlinker.destroy();
-      this.nameBlinker = null;
-    }
+    this.userIdentity.destroy();
     this.element.remove();
   }
 

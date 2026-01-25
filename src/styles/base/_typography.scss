@@ -6,85 +6,89 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// Base font-size: responsive 16px (mobile) → 20px (large screens)
+// Body inherits browser default (16px)
 body {
-  font-size: clamp(1rem, 2vw, 1.25rem);
   line-height: 1;
 }
 
-// Heading placeholders for @extend (use outside media queries)
+// ========================================
+// Headings (fixed sizes, all breakpoints)
+// h1: 27px, h2: 23px, h3: 19px, h4: 16px, h5/h6: 14px
+// Placeholders are margin-free (for components)
+// HTML elements get margin (for prose/content)
+// ========================================
 %heading-base {
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.5;
 }
 
 %h1 {
   @extend %heading-base;
-  font-size: clamp(1.5rem, 4vw, 2.25rem);    // 24px → 36px
+  font-size: 27px;
 }
 
 %h2 {
   @extend %heading-base;
-  font-size: clamp(1.25rem, 3vw, 1.75rem);   // 20px → 28px
+  font-size: 23px;
 }
 
 %h3 {
   @extend %heading-base;
-  font-size: clamp(1.125rem, 2.5vw, 1.5rem); // 18px → 24px
+  font-size: 19px;
 }
 
 %h4 {
   @extend %heading-base;
-  font-size: clamp(1rem, 2vw, 1.25rem);      // 16px → 20px
+  font-size: 16px;
 }
 
 %h5 {
   @extend %heading-base;
-  font-size: clamp(0.875rem, 1.5vw, 1.125rem); // 14px → 18px
+  font-size: 14px;
 }
 
 %h6 {
-  @extend %h5; // Same as h5
+  @extend %h5;
 }
 
 // Heading mixins for use inside media queries
-@mixin h1 { font-size: clamp(1.5rem, 4vw, 2.25rem); }
-@mixin h2 { font-size: clamp(1.25rem, 3vw, 1.75rem); }
-@mixin h3 { font-size: clamp(1.125rem, 2.5vw, 1.5rem); }
-@mixin h4 { font-size: clamp(1rem, 2vw, 1.25rem); }
-@mixin h5 { font-size: clamp(0.875rem, 1.5vw, 1.125rem); }
+@mixin h1 { font-size: 27px; }
+@mixin h2 { font-size: 23px; }
+@mixin h3 { font-size: 19px; }
+@mixin h4 { font-size: 16px; }
+@mixin h5 { font-size: 14px; }
 @mixin h6 { @include h5; }
 
-// Heading elements + utility classes
-h1, .h1 { @extend %h1; }
-h2, .h2 { @extend %h2; }
-h3, .h3 { @extend %h3; }
-h4, .h4 { @extend %h4; }
-h5, .h5 { @extend %h5; }
-h6, .h6 { @extend %h6; }
+// Heading elements + utility classes (with margin for prose/content)
+h1, .h1 { @extend %h1; margin-bottom: $gap; }
+h2, .h2 { @extend %h2; margin-bottom: $gap; }
+h3, .h3 { @extend %h3; margin-bottom: $gap; }
+h4, .h4 { @extend %h4; margin-bottom: $gap; }
+h5, .h5 { @extend %h5; margin-bottom: $gap; }
+h6, .h6 { @extend %h6; margin-bottom: $gap; }
 
-// Small text - placeholder for @extend (use outside media queries)
+// ========================================
+// Small & Mini text (fixed sizes)
+// Small: 12px, Mini: 9px
+// ========================================
 %small {
-  font-size: clamp(0.6875rem, 1.25vw, 0.9375rem); // 11px → 15px
+  font-size: 12px;
 }
 
-// Small text - mixin for use inside media queries
 @mixin small {
-  font-size: clamp(0.6875rem, 1.25vw, 0.9375rem); // 11px → 15px
+  font-size: 12px;
 }
 
 small, .small {
   @extend %small;
 }
 
-// Mini text - placeholder for @extend (use outside media queries)
 %mini {
-  font-size: clamp(0.5625rem, 1vw, 0.8125rem); // 9px → 13px
+  font-size: 9px;
 }
 
-// Mini text - mixin for use inside media queries
 @mixin mini {
-  font-size: clamp(0.5625rem, 1vw, 0.8125rem); // 9px → 13px
+  font-size: 9px;
 }
 
 .mini {
@@ -94,7 +98,6 @@ small, .small {
 // Paragraph styles
 p, li {
   margin-bottom: $gap;
-  color: var(--color-text-primary);
   line-height: 1.5;
 
   &:last-child {
@@ -134,13 +137,11 @@ dl {
 
 dt {
   font-weight: 600;
-  color: var(--color-text-primary);
   margin-bottom: calc($gap / 4);
 }
 
 dd {
   margin-bottom: $gap;
-  color: var(--color-text-secondary);
   margin-left: $gap;
 
   &:last-child {
@@ -152,7 +153,6 @@ dd {
 strong,
 b {
   font-weight: 600;
-  color: var(--color-text-primary);
 }
 
 em,
@@ -162,7 +162,6 @@ i {
 
 mark {
   background-color: rgba($color-warning, 0.2);
-  color: var(--color-text-primary);
   padding: 0 calc($gap / 4);
   border-radius: $radius-sm;
 }
@@ -171,22 +170,20 @@ mark {
 code {
   font-family: $font-family-mono;
   font-size: 0.875em;
-  background-color: var(--color-surface);
-  color: inherit;
+  background-color: $color-2;
   padding: calc($gap / 4) calc($gap / 2);
   border-radius: $radius-sm;
-  border: 1px solid var(--color-border);
+  border: 1px solid $color-2;
 }
 
 pre {
   font-family: $font-family-mono;
   font-size: 14px;
   line-height: 1.5;
-  background-color: var(--color-surface);
-  color: var(--color-text-primary);
+  background-color: $color-2;
   padding: $gap;
   border-radius: $radius-lg;
-  border: 1px solid var(--color-border);
+  border: 1px solid $color-2;
   overflow-x: auto;
   margin-bottom: $gap;
 
@@ -200,10 +197,8 @@ pre {
 
 // Blockquotes
 blockquote {
-  @extend %h3;
   line-height: 1.5;
-  color: var(--color-text-secondary);
-  border-left: 4px solid $color-4;
+  border-left: 4px solid $color-3;
   padding-left: $gap;
   margin: $gap * 1.5 0;
   font-style: italic;
@@ -216,7 +211,6 @@ blockquote {
     display: block;
     font-size: 14px;
     font-style: normal;
-    color: var(--color-text-tertiary);
     margin-top: calc($gap / 2);
 
     &::before {
@@ -229,7 +223,7 @@ blockquote {
 hr {
   border: none;
   height: 1px;
-  background-color: var(--color-border);
+  background-color: $color-2;
   margin: $gap * 2 0;
 }
 

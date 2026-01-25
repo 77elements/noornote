@@ -20,18 +20,15 @@
 .quote-preview {
   margin: $gap 0;
   padding: $gap;
-  background: var(--color-bg-secondary);
   border-left: 3px solid $color-4;
-  border-radius: 4px;
+  border-radius: $radius-base;
   max-width: 100%;
 
   &__loading,
   &__error {
-    color: var(--color-text-secondary);
   }
 
   &__error {
-    color: var(--color-error);
   }
 
   &__header {
@@ -40,11 +37,9 @@
 
   &__author {
     font-weight: 600;
-    color: var(--color-text);
   }
 
   &__content {
-    color: var(--color-text-secondary);
     line-height: 1.4;
     max-height: calc(1.4em * 3); // 3 lines
     overflow: hidden;
@@ -58,7 +53,6 @@
   align-items: center;
   justify-content: space-between;
   gap: $gap;
-  border-bottom: 1px solid var(--color-border);
 }
 
 // Relay Selector
@@ -72,7 +66,6 @@
 
 .relay-selector-label {
   font-weight: 500;
-  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 
@@ -84,17 +77,11 @@
 .relay-selector-trigger {
   width: 100%;
   padding: calc($gap / 2) $gap;
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  color: var(--color-text);
   cursor: pointer;
   text-align: left;
   transition: all 0.2s ease;
 
   &:hover:not(:disabled) {
-    border-color: var(--color-primary);
-    background: var(--color-bg);
   }
 
   &:disabled {
@@ -112,8 +99,6 @@
   max-height: 300px;
   overflow-y: auto;
   background: $color-2;
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
   box-shadow: $box-shadow;
   z-index: 100;
   padding: calc($gap / 2);
@@ -129,19 +114,16 @@
   gap: calc($gap / 2);
   padding: calc($gap / 2);
   cursor: pointer;
-  border-radius: var(--border-radius);
   transition: background 0.2s ease;
 
   &:hover {
-    background: var(--color-bg-secondary);
-  }
+    }
 
   input[type="checkbox"] {
     cursor: pointer;
   }
 
   span {
-    color: var(--color-text);
   }
 }
 
@@ -152,11 +134,6 @@
   max-height: 400px;
   overflow-y: auto;
   padding: $gap;
-  background: var(--color-bg);
-  border: 1px solid var(--color-border);
-  border-radius: var(--border-radius);
-  color: var(--color-text);
-  @extend %h4;
   line-height: 1.5;
   @include custom-scrollbar;
 
@@ -179,7 +156,6 @@
 }
 
 .post-note-preview-empty {
-  color: var(--color-text-secondary);
   font-style: italic;
 }
 
@@ -202,8 +178,7 @@
     background: $overlay-bg;
     color: $color-white;
     padding: calc($gap / 2) $gap;
-    border-radius: var(--border-radius);
-    @extend %small;
+      @extend %small;
     font-weight: 600;
     pointer-events: none;
   }
@@ -214,7 +189,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-gap: calc($gap / 2);
-  border-top: 1px solid var(--color-border);
   padding-bottom: $gap;
 }
 
@@ -274,10 +248,8 @@ svg.upload-progress {
   align-items: center;
   gap: calc($gap / 2);
   padding: $gap;
-  background: var(--color-primary);
   color: $color-white;
   border: none;
-  border-radius: var(--border-radius);
   @extend %h4;
   font-weight: 600;
   cursor: pointer;
@@ -289,7 +261,6 @@ svg.upload-progress {
   }
 
   &:hover {
-    background: var(--color-primary-dark);
     transform: translateY(-1px);
   }
 

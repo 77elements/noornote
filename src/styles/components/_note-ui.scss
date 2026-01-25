@@ -11,8 +11,7 @@
 // Base note card (used in all views)
 .note-card {
   margin: calc($gap / 2) 0;
-  padding: calc($gap / 2);
-  border-bottom: 1px solid $color-2;
+  padding: calc($gap / 2) calc($gap / 2) 0 calc($gap / 2);
   border-radius: 0.5rem;
   transition: background 0.2s ease;
 
@@ -44,7 +43,7 @@
     .reply-avatar {
       width: 18px;
       height: 18px;
-      border-radius: 50%;
+      border-radius: $radius-full;
       object-fit: cover;
       background: $color-3;
       flex-shrink: 0;
@@ -99,7 +98,7 @@
   gap: calc($gap / 2);
   padding: 0 calc($gap / 4);
   background: rgba($color-3, 0.3);
-  border-radius: calc($gap / 4);
+  border-radius: $radius-base;
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -130,6 +129,15 @@
     &.has-long-content {
       word-break: break-word;
       white-space: pre-wrap;
+    }
+
+    // Custom emojis (NIP-30)
+    .custom-emoji {
+      display: inline-block;
+      height: 1.4em;
+      width: auto;
+      vertical-align: middle;
+      margin: 0 0.05em;
     }
   }
 
@@ -180,7 +188,7 @@
   padding: calc($gap / 2) calc($gap * 0.75);
   background: rgba($color-3, 0.3);
   border: 1px solid rgba($color-4, 0.2);
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   color: $color-5;
   text-align: left;
   cursor: not-allowed;
@@ -204,7 +212,7 @@
       rgba($color-4, 0.2) 0%,
       rgba($color-4, 0.1) 100%
     );
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
     transition: width 0.3s ease;
     z-index: 0;
   }
@@ -300,9 +308,93 @@
   background: $color-red-bg;
   border: 1px solid $color-red-border;
   padding: $gap;
-  border-radius: 6px;
+  border-radius: $radius-md;
 
   .note-error {
     color: $color-red;
+  }
+}
+
+// Zap Receipt (kind 9735)
+.note-card--zap-receipt {
+  background: rgba($color-3, 0.3);
+  border: 1px solid rgba($color-4, 0.3);
+  border-radius: $radius-md;
+  padding: $gap;
+
+  &:hover {
+    background: rgba($color-3, 0.5);
+    border-color: rgba($color-4, 0.5);
+  }
+}
+
+.zap-receipt {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+  }
+
+  &__icon {
+    font-size: 1.5rem;
+  }
+
+  &__amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $color-bitcoin-orange;
+  }
+
+  &__details {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    flex-wrap: wrap;
+  }
+
+  &__arrow {
+    color: rgba($color-5, 0.5);
+  }
+
+  &__anonymous {
+    color: rgba($color-5, 0.6);
+    font-style: italic;
+  }
+
+  &__message {
+    color: rgba($color-5, 0.9);
+    font-style: italic;
+    padding-left: calc($gap / 2);
+    border-left: 2px solid rgba($color-4, 0.5);
+    margin-top: calc($gap / 4);
+  }
+
+  &--error {
+    color: rgba($color-5, 0.6);
+    text-align: center;
+  }
+}
+
+// Unsupported Kind Fallback
+.note-card--unsupported {
+  background: rgba($color-3, 0.15);
+  border: 1px dashed rgba($color-5, 0.3);
+  border-radius: $radius-md;
+  padding: $gap;
+}
+
+.unsupported-kind {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc($gap / 2);
+  text-align: center;
+
+  &__message {
+    color: rgba($color-5, 0.7);
   }
 }

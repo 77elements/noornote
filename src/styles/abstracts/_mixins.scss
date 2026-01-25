@@ -25,37 +25,59 @@
 }
 
 // ========================================
-// Responsive Mixins
+// Responsive Mixins (Mobile-First)
+// Base = Phone (0-639px), dann additive min-width
 // ========================================
 
-// Max-width breakpoints (desktop-first)
+// Primary breakpoints (USE THESE)
+@mixin tablet {
+  @media (min-width: $breakpoint-tablet) {
+    @content;
+  }
+}
+
+@mixin tablet-big {
+  @media (min-width: $breakpoint-tablet-big) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: $breakpoint-desktop) {
+    @content;
+  }
+}
+
+// ========================================
+// Legacy Mixins (für schrittweise Migration)
+// TODO: Alle Verwendungen durch neue Mixins ersetzen
+// ========================================
 @mixin mobile-down {
-  @media (max-width: $breakpoint-sm - 1px) {
+  @media (max-width: $breakpoint-tablet - 1px) {
     @content;
   }
 }
 
 @mixin tablet-down {
-  @media (max-width: $breakpoint-md - 1px) {
+  @media (max-width: $breakpoint-tablet-big - 1px) {
     @content;
   }
 }
 
 @mixin desktop-down {
-  @media (max-width: $breakpoint-lg - 1px) {
+  @media (max-width: $breakpoint-desktop - 1px) {
     @content;
   }
 }
 
-// Min-width breakpoints (mobile-first)
 @mixin tablet-up {
-  @media (min-width: $breakpoint-md) {
+  @media (min-width: $breakpoint-tablet-big) {
     @content;
   }
 }
 
 @mixin desktop-up {
-  @media (min-width: $breakpoint-lg) {
+  @media (min-width: $breakpoint-desktop) {
     @content;
   }
 }
@@ -111,7 +133,6 @@
 @mixin heading-base {
   font-weight: 600;
   line-height: 1.25;
-  color: var(--color-text-primary);
   @include font-smoothing;
 }
 
@@ -123,8 +144,8 @@
 // ========================================
 
 @mixin card-base {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background-color: $color-2;
+  border: 1px solid $color-2;
   border-radius: $radius-lg;
 }
 
@@ -159,7 +180,7 @@
 
   &::-webkit-scrollbar-thumb {
     background: color.adjust($color-2, $lightness: 15%);
-    border-radius: 4px;
+    border-radius: $radius-base;
   }
 
   &::-webkit-scrollbar-thumb:hover {

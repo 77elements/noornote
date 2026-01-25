@@ -16,7 +16,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { StorageKeys, now } from './storage';
-import { readJsonFile, writeJsonFile } from './file';
+import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
 import {
   fetchEvents, publishEvent, signEvent,
   encryptContent, decryptContent,
@@ -91,6 +91,34 @@ interface SyncDiff {
   added: string[];
   removed: string[];
   unchanged: string[];
+}
+
+// ============================================================
+// FULL STATE COMPARISON (checks ALL differences)
+// Order is NOT compared - mutes are displayed sorted by addedAt
+// ============================================================
+
+/**
+ * Check if browser and source mute lists are different.
+ * Compares: same pubkeys exist (set comparison)
+ * Does NOT compare order (user can't reorder, displayed by date)
+ */
+function hasMuteDifference(browserItems: string[], sourceItems: string[]): boolean {
+  // Different count = different
+  if (browserItems.length !== sourceItems.length) return true;
+
+  // Set comparison
+  const browserSet = new Set(browserItems);
+  const sourceSet = new Set(sourceItems);
+
+  for (const item of browserSet) {
+    if (!sourceSet.has(item)) return true;
+  }
+  for (const item of sourceSet) {
+    if (!browserSet.has(item)) return true;
+  }
+
+  return false;
 }
 
 /**
@@ -562,11 +590,12 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   }
 
   try {
+    // skipCache=true for sync operations
     const events = await fetchEvents([{
       authors: [pubkey],
       kinds: [10000],
       limit: 10
-    }], 10000);
+    }], 10000, true);
 
     if (events.length === 0) {
       logger.info('mutes.ts', 'No mute list found on relays');
@@ -726,9 +755,37 @@ function escapeHtml(text: string): string {
 // MUTE STORAGE ADAPTER (self-contained, no external dependencies)
 // ============================================================
 
+// Prefixes for distinguishing users and threads in string[] format
+const USER_PREFIX = 'p:';
+const THREAD_PREFIX = 'e:';
+
+/**
+ * Encode a MuteItem to a prefixed string for sync operations
+ */
+function encodeMuteItem(item: MuteItem): string {
+  return item.type === 'user' ? `${USER_PREFIX}${item.id}` : `${THREAD_PREFIX}${item.id}`;
+}
+
+/**
+ * Decode a prefixed string back to type and id
+ */
+function decodeMuteItem(encoded: string): { type: 'user' | 'thread'; id: string } | null {
+  if (encoded.startsWith(USER_PREFIX)) {
+    return { type: 'user', id: encoded.slice(USER_PREFIX.length) };
+  }
+  if (encoded.startsWith(THREAD_PREFIX)) {
+    return { type: 'thread', id: encoded.slice(THREAD_PREFIX.length) };
+  }
+  // Legacy format (no prefix) - treat as user pubkey
+  if (encoded.length === 64 && /^[0-9a-f]+$/i.test(encoded)) {
+    return { type: 'user', id: encoded };
+  }
+  return null;
+}
+
 /**
  * Storage adapter for mute sync operations
- * Only exposes USER mutes (not threads) as string[] for compatibility
+ * Supports both users (p:) and threads (e:) via prefixed string format
  */
 export class MuteStorageAdapter {
   getItemId(item: string): string {
@@ -736,28 +793,57 @@ export class MuteStorageAdapter {
   }
 
   getBrowserItems(): string[] {
-    return getAllMutedUsers();
+    const items = getMuteItems();
+    return items.map(encodeMuteItem);
   }
 
   setBrowserItems(items: string[]): void {
     const existingItems = getMuteItems();
-    const existingUserMap = new Map<string, MuteItem>(
-      existingItems.filter(i => i.type === 'user').map(i => [i.id, i])
+    const existingMap = new Map<string, MuteItem>(
+      existingItems.map(i => [encodeMuteItem(i), i])
     );
 
-    const threads = existingItems.filter(i => i.type === 'thread');
-    const users = items.map(pubkey =>
-      existingUserMap.get(pubkey) ?? { type: 'user' as const, id: pubkey, isPrivate: false, addedAt: now() }
-    );
+    const newItems: MuteItem[] = items.map(encoded => {
+      // Preserve existing item properties (isPrivate, addedAt) if available
+      const existing = existingMap.get(encoded);
+      if (existing) return existing;
 
-    setMuteItems([...threads, ...users]);
+      const decoded = decodeMuteItem(encoded);
+      if (!decoded) return null;
+
+      return {
+        type: decoded.type,
+        id: decoded.id,
+        isPrivate: false,
+        addedAt: now()
+      };
+    }).filter((item): item is MuteItem => item !== null);
+
+    setMuteItems(newItems);
   }
 
   async getFileItems(): Promise<string[]> {
     try {
       const publicData = await readPublicMutesFile();
       const privateData = await readPrivateMutesFile();
-      return [...publicData.items, ...privateData.items];
+
+      const items: string[] = [];
+      // Users from items field
+      for (const pubkey of publicData.items) {
+        items.push(`${USER_PREFIX}${pubkey}`);
+      }
+      for (const pubkey of privateData.items) {
+        items.push(`${USER_PREFIX}${pubkey}`);
+      }
+      // Threads from eventIds field
+      for (const eventId of publicData.eventIds) {
+        items.push(`${THREAD_PREFIX}${eventId}`);
+      }
+      for (const eventId of privateData.eventIds) {
+        items.push(`${THREAD_PREFIX}${eventId}`);
+      }
+
+      return items;
     } catch (error) {
       logger.error('MuteStorageAdapter', `Failed to read from file: ${error}`);
       throw error;
@@ -776,11 +862,10 @@ export class MuteStorageAdapter {
   async fetchFromRelays(): Promise<{ items: string[]; relayContentWasEmpty: boolean }> {
     try {
       const result = await fetchFromRelays();
-      const userPubkeys = result.items
-        .filter(item => item.type === 'user')
-        .map(item => item.id);
+      // Encode all items (users AND threads) with prefixes
+      const encodedItems = result.items.map(encodeMuteItem);
 
-      return { items: userPubkeys, relayContentWasEmpty: result.relayContentWasEmpty };
+      return { items: encodedItems, relayContentWasEmpty: result.relayContentWasEmpty };
     } catch (error) {
       logger.error('MuteStorageAdapter', `Failed to fetch from relays: ${error}`);
       throw error;
@@ -802,8 +887,11 @@ export class MuteStorageAdapter {
     const browserItems = this.getBrowserItems();
     const diff = calculateSyncDiff(browserItems, fetchResult.items);
 
+    // Use full state comparison (now includes threads)
+    const requiresConfirmation = hasMuteDifference(browserItems, fetchResult.items);
+
     return {
-      requiresConfirmation: diff.removed.length > 0,
+      requiresConfirmation,
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty
@@ -823,7 +911,8 @@ export class MuteStorageAdapter {
     const browserItems = this.getBrowserItems();
     const diff = calculateSyncDiff(browserItems, fileItems);
 
-    return { requiresConfirmation: diff.removed.length > 0, diff, fileItems };
+    // Use full state comparison (now includes threads)
+    return { requiresConfirmation: hasMuteDifference(browserItems, fileItems), diff, fileItems };
   }
 
   applySyncFromFile(strategy: 'merge' | 'overwrite', fileItems: string[]): void {
@@ -1200,8 +1289,23 @@ export class MuteListView extends View {
 
   private async handleRestoreFromFile(): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.adapter.syncFromFile();
+      let result: SyncFromFileResult;
+
+      if (PlatformService.getInstance().isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<string[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = calculateSyncDiff(browserItems, uploadedItems);
+        // Use full state comparison
+        result = { requiresConfirmation: hasMuteDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.adapter.syncFromFile();
+      }
 
       if (result.requiresConfirmation) {
         const modal = new SyncConfirmationModal({
@@ -1386,10 +1490,7 @@ export class MuteListManager {
 
   public async renderListTab(content: HTMLElement): Promise<void> {
     content.innerHTML = `
-      <div class="list-loading">
-        <div class="spinner"></div>
-        <p>Loading mute list...</p>
-      </div>
+      <div class="mute-list-loading">Loading mute list...</div>
     `;
 
     try {
@@ -1403,7 +1504,7 @@ export class MuteListManager {
           <div class="list-empty">
             <p>No muted users or threads</p>
           </div>
-        ` + renderListSyncButtons();
+        `;
         this.bindSyncButtons(content);
         return;
       }
@@ -1433,8 +1534,6 @@ export class MuteListManager {
           </div>
         `;
       }
-
-      html += renderListSyncButtons();
 
       content.innerHTML = html;
       this.bindSyncButtons(content);
@@ -1539,8 +1638,23 @@ export class MuteListManager {
 
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.adapter.syncFromFile();
+      let result: SyncFromFileResult;
+
+      if (PlatformService.getInstance().isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<string[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = calculateSyncDiff(browserItems, uploadedItems);
+        // Use full state comparison
+        result = { requiresConfirmation: hasMuteDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.adapter.syncFromFile();
+      }
 
       if (result.requiresConfirmation) {
         const modal = new SyncConfirmationModal({

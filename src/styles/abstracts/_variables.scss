@@ -9,7 +9,7 @@
 
 // Brand Colors (Core Palette - 6 colors)
 $color-1: #0f0d23; // Deep Purple (backgrounds)
-$color-2: #1a1930; // Medium Purple (surfaces, standard borders)
+$color-2: #252343; // Medium Purple (surfaces, standard borders)
 $color-3: #9b79b9; // Light Purple (accent - sparingly)
 $color-4: #dc85ad; // Pink (interactive elements only)
 $color-5: #ede2da; // Light Peach (text)
@@ -98,13 +98,17 @@ $transition-all: all 250ms ease-in-out;
 $transition-colors: color $transition-fast, background-color $transition-fast, border-color $transition-fast;
 
 // ========================================
-// Breakpoints
+// Breakpoints (Mobile-First)
+// Base = Phone (0-639px), dann additive min-width
 // ========================================
-$breakpoint-sm: 640px;
-$breakpoint-md: 768px;
-$breakpoint-lg: 1024px;
-$breakpoint-xl: 1280px;
-$breakpoint-2xl: 1536px;
+$breakpoint-tablet: 640px;      // tablet: 640px+
+$breakpoint-tablet-big: 768px;  // tablet-big: 768px+
+$breakpoint-desktop: 1024px;    // desktop: 1024px+
+
+// Legacy aliases (für schrittweise Migration)
+$breakpoint-sm: $breakpoint-tablet;
+$breakpoint-md: $breakpoint-tablet-big;
+$breakpoint-lg: $breakpoint-desktop;
 
 // ========================================
 // Layout

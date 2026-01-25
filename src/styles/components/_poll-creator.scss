@@ -5,7 +5,7 @@
 .poll-creator {
   background: $color-1;
   border: 1px solid $color-2;
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   padding: $gap;
   margin-top: $gap;
 
@@ -39,7 +39,7 @@
     color: $color-4;
     cursor: pointer;
     padding: calc($gap / 4) calc($gap / 2);
-    border-radius: calc($gap / 4);
+    border-radius: $radius-base;
     transition: all 0.2s ease;
 
     &:hover {
@@ -65,7 +65,7 @@
     flex: 1;
     background: $color-1;
     border: 1px solid $color-2;
-    border-radius: calc($gap / 4);
+    border-radius: $radius-base;
     padding: calc($gap / 2);
     color: $color-6;
 
@@ -81,7 +81,7 @@
     height: calc($gap * 1.5);
     background: none;
     border: 1px solid $color-2;
-    border-radius: calc($gap / 4);
+    border-radius: $radius-base;
     color: $color-4;
     font-size: 20px;
     line-height: 1;
@@ -103,7 +103,7 @@
     border: 1px dashed $color-3;
     color: $color-5;
     padding: calc($gap / 2);
-    border-radius: calc($gap / 4);
+    border-radius: $radius-base;
     cursor: pointer;
     transition: all 0.2s ease;
     margin-bottom: $gap;
@@ -138,7 +138,7 @@
   &__relay-input {
     background: $color-1;
     border: 1px solid $color-2;
-    border-radius: calc($gap / 4);
+    border-radius: $radius-base;
     padding: calc($gap / 2);
     color-scheme: dark;
 
@@ -161,7 +161,7 @@
     padding: $gap;
     background: rgba($color-warning, 0.05);
     border: 1px solid rgba($color-warning, 0.2);
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
     margin-top: $gap;
     display: flex;
     gap: calc($gap / 2);

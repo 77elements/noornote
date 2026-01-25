@@ -1,0 +1,16 @@
+/**
+ * NoorNote Logo Atom
+ * Gradient text logo - use with display: inline-block span
+ * Font-size is inherited from context
+ */
+
+.nn-logo {
+  display: inline-block;
+  font-family: 'Saira', sans-serif;
+  font-weight: 700;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #b45fd9, #5ef75e);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

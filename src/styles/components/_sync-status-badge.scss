@@ -10,7 +10,7 @@
   align-items: center;
   gap: calc($gap / 2);
   padding: calc($gap / 2) $gap;
-  border-radius: 4px;
+  border-radius: $radius-base;
   font-weight: 500;
 
   &__icon {

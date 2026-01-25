@@ -1,0 +1,65 @@
+/**
+ * Search View Primary
+ * Full-width search view in primary content (wide mode)
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.search-view-primary {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    padding: $gap;
+    border-bottom: 1px solid $color-2;
+    flex-shrink: 0;
+  }
+
+  &__back {
+    display: none; // Hidden on phone (base)
+    flex-shrink: 0;
+    color: $color-4;
+
+    @include tablet {
+      display: inline-block; // Show from tablet up
+    }
+
+    svg {
+      display: block;
+    }
+  }
+
+  &__title {
+    @extend %h1;
+    font-weight: 600;
+    color: $color-5;
+    margin-bottom: 0;
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    @include custom-scrollbar;
+    padding: $gap;
+
+    // GlobalSearchView content adapts to primary content
+    .tab-content {
+      display: block;
+      height: 100%;
+      overflow-y: auto;
+      @include custom-scrollbar;
+
+      &.tab-content--active {
+        display: block;
+      }
+    }
+  }
+}

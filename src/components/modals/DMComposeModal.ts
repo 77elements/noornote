@@ -78,7 +78,7 @@ export class DMComposeModal {
         <div class="dm-compose-modal__field">
           <label class="dm-compose-modal__label">Message</label>
           <textarea
-            class="dm-compose-modal__textarea"
+            class="textarea dm-compose-modal__textarea"
             placeholder="Write your message..."
             rows="4"
           ></textarea>

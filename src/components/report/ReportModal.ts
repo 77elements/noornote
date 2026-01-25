@@ -117,7 +117,7 @@ export class ReportModal {
       <div class="report-modal__section">
         <h3 class="report-modal__section-title">Additional details (optional)</h3>
         <textarea
-          class="report-modal__textarea"
+          class="textarea report-modal__textarea"
           placeholder="Provide additional context for your report..."
           maxlength="500"
           rows="4"

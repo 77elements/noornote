@@ -146,8 +146,8 @@ export class WalletBalanceDisplay {
     // Convert msats to sats
     const sats = Math.floor(balanceMsats / 1000);
 
-    // Format sats with k/M suffix
-    const formattedSats = this.formatSats(sats);
+    // Format sats with k/M suffix (locale-aware)
+    const formattedSats = this.formatSats(sats, this.selectedCurrency);
     if (amountEl) amountEl.textContent = formattedSats;
 
     // Convert to selected fiat currency
@@ -156,21 +156,27 @@ export class WalletBalanceDisplay {
 
     let formattedFiat: string;
     if (fiatAmount < 0.01) {
-      formattedFiat = `<${currencySymbol}0.01`;
+      const minAmount = this.exchangeRateService.formatAmount(0.01, this.selectedCurrency);
+      formattedFiat = `<${minAmount} ${currencySymbol}`;
     } else {
-      formattedFiat = `${currencySymbol}${fiatAmount.toFixed(2)}`;
+      const formattedAmount = this.exchangeRateService.formatAmount(fiatAmount, this.selectedCurrency);
+      formattedFiat = `${formattedAmount} ${currencySymbol}`;
     }
 
     if (fiatAmountEl) fiatAmountEl.textContent = formattedFiat;
   }
 
-  private formatSats(sats: number): string {
+  private formatSats(sats: number, currency: string): string {
     if (sats >= 1000000) {
-      return `${(sats / 1000000).toFixed(1)}M`;
+      const value = sats / 1000000;
+      const formatted = this.exchangeRateService.formatAmount(value, currency, 1);
+      return `${formatted}M`;
     } else if (sats >= 1000) {
-      return `${(sats / 1000).toFixed(1)}k`;
+      const value = sats / 1000;
+      const formatted = this.exchangeRateService.formatAmount(value, currency, 1);
+      return `${formatted}k`;
     }
-    return sats.toString();
+    return sats.toLocaleString();
   }
 
   private toggleVisibility(): void {

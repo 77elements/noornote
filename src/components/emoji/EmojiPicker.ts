@@ -1,10 +1,13 @@
 /**
  * Custom Emoji Picker Component
  * Popup-style emoji picker that overlays on top of content
- * Positions itself relative to trigger button
+ * Uses emojilib for full emoji support (~1900 emojis)
  */
 
-import emojilib from 'emojilib';
+import emojilibData from 'emojilib';
+
+// Handle both default and named export patterns
+const emojilib: Record<string, string[]> = (emojilibData as any).default || emojilibData;
 
 export interface EmojiPickerOptions {
   /** Callback when emoji is selected */
@@ -16,151 +19,145 @@ export interface EmojiPickerOptions {
 interface EmojiCategory {
   name: string;
   icon: string;
-  emojis: string[];
+  keywords: string[]; // Keywords to match emojis to this category
 }
 
-// Emoji data organized by category
-const EMOJI_CATEGORIES: EmojiCategory[] = [
+// Category definitions with keywords for matching
+const CATEGORY_DEFINITIONS: EmojiCategory[] = [
   {
     name: 'Smileys & People',
     icon: '😀',
-    emojis: [
-      '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂',
-      '🙂', '🙃', '😉', '😊', '😇', '🥰', '😍', '🤩',
-      '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪',
-      '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨',
-      '😐', '😑', '😶', '😏', '😒', '🙄', '😬', '🤥',
-      '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕',
-      '🤢', '🤮', '🤧', '🥵', '🥶', '😵', '🤯', '🤠',
-      '🥳', '😎', '🤓', '🧐', '😕', '😟', '🙁', '☹️',
-      '😮', '😯', '😲', '😳', '🥺', '😦', '😧', '😨',
-      '😰', '😥', '😢', '😭', '😱', '😖', '😣', '😞',
-      '😓', '😩', '😫', '🥱', '😤', '😡', '😠', '🤬',
-      '👍', '👎', '👏', '🙌', '👐', '🤲', '🤝', '🙏',
-      '✌️', '🤞', '🤟', '🤘', '🤙', '👈', '👉', '👆',
-      '🖕', '👇', '☝️', '👋', '🤚', '🖐', '✋', '🖖',
-      '💪', '🦾', '🦿', '🦵', '🦶', '👂', '🦻', '👃'
-    ]
+    keywords: ['face', 'smile', 'happy', 'sad', 'angry', 'person', 'hand', 'gesture', 'body', 'emotion', 'people', 'human', 'man', 'woman', 'boy', 'girl', 'baby', 'family']
   },
   {
     name: 'Animals & Nature',
     icon: '🐶',
-    emojis: [
-      '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼',
-      '🐨', '🐯', '🦁', '🐮', '🐷', '🐽', '🐸', '🐵',
-      '🙈', '🙉', '🙊', '🐒', '🐔', '🐧', '🐦', '🐤',
-      '🐣', '🐥', '🦆', '🦅', '🦉', '🦇', '🐺', '🐗',
-      '🐴', '🦄', '🐝', '🐛', '🦋', '🐌', '🐞', '🐜',
-      '🦟', '🦗', '🕷', '🕸', '🦂', '🐢', '🐍', '🦎',
-      '🦖', '🦕', '🐙', '🦑', '🦐', '🦞', '🦀', '🐡',
-      '🐠', '🐟', '🐬', '🐳', '🐋', '🦈', '🐊', '🐅',
-      '🌸', '💮', '🏵', '🌹', '🥀', '🌺', '🌻', '🌼',
-      '🌷', '🌱', '🌲', '🌳', '🌴', '🌵', '🌾', '🌿',
-      '☘️', '🍀', '🍁', '🍂', '🍃', '🌍', '🌎', '🌏'
-    ]
+    keywords: ['animal', 'nature', 'plant', 'flower', 'tree', 'dog', 'cat', 'bird', 'fish', 'bug', 'insect', 'mammal', 'wildlife', 'pet', 'leaf', 'weather', 'sun', 'moon', 'star', 'ocean', 'earth', 'world']
   },
   {
     name: 'Food & Drink',
     icon: '🍔',
-    emojis: [
-      '🍏', '🍎', '🍐', '🍊', '🍋', '🍌', '🍉', '🍇',
-      '🍓', '🍈', '🍒', '🍑', '🥭', '🍍', '🥥', '🥝',
-      '🍅', '🍆', '🥑', '🥦', '🥬', '🥒', '🌶', '🌽',
-      '🥕', '🥔', '🍠', '🥐', '🥯', '🍞', '🥖', '🥨',
-      '🧀', '🥚', '🍳', '🥞', '🥓', '🥩', '🍗', '🍖',
-      '🌭', '🍔', '🍟', '🍕', '🥪', '🥙', '🌮', '🌯',
-      '🥗', '🥘', '🍝', '🍜', '🍲', '🍛', '🍣', '🍱',
-      '🥟', '🍤', '🍙', '🍚', '🍘', '🍥', '🥠', '🥮',
-      '🍢', '🍡', '🍧', '🍨', '🍦', '🥧', '🧁', '🍰',
-      '🎂', '🍮', '🍭', '🍬', '🍫', '🍿', '🍩', '🍪',
-      '☕️', '🍵', '🍶', '🍾', '🍷', '🍸', '🍹', '🍺',
-      '🍻', '🥂', '🥃', '🥤', '🧃', '🧉', '🧊'
-    ]
+    keywords: ['food', 'drink', 'fruit', 'vegetable', 'meal', 'dessert', 'sweet', 'meat', 'bread', 'rice', 'wine', 'beer', 'coffee', 'tea', 'restaurant', 'eat', 'hungry']
   },
   {
     name: 'Activities',
     icon: '⚽️',
-    emojis: [
-      '⚽️', '🏀', '🏈', '⚾️', '🥎', '🎾', '🏐', '🏉',
-      '🥏', '🎱', '🏓', '🏸', '🏒', '🏑', '🥍', '🏏',
-      '🥅', '⛳️', '🏹', '🎣', '🥊', '🥋', '🎽', '⛸',
-      '🥌', '🛷', '🛹', '🏂', '⛷', '🏋️', '🤼', '🤸',
-      '🤾', '🏌️', '🏇', '🧘', '🏊', '🤽', '🚣', '🧗',
-      '🚴', '🚵', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧',
-      '🎼', '🎹', '🥁', '🎷', '🎺', '🎸', '🎻', '🎲',
-      '🎯', '🎳', '🎮', '🎰', '🧩'
-    ]
+    keywords: ['sport', 'game', 'activity', 'ball', 'medal', 'trophy', 'music', 'art', 'entertainment', 'hobby', 'play', 'win', 'team']
   },
   {
     name: 'Travel & Places',
     icon: '✈️',
-    emojis: [
-      '🚗', '🚕', '🚙', '🚌', '🚎', '🏎', '🚓', '🚑',
-      '🚒', '🚐', '🚚', '🚛', '🚜', '🏍', '🛵', '🚲',
-      '🛴', '🚨', '🚔', '🚍', '🚘', '🚖', '🚡', '🚠',
-      '🚟', '🚃', '🚋', '🚝', '🚄', '🚅', '🚈', '🚂',
-      '🚆', '🚇', '🚊', '🚉', '✈️', '🛫', '🛬', '🛩',
-      '💺', '🚁', '🚟', '🚠', '🚡', '🛰', '🚀', '🛸',
-      '⛵️', '🛥', '🚤', '⛴', '🛳', '🚢', '⚓️', '⛽️',
-      '🚧', '🚦', '🚥', '🗿', '🗽', '🗼', '🏰', '🏯',
-      '🏟', '🎡', '🎢', '🎠', '⛲️', '⛱', '🏖', '🏝',
-      '🏜', '🌋', '⛰', '🏔', '🗻', '🏕', '⛺️', '🏠',
-      '🏡', '🏘', '🏚', '🏗', '🏭', '🏢', '🏬', '🏣'
-    ]
+    keywords: ['travel', 'place', 'vehicle', 'car', 'train', 'plane', 'boat', 'building', 'house', 'city', 'country', 'map', 'transport', 'vacation', 'trip', 'hotel']
   },
   {
     name: 'Objects',
     icon: '💡',
-    emojis: [
-      '⌚️', '📱', '📲', '💻', '⌨️', '🖥', '🖨', '🖱',
-      '🖲', '🕹', '🗜', '💾', '💿', '📀', '📼', '📷',
-      '📸', '📹', '🎥', '📽', '🎞', '📞', '☎️', '📟',
-      '📠', '📺', '📻', '🎙', '🎚', '🎛', '⏱', '⏲',
-      '⏰', '🕰', '⌛️', '⏳', '📡', '🔋', '🔌', '💡',
-      '🔦', '🕯', '🗑', '🛢', '💸', '💵', '💴', '💶',
-      '💷', '💰', '💳', '💎', '⚖️', '🔧', '🔨', '⚒',
-      '🛠', '⛏', '🔩', '⚙️', '⛓', '🔫', '💣', '🔪',
-      '🗡', '⚔️', '🛡', '🚬', '⚰️', '⚱️', '🏺', '🔮',
-      '📿', '💈', '⚗️', '🔭', '🔬', '🕳', '💊', '💉',
-      '🩸', '🩹', '🩺', '🌡', '🚪', '🛏', '🛋', '🚽'
-    ]
+    keywords: ['object', 'tool', 'device', 'phone', 'computer', 'office', 'money', 'mail', 'book', 'pen', 'clothing', 'bag', 'glasses', 'watch', 'key', 'lock', 'light', 'electric']
   },
   {
     name: 'Symbols',
     icon: '❤️',
-    emojis: [
-      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍',
-      '🤎', '💔', '❣️', '💕', '💞', '💓', '💗', '💖',
-      '💘', '💝', '💟', '☮️', '✝️', '☪️', '🕉', '☸️',
-      '✡️', '🔯', '🕎', '☯️', '☦️', '🛐', '⛎', '♈️',
-      '♉️', '♊️', '♋️', '♌️', '♍️', '♎️', '♏️', '♐️',
-      '♑️', '♒️', '♓️', '🆔', '⚛️', '🉑', '☢️', '☣️',
-      '📴', '📳', '🈶', '🈚️', '🈸', '🈺', '🈷️', '✴️',
-      '🆚', '💮', '🉐', '㊙️', '㊗️', '🈴', '🈵', '🈹',
-      '🈲', '🅰️', '🅱️', '🆎', '🆑', '🅾️', '🆘', '❌',
-      '⭕️', '🛑', '⛔️', '📛', '🚫', '💯', '💢', '♨️',
-      '🚷', '🚯', '🚳', '🚱', '🔞', '📵', '🚭', '❗️',
-      '❕', '❓', '❔', '‼️', '⁉️', '🔅', '🔆', '〽️',
-      '⚠️', '🚸', '🔱', '⚜️', '🔰', '♻️', '✅', '🈯️',
-      '💹', '❇️', '✳️', '❎', '🌐', '💠', '🔠', '🔡'
-    ]
+    keywords: ['symbol', 'heart', 'love', 'arrow', 'sign', 'warning', 'number', 'letter', 'word', 'math', 'zodiac', 'religion', 'peace', 'recycle', 'check', 'cross', 'button']
   },
   {
     name: 'Flags',
     icon: '🏴',
-    emojis: [
-      '🏁', '🚩', '🎌', '🏴', '🏳️', '🏳️‍🌈', '🏴‍☠️',
-      '🇩🇪', '🇺🇸', '🇬🇧', '🇫🇷', '🇪🇸', '🇮🇹', '🇯🇵',
-      '🇨🇳', '🇰🇷', '🇷🇺', '🇧🇷', '🇮🇳', '🇨🇦', '🇦🇺',
-      '🇲🇽', '🇦🇷', '🇨🇱', '🇨🇴', '🇵🇪', '🇻🇪', '🇪🇨',
-      '🇧🇴', '🇺🇾', '🇵🇾', '🇳🇱', '🇧🇪', '🇨🇭', '🇦🇹',
-      '🇵🇱', '🇨🇿', '🇸🇰', '🇭🇺', '🇷🇴', '🇧🇬', '🇬🇷',
-      '🇹🇷', '🇮🇱', '🇸🇦', '🇦🇪', '🇪🇬', '🇿🇦', '🇳🇬',
-      '🇰🇪', '🇪🇹', '🇹🇭', '🇻🇳', '🇵🇭', '🇮🇩', '🇲🇾',
-      '🇸🇬', '🇵🇰', '🇧🇩', '🇱🇰', '🇳🇵', '🇳🇿', '🇫🇯'
-    ]
+    keywords: ['flag', 'country', 'nation', 'banner']
   }
 ];
+
+// Cache for categorized emojis
+let categorizedEmojis: Map<string, string[]> | null = null;
+let allEmojis: Array<{ emoji: string; keywords: string[] }> | null = null;
+
+/**
+ * Initialize emoji data from emojilib
+ */
+function initializeEmojiData(): void {
+  if (categorizedEmojis && allEmojis) return;
+
+  categorizedEmojis = new Map();
+  allEmojis = [];
+
+  // Initialize empty arrays for each category
+  CATEGORY_DEFINITIONS.forEach(cat => {
+    categorizedEmojis!.set(cat.name, []);
+  });
+  categorizedEmojis.set('Other', []);
+
+  // Process all emojis from emojilib
+  const emojiEntries = Object.entries(emojilib);
+
+  for (const [emoji, keywords] of emojiEntries) {
+    // Skip empty or invalid entries
+    if (!emoji || !keywords || keywords.length === 0) continue;
+
+    // Store for search
+    allEmojis.push({ emoji, keywords });
+
+    // Check if this is a flag emoji (Regional Indicator Symbols U+1F1E6 to U+1F1FF)
+    const codePoints = [...emoji].map(c => c.codePointAt(0) || 0);
+    const isFlag = codePoints.some(cp => cp >= 0x1F1E6 && cp <= 0x1F1FF);
+
+    if (isFlag) {
+      categorizedEmojis.get('Flags')!.push(emoji);
+      continue;
+    }
+
+    // Find matching category by keywords
+    let matched = false;
+    const keywordsJoined = keywords.join(' ').toLowerCase();
+
+    for (const category of CATEGORY_DEFINITIONS) {
+      if (category.name === 'Flags') continue; // Already handled above
+
+      const categoryMatches = category.keywords.some(catKeyword =>
+        keywordsJoined.includes(catKeyword)
+      );
+
+      if (categoryMatches) {
+        categorizedEmojis.get(category.name)!.push(emoji);
+        matched = true;
+        break;
+      }
+    }
+
+    // If no category matched, add to "Other"
+    if (!matched) {
+      categorizedEmojis.get('Other')!.push(emoji);
+    }
+  }
+}
+
+/**
+ * Get emojis for a category
+ */
+function getEmojisForCategory(categoryName: string): string[] {
+  initializeEmojiData();
+  return categorizedEmojis?.get(categoryName) || [];
+}
+
+/**
+ * Search emojis by keyword
+ */
+function searchEmojis(query: string, limit: number = 100): string[] {
+  initializeEmojiData();
+  if (!allEmojis) return [];
+
+  const lowerQuery = query.toLowerCase();
+  const results: string[] = [];
+
+  for (const { emoji, keywords } of allEmojis) {
+    if (results.length >= limit) break;
+
+    const matches = keywords.some(kw => kw.toLowerCase().includes(lowerQuery));
+    if (matches) {
+      results.push(emoji);
+    }
+  }
+
+  return results;
+}
 
 export class EmojiPicker {
   private container: HTMLElement;
@@ -173,6 +170,7 @@ export class EmojiPicker {
   constructor(options: EmojiPickerOptions) {
     this.options = options;
     this.loadFrequentlyUsed();
+    initializeEmojiData(); // Pre-initialize emoji data
     this.overlay = this.createOverlay();
     this.container = this.createElement();
     this.overlay.appendChild(this.container);
@@ -220,7 +218,7 @@ export class EmojiPicker {
     // Search input
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
-    searchInput.className = 'emoji-picker-search';
+    searchInput.className = 'emoji-picker-search input';
     searchInput.placeholder = 'Search emoji...';
     searchInput.addEventListener('input', (e) => this.handleSearch((e.target as HTMLInputElement).value));
 
@@ -228,7 +226,7 @@ export class EmojiPicker {
     const tabs = document.createElement('div');
     tabs.className = 'tabs';
 
-    EMOJI_CATEGORIES.forEach((category, index) => {
+    CATEGORY_DEFINITIONS.forEach((category, index) => {
       const tab = document.createElement('button');
       tab.className = `tab ${index === 0 ? 'tab--active' : ''}`;
       tab.textContent = category.icon;
@@ -248,9 +246,10 @@ export class EmojiPicker {
     }
 
     // Render first category
-    const firstCategory = EMOJI_CATEGORIES[0];
+    const firstCategory = CATEGORY_DEFINITIONS[0];
     if (firstCategory) {
-      gridContainer.appendChild(this.createEmojiSection(firstCategory.name, firstCategory.emojis));
+      const emojis = getEmojisForCategory(firstCategory.name);
+      gridContainer.appendChild(this.createEmojiSection(firstCategory.name, emojis));
     }
 
     container.appendChild(searchInput);
@@ -331,9 +330,10 @@ export class EmojiPicker {
       gridContainer.appendChild(this.createEmojiSection('Frequently Used', this.frequentlyUsed));
     }
 
-    const category = EMOJI_CATEGORIES[categoryIndex];
+    const category = CATEGORY_DEFINITIONS[categoryIndex];
     if (category) {
-      gridContainer.appendChild(this.createEmojiSection(category.name, category.emojis));
+      const emojis = getEmojisForCategory(category.name);
+      gridContainer.appendChild(this.createEmojiSection(category.name, emojis));
     }
   }
 
@@ -350,22 +350,7 @@ export class EmojiPicker {
       return;
     }
 
-    const lowerQuery = query.toLowerCase();
-    const searchResults: string[] = [];
-
-    // Search through our emoji categories using emojilib keywords
-    EMOJI_CATEGORIES.forEach(category => {
-      category.emojis.forEach(emoji => {
-        if (searchResults.length >= 100) return; // Limit results
-
-        const keywords = (emojilib as Record<string, string[]>)[emoji] || [];
-        const matches = keywords.some(kw => kw.includes(lowerQuery));
-
-        if (matches) {
-          searchResults.push(emoji);
-        }
-      });
-    });
+    const searchResults = searchEmojis(query, 100);
 
     // Render search results
     gridContainer.innerHTML = '';

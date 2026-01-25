@@ -32,6 +32,7 @@ a {
 .mention-link {
   display: inline-block;
   vertical-align: baseline;
+  text-decoration: none;
 
   &:hover,
   &:active,
@@ -39,10 +40,10 @@ a {
     text-decoration: none;
   }
 
-  .profile-pic {
+  img.profile-pic {
     display: inline-block;
     vertical-align: text-bottom;
-    margin-right: 5px;
+    margin: 0 5px 0 0;
   }
 
   .mention-name {

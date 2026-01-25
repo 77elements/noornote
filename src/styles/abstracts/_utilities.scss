@@ -2,5 +2,26 @@
  * Utilities - Helper classes
  */
 
-// Visibility utility
+@use 'variables' as *;
+
+// Visibility utilities
 .hidden { display: none; }
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+// Border radius utilities (placeholders + classes)
+%rounded-sm, .rounded-sm { border-radius: $radius-sm; }
+%rounded, .rounded { border-radius: $radius-base; }
+%rounded-md, .rounded-md { border-radius: $radius-md; }
+%rounded-lg, .rounded-lg { border-radius: $radius-lg; }
+%rounded-full, .rounded-full { border-radius: $radius-full; }

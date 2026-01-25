@@ -81,6 +81,7 @@
 }
 
 .notification-item__info {
+  @extend %small;
   display: flex;
   align-items: baseline;
   gap: calc($gap / 4);
@@ -141,7 +142,6 @@
 
 .notification-item__footer-link {
   @extend %small;
-  color: rgba($color-5, 0.5);
   text-decoration: none;
   transition: $transition-colors;
 

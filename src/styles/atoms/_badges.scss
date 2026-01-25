@@ -16,7 +16,7 @@
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
-  border-radius: 9px;
+  border-radius: $radius-full;
   background: $color-6;
   color: $color-1;
   @extend %small;

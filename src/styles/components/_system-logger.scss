@@ -11,9 +11,6 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--surface-color);
-  border: 1px solid var(--border-color);
-  border-radius: var(--border-radius);
   overflow: hidden;
 
   // Global section (top, 50% height)
@@ -22,8 +19,6 @@
     height: calc(50% - $gap);
     display: flex;
     flex-direction: column;
-    background: var(--surface-elevated-color);
-    border-bottom: 1px solid var(--border-color);
     margin-bottom: $gap * 2;
     padding-top: $gap;
     overflow: hidden;
@@ -31,11 +26,7 @@
 
   &__global-header {
     padding: calc($gap / 4) calc($gap / 2);
-    @extend %mini;
     font-weight: 600;
-    color: var(--text-secondary-color);
-    background: var(--surface-color);
-    border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
   }
 
@@ -43,7 +34,6 @@
     flex: 1;
     overflow-y: auto;
     padding: calc($gap / 4);
-    font-family: var(--font-mono);
     @extend %small;
     line-height: 1.5;
 
@@ -66,11 +56,7 @@
 
   &__page-header {
     padding: calc($gap / 4) calc($gap / 2);
-    @extend %mini;
     font-weight: 600;
-    color: var(--text-secondary-color);
-    background: var(--surface-elevated-color);
-    border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
   }
 
@@ -78,8 +64,6 @@
     flex: 1;
     overflow-y: auto;
     padding: calc($gap / 4);
-    background: var(--surface-color);
-    font-family: var(--font-mono);
     @extend %small;
     line-height: 1.4;
 
@@ -96,25 +80,19 @@
 .system-log-table {
   width: 100%;
   border-collapse: collapse;
-  font-family: var(--font-mono);
 }
 
 .system-log-entry {
   // Row-level background colors based on log level
   &--info {
-    background: var(--surface-elevated-color);
-
     td:first-child {
-      border-left: 3px solid var(--accent-blue);
     }
   }
 
   &--debug {
-    background: var(--surface-color);
     opacity: 0.8;
 
     td:first-child {
-      border-left: 3px solid var(--text-secondary-color);
     }
   }
 
@@ -122,7 +100,6 @@
     background: rgba($color-warning, 0.1);
 
     td:first-child {
-      border-left: 3px solid var(--accent-yellow);
     }
   }
 
@@ -130,7 +107,6 @@
     background: $color-red-bg;
 
     td:first-child {
-      border-left: 3px solid var(--accent-red);
     }
   }
 
@@ -149,20 +125,17 @@
   }
 
   &__time {
-    color: var(--text-secondary-color);
     white-space: nowrap;
     width: auto;
   }
 
   &__category {
-    color: var(--accent-purple);
     font-weight: 500;
     white-space: nowrap;
     width: auto;
   }
 
   &__message {
-    color: var(--text-primary-color);
     word-break: break-word;
 
     .system-log-entry--success & {
@@ -174,13 +147,9 @@
     display: block;
     margin: calc($gap / 4) 0 0 0;
     padding: calc($gap / 4);
-    background: var(--surface-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius-sm);
     @extend %mini;
     overflow-x: auto;
     white-space: pre-wrap;
-    color: var(--text-secondary-color);
   }
 }
 
@@ -188,7 +157,6 @@
 @media (prefers-color-scheme: dark) {
   .system-logger {
     &__content {
-      background: var(--surface-dark-color);
     }
   }
 
@@ -236,7 +204,6 @@
     display: block;
     margin-bottom: 2px;
     padding: calc($gap / 4);
-    border-radius: var(--border-radius-sm);
 
     td {
       display: block;

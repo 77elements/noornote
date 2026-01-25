@@ -1,13 +1,20 @@
 /**
  * VideoPlayerService
- * Native HTML5 video player with CSS-based fullscreen (Tauri-compatible)
+ * Native HTML5 video player with fullscreen support
+ * - Browser: Uses native Fullscreen API (real fullscreen)
+ * - Tauri: Falls back to CSS-based fullscreen (WebView limitation)
  */
+
+import { PlatformService } from './PlatformService';
 
 export class VideoPlayerService {
   private static instance: VideoPlayerService | null = null;
   private fullscreenVideo: HTMLVideoElement | null = null;
+  private readonly isBrowser: boolean;
 
-  private constructor() {}
+  private constructor() {
+    this.isBrowser = PlatformService.getInstance().isBrowser;
+  }
 
   public static getInstance(): VideoPlayerService {
     if (!VideoPlayerService.instance) {
@@ -17,10 +24,37 @@ export class VideoPlayerService {
   }
 
   /**
-   * Toggle CSS fullscreen for video
-   * Moves video to body to escape CSS containment in .primary-content
+   * Toggle fullscreen for video
+   * Browser: Uses native Fullscreen API (real fullscreen)
+   * Tauri: CSS-based fullscreen (moves video to body to escape containment)
    */
   private toggleFullscreen(video: HTMLVideoElement): void {
+    if (this.isBrowser) {
+      this.toggleNativeFullscreen(video);
+    } else {
+      this.toggleCssFullscreen(video);
+    }
+  }
+
+  /**
+   * Native Fullscreen API (Browser only)
+   */
+  private toggleNativeFullscreen(video: HTMLVideoElement): void {
+    if (document.fullscreenElement === video) {
+      document.exitFullscreen();
+    } else {
+      video.requestFullscreen().catch(() => {
+        // Fallback to CSS if native fails
+        this.toggleCssFullscreen(video);
+      });
+    }
+  }
+
+  /**
+   * CSS-based fullscreen (Tauri fallback)
+   * Moves video to body to escape CSS containment in .primary-content
+   */
+  private toggleCssFullscreen(video: HTMLVideoElement): void {
     const fsButton = (video as any)._fsButton;
 
     if (this.fullscreenVideo === video) {
@@ -80,7 +114,7 @@ export class VideoPlayerService {
       // Exit fullscreen on Escape key
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === 'Escape' && this.fullscreenVideo) {
-          this.toggleFullscreen(this.fullscreenVideo);
+          this.toggleCssFullscreen(this.fullscreenVideo);
           document.removeEventListener('keydown', handleEscape);
         }
       };

@@ -14,6 +14,7 @@ import type { NDKCacheAdapterDexieOptions } from '@nostr-dev-kit/ndk-cache-dexie
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { EventBus } from '../EventBus';
+import { PlatformService } from '../PlatformService';
 
 export interface SubscriptionCallbacks {
   onEvent: (event: NostrEvent, relay: string) => void;
@@ -27,17 +28,35 @@ interface SubCloser {
 /**
  * Get NDK cache configuration from localStorage
  * Returns default values if not configured
+ * Desktop (Tauri): Large cache sizes for better performance
+ * Web/Phone: Smaller cache sizes to reduce memory usage
  */
 function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
   const STORAGE_KEY = 'ndk_cache_config';
-  const DEFAULT_CONFIG = {
+  const isDesktop = PlatformService.getInstance().isTauri;
+
+  // Desktop: Large caches for performance
+  // Web/Phone: Smaller caches for memory efficiency
+  const DEFAULT_CONFIG = isDesktop ? {
     profileCacheSize: 100000,
     zapperCacheSize: 200,
     nip05CacheSize: 1000,
     eventCacheSize: 50000,
     eventTagsCacheSize: 100000,
     saveSig: false
+  } : {
+    profileCacheSize: 5000,
+    zapperCacheSize: 100,
+    nip05CacheSize: 500,
+    eventCacheSize: 5000,
+    eventTagsCacheSize: 10000,
+    saveSig: false
   };
+
+  // Only read custom config on Desktop (Web/Phone don't have settings UI)
+  if (!isDesktop) {
+    return { dbName: 'noornote', ...DEFAULT_CONFIG };
+  }
 
   const stored = localStorage.getItem(STORAGE_KEY);
   if (!stored) {

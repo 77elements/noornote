@@ -10,7 +10,7 @@
 .follow-btn {
   padding: calc($gap / 2) $gap;
   font-weight: 600;
-  border-radius: calc($gap / 4);
+  border-radius: $radius-base;
   border: 1px solid $color-4;
   background: transparent;
   color: $color-4;

@@ -29,9 +29,11 @@ export interface SyncConfirmationOptions<T> {
   getDisplayName: (item: T) => string | Promise<string>;
   /** Optional: Function to render item as HTML (for mentions with avatar) */
   renderItemHtml?: (item: T) => string | Promise<string>;
-  /** Callback when user chooses "Keep local items" (merge strategy) */
+  /** Callback when user chooses "Keep local items" (keep local, ignore relay changes) */
   onKeep: () => void;
-  /** Callback when user chooses "Delete here too" (overwrite strategy) */
+  /** Callback when user chooses "Merge both" (combine local + relay, then sync back) */
+  onMerge?: () => void;
+  /** Callback when user chooses "Overwrite" (replace local with relay) */
   onDelete: () => void;
 }
 
@@ -53,6 +55,7 @@ export class SyncConfirmationModal<T> {
   private resolvedAddedItems: ResolvedItem[] = [];
   private resolvedRemovedItems: ResolvedItem[] = [];
   private resolvedMovedItems: ResolvedMovedItem[] = [];
+  private resolvePromise: (() => void) | null = null;
 
   constructor(options: SyncConfirmationOptions<T>) {
     this.modalService = ModalService.getInstance();
@@ -61,6 +64,7 @@ export class SyncConfirmationModal<T> {
 
   /**
    * Show sync confirmation modal
+   * Returns a Promise that resolves when user makes a choice
    */
   public async show(): Promise<void> {
     // Resolve all display names first
@@ -68,27 +72,32 @@ export class SyncConfirmationModal<T> {
 
     const content = this.renderContent();
 
-    this.modalService.show({
-      title: `⚠️ Sync ${this.options.listType}`,
-      content,
-      width: '550px',
-      maxHeight: '600px',
-      showCloseButton: true,
-      closeOnOverlay: true,
-      closeOnEsc: true
-    });
+    // Create a promise that will be resolved when user clicks a button
+    return new Promise<void>((resolve) => {
+      this.resolvePromise = resolve;
 
-    // Setup event handlers
-    setTimeout(() => {
-      this.setupEventHandlers();
-      // Setup mention handlers if HTML rendering is used
-      if (this.options.renderItemHtml) {
-        const modalContent = document.querySelector('.sync-confirmation-modal');
-        if (modalContent) {
-          setupUserMentionHandlers(modalContent as HTMLElement);
+      this.modalService.show({
+        title: `⚠️ Sync ${this.options.listType}`,
+        content,
+        width: '550px',
+        maxHeight: '600px',
+        showCloseButton: true,
+        closeOnOverlay: false,  // Don't allow closing by overlay click
+        closeOnEsc: false       // Don't allow closing by Esc key
+      });
+
+      // Setup event handlers
+      setTimeout(() => {
+        this.setupEventHandlers();
+        // Setup mention handlers if HTML rendering is used
+        if (this.options.renderItemHtml) {
+          const modalContent = document.querySelector('.sync-confirmation-modal');
+          if (modalContent) {
+            setupUserMentionHandlers(modalContent as HTMLElement);
+          }
         }
-      }
-    }, 0);
+      }, 0);
+    });
   }
 
   /**
@@ -217,6 +226,11 @@ export class SyncConfirmationModal<T> {
           <button type="button" class="btn btn--passive" id="sync-keep-btn">
             Keep actual state
           </button>
+          ${this.options.onMerge ? `
+          <button type="button" class="btn btn--primary" id="sync-merge-btn">
+            Merge both
+          </button>
+          ` : ''}
           <button type="button" class="btn btn--danger" id="sync-delete-btn">
             Overwrite with ${sourceLabel} backup
           </button>
@@ -289,23 +303,49 @@ export class SyncConfirmationModal<T> {
    */
   private setupEventHandlers(): void {
     const keepBtn = document.getElementById('sync-keep-btn');
+    const mergeBtn = document.getElementById('sync-merge-btn');
     const deleteBtn = document.getElementById('sync-delete-btn');
 
     if (!keepBtn || !deleteBtn) {
       console.error('[SyncConfirmationModal] Failed to find modal buttons');
+      // Resolve anyway to prevent hanging
+      if (this.resolvePromise) {
+        this.resolvePromise();
+        this.resolvePromise = null;
+      }
       return;
     }
 
-    // Keep button (merge strategy)
+    // Keep button (keep local, ignore relay changes)
     keepBtn.addEventListener('click', () => {
       this.modalService.hide();
       this.options.onKeep();
+      if (this.resolvePromise) {
+        this.resolvePromise();
+        this.resolvePromise = null;
+      }
     });
 
-    // Delete button (overwrite strategy)
+    // Merge button (combine both and sync back to relays)
+    if (mergeBtn && this.options.onMerge) {
+      mergeBtn.addEventListener('click', () => {
+        this.modalService.hide();
+        this.options.onMerge!();
+        if (this.resolvePromise) {
+          this.resolvePromise();
+          this.resolvePromise = null;
+        }
+      });
+    }
+
+    // Delete button (overwrite with relay)
     deleteBtn.addEventListener('click', () => {
       this.modalService.hide();
       this.options.onDelete();
+      if (this.resolvePromise) {
+        this.resolvePromise();
+        this.resolvePromise = null;
+      }
     });
   }
 

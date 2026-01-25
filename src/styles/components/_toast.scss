@@ -27,7 +27,7 @@
   padding: $gap;
   background: $color-1;
   border: 1px solid $color-2;
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   box-shadow: $box-shadow;
   pointer-events: auto;
   min-width: 280px;
@@ -91,7 +91,7 @@
   flex-shrink: 0;
   width: calc($gap * 1.5);
   height: calc($gap * 1.5);
-  border-radius: 50%;
+  border-radius: $radius-full;
   @include flex-center;
   font-weight: bold;
 }
@@ -115,7 +115,7 @@
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
-  border-radius: calc($gap / 4);
+  border-radius: $radius-base;
   transition: all 0.2s ease;
   @include flex-center;
 

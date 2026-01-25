@@ -88,9 +88,28 @@ export class NotificationsCacheService {
 
   /**
    * Save cache to per-account storage
+   * On QuotaExceededError: removes oldest 50% of events and retries (FIFO)
    */
   public saveCache(cache: NotificationsCache): void {
-    this.perAccountStorage.set(StorageKeys.NOTIFICATIONS_CACHE, cache);
+    while (cache.events.length >= 0) {
+      try {
+        this.perAccountStorage.set(StorageKeys.NOTIFICATIONS_CACHE, cache);
+        return; // Success
+      } catch (e) {
+        if (e instanceof DOMException && e.name === 'QuotaExceededError') {
+          if (cache.events.length === 0) {
+            // Cache is empty but still can't save - localStorage completely full
+            console.error('localStorage quota exceeded, cannot save even empty cache');
+            return;
+          }
+          // Remove oldest 50% of events (they're sorted newest-first)
+          const halfLength = Math.max(1, Math.floor(cache.events.length / 2));
+          cache.events = cache.events.slice(0, cache.events.length - halfLength);
+        } else {
+          throw e; // Re-throw non-quota errors
+        }
+      }
+    }
   }
 
   /**
@@ -113,7 +132,11 @@ export class NotificationsCacheService {
 
     // Also update NotificationsOrchestrator's lastSeen (for badge count)
     // Uses the same per-account storage key
-    this.perAccountStorage.set(StorageKeys.NOTIFICATIONS_LAST_SEEN, now);
+    try {
+      this.perAccountStorage.set(StorageKeys.NOTIFICATIONS_LAST_SEEN, now);
+    } catch {
+      // Ignore quota errors for tiny timestamp value
+    }
   }
 
   /**

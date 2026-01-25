@@ -13,7 +13,7 @@
 
   img, video {
     max-width: 100%;
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
   }
 
   img {
@@ -29,12 +29,12 @@
     max-width: 100%;
     height: auto;
     display: block;
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
   }
 
   .note-video {
     width: 100%;
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
     background: transparent;
     object-fit: contain;
   }
@@ -43,7 +43,7 @@
     max-width: 100%;
     height: auto;
     display: block;
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
   }
 
   .video-link {
@@ -117,7 +117,7 @@
     max-width: 100%;
     height: auto;
     display: block;
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
   }
 
   video {
@@ -134,7 +134,7 @@
     width: 100%;
     max-width: 514px; // Keep under 514px to prevent YouTube's own "Watch on YouTube"
     padding-bottom: min(56.25%, 289px); // 16:9 aspect ratio, capped at 289px (514px * 9/16)
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
     background: $color-1;
 
     iframe {
@@ -144,7 +144,7 @@
       width: 100%;
       height: 100%;
       border: none;
-      border-radius: calc($gap / 2);
+      border-radius: $radius-lg;
     }
   }
 
@@ -181,7 +181,7 @@
     filter: blur(20px);
     opacity: 0.7;
     max-width: 100%;
-    border-radius: calc($gap / 2);
+    border-radius: $radius-lg;
   }
 
   // Warning overlay
@@ -194,7 +194,6 @@
     background: $overlay-bg;
     color: $color-white;
     padding: calc($gap / 2) $gap;
-    border-radius: var(--border-radius);
     @extend %small;
     font-weight: 600;
     pointer-events: none;

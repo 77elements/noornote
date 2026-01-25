@@ -17,7 +17,7 @@
  */
 
 import { StorageKeys, now, deduplicateByPubkey } from './storage';
-import { readJsonFile, writeJsonFile } from './file';
+import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
 import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
@@ -30,6 +30,7 @@ import { switchTabWithContent } from '../helpers/TabsHelper';
 import { renderListSyncButtons, bindSwitchSyncModeLink } from '../helpers/ListSyncMode';
 import { PlatformService } from '../services/PlatformService';
 import { UserProfileService } from '../services/UserProfileService';
+import { UserService } from '../services/UserService';
 import { MutualService } from '../services/MutualService';
 import { MutualChangeDetector } from '../services/MutualChangeDetector';
 import { MutualChangeStorage } from './MutualChangeStorage';
@@ -86,6 +87,58 @@ interface SyncDiff {
   added: FollowItem[];
   removed: FollowItem[];
   unchanged: FollowItem[];
+}
+
+// ============================================================
+// FULL STATE COMPARISON (checks ALL differences)
+// Order is NOT compared - follows are displayed sorted by addedAt
+// ============================================================
+
+/**
+ * Check if browser and source follow lists are different.
+ * Compares: same pubkeys exist, same properties per pubkey (petname, isPrivate)
+ * Does NOT compare order (user can't reorder, displayed by date)
+ */
+function hasFollowDifference(browserItems: FollowItem[], sourceItems: FollowItem[]): boolean {
+  // Different count = different
+  if (browserItems.length !== sourceItems.length) return true;
+
+  // Build maps for property comparison
+  const browserMap = new Map<string, FollowItem>();
+  for (const item of browserItems) {
+    browserMap.set(item.pubkey, item);
+  }
+
+  const sourceMap = new Map<string, FollowItem>();
+  for (const item of sourceItems) {
+    sourceMap.set(item.pubkey, item);
+  }
+
+  // Check if same pubkeys exist
+  for (const pubkey of browserMap.keys()) {
+    if (!sourceMap.has(pubkey)) return true;
+  }
+  for (const pubkey of sourceMap.keys()) {
+    if (!browserMap.has(pubkey)) return true;
+  }
+
+  // Check if properties match for each pubkey
+  for (const [pubkey, browserItem] of browserMap) {
+    const sourceItem = sourceMap.get(pubkey);
+    if (!sourceItem) return true;
+
+    // Compare petname
+    const browserPetname = browserItem.petname || '';
+    const sourcePetname = sourceItem.petname || '';
+    if (browserPetname !== sourcePetname) return true;
+
+    // Compare isPrivate
+    const browserPrivate = browserItem.isPrivate || false;
+    const sourcePrivate = sourceItem.isPrivate || false;
+    if (browserPrivate !== sourcePrivate) return true;
+  }
+
+  return false;
 }
 
 /**
@@ -392,19 +445,20 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
   try {
     // Fetch both kind:3 (public) and kind:30000 (private) events
+    // skipCache=true for sync operations
     const [kind3Events, kind30000Events] = await Promise.all([
       fetchEvents([{
         authors: [pubkey],
         kinds: [3],
         limit: 1
-      }], 10000),
+      }], 10000, true),
       isPrivateFollowsEnabled()
         ? fetchEvents([{
             authors: [pubkey],
             kinds: [30000],
             '#d': ['private-follows'],
             limit: 1
-          }], 10000)
+          }], 10000, true)
         : Promise.resolve([])
     ]);
 
@@ -540,6 +594,40 @@ export async function publishToRelays(): Promise<void> {
 }
 
 // ============================================================
+// SYNC HELPERS (used by FollowStorageAdapter and FollowListManager)
+// ============================================================
+
+function calculateFollowSyncDiff(browserItems: FollowItem[], relayItems: FollowItem[], preservePrivateItems: boolean = false): SyncDiff {
+  const browserIds = new Set(browserItems.map(item => item.pubkey));
+  const relayIds = new Set(relayItems.map(item => item.pubkey));
+
+  const added = relayItems.filter(item => !browserIds.has(item.pubkey));
+  const removed = browserItems.filter(item => {
+    if (!relayIds.has(item.pubkey)) {
+      if (preservePrivateItems && item.isPrivate === true) {
+        return false;
+      }
+      return true;
+    }
+    return false;
+  });
+  const unchanged = browserItems.filter(item => relayIds.has(item.pubkey));
+
+  return { added, removed, unchanged };
+}
+
+function mergeFollowItems(browserItems: FollowItem[], newItems: FollowItem[]): FollowItem[] {
+  const map = new Map<string, FollowItem>();
+  browserItems.forEach(item => map.set(item.pubkey, item));
+  newItems.forEach(item => {
+    if (!map.has(item.pubkey)) {
+      map.set(item.pubkey, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+// ============================================================
 // FOLLOW STORAGE ADAPTER (self-contained, no external dependencies)
 // ============================================================
 
@@ -574,6 +662,43 @@ export class FollowStorageAdapter {
 
   async publishToRelays(_items: FollowItem[]): Promise<void> {
     await publishToRelays();
+  }
+
+  // Sync helper methods (for AutoSyncService)
+  async syncFromRelays(): Promise<SyncFromRelaysResult> {
+    const fetchResult = await this.fetchFromRelays();
+    const relayItems = fetchResult.items;
+    const relayContentWasEmpty = fetchResult.relayContentWasEmpty;
+    const decryptionFailed = fetchResult.decryptionFailed || false;
+    const browserItems = this.getBrowserItems();
+
+    const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
+    const diff = calculateFollowSyncDiff(browserItems, relayItems, preservePrivateItems);
+
+    // Use full state comparison (checks ALL differences including order and properties)
+    const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
+
+    return {
+      requiresConfirmation,
+      diff,
+      relayItems,
+      relayContentWasEmpty: preservePrivateItems
+    };
+  }
+
+  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: FollowItem[], relayContentWasEmpty: boolean = false): void {
+    const browserItems = this.getBrowserItems();
+
+    if (strategy === 'overwrite') {
+      if (relayContentWasEmpty) {
+        const localPrivateItems = browserItems.filter(item => item.isPrivate === true);
+        this.setBrowserItems([...relayItems, ...localPrivateItems]);
+      } else {
+        this.setBrowserItems(relayItems);
+      }
+    } else {
+      this.setBrowserItems(mergeFollowItems(browserItems, relayItems));
+    }
   }
 }
 
@@ -793,20 +918,20 @@ export class ProfileFollowManager {
       return '';
     }
 
-    // Already following - show disconnect button
+    // Already following - show unfollow button
     if (this.isFollowingState) {
       return `
         <button class="btn btn--passive follow-btn" data-action="unfollow">
-          Disconnect
+          Unfollow
         </button>
       `;
     }
 
-    // Not following - show connect button (with dropdown if private follows enabled)
+    // Not following - show follow button (with dropdown if private follows enabled)
     if (!isPrivateFollowsEnabled()) {
       return `
         <button class="btn follow-btn" data-action="follow">
-          Connect 🫂
+          Follow 🫂
         </button>
       `;
     }
@@ -814,7 +939,7 @@ export class ProfileFollowManager {
     return `
       <div class="follow-dropdown-container">
         <button class="btn follow-btn-dropdown" id="follow-btn-dropdown">
-          Connect 🫂
+          Follow 🫂
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
@@ -826,14 +951,14 @@ export class ProfileFollowManager {
               <line x1="2" y1="12" x2="22" y2="12"></line>
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
             </svg>
-            Connect publicly
+            Follow publicly
           </button>
           <button class="follow-dropdown-item" data-action="follow-private">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
               <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
             </svg>
-            Connect privately
+            Follow privately
           </button>
         </div>
       </div>
@@ -919,7 +1044,7 @@ export class ProfileFollowManager {
 
     try {
       followBtn.disabled = true;
-      followBtn.textContent = 'Connecting...';
+      followBtn.textContent = 'Following...';
 
       followUser(this.targetPubkey, type === 'private');
 
@@ -927,10 +1052,10 @@ export class ProfileFollowManager {
       eventBus.emit('follow:updated', {});
       onStateChange();
 
-      ToastService.show(`Connected ${type === 'public' ? 'publicly' : 'privately'} (local)`, 'success');
+      ToastService.show(`Followed ${type === 'public' ? 'publicly' : 'privately'} (local)`, 'success');
     } catch (error) {
-      console.error('Failed to connect:', error);
-      ToastService.show('Failed to connect to user', 'error');
+      console.error('Failed to follow:', error);
+      ToastService.show('Failed to follow user', 'error');
 
       followBtn.disabled = false;
       followBtn.innerHTML = originalHTML;
@@ -957,7 +1082,7 @@ export class ProfileFollowManager {
 
     try {
       followBtn.disabled = true;
-      followBtn.textContent = 'Disconnecting...';
+      followBtn.textContent = 'Unfollowing...';
 
       unfollowUser(this.targetPubkey);
 
@@ -965,13 +1090,13 @@ export class ProfileFollowManager {
       eventBus.emit('follow:updated', {});
       onStateChange();
 
-      ToastService.show('Disconnected successfully (local)', 'success');
+      ToastService.show('Unfollowed successfully (local)', 'success');
     } catch (error) {
-      console.error('Failed to disconnect:', error);
-      ToastService.show('Failed to disconnect from user', 'error');
+      console.error('Failed to unfollow:', error);
+      ToastService.show('Failed to unfollow user', 'error');
 
       followBtn.disabled = false;
-      followBtn.textContent = 'Disconnect';
+      followBtn.textContent = 'Unfollow';
     }
   }
 }
@@ -1187,7 +1312,9 @@ export class FollowListManager {
 
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
     const diff = this.calculateDiff(browserItems, relayItems, preservePrivateItems);
-    const requiresConfirmation = diff.removed.length > 0;
+
+    // Use full state comparison (checks ALL differences including order and properties)
+    const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
 
     return {
       requiresConfirmation,
@@ -1223,7 +1350,9 @@ export class FollowListManager {
     const fileItems = await this.adapter.getFileItems();
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fileItems, false);
-    const requiresConfirmation = diff.removed.length > 0;
+
+    // Use full state comparison (checks ALL differences including order and properties)
+    const requiresConfirmation = hasFollowDifference(browserItems, fileItems);
 
     return { requiresConfirmation, diff, fileItems };
   }
@@ -1338,11 +1467,28 @@ export class FollowListManager {
 
   /**
    * Handle Restore from File
+   * In Browser/Mobile: shows file upload dialog
+   * In Tauri Desktop: reads from local file
    */
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.syncFromFile();
+      let result: SyncFromFileResult;
+
+      if (PlatformService.getInstance().isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<FollowItem[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = this.calculateDiff(browserItems, uploadedItems, false);
+        // Use full state comparison
+        result = { requiresConfirmation: hasFollowDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.syncFromFile();
+      }
 
       if (result.requiresConfirmation) {
         const modal = new SyncConfirmationModal({
@@ -1527,7 +1673,7 @@ export class FollowListManager {
           <div class="follows-list-empty-state">
             <p>No follows yet</p>
           </div>
-        ` + this.renderControlButtons();
+        `;
         this.bindSyncButtons(container);
         return;
       }
@@ -1544,6 +1690,7 @@ export class FollowListManager {
 
       // Render container with sticky header, controls and list
       container.innerHTML = `
+        ${this.renderControlButtons()}
         <div class="follows-header">
           <div class="follows-stats">
             Following: ${this.totalFollowing} | Mutuals: <span class="mutual-count">...</span> (<span class="mutual-percentage">...</span>%)
@@ -1553,7 +1700,6 @@ export class FollowListManager {
             <span class="follows-check-changes__last-check">Last: ${lastCheckText}</span>
           </div>
         </div>
-        ${this.renderControlButtons()}
         <div class="follows-sort-controls">
           <a href="#" class="follows-sort-controls__load-all">Load all</a>
           <span class="follows-sort-controls__sort">
@@ -1572,7 +1718,6 @@ export class FollowListManager {
           </label>
         </div>
         <div class="follows-list"></div>
-        ${this.renderControlButtons()}
         <div class="mutual-changes-modal" style="display: none;"></div>
       `;
 
@@ -1920,7 +2065,7 @@ export class FollowListManager {
         </div>
       </div>
       <button class="follow-item__unfollow-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
-        Disconnect
+        Unfollow
       </button>
     `;
 
@@ -2263,5 +2408,380 @@ export class FollowListManager {
       return '<span class="article-notif-label">(Article alerts)</span>';
     }
     return '';
+  }
+}
+
+// ============================================================
+// EXTERNAL FOLLOW LIST MANAGER (read-only view for other users)
+// ============================================================
+
+/**
+ * Follow item with profile for external user view
+ */
+interface ExternalFollowItemWithProfile {
+  pubkey: string;
+  profile: UserProfile;
+  isFollowedByMe: boolean;
+}
+
+/**
+ * ExternalFollowListManager
+ * Displays follows of another user (not the current user)
+ * Simplified read-only view without sync features
+ *
+ * Features:
+ * - Total count display
+ * - Filter by name
+ * - Follow button (for users not already followed)
+ *
+ * NOT included:
+ * - Unfollow button (can't unfollow someone else's follows)
+ * - Mutuals display
+ * - Zap stats
+ * - Sort by options
+ * - Load all link
+ * - Sync buttons
+ */
+export class ExternalFollowListManager {
+  private targetPubkey: string;
+  private userService: UserService;
+  private userProfileService: UserProfileService;
+  private authService: AuthService;
+  private router: Router;
+  private containerElement: HTMLElement | null = null;
+  private allItemsWithProfiles: ExternalFollowItemWithProfile[] = [];
+  private currentOffset: number = 0;
+  private hasMore: boolean = true;
+  private isLoading: boolean = false;
+  private infiniteScroll: InfiniteScroll | null = null;
+  private usernameFilter: string = '';
+  private readonly BATCH_SIZE: number = 20;
+
+  constructor(targetPubkey: string) {
+    this.targetPubkey = targetPubkey;
+    this.userService = UserService.getInstance();
+    this.userProfileService = UserProfileService.getInstance();
+    this.authService = AuthService.getInstance();
+    this.router = Router.getInstance();
+  }
+
+  /**
+   * Render list tab content
+   */
+  public async renderListTab(container: HTMLElement): Promise<void> {
+    this.containerElement = container;
+
+    // Reset state
+    this.allItemsWithProfiles = [];
+    this.currentOffset = 0;
+    this.hasMore = true;
+    this.isLoading = false;
+    this.usernameFilter = '';
+
+    // Cleanup existing infinite scroll
+    if (this.infiniteScroll) {
+      this.infiniteScroll.destroy();
+      this.infiniteScroll = null;
+    }
+
+    // Show loading state
+    container.innerHTML = `
+      <div class="follows-list-loading">
+        Loading follows...
+      </div>
+    `;
+
+    try {
+      // Fetch follows from relay
+      const followPubkeys = await this.userService.getUserFollowing(this.targetPubkey);
+
+      if (followPubkeys.length === 0) {
+        container.innerHTML = `
+          <div class="follows-list-empty-state">
+            <p>This user doesn't follow anyone yet</p>
+          </div>
+        `;
+        return;
+      }
+
+      // Get profile of target user for title
+      const targetProfile = await this.userProfileService.getUserProfile(this.targetPubkey);
+      const targetName = extractDisplayName(targetProfile);
+
+      // Get my follows to check which users I already follow
+      const myFollows = new Set(getFollowItems().map(f => f.pubkey));
+
+      // Fetch profiles for all followed users
+      const itemsWithProfiles: ExternalFollowItemWithProfile[] = await Promise.all(
+        followPubkeys.map(async (pubkey) => ({
+          pubkey,
+          profile: await this.userProfileService.getUserProfile(pubkey),
+          isFollowedByMe: myFollows.has(pubkey)
+        }))
+      );
+
+      // Store all items
+      this.allItemsWithProfiles = itemsWithProfiles;
+
+      // Render container
+      container.innerHTML = `
+        <div class="external-follows-header">
+          <div class="external-follows-stats">
+            <strong>${targetName}</strong> follows ${itemsWithProfiles.length} ${itemsWithProfiles.length === 1 ? 'user' : 'users'}
+          </div>
+          <input type="text"
+                 class="external-follows-search"
+                 placeholder="Filter by name..." />
+        </div>
+        <div class="follows-list external-follows-list"></div>
+      `;
+
+      // Bind filter input
+      const searchInput = container.querySelector('.external-follows-search') as HTMLInputElement;
+      searchInput?.addEventListener('input', () => {
+        this.usernameFilter = searchInput.value.toLowerCase();
+        this.reRenderList();
+      });
+
+      const list = container.querySelector('.follows-list');
+      if (!list) return;
+
+      // Load first batch
+      await this.loadBatch(list as HTMLElement);
+
+      // Setup infinite scroll if there are more items
+      if (this.hasMore) {
+        this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
+          loadingMessage: 'Loading more...'
+        });
+        this.infiniteScroll.observe(list as HTMLElement);
+      }
+    } catch (error) {
+      console.error('Failed to load external follows:', error);
+      container.innerHTML = `
+        <div class="follows-list-empty-state">
+          <p>Failed to load follows</p>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * Handle infinite scroll load more
+   */
+  private async handleLoadMore(): Promise<void> {
+    const list = this.containerElement?.querySelector('.follows-list');
+    if (!list || this.isLoading || !this.hasMore) return;
+    await this.loadBatch(list as HTMLElement);
+  }
+
+  /**
+   * Load batch of items
+   */
+  private async loadBatch(listElement: HTMLElement): Promise<void> {
+    if (this.isLoading || !this.hasMore) return;
+
+    this.isLoading = true;
+
+    if (this.currentOffset > 0 && this.infiniteScroll) {
+      this.infiniteScroll.showLoading();
+    }
+
+    try {
+      // Filter items based on username filter
+      const filteredItems = this.usernameFilter
+        ? this.allItemsWithProfiles.filter(item => {
+            const username = extractDisplayName(item.profile).toLowerCase();
+            return username.includes(this.usernameFilter);
+          })
+        : this.allItemsWithProfiles;
+
+      // Get next batch
+      const batch = filteredItems.slice(
+        this.currentOffset,
+        this.currentOffset + this.BATCH_SIZE
+      );
+
+      if (batch.length === 0) {
+        this.hasMore = false;
+        if (this.infiniteScroll) {
+          this.infiniteScroll.hideLoading();
+        }
+        return;
+      }
+
+      // Render batch
+      this.renderBatch(listElement, batch);
+
+      // Update offset
+      this.currentOffset += batch.length;
+
+      // Check if there are more items
+      if (this.currentOffset >= filteredItems.length) {
+        this.hasMore = false;
+      }
+    } finally {
+      this.isLoading = false;
+      if (this.infiniteScroll) {
+        this.infiniteScroll.hideLoading();
+      }
+    }
+  }
+
+  /**
+   * Render batch of items
+   */
+  private renderBatch(listElement: HTMLElement, batch: ExternalFollowItemWithProfile[]): void {
+    const sentinel = listElement.querySelector('.infinite-scroll-sentinel');
+
+    for (const item of batch) {
+      const itemEl = this.createFollowItemElement(item);
+
+      if (sentinel) {
+        listElement.insertBefore(itemEl, sentinel);
+      } else {
+        listElement.appendChild(itemEl);
+      }
+    }
+  }
+
+  /**
+   * Create follow item DOM element
+   */
+  private createFollowItemElement(item: ExternalFollowItemWithProfile): HTMLElement {
+    const username = extractDisplayName(item.profile);
+    const npub = hexToNpub(item.pubkey);
+    const avatarUrl = item.profile?.picture || '';
+    const currentUser = this.authService.getCurrentUser();
+    const isMe = currentUser?.pubkey === item.pubkey;
+
+    const itemDiv = document.createElement('div');
+    itemDiv.className = 'ui-list__item follow-item external-follow-item';
+    itemDiv.dataset.pubkey = item.pubkey;
+
+    // Determine button state
+    let buttonHtml = '';
+    if (!isMe && currentUser) {
+      if (item.isFollowedByMe) {
+        buttonHtml = `<span class="external-follow-item__status">Following</span>`;
+      } else {
+        buttonHtml = `
+          <button class="external-follow-item__follow-btn btn btn--medium" data-pubkey="${item.pubkey}">
+            Follow
+          </button>
+        `;
+      }
+    }
+
+    itemDiv.innerHTML = `
+      <div class="follow-item__content-wrapper">
+        <div class="follow-item__avatar">
+          <img class="profile-pic profile-pic--medium" src="${this.escapeHtml(avatarUrl)}" alt="${this.escapeHtml(username)}" />
+        </div>
+        <div class="follow-item__info">
+          <div class="follow-item__username">${this.escapeHtml(username)}</div>
+        </div>
+      </div>
+      ${buttonHtml}
+    `;
+
+    // Navigate to profile on click
+    const contentWrapper = itemDiv.querySelector('.follow-item__content-wrapper');
+    contentWrapper?.addEventListener('click', () => {
+      this.router.navigate(`/profile/${npub}`);
+    });
+
+    // Handle follow button
+    const followBtn = itemDiv.querySelector('.external-follow-item__follow-btn');
+    followBtn?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      await this.handleFollow(item, itemDiv);
+    });
+
+    return itemDiv;
+  }
+
+  /**
+   * Handle follow action
+   */
+  private async handleFollow(item: ExternalFollowItemWithProfile, itemElement: HTMLElement): Promise<void> {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) return;
+
+    const followBtn = itemElement.querySelector('.external-follow-item__follow-btn') as HTMLButtonElement;
+    if (!followBtn) return;
+
+    try {
+      followBtn.disabled = true;
+      followBtn.textContent = 'Following...';
+
+      // Add follow
+      followUser(item.pubkey, false);
+
+      // Update item state
+      item.isFollowedByMe = true;
+
+      // Replace button with status text
+      followBtn.replaceWith(this.createStatusElement());
+
+      ToastService.show('Followed (local)', 'success');
+      eventBus.emit('follow:updated', {});
+    } catch (error) {
+      console.error('Failed to follow:', error);
+      ToastService.show('Failed to follow', 'error');
+      followBtn.disabled = false;
+      followBtn.textContent = 'Follow';
+    }
+  }
+
+  /**
+   * Create "Following" status element
+   */
+  private createStatusElement(): HTMLElement {
+    const span = document.createElement('span');
+    span.className = 'external-follow-item__status';
+    span.textContent = 'Following';
+    return span;
+  }
+
+  /**
+   * Re-render list (for filter changes)
+   */
+  private reRenderList(): void {
+    const list = this.containerElement?.querySelector('.follows-list');
+    if (!list) return;
+
+    // Clear list but keep sentinel
+    const sentinel = list.querySelector('.infinite-scroll-sentinel');
+    list.innerHTML = '';
+    if (sentinel) {
+      list.appendChild(sentinel);
+    }
+
+    // Reset offset
+    this.currentOffset = 0;
+    this.hasMore = true;
+
+    // Load first batch with filter
+    this.loadBatch(list as HTMLElement);
+  }
+
+  /**
+   * Escape HTML
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  /**
+   * Cleanup
+   */
+  public destroy(): void {
+    if (this.infiniteScroll) {
+      this.infiniteScroll.destroy();
+      this.infiniteScroll = null;
+    }
   }
 }

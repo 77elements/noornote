@@ -100,7 +100,6 @@
 }
 
 .profile-nip05 {
-  color: var(--color-text-secondary);
   margin: 0 0 $gap 0;
   word-break: break-all;
 }
@@ -166,7 +165,7 @@
 .copy-btn {
   background: $color-2;
   border: 1px solid $color-3;
-  border-radius: 4px;
+  border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -209,7 +208,7 @@
 .qr-btn {
   background: $color-2;
   border: 1px solid $color-3;
-  border-radius: 4px;
+  border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -234,7 +233,7 @@
 .tribe-btn {
   background: $color-2;
   border: 1px solid $color-3;
-  border-radius: 4px;
+  border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -286,8 +285,8 @@
 // Profile Stats (Following, Relays, Muted)
 .profile-stats {
   display: flex;
-  align-items: center;
-  gap: $gap * 1.5;
+  flex-wrap: wrap;
+  gap: $gap;
   margin: 0;
   padding: calc($gap / 2) 0;
   border-top: 1px solid $color-2;
@@ -321,7 +320,6 @@
   }
 
   span {
-    color: var(--color-text-secondary);
     transition: color 0.2s ease;
   }
 }
@@ -411,13 +409,11 @@
 .profile-joined-date {
   text-align: right;
   @extend %small;
-  color: var(--color-text-secondary);
   margin: calc($gap / 2) 0 $gap 0;
   opacity: 0.8;
 }
 
 .profile-about {
-  color: var(--color-text-primary);
   line-height: 1.5;
   margin: $gap 0;
   white-space: pre-wrap;
@@ -428,7 +424,6 @@
   margin: calc($gap / 2) 0;
 
   a {
-    color: var(--color-text-interactive);
     text-decoration: none;
     transition: $transition-colors;
 
@@ -649,7 +644,7 @@
   height: 40px;
   border: 3px solid $color-2;
   border-top-color: $color-4;
-  border-radius: 50%;
+  border-radius: $radius-full;
   animation: spin 1s linear infinite;
   margin-bottom: $gap;
 }
@@ -657,7 +652,6 @@
 // Profile loading/error text (standalone)
 .profile-loading-text,
 .profile-error-text {
-  color: var(--color-text-secondary);
   @extend %h3;
   margin: 0;
 }

@@ -1,8 +1,7 @@
 /**
  * Note Header Organism
- * Media object pattern using CSS Grid for predictable layout
- * Unified sizing - no size variants needed
- * Low specificity - all BEM elements are standalone
+ * Combines UserIdentity with note-specific meta (timestamp, menu, verification)
+ * Uses flexbox for simple two-section layout
  */
 
 @use '../abstracts/variables' as *;
@@ -11,92 +10,43 @@
 @use 'note-header-responsive';
 
 .note-header {
-  // Grid-based media object (Avatar + Info)
-  display: grid;
-  grid-template-columns: auto 1fr;  // Avatar (fixed) + Info (flexible)
-  gap: calc($gap * 0.75);
-  align-items: start;  // Prevent stretching
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc($gap / 2);
   width: 100%;
 }
 
-// Interactive state modifier
-.note-header--clickable {
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-
-  &:hover {
-    opacity: 0.8;
-
-    .note-header__display-name {
-      text-decoration: underline;
-    }
-  }
-
-  &:active {
-    transform: translateY(1px);
-  }
-}
-
-// Avatar container (first grid column)
-.note-header__avatar {
-  grid-column: 1;
-
-  // Avatar image specific styles (size/border from .profile-pic--medium)
-  .profile-pic--medium {
-    display: block;
-    background: $color-2;
-    transition: border-color 0.2s ease;
-
-    &:hover {
-      border-color: rgba($color-4, 0.5);
-    }
-
-    // Loading state
-    &[src=""] {
-      background: linear-gradient(45deg, $color-2, rgba($color-4, 0.1));
-      animation: pulsate 1.5s ease-in-out infinite;
-    }
-  }
-}
-
-// Text information container (second grid column)
-.note-header__info {
-  grid-column: 2;
+// User section (contains UserIdentity component)
+.note-header__user {
+  flex: 1;
   min-width: 0; // Allow text truncation
-  display: grid;
+
+  // UserIdentity inside note-header gets medium avatar
+  .user-identity {
+    .user-identity__avatar {
+      width: 40px;
+      height: 40px;
+    }
+  }
 }
 
-// Primary line container (Name + Verification + Timestamp + Menu)
-.note-header__primary-line {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  gap: calc($gap / 2);
+// Meta section (verification, timestamp, menu)
+.note-header__meta {
+  display: flex;
   align-items: center;
-  min-width: 0;
-}
-
-// Display name
-.note-header__display-name {
-  grid-column: 1;
-  color: $color-5;
-  @extend %h4;
-  font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  min-width: 0;
-  text-align: left;
+  gap: calc($gap / 2);
+  flex-shrink: 0;
 }
 
 // Verification badge
 .note-header__verification {
-  grid-column: 2;
   width: 16px;
   height: 16px;
   @extend %small;
   color: $color-4;
   background: rgba($color-4, 0.2);
-  border-radius: 50%;
+  border-radius: $radius-full;
   display: grid;
   place-items: center;
   font-weight: bold;
@@ -110,7 +60,6 @@
 
 // Timestamp
 .note-header__timestamp {
-  grid-column: 3;
   @extend %small;
   color: $color-5;
   opacity: 0.6;
@@ -120,18 +69,6 @@
 
 // Menu container
 .note-header__menu-container {
-  grid-column: 4;
+  display: flex;
+  align-items: center;
 }
-
-// Handle/NIP-05
-.note-header__handle {
-  @extend %small;
-  color: $color-5;
-  opacity: 0.7;
-  font-family: $font-family-mono;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-align: left;
-}
-

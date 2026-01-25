@@ -14,6 +14,7 @@ import { formatHashtags } from '../helpers/formatHashtags';
 import { formatQuotedReferences } from '../helpers/formatQuotedReferences';
 import { convertLineBreaks } from '../helpers/convertLineBreaks';
 import { npubToUsername } from '../helpers/npubToUsername';
+import { extractCustomEmojis, formatCustomEmojis } from '../helpers/formatCustomEmojis';
 import { hexToNpub } from '../helpers/nip19';
 import { UserProfileService } from './UserProfileService';
 import type { MediaContent } from '../helpers/renderMediaContent';
@@ -113,12 +114,16 @@ export class ContentProcessor {
     // Don't remove quoted references - they stay at their original position
     cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n').trim();
 
+    // Extract custom emojis from tags (NIP-30)
+    const customEmojis = extractCustomEmojis(tags);
+
     // Process HTML with individual helpers
     let html = escapeHtml(cleanedText);
     html = linkifyUrls(html);
     html = npubToUsername(html, 'html-multi', profileResolver);
     html = formatHashtags(html, hashtags);
     html = formatQuotedReferences(html, quotedReferences);
+    html = formatCustomEmojis(html, customEmojis);
     html = convertLineBreaks(html);
 
     return {

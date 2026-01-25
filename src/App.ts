@@ -24,6 +24,7 @@ import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
+import { AutoSyncService } from './services/AutoSyncService';
 
 export class App {
   private appElement: HTMLElement | null = null;
@@ -622,6 +623,9 @@ export class App {
       const { DMService } = await import('./services/dm/DMService');
       await DMService.getInstance().start();
     });
+
+    // Initialize AutoSyncService for Easy Mode list syncing
+    AutoSyncService.getInstance();
   }
 }
 

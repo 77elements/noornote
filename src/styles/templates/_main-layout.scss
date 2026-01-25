@@ -14,53 +14,57 @@
   box-sizing: border-box;
   overflow: hidden;
 
-  // Mobile-first: Base (phone)
+  // ========================================
+  // Mobile-First: Base = Phone (0-639px)
+  // ========================================
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr 1fr;
+  grid-template-rows: auto 1fr;
   grid-template-areas:
     "sidebar"
-    "primary"
-    "secondary";
-  gap: calc($gap / 4);
-  padding: calc($gap / 4);
+    "primary";
+  gap: calc($gap / 2);
+  padding: calc($gap / 2);
 
-  // 576px+ (small)
-  @media (min-width: 576px) {
-    gap: calc($gap / 2);
-    padding: calc($gap / 2);
-  }
-
-  // 800px+ (2 columns with fluid sidebar)
-  @media (min-width: 800px) {
-    grid-template-columns: clamp(200px, 25vw, 250px) 1fr;
+  // ========================================
+  // Tablet (640px+): 2 columns
+  // ========================================
+  @include tablet {
+    // Sidebar: fluid width, skaliert mit viewport (wie Font-Size)
+    grid-template-columns: clamp(200px, 24vw, 240px) 1fr;
     grid-template-areas: "sidebar primary";
     gap: $gap;
     padding: $gap;
   }
 
-  // 1100px+ (3 columns)
-  @media (min-width: 1100px) {
+  // ========================================
+  // Desktop (1024px+): 3 columns
+  // ========================================
+  @include desktop {
     grid-template-columns: clamp(200px, 18vw, 250px) 1fr 1fr;
     grid-template-areas: "sidebar primary secondary";
   }
 }
 
-// Layout modes set on <html> element by LayoutService
-// Wide mode: Hide secondary content, expand primary content
+// ========================================
+// Layout Mode: Wide (2-column, no secondary)
+// ========================================
 html.layout--wide .main-layout {
-  grid-template-columns: clamp(200px, 15vw, 250px) 1fr;
-  grid-template-areas: "sidebar primary";
+  // Base (phone): single column
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    "sidebar"
+    "primary";
 
-  @include desktop-down {
-    grid-template-columns: 210px 1fr;
+  @include tablet {
+    // Tablet+: 2 columns mit fluid sidebar
+    grid-template-columns: clamp(200px, 24vw, 240px) 1fr;
+    grid-template-areas: "sidebar primary";
   }
 
-  @include tablet-down {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-      "sidebar"
-      "primary";
+  @include desktop {
+    // Desktop: etwas schmalere sidebar im wide mode
+    grid-template-columns: clamp(200px, 16vw, 240px) 1fr;
   }
 
   .secondary-content {
@@ -68,78 +72,9 @@ html.layout--wide .main-layout {
   }
 }
 
-// Mobile header (hamburger menu) - only visible in mobile mode
-.mobile-header {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 48px;
-  background: $color-1;
-  border-bottom: 1px solid $color-2;
-  z-index: 100;
-  align-items: center;
-  padding: 0 $gap;
-  gap: $gap;
-
-  &__hamburger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: $color-5;
-    padding: 0;
-
-    svg {
-      width: 24px;
-      height: 24px;
-    }
-
-    &:hover {
-      color: $color-4;
-    }
-  }
-
-  &__title {
-    flex: 1;
-    text-align: center;
-    margin-right: 40px; // Compensate for hamburger width to center text
-    font-family: 'Saira', sans-serif;
-    @extend %h3;
-    font-weight: 700;
-    background: linear-gradient(135deg, color.adjust($color-3, $saturation: 40%), color.adjust($color-6, $saturation: 40%));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-}
-
-// Sidebar overlay - only visible in mobile mode when sidebar is open
-.sidebar-overlay {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: $overlay-bg;
-  z-index: 199;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-
-  &--visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
-}
-
-// Mobile mode: Single-column with slide-out sidebar
+// ========================================
+// Layout Mode: Phone (single column with drawer)
+// ========================================
 html.layout--phone {
   .mobile-header {
     display: flex;
@@ -192,22 +127,24 @@ html.layout--phone {
   }
 }
 
-// Layout areas
+// ========================================
+// Grid Areas
+// ========================================
 .sidebar {
   grid-area: sidebar;
   min-width: 0;
-  overflow: hidden; // Sidebar stays fixed, no scroll
+  overflow: hidden;
 }
 
 .primary-content {
   grid-area: primary;
   min-width: 0;
-  overflow-y: auto; // Independent vertical scroll
+  overflow-y: auto;
   overflow-x: hidden;
   height: 100%;
   @include custom-scrollbar;
 
-  // Smooth scrolling optimizations (especially for Linux)
+  // Smooth scrolling optimizations
   will-change: scroll-position;
   contain: layout style paint;
   -webkit-overflow-scrolling: touch;
@@ -216,20 +153,14 @@ html.layout--phone {
 .secondary-content {
   grid-area: secondary;
   min-width: 0;
-  overflow-y: auto; // Independent vertical scroll for manual override
+  overflow-y: auto;
   overflow-x: hidden;
   height: 100%;
 
-  // Smooth scrolling optimizations (especially for Linux)
+  // Smooth scrolling optimizations
   will-change: scroll-position;
   contain: layout style paint;
   -webkit-overflow-scrolling: touch;
-
-  .secondary-user {
-    padding: 0;
-    border-bottom: 1px solid $color-2;
-    text-align: right;
-  }
 
   .tabs {
     border-bottom: 1px solid $color-2;
@@ -239,606 +170,13 @@ html.layout--phone {
     height: calc(100% - 120px);
     overflow: hidden;
     position: relative;
-  }
 
-  // Empty/loading states (shared by all lists)
-  .bookmarks-empty-state,
-  .follows-empty-state,
-  .mutes-empty-state {
-    padding: calc($gap * 2);
-    text-align: center;
-    color: $color-5;
-  }
-
-  // Loading states with pulsate animation
-  .bookmarks-loading,
-  .follows-loading,
-  .follows-list-loading,
-  .mutes-loading {
-    padding: calc($gap * 2);
-    text-align: center;
-    color: $color-5;
-    animation: pulsate 2.5s ease-in-out infinite;
-  }
-
-  .bookmarks-list,
-  .follows-list,
-  .mutes-list {
-    padding: $gap 0;
-  }
-
-  // List sync controls (used by Bookmarks, Follows, Muted Users)
-  .list-sync-controls {
-    display: flex;
-    gap: calc($gap / 2);
-    flex-wrap: wrap;
-    padding: $gap 0;
-    border-bottom: 1px solid $color-2;
-  }
-
-  .list-sync-info {
-    padding: calc($gap / 2) 0;
-    margin: 0;
-    @extend %small;
-    line-height: 1.4;
-    color: $color-3;
-    text-align: left;
-    border-bottom: 1px solid $color-2;
-  }
-
-  .bookmark-item {
-    display: flex;
-    align-items: center;
-    gap: $gap;
-    padding: $gap;
-    border-bottom: 1px solid $color-2;
-    transition: background 0.2s ease;
-
-    &:hover {
-      background: color.adjust($color-2, $lightness: 5%);
-    }
-
-    &__content-wrapper {
-      flex: 1;
-      cursor: pointer;
-    }
-
-    &__author {
-      font-weight: 600;
-      color: $color-5;
-      margin-bottom: calc($gap / 4);
-      display: flex;
-      align-items: center;
-      gap: calc($gap / 2);
-    }
-
-    &__content {
-      color: $color-5;
-      margin-bottom: calc($gap / 4);
-      line-height: 1.4;
-    }
-
-    &__timestamp {
-      @extend %small;
-      color: color.adjust($color-5, $lightness: -20%);
-    }
-
-    &__delete {
-      background: none;
-      border: none;
-      padding: calc($gap / 2);
-      cursor: pointer;
-      color: color.adjust($color-5, $lightness: -30%);
-      transition: color 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-
-      &:hover {
-        color: $color-4;
-      }
-
-      svg {
-        display: block;
+    @include desktop {
+      .tab-content {
+        padding-right: calc($gap / 2);
       }
     }
   }
 
-  // Follows header (sticky with stats and filter)
-  .follows-header {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: $gap;
-    padding: calc($gap / 2) 0;
-    border-bottom: 1px solid color.adjust($color-2, $lightness: 10%);
-    background: $color-1;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-
-  .follows-stats {
-    @extend %small;
-    font-weight: 600;
-    color: $color-5;
-    white-space: nowrap;
-  }
-
-  .follows-filter {
-    label {
-      display: flex;
-      align-items: center;
-      gap: calc($gap / 4);
-      @extend %small;
-      color: $color-3;
-      cursor: pointer;
-      white-space: nowrap;
-
-      &:hover {
-        color: $color-4;
-      }
-    }
-
-    &__toggle {
-      cursor: pointer;
-      accent-color: $color-4;
-    }
-  }
-
-  // Follow item (extends .ui-list__item)
-  .follow-item {
-    display: flex;
-    align-items: center;
-    gap: $gap;
-    padding: $gap 0;
-
-    &__content-wrapper {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: $gap;
-      cursor: pointer;
-    }
-
-    &__avatar {
-      flex-shrink: 0;
-    }
-
-    &__info {
-      gap: calc($gap / 4);
-    }
-
-    &__username {
-      font-weight: 600;
-      color: $color-5;
-      display: flex;
-      align-items: center;
-      gap: calc($gap / 2);
-    }
-
-    &__petname {
-      @extend %small;
-      color: color.adjust($color-5, $lightness: -20%);
-    }
-
-    &__unfollow-btn {
-      flex-shrink: 0;
-    }
-  }
-
-  // Mute item (extends .ui-list__item)
-  .mute-item {
-    display: flex;
-    align-items: center;
-    gap: $gap;
-
-    &__content-wrapper {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: $gap;
-      cursor: pointer;
-    }
-
-    &__avatar {
-      flex-shrink: 0;
-    }
-
-    &__info {
-      flex: 1;
-    }
-
-    &__username {
-      font-weight: 600;
-      color: $color-5;
-      display: flex;
-      align-items: center;
-      gap: calc($gap / 2);
-    }
-
-    &__unmute-btn {
-      flex-shrink: 0;
-    }
-
-    // Thread-specific styles
-    &--thread {
-      .mute-item__content-wrapper {
-        cursor: pointer;
-      }
-    }
-
-    &__thread-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 36px;
-      height: 36px;
-      background: color.adjust($color-2, $lightness: 5%);
-      border-radius: $radius-sm;
-      color: $color-warning;
-      flex-shrink: 0;
-    }
-
-    &__event-id {
-      font-family: monospace;
-      @extend %small;
-      color: $color-3;
-      display: flex;
-      align-items: center;
-      gap: calc($gap / 2);
-    }
-
-    &__thread-content {
-      @extend %small;
-      color: $color-5;
-      line-height: 1.4;
-      display: flex;
-      align-items: center;
-      gap: calc($gap / 2);
-      word-break: break-word;
-    }
-  }
-
-  // Mute sections (Users / Threads)
-  .mute-section {
-    margin-bottom: $gap * 1.5;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-
-    &__header {
-      display: flex;
-      align-items: center;
-      gap: calc($gap / 2);
-      padding: calc($gap / 2) $gap;
-      border-bottom: 1px solid color.adjust($color-2, $lightness: 10%);
-      margin-bottom: calc($gap / 2);
-    }
-
-    &__title {
-      @extend %small;
-      font-weight: 600;
-      color: $color-3;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    // Badge uses .badge class (styles in _badges.scss)
-  }
-
-  // Scrollbar styling - MUST be last to override any conflicting styles
   @include custom-scrollbar;
-}
-
-// List view in primary content (wide mode only)
-.list-view-primary {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: $gap;
-    padding: $gap;
-    border-bottom: 1px solid $color-2;
-    flex-shrink: 0;
-  }
-
-  &__back {
-    flex-shrink: 0;
-  }
-
-  &__title {
-    @extend %h1;
-    font-weight: 600;
-    color: $color-5;
-    margin: 0;
-  }
-
-  &__content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    @include custom-scrollbar;
-    padding: $gap;
-
-    // Inherit list styles from secondary-content
-    .list-sync-controls {
-      display: flex;
-      gap: calc($gap / 2);
-      flex-wrap: wrap;
-      padding: $gap 0;
-      border-bottom: 1px solid $color-2;
-    }
-
-    .list-sync-info {
-      padding: calc($gap / 2) 0;
-      margin: 0;
-      @extend %small;
-      line-height: 1.4;
-      color: $color-3;
-      text-align: left;
-      border-bottom: 1px solid $color-2;
-    }
-
-    .bookmarks-list,
-    .follows-list,
-    .mutes-list {
-      padding: $gap 0;
-    }
-
-    // Mute sections (Users / Threads)
-    .mute-section {
-      margin-bottom: $gap * 1.5;
-
-      &:last-child {
-        margin-bottom: 0;
-      }
-
-      &__header {
-        display: flex;
-        align-items: center;
-        gap: calc($gap / 2);
-        padding: calc($gap / 2) $gap;
-        border-bottom: 1px solid color.adjust($color-2, $lightness: 10%);
-        margin-bottom: calc($gap / 2);
-      }
-
-      &__title {
-        @extend %small;
-        font-weight: 600;
-        color: $color-3;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-    }
-
-    // Mute item (same styles as in secondary-content)
-    .mute-item {
-      display: flex;
-      align-items: center;
-      gap: $gap;
-
-      &__content-wrapper {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        gap: $gap;
-        cursor: pointer;
-      }
-
-      &__avatar {
-        flex-shrink: 0;
-      }
-
-      &__info {
-        flex: 1;
-      }
-
-      &__username {
-        font-weight: 600;
-        color: $color-5;
-        display: flex;
-        align-items: center;
-        gap: calc($gap / 2);
-      }
-
-      &__unmute-btn {
-        flex-shrink: 0;
-      }
-
-      // Thread-specific styles
-      &--thread {
-        .mute-item__content-wrapper {
-          cursor: pointer;
-        }
-      }
-
-      &__thread-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 36px;
-        height: 36px;
-        background: color.adjust($color-2, $lightness: 5%);
-        border-radius: $radius-sm;
-        color: $color-warning;
-        flex-shrink: 0;
-      }
-
-      &__event-id {
-        font-family: monospace;
-        @extend %small;
-        color: $color-3;
-        display: flex;
-        align-items: center;
-        gap: calc($gap / 2);
-      }
-
-      &__thread-content {
-        @extend %small;
-        color: $color-5;
-        line-height: 1.4;
-        display: flex;
-        align-items: center;
-        gap: calc($gap / 2);
-        word-break: break-word;
-      }
-    }
-
-    // Follow item (same styles as in secondary-content)
-    .follow-item {
-      display: flex;
-      align-items: center;
-      gap: $gap;
-      padding: $gap 0;
-
-      &__content-wrapper {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        gap: $gap;
-        cursor: pointer;
-      }
-
-      &__avatar {
-        flex-shrink: 0;
-      }
-
-      &__info {
-        gap: calc($gap / 4);
-      }
-
-      &__username {
-        font-weight: 600;
-        color: $color-5;
-        display: flex;
-        align-items: center;
-        gap: calc($gap / 2);
-      }
-
-      &__petname {
-        @extend %small;
-        color: color.adjust($color-5, $lightness: -20%);
-      }
-
-      &__unfollow-btn {
-        flex-shrink: 0;
-      }
-    }
-
-    // Bookmark item (same styles as in secondary-content)
-    .bookmark-item {
-      display: flex;
-      align-items: center;
-      gap: $gap;
-      padding: $gap;
-      border-bottom: 1px solid $color-2;
-      transition: background 0.2s ease;
-
-      &:hover {
-        background: color.adjust($color-2, $lightness: 5%);
-      }
-
-      &__content-wrapper {
-        flex: 1;
-        cursor: pointer;
-      }
-
-      &__author {
-        font-weight: 600;
-        color: $color-5;
-        margin-bottom: calc($gap / 4);
-        display: flex;
-        align-items: center;
-        gap: calc($gap / 2);
-      }
-
-      &__content {
-        color: $color-5;
-        margin-bottom: calc($gap / 4);
-        line-height: 1.4;
-      }
-
-      &__timestamp {
-        @extend %small;
-        color: color.adjust($color-5, $lightness: -20%);
-      }
-
-      &__delete {
-        background: none;
-        border: none;
-        padding: calc($gap / 2);
-        cursor: pointer;
-        color: color.adjust($color-5, $lightness: -30%);
-        transition: color 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-
-        &:hover {
-          color: $color-4;
-        }
-
-        svg {
-          display: block;
-        }
-      }
-    }
-  }
-}
-
-// Search view in primary content (wide mode only)
-.search-view-primary {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: $gap;
-    padding: $gap;
-    border-bottom: 1px solid $color-2;
-    flex-shrink: 0;
-  }
-
-  &__back {
-    flex-shrink: 0;
-  }
-
-  &__title {
-    @extend %h1;
-    font-weight: 600;
-    color: $color-5;
-    margin: 0;
-  }
-
-  &__content {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    @include custom-scrollbar;
-    padding: $gap;
-
-    // GlobalSearchView content adapts to primary content
-    .tab-content {
-      display: block;
-      height: 100%;
-      overflow-y: auto;
-      @include custom-scrollbar;
-
-      &.tab-content--active {
-        display: block;
-      }
-    }
-  }
 }

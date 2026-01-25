@@ -155,7 +155,7 @@ export class ArticleTimeline {
         </div>
       ` : ''}
       <div class="article-card__content">
-        <h3 class="article-card__title">${this.escapeHtml(metadata.title || 'Untitled')}</h3>
+        <h2 class="article-card__title">${this.escapeHtml(metadata.title || 'Untitled')}</h2>
         ${metadata.summary ? `<p class="article-card__summary">${this.escapeHtml(metadata.summary)}</p>` : ''}
         <div class="article-card__meta">
           <span class="article-card__author user-mention" data-pubkey="${event.pubkey}">

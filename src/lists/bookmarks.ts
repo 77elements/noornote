@@ -27,6 +27,7 @@ import { Router } from '../services/Router';
 import { ProfileMountsService } from '../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../services/orchestration/ProfileMountsOrchestrator';
 import { PerAccountLocalStorage, StorageKeys as PerAccountStorageKeys } from '../services/PerAccountLocalStorage';
+import { PlatformService } from '../services/PlatformService';
 
 // Types for folder management (inlined from GenericFolderService)
 export interface Folder {
@@ -51,7 +52,7 @@ import { UpNavigator } from '../components/bookmarks/UpNavigator';
 
 // Shared helpers from /src/lists/
 import { readList, writeList, StorageKeys, now, deduplicateById } from './storage';
-import { readJsonFile, writeJsonFile } from './file';
+import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
 import {
   fetchEvents,
   publishEvent,
@@ -895,6 +896,72 @@ export function getBookmarkFolderService(): BookmarkFolderServiceImpl {
   return BookmarkFolderServiceImpl.getInstance();
 }
 
+/**
+ * Apply relay fetch result to browser storage
+ * Creates folders and assignments based on bookmark categories
+ */
+export function applyRelayFetchResult(
+  items: BookmarkItem[],
+  _categoryAssignments: Map<string, string> | undefined,
+  categories: string[] | undefined
+): void {
+  // Build folders from categories (skip empty/root category)
+  const newFolders: BookmarkFolder[] = [];
+  const folderNameToId = new Map<string, string>();
+
+  if (categories) {
+    for (const dTag of categories) {
+      // Skip root category (empty or generic "bookmarks")
+      if (!dTag || dTag === '' || dTag === 'bookmarks') continue;
+
+      // Use category name as folder name
+      const folderName = dTag;
+      const folderId = `folder_${folderName}`;
+      newFolders.push({
+        id: folderId,
+        name: folderName,
+        createdAt: Date.now()
+      });
+      folderNameToId.set(folderName, folderId);
+    }
+  }
+
+  // Build assignments from item categories
+  const newAssignments: BookmarkAssignment[] = [];
+  const newRootOrder: RootOrderItem<'bookmark'>[] = [];
+
+  // Add folders to root order first
+  for (const folder of newFolders) {
+    newRootOrder.push({ type: 'folder', id: folder.id });
+  }
+
+  // Assign items to their folders
+  for (const item of items) {
+    const categoryName = item.category || '';
+    const folderId = folderNameToId.get(categoryName);
+
+    if (folderId) {
+      // Item belongs to a folder
+      newAssignments.push({
+        bookmarkId: item.id,
+        folderId: folderId,
+        order: newAssignments.filter(a => a.folderId === folderId).length
+      });
+    } else {
+      // Item is in root
+      newRootOrder.push({ type: 'bookmark', id: item.id });
+    }
+  }
+
+  // Apply folder structure only (NOT items - that's done by applySyncFromRelays)
+  const storage = PerAccountLocalStorage.getInstance();
+  storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, newFolders);
+  storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, newAssignments);
+  storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, newRootOrder);
+
+  SystemLogger.getInstance().info('bookmarks.ts', `Applied folder structure: ${newFolders.length} folders`);
+}
+
 // =============================================================================
 // RELAY OPERATIONS (NIP-51 kind:30003)
 // =============================================================================
@@ -1194,18 +1261,18 @@ export async function publishBookmarksToRelays(): Promise<void> {
  */
 export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFromRelaysResult> {
   try {
-    // Fetch ALL kind:30003 events (all categories)
+    // Fetch ALL kind:30003 events (skipCache=true for sync)
     const events = await fetchEvents([{
       authors: [pubkey],
       kinds: [30003],
       limit: 100
-    }], 10000);
+    }], 10000, true);
 
-    // Fetch deletion events (kind:5) to filter out deleted categories
+    // Fetch deletion events (kind:5) - also skip cache
     const deletionEvents = await fetchEvents([{
       authors: [pubkey],
       kinds: [5]
-    }], 5000);
+    }], 5000, true);
 
     // Extract deleted coordinates with deletion timestamp
     const deletedCoordinates = new Map<string, number>();
@@ -1259,12 +1326,12 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       return { items: [], relayContentWasEmpty: true };
     }
 
-    // Fetch folder order metadata (NIP-78 kind:30078)
+    // Fetch folder order metadata (NIP-78 kind:30078) - also skip cache
     const orderEvents = await fetchEvents([{
       authors: [pubkey],
       kinds: [30078],
       '#d': ['noornote:bookmark-folders-order']
-    }], 5000);
+    }], 5000, true);
 
     let folderOrder: string[] = [];
     const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);
@@ -1348,6 +1415,228 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 }
 
 // =============================================================================
+// SYNC HELPERS (used by BookmarkStorageAdapter and BookmarkManager)
+// =============================================================================
+
+interface BookmarkMovedItem {
+  browserItem: BookmarkItem;
+  sourceItem: BookmarkItem;
+}
+
+interface BookmarkAdapterSyncDiff {
+  added: BookmarkItem[];
+  removed: BookmarkItem[];
+  unchanged: BookmarkItem[];
+  moved: BookmarkMovedItem[];
+}
+
+export interface BookmarkAdapterSyncFromRelaysResult {
+  requiresConfirmation: boolean;
+  diff: BookmarkAdapterSyncDiff;
+  relayItems: BookmarkItem[];
+  relayContentWasEmpty: boolean;
+  categoryAssignments: Map<string, string> | undefined;
+  categories: string[] | undefined;
+}
+
+function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: BookmarkItem[]): BookmarkAdapterSyncDiff {
+  const browserMap = new Map(browserItems.map(item => [item.id, item]));
+  const sourceMap = new Map(sourceItems.map(item => [item.id, item]));
+
+  const added = sourceItems.filter(item => !browserMap.has(item.id));
+  const removed = browserItems.filter(item => !sourceMap.has(item.id));
+
+  const unchanged: BookmarkItem[] = [];
+  const moved: BookmarkMovedItem[] = [];
+
+  for (const browserItem of browserItems) {
+    const sourceItem = sourceMap.get(browserItem.id);
+    if (sourceItem) {
+      const browserCategory = browserItem.category || '';
+      const sourceCategory = sourceItem.category || '';
+      if (browserCategory !== sourceCategory) {
+        moved.push({ browserItem, sourceItem });
+      } else {
+        unchanged.push(browserItem);
+      }
+    }
+  }
+
+  return { added, removed, unchanged, moved };
+}
+
+function mergeBookmarkItems(browserItems: BookmarkItem[], newItems: BookmarkItem[]): BookmarkItem[] {
+  const map = new Map<string, BookmarkItem>();
+  browserItems.forEach(item => map.set(item.id, item));
+  newItems.forEach(item => {
+    if (!map.has(item.id)) {
+      map.set(item.id, item);
+    }
+  });
+  return Array.from(map.values());
+}
+
+// =============================================================================
+// STATE SNAPSHOT COMPARISON (for detecting ANY difference)
+// =============================================================================
+
+/**
+ * Complete bookmark state snapshot for comparison.
+ * Captures: folder order, items per folder (with order), item properties.
+ */
+interface BookmarkStateSnapshot {
+  folderOrder: string[];  // Folder names in order ('' = root always first)
+  itemsByFolder: Map<string, string[]>;  // folder name → ordered item ids
+  itemProperties: Map<string, { isPrivate: boolean; description: string }>;
+}
+
+/**
+ * Create snapshot from browser state (localStorage + folderService)
+ */
+function createBrowserBookmarkSnapshot(): BookmarkStateSnapshot {
+  const folderService = getBookmarkFolderService();
+  const browserItems = readBrowserBookmarks();
+  const folders = folderService.getFolders();
+  const rootOrder = folderService.getRootOrder();
+
+  // Build folder order from rootOrder (folders only)
+  const folderOrder: string[] = [''];  // Root always first
+  for (const item of rootOrder) {
+    if (item.type === 'folder') {
+      const folder = folders.find(f => f.id === item.id);
+      if (folder) folderOrder.push(folder.name);
+    }
+  }
+  // Add any folders not in rootOrder
+  for (const folder of folders) {
+    if (!folderOrder.includes(folder.name)) {
+      folderOrder.push(folder.name);
+    }
+  }
+
+  // Build itemsByFolder with order
+  const itemsByFolder = new Map<string, string[]>();
+  itemsByFolder.set('', []);  // Initialize root
+  for (const folderName of folderOrder) {
+    if (folderName !== '') itemsByFolder.set(folderName, []);
+  }
+
+  // Get items in root order
+  for (const item of rootOrder) {
+    if (item.type === 'bookmark') {
+      const rootItems = itemsByFolder.get('') || [];
+      rootItems.push(item.id);
+      itemsByFolder.set('', rootItems);
+    }
+  }
+
+  // Get items in each folder (from assignments)
+  for (const folder of folders) {
+    const folderItems = folderService.getBookmarksInFolder(folder.id);
+    itemsByFolder.set(folder.name, folderItems);
+  }
+
+  // Build item properties map
+  const itemProperties = new Map<string, { isPrivate: boolean; description: string }>();
+  for (const item of browserItems) {
+    itemProperties.set(item.id, {
+      isPrivate: item.isPrivate || false,
+      description: item.description || ''
+    });
+  }
+
+  return { folderOrder, itemsByFolder, itemProperties };
+}
+
+/**
+ * Create snapshot from relay/file data (items array + categories)
+ */
+function createSourceBookmarkSnapshot(
+  items: BookmarkItem[],
+  categories?: string[]
+): BookmarkStateSnapshot {
+  // Build folder order from categories ('' = root always first)
+  const folderOrder: string[] = categories ? [...categories] : [''];
+  if (!folderOrder.includes('')) folderOrder.unshift('');
+
+  // Group items by category, preserving order within each category
+  const itemsByFolder = new Map<string, string[]>();
+  for (const folderName of folderOrder) {
+    itemsByFolder.set(folderName, []);
+  }
+
+  for (const item of items) {
+    const category = item.category || '';
+    if (!itemsByFolder.has(category)) {
+      itemsByFolder.set(category, []);
+      folderOrder.push(category);
+    }
+    itemsByFolder.get(category)!.push(item.id);
+  }
+
+  // Build item properties map
+  const itemProperties = new Map<string, { isPrivate: boolean; description: string }>();
+  for (const item of items) {
+    itemProperties.set(item.id, {
+      isPrivate: item.isPrivate || false,
+      description: item.description || ''
+    });
+  }
+
+  return { folderOrder, itemsByFolder, itemProperties };
+}
+
+/**
+ * Compare two snapshots for equality
+ */
+function bookmarkSnapshotsAreEqual(a: BookmarkStateSnapshot, b: BookmarkStateSnapshot): boolean {
+  // Compare folder order
+  if (a.folderOrder.length !== b.folderOrder.length) return false;
+  for (let i = 0; i < a.folderOrder.length; i++) {
+    if (a.folderOrder[i] !== b.folderOrder[i]) return false;
+  }
+
+  // Compare items in each folder (with order)
+  for (const [folderName, aItems] of a.itemsByFolder) {
+    const bItems = b.itemsByFolder.get(folderName);
+    if (!bItems) return false;
+    if (aItems.length !== bItems.length) return false;
+    for (let i = 0; i < aItems.length; i++) {
+      if (aItems[i] !== bItems[i]) return false;
+    }
+  }
+
+  // Check for folders in b not in a
+  for (const folderName of b.itemsByFolder.keys()) {
+    if (!a.itemsByFolder.has(folderName)) return false;
+  }
+
+  // Compare item properties
+  if (a.itemProperties.size !== b.itemProperties.size) return false;
+  for (const [itemId, aProps] of a.itemProperties) {
+    const bProps = b.itemProperties.get(itemId);
+    if (!bProps) return false;
+    if (aProps.isPrivate !== bProps.isPrivate) return false;
+    if (aProps.description !== bProps.description) return false;
+  }
+
+  return true;
+}
+
+/**
+ * Check if there's ANY difference between browser and relay/file data.
+ * Returns true if merge modal should be shown.
+ */
+function hasAnyBookmarkDifference(
+  sourceItems: BookmarkItem[],
+  categories?: string[]
+): boolean {
+  const browserSnapshot = createBrowserBookmarkSnapshot();
+  const sourceSnapshot = createSourceBookmarkSnapshot(sourceItems, categories);
+  return !bookmarkSnapshotsAreEqual(browserSnapshot, sourceSnapshot);
+}
+
+// =============================================================================
 // BOOKMARK STORAGE ADAPTER (for AutoSyncService / ListSyncManager)
 // =============================================================================
 
@@ -1382,6 +1671,30 @@ export class BookmarkStorageAdapter {
   }
 
   async publishToRelays(_items: BookmarkItem[]): Promise<void> { await publishBookmarksToRelays(); }
+
+  // Sync helper methods (for AutoSyncService)
+  async syncFromRelays(): Promise<BookmarkAdapterSyncFromRelaysResult> {
+    const fetchResult = await this.fetchFromRelays();
+    const browserItems = this.getBrowserItems();
+    const diff = calculateBookmarkSyncDiff(browserItems, fetchResult.items);
+
+    return {
+      requiresConfirmation: hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories),
+      diff,
+      relayItems: fetchResult.items,
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
+      categoryAssignments: fetchResult.categoryAssignments,
+      categories: fetchResult.categories
+    };
+  }
+
+  applySyncFromRelays(strategy: 'merge' | 'overwrite', relayItems: BookmarkItem[]): void {
+    if (strategy === 'overwrite') {
+      this.setBrowserItems(relayItems);
+    } else {
+      this.setBrowserItems(mergeBookmarkItems(this.getBrowserItems(), relayItems));
+    }
+  }
 }
 
 // =============================================================================
@@ -2006,7 +2319,7 @@ export class BookmarkManager {
     const diff = this.calculateDiff(browserItems, fetchResult.items);
 
     const result: BookmarkSyncFromRelaysResult = {
-      requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0,
+      requiresConfirmation: hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories),
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty
@@ -2020,7 +2333,10 @@ export class BookmarkManager {
     const fileItems = await this.adapter.getFileItems();
     const browserItems = this.adapter.getBrowserItems();
     const diff = this.calculateDiff(browserItems, fileItems);
-    return { requiresConfirmation: diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems };
+    // Get categories from file for proper folder order comparison
+    const fileData = await readBookmarkFile();
+    const fileCategories = fileData.metadata.setOrder;
+    return { requiresConfirmation: hasAnyBookmarkDifference(fileItems, fileCategories), diff, fileItems };
   }
 
   private async syncToRelays(): Promise<void> {
@@ -2267,7 +2583,6 @@ export class BookmarkManager {
       ${this.renderHeader(folder)}
       ${isInFolder ? this.renderBreadcrumb(folder) : ''}
       <div class="grid-3-col"></div>
-      ${this.renderSyncControls()}
     `;
 
     this.bindSyncButtons(container);
@@ -2286,7 +2601,7 @@ export class BookmarkManager {
 
     return `
       <div class="bookmark-header">
-        <span class="bookmark-header__title">${escapeHtml(title)}</span>
+        <h2 class="bookmark-header__title">${escapeHtml(title)}</h2>
         <div class="bookmark-header__new-dropdown">
             <button class="bookmark-header__new-btn" title="Create new item">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -3090,9 +3405,23 @@ export class BookmarkManager {
 
   private async handleSaveToFile(): Promise<void> {
     try {
-      ToastService.show('Saving to file...', 'info');
-      await this.saveToFile();
-      ToastService.show('Saved to local file', 'success');
+      ToastService.show('Saving...', 'info');
+      if (PlatformService.getInstance().isTauri) {
+        await this.saveToFile();
+      } else {
+        const items = this.adapter.getBrowserItems();
+        const json = JSON.stringify(items, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `noornote-bookmarks-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+      ToastService.show('Saved successfully', 'success');
     } catch (error) {
       console.error('Failed to save to file:', error);
       ToastService.show('Failed to save to file', 'error');
@@ -3101,14 +3430,32 @@ export class BookmarkManager {
 
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
-      ToastService.show('Reading from file...', 'info');
-      const result = await this.syncFromFile();
+      let result: BookmarkSyncFromFileResult;
+      const isBrowser = PlatformService.getInstance().isBrowser;
 
-      // Full restore: sets bookmarks AND folder data from file
+      if (isBrowser) {
+        // Browser/Mobile: Upload file via dialog
+        const uploadedItems = await uploadJsonFile<BookmarkItem[]>();
+        if (!uploadedItems) {
+          return; // User cancelled
+        }
+        const browserItems = this.adapter.getBrowserItems();
+        const diff = this.calculateDiff(browserItems, uploadedItems);
+        // For uploaded file, categories are derived from items (no setOrder available)
+        result = { requiresConfirmation: hasAnyBookmarkDifference(uploadedItems), diff, fileItems: uploadedItems };
+      } else {
+        // Tauri Desktop: Read from local file
+        ToastService.show('Reading from file...', 'info');
+        result = await this.syncFromFile();
+      }
+
+      // Full restore: sets bookmarks AND folder data from file (folder data only on Desktop)
       const fullRestoreFromFile = async () => {
         this.adapter.setBrowserItems(result.fileItems);
-        const folderData = await getAllFolderDataFromFile();
-        this.folderService.restoreAllFolderData(folderData.folders, folderData.folderAssignments, folderData.rootOrder);
+        if (!isBrowser) {
+          const folderData = await getAllFolderDataFromFile();
+          this.folderService.restoreAllFolderData(folderData.folders, folderData.folderAssignments, folderData.rootOrder);
+        }
       };
 
       // Merge: add new bookmarks with their folder assignments

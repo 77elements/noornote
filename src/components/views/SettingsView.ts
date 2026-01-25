@@ -40,7 +40,7 @@ export class SettingsView extends View {
   private nwcSettingsSection: NWCSettingsSection;
   private privacySettingsSection: PrivacySettingsSection;
   private listSettingsSection: ListSettingsSection;
-  private cacheSettingsSection: CacheSettingsSection;
+  private cacheSettingsSection: CacheSettingsSection | null = null;
   private uiSettingsSection: UISettingsSection;
   private profileRecognitionSettings: ProfileRecognitionSettings;
   private notificationPrioritySection: NotificationPrioritySection;
@@ -66,7 +66,9 @@ export class SettingsView extends View {
     this.nwcSettingsSection = new NWCSettingsSection();
     this.privacySettingsSection = new PrivacySettingsSection();
     this.listSettingsSection = new ListSettingsSection();
-    this.cacheSettingsSection = new CacheSettingsSection();
+    if (PlatformService.getInstance().isTauri) {
+      this.cacheSettingsSection = new CacheSettingsSection();
+    }
     this.uiSettingsSection = new UISettingsSection();
     this.profileRecognitionSettings = new ProfileRecognitionSettings();
     this.notificationPrioritySection = new NotificationPrioritySection();
@@ -139,11 +141,11 @@ export class SettingsView extends View {
           false
         )}
 
-        ${this.cacheSettingsSection.renderAccordionSection(
+        ${this.cacheSettingsSection ? this.cacheSettingsSection.renderAccordionSection(
           'Cache Settings',
           'Configure NDK cache sizes and clear cache data.',
           false
-        )}
+        ) : ''}
 
         <div class="nn-ui-toggle settings-section">
           <div class="nn-ui-toggle__header">
@@ -190,7 +192,9 @@ export class SettingsView extends View {
     this.nwcSettingsSection.mount(this.container);
     this.privacySettingsSection.mount(this.container);
     this.listSettingsSection.mount(this.container);
-    this.cacheSettingsSection.mount(this.container);
+    if (this.cacheSettingsSection) {
+      this.cacheSettingsSection.mount(this.container);
+    }
 
     // Initialize and mount sync status badge
     const badgeContainer = this.container.querySelector('#sync-status-badge-container');
@@ -339,7 +343,9 @@ export class SettingsView extends View {
     this.nwcSettingsSection.unmount();
     this.privacySettingsSection.unmount();
     this.listSettingsSection.unmount();
-    this.cacheSettingsSection.unmount();
+    if (this.cacheSettingsSection) {
+      this.cacheSettingsSection.unmount();
+    }
     this.uiSettingsSection.unmount();
     this.profileRecognitionSettings.unmount();
     this.notificationPrioritySection.unmount();

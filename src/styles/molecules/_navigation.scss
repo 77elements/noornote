@@ -141,7 +141,7 @@
     padding: 0 6px;
     background: $color-6; // Soft Mint Green
     color: $color-1; // Black text
-    border-radius: 10px;
+    border-radius: $radius-full;
     @extend %small;
     font-weight: 600;
     line-height: 20px;
@@ -220,7 +220,9 @@
     margin: calc($gap / 4) 0 0 0;
   }
 
-  &__sublink {
+  &__sublink,
+  &__sublink:link,
+  &__sublink:visited {
     display: grid;
     grid-template-columns: 16px 1fr;
     grid-gap: calc($gap / 2);

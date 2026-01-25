@@ -56,13 +56,15 @@ export function requireAuth(): { pubkey: string } {
 
 /**
  * Fetch events from relays
+ * @param skipCache - If true, bypass NDK cache and fetch fresh from relays (use for sync operations)
  */
 export async function fetchEvents(
   filters: NDKFilter[],
-  timeoutMs: number = 5000
+  timeoutMs: number = 5000,
+  skipCache: boolean = false
 ): Promise<NostrEvent[]> {
   const relays = getReadRelays();
-  return await getTransport().fetch(relays, filters, timeoutMs);
+  return await getTransport().fetch(relays, filters, timeoutMs, skipCache);
 }
 
 /**

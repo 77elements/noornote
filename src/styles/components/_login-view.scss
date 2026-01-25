@@ -18,7 +18,7 @@
 // Auth Section (grouped login options)
 .auth-section {
   border: 1px solid $color-3;
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   padding: calc($gap * 2);
   margin: calc($gap * 2) 0;
 
@@ -123,7 +123,7 @@
 .auth-key-item {
   background: $color-1;
   border: 1px solid $color-3;
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   padding: $gap;
 
   label {
@@ -147,7 +147,7 @@
   padding: $gap * 1.5;
   background: rgba($color-4, 0.1);
   border: 1px solid $color-4;
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   color: $color-5;
   line-height: 1.6;
   margin: $gap * 2 0;

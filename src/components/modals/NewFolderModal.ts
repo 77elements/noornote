@@ -47,7 +47,7 @@ export class NewFolderModal {
         <input
           type="text"
           id="new-folder-input"
-          class="new-folder-input"
+          class="input new-folder-input"
           placeholder="Enter folder name..."
           maxlength="50"
           autocomplete="off"

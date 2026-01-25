@@ -637,7 +637,11 @@ export class ProfileView extends View {
     followingLink.parentNode?.replaceChild(newLink, followingLink);
 
     newLink.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: 'follows' });
+      // Pass pubkey to show this profile's follows (not own follows)
+      EventBus.getInstance().emit('list:open', {
+        listType: 'follows',
+        pubkey: this.pubkey
+      });
     });
   }
 
@@ -680,7 +684,7 @@ export class ProfileView extends View {
   }
 
   /**
-   * Render Connect/Disconnect button (only if logged in and not own profile)
+   * Render Follow/Unfollow button (only if logged in and not own profile)
    */
   private renderFollowButton(): string {
     return this.followManager.renderFollowButton();

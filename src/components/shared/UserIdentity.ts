@@ -1,6 +1,7 @@
 /**
  * UserIdentity Component
- * Displays username + avatar for a pubkey
+ * Displays avatar + username + optional NIP-05 handle for a pubkey
+ * Reusable molecule for notes, DMs, and anywhere user info is shown
  *
  * Fetch strategy (in order):
  * 1. localStorage (usernameCache/pictureCache) - instant
@@ -9,30 +10,37 @@
  * 4. FALLBACK: User's outbound relays (NIP-65) - slow, only if all else fails
  *
  * Usage:
- * const identity = new UserIdentity({ pubkey, size: 'small' });
+ * const identity = new UserIdentity({ pubkey, size: 'medium', showHandle: true, clickable: true });
  * container.appendChild(identity.getElement());
  */
 
-import { UserProfileService } from '../../services/UserProfileService';
+import { UserProfileService, UserProfile } from '../../services/UserProfileService';
 import { UserHoverCard } from '../ui/UserHoverCard';
 import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
 import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
 import { AuthService } from '../../services/AuthService';
+import { Router } from '../../services/Router';
+import { hexToNpub } from '../../helpers/nip19';
 
 export interface UserIdentityConfig {
   pubkey: string;
   size?: 'small' | 'medium' | 'large'; // Avatar size
   showAvatar?: boolean; // Default: true
   showUsername?: boolean; // Default: true
+  showHandle?: boolean; // Default: false - show NIP-05 handle
   enableHoverCard?: boolean; // Default: true - show user hover card on hover
+  clickable?: boolean; // Default: false - click navigates to profile
+  onClick?: (pubkey: string) => void; // Custom click handler (overrides default navigation)
 }
 
 export class UserIdentity {
   private element: HTMLElement;
-  private config: UserIdentityConfig;
+  private config: Required<Omit<UserIdentityConfig, 'onClick'>> & Pick<UserIdentityConfig, 'onClick'>;
   private userProfileService: UserProfileService;
   private recognitionService: ProfileRecognitionService;
   private authService: AuthService;
+  private router: Router;
+  private profile: UserProfile | null = null;
   private unsubscribe?: () => void;
   private blinker: ProfileBlinker | null = null;
   private nameBlinker: TextBlinker | null = null;
@@ -42,13 +50,16 @@ export class UserIdentity {
       size: 'medium',
       showAvatar: true,
       showUsername: true,
+      showHandle: false,
       enableHoverCard: true,
+      clickable: false,
       ...config
     };
 
     this.userProfileService = UserProfileService.getInstance();
     this.recognitionService = ProfileRecognitionService.getInstance();
     this.authService = AuthService.getInstance();
+    this.router = Router.getInstance();
 
     this.element = this.createElement();
     this.loadIdentity();
@@ -57,6 +68,11 @@ export class UserIdentity {
     if (this.config.enableHoverCard) {
       this.setupHoverCard();
     }
+
+    // Setup click handler if clickable
+    if (this.config.clickable) {
+      this.setupClickHandler();
+    }
   }
 
   /**
@@ -64,7 +80,11 @@ export class UserIdentity {
    */
   private createElement(): HTMLElement {
     const container = document.createElement('div');
-    container.className = `user-identity user-identity--${this.config.size}`;
+    const classes = [`user-identity`, `user-identity--${this.config.size}`];
+    if (this.config.clickable) {
+      classes.push('user-identity--clickable');
+    }
+    container.className = classes.join(' ');
 
     if (this.config.showAvatar) {
       const avatar = document.createElement('img');
@@ -74,11 +94,26 @@ export class UserIdentity {
       container.appendChild(avatar);
     }
 
-    if (this.config.showUsername) {
-      const username = document.createElement('span');
-      username.className = 'user-identity__username';
-      username.textContent = ''; // Empty initially
-      container.appendChild(username);
+    // Info container for username + handle
+    if (this.config.showUsername || this.config.showHandle) {
+      const info = document.createElement('div');
+      info.className = 'user-identity__info';
+
+      if (this.config.showUsername) {
+        const username = document.createElement('span');
+        username.className = 'user-identity__username';
+        username.textContent = '';
+        info.appendChild(username);
+      }
+
+      if (this.config.showHandle) {
+        const handle = document.createElement('span');
+        handle.className = 'user-identity__handle';
+        handle.textContent = '';
+        info.appendChild(handle);
+      }
+
+      container.appendChild(info);
     }
 
     return container;
@@ -95,7 +130,6 @@ export class UserIdentity {
     this.subscribeToUpdates();
   }
 
-
   /**
    * Subscribe to profile updates
    */
@@ -103,21 +137,29 @@ export class UserIdentity {
     this.unsubscribe = this.userProfileService.subscribeToProfile(
       this.config.pubkey,
       (profile) => {
-        // Extract data from profile object (no cache)
+        this.profile = profile;
+
+        // Extract data from profile object
         const username = profile.display_name || profile.name || profile.username || 'Anon';
         const picture = profile.picture || '';
 
+        // Get NIP-05 handle(s)
+        const nip05s = profile.nip05s && profile.nip05s.length > 0
+          ? profile.nip05s
+          : (profile.nip05 ? [profile.nip05] : []);
+        const handle = nip05s.length > 0 ? nip05s.join(', ') : '';
+
         // Show element and update UI
         this.element.style.display = '';
-        this.updateUI(username, picture);
+        this.updateUI(username, picture, handle);
       }
     );
   }
 
   /**
-   * Update UI with username and picture
+   * Update UI with username, picture, and handle
    */
-  private updateUI(username: string, picture: string): void {
+  private updateUI(username: string, picture: string, handle: string): void {
     // Don't apply profile recognition to your own profile
     const currentUser = this.authService.getCurrentUser();
     const isOwnProfile = currentUser && currentUser.pubkey === this.config.pubkey;
@@ -180,15 +222,23 @@ export class UserIdentity {
             avatarEl.src = picture;
           }
         }
+
+        avatarEl.alt = username;
       }
     }
-  }
 
-  /**
-   * Get the DOM element
-   */
-  public getElement(): HTMLElement {
-    return this.element;
+    // Update handle
+    if (this.config.showHandle) {
+      const handleEl = this.element.querySelector('.user-identity__handle') as HTMLElement;
+      if (handleEl) {
+        if (handle) {
+          handleEl.textContent = handle;
+          handleEl.style.display = '';
+        } else {
+          handleEl.style.display = 'none';
+        }
+      }
+    }
   }
 
   /**
@@ -204,6 +254,46 @@ export class UserIdentity {
     this.element.addEventListener('mouseleave', () => {
       userHoverCard.hide();
     });
+  }
+
+  /**
+   * Setup click handler for navigation to profile
+   */
+  private setupClickHandler(): void {
+    this.element.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent parent click handlers
+
+      if (this.config.onClick) {
+        this.config.onClick(this.config.pubkey);
+      } else {
+        // Default: navigate to profile
+        const npub = hexToNpub(this.config.pubkey);
+        if (npub) {
+          this.router.navigate(`/profile/${npub}`);
+        }
+      }
+    });
+  }
+
+  /**
+   * Get the DOM element
+   */
+  public getElement(): HTMLElement {
+    return this.element;
+  }
+
+  /**
+   * Get the current profile (if loaded)
+   */
+  public getProfile(): UserProfile | null {
+    return this.profile;
+  }
+
+  /**
+   * Get the pubkey
+   */
+  public getPubkey(): string {
+    return this.config.pubkey;
   }
 
   /**

@@ -26,7 +26,6 @@
     gap: calc($gap / 2);
     padding: calc($gap / 2) $gap;
     background: none;
-    border: 1px solid var(--color-border);
     border-radius: $radius-md;
     color: $color-5;
     font-family: inherit;
@@ -60,7 +59,6 @@
     gap: $gap;
     margin-bottom: $gap;
     padding-bottom: $gap;
-    border-bottom: 1px solid var(--color-border);
   }
 
   // Body (form or preview)
@@ -98,7 +96,6 @@
 
   // Details (collapsible)
   &__details {
-    border: 1px solid var(--color-border);
     border-radius: $radius-md;
     overflow: hidden;
 
@@ -146,7 +143,6 @@
     flex-direction: column;
     gap: $gap;
     padding: $gap;
-    border-top: 1px solid var(--color-border);
   }
 
   // Footer with toolbar and actions
@@ -156,7 +152,6 @@
     justify-content: space-between;
     gap: $gap;
     padding-top: $gap;
-    border-top: 1px solid var(--color-border);
 
     .post-note-toolbar {
       display: flex;
@@ -172,8 +167,6 @@
   // Preview mode
   &__preview {
     padding: $gap * 1.5;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
     border-radius: $radius-md;
     min-height: 400px;
   }
@@ -199,7 +192,6 @@
     color: rgba($color-5, 0.7);
     margin: 0 0 $gap * 1.5;
     padding-bottom: $gap;
-    border-bottom: 1px solid var(--color-border);
   }
 
   &__preview-content {
@@ -218,7 +210,7 @@
     code {
       background: $surface-tint;
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: $radius-base;
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       @extend %small;
     }
@@ -274,7 +266,6 @@
     gap: calc($gap / 2);
     margin-top: $gap * 1.5;
     padding-top: $gap;
-    border-top: 1px solid var(--color-border);
   }
 
   &__preview-tag {
@@ -301,8 +292,6 @@
     justify-content: center;
     width: 40px;
     padding: 0;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
     border-radius: $radius-md;
     color: $color-5;
     cursor: pointer;

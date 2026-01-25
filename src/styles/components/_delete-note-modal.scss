@@ -20,9 +20,6 @@
   &__warning {
     margin: 0;
     padding: $gap;
-    background: var(--color-bg-secondary);
-    border-radius: var(--border-radius);
-    color: var(--color-text-primary);
     line-height: 1.5;
     font-weight: 500;
   }
@@ -30,11 +27,7 @@
   &__disclaimer {
     margin: 0;
     padding: $gap;
-    background: var(--color-bg-secondary);
-    border-left: 3px solid var(--color-warning);
-    border-radius: var(--border-radius);
     @extend %small;
-    color: var(--color-text-secondary);
     line-height: 1.5;
   }
 

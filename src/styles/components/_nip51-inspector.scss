@@ -31,7 +31,13 @@
   }
 }
 
-.nip51-inspector-loading,
+.nip51-inspector-loading {
+  text-align: center;
+  padding: $gap * 3;
+  color: $color-5;
+  animation: pulsate 2.5s ease-in-out infinite;
+}
+
 .nip51-inspector-error,
 .nip51-inspector-empty {
   text-align: center;
@@ -108,7 +114,7 @@
     color: $color-3;
     background: color.adjust($color-2, $lightness: 8%);
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: $radius-base;
   }
 
   &__dtag {
@@ -117,7 +123,7 @@
     font-weight: 600;
     background: rgba($color-4, 0.1);
     padding: 2px 8px;
-    border-radius: 4px;
+    border-radius: $radius-base;
   }
 
   &__time {

@@ -25,6 +25,7 @@ import { TribeManager } from '../../lists/tribes';
 import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
+import { HamburgerBadgeManager } from './managers/HamburgerBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
@@ -63,6 +64,7 @@ export class MainLayout {
   private tribeManager: TribeManager | null = null;
   private nip51InspectorManager: Nip51InspectorManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
+  private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
   private currentListView: ListViewPartial | null = null;
   private viewTabManager: ViewTabManager | null = null;
@@ -156,6 +158,12 @@ export class MainLayout {
       new DMBadgeManager(dmBadgeElement);
     }
 
+    // Initialize HamburgerBadgeManager (phone mode notification dot)
+    const hamburgerBadgeElement = this.element.querySelector('.hamburger-badge') as HTMLElement;
+    if (hamburgerBadgeElement) {
+      this.hamburgerBadgeManager = new HamburgerBadgeManager(hamburgerBadgeElement);
+    }
+
     // Initialize Lists Menu (Sidebar Accordion)
     this.listsMenu = new ListsMenuPartial({
       onListClick: (listType) => this.openListTab(listType)
@@ -172,9 +180,15 @@ export class MainLayout {
       }
     }
 
-    // Listen for list:open events from Settings → Privacy links
-    this.eventBus.on('list:open', (data: { listType: ListType }) => {
-      this.openListTab(data.listType);
+    // Listen for list:open events from Settings → Privacy links and ProfileView
+    this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string }) => {
+      // Check if this is an external user's follows (not current user)
+      const currentUser = this.authService.getCurrentUser();
+      if (data.listType === 'follows' && data.pubkey && currentUser?.pubkey !== data.pubkey) {
+        this.openExternalFollowsTab(data.pubkey);
+      } else {
+        this.openListTab(data.listType);
+      }
     });
   }
 
@@ -528,14 +542,26 @@ export class MainLayout {
       ? `Profile: ${query}`
       : `Search: ${query}`;
 
-    header.innerHTML = `
-      <button class="btn btn--icon search-view-primary__back" title="Back to timeline">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      <h2 class="search-view-primary__title">${title}</h2>
+    // Create back button with direct event handler
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'btn-icon search-view-primary__back';
+    backBtn.title = 'Back to timeline';
+    backBtn.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
     `;
+    backBtn.addEventListener('click', () => {
+      Router.getInstance().navigate('/');
+    });
+
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'search-view-primary__title';
+    titleEl.textContent = title;
+
+    header.appendChild(backBtn);
+    header.appendChild(titleEl);
 
     // Add content container
     const content = document.createElement('div');
@@ -544,13 +570,6 @@ export class MainLayout {
     searchContainer.appendChild(header);
     searchContainer.appendChild(content);
     primaryContent.appendChild(searchContainer);
-
-    // Setup back button
-    const backBtn = header.querySelector('.search-view-primary__back');
-    backBtn?.addEventListener('click', () => {
-      const router = Router.getInstance();
-      router.navigate('/');
-    });
 
     // Mount GlobalSearchView content in pcc
     if (this.globalSearchView) {
@@ -940,19 +959,21 @@ export class MainLayout {
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 12h18M3 6h18M3 18h18"/>
           </svg>
+          <span class="hamburger-badge"></span>
         </button>
-        <span class="mobile-header__title">NoorNote</span>
+        <span class="nn-logo">NoorNote</span>
       </header>
       <div class="sidebar-overlay"></div>
       <aside class="sidebar">
         <div class="sidebar-content">
-          <div class="sidebar-header">
-            NoorNote
-          </div>
-          <div class="wallet-balance-container">
-            <!-- WalletBalanceDisplay will be mounted here -->
-          </div>
-          <ul class="primary-nav">
+          <div class="sidebar-scrollable">
+            <div class="sidebar-header">
+              <span class="nn-logo">NoorNote</span>
+            </div>
+            <div class="wallet-balance-container">
+              <!-- WalletBalanceDisplay will be mounted here -->
+            </div>
+            <ul class="primary-nav">
             <li>
               <a href="/" class="primary-nav__link primary-nav__link--home" title="Scroll to top">
                 <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1034,9 +1055,10 @@ export class MainLayout {
               </a>
             </li>
           </ul>
-          <div class="about">
-            <span class="current-datetime-display">--</span>
-            <a href="/about" class="primary-nav__link--about">About</a>
+            <div class="about">
+              <span class="current-datetime-display">--</span>
+              <a href="/about" class="primary-nav__link--about">About</a>
+            </div>
           </div>
           <div class="new-post-dropup">
             <button class="btn btn--new-post">
@@ -1081,7 +1103,7 @@ export class MainLayout {
       </main>
 
       <aside class="secondary-content">
-        <div class="secondary-user">
+        <div class="user-login-bar">
           <!-- User status will be mounted here -->
         </div>
         <div id="sidebar-tabs" class="tabs">
@@ -1155,7 +1177,7 @@ export class MainLayout {
     });
 
     // Mount in secondary user area
-    const secondaryUser = this.element.querySelector('.secondary-user');
+    const secondaryUser = this.element.querySelector('.user-login-bar');
     if (secondaryUser) {
       secondaryUser.innerHTML = '';
       secondaryUser.appendChild(this.userStatus.getElement());
@@ -1265,7 +1287,7 @@ export class MainLayout {
       this.userStatus = null;
     }
 
-    const secondaryUser = this.element.querySelector('.secondary-user');
+    const secondaryUser = this.element.querySelector('.user-login-bar');
     if (secondaryUser) {
       secondaryUser.innerHTML = '';
       // Re-mount AuthComponent to show Login button again
@@ -1285,9 +1307,9 @@ export class MainLayout {
    * Initialize content areas
    */
   private initializeContent(): void {
-    // Mount auth component in secondary-user (top right - Login/Logout)
+    // Mount auth component in user-login-bar (top right - Login/Logout)
     this.authComponent = new AuthComponent(this);
-    const secondaryUser = this.element.querySelector('.secondary-user');
+    const secondaryUser = this.element.querySelector('.user-login-bar');
     if (secondaryUser) {
       secondaryUser.appendChild(this.authComponent.getElement());
     }
@@ -1565,6 +1587,133 @@ export class MainLayout {
   }
 
   /**
+   * Open external user's follows tab (read-only view)
+   * Shows follows of another user, not the current user
+   */
+  public openExternalFollowsTab(pubkey: string): void {
+    // Import dynamically to avoid circular dependencies
+    import('../../lists/follows').then(({ ExternalFollowListManager }) => {
+      if (!this.layoutService.isSecondaryVisible()) {
+        this.renderExternalFollowsInPrimaryContent(pubkey, ExternalFollowListManager);
+      } else {
+        this.renderExternalFollowsInSecondaryContent(pubkey, ExternalFollowListManager);
+      }
+    });
+  }
+
+  /**
+   * Render external follows in secondary content
+   */
+  private renderExternalFollowsInSecondaryContent(pubkey: string, ExternalFollowListManager: any): void {
+    // Close existing list tab if any
+    if (this.currentListView) {
+      this.currentListView.destroy();
+      this.currentListView = null;
+    }
+
+    // Clear active state on list sublinks
+    this.clearActiveListSublinks();
+
+    // Create manager instance
+    const externalManager = new ExternalFollowListManager(pubkey);
+
+    // Create new list view
+    this.currentListView = new ListViewPartial({
+      type: 'follows',
+      title: 'Following',
+      onClose: () => this.closeListTab(),
+      onRender: (container) => {
+        externalManager.renderListTab(container);
+      }
+    });
+
+    // Insert tab and content into DOM (scc)
+    const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
+    const tabsContainer = this.element.querySelector('#sidebar-tabs');
+    const contentBody = this.element.querySelector('.secondary-content-body');
+
+    if (secondaryContent && tabsContainer && contentBody) {
+      const tab = this.currentListView.createTab();
+      const content = this.currentListView.createContent();
+
+      tabsContainer.appendChild(tab);
+      contentBody.appendChild(content);
+
+      // Setup tab click handler
+      tab.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.tab__close')) {
+          return;
+        }
+        deactivateAllTabs(secondaryContent);
+        this.currentListView?.activate();
+        this.viewTabManager?.deactivateCurrentViewTab();
+      });
+
+      // Activate the new tab
+      deactivateAllTabs(secondaryContent);
+      this.currentListView.activate();
+      this.viewTabManager?.deactivateCurrentViewTab();
+
+      // Render content
+      this.currentListView.renderContent();
+    }
+  }
+
+  /**
+   * Render external follows in primary content (wide mode)
+   */
+  private renderExternalFollowsInPrimaryContent(pubkey: string, ExternalFollowListManager: any): void {
+    const primaryContent = this.element.querySelector('.primary-content');
+    if (!primaryContent) return;
+
+    primaryContent.innerHTML = '';
+
+    // Create manager instance
+    const externalManager = new ExternalFollowListManager(pubkey);
+
+    // Create container for list
+    const listContainer = document.createElement('div');
+    listContainer.className = 'list-view-primary';
+
+    // Add header with title and back button
+    const header = document.createElement('div');
+    header.className = 'list-view-primary__header';
+
+    const backBtn = document.createElement('button');
+    backBtn.className = 'list-view-primary__back btn btn--passive';
+    backBtn.innerHTML = '← Back';
+    backBtn.addEventListener('click', () => {
+      history.back();
+    });
+
+    const title = document.createElement('h2');
+    title.className = 'list-view-primary__title';
+    title.textContent = 'Following';
+
+    header.appendChild(backBtn);
+    header.appendChild(title);
+
+    // Create content container
+    const contentContainer = document.createElement('div');
+    contentContainer.className = 'list-view-primary__content tab-content tab-content--active';
+
+    listContainer.appendChild(header);
+    listContainer.appendChild(contentContainer);
+    primaryContent.appendChild(listContainer);
+
+    // Render content
+    externalManager.renderListTab(contentContainer);
+  }
+
+  /**
+   * Clear active state on all list sublinks
+   */
+  private clearActiveListSublinks(): void {
+    const sublinks = this.element.querySelectorAll('.lists-menu__sublink');
+    sublinks.forEach(link => link.classList.remove('lists-menu__sublink--active'));
+  }
+
+  /**
    * Render list in secondary content (default/right-pane mode)
    */
   private renderListInSecondaryContent(listType: ListType): void {
@@ -1691,14 +1840,27 @@ export class MainLayout {
     // Add header with title and back button
     const header = document.createElement('div');
     header.className = 'list-view-primary__header';
-    header.innerHTML = `
-      <button class="btn btn--icon list-view-primary__back" title="Back to timeline">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 12H5M12 19l-7-7 7-7"/>
-        </svg>
-      </button>
-      <h2 class="list-view-primary__title">${titles[listType]}</h2>
+
+    // Create back button with direct event handler
+    const backBtn = document.createElement('button');
+    backBtn.type = 'button';
+    backBtn.className = 'btn-icon list-view-primary__back';
+    backBtn.title = 'Back to timeline';
+    backBtn.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
     `;
+    backBtn.addEventListener('click', () => {
+      Router.getInstance().navigate('/');
+    });
+
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'list-view-primary__title';
+    titleEl.textContent = titles[listType];
+
+    header.appendChild(backBtn);
+    header.appendChild(titleEl);
 
     // Add content container with data-tab-content for manager selectors
     const content = document.createElement('div');
@@ -1708,13 +1870,6 @@ export class MainLayout {
     listContainer.appendChild(header);
     listContainer.appendChild(content);
     primaryContent.appendChild(listContainer);
-
-    // Setup back button
-    const backBtn = header.querySelector('.list-view-primary__back');
-    backBtn?.addEventListener('click', () => {
-      const router = Router.getInstance();
-      router.navigate('/');
-    });
 
     // Render list content via manager
     manager.renderListTab(content);
@@ -1765,6 +1920,10 @@ export class MainLayout {
 
     if (this.badgeManager) {
       this.badgeManager.destroy();
+    }
+
+    if (this.hamburgerBadgeManager) {
+      this.hamburgerBadgeManager.destroy();
     }
 
     if (this.userStatus) {

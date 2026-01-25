@@ -10,7 +10,6 @@
 import { View } from './View';
 import { DMService } from '../../services/dm/DMService';
 import type { DMMessage } from '../../services/dm/DMStore';
-import { UserProfileService } from '../../services/UserProfileService';
 import { EventBus } from '../../services/EventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../system/SystemLogger';
@@ -23,11 +22,11 @@ import { ContentProcessor } from '../../services/ContentProcessor';
 import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
 import { replaceMediaPlaceholders } from '../../helpers/renderMediaContent';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { UserIdentity } from '../shared/UserIdentity';
 
 export class ConversationView extends View {
   private container: HTMLElement;
   private dmService: DMService;
-  private userProfileService: UserProfileService;
   private eventBus: EventBus;
   private router: Router;
   private systemLogger: SystemLogger;
@@ -36,7 +35,7 @@ export class ConversationView extends View {
   private partnerPubkey: string;
   private messages: DMMessage[] = [];
   private isSending: boolean = false;
-  private partnerProfile: { displayName: string; avatarUrl: string } | null = null;
+  private userIdentity: UserIdentity | null = null;
   private menuOpen: boolean = false;
   private menuElement: HTMLElement | null = null;
   private outsideClickHandler: () => void;
@@ -49,7 +48,6 @@ export class ConversationView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--conversation';
     this.dmService = DMService.getInstance();
-    this.userProfileService = UserProfileService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -63,6 +61,7 @@ export class ConversationView extends View {
     // Listen for new messages in this conversation
     this.subscriptionId = this.eventBus.on('dm:new-message', (data: { message: DMMessage; conversationWith: string }) => {
       if (data.conversationWith === this.partnerPubkey) {
+        // Add new message at the end (newest at bottom)
         this.messages.push(data.message);
         this.renderMessages();
         this.scrollToBottom();
@@ -81,10 +80,7 @@ export class ConversationView extends View {
             <polyline points="15 18 9 12 15 6"/>
           </svg>
         </button>
-        <div class="conversation-view__user">
-          <div class="conversation-view__avatar"></div>
-          <span class="conversation-view__name">Loading...</span>
-        </div>
+        <div class="conversation-view__user"></div>
         <button class="note-menu-trigger conversation-view__menu-trigger" aria-label="User options">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
             <circle cx="8" cy="2" r="1.5" />
@@ -98,7 +94,7 @@ export class ConversationView extends View {
       </div>
       <div class="conversation-view__input">
         <textarea
-          class="conversation-view__textarea"
+          class="textarea conversation-view__textarea"
           placeholder="Type a message..."
           rows="1"
         ></textarea>
@@ -110,6 +106,20 @@ export class ConversationView extends View {
         </button>
       </div>
     `;
+
+    // Create UserIdentity for partner
+    this.userIdentity = new UserIdentity({
+      pubkey: this.partnerPubkey,
+      size: 'medium',
+      showHandle: true,
+      clickable: true,
+      enableHoverCard: true
+    });
+
+    const userContainer = this.container.querySelector('.conversation-view__user');
+    if (userContainer) {
+      userContainer.appendChild(this.userIdentity.getElement());
+    }
 
     this.setupEventListeners();
   }
@@ -296,23 +306,14 @@ export class ConversationView extends View {
    */
   private async loadConversation(): Promise<void> {
     try {
-      // Load partner profile
-      const profile = await this.userProfileService.getUserProfile(this.partnerPubkey);
-      this.partnerProfile = {
-        displayName: profile?.display_name || profile?.name || this.partnerPubkey.slice(0, 8) + '...',
-        avatarUrl: profile?.picture || ''
-      };
-
-      // Update header
-      this.updateHeader();
-
       // Mark conversation as read
       await this.dmService.markAsRead(this.partnerPubkey);
 
-      // Load messages
+      // Load messages and sort oldest first (newest at bottom)
       this.messages = await this.dmService.getMessages(this.partnerPubkey);
+      this.messages.sort((a, b) => a.createdAt - b.createdAt);
 
-      // Render messages
+      // Render messages and scroll to bottom
       this.renderMessages();
       this.scrollToBottom();
     } catch (_error) {
@@ -322,32 +323,20 @@ export class ConversationView extends View {
   }
 
   /**
-   * Update header with partner info
-   */
-  private updateHeader(): void {
-    if (!this.partnerProfile) return;
-
-    const avatarEl = this.container.querySelector('.conversation-view__avatar');
-    const nameEl = this.container.querySelector('.conversation-view__name');
-
-    if (avatarEl) {
-      if (this.partnerProfile.avatarUrl) {
-        avatarEl.innerHTML = `<img src="${this.partnerProfile.avatarUrl}" alt="${this.partnerProfile.displayName}" />`;
-      } else {
-        avatarEl.innerHTML = `<div class="avatar-placeholder">${this.partnerProfile.displayName.charAt(0).toUpperCase()}</div>`;
-      }
-    }
-
-    if (nameEl) {
-      nameEl.textContent = this.partnerProfile.displayName;
-    }
-  }
-
-  /**
    * Get messages container element
    */
   private get messagesContainer(): HTMLElement | null {
     return this.container.querySelector('.conversation-view__messages');
+  }
+
+  /**
+   * Scroll messages container to bottom
+   */
+  private scrollToBottom(): void {
+    const container = this.messagesContainer;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }
 
   /**
@@ -450,16 +439,6 @@ export class ConversationView extends View {
   }
 
   /**
-   * Scroll to bottom of messages
-   */
-  private scrollToBottom(): void {
-    const container = this.messagesContainer;
-    if (container) {
-      container.scrollTop = container.scrollHeight;
-    }
-  }
-
-  /**
    * Render error state
    */
   private renderError(): void {
@@ -516,6 +495,10 @@ export class ConversationView extends View {
     if (this.subscriptionId) {
       this.eventBus.off(this.subscriptionId);
       this.subscriptionId = null;
+    }
+    if (this.userIdentity) {
+      this.userIdentity.destroy();
+      this.userIdentity = null;
     }
   }
 }

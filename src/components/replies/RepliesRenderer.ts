@@ -294,7 +294,7 @@ export class RepliesRenderer {
     const replyWrapper = document.createElement('div');
     replyWrapper.className = 'snv-reply';
     if (replyId) replyWrapper.dataset.eventId = replyId;
-    replyWrapper.dataset.depth = String(depth);
+    replyWrapper.dataset.depth = String(Math.min(depth, 7));
     replyWrapper.appendChild(noteElement);
 
     return replyWrapper;

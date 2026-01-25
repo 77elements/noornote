@@ -13,8 +13,8 @@
 .input {
   width: 100%;
   padding: calc($gap * 0.75);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: $color-2;
+  border: 1px solid $color-2;
   border-radius: $radius-md;
   color: $color-5;
   font-family: inherit;
@@ -46,8 +46,8 @@
 .textarea {
   width: 100%;
   padding: $gap;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: $color-2;
+  border: 1px solid $color-2;
   border-radius: $radius-md;
   color: $color-5;
   font-family: inherit;
@@ -94,6 +94,80 @@ label {
 .form__info {
   border-top: 1px solid $color-3;
   padding-top: $gap;
+  margin-bottom: $gap;
+}
+
+// ========================================
+// Radio Group (simple)
+// ========================================
+.radio-group {
+}
+
+.radio-option {
+  margin-bottom: calc($gap / 2);
+}
+
+// ========================================
+// Mode Options (card-style radio)
+// ========================================
+.mode-options {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+}
+
+.mode-option {
+  display: flex;
+  align-items: flex-start;
+  gap: $gap;
+  padding: $gap;
+  background: $color-2;
+  border: 2px solid $color-3;
+  border-radius: $radius-md;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: rgba($color-4, 0.5);
+  }
+
+  &--active {
+    border-color: $color-4;
+    background: rgba($color-4, 0.05);
+  }
+
+  input[type="radio"] {
+    margin-top: calc($gap / 4);
+    cursor: pointer;
+    accent-color: $color-4;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__title {
+    @extend %h4;
+    font-weight: 600;
+    color: $color-5;
+    margin-bottom: calc($gap / 4);
+  }
+
+  &__description {
+    color: rgba($color-5, 0.7);
+    line-height: 1.5;
+  }
+
+  &__features {
+    margin: calc($gap / 2) 0 0 0;
+    padding-left: $gap;
+    @extend %small;
+    color: rgba($color-5, 0.6);
+
+    li {
+      margin-bottom: calc($gap / 4);
+    }
+  }
 }
 
 // ========================================

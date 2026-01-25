@@ -7,18 +7,27 @@
  */
 
 import type { ListType } from './ListViewPartial';
+import { ToastService } from '../../../services/ToastService';
 
 export interface ListsMenuConfig {
   onListClick: (listType: ListType) => void; // Callback when a list link is clicked
 }
 
+// Easter egg: typing "nip51" anywhere reveals the NIP-51 Inspector
+const EASTER_EGG_CODE = 'nip51';
+const STORAGE_KEY = 'noornote_nip51_unlocked';
+
 export class ListsMenuPartial {
   private config: ListsMenuConfig;
   private element: HTMLElement | null = null;
   private isExpanded: boolean = false;
+  private easterEggBuffer: string = '';
+  private easterEggUnlocked: boolean = false;
+  private keyListener: ((e: KeyboardEvent) => void) | null = null;
 
   constructor(config: ListsMenuConfig) {
     this.config = config;
+    this.easterEggUnlocked = sessionStorage.getItem(STORAGE_KEY) === 'true';
   }
 
   /**
@@ -79,7 +88,7 @@ export class ListsMenuPartial {
             <span class="primary-nav__sublink-desc">Tribes</span>
           </a>
         </li>
-        <li>
+        <li class="nip51-inspector-item" style="${this.easterEggUnlocked ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="nip51-inspector">
             <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"></circle>
@@ -112,7 +121,67 @@ export class ListsMenuPartial {
     });
 
     this.element = li;
+
+    // Setup easter egg listener if not already unlocked
+    if (!this.easterEggUnlocked) {
+      this.setupEasterEggListener();
+    }
+
     return li;
+  }
+
+  /**
+   * Setup global keypress listener for easter egg
+   */
+  private setupEasterEggListener(): void {
+    this.keyListener = (e: KeyboardEvent) => {
+      // Ignore if typing in an input field
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      this.easterEggBuffer += e.key.toLowerCase();
+
+      // Keep buffer at max length of easter egg code
+      if (this.easterEggBuffer.length > EASTER_EGG_CODE.length) {
+        this.easterEggBuffer = this.easterEggBuffer.slice(-EASTER_EGG_CODE.length);
+      }
+
+      // Check if code matches
+      if (this.easterEggBuffer === EASTER_EGG_CODE) {
+        this.unlockEasterEgg();
+      }
+    };
+
+    document.addEventListener('keydown', this.keyListener);
+  }
+
+  /**
+   * Unlock the NIP-51 Inspector easter egg
+   */
+  private unlockEasterEgg(): void {
+    this.easterEggUnlocked = true;
+    sessionStorage.setItem(STORAGE_KEY, 'true');
+
+    // Show the menu item
+    const nip51Item = this.element?.querySelector('.nip51-inspector-item') as HTMLElement;
+    if (nip51Item) {
+      nip51Item.style.display = '';
+    }
+
+    // Expand the Lists menu to show it
+    if (!this.isExpanded) {
+      this.toggle();
+    }
+
+    // Show toast
+    ToastService.show('NIP-51 Inspector unlocked!', 'success');
+
+    // Remove listener
+    if (this.keyListener) {
+      document.removeEventListener('keydown', this.keyListener);
+      this.keyListener = null;
+    }
   }
 
   /**
@@ -157,6 +226,10 @@ export class ListsMenuPartial {
    * Destroy (remove from DOM)
    */
   public destroy(): void {
+    if (this.keyListener) {
+      document.removeEventListener('keydown', this.keyListener);
+      this.keyListener = null;
+    }
     this.element?.remove();
     this.element = null;
   }

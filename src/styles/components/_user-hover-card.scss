@@ -11,7 +11,7 @@
   width: 320px;
   background: $color-2;
   border: 1px solid rgba($color-4, 0.3);
-  border-radius: calc($gap / 2);
+  border-radius: $radius-lg;
   padding: $gap;
   box-shadow: $box-shadow;
   z-index: 10000;
@@ -28,7 +28,7 @@
   &__avatar {
     width: 48px;
     height: 48px;
-    border-radius: 50%;
+    border-radius: $radius-full;
     border: 2px solid rgba($color-4, 0.3);
     object-fit: cover;
     background: $color-1;

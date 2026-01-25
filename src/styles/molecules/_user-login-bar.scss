@@ -1,0 +1,7 @@
+@use '../abstracts/variables' as *;
+
+.user-login-bar {
+  display: block;
+  padding-bottom: $gap;
+  text-align: right;
+}

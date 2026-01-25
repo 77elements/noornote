@@ -6,13 +6,15 @@
 
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
-import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 
-/** Search relay endpoints (hardcoded + user relays) */
+/** NIP-50 search relay endpoints (only relays that support full-text search) */
 const SEARCH_RELAYS = [
-  'wss://search.nos.today'
+  'wss://search.nos.today',
+  'wss://relay.nostr.band',
+  'wss://relay.ditto.pub',
+  'wss://relay.nostrcheck.me'
 ];
 
 export interface SearchOptions {
@@ -31,13 +33,11 @@ export interface SearchOptions {
 export class SearchOrchestrator extends Orchestrator {
   private static instance: SearchOrchestrator;
   private transport: NostrTransport;
-  private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
 
   private constructor() {
     super('SearchOrchestrator');
     this.transport = NostrTransport.getInstance();
-    this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }
 
@@ -141,14 +141,11 @@ export class SearchOrchestrator extends Orchestrator {
   }
 
   /**
-   * Get search relays (hardcoded + user relays)
+   * Get search relays (NIP-50 capable relays only)
+   * Note: User relays are NOT included as most don't support NIP-50
    */
   private getSearchRelays(): string[] {
-    const userRelays = this.relayConfig.getReadRelays();
-
-    // Combine and deduplicate
-    const allRelays = [...SEARCH_RELAYS, ...userRelays];
-    return [...new Set(allRelays)];
+    return SEARCH_RELAYS;
   }
 
   /**

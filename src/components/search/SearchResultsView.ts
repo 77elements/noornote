@@ -92,7 +92,8 @@ export class SearchResultsView {
     header.className = 'search-results__header';
 
     // Title
-    const title = document.createElement('h3');
+    const title = document.createElement('h2');
+    title.className = 'h3';
     title.textContent = this.config.title;
     header.appendChild(title);
 
@@ -146,7 +147,7 @@ export class SearchResultsView {
       // Setup InfiniteScroll if callback provided
       if (this.callbacks.onLoadMore) {
         this.infiniteScroll = new InfiniteScroll(this.callbacks.onLoadMore, {
-          loadingMessage: 'Fetching 20 more results from Relays...'
+          loadingMessage: 'Fetching more results from Relays...'
         });
         this.infiniteScroll.observe(this.listElement);
       }
@@ -206,21 +207,17 @@ export class SearchResultsView {
     const excerpt = this.createExcerpt(note.content, searchTerms);
 
     item.innerHTML = `
-      ${date}
+      <span class="search-results__date">${date}</span>
       <div class="search-results__excerpt">${excerpt}</div>
-      <button class="search-results__view-btn" data-note-id="${note.id}">
-        View note
-      </button>
     `;
 
-    // Setup click handler
+    // Make entire item clickable
     const noteId = note.id;
-    if (!noteId) return item;
-
-    const viewBtn = item.querySelector('.search-results__view-btn');
-    viewBtn?.addEventListener('click', () => {
-      this.callbacks.onNoteClick(noteId);
-    });
+    if (noteId) {
+      item.addEventListener('click', () => {
+        this.callbacks.onNoteClick(noteId);
+      });
+    }
 
     return item;
   }
@@ -261,6 +258,17 @@ export class SearchResultsView {
    */
   public updateConfig(config: Partial<SearchResultsConfig>): void {
     this.config = { ...this.config, ...config };
+  }
+
+  /**
+   * Update meta text in the header
+   */
+  public updateMeta(meta: string): void {
+    this.config.meta = meta;
+    const metaElement = this.container.querySelector('.search-results__meta');
+    if (metaElement) {
+      metaElement.textContent = meta;
+    }
   }
 
   /**

@@ -11,14 +11,15 @@
 .sidebar {
   @include card-base;
   overflow-y: auto;
-  background-color: var(--color-surface);
+  background-color: $color-2;
 
   // Scrollbar styling - MUST be last to override any conflicting styles
   @include custom-scrollbar;
 }
 
 .sidebar-content {
-  display: block;
+  display: flex;
+  flex-direction: column;
   position: relative;
   height: 100%;
   padding: $gap;
@@ -28,22 +29,27 @@
   }
 }
 
+.sidebar-scrollable {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  @include custom-scrollbar;
+  -webkit-overflow-scrolling: touch;
+  // Reserve space for the fixed "New Post" button at the bottom
+  padding-bottom: 70px;
+}
+
 // Sidebar header (logo)
 .sidebar-header {
-  font-family: 'Saira', sans-serif;
-  @extend %h1;
-  font-weight: 700;
-  line-height: 1.2;
   margin-bottom: $gap;
-  background: linear-gradient(135deg, color.adjust($color-3, $saturation: 40%), color.adjust($color-6, $saturation: 40%));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: $text-glow;
 
   // Hide in phone mode (logo shown in mobile header)
   .layout--phone & {
     display: none;
+  }
+
+  .nn-logo {
+    @extend %h1;
   }
 }
 
@@ -80,8 +86,8 @@
     left: 0;
     right: 0;
     margin-bottom: calc($gap / 2);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+    background: $color-2;
+    border: 1px solid $color-2;
     border-radius: $radius-md;
     box-shadow: $box-shadow;
     overflow: hidden;
@@ -119,13 +125,10 @@
     }
 
     &:not(:last-child) {
-      border-bottom: 1px solid var(--color-border);
+      border-bottom: 1px solid $color-2;
     }
   }
 }
 
 .sidebar-footer {
-  margin-top: auto;
-  padding-top: $gap;
-  border-top: 1px solid var(--color-border);
 }
