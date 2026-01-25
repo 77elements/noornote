@@ -405,3 +405,23 @@
     text-align: center;
   }
 }
+
+// Unsupported Kind Fallback
+.note-card--unsupported {
+  background: rgba($color-3, 0.15);
+  border: 1px dashed rgba($color-5, 0.3);
+  border-radius: $radius-md;
+  padding: $gap;
+}
+
+.unsupported-kind {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc($gap / 2);
+  text-align: center;
+
+  &__message {
+    color: rgba($color-5, 0.7);
+  }
+}

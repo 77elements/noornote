@@ -32,27 +32,26 @@ export class NoteProcessor {
         case 30023:
           return ArticleProcessor.process(event);
         default:
-          console.warn(`⚠️ Unsupported note kind: ${event.kind}`);
-          return TextNoteProcessor.process(event);
+          return NoteProcessor.createUnsupportedNote(event, eventId);
       }
     } catch (error) {
       console.error(`❌ ERROR processing note ${eventId.slice(0, 8)}:`, error);
-      return NoteProcessor.createFallbackNote(event, eventId);
+      return NoteProcessor.createUnsupportedNote(event, eventId);
     }
   }
 
   /**
-   * Create fallback note when processing fails
+   * Create unsupported note for unknown event kinds
    */
-  private static createFallbackNote(event: NostrEvent, eventId: string): ProcessedNote {
+  private static createUnsupportedNote(event: NostrEvent, eventId: string): ProcessedNote {
     return {
       id: eventId,
-      type: 'original',
+      type: 'unsupported',
       timestamp: event.created_at,
       author: { pubkey: event.pubkey },
       content: {
-        text: event.content,
-        html: event.content.replace(/\n/g, '<br>'),
+        text: '',
+        html: '',
         media: [],
         links: [],
         hashtags: [],

@@ -12,6 +12,7 @@
 // ========================================
 .btn {
   // Base styles
+  display: inline-block;
   color: $color-1;
   background-color: $color-4;
   border: 1px solid $color-4;
@@ -22,6 +23,12 @@
   line-height: 1.25;
   text-decoration: none;
   white-space: nowrap;
+
+  // Override global link styles when used on <a>
+  &:link, &:visited {
+    color: $color-1;
+    text-decoration: none;
+  }
 
   // Appearance
   border-radius: $radius-base;

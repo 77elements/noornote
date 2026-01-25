@@ -113,6 +113,17 @@ export class QuotedNoteRenderer {
           return;
         }
 
+        // Route unsupported kinds to UnsupportedKindRenderer
+        const supportedKinds = [1, 6, 1068, 6969, 9735, 30023];
+        if (result.event.kind !== undefined && !supportedKinds.includes(result.event.kind)) {
+          const { UnsupportedKindRenderer } = await import('../components/ui/note-rendering/UnsupportedKindRenderer');
+          const { NoteProcessor } = await import('../components/ui/note-processing/NoteProcessor');
+          const processedNote = NoteProcessor.process(result.event);
+          const unsupportedElement = UnsupportedKindRenderer.render(processedNote, { collapsible: false });
+          skeleton.replaceWith(unsupportedElement);
+          return;
+        }
+
         const quoteBox = this.createQuoteBox(result.event, enableCollapsible)
         skeleton.replaceWith(quoteBox);
       } else {
