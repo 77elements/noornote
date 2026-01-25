@@ -8,7 +8,7 @@ import type { PollData } from '../../poll/PollCreator';
 
 export interface ProcessedNote {
   id: string;
-  type: 'original' | 'repost' | 'quote' | 'poll';
+  type: 'original' | 'repost' | 'quote' | 'poll' | 'zap-receipt';
   timestamp: number;
   author: {
     pubkey: string;
@@ -38,6 +38,15 @@ export interface ProcessedNote {
   quotedEvent?: ProcessedNote;
   repostedEvent?: NostrEvent;
   pollData?: PollData;
+  zapReceiptData?: ZapReceiptData;
+}
+
+export interface ZapReceiptData {
+  amountSats: number;
+  senderPubkey?: string;
+  recipientPubkey: string;
+  message?: string;
+  targetEventId?: string;
 }
 
 export interface MediaContent {

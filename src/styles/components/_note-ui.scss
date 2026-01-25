@@ -314,3 +314,94 @@
     color: $color-red;
   }
 }
+
+// Zap Receipt (kind 9735)
+.note-card--zap-receipt {
+  background: rgba($color-3, 0.3);
+  border: 1px solid rgba($color-4, 0.3);
+  border-radius: $radius-md;
+  padding: $gap;
+
+  &:hover {
+    background: rgba($color-3, 0.5);
+    border-color: rgba($color-4, 0.5);
+  }
+}
+
+.zap-receipt {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+  }
+
+  &__icon {
+    font-size: 1.5rem;
+  }
+
+  &__amount {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: $color-bitcoin-orange;
+  }
+
+  &__details {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    flex-wrap: wrap;
+  }
+
+  &__sender {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 4);
+  }
+
+  &__avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: $radius-full;
+    object-fit: cover;
+    background: $color-3;
+
+    &--placeholder {
+      background: linear-gradient(135deg, $color-3, $color-4);
+    }
+  }
+
+  &__name {
+    color: $color-5;
+    font-weight: 500;
+
+    &:hover {
+      color: $color-4;
+      text-decoration: underline;
+    }
+
+    &--recipient {
+      color: rgba($color-5, 0.8);
+    }
+  }
+
+  &__arrow {
+    color: rgba($color-5, 0.5);
+  }
+
+  &__message {
+    color: rgba($color-5, 0.9);
+    font-style: italic;
+    padding-left: calc($gap / 2);
+    border-left: 2px solid rgba($color-4, 0.5);
+    margin-top: calc($gap / 4);
+  }
+
+  &--error {
+    color: rgba($color-5, 0.6);
+    text-align: center;
+  }
+}

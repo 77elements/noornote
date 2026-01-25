@@ -103,7 +103,17 @@ export class QuotedNoteRenderer {
           return;
         }
 
-        const quoteBox = this.createQuoteBox(result.event, enableCollapsible);
+        // Route zap receipts (kind 9735) to ZapReceiptRenderer
+        if (result.event.kind === 9735) {
+          const { ZapReceiptRenderer } = await import('../components/ui/note-rendering/ZapReceiptRenderer');
+          const { ZapReceiptProcessor } = await import('../components/ui/note-processing/ZapReceiptProcessor');
+          const processedNote = ZapReceiptProcessor.process(result.event);
+          const zapElement = ZapReceiptRenderer.render(processedNote, { collapsible: false });
+          skeleton.replaceWith(zapElement);
+          return;
+        }
+
+        const quoteBox = this.createQuoteBox(result.event, enableCollapsible)
         skeleton.replaceWith(quoteBox);
       } else {
         const errorElement = this.createQuoteError(result.error);

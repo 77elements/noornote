@@ -10,6 +10,7 @@ import { TextNoteProcessor } from './TextNoteProcessor';
 import { RepostProcessor } from './RepostProcessor';
 import { PollProcessor } from './PollProcessor';
 import { ArticleProcessor } from './ArticleProcessor';
+import { ZapReceiptProcessor } from './ZapReceiptProcessor';
 
 export class NoteProcessor {
   /**
@@ -26,6 +27,8 @@ export class NoteProcessor {
           return RepostProcessor.process(event);
         case 1068:
           return PollProcessor.process(event);
+        case 9735:
+          return ZapReceiptProcessor.process(event);
         case 30023:
           return ArticleProcessor.process(event);
         default:
