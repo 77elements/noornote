@@ -534,6 +534,37 @@ export class KeySignerClient {
   }
 
   /**
+   * Add account via CLI (when daemon is NOT running)
+   * Uses noorsigner add-account --stdin
+   */
+  public async addAccountViaCli(
+    nsec: string,
+    password: string
+  ): Promise<{ pubkey: string; npub: string }> {
+    this.ensureTauri();
+
+    const { invoke } = await import('@tauri-apps/api/core');
+    const jsonInput = JSON.stringify({ nsec, password });
+
+    try {
+      const responseStr = await invoke<string>('add_account_via_cli', { jsonInput });
+      const response = JSON.parse(responseStr);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to add account');
+      }
+
+      return {
+        pubkey: response.pubkey || '',
+        npub: response.npub || '',
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new Error(`Failed to add account: ${message}`);
+    }
+  }
+
+  /**
    * Destroy instance
    */
   public static destroy(): void {

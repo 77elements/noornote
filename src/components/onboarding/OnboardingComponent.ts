@@ -15,6 +15,8 @@ import {
 } from '../../services/NostrToolsAdapter';
 import { ToastService } from '../../services/ToastService';
 import { PlatformService } from '../../services/PlatformService';
+import { ImportToNoorSignerModal } from '../modals/ImportToNoorSignerModal';
+import { AuthService } from '../../services/AuthService';
 
 // Tauri APIs for file save dialog
 let tauriSave: typeof import('@tauri-apps/plugin-dialog').save | null = null;
@@ -231,10 +233,12 @@ export class OnboardingComponent {
 
           <div class="create-account-actions">
             <button class="btn btn--large" data-action="continue" disabled>
-              Continue to Login
+              ${platform.isTauri ? 'Continue' : 'Continue to Login'}
             </button>
             <p class="onboarding-hint">
-              You'll need to import your key into a signer to log in.
+              ${platform.isTauri
+                ? 'Your key will be securely stored with password protection.'
+                : 'You\'ll need to import your key into a signer to log in.'}
             </p>
           </div>
         </section>
@@ -289,8 +293,7 @@ export class OnboardingComponent {
     // Continue to login
     if (continueBtn) {
       continueBtn.addEventListener('click', () => {
-        localStorage.setItem('noornote_has_key', 'true');
-        this.router.navigate('/login');
+        this.handleContinue();
       });
     }
 
@@ -417,6 +420,47 @@ IMPORTANT:
     } catch (error) {
       console.error('Failed to save backup:', error);
       ToastService.show('Failed to save backup', 'error');
+    }
+  }
+
+  /**
+   * Handle "Continue" button click
+   * Tauri: Show import modal for NoorSigner
+   * Web: Navigate to login page
+   */
+  private handleContinue(): void {
+    localStorage.setItem('noornote_has_key', 'true');
+
+    // On Tauri, show the import modal for seamless NoorSigner integration
+    if (platform.isTauri && this.currentKeypair) {
+      const modal = new ImportToNoorSignerModal({
+        nsec: this.currentKeypair.nsec,
+        npub: this.currentKeypair.npub,
+        onSuccess: async () => {
+          // Log in the user automatically
+          try {
+            const authService = AuthService.getInstance();
+            const authResult = await authService.authenticateWithKeySigner();
+            if (authResult.success) {
+              this.router.navigate('/');
+            } else {
+              console.error('Auto-login failed:', authResult.error);
+              this.router.navigate('/login');
+            }
+          } catch (error) {
+            console.error('Auto-login failed:', error);
+            // Fall back to login page
+            this.router.navigate('/login');
+          }
+        },
+        onCancel: () => {
+          // User can still go to login manually
+        }
+      });
+      modal.show();
+    } else {
+      // Web: Navigate to login page
+      this.router.navigate('/login');
     }
   }
 }

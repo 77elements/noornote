@@ -263,3 +263,47 @@
     text-decoration: underline;
   }
 }
+
+// ===========================================
+// IMPORT TO NOORSIGNER MODAL
+// ===========================================
+
+.import-noorsigner-modal {
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+
+  &__intro {
+    color: $color-4;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+
+    label {
+      color: $color-5;
+      font-weight: 500;
+    }
+  }
+
+  &__error {
+    color: $color-4;
+    background: rgba($color-4, 0.1);
+    padding: calc($gap / 2) $gap;
+    border-radius: $radius-sm;
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $gap;
+    margin-top: $gap;
+  }
+}

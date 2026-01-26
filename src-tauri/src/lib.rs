@@ -47,6 +47,8 @@ pub fn run() {
       key_signer::check_trust_session,
       key_signer::cancel_key_signer_launch,
       key_signer::ensure_noorsigner_installed,
+      key_signer::add_account_via_cli,
+      key_signer::launch_daemon_silent,
       icloud_check::check_icloud_keychain
     ])
     .setup(|app| {
