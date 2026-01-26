@@ -75,7 +75,7 @@
 
 // Large
 .btn--large {
-  padding: calc($gap * 1.5) calc($gap * 2);
+  padding: $gap calc($gap * 1.5);
   font-size: 19px;
 }
 

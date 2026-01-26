@@ -87,11 +87,12 @@ export class App {
 
     const isLoggedIn = this.authService.hasValidSession();
 
-    // Determine target path: prioritize lastURL (reload case), fallback to login or timeline
+    // Determine target path: prioritize lastURL (reload case), fallback to home
+    // Router handles redirect to /welcome or /login based on localStorage
     let targetPath: string;
     if (!isLoggedIn) {
-      targetPath = '/login';
-    } else if (lastURL && lastURL !== '/login') {
+      targetPath = '/';  // Let Router decide /welcome or /login
+    } else if (lastURL && lastURL !== '/login' && lastURL !== '/welcome') {
       targetPath = lastURL;
     } else {
       targetPath = '/';
@@ -173,6 +174,7 @@ export class App {
 
   private setupRoutes(): void {
     // Public routes
+    this.registerRoute('/welcome', 'welcome', 'welcome', 'welcome-view');
     this.registerRoute('/login', 'login', 'not-logged-in', 'login-view');
     this.registerRoute('/about', 'about', 'about', 'abv');
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
@@ -217,6 +219,12 @@ export class App {
     primaryContent.innerHTML = '';
 
     switch (viewType) {
+      case 'welcome':
+        if (this.mainLayout) {
+          this.mainLayout.showWelcomeScreen();
+        }
+        break;
+
       case 'not-logged-in':
         if (this.mainLayout) {
           this.mainLayout.showLoginScreen();

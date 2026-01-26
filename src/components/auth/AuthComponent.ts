@@ -76,6 +76,68 @@ export class AuthComponent {
   }
 
   /**
+   * Show welcome screen for new users
+   * Asks: "Are you new to Nostr?"
+   */
+  public showWelcomeScreen(): void {
+    const primaryContent = document.querySelector('.primary-content');
+    if (!primaryContent) return;
+
+    primaryContent.innerHTML = `
+      <div class="view-content view-content--login">
+        <h1>Welcome to NoorNote</h1>
+
+        <h2 class="auth-subtitle">Are you new to Nostr?</h2>
+
+        <div class="onboarding-choices">
+          <div class="onboarding-choice">
+            <button class="btn btn--large" data-action="new-to-nostr">
+              Yes, create an account
+            </button>
+            <p class="auth-hint">Generate a new keypair</p>
+          </div>
+
+          <div class="onboarding-choice">
+            <button class="btn btn--large btn--passive" data-action="has-key">
+              I already have a key
+            </button>
+            <p class="auth-hint">Sign in with existing account</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.setupWelcomeViewListeners();
+  }
+
+  /**
+   * Setup listeners for welcome view
+   */
+  private setupWelcomeViewListeners(): void {
+    const primaryContent = document.querySelector('.primary-content');
+    if (!primaryContent) return;
+
+    // "Yes, create account" button
+    const newToNostrBtn = primaryContent.querySelector('[data-action="new-to-nostr"]');
+    if (newToNostrBtn) {
+      newToNostrBtn.addEventListener('click', () => {
+        // TODO: Phase 2 - Show onboarding flow
+        // For now, just show a message
+        alert('Onboarding flow coming soon! (Phase 2)');
+      });
+    }
+
+    // "I already have a key" button
+    const hasKeyBtn = primaryContent.querySelector('[data-action="has-key"]');
+    if (hasKeyBtn) {
+      hasKeyBtn.addEventListener('click', () => {
+        localStorage.setItem('noornote_has_key', 'true');
+        this.router.navigate('/login');
+      });
+    }
+  }
+
+  /**
    * Show login screen in primary-content
    * Two options: NoorSigner (primary) and Bunker (remote signer)
    */
@@ -127,6 +189,14 @@ export class AuthComponent {
           </div>
           <p class="auth-hint">Hardware signer or nsecBunker</p>
         </section>
+
+        <div class="auth-divider">
+          <span>or</span>
+        </div>
+
+        <p class="auth-hint" style="text-align: center;">
+          <a href="#" data-action="create-account">Create a new Nostr account</a>
+        </p>
       </div>
     `;
 
@@ -166,6 +236,16 @@ export class AuthComponent {
         if ((e as KeyboardEvent).key === 'Enter') {
           this.handleBunkerLogin();
         }
+      });
+    }
+
+    // Create account link - clears localStorage and goes to welcome
+    const createAccountLink = primaryContent.querySelector('[data-action="create-account"]');
+    if (createAccountLink) {
+      createAccountLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('noornote_has_key');
+        this.router.navigate('/welcome');
       });
     }
   }

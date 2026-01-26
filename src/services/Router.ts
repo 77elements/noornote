@@ -287,8 +287,9 @@ export class Router {
             // Legacy: Use custom unauthenticated handler
             route.unauthenticatedHandler(params);
           } else if (route.requiresAuth) {
-            // New: Route requires auth, redirect to login
-            this.navigate('/login');
+            // Route requires auth - redirect to welcome or login based on user preference
+            const hasKey = localStorage.getItem('noornote_has_key');
+            this.navigate(hasKey ? '/login' : '/welcome');
           } else {
             // Route is public, show it
             route.handler(params);

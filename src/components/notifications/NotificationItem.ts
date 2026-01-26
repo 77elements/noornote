@@ -513,7 +513,10 @@ export class NotificationItem {
     if (!previewElement) return;
 
     try {
-      const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e');
+      // For reactions/zaps, use the LAST e-tag (NIP-25: direct reference to reacted note)
+      // Some clients copy all e-tags from the thread, but the last one is always the direct target
+      const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
+      const eTag = eTags[eTags.length - 1];
       if (!eTag || !eTag[1]) return;
 
       const originalEvent = await this.fetchOriginalNote(eTag[1]);
@@ -532,9 +535,11 @@ export class NotificationItem {
 
   /**
    * Get the referenced note ID from event tags (for zaps, reactions)
+   * Uses the LAST e-tag as that's the direct reference (NIP-25)
    */
   private getReferencedNoteId(): string | null {
-    const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e');
+    const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
+    const eTag = eTags[eTags.length - 1];
     return eTag?.[1] || null;
   }
 

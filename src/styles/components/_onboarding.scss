@@ -1,28 +1,48 @@
 /**
- * Login View
- * Displays in .primary-content when user not logged in
+ * Onboarding Flow Styles
+ * Covers: Welcome View, Login View, New Account View
  */
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 
-// Child element styles only - container styles from .view-content base class
+// ===========================================
+// SHARED STYLES (all onboarding views)
+// ===========================================
+
 .auth-subtitle {
-  margin: 0 0 $gap * 2 0;
-  color: $color-3;
-  @extend %h4;
   text-align: center;
 }
 
-// Auth Section (grouped login options)
+// ===========================================
+// WELCOME VIEW (2-column choices)
+// ===========================================
+
+.onboarding-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $gap * 2;
+  margin: $gap * 2 0;
+}
+
+.onboarding-choice {
+  text-align: center;
+
+  .auth-hint {
+    margin-top: calc($gap / 2);
+    color: $color-3;
+  }
+}
+
+// Auth Section (grouped options)
 .auth-section {
   border: 1px solid $color-3;
   border-radius: $radius-lg;
   padding: calc($gap * 2);
   margin: calc($gap * 2) 0;
 
-  // Primary auth section (no border, prominent)
+  // Primary section (no border, prominent)
   &--primary {
     border: none;
     padding: 0;
@@ -30,11 +50,11 @@
   }
 }
 
-// Primary Action (large button)
+// Primary Action (large button + hint)
 .auth-primary-action {
   text-align: center;
   margin: $gap;
-  
+
   .auth-hint {
     color: $color-3;
 
@@ -47,8 +67,36 @@
       }
     }
   }
-
 }
+
+// Divider with text
+.auth-divider {
+  position: relative;
+  text-align: center;
+  margin: $gap * 2 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: $color-3;
+  }
+
+  span {
+    position: relative;
+    display: inline-block;
+    padding: 0 $gap;
+    background: $color-2;
+    color: $color-3;
+  }
+}
+
+// ===========================================
+// LOGIN VIEW
+// ===========================================
 
 // Input Group (input + button)
 .auth-input-group {
@@ -82,30 +130,9 @@
   }
 }
 
-// Divider
-.auth-divider {
-  position: relative;
-  text-align: center;
-  margin: $gap * 2 0;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: $color-3;
-  }
-
-  span {
-    position: relative;
-    display: inline-block;
-    padding: 0 $gap;
-    background: $color-2;
-    color: $color-3;
-  }
-}
+// ===========================================
+// NEW ACCOUNT VIEW (Phase 2)
+// ===========================================
 
 // Create New Account
 .auth-create {

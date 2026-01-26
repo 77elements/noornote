@@ -1569,6 +1569,14 @@ export class MainLayout {
     }
   }
 
+  /**
+   * Show welcome screen (new users - "Are you new to Nostr?")
+   */
+  public showWelcomeScreen(): void {
+    if (this.authComponent && typeof this.authComponent.showWelcomeScreen === 'function') {
+      this.authComponent.showWelcomeScreen();
+    }
+  }
 
   /**
    * Open a list tab (Bookmarks, Follows, or Muted Users)
