@@ -17,6 +17,7 @@ import { ToastService } from '../../services/ToastService';
 import { PlatformService } from '../../services/PlatformService';
 import { ImportToNoorSignerModal } from '../modals/ImportToNoorSignerModal';
 import { AuthService } from '../../services/AuthService';
+import { getImageViewer } from '../ui/ImageViewer';
 
 // Tauri APIs for file save dialog
 let tauriSave: typeof import('@tauri-apps/plugin-dialog').save | null = null;
@@ -96,12 +97,13 @@ export class OnboardingComponent {
             <div class="nn-carousel-slides">
               <div class="nn-carousel-slide active" data-slide="0">
                 <img src="/images/nostr-illustration.jpeg" alt="How Nostr works" class="nn-carousel-image" />
+                <p class="mini" style="text-align: right; margin-top: 0;">Nostr illustration by @awayuki</p>
                 <p><strong>Nostr</strong> stands for "Notes and Other Stuff Transmitted by Relays". It's a simple, open protocol that enables truly decentralized social networking.</p>
               </div>
 
               <div class="nn-carousel-slide" data-slide="1">
                 <h3>Relays: The Network</h3>
-                <p>Unlike traditional platforms, Nostr doesn't have a central server. Instead, it uses <strong>relays</strong> — independent servers that store and forward your messages.</p>
+                <p>Unlike traditional platforms, Nostr doesn't have a central server. Instead, it uses <strong>relays</strong>, independent servers that store and forward your messages.</p>
                 <p>You can connect to multiple relays at once. If one goes down, your content lives on through others. No single point of failure.</p>
               </div>
 
@@ -109,8 +111,8 @@ export class OnboardingComponent {
                 <h3>Keys: Your Identity</h3>
                 <p>Your identity on Nostr is a <strong>cryptographic key pair</strong>:</p>
                 <ul>
-                  <li><strong>Public key (npub)</strong> — Your username, shareable with anyone</li>
-                  <li><strong>Private key (nsec)</strong> — Your password, never share this!</li>
+                  <li><strong>Public key (npub)</strong>, your username, shareable with anyone</li>
+                  <li><strong>Private key (nsec)</strong>, your password, never share this!</li>
                 </ul>
                 <p>You own your identity. No company can ban you or delete your account.</p>
               </div>
@@ -118,10 +120,10 @@ export class OnboardingComponent {
               <div class="nn-carousel-slide" data-slide="3">
                 <h3>Why Nostr?</h3>
                 <ul>
-                  <li><strong>Censorship-resistant</strong> — No central authority can silence you</li>
-                  <li><strong>Portable identity</strong> — Take your followers anywhere</li>
-                  <li><strong>Interoperable</strong> — Use any client you like</li>
-                  <li><strong>Simple</strong> — Built on proven cryptography</li>
+                  <li><strong>Censorship-resistant</strong>, no central authority can silence you</li>
+                  <li><strong>Portable identity</strong>, take your followers anywhere</li>
+                  <li><strong>Interoperable</strong>, use any client you like</li>
+                  <li><strong>Simple</strong>, built on proven cryptography</li>
                 </ul>
               </div>
             </div>
@@ -168,6 +170,15 @@ export class OnboardingComponent {
         this.router.navigate('/login');
       });
     }
+
+    // Carousel image click to enlarge
+    const carouselImage = primaryContent.querySelector('.nn-carousel-image') as HTMLImageElement;
+    if (carouselImage) {
+      carouselImage.style.cursor = 'pointer';
+      carouselImage.addEventListener('click', () => {
+        getImageViewer().open({ images: [carouselImage.src] });
+      });
+    }
   }
 
   /**
@@ -187,23 +198,23 @@ export class OnboardingComponent {
         <section class="create-account-section">
           <p class="onboarding-intro">
             Your Nostr identity is a cryptographic key pair. The <strong>private key (nsec)</strong>
-            is your password — keep it secret and safe. The <strong>public key (npub)</strong>
-            is your username — share it with anyone.
+            is your password, keep it secret and safe. The <strong>public key (npub)</strong>
+            is your username, share it with anyone.
           </p>
 
           <div class="keypair-display">
             <div class="keypair-item keypair-item--critical">
-              <label>Private Key (nsec) — Keep this secret!</label>
+              <label for="nsec-input">Private Key (nsec), keep this secret!</label>
               <div class="keypair-input-row">
-                <input type="text" class="input input--monospace" value="${this.currentKeypair.nsec}" readonly data-key="nsec" />
+                <input type="text" id="nsec-input" class="input input--monospace" value="${this.currentKeypair.nsec}" readonly data-key="nsec" />
                 <button class="btn btn--mini" data-action="copy-nsec" title="Copy to clipboard">Copy</button>
               </div>
             </div>
 
             <div class="keypair-item">
-              <label>Public Key (npub) — Your username</label>
+              <label for="npub-input">Public Key (npub), your username</label>
               <div class="keypair-input-row">
-                <input type="text" class="input input--monospace" value="${this.currentKeypair.npub}" readonly data-key="npub" />
+                <input type="text" id="npub-input" class="input input--monospace" value="${this.currentKeypair.npub}" readonly data-key="npub" />
                 <button class="btn btn--mini" data-action="copy-npub" title="Copy to clipboard">Copy</button>
               </div>
             </div>
@@ -216,12 +227,13 @@ export class OnboardingComponent {
             <button class="btn btn--passive" data-action="download">
               Download Backup
             </button>
+            <span class="small" style="line-height: 1.5;">or save your keypair in your password manager</span>
           </div>
 
           <div class="backup-warning">
             <p><strong>There is no password recovery.</strong></p>
             <p>If you lose your private key, you lose access to your account forever.
-            No one can help you recover it — not even us.</p>
+            No one can help you recover it, not even us.</p>
           </div>
 
           <div class="backup-confirmation">
@@ -235,15 +247,13 @@ export class OnboardingComponent {
             <button class="btn btn--large" data-action="continue" disabled>
               ${platform.isTauri ? 'Continue' : 'Continue to Login'}
             </button>
-            <p class="onboarding-hint">
+            <p class="onboarding-hint" style="text-align: left; color: inherit;">
               ${platform.isTauri
-                ? 'Your key will be securely stored with password protection.'
+                ? `Your nsec will be securely transferred to NoorSigner, which runs locally on your machine. It never leaves your computer and is never transmitted over the internet or any other network. NoorSigner stores your nsec encrypted with AES-256 at <code>~/.noorsigner/accounts/</code>. To allow NoorSigner to sign Nostr events on your behalf, it will ask for your password every 24 hours. You'll set this password in the next step.`
                 : 'You\'ll need to import your key into a signer to log in.'}
             </p>
           </div>
         </section>
-
-        <a href="#" class="back-link" data-action="back-to-welcome">← Back to Welcome</a>
       </div>
     `;
 
@@ -294,15 +304,6 @@ export class OnboardingComponent {
     if (continueBtn) {
       continueBtn.addEventListener('click', () => {
         this.handleContinue();
-      });
-    }
-
-    // Back to welcome
-    const backLink = primaryContent.querySelector('[data-action="back-to-welcome"]');
-    if (backLink) {
-      backLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.router.navigate('/welcome');
       });
     }
   }

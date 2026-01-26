@@ -16,7 +16,7 @@
 }
 
 .onboarding-hint {
-  margin-top: calc($gap / 2);
+  margin-top: $gap;
   color: $color-3;
 }
 
@@ -160,7 +160,6 @@
 }
 
 .onboarding-intro {
-  color: $color-4;
   line-height: 1.6;
   margin-bottom: $gap * 2;
 }
@@ -188,10 +187,6 @@
   &--critical {
     border-color: $color-4;
     background: rgba($color-4, 0.05);
-
-    label {
-      color: $color-4;
-    }
   }
 }
 
@@ -276,7 +271,6 @@
   }
 
   &__intro {
-    color: $color-4;
     line-height: 1.5;
     margin: 0;
   }
