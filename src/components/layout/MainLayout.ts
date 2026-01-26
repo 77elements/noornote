@@ -662,11 +662,20 @@ export class MainLayout {
         if (currentUser) {
           this.setUserStatus(currentUser.npub, currentUser.pubkey);
         }
+        // Update sidebar for logged-in state
+        this.element.querySelector('.sidebar')?.classList.remove('sidebar--logged-out');
       } else {
         // User logged out - clear user status
         this.clearUserStatus();
+        // Update sidebar for logged-out state
+        this.element.querySelector('.sidebar')?.classList.add('sidebar--logged-out');
       }
     });
+
+    // Set initial sidebar state based on current auth status
+    if (!this.authStateManager.isLoggedIn()) {
+      this.element.querySelector('.sidebar')?.classList.add('sidebar--logged-out');
+    }
 
     // Listen for account switches (user:login fires when switching accounts)
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
@@ -767,6 +776,17 @@ export class MainLayout {
         e.preventDefault();
         const router = Router.getInstance();
         router.navigate('/about');
+      });
+    }
+
+    // Welcome link - reset has_key flag to show welcome screen
+    const welcomeLink = this.element.querySelector('.sidebar a[href="/welcome"]');
+    if (welcomeLink) {
+      welcomeLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('noornote_has_key');
+        const router = Router.getInstance();
+        router.navigate('/welcome');
       });
     }
 
@@ -971,6 +991,15 @@ export class MainLayout {
           <div class="sidebar-scrollable">
             <div class="sidebar-header">
               <span class="nn-logo">NoorNote</span>
+            </div>
+            <div class="sidebar-welcome-link">
+              <a href="/welcome" class="primary-nav__link primary-nav__link--welcome">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span class="primary-nav__item-desc">Welcome</span>
+              </a>
             </div>
             <div class="wallet-balance-container">
               <!-- WalletBalanceDisplay will be mounted here -->
