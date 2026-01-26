@@ -85,7 +85,7 @@ export class ImportToNoorSignerModal {
             Cancel
           </button>
           <button type="button" class="btn" id="import-password-submit-btn">
-            Import Key
+            Set Password
           </button>
         </div>
       </div>
@@ -177,7 +177,7 @@ export class ImportToNoorSignerModal {
         }
       } finally {
         this.isSubmitting = false;
-        submitBtn.textContent = 'Import Key';
+        submitBtn.textContent = 'Set Password';
         submitBtn.removeAttribute('disabled');
       }
     };

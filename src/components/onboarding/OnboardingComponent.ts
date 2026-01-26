@@ -430,14 +430,15 @@ IMPORTANT:
    * Web: Navigate to login page
    */
   private handleContinue(): void {
-    localStorage.setItem('noornote_has_key', 'true');
-
     // On Tauri, show the import modal for seamless NoorSigner integration
     if (platform.isTauri && this.currentKeypair) {
       const modal = new ImportToNoorSignerModal({
         nsec: this.currentKeypair.nsec,
         npub: this.currentKeypair.npub,
         onSuccess: async () => {
+          // Only set has_key after password was successfully set
+          localStorage.setItem('noornote_has_key', 'true');
+
           // Log in the user automatically
           try {
             const authService = AuthService.getInstance();
@@ -461,6 +462,7 @@ IMPORTANT:
       modal.show();
     } else {
       // Web: Navigate to login page
+      localStorage.setItem('noornote_has_key', 'true');
       this.router.navigate('/login');
     }
   }
