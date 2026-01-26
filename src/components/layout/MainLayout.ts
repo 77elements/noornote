@@ -1582,6 +1582,16 @@ export class MainLayout {
   }
 
   /**
+   * Show create account screen (keypair generation)
+   */
+  public showCreateAccountScreen(): void {
+    if (!this.onboardingComponent) {
+      this.onboardingComponent = new OnboardingComponent();
+    }
+    this.onboardingComponent.showCreateAccountScreen();
+  }
+
+  /**
    * Open a list tab (Bookmarks, Follows, or Muted Users)
    * Replaces any existing list tab
    * Renders in pcc (Wide) or scc (Default/Right-pane) based on layout mode

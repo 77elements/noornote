@@ -173,8 +173,9 @@ export class App {
   }
 
   private setupRoutes(): void {
-    // Public routes
+    // Public routes (Onboarding)
     this.registerRoute('/welcome', 'welcome', 'welcome', 'welcome-view');
+    this.registerRoute('/createnewaccount', 'create-account', 'create-account', 'create-account-view');
     this.registerRoute('/login', 'login', 'not-logged-in', 'login-view');
     this.registerRoute('/about', 'about', 'about', 'abv');
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
@@ -222,6 +223,12 @@ export class App {
       case 'welcome':
         if (this.mainLayout) {
           this.mainLayout.showWelcomeScreen();
+        }
+        break;
+
+      case 'create-account':
+        if (this.mainLayout) {
+          this.mainLayout.showCreateAccountScreen();
         }
         break;
 

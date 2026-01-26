@@ -152,23 +152,27 @@
 }
 
 // ===========================================
-// NEW ACCOUNT VIEW (Phase 2)
+// CREATE ACCOUNT VIEW
 // ===========================================
 
-// Create New Account
-.auth-create {
-  text-align: center;
+.create-account-section {
+  max-width: 600px;
 }
 
-// Key Display
-.auth-keys-display {
+.onboarding-intro {
+  color: $color-4;
+  line-height: 1.6;
+  margin-bottom: $gap * 2;
+}
+
+.keypair-display {
   display: flex;
   flex-direction: column;
   gap: $gap * 1.5;
-  margin: $gap * 2 0;
+  margin-bottom: $gap * 2;
 }
 
-.auth-key-item {
+.keypair-item {
   background: $color-1;
   border: 1px solid $color-3;
   border-radius: $radius-lg;
@@ -181,22 +185,81 @@
     font-weight: 500;
   }
 
-  .auth-key-input {
-    margin-bottom: calc($gap / 2);
-  }
-
-  &.auth-key-item--critical {
+  &--critical {
     border-color: $color-4;
     background: rgba($color-4, 0.05);
+
+    label {
+      color: $color-4;
+    }
   }
 }
 
-.auth-warning {
+.keypair-input-row {
+  display: flex;
+  gap: calc($gap / 2);
+
+  .input {
+    flex: 1;
+    font-size: 0.85rem;
+  }
+}
+
+.keypair-actions {
+  display: flex;
+  gap: $gap;
+  margin-bottom: $gap * 2;
+}
+
+.backup-warning {
   padding: $gap * 1.5;
   background: rgba($color-4, 0.1);
   border: 1px solid $color-4;
   border-radius: $radius-lg;
   color: $color-5;
   line-height: 1.6;
-  margin: $gap * 2 0;
+  margin-bottom: $gap * 2;
+
+  p {
+    margin: 0;
+
+    &:not(:last-child) {
+      margin-bottom: calc($gap / 2);
+    }
+  }
+}
+
+.backup-confirmation {
+  margin-bottom: $gap * 2;
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    cursor: pointer;
+    color: $color-5;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: $color-4;
+    }
+  }
+}
+
+.create-account-actions {
+  text-align: center;
+  padding-top: $gap;
+  border-top: 1px solid $color-3;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: $gap * 2;
+  color: $color-4;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
