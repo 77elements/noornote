@@ -8,16 +8,26 @@
 @use '../base/typography' as *;
 
 // ===========================================
-// SHARED STYLES (all onboarding views)
+// ONBOARDING STYLES
 // ===========================================
 
-.auth-subtitle {
+.onboarding-subtitle {
   text-align: center;
+}
+
+.onboarding-hint {
+  margin-top: calc($gap / 2);
+  color: $color-3;
 }
 
 // ===========================================
 // WELCOME VIEW (2-column choices)
 // ===========================================
+
+.onboarding-section {
+  border-bottom: 1px solid $color-3;
+  margin-bottom: $gap * 2;
+}
 
 .onboarding-choices {
   display: grid;
@@ -28,10 +38,21 @@
 
 .onboarding-choice {
   text-align: center;
+}
 
-  .auth-hint {
-    margin-top: calc($gap / 2);
-    color: $color-3;
+// ===========================================
+// NOSTR INTRO SECTION
+// ===========================================
+
+.nostr-intro {
+  h2 {
+    text-align: center;
+    margin-bottom: $gap * 2;
+  }
+
+  // Override carousel min-height for this context
+  .nn-carousel-slides {
+    min-height: 280px;
   }
 }
 

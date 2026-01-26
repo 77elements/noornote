@@ -1,0 +1,87 @@
+/**
+ * Carousel Molecule
+ * Reusable slide carousel with dots navigation
+ */
+
+@use '../abstracts/variables' as *;
+
+.nn-carousel {
+  position: relative;
+  padding-bottom: $gap;
+}
+
+.nn-carousel-slides {
+  position: relative;
+  min-height: 200px;
+}
+
+.nn-carousel-slide {
+  display: none;
+
+  &.active {
+    display: block;
+  }
+
+  h3 {
+    margin-bottom: $gap;
+    color: $color-5;
+  }
+
+  p {
+    margin-bottom: $gap;
+    line-height: 1.6;
+    color: $color-4;
+  }
+
+  ul {
+    margin: $gap 0;
+    padding-left: $gap * 1.5;
+
+    li {
+      margin-bottom: calc($gap / 2);
+      line-height: 1.5;
+      color: $color-4;
+    }
+  }
+}
+
+.nn-carousel-image {
+  width: 100%;
+  max-width: 500px;
+  display: block;
+  margin: 0 auto $gap * 1.5;
+  border-radius: $radius-lg;
+}
+
+.nn-carousel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: $gap * 2;
+  margin-top: $gap * 2;
+  padding-top: $gap;
+  border-top: 1px solid $color-3;
+}
+
+.nn-carousel-dots {
+  display: flex;
+  gap: calc($gap / 2);
+}
+
+.nn-carousel-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: $color-3;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &.active {
+    background: $color-4;
+  }
+
+  &:hover:not(.active) {
+    background: $color-4;
+    opacity: 0.6;
+  }
+}

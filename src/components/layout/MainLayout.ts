@@ -4,6 +4,7 @@
  */
 
 import { AuthComponent } from '../auth/AuthComponent';
+import { OnboardingComponent } from '../onboarding/OnboardingComponent';
 import { SystemLogger } from '../system/SystemLogger';
 import { AccountSwitcher } from '../ui/AccountSwitcher';
 import { CacheManager } from '../../services/CacheManager';
@@ -48,6 +49,7 @@ export class MainLayout {
   private searchSpotlight: SearchSpotlight | null = null;
   private keyboardShortcutManager!: KeyboardShortcutManager;
   private authComponent: any = null; // Store reference to trigger logout
+  private onboardingComponent: OnboardingComponent | null = null;
   private cacheManager: CacheManager;
   private appState: AppState;
   private authStateManager: AuthStateManager;
@@ -1573,9 +1575,10 @@ export class MainLayout {
    * Show welcome screen (new users - "Are you new to Nostr?")
    */
   public showWelcomeScreen(): void {
-    if (this.authComponent && typeof this.authComponent.showWelcomeScreen === 'function') {
-      this.authComponent.showWelcomeScreen();
+    if (!this.onboardingComponent) {
+      this.onboardingComponent = new OnboardingComponent();
     }
+    this.onboardingComponent.showWelcomeScreen();
   }
 
   /**
