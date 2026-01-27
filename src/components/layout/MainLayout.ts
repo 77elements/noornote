@@ -821,6 +821,14 @@ export class MainLayout {
       });
     }
 
+    const reloadLink = this.element.querySelector('.sidebar .primary-nav__link--reload');
+    if (reloadLink) {
+      reloadLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        window.location.reload();
+      });
+    }
+
     const clearCacheLink = this.element.querySelector('.sidebar .primary-nav__link--cache');
     if (clearCacheLink) {
       clearCacheLink.addEventListener('click', (e) => {
@@ -1075,6 +1083,15 @@ export class MainLayout {
                   <path d="m21 21-4.35-4.35"></path>
                 </svg>
                 <span class="primary-nav__item-desc">Search</span>
+              </a>
+            </li>
+            <li>
+              <a href="#" class="primary-nav__link primary-nav__link--reload">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                </svg>
+                <span class="primary-nav__item-desc">Reload</span>
               </a>
             </li>
             <li>

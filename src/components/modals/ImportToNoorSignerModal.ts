@@ -164,7 +164,7 @@ export class ImportToNoorSignerModal {
         }
 
         this.modalService.hide();
-        ToastService.show('Key imported successfully', 'success');
+        ToastService.show('Key successfully imported to NoorSigner', 'success');
         this.options.onSuccess(result);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);

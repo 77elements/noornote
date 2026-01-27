@@ -96,7 +96,10 @@ export class App {
       // Check if user needs profile setup (fresh account or interrupted wizard)
       const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
       const storage = PerAccountLocalStorage.getInstance();
-      const needsSetup = storage.get<boolean>(StorageKeys.NEEDS_PROFILE_SETUP, false);
+      const currentUser = this.authService.getCurrentUser();
+      const needsSetup = currentUser
+        ? storage.getForPubkey<boolean>(StorageKeys.NEEDS_PROFILE_SETUP, currentUser.pubkey, false)
+        : false;
       if (needsSetup) {
         targetPath = '/setup';
       } else if (lastURL && lastURL !== '/login' && lastURL !== '/welcome') {
