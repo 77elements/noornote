@@ -6,10 +6,11 @@
  *
  * Steps:
  * 1. Welcome - intro text
- * 2. Username (required) - random suggestions + custom input + display name
+ * 2. Username (required) - random suggestions + custom input
  * 3. Avatar (required) - upload or choose from default avatars
  * 4. Bio (optional) - textarea
- * 5. Done - summary + publish + go to timeline
+ * 5. Relays (required) - pre-selected suggestions + custom add
+ * 6. Done - summary + publish + go to timeline
  */
 
 import { Router } from '../../services/Router';
@@ -19,10 +20,23 @@ import { EventBus } from '../../services/EventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ImageUploader } from '../profile/ImageUploader';
 import { ToastService } from '../../services/ToastService';
+import { RelayListOrchestrator } from '../../services/orchestration/RelayListOrchestrator';
+import type { RelayInfo, RelayType } from '../../services/RelayConfig';
 import {
   renderUsernameField,
   renderBioField
 } from '../../helpers/profile-field-helpers';
+
+interface WizardRelay {
+  url: string;
+  read: boolean;
+  write: boolean;
+}
+
+interface WizardInboxRelay {
+  url: string;
+  selected: boolean;
+}
 
 interface WizardStep {
   id: string;
@@ -61,6 +75,34 @@ function generateRandomAvatars(count: number): string[] {
   });
 }
 
+// Top relays by user count (online only, source: stats.andotherstuff.org 2026-01-27)
+const RELAY_POOL = [
+  'wss://relay.damus.io',
+  'wss://relay.primal.net',
+  'wss://relay.momostr.pink',
+  'wss://nos.lol',
+  'wss://purplepag.es',
+  'wss://nostr.wine',
+  'wss://relay.ditto.pub',
+  'wss://nostr.mom',
+  'wss://offchain.pub',
+  'wss://relay.mostr.pub',
+];
+
+// NIP-17 DM inbox relays (AUTH-capable, private inbox)
+const INBOX_RELAY_POOL: WizardInboxRelay[] = [
+  { url: 'wss://noornode.nostr1.com', selected: true },
+  { url: 'wss://bitcoinmajlis.nostr1.com', selected: true },
+  { url: 'wss://relay.0xchat.com', selected: false },
+  { url: 'wss://auth.nostr1.com', selected: false },
+];
+
+/** Pick `count` random relays from the pool, all set to read+write */
+function pickRandomRelays(count: number): WizardRelay[] {
+  const shuffled = [...RELAY_POOL].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count).map(url => ({ url, read: true, write: true }));
+}
+
 function generateRandomUsername(): string {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
   const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
@@ -83,6 +125,8 @@ export class ProfileSetupWizard {
   private avatarUploader: ImageUploader | null = null;
   private publishing: boolean = false;
   private avatarChoices: string[] = [];
+  private selectedRelays: WizardRelay[] = [];
+  private inboxRelays: WizardInboxRelay[] = [];
 
   /** The fullscreen container we inject into #app */
   private container: HTMLElement | null = null;
@@ -101,6 +145,8 @@ export class ProfileSetupWizard {
       this.createUsernameStep(),
       this.createAvatarStep(),
       this.createBioStep(),
+      this.createRelayStep(),
+      this.createInboxRelayStep(),
       this.createDoneStep(),
     ];
   }
@@ -285,6 +331,8 @@ export class ProfileSetupWizard {
       stepIndex: this.currentStepIndex,
       profileData: this.profileData,
       avatarChoices: this.avatarChoices,
+      selectedRelays: this.selectedRelays,
+      inboxRelays: this.inboxRelays,
     });
   }
 
@@ -293,6 +341,8 @@ export class ProfileSetupWizard {
       stepIndex: number;
       profileData: Partial<ProfileMetadata>;
       avatarChoices: string[];
+      selectedRelays?: WizardRelay[];
+      inboxRelays?: WizardInboxRelay[];
     } | null>(StorageKeys.WIZARD_PROGRESS, null);
 
     if (saved) {
@@ -300,6 +350,12 @@ export class ProfileSetupWizard {
       this.profileData = saved.profileData;
       if (saved.avatarChoices?.length) {
         this.avatarChoices = saved.avatarChoices;
+      }
+      if (saved.selectedRelays?.length) {
+        this.selectedRelays = saved.selectedRelays;
+      }
+      if (saved.inboxRelays?.length) {
+        this.inboxRelays = saved.inboxRelays;
       }
     } else {
       this.currentStepIndex = 0;
@@ -532,6 +588,202 @@ export class ProfileSetupWizard {
     };
   }
 
+  private createRelayStep(): WizardStep {
+    return {
+      id: 'relays',
+      title: 'Relays',
+      required: true,
+      render: () => {
+        // Initialize with 3 random relays if empty
+        if (this.selectedRelays.length === 0) {
+          this.selectedRelays = pickRandomRelays(3);
+        }
+
+        const el = document.createElement('div');
+
+        const heading = document.createElement('h2');
+        heading.textContent = 'Choose Your Relays';
+        el.appendChild(heading);
+
+        const intro = document.createElement('p');
+        intro.className = 'wizard-intro';
+        intro.textContent = 'Relays are servers that store and share your posts. We\'ve picked a few reliable ones to get you started. You can change these anytime in Settings.';
+        el.appendChild(intro);
+
+        // Relay list
+        const relayList = document.createElement('div');
+        relayList.className = 'wizard-relay-list';
+        this.renderRelayList(relayList);
+        el.appendChild(relayList);
+
+        // Add custom relay
+        const addRow = document.createElement('div');
+        addRow.className = 'wizard-relay-add';
+        addRow.innerHTML = `
+          <input type="text" class="input" id="wizard-relay-custom" placeholder="wss://relay.example.com" />
+          <button class="btn btn--passive" data-action="add-relay">Add</button>
+        `;
+        el.appendChild(addRow);
+
+        // Add relay handler
+        const addRelay = () => {
+          const input = el.querySelector('#wizard-relay-custom') as HTMLInputElement;
+          const url = input?.value.trim();
+          if (!url) return;
+
+          // Validate wss:// or ws:// URL
+          if (!url.startsWith('wss://') && !url.startsWith('ws://')) {
+            ToastService.show('Relay URL must start with wss:// or ws://', 'error');
+            return;
+          }
+
+          // Check duplicate
+          if (this.selectedRelays.some(r => r.url === url)) {
+            ToastService.show('Relay already added', 'error');
+            return;
+          }
+
+          this.selectedRelays.push({ url, read: true, write: true });
+          input.value = '';
+          this.renderRelayList(relayList);
+          this.updateNextButtonState(this.selectedRelays.length > 0);
+        };
+
+        addRow.querySelector('[data-action="add-relay"]')?.addEventListener('click', addRelay);
+        addRow.querySelector('#wizard-relay-custom')?.addEventListener('keydown', (e) => {
+          if ((e as KeyboardEvent).key === 'Enter') addRelay();
+        });
+
+        // Suggest more button
+        const suggestBtn = document.createElement('button');
+        suggestBtn.className = 'btn btn--passive wizard-relay-suggest';
+        suggestBtn.textContent = 'Suggest different relays';
+        suggestBtn.addEventListener('click', () => {
+          this.selectedRelays = pickRandomRelays(3);
+          this.renderRelayList(relayList);
+          this.updateNextButtonState(true);
+        });
+        el.appendChild(suggestBtn);
+
+        setTimeout(() => {
+          this.updateNextButtonState(this.selectedRelays.length > 0);
+        }, 0);
+
+        return el;
+      },
+      validate: () => this.selectedRelays.length > 0,
+      collect: () => {}
+    };
+  }
+
+  private renderRelayList(container: HTMLElement): void {
+    container.innerHTML = '';
+
+    this.selectedRelays.forEach((relay, index) => {
+      const row = document.createElement('div');
+      row.className = 'wizard-relay-row';
+
+      row.innerHTML = `
+        <div class="wizard-relay-url">${this.escapeHtml(relay.url.replace('wss://', ''))}</div>
+        <div class="wizard-relay-toggles">
+          <label class="wizard-relay-toggle">
+            <input type="checkbox" data-relay-index="${index}" data-type="read" ${relay.read ? 'checked' : ''} />
+            <span>Read</span>
+          </label>
+          <label class="wizard-relay-toggle">
+            <input type="checkbox" data-relay-index="${index}" data-type="write" ${relay.write ? 'checked' : ''} />
+            <span>Write</span>
+          </label>
+        </div>
+        <button class="wizard-relay-remove" data-remove-index="${index}" title="Remove">&times;</button>
+      `;
+
+      // Toggle handlers
+      row.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          const target = e.target as HTMLInputElement;
+          const idx = parseInt(target.dataset.relayIndex!);
+          const type = target.dataset.type as 'read' | 'write';
+          this.selectedRelays[idx]![type] = target.checked;
+        });
+      });
+
+      // Remove handler
+      row.querySelector('.wizard-relay-remove')?.addEventListener('click', () => {
+        this.selectedRelays.splice(index, 1);
+        this.renderRelayList(container);
+        this.updateNextButtonState(this.selectedRelays.length > 0);
+      });
+
+      container.appendChild(row);
+    });
+  }
+
+  private createInboxRelayStep(): WizardStep {
+    return {
+      id: 'inbox-relays',
+      title: 'DM Inbox',
+      required: true,
+      render: () => {
+        // Initialize inbox relays from pool if empty
+        if (this.inboxRelays.length === 0) {
+          this.inboxRelays = INBOX_RELAY_POOL.map(r => ({ ...r }));
+        }
+
+        const el = document.createElement('div');
+
+        const heading = document.createElement('h2');
+        heading.textContent = 'DM Inbox Relays';
+        el.appendChild(heading);
+
+        const intro = document.createElement('p');
+        intro.className = 'wizard-intro';
+        intro.textContent = 'These relays receive your private messages. Pick at least 2 for reliability. Only you can read messages delivered here.';
+        el.appendChild(intro);
+
+        const inboxList = document.createElement('div');
+        inboxList.className = 'wizard-inbox-relay-list';
+        this.renderInboxRelayList(inboxList);
+        el.appendChild(inboxList);
+
+        setTimeout(() => {
+          const count = this.inboxRelays.filter(r => r.selected).length;
+          this.updateNextButtonState(count >= 2);
+        }, 0);
+
+        return el;
+      },
+      validate: () => this.inboxRelays.filter(r => r.selected).length >= 2,
+      collect: () => {}
+    };
+  }
+
+  private renderInboxRelayList(container: HTMLElement): void {
+    container.innerHTML = '';
+
+    this.inboxRelays.forEach((relay, index) => {
+      const row = document.createElement('div');
+      row.className = `wizard-relay-row${relay.selected ? ' wizard-relay-row--selected' : ''}`;
+
+      row.innerHTML = `
+        <label class="wizard-inbox-relay-label">
+          <input type="checkbox" data-inbox-index="${index}" ${relay.selected ? 'checked' : ''} />
+          <span class="wizard-relay-url">${this.escapeHtml(relay.url.replace('wss://', ''))}</span>
+        </label>
+      `;
+
+      row.querySelector('input[type="checkbox"]')?.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        this.inboxRelays[index]!.selected = target.checked;
+        row.classList.toggle('wizard-relay-row--selected', target.checked);
+        const selectedCount = this.inboxRelays.filter(r => r.selected).length;
+        this.updateNextButtonState(selectedCount >= 2);
+      });
+
+      container.appendChild(row);
+    });
+  }
+
   private createDoneStep(): WizardStep {
     return {
       id: 'done',
@@ -548,6 +800,7 @@ export class ProfileSetupWizard {
             <h3>${this.escapeHtml(this.profileData.name || '')}</h3>
             <p class="wizard-done-username">@${this.escapeHtml(this.profileData.name || '')}</p>
             ${this.profileData.about ? `<p class="wizard-done-bio">${this.escapeHtml(this.profileData.about)}</p>` : ''}
+            <p class="wizard-done-bio">${this.selectedRelays.length} relay${this.selectedRelays.length !== 1 ? 's' : ''}, ${this.inboxRelays.filter(r => r.selected).length} inbox relay${this.inboxRelays.filter(r => r.selected).length !== 1 ? 's' : ''}</p>
           </div>
           <div class="wizard-nav" style="border-top: none;">
             <button class="btn btn--large btn--passive" data-wizard-action="prev">Previous</button>
@@ -583,28 +836,128 @@ export class ProfileSetupWizard {
     if (finishSpinner) finishSpinner.style.display = 'inline';
 
     try {
+      // 1. Publish profile (Kind-0)
+      this.updateFinishStatus(finishSpinner, 'Publishing profile...');
       const result = await this.profileEditorService.updateProfile(this.profileData);
-
-      if (result) {
-        this.eventBus.emit('profile:updated', {
-          pubkey: this.authService.getCurrentUser()?.pubkey
-        });
-
-        this.storage.remove(StorageKeys.NEEDS_PROFILE_SETUP);
-        this.clearProgress();
-
-        ToastService.show('Profile published!', 'success');
-
-        // Destroy wizard, restore app layout, navigate to timeline
-        this.destroy();
-        this.router.navigate('/');
-      } else {
+      if (!result) {
         this.resetFinishButton(finishBtn, finishText, finishSpinner);
+        return;
       }
-    } catch {
-      ToastService.show('Failed to publish profile', 'error');
+
+      // 2. Publish relay list (Kind-10002)
+      this.updateFinishStatus(finishSpinner, 'Setting up relays...');
+      await this.publishRelayList();
+
+      // 3. Publish DM inbox relay list (Kind-10050)
+      this.updateFinishStatus(finishSpinner, 'Setting up DM inbox...');
+      await this.publishInboxRelayList();
+
+      // Done
+      this.eventBus.emit('profile:updated', {
+        pubkey: this.authService.getCurrentUser()?.pubkey
+      });
+
+      this.storage.remove(StorageKeys.NEEDS_PROFILE_SETUP);
+      this.clearProgress();
+
+      ToastService.show('Profile published!', 'success');
+
+      this.destroy();
+      this.router.navigate('/');
+    } catch (error) {
+      ToastService.show(`Failed to publish: ${error}`, 'error');
       this.resetFinishButton(finishBtn, finishText, finishSpinner);
     }
+  }
+
+  private updateFinishStatus(spinner: HTMLElement | null, text: string): void {
+    if (spinner) spinner.textContent = text;
+  }
+
+  private async publishRelayList(): Promise<void> {
+    if (this.selectedRelays.length === 0) return;
+
+    const user = this.authService.getCurrentUser();
+    if (!user) return;
+
+    const relayInfos: RelayInfo[] = this.selectedRelays.map(r => {
+      const types: RelayType[] = [];
+      if (r.read) types.push('read');
+      if (r.write) types.push('write');
+      return {
+        url: r.url,
+        types,
+        isPaid: false,
+        requiresAuth: false,
+        isActive: true,
+      };
+    });
+
+    const relayTags = RelayListOrchestrator.relayInfosToTags(relayInfos);
+    const unsignedEvent = {
+      kind: 10002,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: relayTags,
+      content: '',
+      pubkey: user.pubkey,
+    };
+
+    const signedEvent = await this.authService.signEvent(unsignedEvent);
+
+    const orchestrator = RelayListOrchestrator.getInstance();
+    const writeRelays = relayInfos.filter(r => r.types.includes('write')).map(r => r.url);
+    // Also publish to aggregator relays so the relay list is discoverable
+    const { RelayConfig } = await import('../../services/RelayConfig');
+    const aggregators = RelayConfig.getInstance().getAggregatorRelays();
+    const publishRelays = [...new Set([...writeRelays, ...aggregators])];
+
+    await orchestrator.publishRelayList(relayInfos, publishRelays, signedEvent);
+
+    // Update RelayConfig with the new relay list
+    const relayConfig = RelayConfig.getInstance();
+    relayInfos.forEach(r => relayConfig.addRelay(r));
+
+    this.eventBus.emit('relays:updated');
+  }
+
+  private async publishInboxRelayList(): Promise<void> {
+    const selected = this.inboxRelays.filter(r => r.selected);
+    if (selected.length === 0) return;
+
+    const user = this.authService.getCurrentUser();
+    if (!user) return;
+
+    const tags = selected.map(r => ['relay', r.url]);
+    const unsignedEvent = {
+      kind: 10050,
+      created_at: Math.floor(Date.now() / 1000),
+      tags,
+      content: '',
+      pubkey: user.pubkey,
+    };
+
+    const signedEvent = await this.authService.signEvent(unsignedEvent);
+
+    const { NostrTransport } = await import('../../services/transport/NostrTransport');
+    const transport = NostrTransport.getInstance();
+
+    // Publish to write relays + aggregators for discoverability
+    const { RelayConfig: RC } = await import('../../services/RelayConfig');
+    const relayConfig = RC.getInstance();
+    const aggregators = relayConfig.getAggregatorRelays();
+    const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
+    const publishRelays = [...new Set([...writeRelays, ...aggregators])];
+
+    await transport.publish(publishRelays, signedEvent);
+
+    // Register inbox relays in RelayConfig so DMService can find them
+    selected.forEach(r => relayConfig.addRelay({
+      url: r.url,
+      types: ['inbox'],
+      isPaid: false,
+      requiresAuth: true,
+      isActive: true,
+    }));
   }
 
   private resetFinishButton(

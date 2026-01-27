@@ -236,6 +236,110 @@
 }
 
 // ===========================================
+// RELAY STEP
+// ===========================================
+
+.wizard-relay-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+  margin-bottom: $gap * 1.5;
+}
+
+.wizard-relay-row {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  padding: $gap;
+  background: $color-2;
+  border-radius: $radius-lg;
+}
+
+.wizard-relay-url {
+  flex: 1;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-relay-toggles {
+  display: flex;
+  gap: $gap;
+  flex-shrink: 0;
+}
+
+.wizard-relay-toggle {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 4);
+  cursor: pointer;
+  font-size: 14px;
+  color: $color-5;
+  margin: 0;
+
+  input[type="checkbox"] {
+    accent-color: $color-4;
+  }
+}
+
+.wizard-relay-remove {
+  background: none;
+  border: none;
+  color: $color-3;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 calc($gap / 4);
+  line-height: 1;
+  flex-shrink: 0;
+
+  &:hover {
+    color: $color-red;
+  }
+}
+
+.wizard-relay-add {
+  display: flex;
+  gap: calc($gap / 2);
+  margin-bottom: $gap * 1.5;
+
+  .input {
+    flex: 1;
+  }
+}
+
+.wizard-relay-suggest {
+  display: block;
+  margin: 0 auto;
+}
+
+.wizard-inbox-relay-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+  margin-bottom: $gap * 1.5;
+}
+
+.wizard-relay-row--selected {
+  border: 1px solid $color-4;
+}
+
+.wizard-inbox-relay-label {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+
+  input[type="checkbox"] {
+    accent-color: $color-4;
+    flex-shrink: 0;
+  }
+}
+
+// ===========================================
 // DONE STEP
 // ===========================================
 
