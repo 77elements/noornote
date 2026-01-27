@@ -1375,8 +1375,9 @@ export class ProfileSetupWizard {
 
     await orchestrator.publishRelayList(relayInfos, publishRelays, signedEvent);
 
-    // Update RelayConfig with the new relay list
+    // Replace RelayConfig with the user's chosen relays (clear defaults first)
     const relayConfig = RelayConfig.getInstance();
+    relayConfig.clearRelays();
     relayInfos.forEach(r => relayConfig.addRelay(r));
 
     this.eventBus.emit('relays:updated');
