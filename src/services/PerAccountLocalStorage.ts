@@ -55,6 +55,10 @@ export const StorageKeys = {
 
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',
+
+  // Onboarding wizard (per-account)
+  NEEDS_PROFILE_SETUP: 'noornote_needs_profile_setup_map',
+  WIZARD_PROGRESS: 'noornote_wizard_progress_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

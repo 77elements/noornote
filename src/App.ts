@@ -92,10 +92,18 @@ export class App {
     let targetPath: string;
     if (!isLoggedIn) {
       targetPath = '/';  // Let Router decide /welcome or /login
-    } else if (lastURL && lastURL !== '/login' && lastURL !== '/welcome') {
-      targetPath = lastURL;
     } else {
-      targetPath = '/';
+      // Check if user needs profile setup (fresh account or interrupted wizard)
+      const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
+      const storage = PerAccountLocalStorage.getInstance();
+      const needsSetup = storage.get<boolean>(StorageKeys.NEEDS_PROFILE_SETUP, false);
+      if (needsSetup) {
+        targetPath = '/setup';
+      } else if (lastURL && lastURL !== '/login' && lastURL !== '/welcome') {
+        targetPath = lastURL;
+      } else {
+        targetPath = '/';
+      }
     }
 
     this.router.navigate(targetPath);
@@ -177,6 +185,7 @@ export class App {
     this.registerRoute('/welcome', 'welcome', 'welcome', 'welcome-view');
     this.registerRoute('/createnewaccount', 'create-account', 'create-account', 'create-account-view');
     this.registerRoute('/login', 'login', 'not-logged-in', 'login-view');
+    this.registerRoute('/setup', 'setup', 'profile-setup', 'setup-view');
     this.registerRoute('/about', 'about', 'about', 'abv');
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
 
@@ -235,6 +244,12 @@ export class App {
       case 'not-logged-in':
         if (this.mainLayout) {
           this.mainLayout.showLoginScreen();
+        }
+        break;
+
+      case 'profile-setup':
+        if (this.mainLayout) {
+          this.mainLayout.showProfileSetupWizard();
         }
         break;
 
@@ -573,7 +588,16 @@ export class App {
     const lastURL = this.router.getLastURL();
 
     if (currentPath === '/login' && (!lastURL || lastURL === '/login')) {
-      this.router.navigate('/');
+      // Check if this is a fresh account that needs profile setup
+      const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
+      const storage = PerAccountLocalStorage.getInstance();
+      const needsSetup = storage.getForPubkey<boolean>(StorageKeys.NEEDS_PROFILE_SETUP, data.pubkey, false);
+
+      if (needsSetup) {
+        this.router.navigate('/setup');
+      } else {
+        this.router.navigate('/');
+      }
     }
 
     // Check if localStorage has data from a different user (handles cross-session account switch)

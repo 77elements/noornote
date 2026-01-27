@@ -1621,6 +1621,16 @@ export class MainLayout {
   }
 
   /**
+   * Show profile setup wizard (new account onboarding).
+   * Wizard renders fullscreen, hiding the main app layout.
+   */
+  public async showProfileSetupWizard(): Promise<void> {
+    const { ProfileSetupWizard } = await import('../onboarding/ProfileSetupWizard');
+    const wizard = new ProfileSetupWizard();
+    wizard.show();
+  }
+
+  /**
    * Open a list tab (Bookmarks, Follows, or Muted Users)
    * Replaces any existing list tab
    * Renders in pcc (Wide) or scc (Default/Right-pane) based on layout mode

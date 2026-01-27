@@ -17,6 +17,7 @@ import { ToastService } from '../../services/ToastService';
 import { PlatformService } from '../../services/PlatformService';
 import { ImportToNoorSignerModal } from '../modals/ImportToNoorSignerModal';
 import { AuthService } from '../../services/AuthService';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { getImageViewer } from '../ui/ImageViewer';
 
 // Tauri APIs for file save dialog
@@ -444,7 +445,13 @@ IMPORTANT:
             const authService = AuthService.getInstance();
             const authResult = await authService.authenticateWithKeySigner();
             if (authResult.success) {
-              this.router.navigate('/');
+              // Mark this as a fresh account needing profile setup
+              const currentUser = authService.getCurrentUser();
+              if (currentUser) {
+                const storage = PerAccountLocalStorage.getInstance();
+                storage.setForPubkey(StorageKeys.NEEDS_PROFILE_SETUP, currentUser.pubkey, true);
+              }
+              this.router.navigate('/setup');
             } else {
               console.error('Auto-login failed:', authResult.error);
               this.router.navigate('/login');
