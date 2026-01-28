@@ -15,6 +15,7 @@
 - **Zaps** - Send and receive Lightning payments via NWC
 
 ### Highlights
+- **Beginner-friendly onboarding** - Step-by-step profile setup with guided explanations, first follows via [calle's Follow Packs](https://github.com/callebtc/following.space), and Lightning wallet setup with [Rizful](https://rizful.com)
 - **Spotlight-like search** - Search by Event, Username, npub and full-text. With built-in browsing history. Quick access to anything with CMD+K/CTRL+K
 - **Search in npub** - Search for keywords within a specific user's posts
 - **Rich Bookmarks** - Sortable lists with folder organization
