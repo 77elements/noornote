@@ -141,6 +141,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: calc($gap / 2);
+  margin-bottom: $gap;
+}
+
+.wizard-username-regenerate {
+  display: block;
   margin-bottom: $gap * 2;
 }
 

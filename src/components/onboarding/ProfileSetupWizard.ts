@@ -61,44 +61,204 @@ interface FollowPack {
 
 // Word lists for random username generation
 const ADJECTIVES = [
-  'Happy', 'Bright', 'Swift', 'Calm', 'Bold', 'Lucky', 'Warm', 'Cool',
-  'Wild', 'Free', 'Noble', 'Wise', 'Kind', 'Pure', 'Keen', 'Brave',
-  'Gentle', 'Vivid', 'Quiet', 'Fierce', 'Mellow', 'Daring', 'Witty',
-  'Steady', 'Clever', 'Humble', 'Cosmic', 'Golden', 'Silent', 'Mystic',
-  'Rustic', 'Jolly', 'Zesty', 'Lucid', 'Nimble', 'Radiant', 'Serene',
-  'Grand', 'Fuzzy', 'Stark', 'Stormy', 'Sunny', 'Frosty', 'Dusty',
-  'Lively', 'Cozy', 'Snappy', 'Sleek', 'Plucky', 'Crisp'
+  // Positive & cheerful
+  'Happy', 'Bright', 'Lucky', 'Warm', 'Jolly', 'Sunny', 'Lively', 'Cozy',
+  'Merry', 'Glad', 'Joyful', 'Cheery', 'Blissful', 'Gleeful', 'Peppy',
+  'Upbeat', 'Chipper', 'Breezy', 'Perky', 'Bubbly',
+  // Strength & courage
+  'Bold', 'Brave', 'Fierce', 'Daring', 'Plucky', 'Mighty', 'Tough',
+  'Sturdy', 'Hardy', 'Gritty', 'Fearless', 'Valiant', 'Gallant', 'Rugged',
+  'Steely', 'Staunch', 'Stout', 'Ironclad', 'Resolute', 'Undaunted',
+  // Speed & agility
+  'Swift', 'Nimble', 'Snappy', 'Quick', 'Agile', 'Zippy', 'Fleet',
+  'Deft', 'Brisk', 'Sprightly', 'Hasty', 'Rapid', 'Darting', 'Spry',
+  'Limber', 'Lithe', 'Bouncy', 'Frisky', 'Loping', 'Scampering',
+  // Calm & gentle
+  'Calm', 'Gentle', 'Quiet', 'Serene', 'Mellow', 'Steady', 'Humble',
+  'Tender', 'Placid', 'Tranquil', 'Docile', 'Meek', 'Soothing', 'Balmy',
+  'Hushed', 'Languid', 'Dulcet', 'Velvet', 'Feathery', 'Pillowy',
+  // Intelligence & wisdom
+  'Wise', 'Clever', 'Keen', 'Witty', 'Lucid', 'Astute', 'Sharp',
+  'Crafty', 'Shrewd', 'Savvy', 'Canny', 'Brainy', 'Learned', 'Sage',
+  'Studious', 'Curious', 'Pensive', 'Knowing', 'Mindful', 'Thoughtful',
+  // Noble & moral
+  'Noble', 'Kind', 'Pure', 'Grand', 'Honest', 'Just', 'Fair', 'Loyal',
+  'True', 'Gracious', 'Virtuous', 'Devout', 'Earnest', 'Sincere',
+  'Worthy', 'Regal', 'Stately', 'Dignified', 'Gallant', 'Courtly',
+  // Nature & elemental
+  'Wild', 'Free', 'Stormy', 'Frosty', 'Dusty', 'Rustic', 'Mossy',
+  'Sandy', 'Rocky', 'Leafy', 'Thorny', 'Woody', 'Muddy', 'Dewy',
+  'Ashen', 'Smoky', 'Misty', 'Foggy', 'Windy', 'Rainy',
+  // Cosmic & mystical
+  'Cosmic', 'Mystic', 'Stellar', 'Lunar', 'Solar', 'Astral', 'Arcane',
+  'Ethereal', 'Phantom', 'Spectral', 'Eldritch', 'Fabled', 'Mythic',
+  'Enchanted', 'Charmed', 'Haunted', 'Veiled', 'Cloaked', 'Shadowy', 'Twilight',
+  // Color & light
+  'Golden', 'Silver', 'Crimson', 'Scarlet', 'Azure', 'Amber', 'Ivory',
+  'Copper', 'Bronze', 'Onyx', 'Jade', 'Ruby', 'Coral', 'Indigo',
+  'Violet', 'Tawny', 'Russet', 'Gilded', 'Opal', 'Pearly',
+  // Texture & feel
+  'Sleek', 'Crisp', 'Fuzzy', 'Stark', 'Vivid', 'Radiant', 'Glossy',
+  'Polished', 'Grainy', 'Woven', 'Braided', 'Carved', 'Frosted', 'Glazed',
+  'Burnished', 'Patched', 'Rough', 'Smooth', 'Silky', 'Velvety',
+  // Temperature & sensation
+  'Cool', 'Zesty', 'Spicy', 'Tangy', 'Bitter', 'Salty', 'Peppery',
+  'Toasty', 'Molten', 'Blazing', 'Searing', 'Chilly', 'Frigid', 'Tepid',
+  'Scalding', 'Lukewarm', 'Glacial', 'Volcanic', 'Tropical', 'Arctic',
+  // Sound & rhythm
+  'Loud', 'Humming', 'Ringing', 'Roaring', 'Rumbling', 'Whispering',
+  'Chanting', 'Singing', 'Droning', 'Buzzing', 'Clicking', 'Ticking',
+  'Rattling', 'Clanking', 'Booming', 'Echoing', 'Lilting', 'Melodic',
+  'Harmonic', 'Rhythmic',
+  // Size & shape
+  'Tiny', 'Vast', 'Narrow', 'Wide', 'Tall', 'Round', 'Angular',
+  'Twisted', 'Curved', 'Spiral', 'Jagged', 'Pointed', 'Blunt', 'Hollow',
+  'Solid', 'Dense', 'Lean', 'Lanky', 'Squat', 'Bulky',
+  // Time & age
+  'Ancient', 'Primal', 'Timeless', 'Ageless', 'Vintage', 'Antique',
+  'Modern', 'Fresh', 'Nascent', 'Budding', 'Dawning', 'Dusk', 'Eternal',
+  'Fleeting', 'Lasting', 'Enduring', 'Bygone', 'Primeval', 'Archaic', 'Newborn',
+  // Attitude & mood
+  'Sly', 'Coy', 'Wry', 'Smug', 'Sassy', 'Feisty', 'Cheeky', 'Grumpy',
+  'Cranky', 'Moody', 'Gloomy', 'Wistful', 'Dreamy', 'Restless', 'Eager',
+  'Anxious', 'Defiant', 'Stubborn', 'Rowdy', 'Reckless',
+  // Misc evocative
+  'Stark', 'Lone', 'Stray', 'Rogue', 'Nomad', 'Vagrant', 'Roaming',
+  'Drifting', 'Wandering', 'Wayward', 'Exiled', 'Hidden', 'Secret',
+  'Obscure', 'Remote', 'Distant', 'Forgotten', 'Lost', 'Sunken', 'Buried'
 ];
 
 const NOUNS = [
-  // Animals
+  // Animals — mammals
   'Falcon', 'Otter', 'Panda', 'Eagle', 'Wolf', 'Dolphin', 'Fox', 'Owl',
   'Bear', 'Hawk', 'Lynx', 'Raven', 'Heron', 'Whale', 'Deer', 'Jaguar',
   'Cobra', 'Parrot', 'Bison', 'Crane', 'Toucan', 'Mantis', 'Badger',
   'Gecko', 'Pelican', 'Moose', 'Osprey', 'Coyote', 'Puffin', 'Condor',
   'Ibis', 'Newt', 'Wombat', 'Ferret', 'Marten', 'Salmon', 'Finch',
-  'Beetle', 'Marlin', 'Yak',
-  // Objects & vehicles
+  'Beetle', 'Marlin', 'Yak', 'Panther', 'Stallion', 'Gazelle', 'Viper',
+  'Scorpion', 'Sparrow', 'Starling', 'Wren', 'Robin', 'Magpie',
+  'Albatross', 'Stork', 'Flamingo', 'Chameleon', 'Iguana', 'Armadillo',
+  'Hedgehog', 'Squirrel', 'Chipmunk', 'Raccoon', 'Possum', 'Mole',
+  'Shrew', 'Lemur', 'Gibbon', 'Macaw', 'Corgi', 'Husky', 'Collie',
+  'Mustang', 'Donkey', 'Rooster', 'Goose', 'Swan', 'Pigeon', 'Moth',
+  'Cricket', 'Firefly', 'Hornet', 'Wasp', 'Lobster', 'Crab', 'Shrimp',
+  'Octopus', 'Squid', 'Stingray', 'Seahorse', 'Walrus', 'Seal', 'Penguin',
+  'Turtle', 'Tortoise', 'Toad', 'Frog', 'Lizard', 'Snail', 'Clam',
+  'Oyster', 'Eel', 'Pike', 'Trout', 'Perch', 'Bass', 'Carp',
+  // Animals — mythical & exotic
+  'Phoenix', 'Griffin', 'Dragon', 'Sphinx', 'Hydra', 'Kraken', 'Minotaur',
+  'Chimera', 'Basilisk', 'Wyvern', 'Gargoyle', 'Golem', 'Titan',
+  'Centaur', 'Cyclops', 'Leviathan', 'Behemoth', 'Unicorn', 'Pegasus', 'Siren',
+  // Objects & tools
   'Sailboat', 'Lantern', 'Compass', 'Rocket', 'Anchor', 'Beacon',
   'Zeppelin', 'Prism', 'Pendulum', 'Telescope', 'Windmill', 'Canoe',
   'Gondola', 'Fiddle', 'Hammock', 'Kite', 'Hourglass', 'Trumpet',
   'Cauldron', 'Anvil', 'Satchel', 'Quill', 'Goblet', 'Loom', 'Abacus',
   'Barrel', 'Mortar', 'Chisel', 'Bugle', 'Shuttle', 'Helm', 'Flute',
   'Spindle', 'Wagon', 'Bellows', 'Oar', 'Vessel', 'Drum', 'Wrench',
-  'Spool',
-  // Nature & sky
+  'Spool', 'Dagger', 'Shield', 'Banner', 'Pendant', 'Amulet', 'Gauntlet',
+  'Chalice', 'Scepter', 'Trident', 'Harpoon', 'Locket', 'Brooch',
+  'Buckle', 'Lever', 'Pulley', 'Cog', 'Gear', 'Valve', 'Piston',
+  'Turbine', 'Propeller', 'Rudder', 'Saddle', 'Bridle', 'Stirrup',
+  'Ladder', 'Pulpit', 'Lectern', 'Easel', 'Canvas', 'Palette', 'Brush',
+  'Chisel', 'Hammer', 'Tongs', 'Bellows', 'Crucible', 'Furnace', 'Forge',
+  'Kiln', 'Lathe', 'Plough', 'Sickle', 'Scythe', 'Spade', 'Trowel',
+  'Pickaxe', 'Lantern', 'Torch', 'Candle', 'Lamp', 'Chandelier',
+  'Monocle', 'Spyglass', 'Sextant', 'Astrolabe', 'Sundial', 'Metronome',
+  'Tuning', 'Gavel', 'Scroll', 'Tome', 'Codex', 'Atlas', 'Ledger',
+  'Inkwell', 'Typewriter', 'Telegraph', 'Phonograph', 'Camera', 'Projector',
+  // Vehicles & craft
+  'Galleon', 'Frigate', 'Clipper', 'Dinghy', 'Kayak', 'Raft', 'Barge',
+  'Trawler', 'Schooner', 'Corvette', 'Biplane', 'Glider', 'Balloon',
+  'Capsule', 'Chariot', 'Carriage', 'Sleigh', 'Sled', 'Trolley', 'Boxcar',
+  // Nature — land
   'Horizon', 'Comet', 'Breeze', 'Summit', 'River', 'Canyon', 'Glacier',
   'Aurora', 'Meadow', 'Nebula', 'Lagoon', 'Tundra', 'Reef', 'Geyser',
   'Dune', 'Fjord', 'Marsh', 'Crater', 'Torrent', 'Thicket', 'Grove',
   'Ravine', 'Estuary', 'Ridge', 'Basin', 'Delta', 'Savanna', 'Plateau',
   'Cove', 'Steppe', 'Cascade', 'Inlet', 'Bluff', 'Prairie', 'Grotto',
-  'Coral', 'Pebble', 'Driftwood', 'Willow', 'Cedar',
-  // Abstract & vibes
+  'Coral', 'Pebble', 'Driftwood', 'Willow', 'Cedar', 'Birch', 'Maple',
+  'Cypress', 'Juniper', 'Hemlock', 'Spruce', 'Aspen', 'Sequoia', 'Banyan',
+  'Bamboo', 'Fern', 'Thistle', 'Clover', 'Ivy', 'Moss', 'Lichen',
+  'Orchid', 'Dahlia', 'Lotus', 'Tulip', 'Iris', 'Poppy', 'Violet',
+  'Jasmine', 'Sage', 'Thyme', 'Basil', 'Rosemary', 'Lavender', 'Mint',
+  'Bramble', 'Briar', 'Thorn', 'Acorn', 'Pinecone', 'Boulder', 'Cobble',
+  'Granite', 'Obsidian', 'Slate', 'Marble', 'Sandstone', 'Limestone',
+  'Flint', 'Chalk', 'Clay', 'Loam', 'Humus', 'Silt', 'Gravel',
+  // Nature — water & sky
+  'Tide', 'Wave', 'Surf', 'Foam', 'Spray', 'Mist', 'Drizzle', 'Downpour',
+  'Squall', 'Tempest', 'Cyclone', 'Typhoon', 'Monsoon', 'Blizzard',
+  'Hailstone', 'Sleet', 'Thunder', 'Lightning', 'Rainbow', 'Halo',
+  'Eclipse', 'Solstice', 'Equinox', 'Twilight', 'Dawn', 'Dusk', 'Sunrise',
+  'Sunset', 'Starlight', 'Moonbeam', 'Sunray', 'Cloud', 'Cirrus',
+  'Cumulus', 'Stratus', 'Nimbus', 'Vortex', 'Whirlpool', 'Maelstrom',
+  'Current', 'Eddy', 'Ripple', 'Spring', 'Brook', 'Creek', 'Stream',
+  'Pond', 'Lake', 'Swamp', 'Bog', 'Fen', 'Oasis',
+  // Nature — earth & geology
+  'Volcano', 'Caldera', 'Cavern', 'Gorge', 'Chasm', 'Abyss', 'Trench',
+  'Fault', 'Ledge', 'Cliff', 'Spire', 'Pinnacle', 'Mesa', 'Butte',
+  'Outcrop', 'Moraine', 'Glacier', 'Iceberg', 'Permafrost', 'Magma',
+  // Space & cosmos
+  'Nova', 'Quasar', 'Pulsar', 'Meteor', 'Asteroid', 'Orbit', 'Galaxy',
+  'Cosmos', 'Void', 'Rift', 'Warp', 'Flux', 'Photon', 'Proton',
+  'Neutron', 'Electron', 'Atom', 'Plasma', 'Spectrum', 'Prism',
+  // Abstract — fate & drama
+  'Fate', 'Drama', 'Chaos', 'Order', 'Chance', 'Destiny', 'Fortune',
+  'Karma', 'Nemesis', 'Paradox', 'Dilemma', 'Crisis', 'Climax', 'Twist',
+  'Plot', 'Scheme', 'Gambit', 'Ruse', 'Bluff', 'Wager', 'Stake',
+  'Verdict', 'Oath', 'Pledge', 'Vow', 'Decree', 'Edict', 'Mandate',
+  'Truce', 'Pact',
+  // Abstract — emotions & states
+  'Fury', 'Rage', 'Wrath', 'Spite', 'Envy', 'Pride', 'Shame', 'Guilt',
+  'Grief', 'Sorrow', 'Bliss', 'Joy', 'Hope', 'Dread', 'Angst',
+  'Malice', 'Grace', 'Mercy', 'Valor', 'Honor', 'Glory', 'Virtue',
+  'Folly', 'Hubris', 'Guile', 'Cunning', 'Grit', 'Nerve', 'Pluck', 'Zeal',
+  // Abstract — thought & concept
   'Spark', 'Echo', 'Drift', 'Ember', 'Frost', 'Riddle', 'Whisper',
-  'Mirage', 'Zenith', 'Cadence', 'Mosaic', 'Voyage', 'Nimbus', 'Flare',
-  'Tempo', 'Ripple', 'Cipher', 'Saga', 'Fable', 'Rune', 'Odyssey',
+  'Mirage', 'Zenith', 'Cadence', 'Mosaic', 'Voyage', 'Flare',
+  'Tempo', 'Cipher', 'Saga', 'Fable', 'Rune', 'Odyssey',
   'Verve', 'Lumen', 'Aura', 'Motif', 'Reverie', 'Presto', 'Quartz',
-  'Axiom', 'Tangent'
+  'Axiom', 'Tangent', 'Theorem', 'Maxim', 'Creed', 'Dogma', 'Canon',
+  'Thesis', 'Premise', 'Notion', 'Whim', 'Hunch', 'Inkling', 'Epiphany',
+  'Omen', 'Portent', 'Herald', 'Signal', 'Beacon', 'Token', 'Symbol',
+  'Emblem', 'Sigil', 'Glyph', 'Cipher', 'Code', 'Key', 'Lock',
+  'Puzzle', 'Maze', 'Labyrinth', 'Spiral', 'Loop', 'Knot',
+  // Abstract — action & event
+  'Clash', 'Surge', 'Burst', 'Rush', 'Dash', 'Leap', 'Plunge', 'Dive',
+  'Charge', 'Rally', 'Siege', 'Raid', 'Ambush', 'Heist', 'Quest',
+  'Crusade', 'Venture', 'Gamble', 'Hustle', 'Grind', 'Sprint', 'March',
+  'Stride', 'Trek', 'Pilgrimage', 'Exodus', 'Revolt', 'Mutiny', 'Coup', 'Uprising',
+  // Abstract — time & change
+  'Epoch', 'Era', 'Moment', 'Phase', 'Cycle', 'Shift', 'Turn', 'Pivot',
+  'Onset', 'Prelude', 'Finale', 'Encore', 'Interlude', 'Overture', 'Crescendo',
+  'Requiem', 'Elegy', 'Ballad', 'Anthem', 'Hymn', 'Psalm', 'Sonnet',
+  'Verse', 'Stanza', 'Canto', 'Prologue', 'Epilogue', 'Chapter', 'Volume', 'Scroll',
+  // Abstract — society & roles
+  'Outlaw', 'Rebel', 'Pilgrim', 'Nomad', 'Hermit', 'Wanderer', 'Drifter',
+  'Sage', 'Oracle', 'Prophet', 'Mystic', 'Shaman', 'Druid', 'Monk',
+  'Knight', 'Squire', 'Baron', 'Duke', 'Earl', 'Marquis', 'Consul',
+  'Tribune', 'Envoy', 'Herald', 'Scribe', 'Bard', 'Minstrel', 'Jester',
+  'Rogue', 'Bandit',
+  // Materials & substances
+  'Amber', 'Topaz', 'Garnet', 'Sapphire', 'Emerald', 'Diamond', 'Onyx',
+  'Jade', 'Pearl', 'Opal', 'Cobalt', 'Chrome', 'Nickel', 'Zinc',
+  'Copper', 'Bronze', 'Brass', 'Iron', 'Steel', 'Titanium', 'Carbon',
+  'Silicon', 'Mercury', 'Neon', 'Argon', 'Helium', 'Radium', 'Sulfur',
+  'Phosphor', 'Crystal',
+  // Food & drink
+  'Pepper', 'Ginger', 'Saffron', 'Cinnamon', 'Nutmeg', 'Vanilla', 'Cocoa',
+  'Espresso', 'Matcha', 'Chai', 'Mango', 'Papaya', 'Coconut', 'Walnut',
+  'Almond', 'Hazel', 'Cashew', 'Pecan', 'Olive', 'Fig',
+  // Music & art
+  'Riff', 'Chord', 'Note', 'Scale', 'Beat', 'Bass', 'Treble', 'Alto',
+  'Tenor', 'Soprano', 'Aria', 'Fugue', 'Opus', 'Sketch', 'Fresco',
+  'Mural', 'Etching', 'Collage', 'Montage', 'Tableau',
+  // Architecture & places
+  'Tower', 'Citadel', 'Bastion', 'Rampart', 'Turret', 'Parapet', 'Vault',
+  'Crypt', 'Dungeon', 'Keep', 'Moat', 'Drawbridge', 'Gatehouse', 'Arcade',
+  'Colonnade', 'Rotunda', 'Atrium', 'Alcove', 'Balcony', 'Terrace',
+  'Pavilion', 'Gazebo', 'Pergola', 'Arbor', 'Courtyard', 'Plaza',
+  'Bazaar', 'Harbor', 'Wharf', 'Pier'
 ];
 
 // DiceBear avatar styles to mix for variety
@@ -474,8 +634,6 @@ export class ProfileSetupWizard {
   }
 
   private createUsernameStep(): WizardStep {
-    const suggestions = Array.from({ length: 6 }, () => generateRandomUsername());
-
     return {
       id: 'username',
       title: 'Username',
@@ -495,22 +653,35 @@ export class ProfileSetupWizard {
         // Suggestion chips
         const chipsContainer = document.createElement('div');
         chipsContainer.className = 'wizard-username-suggestions';
-        suggestions.forEach(name => {
-          const chip = document.createElement('button');
-          chip.className = 'wizard-suggestion-chip';
-          chip.textContent = name;
-          chip.addEventListener('click', () => {
-            const input = this.container?.querySelector('#name') as HTMLInputElement;
-            if (input) {
-              input.value = name;
-              input.dispatchEvent(new Event('input'));
-            }
-            chipsContainer.querySelectorAll('.wizard-suggestion-chip').forEach(c => c.classList.remove('active'));
-            chip.classList.add('active');
+
+        const renderChips = () => {
+          chipsContainer.innerHTML = '';
+          const names = Array.from({ length: 6 }, () => generateRandomUsername());
+          names.forEach(name => {
+            const chip = document.createElement('button');
+            chip.className = 'wizard-suggestion-chip';
+            chip.textContent = name;
+            chip.addEventListener('click', () => {
+              const input = this.container?.querySelector('#name') as HTMLInputElement;
+              if (input) {
+                input.value = name;
+                input.dispatchEvent(new Event('input'));
+              }
+              chipsContainer.querySelectorAll('.wizard-suggestion-chip').forEach(c => c.classList.remove('active'));
+              chip.classList.add('active');
+            });
+            chipsContainer.appendChild(chip);
           });
-          chipsContainer.appendChild(chip);
-        });
+        };
+        renderChips();
         el.appendChild(chipsContainer);
+
+        // Suggest more button
+        const suggestBtn = document.createElement('button');
+        suggestBtn.className = 'btn btn--passive wizard-username-regenerate';
+        suggestBtn.textContent = 'Suggest more usernames';
+        suggestBtn.addEventListener('click', () => renderChips());
+        el.appendChild(suggestBtn);
 
         // Username field
         const usernameField = renderUsernameField(this.profileData.name || '');
