@@ -1,5 +1,5 @@
 /**
- * ProfileSetupWizard
+ * AccountSetupWizard
  * Fullscreen step-by-step wizard for new accounts to set up their profile.
  * Replaces the entire app layout (no sidebar, no 3-column grid).
  * Renders directly into #app with its own fullscreen layout.
@@ -22,10 +22,34 @@ import { ImageUploader } from '../profile/ImageUploader';
 import { ToastService } from '../../services/ToastService';
 import { RelayListOrchestrator } from '../../services/orchestration/RelayListOrchestrator';
 import type { RelayInfo, RelayType } from '../../services/RelayConfig';
+import { PlatformService } from '../../services/PlatformService';
+import {
+  generateSecretKey,
+  getPublicKey,
+  bytesToHex,
+  encodeNsec,
+  encodeNpub
+} from '../../services/NostrToolsAdapter';
 import {
   renderUsernameField,
   renderBioField
 } from '../../helpers/profile-field-helpers';
+import { setupCarouselNavigation } from '../../helpers/CarouselHelper';
+import { getImageViewer } from '../ui/ImageViewer';
+
+const platform = PlatformService.getInstance();
+
+interface GeneratedKeypair {
+  nsec: string;
+  npub: string;
+  privateKeyHex: string;
+  publicKeyHex: string;
+}
+
+interface WalletCredentials {
+  nwcUri: string;
+  lightningAddress: string;
+}
 
 interface WizardRelay {
   url: string;
@@ -283,7 +307,6 @@ const RELAY_POOL = [
   'wss://relay.momostr.pink',
   'wss://nos.lol',
   'wss://purplepag.es',
-  'wss://nostr.wine',
   'wss://relay.ditto.pub',
   'wss://nostr.mom',
   'wss://offchain.pub',
@@ -310,7 +333,7 @@ function generateRandomUsername(): string {
   return `${adj}${noun}`;
 }
 
-export class ProfileSetupWizard {
+export class AccountSetupWizard {
   private router: Router;
   private profileEditorService: ProfileEditorService;
   private authService: AuthService;
@@ -331,6 +354,13 @@ export class ProfileSetupWizard {
   private selectedPackIndex: number = -1;
   private followedPubkeys: Set<string> = new Set();
 
+  /** Generated keypair (before login) */
+  private currentKeypair: GeneratedKeypair | null = null;
+  /** Wallet credentials from Rizful (Web only) */
+  private walletCredentials: WalletCredentials | null = null;
+  /** Whether backup was confirmed */
+  private backupConfirmed: boolean = false;
+
   /** The fullscreen container we inject into #app */
   private container: HTMLElement | null = null;
   /** The original #app content (MainLayout), hidden during wizard */
@@ -343,17 +373,40 @@ export class ProfileSetupWizard {
     this.eventBus = EventBus.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
 
-    this.steps = [
-      this.createWelcomeStep(),
-      this.createUsernameStep(),
-      this.createAvatarStep(),
-      this.createBioStep(),
-      this.createRelayStep(),
-      this.createInboxRelayStep(),
-      this.createFollowPacksStep(),
-      this.createLightningStep(),
-      this.createDoneStep(),
-    ];
+    // Build steps list based on platform
+    if (platform.isTauri) {
+      // Tauri: Keypair → Backup → NoorSigner → Profile Setup → Lightning → Done
+      this.steps = [
+        this.createKeypairStep(),
+        this.createBackupStep(),
+        this.createNoorSignerImportStep(),
+        this.createUsernameStep(),
+        this.createAvatarStep(),
+        this.createBioStep(),
+        this.createRelayStep(),
+        this.createInboxRelayStep(),
+        this.createFollowPacksStep(),
+        this.createLightningStep(),
+        this.createDoneStep(),
+      ];
+    } else {
+      // Web: Extension → Rizful → Keypair → Backup → Import → Login → Profile Setup → Done
+      this.steps = [
+        this.createExtensionStep(),
+        this.createRizfulStep(),
+        this.createKeypairStep(),
+        this.createBackupStep(),
+        this.createExtensionImportStep(),
+        this.createLoginStep(),
+        this.createUsernameStep(),
+        this.createAvatarStep(),
+        this.createBioStep(),
+        this.createRelayStep(),
+        this.createInboxRelayStep(),
+        this.createFollowPacksStep(),
+        this.createDoneStep(),
+      ];
+    }
   }
 
   /**
@@ -507,7 +560,13 @@ export class ProfileSetupWizard {
     const nextBtn = document.createElement('button');
     nextBtn.className = 'btn btn--large';
     nextBtn.textContent = 'Next';
-    if (isRequired) nextBtn.disabled = true;
+    // Set initial state based on validation (after a microtask to let render complete)
+    if (isRequired) {
+      nextBtn.disabled = true;
+      setTimeout(() => {
+        nextBtn.disabled = !step.validate();
+      }, 0);
+    }
     nextBtn.setAttribute('data-wizard-action', 'next');
     nextBtn.addEventListener('click', () => {
       if (step.validate()) {
@@ -619,17 +678,19 @@ export class ProfileSetupWizard {
       this.clearProgress();
       this.storage.remove(StorageKeys.NEEDS_PROFILE_SETUP);
 
-      // Remove keypair from NoorSigner filesystem
       if (pubkey) {
-        try {
-          const { hexToNpub } = await import('../../helpers/nip19');
-          const npub = hexToNpub(pubkey);
-          if (npub) {
-            const { invoke } = await import('@tauri-apps/api/core');
-            await invoke('remove_noorsigner_account', { npub });
+        // Remove keypair from NoorSigner filesystem (Tauri only)
+        if (platform.isTauri) {
+          try {
+            const { hexToNpub } = await import('../../helpers/nip19');
+            const npub = hexToNpub(pubkey);
+            if (npub) {
+              const { invoke } = await import('@tauri-apps/api/core');
+              await invoke('remove_noorsigner_account', { npub });
+            }
+          } catch (e) {
+            console.warn('[AccountSetupWizard] Failed to remove NoorSigner account files:', e);
           }
-        } catch (e) {
-          console.warn('[ProfileSetupWizard] Failed to remove NoorSigner account files:', e);
         }
 
         // Remove from localStorage + sign out
@@ -679,30 +740,750 @@ export class ProfileSetupWizard {
 
   // ─── Step Definitions ──────────────────────────────────────
 
-  private createWelcomeStep(): WizardStep {
+  // ─── Account Creation Steps ────────────────────────────────────
+
+  /**
+   * Step: Install browser extension (Web only)
+   */
+  private createExtensionStep(): WizardStep {
     return {
-      id: 'welcome',
-      title: 'Welcome',
-      required: false,
+      id: 'extension',
+      title: 'Extension',
+      required: true,
       render: () => {
         const el = document.createElement('div');
-        el.innerHTML = `
-          <h1>Set Up Your Profile</h1>
-          <p class="wizard-intro">
-            Let's set up your profile so people can find you on Nostr.
-            This only takes a moment.
-          </p>
-          <p class="wizard-intro">
-            Your profile information is published to Nostr relays as a
-            <strong>Kind 0</strong> event. You can change it anytime in Settings.
-          </p>
+        this.renderStepHeader(el, 'Install a Browser Extension',
+          'To use Nostr in your browser, you need a signing extension. We recommend Alby because it securely stores your keys and wallet.');
+
+        el.innerHTML += `
+          <div class="wizard-extension-action">
+            <a href="https://getalby.com/alby-extension" target="_blank" rel="noopener noreferrer" class="btn btn--large">
+              Install Alby Extension
+            </a>
+            <p class="wizard-hint">Opens in a new tab</p>
+          </div>
+
+          <div class="wizard-info-box">
+            <p><strong>After installing:</strong></p>
+            <ol>
+              <li>Set an unlock passcode for Alby</li>
+              <li>When asked to connect a wallet, <strong>stop and come back here</strong></li>
+              <li>We'll give you the wallet connection in the next step</li>
+            </ol>
+          </div>
         `;
         return el;
       },
-      validate: () => true,
+      validate: () => true, // Can't verify, trust user
       collect: () => {}
     };
   }
+
+  /**
+   * Step: Rizful wallet setup (Web only)
+   */
+  private createRizfulStep(): WizardStep {
+    return {
+      id: 'rizful',
+      title: 'Wallet',
+      required: true,
+      render: () => {
+        const el = document.createElement('div');
+        this.renderStepHeader(el, 'Set Up Lightning Wallet',
+          'A Lightning wallet lets you send and receive Bitcoin tips (Zaps) on Nostr. We use Rizful to create a free wallet for you.');
+
+        const hasWallet = !!this.walletCredentials;
+
+        el.innerHTML += `
+          <div class="wizard-extension-action">
+            <button class="btn btn--large" data-action="open-rizful">
+              Open Rizful
+            </button>
+            <p class="wizard-hint">Create an account, then come back with your code</p>
+          </div>
+
+          <div class="wizard-info-box">
+            <p><strong>On Rizful:</strong></p>
+            <ol>
+              <li>Create an account (email + password)</li>
+              <li>Verify your email</li>
+              <li>Copy the one-time code</li>
+              <li>Paste it below</li>
+            </ol>
+          </div>
+
+          <div class="wizard-code-input">
+            <label for="rizful-code">Enter your Rizful code:</label>
+            <div class="wizard-input-row">
+              <input type="text" id="rizful-code" class="input" placeholder="Paste one-time code here" ${hasWallet ? 'disabled' : ''} />
+              <button class="btn" data-action="redeem-code" ${hasWallet ? 'disabled' : ''}>
+                ${hasWallet ? 'Connected!' : 'Connect'}
+              </button>
+            </div>
+            <div class="wizard-status" data-status></div>
+          </div>
+
+          ${hasWallet ? `
+            <div class="wizard-success-box">
+              <p><strong>Wallet connected!</strong></p>
+              <p>Lightning Address: <code>${this.walletCredentials!.lightningAddress}</code></p>
+            </div>
+
+            <div class="wizard-credentials-box">
+              <p><strong>Your NWC String (save this in your backup!):</strong></p>
+              <div class="wizard-keypair-item">
+                <div class="wizard-input-row">
+                  <input type="text" class="input input--monospace" value="${this.walletCredentials!.nwcUri}" readonly data-nwc />
+                  <button class="btn btn--mini" data-action="copy-nwc">Copy</button>
+                </div>
+              </div>
+            </div>
+          ` : ''}
+        `;
+
+        // Setup listeners after render
+        setTimeout(() => this.setupRizfulListeners(), 0);
+
+        return el;
+      },
+      validate: () => !!this.walletCredentials,
+      collect: () => {
+        // Store lightning address in profile data
+        if (this.walletCredentials) {
+          this.profileData.lud16 = this.walletCredentials.lightningAddress;
+        }
+      }
+    };
+  }
+
+  /**
+   * Setup listeners for Rizful step
+   */
+  private setupRizfulListeners(): void {
+    const container = this.container;
+    if (!container) return;
+
+    // Open Rizful button
+    const openBtn = container.querySelector('[data-action="open-rizful"]');
+    if (openBtn) {
+      openBtn.addEventListener('click', () => {
+        window.open('https://rizful.com/nostr_onboarding_auth_token/get_token', '_blank', 'noopener,noreferrer');
+      });
+    }
+
+    // Copy NWC button (if wallet already connected)
+    container.querySelector('[data-action="copy-nwc"]')?.addEventListener('click', async () => {
+      if (this.walletCredentials) {
+        try {
+          await navigator.clipboard.writeText(this.walletCredentials.nwcUri);
+          ToastService.show('NWC copied to clipboard', 'success');
+        } catch {
+          ToastService.show('Failed to copy', 'error');
+        }
+      }
+    });
+
+    // Redeem code button
+    const redeemBtn = container.querySelector('[data-action="redeem-code"]') as HTMLButtonElement;
+    const codeInput = container.querySelector('#rizful-code') as HTMLInputElement;
+    const statusEl = container.querySelector('[data-status]') as HTMLElement;
+
+    if (redeemBtn && codeInput && !this.walletCredentials) {
+      redeemBtn.addEventListener('click', async () => {
+        const code = codeInput.value.trim();
+        if (!code) {
+          ToastService.show('Please enter a code', 'error');
+          return;
+        }
+
+        redeemBtn.disabled = true;
+        redeemBtn.textContent = 'Connecting...';
+        if (statusEl) statusEl.textContent = '';
+
+        try {
+          const response = await fetch('https://rizful.com/nostr_onboarding_auth_token/post_for_secrets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              secret_code: code,
+              nostr_public_key: '0000000000000000000000000000000000000000000000000000000000000000',
+            }),
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[Rizful API Error]', response.status, errorText);
+            throw new Error(`Request failed (${response.status}): ${errorText}`);
+          }
+
+          const data = await response.json() as {
+            nwc_uri: string;
+            lightning_address: string;
+          };
+
+          this.walletCredentials = {
+            nwcUri: data.nwc_uri,
+            lightningAddress: data.lightning_address,
+          };
+
+          ToastService.show('Wallet connected!', 'success');
+          this.updateNextButtonState(true);
+          this.renderCurrentStep(); // Re-render to show success
+        } catch (error) {
+          if (statusEl) {
+            statusEl.textContent = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
+            statusEl.classList.add('error');
+          }
+          redeemBtn.disabled = false;
+          redeemBtn.textContent = 'Connect';
+        }
+      });
+    }
+  }
+
+  /**
+   * Step: Generate keypair (Both platforms)
+   */
+  private createKeypairStep(): WizardStep {
+    return {
+      id: 'keypair',
+      title: 'Keypair',
+      required: true,
+      render: () => {
+        // Generate keypair if not already done
+        if (!this.currentKeypair) {
+          const secretKey = generateSecretKey();
+          const privateKeyHex = bytesToHex(secretKey);
+          const publicKeyHex = getPublicKey(secretKey);
+          this.currentKeypair = {
+            nsec: encodeNsec(privateKeyHex),
+            npub: encodeNpub(publicKeyHex),
+            privateKeyHex,
+            publicKeyHex,
+          };
+        }
+
+        const el = document.createElement('div');
+        this.renderStepHeader(el, 'Your Nostr Identity',
+          'Your Nostr identity is a cryptographic key pair. The private key (nsec) is your password. The public key (npub) is your username.');
+
+        el.innerHTML += `
+          <div class="wizard-keypair-display">
+            <div class="wizard-keypair-item wizard-keypair-item--critical">
+              <label>Private Key (nsec) - KEEP THIS SECRET!</label>
+              <div class="wizard-input-row">
+                <input type="text" class="input input--monospace" value="${this.currentKeypair.nsec}" readonly data-key="nsec" />
+                <button class="btn btn--mini" data-action="copy-nsec">Copy</button>
+              </div>
+            </div>
+
+            <div class="wizard-keypair-item">
+              <label>Public Key (npub) - Your username</label>
+              <div class="wizard-input-row">
+                <input type="text" class="input input--monospace" value="${this.currentKeypair.npub}" readonly data-key="npub" />
+                <button class="btn btn--mini" data-action="copy-npub">Copy</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="wizard-keypair-actions">
+            <button class="btn btn--passive" data-action="regenerate">Regenerate Keys</button>
+          </div>
+        `;
+
+        // Setup listeners
+        setTimeout(() => this.setupKeypairListeners(), 0);
+
+        return el;
+      },
+      validate: () => !!this.currentKeypair,
+      collect: () => {}
+    };
+  }
+
+  /**
+   * Setup listeners for keypair step
+   */
+  private setupKeypairListeners(): void {
+    const container = this.container;
+    if (!container) return;
+
+    // Copy buttons
+    container.querySelector('[data-action="copy-nsec"]')?.addEventListener('click', async () => {
+      if (this.currentKeypair) {
+        try {
+          await navigator.clipboard.writeText(this.currentKeypair.nsec);
+          ToastService.show('nsec copied to clipboard', 'success');
+        } catch {
+          ToastService.show('Failed to copy', 'error');
+        }
+      }
+    });
+
+    container.querySelector('[data-action="copy-npub"]')?.addEventListener('click', async () => {
+      if (this.currentKeypair) {
+        try {
+          await navigator.clipboard.writeText(this.currentKeypair.npub);
+          ToastService.show('npub copied to clipboard', 'success');
+        } catch {
+          ToastService.show('Failed to copy', 'error');
+        }
+      }
+    });
+
+    // Regenerate
+    container.querySelector('[data-action="regenerate"]')?.addEventListener('click', () => {
+      const secretKey = generateSecretKey();
+      const privateKeyHex = bytesToHex(secretKey);
+      const publicKeyHex = getPublicKey(secretKey);
+      this.currentKeypair = {
+        nsec: encodeNsec(privateKeyHex),
+        npub: encodeNpub(publicKeyHex),
+        privateKeyHex,
+        publicKeyHex,
+      };
+      this.backupConfirmed = false;
+
+      const nsecInput = container.querySelector('[data-key="nsec"]') as HTMLInputElement;
+      const npubInput = container.querySelector('[data-key="npub"]') as HTMLInputElement;
+      if (nsecInput) nsecInput.value = this.currentKeypair.nsec;
+      if (npubInput) npubInput.value = this.currentKeypair.npub;
+
+      ToastService.show('New keypair generated', 'success');
+    });
+
+    // Keypair is already generated, enable Next button
+    if (this.currentKeypair) {
+      this.updateNextButtonState(true);
+    }
+  }
+
+  /**
+   * Step: Download backup (Both platforms)
+   */
+  private createBackupStep(): WizardStep {
+    return {
+      id: 'backup',
+      title: 'Backup',
+      required: true,
+      render: () => {
+        const el = document.createElement('div');
+        const isWeb = platform.isBrowser;
+
+        this.renderStepHeader(el, 'Save Your Backup',
+          isWeb
+            ? 'Your backup includes your keypair AND wallet connection. Download it now!'
+            : 'Download a backup of your keypair. If you lose this, you lose access forever.');
+
+        el.innerHTML += `
+          <div class="wizard-backup-warning">
+            <p><strong>There is no password recovery.</strong></p>
+            <p>If you lose your private key, you lose access to your account forever.
+            No one can help you recover it, not even us.</p>
+          </div>
+
+          <div class="wizard-extension-action">
+            <button class="btn btn--large" data-action="download-backup">
+              Download Backup
+            </button>
+            <p class="wizard-hint">Save this file in a secure location</p>
+          </div>
+
+          <div class="wizard-backup-confirmation">
+            <label class="checkbox-label">
+              <input type="checkbox" data-action="confirm-backup" ${this.backupConfirmed ? 'checked' : ''} />
+              <span>I have downloaded and saved my backup</span>
+            </label>
+          </div>
+        `;
+
+        // Setup listeners
+        setTimeout(() => this.setupBackupListeners(), 0);
+
+        return el;
+      },
+      validate: () => this.backupConfirmed,
+      collect: () => {}
+    };
+  }
+
+  /**
+   * Setup listeners for backup step
+   */
+  private setupBackupListeners(): void {
+    const container = this.container;
+    if (!container) return;
+
+    // Download backup
+    container.querySelector('[data-action="download-backup"]')?.addEventListener('click', () => this.downloadBackup());
+
+    // Confirmation checkbox
+    const confirmCheckbox = container.querySelector('[data-action="confirm-backup"]') as HTMLInputElement;
+    if (confirmCheckbox) {
+      confirmCheckbox.addEventListener('change', () => {
+        this.backupConfirmed = confirmCheckbox.checked;
+        this.updateNextButtonState(this.backupConfirmed);
+      });
+    }
+  }
+
+  /**
+   * Download backup file (platform-aware)
+   */
+  private async downloadBackup(): Promise<void> {
+    if (!this.currentKeypair) return;
+
+    let content = `NOSTR ACCOUNT BACKUP
+====================
+Generated: ${new Date().toISOString()}
+
+PRIVATE KEY (nsec) - KEEP THIS SECRET!
+${this.currentKeypair.nsec}
+
+PUBLIC KEY (npub) - Your username
+${this.currentKeypair.npub}
+`;
+
+    // Add wallet credentials on Web
+    if (platform.isBrowser && this.walletCredentials) {
+      content += `
+LIGHTNING WALLET (NWC) - For sending/receiving zaps
+${this.walletCredentials.nwcUri}
+
+LIGHTNING ADDRESS - Share this to receive payments
+${this.walletCredentials.lightningAddress}
+`;
+    }
+
+    content += `
+IMPORTANT:
+- Your private key IS your account
+- There is NO password recovery
+- If you lose this file, you lose access forever
+- Store this file in a secure location
+`;
+
+    const defaultFileName = `nostr-backup-${this.currentKeypair.npub.slice(0, 12)}.txt`;
+
+    try {
+      if (platform.isTauri) {
+        // Tauri: Use native save dialog
+        const { save } = await import('@tauri-apps/plugin-dialog');
+        const { writeTextFile } = await import('@tauri-apps/plugin-fs');
+
+        const filePath = await save({
+          defaultPath: defaultFileName,
+          filters: [{ name: 'Text Files', extensions: ['txt'] }]
+        });
+
+        if (filePath) {
+          await writeTextFile(filePath, content);
+          ToastService.show('Backup saved', 'success');
+        }
+      } else if ('showSaveFilePicker' in window) {
+        // Web: File System Access API
+        const handle = await (window as any).showSaveFilePicker({
+          suggestedName: defaultFileName,
+          types: [{ description: 'Text Files', accept: { 'text/plain': ['.txt'] } }]
+        });
+        const writable = await handle.createWritable();
+        await writable.write(content);
+        await writable.close();
+        ToastService.show('Backup saved', 'success');
+      } else {
+        // Fallback: Direct download
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = defaultFileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        ToastService.show('Backup saved to Downloads folder', 'success');
+      }
+    } catch (error) {
+      console.error('Failed to save backup:', error);
+      ToastService.show('Failed to save backup', 'error');
+    }
+  }
+
+  /**
+   * Step: Import to NoorSigner (Tauri only)
+   */
+  private createNoorSignerImportStep(): WizardStep {
+    return {
+      id: 'noorsigner',
+      title: 'NoorSigner',
+      required: true,
+      render: () => {
+        const el = document.createElement('div');
+        this.renderStepHeader(el, 'Secure Your Key with NoorSigner',
+          'NoorSigner is a local key manager that runs on your machine. Your private key never leaves your computer.');
+
+        el.innerHTML += `
+          <div class="wizard-info-box">
+            <p>Your nsec will be securely stored by NoorSigner:</p>
+            <ul>
+              <li>Encrypted with AES-256</li>
+              <li>Stored locally at <code>~/.noorsigner/accounts/</code></li>
+              <li>Never transmitted over the internet</li>
+              <li>You'll set a password to unlock it</li>
+            </ul>
+          </div>
+
+          <div class="wizard-extension-action">
+            <button class="btn btn--large" data-action="import-noorsigner">
+              Import to NoorSigner
+            </button>
+            <p class="wizard-hint">You'll set a password in the next dialog</p>
+          </div>
+
+          <div class="wizard-status" data-status></div>
+        `;
+
+        // Setup listeners
+        setTimeout(() => this.setupNoorSignerListeners(), 0);
+
+        return el;
+      },
+      validate: () => !!this.authService.getCurrentUser(),
+      collect: () => {}
+    };
+  }
+
+  /**
+   * Setup listeners for NoorSigner import step
+   */
+  private setupNoorSignerListeners(): void {
+    const container = this.container;
+    if (!container || !this.currentKeypair) return;
+
+    const importBtn = container.querySelector('[data-action="import-noorsigner"]');
+    const statusEl = container.querySelector('[data-status]') as HTMLElement;
+
+    if (importBtn) {
+      importBtn.addEventListener('click', async () => {
+        const { ImportToNoorSignerModal } = await import('../modals/ImportToNoorSignerModal');
+
+        const modal = new ImportToNoorSignerModal({
+          nsec: this.currentKeypair!.nsec,
+          npub: this.currentKeypair!.npub,
+          onSuccess: async () => {
+            localStorage.setItem('noornote_has_key', 'true');
+
+            // Auto-login
+            try {
+              const result = await this.authService.authenticateWithKeySigner();
+              if (result.success && result.pubkey) {
+                // Set NEEDS_PROFILE_SETUP flag
+                this.storage.setForPubkey(StorageKeys.NEEDS_PROFILE_SETUP, result.pubkey, true);
+                ToastService.show('Logged in!', 'success');
+                this.updateNextButtonState(true);
+                // Auto-advance to next step
+                this.goToNextStep();
+              } else {
+                if (statusEl) statusEl.textContent = result.error || 'Login failed';
+              }
+            } catch (error) {
+              if (statusEl) statusEl.textContent = 'Login failed';
+            }
+          },
+          onCancel: () => {}
+        });
+        modal.show();
+      });
+    }
+  }
+
+  /**
+   * Step: Import to browser extension (Web only)
+   */
+  private createExtensionImportStep(): WizardStep {
+    return {
+      id: 'import',
+      title: 'Set up Alby',
+      required: true,
+      render: () => {
+        const el = document.createElement('div');
+        this.renderStepHeader(el, 'Set up Alby', '');
+
+        el.innerHTML += `
+          <div class="nn-carousel nn-carousel--alby">
+            <div class="nn-carousel-slides">
+              <div class="nn-carousel-slide active" data-slide="0">
+                <img src="/images/alby/alby-06-return-to-alby-tab.png" alt="Find Your Wallet" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Click <strong>"Find Your Wallet"</strong> under "Bring Your Own Wallet"</p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="1">
+                <img src="/images/alby/alby-07-choose-nwc.png" alt="Choose NWC" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Select <strong>"NWC (Nostr Wallet Connect)"</strong></p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="2">
+                <img src="/images/alby/alby-08-copy-nwc-from-bakcup-file.png" alt="Paste NWC" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Paste your <strong>NWC string</strong> from the backup file</p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="3">
+                <img src="/images/alby/alby-09.png" alt="Alby ready" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Alby is ready! Pin it to your browser toolbar</p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="4">
+                <img src="/images/alby/alby-10.png" alt="Open settings" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Click the Alby icon, then click the <strong>settings icon</strong></p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="5">
+                <img src="/images/alby/alby-11.png" alt="Select wallet" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Select your <strong>NWC wallet</strong></p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="6">
+                <img src="/images/alby/alby-12.png" alt="Nostr Settings" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Click <strong>"Nostr Settings"</strong></p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="7">
+                <img src="/images/alby/alby-13-copy-nsec-from-backup-file.png" alt="Paste nsec" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Paste your <strong>nsec</strong> from the backup file</p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="8">
+                <img src="/images/alby/alby-14.png" alt="Save" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Your npub will appear. Click <strong>"Save"</strong></p>
+              </div>
+              <div class="nn-carousel-slide" data-slide="9">
+                <img src="/images/alby/alby-15-save.png" alt="Done" class="nn-carousel-image" />
+                <p class="nn-carousel-caption">Done! Your Nostr Public Key shows <strong>"IMPORTED"</strong></p>
+              </div>
+            </div>
+            <div class="nn-carousel-nav">
+              <button class="btn btn--mini btn--passive" data-action="prev-slide" disabled>Previous</button>
+              <span class="nn-carousel-dots"></span>
+              <button class="btn btn--mini" data-action="next-slide">Next</button>
+            </div>
+          </div>
+        `;
+
+        // Setup carousel after render
+        setTimeout(() => this.setupAlbyCarousel(), 0);
+
+        return el;
+      },
+      validate: () => true, // Can't verify, trust user
+      collect: () => {}
+    };
+  }
+
+  /**
+   * Setup Alby carousel navigation and image click handlers
+   */
+  private setupAlbyCarousel(): void {
+    const container = this.container;
+    if (!container) return;
+
+    const carousel = container.querySelector('.nn-carousel--alby') as HTMLElement;
+    if (carousel) {
+      setupCarouselNavigation(carousel);
+
+      // Make images clickable to enlarge
+      const images = carousel.querySelectorAll('.nn-carousel-image') as NodeListOf<HTMLImageElement>;
+      const imageSrcs = Array.from(images).map(img => img.src);
+
+      images.forEach((img, index) => {
+        img.style.cursor = 'pointer';
+        img.addEventListener('click', () => {
+          getImageViewer().open({ images: imageSrcs, initialIndex: index });
+        });
+      });
+    }
+  }
+
+  /**
+   * Step: Login with extension (Web only)
+   */
+  private createLoginStep(): WizardStep {
+    return {
+      id: 'login',
+      title: 'Login',
+      required: true,
+      render: () => {
+        const el = document.createElement('div');
+        this.renderStepHeader(el, 'Login',
+          'Everything is set up! Click below to log in with your new account.');
+
+        el.innerHTML += `
+          <div class="wizard-extension-action">
+            <button class="btn btn--large" data-action="login-extension">
+              Login with Extension
+            </button>
+            <p class="wizard-hint">Alby will ask you to confirm</p>
+          </div>
+
+          <div class="wizard-status" data-status></div>
+        `;
+
+        // Setup listeners
+        setTimeout(() => this.setupLoginListeners(), 0);
+
+        return el;
+      },
+      validate: () => !!this.authService.getCurrentUser(),
+      collect: () => {}
+    };
+  }
+
+  /**
+   * Setup listeners for login step
+   */
+  private setupLoginListeners(): void {
+    const container = this.container;
+    if (!container) return;
+
+    const loginBtn = container.querySelector('[data-action="login-extension"]') as HTMLButtonElement;
+    const statusEl = container.querySelector('[data-status]') as HTMLElement;
+
+    if (loginBtn) {
+      loginBtn.addEventListener('click', async () => {
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Connecting...';
+
+        try {
+          const result = await this.authService.authenticate();
+
+          if (result.success && result.pubkey) {
+            // Set NEEDS_PROFILE_SETUP flag
+            this.storage.setForPubkey(StorageKeys.NEEDS_PROFILE_SETUP, result.pubkey, true);
+
+            // Save NWC connection if we have wallet credentials from Rizful
+            if (this.walletCredentials) {
+              try {
+                const { NWCService } = await import('../../services/NWCService');
+                const nwcService = NWCService.getInstance();
+                await nwcService.connect(this.walletCredentials.nwcUri);
+                // Set lud16 in profile data
+                this.profileData.lud16 = this.walletCredentials.lightningAddress;
+              } catch (nwcError) {
+                console.warn('Failed to save NWC connection:', nwcError);
+              }
+            }
+
+            localStorage.setItem('noornote_has_key', 'true');
+            ToastService.show('Logged in!', 'success');
+            this.updateNextButtonState(true);
+            // Auto-advance to next step
+            this.goToNextStep();
+          } else {
+            if (statusEl) statusEl.textContent = result.error || 'Login failed';
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login with Extension';
+          }
+        } catch (error) {
+          if (statusEl) statusEl.textContent = 'Login failed';
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Login with Extension';
+        }
+      });
+    }
+  }
+
+  // ─── Profile Setup Steps ──────────────────────────────────────
 
   private createUsernameStep(): WizardStep {
     return {
@@ -711,15 +1492,7 @@ export class ProfileSetupWizard {
       required: true,
       render: () => {
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Choose a Username';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'Your username is how others will find and mention you. Pick one of these or type your own.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Choose a Username', 'Your username is how others will find and mention you. Pick one of these or type your own.');
 
         // Suggestion chips
         const chipsContainer = document.createElement('div');
@@ -790,15 +1563,7 @@ export class ProfileSetupWizard {
       required: true,
       render: () => {
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Add a Profile Picture';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'Upload your own or choose one below.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Add a Profile Picture', 'Upload your own or choose one below.');
 
         // Upload section
         const uploadSection = document.createElement('div');
@@ -881,15 +1646,7 @@ export class ProfileSetupWizard {
       required: false,
       render: () => {
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Tell Us About Yourself';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'A short bio helps others get to know you. You can always change this later.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Tell Us About Yourself', 'A short bio helps others get to know you. You can always change this later.');
 
         const bioField = renderBioField(this.profileData.about || '');
         el.appendChild(bioField);
@@ -916,15 +1673,7 @@ export class ProfileSetupWizard {
         }
 
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Choose Your Relays';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'Relays are servers that store and share your posts. We\'ve picked a few reliable ones to get you started. You can change these anytime in Settings.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Choose Your Relays', 'Relays are servers that store and share your posts. We\'ve picked a few reliable ones to get you started. You can change these anytime in Settings.');
 
         // Relay list
         const relayList = document.createElement('div');
@@ -1047,15 +1796,7 @@ export class ProfileSetupWizard {
         }
 
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'DM Inbox Relays';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'These relays receive your private messages. Pick at least 2 for reliability. Only you can read messages delivered here.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'DM Inbox Relays', 'These relays receive your private messages. Pick at least 2 for reliability. Only you can read messages delivered here.');
 
         const inboxList = document.createElement('div');
         inboxList.className = 'wizard-inbox-relay-list';
@@ -1376,15 +2117,7 @@ export class ProfileSetupWizard {
       required: false,
       render: () => {
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Lightning Wallet';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. This is optional, you can set it up later in Settings.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Lightning Wallet', 'Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. This is optional, you can set it up later in Settings.');
 
         // Already configured?
         if (this.profileData.lud16) {
@@ -1643,15 +2376,12 @@ export class ProfileSetupWizard {
     const signedEvent = await this.authService.signEvent(unsignedEvent);
 
     const orchestrator = RelayListOrchestrator.getInstance();
-    const writeRelays = relayInfos.filter(r => r.types.includes('write')).map(r => r.url);
-    // Also publish to aggregator relays so the relay list is discoverable
-    const { RelayConfig } = await import('../../services/RelayConfig');
-    const aggregators = RelayConfig.getInstance().getAggregatorRelays();
-    const publishRelays = [...new Set([...writeRelays, ...aggregators])];
+    const publishRelays = await this.getPublishRelays();
 
     await orchestrator.publishRelayList(relayInfos, publishRelays, signedEvent);
 
     // Replace RelayConfig with the user's chosen relays (clear defaults first)
+    const { RelayConfig } = await import('../../services/RelayConfig');
     const relayConfig = RelayConfig.getInstance();
     relayConfig.clearRelays();
     relayInfos.forEach(r => relayConfig.addRelay(r));
@@ -1679,17 +2409,13 @@ export class ProfileSetupWizard {
 
     const { NostrTransport } = await import('../../services/transport/NostrTransport');
     const transport = NostrTransport.getInstance();
-
-    // Publish to write relays + aggregators for discoverability
-    const { RelayConfig: RC } = await import('../../services/RelayConfig');
-    const relayConfig = RC.getInstance();
-    const aggregators = relayConfig.getAggregatorRelays();
-    const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
-    const publishRelays = [...new Set([...writeRelays, ...aggregators])];
+    const publishRelays = await this.getPublishRelays();
 
     await transport.publish(publishRelays, signedEvent);
 
     // Register inbox relays in RelayConfig so DMService can find them
+    const { RelayConfig } = await import('../../services/RelayConfig');
+    const relayConfig = RelayConfig.getInstance();
     selected.forEach(r => relayConfig.addRelay({
       url: r.url,
       types: ['inbox'],
@@ -1708,6 +2434,26 @@ export class ProfileSetupWizard {
     if (btn) btn.disabled = false;
     if (text) text.style.display = 'inline';
     if (spinner) spinner.style.display = 'none';
+  }
+
+  /** Create a step header with heading and intro paragraph */
+  private renderStepHeader(parent: HTMLElement, heading: string, intro: string): void {
+    const h = document.createElement('h2');
+    h.textContent = heading;
+    parent.appendChild(h);
+
+    const p = document.createElement('p');
+    p.className = 'wizard-intro';
+    p.textContent = intro;
+    parent.appendChild(p);
+  }
+
+  /** Get deduplicated list of write relays + aggregator relays for publishing */
+  private async getPublishRelays(): Promise<string[]> {
+    const { RelayConfig } = await import('../../services/RelayConfig');
+    const aggregators = RelayConfig.getInstance().getAggregatorRelays();
+    const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
+    return [...new Set([...writeRelays, ...aggregators])];
   }
 
   private escapeHtml(text: string): string {

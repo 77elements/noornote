@@ -548,3 +548,182 @@
   line-height: 1.5;
   @include big;
 }
+
+// ===========================================
+// ACCOUNT CREATION STEPS (Keypair, Extension, etc.)
+// ===========================================
+
+.wizard-extension-action {
+  text-align: center;
+  margin: $gap * 2 0;
+
+  .btn {
+    min-width: 200px;
+  }
+}
+
+.wizard-hint {
+  color: $color-3;
+  margin-top: calc($gap / 2);
+  text-align: center;
+}
+
+.wizard-info-box {
+  background: $color-1;
+  border: 1px solid $color-3;
+  border-radius: $radius-lg;
+  padding: $gap * 1.5;
+  margin: $gap * 1.5 0;
+  line-height: 1.6;
+
+  ol, ul {
+    margin: $gap 0;
+    padding-left: $gap * 1.5;
+  }
+
+  li {
+    margin-bottom: calc($gap / 2);
+  }
+}
+
+.wizard-code-input {
+  margin: $gap * 2 0;
+
+  label {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    color: $color-5;
+    font-weight: 500;
+  }
+}
+
+.wizard-input-row {
+  display: flex;
+  gap: calc($gap / 2);
+
+  .input {
+    flex: 1;
+  }
+}
+
+.wizard-status {
+  margin-top: calc($gap / 2);
+  font-size: 0.9rem;
+
+  &.error {
+    color: $color-4;
+  }
+}
+
+.wizard-success-box {
+  background: rgba(#4caf50, 0.1);
+  border: 1px solid #4caf50;
+  border-radius: $radius-lg;
+  padding: $gap * 1.5;
+  margin: $gap * 1.5 0;
+  color: #4caf50;
+
+  p {
+    margin: 0;
+
+    &:not(:last-child) {
+      margin-bottom: calc($gap / 2);
+    }
+  }
+
+  code {
+    background: rgba(#4caf50, 0.2);
+    padding: 2px 6px;
+    border-radius: $radius-sm;
+  }
+}
+
+.wizard-keypair-display {
+  display: flex;
+  flex-direction: column;
+  gap: $gap * 1.5;
+  margin: $gap * 2 0;
+}
+
+.wizard-keypair-item {
+  background: $color-1;
+  border: 1px solid $color-3;
+  border-radius: $radius-lg;
+  padding: $gap;
+
+  label {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    color: $color-5;
+    font-weight: 500;
+  }
+
+  &--critical {
+    border-color: $color-4;
+    background: rgba($color-4, 0.05);
+  }
+}
+
+.wizard-keypair-actions {
+  display: flex;
+  gap: $gap;
+  margin: $gap * 1.5 0;
+}
+
+.wizard-backup-warning {
+  padding: $gap * 1.5;
+  background: rgba($color-4, 0.1);
+  border: 1px solid $color-4;
+  border-radius: $radius-lg;
+  color: $color-5;
+  line-height: 1.6;
+  margin: $gap * 2 0;
+
+  p {
+    margin: 0;
+
+    &:not(:last-child) {
+      margin-bottom: calc($gap / 2);
+    }
+  }
+}
+
+.wizard-backup-confirmation {
+  margin: $gap * 2 0;
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    cursor: pointer;
+    color: $color-5;
+    font-size: 1.1rem;
+
+    input[type="checkbox"] {
+      width: 20px;
+      height: 20px;
+      accent-color: $color-4;
+    }
+  }
+}
+
+.wizard-credentials-box {
+  margin: $gap * 2 0;
+  padding: $gap * 1.5;
+  background: $color-1;
+  border: 1px solid $color-3;
+  border-radius: $radius-lg;
+
+  > p {
+    margin: 0 0 $gap 0;
+    font-weight: 500;
+  }
+
+  .wizard-keypair-item {
+    margin-bottom: $gap;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}

@@ -252,7 +252,7 @@ export class App {
 
       case 'profile-setup':
         if (this.mainLayout) {
-          this.mainLayout.showProfileSetupWizard();
+          this.mainLayout.showAccountSetupWizard();
         }
         break;
 
