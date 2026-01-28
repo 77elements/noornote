@@ -711,15 +711,7 @@ export class ProfileSetupWizard {
       required: true,
       render: () => {
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Choose a Username';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'Your username is how others will find and mention you. Pick one of these or type your own.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Choose a Username', 'Your username is how others will find and mention you. Pick one of these or type your own.');
 
         // Suggestion chips
         const chipsContainer = document.createElement('div');
@@ -790,15 +782,7 @@ export class ProfileSetupWizard {
       required: true,
       render: () => {
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Add a Profile Picture';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'Upload your own or choose one below.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Add a Profile Picture', 'Upload your own or choose one below.');
 
         // Upload section
         const uploadSection = document.createElement('div');
@@ -881,15 +865,7 @@ export class ProfileSetupWizard {
       required: false,
       render: () => {
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Tell Us About Yourself';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'A short bio helps others get to know you. You can always change this later.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Tell Us About Yourself', 'A short bio helps others get to know you. You can always change this later.');
 
         const bioField = renderBioField(this.profileData.about || '');
         el.appendChild(bioField);
@@ -916,15 +892,7 @@ export class ProfileSetupWizard {
         }
 
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Choose Your Relays';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'Relays are servers that store and share your posts. We\'ve picked a few reliable ones to get you started. You can change these anytime in Settings.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Choose Your Relays', 'Relays are servers that store and share your posts. We\'ve picked a few reliable ones to get you started. You can change these anytime in Settings.');
 
         // Relay list
         const relayList = document.createElement('div');
@@ -1047,15 +1015,7 @@ export class ProfileSetupWizard {
         }
 
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'DM Inbox Relays';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'These relays receive your private messages. Pick at least 2 for reliability. Only you can read messages delivered here.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'DM Inbox Relays', 'These relays receive your private messages. Pick at least 2 for reliability. Only you can read messages delivered here.');
 
         const inboxList = document.createElement('div');
         inboxList.className = 'wizard-inbox-relay-list';
@@ -1376,15 +1336,7 @@ export class ProfileSetupWizard {
       required: false,
       render: () => {
         const el = document.createElement('div');
-
-        const heading = document.createElement('h2');
-        heading.textContent = 'Lightning Wallet';
-        el.appendChild(heading);
-
-        const intro = document.createElement('p');
-        intro.className = 'wizard-intro';
-        intro.textContent = 'Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. This is optional, you can set it up later in Settings.';
-        el.appendChild(intro);
+        this.renderStepHeader(el, 'Lightning Wallet', 'Set up a Lightning wallet to send and receive Bitcoin tips (Zaps) on Nostr. This is optional, you can set it up later in Settings.');
 
         // Already configured?
         if (this.profileData.lud16) {
@@ -1643,15 +1595,12 @@ export class ProfileSetupWizard {
     const signedEvent = await this.authService.signEvent(unsignedEvent);
 
     const orchestrator = RelayListOrchestrator.getInstance();
-    const writeRelays = relayInfos.filter(r => r.types.includes('write')).map(r => r.url);
-    // Also publish to aggregator relays so the relay list is discoverable
-    const { RelayConfig } = await import('../../services/RelayConfig');
-    const aggregators = RelayConfig.getInstance().getAggregatorRelays();
-    const publishRelays = [...new Set([...writeRelays, ...aggregators])];
+    const publishRelays = await this.getPublishRelays();
 
     await orchestrator.publishRelayList(relayInfos, publishRelays, signedEvent);
 
     // Replace RelayConfig with the user's chosen relays (clear defaults first)
+    const { RelayConfig } = await import('../../services/RelayConfig');
     const relayConfig = RelayConfig.getInstance();
     relayConfig.clearRelays();
     relayInfos.forEach(r => relayConfig.addRelay(r));
@@ -1679,17 +1628,13 @@ export class ProfileSetupWizard {
 
     const { NostrTransport } = await import('../../services/transport/NostrTransport');
     const transport = NostrTransport.getInstance();
-
-    // Publish to write relays + aggregators for discoverability
-    const { RelayConfig: RC } = await import('../../services/RelayConfig');
-    const relayConfig = RC.getInstance();
-    const aggregators = relayConfig.getAggregatorRelays();
-    const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
-    const publishRelays = [...new Set([...writeRelays, ...aggregators])];
+    const publishRelays = await this.getPublishRelays();
 
     await transport.publish(publishRelays, signedEvent);
 
     // Register inbox relays in RelayConfig so DMService can find them
+    const { RelayConfig } = await import('../../services/RelayConfig');
+    const relayConfig = RelayConfig.getInstance();
     selected.forEach(r => relayConfig.addRelay({
       url: r.url,
       types: ['inbox'],
@@ -1708,6 +1653,26 @@ export class ProfileSetupWizard {
     if (btn) btn.disabled = false;
     if (text) text.style.display = 'inline';
     if (spinner) spinner.style.display = 'none';
+  }
+
+  /** Create a step header with heading and intro paragraph */
+  private renderStepHeader(parent: HTMLElement, heading: string, intro: string): void {
+    const h = document.createElement('h2');
+    h.textContent = heading;
+    parent.appendChild(h);
+
+    const p = document.createElement('p');
+    p.className = 'wizard-intro';
+    p.textContent = intro;
+    parent.appendChild(p);
+  }
+
+  /** Get deduplicated list of write relays + aggregator relays for publishing */
+  private async getPublishRelays(): Promise<string[]> {
+    const { RelayConfig } = await import('../../services/RelayConfig');
+    const aggregators = RelayConfig.getInstance().getAggregatorRelays();
+    const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
+    return [...new Set([...writeRelays, ...aggregators])];
   }
 
   private escapeHtml(text: string): string {
