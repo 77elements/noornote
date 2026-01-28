@@ -61,15 +61,44 @@ interface FollowPack {
 
 // Word lists for random username generation
 const ADJECTIVES = [
-  'Happy', 'Bright', 'Swift', 'Calm', 'Bold',
-  'Lucky', 'Warm', 'Cool', 'Wild', 'Free',
-  'Noble', 'Wise', 'Kind', 'Pure', 'Keen'
+  'Happy', 'Bright', 'Swift', 'Calm', 'Bold', 'Lucky', 'Warm', 'Cool',
+  'Wild', 'Free', 'Noble', 'Wise', 'Kind', 'Pure', 'Keen', 'Brave',
+  'Gentle', 'Vivid', 'Quiet', 'Fierce', 'Mellow', 'Daring', 'Witty',
+  'Steady', 'Clever', 'Humble', 'Cosmic', 'Golden', 'Silent', 'Mystic',
+  'Rustic', 'Jolly', 'Zesty', 'Lucid', 'Nimble', 'Radiant', 'Serene',
+  'Grand', 'Fuzzy', 'Stark', 'Stormy', 'Sunny', 'Frosty', 'Dusty',
+  'Lively', 'Cozy', 'Snappy', 'Sleek', 'Plucky', 'Crisp'
 ];
 
-const ANIMALS = [
-  'Falcon', 'Otter', 'Panda', 'Eagle', 'Wolf',
-  'Dolphin', 'Fox', 'Owl', 'Bear', 'Hawk',
-  'Lynx', 'Raven', 'Heron', 'Whale', 'Deer'
+const NOUNS = [
+  // Animals
+  'Falcon', 'Otter', 'Panda', 'Eagle', 'Wolf', 'Dolphin', 'Fox', 'Owl',
+  'Bear', 'Hawk', 'Lynx', 'Raven', 'Heron', 'Whale', 'Deer', 'Jaguar',
+  'Cobra', 'Parrot', 'Bison', 'Crane', 'Toucan', 'Mantis', 'Badger',
+  'Gecko', 'Pelican', 'Moose', 'Osprey', 'Coyote', 'Puffin', 'Condor',
+  'Ibis', 'Newt', 'Wombat', 'Ferret', 'Marten', 'Salmon', 'Finch',
+  'Beetle', 'Marlin', 'Yak',
+  // Objects & vehicles
+  'Sailboat', 'Lantern', 'Compass', 'Rocket', 'Anchor', 'Beacon',
+  'Zeppelin', 'Prism', 'Pendulum', 'Telescope', 'Windmill', 'Canoe',
+  'Gondola', 'Fiddle', 'Hammock', 'Kite', 'Hourglass', 'Trumpet',
+  'Cauldron', 'Anvil', 'Satchel', 'Quill', 'Goblet', 'Loom', 'Abacus',
+  'Barrel', 'Mortar', 'Chisel', 'Bugle', 'Shuttle', 'Helm', 'Flute',
+  'Spindle', 'Wagon', 'Bellows', 'Oar', 'Vessel', 'Drum', 'Wrench',
+  'Spool',
+  // Nature & sky
+  'Horizon', 'Comet', 'Breeze', 'Summit', 'River', 'Canyon', 'Glacier',
+  'Aurora', 'Meadow', 'Nebula', 'Lagoon', 'Tundra', 'Reef', 'Geyser',
+  'Dune', 'Fjord', 'Marsh', 'Crater', 'Torrent', 'Thicket', 'Grove',
+  'Ravine', 'Estuary', 'Ridge', 'Basin', 'Delta', 'Savanna', 'Plateau',
+  'Cove', 'Steppe', 'Cascade', 'Inlet', 'Bluff', 'Prairie', 'Grotto',
+  'Coral', 'Pebble', 'Driftwood', 'Willow', 'Cedar',
+  // Abstract & vibes
+  'Spark', 'Echo', 'Drift', 'Ember', 'Frost', 'Riddle', 'Whisper',
+  'Mirage', 'Zenith', 'Cadence', 'Mosaic', 'Voyage', 'Nimbus', 'Flare',
+  'Tempo', 'Ripple', 'Cipher', 'Saga', 'Fable', 'Rune', 'Odyssey',
+  'Verve', 'Lumen', 'Aura', 'Motif', 'Reverie', 'Presto', 'Quartz',
+  'Axiom', 'Tangent'
 ];
 
 // DiceBear avatar styles to mix for variety
@@ -117,8 +146,8 @@ function pickRandomRelays(count: number): WizardRelay[] {
 
 function generateRandomUsername(): string {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
-  const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
-  return `${adj}${animal}`;
+  const noun = NOUNS[Math.floor(Math.random() * NOUNS.length)];
+  return `${adj}${noun}`;
 }
 
 export class ProfileSetupWizard {
