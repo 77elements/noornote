@@ -470,6 +470,13 @@ export class ProfileSetupWizard {
     const navLeft = document.createElement('div');
     navLeft.className = 'wizard-nav-left';
 
+    // Cancel button — always visible on all steps
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn btn--large btn--passive';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => this.cancelWizard());
+    navLeft.appendChild(cancelBtn);
+
     if (!isFirst) {
       // Restart button (only show after first step)
       const restartBtn = document.createElement('button');
@@ -584,6 +591,70 @@ export class ProfileSetupWizard {
 
   private clearProgress(): void {
     this.storage.remove(StorageKeys.WIZARD_PROGRESS);
+  }
+
+  private async cancelWizard(): Promise<void> {
+    const { ModalService } = await import('../../services/ModalService');
+    const modalService = ModalService.getInstance();
+
+    const content = document.createElement('div');
+    content.innerHTML = `
+      <p>Are you sure? All your inputs and your keypair will be discarded.</p>
+      <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+        <button class="btn btn--passive" data-action="no">No, don't cancel</button>
+        <button class="btn" data-action="yes">Yes</button>
+      </div>
+    `;
+
+    content.querySelector('[data-action="no"]')!.addEventListener('click', () => {
+      modalService.hide();
+    });
+
+    content.querySelector('[data-action="yes"]')!.addEventListener('click', async () => {
+      modalService.hide();
+
+      const pubkey = this.authService.getCurrentUser()?.pubkey;
+
+      // Clear wizard localStorage
+      this.clearProgress();
+      this.storage.remove(StorageKeys.NEEDS_PROFILE_SETUP);
+
+      // Remove keypair from NoorSigner filesystem
+      if (pubkey) {
+        try {
+          const { hexToNpub } = await import('../../helpers/nip19');
+          const npub = hexToNpub(pubkey);
+          if (npub) {
+            const { invoke } = await import('@tauri-apps/api/core');
+            await invoke('remove_noorsigner_account', { npub });
+          }
+        } catch (e) {
+          console.warn('[ProfileSetupWizard] Failed to remove NoorSigner account files:', e);
+        }
+
+        // Remove from localStorage + sign out
+        await this.authService.removeStoredAccount(pubkey);
+
+        // Switch to previous account if one exists
+        const { AccountStorageService } = await import('../../services/AccountStorageService');
+        const accounts = AccountStorageService.getInstance().getAccounts();
+        if (accounts.length > 0) {
+          await this.authService.switchAccount(accounts[0]!.pubkey);
+        }
+      }
+
+      this.destroy();
+      this.router.navigate('/');
+    });
+
+    modalService.show({
+      title: 'Cancel Setup',
+      content,
+      width: '400px',
+      height: 'auto',
+      closeOnOverlay: true,
+      closeOnEsc: true,
+    });
   }
 
   private restartWizard(): void {
