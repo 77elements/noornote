@@ -1159,6 +1159,11 @@ export class ProfileSetupWizard {
       this.renderPackCards(grid);
       el.appendChild(grid);
     }
+
+    const credit = document.createElement('p');
+    credit.className = 'small';
+    credit.innerHTML = 'Follow Packs by <a href="https://github.com/callebtc/following.space" target="_blank" rel="noopener">calle\'s following.space</a>';
+    el.appendChild(credit);
   }
 
   private renderPackCards(grid: HTMLElement): void {
