@@ -583,7 +583,7 @@ export class ProfileSetupWizard {
 
         // DiceBear avatar grid
         if (this.avatarChoices.length === 0) {
-          this.avatarChoices = generateRandomAvatars(12);
+          this.avatarChoices = generateRandomAvatars(8);
         }
 
         const grid = document.createElement('div');
@@ -596,7 +596,7 @@ export class ProfileSetupWizard {
         regenBtn.className = 'btn btn--passive wizard-avatar-regenerate';
         regenBtn.textContent = 'Show different avatars';
         regenBtn.addEventListener('click', () => {
-          this.avatarChoices = generateRandomAvatars(12);
+          this.avatarChoices = generateRandomAvatars(8);
           this.renderAvatarGrid(grid);
         });
         el.appendChild(regenBtn);
