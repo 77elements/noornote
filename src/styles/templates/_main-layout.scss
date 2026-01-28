@@ -31,6 +31,7 @@
   @include tablet {
     // Sidebar: fluid width, skaliert mit viewport (wie Font-Size)
     grid-template-columns: clamp(200px, 24vw, 240px) 1fr;
+    grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary";
     gap: $gap;
     padding: $gap;
@@ -41,6 +42,7 @@
   // ========================================
   @include desktop {
     grid-template-columns: clamp(200px, 18vw, 250px) 1fr 1fr;
+    grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary secondary";
   }
 }
@@ -59,12 +61,14 @@ html.layout--wide .main-layout {
   @include tablet {
     // Tablet+: 2 columns mit fluid sidebar
     grid-template-columns: clamp(200px, 24vw, 240px) 1fr;
+    grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary";
   }
 
   @include desktop {
     // Desktop: etwas schmalere sidebar im wide mode
     grid-template-columns: clamp(200px, 16vw, 240px) 1fr;
+    grid-template-rows: 1fr;
   }
 
   .secondary-content {
@@ -133,6 +137,7 @@ html.layout--phone {
 .sidebar {
   grid-area: sidebar;
   min-width: 0;
+  min-height: 100%;
   overflow: hidden;
 }
 

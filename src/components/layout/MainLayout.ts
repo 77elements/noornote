@@ -4,6 +4,7 @@
  */
 
 import { AuthComponent } from '../auth/AuthComponent';
+import { OnboardingComponent } from '../onboarding/OnboardingComponent';
 import { SystemLogger } from '../system/SystemLogger';
 import { AccountSwitcher } from '../ui/AccountSwitcher';
 import { CacheManager } from '../../services/CacheManager';
@@ -48,6 +49,7 @@ export class MainLayout {
   private searchSpotlight: SearchSpotlight | null = null;
   private keyboardShortcutManager!: KeyboardShortcutManager;
   private authComponent: any = null; // Store reference to trigger logout
+  private onboardingComponent: OnboardingComponent | null = null;
   private cacheManager: CacheManager;
   private appState: AppState;
   private authStateManager: AuthStateManager;
@@ -660,11 +662,20 @@ export class MainLayout {
         if (currentUser) {
           this.setUserStatus(currentUser.npub, currentUser.pubkey);
         }
+        // Update sidebar for logged-in state
+        this.element.querySelector('.sidebar')?.classList.remove('sidebar--logged-out');
       } else {
         // User logged out - clear user status
         this.clearUserStatus();
+        // Update sidebar for logged-out state
+        this.element.querySelector('.sidebar')?.classList.add('sidebar--logged-out');
       }
     });
+
+    // Set initial sidebar state based on current auth status
+    if (!this.authStateManager.isLoggedIn()) {
+      this.element.querySelector('.sidebar')?.classList.add('sidebar--logged-out');
+    }
 
     // Listen for account switches (user:login fires when switching accounts)
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
@@ -768,6 +779,17 @@ export class MainLayout {
       });
     }
 
+    // Welcome link - reset has_key flag to show welcome screen
+    const welcomeLink = this.element.querySelector('.sidebar a[href="/welcome"]');
+    if (welcomeLink) {
+      welcomeLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('noornote_has_key');
+        const router = Router.getInstance();
+        router.navigate('/welcome');
+      });
+    }
+
     const articlesLink = this.element.querySelector('.sidebar a[href="/articles"]');
     if (articlesLink) {
       articlesLink.addEventListener('click', (e) => {
@@ -805,6 +827,27 @@ export class MainLayout {
         e.preventDefault();
         this.handleClearCache();
       });
+    }
+
+    // Reload button — Tauri only (no browser reload button)
+    if ((window as any).__TAURI_INTERNALS__) {
+      const cacheLi = clearCacheLink?.closest('li');
+      if (cacheLi) {
+        const reloadLi = document.createElement('li');
+        reloadLi.innerHTML = `
+          <a href="#" class="primary-nav__link primary-nav__link--reload">
+            <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            <span class="primary-nav__item-desc">Reload</span>
+          </a>`;
+        cacheLi.after(reloadLi);
+        reloadLi.querySelector('a')!.addEventListener('click', (e) => {
+          e.preventDefault();
+          window.location.reload();
+        });
+      }
     }
 
     // New Post Dropup
@@ -969,6 +1012,15 @@ export class MainLayout {
           <div class="sidebar-scrollable">
             <div class="sidebar-header">
               <span class="nn-logo">NoorNote</span>
+            </div>
+            <div class="sidebar-welcome-link">
+              <a href="/welcome" class="primary-nav__link primary-nav__link--welcome">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span class="primary-nav__item-desc">Welcome</span>
+              </a>
             </div>
             <div class="wallet-balance-container">
               <!-- WalletBalanceDisplay will be mounted here -->
@@ -1569,6 +1621,35 @@ export class MainLayout {
     }
   }
 
+  /**
+   * Show welcome screen (new users - "Are you new to Nostr?")
+   */
+  public showWelcomeScreen(): void {
+    if (!this.onboardingComponent) {
+      this.onboardingComponent = new OnboardingComponent();
+    }
+    this.onboardingComponent.showWelcomeScreen();
+  }
+
+  /**
+   * Show create account screen (keypair generation)
+   */
+  public showCreateAccountScreen(): void {
+    if (!this.onboardingComponent) {
+      this.onboardingComponent = new OnboardingComponent();
+    }
+    this.onboardingComponent.showCreateAccountScreen();
+  }
+
+  /**
+   * Show profile setup wizard (new account onboarding).
+   * Wizard renders fullscreen, hiding the main app layout.
+   */
+  public async showProfileSetupWizard(): Promise<void> {
+    const { ProfileSetupWizard } = await import('../onboarding/ProfileSetupWizard');
+    const wizard = new ProfileSetupWizard();
+    wizard.show();
+  }
 
   /**
    * Open a list tab (Bookmarks, Follows, or Muted Users)

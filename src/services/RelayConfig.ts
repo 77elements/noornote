@@ -274,6 +274,13 @@ export class RelayConfig {
   }
 
   /**
+   * Clear all relays from memory (no re-init of defaults)
+   */
+  public clearRelays(): void {
+    this.relays.clear();
+  }
+
+  /**
    * Setup listener for user login/logout
    */
   private setupLoginListener(): void {

@@ -175,6 +175,20 @@ export class VideoPlayerService {
         this.toggleFullscreen(video);
       });
 
+      // Pause video when scrolled out of viewport
+      const visibilityObserver = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting && !video.paused) {
+              video.pause();
+            }
+          });
+        },
+        { threshold: 0 }
+      );
+      visibilityObserver.observe(video);
+      (video as any)._visibilityObserver = visibilityObserver;
+
       // Position video relatively and add button
       const wrapper = video.parentElement;
       if (wrapper) {
@@ -234,6 +248,11 @@ export class VideoPlayerService {
       if (fsButton) {
         fsButton.remove();
         delete (video as any)._fsButton;
+      }
+      const visibilityObserver = (video as any)._visibilityObserver as IntersectionObserver | undefined;
+      if (visibilityObserver) {
+        visibilityObserver.disconnect();
+        delete (video as any)._visibilityObserver;
       }
       video.classList.remove('video-fullscreen-mode');
       delete video.dataset.fsInitialized;

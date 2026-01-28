@@ -1,0 +1,303 @@
+/**
+ * Onboarding Flow Styles
+ * Covers: Welcome View, Login View, New Account View
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+// ===========================================
+// ONBOARDING STYLES
+// ===========================================
+
+.onboarding-subtitle {
+  text-align: center;
+}
+
+.onboarding-hint {
+  margin-top: $gap;
+  color: $color-3;
+}
+
+// ===========================================
+// WELCOME VIEW (2-column choices)
+// ===========================================
+
+.onboarding-section {
+  border-bottom: 1px solid $color-3;
+  margin-bottom: $gap * 2;
+}
+
+.onboarding-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: $gap * 2;
+  margin: $gap * 2 0;
+}
+
+.onboarding-choice {
+  text-align: center;
+}
+
+// ===========================================
+// NOSTR INTRO SECTION
+// ===========================================
+
+.nostr-intro {
+  h2 {
+    text-align: center;
+    margin-bottom: $gap * 2;
+  }
+
+  // Override carousel min-height for this context
+  .nn-carousel-slides {
+    min-height: 280px;
+  }
+}
+
+// Auth Section (grouped options)
+.auth-section {
+  border: 1px solid $color-3;
+  border-radius: $radius-lg;
+  padding: calc($gap * 2);
+  margin: calc($gap * 2) 0;
+
+  // Primary section (no border, prominent)
+  &--primary {
+    border: none;
+    padding: 0;
+    margin: $gap * 2 0;
+  }
+}
+
+// Primary Action (large button + hint)
+.auth-primary-action {
+  text-align: center;
+  margin: $gap;
+
+  .auth-hint {
+    color: $color-3;
+
+    a {
+      color: $color-4;
+      text-decoration: none;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// Divider with text
+.auth-divider {
+  position: relative;
+  text-align: center;
+  margin: $gap * 2 0;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: $color-3;
+  }
+
+  span {
+    position: relative;
+    display: inline-block;
+    padding: 0 $gap;
+    background: $color-2;
+    color: $color-3;
+  }
+}
+
+// ===========================================
+// LOGIN VIEW
+// ===========================================
+
+// Input Group (input + button)
+.auth-input-group {
+  display: flex;
+  gap: $gap;
+  margin-bottom: calc($gap / 2);
+
+  .input {
+    flex: 1;
+  }
+}
+
+// Key Signer Section
+.auth-key-signer {
+  text-align: center;
+
+  .auth-hint {
+    margin: 0;
+    color: $color-3;
+  }
+}
+
+// Smart Input (single field)
+.auth-smart-input {
+  display: flex;
+  gap: $gap;
+  margin-bottom: $gap;
+
+  .input {
+    flex: 1;
+  }
+}
+
+// ===========================================
+// CREATE ACCOUNT VIEW
+// ===========================================
+
+.create-account-section {
+  max-width: 600px;
+}
+
+.onboarding-intro {
+  line-height: 1.6;
+  margin-bottom: $gap * 2;
+}
+
+.keypair-display {
+  display: flex;
+  flex-direction: column;
+  gap: $gap * 1.5;
+  margin-bottom: $gap * 2;
+}
+
+.keypair-item {
+  background: $color-1;
+  border: 1px solid $color-3;
+  border-radius: $radius-lg;
+  padding: $gap;
+
+  label {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    color: $color-5;
+    font-weight: 500;
+  }
+
+  &--critical {
+    border-color: $color-4;
+    background: rgba($color-4, 0.05);
+  }
+}
+
+.keypair-input-row {
+  display: flex;
+  gap: calc($gap / 2);
+
+  .input {
+    flex: 1;
+    font-size: 0.85rem;
+  }
+}
+
+.keypair-actions {
+  display: flex;
+  gap: $gap;
+  margin-bottom: $gap * 2;
+}
+
+.backup-warning {
+  padding: $gap * 1.5;
+  background: rgba($color-4, 0.1);
+  border: 1px solid $color-4;
+  border-radius: $radius-lg;
+  color: $color-5;
+  line-height: 1.6;
+  margin-bottom: $gap * 2;
+
+  p {
+    margin: 0;
+
+    &:not(:last-child) {
+      margin-bottom: calc($gap / 2);
+    }
+  }
+}
+
+.backup-confirmation {
+  margin-bottom: $gap * 2;
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    cursor: pointer;
+    color: $color-5;
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: $color-4;
+    }
+  }
+}
+
+.create-account-actions {
+  text-align: center;
+  padding-top: $gap;
+  border-top: 1px solid $color-3;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: $gap * 2;
+  color: $color-4;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+// ===========================================
+// IMPORT TO NOORSIGNER MODAL
+// ===========================================
+
+.import-noorsigner-modal {
+  &__content {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+
+  &__intro {
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+
+    label {
+      color: $color-5;
+      font-weight: 500;
+    }
+  }
+
+  &__error {
+    color: $color-4;
+    background: rgba($color-4, 0.1);
+    padding: calc($gap / 2) $gap;
+    border-radius: $radius-sm;
+    margin: 0;
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: $gap;
+    margin-top: $gap;
+  }
+}

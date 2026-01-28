@@ -152,7 +152,26 @@ pub async fn check_trust_session() -> Result<bool, String> {
 
     let home = std::env::var("HOME")
         .map_err(|_| "Failed to get HOME directory".to_string())?;
-    let trust_session_path = PathBuf::from(home).join(".noorsigner").join("trust_session");
+    let noorsigner_dir = PathBuf::from(&home).join(".noorsigner");
+
+    // Try new multi-account path first: ~/.noorsigner/accounts/<npub>/trust_session
+    let mut trust_session_path = noorsigner_dir.join("trust_session"); // fallback to old path
+
+    let active_account_path = noorsigner_dir.join("active_account");
+    if active_account_path.exists() {
+        if let Ok(active_npub) = fs::read_to_string(&active_account_path) {
+            let active_npub = active_npub.trim();
+            if !active_npub.is_empty() {
+                let new_path = noorsigner_dir
+                    .join("accounts")
+                    .join(active_npub)
+                    .join("trust_session");
+                if new_path.exists() {
+                    trust_session_path = new_path;
+                }
+            }
+        }
+    }
 
     if !trust_session_path.exists() {
         return Ok(false);
@@ -195,6 +214,99 @@ pub async fn cancel_key_signer_launch() -> Result<(), String> {
         println!("No noorsigner daemon process found to kill");
     }
     Ok(())
+}
+
+/// Add account via CLI with stdin (when daemon is not running)
+/// Input: JSON string {"nsec": "...", "password": "..."}
+/// Returns: JSON response from noorsigner
+#[command]
+pub async fn add_account_via_cli(json_input: String) -> Result<String, String> {
+    use std::process::{Command, Stdio};
+
+    ensure_noorsigner_installed().await?;
+    let noorsigner_path = get_noorsigner_path()?;
+
+    if !noorsigner_path.exists() {
+        return Err(format!(
+            "NoorSigner binary not found at: {}",
+            noorsigner_path.display()
+        ));
+    }
+
+    let mut child = Command::new(&noorsigner_path)
+        .arg("add-account")
+        .arg("--stdin")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to spawn noorsigner: {}", e))?;
+
+    // Write JSON to stdin
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(json_input.as_bytes())
+            .map_err(|e| format!("Failed to write to stdin: {}", e))?;
+    }
+
+    // Wait for completion and get output
+    let output = child.wait_with_output()
+        .map_err(|e| format!("Failed to wait for noorsigner: {}", e))?;
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Ok(stdout.trim().to_string())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        Err(format!("noorsigner failed: {} {}", stdout.trim(), stderr.trim()))
+    }
+}
+
+/// Launch NoorSigner daemon silently in background (no terminal)
+/// Used after adding account via CLI when trust session is already created
+#[command]
+pub async fn launch_daemon_silent() -> Result<(), String> {
+    use std::process::Command;
+    use std::os::unix::process::CommandExt;
+
+    ensure_noorsigner_installed().await?;
+    let noorsigner_path = get_noorsigner_path()?;
+
+    if !noorsigner_path.exists() {
+        return Err(format!(
+            "NoorSigner binary not found at: {}",
+            noorsigner_path.display()
+        ));
+    }
+
+    let socket_path = get_socket_path()?;
+    if socket_path.exists() {
+        // Daemon already running
+        return Ok(());
+    }
+
+    Command::new(&noorsigner_path)
+        .arg("daemon")
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .process_group(0)
+        .spawn()
+        .map_err(|e| format!("Failed to launch daemon: {}", e))?;
+
+    // Wait for socket to appear
+    use std::time::{Duration, Instant};
+    let start = Instant::now();
+    let timeout = Duration::from_secs(5);
+
+    while start.elapsed() < timeout {
+        if socket_path.exists() {
+            return Ok(());
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+
+    Ok(()) // Return OK even if socket doesn't appear - daemon might still be starting
 }
 
 /// Launch NoorSigner CLI binary
@@ -334,5 +446,38 @@ pub async fn launch_key_signer(mode: String) -> Result<(), String> {
     }
 
     println!("NoorSigner launched successfully");
+    Ok(())
+}
+
+/// Remove a NoorSigner account directory (~/.noorsigner/accounts/<npub>/)
+/// Used during onboarding cancellation when no password has been set yet.
+#[command]
+pub async fn remove_noorsigner_account(npub: String) -> Result<(), String> {
+    use std::fs;
+
+    if npub.is_empty() || !npub.starts_with("npub1") {
+        return Err("Invalid npub".to_string());
+    }
+
+    let home = std::env::var("HOME")
+        .map_err(|_| "Failed to get HOME directory".to_string())?;
+    let noorsigner_dir = PathBuf::from(&home).join(".noorsigner");
+    let account_dir = noorsigner_dir.join("accounts").join(&npub);
+
+    if account_dir.exists() {
+        fs::remove_dir_all(&account_dir)
+            .map_err(|e| format!("Failed to remove account directory: {}", e))?;
+    }
+
+    // Clear active_account if it points to the removed account
+    let active_file = noorsigner_dir.join("active_account");
+    if active_file.exists() {
+        if let Ok(active_npub) = fs::read_to_string(&active_file) {
+            if active_npub.trim() == npub {
+                let _ = fs::remove_file(&active_file);
+            }
+        }
+    }
+
     Ok(())
 }

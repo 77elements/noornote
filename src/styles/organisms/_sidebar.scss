@@ -132,3 +132,46 @@
 
 .sidebar-footer {
 }
+
+// ===========================================
+// LOGGED-OUT STATE
+// ===========================================
+
+// Welcome link - only visible when logged out
+.sidebar-welcome-link {
+  display: none;
+  margin-bottom: $gap;
+
+  .sidebar--logged-out & {
+    display: block;
+  }
+}
+
+// Hide elements when logged out
+.sidebar--logged-out {
+  // Hide wallet balance
+  .wallet-balance-container {
+    display: none;
+  }
+
+  // Hide most nav items (keep cache)
+  .primary-nav__link--home,
+  .primary-nav__link--profile,
+  .primary-nav__link--notifications,
+  .primary-nav__link--articles,
+  .primary-nav__link--messages,
+  .primary-nav__link--settings,
+  .primary-nav__link--search {
+    display: none;
+  }
+
+  // Hide Lists accordion menu
+  .primary-nav__item--accordion {
+    display: none;
+  }
+
+  // Hide new post button
+  .new-post-dropup {
+    display: none;
+  }
+}

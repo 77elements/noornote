@@ -1449,10 +1449,17 @@ function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: Bo
   const unchanged: BookmarkItem[] = [];
   const moved: BookmarkMovedItem[] = [];
 
+  // Get folder service to look up browser item categories from assignments
+  const folderService = getBookmarkFolderService();
+  const folders = folderService.getFolders();
+  const folderIdToName = new Map(folders.map(f => [f.id, f.name]));
+
   for (const browserItem of browserItems) {
     const sourceItem = sourceMap.get(browserItem.id);
     if (sourceItem) {
-      const browserCategory = browserItem.category || '';
+      // Get browser category from folder assignments (not from item.category which is undefined)
+      const browserFolderId = folderService.getBookmarkFolder(browserItem.id);
+      const browserCategory = folderIdToName.get(browserFolderId) || '';
       const sourceCategory = sourceItem.category || '';
       if (browserCategory !== sourceCategory) {
         moved.push({ browserItem, sourceItem });

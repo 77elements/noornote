@@ -28,7 +28,8 @@
 // 3.5. Components - Individual UI components
 @use 'components/view-content';
 @use 'components/auth';
-@use 'components/login-view';
+@use 'components/onboarding';
+@use 'components/profile-setup-wizard';
 @use 'components/note-ui';
 @use 'components/timeline';
 @use 'components/custom-dropdown';
@@ -88,6 +89,7 @@
 
 // 4. Molecules - Combinations of atoms
 @use 'molecules/buttons';
+@use 'molecules/carousel';
 @use 'molecules/tabs';
 @use 'molecules/ui-list';
 @use 'molecules/forms';

@@ -71,6 +71,18 @@ h6, .h6 { @extend %h6; margin-bottom: $gap; }
 // Small & Mini text (fixed sizes)
 // Small: 12px, Mini: 9px
 // ========================================
+%big {
+  font-size: 23px;
+}
+
+@mixin big {
+  font-size: 23px;
+}
+
+.big {
+  @extend %big;
+}
+
 %small {
   font-size: 12px;
 }

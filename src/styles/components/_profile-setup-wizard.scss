@@ -1,0 +1,550 @@
+/**
+ * Profile Setup Wizard Styles
+ * Fullscreen layout — no sidebar, no 3-column grid.
+ * Logo centered on top, content centered with max-width, big text and inputs.
+ */
+
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+// ===========================================
+// FULLSCREEN LAYOUT
+// ===========================================
+
+.wizard-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: $color-1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: $gap * 3 $gap * 2;
+}
+
+// ===========================================
+// LOGO
+// ===========================================
+
+.wizard-logo {
+  text-align: center;
+  margin-bottom: $gap * 3;
+
+  .nn-logo {
+    font-size: 27px;
+  }
+}
+
+// ===========================================
+// INNER WRAPPER (centered content)
+// ===========================================
+
+.wizard-inner {
+  width: 100%;
+  max-width: 560px;
+}
+
+// ===========================================
+// PROGRESS INDICATOR
+// ===========================================
+
+.wizard-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: $gap * 3;
+  padding: 0 $gap * 4;
+}
+
+.wizard-progress-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: $radius-full;
+  flex-shrink: 0;
+
+  &--completed {
+    background: $color-6;
+  }
+
+  &--active {
+    background: $color-4;
+    box-shadow: 0 0 0 4px rgba($color-4, 0.25);
+  }
+
+  &--upcoming {
+    background: $color-2;
+    border: 1px solid $color-3;
+  }
+}
+
+.wizard-progress-line {
+  flex: 1;
+  height: 2px;
+  background: $color-2;
+  min-width: 24px;
+}
+
+// ===========================================
+// STEP CONTENT — big text
+// ===========================================
+
+.wizard-step-content {
+  margin-bottom: $gap * 2;
+
+  h1 {
+    font-size: 27px;
+    margin-bottom: $gap * 1.5;
+  }
+
+  h2 {
+    font-size: 27px;
+    margin-bottom: $gap * 1.5;
+  }
+
+  // All body text is .big (23px)
+  p, label, .form-group, .form-hint {
+    @include big;
+    line-height: 1.5;
+  }
+
+  // Bigger inputs
+  .input, .textarea {
+    @include big;
+    padding: $gap;
+  }
+
+  .form-group {
+    margin-bottom: $gap * 1.5;
+  }
+
+  .form-hint {
+    font-size: 14px;
+    margin-top: calc($gap / 2);
+  }
+}
+
+.wizard-intro {
+  @include big;
+  line-height: 1.6;
+  color: $color-5;
+  margin-bottom: $gap * 1.5;
+}
+
+// ===========================================
+// USERNAME SUGGESTIONS
+// ===========================================
+
+.wizard-username-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc($gap / 2);
+  margin-bottom: $gap;
+}
+
+.wizard-username-regenerate {
+  display: block;
+  margin-bottom: $gap * 2;
+}
+
+.wizard-suggestion-chip {
+  padding: calc($gap / 2) $gap * 1.5;
+  border: 1px solid $color-3;
+  border-radius: $radius-full;
+  background: $color-2;
+  color: $color-5;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  @include big;
+
+  &:hover {
+    border-color: $color-4;
+    color: $color-4;
+  }
+
+  &.active {
+    background: $color-4;
+    border-color: $color-4;
+    color: $color-1;
+  }
+}
+
+// ===========================================
+// AVATAR STEP
+// ===========================================
+
+.wizard-avatar-upload-section {
+  display: flex;
+  justify-content: center;
+  margin: $gap * 2 0;
+
+  .image-uploader-overlay {
+    opacity: 0.5;
+  }
+
+  .image-uploader:hover .image-uploader-overlay {
+    opacity: 1;
+  }
+}
+
+.wizard-avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: $gap;
+  margin-top: $gap * 1.5;
+  margin-bottom: $gap * 1.5;
+}
+
+.wizard-avatar-regenerate {
+  display: block;
+  margin: 0 auto;
+}
+
+.wizard-default-avatar {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: $radius-full;
+  border: 3px solid transparent;
+  overflow: hidden;
+  cursor: pointer;
+  background: $color-2;
+  padding: 0;
+  transition: all 0.15s ease;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: $radius-full;
+  }
+
+  &:hover {
+    border-color: $color-3;
+    transform: scale(1.05);
+  }
+
+  &.active {
+    border-color: $color-4;
+    box-shadow: 0 0 0 3px rgba($color-4, 0.3);
+  }
+}
+
+// ===========================================
+// NAVIGATION — big buttons
+// ===========================================
+
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: $gap * 2;
+  border-top: 1px solid $color-2;
+}
+
+.wizard-nav-left {
+  display: flex;
+  gap: $gap;
+}
+
+.wizard-nav-right {
+  display: flex;
+  gap: $gap;
+}
+
+// ===========================================
+// RELAY STEP
+// ===========================================
+
+.wizard-relay-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+  margin-bottom: $gap * 1.5;
+}
+
+.wizard-relay-row {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  padding: $gap;
+  background: $color-2;
+  border-radius: $radius-lg;
+}
+
+.wizard-relay-url {
+  flex: 1;
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wizard-relay-toggles {
+  display: flex;
+  gap: $gap;
+  flex-shrink: 0;
+}
+
+.wizard-relay-toggle {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 4);
+  cursor: pointer;
+  font-size: 14px;
+  color: $color-5;
+  margin: 0;
+
+  input[type="checkbox"] {
+    accent-color: $color-4;
+  }
+}
+
+.wizard-relay-remove {
+  background: none;
+  border: none;
+  color: $color-3;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0 calc($gap / 4);
+  line-height: 1;
+  flex-shrink: 0;
+
+  &:hover {
+    color: $color-red;
+  }
+}
+
+.wizard-relay-add {
+  display: flex;
+  gap: calc($gap / 2);
+  margin-bottom: $gap * 1.5;
+
+  .input {
+    flex: 1;
+  }
+}
+
+.wizard-relay-suggest {
+  display: block;
+  margin: 0 auto;
+}
+
+.wizard-inbox-relay-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+  margin-bottom: $gap * 1.5;
+}
+
+.wizard-relay-row--selected {
+  border: 1px solid $color-4;
+}
+
+.wizard-inbox-relay-label {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  cursor: pointer;
+  margin: 0;
+  width: 100%;
+
+  input[type="checkbox"] {
+    accent-color: $color-4;
+    flex-shrink: 0;
+  }
+}
+
+// ===========================================
+// FOLLOW PACKS STEP
+// ===========================================
+
+.wizard-follow-count {
+  color: $color-4;
+  font-weight: 600;
+  margin-bottom: $gap;
+}
+
+// Pack Grid
+.wizard-pack-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $gap;
+  margin-top: $gap;
+}
+
+.wizard-pack-card {
+  background: $color-2;
+  border-radius: $radius-lg;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.wizard-pack-cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: $color-3;
+  background-size: cover;
+  background-position: center;
+}
+
+.wizard-pack-info {
+  padding: calc($gap * 0.75);
+}
+
+.wizard-pack-title {
+  font-weight: 600;
+  margin-bottom: calc($gap / 4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wizard-pack-meta {
+  font-size: 14px;
+  color: $color-5;
+}
+
+// Pack Detail
+.wizard-pack-detail-cover {
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  background: $color-3;
+  background-size: cover;
+  background-position: center;
+  border-radius: $radius-lg;
+  margin: $gap 0;
+}
+
+.wizard-pack-detail-header {
+  margin-bottom: $gap;
+}
+
+.wizard-pack-user-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+  margin-top: $gap * 1.5;
+}
+
+.wizard-pack-user-row {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  padding: calc($gap * 0.75);
+  background: $color-2;
+  border-radius: $radius-lg;
+}
+
+.wizard-pack-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: $radius-full;
+  background: $color-3;
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+}
+
+.wizard-pack-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wizard-pack-user-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wizard-pack-user-bio {
+  font-size: 14px;
+  color: $color-5;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+// ===========================================
+// LIGHTNING STEP
+// ===========================================
+
+.wizard-lightning-section {
+  margin-bottom: $gap * 2;
+
+  p {
+    margin-bottom: $gap;
+  }
+}
+
+.wizard-lightning-status {
+  margin-top: $gap;
+  line-height: 1.5;
+
+  &--success {
+    color: $color-success;
+  }
+
+  &--error {
+    color: $color-red;
+  }
+}
+
+.wizard-lightning-done {
+  background: $color-2;
+  border-radius: $radius-lg;
+  padding: $gap * 1.5;
+}
+
+// ===========================================
+// DONE STEP
+// ===========================================
+
+.wizard-done {
+  text-align: center;
+
+  h1 {
+    margin-bottom: $gap * 2;
+  }
+}
+
+.wizard-done-preview {
+  background: $color-2;
+  border-radius: $radius-lg;
+  padding: $gap * 2;
+  margin-bottom: $gap * 2;
+}
+
+.wizard-done-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: $radius-full;
+  background-size: cover;
+  background-position: center;
+  background-color: $color-3;
+  margin: 0 auto $gap;
+}
+
+.wizard-done-username {
+  color: $color-3;
+  margin: 0;
+  @include big;
+}
+
+.wizard-done-bio {
+  margin-top: $gap;
+  color: $color-5;
+  line-height: 1.5;
+  @include big;
+}

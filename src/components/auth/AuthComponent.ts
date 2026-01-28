@@ -127,6 +127,14 @@ export class AuthComponent {
           </div>
           <p class="auth-hint">Hardware signer or nsecBunker</p>
         </section>
+
+        <div class="auth-divider">
+          <span>or</span>
+        </div>
+
+        <p class="auth-hint" style="text-align: center;">
+          <a href="#" data-action="create-account">Create a new Nostr account</a>
+        </p>
       </div>
     `;
 
@@ -166,6 +174,16 @@ export class AuthComponent {
         if ((e as KeyboardEvent).key === 'Enter') {
           this.handleBunkerLogin();
         }
+      });
+    }
+
+    // Create account link - clears localStorage and goes to welcome
+    const createAccountLink = primaryContent.querySelector('[data-action="create-account"]');
+    if (createAccountLink) {
+      createAccountLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        localStorage.removeItem('noornote_has_key');
+        this.router.navigate('/welcome');
       });
     }
   }
