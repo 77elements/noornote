@@ -448,3 +448,36 @@ pub async fn launch_key_signer(mode: String) -> Result<(), String> {
     println!("NoorSigner launched successfully");
     Ok(())
 }
+
+/// Remove a NoorSigner account directory (~/.noorsigner/accounts/<npub>/)
+/// Used during onboarding cancellation when no password has been set yet.
+#[command]
+pub async fn remove_noorsigner_account(npub: String) -> Result<(), String> {
+    use std::fs;
+
+    if npub.is_empty() || !npub.starts_with("npub1") {
+        return Err("Invalid npub".to_string());
+    }
+
+    let home = std::env::var("HOME")
+        .map_err(|_| "Failed to get HOME directory".to_string())?;
+    let noorsigner_dir = PathBuf::from(&home).join(".noorsigner");
+    let account_dir = noorsigner_dir.join("accounts").join(&npub);
+
+    if account_dir.exists() {
+        fs::remove_dir_all(&account_dir)
+            .map_err(|e| format!("Failed to remove account directory: {}", e))?;
+    }
+
+    // Clear active_account if it points to the removed account
+    let active_file = noorsigner_dir.join("active_account");
+    if active_file.exists() {
+        if let Ok(active_npub) = fs::read_to_string(&active_file) {
+            if active_npub.trim() == npub {
+                let _ = fs::remove_file(&active_file);
+            }
+        }
+    }
+
+    Ok(())
+}
