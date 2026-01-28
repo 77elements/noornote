@@ -1645,9 +1645,9 @@ export class MainLayout {
    * Show profile setup wizard (new account onboarding).
    * Wizard renders fullscreen, hiding the main app layout.
    */
-  public async showProfileSetupWizard(): Promise<void> {
-    const { ProfileSetupWizard } = await import('../onboarding/ProfileSetupWizard');
-    const wizard = new ProfileSetupWizard();
+  public async showAccountSetupWizard(): Promise<void> {
+    const { AccountSetupWizard } = await import('../onboarding/AccountSetupWizard');
+    const wizard = new AccountSetupWizard();
     wizard.show();
   }
 

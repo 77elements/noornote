@@ -301,3 +301,142 @@
     margin-top: $gap;
   }
 }
+
+// ===========================================
+// WEB ONBOARDING FLOW (Browser-only)
+// ===========================================
+
+.web-onboarding-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc($gap / 2);
+  margin-bottom: $gap * 2;
+  flex-wrap: wrap;
+}
+
+.web-onboarding-step {
+  padding: calc($gap / 2) $gap;
+  border-radius: $radius-sm;
+  font-size: 0.85rem;
+  font-weight: 500;
+
+  &--completed {
+    background: rgba($color-4, 0.2);
+    color: $color-4;
+  }
+
+  &--active {
+    background: $color-4;
+    color: $color-1;
+  }
+
+  &--upcoming {
+    background: $color-3;
+    color: $color-5;
+    opacity: 0.5;
+  }
+}
+
+.web-onboarding-step-line {
+  width: 20px;
+  height: 2px;
+  background: $color-3;
+}
+
+.web-onboarding-section {
+  max-width: 600px;
+  margin-bottom: $gap * 2;
+
+  h2 {
+    margin-bottom: $gap;
+  }
+
+  ol {
+    margin: $gap 0;
+    padding-left: $gap * 1.5;
+    line-height: 1.8;
+  }
+}
+
+.web-onboarding-action {
+  text-align: center;
+  margin: $gap * 2 0;
+
+  .btn {
+    min-width: 200px;
+  }
+}
+
+.web-onboarding-info {
+  background: $color-1;
+  border: 1px solid $color-3;
+  border-radius: $radius-lg;
+  padding: $gap * 1.5;
+  margin: $gap * 1.5 0;
+}
+
+.web-onboarding-code-input {
+  margin: $gap * 2 0;
+
+  label {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    color: $color-5;
+    font-weight: 500;
+  }
+}
+
+.web-onboarding-status {
+  margin-top: calc($gap / 2);
+  font-size: 0.9rem;
+
+  &.error {
+    color: $color-4;
+  }
+}
+
+.web-onboarding-success {
+  background: rgba(#4caf50, 0.1);
+  border: 1px solid #4caf50;
+  border-radius: $radius-lg;
+  padding: $gap * 1.5;
+  margin: $gap * 1.5 0;
+  color: #4caf50;
+
+  p {
+    margin: 0;
+
+    &:not(:last-child) {
+      margin-bottom: calc($gap / 2);
+    }
+  }
+
+  code {
+    background: rgba(#4caf50, 0.2);
+    padding: 2px 6px;
+    border-radius: $radius-sm;
+  }
+}
+
+.web-onboarding-credentials {
+  margin: $gap * 2 0;
+
+  p {
+    margin-bottom: $gap;
+    font-weight: 500;
+  }
+
+  .keypair-item {
+    margin-bottom: $gap;
+  }
+}
+
+.web-onboarding-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: $gap;
+  padding-top: $gap * 2;
+  border-top: 1px solid $color-3;
+  margin-top: $gap * 2;
+}

@@ -1,6 +1,6 @@
 /**
  * Profile Field Helpers
- * Shared field renderers used by ProfileSetupWizard and ProfileEditModal.
+ * Shared field renderers used by AccountSetupWizard and ProfileEditModal.
  * Each helper returns a .form-group HTMLElement with label, input, and optional hint.
  */
 

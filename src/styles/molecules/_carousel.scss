@@ -83,3 +83,17 @@
     opacity: 0.6;
   }
 }
+
+.nn-carousel-caption {
+  text-align: center;
+  margin-top: $gap;
+  font-size: 0.95rem;
+}
+
+// Alby setup carousel variant
+.nn-carousel--alby {
+  .nn-carousel-image {
+    max-width: 600px;
+    border: 1px solid $color-3;
+  }
+}

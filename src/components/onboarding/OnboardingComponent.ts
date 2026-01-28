@@ -1,62 +1,19 @@
 /**
  * Onboarding Component
- * Handles welcome screen and new account creation flow
- * Routes: /welcome, /createnewaccount
+ * Handles welcome screen for new users
+ * "Yes, create account" → starts the AccountSetupWizard
+ * "I already have a key" → navigates to /login
  */
 
 import { Router } from '../../services/Router';
 import { setupCarouselNavigation } from '../../helpers/CarouselHelper';
-import {
-  generateSecretKey,
-  getPublicKey,
-  bytesToHex,
-  encodeNsec,
-  encodeNpub
-} from '../../services/NostrToolsAdapter';
-import { ToastService } from '../../services/ToastService';
-import { PlatformService } from '../../services/PlatformService';
-import { ImportToNoorSignerModal } from '../modals/ImportToNoorSignerModal';
-import { AuthService } from '../../services/AuthService';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { getImageViewer } from '../ui/ImageViewer';
-
-// Tauri APIs for file save dialog
-let tauriSave: typeof import('@tauri-apps/plugin-dialog').save | null = null;
-let tauriWriteTextFile: typeof import('@tauri-apps/plugin-fs').writeTextFile | null = null;
-
-const platform = PlatformService.getInstance();
-
-if (platform.isTauri) {
-  import('@tauri-apps/plugin-dialog').then(mod => { tauriSave = mod.save; });
-  import('@tauri-apps/plugin-fs').then(mod => { tauriWriteTextFile = mod.writeTextFile; });
-}
-
-interface GeneratedKeypair {
-  nsec: string;
-  npub: string;
-  privateKeyHex: string;
-  publicKeyHex: string;
-}
 
 export class OnboardingComponent {
   private router: Router;
-  private currentKeypair: GeneratedKeypair | null = null;
 
   constructor() {
     this.router = Router.getInstance();
-  }
-
-  /**
-   * Generate a new Nostr keypair
-   */
-  private generateKeypair(): GeneratedKeypair {
-    const secretKey = generateSecretKey();
-    const privateKeyHex = bytesToHex(secretKey);
-    const publicKeyHex = getPublicKey(secretKey);
-    const nsec = encodeNsec(privateKeyHex);
-    const npub = encodeNpub(publicKeyHex);
-
-    return { nsec, npub, privateKeyHex, publicKeyHex };
   }
 
   /**
@@ -149,11 +106,14 @@ export class OnboardingComponent {
     const primaryContent = document.querySelector('.primary-content');
     if (!primaryContent) return;
 
-    // "Yes, create account" button
+    // "Yes, create account" button → Start wizard directly
     const newToNostrBtn = primaryContent.querySelector('[data-action="new-to-nostr"]');
     if (newToNostrBtn) {
-      newToNostrBtn.addEventListener('click', () => {
-        this.router.navigate('/createnewaccount');
+      newToNostrBtn.addEventListener('click', async () => {
+        // Import and start the wizard
+        const { AccountSetupWizard } = await import('./AccountSetupWizard');
+        const wizard = new AccountSetupWizard();
+        wizard.show();
       });
     }
 
@@ -183,294 +143,13 @@ export class OnboardingComponent {
   }
 
   /**
-   * Show create account screen (keypair generation)
+   * Redirect to wizard (for /createnewaccount route compatibility)
    */
   public showCreateAccountScreen(): void {
-    const primaryContent = document.querySelector('.primary-content');
-    if (!primaryContent) return;
-
-    // Generate initial keypair
-    this.currentKeypair = this.generateKeypair();
-
-    primaryContent.innerHTML = `
-      <div class="view-content view-content--onboarding">
-        <h1>Create Your Account</h1>
-
-        <section class="create-account-section">
-          <p class="onboarding-intro">
-            Your Nostr identity is a cryptographic key pair. The <strong>private key (nsec)</strong>
-            is your password, keep it secret and safe. The <strong>public key (npub)</strong>
-            is your username, share it with anyone.
-          </p>
-
-          <div class="keypair-display">
-            <div class="keypair-item keypair-item--critical">
-              <label for="nsec-input">Private Key (nsec), keep this secret!</label>
-              <div class="keypair-input-row">
-                <input type="text" id="nsec-input" class="input input--monospace" value="${this.currentKeypair.nsec}" readonly data-key="nsec" />
-                <button class="btn btn--mini" data-action="copy-nsec" title="Copy to clipboard">Copy</button>
-              </div>
-            </div>
-
-            <div class="keypair-item">
-              <label for="npub-input">Public Key (npub), your username</label>
-              <div class="keypair-input-row">
-                <input type="text" id="npub-input" class="input input--monospace" value="${this.currentKeypair.npub}" readonly data-key="npub" />
-                <button class="btn btn--mini" data-action="copy-npub" title="Copy to clipboard">Copy</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="keypair-actions">
-            <button class="btn btn--passive" data-action="regenerate">
-              Regenerate Keys
-            </button>
-            <button class="btn btn--passive" data-action="download">
-              Download Backup
-            </button>
-            <span class="small" style="line-height: 1.5;">or save your keypair in your password manager</span>
-          </div>
-
-          <div class="backup-warning">
-            <p><strong>There is no password recovery.</strong></p>
-            <p>If you lose your private key, you lose access to your account forever.
-            No one can help you recover it, not even us.</p>
-          </div>
-
-          <div class="backup-confirmation">
-            <label class="checkbox-label">
-              <input type="checkbox" data-action="confirm-backup" />
-              <span>I have saved my private key in a secure location</span>
-            </label>
-          </div>
-
-          <div class="create-account-actions">
-            <button class="btn btn--large" data-action="continue" disabled>
-              ${platform.isTauri ? 'Continue' : 'Continue to Login'}
-            </button>
-            <p class="onboarding-hint" style="text-align: left; color: inherit;">
-              ${platform.isTauri
-                ? `Your nsec will be securely transferred to NoorSigner, which runs locally on your machine. It never leaves your computer and is never transmitted over the internet or any other network. NoorSigner stores your nsec encrypted with AES-256 at <code>~/.noorsigner/accounts/</code>. To allow NoorSigner to sign Nostr events on your behalf, it will ask for your password every 24 hours. You'll set this password in the next step.`
-                : 'You\'ll need to import your key into a signer to log in.'}
-            </p>
-          </div>
-        </section>
-      </div>
-    `;
-
-    this.setupCreateAccountListeners();
-  }
-
-  /**
-   * Setup listeners for create account view
-   */
-  private setupCreateAccountListeners(): void {
-    const primaryContent = document.querySelector('.primary-content');
-    if (!primaryContent) return;
-
-    // Copy nsec
-    const copyNsecBtn = primaryContent.querySelector('[data-action="copy-nsec"]');
-    if (copyNsecBtn) {
-      copyNsecBtn.addEventListener('click', () => this.copyToClipboard('nsec'));
-    }
-
-    // Copy npub
-    const copyNpubBtn = primaryContent.querySelector('[data-action="copy-npub"]');
-    if (copyNpubBtn) {
-      copyNpubBtn.addEventListener('click', () => this.copyToClipboard('npub'));
-    }
-
-    // Regenerate keys
-    const regenerateBtn = primaryContent.querySelector('[data-action="regenerate"]');
-    if (regenerateBtn) {
-      regenerateBtn.addEventListener('click', () => this.regenerateKeys());
-    }
-
-    // Download backup
-    const downloadBtn = primaryContent.querySelector('[data-action="download"]');
-    if (downloadBtn) {
-      downloadBtn.addEventListener('click', () => this.downloadBackup());
-    }
-
-    // Backup confirmation checkbox
-    const confirmCheckbox = primaryContent.querySelector('[data-action="confirm-backup"]') as HTMLInputElement;
-    const continueBtn = primaryContent.querySelector('[data-action="continue"]') as HTMLButtonElement;
-    if (confirmCheckbox && continueBtn) {
-      confirmCheckbox.addEventListener('change', () => {
-        continueBtn.disabled = !confirmCheckbox.checked;
-      });
-    }
-
-    // Continue to login
-    if (continueBtn) {
-      continueBtn.addEventListener('click', () => {
-        this.handleContinue();
-      });
-    }
-  }
-
-  /**
-   * Copy key to clipboard
-   */
-  private async copyToClipboard(keyType: 'nsec' | 'npub'): Promise<void> {
-    if (!this.currentKeypair) return;
-
-    const value = keyType === 'nsec' ? this.currentKeypair.nsec : this.currentKeypair.npub;
-    try {
-      await navigator.clipboard.writeText(value);
-      ToastService.show(`${keyType.toUpperCase()} copied to clipboard`, 'success');
-    } catch {
-      ToastService.show('Failed to copy to clipboard', 'error');
-    }
-  }
-
-  /**
-   * Regenerate keypair
-   */
-  private regenerateKeys(): void {
-    this.currentKeypair = this.generateKeypair();
-
-    const nsecInput = document.querySelector('[data-key="nsec"]') as HTMLInputElement;
-    const npubInput = document.querySelector('[data-key="npub"]') as HTMLInputElement;
-    const confirmCheckbox = document.querySelector('[data-action="confirm-backup"]') as HTMLInputElement;
-    const continueBtn = document.querySelector('[data-action="continue"]') as HTMLButtonElement;
-
-    if (nsecInput && this.currentKeypair) {
-      nsecInput.value = this.currentKeypair.nsec;
-    }
-    if (npubInput && this.currentKeypair) {
-      npubInput.value = this.currentKeypair.npub;
-    }
-    // Reset confirmation when regenerating
-    if (confirmCheckbox) {
-      confirmCheckbox.checked = false;
-    }
-    if (continueBtn) {
-      continueBtn.disabled = true;
-    }
-
-    ToastService.show('New keypair generated', 'success');
-  }
-
-  /**
-   * Download backup file
-   */
-  private async downloadBackup(): Promise<void> {
-    if (!this.currentKeypair) return;
-
-    const content = `NOSTR ACCOUNT BACKUP
-====================
-Generated: ${new Date().toISOString()}
-
-PRIVATE KEY (nsec) - KEEP THIS SECRET!
-${this.currentKeypair.nsec}
-
-PUBLIC KEY (npub) - Your username
-${this.currentKeypair.npub}
-
-IMPORTANT:
-- Your private key IS your account
-- There is NO password recovery
-- If you lose this key, you lose your account forever
-- Store this file in a secure location
-`;
-
-    const defaultFileName = `nostr-backup-${this.currentKeypair.npub.slice(0, 12)}.txt`;
-
-    try {
-      if (platform.isTauri && tauriSave && tauriWriteTextFile) {
-        // Tauri: Show save dialog
-        const filePath = await tauriSave({
-          defaultPath: defaultFileName,
-          filters: [{
-            name: 'Text Files',
-            extensions: ['txt']
-          }]
-        });
-
-        if (filePath) {
-          await tauriWriteTextFile(filePath, content);
-          ToastService.show('Backup saved', 'success');
-        }
-      } else if ('showSaveFilePicker' in window) {
-        // Web: File System Access API (shows native save dialog)
-        const handle = await (window as any).showSaveFilePicker({
-          suggestedName: defaultFileName,
-          types: [{
-            description: 'Text Files',
-            accept: { 'text/plain': ['.txt'] }
-          }]
-        });
-        const writable = await handle.createWritable();
-        await writable.write(content);
-        await writable.close();
-        ToastService.show('Backup saved', 'success');
-      } else {
-        // Fallback: Direct download (older browsers)
-        const blob = new Blob([content], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = defaultFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        ToastService.show('Backup saved to Downloads folder', 'success');
-      }
-    } catch (error) {
-      console.error('Failed to save backup:', error);
-      ToastService.show('Failed to save backup', 'error');
-    }
-  }
-
-  /**
-   * Handle "Continue" button click
-   * Tauri: Show import modal for NoorSigner
-   * Web: Navigate to login page
-   */
-  private handleContinue(): void {
-    // On Tauri, show the import modal for seamless NoorSigner integration
-    if (platform.isTauri && this.currentKeypair) {
-      const modal = new ImportToNoorSignerModal({
-        nsec: this.currentKeypair.nsec,
-        npub: this.currentKeypair.npub,
-        onSuccess: async () => {
-          // Only set has_key after password was successfully set
-          localStorage.setItem('noornote_has_key', 'true');
-
-          // Log in the user automatically
-          try {
-            const authService = AuthService.getInstance();
-            const authResult = await authService.authenticateWithKeySigner();
-            if (authResult.success) {
-              // Mark this as a fresh account needing profile setup
-              const currentUser = authService.getCurrentUser();
-              if (currentUser) {
-                const storage = PerAccountLocalStorage.getInstance();
-                storage.setForPubkey(StorageKeys.NEEDS_PROFILE_SETUP, currentUser.pubkey, true);
-              }
-              this.router.navigate('/setup');
-            } else {
-              console.error('Auto-login failed:', authResult.error);
-              this.router.navigate('/login');
-            }
-          } catch (error) {
-            console.error('Auto-login failed:', error);
-            // Fall back to login page
-            this.router.navigate('/login');
-          }
-        },
-        onCancel: () => {
-          // User can still go to login manually
-        }
-      });
-      modal.show();
-    } else {
-      // Web: Navigate to login page
-      localStorage.setItem('noornote_has_key', 'true');
-      this.router.navigate('/login');
-    }
+    // Redirect to wizard
+    import('./AccountSetupWizard').then(({ AccountSetupWizard }) => {
+      const wizard = new AccountSetupWizard();
+      wizard.show();
+    });
   }
 }
