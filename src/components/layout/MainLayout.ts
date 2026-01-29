@@ -1260,14 +1260,38 @@ export class MainLayout {
     const authMethod = this.authService.getAuthMethod();
 
     if (authMethod === 'key-signer') {
-      // NoorSigner: Show instruction modal first
-      this.showAddAccountInstructions();
+      const isSilentMode = localStorage.getItem('noorsigner_silent_mode') === 'true';
+      if (isSilentMode) {
+        this.showAddAccountSilent();
+      } else {
+        this.showAddAccountInstructions();
+      }
     } else {
       // Bunker: Navigate to login
       sessionStorage.setItem('noornote_add_account', 'true');
       const router = Router.getInstance();
       router.navigate('/login');
     }
+  }
+
+  /**
+   * Show import modal for adding account in silent mode
+   */
+  private async showAddAccountSilent(): Promise<void> {
+    const { ImportToNoorSignerModal } = await import('../modals/ImportToNoorSignerModal');
+    const modal = new ImportToNoorSignerModal({
+      nsec: '',
+      npub: '',
+      showNsecInput: true,
+      onSuccess: async () => {
+        // Re-authenticate with newly added account
+        const result = await this.authService.authenticateWithKeySigner();
+        if (result.success) {
+          window.location.reload();
+        }
+      }
+    });
+    modal.show();
   }
 
   /**

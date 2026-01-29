@@ -49,6 +49,8 @@ pub fn run() {
       key_signer::ensure_noorsigner_installed,
       key_signer::add_account_via_cli,
       key_signer::launch_daemon_silent,
+      key_signer::has_noorsigner_accounts,
+      key_signer::launch_daemon_with_password,
       key_signer::remove_noorsigner_account,
       icloud_check::check_icloud_keychain
     ])

@@ -565,6 +565,25 @@ export class KeySignerClient {
   }
 
   /**
+   * Launch NoorSigner daemon with password (silent, no terminal)
+   * Used when trust session is expired and silent mode is enabled
+   */
+  public async launchDaemonWithPassword(password: string): Promise<string> {
+    this.ensureTauri();
+    const { invoke } = await import('@tauri-apps/api/core');
+    return invoke<string>('launch_daemon_with_password', { password });
+  }
+
+  /**
+   * Check if any NoorSigner accounts exist on disk
+   */
+  public async hasAccounts(): Promise<boolean> {
+    this.ensureTauri();
+    const { invoke } = await import('@tauri-apps/api/core');
+    return invoke<boolean>('has_noorsigner_accounts');
+  }
+
+  /**
    * Destroy instance
    */
   public static destroy(): void {

@@ -10,6 +10,7 @@ import { ToastService } from '../../services/ToastService';
 export interface ImportToNoorSignerModalOptions {
   nsec: string;
   npub: string;
+  showNsecInput?: boolean;
   onSuccess: (result: { pubkey: string; npub: string }) => void;
   onCancel?: () => void;
 }
@@ -40,8 +41,10 @@ export class ImportToNoorSignerModal {
 
     setTimeout(() => {
       this.setupEventHandlers();
-      const input = document.getElementById('import-password-input') as HTMLInputElement;
-      input?.focus();
+      const focusTarget = this.options.showNsecInput
+        ? document.getElementById('import-nsec-input')
+        : document.getElementById('import-password-input');
+      (focusTarget as HTMLInputElement)?.focus();
     }, 0);
   }
 
@@ -55,6 +58,19 @@ export class ImportToNoorSignerModal {
           NoorSigner will securely store your private key with password encryption.
           You'll use this password to unlock your account.
         </p>
+
+        ${this.options.showNsecInput ? `
+        <div class="import-noorsigner-modal__field">
+          <label for="import-nsec-input">Private Key (nsec)</label>
+          <input
+            type="password"
+            id="import-nsec-input"
+            class="input"
+            placeholder="nsec1..."
+            autocomplete="off"
+          />
+        </div>
+        ` : ''}
 
         <div class="import-noorsigner-modal__field">
           <label for="import-password-input">Password (min. 8 characters)</label>
@@ -95,6 +111,7 @@ export class ImportToNoorSignerModal {
   }
 
   private setupEventHandlers(): void {
+    const nsecInput = document.getElementById('import-nsec-input') as HTMLInputElement | null;
     const passwordInput = document.getElementById('import-password-input') as HTMLInputElement;
     const confirmInput = document.getElementById('import-password-confirm') as HTMLInputElement;
     const cancelBtn = document.getElementById('import-password-cancel-btn');
@@ -106,10 +123,26 @@ export class ImportToNoorSignerModal {
     const handleSubmit = async () => {
       if (this.isSubmitting) return;
 
+      // Get nsec: from input field or from options
+      const nsec = this.options.showNsecInput ? nsecInput?.value?.trim() || '' : this.options.nsec;
       const password = passwordInput.value;
       const confirm = confirmInput.value;
 
-      // Validate
+      // Validate nsec if user input
+      if (this.options.showNsecInput) {
+        if (!nsec) {
+          this.showError('Please enter your private key (nsec)');
+          nsecInput?.focus();
+          return;
+        }
+        if (!nsec.startsWith('nsec1')) {
+          this.showError('Invalid format — must start with nsec1');
+          nsecInput?.focus();
+          return;
+        }
+      }
+
+      // Validate password
       if (!password) {
         this.showError('Please enter a password');
         passwordInput.focus();
@@ -140,16 +173,17 @@ export class ImportToNoorSignerModal {
         let result: { pubkey: string; npub: string };
 
         if (daemonRunning) {
-          // Daemon running - use API
+          // Daemon running - use API to add, then switch in-memory key
           result = await this.keySignerClient.addAccount(
-            this.options.nsec,
+            nsec,
             password,
-            true // setActive
+            true // setActive on disk
           );
+          await this.keySignerClient.switchAccount(result.npub, password);
         } else {
           // Daemon not running - use CLI
           result = await this.keySignerClient.addAccountViaCli(
-            this.options.nsec,
+            nsec,
             password
           );
 
@@ -159,7 +193,6 @@ export class ImportToNoorSignerModal {
             await invoke('launch_daemon_silent');
           } catch (daemonError) {
             console.error('Failed to start daemon:', daemonError);
-            // Continue anyway - user can start daemon manually
           }
         }
 
@@ -208,10 +241,21 @@ export class ImportToNoorSignerModal {
       }
     });
 
+    if (nsecInput) {
+      nsecInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          passwordInput.focus();
+        } else if (e.key === 'Escape') {
+          handleCancel();
+        }
+      });
+    }
+
     // Clear error when typing
     const clearError = () => {
       errorEl.style.display = 'none';
     };
+    nsecInput?.addEventListener('input', clearError);
     passwordInput.addEventListener('input', clearError);
     confirmInput.addEventListener('input', clearError);
   }
