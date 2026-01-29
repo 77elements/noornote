@@ -798,13 +798,6 @@ export class AccountSetupWizard {
         const hasWallet = !!this.walletCredentials;
 
         el.innerHTML += `
-          <div class="wizard-extension-action">
-            <button class="btn btn--large" data-action="open-rizful">
-              Open Rizful
-            </button>
-            <p class="wizard-hint">Create an account, then come back with your code</p>
-          </div>
-
           <div class="wizard-info-box">
             <p><strong>On Rizful:</strong></p>
             <ol>
@@ -812,8 +805,14 @@ export class AccountSetupWizard {
               <li>Create an account at <a href="https://rizful.com/create-account" target="_blank" rel="noopener">rizful.com/create-account</a></li>
               <li>Wait for the confirmation email and click "Verify your account" in it</li>
               <li>On the Rizful verification page, click "Verify Account" to confirm</li>
-              <li>Come back here and click the "Open Rizful" button above</li>
+              <li>Come back here and click the "Open Rizful" button below</li>
             </ol>
+          </div>
+
+          <div class="wizard-extension-action">
+            <button class="btn btn--large" data-action="open-rizful">
+              Open Rizful
+            </button>
           </div>
 
           <div class="wizard-code-input">
