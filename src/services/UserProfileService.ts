@@ -308,6 +308,14 @@ export class UserProfileService {
   }
 
   /**
+   * Manually set a profile in cache (e.g., after onboarding publish)
+   */
+  public setCachedProfile(pubkey: string, profile: UserProfile): void {
+    this.addToCache(pubkey, profile);
+    this.notifyProfileUpdate(pubkey, profile);
+  }
+
+  /**
    * Invalidate cached profile (e.g., after profile edit)
    */
   public invalidateProfile(pubkey: string): void {
