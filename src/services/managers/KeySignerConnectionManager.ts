@@ -111,7 +111,7 @@ export class KeySignerConnectionManager {
    * Check if silent mode is enabled
    */
   public isSilentMode(): boolean {
-    return localStorage.getItem(SILENT_MODE_KEY) === 'true';
+    return localStorage.getItem(SILENT_MODE_KEY) !== 'false';
   }
 
   /**

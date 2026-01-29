@@ -67,7 +67,7 @@ export class KeySignerSection extends SettingsSection {
             <div class="setting-row">
               <div class="setting-info">
                 <label class="setting-label">Manage NoorSigner via NoorNote</label>
-                <p class="setting-description">Handle password prompts through NoorNote instead of opening a terminal window.</p>
+                <p class="setting-description">Handle key signer prompts through NoorNote instead of opening a terminal window.</p>
               </div>
               <div id="silent-mode-switch-container"></div>
             </div>
@@ -129,7 +129,7 @@ export class KeySignerSection extends SettingsSection {
       // Silent mode switch
       const silentContainer = contentContainer.querySelector('#silent-mode-switch-container');
       if (silentContainer) {
-        const isSilent = localStorage.getItem(SILENT_MODE_KEY) === 'true';
+        const isSilent = localStorage.getItem(SILENT_MODE_KEY) !== 'false';
 
         this.silentModeSwitch = new Switch({
           label: '',

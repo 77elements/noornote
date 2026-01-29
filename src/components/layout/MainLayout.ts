@@ -1260,7 +1260,7 @@ export class MainLayout {
     const authMethod = this.authService.getAuthMethod();
 
     if (authMethod === 'key-signer') {
-      const isSilentMode = localStorage.getItem('noorsigner_silent_mode') === 'true';
+      const isSilentMode = localStorage.getItem('noorsigner_silent_mode') !== 'false';
       if (isSilentMode) {
         this.showAddAccountSilent();
       } else {
