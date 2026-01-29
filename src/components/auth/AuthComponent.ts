@@ -135,6 +135,10 @@ export class AuthComponent {
         <p class="auth-hint" style="text-align: center;">
           <a href="#" data-action="create-account">Create a new Nostr account</a>
         </p>
+
+        <p class="auth-hint ${!platform.isTauri ? 'hidden' : ''}" style="text-align: center;">
+          <a href="#" data-action="import-to-noorsigner">Import existing key to NoorSigner</a>
+        </p>
       </div>
     `;
 
@@ -186,6 +190,15 @@ export class AuthComponent {
         this.router.navigate('/welcome');
       });
     }
+
+    // Import key to NoorSigner link
+    const importLink = primaryContent.querySelector('[data-action="import-to-noorsigner"]');
+    if (importLink) {
+      importLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.showImportModal();
+      });
+    }
   }
 
   /**
@@ -212,6 +225,47 @@ export class AuthComponent {
       btn.disabled = false;
       btn.textContent = text;
     }
+  }
+
+  /**
+   * Show unlock modal when trust session expired (silent mode)
+   */
+  private showUnlockModal(): void {
+    import('../modals/UnlockNoorSignerModal').then(({ UnlockNoorSignerModal }) => {
+      const modal = new UnlockNoorSignerModal({
+        onSuccess: async () => {
+          const retryResult = await this.authService.authenticateWithKeySigner();
+          if (retryResult.success && retryResult.npub && retryResult.pubkey) {
+            this.handleLoginSuccess(retryResult.npub, retryResult.pubkey, 'NoorSigner');
+          } else {
+            this.showError(retryResult.error || 'Authentication failed after unlock');
+          }
+        }
+      });
+      modal.show();
+    });
+  }
+
+  /**
+   * Show import modal when no NoorSigner accounts exist (silent mode)
+   */
+  private showImportModal(): void {
+    import('../modals/ImportToNoorSignerModal').then(({ ImportToNoorSignerModal }) => {
+      const modal = new ImportToNoorSignerModal({
+        nsec: '',
+        npub: '',
+        showNsecInput: true,
+        onSuccess: async () => {
+          const retryResult = await this.authService.authenticateWithKeySigner();
+          if (retryResult.success && retryResult.npub && retryResult.pubkey) {
+            this.handleLoginSuccess(retryResult.npub, retryResult.pubkey, 'NoorSigner');
+          } else {
+            this.showError(retryResult.error || 'Authentication failed after import');
+          }
+        }
+      });
+      modal.show();
+    });
   }
 
   /**
@@ -258,6 +312,18 @@ export class AuthComponent {
       cancelBtn?.remove();
 
       if (userCancelled) return;
+
+      if (result.needsPassword) {
+        this.resetButton(keySignerBtn, originalText);
+        this.showUnlockModal();
+        return;
+      }
+
+      if (result.needsImport) {
+        this.resetButton(keySignerBtn, originalText);
+        this.showImportModal();
+        return;
+      }
 
       if (result.success && result.npub && result.pubkey) {
         this.handleLoginSuccess(result.npub, result.pubkey, 'NoorSigner');

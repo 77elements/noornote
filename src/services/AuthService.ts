@@ -355,7 +355,10 @@ export class AuthService {
    * Authenticate with KeySigner daemon
    * NO localStorage session - daemon is single source of truth
    */
-  public async authenticateWithKeySigner(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
+  public async authenticateWithKeySigner(): Promise<{
+    success: boolean; npub?: string; pubkey?: string; error?: string;
+    needsPassword?: boolean; needsImport?: boolean;
+  }> {
     if (!this.keySignerManager) {
       return {
         success: false,
@@ -365,6 +368,11 @@ export class AuthService {
 
     try {
       const result = await this.keySignerManager.authenticate();
+
+      // Pass through needsPassword/needsImport for silent mode
+      if (result.needsPassword || result.needsImport) {
+        return result;
+      }
 
       if (result.success && result.npub && result.pubkey) {
         this.currentUser = { npub: result.npub, pubkey: result.pubkey };

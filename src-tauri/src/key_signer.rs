@@ -449,6 +449,99 @@ pub async fn launch_key_signer(mode: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Check if any NoorSigner accounts exist (~/.noorsigner/accounts/ has subdirectories)
+#[command]
+pub async fn has_noorsigner_accounts() -> Result<bool, String> {
+    let home = std::env::var("HOME")
+        .map_err(|_| "Failed to get HOME directory".to_string())?;
+    let accounts_dir = PathBuf::from(home).join(".noorsigner").join("accounts");
+
+    if !accounts_dir.exists() {
+        return Ok(false);
+    }
+
+    let entries = std::fs::read_dir(&accounts_dir)
+        .map_err(|e| format!("Failed to read accounts directory: {}", e))?;
+
+    for entry in entries {
+        if let Ok(entry) = entry {
+            if entry.path().is_dir() {
+                return Ok(true);
+            }
+        }
+    }
+
+    Ok(false)
+}
+
+/// Launch NoorSigner daemon with password piped via stdin (silent, no terminal)
+/// Used when trust session is expired and silent mode is enabled
+#[command]
+pub async fn launch_daemon_with_password(password: String) -> Result<String, String> {
+    use std::process::{Command, Stdio};
+
+    ensure_noorsigner_installed().await?;
+    let noorsigner_path = get_noorsigner_path()?;
+
+    if !noorsigner_path.exists() {
+        return Err(format!(
+            "NoorSigner binary not found at: {}",
+            noorsigner_path.display()
+        ));
+    }
+
+    let socket_path = get_socket_path()?;
+    if socket_path.exists() {
+        // Daemon already running
+        return Ok("already_running".to_string());
+    }
+
+    let mut child = Command::new(&noorsigner_path)
+        .arg("daemon")
+        .arg("--password-stdin")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to launch daemon: {}", e))?;
+
+    // Write password to stdin
+    if let Some(mut stdin) = child.stdin.take() {
+        use std::io::Write;
+        let password_with_newline = format!("{}\n", password);
+        stdin.write_all(password_with_newline.as_bytes())
+            .map_err(|e| format!("Failed to write password: {}", e))?;
+    }
+
+    // Wait for socket to appear (daemon forks to background after password validation)
+    use std::time::{Duration, Instant};
+    let start = Instant::now();
+    let timeout = Duration::from_secs(5);
+
+    while start.elapsed() < timeout {
+        if socket_path.exists() {
+            return Ok("success".to_string());
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+
+    // Socket didn't appear - check if process exited with error
+    match child.try_wait() {
+        Ok(Some(_status)) => {
+            let output = child.wait_with_output()
+                .map_err(|e| format!("Failed to read output: {}", e))?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if stdout.contains("Invalid password") {
+                return Err("invalid_password".to_string());
+            }
+            Err(format!("Daemon failed to start: {}", stdout.trim()))
+        }
+        _ => {
+            Err("Daemon did not start within timeout".to_string())
+        }
+    }
+}
+
 /// Remove a NoorSigner account directory (~/.noorsigner/accounts/<npub>/)
 /// Used during onboarding cancellation when no password has been set yet.
 #[command]

@@ -20,6 +20,7 @@ import { EventBus } from '../../services/EventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ImageUploader } from '../profile/ImageUploader';
 import { ToastService } from '../../services/ToastService';
+import { UserProfileService } from '../../services/UserProfileService';
 import { RelayListOrchestrator } from '../../services/orchestration/RelayListOrchestrator';
 import type { RelayInfo, RelayType } from '../../services/RelayConfig';
 import { PlatformService } from '../../services/PlatformService';
@@ -537,29 +538,31 @@ export class AccountSetupWizard {
       restartBtn.textContent = 'Restart';
       restartBtn.addEventListener('click', () => this.restartWizard());
       navLeft.appendChild(restartBtn);
-
-      const prevBtn = document.createElement('button');
-      prevBtn.className = 'btn btn--large btn--passive';
-      prevBtn.textContent = 'Previous';
-      prevBtn.addEventListener('click', () => this.goToPreviousStep());
-      navLeft.appendChild(prevBtn);
     }
-    nav.appendChild(navLeft);
-
-    const navRight = document.createElement('div');
-    navRight.className = 'wizard-nav-right';
 
     if (showSkip) {
       const skipBtn = document.createElement('button');
       skipBtn.className = 'btn btn--large btn--passive';
       skipBtn.textContent = 'Skip';
       skipBtn.addEventListener('click', () => this.goToNextStep());
-      navRight.appendChild(skipBtn);
+      navLeft.appendChild(skipBtn);
+    }
+    nav.appendChild(navLeft);
+
+    const navRight = document.createElement('div');
+    navRight.className = 'wizard-nav-right';
+
+    if (!isFirst) {
+      const prevBtn = document.createElement('button');
+      prevBtn.className = 'btn btn--large btn--passive';
+      prevBtn.textContent = '<';
+      prevBtn.addEventListener('click', () => this.goToPreviousStep());
+      navRight.appendChild(prevBtn);
     }
 
     const nextBtn = document.createElement('button');
     nextBtn.className = 'btn btn--large';
-    nextBtn.textContent = 'Next';
+    nextBtn.textContent = '>';
     // Set initial state based on validation (after a microtask to let render complete)
     if (isRequired) {
       nextBtn.disabled = true;
@@ -795,21 +798,21 @@ export class AccountSetupWizard {
         const hasWallet = !!this.walletCredentials;
 
         el.innerHTML += `
+          <div class="wizard-info-box">
+            <p><strong>On Rizful:</strong></p>
+            <ol>
+              <li>Open <a href="https://rizful.com" target="_blank" rel="noopener">rizful.com</a></li>
+              <li>Create an account at <a href="https://rizful.com/create-account" target="_blank" rel="noopener">rizful.com/create-account</a></li>
+              <li>Wait for the confirmation email and click "Verify your account" in it</li>
+              <li>On the Rizful verification page, click "Verify Account" to confirm</li>
+              <li>Come back here and click the "Open Rizful" button below</li>
+            </ol>
+          </div>
+
           <div class="wizard-extension-action">
             <button class="btn btn--large" data-action="open-rizful">
               Open Rizful
             </button>
-            <p class="wizard-hint">Create an account, then come back with your code</p>
-          </div>
-
-          <div class="wizard-info-box">
-            <p><strong>On Rizful:</strong></p>
-            <ol>
-              <li>Create an account (email + password)</li>
-              <li>Verify your email</li>
-              <li>Copy the one-time code</li>
-              <li>Paste it below</li>
-            </ol>
           </div>
 
           <div class="wizard-code-input">
@@ -2135,13 +2138,13 @@ IMPORTANT:
         openSection.className = 'wizard-lightning-section';
         openSection.innerHTML = `
           <p><strong>How it works:</strong></p>
-          <ul class="wizard-lightning-steps">
-            <li>Click the button below to open Rizful in your browser</li>
-            <li>Register a free account (email + password)</li>
-            <li>Verify your email by clicking the link Rizful sends you</li>
-            <li>Come back here and click the button again to get your one-time code</li>
-            <li>Copy the code, paste it below and press "Connect"</li>
-          </ul>
+          <ol class="wizard-lightning-steps">
+            <li>Open <a href="https://rizful.com" target="_blank" rel="noopener">rizful.com</a></li>
+            <li>Create an account at <a href="https://rizful.com/create-account" target="_blank" rel="noopener">rizful.com/create-account</a></li>
+            <li>Wait for the confirmation email and click "Verify your account" in it</li>
+            <li>You'll land on the Rizful verification page. Confirm by clicking "Verify Account" there</li>
+            <li>Come back here and click the "Open Rizful" button below</li>
+          </ol>
           <button class="btn btn--large" data-action="open-rizful">Open Rizful</button>
         `;
         el.appendChild(openSection);
@@ -2227,8 +2230,6 @@ IMPORTANT:
 
             statusEl.innerHTML = `Connected! Your Lightning address: <strong>${this.escapeHtml(data.lightning_address)}</strong>`;
             statusEl.classList.add('wizard-lightning-status--success');
-
-            ToastService.show('Lightning wallet connected!', 'success');
           } catch (error) {
             statusEl.textContent = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
             statusEl.classList.add('wizard-lightning-status--error');
@@ -2267,7 +2268,7 @@ IMPORTANT:
             ${this.profileData.lud16 ? `<p class="wizard-done-bio">⚡ ${this.escapeHtml(this.profileData.lud16)}</p>` : ''}
           </div>
           <div class="wizard-nav" style="border-top: none;">
-            <button class="btn btn--large btn--passive" data-wizard-action="prev">Previous</button>
+            <button class="btn btn--large btn--passive" data-wizard-action="prev"><</button>
             <button class="btn btn--large" data-wizard-action="finish"${this.publishing ? ' disabled' : ''}>
               <span data-finish-text>Save & Go to Timeline</span>
               <span data-finish-spinner style="display: none;">Publishing...</span>
@@ -2323,9 +2324,21 @@ IMPORTANT:
         this.followedPubkeys.forEach(pubkey => followUser(pubkey, false));
       }
 
+      // Update ProfileService cache so profile is immediately available
+      const currentPubkey = this.authService.getCurrentUser()?.pubkey;
+      if (currentPubkey) {
+        const cachedProfile: import('../../services/UserProfileService').UserProfile = { pubkey: currentPubkey, lastUpdated: Date.now() };
+        if (this.profileData.name) cachedProfile.name = this.profileData.name;
+        if (this.profileData.display_name) cachedProfile.display_name = this.profileData.display_name;
+        if (this.profileData.picture) cachedProfile.picture = this.profileData.picture;
+        if (this.profileData.about) cachedProfile.about = this.profileData.about;
+        if (this.profileData.lud16) cachedProfile.lud16 = this.profileData.lud16;
+        UserProfileService.getInstance().setCachedProfile(currentPubkey, cachedProfile);
+      }
+
       // Done
       this.eventBus.emit('profile:updated', {
-        pubkey: this.authService.getCurrentUser()?.pubkey
+        pubkey: currentPubkey
       });
 
       this.storage.remove(StorageKeys.NEEDS_PROFILE_SETUP);

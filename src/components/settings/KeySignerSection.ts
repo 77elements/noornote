@@ -2,7 +2,7 @@
  * KeySignerSection Component
  * Manages NoorSigner key signer settings (Tauri only)
  *
- * @purpose Configure autostart and manage key signer daemon
+ * @purpose Configure autostart, silent mode, and manage key signer daemon
  * @used-by SettingsView
  */
 
@@ -12,10 +12,13 @@ import { AuthService } from '../../services/AuthService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
 
+const SILENT_MODE_KEY = 'noorsigner_silent_mode';
+
 export class KeySignerSection extends SettingsSection {
   private keySignerClient: KeySignerClient;
   private authService: AuthService;
   private autostartSwitch: Switch | null = null;
+  private silentModeSwitch: Switch | null = null;
 
   constructor(keySignerClient: KeySignerClient) {
     super('key-signer');
@@ -60,6 +63,16 @@ export class KeySignerSection extends SettingsSection {
             </div>
           </div>
 
+          <div class="key-signer-autostart">
+            <div class="setting-row">
+              <div class="setting-info">
+                <label class="setting-label">Manage NoorSigner via NoorNote</label>
+                <p class="setting-description">Handle key signer prompts through NoorNote instead of opening a terminal window.</p>
+              </div>
+              <div id="silent-mode-switch-container"></div>
+            </div>
+          </div>
+
           <div class="settings-section__actions">
             <button class="btn btn--medium" id="stop-daemon-btn">Stop Key Signer & Logout</button>
           </div>
@@ -81,6 +94,7 @@ export class KeySignerSection extends SettingsSection {
     if (isRunning) {
       const isEnabled = await this.keySignerClient.getAutostartStatus();
 
+      // Autostart switch
       const switchContainer = contentContainer.querySelector('#autostart-switch-container');
       if (switchContainer) {
         this.autostartSwitch = new Switch({
@@ -112,6 +126,27 @@ export class KeySignerSection extends SettingsSection {
         this.autostartSwitch.setupEventListeners(switchContainer as HTMLElement);
       }
 
+      // Silent mode switch
+      const silentContainer = contentContainer.querySelector('#silent-mode-switch-container');
+      if (silentContainer) {
+        const isSilent = localStorage.getItem(SILENT_MODE_KEY) !== 'false';
+
+        this.silentModeSwitch = new Switch({
+          label: '',
+          checked: isSilent,
+          onChange: (checked) => {
+            localStorage.setItem(SILENT_MODE_KEY, String(checked));
+            ToastService.show(
+              checked ? 'NoorSigner managed via NoorNote' : 'NoorSigner uses terminal mode',
+              'success'
+            );
+          }
+        });
+
+        silentContainer.innerHTML = this.silentModeSwitch.render();
+        this.silentModeSwitch.setupEventListeners(silentContainer as HTMLElement);
+      }
+
       const stopBtn = contentContainer.querySelector('#stop-daemon-btn');
       if (stopBtn) {
         stopBtn.addEventListener('click', async () => {
@@ -125,8 +160,7 @@ export class KeySignerSection extends SettingsSection {
    * Unmount section and cleanup
    */
   public unmount(): void {
-    if (this.autostartSwitch) {
-      this.autostartSwitch = null;
-    }
+    this.autostartSwitch = null;
+    this.silentModeSwitch = null;
   }
 }

@@ -10,6 +10,17 @@ import { KeySignerClient } from '../KeySignerClient';
 import { PlatformService } from '../PlatformService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 
+export interface KeySignerAuthResult {
+  success: boolean;
+  npub?: string;
+  pubkey?: string;
+  error?: string;
+  needsPassword?: boolean;
+  needsImport?: boolean;
+}
+
+const SILENT_MODE_KEY = 'noorsigner_silent_mode';
+
 export class KeySignerConnectionManager {
   private keySigner: KeySignerClient | null = null;
   private logger: SystemLogger;
@@ -97,9 +108,16 @@ export class KeySignerConnectionManager {
   }
 
   /**
+   * Check if silent mode is enabled
+   */
+  public isSilentMode(): boolean {
+    return localStorage.getItem(SILENT_MODE_KEY) !== 'false';
+  }
+
+  /**
    * Authenticate with KeySigner
    */
-  public async authenticate(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
+  public async authenticate(): Promise<KeySignerAuthResult> {
     if (!PlatformService.getInstance().isTauri) {
       return { success: false, error: 'KeySigner only available in Tauri' };
     }
@@ -111,6 +129,11 @@ export class KeySignerConnectionManager {
       const isRunning = await this.keySigner.isRunning();
 
       if (!isRunning) {
+        if (this.isSilentMode()) {
+          return this.authenticateSilent();
+        }
+
+        // Terminal mode (default): launch with terminal fallback
         this.logger.info('KeySigner', 'Daemon not running, launching...');
         await this.keySigner.launchDaemon();
 
@@ -138,28 +161,7 @@ export class KeySignerConnectionManager {
         }
       }
 
-      this.keySignerAbortController = new AbortController();
-
-      this.logger.info('KeySigner', 'Getting pubkey...');
-      const pubkey = await this.keySigner.getPubkey();
-
-      if (!pubkey) {
-        throw new Error('Failed to get pubkey from KeySigner');
-      }
-
-      this.logger.success('KeySigner', `Got pubkey: ${pubkey.slice(0, 8)}...`);
-
-      const { hexToNpub } = await import('../../helpers/nip19');
-      const npub = await hexToNpub(pubkey);
-
-      if (!npub) {
-        this.keySigner = null;
-        return { success: false, error: 'Failed to convert pubkey to npub' };
-      }
-
-      this.startDaemonPolling();
-
-      return { success: true, npub, pubkey };
+      return this.finishAuthentication();
     } catch (_error: any) {
       this.logger.error('KeySigner', `Authentication failed: ${_error}`);
 
@@ -173,6 +175,84 @@ export class KeySignerConnectionManager {
     } finally {
       this.keySignerAbortController = null;
     }
+  }
+
+  /**
+   * Silent mode authentication: check state first, then launch or prompt
+   */
+  private async authenticateSilent(): Promise<KeySignerAuthResult> {
+    this.logger.info('KeySigner', 'Silent mode: checking state...');
+
+    // Check accounts and trust session BEFORE trying to launch
+    const hasAccounts = await this.keySigner!.hasAccounts();
+    if (!hasAccounts) {
+      this.logger.info('KeySigner', 'No accounts found — import needed');
+      this.keySigner = null;
+      return { success: false, needsImport: true };
+    }
+
+    const hasTrust = await this.keySigner!.checkTrustSession();
+    if (!hasTrust) {
+      this.logger.info('KeySigner', 'Trust session expired — password needed');
+      this.keySigner = null;
+      return { success: false, needsPassword: true };
+    }
+
+    // Trust session valid — launch daemon silently
+    this.logger.info('KeySigner', 'Trust session valid, launching daemon silently...');
+    try {
+      const { invoke } = await import('@tauri-apps/api/core');
+      await invoke('launch_daemon_silent');
+    } catch (_error) {
+      this.logger.warn('KeySigner', `Silent launch invoke failed: ${_error}`);
+    }
+
+    // Wait for daemon to start
+    const maxWait = 3000;
+    const pollInterval = 200;
+    const startTime = Date.now();
+
+    while (Date.now() - startTime < maxWait) {
+      await new Promise(resolve => setTimeout(resolve, pollInterval));
+      const running = await this.keySigner!.isRunning();
+      if (running) {
+        this.logger.success('KeySigner', 'Silent launch successful');
+        return this.finishAuthentication();
+      }
+    }
+
+    // Fallback: trust session seemed valid but daemon didn't start
+    this.logger.warn('KeySigner', 'Daemon did not start despite valid trust session');
+    this.keySigner = null;
+    return { success: false, needsPassword: true };
+  }
+
+  /**
+   * Complete authentication after daemon is confirmed running
+   */
+  private async finishAuthentication(): Promise<KeySignerAuthResult> {
+    this.keySignerAbortController = new AbortController();
+
+    this.logger.info('KeySigner', 'Getting pubkey...');
+    const pubkey = await this.keySigner!.getPubkey();
+
+    if (!pubkey) {
+      throw new Error('Failed to get pubkey from KeySigner');
+    }
+
+    this.logger.success('KeySigner', `Got pubkey: ${pubkey.slice(0, 8)}...`);
+
+    const { hexToNpub } = await import('../../helpers/nip19');
+    const npub = await hexToNpub(pubkey);
+
+    if (!npub) {
+      this.keySigner = null;
+      return { success: false, error: 'Failed to convert pubkey to npub' };
+    }
+
+    this.startDaemonPolling();
+
+    return { success: true, npub, pubkey };
   }
 
   /**
