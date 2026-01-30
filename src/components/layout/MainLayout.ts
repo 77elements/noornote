@@ -886,6 +886,42 @@ export class MainLayout {
         }
       });
     });
+
+    // Swipe gestures: edge-swipe to open, swipe-left to close
+    const edgeThreshold = 30;
+    const minSwipeDistance = 50;
+    let startX = 0;
+    let startY = 0;
+
+    document.addEventListener('touchstart', (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (!touch) return;
+      startX = touch.clientX;
+      startY = touch.clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e: TouchEvent) => {
+      if (!this.layoutService.isPhone()) return;
+      const touch = e.changedTouches[0];
+      if (!touch) return;
+
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+
+      if (Math.abs(deltaX) <= Math.abs(deltaY) || Math.abs(deltaX) < minSwipeDistance) return;
+
+      const isOpen = sidebar.classList.contains('sidebar--open');
+
+      if (!isOpen && deltaX > 0 && startX < edgeThreshold) {
+        // Swipe right from left edge → open
+        sidebar.classList.add('sidebar--open');
+        overlay.classList.add('sidebar-overlay--visible');
+      } else if (isOpen && deltaX < 0) {
+        // Swipe left while open → close
+        sidebar.classList.remove('sidebar--open');
+        overlay.classList.remove('sidebar-overlay--visible');
+      }
+    }, { passive: true });
   }
 
   /**

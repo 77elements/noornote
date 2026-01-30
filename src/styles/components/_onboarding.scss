@@ -31,9 +31,13 @@
 
 .onboarding-choices {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: $gap * 2;
   margin: $gap * 2 0;
+
+  @include tablet {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .onboarding-choice {
@@ -77,6 +81,7 @@
   margin: $gap;
 
   .auth-hint {
+    margin-top: $gap;
     color: $color-3;
 
     a {
