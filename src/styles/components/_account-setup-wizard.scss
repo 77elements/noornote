@@ -56,7 +56,10 @@
   align-items: center;
   justify-content: center;
   margin-bottom: $gap * 3;
-  padding: 0 $gap * 4;
+  width: 100%;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .wizard-progress-dot {
@@ -84,7 +87,6 @@
   flex: 1;
   height: 2px;
   background: $color-2;
-  min-width: 24px;
 }
 
 // ===========================================
