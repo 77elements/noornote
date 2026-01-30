@@ -62,30 +62,33 @@ export class MediaUploadService {
   }
 
   /**
-   * Convert server URL to proxy URL for browser dev mode
-   * This bypasses CORS by routing through Vite's dev server proxy
+   * Convert server URL to proxy URL for browser mode
+   * Dev: routes through Vite's dev server proxy
+   * Production: routes through Deno Deploy proxy
    */
   private getProxiedUrl(serverUrl: string, path: string): string {
-    // Only use proxy in browser mode with Vite dev server
-    if (!this.platform.isBrowser || !import.meta.env.DEV) {
+    if (!this.platform.isBrowser) {
       return `${serverUrl}${path}`;
     }
 
-    // Map known servers to their proxy paths
-    const proxyMap: Record<string, string> = {
-      'https://blossom.nostr.build': '/proxy/blossom.nostr.build',
-      'https://nostr.build': '/proxy/nostr.build',
-      'https://blossom.band': '/proxy/blossom.band',
-      'https://blossom.primal.net': '/proxy/blossom.primal.net',
-    };
+    if (import.meta.env.DEV) {
+      // Dev mode: Vite proxy with known server map
+      const proxyMap: Record<string, string> = {
+        'https://blossom.nostr.build': '/proxy/blossom.nostr.build',
+        'https://nostr.build': '/proxy/nostr.build',
+        'https://blossom.band': '/proxy/blossom.band',
+        'https://blossom.primal.net': '/proxy/blossom.primal.net',
+      };
 
-    const proxyPath = proxyMap[serverUrl];
-    if (proxyPath) {
-      return `${proxyPath}${path}`;
+      const proxyPath = proxyMap[serverUrl];
+      if (proxyPath) return `${proxyPath}${path}`;
+
+      return `${serverUrl}${path}`;
     }
 
-    // Fallback: try direct URL (might fail due to CORS)
-    return `${serverUrl}${path}`;
+    // Production: Deno Deploy proxy (works with any server)
+    const hostname = new URL(serverUrl).hostname;
+    return `https://noornote-proxy.77elements.deno.net/proxy/${hostname}${path}`;
   }
 
   private loadMediaServerSettings(): MediaServerSettings {
@@ -325,8 +328,8 @@ export class MediaUploadService {
     try {
       onProgress?.(5);
 
-      // In browser dev mode, fetch config through proxy
-      const configUrl = this.platform.isBrowser && import.meta.env.DEV
+      // In browser mode, fetch config through proxy to bypass CORS
+      const configUrl = this.platform.isBrowser
         ? this.getProxiedUrl(serverUrl, '/.well-known/nostr/nip96.json')
         : `${serverUrl}/.well-known/nostr/nip96.json`;
 

@@ -1,0 +1,6 @@
+{
+  "deploy": {
+    "org": "77elements",
+    "app": "noornote-proxy"
+  }
+}
