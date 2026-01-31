@@ -9,6 +9,8 @@
 import { View } from './View';
 import { PlatformService } from '../../services/PlatformService';
 
+declare const __APP_VERSION__: string;
+
 export class AboutView extends View {
   private container: HTMLElement;
   private platform = PlatformService.getInstance();
@@ -18,6 +20,7 @@ export class AboutView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--about';
     this.render();
+    this.bindListeners();
   }
 
   private render(): void {
@@ -84,6 +87,12 @@ export class AboutView extends View {
           </p>
         </section>
 
+        <section class="about-section">
+          <h2>Version</h2>
+          <p>NoorNote v${__APP_VERSION__}</p>
+          ${this.platform.isTauri ? '<button class="btn btn--mini" id="about-check-update-btn">Check for updates</button>' : ''}
+        </section>
+
         <section class="about-section about-section--footer">
           <p>NoorNote - A Nostr Client</p>
         </section>
@@ -120,6 +129,14 @@ export class AboutView extends View {
       <p>
         <strong>We have no access to this data.</strong> All data remains on your device.
       </p>`;
+  }
+
+  private bindListeners(): void {
+    const checkUpdateBtn = this.container.querySelector('#about-check-update-btn');
+    checkUpdateBtn?.addEventListener('click', async () => {
+      const { UpdateCheckService } = await import('../../services/UpdateCheckService');
+      await UpdateCheckService.getInstance().checkManually(checkUpdateBtn as HTMLButtonElement);
+    });
   }
 
   public getElement(): HTMLElement {
