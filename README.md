@@ -1,8 +1,8 @@
 # NoorNote
 
-**NoorNote** (Arabic: نور, meaning "light") is a fast, feature-rich, privacy-focused desktop client for [Nostr](https://nostr.com) - the decentralized social protocol.
+**NoorNote** (Arabic: نور, meaning "light") is a fast, feature-rich, privacy-focused client for [Nostr](https://nostr.com) - the decentralized social protocol.
 
-**Available for macOS and Linux.** Windows is not officially supported.
+**Available as [Web App](https://noornote.app) and Desktop App (macOS, Linux).** Windows is not officially supported.
 
 ## Features
 
@@ -42,9 +42,11 @@
 
 ...and many more to come.
 
-## Download
+## Get Started
 
-Available for macOS and Linux: [Releases](https://github.com/77elements/noornote/releases)
+**Web:** [noornote.app](https://noornote.app) — no install needed, use with a browser extension like [Alby](https://getalby.com)
+
+**Desktop:** macOS and Linux downloads on [Releases](https://github.com/77elements/noornote/releases)
 
 ### macOS Note
 
@@ -75,12 +77,14 @@ If the app crashes, check the log files:
 
 ## Login Options
 
-| Method | Security | Convenience |
-|--------|----------|-------------|
-| [NoorSigner](https://github.com/77elements/noorsigner) | High | High |
-| NIP-46 Remote Signer | High | Medium |
+| Method | Platform | Security | Convenience |
+|--------|----------|----------|-------------|
+| [NoorSigner](https://github.com/77elements/noorsigner) | Desktop | High | High |
+| NIP-07 Browser Extension (e.g. Alby) | Web | High | High |
+| NIP-46 Remote Signer | All | High | Medium |
 
-**Recommended:** Use NoorSigner for best security and convenience.
+**Desktop:** Use NoorSigner for best security and convenience.
+**Web:** Use a NIP-07 browser extension like Alby.
 
 ## NIPs Supported
 
