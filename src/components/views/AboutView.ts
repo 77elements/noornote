@@ -7,9 +7,11 @@
  */
 
 import { View } from './View';
+import { PlatformService } from '../../services/PlatformService';
 
 export class AboutView extends View {
   private container: HTMLElement;
+  private platform = PlatformService.getInstance();
 
   constructor() {
     super();
@@ -46,18 +48,7 @@ export class AboutView extends View {
           <h3>Responsible Party</h3>
           <p>[ mslm dvlpmnt ], Am Engeldorfer Berg 11, 50997 Cologne, Germany</p>
 
-          <h3>Local Data Storage</h3>
-          <p>
-            NoorNote is a desktop application that stores all data locally on your device:
-          </p>
-          <ul>
-            <li><strong>Key Storage:</strong> Your private key (nsec) is stored in your operating system's keychain (macOS Keychain, Windows Credential Manager, Linux Secret Service).</li>
-            <li><strong>Cache:</strong> Temporary data is stored in IndexedDB and localStorage in your browser.</li>
-            <li><strong>Configuration Files:</strong> Settings are stored in the <code>~/.noornote/</code> directory.</li>
-          </ul>
-          <p>
-            <strong>We have no access to this data.</strong> All data remains on your device.
-          </p>
+          ${this.renderDataStorageSection()}
 
           <h3>Connections to Nostr Relays</h3>
           <p>
@@ -94,9 +85,41 @@ export class AboutView extends View {
         </section>
 
         <section class="about-section about-section--footer">
-          <p>NoorNote - A Nostr Client for Desktop</p>
+          <p>NoorNote - A Nostr Client</p>
         </section>
     `;
+  }
+
+  private renderDataStorageSection(): string {
+    if (this.platform.isBrowser) {
+      return `
+        <h3>Data Storage</h3>
+        <p>
+          NoorNote is a web application. All data stays in your browser:
+        </p>
+        <ul>
+          <li><strong>Key Storage:</strong> Your private key is managed by your browser extension (e.g. Alby) and never shared with NoorNote or our server.</li>
+          <li><strong>Cache:</strong> Temporary data is stored in your browser's IndexedDB and localStorage.</li>
+          <li><strong>No Server Storage:</strong> Our web server only hosts the static application files. We do not store any user data on the server.</li>
+        </ul>
+        <p>
+          <strong>We have no access to your data.</strong> All user data remains in your browser and can be cleared at any time via your browser settings.
+        </p>`;
+    }
+
+    return `
+      <h3>Local Data Storage</h3>
+      <p>
+        NoorNote is a desktop application that stores all data locally on your device:
+      </p>
+      <ul>
+        <li><strong>Key Storage:</strong> Your private key (nsec) is stored in your operating system's keychain (macOS Keychain, Linux Secret Service).</li>
+        <li><strong>Cache:</strong> Temporary data is stored in IndexedDB and localStorage.</li>
+        <li><strong>Configuration Files:</strong> Settings are stored in the <code>~/.noornote/</code> directory.</li>
+      </ul>
+      <p>
+        <strong>We have no access to this data.</strong> All data remains on your device.
+      </p>`;
   }
 
   public getElement(): HTMLElement {
