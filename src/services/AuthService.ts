@@ -655,7 +655,8 @@ export class AuthService {
       if (!event.tags) {
         event.tags = [];
       }
-      event.tags.push(['client', 'NoorNote']);
+      const clientName = PlatformService.getInstance().isTauri ? 'NoorNote (d)' : 'NoorNote (w)';
+      event.tags.push(['client', clientName]);
     }
 
     try {

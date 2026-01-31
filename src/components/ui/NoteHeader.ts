@@ -69,10 +69,29 @@ export class NoteHeader {
     const header = document.createElement('div');
     header.className = 'note-header';
 
-    // User identity section (avatar + name + handle)
+    // User identity section (avatar + name + handle + client)
     const userSection = document.createElement('div');
     userSection.className = 'note-header__user';
-    userSection.appendChild(this.userIdentity.getElement());
+    const identityEl = this.userIdentity.getElement();
+    userSection.appendChild(identityEl);
+
+    const clientTag = this.options.rawEvent?.tags?.find((tag: string[]) => tag[0] === 'client');
+    if (clientTag?.[1]) {
+      const handleEl = identityEl.querySelector('.user-identity__handle');
+      const infoEl = identityEl.querySelector('.user-identity__info');
+      if (handleEl && infoEl) {
+        const handleRow = document.createElement('div');
+        handleRow.className = 'note-header__handle-row';
+        infoEl.insertBefore(handleRow, handleEl);
+        handleRow.appendChild(handleEl);
+
+        const clientEl = document.createElement('span');
+        clientEl.className = 'note-header__client';
+        clientEl.textContent = `via ${clientTag[1]}`;
+        handleRow.appendChild(clientEl);
+      }
+    }
+
     header.appendChild(userSection);
 
     // Note meta section (timestamp + verification + menu)
