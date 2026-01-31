@@ -31,6 +31,21 @@
   }
 }
 
+// Handle + client tag on same line
+.note-header__handle-row {
+  display: flex;
+  align-items: baseline;
+  gap: calc($gap / 2);
+  min-width: 0;
+}
+
+// Client tag (e.g. "via NoorNote")
+.note-header__client {
+  @extend %small;
+  color: $color-3;
+  white-space: nowrap;
+}
+
 // Meta section (verification, timestamp, menu)
 .note-header__meta {
   display: flex;

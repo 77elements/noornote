@@ -13,6 +13,7 @@ import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from '../../serv
 import { LayoutService } from '../../services/LayoutService';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
+import { PlatformService } from '../../services/PlatformService';
 
 export class UISettingsSection extends SettingsSection {
   private storage: PerAccountLocalStorage;
@@ -21,6 +22,7 @@ export class UISettingsSection extends SettingsSection {
   private layoutModeDropdown: CustomDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
+  private autoUpdateSwitch: Switch | null = null;
 
   constructor() {
     super('ui-settings');
@@ -44,6 +46,8 @@ export class UISettingsSection extends SettingsSection {
    * Render UI settings content
    */
   private renderContent(): string {
+    const isTauri = PlatformService.getInstance().isTauri;
+
     return `
       <div class="ui-settings">
         <h3 class="subsection-title">Calendar System</h3>
@@ -108,6 +112,18 @@ export class UISettingsSection extends SettingsSection {
             When enabled, long posts will always be displayed in full without "Show More" buttons. This may affect timeline scrolling performance for very long posts.
           </p>
         </div>
+
+        ${isTauri ? `
+          <h3 class="subsection-title" style="margin-top: 2rem;">Updates</h3>
+
+          <div id="auto-update-switch-container">
+            <!-- Switch will be mounted here -->
+          </div>
+
+          <div style="margin-top: 1rem;">
+            <button class="btn btn--mini" id="check-update-now-btn">Check now</button>
+          </div>
+        ` : ''}
       </div>
     `;
   }
@@ -206,6 +222,42 @@ export class UISettingsSection extends SettingsSection {
       postTruncationContainer.innerHTML = this.postTruncationSwitch.render();
       this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
     }
+
+    // Initialize Auto-Update switch (Tauri only)
+    this.bindUpdateSettings(contentContainer);
+  }
+
+  /**
+   * Bind update settings (Tauri desktop only)
+   */
+  private bindUpdateSettings(contentContainer: HTMLElement): void {
+    const autoUpdateContainer = contentContainer.querySelector('#auto-update-switch-container');
+    if (!autoUpdateContainer) return;
+
+    import('../../services/UpdateCheckService').then(({ UpdateCheckService }) => {
+      const service = UpdateCheckService.getInstance();
+
+      this.autoUpdateSwitch = new Switch({
+        label: 'Automatically check for updates',
+        checked: service.isAutoCheckEnabled(),
+        onChange: (checked) => {
+          service.setAutoCheckEnabled(checked);
+          ToastService.show(
+            checked ? 'Auto-update check enabled' : 'Auto-update check disabled',
+            'success'
+          );
+        }
+      });
+
+      autoUpdateContainer.innerHTML = this.autoUpdateSwitch.render();
+      this.autoUpdateSwitch.setupEventListeners(autoUpdateContainer as HTMLElement);
+    });
+
+    const checkNowBtn = contentContainer.querySelector('#check-update-now-btn');
+    checkNowBtn?.addEventListener('click', async () => {
+      const { UpdateCheckService } = await import('../../services/UpdateCheckService');
+      await UpdateCheckService.getInstance().checkManually(checkNowBtn as HTMLButtonElement);
+    });
   }
 
   /**

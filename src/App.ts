@@ -79,6 +79,20 @@ export class App {
       return;
     }
 
+    // Check for app updates (Tauri desktop only, non-blocking)
+    if (PlatformService.getInstance().isTauri) {
+      this.runSilent(async () => {
+        const { UpdateCheckService } = await import('./services/UpdateCheckService');
+        const service = UpdateCheckService.getInstance();
+        await service.checkOnStartup();
+
+        // DEV: expose for console testing → window.__updateService.simulateUpdate()
+        if (import.meta.env.DEV) {
+          (window as any).__updateService = service;
+        }
+      });
+    }
+
     // Capture last URL BEFORE auth (to preserve it before auto-login overwrites it)
     const lastURL = this.router.getLastURL();
 
