@@ -43,7 +43,7 @@ export interface RootOrderItem<T extends string = string> {
 import { encodeNevent } from '../services/NostrToolsAdapter';
 import { formatTimestamp } from '../helpers/formatTimestamp';
 import { applyFolderAssignments } from '../helpers/FolderAssignmentHelper';
-import { renderListSyncButtons, bindSwitchSyncModeLink } from '../helpers/ListSyncMode';
+import { renderListSyncButtons, bindSwitchSyncModeLink, isEasyMode } from '../helpers/ListSyncMode';
 import { SyncConfirmationModal, type MovedItemInfo } from '../components/modals/SyncConfirmationModal';
 import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
@@ -2490,10 +2490,10 @@ export class BookmarkManager {
     this.isLoading = true;
 
     try {
-      // Cascade restore: browser → file → relays
       let bookmarks = this.adapter.getBrowserItems();
 
-      if (bookmarks.length === 0) {
+      // Cascade restore only in Easy Mode
+      if (bookmarks.length === 0 && isEasyMode()) {
         // Try file first
         try {
           const fileItems = await this.adapter.getFileItems();
