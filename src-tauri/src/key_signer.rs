@@ -73,7 +73,7 @@ fn get_sidecar_source_path() -> Result<PathBuf, String> {
     ))
 }
 
-/// Ensure NoorSigner is installed at ~/.noornote/bin/noorsigner
+/// Ensure NoorSigner is installed and up-to-date at ~/.noornote/bin/noorsigner
 #[command]
 pub async fn ensure_noorsigner_installed() -> Result<String, String> {
     use std::fs;
@@ -86,16 +86,33 @@ pub async fn ensure_noorsigner_installed() -> Result<String, String> {
     if !target_dir.exists() {
         fs::create_dir_all(target_dir)
             .map_err(|e| format!("Failed to create directory {:?}: {}", target_dir, e))?;
-        println!("Created directory: {:?}", target_dir);
     }
 
-    if target_path.exists() {
-        println!("NoorSigner already installed at: {:?}", target_path);
+    let needs_install = if target_path.exists() {
+        // Compare with sidecar to detect updates (different size = different version)
+        match get_sidecar_source_path() {
+            Ok(source) => {
+                let source_len = fs::metadata(&source).map(|m| m.len()).unwrap_or(0);
+                let target_len = fs::metadata(&target_path).map(|m| m.len()).unwrap_or(0);
+                if source_len != target_len && source_len > 0 {
+                    println!("NoorSigner update available ({} → {} bytes)", target_len, source_len);
+                    let _ = fs::remove_file(&target_path);
+                    true
+                } else {
+                    false
+                }
+            }
+            Err(_) => false
+        }
+    } else {
+        true
+    };
+
+    if !needs_install {
         return Ok(target_path.display().to_string());
     }
 
     let source_path = get_sidecar_source_path()?;
-    println!("Found NoorSigner sidecar at: {:?}", source_path);
 
     fs::copy(&source_path, &target_path)
         .map_err(|e| format!("Failed to copy NoorSigner from {:?} to {:?}: {}", source_path, target_path, e))?;
@@ -107,7 +124,7 @@ pub async fn ensure_noorsigner_installed() -> Result<String, String> {
     fs::set_permissions(&target_path, perms)
         .map_err(|e| format!("Failed to set executable permission: {}", e))?;
 
-    println!("NoorSigner installed to: {:?}", target_path);
+    println!("NoorSigner installed/updated at: {:?}", target_path);
     Ok(target_path.display().to_string())
 }
 
