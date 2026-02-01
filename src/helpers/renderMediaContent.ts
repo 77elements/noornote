@@ -52,6 +52,8 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
       }
       const posterAttr = item.thumbnail ? ` poster="${item.thumbnail}"` : '';
       return `<video src="${item.url}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="auto"></video>`;
+    case 'audio':
+      return `<audio src="${item.url}" controls preload="metadata" class="note-audio"></audio>`;
     default:
       return '';
   }
@@ -84,6 +86,8 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
         }
         const posterAttr = item.thumbnail ? ` poster="${item.thumbnail}"` : '';
         return `<video src="${item.url}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="auto"></video>`;
+      case 'audio':
+        return `<audio src="${item.url}" controls preload="metadata" class="note-audio"></audio>`;
       default:
         return '';
     }

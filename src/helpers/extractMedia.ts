@@ -43,6 +43,17 @@ export function extractMedia(text: string): MediaContent[] {
     });
   });
 
+  // Audio patterns
+  const audioRegex = /https?:\/\/[^\s]+\.(?:mp3|wav|ogg|flac|m4a|aac)(?:\?[^\s]*)?/gi;
+  const audios = text.match(audioRegex) || [];
+
+  audios.forEach(url => {
+    media.push({
+      type: 'audio',
+      url: url
+    });
+  });
+
   // YouTube detection
   const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/gi;
   let match;
