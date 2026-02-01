@@ -17,7 +17,7 @@ import { KeychainStorage } from './KeychainStorage';
 import { EventBus } from './EventBus';
 import { AccountStorageService, type StoredAccount } from './AccountStorageService';
 import { KeySignerConnectionManager } from './managers/KeySignerConnectionManager';
-import { Nip46SignerManager } from './managers/Nip46SignerManager';
+import { Nip46SignerManager, type NostrConnectSession } from './managers/Nip46SignerManager';
 import { PlatformService } from './PlatformService';
 import { PerAccountListStorageMigration } from './PerAccountListStorageMigration';
 
@@ -296,6 +296,39 @@ export class AuthService {
     }
 
     return result;
+  }
+
+  /**
+   * Start nostrconnect:// flow for QR-based login
+   * Returns URI for QR display and a listener that resolves on connection
+   */
+  public async startNostrConnect(): Promise<NostrConnectSession> {
+    if (!this.nip46Manager) {
+      this.nip46Manager = new Nip46SignerManager();
+    }
+
+    const session = await this.nip46Manager.startNostrConnect();
+
+    const originalWait = session.waitForConnection;
+    const wrappedWait = async () => {
+      const result = await originalWait();
+      if (result.success && result.npub && result.pubkey) {
+        this.currentUser = { npub: result.npub, pubkey: result.pubkey };
+        this.authMethod = 'nip46';
+        this.saveSession();
+        this.saveToAccountStorage();
+
+        this.eventBus.emit('user:login', { npub: result.npub, pubkey: result.pubkey });
+
+        const { SystemLogger } = await import('../components/system/SystemLogger');
+        const { ToastService } = await import('./ToastService');
+        SystemLogger.getInstance().info('Auth', 'Login with Remote Signer (QR): successful');
+        ToastService.show('Connected to remote signer', 'success');
+      }
+      return result;
+    };
+
+    return { uri: session.uri, waitForConnection: wrappedWait, cancel: session.cancel };
   }
 
   /**
