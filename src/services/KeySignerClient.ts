@@ -575,6 +575,26 @@ export class KeySignerClient {
   }
 
   /**
+   * Start daemon process waiting for password input (step 1 of 2)
+   * Daemon is running but not yet authenticated — call submitDaemonPassword() next
+   */
+  public async prepareDaemonForUnlock(): Promise<void> {
+    this.ensureTauri();
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('prepare_daemon_for_unlock');
+  }
+
+  /**
+   * Submit password to already-running daemon process (step 2 of 2)
+   * Daemon validates password, creates socket, starts serving
+   */
+  public async submitDaemonPassword(password: string): Promise<string> {
+    this.ensureTauri();
+    const { invoke } = await import('@tauri-apps/api/core');
+    return invoke<string>('submit_daemon_password', { password });
+  }
+
+  /**
    * Check if any NoorSigner accounts exist on disk
    */
   public async hasAccounts(): Promise<boolean> {

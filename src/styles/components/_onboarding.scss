@@ -135,6 +135,56 @@
   }
 }
 
+// NostrConnect QR Section
+.auth-nostrconnect {
+  text-align: center;
+  margin-bottom: $gap;
+
+  &__qr {
+    display: flex;
+    justify-content: center;
+    margin-bottom: calc($gap / 2);
+    min-height: 200px;
+    align-items: center;
+  }
+
+  &__loading {
+    color: $color-3;
+    font-size: 0.9rem;
+  }
+
+  &__status {
+    color: $color-3;
+    font-size: 0.85rem;
+    margin: 0;
+  }
+}
+
+.auth-divider--small {
+  position: relative;
+  text-align: center;
+  margin: $gap 0;
+  font-size: 0.85rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: $color-3;
+  }
+
+  span {
+    position: relative;
+    display: inline-block;
+    padding: 0 $gap;
+    background: $color-2;
+    color: $color-3;
+  }
+}
+
 // Key Signer Section
 .auth-key-signer {
   text-align: center;

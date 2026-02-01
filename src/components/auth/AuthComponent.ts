@@ -1,13 +1,14 @@
 /**
  * Authentication Component
  * Handles login/logout UI and authentication flow
- * Supports: NoorSigner (local daemon) and Bunker (remote signer)
+ * Supports: NoorSigner (local daemon), Bunker (remote signer), and NostrConnect QR
  */
 
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../system/SystemLogger';
 import { Router } from '../../services/Router';
 import { PlatformService } from '../../services/PlatformService';
+import QRCode from 'qrcode';
 
 // Forward declaration to avoid circular dependency
 interface MainLayoutInterface {
@@ -22,6 +23,7 @@ export class AuthComponent {
   private router: Router;
   private mainLayout: MainLayoutInterface | null = null;
   private currentUser: { npub: string; pubkey: string } | null = null;
+  private nostrConnectCancel: (() => void) | null = null;
 
   constructor(mainLayout?: MainLayoutInterface) {
     this.authService = AuthService.getInstance();
@@ -80,6 +82,9 @@ export class AuthComponent {
    * Two options: NoorSigner (primary) and Bunker (remote signer)
    */
   public showLoginScreen(): void {
+    // Cancel any previous nostrconnect session
+    this.cancelNostrConnect();
+
     const primaryContent = document.querySelector('.primary-content');
     if (!primaryContent) return;
 
@@ -115,6 +120,16 @@ export class AuthComponent {
 
         <section class="auth-section">
           <h2>Remote Signer</h2>
+          <div class="auth-nostrconnect" data-container="nostrconnect">
+            <div class="auth-nostrconnect__qr" data-container="nostrconnect-qr">
+              <div class="auth-nostrconnect__loading">Generating QR code...</div>
+            </div>
+            <p class="auth-hint">Scan with Amber or other mobile signer</p>
+            <p class="auth-nostrconnect__status" data-status="nostrconnect">Waiting for connection...</p>
+          </div>
+          <div class="auth-divider auth-divider--small">
+            <span>or enter bunker:// URI</span>
+          </div>
           <div class="auth-input-group">
             <input
               type="text"
@@ -125,7 +140,6 @@ export class AuthComponent {
             />
             <button class="btn" data-action="connect-bunker">Connect</button>
           </div>
-          <p class="auth-hint">Hardware signer or nsecBunker</p>
         </section>
 
         <div class="auth-divider">
@@ -144,6 +158,59 @@ export class AuthComponent {
 
     // Setup event listeners for injected UI
     this.setupLoginViewListeners();
+
+    // Start nostrconnect QR flow
+    this.initNostrConnect();
+  }
+
+  /**
+   * Initialize nostrconnect:// QR code flow
+   * Generates URI, renders QR, and waits for remote signer connection
+   */
+  private async initNostrConnect(): Promise<void> {
+    const qrContainer = document.querySelector('[data-container="nostrconnect-qr"]');
+    const statusEl = document.querySelector('[data-status="nostrconnect"]');
+    if (!qrContainer) return;
+
+    try {
+      const session = await this.authService.startNostrConnect();
+      this.nostrConnectCancel = session.cancel;
+
+      // Render QR code
+      const qrDataUrl = await QRCode.toDataURL(session.uri, {
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#FFFFFF',
+          light: '#1a0933'
+        }
+      });
+
+      qrContainer.innerHTML = `<img src="${qrDataUrl}" alt="Scan to connect" style="border-radius: 8px;" />`;
+
+      // Wait for connection in background
+      const result = await session.waitForConnection();
+
+      if (result.success && result.npub && result.pubkey) {
+        this.handleLoginSuccess(result.npub, result.pubkey, 'nostrconnect');
+      } else if (result.error !== 'Cancelled') {
+        if (statusEl) statusEl.textContent = 'Connection failed. Reload to try again.';
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      this.systemLogger.warn('Auth', `NostrConnect init failed: ${msg}`);
+      qrContainer.innerHTML = '<p class="auth-hint">QR code unavailable</p>';
+    }
+  }
+
+  /**
+   * Cancel active nostrconnect session
+   */
+  private cancelNostrConnect(): void {
+    if (this.nostrConnectCancel) {
+      this.nostrConnectCancel();
+      this.nostrConnectCancel = null;
+    }
   }
 
   /**
@@ -205,6 +272,7 @@ export class AuthComponent {
    * Handle successful login - common flow for all auth methods
    */
   private handleLoginSuccess(npub: string, pubkey: string, method: string): void {
+    this.cancelNostrConnect();
     this.currentUser = { npub, pubkey };
     this.systemLogger.info('Auth', `Logged in successfully via ${method}`);
 
@@ -369,6 +437,9 @@ export class AuthComponent {
    * Handle bunker:// login (NIP-46 remote signer)
    */
   private async handleBunkerLogin(): Promise<void> {
+    // Cancel nostrconnect QR listener before using bunker:// input
+    this.cancelNostrConnect();
+
     const primaryContent = document.querySelector('.primary-content');
     const bunkerInput = primaryContent?.querySelector('[data-input="bunker"]') as HTMLInputElement;
     const bunkerBtn = primaryContent?.querySelector('[data-action="connect-bunker"]') as HTMLButtonElement;
@@ -495,6 +566,7 @@ export class AuthComponent {
    * Cleanup resources
    */
   public destroy(): void {
+    this.cancelNostrConnect();
     this.element.remove();
   }
 }

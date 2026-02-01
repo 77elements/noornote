@@ -4,6 +4,7 @@
  *
  * Handles:
  * - Bunker URI authentication
+ * - NostrConnect QR flow
  * - Session persistence and restore
  * - RPC connection management
  * - Event signing delegation
@@ -19,6 +20,12 @@ export interface Nip46AuthResult {
   npub?: string;
   pubkey?: string;
   error?: string;
+}
+
+export interface NostrConnectSession {
+  uri: string;
+  waitForConnection: () => Promise<Nip46AuthResult>;
+  cancel: () => void;
 }
 
 export class Nip46SignerManager {
@@ -147,6 +154,69 @@ export class Nip46SignerManager {
         error: errorMessage
       };
     }
+  }
+
+  /**
+   * Start a nostrconnect:// flow — generates URI for QR display,
+   * returns a listener that resolves when a remote signer connects.
+   */
+  public async startNostrConnect(): Promise<NostrConnectSession> {
+    const { NostrTransport } = await import('../transport/NostrTransport');
+    const ndk = NostrTransport.getInstance().getNDK();
+
+    const relay = 'wss://relay.nsec.app';
+
+    const signer = NDKNip46Signer.nostrconnect(ndk, relay, undefined, {
+      name: 'NoorNote',
+      url: 'https://noornote.app'
+    });
+
+    const uri = signer.nostrConnectUri!;
+    let cancelled = false;
+    let cancelReject: (() => void) | null = null;
+
+    const waitForConnection = async (): Promise<Nip46AuthResult> => {
+      try {
+        const user = await Promise.race([
+          signer.blockUntilReady(),
+          new Promise<never>((_, reject) => {
+            cancelReject = () => reject(new Error('Cancelled'));
+          })
+        ]);
+
+        if (cancelled) {
+          signer.stop();
+          return { success: false, error: 'Cancelled' };
+        }
+
+        this.bunkerSigner = signer;
+        const pubkey = user.pubkey;
+        const npub = hexToNpub(pubkey);
+
+        if (!npub) {
+          signer.stop();
+          return { success: false, error: 'Failed to convert pubkey to npub' };
+        }
+
+        const signerPayload = signer.toPayload();
+        localStorage.setItem(NIP46_STORAGE_KEY, signerPayload);
+
+        return { success: true, npub, pubkey };
+      } catch (error) {
+        if (cancelled) return { success: false, error: 'Cancelled' };
+        signer.stop();
+        const msg = error instanceof Error ? error.message : String(error);
+        return { success: false, error: msg };
+      }
+    };
+
+    const cancel = () => {
+      cancelled = true;
+      cancelReject?.();
+      signer.stop();
+    };
+
+    return { uri, waitForConnection, cancel };
   }
 
   /**
