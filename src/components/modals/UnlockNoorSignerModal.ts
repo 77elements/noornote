@@ -96,7 +96,20 @@ export class UnlockNoorSignerModal {
       errorEl.style.display = 'none';
 
       try {
-        await this.keySignerClient.launchDaemonWithPassword(password);
+        // Daemon process is already running (started before modal appeared)
+        // Submit password to it — if no process, prepare a new one first
+        try {
+          await this.keySignerClient.submitDaemonPassword(password);
+        } catch (prepError) {
+          const msg = prepError instanceof Error ? prepError.message : String(prepError);
+          if (msg.includes('No daemon process')) {
+            // Process died or wasn't prepared — restart and retry
+            await this.keySignerClient.prepareDaemonForUnlock();
+            await this.keySignerClient.submitDaemonPassword(password);
+          } else {
+            throw prepError;
+          }
+        }
         this.modalService.hide();
         this.options.onSuccess();
       } catch (error) {
@@ -104,6 +117,8 @@ export class UnlockNoorSignerModal {
         const isPasswordError = errorMessage.includes('invalid_password') ||
                                 errorMessage.includes('Invalid password');
         this.showError(isPasswordError ? 'Incorrect password' : errorMessage);
+        // Re-prepare daemon for next attempt (previous process consumed)
+        this.keySignerClient.prepareDaemonForUnlock().catch(() => {});
         input.value = '';
         input.focus();
       } finally {

@@ -51,6 +51,8 @@ pub fn run() {
       key_signer::launch_daemon_silent,
       key_signer::has_noorsigner_accounts,
       key_signer::launch_daemon_with_password,
+      key_signer::prepare_daemon_for_unlock,
+      key_signer::submit_daemon_password,
       key_signer::remove_noorsigner_account,
       icloud_check::check_icloud_keychain
     ])

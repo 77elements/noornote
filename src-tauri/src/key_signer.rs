@@ -559,6 +559,126 @@ pub async fn launch_daemon_with_password(password: String) -> Result<String, Str
     }
 }
 
+// ── Two-step daemon unlock: start process first, submit password later ──
+
+/// Holds the daemon child process between prepare and submit steps
+static PENDING_DAEMON: std::sync::Mutex<Option<std::process::Child>> = std::sync::Mutex::new(None);
+
+/// Remove expired/broken trust session files so daemon uses password mode
+fn cleanup_trust_session() {
+    use std::fs;
+    if let Ok(home) = std::env::var("HOME") {
+        let dir = PathBuf::from(&home).join(".noorsigner");
+
+        let old_trust = dir.join("trust_session");
+        if old_trust.exists() {
+            let _ = fs::remove_file(&old_trust);
+        }
+
+        let active_file = dir.join("active_account");
+        if let Ok(active_npub) = fs::read_to_string(&active_file) {
+            let active_npub = active_npub.trim();
+            if !active_npub.is_empty() {
+                let trust_path = dir.join("accounts").join(active_npub).join("trust_session");
+                if trust_path.exists() {
+                    let _ = fs::remove_file(&trust_path);
+                }
+            }
+        }
+    }
+}
+
+/// Step 1: Start daemon process waiting for password on stdin
+/// Call this BEFORE showing the password modal so the daemon is already running
+#[command]
+pub async fn prepare_daemon_for_unlock() -> Result<(), String> {
+    use std::process::{Command, Stdio};
+
+    ensure_noorsigner_installed().await?;
+    let noorsigner_path = get_noorsigner_path()?;
+
+    if !noorsigner_path.exists() {
+        return Err(format!("NoorSigner binary not found at: {}", noorsigner_path.display()));
+    }
+
+    let socket_path = get_socket_path()?;
+    if socket_path.exists() {
+        return Ok(()); // Daemon already running
+    }
+
+    // Kill any existing pending process
+    if let Ok(mut guard) = PENDING_DAEMON.lock() {
+        if let Some(mut existing) = guard.take() {
+            let _ = existing.kill();
+        }
+    }
+
+    // Remove trust session so daemon uses the password, not broken/expired trust
+    cleanup_trust_session();
+
+    let child = Command::new(&noorsigner_path)
+        .arg("daemon")
+        .arg("--password-stdin")
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("Failed to start daemon: {}", e))?;
+
+    if let Ok(mut guard) = PENDING_DAEMON.lock() {
+        *guard = Some(child);
+    }
+
+    Ok(())
+}
+
+/// Step 2: Submit password to the already-running daemon process
+/// Daemon validates password, creates socket, starts serving
+#[command]
+pub async fn submit_daemon_password(password: String) -> Result<String, String> {
+    use std::io::Write;
+
+    let mut child = {
+        let mut guard = PENDING_DAEMON.lock()
+            .map_err(|_| "Lock error".to_string())?;
+        guard.take()
+            .ok_or("No daemon process waiting — call prepare_daemon_for_unlock first")?
+    };
+
+    if let Some(mut stdin) = child.stdin.take() {
+        stdin.write_all(format!("{}\n", password).as_bytes())
+            .map_err(|e| format!("Failed to write password: {}", e))?;
+    }
+
+    let socket_path = get_socket_path()?;
+    use std::time::{Duration, Instant};
+    let start = Instant::now();
+    let timeout = Duration::from_secs(5);
+
+    while start.elapsed() < timeout {
+        if socket_path.exists() {
+            return Ok("success".to_string());
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
+
+    match child.try_wait() {
+        Ok(Some(_)) => {
+            let output = child.wait_with_output()
+                .map_err(|e| format!("Failed to read output: {}", e))?;
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            if stdout.contains("Invalid password") {
+                return Err("invalid_password".to_string());
+            }
+            Err(format!("Daemon failed to start: {}", stdout.trim()))
+        }
+        _ => {
+            let _ = child.kill();
+            Err("Daemon did not start within timeout".to_string())
+        }
+    }
+}
+
 /// Remove a NoorSigner account directory (~/.noorsigner/accounts/<npub>/)
 /// Used during onboarding cancellation when no password has been set yet.
 #[command]

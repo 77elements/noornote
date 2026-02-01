@@ -193,7 +193,15 @@ export class KeySignerConnectionManager {
 
     const hasTrust = await this.keySigner!.checkTrustSession();
     if (!hasTrust) {
-      this.logger.info('KeySigner', 'Trust session expired — password needed');
+      this.logger.info('KeySigner', 'Trust session expired — starting daemon, then password needed');
+      // Start daemon process FIRST (waits for password on stdin)
+      // so it's already running when the password modal appears
+      try {
+        await this.keySigner!.prepareDaemonForUnlock();
+        this.logger.info('KeySigner', 'Daemon process started, waiting for password');
+      } catch (_error) {
+        this.logger.warn('KeySigner', `Failed to prepare daemon: ${_error}`);
+      }
       this.keySigner = null;
       return { success: false, needsPassword: true };
     }
