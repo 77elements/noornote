@@ -18,6 +18,10 @@ export type ProfileResolver = (hexPubkey: string) => Profile | null;
 // Threshold for switching to simple mention mode (no profile pics)
 const SIMPLE_MENTION_THRESHOLD = 20;
 
+const BECH32_CHARS = '023456789acdefghjklmnpqrstuvwxyz';
+const NPROFILE_REGEX = new RegExp(`(nostr:)?(nprofile1[${BECH32_CHARS}]{58,})(?=[^${BECH32_CHARS}]|$)`, 'gi');
+const NPUB_REGEX = new RegExp(`(nostr:)?(npub1[${BECH32_CHARS}]{58})(?=[^${BECH32_CHARS}]|$)`, 'gi');
+
 /**
  * MODE 1 (Simple): npub → username string
  * MODE 2 (HTML Single): npub → <a>@username</a>
@@ -36,17 +40,14 @@ export function npubToUsername(
     return npubToUsernameHTMLMulti(input, mode as ProfileResolver);
   }
 
-  // Simple mode (default): single npub to username string
   if (!mode) {
     return npubToUsernameSimple(input);
   }
 
-  // HTML Single mode: single npub to HTML link
   if (mode === 'html-single' && profileResolver) {
     return npubToUsernameHTMLSingle(input, profileResolver);
   }
 
-  // HTML Multi mode: process entire HTML text with multiple mentions
   if (mode === 'html-multi' && profileResolver) {
     return npubToUsernameHTMLMulti(input, profileResolver);
   }
@@ -63,22 +64,16 @@ function npubToUsernameSimple(npub: string): string {
     const hexPubkey = npubToHex(npub);
     if (!hexPubkey) return npub;
 
-    // Try to get cached username (synchronous)
     const userProfileService = UserProfileService.getInstance();
     const cachedUsername = userProfileService.getUsername(hexPubkey);
 
-    // If we got a real name (not hex/npub fallback), use it
-    // Check if it's NOT the hex pubkey (fallback)
     if (cachedUsername && cachedUsername !== hexPubkey) {
       return cachedUsername;
     }
 
-    // Trigger async profile fetch (fire and forget)
-    userProfileService.getUserProfile(hexPubkey).catch((_error) => {
-      // Ignore errors, profile will stay as fallback
-    });
+    // Fire-and-forget: trigger async profile fetch for future resolution
+    userProfileService.getUserProfile(hexPubkey).catch(() => {});
 
-    // Fallback to FULL npub (NO SHORTENING!)
     return npub;
   } catch {
     return npub;
@@ -105,7 +100,6 @@ function npubToUsernameHTMLSingle(npub: string, profileResolver: ProfileResolver
 
 /**
  * Escape text for safe use in HTML attributes
- * Escapes quotes to prevent attribute injection
  */
 function escapeHtmlAttribute(text: string): string {
   return text
@@ -127,8 +121,7 @@ function buildMentionHTML(npub: string, username: string, picture?: string, isLo
 }
 
 /**
- * Build simple mention HTML without profile picture (for hell threads with many mentions)
- * Same as buildMentionHTML but without img and background
+ * Build simple mention HTML without profile picture (for threads with many mentions)
  */
 function buildSimpleMentionHTML(npub: string, username: string, isLoading = false): string {
   const escapedUsername = escapeHtml(username);
@@ -140,17 +133,52 @@ function buildSimpleMentionHTML(npub: string, username: string, isLoading = fals
  * Count mentions in text (npub + nprofile)
  */
 function countMentions(text: string): number {
-  const nprofileRegex = /(nostr:)?(nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi;
-  const npubRegex = /(nostr:)?(npub1[023456789acdefghjklmnpqrstuvwxyz]{58})(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi;
-
-  const nprofileMatches = text.match(nprofileRegex) || [];
-  const npubMatches = text.match(npubRegex) || [];
-
+  const nprofileMatches = text.match(NPROFILE_REGEX) || [];
+  const npubMatches = text.match(NPUB_REGEX) || [];
   return nprofileMatches.length + npubMatches.length;
 }
 
 /**
- * HTML Multi mode: HTML text with multiple npub/nprofile mentions
+ * Check if a match position is inside an HTML tag or an already-created mention link.
+ * Prevents double-processing of npubs that appear in href attributes or tag content.
+ */
+function isInsideExistingHTML(text: string, offset: number): boolean {
+  // Check if inside an unclosed HTML tag (e.g. npub inside src="...npub1...blossom.band/...")
+  const beforeTag = text.substring(Math.max(0, offset - 500), offset);
+  const lastOpen = beforeTag.lastIndexOf('<');
+  const lastClose = beforeTag.lastIndexOf('>');
+  if (lastOpen > lastClose) return true;
+
+  // Check if inside an already-created mention link from step 1
+  const nearContext = text.substring(Math.max(0, offset - 60), offset);
+  if (nearContext.includes('href="/profile/') || nearContext.includes('data-mention')) return true;
+
+  return false;
+}
+
+/**
+ * Resolve a profile to mention HTML, with loading placeholder fallback.
+ */
+function resolveProfileToMentionHTML(
+  npub: string,
+  profile: Profile | null,
+  useSimpleMode: boolean
+): string {
+  if (profile?.name || profile?.display_name) {
+    const username = (profile.name || profile.display_name)!;
+    return useSimpleMode
+      ? buildSimpleMentionHTML(npub, username)
+      : buildMentionHTML(npub, username, profile.picture);
+  }
+
+  // Loading placeholder, updated later by ContentProcessor.updateMentionsInDOM
+  return useSimpleMode
+    ? buildSimpleMentionHTML(npub, '...', true)
+    : buildMentionHTML(npub, '...', undefined, true);
+}
+
+/**
+ * HTML Multi mode: replace all npub/nprofile mentions in HTML text
  */
 function npubToUsernameHTMLMulti(
   htmlText: string,
@@ -158,72 +186,30 @@ function npubToUsernameHTMLMulti(
 ): string {
   let text = htmlText;
 
-  // Count mentions to decide rendering mode
   const mentionCount = countMentions(text);
   const useSimpleMode = mentionCount > SIMPLE_MENTION_THRESHOLD;
 
-  // Step 1: Handle nprofile (with or without nostr: prefix)
-  // Use capturing groups to get full match
-  // Valid nprofile format: nprofile1 + bech32 chars (excludes b, i, o)
-  // Variable length due to relay hints, but must be at least 59 chars
-  // Use word boundary (\b) or lookahead to prevent over-matching
-  text = text.replace(/(nostr:)?(nprofile1[023456789acdefghjklmnpqrstuvwxyz]{58,})(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi, (fullMatch, _prefix, nprofile) => {
+  // Step 1: Replace nprofile mentions
+  text = text.replace(NPROFILE_REGEX, (fullMatch, _prefix, nprofile) => {
     try {
       const npub = nprofileToNpub(nprofile);
       const hexPubkey = npubToHex(npub);
       if (!hexPubkey) return fullMatch;
-      const profile = profileResolver(hexPubkey);
-
-      if (profile?.name || profile?.display_name) {
-        const username = profile.name || profile.display_name;
-        return useSimpleMode
-          ? buildSimpleMentionHTML(npub, username!)
-          : buildMentionHTML(npub, username!, profile.picture);
-      } else {
-        // Fallback: show loading placeholder, will be updated by ContentProcessor.updateMentionsInDOM
-        return useSimpleMode
-          ? buildSimpleMentionHTML(npub, '...', true)
-          : buildMentionHTML(npub, '...', undefined, true);
-      }
-    } catch (_error) {
-      // Fail gracefully - return original text without logging
-      // (invalid checksums are common in wild, not worth spamming console)
+      return resolveProfileToMentionHTML(npub, profileResolver(hexPubkey), useSimpleMode);
+    } catch {
       return fullMatch;
     }
   });
 
-  // Step 2: Handle npub (with or without nostr: prefix)
-  // BUT skip npubs that are already inside links we created above
-  // Valid npub format: npub1 + 58 bech32 chars (excludes b, i, o) = exactly 63 chars
-  // Use lookahead to ensure we stop at word boundary
-  text = text.replace(/(nostr:)?(npub1[023456789acdefghjklmnpqrstuvwxyz]{58})(?=[^023456789acdefghjklmnpqrstuvwxyz]|$)/gi, (fullMatch, _prefix, npub, offset, string) => {
-
-    // Check if this npub is inside a link we already created
-    const before = string.substring(Math.max(0, offset - 60), offset);
-
-    // Skip if it's inside href="/profile/..." or has data-mention marker
-    if (before.includes('href="/profile/') || before.includes('data-mention')) {
-      return fullMatch;
-    }
+  // Step 2: Replace npub mentions, skipping those already inside HTML from step 1
+  text = text.replace(NPUB_REGEX, (fullMatch, _prefix, npub, offset, string) => {
+    if (isInsideExistingHTML(string, offset)) return fullMatch;
 
     try {
       const hexPubkey = npubToHex(npub);
       if (!hexPubkey) return fullMatch;
-      const profile = profileResolver(hexPubkey);
-
-      if (profile?.name || profile?.display_name) {
-        const username = profile.name || profile.display_name;
-        return useSimpleMode
-          ? buildSimpleMentionHTML(npub, username!)
-          : buildMentionHTML(npub, username!, profile.picture);
-      } else {
-        // Fallback: show loading placeholder, will be updated by ContentProcessor.updateMentionsInDOM
-        return useSimpleMode
-          ? buildSimpleMentionHTML(npub, '...', true)
-          : buildMentionHTML(npub, '...', undefined, true);
-      }
-    } catch (_error) {
-      // Fail gracefully - return original text without logging
+      return resolveProfileToMentionHTML(npub, profileResolver(hexPubkey), useSimpleMode);
+    } catch {
       return fullMatch;
     }
   });

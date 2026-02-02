@@ -59,6 +59,13 @@ export const StorageKeys = {
   // Onboarding wizard (per-account)
   NEEDS_PROFILE_SETUP: 'noornote_needs_profile_setup_map',
   WIZARD_PROGRESS: 'noornote_wizard_progress_map',
+
+  // Mutual change detection (per-account)
+  MUTUAL_SNAPSHOT: 'noornote_mutual_snapshot_map',
+  MUTUAL_PENDING_SNAPSHOT: 'noornote_mutual_pending_snapshot_map',
+  MUTUAL_LAST_CHECK: 'noornote_mutual_last_check_map',
+  MUTUAL_UNSEEN_CHANGES: 'noornote_mutual_unseen_changes_map',
+  MUTUAL_CHANGES: 'noornote_mutual_changes_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
