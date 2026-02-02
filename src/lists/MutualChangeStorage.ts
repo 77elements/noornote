@@ -4,13 +4,14 @@
  *
  * Architecture:
  * - File (~/.noornote/{npub}/mutual-check-data.json) = Source of Truth
- * - localStorage = Runtime cache for fast access
+ * - PerAccountLocalStorage = Runtime cache for fast access (per-account isolated)
  *
  * @purpose Store mutual snapshots and detected changes
  * @used-by MutualChangeDetector, MutualChangeScheduler, FollowListSecondaryManager
  */
 
 import { BaseFileStorage, type BaseFileData } from '../services/BaseFileStorage';
+import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
 
 export interface MutualSnapshot {
   timestamp: number;
@@ -39,18 +40,22 @@ export interface MutualCheckData extends BaseFileData {
   checkHistory: CheckHistoryEntry[];
 }
 
-// localStorage keys (runtime cache)
-const LS_SNAPSHOT = 'noornote_mutual_snapshot';
-const LS_PENDING_SNAPSHOT = 'noornote_mutual_pending_snapshot';
-const LS_LAST_CHECK = 'noornote_mutual_last_check';
-const LS_UNSEEN_CHANGES = 'noornote_mutual_unseen_changes';
-const LS_CHANGES = 'noornote_mutual_changes';
+/** All PerAccountLocalStorage keys managed by this class */
+const MUTUAL_STORAGE_KEYS = [
+  StorageKeys.MUTUAL_SNAPSHOT,
+  StorageKeys.MUTUAL_PENDING_SNAPSHOT,
+  StorageKeys.MUTUAL_LAST_CHECK,
+  StorageKeys.MUTUAL_UNSEEN_CHANGES,
+  StorageKeys.MUTUAL_CHANGES,
+] as const;
 
 export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
   private static instance: MutualChangeStorage;
+  private perAccountStorage: PerAccountLocalStorage;
 
   private constructor() {
     super();
+    this.perAccountStorage = PerAccountLocalStorage.getInstance();
   }
 
   public static getInstance(): MutualChangeStorage {
@@ -82,49 +87,44 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
 
   /**
    * Initialize from file on app startup
-   * Populates localStorage cache from file
+   * Populates PerAccountLocalStorage cache from file
    */
   public async initFromFile(): Promise<void> {
     try {
       await this.initialize();
       const data = await this.read();
 
-      if (data.snapshot) {
-        localStorage.setItem(LS_SNAPSHOT, JSON.stringify(data.snapshot));
-      }
-      if (data.lastCheckTimestamp) {
-        localStorage.setItem(LS_LAST_CHECK, data.lastCheckTimestamp.toString());
-      }
-      localStorage.setItem(LS_UNSEEN_CHANGES, data.unseenChanges ? 'true' : 'false');
-      if (data.changes.length > 0) {
-        localStorage.setItem(LS_CHANGES, JSON.stringify(data.changes));
-      }
+      this.perAccountStorage.set(StorageKeys.MUTUAL_SNAPSHOT, data.snapshot);
+      this.perAccountStorage.set(StorageKeys.MUTUAL_LAST_CHECK, data.lastCheckTimestamp);
+      this.perAccountStorage.set(StorageKeys.MUTUAL_UNSEEN_CHANGES, data.unseenChanges);
+      this.perAccountStorage.set(StorageKeys.MUTUAL_CHANGES, data.changes);
 
-      this.systemLogger.info(this.getLoggerName(), 'Initialized from file, localStorage populated');
+      this.systemLogger.info(this.getLoggerName(), 'Initialized from file, per-account storage populated');
     } catch (error) {
       this.systemLogger.error(this.getLoggerName(), `Failed to init from file: ${error}`);
     }
   }
 
   /**
-   * Save current state to both localStorage AND file
+   * Save current PerAccountLocalStorage state to file
+   * Preserves checkHistory from file (not stored in localStorage)
    */
   public async saveToFile(): Promise<void> {
     try {
-      const existingData = await this.read();
+      const fileData = await this.read();
       const lsData = this.collectFromLocalStorage();
-
-      const existingCount = existingData.snapshot?.mutualPubkeys.length || 0;
-      const newCount = lsData.snapshot?.mutualPubkeys.length || 0;
 
       const mergedData: MutualCheckData = {
         ...lsData,
-        checkHistory: existingData.checkHistory || []
+        checkHistory: fileData.checkHistory || []
       };
 
       await this.write(mergedData);
+
+      const prevCount = fileData.snapshot?.mutualPubkeys.length || 0;
+      const currCount = lsData.snapshot?.mutualPubkeys.length || 0;
       this.systemLogger.info(this.getLoggerName(),
-        `Saved to file: ${existingCount} → ${newCount} mutuals (history: ${mergedData.checkHistory.length} entries)`
+        `Saved to file: ${prevCount} -> ${currCount} mutuals (history: ${mergedData.checkHistory.length} entries)`
       );
     } catch (error) {
       this.systemLogger.error(this.getLoggerName(), `Failed to save to file: ${error}`);
@@ -132,27 +132,21 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
   }
 
   private collectFromLocalStorage(): MutualCheckData {
-    const snapshotStr = localStorage.getItem(LS_SNAPSHOT);
-    const lastCheckStr = localStorage.getItem(LS_LAST_CHECK);
-    const unseenStr = localStorage.getItem(LS_UNSEEN_CHANGES);
-    const changesStr = localStorage.getItem(LS_CHANGES);
-
     return {
       version: 1,
       lastModified: Math.floor(Date.now() / 1000),
-      snapshot: snapshotStr ? JSON.parse(snapshotStr) : null,
-      lastCheckTimestamp: lastCheckStr ? parseInt(lastCheckStr, 10) : null,
-      unseenChanges: unseenStr === 'true',
-      changes: changesStr ? JSON.parse(changesStr) : [],
+      snapshot: this.perAccountStorage.get<MutualSnapshot | null>(StorageKeys.MUTUAL_SNAPSHOT, null),
+      lastCheckTimestamp: this.perAccountStorage.get<number | null>(StorageKeys.MUTUAL_LAST_CHECK, null),
+      unseenChanges: this.perAccountStorage.get<boolean>(StorageKeys.MUTUAL_UNSEEN_CHANGES, false),
+      changes: this.perAccountStorage.get<MutualChange[]>(StorageKeys.MUTUAL_CHANGES, []),
       checkHistory: []
     };
   }
 
-  // ========== Snapshot Methods (localStorage) ==========
+  // ========== Snapshot Methods (PerAccountLocalStorage) ==========
 
   public getSnapshot(): MutualSnapshot | null {
-    const stored = localStorage.getItem(LS_SNAPSHOT);
-    return stored ? JSON.parse(stored) : null;
+    return this.perAccountStorage.get<MutualSnapshot | null>(StorageKeys.MUTUAL_SNAPSHOT, null);
   }
 
   public saveSnapshot(mutualPubkeys: string[]): void {
@@ -160,35 +154,31 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
       timestamp: Date.now(),
       mutualPubkeys
     };
-    localStorage.setItem(LS_SNAPSHOT, JSON.stringify(snapshot));
-    localStorage.setItem(LS_LAST_CHECK, Date.now().toString());
+    this.perAccountStorage.set(StorageKeys.MUTUAL_SNAPSHOT, snapshot);
+    this.perAccountStorage.set(StorageKeys.MUTUAL_LAST_CHECK, Date.now());
   }
 
   public savePendingSnapshot(mutualPubkeys: string[]): void {
-    localStorage.setItem(LS_PENDING_SNAPSHOT, JSON.stringify(mutualPubkeys));
+    this.perAccountStorage.set(StorageKeys.MUTUAL_PENDING_SNAPSHOT, mutualPubkeys);
   }
 
   public getPendingSnapshot(): string[] | null {
-    const stored = localStorage.getItem(LS_PENDING_SNAPSHOT);
-    return stored ? JSON.parse(stored) : null;
+    return this.perAccountStorage.get<string[] | null>(StorageKeys.MUTUAL_PENDING_SNAPSHOT, null);
   }
 
   public getLastCheckTimestamp(): number | null {
-    const stored = localStorage.getItem(LS_LAST_CHECK);
-    return stored ? parseInt(stored, 10) : null;
+    return this.perAccountStorage.get<number | null>(StorageKeys.MUTUAL_LAST_CHECK, null);
   }
 
-  // ========== Changes Methods (localStorage) ==========
+  // ========== Changes Methods (PerAccountLocalStorage) ==========
 
   public getChanges(): MutualChange[] {
-    const stored = localStorage.getItem(LS_CHANGES);
-    return stored ? JSON.parse(stored) : [];
+    return this.perAccountStorage.get<MutualChange[]>(StorageKeys.MUTUAL_CHANGES, []);
   }
 
   public addChanges(changes: MutualChange[]): void {
     const existing = this.getChanges();
-    const combined = [...existing, ...changes];
-    localStorage.setItem(LS_CHANGES, JSON.stringify(combined));
+    this.perAccountStorage.set(StorageKeys.MUTUAL_CHANGES, [...existing, ...changes]);
 
     if (changes.length > 0) {
       this.setUnseenChanges(true);
@@ -196,18 +186,18 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
   }
 
   public clearChanges(): void {
-    localStorage.removeItem(LS_CHANGES);
+    this.perAccountStorage.remove(StorageKeys.MUTUAL_CHANGES);
     this.setUnseenChanges(false);
   }
 
   // ========== Unseen Changes Flag ==========
 
   public hasUnseenChanges(): boolean {
-    return localStorage.getItem(LS_UNSEEN_CHANGES) === 'true';
+    return this.perAccountStorage.get<boolean>(StorageKeys.MUTUAL_UNSEEN_CHANGES, false);
   }
 
   public setUnseenChanges(value: boolean): void {
-    localStorage.setItem(LS_UNSEEN_CHANGES, value ? 'true' : 'false');
+    this.perAccountStorage.set(StorageKeys.MUTUAL_UNSEEN_CHANGES, value);
   }
 
   // ========== History Methods (file only) ==========
@@ -230,11 +220,9 @@ export class MutualChangeStorage extends BaseFileStorage<MutualCheckData> {
   // ========== Clear Methods ==========
 
   public clearLocalStorage(): void {
-    localStorage.removeItem(LS_SNAPSHOT);
-    localStorage.removeItem(LS_PENDING_SNAPSHOT);
-    localStorage.removeItem(LS_LAST_CHECK);
-    localStorage.removeItem(LS_UNSEEN_CHANGES);
-    localStorage.removeItem(LS_CHANGES);
+    for (const key of MUTUAL_STORAGE_KEYS) {
+      this.perAccountStorage.remove(key);
+    }
   }
 
   public reset(): void {
