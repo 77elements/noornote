@@ -44,8 +44,8 @@
     "license": "MIT",
     "licenseFile": "../LICENSE",
     "homepage": "https://github.com/77elements/noornote/releases",
-    "shortDescription": "A Nostr desktop client for sovereign communication",
-    "longDescription": "NoorNote is a privacy-focused Nostr desktop client. Features include encrypted direct messages (NIP-17), Lightning zaps, bookmark management, and secure local key storage via NoorSigner.",
+    "shortDescription": "Feature-rich, fast, secure Nostr client",
+    "longDescription": "NoorNote is a feature-rich, fast, secure Nostr desktop client. Features include encrypted direct messages (NIP-17), Lightning zaps, bookmark management, and secure local key storage via NoorSigner.",
     "linux": {
       "deb": {
         "section": "net",

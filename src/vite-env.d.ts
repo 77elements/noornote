@@ -21,3 +21,13 @@ declare module '*.jpeg' {
   const src: string;
   export default src;
 }
+
+// WebLN provider (injected by Keychat browser, Alby extension, etc.)
+interface WebLNProvider {
+  enable(): Promise<{ enabled: boolean }>;
+  sendPayment(paymentRequest: string): Promise<string | { preimage: string }>;
+}
+
+interface Window {
+  webln?: WebLNProvider;
+}

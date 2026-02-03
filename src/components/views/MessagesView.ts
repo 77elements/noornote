@@ -116,9 +116,6 @@ export class MessagesView extends View {
         <h1>Messages</h1>
         <div class="messages-view__actions">
           <button class="btn btn--medium messages-view__compose-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
             New Message
           </button>
           <button class="dropdown-menu-trigger messages-view__menu-trigger" aria-label="Message options">
