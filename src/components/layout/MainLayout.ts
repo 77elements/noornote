@@ -602,9 +602,10 @@ export class MainLayout {
    * Update active navigation based on view class (e.g., 'tv', 'pv', 'nv')
    */
   private updateActiveNavigation(viewClass: string): void {
-    // Clear all active states (main nav only, not sublinks)
+    // Clear all active states (main nav + list sublinks)
     const navLinks = this.element.querySelectorAll('.primary-nav > li > a');
     navLinks.forEach(link => link.classList.remove('is-active'));
+    this.setActiveListSublink(null);
 
     // Map viewClass abbreviations to nav selectors
     const viewToSelector: Record<string, string> = {
@@ -930,9 +931,12 @@ export class MainLayout {
   private handleHomeClick(): void {
     const router = Router.getInstance();
     const currentPath = router.getCurrentPath();
+    const hasListInPcc = !!this.element.querySelector('.list-view-primary');
 
-    // Check if already on timeline (home page)
-    if (currentPath === '/' || currentPath === '/timeline') {
+    if (hasListInPcc) {
+      // List view is rendered in PCC - force navigate to replace it
+      router.navigate('/', true);
+    } else if (currentPath === '/' || currentPath === '/timeline') {
       // Already in timeline - scroll to top
       this.scrollToTop();
     } else {
@@ -1717,6 +1721,12 @@ export class MainLayout {
    * Renders in pcc (Wide) or scc (Default/Right-pane) based on layout mode
    */
   public openListTab(listType: ListType): void {
+    // Close sidebar in phone mode (sublinks are added after setupMobileSidebar)
+    if (this.layoutService.isPhone()) {
+      this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
+      this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
+    }
+
     // Check layout mode and delegate to appropriate renderer
     if (!this.layoutService.isSecondaryVisible()) {
       // Wide/Mobile mode: Render in primary content (scc is hidden)
@@ -1946,6 +1956,11 @@ export class MainLayout {
   private renderListInPrimaryContent(listType: ListType): void {
     const primaryContent = this.element.querySelector('.primary-content');
     if (!primaryContent) return;
+
+    // Update navigation active state
+    const navLinks = this.element.querySelectorAll('.primary-nav > li > a');
+    navLinks.forEach(link => link.classList.remove('is-active'));
+    this.setActiveListSublink(listType);
 
     // Clear primary content
     primaryContent.innerHTML = '';
