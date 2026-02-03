@@ -157,3 +157,11 @@
     font-size: 24px;
   }
 }
+
+@media (max-width: 639px) {
+  .emoji-picker-custom {
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%);
+  }
+}
