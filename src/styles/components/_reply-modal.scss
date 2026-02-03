@@ -62,12 +62,14 @@
 }
 
 // Mobile responsive
-@media (max-width: 768px) {
-  .reply-modal {
-    min-height: 400px;
+@media (max-width: 600px) {
+  // Override fixed modal height on small screens
+  .modal__content:has(.reply-modal) {
+    height: auto !important;
+    max-height: 90vh;
   }
 
   .reply-modal .textarea {
-    min-height: 120px;
+    min-height: 100px;
   }
 }

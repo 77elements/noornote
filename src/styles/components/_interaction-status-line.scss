@@ -201,3 +201,12 @@
     transform: rotate(360deg);
   }
 }
+
+// Mobile: compact layout
+@media (max-width: 639px) {
+  .isl {
+    grid-template-columns: auto auto auto auto auto auto;
+    justify-content: space-between;
+    gap: 0;
+  }
+}

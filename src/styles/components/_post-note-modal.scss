@@ -61,7 +61,8 @@
   align-items: center;
   gap: calc($gap / 2);
   white-space: nowrap;
-  min-width: 280px; // Make it wider
+  min-width: 0;
+  overflow: hidden;
 }
 
 .relay-selector-label {
@@ -72,6 +73,7 @@
 .relay-selector-dropdown {
   position: relative;
   flex: 1;
+  min-width: 0;
 }
 
 .relay-selector-trigger {
@@ -80,6 +82,9 @@
   cursor: pointer;
   text-align: left;
   transition: all 0.2s ease;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 
   &:hover:not(:disabled) {
   }
@@ -187,7 +192,7 @@
 // Actions (Toolbar + Buttons)
 .post-note-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: auto auto;
   grid-gap: calc($gap / 2);
   padding-bottom: $gap;
 }

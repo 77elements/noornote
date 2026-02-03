@@ -70,6 +70,7 @@
 
   &__actions {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: $gap;
     padding-top: calc($gap / 2);

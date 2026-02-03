@@ -37,6 +37,9 @@
   align-items: baseline;
   gap: calc($gap / 2);
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 // Client tag (e.g. "via NoorNote")
