@@ -8,6 +8,7 @@ import { ModalService } from '../../services/ModalService';
 import { ZapService } from '../../services/ZapService';
 import { NWCService } from '../../services/NWCService';
 import { ToastService } from '../../services/ToastService';
+import { PlatformService } from '../../services/PlatformService';
 import { SystemLogger } from '../system/SystemLogger';
 
 export interface ZapModalOptions {
@@ -45,8 +46,9 @@ export class ZapModal {
    * Show zap modal (async to load defaults from Keychain)
    */
   public async show(): Promise<void> {
-    // Check NWC connection
-    if (!this.nwcService.isConnected()) {
+    // Check if any payment method is available (NWC or WebLN in browser)
+    const hasWebLN = PlatformService.getInstance().isBrowser && !!window.webln;
+    if (!this.nwcService.isConnected() && !hasWebLN) {
       ToastService.show('Please connect Lightning Wallet', 'error');
       return;
     }

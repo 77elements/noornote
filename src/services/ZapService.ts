@@ -1,12 +1,13 @@
 /**
- * ZapService - Lightning Zaps via NWC (NIP-57)
+ * ZapService - Lightning Zaps via WebLN / NWC (NIP-57)
  * Handles zap requests, LNURL fetching, and invoice payments
+ * Payment priority: NWC (if configured in Settings) → WebLN (Keychat browser, Alby, etc.)
  *
  * NIP-57: https://github.com/nostr-protocol/nips/blob/master/57.md
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { NWCService } from './NWCService';
+import { NWCService, type PayInvoiceResult } from './NWCService';
 import { AuthService } from './AuthService';
 import { UserProfileService } from './UserProfileService';
 import { RelayConfig } from './RelayConfig';
@@ -16,6 +17,7 @@ import { ToastService } from './ToastService';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
+import { PlatformService } from './PlatformService';
 
 export interface ZapRequest {
   noteId: string;
@@ -103,21 +105,68 @@ export class ZapService {
   }
 
   /**
-   * Check NWC connection and show error if not connected
+   * Try to enable WebLN provider (Keychat browser, Alby extension, etc.)
+   * Only available in browser environment (Web version), never in Tauri desktop app.
    */
-  private checkNWCConnection(): ZapResult | null {
-    if (!this.nwcService.isConnected()) {
-      ToastService.show('Please connect Lightning Wallet', 'error');
-      return { success: false, error: 'NWC not connected' };
+  private async tryEnableWebLN(): Promise<boolean> {
+    try {
+      if (!PlatformService.getInstance().isBrowser) return false;
+      if (!window.webln) return false;
+      await window.webln.enable();
+      return true;
+    } catch {
+      return false;
     }
-    return null;
+  }
+
+  /**
+   * Pay Lightning invoice via WebLN provider
+   *
+   * Handles two response formats:
+   * - Keychat: returns raw preimage string, errors start with "Error:"
+   * - Standard WebLN (Alby, etc.): returns { preimage: string }
+   */
+  private async payWithWebLN(invoice: string): Promise<PayInvoiceResult> {
+    try {
+      const result = await window.webln!.sendPayment(invoice);
+
+      // Keychat returns preimage as raw string, errors start with "Error:"
+      if (typeof result === 'string') {
+        if (result.startsWith('Error:')) {
+          return { success: false, error: result };
+        }
+        return { success: true, preimage: result };
+      }
+
+      // Standard WebLN returns { preimage: string }
+      if (result && typeof result === 'object' && 'preimage' in result) {
+        return { success: true, preimage: (result as { preimage: string }).preimage };
+      }
+
+      return { success: false, error: 'Unexpected WebLN response' };
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : 'WebLN payment failed' };
+    }
+  }
+
+  /**
+   * Check if any payment method is available (NWC or WebLN)
+   * NWC takes priority (user explicitly configured it in Settings).
+   * WebLN is only used when no NWC is configured (e.g., Keychat browser).
+   */
+  private async checkPaymentAvailability(): Promise<ZapResult | null> {
+    if (this.nwcService.isConnected()) return null;
+    if (await this.tryEnableWebLN()) return null;
+
+    ToastService.show('Please connect Lightning Wallet', 'error');
+    return { success: false, error: 'No payment method available' };
   }
 
   /**
    * Send quick zap with default amount and comment from settings
    */
   public async sendQuickZap(noteId: string, authorPubkey: string, articleEventId?: string): Promise<ZapResult> {
-    const connectionError = this.checkNWCConnection();
+    const connectionError = await this.checkPaymentAvailability();
     if (connectionError) return connectionError;
 
     const defaults = await this.getZapDefaults();
@@ -143,7 +192,7 @@ export class ZapService {
     comment?: string,
     articleEventId?: string
   ): Promise<ZapResult> {
-    const connectionError = this.checkNWCConnection();
+    const connectionError = await this.checkPaymentAvailability();
     if (connectionError) return connectionError;
 
     const zapRequest: ZapRequest = { noteId, authorPubkey, amount };
@@ -211,8 +260,15 @@ export class ZapService {
 
     this.systemLogger.info('ZapService', 'Invoice received');
 
-    // Step 4: Pay invoice with NWC
-    const paymentResult = await this.nwcService.payInvoice(invoice);
+    // Step 4: Pay invoice (NWC if configured, otherwise WebLN)
+    const useNWC = this.nwcService.isConnected();
+    const paymentResult = useNWC
+      ? await this.nwcService.payInvoice(invoice)
+      : await this.payWithWebLN(invoice);
+
+    if (!useNWC) {
+      this.systemLogger.info('ZapService', 'Paying via WebLN');
+    }
 
     if (!paymentResult.success) {
       this.systemLogger.error('ZapService', 'Payment failed', paymentResult.error);
