@@ -142,24 +142,8 @@ export class App {
     }
   }
 
-  private waitForAuthReady(): Promise<void> {
-    return new Promise((resolve) => {
-      if (this.authService.hasValidSession()) {
-        resolve();
-        return;
-      }
-
-      const timeout = setTimeout(() => {
-        this.eventBus.off(subscriptionId);
-        resolve();
-      }, 1000);
-
-      const subscriptionId = this.eventBus.on('user:login', () => {
-        clearTimeout(timeout);
-        this.eventBus.off(subscriptionId);
-        resolve();
-      });
-    });
+  private async waitForAuthReady(): Promise<void> {
+    await this.authService.waitForInitialization();
   }
 
   /**

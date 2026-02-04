@@ -851,25 +851,12 @@ export class AuthService {
       return false; // Don't clear session - extension might become available later
     }
 
-    try {
-      this.extension = window.nostr!;
-
-      // Verify the extension still has the same public key
-      const currentPubkey = await this.extension.getPublicKey();
-
-      if (currentPubkey === this.currentUser.pubkey) {
-        return true;
-      } else {
-        // Public key mismatch - clear session
-        console.warn('[AuthService] Extension pubkey mismatch - clearing session');
-        this.clearSession();
-        return false;
-      }
-    } catch (error) {
-      console.warn('[AuthService] Failed to restore extension connection:', error);
-      // Don't clear session on temporary errors - user can retry
-      return false;
-    }
+    // Set extension reference without calling getPublicKey().
+    // Keychat's getPublicKey always forces identity picker (skipCache=true),
+    // causing an unwanted prompt on every page load.
+    // Trust localStorage session data — key was verified during original login.
+    this.extension = window.nostr!;
+    return true;
   }
 
   /**
@@ -912,8 +899,11 @@ export class AuthService {
               const restored = await this.restoreExtensionConnection();
               if (!restored) {
                 console.warn('[AuthService] Extension session could not be restored - extension not available');
-                // Don't emit login event - user will need to re-authenticate
-                // But keep session data in case extension becomes available
+                // Clear in-memory state so hasValidSession() returns false → login page shown
+                // Keep localStorage session so next reload tries again
+                this.currentUser = null;
+                this.authMethod = null;
+                this.isReadOnly = false;
                 return;
               }
             }
