@@ -66,6 +66,9 @@ export const StorageKeys = {
   MUTUAL_LAST_CHECK: 'noornote_mutual_last_check_map',
   MUTUAL_UNSEEN_CHANGES: 'noornote_mutual_unseen_changes_map',
   MUTUAL_CHANGES: 'noornote_mutual_changes_map',
+
+  // Quick Zap toggle (per-account)
+  QUICK_ZAP_ENABLED: 'noornote_quick_zap_enabled_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

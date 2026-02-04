@@ -1,8 +1,8 @@
 /**
  * NWCSettingsSection Component
- * Manages Nostr Wallet Connect (NWC) and Zap default settings
+ * Manages Nostr Wallet Connect (NWC), Zap defaults, and Quick Zap settings
  *
- * @purpose Configure Lightning wallet connection and zap defaults
+ * @purpose Configure Lightning wallet connection, zap defaults, and Quick Zap toggle
  * @used-by SettingsView
  */
 
@@ -31,6 +31,7 @@ export class NWCSettingsSection extends SettingsSection {
   private zapDefaults: ZapDefaults;
   private fiatCurrencySettings: FiatCurrencySettings;
   private storageSwitch?: Switch;
+  private quickZapSwitch?: Switch;
 
   constructor() {
     super('zaps');
@@ -136,92 +137,113 @@ export class NWCSettingsSection extends SettingsSection {
     const isConnected = this.nwcService.isConnected();
     const lightningAddress = this.nwcService.getLightningAddress();
 
-    if (!isConnected) {
-      // Disconnected State
-      return `
-        <div class="zap-settings">
-          <div class="zap-info">
-            <p>Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps. Get your NWC connection string from your Lightning wallet provider (Alby, Mutiny, etc.).</p>
-          </div>
-
-          <div class="zap-connect">
-            <label for="nwc-connection-string">NWC Connection String:</label>
-            <input
-              type="password"
-              id="nwc-connection-string"
-              class="nwc-input"
-              placeholder="nostr+walletconnect://..."
-            />
-            <button class="btn btn--medium" id="nwc-connect-btn">Connect Wallet</button>
-            <div class="nwc-status" id="nwc-status"></div>
-
-            <div class="nwc-storage-option">
-              <div id="nwc-storage-switch-container"></div>
-              <p class="form__info" id="nwc-storage-info"></p>
+    // NWC connection section (connect or disconnect)
+    const nwcSection = isConnected
+      ? `
+        <div class="zap-connected">
+          <div class="zap-wallet-status">
+            <span class="wallet-icon">⚡</span>
+            <div class="wallet-connected-info">
+              <span class="wallet-connected-text">Lightning Wallet Connected</span>
+              ${lightningAddress ? `<span class="wallet-ln-address">${lightningAddress}</span>` : ''}
             </div>
+            <button class="btn btn--mini" id="nwc-disconnect-btn">Disconnect</button>
           </div>
         </div>
-      `;
-    } else {
-      // Connected State
-      return `
-        <div class="zap-settings">
-          <div class="zap-connected">
-            <div class="zap-wallet-status">
-              <span class="wallet-icon">⚡</span>
-              <div class="wallet-connected-info">
-                <span class="wallet-connected-text">Lightning Wallet Connected</span>
-                ${lightningAddress ? `<span class="wallet-ln-address">${lightningAddress}</span>` : ''}
-              </div>
-              <button class="btn btn--mini" id="nwc-disconnect-btn">Disconnect</button>
-            </div>
-          </div>
+      `
+      : `
+        <div class="zap-info">
+          <p>Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps. Get your NWC connection string from your Lightning wallet provider (Alby, Mutiny, etc.).</p>
+        </div>
 
-          <div class="zap-defaults">
-            <h3 class="subsection-title">Quick Zap Defaults</h3>
-            <div class="form__info">Configure default amount and comment for quick zaps (single click).</div>
-
-            <div class="form__row form__row--oneline">
-              <label for="zap-default-amount">Default Amount (sats):</label>
-              <input
-                type="number"
-                id="zap-default-amount"
-                min="1"
-                value="${this.zapDefaults.amount}"
-              />
-            </div>
-
-            <div class="form__row form__row--oneline">
-              <label for="zap-default-comment">Default Comment (optional):</label>
-              <input
-                type="text"
-                id="zap-default-comment"
-                placeholder="Great post!"
-                value="${this.zapDefaults.comment}"
-                maxlength="200"
-              />
-            </div>
-
-            <div class="form__row form__row--oneline">
-              <label for="fiat-currency-select">Zap Balance Fiat Currency:</label>
-              <select id="fiat-currency-select">
-                ${this.renderCurrencyOptions()}
-              </select>
-            </div>
-
-            <div class="settings-section__actions">
-              <button class="btn btn--medium" id="save-zap-defaults-btn">Save Defaults</button>
-              <div class="settings-section__action-feedback" id="zap-save-message"></div>
-            </div>
-          </div>
-
-          <div class="nwc-storage-option">
-            <div id="nwc-storage-switch-container"></div>
-            <p class="form__info" id="nwc-storage-info"></p>
-          </div>
+        <div class="zap-connect">
+          <label for="nwc-connection-string">NWC Connection String:</label>
+          <input
+            type="password"
+            id="nwc-connection-string"
+            class="nwc-input"
+            placeholder="nostr+walletconnect://..."
+          />
+          <button class="btn btn--medium" id="nwc-connect-btn">Connect Wallet</button>
+          <div class="nwc-status" id="nwc-status"></div>
         </div>
       `;
-    }
+
+    // Zap defaults section (always visible)
+    const zapDefaultsSection = `
+      <div class="zap-defaults">
+        <h3 class="subsection-title">Zap Settings</h3>
+
+        <div id="quick-zap-switch-container"></div>
+
+        <div class="form__row form__row--oneline">
+          <label for="zap-default-amount">Default Amount (sats):</label>
+          <input
+            type="number"
+            id="zap-default-amount"
+            min="1"
+            value="${this.zapDefaults.amount}"
+          />
+        </div>
+
+        <div class="form__row form__row--oneline">
+          <label for="zap-default-comment">Default Comment (optional):</label>
+          <input
+            type="text"
+            id="zap-default-comment"
+            placeholder="Great post!"
+            value="${this.zapDefaults.comment}"
+            maxlength="200"
+          />
+        </div>
+
+        <div class="form__row form__row--oneline">
+          <label for="fiat-currency-select">Zap Balance Fiat Currency:</label>
+          <select id="fiat-currency-select">
+            ${this.renderCurrencyOptions()}
+          </select>
+        </div>
+
+        <div class="settings-section__actions">
+          <button class="btn btn--medium" id="save-zap-defaults-btn">Save</button>
+          <div class="settings-section__action-feedback" id="zap-save-message"></div>
+        </div>
+      </div>
+    `;
+
+    return `
+      <div class="zap-settings">
+        ${nwcSection}
+        ${zapDefaultsSection}
+        <div class="nwc-storage-option">
+          <div id="nwc-storage-switch-container"></div>
+          <p class="form__info" id="nwc-storage-info"></p>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Setup Quick Zap toggle switch
+   */
+  private setupQuickZapSwitch(contentContainer: HTMLElement): void {
+    const container = contentContainer.querySelector('#quick-zap-switch-container');
+    if (!container) return;
+
+    const storage = PerAccountLocalStorage.getInstance();
+    const quickZapEnabled = storage.get(StorageKeys.QUICK_ZAP_ENABLED, false);
+
+    this.quickZapSwitch = new Switch({
+      label: 'Quick Zap',
+      checked: quickZapEnabled,
+      onChange: (checked) => {
+        storage.set(StorageKeys.QUICK_ZAP_ENABLED, checked);
+      }
+    });
+
+    container.innerHTML = this.quickZapSwitch.render()
+      + '<p class="form__info">Single click sends zap with default amount. When disabled, click opens zap dialog.</p>';
+    this.quickZapSwitch.setupEventListeners(container as HTMLElement);
   }
 
   /**
@@ -325,7 +347,8 @@ export class NWCSettingsSection extends SettingsSection {
   private async bindListeners(contentContainer: HTMLElement): Promise<void> {
     const isConnected = this.nwcService.isConnected();
 
-    // Setup storage switch (both connected and disconnected states)
+    // Setup switches
+    this.setupQuickZapSwitch(contentContainer);
     await this.setupStorageSwitch(contentContainer);
 
     if (!isConnected) {
@@ -370,32 +393,32 @@ export class NWCSettingsSection extends SettingsSection {
           this.mount(parentContainer);
         }
       });
-
-      // Save defaults button
-      const saveBtn = contentContainer.querySelector('#save-zap-defaults-btn');
-      const amountInput = contentContainer.querySelector('#zap-default-amount') as HTMLInputElement;
-      const commentInput = contentContainer.querySelector('#zap-default-comment') as HTMLInputElement;
-      const currencySelect = contentContainer.querySelector('#fiat-currency-select') as HTMLSelectElement;
-
-      saveBtn?.addEventListener('click', async () => {
-        const amount = parseInt(amountInput?.value || '21', 10);
-        const comment = commentInput?.value || '';
-        const currency = currencySelect?.value || 'EUR';
-
-        if (amount < 1) {
-          this.showMessage(contentContainer, 'Amount must be at least 1 sat', 'error');
-          return;
-        }
-
-        // Update and save
-        this.zapDefaults = { amount, comment };
-        this.fiatCurrencySettings = { currency };
-        await this.saveZapDefaults();
-        await this.saveFiatCurrencySettings();
-
-        this.showMessage(contentContainer, 'Zap defaults saved!', 'success');
-      });
     }
+
+    // Save defaults button (always available)
+    const saveBtn = contentContainer.querySelector('#save-zap-defaults-btn');
+    const amountInput = contentContainer.querySelector('#zap-default-amount') as HTMLInputElement;
+    const commentInput = contentContainer.querySelector('#zap-default-comment') as HTMLInputElement;
+    const currencySelect = contentContainer.querySelector('#fiat-currency-select') as HTMLSelectElement;
+
+    saveBtn?.addEventListener('click', async () => {
+      const amount = parseInt(amountInput?.value || '21', 10);
+      const comment = commentInput?.value || '';
+      const currency = currencySelect?.value || 'EUR';
+
+      if (amount < 1) {
+        this.showMessage(contentContainer, 'Amount must be at least 1 sat', 'error');
+        return;
+      }
+
+      // Update and save
+      this.zapDefaults = { amount, comment };
+      this.fiatCurrencySettings = { currency };
+      await this.saveZapDefaults();
+      await this.saveFiatCurrencySettings();
+
+      this.showMessage(contentContainer, 'Zap defaults saved!', 'success');
+    });
   }
 
   /**

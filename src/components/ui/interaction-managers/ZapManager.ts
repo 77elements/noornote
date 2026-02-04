@@ -1,8 +1,8 @@
 /**
  * ZapManager
  * Handles zap interactions for InteractionStatusLine:
- * - Quick Zap (click)
- * - Custom Zap Modal (long-press)
+ * - Default: Click opens Zap Modal (amount selection)
+ * - Quick Zap (opt-in setting): Click sends default amount, long-press opens modal
  * - Button state updates (yellow icon, amount badge, loading spinner)
  */
 
@@ -13,6 +13,7 @@ import { ToastService } from '../../../services/ToastService';
 import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
 import { EventBus } from '../../../services/EventBus';
 import { UserProfileService } from '../../../services/UserProfileService';
+import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
 
 export interface ZapManagerConfig {
   noteId: string;
@@ -45,6 +46,13 @@ export class ZapManager {
     this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
     this.eventBus = EventBus.getInstance();
     this.userProfileService = UserProfileService.getInstance();
+  }
+
+  /**
+   * Check if Quick Zap is enabled (opt-in setting, default OFF)
+   */
+  private isQuickZapEnabled(): boolean {
+    return PerAccountLocalStorage.getInstance().get(StorageKeys.QUICK_ZAP_ENABLED, false);
   }
 
   /**
@@ -119,7 +127,7 @@ export class ZapManager {
   }
 
   /**
-   * Handle custom zap action (long-press)
+   * Handle custom zap action (modal)
    */
   public handleCustomZap(): void {
     if (!AuthGuard.requireAuth('send custom zap')) {
@@ -285,11 +293,25 @@ export class ZapManager {
   }
 
   /**
-   * Attach long-press event listeners to zap button
+   * Attach event listeners to zap button
+   * Quick Zap OFF (default): click = open modal
+   * Quick Zap ON: click = quick zap, long-press = open modal
    */
   public attachEventListeners(zapButton: HTMLElement): void {
     this.setButtonElement(zapButton);
 
+    const quickZap = this.isQuickZapEnabled();
+
+    if (!quickZap) {
+      // Default: every click opens ZapModal
+      zapButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.handleCustomZap();
+      });
+      return;
+    }
+
+    // Quick Zap enabled: click = quick zap, long-press = modal
     let longPressTimer: number | null = null;
     let isLongPress = false;
 
@@ -298,7 +320,7 @@ export class ZapManager {
       longPressTimer = window.setTimeout(() => {
         isLongPress = true;
         this.handleCustomZap();
-      }, 1000); // 1 second long-press
+      }, 1000);
     };
 
     const cancelLongPress = () => {
