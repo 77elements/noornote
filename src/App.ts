@@ -125,6 +125,16 @@ export class App {
 
     this.router.navigate(targetPath);
 
+    // If user is already logged in from session restore, start services explicitly.
+    // user:login may have been emitted before setupEventListeners() registered the handler
+    // (loadSession runs synchronously for nsec/extension auth during module import).
+    if (isLoggedIn) {
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser) {
+        await this.handleUserLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
+      }
+    }
+
     // Set focus to enable keyboard shortcuts immediately after app load
     this.setInitialFocus();
   }
@@ -568,8 +578,8 @@ export class App {
   private async runSilent(fn: () => Promise<void>): Promise<void> {
     try {
       await fn();
-    } catch {
-      // Initialization failed - non-critical
+    } catch (error) {
+      console.error('[App] runSilent caught error:', error);
     }
   }
 
