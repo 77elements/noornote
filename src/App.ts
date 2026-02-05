@@ -505,8 +505,15 @@ export class App {
   // Intentionally empty - CSS handles responsive layout
   private handleResize(): void {}
 
-  // Intentionally empty - subscriptions are lightweight, no pause needed
-  private handleVisibilityChange(): void {}
+  private async handleVisibilityChange(): Promise<void> {
+    if (document.visibilityState !== 'visible') return;
+
+    const { NotificationsOrchestrator } = await import('./services/orchestration/NotificationsOrchestrator');
+    await NotificationsOrchestrator.getInstance().refreshSubscriptions();
+
+    const { DMService } = await import('./services/dm/DMService');
+    await DMService.getInstance().refreshSubscriptions();
+  }
 
   private setupExternalLinkHandler(): void {
     document.addEventListener('click', async (event) => {

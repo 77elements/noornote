@@ -58,6 +58,10 @@ export class DMService {
   // Progress tracking for UI
   private fetchProgress: { current: number; total: number } = { current: 0, total: 0 };
 
+  // Periodic subscription refresh (browser WebSocket connections go stale)
+  private refreshTimer: number | null = null;
+  private static readonly REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+
   private constructor() {
     this.transport = NostrTransport.getInstance();
     this.authService = AuthService.getInstance();
@@ -129,6 +133,9 @@ export class DMService {
         this.systemLogger.warn('DMService', 'Error starting subscription:', subError);
       }
 
+      // Start periodic refresh timer (browser WebSocket connections go stale)
+      this.startRefreshTimer();
+
       this.systemLogger.info('DMService', 'DM service started');
     } catch (error) {
       this.systemLogger.error('DMService', 'Failed to start DM service:', error);
@@ -140,6 +147,8 @@ export class DMService {
    * Stop DM subscription (called on logout)
    */
   public stop(): void {
+    this.clearRefreshTimer();
+
     if (this.subscriptionId) {
       this.transport.unsubscribeLive(this.subscriptionId);
       this.subscriptionId = null;
@@ -147,6 +156,89 @@ export class DMService {
 
     this.userPubkey = null;
     this.systemLogger.info('DMService', 'DM service stopped');
+  }
+
+  /**
+   * Refresh DM subscription - closes stale one and re-subscribes
+   * Called periodically and on tab visibility change
+   */
+  public async refreshSubscriptions(): Promise<void> {
+    if (!this.userPubkey) return;
+
+    this.systemLogger.info('DMService', '🔄 Refreshing DM subscription...');
+
+    // 1. Close existing subscription
+    if (this.subscriptionId) {
+      this.transport.unsubscribeLive(this.subscriptionId);
+      this.subscriptionId = null;
+    }
+
+    // 2. Fetch missed DMs from the last 35 minutes
+    await this.fetchMissedMessages();
+
+    // 3. Re-subscribe
+    await this.startSubscription();
+
+    this.systemLogger.info('DMService', '✅ DM subscription refreshed');
+  }
+
+  /**
+   * Fetch missed DMs since last refresh interval
+   * Lightweight version of fetchHistoricalMessages for catch-up
+   */
+  private async fetchMissedMessages(): Promise<void> {
+    if (!this.userPubkey) return;
+
+    const since = Math.floor(Date.now() / 1000) - (35 * 60); // last 35 minutes
+
+    try {
+      const inboxRelays = await this.getMyInboxRelays();
+
+      // NIP-17 Gift Wraps
+      const nip17Events = await this.transport.fetch(inboxRelays, [{
+        kinds: [KIND_GIFT_WRAP],
+        '#p': [this.userPubkey],
+        since
+      }], 10000);
+
+      // Legacy NIP-04
+      const readRelays = this.relayConfig.getReadRelays();
+      const legacyEvents = await this.transport.fetch(readRelays, [{
+        kinds: [KIND_LEGACY_DM],
+        '#p': [this.userPubkey],
+        since
+      }], 10000);
+
+      for (const event of nip17Events) {
+        await this.processGiftWrap(event);
+      }
+      for (const event of legacyEvents) {
+        await this.processLegacyDM(event);
+      }
+
+      if (nip17Events.length > 0 || legacyEvents.length > 0) {
+        this.systemLogger.info('DMService', `Caught up: ${nip17Events.length} NIP-17, ${legacyEvents.length} legacy events`);
+        this.eventBus.emit('dm:badge-update');
+      }
+    } catch (error) {
+      this.systemLogger.error('DMService', 'Failed to fetch missed messages:', error);
+    }
+  }
+
+  /** Start periodic refresh timer */
+  private startRefreshTimer(): void {
+    this.clearRefreshTimer();
+    this.refreshTimer = window.setInterval(() => {
+      this.refreshSubscriptions();
+    }, DMService.REFRESH_INTERVAL);
+  }
+
+  /** Clear periodic refresh timer */
+  private clearRefreshTimer(): void {
+    if (this.refreshTimer !== null) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+    }
   }
 
   /**

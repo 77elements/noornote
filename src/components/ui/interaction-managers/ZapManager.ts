@@ -294,28 +294,18 @@ export class ZapManager {
 
   /**
    * Attach event listeners to zap button
+   * Checks Quick Zap setting dynamically at click time (not at setup time)
    * Quick Zap OFF (default): click = open modal
    * Quick Zap ON: click = quick zap, long-press = open modal
    */
   public attachEventListeners(zapButton: HTMLElement): void {
     this.setButtonElement(zapButton);
 
-    const quickZap = this.isQuickZapEnabled();
-
-    if (!quickZap) {
-      // Default: every click opens ZapModal
-      zapButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.handleCustomZap();
-      });
-      return;
-    }
-
-    // Quick Zap enabled: click = quick zap, long-press = modal
     let longPressTimer: number | null = null;
     let isLongPress = false;
 
     const startLongPress = () => {
+      if (!this.isQuickZapEnabled()) return;
       isLongPress = false;
       longPressTimer = window.setTimeout(() => {
         isLongPress = true;
@@ -330,6 +320,17 @@ export class ZapManager {
       }
     };
 
+    const handleRelease = () => {
+      cancelLongPress();
+      if (isLongPress) return;
+
+      if (this.isQuickZapEnabled()) {
+        this.handleQuickZap();
+      } else {
+        this.handleCustomZap();
+      }
+    };
+
     // Mouse events
     zapButton.addEventListener('mousedown', (e) => {
       e.stopPropagation();
@@ -338,10 +339,7 @@ export class ZapManager {
 
     zapButton.addEventListener('mouseup', (e) => {
       e.stopPropagation();
-      cancelLongPress();
-      if (!isLongPress) {
-        this.handleQuickZap();
-      }
+      handleRelease();
     });
 
     zapButton.addEventListener('mouseleave', () => {
@@ -356,10 +354,7 @@ export class ZapManager {
 
     zapButton.addEventListener('touchend', (e) => {
       e.stopPropagation();
-      cancelLongPress();
-      if (!isLongPress) {
-        this.handleQuickZap();
-      }
+      handleRelease();
     });
 
     zapButton.addEventListener('touchcancel', () => {
