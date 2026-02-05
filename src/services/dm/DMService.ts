@@ -60,6 +60,7 @@ export class DMService {
 
   // Periodic subscription refresh (browser WebSocket connections go stale)
   private refreshTimer: number | null = null;
+  private isRefreshing: boolean = false;
   private static readonly REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
   private constructor() {
@@ -163,23 +164,31 @@ export class DMService {
    * Called periodically and on tab visibility change
    */
   public async refreshSubscriptions(): Promise<void> {
-    if (!this.userPubkey) return;
+    if (!this.userPubkey || this.isRefreshing) return;
 
-    this.systemLogger.info('DMService', '🔄 Refreshing DM subscription...');
+    this.isRefreshing = true;
+    try {
+      this.systemLogger.info('DMService', '🔄 Refreshing DM subscription...');
 
-    // 1. Close existing subscription
-    if (this.subscriptionId) {
-      this.transport.unsubscribeLive(this.subscriptionId);
-      this.subscriptionId = null;
+      // 1. Close existing subscription
+      if (this.subscriptionId) {
+        this.transport.unsubscribeLive(this.subscriptionId);
+        this.subscriptionId = null;
+      }
+
+      // 2. Fetch missed DMs from the last 35 minutes
+      await this.fetchMissedMessages();
+
+      // 3. Re-subscribe
+      await this.startSubscription();
+
+      // 4. Reset timer so it counts from now (avoids redundant refresh after visibility change)
+      this.startRefreshTimer();
+
+      this.systemLogger.info('DMService', '✅ DM subscription refreshed');
+    } finally {
+      this.isRefreshing = false;
     }
-
-    // 2. Fetch missed DMs from the last 35 minutes
-    await this.fetchMissedMessages();
-
-    // 3. Re-subscribe
-    await this.startSubscription();
-
-    this.systemLogger.info('DMService', '✅ DM subscription refreshed');
   }
 
   /**

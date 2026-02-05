@@ -125,6 +125,16 @@ export class App {
 
     this.router.navigate(targetPath);
 
+    // If user is already logged in from session restore, start services explicitly.
+    // user:login may have been emitted before setupEventListeners() registered the handler
+    // (loadSession runs synchronously for nsec/extension auth during module import).
+    if (isLoggedIn) {
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser) {
+        await this.handleUserLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
+      }
+    }
+
     // Set focus to enable keyboard shortcuts immediately after app load
     this.setInitialFocus();
   }
@@ -508,11 +518,20 @@ export class App {
   private async handleVisibilityChange(): Promise<void> {
     if (document.visibilityState !== 'visible') return;
 
-    const { NotificationsOrchestrator } = await import('./services/orchestration/NotificationsOrchestrator');
-    await NotificationsOrchestrator.getInstance().refreshSubscriptions();
+    // Run independently — one failing must not block the other
+    const [notifResult, dmResult] = await Promise.allSettled([
+      import('./services/orchestration/NotificationsOrchestrator')
+        .then(({ NotificationsOrchestrator }) => NotificationsOrchestrator.getInstance().refreshSubscriptions()),
+      import('./services/dm/DMService')
+        .then(({ DMService }) => DMService.getInstance().refreshSubscriptions())
+    ]);
 
-    const { DMService } = await import('./services/dm/DMService');
-    await DMService.getInstance().refreshSubscriptions();
+    if (notifResult.status === 'rejected') {
+      SystemLogger.getInstance().error('App', 'Notification refresh failed on visibility change:', notifResult.reason);
+    }
+    if (dmResult.status === 'rejected') {
+      SystemLogger.getInstance().error('App', 'DM refresh failed on visibility change:', dmResult.reason);
+    }
   }
 
   private setupExternalLinkHandler(): void {
@@ -559,8 +578,8 @@ export class App {
   private async runSilent(fn: () => Promise<void>): Promise<void> {
     try {
       await fn();
-    } catch {
-      // Initialization failed - non-critical
+    } catch (error) {
+      console.error('[App] runSilent caught error:', error);
     }
   }
 
