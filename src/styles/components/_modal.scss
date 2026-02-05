@@ -8,6 +8,7 @@
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/icons' as *;
 
 .modal {
   position: fixed;
@@ -71,7 +72,7 @@
     background: transparent;
     border: none;
     color: $color-5;
-    font-size: 28px;
+    @extend %icon-md;
     line-height: 1;
     cursor: pointer;
     padding: calc($gap / 4);

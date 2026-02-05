@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 // ========================================
 // SNV Wrapper (wraps NoteUI + SNV-specific elements)
@@ -89,7 +90,7 @@
   gap: $gap;
 
   &__icon {
-    font-size: 48px;
+    @extend %icon-lg;
   }
 
   &__message {

@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/icons' as *;
 
 // Container (fixed position, top-right)
 .toast-container {
@@ -112,7 +113,7 @@
   background: none;
   border: none;
   color: $color-4;
-  font-size: 20px;
+  @extend %icon-sm;
   line-height: 1;
   cursor: pointer;
   border-radius: $radius-base;

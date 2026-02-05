@@ -68,9 +68,33 @@ h5, .h5 { @extend %h5; margin-bottom: $gap; }
 h6, .h6 { @extend %h6; margin-bottom: $gap; }
 
 // ========================================
-// Small & Mini text (fixed sizes)
-// Small: 12px, Mini: 9px
+// Text sizes (non-heading)
+// gigantic: 48px, big: 23px, compact: 14px, small: 12px, mini: 9px
 // ========================================
+%gigantic {
+  font-size: 48px;
+}
+
+@mixin gigantic {
+  font-size: 48px;
+}
+
+.gigantic {
+  @extend %gigantic;
+}
+
+%huge {
+  font-size: 27px;
+}
+
+@mixin huge {
+  font-size: 27px;
+}
+
+.huge {
+  @extend %huge;
+}
+
 %big {
   font-size: 23px;
 }
@@ -81,6 +105,18 @@ h6, .h6 { @extend %h6; margin-bottom: $gap; }
 
 .big {
   @extend %big;
+}
+
+%compact {
+  font-size: 14px;
+}
+
+@mixin compact {
+  font-size: 14px;
+}
+
+.compact {
+  @extend %compact;
 }
 
 %small {
@@ -181,7 +217,7 @@ mark {
 // Code elements
 code {
   font-family: $font-family-mono;
-  font-size: 0.875em;
+  @extend %compact;
   background-color: $color-2;
   padding: calc($gap / 4) calc($gap / 2);
   border-radius: $radius-sm;
@@ -190,7 +226,7 @@ code {
 
 pre {
   font-family: $font-family-mono;
-  font-size: 14px;
+  @extend %compact;
   line-height: 1.5;
   background-color: $color-2;
   padding: $gap;
@@ -203,7 +239,6 @@ pre {
     background: none;
     border: none;
     padding: 0;
-    font-size: inherit;
   }
 }
 
@@ -221,7 +256,7 @@ blockquote {
 
   cite {
     display: block;
-    font-size: 14px;
+    @extend %compact;
     font-style: normal;
     margin-top: calc($gap / 2);
 

@@ -7,6 +7,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 // ProfileSearchComponent - Search overlay
 .profile-search {
@@ -61,7 +62,7 @@
     background: transparent;
     border: none;
     color: $color-5;
-    font-size: 24px;
+    @extend %icon-md;
     line-height: 1;
     cursor: pointer;
     padding: calc($gap / 4);

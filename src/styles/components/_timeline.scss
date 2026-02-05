@@ -6,6 +6,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 .timeline {
   min-height: 100%;
@@ -47,7 +48,6 @@
 
   // "Look for new notes" link (shown when polling might be stuck)
   .timeline-look-for-notes-link {
-    font-size: 0.875rem;
     color: $color-4;
     text-decoration: none;
     padding: calc($gap / 2) $gap;
@@ -178,7 +178,7 @@
     color: $color-5;
 
     .depth-icon {
-      font-size: 19px;
+      @extend %icon-sm;
       opacity: 0.7;
     }
 

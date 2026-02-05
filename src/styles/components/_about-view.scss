@@ -86,7 +86,7 @@
 }
 
 .primary-nav__link--about {
-  font-size: 12px !important;
+  @extend %small;
   color: $color-4 !important;
   text-decoration: none;
   padding: calc($gap / 4) 0 !important;

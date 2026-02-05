@@ -7,6 +7,7 @@
 @use '../base/typography' as *;
 @use '../abstracts/mixins' as *;
 @use 'sass:color';
+@use '../base/icons' as *;
 
 // Article content wrapper
 .article-view-content {
@@ -79,7 +80,6 @@
     padding: calc($gap / 4) calc($gap / 2);
     border-radius: $radius-base;
     font-family: $font-family-mono;
-    font-size: 0.9em;
   }
 
   pre {
@@ -161,7 +161,7 @@
   gap: $gap;
 
   .error-icon {
-    font-size: 48px;
+    @extend %icon-lg;
   }
 
   p {

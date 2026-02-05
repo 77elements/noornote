@@ -98,7 +98,7 @@
 .analytics-modal__client {
   text-align: right;
   color: $color-3;
-  font-size: 0.75rem;
+  @extend %small;
   margin-top: $gap;
   opacity: 0.8;
 }

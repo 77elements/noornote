@@ -1,11 +1,12 @@
 @use '../abstracts/variables' as *;
+@use '../base/icons' as *;
 
 .auth-required-modal {
   text-align: center;
   padding: $gap;
 
   &__icon {
-    font-size: 48px;
+    @extend %icon-lg;
     margin-bottom: $gap;
   }
 

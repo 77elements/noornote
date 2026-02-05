@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 @use 'sass:color';
 
 .isl {
@@ -51,7 +52,7 @@
 }
 
 .isl-icon {
-  font-size: 19px;
+  @extend %icon-sm;
   line-height: 1;
   display: flex;
   align-items: center;
@@ -68,7 +69,7 @@
 }
 
 .isl-quote .isl-icon {
-  font-size: 24px;
+  @extend %icon-md;
 }
 
 .isl-count {
@@ -102,7 +103,7 @@
 
     &::before {
       content: '♥';
-      font-size: 19px; // Show filled heart
+      @extend %icon-sm; // Show filled heart
     }
   }
 }
@@ -144,7 +145,7 @@
 
       &::before {
         content: '♥'; // Filled heart when liked
-        font-size: 19px;
+        @extend %icon-sm;
       }
     }
 

@@ -8,6 +8,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 // ===========================================
 // FULLSCREEN LAYOUT
@@ -34,7 +35,7 @@
   margin-bottom: $gap * 3;
 
   .nn-logo {
-    font-size: 27px;
+    @extend %huge;
   }
 }
 
@@ -97,12 +98,11 @@
   margin-bottom: $gap * 2;
 
   h1 {
-    font-size: 27px;
     margin-bottom: $gap * 1.5;
   }
 
   h2 {
-    font-size: 27px;
+    @include h1;
     margin-bottom: $gap * 1.5;
   }
 
@@ -123,7 +123,7 @@
   }
 
   .form-hint {
-    font-size: 14px;
+    @extend %compact;
     margin-top: calc($gap / 2);
   }
 }
@@ -295,7 +295,7 @@
   align-items: center;
   gap: calc($gap / 4);
   cursor: pointer;
-  font-size: 14px;
+  @extend %compact;
   color: $color-5;
   margin: 0;
 
@@ -308,7 +308,7 @@
   background: none;
   border: none;
   color: $color-3;
-  font-size: 20px;
+  @extend %icon-sm;
   cursor: pointer;
   padding: 0 calc($gap / 4);
   line-height: 1;
@@ -411,7 +411,7 @@
 }
 
 .wizard-pack-meta {
-  font-size: 14px;
+  @extend %compact;
   color: $color-5;
 }
 
@@ -469,7 +469,7 @@
 }
 
 .wizard-pack-user-bio {
-  font-size: 14px;
+  @extend %compact;
   color: $color-5;
   line-height: 1.4;
   display: -webkit-box;
@@ -610,7 +610,6 @@
 
 .wizard-status {
   margin-top: calc($gap / 2);
-  font-size: 0.9rem;
 
   &.error {
     color: $color-4;
@@ -699,7 +698,6 @@
     gap: calc($gap / 2);
     cursor: pointer;
     color: $color-5;
-    font-size: 1.1rem;
 
     input[type="checkbox"] {
       width: 20px;
