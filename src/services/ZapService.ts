@@ -561,7 +561,8 @@ export class ZapService {
     try {
       const amountMillisats = amountSats * 1000;
       const nostrParam = encodeURIComponent(JSON.stringify(zapRequestEvent));
-      const callbackUrl = `${lnurl}?amount=${amountMillisats}&nostr=${nostrParam}`;
+      const separator = lnurl.includes('?') ? '&' : '?';
+      const callbackUrl = `${lnurl}${separator}amount=${amountMillisats}&nostr=${nostrParam}`;
 
       const response = await this.fetchWithTimeout(callbackUrl);
 
@@ -665,8 +666,8 @@ export class ZapService {
 
     // Default values
     return {
-      amount: 7,
-      comment: 'NoorNote Zap'
+      amount: 21,
+      comment: ''
     };
   }
 

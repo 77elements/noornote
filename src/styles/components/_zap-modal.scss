@@ -1,6 +1,6 @@
 /**
  * ZapModal Component Styles
- * Custom zap interface with amount and comment inputs
+ * Zap interface with preset amount buttons, custom input, and comment
  */
 
 @use '../abstracts/variables' as *;
@@ -14,6 +14,59 @@
     display: flex;
     flex-direction: column;
     gap: calc($gap * 1.5);
+  }
+
+  &__amount-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: calc($gap / 2);
+  }
+
+  &__amount-input {
+    background: transparent;
+    border: none;
+    text-align: center;
+    font-size: 3rem;
+    font-weight: 700;
+    width: 100%;
+    padding: 0;
+    color: $color-6;
+    font-family: inherit;
+
+    &:focus {
+      outline: none;
+    }
+
+    // Remove spinner
+    -moz-appearance: textfield;
+
+    &::-webkit-outer-spin-button,
+    &::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+  }
+
+  &__amount-unit {
+    font-size: 1rem;
+    color: $color-3;
+    font-weight: 600;
+  }
+
+  &__presets {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: calc($gap / 2);
+  }
+
+  &__preset {
+    font-size: 0.85rem;
+
+    &--active {
+      border-color: $color-4;
+      color: $color-4;
+    }
   }
 
   &__field {
@@ -36,9 +89,6 @@
       outline: none;
     }
 
-    &::placeholder {
-    }
-
     // Remove spinner for number input
     &[type="number"] {
       -moz-appearance: textfield;
@@ -56,20 +106,5 @@
     justify-content: flex-end;
     gap: $gap;
     padding-top: calc($gap / 2);
-  }
-}
-
-// Mobile responsiveness
-@media (max-width: 768px) {
-  .zap-modal {
-    gap: $gap;
-
-    &__content {
-      gap: $gap;
-    }
-
-    &__actions {
-      flex-direction: column-reverse;
-    }
   }
 }

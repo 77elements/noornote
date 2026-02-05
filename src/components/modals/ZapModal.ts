@@ -1,6 +1,6 @@
 /**
  * ZapModal - Custom Zap UI Component
- * Modal for sending custom zaps with specified amount and comment
+ * Modal for sending zaps with preset amounts or custom input
  * Uses ModalService for modal infrastructure
  */
 
@@ -10,6 +10,18 @@ import { NWCService } from '../../services/NWCService';
 import { ToastService } from '../../services/ToastService';
 import { PlatformService } from '../../services/PlatformService';
 import { SystemLogger } from '../system/SystemLogger';
+
+const PRESET_AMOUNTS = [
+  { display: '21', value: 21 },
+  { display: '42', value: 42 },
+  { display: '210', value: 210 },
+  { display: '420', value: 420 },
+  { display: '1k', value: 1000 },
+  { display: '2.1k', value: 2100 },
+  { display: '4.2k', value: 4200 },
+  { display: '10k', value: 10000 },
+  { display: '21k', value: 21000 },
+];
 
 export interface ZapModalOptions {
   /** Note ID being zapped */
@@ -56,10 +68,10 @@ export class ZapModal {
     const content = await this.renderContent();
 
     this.modalService.show({
-      title: '⚡ Custom Zap',
+      title: 'Zap',
       content,
       width: '450px',
-      height: '360px',
+      height: 'auto',
       showCloseButton: true,
       closeOnOverlay: true,
       closeOnEsc: true
@@ -81,28 +93,34 @@ export class ZapModal {
     // Get default values from Keychain/localStorage
     const defaults = await this.getZapDefaults();
 
+    const presetButtonsHtml = PRESET_AMOUNTS.map(p =>
+      `<button type="button" class="btn btn--mini zap-modal__preset${p.value === defaults.amount ? ' zap-modal__preset--active' : ''}" data-amount="${p.value}">${p.display}</button>`
+    ).join('');
+
     container.innerHTML = `
       <div class="zap-modal__content">
-        <div class="zap-modal__field">
-          <label for="zap-amount" class="zap-modal__label">Amount (Sats)</label>
+        <div class="zap-modal__amount-display">
           <input
             type="number"
             id="zap-amount"
-            class="input zap-modal__input"
+            class="zap-modal__amount-input"
             value="${defaults.amount}"
             min="1"
             max="1000000"
-            placeholder="21"
           />
+          <span class="zap-modal__amount-unit">sats</span>
+        </div>
+
+        <div class="zap-modal__presets">
+          ${presetButtonsHtml}
         </div>
 
         <div class="zap-modal__field">
-          <label for="zap-comment" class="zap-modal__label">Comment (optional)</label>
           <input
             type="text"
             id="zap-comment"
             class="input zap-modal__input"
-            placeholder="Great post!"
+            placeholder="Comment (optional)"
             maxlength="280"
             value="${defaults.comment}"
           />
@@ -111,7 +129,7 @@ export class ZapModal {
         <div class="zap-modal__actions">
           <button type="button" class="btn btn--passive" id="zap-cancel-btn">Cancel</button>
           <button type="button" class="btn" id="zap-send-btn">
-            <span class="btn__text">Send Zap</span>
+            <span class="btn__text">Zap</span>
             <span class="btn__loading" style="display: none;">Sending...</span>
           </button>
         </div>
@@ -138,6 +156,29 @@ export class ZapModal {
     // Focus amount input
     amountInput.focus();
     amountInput.select();
+
+    // Preset buttons
+    const presetButtons = document.querySelectorAll('.zap-modal__preset');
+    presetButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const amount = (btn as HTMLElement).dataset.amount;
+        if (amount) {
+          amountInput.value = amount;
+          // Update active state
+          presetButtons.forEach(b => b.classList.remove('zap-modal__preset--active'));
+          btn.classList.add('zap-modal__preset--active');
+        }
+      });
+    });
+
+    // Deselect presets when typing custom amount
+    amountInput.addEventListener('input', () => {
+      const val = parseInt(amountInput.value, 10);
+      presetButtons.forEach(btn => {
+        const presetVal = parseInt((btn as HTMLElement).dataset.amount || '0', 10);
+        btn.classList.toggle('zap-modal__preset--active', presetVal === val);
+      });
+    });
 
     // Cancel button
     cancelBtn.addEventListener('click', () => {
@@ -167,6 +208,14 @@ export class ZapModal {
 
     amountInput.addEventListener('keydown', handleCtrlEnter);
     commentInput.addEventListener('keydown', handleCtrlEnter);
+
+    // Enter in comment field sends zap
+    commentInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.ctrlKey && !e.metaKey) {
+        e.preventDefault();
+        this.handleSendZap(amountInput, commentInput, sendBtn);
+      }
+    });
   }
 
   /**

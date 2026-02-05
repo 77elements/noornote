@@ -73,6 +73,10 @@ export class NotificationsOrchestrator extends Orchestrator {
   /** NoteService for caching kind 1 events */
   private noteService: NoteService;
 
+  /** Refresh timer for periodic re-subscription (browser WebSocket connections go stale) */
+  private refreshTimer: number | null = null;
+  private static readonly REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+
   private constructor() {
     super('NotificationsOrchestrator');
     this.transport = NostrTransport.getInstance();
@@ -143,51 +147,10 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.restoreMutualChangeNotifications(currentUser.pubkey);
 
     // Step 3: Subscribe to new notifications (real-time)
-    const now = Math.floor(Date.now() / 1000);
-    const relays = await this.getReadRelays();
+    await this.subscribeToLive();
 
-    // Filter 1: Direct mentions/tags (#p filter)
-    const ptagFilter: NDKFilter = {
-      '#p': [currentUser.pubkey],
-      kinds: [1, 6, 7, 9735], // notes, reposts, reactions, zaps
-      since: now // Only new events from now on
-    };
-
-    this.ptagSubId = 'notifications-ptag';
-    this.transport.subscribeLive(
-      relays,
-      [ptagFilter],
-      this.ptagSubId,
-      (event: NostrEvent, _relay: string) => {
-        this.onmessage(_relay, event);
-      }
-    );
-
-    this.systemLogger.info('NotificationsOrchestrator', `✅ #p subscription active (${this.ptagSubId})`);
-
-    // Filter 2: Replies to user's events (#e filter)
-    const userEventIds = this.getUserEventIds();
-    if (userEventIds.length > 0) {
-      const etagFilter: NDKFilter = {
-        '#e': userEventIds,
-        kinds: [1, 7, 9735], // replies, reactions, zaps to user's events
-        since: now // Only new events from now on
-      };
-
-      this.etagSubId = 'notifications-etag';
-      this.transport.subscribeLive(
-        relays,
-        [etagFilter],
-        this.etagSubId,
-        (event: NostrEvent, _relay: string) => {
-          this.onmessage(_relay, event);
-        }
-      );
-
-      this.systemLogger.info('NotificationsOrchestrator', `✅ #e subscription active (${this.etagSubId}) - tracking ${userEventIds.length} events`);
-    } else {
-      this.systemLogger.warn('NotificationsOrchestrator', '⚠️ No user event IDs found - #e filter skipped');
-    }
+    // Step 4: Start periodic refresh timer (browser WebSocket connections go stale)
+    this.startRefreshTimer();
 
     // Listen for article notification events
     this.eventBus.on('article-notification:new', (data: { pubkey: string; articleId: string; naddr: string; title: string; createdAt: number }) => {
@@ -208,6 +171,107 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.eventBus.on('mute:thread:updated', () => {
       this.refreshMutedUsers();
     });
+  }
+
+  /**
+   * Subscribe to live notification events
+   * Extracted from start() for reuse by refreshSubscriptions()
+   */
+  private async subscribeToLive(): Promise<void> {
+    if (!this.userPubkey) return;
+
+    const now = Math.floor(Date.now() / 1000);
+    const relays = await this.getReadRelays();
+
+    // Filter 1: Direct mentions/tags (#p filter)
+    const ptagFilter: NDKFilter = {
+      '#p': [this.userPubkey],
+      kinds: [1, 6, 7, 9735],
+      since: now
+    };
+
+    this.ptagSubId = 'notifications-ptag';
+    this.transport.subscribeLive(
+      relays,
+      [ptagFilter],
+      this.ptagSubId,
+      (event: NostrEvent, _relay: string) => {
+        this.onmessage(_relay, event);
+      }
+    );
+
+    this.systemLogger.info('NotificationsOrchestrator', `✅ #p subscription active (${this.ptagSubId})`);
+
+    // Filter 2: Replies to user's events (#e filter)
+    const userEventIds = this.getUserEventIds();
+    if (userEventIds.length > 0) {
+      const etagFilter: NDKFilter = {
+        '#e': userEventIds,
+        kinds: [1, 7, 9735],
+        since: now
+      };
+
+      this.etagSubId = 'notifications-etag';
+      this.transport.subscribeLive(
+        relays,
+        [etagFilter],
+        this.etagSubId,
+        (event: NostrEvent, _relay: string) => {
+          this.onmessage(_relay, event);
+        }
+      );
+
+      this.systemLogger.info('NotificationsOrchestrator', `✅ #e subscription active (${this.etagSubId}) - tracking ${userEventIds.length} events`);
+    } else {
+      this.systemLogger.warn('NotificationsOrchestrator', '⚠️ No user event IDs found - #e filter skipped');
+    }
+  }
+
+  /**
+   * Refresh subscriptions - closes stale ones and re-subscribes
+   * Called periodically and on tab visibility change to recover from
+   * silent WebSocket/relay disconnections (common in browsers)
+   */
+  public async refreshSubscriptions(): Promise<void> {
+    if (!this.userPubkey) return;
+
+    this.systemLogger.info('NotificationsOrchestrator', '🔄 Refreshing subscriptions...');
+
+    // 1. Close existing subscriptions
+    if (this.ptagSubId) {
+      this.transport.unsubscribeLive(this.ptagSubId);
+      this.ptagSubId = null;
+    }
+    if (this.etagSubId) {
+      this.transport.unsubscribeLive(this.etagSubId);
+      this.etagSubId = null;
+    }
+
+    // 2. Fetch missed notifications since latest known
+    const latestTimestamp = this.notifications[0]?.timestamp
+      ?? Math.floor(Date.now() / 1000) - 1800;
+    await this.fetchNewNotifications(latestTimestamp);
+
+    // 3. Re-subscribe to live events
+    await this.subscribeToLive();
+
+    this.systemLogger.info('NotificationsOrchestrator', '✅ Subscriptions refreshed');
+  }
+
+  /** Start periodic refresh timer */
+  private startRefreshTimer(): void {
+    this.clearRefreshTimer();
+    this.refreshTimer = window.setInterval(() => {
+      this.refreshSubscriptions();
+    }, NotificationsOrchestrator.REFRESH_INTERVAL);
+  }
+
+  /** Clear periodic refresh timer */
+  private clearRefreshTimer(): void {
+    if (this.refreshTimer !== null) {
+      clearInterval(this.refreshTimer);
+      this.refreshTimer = null;
+    }
   }
 
   /**
@@ -502,6 +566,8 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Stop notifications subscriptions (called on logout)
    */
   public stop(): void {
+    this.clearRefreshTimer();
+
     if (this.ptagSubId) {
       this.transport.unsubscribeLive(this.ptagSubId);
       this.ptagSubId = null;
