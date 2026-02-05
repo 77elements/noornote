@@ -75,6 +75,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
   /** Refresh timer for periodic re-subscription (browser WebSocket connections go stale) */
   private refreshTimer: number | null = null;
+  private isRefreshing: boolean = false;
   private static readonly REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
   private constructor() {
@@ -233,29 +234,37 @@ export class NotificationsOrchestrator extends Orchestrator {
    * silent WebSocket/relay disconnections (common in browsers)
    */
   public async refreshSubscriptions(): Promise<void> {
-    if (!this.userPubkey) return;
+    if (!this.userPubkey || this.isRefreshing) return;
 
-    this.systemLogger.info('NotificationsOrchestrator', '🔄 Refreshing subscriptions...');
+    this.isRefreshing = true;
+    try {
+      this.systemLogger.info('NotificationsOrchestrator', '🔄 Refreshing subscriptions...');
 
-    // 1. Close existing subscriptions
-    if (this.ptagSubId) {
-      this.transport.unsubscribeLive(this.ptagSubId);
-      this.ptagSubId = null;
+      // 1. Close existing subscriptions
+      if (this.ptagSubId) {
+        this.transport.unsubscribeLive(this.ptagSubId);
+        this.ptagSubId = null;
+      }
+      if (this.etagSubId) {
+        this.transport.unsubscribeLive(this.etagSubId);
+        this.etagSubId = null;
+      }
+
+      // 2. Fetch missed notifications since latest known
+      const latestTimestamp = this.notifications[0]?.timestamp
+        ?? Math.floor(Date.now() / 1000) - 1800;
+      await this.fetchNewNotifications(latestTimestamp);
+
+      // 3. Re-subscribe to live events
+      await this.subscribeToLive();
+
+      // 4. Reset timer so it counts from now (avoids redundant refresh after visibility change)
+      this.startRefreshTimer();
+
+      this.systemLogger.info('NotificationsOrchestrator', '✅ Subscriptions refreshed');
+    } finally {
+      this.isRefreshing = false;
     }
-    if (this.etagSubId) {
-      this.transport.unsubscribeLive(this.etagSubId);
-      this.etagSubId = null;
-    }
-
-    // 2. Fetch missed notifications since latest known
-    const latestTimestamp = this.notifications[0]?.timestamp
-      ?? Math.floor(Date.now() / 1000) - 1800;
-    await this.fetchNewNotifications(latestTimestamp);
-
-    // 3. Re-subscribe to live events
-    await this.subscribeToLive();
-
-    this.systemLogger.info('NotificationsOrchestrator', '✅ Subscriptions refreshed');
   }
 
   /** Start periodic refresh timer */
