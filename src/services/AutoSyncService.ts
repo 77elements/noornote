@@ -430,7 +430,19 @@ export class AutoSyncService {
         return;
       }
 
-      // Any difference - show modal to let user decide
+      // Simple case: only new items from relay, nothing removed or moved
+      // → auto-merge without bothering the user
+      if (result.diff.added.length > 0 && result.diff.removed.length === 0 && movedCount === 0) {
+        this.systemLogger.info('ListAutoSync', `${listType}: auto-merging ${result.diff.added.length} new items`);
+        this.applyMerge(listType, result.relayItems);
+        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
+          await this.applyFolderAssignments(listType, result);
+        }
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: ${result.diff.added.length} new synced from relay`, 'success');
+        return;
+      }
+
+      // Complex case (removals, moves) - show modal to let user decide
       this.systemLogger.info('ListAutoSync', `${listType}: showing merge modal`);
       await this.showSyncConfirmationModal(listType, result);
     } catch (error) {
