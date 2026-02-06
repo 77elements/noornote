@@ -6,6 +6,7 @@
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
 @use 'sass:color';
+@use '../base/icons' as *;
 
 // Notifications View child elements
 .notifications-view__header {
@@ -129,7 +130,7 @@
 
 .notification-item[data-type="reaction"] .notification-item__icon {
   color: $color-red;
-  font-size: 20px; // Emoji reactions slightly bigger
+  @extend %icon-sm;
 }
 
 // Hashtag notification footer

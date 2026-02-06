@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .zap-modal {
   display: flex;
@@ -27,7 +28,7 @@
     background: transparent;
     border: none;
     text-align: center;
-    font-size: 3rem;
+    @extend %gigantic;
     font-weight: 700;
     width: 100%;
     padding: 0;
@@ -49,7 +50,6 @@
   }
 
   &__amount-unit {
-    font-size: 1rem;
     color: $color-3;
     font-weight: 600;
   }
@@ -61,8 +61,6 @@
   }
 
   &__preset {
-    font-size: 0.85rem;
-
     &--active {
       border-color: $color-4;
       color: $color-4;

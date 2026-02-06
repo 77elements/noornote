@@ -7,6 +7,8 @@ import { AuthComponent } from '../auth/AuthComponent';
 import { OnboardingComponent } from '../onboarding/OnboardingComponent';
 import { SystemLogger } from '../system/SystemLogger';
 import { AccountSwitcher } from '../ui/AccountSwitcher';
+import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
+import { FontSizeService } from '../../services/FontSizeService';
 import { CacheManager } from '../../services/CacheManager';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
@@ -46,6 +48,8 @@ export class MainLayout {
   private element: HTMLElement;
   private systemLogger: SystemLogger;
   private userStatus: AccountSwitcher | null = null;
+  private fontSizeSwitcher: FontSizeSwitcher | null = null;
+  private sidebarFontSizeSwitcher: FontSizeSwitcher | null = null;
   private searchSpotlight: SearchSpotlight | null = null;
   private keyboardShortcutManager!: KeyboardShortcutManager;
   private authComponent: any = null; // Store reference to trigger logout
@@ -220,6 +224,7 @@ export class MainLayout {
     // On login, re-check layout mode (user might have right-pane enabled)
     const loginSub = this.eventBus.on('user:login', () => {
       this.layoutService.refresh();
+      FontSizeService.getInstance().refresh();
       if (this.layoutService.isRightPane() && !this.viewTabManager) {
         this.enableViewTabManager();
       }
@@ -1147,6 +1152,7 @@ export class MainLayout {
               </a>
             </li>
           </ul>
+            <div class="sidebar-font-size-mount"></div>
             <div class="about">
               <span class="current-datetime-display">--</span>
               <a href="/about" class="primary-nav__link--about">About</a>
@@ -1255,12 +1261,13 @@ export class MainLayout {
    * Set user status in secondary header
    */
   public setUserStatus(npub: string, pubkey: string): void {
-    // Clean up existing user status
-    if (this.userStatus) {
-      this.userStatus.destroy();
-    }
+    // Clean up existing
+    if (this.userStatus) this.userStatus.destroy();
+    if (this.fontSizeSwitcher) this.fontSizeSwitcher.destroy();
+    if (this.sidebarFontSizeSwitcher) this.sidebarFontSizeSwitcher.destroy();
 
-    // Create new account switcher with callbacks
+    // Create font size switcher + account switcher
+    this.fontSizeSwitcher = new FontSizeSwitcher();
     this.userStatus = new AccountSwitcher({
       npub,
       pubkey,
@@ -1268,11 +1275,20 @@ export class MainLayout {
       onAddAccount: () => this.handleAddAccount()
     });
 
-    // Mount in secondary user area
+    // Mount in secondary content (visible in default/right-pane modes)
     const secondaryUser = this.element.querySelector('.user-login-bar');
     if (secondaryUser) {
       secondaryUser.innerHTML = '';
+      secondaryUser.appendChild(this.fontSizeSwitcher.getElement());
       secondaryUser.appendChild(this.userStatus.getElement());
+    }
+
+    // Mount sidebar copy (visible in wide/phone modes only via CSS)
+    this.sidebarFontSizeSwitcher = new FontSizeSwitcher();
+    const sidebarMount = this.element.querySelector('.sidebar-font-size-mount');
+    if (sidebarMount) {
+      sidebarMount.innerHTML = '';
+      sidebarMount.appendChild(this.sidebarFontSizeSwitcher.getElement());
     }
 
     // Update profile link href (event listener is set up in setupNavigationLinks)

@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 // Mobile header (hamburger menu)
 .mobile-header {
@@ -21,7 +22,7 @@
   padding: 0 $gap;
 
   .nn-logo {
-    font-size: 27px;
+    @extend %huge;
   }
 
   &__hamburger {

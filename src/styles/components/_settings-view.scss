@@ -6,6 +6,7 @@
 @use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 // Settings title (standalone)
 .settings-title {
@@ -492,7 +493,7 @@
   border-radius: $radius-sm;
 
   .wallet-icon {
-    font-size: 24px;
+    @extend %icon-md;
   }
 
   .wallet-connected-info {

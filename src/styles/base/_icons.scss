@@ -1,0 +1,40 @@
+/**
+ * Icon Sizes — Consistent icon/emoji font-size scale
+ * icon-sm: 20px, icon-md: 24px, icon-lg: 48px
+ */
+
+%icon-sm {
+  font-size: 20px;
+}
+
+@mixin icon-sm {
+  font-size: 20px;
+}
+
+.icon-sm {
+  @extend %icon-sm;
+}
+
+%icon-md {
+  font-size: 24px;
+}
+
+@mixin icon-md {
+  font-size: 24px;
+}
+
+.icon-md {
+  @extend %icon-md;
+}
+
+%icon-lg {
+  font-size: 48px;
+}
+
+@mixin icon-lg {
+  font-size: 48px;
+}
+
+.icon-lg {
+  @extend %icon-lg;
+}

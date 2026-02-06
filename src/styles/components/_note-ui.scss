@@ -7,6 +7,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 // Base note card (used in all views)
 .note-card {
@@ -340,11 +341,10 @@
   }
 
   &__icon {
-    font-size: 1.5rem;
+    @extend %icon-md;
   }
 
   &__amount {
-    font-size: 1.25rem;
     font-weight: 700;
     color: $color-bitcoin-orange;
   }

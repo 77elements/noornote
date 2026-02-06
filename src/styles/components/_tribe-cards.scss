@@ -7,6 +7,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 // Tribe member card
 .tribe-member-card {
@@ -66,7 +67,7 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: 20px;
+        @extend %icon-sm;
       }
     }
   }

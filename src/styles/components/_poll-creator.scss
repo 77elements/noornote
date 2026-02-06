@@ -1,6 +1,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 .poll-creator {
   background: $color-1;
@@ -83,7 +84,7 @@
     border: 1px solid $color-2;
     border-radius: $radius-base;
     color: $color-4;
-    font-size: 20px;
+    @extend %icon-sm;
     line-height: 1;
     cursor: pointer;
     display: flex;
@@ -169,7 +170,7 @@
 
   &__notice-icon {
     flex-shrink: 0;
-    font-size: 20px;
+    @extend %icon-sm;
   }
 
   &__notice-text {
@@ -228,4 +229,3 @@
     margin-top: calc($gap / 4);
   }
 }
-

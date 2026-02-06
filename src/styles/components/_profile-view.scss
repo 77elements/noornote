@@ -6,6 +6,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 // Profile Header Section
 .profile-header {
@@ -620,7 +621,7 @@
   }
 
   .profile-muted__icon {
-    font-size: 64px;
+    @extend %icon-lg;
     margin-bottom: $gap;
   }
 

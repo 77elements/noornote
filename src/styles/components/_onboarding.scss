@@ -150,12 +150,10 @@
 
   &__loading {
     color: $color-3;
-    font-size: 0.9rem;
   }
 
   &__status {
     color: $color-3;
-    font-size: 0.85rem;
     margin: 0;
   }
 }
@@ -164,7 +162,6 @@
   position: relative;
   text-align: center;
   margin: $gap 0;
-  font-size: 0.85rem;
 
   &::before {
     content: '';
@@ -251,7 +248,6 @@
 
   .input {
     flex: 1;
-    font-size: 0.85rem;
   }
 }
 
@@ -373,7 +369,6 @@
 .web-onboarding-step {
   padding: calc($gap / 2) $gap;
   border-radius: $radius-sm;
-  font-size: 0.85rem;
   font-weight: 500;
 
   &--completed {
@@ -444,7 +439,6 @@
 
 .web-onboarding-status {
   margin-top: calc($gap / 2);
-  font-size: 0.9rem;
 
   &.error {
     color: $color-4;

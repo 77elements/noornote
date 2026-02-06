@@ -1,5 +1,6 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 /**
  * Mention Autocomplete Dropdown Styles
@@ -48,14 +49,13 @@
       }
 
       .mention-username {
-        font-size: 0.9rem;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
       }
 
       .mention-nip05 {
-        font-size: 0.8rem;
+        @extend %small;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;

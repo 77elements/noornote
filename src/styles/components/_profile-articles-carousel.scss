@@ -4,6 +4,7 @@
  */
 
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .profile-articles-carousel {
   margin: $gap 0;
@@ -113,7 +114,6 @@
   // Card title
   &__card-title {
     margin: 0 0 calc($gap / 2) 0;
-    font-size: 0.9375rem;
     font-weight: 600;
     color: $color-5;
     line-height: 1.3;
@@ -129,7 +129,7 @@
     align-items: center;
     gap: calc($gap / 4);
     margin-bottom: calc($gap / 2);
-    font-size: 0.75rem;
+    @extend %small;
     color: rgba($color-5, 0.6);
   }
 
@@ -148,7 +148,6 @@
   // Card excerpt
   &__card-excerpt {
     margin: 0;
-    font-size: 0.8125rem;
     color: rgba($color-5, 0.7);
     line-height: 1.4;
     display: -webkit-box;

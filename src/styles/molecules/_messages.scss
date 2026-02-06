@@ -6,6 +6,7 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
+@use '../base/icons' as *;
 
 /* Base message styling */
 .message {
@@ -17,7 +18,7 @@
   gap: calc($gap * 0.75);
 
   .message-icon {
-    font-size: 24px; // Icon size - keep
+    @extend %icon-md;
     flex-shrink: 0;
   }
 
@@ -79,7 +80,7 @@
 
   .quote-muted__icon {
     @extend .message-icon;
-    font-size: 20px; // Icon size - keep
+    @extend %icon-sm;
   }
 
   .quote-muted__text {

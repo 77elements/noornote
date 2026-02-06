@@ -3,12 +3,31 @@
  * Consistent typography across the application
  */
 
+@use 'sass:map';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-// Body inherits browser default (16px)
+// ========================================
+// Font-size scaling (small / default / large)
+// Parent-selector overrides via .font-size--small / .font-size--large on <html>
+// ========================================
+$scale-small: (48px: 40px, 27px: 23px, 23px: 19px, 19px: 16px, 16px: 14px, 14px: 12px, 12px: 10px, 9px: 8px);
+$scale-large: (48px: 56px, 27px: 32px, 23px: 27px, 19px: 23px, 16px: 19px, 14px: 16px, 12px: 14px, 9px: 10px);
+$scale-x-large: (48px: 64px, 27px: 38px, 23px: 32px, 19px: 27px, 16px: 23px, 14px: 19px, 12px: 16px, 9px: 12px);
+
+@mixin scaled-font-size($size) {
+  font-size: $size;
+  .font-size--small & { font-size: map.get($scale-small, $size); }
+  .font-size--large & { font-size: map.get($scale-large, $size); }
+  .font-size--x-large & { font-size: map.get($scale-x-large, $size); }
+}
+
+// Body inherits browser default (16px), scaled via parent class
 body {
   line-height: 1;
+  .font-size--small & { font-size: 14px; }
+  .font-size--large & { font-size: 19px; }
+  .font-size--x-large & { font-size: 23px; }
 }
 
 // ========================================
@@ -24,27 +43,27 @@ body {
 
 %h1 {
   @extend %heading-base;
-  font-size: 27px;
+  @include scaled-font-size(27px);
 }
 
 %h2 {
   @extend %heading-base;
-  font-size: 23px;
+  @include scaled-font-size(23px);
 }
 
 %h3 {
   @extend %heading-base;
-  font-size: 19px;
+  @include scaled-font-size(19px);
 }
 
 %h4 {
   @extend %heading-base;
-  font-size: 16px;
+  @include scaled-font-size(16px);
 }
 
 %h5 {
   @extend %heading-base;
-  font-size: 14px;
+  @include scaled-font-size(14px);
 }
 
 %h6 {
@@ -52,11 +71,11 @@ body {
 }
 
 // Heading mixins for use inside media queries
-@mixin h1 { font-size: 27px; }
-@mixin h2 { font-size: 23px; }
-@mixin h3 { font-size: 19px; }
-@mixin h4 { font-size: 16px; }
-@mixin h5 { font-size: 14px; }
+@mixin h1 { @include scaled-font-size(27px); }
+@mixin h2 { @include scaled-font-size(23px); }
+@mixin h3 { @include scaled-font-size(19px); }
+@mixin h4 { @include scaled-font-size(16px); }
+@mixin h5 { @include scaled-font-size(14px); }
 @mixin h6 { @include h5; }
 
 // Heading elements + utility classes (with margin for prose/content)
@@ -68,27 +87,63 @@ h5, .h5 { @extend %h5; margin-bottom: $gap; }
 h6, .h6 { @extend %h6; margin-bottom: $gap; }
 
 // ========================================
-// Small & Mini text (fixed sizes)
-// Small: 12px, Mini: 9px
+// Text sizes (non-heading)
+// gigantic: 48px, huge: 27px, big: 23px, compact: 14px, small: 12px, mini: 9px
 // ========================================
+%gigantic {
+  @include scaled-font-size(48px);
+}
+
+@mixin gigantic {
+  @include scaled-font-size(48px);
+}
+
+.gigantic {
+  @extend %gigantic;
+}
+
+%huge {
+  @include scaled-font-size(27px);
+}
+
+@mixin huge {
+  @include scaled-font-size(27px);
+}
+
+.huge {
+  @extend %huge;
+}
+
 %big {
-  font-size: 23px;
+  @include scaled-font-size(23px);
 }
 
 @mixin big {
-  font-size: 23px;
+  @include scaled-font-size(23px);
 }
 
 .big {
   @extend %big;
 }
 
+%compact {
+  @include scaled-font-size(14px);
+}
+
+@mixin compact {
+  @include scaled-font-size(14px);
+}
+
+.compact {
+  @extend %compact;
+}
+
 %small {
-  font-size: 12px;
+  @include scaled-font-size(12px);
 }
 
 @mixin small {
-  font-size: 12px;
+  @include scaled-font-size(12px);
 }
 
 small, .small {
@@ -96,11 +151,11 @@ small, .small {
 }
 
 %mini {
-  font-size: 9px;
+  @include scaled-font-size(9px);
 }
 
 @mixin mini {
-  font-size: 9px;
+  @include scaled-font-size(9px);
 }
 
 .mini {
@@ -181,7 +236,7 @@ mark {
 // Code elements
 code {
   font-family: $font-family-mono;
-  font-size: 0.875em;
+  @extend %compact;
   background-color: $color-2;
   padding: calc($gap / 4) calc($gap / 2);
   border-radius: $radius-sm;
@@ -190,7 +245,7 @@ code {
 
 pre {
   font-family: $font-family-mono;
-  font-size: 14px;
+  @extend %compact;
   line-height: 1.5;
   background-color: $color-2;
   padding: $gap;
@@ -203,7 +258,6 @@ pre {
     background: none;
     border: none;
     padding: 0;
-    font-size: inherit;
   }
 }
 
@@ -221,7 +275,7 @@ blockquote {
 
   cite {
     display: block;
-    font-size: 14px;
+    @extend %compact;
     font-style: normal;
     margin-top: calc($gap / 2);
 
