@@ -189,3 +189,15 @@
   display: block;
   margin: calc($gap * 0.75) auto;
 }
+
+// ========================================
+// Font Size Switcher Button Modifier
+// ========================================
+
+.btn--fontsizeswitcher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}

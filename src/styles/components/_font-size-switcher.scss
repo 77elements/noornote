@@ -17,32 +17,6 @@
     white-space: nowrap;
   }
 
-  &__btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: $radius-base;
-    border: 1px solid $color-3;
-    background: transparent;
-    color: $color-5;
-    cursor: pointer;
-    font-weight: 600;
-    @extend %compact;
-    transition: $transition-colors;
-
-    &:hover:not(:disabled) {
-      background: $color-2;
-      border-color: $color-4;
-      color: $color-4;
-    }
-
-    &:disabled {
-      opacity: 0.3;
-      cursor: default;
-    }
-  }
 }
 
 // Sidebar mount: hidden by default, shown in wide/phone modes
