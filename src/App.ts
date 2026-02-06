@@ -135,7 +135,7 @@ export class App {
     if (isLoggedIn) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
-        await this.handleUserLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
+        this.handleUserLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
       }
     }
 
@@ -650,49 +650,52 @@ export class App {
       }
     }
 
-    // Load follow list into AppState (for mention autocomplete)
-    await this.runSilent(async () => {
-      const { UserService } = await import('./services/UserService');
-      const { MentionProfileCache } = await import('./services/MentionProfileCache');
+    // Start all post-login services in parallel (independent of each other)
+    await Promise.all([
+      // Load follow list into AppState (for mention autocomplete)
+      this.runSilent(async () => {
+        const { UserService } = await import('./services/UserService');
+        const { MentionProfileCache } = await import('./services/MentionProfileCache');
 
-      const userService = UserService.getInstance();
-      const mentionCache = MentionProfileCache.getInstance();
+        const userService = UserService.getInstance();
+        const mentionCache = MentionProfileCache.getInstance();
 
-      const followingPubkeys = await userService.getUserFollowing(data.pubkey);
+        const followingPubkeys = await userService.getUserFollowing(data.pubkey);
 
-      this.appState.setState('user', { followingPubkeys });
+        this.appState.setState('user', { followingPubkeys });
 
-      // Preload profiles in background (non-blocking)
-      mentionCache.preloadProfiles(followingPubkeys).catch(() => {});
-    });
+        // Preload profiles in background (non-blocking)
+        mentionCache.preloadProfiles(followingPubkeys).catch(() => {});
+      }),
 
-    // Start notification services
-    await this.runSilent(async () => {
-      const { NotificationsOrchestrator } = await import('./services/orchestration/NotificationsOrchestrator');
-      const notificationsOrch = NotificationsOrchestrator.getInstance();
-      await notificationsOrch.start();
+      // Start notification services
+      this.runSilent(async () => {
+        const { NotificationsOrchestrator } = await import('./services/orchestration/NotificationsOrchestrator');
+        const notificationsOrch = NotificationsOrchestrator.getInstance();
+        await notificationsOrch.start();
 
-      const { ArticleNotificationService } = await import('./services/ArticleNotificationService');
-      ArticleNotificationService.getInstance().startPolling();
-    });
+        const { ArticleNotificationService } = await import('./services/ArticleNotificationService');
+        ArticleNotificationService.getInstance().startPolling();
+      }),
 
-    // Start hashtag notification polling (separate block to avoid being blocked by above)
-    await this.runSilent(async () => {
-      const { HashtagNotificationService } = await import('./services/HashtagNotificationService');
-      HashtagNotificationService.getInstance().startPolling();
-    });
+      // Start hashtag notification polling
+      this.runSilent(async () => {
+        const { HashtagNotificationService } = await import('./services/HashtagNotificationService');
+        HashtagNotificationService.getInstance().startPolling();
+      }),
 
-    // Initialize ProfileRecognitionService
-    await this.runSilent(async () => {
-      const { ProfileRecognitionService } = await import('./services/ProfileRecognitionService');
-      await ProfileRecognitionService.getInstance().init();
-    });
+      // Initialize ProfileRecognitionService
+      this.runSilent(async () => {
+        const { ProfileRecognitionService } = await import('./services/ProfileRecognitionService');
+        await ProfileRecognitionService.getInstance().init();
+      }),
 
-    // Start DM service
-    await this.runSilent(async () => {
-      const { DMService } = await import('./services/dm/DMService');
-      await DMService.getInstance().start();
-    });
+      // Start DM service
+      this.runSilent(async () => {
+        const { DMService } = await import('./services/dm/DMService');
+        await DMService.getInstance().start();
+      }),
+    ]);
 
     // Initialize AutoSyncService for Easy Mode list syncing
     AutoSyncService.getInstance();
