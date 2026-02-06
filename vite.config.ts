@@ -3,8 +3,8 @@ import { resolve } from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
-  // Base URL for assets
-  base: './',
+  // Base URL for assets (absolute for SPA deep-link support)
+  base: '/',
 
   // Development server configuration
   server: {
