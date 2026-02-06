@@ -16,9 +16,10 @@
  * GOAL: Claude can understand and fix follow bugs without navigating between files.
  */
 
-import { StorageKeys, now, deduplicateByPubkey } from './storage';
-import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
+import { StorageKeys, now, deduplicateByPubkey, mergeByKey } from './storage';
+import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey } from './relays';
+import { escapeHtml } from '../helpers/escapeHtml';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
@@ -617,14 +618,7 @@ function calculateFollowSyncDiff(browserItems: FollowItem[], relayItems: FollowI
 }
 
 function mergeFollowItems(browserItems: FollowItem[], newItems: FollowItem[]): FollowItem[] {
-  const map = new Map<string, FollowItem>();
-  browserItems.forEach(item => map.set(item.pubkey, item));
-  newItems.forEach(item => {
-    if (!map.has(item.pubkey)) {
-      map.set(item.pubkey, item);
-    }
-  });
-  return Array.from(map.values());
+  return mergeByKey(browserItems, newItems, 'pubkey');
 }
 
 // ============================================================
@@ -1290,14 +1284,7 @@ export class FollowListManager {
    * Merge browser items with relay/file items (union)
    */
   private mergeFollowItems(browserItems: FollowItem[], newItems: FollowItem[]): FollowItem[] {
-    const map = new Map<string, FollowItem>();
-    browserItems.forEach(item => map.set(item.pubkey, item));
-    newItems.forEach(item => {
-      if (!map.has(item.pubkey)) {
-        map.set(item.pubkey, item);
-      }
-    });
-    return Array.from(map.values());
+    return mergeByKey(browserItems, newItems, 'pubkey');
   }
 
   /**
@@ -1439,30 +1426,13 @@ export class FollowListManager {
       if (PlatformService.getInstance().isTauri) {
         await this.adapter.setFileItems(browserItems);
       } else {
-        this.downloadAsJson(browserItems, 'follows');
+        downloadAsJson(browserItems, 'follows');
       }
       ToastService.show('Saved successfully', 'success');
     } catch (error) {
       console.error('Failed to save to file:', error);
       ToastService.show('Failed to save', 'error');
     }
-  }
-
-  /**
-   * Download data as JSON file (Browser fallback)
-   */
-  private downloadAsJson(data: FollowItem[], filename: string): void {
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `noornote-${filename.toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   }
 
   /**
@@ -1522,15 +1492,6 @@ export class FollowListManager {
       console.error('Failed to restore from file:', error);
       ToastService.show(`Failed to restore: ${error}`, 'error');
     }
-  }
-
-  /**
-   * Escape HTML (inlined from BaseListManager)
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   /**
@@ -2053,7 +2014,7 @@ export class FollowListManager {
         </div>
         <div class="follow-item__info">
           <div class="follow-item__username">
-            ${this.escapeHtml(username)}
+            ${escapeHtml(username)}
             ${item.isPrivate ? '<span class="private-badge">🔒 Private</span>' : ''}
             ${this.renderArticleNotifLabel(item.pubkey)}
           </div>
@@ -2061,7 +2022,7 @@ export class FollowListManager {
             <span class="mutual-badge ${mutualBadgeClass}">${mutualBadgeText}</span>
             ${zapBadgeHtml}
           </div>
-          ${item.petname ? `<div class="follow-item__petname">${this.escapeHtml(item.petname)}</div>` : ''}
+          ${item.petname ? `<div class="follow-item__petname">${escapeHtml(item.petname)}</div>` : ''}
         </div>
       </div>
       <button class="follow-item__unfollow-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
@@ -2676,10 +2637,10 @@ export class ExternalFollowListManager {
     itemDiv.innerHTML = `
       <div class="follow-item__content-wrapper">
         <div class="follow-item__avatar">
-          <img class="profile-pic profile-pic--medium" src="${this.escapeHtml(avatarUrl)}" alt="${this.escapeHtml(username)}" />
+          <img class="profile-pic profile-pic--medium" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(username)}" />
         </div>
         <div class="follow-item__info">
-          <div class="follow-item__username">${this.escapeHtml(username)}</div>
+          <div class="follow-item__username">${escapeHtml(username)}</div>
         </div>
       </div>
       ${buttonHtml}
@@ -2764,15 +2725,6 @@ export class ExternalFollowListManager {
 
     // Load first batch with filter
     this.loadBatch(list as HTMLElement);
-  }
-
-  /**
-   * Escape HTML
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   /**

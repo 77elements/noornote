@@ -15,8 +15,8 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { StorageKeys, now } from './storage';
-import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
+import { StorageKeys, now, mergeStringArrays } from './storage';
+import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {
   fetchEvents, publishEvent, signEvent,
   encryptContent, decryptContent,
@@ -725,31 +725,9 @@ function calculateSyncDiff(browserItems: string[], sourceItems: string[]): SyncD
   };
 }
 
-function mergeItemArrays(browserItems: string[], newItems: string[]): string[] {
-  const set = new Set(browserItems);
-  newItems.forEach(item => set.add(item));
-  return Array.from(set);
-}
+const mergeItemArrays = mergeStringArrays;
 
-function downloadAsJson(data: string[], filename: string): void {
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `noornote-${filename.toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+import { escapeHtml } from '../helpers/escapeHtml';
 
 // ============================================================
 // MUTE STORAGE ADAPTER (self-contained, no external dependencies)

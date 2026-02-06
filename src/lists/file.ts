@@ -149,6 +149,24 @@ export async function fileExists(filename: string): Promise<boolean> {
  * Used in Web/Mobile mode as alternative to local file reading
  * @returns Parsed JSON data or null if cancelled/failed
  */
+/**
+ * Download data as JSON file via browser download dialog
+ * Used in Web/Mobile mode as alternative to Tauri file writing
+ */
+export function downloadAsJson<T>(data: T, filename: string): void {
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `noornote-${filename.toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export function uploadJsonFile<T>(): Promise<T | null> {
   return new Promise((resolve) => {
     const input = document.createElement('input');

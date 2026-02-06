@@ -14,8 +14,8 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { StorageKeys, readList, writeList, deduplicateByPubkey, now } from './storage';
-import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
+import { StorageKeys, readList, writeList, deduplicateByPubkey, now, mergeByKey } from './storage';
+import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {
   fetchEvents, publishEvent, signEvent,
   encryptContent, decryptContent,
@@ -1444,14 +1444,7 @@ export class TribeManager {
   }
 
   private mergeItems(browserItems: TribeMember[], newItems: TribeMember[]): TribeMember[] {
-    const map = new Map<string, TribeMember>();
-    browserItems.forEach(item => map.set(item.pubkey, item));
-    newItems.forEach(item => {
-      if (!map.has(item.pubkey)) {
-        map.set(item.pubkey, item);
-      }
-    });
-    return Array.from(map.values());
+    return mergeByKey(browserItems, newItems, 'pubkey');
   }
 
   private async syncFromRelays(): Promise<SyncFromRelaysResult> {
@@ -1521,20 +1514,6 @@ export class TribeManager {
     const requiresConfirmation = hasAnyDifferenceFromFile(fileData);
 
     return { requiresConfirmation, diff, fileItems };
-  }
-
-  private downloadAsJson(data: TribeMember[], filename: string): void {
-    const json = JSON.stringify(data, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `noornote-${filename.toLowerCase()}-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   }
 
   private setupEventListeners(): void {
@@ -2576,7 +2555,7 @@ export class TribeManager {
       if (PlatformService.getInstance().isTauri) {
         await saveToFile();
       } else {
-        this.downloadAsJson(this.adapter.getBrowserItems(), 'tribes');
+        downloadAsJson(this.adapter.getBrowserItems(), 'tribes');
       }
       ToastService.show('Saved to file', 'success');
     } catch (error) {
@@ -3026,14 +3005,7 @@ function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeM
 }
 
 function mergeTribeItems(browserItems: TribeMember[], newItems: TribeMember[]): TribeMember[] {
-  const map = new Map<string, TribeMember>();
-  browserItems.forEach(item => map.set(item.pubkey, item));
-  newItems.forEach(item => {
-    if (!map.has(item.pubkey)) {
-      map.set(item.pubkey, item);
-    }
-  });
-  return Array.from(map.values());
+  return mergeByKey(browserItems, newItems, 'pubkey');
 }
 
 // ============================================================
