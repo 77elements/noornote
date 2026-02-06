@@ -69,11 +69,15 @@ export const StorageKeys = {
 
   // Quick Zap toggle (per-account)
   QUICK_ZAP_ENABLED: 'noornote_quick_zap_enabled_map',
+
+  // Font size preference (per-account)
+  FONT_SIZE_SCALE: 'noornote_font_size_scale_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
 
 export type LayoutMode = 'default' | 'right-pane' | 'wide' | 'phone';
+export type FontSizeScale = 'small' | 'default' | 'large' | 'x-large';
 
 // Notification priority: 1 = highest (pulsing), 2 = medium (solid), 3 = lowest (hollow)
 export type NotificationPriority = 1 | 2 | 3;

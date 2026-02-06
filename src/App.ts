@@ -22,6 +22,7 @@ import { PlatformService } from './services/PlatformService';
 import { ConnectivityService } from './services/ConnectivityService';
 import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
+import { FontSizeService } from './services/FontSizeService';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
 import { AutoSyncService } from './services/AutoSyncService';
@@ -69,6 +70,9 @@ export class App {
 
     // Initialize CollapsibleManager to listen for post truncation setting changes
     CollapsibleManager.init();
+
+    // Initialize FontSizeService (applies persisted font-size class on <html>)
+    FontSizeService.getInstance();
 
     // Check internet connectivity before proceeding
     const connectivityService = ConnectivityService.getInstance();
