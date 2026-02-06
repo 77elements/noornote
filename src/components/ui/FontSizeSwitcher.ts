@@ -27,8 +27,8 @@ export class FontSizeSwitcher {
     container.className = 'font-size-switcher';
     container.innerHTML = `
       <span class="font-size-switcher__label">Font Size</span>
-      <button class="font-size-switcher__btn font-size-switcher__btn--decrease" type="button" title="Decrease font size">&minus;</button>
-      <button class="font-size-switcher__btn font-size-switcher__btn--increase" type="button" title="Increase font size">+</button>
+      <button class="btn btn--secondary btn--fontsizeswitcher font-size-switcher__btn--decrease" type="button" title="Decrease font size">&minus;</button>
+      <button class="btn btn--secondary btn--fontsizeswitcher font-size-switcher__btn--increase" type="button" title="Increase font size">+</button>
     `;
 
     container.querySelector('.font-size-switcher__btn--decrease')!
