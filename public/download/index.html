@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NoorNote — Nostr Desktop Client for Linux & macOS</title>
+  <title>NoorNote - Nostr Desktop Client for Linux & macOS</title>
   <meta name="description" content="NoorNote is a free, open-source Nostr desktop client for Linux and macOS. Download the native app or use the web version.">
-  <meta property="og:title" content="NoorNote — Nostr Desktop Client">
+  <meta property="og:title" content="NoorNote - Nostr Desktop Client">
   <meta property="og:description" content="A free, open-source Nostr client for Linux & macOS. Native desktop app with key management, zaps, and more.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://noornote.app/download/">
@@ -127,13 +127,16 @@
     /* ── Hero ── */
     .hero { padding-top: 10rem; padding-bottom: 5rem; text-align: center; }
     .hero-logo {
+      margin-bottom: 0.8rem; line-height: 1.1;
+    }
+    .hero-logo span {
+      display: inline-block;
       font-family: 'Saira', sans-serif;
       font-size: clamp(3.2rem, 9vw, 5.5rem);
       font-weight: 700;
       background: linear-gradient(135deg, var(--grad-start), var(--grad-end));
       -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent;
-      margin-bottom: 0.8rem; line-height: 1.1;
     }
     .hero-tagline {
       font-size: clamp(1.05rem, 2.5vw, 1.35rem);
@@ -349,13 +352,13 @@
     <!-- ════════════════════════════════════════ -->
     <section id="noornote" class="hero">
       <div class="container">
-        <h1 class="hero-logo">NoorNote</h1>
-        <p class="hero-tagline">A Nostr Desktop Client for Linux &amp; macOS</p>
+        <h1 class="hero-logo"><span>NoorNote</span></h1>
+        <p class="hero-tagline">A Feature-Rich Nostr Desktop Client for Linux &amp; macOS</p>
         <p class="hero-desc">
           NoorNote is a free, open-source Nostr client built for the desktop.
           Browse your timeline, write and discover long-form articles, manage
           follows, bookmarks and mute lists, send zaps, and handle your keys
-          securely &mdash; all from a native app that respects your sovereignty.
+          securely, all from a native app that respects your sovereignty.
         </p>
 
         <!-- Screenshot placeholder -->
@@ -366,11 +369,11 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
             Web Client
           </a>
-          <a href="https://github.com/77elements/noornote/releases/download/v0.4.5/noornote-0.4.5-linux-amd64.deb" class="btn btn-outline">
+          <a href="https://github.com/77elements/noornote/releases" data-asset="linux-amd64.deb" class="btn btn-outline">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.504.96c-.32 0-.634.04-.942.1C9.318 1.54 8.196 3.02 7.702 4.1c-.498-1.08-1.62-2.56-3.86-3.04A5.14 5.14 0 0 0 2.9.96C1.36.96.1 2.42.1 4.22c0 .98.32 1.86.9 2.56-.58.7-.9 1.58-.9 2.56 0 1.08.42 2.06 1.14 2.78-.24.52-.38 1.1-.38 1.7 0 1.52.82 2.84 2.04 3.48-.04.2-.06.42-.06.64 0 2.5 2.7 4.54 6.02 4.76h.64c3.32-.22 6.02-2.26 6.02-4.76 0-.22-.02-.44-.06-.64 1.22-.64 2.04-1.96 2.04-3.48 0-.6-.14-1.18-.38-1.7.72-.72 1.14-1.7 1.14-2.78 0-.98-.32-1.86-.9-2.56.58-.7.9-1.58.9-2.56 0-1.8-1.26-3.26-2.8-3.26-.32 0-.634.04-.942.1C13.804 1.54 12.682 3.02 12.188 4.1c-.498-1.08-1.62-2.56-3.86-3.04.326-.06.634-.1.942-.1h3.234z"/></svg>
             Linux Desktop
           </a>
-          <a href="https://github.com/77elements/noornote/releases/download/v0.4.5/noornote-0.4.5-macos-aarch64.dmg" class="btn btn-outline">
+          <a href="https://github.com/77elements/noornote/releases" data-asset="macos-aarch64.dmg" class="btn btn-outline">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
             Mac Desktop
           </a>
@@ -378,11 +381,11 @@
 
         <div class="sub-links">
           <span>More:</span>
-          <a href="https://github.com/77elements/noornote/releases/download/v0.4.5/noornote-0.4.5-linux-arm64.deb">Linux ARM64 (.deb)</a>
+          <a href="https://github.com/77elements/noornote/releases" data-asset="linux-arm64.deb">Linux ARM64 (.deb)</a>
           <span class="dot">&middot;</span>
-          <a href="https://github.com/77elements/noornote/releases/download/v0.4.5/noornote-0.4.5-linux-x86_64.rpm">Linux x86_64 (.rpm)</a>
+          <a href="https://github.com/77elements/noornote/releases" data-asset="linux-x86_64.rpm">Linux x86_64 (.rpm)</a>
           <span class="dot">&middot;</span>
-          <a href="https://github.com/77elements/noornote/releases/download/v0.4.5/noornote-0.4.5-linux-aarch64.rpm">Linux ARM64 (.rpm)</a>
+          <a href="https://github.com/77elements/noornote/releases" data-asset="linux-aarch64.rpm">Linux ARM64 (.rpm)</a>
         </div>
 
         <div class="meta-links">
@@ -419,8 +422,8 @@
             your secret key.
           </p>
           <p>
-            While it integrates seamlessly with NoorNote &mdash; fully
-            controllable from within the client &mdash; NoorSigner is a
+            While it integrates seamlessly with NoorNote, fully
+            controllable from within the client, NoorSigner is a
             standalone project that can be used with any Nostr desktop
             application that supports NIP-46 remote signing.
           </p>
@@ -466,7 +469,7 @@
           <p>
             Open <strong>noornote.app</strong> in Keychat's browser, sign in with
             your Keychat identity, and you have a full Nostr client on your phone
-            &mdash; with your keys managed securely by Keychat itself.
+            with your keys managed securely by Keychat itself.
           </p>
 
           <!-- Screenshot placeholder -->
@@ -526,16 +529,29 @@
 
   <!-- Footer -->
   <footer>
-    <p>NoorNote &mdash; Free &amp; Open Source &middot; <a href="https://github.com/77elements/noornote" target="_blank" rel="noopener">GitHub</a></p>
+    <p>NoorNote - Free &amp; Open Source &middot; <a href="https://github.com/77elements/noornote" target="_blank" rel="noopener">GitHub</a></p>
   </footer>
 
-  <!-- Close mobile nav on resize -->
   <script>
+    // Close mobile nav on resize
     window.addEventListener('resize', () => {
       if (window.innerWidth > 768) {
         document.querySelector('.nav-links').classList.remove('open');
       }
     });
+
+    // Resolve download links to latest GitHub release
+    fetch('https://api.github.com/repos/77elements/noornote/releases/latest')
+      .then(r => r.json())
+      .then(release => {
+        const assets = release.assets || [];
+        document.querySelectorAll('[data-asset]').forEach(link => {
+          const suffix = link.dataset.asset;
+          const match = assets.find(a => a.name.endsWith(suffix));
+          if (match) link.href = match.browser_download_url;
+        });
+      })
+      .catch(() => {}); // Fallback: links point to /releases page
   </script>
 
 </body>
