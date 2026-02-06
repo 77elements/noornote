@@ -1,6 +1,6 @@
 [package]
 name = "noornote"
-version = "0.4.5"
+version = "0.4.6"
 description = "A Nostr desktop client for sovereign communication"
 authors = ["77elements"]
 license = "MIT"
