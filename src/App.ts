@@ -101,7 +101,7 @@ export class App {
     const lastURL = this.router.getLastURL();
 
     // Wait for auth initialization before navigating to preserve current route on reload
-    await this.waitForAuthReady();
+    await this.authService.waitForInitialization();
 
     const isLoggedIn = this.authService.hasValidSession();
 
@@ -154,10 +154,6 @@ export class App {
         document.body.tabIndex = -1;
       }, 100);
     }
-  }
-
-  private async waitForAuthReady(): Promise<void> {
-    await this.authService.waitForInitialization();
   }
 
   /**
@@ -238,8 +234,7 @@ export class App {
       this.viewLifecycleManager.onViewUnmount(this.profileView);
     }
 
-    const systemLogger = SystemLogger.getInstance();
-    systemLogger.clearPageLogs();
+    this.systemLogger.clearPageLogs();
 
     primaryContent.innerHTML = '';
 
@@ -531,10 +526,10 @@ export class App {
     ]);
 
     if (notifResult.status === 'rejected') {
-      SystemLogger.getInstance().error('App', 'Notification refresh failed on visibility change:', notifResult.reason);
+      this.systemLogger.error('App', 'Notification refresh failed on visibility change:', notifResult.reason);
     }
     if (dmResult.status === 'rejected') {
-      SystemLogger.getInstance().error('App', 'DM refresh failed on visibility change:', dmResult.reason);
+      this.systemLogger.error('App', 'DM refresh failed on visibility change:', dmResult.reason);
     }
   }
 
