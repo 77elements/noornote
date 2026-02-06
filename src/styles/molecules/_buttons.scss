@@ -94,6 +94,18 @@
   }
 }
 
+// Secondary (subtle, neutral tone)
+.btn--secondary {
+  color: $color-5;
+  background-color: $color-2;
+  border-color: $color-3;
+
+  &:hover {
+    background-color: rgb(46.25, 43.75, 83.75);
+    border-color: $color-4;
+  }
+}
+
 // Danger (for destructive actions)
 .btn--danger {
   color: $color-white;
