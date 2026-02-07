@@ -12,6 +12,7 @@
 
 import { NDKNip46Signer, NDKUser } from '@nostr-dev-kit/ndk';
 import { hexToNpub } from '../../helpers/nip19';
+import { PlatformService } from '../PlatformService';
 
 const NIP46_STORAGE_KEY = 'noornote_nip46_payload';
 
@@ -164,7 +165,10 @@ export class Nip46SignerManager {
     const { NostrTransport } = await import('../transport/NostrTransport');
     const ndk = NostrTransport.getInstance().getNDK();
 
-    const relay = 'wss://relay.nsec.app';
+    // relay.nsec.app works in browsers but causes kCFErrorDomainCFNetwork 303 in Tauri's WKWebView
+    const relay = PlatformService.getInstance().isTauri
+      ? 'wss://relay.primal.net'
+      : 'wss://relay.nsec.app';
 
     const signer = NDKNip46Signer.nostrconnect(ndk, relay, undefined, {
       name: 'NoorNote',
