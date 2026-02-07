@@ -35,6 +35,7 @@ import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../.
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { LayoutService } from '../../services/LayoutService';
+import { PlatformService } from '../../services/PlatformService';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
@@ -177,10 +178,10 @@ export class MainLayout {
 
     const listsMenuContainer = this.element.querySelector('.primary-nav');
     if (listsMenuContainer) {
-      // Insert after Settings link (before Cache link)
-      const cacheLink = listsMenuContainer.querySelector('.primary-nav__link--cache')?.parentElement;
-      if (cacheLink) {
-        listsMenuContainer.insertBefore(this.listsMenu.createElement(), cacheLink);
+      // Insert after Settings link (before Download link)
+      const downloadLink = listsMenuContainer.querySelector('.primary-nav__link--download')?.parentElement;
+      if (downloadLink) {
+        listsMenuContainer.insertBefore(this.listsMenu.createElement(), downloadLink);
       } else {
         listsMenuContainer.appendChild(this.listsMenu.createElement());
       }
@@ -785,6 +786,21 @@ export class MainLayout {
       });
     }
 
+    // Download link - open in system browser (Tauri) or navigate (web)
+    const downloadLink = this.element.querySelector('.sidebar .primary-nav__link--download');
+    if (downloadLink) {
+      downloadLink.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const url = 'https://noornote.app/download/';
+        if (PlatformService.getInstance().isTauri) {
+          const { open } = await import('@tauri-apps/plugin-shell');
+          await open(url);
+        } else {
+          window.location.href = '/download/';
+        }
+      });
+    }
+
     // Welcome link - reset has_key flag to show welcome screen
     const welcomeLink = this.element.querySelector('.sidebar a[href="/welcome"]');
     if (welcomeLink) {
@@ -1141,6 +1157,16 @@ export class MainLayout {
                   <path d="m21 21-4.35-4.35"></path>
                 </svg>
                 <span class="primary-nav__item-desc">Search</span>
+              </a>
+            </li>
+            <li>
+              <a href="/download/" class="primary-nav__link primary-nav__link--download">
+                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span class="primary-nav__item-desc">Download</span>
               </a>
             </li>
             <li>

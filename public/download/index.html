@@ -331,7 +331,7 @@
     .about-col p { opacity: 0.82; line-height: 1.75; margin-bottom: 1.4rem; }
     .about-col .sec-title { margin-bottom: 1.2rem; }
     .qr-code {
-      width: 180px; height: auto;
+      width: 300px; height: auto;
       border-radius: 12px;
       margin-bottom: 1rem;
     }
@@ -342,7 +342,7 @@
       font-size: 0.82rem; opacity: 0.4;
       position: relative; z-index: 1;
     }
-    footer a { color: var(--color-3); text-decoration: none; }
+    footer a { color: #dc85ad; text-decoration: none; }
     footer a:hover { color: var(--color-4); }
 
     /* ── Device Frame Mockup ── */
@@ -552,8 +552,7 @@
         </div>
 
         <div class="card">
-          <span class="badge badge-purple">Standalone App</span>
-          <p>
+<p>
             NoorSigner is an independent desktop application that manages your
             Nostr private keys in a dedicated, secure process. It handles all
             signing operations so that your client never needs direct access to
@@ -570,10 +569,6 @@
           <!-- <div class="screenshot"><img src="noorsigner-screenshot.png" alt="NoorSigner screenshot"></div> -->
 
           <div class="btn-row">
-            <a href="https://github.com/77elements/noorsigner/releases" class="btn btn-outline btn-sm" target="_blank" rel="noopener">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Downloads
-            </a>
             <a href="https://github.com/77elements/noorsigner" class="btn btn-ghost btn-sm" target="_blank" rel="noopener">
               <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.6v-2c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1.1-.8.1-.7.1-.7 1.2.1 1.9 1.3 1.9 1.3 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.5.1-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.7 1.7.3 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A12 12 0 0 0 12 .3"/></svg>
               GitHub
@@ -606,16 +601,15 @@
           </div>
 
           <div class="card">
-            <span class="badge badge-green">Works Today</span>
-            <p>
+<p>
               NoorNote's web client runs inside
               <a href="https://keychat.io" target="_blank" rel="noopener" style="color:var(--color-4);text-decoration:none;font-weight:600;">Keychat</a>'s
-              built-in browser on both Android and iOS. Keychat is a Nostr-based
+              built-in browser on GrapheneOS, Android and iOS. Keychat is a Nostr-based
               messenger with Signal-level encryption that includes a full web
               browser with extension support.
             </p>
             <p>
-              Open <strong>noornote.app</strong> in Keychat's browser, sign in with
+              Open <strong>NoorNote</strong> in Keychat's Mini-Apps or browser, sign in with
               your Keychat identity, and you have a full Nostr client on your phone
               with your keys managed securely by Keychat itself.
             </p>
@@ -643,7 +637,7 @@
             <h2 class="sec-title"><span class="grad-text">About</span></h2>
             <p>
               NoorNote is built and maintained by
-              <a href="https://noornote.app/profile/npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0" target="_blank" rel="noopener" style="color:var(--color-4);text-decoration:none;font-weight:600;">Alp</a>,
+              <a href="https://noornote.app/profile/npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0" target="_blank" rel="noopener" style="color:var(--color-4);text-decoration:none;font-weight:600;">Alp</a> <a href="https://mslmdvlpmnt.com/" target="_blank" rel="noopener" style="color:var(--color-4);text-decoration:none;font-weight:600;">[ mslm dvlpmnt ]</a>,
               an independent developer passionate about decentralized
               communication and open-source software.
             </p>
@@ -652,25 +646,28 @@
               entirely by one person, without any grants or corporate backing.
               It is a labor of love for the Nostr ecosystem.
             </p>
-          </div>
-
-          <div class="about-col">
-            <h2 class="sec-title"><span class="grad-text">Support NoorNote</span></h2>
+            <p>
+              NoorNote does not use any tracking services, analytics, or cookies.
+              It does not collect any usage data.
+            </p>
             <p>
               NoorNote lives entirely from the support of its community.
               Every zap and donation helps keep this project alive,
               independent, and free for everyone.
             </p>
-
-            <p style="opacity:0.7;font-size:0.95rem;margin-bottom:0.6rem;">Support via Lightning</p>
-            <img src="rizful-payment-qr-shiny-crab-70.png" alt="Lightning QR Code" class="qr-code">
-
             <div class="btn-row" style="justify-content:flex-start;">
               <a href="https://noornote.app/profile/npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0" class="btn btn-primary btn-sm" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                 Zap Me on Nostr
               </a>
             </div>
+          </div>
+
+          <div class="about-col">
+            <h2 class="sec-title"><span class="grad-text">Support NoorNote</span></h2>
+
+            <p style="opacity:0.7;font-size:1rem;margin-bottom:0.6rem;text-align:center;">Support via Lightning</p>
+            <img src="rizful-payment-qr-shiny-crab-70.png" alt="Lightning QR Code" class="qr-code" style="width:100%;max-width:none;">
           </div>
         </div>
       </div>
@@ -680,7 +677,7 @@
 
   <!-- Footer -->
   <footer>
-    <p>NoorNote - Free &amp; Open Source &middot; <a href="https://github.com/77elements/noornote" target="_blank" rel="noopener">GitHub</a></p>
+    <p>NoorNote - Free &amp; Open Source &middot; <a href="https://github.com/77elements/noornote" target="_blank" rel="noopener">GitHub</a> &middot; <a href="https://mslmdvlpmnt.com/imprint/" target="_blank" rel="noopener">Imprint</a></p>
   </footer>
 
   <script>
