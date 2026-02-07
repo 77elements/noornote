@@ -97,19 +97,21 @@ export class App {
       });
     }
 
-    // Capture last URL BEFORE auth (to preserve it before auto-login overwrites it)
+    // Capture intended URL: sessionStorage (reload) or browser URL (fresh external link)
     const lastURL = this.router.getLastURL();
+    const browserPath = window.location.pathname;
+    const intendedURL = lastURL || (browserPath !== '/' ? browserPath : null);
 
     // Wait for auth initialization before navigating to preserve current route on reload
     await this.authService.waitForInitialization();
 
     const isLoggedIn = this.authService.hasValidSession();
 
-    // Determine target path: prioritize lastURL (reload case), fallback to home
-    // Router handles redirect to /welcome or /login based on localStorage
+    // Determine target path: preserve intended URL for public routes (profile, note, article)
+    // Router handles auth redirect to /welcome or /login for protected routes
     let targetPath: string;
     if (!isLoggedIn) {
-      targetPath = '/';  // Let Router decide /welcome or /login
+      targetPath = intendedURL || '/';
     } else {
       // Check if user needs profile setup (fresh account or interrupted wizard)
       const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
@@ -120,8 +122,8 @@ export class App {
         : false;
       if (needsSetup) {
         targetPath = '/setup';
-      } else if (lastURL && lastURL !== '/login' && lastURL !== '/welcome') {
-        targetPath = lastURL;
+      } else if (intendedURL && intendedURL !== '/login' && intendedURL !== '/welcome') {
+        targetPath = intendedURL;
       } else {
         targetPath = '/';
       }

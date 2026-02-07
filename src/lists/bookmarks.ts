@@ -51,8 +51,8 @@ import { FolderCard, type FolderData } from '../components/bookmarks/FolderCard'
 import { UpNavigator } from '../components/bookmarks/UpNavigator';
 
 // Shared helpers from /src/lists/
-import { readList, writeList, StorageKeys, now, deduplicateById } from './storage';
-import { readJsonFile, writeJsonFile, uploadJsonFile } from './file';
+import { readList, writeList, StorageKeys, now, deduplicateById, mergeByKey } from './storage';
+import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {
   fetchEvents,
   publishEvent,
@@ -73,14 +73,7 @@ const logger = SystemLogger.getInstance();
 // SHARED UTILITIES
 // =============================================================================
 
-/**
- * Escape HTML special characters for safe rendering
- */
-function escapeHtml(text: string): string {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+import { escapeHtml } from '../helpers/escapeHtml';
 
 /**
  * Validate URL format
@@ -1473,14 +1466,7 @@ function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: Bo
 }
 
 function mergeBookmarkItems(browserItems: BookmarkItem[], newItems: BookmarkItem[]): BookmarkItem[] {
-  const map = new Map<string, BookmarkItem>();
-  browserItems.forEach(item => map.set(item.id, item));
-  newItems.forEach(item => {
-    if (!map.has(item.id)) {
-      map.set(item.id, item);
-    }
-  });
-  return Array.from(map.values());
+  return mergeByKey(browserItems, newItems, 'id');
 }
 
 // =============================================================================
@@ -2310,14 +2296,7 @@ export class BookmarkManager {
   }
 
   private mergeItems(browserItems: BookmarkItem[], newItems: BookmarkItem[]): BookmarkItem[] {
-    const map = new Map<string, BookmarkItem>();
-    browserItems.forEach(item => map.set(item.id, item));
-    newItems.forEach(item => {
-      if (!map.has(item.id)) {
-        map.set(item.id, item);
-      }
-    });
-    return Array.from(map.values());
+    return mergeByKey(browserItems, newItems, 'id');
   }
 
   private async syncFromRelays(): Promise<BookmarkSyncFromRelaysResult> {
@@ -3416,17 +3395,7 @@ export class BookmarkManager {
       if (PlatformService.getInstance().isTauri) {
         await this.saveToFile();
       } else {
-        const items = this.adapter.getBrowserItems();
-        const json = JSON.stringify(items, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `noornote-bookmarks-${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        downloadAsJson(this.adapter.getBrowserItems(), 'bookmarks');
       }
       ToastService.show('Saved successfully', 'success');
     } catch (error) {

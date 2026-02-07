@@ -60,10 +60,13 @@ export class RepostProcessor {
       return { pubkey };
     };
 
-    const authorProfile = originalAuthorPubkey
-      ? buildProfile(originalAuthorProfile ?? null)
+    // Priority: embedded event pubkey (authoritative) > p-tag > reposter
+    const authorPubkey = originalEvent?.pubkey ?? originalAuthorPubkey ?? event.pubkey;
+    const authorProfile = (authorPubkey !== event.pubkey)
+      ? buildProfile(authorPubkey === originalAuthorPubkey
+          ? (originalAuthorProfile ?? null)
+          : RepostProcessor.contentProcessor.getNonBlockingProfile(authorPubkey) ?? null)
       : buildProfile(reposterProfile);
-    const authorPubkey = originalAuthorPubkey ?? event.pubkey;
 
     const reposterProfileObj = buildProfile(reposterProfile);
 
