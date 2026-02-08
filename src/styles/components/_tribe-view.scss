@@ -10,8 +10,8 @@
 .tribe-view__header {
   flex-shrink: 0;
   padding: $gap;
-  border-bottom: 1px solid $color-2;
-  background: $color-1;
+  border-bottom: 1px solid var(--color-2);
+  background: var(--color-1);
 }
 
 .tribe-view__tabs-container {
@@ -24,7 +24,7 @@
 .tribe-view__edit-link {
   background: none;
   border: none;
-  color: $color-4;
+  color: var(--color-4);
   cursor: pointer;
   font-weight: 500;
   padding: calc($gap / 2) $gap;
@@ -34,8 +34,8 @@
   flex-shrink: 0;
 
   &:hover {
-    background: rgba($color-4, 0.1);
-    color: $color-5;
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
+    color: var(--color-5);
   }
 }
 
@@ -50,6 +50,6 @@
   align-items: center;
   justify-content: center;
   padding: calc($gap * 4);
-  color: $color-3;
+  color: var(--color-3);
   text-align: center;
 }

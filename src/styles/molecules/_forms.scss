@@ -13,21 +13,21 @@
 .input {
   width: 100%;
   padding: calc($gap * 0.75);
-  background: $color-2;
-  border: 1px solid $color-2;
+  background: var(--color-2);
+  border: 1px solid var(--color-2);
   border-radius: $radius-md;
-  color: $color-5;
+  color: var(--color-5);
   font-family: inherit;
   transition: $transition-colors;
 
   &::placeholder {
-    color: $text-faint;
+    color: var(--text-faint);
   }
 
   &:focus {
     outline: none;
-    border-color: $color-4;
-    box-shadow: 0 0 0 2px rgba($color-4, 0.2);
+    border-color: var(--color-4);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-4) 20%, transparent);
   }
 
   // Modifiers
@@ -46,10 +46,10 @@
 .textarea {
   width: 100%;
   padding: $gap;
-  background: $color-2;
-  border: 1px solid $color-2;
+  background: var(--color-2);
+  border: 1px solid var(--color-2);
   border-radius: $radius-md;
-  color: $color-5;
+  color: var(--color-5);
   font-family: inherit;
   line-height: 1.6;
   min-height: 200px;
@@ -58,13 +58,13 @@
   @include custom-scrollbar;
 
   &::placeholder {
-    color: $text-faint;
+    color: var(--text-faint);
   }
 
   &:focus {
     outline: none;
-    border-color: $color-4;
-    box-shadow: 0 0 0 2px rgba($color-4, 0.2);
+    border-color: var(--color-4);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-4) 20%, transparent);
   }
 
   // Modifiers
@@ -92,7 +92,7 @@ label {
 // Form Info (description text)
 // ========================================
 .form__info {
-  border-top: 1px solid $color-3;
+  border-top: 1px solid var(--color-3);
   padding-top: $gap;
   margin-bottom: $gap;
 }
@@ -121,25 +121,25 @@ label {
   align-items: flex-start;
   gap: $gap;
   padding: $gap;
-  background: $color-2;
-  border: 2px solid $color-3;
+  background: var(--color-2);
+  border: 2px solid var(--color-3);
   border-radius: $radius-md;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    border-color: rgba($color-4, 0.5);
+    border-color: color-mix(in srgb, var(--color-4) 50%, transparent);
   }
 
   &--active {
-    border-color: $color-4;
-    background: rgba($color-4, 0.05);
+    border-color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 5%, transparent);
   }
 
   input[type="radio"] {
     margin-top: calc($gap / 4);
     cursor: pointer;
-    accent-color: $color-4;
+    accent-color: var(--color-4);
   }
 
   &__content {
@@ -149,12 +149,12 @@ label {
   &__title {
     @extend %h4;
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     margin-bottom: calc($gap / 4);
   }
 
   &__description {
-    color: $text-muted;
+    color: var(--text-muted);
     line-height: 1.5;
   }
 
@@ -162,7 +162,7 @@ label {
     margin: calc($gap / 2) 0 0 0;
     padding-left: $gap;
     @extend %small;
-    color: $text-muted;
+    color: var(--text-muted);
 
     li {
       margin-bottom: calc($gap / 4);
@@ -176,7 +176,7 @@ label {
 .form__note {
   margin-top: calc($gap / 2);
   @extend %small;
-  color: $text-faint;
+  color: var(--text-faint);
   font-style: italic;
 }
 
@@ -189,7 +189,7 @@ label {
   label {
     display: block;
     margin-bottom: calc($gap / 2);
-    color: $color-4;
+    color: var(--color-4);
     white-space: nowrap;
   }
 
@@ -210,14 +210,14 @@ label {
   .input-element {
     width: 100%;
     padding: calc($gap / 2) $gap;
-    color: $color-5;
-    background: $color-1;
-    border: 1px solid $color-3;
+    color: var(--color-5);
+    background: var(--color-1);
+    border: 1px solid var(--color-3);
     border-radius: $radius-sm;
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
   }
 }
@@ -231,7 +231,7 @@ label {
   label {
     display: block;
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     margin-bottom: calc($gap / 4);
   }
 }

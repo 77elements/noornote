@@ -46,8 +46,8 @@ export class QRCodeModal {
         width: 300,
         margin: 2,
         color: {
-          dark: getComputedStyle(document.documentElement).getPropertyValue('--color-white').trim() || '#FFFFFF',
-          light: getComputedStyle(document.documentElement).getPropertyValue('--color-1').trim() || '#0f0d23'
+          dark: '#000000',
+          light: '#FFFFFF'
         }
       });
 

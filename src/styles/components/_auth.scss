@@ -41,8 +41,8 @@
 .user-status {
   @include flex-between;
   padding: $gap;
-  border-bottom: 1px solid $color-2;
-  background: $color-1;
+  border-bottom: 1px solid var(--color-2);
+  background: var(--color-1);
 }
 
 // User info (standalone - within auth)
@@ -60,13 +60,13 @@
 // User npub (standalone)
 .user-npub {
   font-family: monospace;
-  color: $color-4;
+  color: var(--color-4);
 }
 
 // Auth npub (within auth status)
 .auth-npub {
   font-family: $font-family-mono;
-  color: $color-4;
+  color: var(--color-4);
   word-break: break-all;
   margin: calc($gap / 2) 0;
 }
@@ -74,7 +74,7 @@
 // Auth extension (standalone)
 .auth-extension {
   @extend %small;
-  color: $color-5;
+  color: var(--color-5);
   opacity: 0.7;
 }
 
@@ -105,7 +105,7 @@
 
 // Extension link (standalone)
 .extension-link {
-  color: $color-4;
+  color: var(--color-4);
   text-decoration: none;
 
   &:hover {
@@ -116,32 +116,32 @@
 // Retry button (standalone)
 .retry-btn {
   background: transparent;
-  color: $color-4;
-  border: 1px solid $color-4;
+  color: var(--color-4);
+  border: 1px solid var(--color-4);
   padding: calc($gap / 2) $gap;
   border-radius: $radius-base;
   cursor: pointer;
   margin-top: $gap;
 
   &:hover {
-    background: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    color: var(--color-1);
   }
 }
 
 // Logout button (standalone)
 .logout-btn {
   background: transparent;
-  color: $color-4;
-  border: 1px solid $color-4;
+  color: var(--color-4);
+  border: 1px solid var(--color-4);
   padding: calc($gap * 0.375) calc($gap * 0.75);
   border-radius: $radius-base;
   cursor: pointer;
   @extend %small;
 
   &:hover {
-    background: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    color: var(--color-1);
   }
 }
 
@@ -154,18 +154,18 @@
 // Auth container heading
 .auth-container-heading {
   margin: 0 0 $gap 0;
-  color: $color-5;
+  color: var(--color-5);
 }
 
 // Auth container text
 .auth-container-text {
   margin: 0 0 $gap * 2 0;
-  color: $color-5;
+  color: var(--color-5);
   opacity: 0.8;
 }
 
 // Auth status heading
 .auth-status-heading {
   margin: 0 0 $gap 0;
-  color: $color-5;
+  color: var(--color-5);
 }

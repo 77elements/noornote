@@ -111,10 +111,10 @@
   }
 
   &--success {
-    background: rgba($color-6, 0.1);
+    background: color-mix(in srgb, var(--color-6) 10%, transparent);
 
     td:first-child {
-      border-left: 3px solid $color-6;
+      border-left: 3px solid var(--color-6);
     }
   }
 
@@ -139,7 +139,7 @@
     word-break: break-word;
 
     .system-log-entry--success & {
-      color: $color-6;
+      color: var(--color-6);
     }
   }
 
@@ -153,33 +153,14 @@
   }
 }
 
-// Dark mode optimizations
-@media (prefers-color-scheme: dark) {
-  .system-logger {
-    &__content {
-    }
+// Log entry backgrounds (theme-aware)
+.system-log-entry {
+  &--info {
+    background: var(--color-2);
   }
 
-  .system-log-entry {
-    &--info {
-      background: rgba($color-info, 0.1);
-    }
-
-    &--debug {
-      background: rgba($color-3, 0.1);
-    }
-
-    &--warn {
-      background: $bg-warning;
-    }
-
-    &--error {
-      background: $bg-error;
-    }
-
-    &--success {
-      background: rgba($color-6, 0.15);
-    }
+  &--debug {
+    background: color-mix(in srgb, var(--color-3) 10%, transparent);
   }
 }
 

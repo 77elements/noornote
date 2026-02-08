@@ -24,7 +24,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: color.adjust($color-1, $alpha: -0.5); // 50% transparency
+    background-color: color-mix(in srgb, var(--color-1) 50%, transparent); // 50% transparency
     cursor: pointer;
   }
 
@@ -73,8 +73,8 @@
     height: 48px;
     border: none;
     border-radius: $radius-lg;
-    background-color: color.adjust($color-1, $alpha: -0.2); // 80% opacity
-    color: $color-6;
+    background-color: color-mix(in srgb, var(--color-1) 80%, transparent); // 80% opacity
+    color: var(--color-6);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -82,8 +82,8 @@
     transition: all 0.2s ease;
 
     &:hover:not(:disabled) {
-      background-color: $color-4;
-      color: $color-1;
+      background-color: var(--color-4);
+      color: var(--color-1);
       transform: scale(1.05);
     }
 
@@ -111,8 +111,8 @@
     height: 56px;
     border: none;
     border-radius: $radius-full;
-    background-color: color.adjust($color-1, $alpha: -0.2); // 80% opacity
-    color: $color-6;
+    background-color: color-mix(in srgb, var(--color-1) 80%, transparent); // 80% opacity
+    color: var(--color-6);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -121,8 +121,8 @@
     z-index: 2;
 
     &:hover:not(:disabled) {
-      background-color: $color-4;
-      color: $color-1;
+      background-color: var(--color-4);
+      color: var(--color-1);
       transform: translateY(-50%) scale(1.1);
     }
 
@@ -158,8 +158,8 @@
     left: 50%;
     transform: translateX(-50%);
     padding: calc($gap / 2) $gap;
-    background-color: color.adjust($color-1, $alpha: -0.2); // 80% opacity
-    color: $color-6;
+    background-color: color-mix(in srgb, var(--color-1) 80%, transparent); // 80% opacity
+    color: var(--color-6);
     border-radius: $radius-full;
     font-weight: 500;
     z-index: 2;

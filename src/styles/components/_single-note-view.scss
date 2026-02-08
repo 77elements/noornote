@@ -24,7 +24,7 @@
     justify-content: flex-start;
     padding-top: $gap;
     margin-top: $gap;
-    border-top: 1px solid $color-2;
+    border-top: 1px solid var(--color-2);
   }
 }
 
@@ -33,16 +33,16 @@
 // ========================================
 .snv-back-btn {
   padding: calc($gap / 2) $gap;
-  background: $color-2;
-  color: $color-5;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  color: var(--color-5);
+  border: 1px solid var(--color-3);
   border-radius: $radius-sm;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: $color-3;
-    border-color: $color-4;
+    background: var(--color-3);
+    border-color: var(--color-4);
   }
 }
 
@@ -60,14 +60,14 @@
   .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid $color-2;
-    border-top-color: $color-4;
+    border: 3px solid var(--color-2);
+    border-top-color: var(--color-4);
     border-radius: $radius-full;
     animation: spin 0.8s linear infinite;
   }
 
   p {
-    color: $color-5;
+    color: var(--color-5);
     opacity: 0.7;
   }
 }
@@ -94,7 +94,7 @@
   }
 
   &__message {
-    color: $color-5;
+    color: var(--color-5);
     opacity: 0.7;
     @extend %h3;
   }
@@ -112,7 +112,7 @@
 .snv-replies__error {
   padding: $gap * 2;
   text-align: center;
-  color: $text-muted;
+  color: var(--text-muted);
   font-style: italic;
 }
 
@@ -123,7 +123,7 @@
 .snv-replies__header {
   margin-bottom: $gap;
   padding-bottom: $gap;
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
 }
 
 .snv-replies__list {
@@ -174,7 +174,7 @@
   &__header {
     margin-bottom: calc($gap / 2);
     padding-left: calc($gap / 2);
-    color: $text-soft;
+    color: var(--text-soft);
   }
 
   &__link {

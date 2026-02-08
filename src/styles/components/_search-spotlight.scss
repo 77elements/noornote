@@ -32,8 +32,8 @@
   position: relative;
   width: 90%;
   max-width: 600px;
-  background: $color-1;
-  border: 1px solid $color-2;
+  background: var(--color-1);
+  border: 1px solid var(--color-2);
   border-radius: $radius-md;
   box-shadow: $box-shadow;
   overflow: hidden;
@@ -42,15 +42,15 @@
 
 .search-spotlight__input-wrapper {
   padding: $gap;
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
 }
 
 .search-spotlight__controls {
   display: flex;
   gap: calc($gap / 2);
   padding: calc($gap / 2) $gap;
-  background: $color-2;
-  border-bottom: 1px solid $surface-tint;
+  background: var(--color-2);
+  border-bottom: 1px solid var(--surface-tint);
 }
 
 .search-spotlight__btn {
@@ -61,7 +61,7 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: $radius-sm;
-  color: $color-5;
+  color: var(--color-5);
   @extend %small;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -72,13 +72,13 @@
   }
 
   &:hover:not(:disabled) {
-    background: $color-1;
-    border-color: $color-4;
+    background: var(--color-1);
+    border-color: var(--color-4);
   }
 
   &--selected:not(:disabled) {
-    background: $color-1;
-    border-color: $color-4;
+    background: var(--color-1);
+    border-color: var(--color-4);
   }
 
   &:disabled {
@@ -103,36 +103,36 @@
   transition: background 0.2s ease;
 
   &:hover {
-    background: $color-2;
+    background: var(--color-2);
   }
 
   &--selected {
-    background: $color-2;
-    border: 1px solid $color-4;
+    background: var(--color-2);
+    border: 1px solid var(--color-4);
   }
 }
 
 .search-spotlight__suggestion-icon {
   width: 16px;
   height: 16px;
-  color: $text-faint;
+  color: var(--text-faint);
   flex-shrink: 0;
 }
 
 .search-spotlight__suggestion-text {
-  color: $color-5;
+  color: var(--color-5);
   font-family: monospace;
 }
 
 .search-spotlight__empty {
   padding: $gap;
   text-align: center;
-  color: $text-faint;
+  color: var(--text-faint);
 }
 
 // User search suggestions
 .search-spotlight__user-suggestions {
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
 }
 
 .search-spotlight__user-section {
@@ -145,12 +145,12 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: $text-faint;
+  color: var(--text-faint);
 }
 
 .search-spotlight__user-loading {
   padding: calc($gap / 2);
-  color: $text-faint;
+  color: var(--text-faint);
   @extend %small;
 }
 
@@ -164,12 +164,12 @@
   transition: background 0.2s ease;
 
   &:hover {
-    background: $color-2;
+    background: var(--color-2);
   }
 
   &.search-spotlight__suggestion--selected {
-    background: $color-2;
-    border: 1px solid $color-4;
+    background: var(--color-2);
+    border: 1px solid var(--color-4);
   }
 }
 
@@ -179,7 +179,7 @@
   border-radius: $radius-full;
   overflow: hidden;
   flex-shrink: 0;
-  background: $color-2;
+  background: var(--color-2);
 
   img {
     width: 100%;
@@ -191,7 +191,7 @@
 .search-spotlight__user-avatar-placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, $color-3, $color-2);
+  background: linear-gradient(135deg, var(--color-3), var(--color-2));
 }
 
 .search-spotlight__user-info {
@@ -204,7 +204,7 @@
 
 .search-spotlight__user-name {
   font-weight: 500;
-  color: $color-5;
+  color: var(--color-5);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -212,7 +212,7 @@
 
 .search-spotlight__user-nip05 {
   @extend %small;
-  color: $text-faint;
+  color: var(--text-faint);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -223,8 +223,8 @@
   @extend %mini;
   font-weight: 600;
   text-transform: uppercase;
-  background: rgba($color-4, 0.2);
-  color: $color-4;
+  background: color-mix(in srgb, var(--color-4) 20%, transparent);
+  color: var(--color-4);
   border-radius: $radius-sm;
   flex-shrink: 0;
 }

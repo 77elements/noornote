@@ -44,13 +44,13 @@
 
   // Focus state for accessibility
   &:focus-visible + .switch-slider {
-    outline: 2px solid $color-6;
+    outline: 2px solid var(--color-6);
     outline-offset: 2px;
   }
 
   // Checked state
   &:checked + .switch-slider {
-    background: $color-6;
+    background: var(--color-6);
 
     &::before {
       transform: translateX(20px);
@@ -65,7 +65,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: $color-3;
+  background: var(--color-3);
   border-radius: $radius-full;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -92,15 +92,15 @@
 // Dark mode adjustments
 @media (prefers-color-scheme: dark) {
   .switch-slider {
-    background: $surface-tint;
+    background: var(--surface-tint);
 
     &::before {
-      background: $color-1;
+      background: var(--color-1);
     }
   }
 
   .switch-input:checked + .switch-slider {
-    background: $color-6;
+    background: var(--color-6);
 
     &::before {
       background: $color-white;

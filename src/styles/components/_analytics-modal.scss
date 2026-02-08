@@ -26,7 +26,7 @@
 // Section separator
 .analytics-modal__separator {
   height: 1px;
-  background: $color-2;
+  background: var(--color-2);
   margin-bottom: $gap;
 }
 
@@ -38,19 +38,19 @@
 
 // User links list
 .analytics-modal__list {
-  color: $color-5;
+  color: var(--color-5);
   line-height: 1.5;
 }
 
 // User link
 .analytics-modal__user-link {
-  color: $color-4;
+  color: var(--color-4);
   text-decoration: none;
   transition: color 0.2s ease;
 
   &:hover {
     text-decoration: underline;
-    color: color.adjust($color-4, $lightness: 10%);
+    color: color-mix(in srgb, var(--color-4) 80%, white);
   }
 }
 
@@ -63,13 +63,13 @@
 
 // Zap item
 .analytics-modal__zap-item {
-  color: $color-5;
+  color: var(--color-5);
   line-height: 1.5;
 }
 
 // Zap amount
 .analytics-modal__zap-amount {
-  color: $color-5; // White - non-interactive element
+  color: var(--color-5); // White - non-interactive element
   font-weight: 600;
 }
 
@@ -97,7 +97,7 @@
 // Client info (bottom right)
 .analytics-modal__client {
   text-align: right;
-  color: $color-3;
+  color: var(--color-3);
   @extend %small;
   margin-top: $gap;
   opacity: 0.8;

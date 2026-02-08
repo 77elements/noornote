@@ -47,15 +47,15 @@
 
     &:link,
     &:visited {
-      color: $color-5;
+      color: var(--color-5);
     }
 
     &:hover,
     &:active,
     &:focus,
     &.is-active {
-      background: rgba($color-4, 0.1);
-      color: $color-4;
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      color: var(--color-4);
       text-decoration: none;
     }
 
@@ -92,7 +92,7 @@
   a:not([class*="primary-nav__"]) {
     display: block;
     padding: calc($gap / 2);
-    color: $color-5;
+    color: var(--color-5);
     text-decoration: none;
     transition: $transition-colors;
     border-radius: $radius-sm;
@@ -115,8 +115,8 @@
 
     &:hover,
     &.is-active {
-      background: rgba($color-4, 0.1);
-      color: $color-4;
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      color: var(--color-4);
     }
   }
 
@@ -124,12 +124,12 @@
     display: none; // Hidden by default, shown via JS
     width: 20px;
     height: 20px;
-    color: $color-5;
+    color: var(--color-5);
     cursor: pointer;
     transition: $transition-colors;
 
     &:hover {
-      color: $color-4;
+      color: var(--color-4);
     }
   }
 
@@ -139,8 +139,8 @@
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: $color-6; // Soft Mint Green
-    color: $color-1; // Black text
+    background: var(--color-6); // Soft Mint Green
+    color: var(--color-1); // Black text
     border-radius: $radius-full;
     @extend %small;
     font-weight: 600;
@@ -150,15 +150,15 @@
     // Hashtag-only notifications: hollow circle (low priority)
     &--hashtag-only {
       background: transparent;
-      border: 1px solid $color-6;
-      color: $color-6;
+      border: 1px solid var(--color-6);
+      color: var(--color-6);
       line-height: 18px; // Adjust for border
     }
 
     // High priority notifications: pulsing badge (replies, zaps)
     &--priority-high {
       animation: badge-pulse 2s ease-in-out infinite;
-      box-shadow: 0 0 8px rgba($color-6, 0.6);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
     }
   }
 
@@ -170,7 +170,7 @@
       padding: calc($gap / 2);
       background: none;
       border: none;
-      color: $color-5;
+      color: var(--color-5);
       text-align: left;
       cursor: pointer;
       transition: $transition-colors;
@@ -196,8 +196,8 @@
       }
 
       &:hover {
-        background: rgba($color-4, 0.1);
-        color: $color-4;
+        background: color-mix(in srgb, var(--color-4) 10%, transparent);
+        color: var(--color-4);
       }
     }
   }
@@ -228,7 +228,7 @@
     grid-gap: calc($gap / 2);
     align-items: center;
     padding: calc($gap / 2) calc($gap / 2) calc($gap / 2) $gap;
-    color: $color-5;
+    color: var(--color-5);
     text-decoration: none;
     transition: $transition-colors;
     border-radius: $radius-sm;
@@ -238,8 +238,8 @@
     &:active,
     &:focus,
     &.is-active {
-      background: rgba($color-4, 0.1);
-      color: $color-4;
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      color: var(--color-4);
       text-decoration: none;
     }
   }
@@ -259,11 +259,11 @@
 @keyframes badge-pulse {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 8px rgba($color-6, 0.6);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
   }
   50% {
     transform: scale(1.15);
-    box-shadow: 0 0 12px rgba($color-6, 0.8);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--color-6) 80%, transparent);
   }
 }
 

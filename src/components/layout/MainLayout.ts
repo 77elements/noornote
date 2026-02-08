@@ -8,6 +8,7 @@ import { OnboardingComponent } from '../onboarding/OnboardingComponent';
 import { SystemLogger } from '../system/SystemLogger';
 import { AccountSwitcher } from '../ui/AccountSwitcher';
 import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
+import { ThemeSwitcher } from '../ui/ThemeSwitcher';
 import { FontSizeService } from '../../services/FontSizeService';
 import { CacheManager } from '../../services/CacheManager';
 import { AppState } from '../../services/AppState';
@@ -51,6 +52,8 @@ export class MainLayout {
   private userStatus: AccountSwitcher | null = null;
   private fontSizeSwitcher: FontSizeSwitcher | null = null;
   private sidebarFontSizeSwitcher: FontSizeSwitcher | null = null;
+  private themeSwitcher: ThemeSwitcher | null = null;
+  private sidebarThemeSwitcher: ThemeSwitcher | null = null;
   private searchSpotlight: SearchSpotlight | null = null;
   private keyboardShortcutManager!: KeyboardShortcutManager;
   private authComponent: any = null; // Store reference to trigger logout
@@ -1291,8 +1294,11 @@ export class MainLayout {
     if (this.userStatus) this.userStatus.destroy();
     if (this.fontSizeSwitcher) this.fontSizeSwitcher.destroy();
     if (this.sidebarFontSizeSwitcher) this.sidebarFontSizeSwitcher.destroy();
+    if (this.themeSwitcher) this.themeSwitcher.destroy();
+    if (this.sidebarThemeSwitcher) this.sidebarThemeSwitcher.destroy();
 
-    // Create font size switcher + account switcher
+    // Create theme switcher + font size switcher + account switcher
+    this.themeSwitcher = new ThemeSwitcher();
     this.fontSizeSwitcher = new FontSizeSwitcher();
     this.userStatus = new AccountSwitcher({
       npub,
@@ -1305,15 +1311,18 @@ export class MainLayout {
     const secondaryUser = this.element.querySelector('.user-login-bar');
     if (secondaryUser) {
       secondaryUser.innerHTML = '';
+      secondaryUser.appendChild(this.themeSwitcher.getElement());
       secondaryUser.appendChild(this.fontSizeSwitcher.getElement());
       secondaryUser.appendChild(this.userStatus.getElement());
     }
 
-    // Mount sidebar copy (visible in wide/phone modes only via CSS)
+    // Mount sidebar copies (visible in wide/phone modes only via CSS)
+    this.sidebarThemeSwitcher = new ThemeSwitcher();
     this.sidebarFontSizeSwitcher = new FontSizeSwitcher();
     const sidebarMount = this.element.querySelector('.sidebar-font-size-mount');
     if (sidebarMount) {
       sidebarMount.innerHTML = '';
+      sidebarMount.appendChild(this.sidebarThemeSwitcher.getElement());
       sidebarMount.appendChild(this.sidebarFontSizeSwitcher.getElement());
     }
 
@@ -2126,6 +2135,14 @@ export class MainLayout {
 
     if (this.userStatus) {
       this.userStatus.destroy();
+    }
+
+    if (this.themeSwitcher) {
+      this.themeSwitcher.destroy();
+    }
+
+    if (this.sidebarThemeSwitcher) {
+      this.sidebarThemeSwitcher.destroy();
     }
 
     if (this.walletBalanceDisplay) {

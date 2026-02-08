@@ -18,7 +18,7 @@
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: $color-1;
+  background: var(--color-1);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -70,24 +70,24 @@
   flex-shrink: 0;
 
   &--completed {
-    background: $color-6;
+    background: var(--color-6);
   }
 
   &--active {
-    background: $color-4;
-    box-shadow: 0 0 0 4px rgba($color-4, 0.25);
+    background: var(--color-4);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-4) 25%, transparent);
   }
 
   &--upcoming {
-    background: $color-2;
-    border: 1px solid $color-3;
+    background: var(--color-2);
+    border: 1px solid var(--color-3);
   }
 }
 
 .wizard-progress-line {
   flex: 1;
   height: 2px;
-  background: $color-2;
+  background: var(--color-2);
 }
 
 // ===========================================
@@ -131,7 +131,7 @@
 .wizard-intro {
   @include big;
   line-height: 1.6;
-  color: $color-5;
+  color: var(--color-5);
   margin-bottom: $gap * 1.5;
 }
 
@@ -153,23 +153,23 @@
 
 .wizard-suggestion-chip {
   padding: calc($gap / 2) $gap * 1.5;
-  border: 1px solid $color-3;
+  border: 1px solid var(--color-3);
   border-radius: $radius-full;
-  background: $color-2;
-  color: $color-5;
+  background: var(--color-2);
+  color: var(--color-5);
   cursor: pointer;
   transition: all 0.15s ease;
   @include big;
 
   &:hover {
-    border-color: $color-4;
-    color: $color-4;
+    border-color: var(--color-4);
+    color: var(--color-4);
   }
 
   &.active {
-    background: $color-4;
-    border-color: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    border-color: var(--color-4);
+    color: var(--color-1);
   }
 }
 
@@ -211,7 +211,7 @@
   border: 3px solid transparent;
   overflow: hidden;
   cursor: pointer;
-  background: $color-2;
+  background: var(--color-2);
   padding: 0;
   transition: all 0.15s ease;
 
@@ -223,13 +223,13 @@
   }
 
   &:hover {
-    border-color: $color-3;
+    border-color: var(--color-3);
     transform: scale(1.05);
   }
 
   &.active {
-    border-color: $color-4;
-    box-shadow: 0 0 0 3px rgba($color-4, 0.3);
+    border-color: var(--color-4);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-4) 30%, transparent);
   }
 }
 
@@ -242,7 +242,7 @@
   justify-content: space-between;
   align-items: center;
   padding-top: $gap * 2;
-  border-top: 1px solid $color-2;
+  border-top: 1px solid var(--color-2);
 }
 
 .wizard-nav-left {
@@ -271,7 +271,7 @@
   align-items: center;
   gap: $gap;
   padding: $gap;
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-lg;
 }
 
@@ -296,18 +296,18 @@
   gap: calc($gap / 4);
   cursor: pointer;
   @extend %compact;
-  color: $color-5;
+  color: var(--color-5);
   margin: 0;
 
   input[type="checkbox"] {
-    accent-color: $color-4;
+    accent-color: var(--color-4);
   }
 }
 
 .wizard-relay-remove {
   background: none;
   border: none;
-  color: $color-3;
+  color: var(--color-3);
   @extend %icon-sm;
   cursor: pointer;
   padding: 0 calc($gap / 4);
@@ -342,7 +342,7 @@
 }
 
 .wizard-relay-row--selected {
-  border: 1px solid $color-4;
+  border: 1px solid var(--color-4);
 }
 
 .wizard-inbox-relay-label {
@@ -354,7 +354,7 @@
   width: 100%;
 
   input[type="checkbox"] {
-    accent-color: $color-4;
+    accent-color: var(--color-4);
     flex-shrink: 0;
   }
 }
@@ -364,7 +364,7 @@
 // ===========================================
 
 .wizard-follow-count {
-  color: $color-4;
+  color: var(--color-4);
   font-weight: 600;
   margin-bottom: $gap;
 }
@@ -378,7 +378,7 @@
 }
 
 .wizard-pack-card {
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-lg;
   overflow: hidden;
   cursor: pointer;
@@ -393,7 +393,7 @@
 .wizard-pack-cover {
   width: 100%;
   aspect-ratio: 16 / 9;
-  background: $color-3;
+  background: var(--color-3);
   background-size: cover;
   background-position: center;
 }
@@ -412,14 +412,14 @@
 
 .wizard-pack-meta {
   @extend %compact;
-  color: $color-5;
+  color: var(--color-5);
 }
 
 // Pack Detail
 .wizard-pack-detail-cover {
   width: 100%;
   aspect-ratio: 21 / 9;
-  background: $color-3;
+  background: var(--color-3);
   background-size: cover;
   background-position: center;
   border-radius: $radius-lg;
@@ -442,7 +442,7 @@
   align-items: center;
   gap: $gap;
   padding: calc($gap * 0.75);
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-lg;
 }
 
@@ -450,7 +450,7 @@
   width: 40px;
   height: 40px;
   border-radius: $radius-full;
-  background: $color-3;
+  background: var(--color-3);
   background-size: cover;
   background-position: center;
   flex-shrink: 0;
@@ -470,7 +470,7 @@
 
 .wizard-pack-user-bio {
   @extend %compact;
-  color: $color-5;
+  color: var(--color-5);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -504,7 +504,7 @@
 }
 
 .wizard-lightning-done {
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-lg;
   padding: $gap * 1.5;
 }
@@ -522,7 +522,7 @@
 }
 
 .wizard-done-preview {
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-lg;
   padding: $gap * 2;
   margin-bottom: $gap * 2;
@@ -534,19 +534,19 @@
   border-radius: $radius-full;
   background-size: cover;
   background-position: center;
-  background-color: $color-3;
+  background-color: var(--color-3);
   margin: 0 auto $gap;
 }
 
 .wizard-done-username {
-  color: $color-3;
+  color: var(--color-3);
   margin: 0;
   @include big;
 }
 
 .wizard-done-bio {
   margin-top: $gap;
-  color: $color-5;
+  color: var(--color-5);
   line-height: 1.5;
   @include big;
 }
@@ -565,14 +565,14 @@
 }
 
 .wizard-hint {
-  color: $color-3;
+  color: var(--color-3);
   margin-top: calc($gap / 2);
   text-align: center;
 }
 
 .wizard-info-box {
-  background: $color-1;
-  border: 1px solid $color-3;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
   border-radius: $radius-lg;
   padding: $gap * 1.5;
   margin: $gap * 1.5 0;
@@ -594,7 +594,7 @@
   label {
     display: block;
     margin-bottom: calc($gap / 2);
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
   }
 }
@@ -612,7 +612,7 @@
   margin-top: calc($gap / 2);
 
   &.error {
-    color: $color-4;
+    color: var(--color-4);
   }
 }
 
@@ -647,21 +647,21 @@
 }
 
 .wizard-keypair-item {
-  background: $color-1;
-  border: 1px solid $color-3;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
   border-radius: $radius-lg;
   padding: $gap;
 
   label {
     display: block;
     margin-bottom: calc($gap / 2);
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
   }
 
   &--critical {
-    border-color: $color-4;
-    background: rgba($color-4, 0.05);
+    border-color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 5%, transparent);
   }
 }
 
@@ -673,10 +673,10 @@
 
 .wizard-backup-warning {
   padding: $gap * 1.5;
-  background: rgba($color-4, 0.1);
-  border: 1px solid $color-4;
+  background: color-mix(in srgb, var(--color-4) 10%, transparent);
+  border: 1px solid var(--color-4);
   border-radius: $radius-lg;
-  color: $color-5;
+  color: var(--color-5);
   line-height: 1.6;
   margin: $gap * 2 0;
 
@@ -697,12 +697,12 @@
     align-items: center;
     gap: calc($gap / 2);
     cursor: pointer;
-    color: $color-5;
+    color: var(--color-5);
 
     input[type="checkbox"] {
       width: 20px;
       height: 20px;
-      accent-color: $color-4;
+      accent-color: var(--color-4);
     }
   }
 }
@@ -710,8 +710,8 @@
 .wizard-credentials-box {
   margin: $gap * 2 0;
   padding: $gap * 1.5;
-  background: $color-1;
-  border: 1px solid $color-3;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
   border-radius: $radius-lg;
 
   > p {

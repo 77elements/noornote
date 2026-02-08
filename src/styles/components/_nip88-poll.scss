@@ -10,14 +10,14 @@
   margin-top: $gap;
   padding: $gap;
   background: $alpha-light;
-  border: 1px solid $color-2;
+  border: 1px solid var(--color-2);
   border-radius: $radius-lg;
 
   &__meta {
     display: flex;
     gap: $gap;
     margin-bottom: $gap;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__meta-item {
@@ -26,7 +26,7 @@
     gap: calc($gap / 4);
 
     &--expired {
-      color: rgba($color-6, 0.5);
+      color: color-mix(in srgb, var(--color-6) 50%, transparent);
     }
   }
 
@@ -42,17 +42,17 @@
     align-items: center;
     justify-content: space-between;
     padding: calc($gap * 0.75);
-    background: $color-1;
-    border: 1px solid $color-2;
+    background: var(--color-1);
+    border: 1px solid var(--color-2);
     border-radius: $radius-base;
-    color: $color-6;
+    color: var(--color-6);
     text-align: left;
     cursor: pointer;
     transition: all 0.2s ease;
     overflow: hidden;
 
     &:hover:not(:disabled) {
-      border-color: $color-4;
+      border-color: var(--color-4);
       background: $alpha-light;
     }
 
@@ -66,11 +66,11 @@
     }
 
     &--voted {
-      border-color: $color-4;
-      background: rgba($color-4, 0.1);
+      border-color: var(--color-4);
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
 
       .nip88-poll__option-bar {
-        background: linear-gradient(90deg, rgba($color-4, 0.3), rgba($color-4, 0.1));
+        background: linear-gradient(90deg, color-mix(in srgb, var(--color-4) 30%, transparent), color-mix(in srgb, var(--color-4) 10%, transparent));
       }
     }
   }
@@ -94,7 +94,7 @@
     z-index: 2;
     display: flex;
     gap: $gap;
-    color: $color-4;
+    color: var(--color-4);
   }
 
   &__option-count {
@@ -105,7 +105,7 @@
   &__option-percentage {
     min-width: 3rem;
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
   }
 
   &__option-bar {
@@ -113,7 +113,7 @@
     left: 0;
     top: 0;
     height: 100%;
-    background: linear-gradient(90deg, rgba($color-3, 0.2), rgba($color-3, 0.05));
+    background: linear-gradient(90deg, color-mix(in srgb, var(--color-3) 20%, transparent), color-mix(in srgb, var(--color-3) 5%, transparent));
     border-radius: $radius-base;
     transition: width 0.3s ease;
     z-index: 1;
@@ -128,8 +128,8 @@
       pointer-events: none;
 
       &:hover {
-        border-color: $color-2;
-        background: $color-1;
+        border-color: var(--color-2);
+        background: var(--color-1);
       }
     }
   }

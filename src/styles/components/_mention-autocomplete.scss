@@ -7,8 +7,8 @@
  */
 
 .mention-autocomplete {
-  background: $color-2;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-lg;
   max-height: 300px;
   overflow-y: auto;

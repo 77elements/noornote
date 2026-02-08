@@ -17,7 +17,7 @@
 
 .onboarding-hint {
   margin-top: $gap;
-  color: $color-3;
+  color: var(--color-3);
 }
 
 // ===========================================
@@ -25,7 +25,7 @@
 // ===========================================
 
 .onboarding-section {
-  border-bottom: 1px solid $color-3;
+  border-bottom: 1px solid var(--color-3);
   margin-bottom: $gap * 2;
 }
 
@@ -62,7 +62,7 @@
 
 // Auth Section (grouped options)
 .auth-section {
-  border: 1px solid $color-3;
+  border: 1px solid var(--color-3);
   border-radius: $radius-lg;
   padding: calc($gap * 2);
   margin: calc($gap * 2) 0;
@@ -82,10 +82,10 @@
 
   .auth-hint {
     margin-top: $gap;
-    color: $color-3;
+    color: var(--color-3);
 
     a {
-      color: $color-4;
+      color: var(--color-4);
       text-decoration: none;
 
       &:hover {
@@ -108,15 +108,15 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: $color-3;
+    background: var(--color-3);
   }
 
   span {
     position: relative;
     display: inline-block;
     padding: 0 $gap;
-    background: $color-2;
-    color: $color-3;
+    background: var(--color-2);
+    color: var(--color-3);
   }
 }
 
@@ -149,11 +149,11 @@
   }
 
   &__loading {
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__status {
-    color: $color-3;
+    color: var(--color-3);
     margin: 0;
   }
 }
@@ -170,15 +170,15 @@
     left: 0;
     right: 0;
     height: 1px;
-    background: $color-3;
+    background: var(--color-3);
   }
 
   span {
     position: relative;
     display: inline-block;
     padding: 0 $gap;
-    background: $color-2;
-    color: $color-3;
+    background: var(--color-2);
+    color: var(--color-3);
   }
 }
 
@@ -188,7 +188,7 @@
 
   .auth-hint {
     margin: 0;
-    color: $color-3;
+    color: var(--color-3);
   }
 }
 
@@ -224,21 +224,21 @@
 }
 
 .keypair-item {
-  background: $color-1;
-  border: 1px solid $color-3;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
   border-radius: $radius-lg;
   padding: $gap;
 
   label {
     display: block;
     margin-bottom: calc($gap / 2);
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
   }
 
   &--critical {
-    border-color: $color-4;
-    background: rgba($color-4, 0.05);
+    border-color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 5%, transparent);
   }
 }
 
@@ -259,10 +259,10 @@
 
 .backup-warning {
   padding: $gap * 1.5;
-  background: rgba($color-4, 0.1);
-  border: 1px solid $color-4;
+  background: color-mix(in srgb, var(--color-4) 10%, transparent);
+  border: 1px solid var(--color-4);
   border-radius: $radius-lg;
-  color: $color-5;
+  color: var(--color-5);
   line-height: 1.6;
   margin-bottom: $gap * 2;
 
@@ -283,12 +283,12 @@
     align-items: center;
     gap: calc($gap / 2);
     cursor: pointer;
-    color: $color-5;
+    color: var(--color-5);
 
     input[type="checkbox"] {
       width: 18px;
       height: 18px;
-      accent-color: $color-4;
+      accent-color: var(--color-4);
     }
   }
 }
@@ -296,13 +296,13 @@
 .create-account-actions {
   text-align: center;
   padding-top: $gap;
-  border-top: 1px solid $color-3;
+  border-top: 1px solid var(--color-3);
 }
 
 .back-link {
   display: inline-block;
   margin-top: $gap * 2;
-  color: $color-4;
+  color: var(--color-4);
   text-decoration: none;
 
   &:hover {
@@ -332,14 +332,14 @@
     gap: calc($gap / 2);
 
     label {
-      color: $color-5;
+      color: var(--color-5);
       font-weight: 500;
     }
   }
 
   &__error {
-    color: $color-4;
-    background: rgba($color-4, 0.1);
+    color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
     padding: calc($gap / 2) $gap;
     border-radius: $radius-sm;
     margin: 0;
@@ -372,18 +372,18 @@
   font-weight: 500;
 
   &--completed {
-    background: rgba($color-4, 0.2);
-    color: $color-4;
+    background: color-mix(in srgb, var(--color-4) 20%, transparent);
+    color: var(--color-4);
   }
 
   &--active {
-    background: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    color: var(--color-1);
   }
 
   &--upcoming {
-    background: $color-3;
-    color: $color-5;
+    background: var(--color-3);
+    color: var(--color-5);
     opacity: 0.5;
   }
 }
@@ -391,7 +391,7 @@
 .web-onboarding-step-line {
   width: 20px;
   height: 2px;
-  background: $color-3;
+  background: var(--color-3);
 }
 
 .web-onboarding-section {
@@ -419,8 +419,8 @@
 }
 
 .web-onboarding-info {
-  background: $color-1;
-  border: 1px solid $color-3;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
   border-radius: $radius-lg;
   padding: $gap * 1.5;
   margin: $gap * 1.5 0;
@@ -432,7 +432,7 @@
   label {
     display: block;
     margin-bottom: calc($gap / 2);
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
   }
 }
@@ -441,7 +441,7 @@
   margin-top: calc($gap / 2);
 
   &.error {
-    color: $color-4;
+    color: var(--color-4);
   }
 }
 
@@ -486,6 +486,6 @@
   justify-content: space-between;
   gap: $gap;
   padding-top: $gap * 2;
-  border-top: 1px solid $color-3;
+  border-top: 1px solid var(--color-3);
   margin-top: $gap * 2;
 }

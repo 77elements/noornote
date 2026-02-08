@@ -14,6 +14,9 @@
 @use 'base/base';
 @use 'base/screensize';
 
+// 2.5. Theme overrides (MUST come after base to win same-specificity cascade)
+@use 'abstracts/themes';
+
 // 3. Atoms - Smallest UI components
 @use 'atoms/nn-logo';
 @use 'atoms/pulsate';
@@ -87,6 +90,7 @@
 @use 'components/dm-views';
 @use 'components/about-view';
 @use 'components/font-size-switcher';
+@use 'components/theme-switcher';
 
 // 4. Molecules - Combinations of atoms
 @use 'molecules/buttons';

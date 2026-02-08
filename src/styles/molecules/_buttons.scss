@@ -13,9 +13,9 @@
 .btn {
   // Base styles
   display: inline-block;
-  color: $color-1;
-  background-color: $color-4;
-  border: 1px solid $color-4;
+  color: var(--color-1);
+  background-color: var(--color-4);
+  border: 1px solid var(--color-4);
   padding: calc($gap / 2) $gap;
 
   // Typography
@@ -26,7 +26,7 @@
 
   // Override global link styles when used on <a>
   &:link, &:visited {
-    color: $color-1;
+    color: var(--color-1);
     text-decoration: none;
   }
 
@@ -45,7 +45,7 @@
   }
 
   &:focus {
-    outline: 1px solid $color-4;
+    outline: 1px solid var(--color-4);
     outline-offset: 2px;
   }
 
@@ -85,24 +85,24 @@
 
 // Passive (inverted)
 .btn--passive {
-  color: $color-4;
-  background-color: $color-1;
-  border-color: $color-4;
+  color: var(--color-4);
+  background-color: var(--color-1);
+  border-color: var(--color-4);
 
   &:hover {
-    background-color: rgba($color-4, 0.1);
+    background-color: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 }
 
 // Secondary (subtle, neutral tone)
 .btn--secondary {
-  color: $color-5;
-  background-color: $color-2;
-  border-color: $color-3;
+  color: var(--color-5);
+  background-color: var(--color-2);
+  border-color: var(--color-3);
 
   &:hover {
-    background-color: color.adjust($color-2, $lightness: 5%);
-    border-color: $color-4;
+    background-color: color-mix(in srgb, var(--color-2) 90%, white);
+    border-color: var(--color-4);
   }
 }
 
@@ -131,7 +131,7 @@
   padding: calc($gap / 2);
   border: none;
   border-radius: 0.125rem;
-  color: $text-muted;
+  color: var(--text-muted);
   background-color: transparent;
   cursor: pointer;
   vertical-align: middle;
@@ -140,8 +140,8 @@
   &:hover,
   &:active,
   &:focus {
-    color: $color-6;
-    background-color: rgba($color-6, 0.1);
+    color: var(--color-6);
+    background-color: color-mix(in srgb, var(--color-6) 10%, transparent);
   }
 
   &:disabled {
@@ -179,7 +179,7 @@
   border-radius: $radius-full;
   background-size: cover;
   background-position: center;
-  background-color: $color-3;
+  background-color: var(--color-3);
   margin-left: -8px; // Overlap previous avatar
 
   &:first-child {
@@ -210,6 +210,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
 }

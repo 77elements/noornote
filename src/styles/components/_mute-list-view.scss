@@ -11,7 +11,7 @@
   margin-bottom: $gap * 2;
 
   .mute-list-description {
-    color: $color-3;
+    color: var(--color-3);
     margin-bottom: $gap;
   }
 }
@@ -38,7 +38,7 @@
 .mute-list-error {
   text-align: center;
   padding: $gap * 3;
-  color: $color-3;
+  color: var(--color-3);
 }
 
 .mute-list-empty {
@@ -46,12 +46,12 @@
   padding: 0;
 
   svg {
-    color: $color-3;
+    color: var(--color-3);
     margin-bottom: $gap;
   }
 
   p {
-    color: $color-3;
+    color: var(--color-3);
   }
 }
 
@@ -96,7 +96,7 @@
   justify-content: center;
   width: 32px;
   height: 32px;
-  background: color.adjust($color-2, $lightness: 5%);
+  background: color-mix(in srgb, var(--color-2) 90%, white);
   border-radius: $radius-sm;
   color: $color-warning;
 
@@ -109,7 +109,7 @@
 .mute-list-item__event-id {
   font-family: monospace;
   @extend %small;
-  color: $color-3;
+  color: var(--color-3);
 }
 
 .mute-list-item--thread {
@@ -135,7 +135,7 @@
   &__header {
     margin-bottom: $gap;
     padding-bottom: calc($gap / 2);
-    border-bottom: 1px solid color.adjust($color-2, $lightness: 10%);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-2) 80%, white);
   }
 
   &__title {
@@ -144,7 +144,7 @@
     gap: calc($gap / 2);
     @extend %h4;
     font-weight: 600;
-    color: $color-1;
+    color: var(--color-1);
 
     svg {
       width: 16px;
@@ -160,8 +160,8 @@
     min-width: 20px;
     height: 20px;
     padding: 0 6px;
-    background: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    color: var(--color-1);
     border-radius: $radius-full;
     @extend %small;
     font-weight: 600;
@@ -169,7 +169,7 @@
 
   &__description {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     margin-top: calc($gap / 4);
   }
 }
@@ -190,9 +190,9 @@
 
     .mutes-warning {
       padding: calc($gap / 2) $gap;
-      background: rgba($color-4, 0.1);
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
       border-radius: $radius-base;
-      border-left: 3px solid $color-4;
+      border-left: 3px solid var(--color-4);
     }
   }
 

@@ -4,8 +4,8 @@
 @use '../base/icons' as *;
 
 .poll-creator {
-  background: $color-1;
-  border: 1px solid $color-2;
+  background: var(--color-1);
+  border: 1px solid var(--color-2);
   border-radius: $radius-lg;
   padding: $gap;
   margin-top: $gap;
@@ -37,7 +37,7 @@
   &__remove {
     background: none;
     border: none;
-    color: $color-4;
+    color: var(--color-4);
     cursor: pointer;
     padding: calc($gap / 4) calc($gap / 2);
     border-radius: $radius-base;
@@ -64,15 +64,15 @@
 
   &__option-input {
     flex: 1;
-    background: $color-1;
-    border: 1px solid $color-2;
+    background: var(--color-1);
+    border: 1px solid var(--color-2);
     border-radius: $radius-base;
     padding: calc($gap / 2);
-    color: $color-6;
+    color: var(--color-6);
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
   }
 
@@ -81,9 +81,9 @@
     width: calc($gap * 1.5);
     height: calc($gap * 1.5);
     background: none;
-    border: 1px solid $color-2;
+    border: 1px solid var(--color-2);
     border-radius: $radius-base;
-    color: $color-4;
+    color: var(--color-4);
     @extend %icon-sm;
     line-height: 1;
     cursor: pointer;
@@ -101,8 +101,8 @@
 
   &__add-option {
     background: none;
-    border: 1px dashed $color-3;
-    color: $color-5;
+    border: 1px dashed var(--color-3);
+    color: var(--color-5);
     padding: calc($gap / 2);
     border-radius: $radius-base;
     cursor: pointer;
@@ -110,15 +110,15 @@
     margin-bottom: $gap;
 
     &:hover {
-      border-color: $color-4;
-      color: $color-6;
-      background: $color-2;
+      border-color: var(--color-4);
+      color: var(--color-6);
+      background: var(--color-2);
     }
   }
 
   &__settings {
     width: 100%;
-    border-top: 1px solid $color-2;
+    border-top: 1px solid var(--color-2);
     padding-top: $gap;
   }
 
@@ -131,21 +131,21 @@
     display: block;
     width: 100%;
     margin-bottom: calc($gap / 2);
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
   }
 
   &__datetime,
   &__relay-input {
-    background: $color-1;
-    border: 1px solid $color-2;
+    background: var(--color-1);
+    border: 1px solid var(--color-2);
     border-radius: $radius-base;
     padding: calc($gap / 2);
     color-scheme: dark;
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
 
     // Calendar icon color for datetime-local (pink - interactive element)
@@ -174,11 +174,11 @@
   }
 
   &__notice-text {
-    color: $color-5;
+    color: var(--color-5);
     line-height: 1.4;
 
     strong {
-      color: $color-6;
+      color: var(--color-6);
       font-weight: 600;
     }
   }
@@ -186,13 +186,13 @@
   &__advanced {
     width: 100%;
     margin-top: $gap;
-    border-top: 1px solid $color-2;
+    border-top: 1px solid var(--color-2);
     padding-top: $gap;
   }
 
   &__advanced-toggle {
     cursor: pointer;
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
     user-select: none;
     list-style: none;
@@ -213,7 +213,7 @@
     }
 
     &:hover {
-      color: $color-6;
+      color: var(--color-6);
     }
   }
 
@@ -224,7 +224,7 @@
   &__hint {
     display: block;
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     font-weight: 400;
     margin-top: calc($gap / 4);
   }

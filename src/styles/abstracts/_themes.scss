@@ -1,0 +1,21 @@
+/**
+ * Theme Definitions
+ * Each theme overrides the CSS custom properties defined in _base.scss :root
+ * Only theme-dependent colors (palette + derived) are listed here.
+ * Universal colors ($color-success, $alpha-*, $bg-*, etc.) stay as SCSS variables.
+ */
+
+// Default theme (Deep Purple) is defined in _base.scss :root
+
+[data-theme="bright-superman"] {
+  --color-1: #ffffff;
+  --color-2: #EFF5FE;
+  --color-3: #dc2626;
+  --color-4: #2563eb;
+  --color-5: #000000;
+  --color-6: #f59e0b;
+  --text-faint: rgba(0, 0, 0, 0.4);
+  --text-muted: rgba(0, 0, 0, 0.6);
+  --text-soft: rgba(0, 0, 0, 0.8);
+  --surface-tint: rgba(0, 0, 0, 0.08);
+}

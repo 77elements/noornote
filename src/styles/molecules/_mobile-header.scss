@@ -14,8 +14,8 @@
   left: 0;
   right: 0;
   height: 48px;
-  background: $color-1;
-  border-bottom: 1px solid $color-2;
+  background: var(--color-1);
+  border-bottom: 1px solid var(--color-2);
   z-index: 100;
   align-items: center;
   justify-content: center;
@@ -36,7 +36,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    color: $color-5;
+    color: var(--color-5);
     padding: 0;
 
     svg {
@@ -45,7 +45,7 @@
     }
 
     &:hover {
-      color: $color-4;
+      color: var(--color-4);
     }
   }
 
@@ -57,7 +57,7 @@
     right: 6px;
     width: 10px;
     height: 10px;
-    background: $color-6;
+    background: var(--color-6);
     border-radius: 50%;
   }
 }

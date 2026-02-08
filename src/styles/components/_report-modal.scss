@@ -108,7 +108,7 @@
     align-items: flex-start;
     gap: $gap;
     padding: $gap;
-    border-left: 3px solid $color-4;
+    border-left: 3px solid var(--color-4);
     @extend %small;
     line-height: 1.5;
 

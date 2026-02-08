@@ -21,8 +21,8 @@
     grid-template-columns: 1fr 1fr;
     grid-gap: calc($gap / 2);
     padding: calc($gap / 2) 0; // Mobile-first base
-    border-bottom: 1px solid $color-2;
-    background: $color-1;
+    border-bottom: 1px solid var(--color-2);
+    background: var(--color-1);
 
     .timeline-view-selector {
       // Dropdown takes full width of its grid cell
@@ -48,14 +48,14 @@
 
   // "Look for new notes" link (shown when polling might be stuck)
   .timeline-look-for-notes-link {
-    color: $color-4;
+    color: var(--color-4);
     text-decoration: none;
     padding: calc($gap / 2) $gap;
     border-radius: $radius-base;
     transition: background-color 0.2s ease;
 
     &:hover {
-      background-color: rgba($color-4, 0.1);
+      background-color: color-mix(in srgb, var(--color-4) 10%, transparent);
       text-decoration: underline;
     }
   }
@@ -63,8 +63,8 @@
   // Timeline item (legacy wrapper from TimelineUI - deprecated)
   .timeline-item {
     padding: $gap 0;
-    border-bottom: 1px solid $color-2;
-    background: $color-1;
+    border-bottom: 1px solid var(--color-2);
+    background: var(--color-1);
     transition: background-color 0.2s ease;
 
     &:hover {
@@ -76,7 +76,7 @@
     }
 
     .event-content {
-      color: $color-5;
+      color: var(--color-5);
       line-height: 1.5;
       margin-bottom: calc($gap * 0.75);
 
@@ -93,20 +93,20 @@
 
   .timeline-loading {
     padding: $gap;
-    color: $color-5;
+    color: var(--color-5);
     text-align: center;
   }
 
   .timeline-empty {
     padding: $gap * 4 $gap * 2;
     text-align: center;
-    color: $color-5;
+    color: var(--color-5);
   }
 
   .timeline-error {
     padding: $gap * 2;
     text-align: center;
-    color: $color-5;
+    color: var(--color-5);
   }
 
   .timeline-load-trigger {
@@ -119,8 +119,8 @@
 .loading-spinner {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba($color-4, 0.3);
-  border-top: 2px solid $color-4;
+  border: 2px solid color-mix(in srgb, var(--color-4) 30%, transparent);
+  border-top: 2px solid var(--color-4);
   border-radius: $radius-full;
   animation: spin 1s linear infinite;
   margin: 0 auto $gap;
@@ -137,7 +137,7 @@
 .quote-box {
   margin: calc($gap * 0.75) 0;
   padding: $gap 0 0 calc($gap * 1.5);
-  border-left: 1px solid $color-3;
+  border-left: 1px solid var(--color-3);
 
   // No special styling - quoted notes look exactly like normal notes
   .note-card {
@@ -158,8 +158,8 @@
 
 /* Max depth reached indicator */
 .quote-max-depth {
-  background: $color-2;
-  border: 1px dashed $color-3;
+  background: var(--color-2);
+  border: 1px dashed var(--color-3);
   border-radius: $radius-md;
   padding: calc($gap * 0.75);
   margin: calc($gap / 2) 0;
@@ -167,15 +167,15 @@
   transition: background-color 0.2s ease, border-color 0.2s ease;
 
   &:hover {
-    background: color.adjust($color-2, $lightness: 5%);
-    border-color: $color-4;
+    background: color-mix(in srgb, var(--color-2) 90%, white);
+    border-color: var(--color-4);
   }
 
   .max-depth-content {
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    color: $color-5;
+    color: var(--color-5);
 
     .depth-icon {
       @extend %icon-sm;
@@ -197,8 +197,8 @@
 
 /* Skeleton loader for quoted notes */
 .quote-skeleton {
-  background: $color-2;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-md;
   padding: $gap;
   margin: calc($gap / 2) 0;
@@ -218,7 +218,7 @@
   width: 40px;
   height: 40px;
   border-radius: $radius-full;
-  background: $color-3;
+  background: var(--color-3);
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
@@ -234,7 +234,7 @@
 .skeleton-name {
   width: 120px;
   height: 14px;
-  background: $color-3;
+  background: var(--color-3);
   border-radius: $radius-base;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
@@ -243,7 +243,7 @@
 .skeleton-timestamp {
   width: 80px;
   height: 12px;
-  background: $color-3;
+  background: var(--color-3);
   border-radius: $radius-base;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
@@ -259,7 +259,7 @@
 .skeleton-text-line {
   width: 100%;
   height: 12px;
-  background: $color-3;
+  background: var(--color-3);
   border-radius: $radius-base;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 
@@ -270,7 +270,7 @@
 
 // Skeleton line (standalone)
 .skeleton-line {
-  background: $color-3;
+  background: var(--color-3);
   border-radius: $radius-base;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }

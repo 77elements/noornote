@@ -18,15 +18,15 @@
     align-items: center;
     gap: calc($gap / 2);
     padding: calc($gap / 2) $gap;
-    background-color: $color-2;
-    border: 1px solid $color-3;
+    background-color: var(--color-2);
+    border: 1px solid var(--color-3);
     border-radius: $radius-base;
     cursor: pointer;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 
     &:hover {
-      background-color: color.adjust($color-2, $lightness: 5%);
-      border-color: $color-4;
+      background-color: color-mix(in srgb, var(--color-2) 90%, white);
+      border-color: var(--color-4);
     }
   }
 
@@ -41,11 +41,11 @@
     width: 8px;
     height: 8px;
     border-radius: $radius-full;
-    background-color: $color-6;
+    background-color: var(--color-6);
   }
 
   &__name {
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
@@ -54,7 +54,7 @@
   }
 
   &__arrow {
-    color: $color-3;
+    color: var(--color-3);
     @extend %mini;
     transition: transform 0.15s ease;
   }
@@ -72,7 +72,7 @@
     top: 100%;
     right: 0;
     width: max-content;
-    background-color: $color-2;
+    background-color: var(--color-2);
     border-radius: $radius-base;
     box-shadow: $box-shadow;
     z-index: 1000;
@@ -88,13 +88,13 @@
     }
 
     .ui-list__item--clickable {
-      color: $color-4;
+      color: var(--color-4);
     }
   }
 
   // Header
   &__header {
-    color: $color-3;
+    color: var(--color-3);
     @extend %small;
     font-weight: 600;
     text-transform: uppercase;
@@ -105,7 +105,7 @@
   // Loading state
   &__loading {
     padding: $gap;
-    color: $color-3;
+    color: var(--color-3);
     @extend %small;
   }
 
@@ -115,7 +115,7 @@
     width: 6px;
     height: 6px;
     border-radius: $radius-full;
-    background-color: $color-6;
+    background-color: var(--color-6);
     flex-shrink: 0;
   }
 

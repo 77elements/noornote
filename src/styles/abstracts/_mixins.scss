@@ -144,8 +144,8 @@
 // ========================================
 
 @mixin card-base {
-  background-color: $color-2;
-  border: 1px solid $color-2;
+  background-color: var(--color-2);
+  border: 1px solid var(--color-2);
   border-radius: $radius-lg;
 }
 
@@ -171,23 +171,23 @@
   &::-webkit-scrollbar {
     width: 8px;
     height: 8px;
-    background-color: $color-1;
+    background-color: var(--color-1);
   }
 
   &::-webkit-scrollbar-track {
-    background: $color-1;
+    background: var(--color-1);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: color.adjust($color-2, $lightness: 15%);
+    background: color-mix(in srgb, var(--color-2) 70%, white);
     border-radius: $radius-base;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: color.adjust($color-2, $lightness: 30%);
+    background: color-mix(in srgb, var(--color-2) 50%, white);
   }
 
   &::-webkit-scrollbar-corner {
-    background: $color-1;
+    background: var(--color-1);
   }
 }

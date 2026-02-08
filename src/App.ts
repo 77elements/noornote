@@ -23,6 +23,7 @@ import { ConnectivityService } from './services/ConnectivityService';
 import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { FontSizeService } from './services/FontSizeService';
+import { ThemeService } from './services/ThemeService';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
 import { AutoSyncService } from './services/AutoSyncService';
@@ -73,6 +74,9 @@ export class App {
 
     // Initialize FontSizeService (applies persisted font-size class on <html>)
     FontSizeService.getInstance();
+
+    // Initialize ThemeService (applies persisted data-theme attribute on <html>)
+    ThemeService.getInstance();
 
     // Check internet connectivity before proceeding
     const connectivityService = ConnectivityService.getInstance();

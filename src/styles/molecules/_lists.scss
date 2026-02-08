@@ -16,7 +16,7 @@
 .mutes-empty-state {
   padding: calc($gap * 2);
   text-align: center;
-  color: $color-5;
+  color: var(--color-5);
 }
 
 .bookmarks-loading,
@@ -27,7 +27,7 @@
 .tribes-loading {
   padding: calc($gap * 2);
   text-align: center;
-  color: $color-5;
+  color: var(--color-5);
   animation: pulsate 2.5s ease-in-out infinite;
 }
 
@@ -54,9 +54,9 @@
   padding-bottom: calc($gap / 2);
   margin: 0;
   @extend %small;
-  color: $color-3;
+  color: var(--color-3);
   text-align: left;
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
 
   &--easy {
     padding: $gap 0;
@@ -71,11 +71,11 @@
   align-items: center;
   gap: $gap;
   padding: $gap;
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
   transition: background 0.2s ease;
 
   &:hover {
-    background: color.adjust($color-2, $lightness: 5%);
+    background: color-mix(in srgb, var(--color-2) 90%, white);
   }
 
   &__content-wrapper {
@@ -85,7 +85,7 @@
 
   &__author {
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     margin-bottom: calc($gap / 4);
     display: flex;
     align-items: center;
@@ -93,14 +93,14 @@
   }
 
   &__content {
-    color: $color-5;
+    color: var(--color-5);
     margin-bottom: calc($gap / 4);
     line-height: 1.4;
   }
 
   &__timestamp {
     @extend %small;
-    color: color.adjust($color-5, $lightness: -20%);
+    color: color-mix(in srgb, var(--color-5) 60%, black);
   }
 
   &__delete {
@@ -108,7 +108,7 @@
     border: none;
     padding: calc($gap / 2);
     cursor: pointer;
-    color: color.adjust($color-5, $lightness: -30%);
+    color: color-mix(in srgb, var(--color-5) 40%, black);
     transition: color 0.2s ease;
     display: flex;
     align-items: center;
@@ -116,7 +116,7 @@
     flex-shrink: 0;
 
     &:hover {
-      color: $color-4;
+      color: var(--color-4);
     }
 
     svg {
@@ -147,7 +147,7 @@
 .follows-stats {
   @extend %small;
   font-weight: 600;
-  color: $color-5;
+  color: var(--color-5);
   white-space: nowrap;
 
   @include mobile-down {
@@ -161,18 +161,18 @@
     align-items: center;
     gap: calc($gap / 4);
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     cursor: pointer;
     white-space: nowrap;
 
     &:hover {
-      color: $color-4;
+      color: var(--color-4);
     }
   }
 
   &__toggle {
     cursor: pointer;
-    accent-color: $color-4;
+    accent-color: var(--color-4);
   }
 }
 
@@ -200,7 +200,7 @@
 
   &__username {
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
@@ -208,7 +208,7 @@
 
   &__petname {
     @extend %small;
-    color: color.adjust($color-5, $lightness: -20%);
+    color: color-mix(in srgb, var(--color-5) 60%, black);
   }
 
   &__unfollow-btn {
@@ -242,7 +242,7 @@
 
   &__username {
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
@@ -265,7 +265,7 @@
     justify-content: center;
     width: 36px;
     height: 36px;
-    background: color.adjust($color-2, $lightness: 5%);
+    background: color-mix(in srgb, var(--color-2) 90%, white);
     border-radius: $radius-sm;
     color: $color-warning;
     flex-shrink: 0;
@@ -274,7 +274,7 @@
   &__event-id {
     font-family: monospace;
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
@@ -282,7 +282,7 @@
 
   &__thread-content {
     @extend %small;
-    color: $color-5;
+    color: var(--color-5);
     line-height: 1.4;
     display: flex;
     align-items: center;
@@ -306,14 +306,14 @@
     align-items: center;
     gap: calc($gap / 2);
     padding: calc($gap / 2) $gap;
-    border-bottom: 1px solid color.adjust($color-2, $lightness: 10%);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-2) 80%, white);
     margin-bottom: calc($gap / 2);
   }
 
   &__title {
     @extend %small;
     font-weight: 600;
-    color: $color-3;
+    color: var(--color-3);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -329,12 +329,12 @@
   justify-content: space-between;
   gap: calc($gap / 2) $gap;
   padding: $gap 0;
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
 }
 
 .external-follows-stats {
   @extend %small;
-  color: $color-5;
+  color: var(--color-5);
 }
 
 .external-follows-search {
@@ -342,26 +342,26 @@
   min-width: 150px;
   max-width: 250px;
   padding: calc($gap / 2);
-  border: 1px solid $color-2;
+  border: 1px solid var(--color-2);
   border-radius: $radius-sm;
   background: transparent;
-  color: $color-5;
+  color: var(--color-5);
   @extend %small;
 
   &::placeholder {
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &:focus {
     outline: none;
-    border-color: $color-4;
+    border-color: var(--color-4);
   }
 }
 
 .external-follow-item {
   &__status {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     padding: calc($gap / 4) calc($gap / 2);
   }
 

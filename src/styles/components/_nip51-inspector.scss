@@ -22,11 +22,11 @@
 }
 
 .nip51-inspector-description {
-  color: $color-3;
+  color: var(--color-3);
   line-height: 1.6;
 
   strong {
-    color: $color-4;
+    color: var(--color-4);
     font-weight: 600;
   }
 }
@@ -34,7 +34,7 @@
 .nip51-inspector-loading {
   text-align: center;
   padding: $gap * 3;
-  color: $color-5;
+  color: var(--color-5);
   animation: pulsate 2.5s ease-in-out infinite;
 }
 
@@ -42,11 +42,11 @@
 .nip51-inspector-empty {
   text-align: center;
   padding: $gap * 3;
-  color: $color-3;
+  color: var(--color-3);
 
   h3 {
     margin-bottom: calc($gap / 2);
-    color: $color-1;
+    color: var(--color-1);
   }
 
   p {
@@ -64,14 +64,14 @@
 .nip51-inspector-group {
   // Count badge in description
   &__count {
-    color: $color-4;
+    color: var(--color-4);
     font-weight: 600;
   }
 
   &__empty {
     padding: $gap * 2;
     text-align: center;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__events {
@@ -82,7 +82,7 @@
 
 // Individual event items (custom accordion, NOT collapsible-section)
 .nip51-inspector-event {
-  border-bottom: 1px solid color.adjust($color-2, $lightness: 8%);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-2) 84%, white);
 
   &:last-child {
     border-bottom: none;
@@ -97,7 +97,7 @@
     transition: background 0.2s;
 
     &:hover {
-      background: color.adjust($color-2, $lightness: 5%);
+      background: color-mix(in srgb, var(--color-2) 90%, white);
     }
   }
 
@@ -111,24 +111,24 @@
   &__id {
     font-family: monospace;
     @extend %small;
-    color: $color-3;
-    background: color.adjust($color-2, $lightness: 8%);
+    color: var(--color-3);
+    background: color-mix(in srgb, var(--color-2) 84%, white);
     padding: 2px 6px;
     border-radius: $radius-base;
   }
 
   &__dtag {
     @extend %small;
-    color: $color-4;
+    color: var(--color-4);
     font-weight: 600;
-    background: rgba($color-4, 0.1);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
     padding: 2px 8px;
     border-radius: $radius-base;
   }
 
   &__time {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__toggle {
@@ -136,14 +136,14 @@
     border: none;
     padding: 4px;
     cursor: pointer;
-    color: $color-3;
+    color: var(--color-3);
     transition: transform 0.2s, color 0.2s;
     display: flex;
     align-items: center;
     justify-content: center;
 
     &:hover {
-      color: $color-1;
+      color: var(--color-1);
     }
 
     &--expanded {
@@ -162,13 +162,13 @@
 
   &__tags-summary {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__details {
     padding: $gap;
-    background: color.adjust($color-2, $lightness: -2%);
-    border-top: 1px solid color.adjust($color-2, $lightness: 8%);
+    background: color-mix(in srgb, var(--color-2) 96%, black);
+    border-top: 1px solid color-mix(in srgb, var(--color-2) 84%, white);
   }
 
   &__section {
@@ -181,12 +181,12 @@
     h4 {
       margin: 0 0 calc($gap / 2) 0;
       font-weight: 600;
-      color: $color-1;
+      color: var(--color-1);
     }
 
     pre {
-      background: color.adjust($color-2, $lightness: -5%);
-      border: 1px solid color.adjust($color-2, $lightness: 10%);
+      background: color-mix(in srgb, var(--color-2) 90%, black);
+      border: 1px solid color-mix(in srgb, var(--color-2) 80%, white);
       border-radius: $radius-sm;
       padding: calc($gap / 2);
       overflow-x: auto;

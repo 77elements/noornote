@@ -8,12 +8,19 @@
 // ========================================
 
 // Brand Colors (Core Palette - 6 colors, theme-dependent)
-$color-1: #0f0d23; // Deep Purple (backgrounds)
-$color-2: #252343; // Medium Purple (surfaces, standard borders)
-$color-3: #9b79b9; // Light Purple (accent - sparingly)
-$color-4: #dc85ad; // Pink (interactive elements only)
-$color-5: #ede2da; // Light Peach (text)
-$color-6: #7dd87d; // Soft Mint Green (status indicators)
+// ROLES (must be preserved across ALL themes):
+//   color-1: Primary background (dominant)
+//   color-2: Surface/card background, borders (secondary bg)
+//   color-3: Accent color (decorative, sparingly)
+//   color-4: Interactive accent (links, buttons, ALL clickable elements)
+//   color-5: Text color (MUST have high contrast against color-1 and color-2)
+//   color-6: Status accent (indicators, badges)
+$color-1: #0f0d23; // Deep Purple
+$color-2: #252343; // Medium Purple
+$color-3: #9b79b9; // Light Purple
+$color-4: #dc85ad; // Pink
+$color-5: #ede2da; // Light Peach
+$color-6: #7dd87d; // Soft Mint Green
 
 // Neutral Colors
 $color-white: #ffffff;
