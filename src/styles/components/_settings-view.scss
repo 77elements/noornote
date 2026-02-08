@@ -86,13 +86,13 @@
 .relay-health-summary {
   padding: $gap;
   margin-bottom: $gap * 2;
-  background: rgba($color-2, 0.5);
+  background: $alpha-medium;
   border: 1px solid $color-3;
   border-radius: $radius-sm;
 }
 
 .health-summary-empty {
-  color: rgba($color-5, 0.6);
+  color: $text-muted;
   font-style: italic;
 }
 
@@ -107,21 +107,21 @@
   font-weight: 600;
 
   &--good {
-    background: rgba($color-success, 0.15);
+    background: $bg-success;
     color: $color-success;
     border: 1px solid rgba($color-success, 0.3);
   }
 
   &--warning {
-    background: rgba($color-warning, 0.15);
+    background: $bg-warning;
     color: $color-warning;
     border: 1px solid rgba($color-warning, 0.3);
   }
 
   &--critical {
-    background: $color-red-bg;
+    background: $bg-error;
     color: $color-red;
-    border: 1px solid $color-red-border;
+    border: 1px solid rgba($color-red, 0.5);
   }
 }
 
@@ -221,7 +221,7 @@
 
 .relay-latency {
   @extend %small;
-  color: rgba($color-5, 0.5);
+  color: $text-faint;
   font-weight: 400;
   margin-left: calc($gap / 4);
 }
@@ -304,7 +304,7 @@
 
 // Media server info text (standalone)
 .media-server-info-text {
-  color: rgba($color-5, 0.7);
+  color: $text-muted;
   line-height: 1.5;
 }
 
@@ -382,7 +382,7 @@
 
 // Sensitive media info text (standalone)
 .sensitive-media-info-text {
-  color: rgba($color-5, 0.7);
+  color: $text-muted;
   line-height: 1.5;
 }
 
@@ -412,7 +412,7 @@
 }
 
 .zap-info {
-  color: rgba($color-5, 0.8);
+  color: $text-soft;
   line-height: 1.6;
 }
 
@@ -435,7 +435,7 @@
     color: $color-5;
 
     &::placeholder {
-      color: rgba($color-5, 0.4);
+      color: $text-faint;
     }
 
     &:focus {
@@ -510,7 +510,7 @@
 
   .wallet-ln-address {
     @extend %small;
-    color: rgba($color-5, 0.6);
+    color: $text-muted;
   }
 }
 
@@ -518,7 +518,7 @@
   display: flex;
   flex-direction: column;
   gap: $gap;
-  background: rgba($color-2, 0.3);
+  background: $alpha-light;
   border-radius: $radius-sm;
 }
 
@@ -544,7 +544,7 @@
     color: $color-5;
 
     &::placeholder {
-      color: rgba($color-5, 0.4);
+      color: $text-faint;
     }
 
     &:focus {
@@ -677,7 +677,7 @@
 
 .setting-description {
   @extend %small;
-  color: rgba($color-5, 0.6);
+  color: $text-muted;
   line-height: 1.4;
 }
 
@@ -689,7 +689,7 @@
   border-radius: $radius-sm;
 
   p {
-    color: rgba($color-5, 0.7);
+    color: $text-muted;
     line-height: 1.5;
   }
 }
@@ -700,7 +700,7 @@
 .cache-settings {
 
   .section-help {
-    color: rgba($color-5, 0.6);
+    color: $text-muted;
     margin-bottom: $gap * 2;
     line-height: 1.5;
   }
@@ -780,7 +780,7 @@
     color: $color-5;
 
     &::placeholder {
-      color: rgba($color-5, 0.4);
+      color: $text-faint;
     }
 
     &:focus {
@@ -879,7 +879,7 @@
 
   &__description {
     @extend %small;
-    color: rgba($color-5, 0.6);
+    color: $text-muted;
     margin: calc($gap / 4) 0 0 0;
   }
 
@@ -933,7 +933,7 @@
   }
 
   &__handle {
-    color: rgba($color-5, 0.4);
+    color: $text-faint;
     line-height: 1;
   }
 
@@ -968,8 +968,8 @@
     align-items: flex-start;
     gap: $gap;
     padding: $gap;
-    background: $color-red-bg;
-    border: 1px solid $color-red-border;
+    background: $bg-error;
+    border: 1px solid rgba($color-red, 0.5);
     border-radius: $radius-sm;
     margin-bottom: $gap * 2;
 
@@ -1013,7 +1013,7 @@
 
       p {
         @extend %small;
-        color: rgba($color-5, 0.6);
+        color: $text-muted;
         line-height: 1.4;
         margin: 0;
 
@@ -1032,13 +1032,13 @@
 // Danger Zone Modal Styles
 .danger-zone-modal {
   p {
-    color: rgba($color-5, 0.9);
+    color: $text-soft;
     line-height: 1.5;
   }
 
   ul, ol {
     margin: calc($gap / 2) 0 0 $gap * 1.5;
-    color: rgba($color-5, 0.8);
+    color: $text-soft;
     line-height: 1.6;
 
     li {
@@ -1048,15 +1048,15 @@
 
   &__warning {
     padding: calc($gap / 2) $gap;
-    background: $color-red-bg;
-    border: 1px solid $color-red-border;
+    background: $bg-error;
+    border: 1px solid rgba($color-red, 0.5);
     border-radius: $radius-sm;
     color: $color-red;
     margin-top: $gap;
 
     &--critical {
-      background: $color-red-bg;
-      border-color: $color-red-border;
+      background: $bg-error;
+      border-color: rgba($color-red, 0.5);
     }
   }
 
@@ -1075,7 +1075,7 @@
     ul {
       margin: 0 0 0 $gap;
       @extend %small;
-      color: rgba($color-5, 0.7);
+      color: $text-muted;
     }
   }
 

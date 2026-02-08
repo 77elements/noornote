@@ -45,7 +45,7 @@
 
     &:hover {
       color: $color-red;
-      background: $color-red-bg;
+      background: $bg-error;
     }
   }
 
@@ -95,7 +95,7 @@
     &:hover {
       border-color: $color-red;
       color: $color-red;
-      background: $color-red-bg;
+      background: $bg-error;
     }
   }
 
@@ -160,8 +160,8 @@
   &__notice {
     width: 100%;
     padding: $gap;
-    background: rgba($color-warning, 0.05);
-    border: 1px solid rgba($color-warning, 0.2);
+    background: $bg-warning;
+    border: 1px solid $bg-warning;
     border-radius: $radius-lg;
     margin-top: $gap;
     display: flex;

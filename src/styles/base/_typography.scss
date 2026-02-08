@@ -228,7 +228,7 @@ i {
 }
 
 mark {
-  background-color: rgba($color-warning, 0.2);
+  background-color: $bg-warning;
   padding: 0 calc($gap / 4);
   border-radius: $radius-sm;
 }

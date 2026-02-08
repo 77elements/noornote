@@ -9,7 +9,7 @@
 .nip88-poll {
   margin-top: $gap;
   padding: $gap;
-  background: rgba($color-2, 0.3);
+  background: $alpha-light;
   border: 1px solid $color-2;
   border-radius: $radius-lg;
 
@@ -53,7 +53,7 @@
 
     &:hover:not(:disabled) {
       border-color: $color-4;
-      background: rgba($color-2, 0.3);
+      background: $alpha-light;
     }
 
     &:active:not(:disabled) {

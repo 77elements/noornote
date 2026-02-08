@@ -59,7 +59,7 @@
       display: none;
       width: 16px;
       height: 16px;
-      border: 2px solid rgba($color-5, 0.3);
+      border: 2px solid $surface-tint;
       border-top-color: $color-5;
       border-radius: $radius-full;
       animation: offline-spin 0.8s linear infinite;

@@ -97,14 +97,14 @@
   }
 
   &--warn {
-    background: rgba($color-warning, 0.1);
+    background: $bg-warning;
 
     td:first-child {
     }
   }
 
   &--error {
-    background: $color-red-bg;
+    background: $bg-error;
 
     td:first-child {
     }
@@ -170,11 +170,11 @@
     }
 
     &--warn {
-      background: rgba($color-warning, 0.15);
+      background: $bg-warning;
     }
 
     &--error {
-      background: $color-red-bg;
+      background: $bg-error;
     }
 
     &--success {

@@ -18,7 +18,7 @@
   white-space: nowrap;
 
   &--yes {
-    background: rgba($color-success, 0.15);
+    background: $bg-success;
     color: $color-success;
   }
 
@@ -36,7 +36,7 @@
   border-radius: $radius-sm;
   font-weight: 600;
   white-space: nowrap;
-  background: rgba($color-warning, 0.15);
+  background: $bg-warning;
   color: $color-warning;
 
   // Loading state with pulsing animation
@@ -225,7 +225,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: $overlay-bg;
+    background: $alpha-medium;
   }
 
   &__content {

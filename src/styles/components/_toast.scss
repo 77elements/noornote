@@ -64,7 +64,7 @@
 
     .toast__icon {
       color: $color-red;
-      background: $color-red-bg;
+      background: $bg-error;
     }
   }
 
@@ -73,7 +73,7 @@
 
     .toast__icon {
       color: $color-warning;
-      background: rgba($color-warning, 0.1);
+      background: $bg-warning;
     }
   }
 

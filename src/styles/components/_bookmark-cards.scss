@@ -225,7 +225,7 @@
     }
 
     &:hover {
-      background: $color-red-bg;
+      background: $bg-error;
       opacity: 1;
     }
   }
@@ -373,7 +373,7 @@
     color: $color-red;
 
     &:hover {
-      background: $color-red-bg;
+      background: $bg-error;
     }
   }
 

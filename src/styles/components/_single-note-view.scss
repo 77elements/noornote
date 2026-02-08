@@ -112,7 +112,7 @@
 .snv-replies__error {
   padding: $gap * 2;
   text-align: center;
-  color: rgba($color-5, 0.6);
+  color: $text-muted;
   font-style: italic;
 }
 
@@ -174,7 +174,7 @@
   &__header {
     margin-bottom: calc($gap / 2);
     padding-left: calc($gap / 2);
-    color: rgba($color-5, 0.8);
+    color: $text-soft;
   }
 
   &__link {

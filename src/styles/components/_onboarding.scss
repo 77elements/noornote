@@ -446,12 +446,12 @@
 }
 
 .web-onboarding-success {
-  background: rgba(#4caf50, 0.1);
-  border: 1px solid #4caf50;
+  background: $bg-success;
+  border: 1px solid $color-success;
   border-radius: $radius-lg;
   padding: $gap * 1.5;
   margin: $gap * 1.5 0;
-  color: #4caf50;
+  color: $color-success;
 
   p {
     margin: 0;
@@ -462,7 +462,7 @@
   }
 
   code {
-    background: rgba(#4caf50, 0.2);
+    background: $bg-success;
     padding: 2px 6px;
     border-radius: $radius-sm;
   }

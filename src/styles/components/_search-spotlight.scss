@@ -50,7 +50,7 @@
   gap: calc($gap / 2);
   padding: calc($gap / 2) $gap;
   background: $color-2;
-  border-bottom: 1px solid rgba($color-5, 0.1);
+  border-bottom: 1px solid $surface-tint;
 }
 
 .search-spotlight__btn {
@@ -115,7 +115,7 @@
 .search-spotlight__suggestion-icon {
   width: 16px;
   height: 16px;
-  color: rgba($color-5, 0.5);
+  color: $text-faint;
   flex-shrink: 0;
 }
 
@@ -127,7 +127,7 @@
 .search-spotlight__empty {
   padding: $gap;
   text-align: center;
-  color: rgba($color-5, 0.4);
+  color: $text-faint;
 }
 
 // User search suggestions
@@ -145,12 +145,12 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: rgba($color-5, 0.5);
+  color: $text-faint;
 }
 
 .search-spotlight__user-loading {
   padding: calc($gap / 2);
-  color: rgba($color-5, 0.4);
+  color: $text-faint;
   @extend %small;
 }
 
@@ -212,7 +212,7 @@
 
 .search-spotlight__user-nip05 {
   @extend %small;
-  color: rgba($color-5, 0.5);
+  color: $text-faint;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

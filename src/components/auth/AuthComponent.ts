@@ -181,8 +181,8 @@ export class AuthComponent {
         width: 200,
         margin: 2,
         color: {
-          dark: '#FFFFFF',
-          light: '#1a0933'
+          dark: getComputedStyle(document.documentElement).getPropertyValue('--color-white').trim() || '#FFFFFF',
+          light: getComputedStyle(document.documentElement).getPropertyValue('--color-1').trim() || '#0f0d23'
         }
       });
 

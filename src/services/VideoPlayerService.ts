@@ -145,7 +145,7 @@ export class VideoPlayerService {
         position: absolute;
         top: 10px;
         right: 10px;
-        background: rgba(0, 0, 0, 0.7);
+        background: var(--alpha-medium);
         border: none;
         border-radius: 4px;
         padding: 8px;
@@ -158,11 +158,11 @@ export class VideoPlayerService {
       `;
 
       fsButton.addEventListener('mouseenter', () => {
-        fsButton.style.background = 'rgba(0, 0, 0, 0.9)';
+        fsButton.style.background = 'var(--alpha-medium)';
       });
 
       fsButton.addEventListener('mouseleave', () => {
-        fsButton.style.background = 'rgba(0, 0, 0, 0.7)';
+        fsButton.style.background = 'var(--alpha-medium)';
       });
 
       fsButton.addEventListener('click', (e) => {

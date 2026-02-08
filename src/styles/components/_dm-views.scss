@@ -357,7 +357,7 @@
     border-bottom-right-radius: $radius-base;
 
     .message__time {
-      color: rgba($color-1, 0.7);
+      color: $alpha-heavy;
     }
   }
 
@@ -508,7 +508,7 @@
     transition: all 0.15s ease;
 
     &:hover {
-      background: rgba($color-5, 0.1);
+      background: $surface-tint;
       color: $color-5;
     }
   }

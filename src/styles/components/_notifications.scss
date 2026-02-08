@@ -22,14 +22,14 @@
 .notifications-view__empty {
   text-align: center;
   padding: $gap * 4;
-  color: rgba($color-5, 0.5);
+  color: $text-faint;
   @extend %h4;
 }
 
 .notifications-view__loading {
   text-align: center;
   padding: $gap * 2;
-  color: rgba($color-5, 0.6);
+  color: $text-muted;
   font-style: italic;
 }
 
@@ -92,17 +92,17 @@
 }
 
 .notification-item__action {
-  color: rgba($color-5, 0.6);
+  color: $text-muted;
 }
 
 .notification-item__timestamp {
   @extend %small;
-  color: rgba($color-5, 0.5);
+  color: $text-faint;
   white-space: nowrap;
 }
 
 .notification-item__preview {
-  color: rgba($color-5, 0.8);
+  color: $text-soft;
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;

@@ -32,13 +32,13 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    color: rgba($color-5, 0.6);
+    color: $text-muted;
     margin-bottom: calc($gap / 2);
     cursor: pointer;
     transition: color 0.2s ease;
 
     &:hover {
-      color: rgba($color-5, 0.8);
+      color: $text-soft;
     }
 
     .reply-avatar {
@@ -51,7 +51,7 @@
     }
 
     .reply-username {
-      color: rgba($color-5, 0.8);
+      color: $text-soft;
       font-weight: 500;
     }
   }
@@ -65,7 +65,7 @@
 
     .thread-context-loading,
     .thread-context-error {
-      color: rgba($color-5, 0.5);
+      color: $text-faint;
       font-style: italic;
     }
 
@@ -75,7 +75,7 @@
 
     .thread-context-ellipsis {
       text-align: left;
-      color: rgba($color-5, 0.4);
+      color: $text-faint;
       @extend %h4;
       line-height: 1;
       padding: calc($gap / 8) 0;
@@ -90,7 +90,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: rgba($color-5, 0.7);
+  color: $text-muted;
 }
 
 .thread-context-item {
@@ -107,7 +107,7 @@
     background: rgba($color-3, 0.5);
 
     .thread-context-content {
-      color: rgba($color-5, 0.9);
+      color: $text-soft;
     }
   }
 }
@@ -234,7 +234,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 4);
-  color: rgba($color-5, 0.7);
+  color: $text-muted;
   white-space: nowrap;
 }
 
@@ -275,7 +275,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  color: rgba($color-5, 0.7);
+  color: $text-muted;
   margin: calc($gap * 0.75) 0;
 }
 
@@ -285,7 +285,7 @@
   align-items: center;
   width: 16px;
   height: 16px;
-  color: rgba($color-5, 0.6);
+  color: $text-muted;
 
   svg {
     width: 100%;
@@ -306,8 +306,8 @@
 
 // Error state for note-card
 .note-card--error {
-  background: $color-red-bg;
-  border: 1px solid $color-red-border;
+  background: $bg-error;
+  border: 1px solid rgba($color-red, 0.5);
   padding: $gap;
   border-radius: $radius-md;
 
@@ -357,16 +357,16 @@
   }
 
   &__arrow {
-    color: rgba($color-5, 0.5);
+    color: $text-faint;
   }
 
   &__anonymous {
-    color: rgba($color-5, 0.6);
+    color: $text-muted;
     font-style: italic;
   }
 
   &__message {
-    color: rgba($color-5, 0.9);
+    color: $text-soft;
     font-style: italic;
     padding-left: calc($gap / 2);
     border-left: 2px solid rgba($color-4, 0.5);
@@ -374,7 +374,7 @@
   }
 
   &--error {
-    color: rgba($color-5, 0.6);
+    color: $text-muted;
     text-align: center;
   }
 }
@@ -382,7 +382,7 @@
 // Unsupported Kind Fallback
 .note-card--unsupported {
   background: rgba($color-3, 0.15);
-  border: 1px dashed rgba($color-5, 0.3);
+  border: 1px dashed $surface-tint;
   border-radius: $radius-md;
   padding: $gap;
 }
@@ -395,6 +395,6 @@
   text-align: center;
 
   &__message {
-    color: rgba($color-5, 0.7);
+    color: $text-muted;
   }
 }

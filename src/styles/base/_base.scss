@@ -15,6 +15,14 @@
   @include dark-mode {
     @include theme-colors($dark-theme);
   }
+
+  // Runtime CSS variables (for dynamically generated elements in TypeScript)
+  --color-1: #{$color-1};
+  --color-white: #{$color-white};
+  --text-muted: #{$text-muted};
+  --alpha-medium: #{$alpha-medium};
+  --surface-tint: #{$surface-tint};
+  --color-red: #{$color-red};
 }
 
 // Manual theme classes (for theme toggle)

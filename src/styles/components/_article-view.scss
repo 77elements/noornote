@@ -38,7 +38,7 @@
 
   .article-summary {
     line-height: 1.6;
-    color: rgba($color-5, 0.8);
+    color: $text-soft;
     margin: 0 0 calc($gap * 1.5) 0;
     font-style: italic;
   }
@@ -110,7 +110,7 @@
     border-left: 4px solid $color-4;
     padding-left: $gap;
     margin: $gap 0;
-    color: rgba($color-5, 0.8);
+    color: $text-soft;
     font-style: italic;
   }
 
@@ -146,7 +146,7 @@
   }
 
   p {
-    color: rgba($color-5, 0.7);
+    color: $text-muted;
     @extend %h4;
   }
 }

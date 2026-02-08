@@ -17,7 +17,7 @@
   // Trigger link (initial state)
   &__trigger {
     text-align: right;
-    background: rgba($color-1, 0.7);
+    background: $alpha-heavy;
     padding: 4px 8px;
     border-radius: $radius-base;
     margin-right: 10px;
@@ -40,7 +40,7 @@
     display: flex;
     flex-direction: column;
     gap: calc($gap / 2);
-    background: rgba($color-1, 0.95);
+    background: $alpha-heavy;
     backdrop-filter: blur(8px);
     border: 1px solid $color-3;
     border-radius: $radius-lg;
@@ -96,7 +96,7 @@
     }
 
     &::placeholder {
-      color: rgba($color-5, 0.5);
+      color: $text-faint;
     }
   }
 
@@ -111,7 +111,7 @@
     }
 
     &--error {
-      background: $color-red-bg;
+      background: $bg-error;
       color: $color-red;
     }
   }

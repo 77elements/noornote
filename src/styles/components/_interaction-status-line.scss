@@ -25,7 +25,7 @@
   background: transparent;
   border: none;
   border-radius: $radius-base;
-  color: rgba($color-5, 0.6);
+  color: $text-muted;
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -46,7 +46,7 @@
 
     &:hover {
       background: transparent;
-      color: rgba($color-5, 0.6);
+      color: $text-muted;
     }
   }
 }
@@ -172,7 +172,7 @@
     @extend %small;
     margin-left: calc($gap / 4);
     padding: 2px calc($gap / 4);
-    background: rgba($color-warning, 0.1);
+    background: $bg-warning;
     border-radius: $radius-base;
   }
 }

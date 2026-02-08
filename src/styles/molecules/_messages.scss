@@ -49,7 +49,7 @@
   border: 1px solid $color-2;
 
   .message-content {
-    color: rgba($color-5, 0.6);
+    color: $text-muted;
   }
 
   .quote-error-content {

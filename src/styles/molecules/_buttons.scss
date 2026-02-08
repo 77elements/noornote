@@ -101,7 +101,7 @@
   border-color: $color-3;
 
   &:hover {
-    background-color: rgb(46.25, 43.75, 83.75);
+    background-color: color.adjust($color-2, $lightness: 5%);
     border-color: $color-4;
   }
 }
@@ -131,7 +131,7 @@
   padding: calc($gap / 2);
   border: none;
   border-radius: 0.125rem;
-  color: rgba($color-5, 0.6);
+  color: $text-muted;
   background-color: transparent;
   cursor: pointer;
   vertical-align: middle;

@@ -1506,10 +1506,10 @@ export class MainLayout {
             <li>Lightning Addresses</li>
             <li>Relay Status</li>
           </ul>
-          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 1rem;">
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: 1rem;">
             Unpublished posts and decrypted messages will remain protected.
           </p>
-          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.5); margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+          <p style="font-size: 13px; color: var(--text-muted); margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--surface-tint);">
             To clear specific caches individually, go to <a href="#" data-action="settings">Cache Settings</a>.
           </p>
         </div>
