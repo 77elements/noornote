@@ -92,7 +92,7 @@
 }
 
 .health-summary-empty {
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
   font-style: italic;
 }
 
@@ -221,7 +221,7 @@
 
 .relay-latency {
   @extend %small;
-  color: var(--text-faint);
+  color: var(--text-alpha-light);
   font-weight: 400;
   margin-left: calc($gap / 4);
 }
@@ -304,7 +304,7 @@
 
 // Media server info text (standalone)
 .media-server-info-text {
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
   line-height: 1.5;
 }
 
@@ -382,7 +382,7 @@
 
 // Sensitive media info text (standalone)
 .sensitive-media-info-text {
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
   line-height: 1.5;
 }
 
@@ -412,7 +412,7 @@
 }
 
 .zap-info {
-  color: var(--text-soft);
+  color: var(--text-alpha-heavy);
   line-height: 1.6;
 }
 
@@ -435,7 +435,7 @@
     color: var(--color-5);
 
     &::placeholder {
-      color: var(--text-faint);
+      color: var(--text-alpha-light);
     }
 
     &:focus {
@@ -510,7 +510,7 @@
 
   .wallet-ln-address {
     @extend %small;
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
   }
 }
 
@@ -544,7 +544,7 @@
     color: var(--color-5);
 
     &::placeholder {
-      color: var(--text-faint);
+      color: var(--text-alpha-light);
     }
 
     &:focus {
@@ -677,7 +677,7 @@
 
 .setting-description {
   @extend %small;
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
   line-height: 1.4;
 }
 
@@ -689,7 +689,7 @@
   border-radius: $radius-sm;
 
   p {
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     line-height: 1.5;
   }
 }
@@ -700,7 +700,7 @@
 .cache-settings {
 
   .section-help {
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     margin-bottom: $gap * 2;
     line-height: 1.5;
   }
@@ -780,7 +780,7 @@
     color: var(--color-5);
 
     &::placeholder {
-      color: var(--text-faint);
+      color: var(--text-alpha-light);
     }
 
     &:focus {
@@ -879,7 +879,7 @@
 
   &__description {
     @extend %small;
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     margin: calc($gap / 4) 0 0 0;
   }
 
@@ -933,7 +933,7 @@
   }
 
   &__handle {
-    color: var(--text-faint);
+    color: var(--text-alpha-light);
     line-height: 1;
   }
 
@@ -1013,7 +1013,7 @@
 
       p {
         @extend %small;
-        color: var(--text-muted);
+        color: var(--text-alpha-medium);
         line-height: 1.4;
         margin: 0;
 
@@ -1032,13 +1032,13 @@
 // Danger Zone Modal Styles
 .danger-zone-modal {
   p {
-    color: var(--text-soft);
+    color: var(--text-alpha-heavy);
     line-height: 1.5;
   }
 
   ul, ol {
     margin: calc($gap / 2) 0 0 $gap * 1.5;
-    color: var(--text-soft);
+    color: var(--text-alpha-heavy);
     line-height: 1.6;
 
     li {
@@ -1075,7 +1075,7 @@
     ul {
       margin: 0 0 0 $gap;
       @extend %small;
-      color: var(--text-muted);
+      color: var(--text-alpha-medium);
     }
   }
 

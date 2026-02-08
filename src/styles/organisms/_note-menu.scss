@@ -127,7 +127,7 @@
   padding: calc($gap / 2) $gap calc($gap / 4) $gap;
   @extend %small;
   font-weight: 600;
-  color: var(--text-faint);
+  color: var(--text-alpha-light);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -136,7 +136,7 @@
 .note-menu-relay-item {
   padding: calc($gap / 2) $gap;
   @extend %small;
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
   font-family: monospace;
   word-break: break-all;
   line-height: 1.4;

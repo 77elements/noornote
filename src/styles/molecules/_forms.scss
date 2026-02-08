@@ -21,7 +21,7 @@
   transition: $transition-colors;
 
   &::placeholder {
-    color: var(--text-faint);
+    color: var(--text-alpha-light);
   }
 
   &:focus {
@@ -58,7 +58,7 @@
   @include custom-scrollbar;
 
   &::placeholder {
-    color: var(--text-faint);
+    color: var(--text-alpha-light);
   }
 
   &:focus {
@@ -154,7 +154,7 @@ label {
   }
 
   &__description {
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     line-height: 1.5;
   }
 
@@ -162,7 +162,7 @@ label {
     margin: calc($gap / 2) 0 0 0;
     padding-left: $gap;
     @extend %small;
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
 
     li {
       margin-bottom: calc($gap / 4);
@@ -176,7 +176,7 @@ label {
 .form__note {
   margin-top: calc($gap / 2);
   @extend %small;
-  color: var(--text-faint);
+  color: var(--text-alpha-light);
   font-style: italic;
 }
 

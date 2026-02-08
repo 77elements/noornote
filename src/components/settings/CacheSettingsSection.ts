@@ -370,7 +370,7 @@ export class CacheSettingsSection extends SettingsSection {
     this.showConfirmationModal(
       'Clear All Cache & Reload?',
       `<p style="margin-bottom: 1rem;">This will clear all safe cache tables and reload the app.</p>
-       <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 1rem;">
+       <p style="font-size: 13px; color: var(--text-alpha-medium); margin-bottom: 1rem;">
          Excludes: Unpublished events and decrypted messages (protected from accidental deletion).
        </p>`,
       'Clear Cache & Reload',

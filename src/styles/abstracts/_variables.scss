@@ -54,9 +54,9 @@ $bg-error: rgba($color-red, 0.15);
 // ========================================
 // Text Opacity Levels (based on $color-5)
 // ========================================
-$text-faint: rgba($color-5, 0.4);
-$text-muted: rgba($color-5, 0.6);
-$text-soft: rgba($color-5, 0.8);
+$text-alpha-light: rgba($color-5, 0.4);
+$text-alpha-medium: rgba($color-5, 0.6);
+$text-alpha-heavy: rgba($color-5, 0.8);
 
 // ========================================
 // Surface

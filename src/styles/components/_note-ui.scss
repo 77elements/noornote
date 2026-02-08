@@ -32,13 +32,13 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     margin-bottom: calc($gap / 2);
     cursor: pointer;
     transition: color 0.2s ease;
 
     &:hover {
-      color: var(--text-soft);
+      color: var(--text-alpha-heavy);
     }
 
     .reply-avatar {
@@ -51,7 +51,7 @@
     }
 
     .reply-username {
-      color: var(--text-soft);
+      color: var(--text-alpha-heavy);
       font-weight: 500;
     }
   }
@@ -65,7 +65,7 @@
 
     .thread-context-loading,
     .thread-context-error {
-      color: var(--text-faint);
+      color: var(--text-alpha-light);
       font-style: italic;
     }
 
@@ -75,7 +75,7 @@
 
     .thread-context-ellipsis {
       text-align: left;
-      color: var(--text-faint);
+      color: var(--text-alpha-light);
       @extend %h4;
       line-height: 1;
       padding: calc($gap / 8) 0;
@@ -90,7 +90,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
 }
 
 .thread-context-item {
@@ -107,7 +107,7 @@
     background: color-mix(in srgb, var(--color-3) 50%, transparent);
 
     .thread-context-content {
-      color: var(--text-soft);
+      color: var(--text-alpha-heavy);
     }
   }
 }
@@ -234,7 +234,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 4);
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
   white-space: nowrap;
 }
 
@@ -275,7 +275,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
   margin: calc($gap * 0.75) 0;
 }
 
@@ -285,7 +285,7 @@
   align-items: center;
   width: 16px;
   height: 16px;
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
 
   svg {
     width: 100%;
@@ -357,16 +357,16 @@
   }
 
   &__arrow {
-    color: var(--text-faint);
+    color: var(--text-alpha-light);
   }
 
   &__anonymous {
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     font-style: italic;
   }
 
   &__message {
-    color: var(--text-soft);
+    color: var(--text-alpha-heavy);
     font-style: italic;
     padding-left: calc($gap / 2);
     border-left: 2px solid color-mix(in srgb, var(--color-4) 50%, transparent);
@@ -374,7 +374,7 @@
   }
 
   &--error {
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     text-align: center;
   }
 }
@@ -395,6 +395,6 @@
   text-align: center;
 
   &__message {
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
   }
 }

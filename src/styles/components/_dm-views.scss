@@ -92,7 +92,7 @@
 
   p {
     margin: 0;
-    &.text-muted {
+    &.text-alpha-medium {
       color: var(--color-3);
       margin-top: calc($gap / 2);
     }
@@ -287,7 +287,7 @@
 
   p {
     margin: 0;
-    &.text-muted {
+    &.text-alpha-medium {
       margin-top: calc($gap / 2);
     }
   }

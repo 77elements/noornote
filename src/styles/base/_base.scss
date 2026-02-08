@@ -18,9 +18,9 @@
   --color-6: #{$color-6};
 
   // Derived text levels (change per theme, based on color-5)
-  --text-faint: #{$text-faint};
-  --text-muted: #{$text-muted};
-  --text-soft: #{$text-soft};
+  --text-alpha-light: #{$text-alpha-light};
+  --text-alpha-medium: #{$text-alpha-medium};
+  --text-alpha-heavy: #{$text-alpha-heavy};
 
   // Surface tint (change per theme: lighten on dark, darken on light)
   --surface-tint: #{$surface-tint};

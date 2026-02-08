@@ -22,14 +22,14 @@
 .notifications-view__empty {
   text-align: center;
   padding: $gap * 4;
-  color: var(--text-faint);
+  color: var(--text-alpha-light);
   @extend %h4;
 }
 
 .notifications-view__loading {
   text-align: center;
   padding: $gap * 2;
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
   font-style: italic;
 }
 
@@ -92,17 +92,17 @@
 }
 
 .notification-item__action {
-  color: var(--text-muted);
+  color: var(--text-alpha-medium);
 }
 
 .notification-item__timestamp {
   @extend %small;
-  color: var(--text-faint);
+  color: var(--text-alpha-light);
   white-space: nowrap;
 }
 
 .notification-item__preview {
-  color: var(--text-soft);
+  color: var(--text-alpha-heavy);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;

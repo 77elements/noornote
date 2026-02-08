@@ -33,7 +33,7 @@
   }
 
   p {
-    color: var(--text-soft);
+    color: var(--text-alpha-heavy);
     line-height: 1.6;
     margin-bottom: calc($gap / 2);
   }
@@ -43,7 +43,7 @@
     padding-left: $gap * 1.5;
 
     li {
-      color: var(--text-soft);
+      color: var(--text-alpha-heavy);
       line-height: 1.6;
       margin-bottom: calc($gap / 4);
     }
@@ -72,7 +72,7 @@
     padding: $gap;
 
     p {
-      color: var(--text-faint);
+      color: var(--text-alpha-light);
       @extend %small;
     }
   }
@@ -100,7 +100,7 @@
 .current-datetime-display,
 .datetime-separator {
   @extend %small;
-  color: var(--text-faint);
+  color: var(--text-alpha-light);
 }
 
 .primary-nav a.about-link {

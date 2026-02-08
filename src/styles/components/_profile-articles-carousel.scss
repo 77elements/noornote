@@ -130,7 +130,7 @@
     gap: calc($gap / 4);
     margin-bottom: calc($gap / 2);
     @extend %small;
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
   }
 
   &__card-author {
@@ -148,7 +148,7 @@
   // Card excerpt
   &__card-excerpt {
     margin: 0;
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;

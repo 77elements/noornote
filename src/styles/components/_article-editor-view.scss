@@ -89,7 +89,7 @@
   &__hint {
     font-weight: 400;
     @extend %small;
-    color: var(--text-faint);
+    color: var(--text-alpha-light);
     margin-left: calc($gap / 2);
   }
 
@@ -189,7 +189,7 @@
 
   &__preview-summary {
     @extend %h4;
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     margin: 0 0 $gap * 1.5;
     padding-bottom: $gap;
   }
@@ -232,7 +232,7 @@
       border-left: 3px solid var(--color-4);
       padding-left: $gap;
       margin: 0 0 $gap;
-      color: var(--text-soft);
+      color: var(--text-alpha-heavy);
       font-style: italic;
     }
 
@@ -254,7 +254,7 @@
   }
 
   &__preview-empty {
-    color: var(--text-faint);
+    color: var(--text-alpha-light);
     font-style: italic;
     text-align: center;
     padding: $gap * 3;

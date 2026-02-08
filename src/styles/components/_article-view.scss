@@ -38,7 +38,7 @@
 
   .article-summary {
     line-height: 1.6;
-    color: var(--text-soft);
+    color: var(--text-alpha-heavy);
     margin: 0 0 calc($gap * 1.5) 0;
     font-style: italic;
   }
@@ -110,7 +110,7 @@
     border-left: 4px solid var(--color-4);
     padding-left: $gap;
     margin: $gap 0;
-    color: var(--text-soft);
+    color: var(--text-alpha-heavy);
     font-style: italic;
   }
 
@@ -146,7 +146,7 @@
   }
 
   p {
-    color: var(--text-muted);
+    color: var(--text-alpha-medium);
     @extend %h4;
   }
 }
