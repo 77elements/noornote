@@ -301,7 +301,7 @@ export class CacheSettingsSection extends SettingsSection {
       content: `
         <div style="padding: 1rem 0;">
           ${bodyHtml}
-          <p style="color: rgba(255, 100, 100, 0.8);">This action cannot be undone.</p>
+          <p style="color: var(--color-red);">This action cannot be undone.</p>
         </div>
         <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
           <button class="btn" data-action="cancel">Cancel</button>
@@ -370,7 +370,7 @@ export class CacheSettingsSection extends SettingsSection {
     this.showConfirmationModal(
       'Clear All Cache & Reload?',
       `<p style="margin-bottom: 1rem;">This will clear all safe cache tables and reload the app.</p>
-       <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-bottom: 1rem;">
+       <p style="font-size: 13px; color: var(--text-alpha-medium); margin-bottom: 1rem;">
          Excludes: Unpublished events and decrypted messages (protected from accidental deletion).
        </p>`,
       'Clear Cache & Reload',

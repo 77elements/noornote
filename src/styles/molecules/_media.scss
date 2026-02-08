@@ -49,7 +49,7 @@
   .video-link {
     display: inline-block;
     margin-top: calc($gap / 2);
-    color: $color-4;
+    color: var(--color-4);
     text-decoration: none;
     font-weight: 500;
 
@@ -135,7 +135,7 @@
     max-width: 514px; // Keep under 514px to prevent YouTube's own "Watch on YouTube"
     padding-bottom: min(56.25%, 289px); // 16:9 aspect ratio, capped at 289px (514px * 9/16)
     border-radius: $radius-lg;
-    background: $color-1;
+    background: var(--color-1);
 
     iframe {
       position: absolute;
@@ -153,7 +153,7 @@
     align-items: center;
     gap: 6px;
     margin-top: calc($gap / 2);
-    color: $color-4;
+    color: var(--color-4);
     @extend %small;
     text-decoration: none;
     cursor: pointer;
@@ -191,7 +191,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: $overlay-bg;
+    background: $alpha-medium;
     color: $color-white;
     padding: calc($gap / 2) $gap;
     @extend %small;

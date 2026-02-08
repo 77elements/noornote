@@ -32,8 +32,8 @@
     align-items: center;
     gap: calc($gap / 4);
     padding: calc($gap / 4) calc($gap / 2);
-    background-color: rgba($color-6, 0.1);
-    border: 1px solid rgba($color-6, 0.2);
+    background-color: color-mix(in srgb, var(--color-6) 10%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-6) 20%, transparent);
     border-radius: $radius-full;
     white-space: nowrap;
     flex-shrink: 0;
@@ -53,7 +53,7 @@
 
   &__amount {
     font-weight: 600;
-    color: $color-6;
+    color: var(--color-6);
   }
 
   &__text {

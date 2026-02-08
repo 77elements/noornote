@@ -20,11 +20,11 @@
     .user-indicator {
       @extend %small;
       margin-right: 5px;
-      color: $color-6; // Soft mint green status indicator
+      color: var(--color-6); // Soft mint green status indicator
     }
 
     .user-display {
-      color: $color-5;
+      color: var(--color-5);
       font-weight: 500;
       white-space: nowrap;
       overflow: hidden;

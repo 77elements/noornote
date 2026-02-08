@@ -17,8 +17,8 @@
   height: 18px;
   padding: 0 5px;
   border-radius: $radius-full;
-  background: $color-6;
-  color: $color-1;
+  background: var(--color-6);
+  color: var(--color-1);
   @extend %small;
   font-weight: 600;
 }

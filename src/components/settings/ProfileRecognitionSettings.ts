@@ -100,7 +100,7 @@ export class ProfileRecognitionSettings extends SettingsSection {
         </div>
 
         <div class="form__info" style="margin-top: 1.5rem;">
-          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6);">
+          <p style="font-size: 13px; color: var(--text-alpha-medium);">
             <strong>How it works:</strong><br>
             • When you follow someone, the app saves their current name and profile picture<br>
             • If they change their profile within your selected window, their picture will blink between old and new<br>

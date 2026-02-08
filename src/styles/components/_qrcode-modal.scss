@@ -27,7 +27,7 @@
 .qrcode-modal__qr-image {
   width: 300px;
   height: 300px;
-  border: 2px solid $color-3;
+  border: 2px solid var(--color-3);
   border-radius: $radius-lg;
   display: block;
 
@@ -39,7 +39,7 @@
 
 // npub text below QR code
 .qrcode-modal__npub-text {
-  color: $color-5;
+  color: var(--color-5);
   font-family: monospace;
   margin: 0;
 }

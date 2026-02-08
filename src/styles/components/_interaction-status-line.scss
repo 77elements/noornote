@@ -25,13 +25,13 @@
   background: transparent;
   border: none;
   border-radius: $radius-base;
-  color: rgba($color-5, 0.6);
+  color: var(--text-alpha-medium);
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: $color-2;
-    color: $color-5;
+    background: var(--color-2);
+    color: var(--color-5);
   }
 
   &:active {
@@ -46,7 +46,7 @@
 
     &:hover {
       background: transparent;
-      color: rgba($color-5, 0.6);
+      color: var(--text-alpha-medium);
     }
   }
 }
@@ -92,7 +92,7 @@
 }
 
 .isl-quote:hover {
-  color: $color-3; // Purple
+  color: var(--color-3); // Purple
 }
 
 .isl-like:hover {
@@ -113,13 +113,13 @@
   padding: calc($gap / 4) calc($gap / 2);
 
   &:hover {
-    color: $color-4;
+    color: var(--color-4);
   }
 }
 
 // Active states (when user has interacted)
 .isl-action.active {
-  color: $color-5;
+  color: var(--color-5);
 
   &.isl-reply {
     color: $color-info;
@@ -134,7 +134,7 @@
   }
 
   &.isl-quote {
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &.isl-like {
@@ -172,7 +172,7 @@
     @extend %small;
     margin-left: calc($gap / 4);
     padding: 2px calc($gap / 4);
-    background: rgba($color-warning, 0.1);
+    background: $bg-warning;
     border-radius: $radius-base;
   }
 }

@@ -15,7 +15,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: $color-1;
+  background: var(--color-1);
   opacity: 0;
   transition: opacity 0.3s ease;
 
@@ -33,19 +33,19 @@
   }
 
   &__icon {
-    color: $color-4;
+    color: var(--color-4);
     margin-bottom: $gap * 1.5;
     opacity: 0.8;
   }
 
   &__title {
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 600;
     margin: 0 0 $gap 0;
   }
 
   &__message {
-    color: $color-5;
+    color: var(--color-5);
     opacity: 0.7;
     margin: 0 0 $gap * 2 0;
     line-height: 1.5;
@@ -59,8 +59,8 @@
       display: none;
       width: 16px;
       height: 16px;
-      border: 2px solid rgba($color-5, 0.3);
-      border-top-color: $color-5;
+      border: 2px solid var(--surface-tint);
+      border-top-color: var(--color-5);
       border-radius: $radius-full;
       animation: offline-spin 0.8s linear infinite;
       position: absolute;

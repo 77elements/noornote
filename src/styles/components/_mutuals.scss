@@ -18,13 +18,13 @@
   white-space: nowrap;
 
   &--yes {
-    background: rgba($color-success, 0.15);
+    background: $bg-success;
     color: $color-success;
   }
 
   &--no {
-    background: rgba($color-3, 0.15);
-    color: $color-3;
+    background: color-mix(in srgb, var(--color-3) 15%, transparent);
+    color: var(--color-3);
   }
 }
 
@@ -36,7 +36,7 @@
   border-radius: $radius-sm;
   font-weight: 600;
   white-space: nowrap;
-  background: rgba($color-warning, 0.15);
+  background: $bg-warning;
   color: $color-warning;
 
   // Loading state with pulsing animation
@@ -56,7 +56,7 @@
 // Article notification label in follow list
 .article-notif-label {
   @extend %mini;
-  color: $color-3;
+  color: var(--color-3);
   margin-left: calc($gap / 4);
 }
 
@@ -71,7 +71,7 @@
   @extend %small;
 
   a {
-    color: $color-4;
+    color: var(--color-4);
     text-decoration: none;
 
     &:hover {
@@ -86,7 +86,7 @@
   &__link--disabled {
     opacity: 0.4;
     pointer-events: none;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__load-all {
@@ -96,20 +96,20 @@
     }
 
     &--done {
-      color: $color-3;
+      color: var(--color-3);
       pointer-events: none;
     }
   }
 
   &__sort {
-    color: $color-3;
+    color: var(--color-3);
 
     &--disabled {
       opacity: 0.4;
       pointer-events: none;
 
       a {
-        color: $color-3;
+        color: var(--color-3);
         cursor: not-allowed;
       }
     }
@@ -118,19 +118,19 @@
   &__search {
     padding: 2px 6px;
     @extend %small;
-    border: 1px solid $color-2;
+    border: 1px solid var(--color-2);
     border-radius: $radius-sm;
     background: transparent;
-    color: $color-5;
+    color: var(--color-5);
     width: 120px;
 
     &::placeholder {
-      color: $color-3;
+      color: var(--color-3);
     }
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
 
     &--disabled {
@@ -143,17 +143,17 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 4);
-    color: $color-3;
+    color: var(--color-3);
     cursor: pointer;
     white-space: nowrap;
 
     input {
       cursor: pointer;
-      accent-color: $color-4;
+      accent-color: var(--color-4);
     }
 
     &:hover {
-      color: $color-4;
+      color: var(--color-4);
     }
 
     &--disabled {
@@ -171,7 +171,7 @@
   @extend %small;
 
   &__link {
-    color: $color-4;
+    color: var(--color-4);
     text-decoration: none;
     cursor: pointer;
 
@@ -181,7 +181,7 @@
   }
 
   &__last-check {
-    color: $color-3;
+    color: var(--color-3);
   }
 }
 
@@ -225,13 +225,13 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: $overlay-bg;
+    background: $alpha-medium;
   }
 
   &__content {
     position: relative;
-    background: $color-1;
-    border: 1px solid $color-2;
+    background: var(--color-1);
+    border: 1px solid var(--color-2);
     border-radius: $radius-lg;
     padding: $gap * 1.5;
     max-width: 400px;
@@ -241,12 +241,12 @@
 
     h3 {
       margin: 0 0 $gap 0;
-      color: $color-5;
+      color: var(--color-5);
     }
   }
 
   &__summary {
-    color: $color-3;
+    color: var(--color-3);
     @extend %small;
     margin-bottom: $gap;
   }
@@ -275,7 +275,7 @@
 
   &__item {
     padding: calc($gap / 2) 0;
-    border-bottom: 1px solid $color-2;
+    border-bottom: 1px solid var(--color-2);
     @extend %small;
 
     &:last-child {

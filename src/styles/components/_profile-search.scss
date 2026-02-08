@@ -17,14 +17,14 @@
   // Trigger link (initial state)
   &__trigger {
     text-align: right;
-    background: rgba($color-1, 0.7);
+    background: $alpha-heavy;
     padding: 4px 8px;
     border-radius: $radius-base;
     margin-right: 10px;
   }
 
   &__link {
-    color: $color-4;
+    color: var(--color-4);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s ease;
@@ -40,9 +40,9 @@
     display: flex;
     flex-direction: column;
     gap: calc($gap / 2);
-    background: rgba($color-1, 0.95);
+    background: $alpha-heavy;
     backdrop-filter: blur(8px);
-    border: 1px solid $color-3;
+    border: 1px solid var(--color-3);
     border-radius: $radius-lg;
     padding: $gap;
     min-width: 310px;
@@ -61,7 +61,7 @@
     right: calc($gap / 4);
     background: transparent;
     border: none;
-    color: $color-5;
+    color: var(--color-5);
     @extend %icon-md;
     line-height: 1;
     cursor: pointer;
@@ -71,7 +71,7 @@
 
     &:hover {
       opacity: 1;
-      color: $color-4;
+      color: var(--color-4);
     }
   }
 
@@ -82,21 +82,21 @@
 
   &__input {
     flex: 1;
-    background: $color-1;
-    color: $color-5;
-    border: 1px solid $color-3;
+    background: var(--color-1);
+    color: var(--color-5);
+    border: 1px solid var(--color-3);
     border-radius: $radius-base;
     padding: calc($gap / 2);
     outline: none;
     transition: border-color 0.2s ease;
 
     &:focus {
-      border-color: $color-4;
-      box-shadow: 0 0 0 2px rgba($color-4, 0.2);
+      border-color: var(--color-4);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-4) 20%, transparent);
     }
 
     &::placeholder {
-      color: rgba($color-5, 0.5);
+      color: var(--text-alpha-light);
     }
   }
 
@@ -106,12 +106,12 @@
     border-radius: $radius-base;
 
     &--info {
-      background: rgba($color-4, 0.2);
-      color: $color-4;
+      background: color-mix(in srgb, var(--color-4) 20%, transparent);
+      color: var(--color-4);
     }
 
     &--error {
-      background: $color-red-bg;
+      background: $bg-error;
       color: $color-red;
     }
   }
@@ -120,7 +120,7 @@
 // ProfileTabs - Tab navigation
 .profile-tabs {
   margin-bottom: $gap;
-  border-bottom: 2px solid $color-2;
+  border-bottom: 2px solid var(--color-2);
 
   .tab {
     margin-bottom: -2px;
@@ -173,13 +173,13 @@
   }
 
   &__excerpt {
-    color: $color-5;
+    color: var(--color-5);
     line-height: 1.5;
     word-wrap: break-word;
 
     mark {
-      background: rgba($color-4, 0.3);
-      color: $color-5;
+      background: color-mix(in srgb, var(--color-4) 30%, transparent);
+      color: var(--color-5);
       padding: 1px 2px;
       border-radius: $radius-sm;
     }
@@ -188,11 +188,11 @@
   &__back {
     margin-bottom: $gap;
     padding-bottom: $gap;
-    border-bottom: 1px solid $color-2;
+    border-bottom: 1px solid var(--color-2);
   }
 
   &__back-link {
-    color: $color-4;
+    color: var(--color-4);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s ease;

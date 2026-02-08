@@ -22,14 +22,14 @@
 .notifications-view__empty {
   text-align: center;
   padding: $gap * 4;
-  color: rgba($color-5, 0.5);
+  color: var(--text-alpha-light);
   @extend %h4;
 }
 
 .notifications-view__loading {
   text-align: center;
   padding: $gap * 2;
-  color: rgba($color-5, 0.6);
+  color: var(--text-alpha-medium);
   font-style: italic;
 }
 
@@ -92,17 +92,17 @@
 }
 
 .notification-item__action {
-  color: rgba($color-5, 0.6);
+  color: var(--text-alpha-medium);
 }
 
 .notification-item__timestamp {
   @extend %small;
-  color: rgba($color-5, 0.5);
+  color: var(--text-alpha-light);
   white-space: nowrap;
 }
 
 .notification-item__preview {
-  color: rgba($color-5, 0.8);
+  color: var(--text-alpha-heavy);
   line-height: 1.4;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -147,7 +147,7 @@
   transition: $transition-colors;
 
   &:hover {
-    color: $color-4;
+    color: var(--color-4);
     text-decoration: none;
   }
 
@@ -156,6 +156,6 @@
   }
 
   &--subscribe:hover {
-    color: $color-6;
+    color: var(--color-6);
   }
 }

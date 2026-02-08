@@ -12,7 +12,7 @@
 
   &__label {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     margin-right: calc($gap / 4);
     white-space: nowrap;
   }
@@ -28,6 +28,6 @@
     display: block;
     margin-top: calc($gap / 2);
     padding-top: calc($gap / 2);
-    border-top: 1px solid rgba($color-5, 0.1);
+    border-top: 1px solid var(--surface-tint);
   }
 }

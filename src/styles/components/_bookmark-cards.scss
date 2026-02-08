@@ -14,11 +14,11 @@
   justify-content: space-between;
   align-items: center;
   padding: calc($gap / 2) 0;
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
 
   &__title {
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     margin: 0;
   }
 
@@ -43,9 +43,9 @@
     height: 100%;
     padding: calc($gap / 4) calc($gap / 2);
     background: none;
-    border: 1px solid $color-2;
+    border: 1px solid var(--color-2);
     border-radius: $radius-md;
-    color: $color-4;
+    color: var(--color-4);
     cursor: pointer;
     transition: $transition-colors;
 
@@ -55,8 +55,8 @@
     }
 
     &:hover {
-      background: rgba($color-4, 0.1);
-      border-color: $color-4;
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      border-color: var(--color-4);
     }
   }
 
@@ -70,8 +70,8 @@
     top: 100%;
     right: 0;
     margin-top: 4px;
-    background: $color-1;
-    border: 1px solid $color-2;
+    background: var(--color-1);
+    border: 1px solid var(--color-2);
     border-radius: $radius-md;
     box-shadow: $box-shadow;
     min-width: 140px;
@@ -87,17 +87,17 @@
     padding: $gap;
     background: none;
     border: none;
-    color: $color-5;
+    color: var(--color-5);
     text-align: left;
     cursor: pointer;
     transition: background-color 0.15s ease;
 
     svg {
-      color: $color-4;
+      color: var(--color-4);
     }
 
     &:hover {
-      background: rgba($color-4, 0.15);
+      background: color-mix(in srgb, var(--color-4) 15%, transparent);
     }
   }
 }
@@ -108,7 +108,7 @@
 .up-navigator {
   position: relative;
   border-radius: $radius-lg;
-  background: $color-2;
+  background: var(--color-2);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   cursor: pointer;
   overflow: hidden;
@@ -125,8 +125,8 @@
   }
 
   &.drag-over {
-    background: color.adjust($color-2, $lightness: 10%);
-    box-shadow: 0 0 0 2px $color-4;
+    background: color-mix(in srgb, var(--color-2) 80%, white);
+    box-shadow: 0 0 0 2px var(--color-4);
   }
 }
 
@@ -148,13 +148,13 @@
       height: 24px;
       border-radius: $radius-full;
       object-fit: cover;
-      background: $color-1;
+      background: var(--color-1);
     }
 
     &-name {
       @extend %small;
       font-weight: 600;
-      color: $color-5;
+      color: var(--color-5);
       flex: 1;
       white-space: nowrap;
       overflow: hidden;
@@ -166,7 +166,7 @@
     flex: 1;
     @extend %small;
     line-height: 1.4;
-    color: $color-5;
+    color: var(--color-5);
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 3;
@@ -177,7 +177,7 @@
     display: block;
     margin-top: calc($gap / 4);
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__actions {
@@ -197,12 +197,12 @@
     align-items: center;
     margin-top: calc($gap / 2);
     padding-top: calc($gap / 2);
-    border-top: 1px solid color.adjust($color-2, $lightness: 10%);
+    border-top: 1px solid color-mix(in srgb, var(--color-2) 80%, white);
   }
 
   &__timestamp {
     @extend %small;
-    color: color.adjust($color-5, $lightness: -30%);
+    color: color-mix(in srgb, var(--color-5) 40%, black);
   }
 
   &__delete {
@@ -225,7 +225,7 @@
     }
 
     &:hover {
-      background: $color-red-bg;
+      background: $bg-error;
       opacity: 1;
     }
   }
@@ -236,33 +236,33 @@
     top: calc($gap / 2);
     right: calc($gap / 2);
     @extend %mini;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   // External/URL content style
   &__content--external {
-    color: $color-4;
+    color: var(--color-4);
     @extend %small;
     word-break: break-all;
   }
 
   // Not found content style (event refs that couldn't load)
   &__content--not-found {
-    color: $color-3;
+    color: var(--color-3);
     font-style: italic;
   }
 
   &__event-id {
     display: block;
     @extend %mini;
-    color: color.adjust($color-3, $lightness: -10%);
+    color: color-mix(in srgb, var(--color-3) 80%, black);
     font-family: monospace;
     margin-top: calc($gap / 4);
   }
 
   // Type indicator icons for author pic
   &__author-pic--type-r {
-    background: $color-4;
+    background: var(--color-4);
     position: relative;
 
     &::after {
@@ -276,7 +276,7 @@
   }
 
   &__author-pic--type-t {
-    background: $color-4;
+    background: var(--color-4);
     position: relative;
 
     &::after {
@@ -286,7 +286,7 @@
       left: 50%;
       transform: translate(-50%, -50%);
       font-weight: bold;
-      color: $color-1;
+      color: var(--color-1);
     }
   }
 }
@@ -299,14 +299,14 @@
   justify-content: center;
   min-height: 120px;
   padding: $gap;
-  background: color.adjust($color-2, $lightness: 5%);
-  border: 2px dashed color.adjust($color-2, $lightness: 15%);
+  background: color-mix(in srgb, var(--color-2) 90%, white);
+  border: 2px dashed color-mix(in srgb, var(--color-2) 70%, white);
 
   &__icon {
     width: 40px;
     height: 40px;
     margin-bottom: calc($gap / 2);
-    color: $color-4;
+    color: var(--color-4);
 
     svg {
       width: 100%;
@@ -316,14 +316,14 @@
 
   &__name {
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     text-align: center;
     word-break: break-word;
   }
 
   &__count {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     margin-top: calc($gap / 4);
   }
 
@@ -362,10 +362,10 @@
   }
 
   &__edit {
-    color: $color-4;
+    color: var(--color-4);
 
     &:hover {
-      background: rgba($color-4, 0.15);
+      background: color-mix(in srgb, var(--color-4) 15%, transparent);
     }
   }
 
@@ -373,7 +373,7 @@
     color: $color-red;
 
     &:hover {
-      background: $color-red-bg;
+      background: $bg-error;
     }
   }
 
@@ -394,7 +394,7 @@
     align-items: center;
     gap: 4px;
     @extend %mini;
-    color: $color-4;
+    color: var(--color-4);
     cursor: pointer;
     opacity: 0;
     transition: opacity 0.15s ease;
@@ -402,7 +402,7 @@
     input[type="checkbox"] {
       width: 14px;
       height: 14px;
-      accent-color: $color-4;
+      accent-color: var(--color-4);
       cursor: pointer;
     }
 
@@ -411,15 +411,15 @@
     }
 
     &:hover {
-      color: $color-5;
+      color: var(--color-5);
     }
   }
 
   // Drop target highlight
   &.drag-over {
     border-style: solid;
-    border-color: $color-4;
-    background: rgba($color-4, 0.1);
+    border-color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 }
 
@@ -431,14 +431,14 @@
   justify-content: center;
   min-height: 120px;
   padding: $gap;
-  background: color.adjust($color-1, $lightness: 5%);
-  border: 1px solid $color-2;
+  background: color-mix(in srgb, var(--color-1) 90%, white);
+  border: 1px solid var(--color-2);
 
   &__icon {
     width: 32px;
     height: 32px;
     margin-bottom: calc($gap / 2);
-    color: $color-3;
+    color: var(--color-3);
 
     svg {
       width: 100%;
@@ -449,33 +449,33 @@
   &__label {
     @extend %h1;
     font-weight: 700;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__hint {
     @extend %small;
-    color: color.adjust($color-3, $lightness: -10%);
+    color: color-mix(in srgb, var(--color-3) 80%, black);
     margin-top: calc($gap / 4);
   }
 
   &:hover {
-    background: color.adjust($color-1, $lightness: 8%);
-    border-color: $color-4;
+    background: color-mix(in srgb, var(--color-1) 84%, white);
+    border-color: var(--color-4);
 
     .up-navigator__label,
     .up-navigator__icon {
-      color: $color-4;
+      color: var(--color-4);
     }
   }
 
   // Drop target highlight
   &.drag-over {
-    border-color: $color-4;
-    background: rgba($color-4, 0.1);
+    border-color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
 
     .up-navigator__label,
     .up-navigator__icon {
-      color: $color-4;
+      color: var(--color-4);
     }
   }
 }
@@ -487,26 +487,26 @@
   gap: calc($gap / 4);
   padding: calc($gap / 2) 0;
   @extend %small;
-  color: $color-3;
+  color: var(--color-3);
 
   &__item {
-    color: $color-4;
+    color: var(--color-4);
     cursor: pointer;
     transition: $transition-colors;
 
     &:hover {
-      color: $color-5;
+      color: var(--color-5);
     }
 
     &--current {
-      color: $color-5;
+      color: var(--color-5);
       cursor: default;
       font-weight: 600;
     }
   }
 
   &__separator {
-    color: $color-3;
+    color: var(--color-3);
   }
 }
 
@@ -514,26 +514,26 @@
 .new-folder-input {
   width: 100%;
   padding: calc($gap / 2);
-  background: $color-1;
-  border: 1px solid $color-2;
+  background: var(--color-1);
+  border: 1px solid var(--color-2);
   border-radius: $radius-md;
-  color: $color-5;
+  color: var(--color-5);
 
   &:focus {
     outline: none;
-    border-color: $color-4;
+    border-color: var(--color-4);
   }
 
   &::placeholder {
-    color: $color-3;
+    color: var(--color-3);
   }
 }
 
 // Drag placeholder
 .bookmark-card-placeholder {
   border-radius: $radius-lg;
-  background: color.adjust($color-2, $lightness: -5%);
-  border: 2px dashed $color-3;
+  background: color-mix(in srgb, var(--color-2) 90%, black);
+  border: 2px dashed var(--color-3);
   opacity: 0.5;
 }
 

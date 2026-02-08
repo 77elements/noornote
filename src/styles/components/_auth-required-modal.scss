@@ -12,7 +12,7 @@
 
   p {
     margin: 0 0 calc($gap * 1.5) 0;
-    color: $color-4;
+    color: var(--color-4);
   }
 
   &__actions {

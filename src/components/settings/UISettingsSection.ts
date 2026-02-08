@@ -63,7 +63,7 @@ export class UISettingsSection extends SettingsSection {
         </div>
 
         <div class="form__info">
-          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
+          <p style="font-size: 13px; color: var(--text-alpha-medium); margin-top: 0.5rem;">
             • <strong>Gregorian:</strong> Standard Western calendar (e.g., "30. Oct. 2024")<br>
             • <strong>Hijri:</strong> Islamic calendar (e.g., "26. Rabi' ath-Thani 1446")<br>
             • <strong>Gregorian + Hijri:</strong> Both calendars side-by-side
@@ -84,13 +84,13 @@ export class UISettingsSection extends SettingsSection {
           </div>
 
           <div class="form__info">
-            <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
+            <p style="font-size: 13px; color: var(--text-alpha-medium); margin-top: 0.5rem;">
               • <strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger<br>
               • <strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane<br>
               • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space<br>
               • <strong>Phone:</strong> Single-column layout (390px width) for phone development and testing
             </p>
-            <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6);">
+            <p style="font-size: 13px; color: var(--text-alpha-medium);">
               <strong>Right Pane mode click behavior:</strong><br>
               • Single click: Open in new tab or switch to existing tab<br>
               • Double-click or Cmd+Click: Open additional tabs
@@ -108,7 +108,7 @@ export class UISettingsSection extends SettingsSection {
         </div>
 
         <div class="form__info">
-          <p style="font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-top: 0.5rem;">
+          <p style="font-size: 13px; color: var(--text-alpha-medium); margin-top: 0.5rem;">
             When enabled, long posts will always be displayed in full without "Show More" buttons. This may affect timeline scrolling performance for very long posts.
           </p>
         </div>

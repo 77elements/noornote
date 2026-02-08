@@ -32,7 +32,7 @@
     font-weight: 700;
     width: 100%;
     padding: 0;
-    color: $color-6;
+    color: var(--color-6);
     font-family: inherit;
 
     &:focus {
@@ -50,7 +50,7 @@
   }
 
   &__amount-unit {
-    color: $color-3;
+    color: var(--color-3);
     font-weight: 600;
   }
 
@@ -62,8 +62,8 @@
 
   &__preset {
     &--active {
-      border-color: $color-4;
-      color: $color-4;
+      border-color: var(--color-4);
+      color: var(--color-4);
     }
   }
 

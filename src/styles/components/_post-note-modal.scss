@@ -20,7 +20,7 @@
 .quote-preview {
   margin: $gap 0;
   padding: $gap;
-  border-left: 3px solid $color-4;
+  border-left: 3px solid var(--color-4);
   border-radius: $radius-base;
   max-width: 100%;
 
@@ -103,7 +103,7 @@
   right: 0;
   max-height: 300px;
   overflow-y: auto;
-  background: $color-2;
+  background: var(--color-2);
   box-shadow: $box-shadow;
   z-index: 100;
   padding: calc($gap / 2);
@@ -180,7 +180,7 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: $overlay-bg;
+    background: $alpha-medium;
     color: $color-white;
     padding: calc($gap / 2) $gap;
       @extend %small;
@@ -211,7 +211,7 @@ svg.upload-progress {
   }
 
   .upload-progress-bar {
-    stroke: $color-6; // Soft Mint Green
+    stroke: var(--color-6); // Soft Mint Green
     stroke-linecap: round;
     transition: stroke-dashoffset 0.3s ease;
   }

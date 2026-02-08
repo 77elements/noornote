@@ -7,26 +7,61 @@
 // Color Palette - Noornote Brand Colors
 // ========================================
 
-// Brand Colors (Core Palette - 6 colors)
-$color-1: #0f0d23; // Deep Purple (backgrounds)
-$color-2: #252343; // Medium Purple (surfaces, standard borders)
-$color-3: #9b79b9; // Light Purple (accent - sparingly)
-$color-4: #dc85ad; // Pink (interactive elements only)
-$color-5: #ede2da; // Light Peach (text)
-$color-6: #7dd87d; // Soft Mint Green (status indicators)
+// Brand Colors (Core Palette - 6 colors, theme-dependent)
+// ROLES (must be preserved across ALL themes):
+//   color-1: Primary background (dominant)
+//   color-2: Surface/card background, borders (secondary bg)
+//   color-3: Accent color (decorative, sparingly)
+//   color-4: Interactive accent (links, buttons, ALL clickable elements)
+//   color-5: Text color (MUST have high contrast against color-1 and color-2)
+//   color-6: Status accent (indicators, badges)
+$color-1: #0f0d23; // Deep Purple
+$color-2: #252343; // Medium Purple
+$color-3: #9b79b9; // Light Purple
+$color-4: #dc85ad; // Pink
+$color-5: #ede2da; // Light Peach
+$color-6: #7dd87d; // Soft Mint Green
 
 // Neutral Colors
 $color-white: #ffffff;
 $color-black: #000000;
 
-// Semantic Colors
+// Semantic Colors (universal, don't change per theme)
 $color-success: #10b981;
 $color-warning: #f59e0b;
 $color-red: #ef4444;
-$color-red-bg: rgba($color-red, 0.15);
-$color-red-border: rgba($color-red, 0.5);
 $color-info: #3b82f6;
 $color-bitcoin-orange: #f7931a;
+
+// Logo Gradient (universal)
+$color-logo-start: #b45fd9;
+$color-logo-end: #5ef75e;
+
+// ========================================
+// Alpha (Darkening - 3 levels, based on black)
+// ========================================
+$alpha-light: rgba($color-black, 0.15);
+$alpha-medium: rgba($color-black, 0.5);
+$alpha-heavy: rgba($color-black, 0.85);
+
+// ========================================
+// Semantic Backgrounds (1 per type)
+// ========================================
+$bg-success: rgba($color-success, 0.1);
+$bg-warning: rgba($color-warning, 0.1);
+$bg-error: rgba($color-red, 0.15);
+
+// ========================================
+// Text Opacity Levels (based on $color-5)
+// ========================================
+$text-alpha-light: rgba($color-5, 0.4);
+$text-alpha-medium: rgba($color-5, 0.6);
+$text-alpha-heavy: rgba($color-5, 0.8);
+
+// ========================================
+// Surface
+// ========================================
+$surface-tint: rgba($color-white, 0.1);
 
 // ========================================
 // Theme Maps
@@ -43,7 +78,7 @@ $light-theme: (
   border: $color-2,
   border-light: $color-1,
   border-focus: $color-4,
-  shadow: rgba($color-1, 0.3)
+  shadow: $alpha-light
 );
 
 $dark-theme: (
@@ -58,7 +93,7 @@ $dark-theme: (
   border: $color-2,
   border-light: $color-1,
   border-focus: $color-4,
-  shadow: rgba($color-1, 0.5)
+  shadow: $alpha-medium
 );
 
 // ========================================
@@ -84,11 +119,9 @@ $radius-full: 9999px;
 // ========================================
 // Shadows
 // ========================================
-$box-shadow: 0 4px 12px rgba($color-black, 0.35);
-$box-hover: 0 10px 15px -3px rgba($color-black, 0.1), 0 4px 6px -2px rgba($color-black, 0.05);
-$overlay-bg: rgba($color-black, 0.5);
+$box-shadow: 0 4px 12px $alpha-medium;
+$box-hover: 0 10px 15px -3px $alpha-light, 0 4px 6px -2px $alpha-light;
 $text-glow: 0 0 10px rgba($color-white, 0.15), 0 0 20px rgba($color-white, 0.1);
-$surface-tint: rgba($color-white, 0.1);
 
 // ========================================
 // Transitions

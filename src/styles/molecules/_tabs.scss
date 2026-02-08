@@ -36,19 +36,19 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  color: $color-4;
+  color: var(--color-4);
   cursor: pointer;
   font-weight: 500;
   transition: all 0.2s ease;
 
   &:hover {
-    color: $color-5;
+    color: var(--color-5);
   }
 
   &--active {
-    color: $color-5;
-    border-bottom-color: $color-5;
-    background-color: $surface-tint;
+    color: var(--color-5);
+    border-bottom-color: var(--color-5);
+    background-color: var(--color-2);
     cursor: default;
   }
 
@@ -59,7 +59,7 @@
     gap: calc($gap / 2);
 
     &:hover {
-      background: color.adjust($color-2, $lightness: 5%);
+      background: color-mix(in srgb, var(--color-2) 90%, white);
     }
   }
 
@@ -72,7 +72,7 @@
     border: none;
     padding: 0;
     cursor: pointer;
-    color: $color-4;
+    color: var(--color-4);
     transition: color 0.2s ease;
     display: flex;
     align-items: center;
@@ -86,7 +86,7 @@
     }
 
     &:hover {
-      color: $color-5;
+      color: var(--color-5);
     }
   }
 

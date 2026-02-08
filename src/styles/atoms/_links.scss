@@ -7,7 +7,7 @@
 @use '../abstracts/variables' as *;
 
 a {
-  color: $color-4; // Pink (interactive color)
+  color: var(--color-4); // Pink (interactive color)
   text-decoration: none;
   cursor: pointer;
   transition: text-decoration 0.2s ease;
@@ -24,7 +24,7 @@ a {
   }
 
   &:visited {
-    color: $color-4; // Same color as unvisited
+    color: var(--color-4); // Same color as unvisited
   }
 }
 
@@ -53,13 +53,13 @@ a {
 
 // Modifier: with background (for inline mentions, Analytics Modal, etc.)
 .mention-link--bg {
-  background-color: color.adjust($color-2, $lightness: 10%);
+  background-color: color-mix(in srgb, var(--color-2) 80%, white);
   border-radius: 1rem;
   padding: 2px 4px;
 
   &:hover,
   &:active,
   &:focus {
-    background-color: color.adjust($color-2, $lightness: 20%);
+    background-color: color-mix(in srgb, var(--color-2) 60%, white);
   }
 }

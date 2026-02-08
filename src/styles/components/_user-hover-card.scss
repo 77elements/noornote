@@ -9,8 +9,8 @@
 .user-hover-card {
   position: fixed;
   width: 320px;
-  background: $color-2;
-  border: 1px solid rgba($color-4, 0.3);
+  background: var(--color-2);
+  border: 1px solid color-mix(in srgb, var(--color-4) 30%, transparent);
   border-radius: $radius-lg;
   padding: $gap;
   box-shadow: $box-shadow;
@@ -29,9 +29,9 @@
     width: 48px;
     height: 48px;
     border-radius: $radius-full;
-    border: 2px solid rgba($color-4, 0.3);
+    border: 2px solid color-mix(in srgb, var(--color-4) 30%, transparent);
     object-fit: cover;
-    background: $color-1;
+    background: var(--color-1);
     flex-shrink: 0;
   }
 
@@ -43,14 +43,14 @@
   &__name {
     @extend %h4;
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   &__username {
-    color: $color-5;
+    color: var(--color-5);
     opacity: 0.7;
     white-space: nowrap;
     overflow: hidden;
@@ -58,7 +58,7 @@
   }
 
   &__bio {
-    color: $color-5;
+    color: var(--color-5);
     opacity: 0.9;
     line-height: 1.4;
     margin-bottom: $gap;

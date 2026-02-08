@@ -8,5 +8,5 @@
 
 .date-time {
   @extend %small;
-  color: $color-3;
+  color: var(--color-3);
 }

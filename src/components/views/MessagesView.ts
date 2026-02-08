@@ -374,7 +374,7 @@ export class MessagesView extends View {
             <polyline points="22,6 12,13 2,6"/>
           </svg>
           <p>${emptyMessage}</p>
-          <p class="text-muted">Start a conversation by clicking "New Message"</p>
+          <p class="text-alpha-medium">Start a conversation by clicking "New Message"</p>
         </div>
       `;
       return;

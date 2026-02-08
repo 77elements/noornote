@@ -19,12 +19,12 @@
 
 /// Progress bar container mixin
 /// Adds ::after pseudo-element that acts as progress bar
-/// @param {Color} $color [$color-4] - Bar color
+/// @param {Color} $color [var(--color-4)] - Bar color
 /// @param {Number} $height [1px] - Bar height/thickness
 /// @param {Number} $transition-speed [0.3s] - Width transition speed
 /// @param {Number} $fade-delay [0.2s] - Delay before fade-out starts
 @mixin progress-bar-container(
-  $color: $color-4,
+  $color: var(--color-4),
   $height: 1px,
   $transition-speed: 0.3s,
   $fade-delay: 0.2s

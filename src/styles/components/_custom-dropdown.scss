@@ -20,9 +20,9 @@
     justify-content: space-between;
     gap: calc($gap / 2);
     width: 100%; // Fill parent container
-    background: $color-2;
-    color: $color-5;
-    border: 1px solid $color-3;
+    background: var(--color-2);
+    color: var(--color-5);
+    border: 1px solid var(--color-3);
     border-radius: $radius-base;
     padding: 12px;
     font-weight: 500;
@@ -32,13 +32,13 @@
     white-space: nowrap;
 
     &:hover {
-      border-color: $color-4;
-      background: color.adjust($color-2, $lightness: 3%);
+      border-color: var(--color-4);
+      background: color-mix(in srgb, var(--color-2) 94%, white);
     }
 
     &:focus {
-      border-color: $color-4;
-      box-shadow: 0 0 0 2px rgba($color-4, 0.2);
+      border-color: var(--color-4);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-4) 20%, transparent);
     }
   }
 
@@ -54,7 +54,7 @@
     height: 0;
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
-    border-top: 5px solid $color-5;
+    border-top: 5px solid var(--color-5);
     transition: transform 0.2s ease;
     margin-left: calc($gap / 2);
     flex-shrink: 0;
@@ -72,8 +72,8 @@
     left: 0;
     right: 0;
     min-width: 100%; // Ensure menu is at least as wide as trigger
-    background: $color-2;
-    border: 1px solid $color-3;
+    background: var(--color-2);
+    border: 1px solid var(--color-3);
     border-radius: $radius-base;
     list-style: none;
     margin: 0;
@@ -98,7 +98,7 @@
   // Menu items
   &__item {
     padding: calc($gap / 2) calc($gap * 0.75);
-    color: $color-5;
+    color: var(--color-5);
     cursor: pointer;
     transition: background-color 0.15s ease;
     font-weight: 400;
@@ -107,17 +107,17 @@
     white-space: nowrap;
 
     &:hover {
-      background: color.adjust($color-2, $lightness: 5%);
+      background: color-mix(in srgb, var(--color-2) 90%, white);
     }
 
     &--selected {
-      background: color.adjust($color-2, $lightness: 8%);
+      background: color-mix(in srgb, var(--color-2) 84%, white);
       font-weight: 500;
-      color: $color-4;
+      color: var(--color-4);
     }
 
     &--selected:hover {
-      background: color.adjust($color-2, $lightness: 10%);
+      background: color-mix(in srgb, var(--color-2) 80%, white);
     }
   }
 }
@@ -144,7 +144,7 @@
     &__arrow {
       border-left: 3px solid transparent;
       border-right: 3px solid transparent;
-      border-top: 4px solid $color-5;
+      border-top: 4px solid var(--color-5);
     }
 
     &__item {

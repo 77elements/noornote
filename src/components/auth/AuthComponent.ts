@@ -181,8 +181,8 @@ export class AuthComponent {
         width: 200,
         margin: 2,
         color: {
-          dark: '#FFFFFF',
-          light: '#1a0933'
+          dark: '#000000',
+          light: '#FFFFFF'
         }
       });
 

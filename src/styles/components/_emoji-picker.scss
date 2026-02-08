@@ -30,8 +30,8 @@
   height: 450px;
   display: flex;
   flex-direction: column;
-  background: $color-1;
-  border: 1px solid $color-3;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
   border-radius: $radius-lg;
   overflow: hidden;
   box-shadow: $box-shadow;
@@ -47,7 +47,7 @@
   outline: none;
 
   &:focus {
-    border-bottom-color: $color-6;
+    border-bottom-color: var(--color-6);
   }
 }
 
@@ -77,7 +77,7 @@
 
   &--active {
     opacity: 1;
-    box-shadow: 0 2px 0 $color-6;
+    box-shadow: 0 2px 0 var(--color-6);
   }
 }
 
@@ -139,7 +139,7 @@
 // Dark mode adjustments
 @media (prefers-color-scheme: dark) {
   .emoji-picker-emoji:hover {
-    background: $surface-tint;
+    background: var(--surface-tint);
   }
 }
 

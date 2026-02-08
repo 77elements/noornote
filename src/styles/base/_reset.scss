@@ -27,8 +27,8 @@ html {
 body {
   font-family: $font-family-sans;
   line-height: 1.5;
-  color: $color-5;
-  background-color: $color-1;
+  color: var(--color-5);
+  background-color: var(--color-1);
   @include font-smoothing;
   min-height: 100vh;
   overflow-x: hidden;
@@ -93,6 +93,6 @@ h6 {
 
 // Better focus indicators
 :focus-visible {
-  outline: 2px solid $color-4;
+  outline: 2px solid var(--color-4);
   outline-offset: 2px;
 }

@@ -31,7 +31,7 @@
 .user-identity__username {
   @extend %h4;
   font-weight: 600;
-  color: $color-5;
+  color: var(--color-5);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -39,7 +39,7 @@
 
 .user-identity__handle {
   @extend %small;
-  color: $color-3;
+  color: var(--color-3);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

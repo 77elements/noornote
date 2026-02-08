@@ -4,12 +4,14 @@
  * Font-size is inherited from context
  */
 
+@use '../abstracts/variables' as *;
+
 .nn-logo {
   display: inline-block;
   font-family: 'Saira', sans-serif;
   font-weight: 700;
   line-height: 1.2;
-  background: linear-gradient(135deg, #b45fd9, #5ef75e);
+  background: linear-gradient(135deg, $color-logo-start, $color-logo-end);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

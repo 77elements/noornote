@@ -51,7 +51,7 @@ export class UpdateModal {
         </p>
 
         ${update.releaseNotes ? `
-          <div style="max-height: 200px; overflow-y: auto; padding: 0.75rem; border-radius: 6px; background: rgba(255,255,255,0.05); margin-bottom: 1.5rem; white-space: pre-wrap; font-size: 13px; line-height: 1.5;">
+          <div style="max-height: 200px; overflow-y: auto; padding: 0.75rem; border-radius: 6px; background: var(--surface-tint); margin-bottom: 1.5rem; white-space: pre-wrap; font-size: 13px; line-height: 1.5;">
 ${escapeHtml(update.releaseNotes)}
           </div>
         ` : ''}

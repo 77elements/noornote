@@ -16,7 +16,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0 0 $gap 0;
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
 }
 
 .messages-view__actions {
@@ -27,7 +27,7 @@
 
 .messages-view__tabs {
   padding: 0 0 $gap 0;
-  border-bottom: 1px solid $color-2;
+  border-bottom: 1px solid var(--color-2);
 }
 
 .messages-view__warning {
@@ -36,15 +36,15 @@
   gap: calc($gap / 2);
   padding: $gap;
   margin-bottom: $gap;
-  background: rgba($color-4, 0.1);
-  border: 1px solid $color-4;
+  background: color-mix(in srgb, var(--color-4) 10%, transparent);
+  border: 1px solid var(--color-4);
   border-radius: $radius-lg;
-  color: $color-6;
+  color: var(--color-6);
   line-height: 1.4;
 
   svg {
     flex-shrink: 0;
-    color: $color-4;
+    color: var(--color-4);
     margin-top: 2px;
   }
 }
@@ -83,7 +83,7 @@
   justify-content: center;
   padding: calc($gap * 3);
   text-align: center;
-  color: $color-4;
+  color: var(--color-4);
 
   svg {
     margin-bottom: $gap;
@@ -92,8 +92,8 @@
 
   p {
     margin: 0;
-    &.text-muted {
-      color: $color-3;
+    &.text-alpha-medium {
+      color: var(--color-3);
       margin-top: calc($gap / 2);
     }
   }
@@ -112,7 +112,7 @@
     }
 
     .conversation-item__preview {
-      color: $color-5;
+      color: var(--color-5);
     }
   }
 
@@ -144,8 +144,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    color: var(--color-1);
     font-weight: 600;
     @extend %h3;
     flex-shrink: 0;
@@ -166,7 +166,7 @@
 
   &__name {
     font-weight: 500;
-    color: $color-5;
+    color: var(--color-5);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -175,13 +175,13 @@
 
   &__time {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     flex-shrink: 0;
     margin-left: $gap;
   }
 
   &__preview {
-    color: $color-3;
+    color: var(--color-3);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -202,8 +202,8 @@
   align-items: center;
   gap: $gap;
   padding: $gap calc($gap * 1.5);
-  border-bottom: 1px solid $color-2;
-  background: $color-1;
+  border-bottom: 1px solid var(--color-2);
+  background: var(--color-1);
   flex-shrink: 0;
 }
 
@@ -213,7 +213,7 @@
   padding: calc($gap / 2);
   margin: calc($gap / -2);
   cursor: pointer;
-  color: $color-4;
+  color: var(--color-4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -221,7 +221,7 @@
   transition: background-color 0.15s ease;
 
   &:hover {
-    background: rgba($color-4, 0.1);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 }
 
@@ -249,15 +249,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    color: var(--color-1);
     font-weight: 600;
   }
 }
 
 .conversation-view__name {
   font-weight: 500;
-  color: $color-5;
+  color: var(--color-5);
 }
 
 .conversation-view__menu-trigger {
@@ -283,11 +283,11 @@
   justify-content: center;
   height: 100%;
   text-align: center;
-  color: $color-3;
+  color: var(--color-3);
 
   p {
     margin: 0;
-    &.text-muted {
+    &.text-alpha-medium {
       margin-top: calc($gap / 2);
     }
   }
@@ -297,30 +297,30 @@
   display: flex;
   gap: calc($gap / 2);
   padding: $gap calc($gap * 1.5);
-  border-top: 1px solid $color-2;
-  background: $color-1;
+  border-top: 1px solid var(--color-2);
+  background: var(--color-1);
   flex-shrink: 0;
 }
 
 .conversation-view__textarea {
   flex: 1;
   resize: none;
-  border: 1px solid $color-2;
+  border: 1px solid var(--color-2);
   border-radius: $radius-full;
   padding: calc($gap * 0.75) $gap;
   line-height: 1.4;
-  background: $color-1;
-  color: $color-5;
+  background: var(--color-1);
+  color: var(--color-5);
   min-height: 40px;
   max-height: 120px;
 
   &::placeholder {
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &:focus {
     outline: none;
-    border-color: $color-4;
+    border-color: var(--color-4);
   }
 }
 
@@ -352,23 +352,23 @@
 
   &--own {
     align-self: flex-end;
-    background: $color-3;
-    color: $color-1;
+    background: var(--color-3);
+    color: var(--color-1);
     border-bottom-right-radius: $radius-base;
 
     .message__time {
-      color: rgba($color-1, 0.7);
+      color: $alpha-heavy;
     }
   }
 
   &--other {
     align-self: flex-start;
-    background: $color-2;
-    color: $color-5;
+    background: var(--color-2);
+    color: var(--color-5);
     border-bottom-left-radius: $radius-base;
 
     .message__time {
-      color: $color-3;
+      color: var(--color-3);
     }
   }
 
@@ -419,26 +419,26 @@
   &__label {
     @extend %small;
     font-weight: 500;
-    color: $color-3;
+    color: var(--color-3);
   }
 
   &__textarea {
     resize: none;
-    border: 1px solid $color-2;
+    border: 1px solid var(--color-2);
     border-radius: $radius-md;
     padding: calc($gap * 0.75) $gap;
     line-height: 1.5;
-    background: $color-1;
-    color: $color-5;
+    background: var(--color-1);
+    color: var(--color-5);
     min-height: 100px;
 
     &::placeholder {
-      color: $color-3;
+      color: var(--color-3);
     }
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
   }
 
@@ -468,8 +468,8 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: $color-1;
-    border: 1px solid $color-2;
+    background: var(--color-1);
+    border: 1px solid var(--color-2);
     border-radius: $radius-md;
     box-shadow: $box-shadow;
     z-index: 100;
@@ -486,7 +486,7 @@
     display: inline-flex;
     align-items: center;
     gap: calc($gap / 2);
-    background: $color-2;
+    background: var(--color-2);
     border-radius: $radius-full;
     padding: calc($gap / 4) calc($gap / 2);
     padding-right: calc($gap / 4);
@@ -499,7 +499,7 @@
   &__clear {
     background: none;
     border: none;
-    color: $color-3;
+    color: var(--color-3);
     cursor: pointer;
     @extend %h3;
     line-height: 1;
@@ -508,8 +508,8 @@
     transition: all 0.15s ease;
 
     &:hover {
-      background: rgba($color-5, 0.1);
-      color: $color-5;
+      background: var(--surface-tint);
+      color: var(--color-5);
     }
   }
 }

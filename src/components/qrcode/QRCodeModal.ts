@@ -46,8 +46,8 @@ export class QRCodeModal {
         width: 300,
         margin: 2,
         color: {
-          dark: '#FFFFFF',  // White QR code
-          light: '#1a0933'  // Dark purple background (same as $color-1)
+          dark: '#000000',
+          light: '#FFFFFF'
         }
       });
 

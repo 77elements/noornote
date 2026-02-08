@@ -6,13 +6,13 @@
 @use '../abstracts/variables' as *;
 
 .hashtag {
-  color: $color-4;
+  color: var(--color-4);
   cursor: pointer;
   text-decoration: none;
   transition: color 0.2s ease;
 
   &:hover {
-    color: $color-5;
+    color: var(--color-5);
     text-decoration: underline;
   }
 }

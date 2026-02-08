@@ -7,23 +7,28 @@
 @use '../abstracts/mixins' as *;
 
 // CSS Custom Properties (CSS Variables)
+// Theme-dependent colors as CSS variables (overridden per theme in _themes.scss)
 :root {
-  // Apply light theme by default
-  @include theme-colors($light-theme);
+  // Palette colors (change per theme)
+  --color-1: #{$color-1};
+  --color-2: #{$color-2};
+  --color-3: #{$color-3};
+  --color-4: #{$color-4};
+  --color-5: #{$color-5};
+  --color-6: #{$color-6};
 
-  // Apply dark theme based on preference
-  @include dark-mode {
-    @include theme-colors($dark-theme);
-  }
-}
+  // Derived text levels (change per theme, based on color-5)
+  --text-alpha-light: #{$text-alpha-light};
+  --text-alpha-medium: #{$text-alpha-medium};
+  --text-alpha-heavy: #{$text-alpha-heavy};
 
-// Manual theme classes (for theme toggle)
-.theme-light {
-  @include theme-colors($light-theme);
-}
+  // Surface tint (change per theme: lighten on dark, darken on light)
+  --surface-tint: #{$surface-tint};
 
-.theme-dark {
-  @include theme-colors($dark-theme);
+  // Runtime-only CSS variables (for inline styles in TypeScript)
+  --color-white: #{$color-white};
+  --alpha-medium: #{$alpha-medium};
+  --color-red: #{$color-red};
 }
 
 // Root element setup
@@ -45,7 +50,7 @@ body {
   overflow-x: hidden;
 
   // Background patterns or textures could go here
-  background-color: $color-1;
+  background-color: var(--color-1);
 
   // Improve text rendering
   text-rendering: optimizeLegibility;

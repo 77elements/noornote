@@ -350,7 +350,7 @@ export class ConversationView extends View {
       container.innerHTML = `
         <div class="conversation-view__empty">
           <p>No messages yet</p>
-          <p class="text-muted">Send a message to start the conversation</p>
+          <p class="text-alpha-medium">Send a message to start the conversation</p>
         </div>
       `;
       return;

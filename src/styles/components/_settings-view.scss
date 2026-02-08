@@ -12,7 +12,7 @@
 .settings-title {
   @extend %h1;
   font-weight: 600;
-  color: $color-5;
+  color: var(--color-5);
   margin-bottom: $gap;
 }
 
@@ -63,7 +63,7 @@
 
   &__action-feedback {
     padding: calc($gap / 2) 0 0 0;
-    color: $color-6;
+    color: var(--color-6);
     transition: opacity 0.3s ease;
     min-height: 1.5em;
     text-align: right;
@@ -86,13 +86,13 @@
 .relay-health-summary {
   padding: $gap;
   margin-bottom: $gap * 2;
-  background: rgba($color-2, 0.5);
-  border: 1px solid $color-3;
+  background: $alpha-medium;
+  border: 1px solid var(--color-3);
   border-radius: $radius-sm;
 }
 
 .health-summary-empty {
-  color: rgba($color-5, 0.6);
+  color: var(--text-alpha-medium);
   font-style: italic;
 }
 
@@ -107,21 +107,21 @@
   font-weight: 600;
 
   &--good {
-    background: rgba($color-success, 0.15);
+    background: $bg-success;
     color: $color-success;
     border: 1px solid rgba($color-success, 0.3);
   }
 
   &--warning {
-    background: rgba($color-warning, 0.15);
+    background: $bg-warning;
     color: $color-warning;
     border: 1px solid rgba($color-warning, 0.3);
   }
 
   &--critical {
-    background: $color-red-bg;
+    background: $bg-error;
     color: $color-red;
-    border: 1px solid $color-red-border;
+    border: 1px solid rgba($color-red, 0.5);
   }
 }
 
@@ -141,19 +141,19 @@
   display: flex;
   gap: $gap;
   margin-bottom: $gap * 2;
-  border-top: 1px solid $color-2;
+  border-top: 1px solid var(--color-2);
 
   .relay-input {
     flex: 1;
     padding: calc($gap / 2) $gap;
-    background: $color-2;
-    border: 1px solid $color-3;
+    background: var(--color-2);
+    border: 1px solid var(--color-3);
     border-radius: $radius-sm;
-    color: $color-5;
+    color: var(--color-5);
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
 
     &:disabled {
@@ -175,13 +175,13 @@
 
 .relay-item {
   padding: calc($gap / 2);
-  background: $color-1;
-  border: 1px solid $color-2;
+  background: var(--color-1);
+  border: 1px solid var(--color-2);
   border-radius: $radius-lg;
   transition: background 0.2s ease;
 
   &:hover {
-    background: $color-2;
+    background: var(--color-2);
   }
 }
 
@@ -192,7 +192,7 @@
   margin-bottom: calc($gap / 2);
 
   .relay-url {
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -221,7 +221,7 @@
 
 .relay-latency {
   @extend %small;
-  color: rgba($color-5, 0.5);
+  color: var(--text-alpha-light);
   font-weight: 400;
   margin-left: calc($gap / 4);
 }
@@ -241,9 +241,9 @@
 .relay-type-btn {
   padding: calc($gap / 4) calc($gap / 2);
   background: transparent;
-  border: 1px solid $color-4;
+  border: 1px solid var(--color-4);
   border-radius: $radius-sm;
-  color: $color-4;
+  color: var(--color-4);
   @extend %small;
   font-weight: 500;
   cursor: pointer;
@@ -251,13 +251,13 @@
   white-space: nowrap;
 
   &:hover {
-    background: rgba($color-4, 0.1);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 
   &.active {
-    background: $color-4;
-    border-color: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    border-color: var(--color-4);
+    color: var(--color-1);
   }
 }
 
@@ -299,12 +299,12 @@
 .media-server-info {
   margin-bottom: $gap;
   padding: calc($gap / 2);
-  border-top: 1px solid $color-2;
+  border-top: 1px solid var(--color-2);
 }
 
 // Media server info text (standalone)
 .media-server-info-text {
-  color: rgba($color-5, 0.7);
+  color: var(--text-alpha-medium);
   line-height: 1.5;
 }
 
@@ -317,7 +317,7 @@
 .media-server-label {
   display: block;
   font-weight: 500;
-  color: $color-5;
+  color: var(--color-5);
   margin-bottom: calc($gap / 4);
 }
 
@@ -325,14 +325,14 @@
 .media-server-input {
   width: 100%;
   padding: calc($gap / 2) $gap;
-  background: $color-2;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-sm;
-  color: $color-5;
+  color: var(--color-5);
 
   &:focus {
     outline: none;
-    border-color: $color-4;
+    border-color: var(--color-4);
   }
 }
 
@@ -352,21 +352,21 @@
 .protocol-btn {
   padding: calc($gap / 2) $gap;
   background: transparent;
-  border: 1px solid $color-4;
+  border: 1px solid var(--color-4);
   border-radius: $radius-sm;
-  color: $color-4;
+  color: var(--color-4);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba($color-4, 0.1);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 
   &.active {
-    background: $color-4;
-    border-color: $color-4;
-    color: $color-1;
+    background: var(--color-4);
+    border-color: var(--color-4);
+    color: var(--color-1);
   }
 }
 
@@ -382,7 +382,7 @@
 
 // Sensitive media info text (standalone)
 .sensitive-media-info-text {
-  color: rgba($color-5, 0.7);
+  color: var(--text-alpha-medium);
   line-height: 1.5;
 }
 
@@ -412,7 +412,7 @@
 }
 
 .zap-info {
-  color: rgba($color-5, 0.8);
+  color: var(--text-alpha-heavy);
   line-height: 1.6;
 }
 
@@ -423,24 +423,24 @@
 
   label {
     font-weight: 500;
-    color: $color-5;
+    color: var(--color-5);
   }
 
   .nwc-input {
     width: 100%;
     padding: calc($gap / 2);
-    background: $color-2;
-    border: 1px solid $color-2;
+    background: var(--color-2);
+    border: 1px solid var(--color-2);
     border-radius: $radius-sm;
-    color: $color-5;
+    color: var(--color-5);
 
     &::placeholder {
-      color: rgba($color-5, 0.4);
+      color: var(--text-alpha-light);
     }
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
   }
 
@@ -451,7 +451,7 @@
 
 .nwc-storage-option {
   padding-top: $gap;
-  border-top: 1px solid rgba($color-3, 0.2);
+  border-top: 1px solid color-mix(in srgb, var(--color-3) 20%, transparent);
 
   #nwc-storage-info {
     margin-top: calc($gap / 2);
@@ -459,7 +459,7 @@
     line-height: 1.5;
 
     code {
-      background: rgba($color-3, 0.2);
+      background: color-mix(in srgb, var(--color-3) 20%, transparent);
       padding: 2px 6px;
       border-radius: $radius-sm;
       font-family: monospace;
@@ -488,8 +488,8 @@
   align-items: center;
   gap: $gap;
   padding: $gap;
-  background: rgba($color-4, 0.1);
-  border: 1px solid rgba($color-4, 0.3);
+  background: color-mix(in srgb, var(--color-4) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-4) 30%, transparent);
   border-radius: $radius-sm;
 
   .wallet-icon {
@@ -505,12 +505,12 @@
 
   .wallet-connected-text {
     font-weight: 500;
-    color: $color-5;
+    color: var(--color-5);
   }
 
   .wallet-ln-address {
     @extend %small;
-    color: rgba($color-5, 0.6);
+    color: var(--text-alpha-medium);
   }
 }
 
@@ -518,7 +518,7 @@
   display: flex;
   flex-direction: column;
   gap: $gap;
-  background: rgba($color-2, 0.3);
+  background: $alpha-light;
   border-radius: $radius-sm;
 }
 
@@ -532,24 +532,24 @@
 
   label {
     font-weight: 500;
-    color: $color-5;
+    color: var(--color-5);
   }
 
   input,
   select {
     padding: calc($gap / 2);
-    background: $color-2;
-    border: 1px solid $color-2;
+    background: var(--color-2);
+    border: 1px solid var(--color-2);
     border-radius: $radius-sm;
-    color: $color-5;
+    color: var(--color-5);
 
     &::placeholder {
-      color: rgba($color-5, 0.4);
+      color: var(--text-alpha-light);
     }
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
   }
 
@@ -603,7 +603,7 @@
 .subsection-title {
   @extend %h3;
   font-weight: 600;
-  color: $color-3;
+  color: var(--color-3);
 }
 
 // ========================================
@@ -617,7 +617,7 @@
 
 .key-signer-status {
   padding: $gap;
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-sm;
 }
 
@@ -631,7 +631,7 @@
   width: 10px;
   height: 10px;
   border-radius: $radius-full;
-  background: $color-3;
+  background: var(--color-3);
 }
 
 .status-running .status-dot {
@@ -645,7 +645,7 @@
 
 .status-text {
   font-weight: 500;
-  color: $color-5;
+  color: var(--color-5);
 }
 
 .key-signer-autostart {
@@ -660,7 +660,7 @@
   justify-content: space-between;
   gap: $gap;
   padding: $gap;
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-sm;
 }
 
@@ -670,14 +670,14 @@
 
 .setting-label {
   font-weight: 500;
-  color: $color-5;
+  color: var(--color-5);
   margin-bottom: calc($gap / 4);
   display: block;
 }
 
 .setting-description {
   @extend %small;
-  color: rgba($color-5, 0.6);
+  color: var(--text-alpha-medium);
   line-height: 1.4;
 }
 
@@ -685,11 +685,11 @@
 
 .key-signer-info {
   padding: $gap;
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-sm;
 
   p {
-    color: rgba($color-5, 0.7);
+    color: var(--text-alpha-medium);
     line-height: 1.5;
   }
 }
@@ -700,7 +700,7 @@
 .cache-settings {
 
   .section-help {
-    color: rgba($color-5, 0.6);
+    color: var(--text-alpha-medium);
     margin-bottom: $gap * 2;
     line-height: 1.5;
   }
@@ -724,15 +724,15 @@
   align-items: center;
   gap: calc($gap / 2);
   padding: calc($gap / 2);
-  background: $color-2;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-sm;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    background: rgba($color-4, 0.1);
-    border-color: rgba($color-4, 0.3);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
+    border-color: color-mix(in srgb, var(--color-4) 30%, transparent);
   }
 }
 
@@ -769,23 +769,23 @@
   gap: $gap;
   margin-bottom: $gap * 2;
   padding-top: $gap;
-  border-top: 1px solid $color-2;
+  border-top: 1px solid var(--color-2);
 
   .subscription-input {
     flex: 1;
     padding: calc($gap / 2) $gap;
-    background: $color-2;
-    border: 1px solid $color-3;
+    background: var(--color-2);
+    border: 1px solid var(--color-3);
     border-radius: $radius-sm;
-    color: $color-5;
+    color: var(--color-5);
 
     &::placeholder {
-      color: rgba($color-5, 0.4);
+      color: var(--text-alpha-light);
     }
 
     &:focus {
       outline: none;
-      border-color: $color-4;
+      border-color: var(--color-4);
     }
 
     &:disabled {
@@ -803,7 +803,7 @@
 }
 
 .subscription-hashtag {
-  color: $color-4;
+  color: var(--color-4);
   font-weight: 500;
 }
 
@@ -828,8 +828,8 @@
 }
 
 .priority-zone {
-  background: $color-2;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-sm;
   overflow: hidden;
 
@@ -838,8 +838,8 @@
     align-items: center;
     gap: $gap;
     padding: $gap;
-    background: rgba($color-3, 0.3);
-    border-bottom: 1px solid $color-3;
+    background: color-mix(in srgb, var(--color-3) 30%, transparent);
+    border-bottom: 1px solid var(--color-3);
   }
 
   &__badge {
@@ -850,20 +850,20 @@
 
     // Priority 1: Pulsing (high priority)
     &--1 {
-      background: $color-6;
-      box-shadow: 0 0 8px rgba($color-6, 0.6);
+      background: var(--color-6);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
       animation: badge-pulse-preview 2s ease-in-out infinite;
     }
 
     // Priority 2: Solid (normal)
     &--2 {
-      background: $color-6;
+      background: var(--color-6);
     }
 
     // Priority 3: Hollow (low priority)
     &--3 {
       background: transparent;
-      border: 2px solid $color-6;
+      border: 2px solid var(--color-6);
     }
   }
 
@@ -873,13 +873,13 @@
 
   &__title {
     font-weight: 600;
-    color: $color-5;
+    color: var(--color-5);
     margin: 0;
   }
 
   &__description {
     @extend %small;
-    color: rgba($color-5, 0.6);
+    color: var(--text-alpha-medium);
     margin: calc($gap / 4) 0 0 0;
   }
 
@@ -892,7 +892,7 @@
     transition: background 0.2s ease;
 
     &--drag-over {
-      background: rgba($color-4, 0.1);
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
     }
   }
 }
@@ -902,8 +902,8 @@
   align-items: center;
   gap: calc($gap / 2);
   padding: calc($gap / 2) $gap;
-  background: $color-1;
-  border: 1px solid $color-3;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
   border-radius: $radius-sm;
   cursor: grab;
   user-select: none;
@@ -912,8 +912,8 @@
   min-height: 44px;
 
   &:hover {
-    border-color: $color-4;
-    background: rgba($color-4, 0.05);
+    border-color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 5%, transparent);
   }
 
   &:active {
@@ -922,40 +922,40 @@
 
   &--dragging {
     opacity: 0.5;
-    border-color: $color-4;
+    border-color: var(--color-4);
   }
 
   &--clone {
-    background: rgba($color-4, 0.2);
-    border-color: $color-4;
+    background: color-mix(in srgb, var(--color-4) 20%, transparent);
+    border-color: var(--color-4);
     box-shadow: $box-shadow;
     width: 140px;
   }
 
   &__handle {
-    color: rgba($color-5, 0.4);
+    color: var(--text-alpha-light);
     line-height: 1;
   }
 
   &__label {
-    color: $color-5;
+    color: var(--color-5);
     white-space: nowrap;
   }
 }
 
 .notification-priority-actions {
   padding-top: $gap;
-  border-top: 1px solid $color-3;
+  border-top: 1px solid var(--color-3);
 }
 
 @keyframes badge-pulse-preview {
   0%, 100% {
     transform: scale(1);
-    box-shadow: 0 0 8px rgba($color-6, 0.6);
+    box-shadow: 0 0 8px color-mix(in srgb, var(--color-6) 60%, transparent);
   }
   50% {
     transform: scale(1.2);
-    box-shadow: 0 0 12px rgba($color-6, 0.8);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--color-6) 80%, transparent);
   }
 }
 
@@ -968,8 +968,8 @@
     align-items: flex-start;
     gap: $gap;
     padding: $gap;
-    background: $color-red-bg;
-    border: 1px solid $color-red-border;
+    background: $bg-error;
+    border: 1px solid rgba($color-red, 0.5);
     border-radius: $radius-sm;
     margin-bottom: $gap * 2;
 
@@ -998,8 +998,8 @@
     justify-content: space-between;
     gap: $gap;
     padding: $gap;
-    background: $color-2;
-    border: 1px solid $color-3;
+    background: var(--color-2);
+    border: 1px solid var(--color-3);
     border-radius: $radius-sm;
 
     &-info {
@@ -1007,13 +1007,13 @@
 
       h4 {
         font-weight: 600;
-        color: $color-5;
+        color: var(--color-5);
         margin: 0 0 calc($gap / 4) 0;
       }
 
       p {
         @extend %small;
-        color: rgba($color-5, 0.6);
+        color: var(--text-alpha-medium);
         line-height: 1.4;
         margin: 0;
 
@@ -1032,13 +1032,13 @@
 // Danger Zone Modal Styles
 .danger-zone-modal {
   p {
-    color: rgba($color-5, 0.9);
+    color: var(--text-alpha-heavy);
     line-height: 1.5;
   }
 
   ul, ol {
     margin: calc($gap / 2) 0 0 $gap * 1.5;
-    color: rgba($color-5, 0.8);
+    color: var(--text-alpha-heavy);
     line-height: 1.6;
 
     li {
@@ -1048,39 +1048,39 @@
 
   &__warning {
     padding: calc($gap / 2) $gap;
-    background: $color-red-bg;
-    border: 1px solid $color-red-border;
+    background: $bg-error;
+    border: 1px solid rgba($color-red, 0.5);
     border-radius: $radius-sm;
     color: $color-red;
     margin-top: $gap;
 
     &--critical {
-      background: $color-red-bg;
-      border-color: $color-red-border;
+      background: $bg-error;
+      border-color: rgba($color-red, 0.5);
     }
   }
 
   &__recovery {
     margin-top: $gap;
     padding: $gap;
-    background: rgba($color-3, 0.3);
+    background: color-mix(in srgb, var(--color-3) 30%, transparent);
     border-radius: $radius-sm;
 
     strong {
       display: block;
-      color: $color-5;
+      color: var(--color-5);
       margin-bottom: calc($gap / 2);
     }
 
     ul {
       margin: 0 0 0 $gap;
       @extend %small;
-      color: rgba($color-5, 0.7);
+      color: var(--text-alpha-medium);
     }
   }
 
   a {
-    color: $color-4;
+    color: var(--color-4);
     text-decoration: none;
 
     &:hover {

@@ -30,13 +30,13 @@
   }
 
   .message-text {
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
   }
 
   .message-details {
     @extend %small;
-    color: $color-5;
+    color: var(--color-5);
     opacity: 0.7;
     font-family: $font-family-mono;
   }
@@ -45,11 +45,11 @@
 /* Generic quote error fallback */
 .quote-error {
   @extend .message;
-  background: $color-2;
-  border: 1px solid $color-2;
+  background: var(--color-2);
+  border: 1px solid var(--color-2);
 
   .message-content {
-    color: rgba($color-5, 0.6);
+    color: var(--text-alpha-medium);
   }
 
   .quote-error-content {
@@ -68,8 +68,8 @@
 /* Muted user placeholder */
 .quote-muted {
   @extend .message;
-  background: $color-2;
-  border: 1px solid $color-2;
+  background: var(--color-2);
+  border: 1px solid var(--color-2);
 
   .quote-muted__content {
     @extend .message-content;
@@ -94,7 +94,7 @@
   .quote-muted__show-btn {
     background: none;
     border: none;
-    color: $color-4;
+    color: var(--color-4);
     @extend %small;
     padding: 0;
     cursor: pointer;

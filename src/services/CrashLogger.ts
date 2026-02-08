@@ -11,6 +11,7 @@
 
 import { error as tauriError, info as tauriInfo, attachConsole } from '@tauri-apps/plugin-log';
 import { SystemLogger, type LogEntry } from '../components/system/SystemLogger';
+import { PlatformService } from './PlatformService';
 
 class CrashLoggerService {
   private static instance: CrashLoggerService;
@@ -31,6 +32,7 @@ class CrashLoggerService {
    */
   public async init(): Promise<void> {
     if (this.initialized) return;
+    if (!PlatformService.getInstance().isTauri) return;
 
     try {
       // Attach console to Tauri log plugin (forwards console.* to file)

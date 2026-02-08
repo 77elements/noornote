@@ -27,19 +27,19 @@
 
   // Syncing state (blue/info)
   &--syncing {
-    background-color: rgba($color-4, 0.1);
-    color: $color-4;
+    background-color: color-mix(in srgb, var(--color-4) 10%, transparent);
+    color: var(--color-4);
   }
 
   // Synced state (green/success)
   &--synced {
-    background-color: rgba($color-success, 0.1);
+    background-color: $bg-success;
     color: $color-success;
   }
 
   // Error state (red/error)
   &--error {
-    background-color: $color-red-bg;
+    background-color: $bg-error;
     color: $color-red;
   }
 }

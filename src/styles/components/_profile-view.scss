@@ -59,7 +59,7 @@
 }
 
 .profile-banner-fallback {
-  background: linear-gradient(135deg, $color-2 0%, $color-3 100%);
+  background: linear-gradient(135deg, var(--color-2) 0%, var(--color-3) 100%);
 }
 
 .profile-info {
@@ -96,7 +96,7 @@
 
 .profile-name {
   @extend %h1;
-  color: $color-5;
+  color: var(--color-5);
   margin: 0 0 calc($gap / 4) 0;
 }
 
@@ -124,7 +124,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  color: $color-5;
+  color: var(--color-5);
 }
 
 // Lightning icon (standalone)
@@ -144,7 +144,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  color: $color-5;
+  color: var(--color-5);
   font-family: monospace;
   position: relative;
 
@@ -164,8 +164,8 @@
 
 // Copy button (standalone)
 .copy-btn {
-  background: $color-2;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
@@ -177,25 +177,25 @@
   svg {
     width: 14px;
     height: 14px;
-    color: $color-5;
+    color: var(--color-5);
     transition: color 0.2s ease;
   }
 
   &:hover {
-    background: $color-3;
-    border-color: $color-4;
+    background: var(--color-3);
+    border-color: var(--color-4);
   }
 
   &.copied {
-    background: rgba($color-4, 0.2);
-    border-color: $color-4;
+    background: color-mix(in srgb, var(--color-4) 20%, transparent);
+    border-color: var(--color-4);
 
     svg {
-      color: $color-4;
+      color: var(--color-4);
     }
 
     & ~ .npub-text {
-      color: $color-4;
+      color: var(--color-4);
     }
 
     & ~ .copy-feedback {
@@ -207,8 +207,8 @@
 
 // QR button (standalone)
 .qr-btn {
-  background: $color-2;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
@@ -220,20 +220,20 @@
   svg {
     width: 14px;
     height: 14px;
-    color: $color-5;
+    color: var(--color-5);
     transition: color 0.2s ease;
   }
 
   &:hover {
-    background: $color-3;
-    border-color: $color-4;
+    background: var(--color-3);
+    border-color: var(--color-4);
   }
 }
 
 // Tribe button (analog zu .copy-btn/.qr-btn)
 .tribe-btn {
-  background: $color-2;
-  border: 1px solid $color-3;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-base;
   padding: 4px;
   cursor: pointer;
@@ -245,13 +245,13 @@
   svg {
     width: 14px;
     height: 14px;
-    color: $color-5;
+    color: var(--color-5);
     transition: color 0.2s ease;
   }
 
   &:hover {
-    background: $color-3;
-    border-color: $color-4;
+    background: var(--color-3);
+    border-color: var(--color-4);
   }
 }
 
@@ -274,7 +274,7 @@
   right: 0;
   top: -24px;
   @extend %small;
-  color: $color-4;
+  color: var(--color-4);
   font-weight: 600;
   opacity: 0;
   transform: translateY(4px);
@@ -290,7 +290,7 @@
   gap: $gap;
   margin: 0;
   padding: calc($gap / 2) 0;
-  border-top: 1px solid $color-2;
+  border-top: 1px solid var(--color-2);
 }
 
 // Stat item (standalone)
@@ -304,18 +304,18 @@
     transition: color 0.2s ease;
 
     &:hover {
-      color: $color-4;
+      color: var(--color-4);
 
       strong,
       span {
-        color: $color-4;
+        color: var(--color-4);
       }
     }
   }
 
   strong {
     @extend %h3;
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 600;
     transition: color 0.2s ease;
   }
@@ -331,7 +331,7 @@
   align-items: center;
   padding: calc($gap / 4) calc($gap / 2);
   @extend %small;
-  color: $color-3;
+  color: var(--color-3);
   font-weight: 500;
   white-space: nowrap;
 }
@@ -355,8 +355,8 @@
   top: 100%;
   left: 0;
   margin-top: calc($gap / 4);
-  background: $color-1;
-  border: 1px solid $color-3;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
   border-radius: $radius-sm;
   box-shadow: $box-shadow;
   min-width: 200px;
@@ -381,7 +381,7 @@
   padding: calc($gap / 2) $gap;
   background: transparent;
   border: none;
-  color: $color-5;
+  color: var(--color-5);
   text-align: left;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -399,7 +399,7 @@
   }
 
   &:hover {
-    background: $color-2;
+    background: var(--color-2);
   }
 
   svg {
@@ -446,11 +446,11 @@
 
 .profile-lists {
   padding: $gap 0;
-  border-top: 1px solid $color-2;
+  border-top: 1px solid var(--color-2);
 
   &__loading {
     padding: $gap;
-    color: $color-3;
+    color: var(--color-3);
     @extend %small;
     text-align: center;
   }
@@ -467,11 +467,11 @@
   }
 
   &.drop-above {
-    border-top: 2px solid $color-4;
+    border-top: 2px solid var(--color-4);
   }
 
   &.drop-below {
-    border-bottom: 2px solid $color-4;
+    border-bottom: 2px solid var(--color-4);
   }
 }
 
@@ -484,7 +484,7 @@
 
 .profile-list-title {
   font-weight: 600;
-  color: $color-5;
+  color: var(--color-5);
   margin: 0;
 }
 
@@ -497,14 +497,14 @@
   background: none;
   border: none;
   border-radius: $radius-sm;
-  color: $color-3;
+  color: var(--color-3);
   cursor: grab;
   opacity: 0;
   transition: opacity 0.15s ease, color 0.15s ease, background 0.15s ease;
 
   &:hover {
-    color: $color-4;
-    background: rgba($color-4, 0.1);
+    color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 
   &:active {
@@ -527,12 +527,12 @@
   align-items: flex-start;
   gap: calc($gap / 2);
   padding: calc($gap / 2);
-  background: $color-2;
+  background: var(--color-2);
   border-radius: $radius-md;
   transition: background 0.15s ease;
 
   &:hover {
-    background: rgba($color-4, 0.1);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 
   &__icon {
@@ -542,7 +542,7 @@
     width: 20px;
     height: 20px;
     flex-shrink: 0;
-    color: $color-4;
+    color: var(--color-4);
   }
 
   &__content {
@@ -554,7 +554,7 @@
   }
 
   &__url {
-    color: $color-4;
+    color: var(--color-4);
     @extend %small;
     text-decoration: none;
     word-break: break-all;
@@ -566,7 +566,7 @@
 
   &__desc {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -575,7 +575,7 @@
   &__id {
     @extend %small;
     font-family: monospace;
-    color: $color-3;
+    color: var(--color-3);
   }
 }
 
@@ -584,16 +584,16 @@
   margin-top: calc($gap / 2);
   padding: calc($gap / 4) calc($gap / 2);
   background: none;
-  border: 1px solid $color-2;
+  border: 1px solid var(--color-2);
   border-radius: $radius-sm;
-  color: $color-4;
+  color: var(--color-4);
   @extend %small;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 
   &:hover {
-    border-color: $color-4;
-    background: rgba($color-4, 0.1);
+    border-color: var(--color-4);
+    background: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 }
 
@@ -627,7 +627,7 @@
 
   p {
     @extend %h4;
-    color: $color-3;
+    color: var(--color-3);
     margin: 0;
     line-height: 1.6;
   }
@@ -643,8 +643,8 @@
 .profile-loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid $color-2;
-  border-top-color: $color-4;
+  border: 3px solid var(--color-2);
+  border-top-color: var(--color-4);
   border-radius: $radius-full;
   animation: spin 1s linear infinite;
   margin-bottom: $gap;
@@ -669,7 +669,7 @@
   align-items: center;
   gap: calc($gap / 4);
   @extend %small;
-  color: $color-3;
+  color: var(--color-3);
   cursor: pointer;
   margin-left: calc($gap / 2);
 
@@ -677,7 +677,7 @@
     width: 14px;
     height: 14px;
     cursor: pointer;
-    accent-color: $color-4;
+    accent-color: var(--color-4);
   }
 
   span {
@@ -685,6 +685,6 @@
   }
 
   &:hover {
-    color: $color-5;
+    color: var(--color-5);
   }
 }

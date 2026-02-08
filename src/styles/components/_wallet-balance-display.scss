@@ -23,11 +23,11 @@
 }
 
 .wallet-balance-content {
-  color: $color-5;
+  color: var(--color-5);
 }
 
 .wallet-balance-amount {
-  color: $color-5;
+  color: var(--color-5);
 }
 
 .wallet-balance-content .sats-icon {
@@ -40,13 +40,13 @@
 }
 
 .wallet-balance-exchange {
-  color: $color-5;
+  color: var(--color-5);
   opacity: 0.6;
   margin: 0 calc($gap / 4);
 }
 
 .wallet-balance-fiat-amount {
-  color: $color-5;
+  color: var(--color-5);
 }
 
 .wallet-balance-toggle {
@@ -67,6 +67,6 @@
   .eye-icon {
     width: 18px;
     height: 18px;
-    color: $color-5;
+    color: var(--color-5);
   }
 }

@@ -11,7 +11,7 @@
 .sidebar {
   @include card-base;
   overflow-y: auto;
-  background-color: $color-2;
+  background-color: var(--color-2);
 
   // Scrollbar styling - MUST be last to override any conflicting styles
   @include custom-scrollbar;
@@ -86,8 +86,8 @@
     left: 0;
     right: 0;
     margin-bottom: calc($gap / 2);
-    background: $color-2;
-    border: 1px solid $color-2;
+    background: var(--color-2);
+    border: 1px solid var(--color-2);
     border-radius: $radius-md;
     box-shadow: $box-shadow;
     overflow: hidden;
@@ -106,7 +106,7 @@
     padding: calc($gap * 0.75) $gap;
     background: none;
     border: none;
-    color: $color-5;
+    color: var(--color-5);
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
@@ -120,12 +120,12 @@
     }
 
     &:hover {
-      background: rgba($color-4, 0.1);
-      color: $color-4;
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      color: var(--color-4);
     }
 
     &:not(:last-child) {
-      border-bottom: 1px solid $color-2;
+      border-bottom: 1px solid var(--color-2);
     }
   }
 }
