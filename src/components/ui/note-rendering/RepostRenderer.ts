@@ -63,7 +63,7 @@ export class RepostRenderer {
       </span>
       <span class="user-mention" data-pubkey="${reposterPubkey}">
         <a href="/profile/${reposterNpub}" class="mention-link" data-profile-pubkey="${reposterPubkey}">
-          <img src="${reposterPicture}" alt="" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span> reposted
+          <img src="${reposterPicture}" alt="" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
     `;
 
     // Set initial username (may be npub if not cached)
