@@ -45,3 +45,16 @@
   --text-alpha-heavy: rgba(30, 30, 30, 0.8);
   --surface-tint: rgba(0, 0, 0, 0.06);
 }
+
+[data-theme="dark-symbiote"] {
+  --color-1: #0c1520;
+  --color-2: #1e303a;
+  --color-3: #bc3b3b;
+  --color-4: #b13d4c;
+  --color-5: #ebdedb;
+  --color-6: #8e9599;
+  --text-alpha-light: rgba(235, 222, 219, 0.4);
+  --text-alpha-medium: rgba(235, 222, 219, 0.6);
+  --text-alpha-heavy: rgba(235, 222, 219, 0.8);
+  --surface-tint: rgba(255, 255, 255, 0.06);
+}
