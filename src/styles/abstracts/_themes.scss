@@ -32,3 +32,16 @@
   --text-alpha-heavy: rgba(204, 204, 204, 0.8);
   --surface-tint: rgba(255, 255, 255, 0.06);
 }
+
+[data-theme="soft-lilac"] {
+  --color-1: #faf8ff;
+  --color-2: #e8ddf2;
+  --color-3: #d1548e;
+  --color-4: #8757ad;
+  --color-5: #1e1e1e;
+  --color-6: #c08040;
+  --text-alpha-light: rgba(30, 30, 30, 0.4);
+  --text-alpha-medium: rgba(30, 30, 30, 0.6);
+  --text-alpha-heavy: rgba(30, 30, 30, 0.8);
+  --surface-tint: rgba(0, 0, 0, 0.06);
+}
