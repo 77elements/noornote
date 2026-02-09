@@ -94,11 +94,7 @@ jobs:
         run: ls -lh release/
 
       - name: Upload to Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          TAG="${GITHUB_REF#refs/tags/}"
-          for file in release/*; do
-            echo "Uploading $file..."
-            gh release upload "$TAG" "$file" --repo "$GITHUB_REPOSITORY" --clobber
-          done
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          draft: false
