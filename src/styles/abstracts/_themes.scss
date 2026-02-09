@@ -81,3 +81,18 @@
   --color-logo-start: #ff2aaa;
   --color-logo-end: #50ff30;
 }
+
+[data-theme="wake-up-neo"] {
+  --color-1: #050505;
+  --color-2: #0d1a0d;
+  --color-3: #008f11;
+  --color-4: #00ff41;
+  --color-5: #88cc88;
+  --color-6: #c8a000;
+  --text-alpha-light: rgba(136, 204, 136, 0.4);
+  --text-alpha-medium: rgba(136, 204, 136, 0.6);
+  --text-alpha-heavy: rgba(136, 204, 136, 0.8);
+  --surface-tint: rgba(0, 255, 65, 0.04);
+  --color-logo-start: #00ff41;
+  --color-logo-end: #e0c020;
+}
