@@ -1322,7 +1322,14 @@ export class MainLayout {
     const sidebarMount = this.element.querySelector('.sidebar-font-size-mount');
     if (sidebarMount) {
       sidebarMount.innerHTML = '';
-      sidebarMount.appendChild(this.sidebarThemeSwitcher.getElement());
+      const themeRow = document.createElement('div');
+      themeRow.className = 'sidebar-theme-row';
+      const themeLabel = document.createElement('span');
+      themeLabel.className = 'sidebar-theme-label';
+      themeLabel.textContent = 'Themes';
+      themeRow.appendChild(themeLabel);
+      themeRow.appendChild(this.sidebarThemeSwitcher.getElement());
+      sidebarMount.appendChild(themeRow);
       sidebarMount.appendChild(this.sidebarFontSizeSwitcher.getElement());
     }
 

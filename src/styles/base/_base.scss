@@ -25,6 +25,10 @@
   // Surface tint (change per theme: lighten on dark, darken on light)
   --surface-tint: #{$surface-tint};
 
+  // Logo gradient (change per theme, derived from color-3/color-6 with more saturation)
+  --color-logo-start: #{$color-logo-start};
+  --color-logo-end: #{$color-logo-end};
+
   // Runtime-only CSS variables (for inline styles in TypeScript)
   --color-white: #{$color-white};
   --alpha-medium: #{$alpha-medium};
