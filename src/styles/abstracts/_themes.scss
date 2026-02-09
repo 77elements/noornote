@@ -18,6 +18,8 @@
   --text-alpha-medium: rgba(0, 0, 0, 0.6);
   --text-alpha-heavy: rgba(0, 0, 0, 0.8);
   --surface-tint: rgba(0, 0, 0, 0.08);
+  --color-logo-start: #f02020;
+  --color-logo-end: #ffa800;
 }
 
 [data-theme="code-bunker"] {
@@ -31,6 +33,8 @@
   --text-alpha-medium: rgba(204, 204, 204, 0.6);
   --text-alpha-heavy: rgba(204, 204, 204, 0.8);
   --surface-tint: rgba(255, 255, 255, 0.06);
+  --color-logo-start: #e8875a;
+  --color-logo-end: #f0f080;
 }
 
 [data-theme="soft-lilac"] {
@@ -44,6 +48,8 @@
   --text-alpha-medium: rgba(30, 30, 30, 0.6);
   --text-alpha-heavy: rgba(30, 30, 30, 0.8);
   --surface-tint: rgba(0, 0, 0, 0.06);
+  --color-logo-start: #e84090;
+  --color-logo-end: #d89030;
 }
 
 [data-theme="dark-symbiote"] {
@@ -57,4 +63,6 @@
   --text-alpha-medium: rgba(235, 222, 219, 0.6);
   --text-alpha-heavy: rgba(235, 222, 219, 0.8);
   --surface-tint: rgba(255, 255, 255, 0.06);
+  --color-logo-start: #d83030;
+  --color-logo-end: #a0bcc4;
 }
