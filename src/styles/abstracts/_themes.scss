@@ -19,3 +19,16 @@
   --text-alpha-heavy: rgba(0, 0, 0, 0.8);
   --surface-tint: rgba(0, 0, 0, 0.08);
 }
+
+[data-theme="code-bunker"] {
+  --color-1: #1e1e1e;
+  --color-2: #252526;
+  --color-3: #ce9178;
+  --color-4: #9cdcfe;
+  --color-5: #cccccc;
+  --color-6: #dcdcaa;
+  --text-alpha-light: rgba(204, 204, 204, 0.4);
+  --text-alpha-medium: rgba(204, 204, 204, 0.6);
+  --text-alpha-heavy: rgba(204, 204, 204, 0.8);
+  --surface-tint: rgba(255, 255, 255, 0.06);
+}
