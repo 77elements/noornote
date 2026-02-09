@@ -33,6 +33,8 @@
 - **Image reposts** - Share images with automatic source attribution
 - **Notification priorities** - Drag & drop to customize notification order
 - **Rich DM content** - Links, media, mentions, and quoted notes in direct messages
+- **7 color themes** - Deep Purple, Bright Superman, Code Bunker, Soft Lilac, Dark Symbiote, Neon Harley, Wake up Neo
+- **Font size controls** - Adjustable text size with persistent preference
 - **Layout modes** - Phone mode and customizable layout options
 - **Bookmark folders on profile** - Mount folders to share them publicly
 - **Mutual change alerts** - Get notified when someone stops following back
