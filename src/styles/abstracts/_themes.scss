@@ -66,3 +66,18 @@
   --color-logo-start: #d83030;
   --color-logo-end: #a0bcc4;
 }
+
+[data-theme="neon-harley"] {
+  --color-1: #0a0a1a;
+  --color-2: #151530;
+  --color-3: #0ea0c8;
+  --color-4: #ed3a96;
+  --color-5: #ffffff;
+  --color-6: #39ff14;
+  --text-alpha-light: rgba(255, 255, 255, 0.4);
+  --text-alpha-medium: rgba(255, 255, 255, 0.6);
+  --text-alpha-heavy: rgba(255, 255, 255, 0.8);
+  --surface-tint: rgba(255, 255, 255, 0.06);
+  --color-logo-start: #ff2aaa;
+  --color-logo-end: #50ff30;
+}

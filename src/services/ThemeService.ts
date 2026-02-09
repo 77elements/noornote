@@ -4,7 +4,7 @@
  * Sets data-theme attribute on <html> for CSS custom property overrides.
  */
 
-export type ThemeId = 'default' | 'bright-superman' | 'code-bunker' | 'soft-lilac' | 'dark-symbiote';
+export type ThemeId = 'default' | 'bright-superman' | 'code-bunker' | 'soft-lilac' | 'dark-symbiote' | 'neon-harley';
 
 export interface ThemeOption {
   id: ThemeId;
@@ -17,6 +17,7 @@ export const THEMES: ThemeOption[] = [
   { id: 'code-bunker', label: 'Code Bunker' },
   { id: 'soft-lilac', label: 'Soft Lilac' },
   { id: 'dark-symbiote', label: 'Dark Symbiote' },
+  { id: 'neon-harley', label: 'Neon Harley' },
 ];
 
 const STORAGE_KEY = 'noornote_theme';
