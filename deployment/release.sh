@@ -30,15 +30,29 @@ if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     exit 1
 fi
 
+# Check that release notes file exists
+NOTES_FILE="docs/release-notes-${NEW_VERSION}.md"
+if [[ ! -f "$NOTES_FILE" ]]; then
+    echo -e "${RED}Error: Release notes not found at ${NOTES_FILE}${NC}"
+    echo -e "${RED}Generate them first with /release skill (step 1)${NC}"
+    exit 1
+fi
+
 echo ""
+echo -e "${YELLOW}Release notes (${NOTES_FILE}):${NC}"
+echo "----------------------------------------"
+cat "$NOTES_FILE"
+echo "----------------------------------------"
+echo ""
+
 echo -e "${YELLOW}This will:${NC}"
 echo "  1. Update version in package.json, tauri.conf.json, Cargo.toml"
 echo "  2. Commit version bump"
 echo "  3. Merge development → main"
 echo "  4. Create tag v${NEW_VERSION}"
 echo "  5. Push everything to GitHub"
-echo "  6. GitHub Actions builds .deb and .AppImage"
-echo "  7. Release appears at github.com/77elements/noornote/releases"
+echo "  6. Create GitHub Release with release notes"
+echo "  7. GitHub Actions builds and uploads artifacts"
 echo ""
 read -p "Continue? (y/n): " CONFIRM
 
@@ -48,7 +62,7 @@ if [[ "$CONFIRM" != "y" ]]; then
 fi
 
 echo ""
-echo -e "${GREEN}[1/6] Updating version to ${NEW_VERSION}...${NC}"
+echo -e "${GREEN}[1/7] Updating version to ${NEW_VERSION}...${NC}"
 
 # Update package.json
 sed -i '' "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"/" package.json
@@ -59,22 +73,25 @@ sed -i '' "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"
 # Update Cargo.toml
 sed -i '' "s/^version = \"${CURRENT_VERSION}\"/version = \"${NEW_VERSION}\"/" src-tauri/Cargo.toml
 
-echo -e "${GREEN}[2/6] Committing version bump...${NC}"
+echo -e "${GREEN}[2/7] Committing version bump...${NC}"
 git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
 git commit -m "Bump version to ${NEW_VERSION}"
 
-echo -e "${GREEN}[3/6] Merging development → main...${NC}"
+echo -e "${GREEN}[3/7] Merging development → main...${NC}"
 git checkout main
 git merge development
 
-echo -e "${GREEN}[4/6] Creating tag v${NEW_VERSION}...${NC}"
+echo -e "${GREEN}[4/7] Creating tag v${NEW_VERSION}...${NC}"
 git tag "v${NEW_VERSION}"
 
-echo -e "${GREEN}[5/6] Pushing to GitHub...${NC}"
+echo -e "${GREEN}[5/7] Pushing to GitHub...${NC}"
 git push origin main
 git push origin "v${NEW_VERSION}"
 
-echo -e "${GREEN}[6/6] Switching back to development...${NC}"
+echo -e "${GREEN}[6/7] Creating GitHub Release...${NC}"
+gh release create "v${NEW_VERSION}" --title "v${NEW_VERSION}" --notes-file "$NOTES_FILE"
+
+echo -e "${GREEN}[7/7] Switching back to development...${NC}"
 git checkout development
 
 echo ""
