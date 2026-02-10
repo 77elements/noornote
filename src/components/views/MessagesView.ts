@@ -82,6 +82,13 @@ export class MessagesView extends View {
       })
     );
 
+    // Listen for DM unsupported (bunker login — no NIP-44)
+    this.subscriptionIds.push(
+      this.eventBus.on('dm:unsupported', () => {
+        this.showUnsupportedNotice();
+      })
+    );
+
     // Call loadInitialData AFTER event listeners are setup
     this.loadInitialData();
 
@@ -524,6 +531,28 @@ export class MessagesView extends View {
     document.body.appendChild(menu);
 
     return menu;
+  }
+
+  /**
+   * Show notice when DMs are not available (bunker login)
+   */
+  private showUnsupportedNotice(): void {
+    this.isFetchingDMs = false;
+    this.progressBar?.reset();
+
+    this.container.innerHTML = `
+      <div class="messages-view__header">
+        <h1>Messages</h1>
+      </div>
+      <div class="messages-view__empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        <p>Direct messages are not available with Bunker URL login</p>
+        <p class="text-alpha-medium">Your remote signer does not support NIP-44 encryption required for private messages. Use a browser extension or NoorSigner for full DM access.</p>
+      </div>
+    `;
   }
 
   /**

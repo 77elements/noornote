@@ -24,6 +24,7 @@ import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModa
 import { isEasyMode } from '../helpers/ListSyncMode';
 import { extractDisplayName } from '../helpers/extractDisplayName';
 import { renderUserMention } from '../helpers/UserMentionHelper';
+import { escapeHtml } from '../helpers/escapeHtml';
 
 // Import list functions and adapters
 import {
@@ -196,7 +197,7 @@ export class AutoSyncService {
     // Start sync if already logged in and in Easy Mode
     // Use delayed check because user:login may have fired before this service initialized
     setTimeout(() => {
-      if (this.authService.getCurrentUser() && isEasyMode() && !this.startupSyncTimeout && !this.periodicSyncInterval) {
+      if (this.authService.getCurrentUser() && isEasyMode() && !this.authService.isBunkerAuth() && !this.startupSyncTimeout && !this.periodicSyncInterval) {
         this.systemLogger.info('ListAutoSync', 'Delayed init: user is logged in, scheduling startup sync');
         this.scheduleStartupSync();
       }
@@ -207,6 +208,7 @@ export class AutoSyncService {
    * Schedule startup sync (10 seconds after login)
    */
   private scheduleStartupSync(): void {
+    if (this.authService.isBunkerAuth()) return;
     this.cancelStartupSync();
     this.systemLogger.info('ListAutoSync', 'Startup sync scheduled in 10 seconds');
 
@@ -719,7 +721,7 @@ export class AutoSyncService {
             const noteService = NoteService.getInstance();
             const event = await noteService.getNote(eventId);
             const content = event?.content?.slice(0, 40) || eventId.slice(0, 12);
-            return `<span class="sync-item-thread">🔇 Thread: ${this.escapeHtml(content)}...</span>`;
+            return `<span class="sync-item-thread">🔇 Thread: ${escapeHtml(content)}...</span>`;
           } else {
             // Legacy format (no prefix) - treat as pubkey
             pubkey = encoded;
@@ -742,14 +744,6 @@ export class AutoSyncService {
     }
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 }
 
 // Internal type for sync results

@@ -137,9 +137,9 @@ async function tryDecryptWithFallback(
 /**
  * Get NIP-46 manager from AuthService
  */
-function getNip46Manager(): any {
+function getNip46Manager(): import('../services/managers/Nip46BaseManager').Nip46BaseManager {
   const authService = AuthService.getInstance();
-  const nip46Manager = (authService as any).nip46Manager;
+  const nip46Manager = authService.nip46Manager;
   if (!nip46Manager?.isAvailable()) {
     throw new Error('NIP-46 remote signer not available');
   }
@@ -194,7 +194,9 @@ export async function encryptContent(plaintext: string, pubkey: string): Promise
  * Decrypt content from private items (NIP-44 with NIP-04 fallback)
  */
 export async function decryptContent(ciphertext: string, senderPubkey: string): Promise<string | null> {
-  const authMethod = AuthService.getInstance().getAuthMethod();
+  const authService = AuthService.getInstance();
+  if (authService.isBunkerAuth()) return null;
+  const authMethod = authService.getAuthMethod();
 
   try {
     if (authMethod === 'key-signer') {

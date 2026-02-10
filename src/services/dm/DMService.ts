@@ -103,6 +103,12 @@ export class DMService {
         return;
       }
 
+      // Bunker URL login cannot do NIP-44 — DMs not available
+      if (this.authService.isBunkerAuth()) {
+        this.eventBus.emit('dm:unsupported');
+        return;
+      }
+
       // Idempotency check - same user already running
       if (this.userPubkey === currentUser.pubkey && this.subscriptionId) {
         this.systemLogger.info('DMService', 'Already started for this user');
@@ -446,16 +452,7 @@ export class DMService {
       if (replyTo) message.replyTo = replyTo;
       if (subject) message.subject = subject;
 
-      // Store message
-      await this.dmStore.saveMessage(message);
-
-      // Emit events - batch during historical fetch, immediate for live
-      if (this.isFetchingHistorical) {
-        this.pendingBadgeUpdate = true;
-      } else {
-        this.eventBus.emit('dm:new-message', { message, conversationWith });
-        this.eventBus.emit('dm:badge-update');
-      }
+      await this.storeAndEmit(message, conversationWith);
     } catch (error) {
       this.systemLogger.error('DMService', 'Error processing gift wrap:', error);
     }
@@ -516,18 +513,24 @@ export class DMService {
         format: 'legacy'
       };
 
-      // Store message
-      await this.dmStore.saveMessage(message);
-
-      // Emit events - batch during historical fetch, immediate for live
-      if (this.isFetchingHistorical) {
-        this.pendingBadgeUpdate = true;
-      } else {
-        this.eventBus.emit('dm:new-message', { message, conversationWith });
-        this.eventBus.emit('dm:badge-update');
-      }
+      await this.storeAndEmit(message, conversationWith);
     } catch (error) {
       this.systemLogger.error('DMService', 'Error processing legacy DM:', error);
+    }
+  }
+
+  /**
+   * Store a message and emit appropriate events.
+   * Batches events during historical fetch, emits immediately for live messages.
+   */
+  private async storeAndEmit(message: DMMessage, conversationWith: string): Promise<void> {
+    await this.dmStore.saveMessage(message);
+
+    if (this.isFetchingHistorical) {
+      this.pendingBadgeUpdate = true;
+    } else {
+      this.eventBus.emit('dm:new-message', { message, conversationWith });
+      this.eventBus.emit('dm:badge-update');
     }
   }
 
@@ -751,20 +754,11 @@ export class DMService {
    * Combines: configured inbox relays + aggregator relays + nostr1.com relays
    */
   private async getMyInboxRelays(): Promise<string[]> {
-    const relays = new Set<string>();
-
-    // Add configured inbox relays if available
-    const configRelays = this.relayConfig.getInboxRelays();
-    configRelays.forEach(r => relays.add(r));
-
-    // Add aggregator relays (popular public relays)
-    const aggregatorRelays = this.relayConfig.getAggregatorRelays();
-    aggregatorRelays.forEach(r => relays.add(r));
-
-    // Add nostr1.com relays as fallback
-    this.FALLBACK_INBOX_RELAYS.forEach(r => relays.add(r));
-
-    return Array.from(relays);
+    return [...new Set([
+      ...this.relayConfig.getInboxRelays(),
+      ...this.relayConfig.getAggregatorRelays(),
+      ...this.FALLBACK_INBOX_RELAYS
+    ])];
   }
 
   /**
