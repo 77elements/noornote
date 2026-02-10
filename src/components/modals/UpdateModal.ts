@@ -1,6 +1,7 @@
 /**
  * UpdateModal
  * Shows available update with release notes and download/skip/later actions
+ * Tauri desktop only (guarded by UpdateCheckService.checkOnStartup)
  */
 
 import { ModalService } from '../../services/ModalService';
@@ -9,6 +10,44 @@ import { UpdateCheckService, type UpdateInfo } from '../../services/UpdateCheckS
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 declare const __APP_VERSION__: string;
+
+/**
+ * Render simple markdown to HTML.
+ * Supports: lines starting with "# " / "## " → headings,
+ * lines starting with "- " → list items, blank lines → spacing.
+ */
+function renderMarkdown(text: string): string {
+  const lines = text.split('\n');
+  let html = '';
+  let inList = false;
+
+  function closeList(): void {
+    if (inList) { html += '</ul>'; inList = false; }
+  }
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('# ')) {
+      closeList();
+      html += `<h3 style="margin: 0.75rem 0 0.25rem; font-size: 14px;">${escapeHtml(trimmed.slice(2))}</h3>`;
+    } else if (trimmed.startsWith('## ')) {
+      closeList();
+      html += `<h4 style="margin: 0.75rem 0 0.25rem; font-size: 13px; opacity: 0.8;">${escapeHtml(trimmed.slice(3))}</h4>`;
+    } else if (trimmed.startsWith('- ')) {
+      if (!inList) { html += '<ul style="margin: 0.25rem 0; padding-left: 1.25rem;">'; inList = true; }
+      html += `<li style="font-size: 13px; line-height: 1.5;">${escapeHtml(trimmed.slice(2))}</li>`;
+    } else if (trimmed === '') {
+      closeList();
+    } else {
+      closeList();
+      html += `<p style="margin: 0.25rem 0; font-size: 13px; line-height: 1.5;">${escapeHtml(trimmed)}</p>`;
+    }
+  }
+
+  closeList();
+  return html;
+}
 
 export class UpdateModal {
   private modalService: ModalService;
@@ -51,8 +90,8 @@ export class UpdateModal {
         </p>
 
         ${update.releaseNotes ? `
-          <div style="max-height: 200px; overflow-y: auto; padding: 0.75rem; border-radius: 6px; background: var(--surface-tint); margin-bottom: 1.5rem; white-space: pre-wrap; font-size: 13px; line-height: 1.5;">
-${escapeHtml(update.releaseNotes)}
+          <div style="max-height: 50vh; overflow-y: auto; padding: 0.75rem; border-radius: 6px; background: var(--surface-tint); margin-bottom: 1.5rem;">
+            ${renderMarkdown(update.releaseNotes)}
           </div>
         ` : ''}
 
@@ -81,7 +120,7 @@ ${escapeHtml(update.releaseNotes)}
           window.open(update.downloadUrl, '_blank', 'noopener,noreferrer');
         }
       } catch {
-        // fallback
+        // Best-effort: modal closes regardless
       }
       this.modalService.hide();
     });
