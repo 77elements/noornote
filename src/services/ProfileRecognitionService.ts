@@ -349,6 +349,7 @@ export class ProfileRecognitionService {
    * Save encounters to relays via ProfileRecognitionOrchestrator
    */
   private async saveToRelays(): Promise<void> {
+    if (this.authService.isBunkerAuth()) return;
     try {
       const encounters = this.getEncountersFromStorage();
       await this.orchestrator.publishToRelays({
