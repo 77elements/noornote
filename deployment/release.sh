@@ -30,18 +30,26 @@ if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     exit 1
 fi
 
-# Check that release notes file exists
-NOTES_FILE="docs/release-notes-${NEW_VERSION}.md"
-if [[ ! -f "$NOTES_FILE" ]]; then
-    echo -e "${RED}Error: Release notes not found at ${NOTES_FILE}${NC}"
+# Check that release notes files exist
+NOTES_DETAILED="docs/release-notes-${NEW_VERSION}.md"
+NOTES_COMPACT="docs/release-notes-${NEW_VERSION}-compact.md"
+
+if [[ ! -f "$NOTES_DETAILED" ]]; then
+    echo -e "${RED}Error: Detailed release notes not found at ${NOTES_DETAILED}${NC}"
+    echo -e "${RED}Generate them first with /release skill (step 1)${NC}"
+    exit 1
+fi
+
+if [[ ! -f "$NOTES_COMPACT" ]]; then
+    echo -e "${RED}Error: Compact release notes not found at ${NOTES_COMPACT}${NC}"
     echo -e "${RED}Generate them first with /release skill (step 1)${NC}"
     exit 1
 fi
 
 echo ""
-echo -e "${YELLOW}Release notes (${NOTES_FILE}):${NC}"
+echo -e "${YELLOW}Compact release notes for GitHub / Update Modal:${NC}"
 echo "----------------------------------------"
-cat "$NOTES_FILE"
+cat "$NOTES_COMPACT"
 echo "----------------------------------------"
 echo ""
 
@@ -89,7 +97,7 @@ git push origin main
 git push origin "v${NEW_VERSION}"
 
 echo -e "${GREEN}[6/7] Creating GitHub Release...${NC}"
-gh release create "v${NEW_VERSION}" --title "v${NEW_VERSION}" --notes-file "$NOTES_FILE"
+gh release create "v${NEW_VERSION}" --title "v${NEW_VERSION}" --notes-file "$NOTES_COMPACT"
 
 echo -e "${GREEN}[7/7] Switching back to development...${NC}"
 git checkout development
