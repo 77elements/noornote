@@ -397,6 +397,10 @@
   padding: $gap;
 }
 
+.video-note-title {
+  margin-bottom: calc($gap / 2);
+}
+
 .unsupported-kind {
   display: flex;
   flex-direction: column;

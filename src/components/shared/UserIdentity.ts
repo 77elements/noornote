@@ -100,8 +100,8 @@ export class UserIdentity {
       info.className = 'user-identity__info';
 
       if (this.config.showUsername) {
-        const username = document.createElement('span');
-        username.className = 'user-identity__username';
+        const username = document.createElement('h2');
+        username.className = 'user-identity__username h4';
         username.textContent = '';
         info.appendChild(username);
       }
