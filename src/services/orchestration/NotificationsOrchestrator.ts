@@ -168,6 +168,11 @@ export class NotificationsOrchestrator extends Orchestrator {
       this.handleHashtagNotification(data);
     });
 
+    // Listen for user mute changes (refresh filter when user is muted/unmuted)
+    this.eventBus.on('mute:updated', () => {
+      this.refreshMutedUsers();
+    });
+
     // Listen for thread mute changes (Hell Thread protection)
     this.eventBus.on('mute:thread:updated', () => {
       this.refreshMutedUsers();
