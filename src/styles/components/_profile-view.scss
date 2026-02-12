@@ -342,12 +342,12 @@
 .mute-dropdown-container {
   position: relative;
   display: inline-block;
-}
 
-.mute-btn-dropdown {
-  display: flex;
-  align-items: center;
-  gap: calc($gap / 4);
+  .mute-btn-dropdown {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 4);
+  }
 }
 
 .mute-dropdown-menu {

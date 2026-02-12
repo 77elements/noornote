@@ -925,7 +925,7 @@ export class ProfileFollowManager {
     if (!isPrivateFollowsEnabled()) {
       return `
         <button class="btn follow-btn" data-action="follow">
-          Follow 🫂
+          Follow
         </button>
       `;
     }
@@ -933,7 +933,7 @@ export class ProfileFollowManager {
     return `
       <div class="follow-dropdown-container">
         <button class="btn follow-btn-dropdown" id="follow-btn-dropdown">
-          Follow 🫂
+          Follow
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
