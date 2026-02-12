@@ -114,7 +114,7 @@ export class QuotedNoteRenderer {
         }
 
         // Route unsupported kinds to UnsupportedKindRenderer
-        const supportedKinds = [1, 6, 1068, 6969, 9735, 30023];
+        const supportedKinds = [1, 6, 21, 22, 1068, 6969, 9735, 30023];
         if (result.event.kind !== undefined && !supportedKinds.includes(result.event.kind)) {
           const { UnsupportedKindRenderer } = await import('../components/ui/note-rendering/UnsupportedKindRenderer');
           const { NoteProcessor } = await import('../components/ui/note-processing/NoteProcessor');
@@ -124,7 +124,7 @@ export class QuotedNoteRenderer {
           return;
         }
 
-        const quoteBox = this.createQuoteBox(result.event, enableCollapsible)
+        const quoteBox = await this.createQuoteBox(result.event, enableCollapsible);
         skeleton.replaceWith(quoteBox);
       } else {
         const errorElement = this.createQuoteError(result.error);
@@ -140,7 +140,7 @@ export class QuotedNoteRenderer {
    * Create quote box element from event
    * Uses same structure as NoteStructureBuilder for consistent styling
    */
-  private createQuoteBox(event: NostrEvent, enableCollapsible: boolean): HTMLElement {
+  private async createQuoteBox(event: NostrEvent, enableCollapsible: boolean): Promise<HTMLElement> {
     const quoteBox = document.createElement('div');
     quoteBox.className = 'quote-box';
 
@@ -148,6 +148,12 @@ export class QuotedNoteRenderer {
     const processedContent = event.tags
       ? this.contentProcessor.processContentWithTags(event.content, event.tags)
       : this.contentProcessor.processContent(event.content);
+
+    // For video events (Kind 21/22), extract video from imeta tags and prepend title
+    if (event.kind === 21 || event.kind === 22) {
+      const { VideoNoteProcessor } = await import('../components/ui/note-processing/VideoNoteProcessor');
+      VideoNoteProcessor.prependVideoContent(processedContent, event.tags);
+    }
 
     // Create header (small size for quotes)
     const eventId = event.id;
@@ -260,10 +266,10 @@ export class QuotedNoteRenderer {
     // Add click handler for "Show temporarily" button
     const showBtn = placeholder.querySelector('.quote-muted__show-btn');
     if (showBtn) {
-      showBtn.addEventListener('click', (e) => {
+      showBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         // Replace placeholder with actual quote box
-        const quoteBox = this.createQuoteBox(event, true);
+        const quoteBox = await this.createQuoteBox(event, true);
         placeholder.replaceWith(quoteBox);
       });
     }

@@ -159,6 +159,12 @@ export class SingleNoteView extends View {
 
     this.container.innerHTML = '';
 
+    // Accessibility: Page heading for screen readers
+    const pageHeading = document.createElement('h1');
+    pageHeading.className = 'visually-hidden';
+    pageHeading.textContent = 'Single Post';
+    this.container.appendChild(pageHeading);
+
     const isUserLoggedIn = this.authService.getCurrentUser() !== null;
 
     const noteElement = NoteUI.createNoteElement(event, {

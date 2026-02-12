@@ -11,6 +11,7 @@ import { RepostProcessor } from './RepostProcessor';
 import { PollProcessor } from './PollProcessor';
 import { ArticleProcessor } from './ArticleProcessor';
 import { ZapReceiptProcessor } from './ZapReceiptProcessor';
+import { VideoNoteProcessor } from './VideoNoteProcessor';
 
 export class NoteProcessor {
   /**
@@ -25,6 +26,9 @@ export class NoteProcessor {
           return TextNoteProcessor.process(event);
         case 6:
           return RepostProcessor.process(event);
+        case 21:
+        case 22:
+          return VideoNoteProcessor.process(event);
         case 1068:
           return PollProcessor.process(event);
         case 9735:

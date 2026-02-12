@@ -29,8 +29,8 @@
 }
 
 .user-identity__username {
-  @extend %h4;
-  font-weight: 600;
+  font-weight: normal;
+  margin-bottom: 0;
   color: var(--color-5);
   overflow: hidden;
   text-overflow: ellipsis;
