@@ -594,6 +594,13 @@ export class AuthService {
       this.isReadOnly = sessionData.isReadOnly || false;
       this.nip46SubType = sessionData.nip46SubType || null;
 
+      // Legacy guard: old sessions (≤0.4.7) lack nip46SubType — clear and re-login
+      if (this.authMethod === 'nip46' && !this.nip46SubType) {
+        console.warn('[AuthService] Legacy NIP-46 session without subType — clearing');
+        this.clearSession();
+        return;
+      }
+
       // Restore signer connections BEFORE emitting login event
       if (this.authMethod === 'nip46' && this.nip46SubType === 'bunker') {
         if (!this.bunkerManager) this.bunkerManager = new BunkerSignerManager();
