@@ -106,8 +106,14 @@ export class App {
     const browserPath = window.location.pathname;
     const intendedURL = lastURL || (browserPath !== '/' ? browserPath : null);
 
-    // Wait for auth initialization before navigating to preserve current route on reload
-    await this.authService.waitForInitialization();
+    // Wait for auth initialization with safety timeout (prevents infinite loading screen)
+    await Promise.race([
+      this.authService.waitForInitialization(),
+      new Promise<void>(resolve => setTimeout(() => {
+        console.warn('[App] Auth initialization timed out after 10s — continuing without session');
+        resolve();
+      }, 10000)),
+    ]);
 
     const isLoggedIn = this.authService.hasValidSession();
 
