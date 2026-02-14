@@ -83,13 +83,17 @@ export class App {
     const intendedURL = lastURL || (browserPath !== '/' ? browserPath : null);
 
     // Wait for auth initialization with safety timeout
+    let authTimedOut = false;
     await Promise.race([
       this.authService.waitForInitialization(),
       new Promise<void>(resolve => setTimeout(() => {
-        console.warn('[App] Auth initialization timed out after 10s — continuing without session');
+        authTimedOut = true;
         resolve();
       }, 10000)),
     ]);
+    if (authTimedOut) {
+      console.warn('[App] Auth initialization timed out after 10s — continuing without session');
+    }
 
     const isLoggedIn = this.authService.hasValidSession();
     const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);

@@ -75,53 +75,13 @@ export class BunkerSignerManager extends Nip46BaseManager {
         this.signer.userPubkey = bunkerPubkey;
       }
 
-      // Set NIP-04 for the initial connect handshake (don't lock yet —
+      // Set NIP-04 for the initial connect handshake (don't lock yet --
       // NDK's parseEvent needs to detect the response encryption format)
       this.signer.rpc.encryptionType = 'nip04';
 
-      const localUser = await this.signer.localSigner.user();
-      await this.signer.rpc.subscribe({
-        kinds: [24133],
-        '#p': [localUser.pubkey],
-      });
+      await this.subscribeAndConnect(30000, 'Bunker connect');
 
-      // Send connect request and wait for response
-      const pubkey = await new Promise<string>((resolve, reject) => {
-        const timeoutMs = 30000;
-        const timeout = setTimeout(() => {
-          reject(new Error(`Bunker connection timeout after ${timeoutMs / 1000}s`));
-        }, timeoutMs);
-
-        const responseHandler = (response: any) => {
-          nip46Log.info('Response received:', {
-            id: response?.id,
-            result: response?.result,
-            error: response?.error,
-          });
-
-          if (response?.result === secret || response?.result === 'ack') {
-            clearTimeout(timeout);
-            nip46Log.info('Connect confirmed');
-            resolve(bunkerPubkey!);
-          } else if (response?.error) {
-            clearTimeout(timeout);
-            reject(new Error(response.error));
-          }
-        };
-
-        this.signer!.rpc.on('response', responseHandler);
-
-        this.signer!.rpc.sendRequest(
-          bunkerPubkey!,
-          'connect',
-          [bunkerPubkey!, secret!],
-          24133
-        ).catch((err: any) => {
-          nip46Log.error('sendRequest error:', err);
-        });
-      });
-
-      const npub = hexToNpub(pubkey);
+      const npub = hexToNpub(bunkerPubkey!);
       if (!npub) {
         return { success: false, error: 'Failed to convert pubkey to npub' };
       }
@@ -138,17 +98,12 @@ export class BunkerSignerManager extends Nip46BaseManager {
       localStorage.setItem(NIP46_STORAGE_KEY, signerPayload);
 
       nip46Log.info('Authentication successful');
-      return { success: true, npub, pubkey };
+      return { success: true, npub, pubkey: bunkerPubkey! };
     } catch (error: unknown) {
       this.signer = null;
-
-      let errorMessage = 'Bunker authentication failed';
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      }
-
-      nip46Log.error('Authentication failed:', errorMessage);
-      return { success: false, error: errorMessage };
+      const msg = error instanceof Error ? error.message : 'Bunker authentication failed';
+      nip46Log.error('Authentication failed:', msg);
+      return { success: false, error: msg };
     }
   }
 }

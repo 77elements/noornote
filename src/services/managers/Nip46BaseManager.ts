@@ -6,6 +6,7 @@
  * - Event signing via remote signer
  * - NIP-44/NIP-04 encrypt/decrypt delegation
  * - RPC relay health checks and reconnection
+ * - Circuit breaker (prevents timeout floods when relay is down)
  * - encryptionType lock (prevents NDK auto-flip to nip44)
  * - Session persistence and restore
  */
@@ -16,6 +17,9 @@ export const NIP46_STORAGE_KEY = 'noornote_nip46_payload';
 
 // NDK relay status constants (mirrors NDKRelayStatus enum)
 const RELAY_STATUS_CONNECTED = 5;
+
+// Circuit breaker: reject immediately instead of waiting for timeouts
+const CIRCUIT_COOLDOWN_MS = 30_000;
 
 // Debug logger for NIP-46
 export const nip46Log = {
@@ -39,6 +43,10 @@ export interface NostrConnectSession {
 
 export abstract class Nip46BaseManager {
   protected signer: NDKNip46Signer | null = null;
+
+  // Circuit breaker state
+  private circuitOpen = false;
+  private circuitOpenSince = 0;
 
   /**
    * Lock encryptionType to 'nip04' using Object.defineProperty.
@@ -90,12 +98,44 @@ export abstract class Nip46BaseManager {
     });
   }
 
+  // ── Circuit breaker ────────────────────────────────────────────────
+
   /**
-   * Ensure the RPC relay pool is connected before signing/encrypting.
-   * Checks actual relay WebSocket status (not just cached pool stats)
-   * and forces reconnection + re-subscription if needed.
+   * Check circuit breaker before any RPC operation.
+   * If relay was recently unreachable, reject immediately instead of
+   * waiting 15-30s for another timeout.
    */
-  /** Check if any relay in the pool is connected */
+  private checkCircuitBreaker(): void {
+    if (!this.circuitOpen) return;
+
+    const elapsed = Date.now() - this.circuitOpenSince;
+    if (elapsed < CIRCUIT_COOLDOWN_MS) {
+      const remaining = Math.ceil((CIRCUIT_COOLDOWN_MS - elapsed) / 1000);
+      throw new Error(`Remote signer unreachable — retrying in ${remaining}s`);
+    }
+
+    // Cooldown elapsed — allow retry
+    nip46Log.info('Circuit breaker cooldown elapsed, allowing retry');
+    this.circuitOpen = false;
+  }
+
+  private openCircuit(): void {
+    if (!this.circuitOpen) {
+      nip46Log.warn(`Remote signer unreachable — suppressing further requests for ${CIRCUIT_COOLDOWN_MS / 1000}s`);
+    }
+    this.circuitOpen = true;
+    this.circuitOpenSince = Date.now();
+  }
+
+  private closeCircuit(): void {
+    if (this.circuitOpen) {
+      nip46Log.info('Remote signer reconnected — circuit breaker reset');
+    }
+    this.circuitOpen = false;
+  }
+
+  // ── Relay health ───────────────────────────────────────────────────
+
   private hasConnectedRelay(pool: any): boolean {
     for (const relay of pool.relays.values()) {
       if (relay.status >= RELAY_STATUS_CONNECTED) return true;
@@ -110,7 +150,10 @@ export abstract class Nip46BaseManager {
     const pool = rpc.pool;
     if (!pool) return;
 
-    if (this.hasConnectedRelay(pool)) return;
+    if (this.hasConnectedRelay(pool)) {
+      this.closeCircuit();
+      return;
+    }
 
     nip46Log.warn('RPC relay disconnected, reconnecting...');
     try {
@@ -127,8 +170,9 @@ export abstract class Nip46BaseManager {
       });
 
       nip46Log.info('RPC relay reconnected and re-subscribed');
+      this.closeCircuit();
     } catch (err) {
-      nip46Log.error('RPC relay reconnection failed:', err);
+      this.openCircuit();
       throw new Error('Remote signer relay is not reachable');
     }
   }
@@ -140,12 +184,13 @@ export abstract class Nip46BaseManager {
   private withTimeout<T>(promise: Promise<T>, ms: number, operation: string): Promise<T> {
     return new Promise<T>((resolve, reject) => {
       const timeout = setTimeout(() => {
+        this.openCircuit();
         nip46Log.error(`${operation} TIMEOUT after ${ms / 1000}s`);
         reject(new Error(`Remote signer ${operation} timeout after ${ms / 1000}s`));
       }, ms);
 
       promise.then(
-        (result) => { clearTimeout(timeout); resolve(result); },
+        (result) => { clearTimeout(timeout); this.closeCircuit(); resolve(result); },
         (err) => { clearTimeout(timeout); reject(err); }
       );
     });
@@ -153,41 +198,48 @@ export abstract class Nip46BaseManager {
 
   // ── Signer operations ──────────────────────────────────────────────
 
-  public async signEvent(event: any): Promise<string> {
-    if (!this.signer) {
-      throw new Error('NIP-46 signer not available');
-    }
-    nip46Log.info('signEvent called');
+  /**
+   * Ensure the signer is available, circuit breaker allows requests,
+   * and at least one RPC relay is connected. Returns the verified signer.
+   */
+  private async guardRpcReady(): Promise<NDKNip46Signer> {
+    if (!this.signer) throw new Error('NIP-46 signer not available');
+    this.checkCircuitBreaker();
     await this.ensureRpcRelayConnected();
-    return this.withTimeout(this.signer.sign(event), 30000, 'sign_event');
+    return this.signer;
+  }
+
+  private async encryptOrDecrypt(
+    pubkey: string,
+    text: string,
+    method: 'encrypt' | 'decrypt',
+    scheme: 'nip04' | 'nip44',
+  ): Promise<string> {
+    const signer = await this.guardRpcReady();
+    const user = new NDKUser({ pubkey });
+    const operation = `${scheme}_${method}`;
+    return this.withTimeout(signer[method](user, text, scheme), 15000, operation);
+  }
+
+  public async signEvent(event: any): Promise<string> {
+    const signer = await this.guardRpcReady();
+    return this.withTimeout(signer.sign(event), 30000, 'sign_event');
   }
 
   public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    if (!this.signer) throw new Error('NIP-46 signer not available');
-    await this.ensureRpcRelayConnected();
-    const recipient = new NDKUser({ pubkey: recipientPubkey });
-    return this.withTimeout(this.signer.encrypt(recipient, plaintext, 'nip44'), 15000, 'nip44_encrypt');
+    return this.encryptOrDecrypt(recipientPubkey, plaintext, 'encrypt', 'nip44');
   }
 
   public async nip44Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
-    if (!this.signer) throw new Error('NIP-46 signer not available');
-    await this.ensureRpcRelayConnected();
-    const sender = new NDKUser({ pubkey: senderPubkey });
-    return this.withTimeout(this.signer.decrypt(sender, ciphertext, 'nip44'), 15000, 'nip44_decrypt');
+    return this.encryptOrDecrypt(senderPubkey, ciphertext, 'decrypt', 'nip44');
   }
 
   public async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
-    if (!this.signer) throw new Error('NIP-46 signer not available');
-    await this.ensureRpcRelayConnected();
-    const recipient = new NDKUser({ pubkey: recipientPubkey });
-    return this.withTimeout(this.signer.encrypt(recipient, plaintext, 'nip04'), 15000, 'nip04_encrypt');
+    return this.encryptOrDecrypt(recipientPubkey, plaintext, 'encrypt', 'nip04');
   }
 
   public async nip04Decrypt(ciphertext: string, senderPubkey: string): Promise<string> {
-    if (!this.signer) throw new Error('NIP-46 signer not available');
-    await this.ensureRpcRelayConnected();
-    const sender = new NDKUser({ pubkey: senderPubkey });
-    return this.withTimeout(this.signer.decrypt(sender, ciphertext, 'nip04'), 15000, 'nip04_decrypt');
+    return this.encryptOrDecrypt(senderPubkey, ciphertext, 'decrypt', 'nip04');
   }
 
   // ── State ──────────────────────────────────────────────────────────
@@ -198,6 +250,59 @@ export abstract class Nip46BaseManager {
 
   public hasStoredSession(): boolean {
     return localStorage.getItem(NIP46_STORAGE_KEY) !== null;
+  }
+
+  // ── Connect handshake ─────────────────────────────────────────────
+
+  /**
+   * Subscribe to RPC responses, send a 'connect' request, and wait
+   * for the remote signer to confirm (result === secret or 'ack').
+   * Shared by restoreSession() and BunkerSignerManager.authenticate().
+   */
+  protected async subscribeAndConnect(timeoutMs: number, label: string): Promise<void> {
+    const signer = this.signer!;
+    const secret = signer.secret;
+    const bunkerPubkey = signer.bunkerPubkey!;
+
+    const localUser = await signer.localSigner.user();
+    await signer.rpc.subscribe({
+      kinds: [24133],
+      '#p': [localUser.pubkey],
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        nip46Log.error(`${label} TIMEOUT after ${timeoutMs / 1000}s`);
+        reject(new Error(`${label} timeout after ${timeoutMs / 1000}s`));
+      }, timeoutMs);
+
+      signer.rpc.on('response', (response: any) => {
+        nip46Log.info(`${label} response:`, {
+          result: response?.result,
+          error: response?.error,
+        });
+
+        if (response?.result === secret || response?.result === 'ack') {
+          clearTimeout(timeout);
+          nip46Log.info(`${label} confirmed`);
+          resolve();
+        } else if (response?.error) {
+          clearTimeout(timeout);
+          reject(new Error(response.error));
+        } else {
+          nip46Log.warn(`${label} unmatched response:`, response?.result);
+        }
+      });
+
+      signer.rpc.sendRequest(
+        bunkerPubkey,
+        'connect',
+        [bunkerPubkey, secret!],
+        24133
+      ).catch((err: any) => {
+        nip46Log.error(`${label} sendRequest error:`, err);
+      });
+    });
   }
 
   // ── Session restore ────────────────────────────────────────────────
@@ -212,9 +317,7 @@ export abstract class Nip46BaseManager {
 
       this.signer = await NDKNip46Signer.fromPayload(storedPayload, ndk);
 
-      const secret = this.signer.secret;
       const bunkerPubkey = this.signer.bunkerPubkey;
-
       nip46Log.info('Restoring session, bunkerPubkey:', bunkerPubkey?.slice(0, 12) + '...');
 
       if (!this.signer.userPubkey && bunkerPubkey) {
@@ -224,48 +327,7 @@ export abstract class Nip46BaseManager {
       this.lockEncryptionType(this.signer.rpc);
       this.activateRpcPool(this.signer.rpc);
 
-      const localUser = await this.signer.localSigner.user();
-      await this.signer.rpc.subscribe({
-        kinds: [24133],
-        '#p': [localUser.pubkey],
-      });
-
-      await new Promise<void>((resolve, reject) => {
-        const timeoutMs = 15000;
-        const timeout = setTimeout(() => {
-          nip46Log.error('Session restore TIMEOUT after 15s');
-          reject(new Error('Session restore timeout'));
-        }, timeoutMs);
-
-        const responseHandler = (response: any) => {
-          nip46Log.info('Restore response:', {
-            result: response?.result,
-            error: response?.error,
-          });
-
-          if (response?.result === secret || response?.result === 'ack') {
-            clearTimeout(timeout);
-            nip46Log.info('Session restore confirmed');
-            resolve();
-          } else if (response?.error) {
-            clearTimeout(timeout);
-            reject(new Error(response.error));
-          } else {
-            nip46Log.warn('Unmatched restore response:', response?.result);
-          }
-        };
-
-        this.signer!.rpc.on('response', responseHandler);
-
-        this.signer!.rpc.sendRequest(
-          bunkerPubkey!,
-          'connect',
-          [bunkerPubkey!, secret!],
-          24133
-        ).catch((err: any) => {
-          nip46Log.error('Restore sendRequest error:', err);
-        });
-      });
+      await this.subscribeAndConnect(15000, 'Session restore');
 
       nip46Log.info('Session restored successfully');
       return true;

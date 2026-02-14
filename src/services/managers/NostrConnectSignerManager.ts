@@ -2,12 +2,22 @@
  * NostrConnectSignerManager
  * Handles nostrconnect:// QR-based login via NIP-46.
  * Isolated from Bunker URL flow — each has its own signer lifecycle.
+ *
+ * Uses 3 parallel relays for redundancy (matches Jumble's strategy).
+ * NDK's RPC pool publishes to all and subscribes on all — if one relay
+ * goes down, communication continues via the others.
  */
 
 import { NDKNip46Signer } from '@nostr-dev-kit/ndk';
 import { hexToNpub } from '../../helpers/nip19';
-import { PlatformService } from '../PlatformService';
 import { Nip46BaseManager, NIP46_STORAGE_KEY, nip46Log, type Nip46AuthResult, type NostrConnectSession } from './Nip46BaseManager';
+
+/** NIP-46 relays for the nostrconnect flow (parallel multi-relay) */
+const NIP46_RELAYS = [
+  'wss://relay.nsec.app',
+  'wss://relay.primal.net',
+  'wss://relay.damus.io',
+];
 
 export class NostrConnectSignerManager extends Nip46BaseManager {
 
@@ -20,20 +30,22 @@ export class NostrConnectSignerManager extends Nip46BaseManager {
     const { NostrTransport } = await import('../transport/NostrTransport');
     const ndk = NostrTransport.getInstance().getNDK();
 
-    // relay.nsec.app works in browsers but causes kCFErrorDomainCFNetwork 303 in Tauri's WKWebView
-    const relay = PlatformService.getInstance().isTauri
-      ? 'wss://relay.primal.net'
-      : 'wss://relay.nsec.app';
+    nip46Log.info('Starting nostrconnect flow, relays:', NIP46_RELAYS.join(', '));
 
-    nip46Log.info('Starting nostrconnect flow, relay:', relay);
-
-    const signer = NDKNip46Signer.nostrconnect(ndk, relay, undefined, {
+    // Create signer with all relays (RPC pool connects to all)
+    const signer = new NDKNip46Signer(ndk, undefined, undefined, NIP46_RELAYS, {
       name: 'NoorNote',
       url: 'https://noornote.app'
     });
     this.signer = signer;
 
-    const uri = signer.nostrConnectUri!;
+    // NDK only puts the first relay in the URI — add the rest
+    // so the remote signer (Amber) subscribes on all relays too
+    let uri = signer.nostrConnectUri!;
+    for (let i = 1; i < NIP46_RELAYS.length; i++) {
+      uri += `&relay=${encodeURIComponent(NIP46_RELAYS[i]!)}`;
+    }
+
     let cancelled = false;
     let connected = false;
     let cancelReject: (() => void) | null = null;
