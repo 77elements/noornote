@@ -1,0 +1,50 @@
+/**
+ * MoveDropdown Component
+ * Floating dropdown for "Move to..." actions on draggable items
+ */
+
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+
+.move-dropdown {
+  &__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 4px;
+    line-height: 1;
+    flex-shrink: 0;
+
+    svg {
+      display: block;
+    }
+  }
+
+  &__menu {
+    position: fixed;
+    z-index: 1001;
+    min-width: 160px;
+    max-height: 250px;
+    overflow-y: auto;
+    background: var(--color-2);
+    border: 1px solid var(--color-3);
+    border-radius: $radius-base;
+    padding: calc($gap / 4) 0;
+    box-shadow: $box-shadow;
+  }
+
+  &__item {
+    padding: calc($gap / 2) calc($gap * 0.75);
+    color: var(--color-5);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 13px;
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-2) 90%, white);
+    }
+  }
+}
