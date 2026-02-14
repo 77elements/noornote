@@ -1,21 +1,15 @@
 /**
  * Main Application Class
- * Coordinates all application modules and manages the application lifecycle
+ * Coordinates all application modules and manages the application lifecycle.
+ * GLUE ONLY -- no business logic. All logic lives in services.
  */
 
 import { MainLayout } from './components/layout/MainLayout';
 import { Router } from './services/Router';
 import { AppState } from './services/AppState';
-import { SingleNoteView } from './components/views/SingleNoteView';
-import { ProfileView } from './components/views/ProfileView';
-import { ArticleView } from './components/views/ArticleView';
-import { SettingsView } from './components/views/SettingsView';
-import { AboutView } from './components/views/AboutView';
-import type { TimelineView } from './components/views/TimelineView';
 import { AuthService } from './services/AuthService';
 import { SystemLogger } from './components/system/SystemLogger';
 import { EventBus } from './services/EventBus';
-import { ViewLifecycleManager } from './services/ViewLifecycleManager';
 import { KeySignerClient } from './services/KeySignerClient';
 import { ModalService } from './services/ModalService';
 import { PlatformService } from './services/PlatformService';
@@ -24,27 +18,28 @@ import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { FontSizeService } from './services/FontSizeService';
 import { ThemeService } from './services/ThemeService';
+import { ViewMountingService } from './services/ViewMountingService';
+import { PostLoginService } from './services/PostLoginService';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
-import { AutoSyncService } from './services/AutoSyncService';
+
+/** Maps viewName to the AppState key that stores the route parameter */
+const VIEW_PARAM_STATE_KEY: Record<string, string> = {
+  'single-note': 'currentNoteId',
+  'profile': 'currentProfileNpub',
+  'article': 'currentArticleNaddr',
+};
 
 export class App {
   private appElement: HTMLElement | null = null;
 
-  // Layout Component
-  private mainLayout: MainLayout | null = null;
-
-  // Core Services
   private router: Router;
   private appState: AppState;
   private authService: AuthService;
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
-  private viewLifecycleManager: ViewLifecycleManager;
-
-  // View Components (reused instances)
-  private timelineUI: TimelineView | null = null;
-  private profileView: ProfileView | null = null;
+  private viewMountingService: ViewMountingService;
+  private postLoginService: PostLoginService;
 
   constructor() {
     this.appElement = document.getElementById('app');
@@ -52,13 +47,13 @@ export class App {
       throw new Error('App element not found');
     }
 
-    // Initialize Core Services (Singletons)
     this.router = Router.getInstance();
     this.appState = AppState.getInstance();
     this.authService = AuthService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.viewLifecycleManager = ViewLifecycleManager.getInstance();
+    this.viewMountingService = ViewMountingService.getInstance();
+    this.postLoginService = PostLoginService.getInstance();
   }
 
   async initialize(): Promise<void> {
@@ -66,22 +61,12 @@ export class App {
     this.setupUI();
     this.setupEventListeners();
 
-    // Initialize OfflineOverlay early so it can listen for runtime offline events
     OfflineOverlay.getInstance();
-
-    // Initialize CollapsibleManager to listen for post truncation setting changes
     CollapsibleManager.init();
-
-    // Initialize FontSizeService (applies persisted font-size class on <html>)
     FontSizeService.getInstance();
-
-    // Initialize ThemeService (applies persisted data-theme attribute on <html>)
     ThemeService.getInstance();
 
-    // Check internet connectivity before proceeding
-    const connectivityService = ConnectivityService.getInstance();
-    const isOnline = await connectivityService.checkConnectivity();
-
+    const isOnline = await ConnectivityService.getInstance().checkConnectivity();
     if (!isOnline) {
       OfflineOverlay.getInstance().show();
       return;
@@ -89,16 +74,7 @@ export class App {
 
     // Check for app updates (Tauri desktop only, non-blocking)
     if (PlatformService.getInstance().isTauri) {
-      this.runSilent(async () => {
-        const { UpdateCheckService } = await import('./services/UpdateCheckService');
-        const service = UpdateCheckService.getInstance();
-        await service.checkOnStartup();
-
-        // DEV: expose for console testing → window.__updateService.simulateUpdate()
-        if (import.meta.env.DEV) {
-          (window as any).__updateService = service;
-        }
-      });
+      this.checkForUpdates();
     }
 
     // Capture intended URL: sessionStorage (reload) or browser URL (fresh external link)
@@ -106,7 +82,7 @@ export class App {
     const browserPath = window.location.pathname;
     const intendedURL = lastURL || (browserPath !== '/' ? browserPath : null);
 
-    // Wait for auth initialization with safety timeout (prevents infinite loading screen)
+    // Wait for auth initialization with safety timeout
     await Promise.race([
       this.authService.waitForInitialization(),
       new Promise<void>(resolve => setTimeout(() => {
@@ -116,43 +92,34 @@ export class App {
     ]);
 
     const isLoggedIn = this.authService.hasValidSession();
-
-    // Determine target path: preserve intended URL for public routes (profile, note, article)
-    // Router handles auth redirect to /welcome or /login for protected routes
-    let targetPath: string;
-    if (!isLoggedIn) {
-      targetPath = intendedURL || '/';
-    } else {
-      // Check if user needs profile setup (fresh account or interrupted wizard)
-      const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
-      const storage = PerAccountLocalStorage.getInstance();
-      const currentUser = this.authService.getCurrentUser();
-      const needsSetup = currentUser
-        ? storage.getForPubkey<boolean>(StorageKeys.NEEDS_PROFILE_SETUP, currentUser.pubkey, false)
-        : false;
-      if (needsSetup) {
-        targetPath = '/setup';
-      } else if (intendedURL && intendedURL !== '/login' && intendedURL !== '/welcome') {
-        targetPath = intendedURL;
-      } else {
-        targetPath = '/';
-      }
-    }
-
+    const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
     this.router.navigate(targetPath);
 
     // If user is already logged in from session restore, start services explicitly.
-    // user:login may have been emitted before setupEventListeners() registered the handler
-    // (loadSession runs synchronously for nsec/extension auth during module import).
+    // user:login may have been emitted before setupEventListeners() registered the handler.
     if (isLoggedIn) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
-        this.handleUserLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
+        this.postLoginService.handleLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
       }
     }
 
-    // Set focus to enable keyboard shortcuts immediately after app load
     this.setInitialFocus();
+  }
+
+  private async resolveTargetPath(isLoggedIn: boolean, intendedURL: string | null): Promise<string> {
+    if (!isLoggedIn) return intendedURL || '/';
+
+    const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
+    const storage = PerAccountLocalStorage.getInstance();
+    const currentUser = this.authService.getCurrentUser();
+    const needsSetup = currentUser
+      ? storage.getForPubkey<boolean>(StorageKeys.NEEDS_PROFILE_SETUP, currentUser.pubkey, false)
+      : false;
+
+    if (needsSetup) return '/setup';
+    if (intendedURL && intendedURL !== '/login' && intendedURL !== '/welcome') return intendedURL;
+    return '/';
   }
 
   private async setInitialFocus(): Promise<void> {
@@ -168,35 +135,49 @@ export class App {
     }
   }
 
-  /**
-   * Helper to register a route with consistent state/mount pattern
-   */
+  private async checkForUpdates(): Promise<void> {
+    try {
+      const { UpdateCheckService } = await import('./services/UpdateCheckService');
+      const service = UpdateCheckService.getInstance();
+      await service.checkOnStartup();
+
+      if (import.meta.env.DEV) {
+        (window as any).__updateService = service;
+      }
+    } catch (error) {
+      console.error('[App] Update check failed:', error);
+    }
+  }
+
+  // ─── Route Registration ──────────────────────────────────────────────
+
   private registerRoute(
     path: string,
     viewName: string,
     viewType: string,
     shortcut: string,
     requiresAuth: boolean = false,
-    stateExtras?: Record<string, unknown>,
     paramHandler?: (params: Record<string, string | undefined>) => string | undefined
   ): void {
     this.router.register(
       path,
       (params) => {
-        const state: Record<string, unknown> = { currentView: viewName, ...stateExtras };
+        const state: Record<string, unknown> = { currentView: viewName };
 
-        // Handle parameterized routes
         let param: string | undefined;
         if (paramHandler) {
           param = paramHandler(params);
-          if (viewName === 'single-note') state.currentNoteId = param;
-          else if (viewName === 'profile') state.currentProfileNpub = param;
-          else if (viewName === 'article') state.currentArticleNaddr = param;
-          else if (viewName === 'conversation') state.params = { pubkey: param };
+
+          const stateKey = VIEW_PARAM_STATE_KEY[viewName];
+          if (stateKey) {
+            state[stateKey] = param;
+          } else if (viewName === 'conversation') {
+            state.params = { pubkey: param };
+          }
         }
 
         this.appState.setState('view', state);
-        this.mountPrimaryContent(viewType, param);
+        this.viewMountingService.mountView(viewType, param);
       },
       shortcut,
       requiresAuth
@@ -213,11 +194,11 @@ export class App {
     this.registerRoute('/articles', 'articles', 'articles', 'atv');
 
     // Parameterized routes (public)
-    this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false, {},
+    this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false,
       (params) => params.noteId ?? '');
-    this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false, {},
+    this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false,
       (params) => params.npub ?? '');
-    this.registerRoute('/article/:naddr', 'article', 'article', 'av', false, {},
+    this.registerRoute('/article/:naddr', 'article', 'article', 'av', false,
       (params) => params.naddr);
 
     // Authenticated routes
@@ -229,185 +210,37 @@ export class App {
     this.registerRoute('/tribes', 'tribes', 'tribes', 'tribes-view', true);
 
     // Parameterized routes (authenticated)
-    this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true, {},
+    this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true,
       (params) => params.pubkey);
   }
 
-  private async mountPrimaryContent(viewType: string, param?: string): Promise<void> {
-    const primaryContent = document.querySelector('.primary-content');
-    if (!primaryContent) return;
-
-    // Unmount existing views via ViewLifecycleManager
-    if (this.timelineUI && this.viewLifecycleManager.isViewMounted(this.timelineUI, primaryContent)) {
-      this.viewLifecycleManager.onViewUnmount(this.timelineUI);
-    }
-
-    if (this.profileView && this.viewLifecycleManager.isViewMounted(this.profileView, primaryContent)) {
-      this.viewLifecycleManager.onViewUnmount(this.profileView);
-    }
-
-    this.systemLogger.clearPageLogs();
-
-    primaryContent.innerHTML = '';
-
-    switch (viewType) {
-      case 'welcome':
-        if (this.mainLayout) {
-          this.mainLayout.showWelcomeScreen();
-        }
-        break;
-
-      case 'create-account':
-        if (this.mainLayout) {
-          this.mainLayout.showCreateAccountScreen();
-        }
-        break;
-
-      case 'not-logged-in':
-        if (this.mainLayout) {
-          this.mainLayout.showLoginScreen();
-        }
-        break;
-
-      case 'profile-setup':
-        if (this.mainLayout) {
-          this.mainLayout.showAccountSetupWizard();
-        }
-        break;
-
-      case 'timeline': {
-        if (!this.timelineUI) {
-          const { TimelineView } = await import('./components/views/TimelineView');
-          this.timelineUI = new TimelineView();
-        }
-        primaryContent.appendChild(this.timelineUI.getElement());
-        this.viewLifecycleManager.onViewMount(this.timelineUI);
-        break;
-      }
-
-      case 'single-note':
-        if (param) {
-          const snv = new SingleNoteView(param);
-          primaryContent.appendChild(snv.getElement());
-        }
-        break;
-
-      case 'profile':
-        if (param) {
-          if (!this.profileView || this.profileView.getNpub() !== param) {
-            this.profileView = new ProfileView(param);
-          }
-          primaryContent.appendChild(this.profileView.getElement());
-          this.viewLifecycleManager.onViewMount(this.profileView);
-        }
-        break;
-
-      case 'article':
-        if (param) {
-          const articleView = new ArticleView(param);
-          primaryContent.appendChild(articleView.getElement());
-        }
-        break;
-
-      case 'notifications': {
-        const { NotificationsView } = await import('./components/views/NotificationsView');
-        const notificationsView = new NotificationsView();
-        primaryContent.appendChild(notificationsView.getElement());
-        break;
-      }
-
-      case 'settings': {
-        const settingsView = new SettingsView();
-        primaryContent.appendChild(settingsView.getElement());
-        break;
-      }
-
-      case 'about': {
-        const aboutView = new AboutView();
-        primaryContent.appendChild(aboutView.getElement());
-        break;
-      }
-
-      case 'write-article': {
-        const { ArticleEditorView } = await import('./components/views/ArticleEditorView');
-        const articleEditor = new ArticleEditorView();
-        primaryContent.appendChild(articleEditor.getElement());
-        break;
-      }
-
-      case 'articles': {
-        const { ArticleTimelineView } = await import('./components/views/ArticleTimelineView');
-        const articleTimeline = new ArticleTimelineView();
-        primaryContent.appendChild(articleTimeline.getElement());
-        break;
-      }
-
-      case 'tribes': {
-        const { TribeView } = await import('./lists/tribes');
-        const tribeView = new TribeView();
-        primaryContent.appendChild(tribeView.getElement());
-        break;
-      }
-
-      case 'mute-list': {
-        const { MuteListView } = await import('./lists/mutes');
-        const muteListView = new MuteListView();
-        primaryContent.appendChild(await muteListView.render());
-        break;
-      }
-
-      case 'messages': {
-        const { MessagesView } = await import('./components/views/MessagesView');
-        const messagesView = new MessagesView();
-        primaryContent.appendChild(messagesView.getElement());
-        break;
-      }
-
-      case 'conversation':
-        if (param) {
-          const { ConversationView } = await import('./components/views/ConversationView');
-          const conversationView = new ConversationView(param);
-          primaryContent.appendChild(conversationView.getElement());
-        }
-        break;
-    }
-  }
+  // ─── UI & Event Listeners ────────────────────────────────────────────
 
   private setupUI(): void {
     if (!this.appElement) return;
 
-    this.mainLayout = new MainLayout();
-    this.appElement.appendChild(this.mainLayout.getElement());
+    const mainLayout = new MainLayout();
+    this.appElement.appendChild(mainLayout.getElement());
+    this.viewMountingService.setMainLayout(mainLayout);
   }
 
   private setupEventListeners(): void {
-    window.addEventListener('resize', this.handleResize.bind(this));
     document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
     this.setupExternalLinkHandler();
     this.setupHashtagClickHandler();
     this.setupDeepLinkHandler();
 
-    this.eventBus.on('user:login', this.handleUserLogin.bind(this));
+    this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
+      this.postLoginService.handleLogin(data);
+    });
 
     this.eventBus.on('relays:updated', () => {
-      if (this.timelineUI) {
-        this.timelineUI.destroy();
-        this.timelineUI = null;
-        this.mountPrimaryContent('timeline');
-      }
+      this.viewMountingService.destroyTimelineCache();
+      this.viewMountingService.mountView('timeline');
     });
 
     this.eventBus.on('user:logout', () => {
-      // Destroy cached views
-      if (this.timelineUI) {
-        this.timelineUI.destroy();
-        this.timelineUI = null;
-      }
-      if (this.profileView) {
-        this.profileView.destroy();
-        this.profileView = null;
-      }
-      // Clear primary content immediately before navigation
+      this.viewMountingService.destroyAllCaches();
       const primaryContent = document.querySelector('.primary-content');
       if (primaryContent) {
         primaryContent.innerHTML = '';
@@ -415,13 +248,10 @@ export class App {
       this.router.navigate('/login');
     });
 
-    // AuthGuard emits this when user tries protected action without login
-    this.eventBus.on('auth:login-required', (data: { action: string }) => {
-      this.showLoginRequiredModal(data.action);
-    });
-
     this.setupTauriCloseHandler();
   }
+
+  // ─── Platform Handlers (thin glue) ───────────────────────────────────
 
   private async setupDeepLinkHandler(): Promise<void> {
     if (!PlatformService.getInstance().isTauri) return;
@@ -430,21 +260,14 @@ export class App {
       const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
 
       await onOpenUrl((urls) => {
-        if (urls.length === 0) return;
-
         const url = urls[0];
         if (!url) return;
 
         try {
-          let nip19String: string = url;
-          if (url.startsWith('nostr:')) {
-            nip19String = url.slice(6);
-          }
-
+          const nip19String = url.startsWith('nostr:') ? url.slice(6) : url;
           const decoded = decodeNip19(nip19String);
           const type = decoded.type;
 
-          // Profile types: npub, nprofile
           if (type === 'npub' || type === 'nprofile') {
             const npub = type === 'npub'
               ? nip19String
@@ -455,7 +278,6 @@ export class App {
             return;
           }
 
-          // Note types: note, nevent
           if (type === 'note' || type === 'nevent') {
             const noteId = type === 'note'
               ? nip19String
@@ -464,7 +286,6 @@ export class App {
             return;
           }
 
-          // Article type: naddr
           if (type === 'naddr') {
             this.router.navigate(`/article/${nip19String}`);
           }
@@ -486,7 +307,6 @@ export class App {
 
       await appWindow.onCloseRequested(async (event) => {
         const authMethod = this.authService.getAuthMethod();
-
         if (authMethod !== 'key-signer') return;
 
         event.preventDefault();
@@ -499,8 +319,7 @@ export class App {
           return;
         }
 
-        const modalService = ModalService.getInstance();
-        const shouldStopDaemon = await modalService.confirm({
+        const shouldStopDaemon = await ModalService.getInstance().confirm({
           title: 'Stop NoorSigner Daemon?',
           message: 'The NoorSigner daemon is currently running. Do you want to stop it when closing the app?',
           confirmText: 'Stop Daemon',
@@ -523,13 +342,9 @@ export class App {
     }
   }
 
-  // Intentionally empty - CSS handles responsive layout
-  private handleResize(): void {}
-
   private async handleVisibilityChange(): Promise<void> {
     if (document.visibilityState !== 'visible') return;
 
-    // Run independently — one failing must not block the other
     const [notifResult, dmResult] = await Promise.allSettled([
       import('./services/orchestration/NotificationsOrchestrator')
         .then(({ NotificationsOrchestrator }) => NotificationsOrchestrator.getInstance().refreshSubscriptions()),
@@ -581,131 +396,6 @@ export class App {
         this.eventBus.emit('hashtagSearch:start', { hashtag: tag });
       }
     });
-  }
-
-  /**
-   * Helper to run async initialization tasks that can fail silently
-   */
-  private async runSilent(fn: () => Promise<void>): Promise<void> {
-    try {
-      await fn();
-    } catch (error) {
-      console.error('[App] runSilent caught error:', error);
-    }
-  }
-
-  private showLoginRequiredModal(actionDescription: string): void {
-    const modalContent = `
-      <div class="auth-required-modal">
-        <div class="auth-required-modal__icon">🔒</div>
-        <h3>Login Required</h3>
-        <p>Please log in to ${actionDescription}.</p>
-        <div class="auth-required-modal__actions">
-          <button class="btn" data-action="close">OK</button>
-        </div>
-      </div>
-    `;
-
-    const modalService = ModalService.getInstance();
-    modalService.show({
-      title: 'Authentication Required',
-      content: modalContent,
-      width: '400px',
-      showCloseButton: true,
-      closeOnOverlay: true,
-      closeOnEsc: true
-    });
-
-    const closeBtn = document.querySelector('[data-action="close"]');
-    closeBtn?.addEventListener('click', () => modalService.hide());
-  }
-
-  private async handleUserLogin(data: { npub: string; pubkey: string }): Promise<void> {
-    // Only navigate if we're actually on /login page (user manually logged in)
-    const currentPath = this.router.getCurrentPath();
-    const lastURL = this.router.getLastURL();
-
-    if (currentPath === '/login' && (!lastURL || lastURL === '/login')) {
-      // Check if this is a fresh account that needs profile setup
-      const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
-      const storage = PerAccountLocalStorage.getInstance();
-      const needsSetup = storage.getForPubkey<boolean>(StorageKeys.NEEDS_PROFILE_SETUP, data.pubkey, false);
-
-      if (needsSetup) {
-        this.router.navigate('/setup');
-      } else {
-        this.router.navigate('/');
-      }
-    }
-
-    // Check if localStorage has data from a different user (handles cross-session account switch)
-    const lastLoggedInPubkey = localStorage.getItem('noornote_last_logged_in_pubkey');
-    if (lastLoggedInPubkey && lastLoggedInPubkey !== data.pubkey) {
-      const { CacheManager } = await import('./services/CacheManager');
-      CacheManager.getInstance().clearUserSpecificCaches();
-    }
-    localStorage.setItem('noornote_last_logged_in_pubkey', data.pubkey);
-
-    // Reset TimelineUI on account switch (different user)
-    if (this.timelineUI && lastLoggedInPubkey && lastLoggedInPubkey !== data.pubkey) {
-      this.timelineUI.destroy();
-      this.timelineUI = null;
-
-      // Re-mount timeline if currently on timeline route
-      if (currentPath === '/' || currentPath === '/timeline') {
-        this.mountPrimaryContent('timeline');
-      }
-    }
-
-    // Start all post-login services in parallel (independent of each other)
-    await Promise.all([
-      // Load follow list into AppState (for mention autocomplete)
-      this.runSilent(async () => {
-        const { UserService } = await import('./services/UserService');
-        const { MentionProfileCache } = await import('./services/MentionProfileCache');
-
-        const userService = UserService.getInstance();
-        const mentionCache = MentionProfileCache.getInstance();
-
-        const followingPubkeys = await userService.getUserFollowing(data.pubkey);
-
-        this.appState.setState('user', { followingPubkeys });
-
-        // Preload profiles in background (non-blocking)
-        mentionCache.preloadProfiles(followingPubkeys).catch(() => {});
-      }),
-
-      // Start notification services
-      this.runSilent(async () => {
-        const { NotificationsOrchestrator } = await import('./services/orchestration/NotificationsOrchestrator');
-        const notificationsOrch = NotificationsOrchestrator.getInstance();
-        await notificationsOrch.start();
-
-        const { ArticleNotificationService } = await import('./services/ArticleNotificationService');
-        ArticleNotificationService.getInstance().startPolling();
-      }),
-
-      // Start hashtag notification polling
-      this.runSilent(async () => {
-        const { HashtagNotificationService } = await import('./services/HashtagNotificationService');
-        HashtagNotificationService.getInstance().startPolling();
-      }),
-
-      // Initialize ProfileRecognitionService
-      this.runSilent(async () => {
-        const { ProfileRecognitionService } = await import('./services/ProfileRecognitionService');
-        await ProfileRecognitionService.getInstance().init();
-      }),
-
-      // Start DM service
-      this.runSilent(async () => {
-        const { DMService } = await import('./services/dm/DMService');
-        await DMService.getInstance().start();
-      }),
-    ]);
-
-    // Initialize AutoSyncService for Easy Mode list syncing
-    AutoSyncService.getInstance();
   }
 }
 
