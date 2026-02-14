@@ -48,7 +48,7 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
       // Check if YouTube
       const videoId = getYouTubeVideoId(item.url);
       if (videoId) {
-        return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${videoId}" class="youtube-external-link">Watch on YouTube</a></div>`;
+        return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${videoId}" class="youtube-external-link">Watch on YouTube</a></div>`;
       }
       const posterAttr = item.thumbnail ? ` poster="${item.thumbnail}"` : '';
       return `<video src="${item.url}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="auto"></video>`;
@@ -82,7 +82,7 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
       case 'video':
         const ytId = getYouTubeVideoId(item.url);
         if (ytId) {
-          return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${ytId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${ytId}" class="youtube-external-link">Watch on YouTube</a></div>`;
+          return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${ytId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${ytId}" class="youtube-external-link">Watch on YouTube</a></div>`;
         }
         const posterAttr = item.thumbnail ? ` poster="${item.thumbnail}"` : '';
         return `<video src="${item.url}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="auto"></video>`;

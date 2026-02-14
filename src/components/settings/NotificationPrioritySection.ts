@@ -143,7 +143,7 @@ export class NotificationPrioritySection extends SettingsSection {
         <div class="priority-zone__header">
           <span class="priority-zone__badge priority-zone__badge--${priority}"></span>
           <div class="priority-zone__info">
-            <h4 class="priority-zone__title">${title}</h4>
+            <h3 class="priority-zone__title">${title}</h3>
             <p class="priority-zone__description">${description}</p>
           </div>
         </div>
