@@ -41,6 +41,7 @@ import { View } from '../components/views/View';
 import { Timeline } from '../components/timeline/Timeline';
 import { PlatformService } from '../services/PlatformService';
 import { escapeHtml } from '../helpers/escapeHtml';
+import { MoveDropdown } from '../components/ui/MoveDropdown';
 
 const logger = SystemLogger.getInstance();
 
@@ -1848,6 +1849,13 @@ export class TribeManager {
    * Create a member card
    */
   private async createMemberCard(member: MemberWithProfile): Promise<HTMLElement> {
+    // Build move targets: all folders except current one
+    const allFolders = getFolders();
+    const currentFolder = this.currentFolderId;
+    const moveTargets = allFolders
+      .filter(f => f.id !== currentFolder)
+      .map(f => ({ id: f.id, label: f.name }));
+
     const card = new TribeMemberCard({
       pubkey: member.pubkey,
       isPrivate: member.isPrivate,
@@ -1855,6 +1863,10 @@ export class TribeManager {
     }, {
       onDelete: async (pubkey: string) => {
         await this.deleteMember(pubkey);
+      },
+      moveTargets,
+      onMove: async (pubkey: string, targetFolderId: string) => {
+        await this.moveMemberToFolderUI(pubkey, targetFolderId);
       }
     });
 
@@ -1917,7 +1929,7 @@ export class TribeManager {
 
     const onMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.closest('.tribe-member-card__delete') || target.closest('.folder-card__delete')) {
+      if (target.closest('.tribe-member-card__delete') || target.closest('.folder-card__delete') || target.closest('.tribe-member-card__move')) {
         return;
       }
 
@@ -2863,6 +2875,8 @@ export interface TribeMemberCardData {
 
 export interface TribeMemberCardOptions {
   onDelete: (pubkey: string) => Promise<void>;
+  onMove?: (pubkey: string, targetFolderId: string) => Promise<void>;
+  moveTargets?: Array<{ id: string; label: string }>;
 }
 
 export class TribeMemberCard {
@@ -2910,11 +2924,14 @@ export class TribeMemberCard {
           ${nip05Display ? `<span class="tribe-member-card__nip05">${escapeHtml(nip05Display)}</span>` : `<span class="tribe-member-card__pubkey">${escapeHtml(pubkey.slice(0, 8))}...</span>`}
         </div>
       </div>
-      <button class="tribe-member-card__delete" aria-label="Remove member" title="Remove member">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
+      <div class="tribe-member-card__actions">
+        <span class="tribe-member-card__move"></span>
+        <button class="tribe-member-card__delete" aria-label="Remove member" title="Remove member">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
     `;
 
     // Bind events
@@ -2947,6 +2964,17 @@ export class TribeMemberCard {
       await this.options.onDelete(pubkey);
       card.remove();
     });
+
+    // Mount move dropdown (browser only)
+    const moveMount = card.querySelector('.tribe-member-card__move');
+    if (moveMount && this.options.onMove && this.options.moveTargets && MoveDropdown.shouldShow()) {
+      const dropdown = new MoveDropdown({
+        targets: this.options.moveTargets,
+        ariaLabel: 'Move member',
+        onSelect: (targetId) => this.options.onMove!(pubkey, targetId),
+      });
+      moveMount.appendChild(dropdown.getElement());
+    }
   }
 
   public getElement(): HTMLElement | null {

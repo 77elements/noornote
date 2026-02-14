@@ -10,6 +10,7 @@ import { SettingsSection } from './SettingsSection';
 import { PerAccountLocalStorage, StorageKeys, type NotificationPriority, type NotificationPriorityMap } from '../../services/PerAccountLocalStorage';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
+import { MoveDropdown, type MoveTarget } from '../ui/MoveDropdown';
 
 interface NotificationTypeInfo {
   type: string;
@@ -143,7 +144,7 @@ export class NotificationPrioritySection extends SettingsSection {
         <div class="priority-zone__header">
           <span class="priority-zone__badge priority-zone__badge--${priority}"></span>
           <div class="priority-zone__info">
-            <h4 class="priority-zone__title">${title}</h4>
+            <h3 class="priority-zone__title">${title}</h3>
             <p class="priority-zone__description">${description}</p>
           </div>
         </div>
@@ -169,6 +170,7 @@ export class NotificationPrioritySection extends SettingsSection {
       <div class="priority-item" data-type="${item.type}">
         <span class="priority-item__handle">⋮⋮</span>
         <span class="priority-item__label">${item.label}</span>
+        <span class="priority-item__move" data-type="${item.type}"></span>
       </div>
     `;
   }
@@ -191,11 +193,44 @@ export class NotificationPrioritySection extends SettingsSection {
       saveBtn.addEventListener('click', () => this.saveChanges());
     }
 
+    // Mount move dropdowns (browser only)
+    this.mountMoveDropdowns();
+
     // Mouse-based drag & drop (like bookmarks.ts pattern)
     this.setupMouseDragAndDrop();
 
     // Touch support for mobile
     this.setupTouchDragAndDrop();
+  }
+
+  /**
+   * Mount move dropdowns on priority items (browser only)
+   */
+  private mountMoveDropdowns(): void {
+    if (!this.contentContainer || !MoveDropdown.shouldShow()) return;
+
+    const mountPoints = this.contentContainer.querySelectorAll<HTMLElement>('.priority-item__move');
+    mountPoints.forEach(mount => {
+      const type = mount.dataset.type;
+      if (!type) return;
+
+      const currentPriority = this.priorities[type];
+      const targets: MoveTarget[] = ([1, 2, 3] as NotificationPriority[])
+        .filter(p => p !== currentPriority)
+        .map(p => ({ id: String(p), label: PRIORITY_LABELS[p].title }));
+
+      const dropdown = new MoveDropdown({
+        targets,
+        ariaLabel: `Move ${type}`,
+        onSelect: (targetId) => {
+          this.priorities[type] = parseInt(targetId, 10) as NotificationPriority;
+          this.markAsUnsaved();
+          this.rerender();
+        },
+      });
+
+      mount.appendChild(dropdown.getElement());
+    });
   }
 
   /**

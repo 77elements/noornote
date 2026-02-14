@@ -1071,7 +1071,7 @@ export class MainLayout {
         <span class="nn-logo">NoorNote</span>
       </header>
       <div class="sidebar-overlay"></div>
-      <aside class="sidebar">
+      <aside class="sidebar" aria-label="Navigation">
         <div class="sidebar-content">
           <div class="sidebar-scrollable">
             <div class="sidebar-header">
@@ -1225,11 +1225,11 @@ export class MainLayout {
         </div>
       </aside>
 
-      <main class="primary-content">
+      <main class="primary-content" tabindex="0">
         <!-- Content will be dynamically updated based on auth state -->
       </main>
 
-      <aside class="secondary-content">
+      <aside class="secondary-content" aria-label="Details">
         <div class="user-login-bar">
           <!-- User status will be mounted here -->
         </div>

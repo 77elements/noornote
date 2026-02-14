@@ -49,6 +49,7 @@ import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
 import { FolderCard, type FolderData } from '../components/bookmarks/FolderCard';
 import { UpNavigator } from '../components/bookmarks/UpNavigator';
+import { MoveDropdown } from '../components/ui/MoveDropdown';
 
 // Shared helpers from /src/lists/
 import { readList, writeList, StorageKeys, now, deduplicateById, mergeByKey } from './storage';
@@ -1709,6 +1710,8 @@ export interface BookmarkCardData {
 export interface BookmarkCardOptions {
   onDelete: (eventId: string) => Promise<void>;
   onEdit?: (bookmarkId: string) => void;
+  onMove?: (bookmarkId: string, targetFolderId: string) => Promise<void>;
+  moveTargets?: Array<{ id: string; label: string }>;
 }
 
 /**
@@ -1755,11 +1758,14 @@ export class BookmarkCard {
         <div class="bookmark-card__content">${escapeHtml(snippet)}</div>
         <div class="bookmark-card__footer">
           <span class="bookmark-card__timestamp">${timeAgo}</span>
-          <button class="bookmark-card__delete" aria-label="Remove bookmark" title="Remove bookmark">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
+          <div class="bookmark-card__actions">
+            <span class="bookmark-card__move"></span>
+            <button class="bookmark-card__delete" aria-label="Remove bookmark" title="Remove bookmark">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
       `;
     } else {
@@ -1807,6 +1813,7 @@ export class BookmarkCard {
         <div class="bookmark-card__footer">
           <span class="bookmark-card__timestamp">${escapeHtml(footerText)}</span>
           <div class="bookmark-card__actions">
+            <span class="bookmark-card__move"></span>
             ${type === 'r' ? `
               <button class="btn btn--mini bookmark-card__edit" aria-label="Edit bookmark" title="Edit bookmark">
                 Edit
@@ -1832,7 +1839,7 @@ export class BookmarkCard {
 
     card.addEventListener('click', async (e) => {
       const target = e.target as HTMLElement;
-      if (target.closest('.bookmark-card__delete') || target.closest('.bookmark-card__edit')) return;
+      if (target.closest('.bookmark-card__delete') || target.closest('.bookmark-card__edit') || target.closest('.bookmark-card__move')) return;
 
       if (card.dataset.wasDragging === 'true') {
         card.dataset.wasDragging = 'false';
@@ -1869,6 +1876,17 @@ export class BookmarkCard {
       await this.options.onDelete(id);
       card.remove();
     });
+
+    // Mount move dropdown (browser only)
+    const moveMount = card.querySelector('.bookmark-card__move');
+    if (moveMount && this.options.onMove && this.options.moveTargets && MoveDropdown.shouldShow()) {
+      const dropdown = new MoveDropdown({
+        targets: this.options.moveTargets,
+        ariaLabel: 'Move bookmark',
+        onSelect: (targetId) => this.options.onMove!(id, targetId),
+      });
+      moveMount.appendChild(dropdown.getElement());
+    }
   }
 
   private getTextSnippet(content: string, maxLength: number): string {
@@ -2715,13 +2733,31 @@ export class BookmarkManager {
     if (bookmark.event) cardData.event = bookmark.event;
     if (bookmark.description !== undefined) cardData.description = bookmark.description;
 
+    // Build move targets: all folders (excluding current) + root if in a folder
+    const currentFolderId = cardData.folderId || '';
+    const allFolders = this.folderService.getFolders();
+    const moveTargets: Array<{ id: string; label: string }> = [];
+    if (currentFolderId !== '') {
+      moveTargets.push({ id: '', label: 'Root' });
+    }
+    for (const f of allFolders) {
+      if (f.id !== currentFolderId) {
+        moveTargets.push({ id: f.id, label: f.name });
+      }
+    }
+
     const card = new BookmarkCard(cardData, {
       onDelete: async (eventId: string) => {
         await this.deleteBookmark(eventId);
       },
       onEdit: (bookmarkId: string) => {
         this.editBookmark(bookmarkId);
-      }
+      },
+      onMove: async (bookmarkId: string, targetFolderId: string) => {
+        await this.moveBookmarkToFolder(bookmarkId, targetFolderId);
+        this.refreshCurrentView();
+      },
+      moveTargets,
     });
 
     return await card.render();

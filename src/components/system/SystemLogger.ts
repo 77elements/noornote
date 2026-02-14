@@ -105,14 +105,14 @@ export class SystemLogger {
     container.className = 'system-logger';
     container.innerHTML = `
       <div class="system-logger__global debug-section">
-        <h2 class="system-logger__global-header heading--sidebar-subheading h4">Global</h2>
-        <div class="system-logger__global-content">
+        <h3 class="system-logger__global-header heading--sidebar-subheading h4">Global</h3>
+        <div class="system-logger__global-content" tabindex="0" role="log" aria-label="Global logs">
           <div class="system-logger__global-logs"></div>
         </div>
       </div>
       <div class="system-logger__page debug-section">
-        <h2 class="system-logger__page-header heading--sidebar-subheading h4">Local</h2>
-        <div class="system-logger__page-content">
+        <h3 class="system-logger__page-header heading--sidebar-subheading h4">Local</h3>
+        <div class="system-logger__page-content" tabindex="0" role="log" aria-label="Local logs">
           <div class="system-logger__page-logs"></div>
         </div>
       </div>
