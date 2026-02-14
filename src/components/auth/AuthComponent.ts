@@ -186,7 +186,7 @@ export class AuthComponent {
         }
       });
 
-      qrContainer.innerHTML = `<img src="${qrDataUrl}" alt="Scan to connect" style="border-radius: 8px;" />`;
+      qrContainer.innerHTML = `<img src="${qrDataUrl}" alt="Scan to connect" style="border-radius: 8px; padding: 40px; background: #FFFFFF;" />`;
 
       // Wait for connection in background
       const result = await session.waitForConnection();
