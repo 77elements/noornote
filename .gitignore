@@ -58,7 +58,8 @@ docs/
 
 # Claude Code
 CLAUDE.md
-.claude/
+.claude/*
+!.claude/skills/
 
 # Optional relay (local data only)
 relay/strfry-db/
