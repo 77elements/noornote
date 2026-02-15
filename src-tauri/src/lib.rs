@@ -99,13 +99,13 @@ pub fn run() {
     .expect("error while building tauri application")
     .run(|app_handle, event| {
       match event {
-        RunEvent::WindowEvent { label, event: WindowEvent::CloseRequested { api, .. }, .. } => {
+        RunEvent::WindowEvent { label: _label, event: WindowEvent::CloseRequested { api: _api, .. }, .. } => {
           // macOS: Minimize window instead of quitting (user must use Cmd+Q or menu to quit)
           #[cfg(target_os = "macos")]
           {
-            if let Some(window) = app_handle.get_webview_window(&label) {
+            if let Some(window) = app_handle.get_webview_window(&_label) {
               let _ = window.minimize();
-              api.prevent_close();
+              _api.prevent_close();
             }
           }
 

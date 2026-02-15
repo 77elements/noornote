@@ -12,6 +12,7 @@ import { NostrTransport } from './transport/NostrTransport';
 import { AuthService } from './AuthService';
 import { RelayConfig } from './RelayConfig';
 import { EventBus } from './EventBus';
+import { extractZapperPubkey, getZapAmountSats } from '../helpers/zapUtils';
 
 export interface ZapStats {
   pubkey: string;
@@ -29,6 +30,15 @@ const EXTRA_ZAP_RELAYS = [
 // Limit for zap queries (balanced for performance)
 const ZAP_QUERY_LIMIT = 800;
 
+// Batch size for outgoing zap queries
+const BATCH_SIZE = 100;
+
+// Delay between batches to avoid rate limiting (ms)
+const BATCH_DELAY_MS = 300;
+
+// Timeout for zap relay fetches (ms)
+const FETCH_TIMEOUT_MS = 60000;
+
 export class ZapStatsService {
   private static instance: ZapStatsService;
   private transport: NostrTransport;
@@ -36,7 +46,6 @@ export class ZapStatsService {
   private relayConfig: RelayConfig;
   private eventBus: EventBus;
 
-  // Cache for stats per pubkey
   private statsCache: Map<string, ZapStats> = new Map();
   private isLoading: boolean = false;
   private loadingPromise: Promise<void> | null = null;
@@ -56,26 +65,22 @@ export class ZapStatsService {
   }
 
   /**
-   * Get zap stats for a specific pubkey (from cache)
-   * Returns null if not yet loaded
+   * Get zap stats for a specific pubkey (from cache).
+   * Returns null if not yet loaded.
    */
   public getStats(pubkey: string): ZapStats | null {
     return this.statsCache.get(pubkey) || null;
   }
 
-  /**
-   * Check if stats are currently loading
-   */
   public isLoadingStats(): boolean {
     return this.isLoading;
   }
 
   /**
-   * Load zap stats for a batch of pubkeys asynchronously
-   * Emits 'zapstats:loaded' event when complete
+   * Load zap stats for a batch of pubkeys asynchronously.
+   * Emits 'zapstats:loaded' event when complete.
    */
   public async loadStatsForPubkeys(pubkeys: string[]): Promise<void> {
-    // If already loading, wait for existing promise
     if (this.loadingPromise) {
       return this.loadingPromise;
     }
@@ -104,30 +109,19 @@ export class ZapStatsService {
    * Build combined relay list: user relays + aggregator relays + extra zap relays
    */
   private getZapRelays(): string[] {
-    const relaySet = new Set<string>();
-
-    // Add user's configured relays
-    this.relayConfig.getAllRelays().forEach(r => relaySet.add(r.url));
-
-    // Add aggregator relays
-    this.relayConfig.getAggregatorRelays().forEach(r => relaySet.add(r));
-
-    // Add extra zap-specific relays
-    EXTRA_ZAP_RELAYS.forEach(r => relaySet.add(r));
-
+    const relaySet = new Set<string>([
+      ...this.relayConfig.getAllRelays().map(r => r.url),
+      ...this.relayConfig.getAggregatorRelays(),
+      ...EXTRA_ZAP_RELAYS
+    ]);
     return Array.from(relaySet);
   }
 
   /**
-   * Fetch zap stats from combined relay list
-   * Uses limit of 1500 for better coverage without overwhelming relays
+   * Initialize empty stats entries for all follow pubkeys
    */
-  private async fetchZapStats(currentUserPubkey: string, followPubkeys: string[]): Promise<void> {
-    const zapRelays = this.getZapRelays();
-    console.log(`[ZapStatsService] Fetching zap stats for ${followPubkeys.length} follows from ${zapRelays.length} relays...`);
-
-    // Initialize stats for all pubkeys
-    for (const pubkey of followPubkeys) {
+  private initializeStatsCache(pubkeys: string[]): void {
+    for (const pubkey of pubkeys) {
       this.statsCache.set(pubkey, {
         pubkey,
         outgoingCount: 0,
@@ -136,8 +130,33 @@ export class ZapStatsService {
         incomingSats: 0
       });
     }
+  }
 
-    // Set for deduplication by event ID
+  /**
+   * Process a batch of zap events, deduplicating by event ID.
+   * Calls the handler for each unique event.
+   */
+  private processZapEvents(
+    events: NostrEvent[],
+    seenIds: Set<string>,
+    handler: (event: NostrEvent) => void
+  ): void {
+    for (const event of events) {
+      if (!event.id || seenIds.has(event.id)) continue;
+      seenIds.add(event.id);
+      handler(event);
+    }
+  }
+
+  /**
+   * Fetch zap stats from combined relay list
+   */
+  private async fetchZapStats(currentUserPubkey: string, followPubkeys: string[]): Promise<void> {
+    const zapRelays = this.getZapRelays();
+    console.log(`[ZapStatsService] Fetching zap stats for ${followPubkeys.length} follows from ${zapRelays.length} relays...`);
+
+    this.initializeStatsCache(followPubkeys);
+    const followSet = new Set(followPubkeys);
     const seenEventIds = new Set<string>();
 
     // Fetch incoming zaps (zaps TO current user)
@@ -146,37 +165,25 @@ export class ZapStatsService {
       kinds: [9735],
       '#p': [currentUserPubkey],
       limit: ZAP_QUERY_LIMIT
-    }], 60000); // 60s timeout
+    }], FETCH_TIMEOUT_MS);
 
     console.log(`[ZapStatsService] Received ${incomingZaps.length} incoming zap events`);
 
-    // Process incoming zaps - find who zapped us
-    for (const zap of incomingZaps) {
-      // Skip events without ID
-      if (!zap.id) continue;
-      // Deduplicate by event ID
-      if (seenEventIds.has(zap.id)) continue;
-      seenEventIds.add(zap.id);
+    this.processZapEvents(incomingZaps, seenEventIds, (zap) => {
+      const zapperPubkey = extractZapperPubkey(zap);
+      if (!followSet.has(zapperPubkey)) return;
 
-      const zapperPubkey = this.extractZapperPubkey(zap);
-      if (zapperPubkey && followPubkeys.includes(zapperPubkey)) {
-        const stats = this.statsCache.get(zapperPubkey);
-        if (stats) {
-          stats.incomingCount++;
-          stats.incomingSats += this.parseBolt11Amount(zap);
-        }
+      const stats = this.statsCache.get(zapperPubkey);
+      if (stats) {
+        stats.incomingCount++;
+        stats.incomingSats += getZapAmountSats(zap);
       }
-    }
+    });
 
-    // Fetch ALL outgoing zaps (zaps FROM current user)
-    // Strategy: Fetch all zaps TO each follow, then filter by zapper = currentUser
+    // Fetch outgoing zaps (zaps FROM current user to follows, in batches)
     console.log('[ZapStatsService] Fetching outgoing zaps...');
-
-    // Reset seen events for outgoing
     seenEventIds.clear();
 
-    // Batch query - fetch zaps to all follows at once
-    const BATCH_SIZE = 100;
     for (let i = 0; i < followPubkeys.length; i += BATCH_SIZE) {
       const batch = followPubkeys.slice(i, i + BATCH_SIZE);
 
@@ -184,86 +191,28 @@ export class ZapStatsService {
         kinds: [9735],
         '#p': batch,
         limit: ZAP_QUERY_LIMIT
-      }], 60000); // 60s timeout
+      }], FETCH_TIMEOUT_MS);
 
-      // Process outgoing zaps - find where we are the zapper
-      for (const zap of outgoingZaps) {
-        // Skip events without ID
-        if (!zap.id) continue;
-        // Deduplicate by event ID
-        if (seenEventIds.has(zap.id)) continue;
-        seenEventIds.add(zap.id);
+      this.processZapEvents(outgoingZaps, seenEventIds, (zap) => {
+        if (extractZapperPubkey(zap) !== currentUserPubkey) return;
 
-        const zapperPubkey = this.extractZapperPubkey(zap);
-        if (zapperPubkey === currentUserPubkey) {
-          // Find recipient from 'p' tag
-          const recipientTag = zap.tags.find(t => t[0] === 'p');
-          const recipientPubkey = recipientTag?.[1];
+        const recipientPubkey = zap.tags.find(t => t[0] === 'p')?.[1];
+        if (!recipientPubkey) return;
 
-          if (recipientPubkey && this.statsCache.has(recipientPubkey)) {
-            const stats = this.statsCache.get(recipientPubkey);
-            if (stats) {
-              stats.outgoingCount++;
-              stats.outgoingSats += this.parseBolt11Amount(zap);
-            }
-          }
+        const stats = this.statsCache.get(recipientPubkey);
+        if (stats) {
+          stats.outgoingCount++;
+          stats.outgoingSats += getZapAmountSats(zap);
         }
-      }
+      });
 
       // Small delay between batches to avoid rate limiting
       if (i + BATCH_SIZE < followPubkeys.length) {
-        await this.delay(300);
+        await this.delay(BATCH_DELAY_MS);
       }
     }
 
     console.log('[ZapStatsService] Zap stats fetching complete');
-  }
-
-  /**
-   * Extract zapper pubkey from Kind 9735 event
-   * The actual zapper is in the 'description' tag (zap request JSON)
-   */
-  private extractZapperPubkey(zapEvent: NostrEvent): string | null {
-    try {
-      const descTag = zapEvent.tags.find(t => t[0] === 'description');
-      if (!descTag || !descTag[1]) return null;
-
-      const zapRequest = JSON.parse(descTag[1]);
-      return zapRequest.pubkey || null;
-    } catch {
-      return null;
-    }
-  }
-
-  /**
-   * Parse bolt11 invoice to get amount in sats
-   * Based on ZapsList.parseBolt11Amount()
-   */
-  private parseBolt11Amount(zapEvent: NostrEvent): number {
-    try {
-      const bolt11Tag = zapEvent.tags.find(t => t[0] === 'bolt11');
-      if (!bolt11Tag || !bolt11Tag[1]) return 0;
-
-      const invoice = bolt11Tag[1];
-      const match = invoice.match(/^ln(bc|tb)(\d+)([munp]?)/i);
-      if (!match || !match[2]) return 0;
-
-      const amount = parseInt(match[2]);
-      const multiplier = match[3]?.toLowerCase();
-
-      let millisats = 0;
-      switch (multiplier) {
-        case 'm': millisats = amount * 100_000_000; break;
-        case 'u': millisats = amount * 100_000; break;
-        case 'n': millisats = amount * 100; break;
-        case 'p': millisats = amount * 0.1; break;
-        default: millisats = amount * 100_000_000_000; break;
-      }
-
-      return Math.floor(millisats / 1000);
-    } catch {
-      return 0;
-    }
   }
 
   /**
@@ -279,9 +228,6 @@ export class ZapStatsService {
     return sats.toString();
   }
 
-  /**
-   * Clear cache (e.g., on logout)
-   */
   public clearCache(): void {
     this.statsCache.clear();
   }

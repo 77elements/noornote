@@ -1,9 +1,8 @@
-use std::process::Command;
-
 #[tauri::command]
 pub fn check_icloud_keychain() -> Result<bool, String> {
     #[cfg(target_os = "macos")]
     {
+        use std::process::Command;
         // Run: security list-keychains
         let output = Command::new("security")
             .arg("list-keychains")
