@@ -63,6 +63,9 @@ export class DMService {
   private isRefreshing: boolean = false;
   private static readonly REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
+  // Track active inbox relays to detect changes from relay sync
+  private activeInboxRelays: string[] = [];
+
   private constructor() {
     this.transport = NostrTransport.getInstance();
     this.authService = AuthService.getInstance();
@@ -76,6 +79,11 @@ export class DMService {
     // Listen for mute updates to refresh cache
     this.eventBus.on('mute:updated', () => {
       this.refreshMutedPubkeys();
+    });
+
+    // Listen for relay sync — re-subscribe if inbox relays changed
+    this.eventBus.on('relays:updated', () => {
+      this.handleRelayUpdate();
     });
 
     // Listen for logout - close DB connection (do NOT clear data - per-user DBs preserve data)
@@ -162,7 +170,24 @@ export class DMService {
     }
 
     this.userPubkey = null;
+    this.activeInboxRelays = [];
     this.systemLogger.info('DMService', 'DM service stopped');
+  }
+
+  /**
+   * Re-subscribe if inbox relays changed after a relay sync.
+   * Called on 'relays:updated' event.
+   */
+  private handleRelayUpdate(): void {
+    if (!this.userPubkey || !this.subscriptionId) return;
+
+    const currentRelays = this.getMyInboxRelays().sort();
+    const relaysUnchanged = currentRelays.length === this.activeInboxRelays.length &&
+                            currentRelays.every((url, i) => url === this.activeInboxRelays[i]);
+    if (relaysUnchanged) return;
+
+    this.systemLogger.info('DMService', 'Inbox relays changed, refreshing DM subscription');
+    this.refreshSubscriptions();
   }
 
   /**
@@ -366,7 +391,8 @@ export class DMService {
   private async startSubscription(): Promise<void> {
     if (!this.userPubkey) return;
 
-    const relays = await this.getMyInboxRelays();
+    const relays = this.getMyInboxRelays();
+    this.activeInboxRelays = relays.slice().sort();
     const now = Math.floor(Date.now() / 1000);
 
     // Combined filter for NIP-17 and Legacy NIP-04
