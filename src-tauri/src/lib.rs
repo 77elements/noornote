@@ -67,20 +67,20 @@ pub fn run() {
 
         match dev_mode.as_str() {
           "wide" => {
-            // Wide mode: Full screen width with DevTools open (minus 50px for macOS Dock)
+            // Wide mode: Full screen width with DevTools open
+            #[cfg(target_os = "macos")]
             if let Some(monitor) = window.current_monitor().ok().flatten() {
               let size = monitor.size();
               let position = monitor.position();
-              let window_width = size.width - 50;
+              let window_width = size.width - 50; // minus macOS Dock
               let window_height = 1200;
-
-              // Center horizontally with 15px offset to avoid Dock
               let x = position.x + ((size.width as i32 - window_width as i32) / 2) + 15;
               let y = position.y;
-
               let _ = window.set_size(tauri::PhysicalSize::new(window_width, window_height));
               let _ = window.set_position(tauri::PhysicalPosition::new(x, y));
             }
+            #[cfg(target_os = "linux")]
+            let _ = window.maximize();
             window.open_devtools();
           }
           "clean" => {
@@ -88,7 +88,9 @@ pub fn run() {
             // Window size from tauri.conf.json (1400x1200)
           }
           _ => {
-            // Default: Open DevTools (backwards compatible)
+            // Default: Open DevTools + maximize on Linux
+            #[cfg(target_os = "linux")]
+            let _ = window.maximize();
             window.open_devtools();
           }
         }
