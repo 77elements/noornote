@@ -12,6 +12,7 @@
  */
 
 import { NDKNip46Signer, NDKUser } from '@nostr-dev-kit/ndk';
+import { SystemLogger } from '../../components/system/SystemLogger';
 
 export const NIP46_STORAGE_KEY = 'noornote_nip46_payload';
 
@@ -21,12 +22,15 @@ const RELAY_STATUS_CONNECTED = 5;
 // Circuit breaker: reject immediately instead of waiting for timeouts
 const CIRCUIT_COOLDOWN_MS = 30_000;
 
-// Debug logger for NIP-46
+// Technical debug logger (DevTools console only)
 export const nip46Log = {
-  info: (msg: string, ...args: any[]) => console.log(`[NIP-46] ${msg}`, ...args),
-  warn: (msg: string, ...args: any[]) => console.warn(`[NIP-46] ${msg}`, ...args),
+  info: (msg: string, ...args: any[]) => console.debug(`[NIP-46] ${msg}`, ...args),
+  warn: (msg: string, ...args: any[]) => console.debug(`[NIP-46] ${msg}`, ...args),
   error: (msg: string, ...args: any[]) => console.error(`[NIP-46] ${msg}`, ...args),
 };
+
+// User-facing System Log
+const sysLog = () => SystemLogger.getInstance();
 
 export interface Nip46AuthResult {
   success: boolean;
@@ -60,7 +64,7 @@ export abstract class Nip46BaseManager {
       get: () => _encType,
       set: (val: string) => {
         if (val !== _encType) {
-          nip46Log.warn(`Blocked encryptionType change from "${_encType}" to "${val}"`);
+          nip46Log.info(`Encryption locked to ${_encType} — rejected ${val} upgrade`);
         }
       },
       configurable: true,
@@ -122,6 +126,7 @@ export abstract class Nip46BaseManager {
   private openCircuit(): void {
     if (!this.circuitOpen) {
       nip46Log.warn(`Remote signer unreachable — suppressing further requests for ${CIRCUIT_COOLDOWN_MS / 1000}s`);
+      sysLog().warn('Auth', 'Remote signer unreachable — retrying shortly');
     }
     this.circuitOpen = true;
     this.circuitOpenSince = Date.now();
@@ -130,6 +135,7 @@ export abstract class Nip46BaseManager {
   private closeCircuit(): void {
     if (this.circuitOpen) {
       nip46Log.info('Remote signer reconnected — circuit breaker reset');
+      sysLog().success('Auth', 'Remote signer reconnected');
     }
     this.circuitOpen = false;
   }
@@ -271,26 +277,24 @@ export abstract class Nip46BaseManager {
     });
 
     await new Promise<void>((resolve, reject) => {
+      let settled = false;
       const timeout = setTimeout(() => {
         nip46Log.error(`${label} TIMEOUT after ${timeoutMs / 1000}s`);
         reject(new Error(`${label} timeout after ${timeoutMs / 1000}s`));
       }, timeoutMs);
 
       signer.rpc.on('response', (response: any) => {
-        nip46Log.info(`${label} response:`, {
-          result: response?.result,
-          error: response?.error,
-        });
+        if (settled) return;
 
         if (response?.result === secret || response?.result === 'ack') {
+          settled = true;
           clearTimeout(timeout);
           nip46Log.info(`${label} confirmed`);
           resolve();
         } else if (response?.error) {
+          settled = true;
           clearTimeout(timeout);
           reject(new Error(response.error));
-        } else {
-          nip46Log.warn(`${label} unmatched response:`, response?.result);
         }
       });
 
@@ -330,9 +334,11 @@ export abstract class Nip46BaseManager {
       await this.subscribeAndConnect(15000, 'Session restore');
 
       nip46Log.info('Session restored successfully');
+      sysLog().success('Auth', 'Remote signer session restored');
       return true;
     } catch (err) {
       nip46Log.error('Session restore failed:', err);
+      sysLog().error('Auth', 'Remote signer session expired — please reconnect');
       localStorage.removeItem(NIP46_STORAGE_KEY);
       this.signer = null;
       return false;

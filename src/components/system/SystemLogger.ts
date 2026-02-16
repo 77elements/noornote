@@ -6,6 +6,7 @@
  */
 
 import { Router } from '../../services/Router';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export type LogLevel = 'info' | 'debug' | 'warn' | 'error' | 'success';
 export type LogCategory = 'global' | 'page';
@@ -133,60 +134,24 @@ export class SystemLogger {
   }
 
   /**
-   * Setup global console override for automatic logging
+   * Setup console.error override to surface critical errors in System Log.
+   * Only console.error is intercepted — console.log/warn/info stay in DevTools only.
+   * All intentional System Log entries go through systemLogger.info/warn/error() directly.
    */
   private setupGlobalLogging(): void {
-    // Store original console methods
-    const originalConsole = {
-      log: console.log,
-      info: console.info,
-      warn: console.warn,
-      error: console.error,
-      debug: console.debug
-    };
-
-    // Override console methods to also log to our debug logger
-    console.log = (...args) => {
-      originalConsole.log(...args);
-      this.log('info', 'Console', args.join(' '));
-    };
-
-    console.info = (...args) => {
-      originalConsole.info(...args);
-      this.log('info', 'Console', args.join(' '));
-    };
-
-    console.warn = (...args) => {
-      originalConsole.warn(...args);
-      const message = args.join(' ');
-
-      // Filter out localhost:3000 image loading errors from UI (but keep in DevTools)
-      if (message.includes('localhost:3000') && message.includes('Failed to load')) {
-        return; // Don't show in System Log UI
-      }
-
-      this.log('warn', 'Console', message);
-    };
+    const originalError = console.error;
 
     console.error = (...args) => {
-      originalConsole.error(...args);
-
+      originalError(...args);
       const message = args.join(' ');
 
-      // Handle "bad response" relay errors gracefully (expected behavior)
+      // Relay connection issues → friendly warning
       if (message.includes('bad response') || message.includes('WebSocket connection')) {
-        // Extract relay URL from error message
         const relayMatch = message.match(/wss?:\/\/[^\s]+/);
         const relay = relayMatch ? relayMatch[0] : 'unknown relay';
-        this.log('warn', 'NostrTransport', `⚠️ Relay connection issue: ${relay} (expected - some user relays may be offline)`, { rawError: message });
-      } else {
-        this.log('error', 'Console', message);
+        this.log('warn', 'NostrTransport', `Relay offline: ${relay}`);
       }
     };
-
-    // Note: console.debug is NOT forwarded to SystemLogger
-    // Use console.debug for DevTools-only debug output
-    // Use this.debug() for SystemLogger output
   }
 
   /**
@@ -369,18 +334,9 @@ export class SystemLogger {
       <tr class="system-log-entry ${levelClass}">
         <td class="system-log-entry__time">${time}</td>
         <td class="system-log-entry__category">[${category}]</td>
-        <td class="system-log-entry__message">${this.escapeHtml(entry.message)}${countSuffix}${dataHtml}</td>
+        <td class="system-log-entry__message">${escapeHtml(entry.message)}${countSuffix}${dataHtml}</td>
       </tr>
     `;
-  }
-
-  /**
-   * Escape HTML for safe display
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
   }
 
   /**
@@ -430,15 +386,15 @@ export class SystemLogger {
    * Remove specific log entry by message (for clearing resolved errors)
    */
   public removeLog(category: string, message: string): void {
-    const isGlobal = GLOBAL_CATEGORIES.includes(category);
+    const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
     const filterFn = (entry: LogEntry) => !(entry.category === category && entry.message === message);
 
-    if (isGlobal) {
+    if (logCategory === 'global') {
       this.globalLogs = this.globalLogs.filter(filterFn);
     } else {
       this.pageLogs = this.pageLogs.filter(filterFn);
     }
-    this.renderLogs(isGlobal ? 'global' : 'page');
+    this.renderLogs(logCategory);
   }
 
   /**

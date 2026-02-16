@@ -6,7 +6,7 @@
  * Used by: OrchestrationsRouter exclusively (no direct Component access)
  */
 
-import NDK, { NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKRelaySet, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
 import NDKCacheDexie from '@nostr-dev-kit/ndk-cache-dexie';
 import type { NDKCacheAdapter, NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -94,7 +94,7 @@ export class NostrTransport {
       autoConnectUserRelays: false // We manage relays explicitly via RelayConfig
     });
 
-    this.systemLogger.info('NostrTransport', 'NDK initialized, ready to connect');
+    this.systemLogger.info('NostrTransport', 'Transport ready');
   }
 
   // Shared promise prevents multiple parallel connect attempts
@@ -120,7 +120,7 @@ export class NostrTransport {
   }
 
   private async doConnect(): Promise<void> {
-    this.systemLogger.info('NostrTransport', 'Connecting to relays via NDK...');
+    this.systemLogger.info('NostrTransport', 'Connecting to relays...');
 
     await this.ndk.connect(3000);
 
@@ -133,12 +133,11 @@ export class NostrTransport {
     this.setupRelayEventListeners();
 
     if (connectedRelays.length > 0) {
-      this.systemLogger.info(
+      this.systemLogger.success(
         'NostrTransport',
-        `Connected to ${connectedRelays.length}/${this.ndk.pool.relays.size} relays via NDK`
+        `Connected to ${connectedRelays.length} of ${this.ndk.pool.relays.size} relays`
       );
     } else {
-      // Relays connect in background - not a problem
       this.systemLogger.info('NostrTransport', 'Relays connecting in background...');
     }
   }
@@ -195,7 +194,7 @@ export class NostrTransport {
     const relay = this.ndk.pool.getRelay(url, true); // true = create if not exists
 
     if (!relay) {
-      this.systemLogger.warn('NostrTransport', `Failed to create relay: ${url}`);
+      this.systemLogger.warn('NostrTransport', `Relay unavailable: ${url}`);
       return false;
     }
 
@@ -207,7 +206,7 @@ export class NostrTransport {
     // Wait for connection with timeout
     return new Promise<boolean>((resolve) => {
       const timeout = setTimeout(() => {
-        this.systemLogger.warn('NostrTransport', `Relay connection timeout: ${url}`);
+        this.systemLogger.warn('NostrTransport', `Relay timeout: ${url}`);
         resolve(false);
       }, timeoutMs);
 
@@ -334,7 +333,7 @@ export class NostrTransport {
 
       return events;
     } catch (error) {
-      this.systemLogger.error('NostrTransport', `Fetch error: ${error}`);
+      this.systemLogger.error('NostrTransport', 'Failed to fetch events from relays');
       return [];
     }
   }
@@ -407,22 +406,17 @@ export class NostrTransport {
   public async publish(relays: string[], event: NostrEvent): Promise<Set<string>> {
     await this.ensureConnected();
 
-    this.systemLogger.info(
-      'NostrTransport',
-      `Publishing event ${event.id} (kind:${event.kind}) to ${relays.length} relays`
-    );
+    this.systemLogger.info('NostrTransport', `Sending to ${relays.length} relays`);
 
-    // Convert NostrEvent to NDKEvent
-    const ndkEvent = new (await import('@nostr-dev-kit/ndk')).NDKEvent(this.ndk, event);
+    const ndkEvent = new NDKEvent(this.ndk, event);
 
     try {
       // Publish to specified relays with timeout
-      const publishPromise = ndkEvent.publish(
-        new (await import('@nostr-dev-kit/ndk')).NDKRelaySet(new Set(relays.map(url =>
-          this.ndk.pool.getRelay(url)
-        ).filter(Boolean)), this.ndk),
-        10000 // 10 second timeout
+      const relaySet = new NDKRelaySet(
+        new Set(relays.map(url => this.ndk.pool.getRelay(url)).filter(Boolean)),
+        this.ndk
       );
+      const publishPromise = ndkEvent.publish(relaySet, 10000);
 
       const publishedRelays = await publishPromise;
 
@@ -435,23 +429,23 @@ export class NostrTransport {
       });
 
       if (successful > 0) {
-        this.systemLogger.info('NostrTransport', `Event ${event.id} published to ${successful}/${relays.length} relays`);
+        this.systemLogger.success('NostrTransport', `Delivered to ${successful} of ${relays.length} relays`);
       }
 
-      if (failed > 0) {
-        this.systemLogger.warn('NostrTransport', `Event ${event.id} failed on ${failed}/${relays.length} relays`);
+      if (failed > 0 && successful > 0) {
+        this.systemLogger.warn('NostrTransport', `${failed} relay${failed > 1 ? 's' : ''} didn't respond`);
       }
 
       // Only throw if ALL relays failed
       if (successful === 0) {
-        this.systemLogger.error('NostrTransport', `Publish failed on all relays`);
+        this.systemLogger.error('NostrTransport', 'Delivery failed — no relays responded');
         throw new Error(`Failed to publish to any relay`);
       }
 
       // Return relay URLs (convert NDKRelay objects to strings)
       return new Set(Array.from(publishedRelays).map(relay => relay.url));
     } catch (error) {
-      this.systemLogger.error('NostrTransport', `Publish error: ${error}`);
+      this.systemLogger.error('NostrTransport', 'Publish failed');
       throw error;
     }
   }
@@ -460,7 +454,7 @@ export class NostrTransport {
    * Close connections to specific relays
    */
   public close(relays: string[]): void {
-    this.systemLogger.info('NostrTransport', `Closing connections to ${relays.length} relays`);
+    this.systemLogger.info('NostrTransport', `Disconnecting ${relays.length} relays`);
 
     relays.forEach(url => {
       const relay = this.ndk.pool.getRelay(url);
@@ -506,16 +500,13 @@ export class NostrTransport {
   ): Promise<void> {
     await this.ensureConnected();
 
-    // Check if subscription already exists
+    // Subscription already active — skip silently
     if (this.subscriptions.has(subId)) {
-      this.systemLogger.warn('NostrTransport', `Subscription ${subId} already exists`);
+      console.debug(`[NostrTransport] Subscription ${subId} already active, skipping`);
       return;
     }
 
-    this.systemLogger.info(
-      'NostrTransport',
-      `Creating live subscription ${subId} to ${relays.length} relays`
-    );
+    this.systemLogger.info('NostrTransport', `Listening on ${relays.length} relays`);
 
     // Subscribe using NDK (persistent connection)
     const ndkSub = this.ndk.subscribe(filters, {
@@ -529,14 +520,9 @@ export class NostrTransport {
       }
     });
 
-    // Store subscription for cleanup
-    const closer = {
-      close: () => ndkSub.stop()
-    };
+    this.subscriptions.set(subId, { closer: { close: () => ndkSub.stop() }, relays });
 
-    this.subscriptions.set(subId, { closer, relays });
-
-    this.systemLogger.info('NostrTransport', `Live subscription ${subId} created`);
+    console.debug(`[NostrTransport] Subscription ${subId} active`);
   }
 
   /**
@@ -546,13 +532,13 @@ export class NostrTransport {
   public unsubscribeLive(subId: string): void {
     const subscription = this.subscriptions.get(subId);
     if (!subscription) {
-      this.systemLogger.warn('NostrTransport', `Subscription ${subId} not found`);
+      console.debug(`[NostrTransport] Subscription ${subId} not found`);
       return;
     }
 
     subscription.closer.close();
     this.subscriptions.delete(subId);
-    this.systemLogger.info('NostrTransport', `Live subscription ${subId} closed`);
+    console.debug(`[NostrTransport] Subscription ${subId} closed`);
   }
 
   /**
@@ -562,6 +548,6 @@ export class NostrTransport {
     const count = this.subscriptions.size;
     this.subscriptions.forEach((subscription) => subscription.closer.close());
     this.subscriptions.clear();
-    this.systemLogger.info('NostrTransport', `Closed all ${count} live subscriptions`);
+    this.systemLogger.info('NostrTransport', `All ${count} subscriptions closed`);
   }
 }

@@ -21,20 +21,34 @@ Run all checks before a commit. Every step must pass with zero errors/warnings.
 
    a. **`debugger` statements** → FAIL if found. Must be removed.
    b. **TODO / FIXME / HACK / XXX** → FAIL if found. Per CLAUDE.md: "No TODOs in code".
-   c. **`console.log`** → WARN. Show matches. Legitimate uses: tagged loggers (`[ServiceName]`), debug utilities, doc comments. Leftover debug logs (emoji prefixes, bare messages) should be flagged for review.
+   c. **`console.log`** → FAIL if found. Must be `console.debug()` (DevTools) or `systemLogger.*()` (System Log).
+   d. **`console.warn`** → FAIL if found. Same rule: `console.debug()` or `systemLogger.*()`.
+   e. **`console.info`** → FAIL if found. Same rule.
+
+   Exception: `console.error` is allowed (intercepted for relay error handling in SystemLogger).
+   If no modified .ts files exist, skip this step.
+
+3. **Log Review** (on modified .ts files only)
+   Execute `/log-review` skill logic on modified files:
+
+   a. **`systemLogger.*()` calls** → Verify messages are Hollywood-style, human-readable, user-worthy.
+      Flag technical jargon, hex IDs, JSON dumps, or overly verbose messages.
+   b. **Suggest promotions** → If a `console.debug` message would be interesting to the user,
+      suggest adding a `systemLogger` call with Hollywood-style wording.
+   c. Present findings and apply fixes on user approval.
 
    If no modified .ts files exist, skip this step.
 
-3. **TypeScript Build**
+4. **TypeScript Build**
    ```bash
    bun run build
    ```
    Zero errors and zero warnings required (includes strict mode check).
 
-4. **Rust Check**
+5. **Rust Check**
    ```bash
    cd src-tauri && cargo check
    ```
    Zero errors and zero warnings required.
 
-5. If all checks pass, report success. If any fail, fix issues and re-run.
+6. If all checks pass, report success. If any fail, fix issues and re-run.

@@ -6,6 +6,7 @@
 
 import { Router } from './Router';
 import { ModalService } from './ModalService';
+import { PlatformService } from './PlatformService';
 
 export class KeyboardShortcutManager {
   private static instance: KeyboardShortcutManager;
@@ -15,7 +16,6 @@ export class KeyboardShortcutManager {
   private constructor() {
     this.router = Router.getInstance();
     this.setupGlobalShortcuts();
-    console.log('[KeyboardShortcutManager] Initialized');
   }
 
   public static getInstance(): KeyboardShortcutManager {
@@ -30,31 +30,20 @@ export class KeyboardShortcutManager {
    */
   public registerSearchModalCallback(callback: () => void): void {
     this.searchModalCallback = callback;
-    console.log('[KeyboardShortcutManager] Search modal callback registered');
   }
 
   /**
    * Check if shortcuts should be blocked (modal open or focus in input)
    */
   private shouldBlockShortcuts(): boolean {
-    // Block if modal is open
-    const modalService = ModalService.getInstance();
-    if (modalService.isOpen()) {
-      return true;
-    }
+    if (ModalService.getInstance().isOpen()) return true;
 
     // Block if focus is in input/textarea/contenteditable
-    const activeElement = document.activeElement;
-    if (activeElement) {
-      const tagName = activeElement.tagName.toLowerCase();
-      const isEditable = activeElement.getAttribute('contenteditable') === 'true';
+    const active = document.activeElement;
+    if (!active) return false;
 
-      if (tagName === 'input' || tagName === 'textarea' || isEditable) {
-        return true;
-      }
-    }
-
-    return false;
+    const tag = active.tagName.toLowerCase();
+    return tag === 'input' || tag === 'textarea' || active.getAttribute('contenteditable') === 'true';
   }
 
   /**
@@ -64,44 +53,29 @@ export class KeyboardShortcutManager {
     // Always setup browser shortcuts (focus-aware)
     this.setupBrowserShortcuts();
 
+    if (!PlatformService.getInstance().isTauri) return;
+
     try {
-      // Import Tauri event API
       const { listen } = await import('@tauri-apps/api/event');
 
-      // Listen for global shortcuts from Tauri backend (if registered)
       await listen<string>('global-shortcut', (event) => {
-        console.log('[KeyboardShortcutManager] Global shortcut received:', event.payload);
-
-        // Block shortcuts if modal is open or focus is in input
-        if (this.shouldBlockShortcuts()) {
-          return;
-        }
+        if (this.shouldBlockShortcuts()) return;
 
         switch (event.payload) {
           case 'search':
           case 'search-alt':
-            if (this.searchModalCallback) {
-              this.searchModalCallback();
-            }
+            if (this.searchModalCallback) this.searchModalCallback();
             break;
-
           case 'navigate-back':
-            if (this.router.canGoBack()) {
-              this.router.back();
-            }
+            if (this.router.canGoBack()) this.router.back();
             break;
-
           case 'navigate-forward':
-            if (this.router.canGoForward()) {
-              this.router.forward();
-            }
+            if (this.router.canGoForward()) this.router.forward();
             break;
         }
       });
-
-      console.log('[KeyboardShortcutManager] Listening for Tauri global shortcuts');
-    } catch (error) {
-      console.warn('[KeyboardShortcutManager] Not in Tauri environment');
+    } catch {
+      // Tauri event API unavailable
     }
   }
 
