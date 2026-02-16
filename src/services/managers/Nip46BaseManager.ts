@@ -48,6 +48,9 @@ export interface NostrConnectSession {
 export abstract class Nip46BaseManager {
   protected signer: NDKNip46Signer | null = null;
 
+  // NIP-46 session state: connect handshake completed?
+  private sessionEstablished = false;
+
   // Circuit breaker state
   private circuitOpen = false;
   private circuitOpenSince = 0;
@@ -80,6 +83,7 @@ export abstract class Nip46BaseManager {
    */
   protected stopSignerAndPool(signer: NDKNip46Signer): void {
     signer.stop();
+    this.sessionEstablished = false;
     const rpc = signer.rpc as any;
     if (rpc.pool) {
       for (const relay of rpc.pool.relays.values()) {
@@ -175,6 +179,8 @@ export abstract class Nip46BaseManager {
         '#p': [localUser.pubkey],
       });
 
+      // Relay reconnected, but NIP-46 session needs re-establishment
+      this.sessionEstablished = false;
       nip46Log.info('RPC relay reconnected and re-subscribed');
       this.closeCircuit();
     } catch (err) {
@@ -212,6 +218,21 @@ export abstract class Nip46BaseManager {
     if (!this.signer) throw new Error('NIP-46 signer not available');
     this.checkCircuitBreaker();
     await this.ensureRpcRelayConnected();
+
+    // Lazy connect: if the NIP-46 handshake wasn't completed at startup
+    // (remote signer was offline), attempt it now before any sign/encrypt.
+    if (!this.sessionEstablished) {
+      nip46Log.info('NIP-46 session not established, attempting connect handshake...');
+      try {
+        await this.subscribeAndConnect(15000, 'Lazy connect');
+        this.sessionEstablished = true;
+        sysLog().success('Auth', 'Remote signer connected');
+      } catch (err) {
+        this.openCircuit();
+        throw new Error('Remote signer not responding — please check that it is running');
+      }
+    }
+
     return this.signer;
   }
 
@@ -335,9 +356,11 @@ export abstract class Nip46BaseManager {
       // guardRpcReady() will reconnect before the first actual sign/encrypt operation.
       try {
         await this.subscribeAndConnect(15000, 'Session restore');
+        this.sessionEstablished = true;
         nip46Log.info('Session restored successfully');
         sysLog().success('Auth', 'Remote signer session restored');
       } catch (connectErr) {
+        // Signer stays alive, guardRpcReady() will retry the connect handshake on demand
         nip46Log.warn('Remote signer offline at startup, will reconnect on demand:', connectErr);
         sysLog().warn('Auth', 'Remote signer offline — will reconnect when needed');
       }
