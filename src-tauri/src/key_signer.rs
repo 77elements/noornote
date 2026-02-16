@@ -29,6 +29,23 @@ fn get_noorsigner_path() -> Result<PathBuf, String> {
     Ok(get_noornote_base_path()?.join("bin").join("noorsigner"))
 }
 
+/// Check if daemon is actually alive by attempting a socket connection.
+/// A stale socket file (from a crashed daemon) will fail to connect.
+/// Cleans up the stale socket file on failure.
+fn is_daemon_alive(socket_path: &PathBuf) -> bool {
+    if !socket_path.exists() {
+        return false;
+    }
+    match UnixStream::connect(socket_path) {
+        Ok(_) => true,
+        Err(_) => {
+            // Socket file exists but daemon is dead — clean up stale socket
+            let _ = std::fs::remove_file(socket_path);
+            false
+        }
+    }
+}
+
 /// Get the sidecar binary path from the app bundle
 fn get_sidecar_source_path() -> Result<PathBuf, String> {
     let exe_path = std::env::current_exe()
@@ -297,8 +314,7 @@ pub async fn launch_daemon_silent() -> Result<(), String> {
     }
 
     let socket_path = get_socket_path()?;
-    if socket_path.exists() {
-        // Daemon already running
+    if is_daemon_alive(&socket_path) {
         return Ok(());
     }
 
@@ -364,7 +380,7 @@ pub async fn launch_key_signer(mode: String) -> Result<(), String> {
 
     let has_trust_session = check_trust_session().await.unwrap_or(false);
     let socket_path = get_socket_path()?;
-    let daemon_already_running = socket_path.exists();
+    let daemon_already_running = is_daemon_alive(&socket_path);
 
     println!("Trust session valid: {}", has_trust_session);
     println!("Daemon already running: {}", daemon_already_running);
@@ -508,8 +524,7 @@ pub async fn launch_daemon_with_password(password: String) -> Result<String, Str
     }
 
     let socket_path = get_socket_path()?;
-    if socket_path.exists() {
-        // Daemon already running
+    if is_daemon_alive(&socket_path) {
         return Ok("already_running".to_string());
     }
 
@@ -602,7 +617,7 @@ pub async fn prepare_daemon_for_unlock() -> Result<(), String> {
     }
 
     let socket_path = get_socket_path()?;
-    if socket_path.exists() {
+    if is_daemon_alive(&socket_path) {
         return Ok(()); // Daemon already running
     }
 
