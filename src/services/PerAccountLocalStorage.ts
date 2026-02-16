@@ -50,8 +50,10 @@ export const StorageKeys = {
   // NWC storage preference (per-account)
   NWC_USE_ENCRYPTED_FILE: 'noornote_nwc_use_encrypted_file_map', // boolean: true = encrypted file, false = keychain
 
-  // Relay list cache (per-account) - NIP-65 kind:10002
+  // Relay list cache (per-account) - NIP-65 kind:10002 + NIP-17 kind:10050
   RELAY_LIST: 'noornote_relay_list_map',
+  RELAY_LIST_TIMESTAMP: 'noornote_relay_list_timestamp_map',
+  INBOX_RELAY_LIST_TIMESTAMP: 'noornote_inbox_relay_list_timestamp_map',
 
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',

@@ -1,15 +1,15 @@
 /**
- * RelayListOrchestrator - NIP-65 Relay List Management
- * Handles fetching and publishing user's relay list (kind:10002)
+ * RelayListOrchestrator - NIP-65 + NIP-17 Relay List Management
+ * Handles fetching and publishing user's relay lists (kind:10002, kind:10050)
  *
  * @orchestrator RelayListOrchestrator
- * @purpose Fetch and publish NIP-65 relay lists
+ * @purpose Fetch and publish relay lists (read/write + inbox)
  * @used-by RelayConfig, SettingsView
  *
  * Architecture:
- * - Fetches kind:10002 relay list metadata on LOGIN
+ * - Fetches kind:10002 (NIP-65 read/write) and kind:10050 (NIP-17 inbox) on LOGIN
  * - Publishes kind:10002 when user updates settings
- * - Bootstrap relays from config/relays.json used to fetch
+ * - Bootstrap relays from config used to fetch
  * - User's relay list syncs across devices
  */
 
@@ -39,47 +39,58 @@ export class RelayListOrchestrator extends Orchestrator {
   }
 
   /**
-   * Fetch user's relay list (kind:10002) from bootstrap relays
-   * Called on LOGIN event
+   * Fetch a replaceable relay list event by kind from bootstrap relays.
+   * Shared fetch logic for kind:10002 and kind:10050.
    */
-  public async fetchRelayList(
+  private async fetchRelayKind(
     pubkey: string,
-    bootstrapRelays: string[]
-  ): Promise<RelayInfo[] | null> {
-    // Silent operation - RelayConfig logs "Fetching [username]'s relay list"
-
+    kind: number,
+    bootstrapRelays: string[],
+    parseEvent: (event: NostrEvent) => RelayInfo[]
+  ): Promise<{ relays: RelayInfo[]; timestamp: number } | null> {
     const filters: NDKFilter[] = [{
       authors: [pubkey],
-      kinds: [10002],
+      kinds: [kind],
       limit: 1
     }];
 
     try {
       const events = await this.transport.fetch(bootstrapRelays, filters, 5000);
 
-      if (events.length === 0) {
-        this.systemLogger.info(
-          'RelayListOrchestrator',
-          'No relay list found (kind:10002)'
-        );
-        return null;
-      }
-
-      // Parse most recent relay list
       const event = events[0];
       if (!event) return null;
-      const relayInfos = this.parseRelayListEvent(event);
 
-      // Silent operation - RelayConfig logs "✓ Loaded X relays from NIP-65"
-
-      return relayInfos;
+      return {
+        relays: parseEvent(event),
+        timestamp: event.created_at ?? 0
+      };
     } catch (error) {
       this.systemLogger.error(
         'RelayListOrchestrator',
-        `Fetch relay list failed: ${error}`
+        `Fetch kind:${kind} relay list failed: ${error}`
       );
       return null;
     }
+  }
+
+  /**
+   * Fetch user's relay list (kind:10002) from bootstrap relays
+   */
+  public async fetchRelayList(
+    pubkey: string,
+    bootstrapRelays: string[]
+  ): Promise<{ relays: RelayInfo[]; timestamp: number } | null> {
+    return this.fetchRelayKind(pubkey, 10002, bootstrapRelays, event => this.parseRelayListEvent(event));
+  }
+
+  /**
+   * Fetch user's DM inbox relay list (kind:10050) from bootstrap relays
+   */
+  public async fetchDMRelayList(
+    pubkey: string,
+    bootstrapRelays: string[]
+  ): Promise<{ relays: RelayInfo[]; timestamp: number } | null> {
+    return this.fetchRelayKind(pubkey, 10050, bootstrapRelays, event => this.parseInboxRelayEvent(event));
   }
 
   /**
@@ -115,34 +126,43 @@ export class RelayListOrchestrator extends Orchestrator {
    * NIP-65 format: [["r", url], ["r", url, "read"], ["r", url, "write"]]
    */
   private parseRelayListEvent(event: NostrEvent): RelayInfo[] {
-    const relayInfos: RelayInfo[] = [];
-
-    event.tags.forEach(tag => {
-      if (tag[0] === 'r' && tag[1]) {
-        const url = tag[1];
-        const marker = tag[2]; // "read", "write", or undefined (both)
-
-        let types: RelayType[] = [];
-        if (!marker) {
-          // No marker = both read and write
-          types = ['read', 'write'];
-        } else if (marker === 'read') {
+    return event.tags
+      .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'r' && !!tag[1])
+      .map(tag => {
+        const marker = tag[2];
+        let types: RelayType[];
+        if (marker === 'read') {
           types = ['read'];
         } else if (marker === 'write') {
           types = ['write'];
+        } else {
+          types = ['read', 'write'];
         }
 
-        relayInfos.push({
-          url,
+        return {
+          url: tag[1],
           types,
           isPaid: false,
           requiresAuth: false,
           isActive: true
-        });
-      }
-    });
+        };
+      });
+  }
 
-    return relayInfos;
+  /**
+   * Parse kind:10050 event into RelayInfo[]
+   * NIP-17 format: [["relay", url], ["relay", url], ...]
+   */
+  private parseInboxRelayEvent(event: NostrEvent): RelayInfo[] {
+    return event.tags
+      .filter((tag): tag is [string, string, ...string[]] => tag[0] === 'relay' && !!tag[1])
+      .map(tag => ({
+        url: tag[1],
+        types: ['inbox'] as RelayType[],
+        isPaid: false,
+        requiresAuth: false,
+        isActive: true
+      }));
   }
 
   /**

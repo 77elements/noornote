@@ -254,15 +254,33 @@ export class RelayConfig {
   }
 
   /**
-   * Save relay list to per-account cache
+   * Save relay list to per-account cache.
+   * Advances both timestamps (for local UI changes via addRelay/removeRelay).
    */
   private saveToCache(): void {
     try {
+      const now = Math.floor(Date.now() / 1000);
       const relayArray = Array.from(this.relays.values());
       this.perAccountStorage.set(StorageKeys.RELAY_LIST, relayArray);
+      this.perAccountStorage.set(StorageKeys.RELAY_LIST_TIMESTAMP, now);
+      this.perAccountStorage.set(StorageKeys.INBOX_RELAY_LIST_TIMESTAMP, now);
     } catch (error) {
       // Failed to save to cache
     }
+  }
+
+  /**
+   * Get cached relay list timestamp (created_at of last Kind 10002)
+   */
+  private getCacheTimestamp(): number {
+    return this.perAccountStorage.get<number>(StorageKeys.RELAY_LIST_TIMESTAMP, 0);
+  }
+
+  /**
+   * Get cached inbox relay list timestamp (created_at of last Kind 10050)
+   */
+  private getInboxCacheTimestamp(): number {
+    return this.perAccountStorage.get<number>(StorageKeys.INBOX_RELAY_LIST_TIMESTAMP, 0);
   }
 
   /**
@@ -297,65 +315,134 @@ export class RelayConfig {
   }
 
   /**
-   * Load relay list for user: cache-first, then fetch from relays if needed
-   * Emits 'relays:loaded' when done (for UI updates)
+   * Load relay list for user: cache first for instant UI, then background-sync
+   * from relays to pick up changes made on other instances.
+   * Emits 'relays:loaded' when cache is ready, 'relays:updated' if relay data is newer.
    */
   private async loadRelayListForUser(pubkey: string): Promise<void> {
-    // 1. Try to load from per-account cache first (synchronous)
-    if (this.loadFromCache()) {
-      this.systemLogger.info(
-        'RelayConfig',
-        `✓ Loaded ${this.relays.size} relays from cache`
-      );
+    const hadCache = this.loadFromCache();
+
+    if (hadCache) {
+      this.systemLogger.info('RelayConfig', `Loaded ${this.relays.size} relays from cache`);
       this.eventBus.emit('relays:loaded');
+
+      // Background-sync: check relays for newer list (don't block UI)
+      this.syncFromRelays(pubkey);
       return;
     }
 
-    // 2. No cache - fetch from relays (async)
-    await this.fetchAndLoadRelayList(pubkey);
+    // No cache — must fetch before UI can proceed
+    await this.syncFromRelays(pubkey);
     this.eventBus.emit('relays:loaded');
   }
 
   /**
-   * Fetch and load user's relay list from NIP-65 (kind:10002)
+   * Merge a fetched relay kind into the relay map, replacing old entries of that type
+   * category while preserving other types. Returns summary parts for logging.
    */
-  private async fetchAndLoadRelayList(pubkey: string): Promise<void> {
-    const relayListOrchestrator = RelayListOrchestrator.getInstance();
+  private mergeRelayKind(
+    result: { relays: RelayInfo[]; timestamp: number },
+    typesToReplace: RelayType[],
+    label: string
+  ): string[] {
+    const replaceSet = new Set(typesToReplace);
+    const parts: string[] = [];
 
+    // Compute old URLs that have any of the types being replaced
+    const oldUrls = new Set(
+      [...this.relays.values()]
+        .filter(r => r.types.some(t => replaceSet.has(t)))
+        .map(r => r.url)
+    );
+    const newUrls = new Set(result.relays.map(r => r.url));
+
+    const added = [...newUrls].filter(url => !oldUrls.has(url)).length;
+    const removed = [...oldUrls].filter(url => !newUrls.has(url)).length;
+
+    // Strip replaced types from all relays, remove those with no types left
+    for (const [url, relay] of this.relays) {
+      relay.types = relay.types.filter(t => !replaceSet.has(t));
+      if (relay.types.length === 0) this.relays.delete(url);
+    }
+
+    // Merge new relays, preserving existing types from other kinds
+    for (const relay of result.relays) {
+      const existing = this.relays.get(relay.url);
+      if (existing) {
+        existing.types = [...new Set([...existing.types, ...relay.types])];
+      } else {
+        this.relays.set(relay.url, { ...relay });
+      }
+    }
+
+    if (added > 0) parts.push(`${added} new ${label}${added > 1 ? 's' : ''}`);
+    if (removed > 0) parts.push(`${removed} ${label}${removed > 1 ? 's' : ''} removed`);
+    return parts;
+  }
+
+  /**
+   * Fetch relay lists from relays (Kind 10002 + Kind 10050) and update if newer.
+   * Called on first login (blocking) and as background-sync (non-blocking).
+   */
+  private async syncFromRelays(pubkey: string): Promise<void> {
+    const orchestrator = RelayListOrchestrator.getInstance();
     const profileService = UserProfileService.getInstance();
     const username = profileService.getUsername(pubkey) || pubkey.slice(0, 8) + '...';
 
-    const bootstrapRelays = this.getBootstrapRelays();
+    this.systemLogger.info('RelayConfig', `Syncing ${username}'s relay list`);
 
-    this.systemLogger.info(
-      'RelayConfig',
-      `Fetching ${username}'s relay list from relays`
-    );
+    try {
+      const bootstrapRelays = this.getBootstrapRelays();
 
-    const relayInfos = await relayListOrchestrator.fetchRelayList(
-      pubkey,
-      bootstrapRelays
-    );
+      // Fetch Kind 10002 (read/write) and Kind 10050 (inbox) in parallel
+      const [relayResult, inboxResult] = await Promise.all([
+        orchestrator.fetchRelayList(pubkey, bootstrapRelays),
+        orchestrator.fetchDMRelayList(pubkey, bootstrapRelays)
+      ]);
 
-    if (!relayInfos || relayInfos.length === 0) {
-      this.systemLogger.info(
-        'RelayConfig',
-        'No relay list found on relays, using defaults'
-      );
-      return;
+      const parts: string[] = [];
+      let newRelayTimestamp: number | undefined;
+      let newInboxTimestamp: number | undefined;
+
+      // --- Kind 10002: read/write relays ---
+      if (relayResult && relayResult.relays.length > 0 && relayResult.timestamp > this.getCacheTimestamp()) {
+        parts.push(...this.mergeRelayKind(relayResult, ['read', 'write'], 'relay'));
+        newRelayTimestamp = relayResult.timestamp;
+      }
+
+      // --- Kind 10050: inbox relays ---
+      if (inboxResult && inboxResult.relays.length > 0 && inboxResult.timestamp > this.getInboxCacheTimestamp()) {
+        parts.push(...this.mergeRelayKind(inboxResult, ['inbox'], 'inbox relay'));
+        newInboxTimestamp = inboxResult.timestamp;
+      }
+
+      const changed = newRelayTimestamp !== undefined || newInboxTimestamp !== undefined;
+
+      if (changed) {
+        try {
+          const relayArray = Array.from(this.relays.values());
+          this.perAccountStorage.set(StorageKeys.RELAY_LIST, relayArray);
+          if (newRelayTimestamp) this.perAccountStorage.set(StorageKeys.RELAY_LIST_TIMESTAMP, newRelayTimestamp);
+          if (newInboxTimestamp) this.perAccountStorage.set(StorageKeys.INBOX_RELAY_LIST_TIMESTAMP, newInboxTimestamp);
+        } catch {
+          // Failed to save to cache
+        }
+
+        if (parts.length === 0) parts.push('relay settings updated');
+        this.systemLogger.success('RelayConfig', `Relay sync: ${parts.join(', ')}`);
+        this.eventBus.emit('relays:updated');
+      } else {
+        const noData = (!relayResult || relayResult.relays.length === 0) &&
+                       (!inboxResult || inboxResult.relays.length === 0);
+        if (noData) {
+          this.systemLogger.info('RelayConfig', 'No relay list found on relays, using defaults');
+        } else {
+          this.systemLogger.info('RelayConfig', 'Relay list is up to date');
+        }
+      }
+    } catch (error) {
+      console.debug('[RelayConfig] Background sync failed:', error);
     }
-
-    this.relays.clear();
-    relayInfos.forEach(relay => {
-      this.relays.set(relay.url, relay);
-    });
-
-    this.saveToCache();
-
-    this.systemLogger.info(
-      'RelayConfig',
-      `✓ Loaded ${relayInfos.length} relays from NIP-65`
-    );
   }
 
   /**
