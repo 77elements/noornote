@@ -14,10 +14,8 @@ import { RelayListOrchestrator } from '../../services/orchestration/RelayListOrc
 import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
-import { Switch } from '../ui/Switch';
 import { RelayHealthMonitor } from '../../services/RelayHealthMonitor';
 import { EventBus } from '../../services/EventBus';
-import { SystemLogger } from '../system/SystemLogger';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 
 interface LocalRelaySettings {
@@ -34,7 +32,6 @@ export class RelaySettingsSection extends SettingsSection {
   private healthMonitor: RelayHealthMonitor;
   private eventBus: EventBus;
   private eventBusSubscriptions: string[] = [];
-  private localRelaySwitch: Switch | null = null;
   private localRelaySettings: LocalRelaySettings;
   private tempRelays: RelayInfo[];
   private readonly localRelayStorageKey = 'noornote_local_relay';
@@ -526,7 +523,7 @@ export class RelaySettingsSection extends SettingsSection {
         signedEvent
       );
 
-      console.log('Relay list published successfully');
+      console.debug('[RelaySettings] Relay list published successfully');
     } catch (error) {
       console.error('Failed to publish relay list:', error);
       throw error;
@@ -537,13 +534,12 @@ export class RelaySettingsSection extends SettingsSection {
    * Publish DM relay list to network as NIP-17 (kind:10050)
    */
   private async publishDMRelayList(): Promise<void> {
-    const systemLogger = SystemLogger.getInstance();
     const context = this.getPublishContext();
     if (!context) return;
 
     const inboxRelays = this.tempRelays.filter(r => r.types.includes('inbox'));
     if (inboxRelays.length === 0) {
-      systemLogger.info('RelaySettings', 'No DM inbox relays configured, skipping kind:10050 publish');
+      console.debug('[RelaySettings] No DM inbox relays configured, skipping kind:10050 publish');
       return;
     }
 
@@ -562,10 +558,9 @@ export class RelaySettingsSection extends SettingsSection {
       const transport = NostrTransport.getInstance();
       await transport.publish(context.writeRelays, signedEvent);
 
-      const relayUrls = inboxRelays.map(r => r.url).join(', ');
-      systemLogger.info('RelaySettings', `Published kind:10050 DM relay list with ${inboxRelays.length} relays: ${relayUrls}`);
+      console.debug(`[RelaySettings] DM relay list published (${inboxRelays.length} relays)`);
     } catch (error) {
-      systemLogger.error('RelaySettings', 'Failed to publish DM relay list:', error);
+      console.error('Failed to publish DM relay list:', error);
     }
   }
 
@@ -591,9 +586,5 @@ export class RelaySettingsSection extends SettingsSection {
   public unmount(): void {
     this.eventBusSubscriptions.forEach(id => this.eventBus.off(id));
     this.eventBusSubscriptions = [];
-
-    if (this.localRelaySwitch) {
-      this.localRelaySwitch = null;
-    }
   }
 }

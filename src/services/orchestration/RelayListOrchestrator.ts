@@ -170,22 +170,20 @@ export class RelayListOrchestrator extends Orchestrator {
    * Returns: [["r", url], ["r", url, "read"], ["r", url, "write"]]
    */
   public static relayInfosToTags(relays: RelayInfo[]): string[][] {
-    return relays.map(relay => {
-      const hasRead = relay.types.includes('read');
-      const hasWrite = relay.types.includes('write');
+    return relays
+      .filter(relay => relay.types.includes('read') || relay.types.includes('write'))
+      .map(relay => {
+        const hasRead = relay.types.includes('read');
+        const hasWrite = relay.types.includes('write');
 
-      if (hasRead && hasWrite) {
-        // Both read and write = no marker
-        return ['r', relay.url];
-      } else if (hasRead) {
-        return ['r', relay.url, 'read'];
-      } else if (hasWrite) {
-        return ['r', relay.url, 'write'];
-      } else {
-        // No types = both (fallback)
-        return ['r', relay.url];
-      }
-    });
+        if (hasRead && hasWrite) {
+          return ['r', relay.url];
+        } else if (hasRead) {
+          return ['r', relay.url, 'read'];
+        } else {
+          return ['r', relay.url, 'write'];
+        }
+      });
   }
 
   // Orchestrator interface implementations
