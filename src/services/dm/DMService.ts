@@ -749,25 +749,23 @@ export class DMService {
     return timestamp - randomOffset;
   }
 
-  /**
-   * Get current user's inbox relays (from config or fallback)
-   * Combines: configured inbox relays + aggregator relays + nostr1.com relays
-   */
-  private async getMyInboxRelays(): Promise<string[]> {
-    return [...new Set([
-      ...this.relayConfig.getInboxRelays(),
-      ...this.relayConfig.getAggregatorRelays(),
-      ...this.FALLBACK_INBOX_RELAYS
-    ])];
-  }
-
-  /**
-   * Default fallback inbox relays (nostr1.com infrastructure)
-   */
+  /** Default fallback DM inbox relays (NIP-17 + NIP-42 AUTH capable) */
   private readonly FALLBACK_INBOX_RELAYS = [
+    'wss://auth.nostr1.com',
     'wss://noornode.nostr1.com',
     'wss://bitcoinmajlis.nostr1.com'
   ];
+
+  /**
+   * Get current user's inbox relays (configured or fallback)
+   */
+  private getMyInboxRelays(): string[] {
+    const configured = this.relayConfig.getInboxRelays();
+    if (configured.length > 0) {
+      return configured;
+    }
+    return [...this.FALLBACK_INBOX_RELAYS];
+  }
 
   /**
    * Get a user's inbox relays (kind:10050)
@@ -775,7 +773,7 @@ export class DMService {
    */
   public async getUserInboxRelays(pubkey: string): Promise<string[]> {
     try {
-      // For own user: use getMyInboxRelays (which combines all sources)
+      // For own user: use configured inbox relays (or fallback)
       if (pubkey === this.userPubkey) {
         return this.getMyInboxRelays();
       }
