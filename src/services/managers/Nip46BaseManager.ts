@@ -331,12 +331,20 @@ export abstract class Nip46BaseManager {
       this.lockEncryptionType(this.signer.rpc);
       this.activateRpcPool(this.signer.rpc);
 
-      await this.subscribeAndConnect(15000, 'Session restore');
+      // Lazy connect: try handshake but keep signer alive if remote signer is offline.
+      // guardRpcReady() will reconnect before the first actual sign/encrypt operation.
+      try {
+        await this.subscribeAndConnect(15000, 'Session restore');
+        nip46Log.info('Session restored successfully');
+        sysLog().success('Auth', 'Remote signer session restored');
+      } catch (connectErr) {
+        nip46Log.warn('Remote signer offline at startup, will reconnect on demand:', connectErr);
+        sysLog().warn('Auth', 'Remote signer offline — will reconnect when needed');
+      }
 
-      nip46Log.info('Session restored successfully');
-      sysLog().success('Auth', 'Remote signer session restored');
       return true;
     } catch (err) {
+      // Signer creation failed (corrupted payload) — clean up
       nip46Log.error('Session restore failed:', err);
       sysLog().error('Auth', 'Remote signer session expired — please reconnect');
       localStorage.removeItem(NIP46_STORAGE_KEY);

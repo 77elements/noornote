@@ -24,6 +24,12 @@ export interface ReactionOptions {
   relays: string[];
 }
 
+/** Normalize emoji: treat "+" and empty string as ❤️ (NIP-25 convention) */
+function normalizeEmoji(emoji: string): string {
+  const trimmed = emoji.trim();
+  return (trimmed === '+' || trimmed === '') ? '❤️' : trimmed;
+}
+
 export class ReactionService {
   private static instance: ReactionService;
   private authService: AuthService;
@@ -57,13 +63,7 @@ export class ReactionService {
 
     try {
       const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
-
-      // Check if any reaction event is from the current user
-      const userReaction = stats.reactionEvents.find(
-        event => event.pubkey === currentUser.pubkey
-      );
-
-      return !!userReaction;
+      return stats.reactionEvents.some(event => event.pubkey === currentUser.pubkey);
     } catch (_error) {
       this.systemLogger.warn('ReactionService', 'Failed to check if user liked note:', _error);
       return false;
@@ -83,21 +83,10 @@ export class ReactionService {
 
     try {
       const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
-
-      // Normalize emoji for comparison (handle "+" and empty as ❤️)
-      const normalizedTargetEmoji = (emoji === '+' || emoji === '') ? '❤️' : emoji;
-
-      // Check if user has reacted with this specific emoji
-      const userReaction = stats.reactionEvents.find(event => {
-        if (event.pubkey !== currentUser.pubkey) return false;
-
-        const eventEmoji = event.content.trim();
-        const normalizedEventEmoji = (eventEmoji === '+' || eventEmoji === '') ? '❤️' : eventEmoji;
-
-        return normalizedEventEmoji === normalizedTargetEmoji;
-      });
-
-      return !!userReaction;
+      const target = normalizeEmoji(emoji);
+      return stats.reactionEvents.some(
+        event => event.pubkey === currentUser.pubkey && normalizeEmoji(event.content) === target
+      );
     } catch (_error) {
       this.systemLogger.warn('ReactionService', 'Failed to check if user liked note with emoji:', _error);
       return false;
@@ -182,14 +171,14 @@ export class ReactionService {
 
       return { success: true };
     } catch (error) {
-      // Centralized error handling with user notification
+      const errorMsg = error instanceof Error ? error.message : 'Unknown error';
       ErrorService.handle(
         error,
         'ReactionService.publishReaction',
         true,
-        'Like konnte nicht abgegeben werden. Bitte versuche es erneut.'
+        errorMsg
       );
-      return { success: false, error: 'Publish failed' };
+      return { success: false, error: errorMsg };
     }
   }
 }

@@ -341,7 +341,14 @@ export class AuthService {
         return event;
 
       } else {
-        throw new Error('No signing method available');
+        const disconnectErrors: Record<string, string> = {
+          'extension': 'Browser extension disconnected — please reload the page',
+          'nip46': 'Remote signer disconnected — please reconnect',
+          'key-signer': 'Key signer not running — please restart NoorSigner',
+        };
+        throw new Error(
+          (this.authMethod && disconnectErrors[this.authMethod]) || 'No signing method available'
+        );
       }
     } catch (error) {
       console.error('AuthService signing error:', error);
@@ -566,6 +573,41 @@ export class AuthService {
     });
   }
 
+  /**
+   * Reset session state when a signer connection cannot be restored.
+   */
+  private invalidateSession(): void {
+    console.debug('[AuthService] Signer session could not be restored');
+    this.currentUser = null;
+    this.authMethod = null;
+    this.isReadOnly = false;
+  }
+
+  /**
+   * Restore the active signer connection based on current auth method.
+   * Returns true if the connection was restored (or no restore needed).
+   */
+  private async restoreSignerConnection(): Promise<boolean> {
+    if (this.authMethod === 'nip46' && this.nip46SubType === 'bunker') {
+      if (!this.bunkerManager) this.bunkerManager = new BunkerSignerManager();
+      await this.bunkerManager.restoreSession();
+      return this.bunkerManager.isAvailable();
+    }
+
+    if (this.authMethod === 'nip46' && this.nip46SubType === 'nostrconnect') {
+      if (!this.nostrConnectManager) this.nostrConnectManager = new NostrConnectSignerManager();
+      await this.nostrConnectManager.restoreSession();
+      return this.nostrConnectManager.isAvailable();
+    }
+
+    if (this.authMethod === 'extension') {
+      if (!this.extensionManager) this.extensionManager = new ExtensionSignerManager();
+      return this.extensionManager.restoreConnection();
+    }
+
+    return true;
+  }
+
   private async loadSession(): Promise<void> {
     try {
       const stored = localStorage.getItem(this.storageKey);
@@ -601,23 +643,14 @@ export class AuthService {
         return;
       }
 
-      // Restore signer connections BEFORE emitting login event
-      if (this.authMethod === 'nip46' && this.nip46SubType === 'bunker') {
-        if (!this.bunkerManager) this.bunkerManager = new BunkerSignerManager();
-        await this.bunkerManager.restoreSession();
-      } else if (this.authMethod === 'nip46' && this.nip46SubType === 'nostrconnect') {
-        if (!this.nostrConnectManager) this.nostrConnectManager = new NostrConnectSignerManager();
-        await this.nostrConnectManager.restoreSession();
-      } else if (this.authMethod === 'extension') {
-        if (!this.extensionManager) this.extensionManager = new ExtensionSignerManager();
-        const restored = await this.extensionManager.restoreConnection();
-        if (!restored) {
-          console.warn('[AuthService] Extension session could not be restored');
-          this.currentUser = null;
-          this.authMethod = null;
-          this.isReadOnly = false;
-          return;
-        }
+      // Restore signer connections BEFORE emitting login event.
+      // NIP-46: restoreSession() keeps signer alive even if remote signer is offline
+      // (lazy reconnect via guardRpcReady on first sign/encrypt). Only log out if
+      // signer creation itself failed (corrupted payload → isAvailable() = false).
+      const restored = await this.restoreSignerConnection();
+      if (!restored) {
+        this.invalidateSession();
+        return;
       }
 
       this.eventBus.emit('user:login', { npub: sessionData.npub, pubkey: sessionData.pubkey });
