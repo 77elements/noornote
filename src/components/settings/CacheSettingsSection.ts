@@ -78,7 +78,6 @@ export class CacheSettingsSection extends SettingsSection {
    */
   private renderContent(config: NDKCacheConfig, notificationsCacheLimit: number): string {
     return `
-      <div class="cache-settings">
         <h3 class="subsection-title">Notifications Cache</h3>
         <div class="form__row form__row--oneline">
           <label for="notifications-cache-size">Cache Size</label>
@@ -168,11 +167,6 @@ export class CacheSettingsSection extends SettingsSection {
         </div>
         <p class="form__note">Store signatures in cache (increases storage usage).</p>
 
-        <div class="settings-section__actions">
-          <button class="btn btn--medium" id="save-cache-config-btn">Save Configuration</button>
-          <div id="cache-config-message" class="settings-section__action-feedback"></div>
-        </div>
-
         <h3 class="subsection-title">Clear Cache Data</h3>
         <div class="form__info">
           <p>Select which cache tables to clear. This action cannot be undone.</p>
@@ -209,7 +203,6 @@ export class CacheSettingsSection extends SettingsSection {
           <button class="btn btn--medium btn--danger" id="clear-selected-btn">Clear Selected</button>
           <button class="btn btn--medium btn--danger" id="clear-all-btn">Clear All & Reload</button>
         </div>
-      </div>
     `;
   }
 
@@ -217,9 +210,41 @@ export class CacheSettingsSection extends SettingsSection {
    * Bind event listeners
    */
   private bindListeners(contentContainer: HTMLElement): void {
-    // Save configuration button
-    const saveBtn = contentContainer.querySelector('#save-cache-config-btn');
-    saveBtn?.addEventListener('click', () => this.handleSaveConfig(contentContainer));
+    // Notifications cache size: save on blur / Enter
+    const notifInput = contentContainer.querySelector('#notifications-cache-size') as HTMLInputElement;
+    const saveNotifCache = () => {
+      const val = parseInt(notifInput.value, 10);
+      if (isNaN(val) || val < 10 || val > 1000) {
+        ToastService.show('Invalid notifications cache size (10-1000)', 'error');
+        return;
+      }
+      NotificationsCacheService.getInstance().setLimit(val);
+      ToastService.show('Notifications cache size saved', 'success');
+    };
+    notifInput?.addEventListener('blur', saveNotifCache);
+    notifInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveNotifCache(); });
+
+    // NDK cache inputs: save on blur / Enter
+    const ndkInputIds = [
+      'profile-cache-size', 'event-cache-size', 'event-tags-cache-size',
+      'zapper-cache-size', 'nip05-cache-size'
+    ];
+    const saveNDKConfig = () => {
+      const config = this.readConfigFromDOM(contentContainer);
+      if (!config) return;
+      this.saveConfig(config);
+      ToastService.show('Saved. Reload app for NDK changes to take effect.', 'success');
+    };
+
+    ndkInputIds.forEach(id => {
+      const input = contentContainer.querySelector(`#${id}`) as HTMLInputElement;
+      input?.addEventListener('blur', saveNDKConfig);
+      input?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveNDKConfig(); });
+    });
+
+    // Save signatures checkbox: save on change
+    const saveSigInput = contentContainer.querySelector('#save-sig') as HTMLInputElement;
+    saveSigInput?.addEventListener('change', saveNDKConfig);
 
     // Clear selected tables button
     const clearSelectedBtn = contentContainer.querySelector('#clear-selected-btn');
@@ -231,28 +256,19 @@ export class CacheSettingsSection extends SettingsSection {
   }
 
   /**
-   * Get numeric input value from container
+   * Read current NDK cache config values from DOM inputs
    */
-  private getInputValue(contentContainer: HTMLElement, id: string): number {
-    const input = contentContainer.querySelector(`#${id}`) as HTMLInputElement;
-    return parseInt(input.value, 10);
-  }
+  private readConfigFromDOM(contentContainer: HTMLElement): NDKCacheConfig | null {
+    const getValue = (id: string): number => {
+      const input = contentContainer.querySelector(`#${id}`) as HTMLInputElement;
+      return parseInt(input.value, 10);
+    };
 
-  /**
-   * Handle save configuration
-   */
-  private handleSaveConfig(contentContainer: HTMLElement): void {
-    const notificationsCacheSize = this.getInputValue(contentContainer, 'notifications-cache-size');
-    if (isNaN(notificationsCacheSize) || notificationsCacheSize < 10 || notificationsCacheSize > 1000) {
-      this.showMessage(contentContainer, 'Invalid notifications cache size (must be between 10-1000)', 'error');
-      return;
-    }
-
-    const profileCacheSize = this.getInputValue(contentContainer, 'profile-cache-size');
-    const eventCacheSize = this.getInputValue(contentContainer, 'event-cache-size');
-    const eventTagsCacheSize = this.getInputValue(contentContainer, 'event-tags-cache-size');
-    const zapperCacheSize = this.getInputValue(contentContainer, 'zapper-cache-size');
-    const nip05CacheSize = this.getInputValue(contentContainer, 'nip05-cache-size');
+    const profileCacheSize = getValue('profile-cache-size');
+    const eventCacheSize = getValue('event-cache-size');
+    const eventTagsCacheSize = getValue('event-tags-cache-size');
+    const zapperCacheSize = getValue('zapper-cache-size');
+    const nip05CacheSize = getValue('nip05-cache-size');
     const saveSig = (contentContainer.querySelector('#save-sig') as HTMLInputElement).checked;
 
     const isInvalidSize = (val: number, min: number): boolean => isNaN(val) || val < min;
@@ -263,26 +279,11 @@ export class CacheSettingsSection extends SettingsSection {
       isInvalidSize(zapperCacheSize, 50) ||
       isInvalidSize(nip05CacheSize, 100)
     ) {
-      this.showMessage(contentContainer, 'Invalid cache size values', 'error');
-      return;
+      ToastService.show('Invalid cache size values', 'error');
+      return null;
     }
 
-    NotificationsCacheService.getInstance().setLimit(notificationsCacheSize);
-
-    this.saveConfig({
-      profileCacheSize,
-      eventCacheSize,
-      eventTagsCacheSize,
-      zapperCacheSize,
-      nip05CacheSize,
-      saveSig
-    });
-
-    this.showMessage(
-      contentContainer,
-      'Configuration saved! Reload the app for NDK cache changes to take effect.',
-      'success'
-    );
+    return { profileCacheSize, eventCacheSize, eventTagsCacheSize, zapperCacheSize, nip05CacheSize, saveSig };
   }
 
   /**
@@ -370,7 +371,7 @@ export class CacheSettingsSection extends SettingsSection {
     this.showConfirmationModal(
       'Clear All Cache & Reload?',
       `<p style="margin-bottom: 1rem;">This will clear all safe cache tables and reload the app.</p>
-       <p style="font-size: 13px; color: var(--text-alpha-medium); margin-bottom: 1rem;">
+       <p class="small">
          Excludes: Unpublished events and decrypted messages (protected from accidental deletion).
        </p>`,
       'Clear Cache & Reload',
@@ -394,26 +395,6 @@ export class CacheSettingsSection extends SettingsSection {
         }
       }
     );
-  }
-
-  /**
-   * Show message
-   */
-  private showMessage(
-    contentContainer: HTMLElement,
-    message: string,
-    type: 'success' | 'error'
-  ): void {
-    const messageEl = contentContainer.querySelector('#cache-config-message');
-    if (!messageEl) return;
-
-    messageEl.textContent = message;
-    messageEl.className = `settings-section__action-feedback settings-section__action-feedback--${type}`;
-
-    setTimeout(() => {
-      messageEl.textContent = '';
-      messageEl.className = 'settings-section__action-feedback';
-    }, 5000);
   }
 
   /**

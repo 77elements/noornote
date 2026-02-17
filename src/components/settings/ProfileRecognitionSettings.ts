@@ -84,7 +84,6 @@ export class ProfileRecognitionSettings extends SettingsSection {
     }).join('');
 
     return `
-      <div class="profile-recognition-settings">
         <div class="form__info">
           <p>
             Profile Recognition helps you recognize people you follow even after they change their name or profile picture.
@@ -99,8 +98,8 @@ export class ProfileRecognitionSettings extends SettingsSection {
           ${optionsHtml}
         </div>
 
-        <div class="form__info" style="margin-top: 1.5rem;">
-          <p style="font-size: 13px; color: var(--text-alpha-medium);">
+        <div class="form__info">
+          <p class="small">
             <strong>How it works:</strong><br>
             • When you follow someone, the app saves their current name and profile picture<br>
             • If they change their profile within your selected window, their picture will blink between old and new<br>
@@ -108,7 +107,6 @@ export class ProfileRecognitionSettings extends SettingsSection {
             • Only applies to people you follow (not everyone you see)
           </p>
         </div>
-      </div>
     `;
   }
 

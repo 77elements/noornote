@@ -40,42 +40,21 @@
   // Settings-specific content padding
   padding: 0;
 
-  .nn-ui-toggle__content {
-    padding: 0 calc($gap / 2);
-  }
-
-  &.open .nn-ui-toggle__content {
-    padding-bottom: $gap;
-  }
-
   // Settings-specific header padding
   .nn-ui-toggle__header {
-    padding: calc($gap / 2);
-    margin-bottom: $gap;
+    padding: $gap;
   }
 
   // Settings-specific action area
   &__actions {
     margin-top: $gap;
-    padding: 0 calc($gap / 2);
-    text-align: right;
-  }
-
-  &__action-feedback {
-    padding: calc($gap / 2) 0 0 0;
-    color: var(--color-6);
-    transition: opacity 0.3s ease;
-    min-height: 1.5em;
     text-align: right;
 
-    &--success {
-      color: $color-success;
-    }
-
-    &--error {
-      color: $color-red;
+    &:last-child {
+      margin-bottom: 0;
     }
   }
+
 }
 
 // ========================================
@@ -370,7 +349,6 @@
   }
 }
 
-// .media-server-save moved to .settings-section__actions
 
 // ========================================
 // Sensitive Media Subsection
@@ -390,7 +368,6 @@
   margin-bottom: $gap;
 }
 
-// .sensitive-media-save moved to .settings-section__actions
 
 // ========================================
 // Privacy Settings Switch Containers
@@ -414,12 +391,14 @@
 .zap-info {
   color: var(--text-alpha-heavy);
   line-height: 1.6;
+  margin-bottom: $gap;
 }
 
 .zap-connect {
   display: flex;
   flex-direction: column;
   gap: $gap;
+  margin-bottom: $gap;
 
   label {
     font-weight: 500;
@@ -444,9 +423,6 @@
     }
   }
 
-  .nwc-status {
-    min-height: 20px;
-  }
 }
 
 .nwc-storage-option {
@@ -481,6 +457,7 @@
   display: flex;
   flex-direction: column;
   gap: $gap;
+  margin-bottom: $gap;
 }
 
 .zap-wallet-status {
@@ -558,7 +535,6 @@
   }
 }
 
-// .zap-save moved to .settings-section__actions
 
 // ========================================
 // Responsive
@@ -598,6 +574,10 @@
 // ========================================
 .privacy-subsection {
   margin-bottom: calc(2 * $gap);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 .subsection-title {
@@ -681,7 +661,6 @@
   line-height: 1.4;
 }
 
-// .key-signer-actions moved to .settings-section__actions
 
 .key-signer-info {
   padding: $gap;
@@ -697,14 +676,7 @@
 // ========================================
 // Cache Settings Section
 // ========================================
-.cache-settings {
-
-  .section-help {
-    color: var(--text-alpha-medium);
-    margin-bottom: $gap * 2;
-    line-height: 1.5;
-  }
-
+#cache-settings {
   // Right-align number inputs
   input[type="number"] {
     text-align: right;

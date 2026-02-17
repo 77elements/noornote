@@ -15,9 +15,7 @@ import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
 import { EventBus } from '../../services/EventBus';
-import * as tribes from '../../lists/tribes';
-
-type ListType = 'follows' | 'bookmarks' | 'tribes' | 'mutes';
+type ListType = 'follows' | 'bookmarks' | 'mutes';
 
 interface PrivacySectionConfig {
   id: ListType;
@@ -78,16 +76,6 @@ export class PrivacySettingsSection extends SettingsSection {
         setEnabled: (enabled) => this.bookmarkOrch.setPrivateBookmarksEnabled(enabled)
       },
       {
-        id: 'tribes',
-        title: 'Tribes',
-        listName: 'tribes',
-        switchLabel: 'Use private tribes (NIP-51)',
-        description: 'Private tribes (NIP-51 kind:30000) allow you to create curated user lists without publicly revealing who you added. Your tribe members are encrypted and only you can see them.',
-        viewButtonLabel: 'View Tribes',
-        isEnabled: () => tribes.isPrivateTribesEnabled(),
-        setEnabled: (enabled) => tribes.setPrivateTribesEnabled(enabled)
-      },
-      {
         id: 'mutes',
         title: 'Mute List',
         listName: 'mutes',
@@ -105,14 +93,13 @@ export class PrivacySettingsSection extends SettingsSection {
       .map(config => this.renderPrivacySubsection(config))
       .join('');
 
-    return `<div class="privacy-settings">${sections}</div>`;
+    return sections;
   }
 
   private renderPrivacySubsection(config: PrivacySectionConfig): string {
     return `
       <div class="privacy-subsection">
         <h3 class="subsection-title">${config.title}</h3>
-        <div class="${config.id}-settings">
           <div class="form__info">
             <p>${config.description}</p>
             <p class="${config.id}-warning"><strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private ${config.listName}.</p>
@@ -124,7 +111,6 @@ export class PrivacySettingsSection extends SettingsSection {
           <div class="settings-section__actions">
             <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
           </div>
-        </div>
       </div>
     `;
   }

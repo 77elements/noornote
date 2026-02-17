@@ -8,6 +8,7 @@
 
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
+import { ToastService } from '../../services/ToastService';
 
 interface MediaServerSettings {
   url: string;
@@ -129,7 +130,6 @@ export class MediaServerSection extends SettingsSection {
    */
   private renderContent(): string {
     return `
-      <div class="media-settings">
         <!-- Media Server Subsection -->
         <div class="media-subsection">
           <h3 class="subsection-title">Media Server</h3>
@@ -141,7 +141,6 @@ export class MediaServerSection extends SettingsSection {
           <h3 class="subsection-title">Sensitive Media</h3>
           ${this.renderSensitiveMedia()}
         </div>
-      </div>
     `;
   }
 
@@ -157,7 +156,6 @@ export class MediaServerSection extends SettingsSection {
     ];
 
     return `
-      <div class="media-server-settings">
         <div class="form__info">
           <p>Choose where to upload images, videos, and other media files. Noornote supports both Blossom and NIP-96 protocols.</p>
         </div>
@@ -205,12 +203,6 @@ export class MediaServerSection extends SettingsSection {
           </div>
           <p class="form__note">Most servers auto-detect. Use Blossom for newer servers, NIP-96 for legacy.</p>
         </div>
-
-        <div class="settings-section__actions">
-          <button class="btn btn--medium" id="save-media-server-btn">Save Settings</button>
-          <div class="settings-section__action-feedback" id="media-save-message"></div>
-        </div>
-      </div>
     `;
   }
 
@@ -219,7 +211,6 @@ export class MediaServerSection extends SettingsSection {
    */
   private renderSensitiveMedia(): string {
     return `
-      <div class="sensitive-media-settings">
         <div class="form__info">
           <p>Control how sensitive content (NSFW) is displayed. When disabled, NSFW images and videos will be blurred.</p>
         </div>
@@ -227,12 +218,6 @@ export class MediaServerSection extends SettingsSection {
         <div class="sensitive-media-switch-container" id="sensitive-media-switch-container">
           <!-- Switch will be mounted here -->
         </div>
-
-        <div class="settings-section__actions">
-          <button class="btn btn--medium" id="save-sensitive-media-btn">Save Settings</button>
-          <div class="settings-section__action-feedback" id="sensitive-save-message"></div>
-        </div>
-      </div>
     `;
   }
 
@@ -271,11 +256,27 @@ export class MediaServerSection extends SettingsSection {
             btn.classList.remove('active');
           }
         });
+
+        this.saveMediaServerSettings();
+        ToastService.show('Media server saved', 'success');
       }
     });
 
-    customInput?.addEventListener('input', () => {
-      this.mediaServerSettings.url = customInput.value.trim();
+    const saveCustomUrl = () => {
+      const url = customInput?.value.trim();
+      if (!url) return;
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        ToastService.show('URL must start with http:// or https://', 'error');
+        return;
+      }
+      this.mediaServerSettings.url = url;
+      this.saveMediaServerSettings();
+      ToastService.show('Media server saved', 'success');
+    };
+
+    customInput?.addEventListener('blur', saveCustomUrl);
+    customInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveCustomUrl();
     });
 
     const protocolButtons = contentContainer.querySelectorAll('.protocol-btn');
@@ -290,11 +291,11 @@ export class MediaServerSection extends SettingsSection {
 
         protocolButtons.forEach(b => b.classList.remove('active'));
         button.classList.add('active');
+
+        this.saveMediaServerSettings();
+        ToastService.show(`Protocol set to ${protocol === 'blossom' ? 'Blossom' : 'NIP-96'}`, 'success');
       });
     });
-
-    const saveBtn = contentContainer.querySelector('#save-media-server-btn');
-    saveBtn?.addEventListener('click', () => this.handleMediaServerSave(contentContainer));
   }
 
   /**
@@ -309,77 +310,18 @@ export class MediaServerSection extends SettingsSection {
       checked: this.sensitiveMediaSettings.displayNSFW,
       onChange: (checked) => {
         this.sensitiveMediaSettings.displayNSFW = checked;
+        this.saveSensitiveMediaSettings();
+
+        window.dispatchEvent(new CustomEvent('nsfw-preference-changed', {
+          detail: { displayNSFW: checked }
+        }));
+
+        ToastService.show(checked ? 'Sensitive media will be shown' : 'Sensitive media will be blurred', 'success');
       }
     });
 
     switchContainer.innerHTML = nsfwSwitch.render();
     nsfwSwitch.setupEventListeners(switchContainer as HTMLElement);
-
-    const saveBtn = contentContainer.querySelector('#save-sensitive-media-btn');
-    saveBtn?.addEventListener('click', () => this.handleSensitiveMediaSave(contentContainer));
-  }
-
-  /**
-   * Handle media server save
-   */
-  private handleMediaServerSave(contentContainer: HTMLElement): void {
-    if (!this.mediaServerSettings.url) {
-      this.showMediaMessage(contentContainer, 'Please enter a media server URL', 'error');
-      return;
-    }
-
-    if (!this.mediaServerSettings.url.startsWith('http://') && !this.mediaServerSettings.url.startsWith('https://')) {
-      this.showMediaMessage(contentContainer, 'Media server URL must start with http:// or https://', 'error');
-      return;
-    }
-
-    this.saveMediaServerSettings();
-    this.showMediaMessage(contentContainer, 'Media server settings saved!', 'success');
-  }
-
-  /**
-   * Handle sensitive media save
-   */
-  private handleSensitiveMediaSave(contentContainer: HTMLElement): void {
-    this.saveSensitiveMediaSettings();
-
-    window.dispatchEvent(new CustomEvent('nsfw-preference-changed', {
-      detail: { displayNSFW: this.sensitiveMediaSettings.displayNSFW }
-    }));
-
-    this.showSensitiveMediaMessage(contentContainer, 'Sensitive media settings saved!', 'success');
-  }
-
-  /**
-   * Show media server message
-   */
-  private showMediaMessage(contentContainer: HTMLElement, message: string, type: 'success' | 'error'): void {
-    const messageEl = contentContainer.querySelector('#media-save-message');
-    if (!messageEl) return;
-
-    messageEl.textContent = message;
-    messageEl.className = `settings-section__action-feedback settings-section__action-feedback--${type}`;
-
-    setTimeout(() => {
-      messageEl.textContent = '';
-      messageEl.className = 'settings-section__action-feedback';
-    }, 5000);
-  }
-
-  /**
-   * Show sensitive media message
-   */
-  private showSensitiveMediaMessage(contentContainer: HTMLElement, message: string, type: 'success' | 'error'): void {
-    const messageEl = contentContainer.querySelector('#sensitive-save-message');
-    if (!messageEl) return;
-
-    messageEl.textContent = message;
-    messageEl.className = `settings-section__action-feedback settings-section__action-feedback--${type}`;
-
-    setTimeout(() => {
-      messageEl.textContent = '';
-      messageEl.className = 'settings-section__action-feedback';
-    }, 5000);
   }
 
   /**

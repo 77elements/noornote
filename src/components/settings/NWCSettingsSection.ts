@@ -165,13 +165,11 @@ export class NWCSettingsSection extends SettingsSection {
             placeholder="nostr+walletconnect://..."
           />
           <button class="btn btn--medium" id="nwc-connect-btn">Connect Wallet</button>
-          <div class="nwc-status" id="nwc-status"></div>
         </div>
       `;
 
     // Zap defaults section (always visible)
     const zapDefaultsSection = `
-      <div class="zap-defaults">
         <h3 class="subsection-title">Zap Settings</h3>
 
         <div id="quick-zap-switch-container"></div>
@@ -203,23 +201,13 @@ export class NWCSettingsSection extends SettingsSection {
             ${this.renderCurrencyOptions()}
           </select>
         </div>
-
-        <div class="settings-section__actions">
-          <button class="btn btn--medium" id="save-zap-defaults-btn">Save</button>
-          <div class="settings-section__action-feedback" id="zap-save-message"></div>
-        </div>
-      </div>
     `;
 
     return `
-      <div class="zap-settings">
         ${nwcSection}
         ${zapDefaultsSection}
-        <div class="nwc-storage-option">
-          <div id="nwc-storage-switch-container"></div>
-          <p class="form__info" id="nwc-storage-info"></p>
-        </div>
-      </div>
+        <div id="nwc-storage-switch-container"></div>
+        <p class="form__info" id="nwc-storage-info"></p>
     `;
   }
 
@@ -238,6 +226,7 @@ export class NWCSettingsSection extends SettingsSection {
       checked: quickZapEnabled,
       onChange: (checked) => {
         storage.set(StorageKeys.QUICK_ZAP_ENABLED, checked);
+        ToastService.show(checked ? 'Quick zap enabled' : 'Quick zap disabled', 'success');
       }
     });
 
@@ -359,7 +348,7 @@ export class NWCSettingsSection extends SettingsSection {
       connectBtn?.addEventListener('click', async () => {
         const connectionString = connectionInput?.value.trim();
         if (!connectionString) {
-          this.showMessage(contentContainer, 'Please enter NWC connection string', 'error');
+          ToastService.show('Please enter NWC connection string', 'error');
           return;
         }
 
@@ -395,46 +384,38 @@ export class NWCSettingsSection extends SettingsSection {
       });
     }
 
-    // Save defaults button (always available)
-    const saveBtn = contentContainer.querySelector('#save-zap-defaults-btn');
+    // Zap default amount: save on blur / Enter
     const amountInput = contentContainer.querySelector('#zap-default-amount') as HTMLInputElement;
-    const commentInput = contentContainer.querySelector('#zap-default-comment') as HTMLInputElement;
-    const currencySelect = contentContainer.querySelector('#fiat-currency-select') as HTMLSelectElement;
-
-    saveBtn?.addEventListener('click', async () => {
+    const saveAmount = async () => {
       const amount = parseInt(amountInput?.value || '21', 10);
-      const comment = commentInput?.value || '';
-      const currency = currencySelect?.value || 'EUR';
-
       if (amount < 1) {
-        this.showMessage(contentContainer, 'Amount must be at least 1 sat', 'error');
+        ToastService.show('Amount must be at least 1 sat', 'error');
         return;
       }
-
-      // Update and save
-      this.zapDefaults = { amount, comment };
-      this.fiatCurrencySettings = { currency };
+      this.zapDefaults.amount = amount;
       await this.saveZapDefaults();
+      ToastService.show('Zap defaults saved', 'success');
+    };
+    amountInput?.addEventListener('blur', saveAmount);
+    amountInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveAmount(); });
+
+    // Zap default comment: save on blur / Enter
+    const commentInput = contentContainer.querySelector('#zap-default-comment') as HTMLInputElement;
+    const saveComment = async () => {
+      this.zapDefaults.comment = commentInput?.value || '';
+      await this.saveZapDefaults();
+      ToastService.show('Zap defaults saved', 'success');
+    };
+    commentInput?.addEventListener('blur', saveComment);
+    commentInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveComment(); });
+
+    // Fiat currency: save on change
+    const currencySelect = contentContainer.querySelector('#fiat-currency-select') as HTMLSelectElement;
+    currencySelect?.addEventListener('change', async () => {
+      this.fiatCurrencySettings.currency = currencySelect.value;
       await this.saveFiatCurrencySettings();
-
-      this.showMessage(contentContainer, 'Zap defaults saved!', 'success');
+      ToastService.show('Fiat currency saved', 'success');
     });
-  }
-
-  /**
-   * Show message
-   */
-  private showMessage(contentContainer: HTMLElement, message: string, type: 'success' | 'error'): void {
-    const messageEl = contentContainer.querySelector('#nwc-status, #zap-save-message');
-    if (!messageEl) return;
-
-    messageEl.textContent = message;
-    messageEl.className = `settings-section__action-feedback settings-section__action-feedback--${type}`;
-
-    setTimeout(() => {
-      messageEl.textContent = '';
-      messageEl.className = 'settings-section__action-feedback';
-    }, 5000);
   }
 
   /**

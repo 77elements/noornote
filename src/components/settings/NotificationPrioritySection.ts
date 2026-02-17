@@ -111,7 +111,6 @@ export class NotificationPrioritySection extends SettingsSection {
    */
   private renderContent(): string {
     return `
-      <div class="notification-priority-settings">
         <div class="form__info">
           <p>Drag notification types between priority levels to customize your badge indicator.</p>
         </div>
@@ -128,7 +127,6 @@ export class NotificationPrioritySection extends SettingsSection {
             Save
           </button>
         </div>
-      </div>
     `;
   }
 

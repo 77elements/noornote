@@ -44,7 +44,6 @@ export class KeySignerSection extends SettingsSection {
    */
   private renderContent(isRunning: boolean): string {
     return `
-      <div class="key-signer-settings">
         <div class="key-signer-status">
           <div class="status-indicator ${isRunning ? 'status-running' : 'status-stopped'}">
             <span class="status-dot"></span>
@@ -81,7 +80,6 @@ export class KeySignerSection extends SettingsSection {
             <p>NoorSigner key signer is not running. Start it by logging in with NoorSigner.</p>
           </div>
         `}
-      </div>
     `;
   }
 

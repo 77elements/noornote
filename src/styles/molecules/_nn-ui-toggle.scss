@@ -24,8 +24,6 @@
   background: var(--color-1);
   border: 1px solid var(--color-2);
   border-radius: $radius-sm;
-  overflow: hidden;
-  transition: all 0.2s ease;
   margin-bottom: $gap;
 
   &__header {
@@ -35,7 +33,6 @@
     padding: $gap;
     cursor: pointer;
     user-select: none;
-    transition: background 0.2s ease;
 
     &:hover {
       background: var(--color-2);
@@ -64,7 +61,6 @@
     color: var(--color-5);
     cursor: pointer;
     padding: calc($gap / 2);
-    transition: transform 0.2s ease;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -78,16 +74,15 @@
   }
 
   &__content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    padding: 0 $gap;
+    display: none;
+    padding: $gap;
   }
 
   // Open state
   &.open {
     .nn-ui-toggle__header {
       background-color: var(--color-2);
+      border-bottom: 1px solid var(--color-3);
     }
 
     .nn-ui-toggle__toggle {
@@ -95,8 +90,8 @@
     }
 
     .nn-ui-toggle__content {
-      max-height: 5000px; // Large enough for most content
-      padding-bottom: $gap;
+      display: block;
+      background-color: var(--color-2);
     }
   }
 }

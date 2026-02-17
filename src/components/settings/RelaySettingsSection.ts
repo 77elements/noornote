@@ -74,7 +74,7 @@ export class RelaySettingsSection extends SettingsSection {
       this.eventBus.on('relays:loaded', () => {
         this.tempRelays = this.loadRelaysFromConfig();
         // Re-render if section is currently mounted
-        const contentContainer = document.querySelector('.relay-settings')?.parentElement;
+        const contentContainer = document.getElementById('relay-settings-content');
         if (contentContainer) {
           contentContainer.innerHTML = this.renderContent();
           this.bindListeners(contentContainer as HTMLElement);
@@ -176,7 +176,6 @@ export class RelaySettingsSection extends SettingsSection {
    */
   private renderContent(): string {
     return `
-      <div class="relay-settings">
         <!-- Health Summary -->
         <div class="relay-health-summary" id="relay-health-summary">
           <div class="health-summary-loading">Loading relay health status...</div>
@@ -197,13 +196,6 @@ export class RelaySettingsSection extends SettingsSection {
         <div class="relay-list">
           ${this.tempRelays.map(relay => this.renderRelayItem(relay)).join('')}
         </div>
-
-        <!-- Save button -->
-        <div class="settings-section__actions">
-          <button class="btn btn--medium" id="save-relay-settings-btn">Save Settings</button>
-          <div class="settings-section__action-feedback" id="save-message"></div>
-        </div>
-      </div>
     `;
   }
 
@@ -315,16 +307,12 @@ export class RelaySettingsSection extends SettingsSection {
     removeButtons.forEach(btn => {
       btn.addEventListener('click', (e) => this.handleRemoveRelay(e, contentContainer));
     });
-
-    // Save button
-    const saveBtn = contentContainer.querySelector('#save-relay-settings-btn');
-    saveBtn?.addEventListener('click', () => this.handleSave(contentContainer));
   }
 
   /**
    * Handle add new relay
    */
-  private handleAddRelay(contentContainer: HTMLElement): void {
+  private async handleAddRelay(contentContainer: HTMLElement): Promise<void> {
     const input = contentContainer.querySelector('#new-relay-url') as HTMLInputElement;
     let url = input?.value.trim();
 
@@ -354,12 +342,14 @@ export class RelaySettingsSection extends SettingsSection {
     input.value = '';
     contentContainer.innerHTML = this.renderContent();
     this.bindListeners(contentContainer);
+
+    await this.saveAndPublish();
   }
 
   /**
    * Handle toggle relay type
    */
-  private handleToggleRelayType(e: Event): void {
+  private async handleToggleRelayType(e: Event): Promise<void> {
     const btn = e.currentTarget as HTMLElement;
     const url = btn.dataset.url;
     const type = btn.dataset.type as RelayType;
@@ -374,6 +364,8 @@ export class RelaySettingsSection extends SettingsSection {
       relay.types.push(type);
       btn.classList.add('active');
     }
+
+    await this.saveAndPublish();
   }
 
   /**
@@ -413,22 +405,24 @@ export class RelaySettingsSection extends SettingsSection {
         this.modalService.hide();
       });
 
-      confirmBtn?.addEventListener('click', () => {
+      confirmBtn?.addEventListener('click', async () => {
         this.tempRelays = this.tempRelays.filter(r => r.url !== url);
         this.modalService.hide();
         contentContainer.innerHTML = this.renderContent();
         this.bindListeners(contentContainer);
+
+        await this.saveAndPublish();
       });
     }, 0);
   }
 
   /**
-   * Handle save settings
+   * Save relay configuration and publish to network
    */
-  private async handleSave(contentContainer: HTMLElement): Promise<void> {
+  private async saveAndPublish(): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
-      this.showMessage(contentContainer, 'Please log in to save relay settings', 'error');
+      ToastService.show('Please log in to save relay settings', 'error');
       return;
     }
 
@@ -473,9 +467,10 @@ export class RelaySettingsSection extends SettingsSection {
       // Publish NIP-17 DM relay list (kind:10050) to network
       await this.publishDMRelayList();
 
-      this.showMessage(contentContainer, 'Settings saved successfully!', 'success');
+      ToastService.show('Relay settings saved', 'success');
     } catch (error) {
-      this.showMessage(contentContainer, 'Failed to save settings: ' + error, 'error');
+      ToastService.show('Failed to save relay settings', 'error');
+      console.error('[RelaySettings] Save error:', error);
     }
   }
 
@@ -562,22 +557,6 @@ export class RelaySettingsSection extends SettingsSection {
     } catch (error) {
       console.error('Failed to publish DM relay list:', error);
     }
-  }
-
-  /**
-   * Show message
-   */
-  private showMessage(contentContainer: HTMLElement, message: string, type: 'success' | 'error'): void {
-    const messageEl = contentContainer.querySelector('#save-message');
-    if (!messageEl) return;
-
-    messageEl.textContent = message;
-    messageEl.className = `settings-section__action-feedback settings-section__action-feedback--${type}`;
-
-    setTimeout(() => {
-      messageEl.textContent = '';
-      messageEl.className = 'settings-section__action-feedback';
-    }, 5000);
   }
 
   /**

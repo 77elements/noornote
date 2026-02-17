@@ -11,7 +11,7 @@
 .switch-container {
   display: inline-flex;
   align-items: center;
-  margin-bottom: calc($gap / 2);
+  margin-bottom: $gap;
 }
 
 // Label wrapper

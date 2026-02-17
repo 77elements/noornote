@@ -92,9 +92,11 @@ label {
 // Form Info (description text)
 // ========================================
 .form__info {
-  border-top: 1px solid var(--color-3);
-  padding-top: $gap;
   margin-bottom: $gap;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 
 // ========================================
@@ -114,6 +116,7 @@ label {
   display: flex;
   flex-direction: column;
   gap: $gap;
+  margin-bottom: $gap;
 }
 
 .mode-option {

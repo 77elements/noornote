@@ -49,7 +49,6 @@ export class UISettingsSection extends SettingsSection {
     const isTauri = PlatformService.getInstance().isTauri;
 
     return `
-      <div class="ui-settings">
         <h3 class="subsection-title">Calendar System</h3>
         <div class="form__info">
           <p>Choose how dates are displayed throughout the app.</p>
@@ -63,42 +62,40 @@ export class UISettingsSection extends SettingsSection {
         </div>
 
         <div class="form__info">
-          <p style="font-size: 13px; color: var(--text-alpha-medium); margin-top: 0.5rem;">
+          <p class="small">
             • <strong>Gregorian:</strong> Standard Western calendar (e.g., "30. Oct. 2024")<br>
             • <strong>Hijri:</strong> Islamic calendar (e.g., "26. Rabi' ath-Thani 1446")<br>
             • <strong>Gregorian + Hijri:</strong> Both calendars side-by-side
           </p>
         </div>
 
-        <div class="layout-mode-section">
-          <h3 class="subsection-title" style="margin-top: 2rem;">Layout Mode</h3>
-          <div class="form__info">
-            <p>Configure how the app layout behaves when opening notes, profiles, and other views.</p>
-          </div>
+        <h3 class="subsection-title">Layout Mode</h3>
+        <div class="form__info">
+          <p>Configure how the app layout behaves when opening notes, profiles, and other views.</p>
+        </div>
 
-          <div class="form-group">
-            <label class="form-label">Layout Mode</label>
-            <div class="layout-mode-dropdown-container">
-              <!-- Layout mode dropdown will be mounted here -->
-            </div>
-          </div>
-
-          <div class="form__info">
-            <p style="font-size: 13px; color: var(--text-alpha-medium); margin-top: 0.5rem;">
-              • <strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger<br>
-              • <strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane<br>
-              • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space<br>
-              • <strong>Phone:</strong> Single-column layout (390px width) for phone development and testing
-            </p>
-            <p style="font-size: 13px; color: var(--text-alpha-medium);">
-              <strong>Right Pane mode click behavior:</strong><br>
-              • Single click: Open in new tab or switch to existing tab<br>
-              • Double-click or Cmd+Click: Open additional tabs
-            </p>
+        <div class="form-group">
+          <label class="form-label">Layout Mode</label>
+          <div class="layout-mode-dropdown-container">
+            <!-- Layout mode dropdown will be mounted here -->
           </div>
         </div>
 
-        <h3 class="subsection-title" style="margin-top: 2rem;">Content Display</h3>
+        <div class="form__info">
+          <p class="small">
+            • <strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger<br>
+            • <strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane<br>
+            • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space<br>
+            • <strong>Phone:</strong> Single-column layout (390px width) for phone development and testing
+          </p>
+          <p class="small">
+            <strong>Right Pane mode click behavior:</strong><br>
+            • Single click: Open in new tab or switch to existing tab<br>
+            • Double-click or Cmd+Click: Open additional tabs
+          </p>
+        </div>
+
+        <h3 class="subsection-title">Content Display</h3>
         <div class="form__info">
           <p>Configure how long posts are displayed in the timeline.</p>
         </div>
@@ -108,23 +105,22 @@ export class UISettingsSection extends SettingsSection {
         </div>
 
         <div class="form__info">
-          <p style="font-size: 13px; color: var(--text-alpha-medium); margin-top: 0.5rem;">
+          <p class="small">
             When enabled, long posts will always be displayed in full without "Show More" buttons. This may affect timeline scrolling performance for very long posts.
           </p>
         </div>
 
         ${isTauri ? `
-          <h3 class="subsection-title" style="margin-top: 2rem;">Updates</h3>
+          <h3 class="subsection-title">Updates</h3>
 
           <div id="auto-update-switch-container">
             <!-- Switch will be mounted here -->
           </div>
 
-          <div style="margin-top: 1rem;">
+          <div>
             <button class="btn btn--mini" id="check-update-now-btn">Check now</button>
           </div>
         ` : ''}
-      </div>
     `;
   }
 

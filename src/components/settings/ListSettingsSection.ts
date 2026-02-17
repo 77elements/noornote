@@ -43,7 +43,6 @@ export class ListSettingsSection extends SettingsSection {
    */
   private renderContent(): string {
     return `
-      <div class="list-settings">
         <div class="form__info">
           <p>Choose how NoorNote syncs your lists (Follows, Bookmarks, Mutes) across your local backup and relays.</p>
         </div>
@@ -87,11 +86,6 @@ export class ListSettingsSection extends SettingsSection {
               </div>
             </label>
           </div>
-        </div>
-
-        <div class="settings-section__actions">
-          <button class="btn btn--medium" id="save-list-settings-btn">Save Settings</button>
-          <div class="settings-section__action-feedback" id="list-settings-message"></div>
         </div>
 
         <!-- Danger Zone -->
@@ -141,7 +135,6 @@ export class ListSettingsSection extends SettingsSection {
             </div>
           </div>
         </div>
-      </div>
     `;
   }
 
@@ -166,12 +159,12 @@ export class ListSettingsSection extends SettingsSection {
             label.classList.remove('mode-option--active');
           }
         });
+
+        setListSyncMode(this.currentMode);
+        const modeLabel = this.currentMode === 'easy' ? 'Easy Mode' : 'Manual Mode';
+        ToastService.show(`List sync: ${modeLabel} enabled`, 'success');
       });
     });
-
-    // Save button
-    const saveBtn = contentContainer.querySelector('#save-list-settings-btn');
-    saveBtn?.addEventListener('click', () => this.handleSave(contentContainer));
 
     // Danger Zone buttons
     contentContainer.querySelector('[data-action="reset-tribes"]')
@@ -185,43 +178,6 @@ export class ListSettingsSection extends SettingsSection {
 
     contentContainer.querySelector('[data-action="reset-follows"]')
       ?.addEventListener('click', () => this.confirmResetFollows());
-  }
-
-  /**
-   * Handle save settings
-   */
-  private handleSave(contentContainer: HTMLElement): void {
-    const previousMode = getListSyncMode();
-    setListSyncMode(this.currentMode);
-
-    const modeLabel = this.currentMode === 'easy' ? 'Easy Mode' : 'Manual Mode';
-
-    if (previousMode !== this.currentMode) {
-      this.showMessage(contentContainer, `Switched to ${modeLabel}`, 'success');
-      ToastService.show(`List sync: ${modeLabel} enabled`, 'success');
-    } else {
-      this.showMessage(contentContainer, 'Settings saved', 'success');
-    }
-  }
-
-  /**
-   * Show feedback message
-   */
-  private showMessage(
-    contentContainer: HTMLElement,
-    message: string,
-    type: 'success' | 'error'
-  ): void {
-    const messageEl = contentContainer.querySelector('#list-settings-message');
-    if (!messageEl) return;
-
-    messageEl.textContent = message;
-    messageEl.className = `settings-section__action-feedback settings-section__action-feedback--${type}`;
-
-    setTimeout(() => {
-      messageEl.textContent = '';
-      messageEl.className = 'settings-section__action-feedback';
-    }, 5000);
   }
 
   // ========================================
