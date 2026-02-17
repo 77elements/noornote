@@ -1,7 +1,7 @@
 /**
  * SyncConfirmationModal
  * Confirms sync operations when local list differs from source (relay/file)
- * Shows diff (added/removed/moved items) and asks user whether to keep local or overwrite
+ * Shows diff (added/removed/moved items) and asks user whether to only add new ones or accept changes
  */
 
 import { ModalService } from '../../services/ModalService';
@@ -29,11 +29,11 @@ export interface SyncConfirmationOptions<T> {
   getDisplayName: (item: T) => string | Promise<string>;
   /** Optional: Function to render item as HTML (for mentions with avatar) */
   renderItemHtml?: (item: T) => string | Promise<string>;
-  /** Callback when user chooses "Keep local items" (keep local, ignore relay changes) */
+  /** Callback when user chooses "Only add new ones" (keep local, ignore relay removals) */
   onKeep: () => void;
   /** Callback when user chooses "Merge both" (combine local + relay, then sync back) */
   onMerge?: () => void;
-  /** Callback when user chooses "Overwrite" (replace local with relay) */
+  /** Callback when user chooses "Accept changes" (replace local with relay) */
   onDelete: () => void;
 }
 
@@ -224,15 +224,15 @@ export class SyncConfirmationModal<T> {
 
         <div class="sync-confirmation-modal__actions">
           <button type="button" class="btn btn--passive" id="sync-keep-btn">
-            Keep actual state
+            Only add new ones
           </button>
           ${this.options.onMerge ? `
           <button type="button" class="btn btn--primary" id="sync-merge-btn">
             Merge both
           </button>
           ` : ''}
-          <button type="button" class="btn btn--danger" id="sync-delete-btn">
-            Overwrite with ${sourceLabel} backup
+          <button type="button" class="btn btn--success" id="sync-delete-btn">
+            Accept changes
           </button>
         </div>
       </div>

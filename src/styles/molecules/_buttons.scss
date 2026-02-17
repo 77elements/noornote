@@ -122,6 +122,22 @@
   }
 }
 
+// Success (for confirmative actions)
+.btn--success {
+  color: $color-white;
+  background-color: $color-success;
+  border-color: $color-success;
+
+  &:hover {
+    background-color: color.adjust($color-success, $lightness: -8%);
+    border-color: color.adjust($color-success, $lightness: -12%);
+  }
+
+  &:focus {
+    outline-color: $color-success;
+  }
+}
+
 // ========================================
 // Icon Button (toolbar icons)
 // ========================================
