@@ -25,6 +25,7 @@ import { HashtagNotificationService } from '../../services/HashtagNotificationSe
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
 import { NotificationPrioritySection } from '../settings/NotificationPrioritySection';
+import { DefaultAppSection } from '../settings/DefaultAppSection';
 
 export class SettingsView extends View {
   private container: HTMLElement;
@@ -44,6 +45,7 @@ export class SettingsView extends View {
   private uiSettingsSection: UISettingsSection;
   private profileRecognitionSettings: ProfileRecognitionSettings;
   private notificationPrioritySection: NotificationPrioritySection;
+  private defaultAppSection: DefaultAppSection | null = null;
 
   constructor() {
     super();
@@ -68,6 +70,7 @@ export class SettingsView extends View {
     this.listSettingsSection = new ListSettingsSection();
     if (PlatformService.getInstance().isTauri) {
       this.cacheSettingsSection = new CacheSettingsSection();
+      this.defaultAppSection = new DefaultAppSection();
     }
     this.uiSettingsSection = new UISettingsSection();
     this.profileRecognitionSettings = new ProfileRecognitionSettings();
@@ -92,6 +95,12 @@ export class SettingsView extends View {
           'Configure UI behavior and experimental view navigation features.',
           false
         )}
+
+        ${this.defaultAppSection ? this.defaultAppSection.renderAccordionSection(
+          'Default Nostr App',
+          'Set Noornote as the default app for opening nostr: links.',
+          false
+        ) : ''}
 
         ${this.profileRecognitionSettings.renderAccordionSection(
           'Profile Recognition',
@@ -182,6 +191,9 @@ export class SettingsView extends View {
 
     // Mount section content
     this.uiSettingsSection.mount(this.container);
+    if (this.defaultAppSection) {
+      this.defaultAppSection.mount(this.container);
+    }
     this.profileRecognitionSettings.mount(this.container);
     this.notificationPrioritySection.mount(this.container);
     this.relaySettingsSection.mount(this.container);
@@ -347,6 +359,9 @@ export class SettingsView extends View {
       this.cacheSettingsSection.unmount();
     }
     this.uiSettingsSection.unmount();
+    if (this.defaultAppSection) {
+      this.defaultAppSection.unmount();
+    }
     this.profileRecognitionSettings.unmount();
     this.notificationPrioritySection.unmount();
 

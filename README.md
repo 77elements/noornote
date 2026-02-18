@@ -114,6 +114,7 @@ If the app crashes, check the log files:
 | [NIP-56](https://github.com/nostr-protocol/nips/blob/master/56.md) | Reporting | 1984 |
 | [NIP-57](https://github.com/nostr-protocol/nips/blob/master/57.md) | Zaps | 9734, 9735 |
 | [NIP-65](https://github.com/nostr-protocol/nips/blob/master/65.md) | Relay list metadata | 10002 |
+| [NIP-71](https://github.com/nostr-protocol/nips/blob/master/71.md) | Video events (render) | 21, 22 |
 | [NIP-78](https://github.com/nostr-protocol/nips/blob/master/78.md) | Application-specific data | 30078 |
 | [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) | Polls | 1068, 1018 |
 | [NIP-96](https://github.com/nostr-protocol/nips/blob/master/96.md) | HTTP file storage | 24242 |
