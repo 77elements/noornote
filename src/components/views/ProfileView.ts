@@ -112,16 +112,18 @@ export class ProfileView extends View {
     this.profileOrchestrator = ProfileOrchestrator.getInstance();
     this.recognitionService = ProfileRecognitionService.getInstance();
 
-    // Decode npub to pubkey
+    // Decode npub or nprofile to pubkey
     try {
       const decoded = decodeNip19(npub);
       if (decoded.type === 'npub') {
         this.pubkey = decoded.data;
+      } else if (decoded.type === 'nprofile') {
+        this.pubkey = (decoded.data as { pubkey: string }).pubkey;
       } else {
-        throw new Error('Invalid npub');
+        throw new Error('Invalid npub/nprofile');
       }
     } catch (_error) {
-      console.error('❌ PV: Invalid npub', _error);
+      console.error('❌ PV: Invalid npub/nprofile', _error);
       this.pubkey = '';
     }
 

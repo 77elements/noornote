@@ -216,6 +216,29 @@ export class App {
     // Parameterized routes (authenticated)
     this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true,
       (params) => params.pubkey);
+
+    // Catch-all: bare nip19 entities in URL path (njump.me links like noornote.app/nprofile1...)
+    this.router.register(
+      '/:entity',
+      (params) => {
+        const entity = params['entity'];
+        if (!entity) return;
+
+        try {
+          const decoded = decodeNip19(entity);
+          if (decoded.type === 'npub' || decoded.type === 'nprofile') {
+            this.router.navigate(`/profile/${entity}`);
+          } else if (decoded.type === 'note' || decoded.type === 'nevent') {
+            this.router.navigate(`/note/${entity}`);
+          } else if (decoded.type === 'naddr') {
+            this.router.navigate(`/article/${entity}`);
+          }
+        } catch {
+          this.router.navigate('/');
+        }
+      },
+      'nip19-entity'
+    );
   }
 
   // ─── UI & Event Listeners ────────────────────────────────────────────
