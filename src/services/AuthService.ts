@@ -623,7 +623,7 @@ export class AuthService {
       }
 
       const sessionAge = Date.now() - sessionData.timestamp;
-      const maxAge = 7 * 24 * 60 * 60 * 1000;
+      const maxAge = 30 * 24 * 60 * 60 * 1000;
 
       if (sessionAge >= maxAge) {
         this.clearSession();
