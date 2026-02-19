@@ -257,21 +257,6 @@ export class App {
     // Parameterized routes (authenticated)
     this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true,
       (params) => params.pubkey);
-
-    // Catch-all: bare nip19 entity in URL path (e.g. /npub1..., /nprofile1..., /nevent1...)
-    // Used by njump.me and other gateways that link to https://noornote.app/{nip19entity}
-    // Must be registered LAST so named routes take priority.
-    this.router.register('/:entity', (params) => {
-      const entity = params.entity;
-      if (entity) {
-        const path = resolveNostrUri(entity);
-        if (path) {
-          this.router.navigate(path);
-          return;
-        }
-      }
-      this.router.navigate('/');
-    });
   }
 
   // ─── UI & Event Listeners ────────────────────────────────────────────
