@@ -20,10 +20,8 @@ import { FontSizeService } from './services/FontSizeService';
 import { ThemeService } from './services/ThemeService';
 import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
-import { resolveNostrUri } from './helpers/nostrUri';
-
-/** Capture query params immediately at module load (before Router.navigate strips them via pushState) */
-const STARTUP_NOSTR_PARAM = new URLSearchParams(window.location.search).get('nostr');
+import { decodeNip19 } from './services/NostrToolsAdapter';
+import { hexToNpub } from './helpers/nip19';
 
 /** Maps viewName to the AppState key that stores the route parameter */
 const VIEW_PARAM_STATE_KEY: Record<string, string> = {
@@ -79,14 +77,10 @@ export class App {
       this.checkForUpdates();
     }
 
-    // Register web+nostr: protocol handler (web only, non-blocking)
-    this.registerWebProtocolHandler();
-
-    // Capture intended URL: query param (web+nostr redirect), sessionStorage (reload), or browser URL
-    const nostrUri = this.extractNostrQueryParam();
+    // Capture intended URL: sessionStorage (reload) or browser URL (fresh external link)
     const lastURL = this.router.getLastURL();
     const browserPath = window.location.pathname;
-    const intendedURL = nostrUri || lastURL || (browserPath !== '/' ? browserPath : null);
+    const intendedURL = lastURL || (browserPath !== '/' ? browserPath : null);
 
     // Wait for auth initialization with safety timeout
     let authTimedOut = false;
@@ -115,11 +109,6 @@ export class App {
     }
 
     this.setInitialFocus();
-
-    // Offer to set as default nostr: handler (Tauri desktop only, non-blocking)
-    if (isLoggedIn && PlatformService.getInstance().isTauri) {
-      this.promptDefaultNostrHandler();
-    }
   }
 
   private async resolveTargetPath(isLoggedIn: boolean, intendedURL: string | null): Promise<string> {
@@ -161,36 +150,6 @@ export class App {
       }
     } catch (error) {
       console.error('[App] Update check failed:', error);
-    }
-  }
-
-  private async promptDefaultNostrHandler(): Promise<void> {
-    try {
-      const { PerAccountLocalStorage, StorageKeys } = await import('./services/PerAccountLocalStorage');
-      const storage = PerAccountLocalStorage.getInstance();
-      if (storage.get<boolean>(StorageKeys.DEFAULT_HANDLER_DISMISSED, false)) return;
-
-      const { invoke } = await import('@tauri-apps/api/core');
-      const isDefault = await invoke<boolean>('is_default_nostr_handler');
-      if (isDefault) return;
-
-      const confirmed = await ModalService.getInstance().confirm({
-        title: 'Default Nostr App',
-        message: 'Noornote is not your default app for nostr: links. Set Noornote as default so you can open Nostr profiles and notes directly?',
-        confirmText: 'Set as Default',
-        cancelText: 'Not Now',
-        confirmDestructive: false
-      });
-
-      if (confirmed) {
-        await invoke('set_default_nostr_handler');
-        const { ToastService } = await import('./services/ToastService');
-        ToastService.show('Noornote is now your default Nostr app', 'success');
-      } else {
-        storage.set(StorageKeys.DEFAULT_HANDLER_DISMISSED, true);
-      }
-    } catch {
-      // Non-critical - silently ignore
     }
   }
 
@@ -298,7 +257,6 @@ export class App {
 
   // ─── Platform Handlers (thin glue) ───────────────────────────────────
 
-  /** Handle nostr: deep links on Tauri desktop (macOS/Linux) */
   private async setupDeepLinkHandler(): Promise<void> {
     if (!PlatformService.getInstance().isTauri) return;
 
@@ -309,36 +267,39 @@ export class App {
         const url = urls[0];
         if (!url) return;
 
-        const path = resolveNostrUri(url);
-        if (path) {
-          this.router.navigate(path);
-        } else {
+        try {
+          const nip19String = url.startsWith('nostr:') ? url.slice(6) : url;
+          const decoded = decodeNip19(nip19String);
+          const type = decoded.type;
+
+          if (type === 'npub' || type === 'nprofile') {
+            const npub = type === 'npub'
+              ? nip19String
+              : hexToNpub((decoded.data as { pubkey: string }).pubkey);
+            if (npub) {
+              this.router.navigate(`/profile/${npub}`);
+            }
+            return;
+          }
+
+          if (type === 'note' || type === 'nevent') {
+            const noteId = type === 'note'
+              ? nip19String
+              : `note1${(decoded.data as { id: string }).id}`;
+            this.router.navigate(`/note/${noteId}`);
+            return;
+          }
+
+          if (type === 'naddr') {
+            this.router.navigate(`/article/${nip19String}`);
+          }
+        } catch {
           this.systemLogger.warn('Deep Link', `Failed to handle nostr: URL: ${url}`);
         }
       });
     } catch {
       // Deep link handler setup failed - expected in non-Tauri environments
     }
-  }
-
-  /** Register as web+nostr: protocol handler (web browser only) */
-  private registerWebProtocolHandler(): void {
-    if (PlatformService.getInstance().isTauri) return;
-
-    try {
-      navigator.registerProtocolHandler(
-        'web+nostr',
-        `${window.location.origin}/?nostr=%s`
-      );
-    } catch {
-      // registerProtocolHandler not supported or not in secure context
-    }
-  }
-
-  /** Extract and resolve a nostr URI from ?nostr= query parameter (web+nostr redirect) */
-  private extractNostrQueryParam(): string | null {
-    if (!STARTUP_NOSTR_PARAM) return null;
-    return resolveNostrUri(STARTUP_NOSTR_PARAM);
   }
 
   private async setupTauriCloseHandler(): Promise<void> {

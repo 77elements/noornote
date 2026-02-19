@@ -1,6 +1,5 @@
 mod key_signer;
 mod icloud_check;
-mod default_handler;
 
 use tauri::{Emitter, Manager, RunEvent, WindowEvent};
 use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
@@ -55,9 +54,7 @@ pub fn run() {
       key_signer::prepare_daemon_for_unlock,
       key_signer::submit_daemon_password,
       key_signer::remove_noorsigner_account,
-      icloud_check::check_icloud_keychain,
-      default_handler::is_default_nostr_handler,
-      default_handler::set_default_nostr_handler
+      icloud_check::check_icloud_keychain
     ])
     .setup(|app| {
       // Register global keyboard shortcuts

@@ -74,9 +74,6 @@ export const StorageKeys = {
 
   // Font size preference (per-account)
   FONT_SIZE_SCALE: 'noornote_font_size_scale_map',
-
-  // Default nostr: handler prompt dismissed (per-account)
-  DEFAULT_HANDLER_DISMISSED: 'noornote_default_handler_dismissed_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

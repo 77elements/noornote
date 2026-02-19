@@ -157,14 +157,14 @@ export class ModalService {
     return new Promise((resolve) => {
       const confirmText = config.confirmText || 'Confirm';
       const cancelText = config.cancelText || 'Cancel';
-      const confirmClass = config.confirmDestructive ? 'btn--danger' : '';
+      const confirmClass = config.confirmDestructive ? 'btn-danger' : 'btn-primary';
 
       const content = document.createElement('div');
       content.className = 'modal-confirm';
       content.innerHTML = `
         <p class="modal-confirm__message">${this.escapeHtml(config.message)}</p>
         <div class="modal-confirm__actions">
-          <button class="btn btn--passive modal-confirm__cancel">${this.escapeHtml(cancelText)}</button>
+          <button class="btn btn-secondary modal-confirm__cancel">${this.escapeHtml(cancelText)}</button>
           <button class="btn ${confirmClass} modal-confirm__confirm">${this.escapeHtml(confirmText)}</button>
         </div>
       `;
