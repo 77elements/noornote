@@ -53,14 +53,7 @@ marketing/
 tmp/
 temp/
 
-# Screenshots
-screenshots/
-
-# Local documentation (not pushed to repo)
-docs/
-
 # Claude Code
-CLAUDE.md
 .claude/*
 !.claude/skills/
 
