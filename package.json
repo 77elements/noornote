@@ -53,6 +53,7 @@
     "eslint-plugin-prettier": "^5.0.0",
     "husky": "^9.1.7",
     "prettier": "^3.0.3",
+    "puppeteer": "^24.37.5",
     "rollup-plugin-visualizer": "^5.9.2",
     "sass-embedded": "^1.93.2",
     "typescript": "^5.2.0",
