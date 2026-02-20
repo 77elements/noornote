@@ -1,0 +1,301 @@
+/**
+ * Video Editor View
+ * Full-page editor for NIP-71 video events (Kind 21/22)
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.video-editor {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - $gap * 6);
+
+  // Header with back button and title
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    margin-bottom: $gap * 1.5;
+  }
+
+  &__back {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    padding: calc($gap / 2) $gap;
+    background: none;
+    border-radius: $radius-md;
+    color: var(--color-5);
+    font-family: inherit;
+    cursor: pointer;
+    transition: $transition-colors;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      color: var(--color-4);
+      border-color: var(--color-4);
+    }
+  }
+
+  &__title {
+    @extend %h1;
+    font-weight: 600;
+    color: var(--color-5);
+    margin: 0;
+  }
+
+  // Toolbar with relay selector
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: $gap;
+    margin-bottom: $gap;
+    padding-bottom: $gap;
+  }
+
+  // Body
+  &__body {
+    flex: 1;
+    margin-bottom: $gap * 1.5;
+  }
+
+  // Form
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  &__label {
+    @extend %small;
+    font-weight: 500;
+    color: var(--color-5);
+  }
+
+  // Upload zone
+  &__upload-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: $gap;
+    padding: $gap * 3;
+    border: 2px dashed var(--border-color);
+    border-radius: $radius-md;
+    color: var(--text-alpha-light);
+    cursor: pointer;
+    transition: $transition-colors;
+
+    svg {
+      opacity: 0.5;
+    }
+
+    &:hover {
+      border-color: var(--color-4);
+      color: var(--color-4);
+
+      svg {
+        opacity: 0.8;
+      }
+    }
+
+    &--dragover {
+      border-color: var(--color-4);
+      background: color-mix(in srgb, var(--color-4) 5%, transparent);
+      color: var(--color-4);
+    }
+
+    &--uploading {
+      cursor: default;
+      border-style: solid;
+      border-color: var(--color-4);
+      color: var(--color-4);
+    }
+  }
+
+  // Video preview after upload
+  &__preview {
+    border-radius: $radius-md;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+  }
+
+  &__video {
+    display: block;
+    width: 100%;
+    max-height: 400px;
+    background: #000;
+  }
+
+  &__video-info {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    padding: calc($gap * 0.75) $gap;
+    background: var(--surface-tint);
+  }
+
+  &__kind-badge {
+    @extend %small;
+    padding: calc($gap / 4) calc($gap / 2);
+    border-radius: $radius-sm;
+    font-weight: 500;
+    background: color-mix(in srgb, var(--color-4) 15%, transparent);
+    color: var(--color-4);
+  }
+
+  &__dimensions {
+    @extend %small;
+    color: var(--text-alpha-light);
+  }
+
+  &__toggle-kind,
+  &__remove-video {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: $radius-sm;
+    color: var(--text-alpha-light);
+    cursor: pointer;
+    transition: $transition-colors;
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      color: var(--color-4);
+    }
+  }
+
+  &__remove-video {
+    margin-left: auto;
+
+    &:hover {
+      color: var(--color-error, #e53e3e);
+    }
+  }
+
+  // Details (collapsible)
+  &__details {
+    border-radius: $radius-md;
+    overflow: hidden;
+
+    &[open] {
+      .video-editor__summary::after {
+        transform: rotate(90deg);
+      }
+    }
+  }
+
+  &__summary {
+    display: flex;
+    align-items: center;
+    padding: calc($gap * 0.75) $gap;
+    background: var(--surface-tint);
+    color: var(--color-5);
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    &::after {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin-left: auto;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(-45deg);
+      transition: transform 0.2s ease;
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-4) 5%, transparent);
+    }
+  }
+
+  &__details-content {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+    padding: $gap;
+  }
+
+  // Thumbnail input with upload button
+  &__thumb-input {
+    display: flex;
+    gap: calc($gap / 2);
+
+    .input {
+      flex: 1;
+    }
+  }
+
+  &__upload-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    padding: 0;
+    border-radius: $radius-md;
+    color: var(--color-5);
+    cursor: pointer;
+    transition: $transition-colors;
+
+    &:hover:not(:disabled) {
+      background: color-mix(in srgb, var(--color-4) 10%, transparent);
+      color: var(--color-4);
+      border-color: var(--color-4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .spin {
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  // Footer with toolbar and actions
+  &__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $gap;
+    padding-top: $gap;
+
+    .post-note-toolbar {
+      display: flex;
+      gap: calc($gap / 2);
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: calc($gap / 2);
+  }
+}

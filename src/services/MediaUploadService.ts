@@ -19,6 +19,7 @@ import { createMediaUploadAdapter, type MediaUploadAdapter } from './media';
 interface MediaServerSettings {
   url: string;
   protocol: 'blossom' | 'nip96';
+  maxFileSize?: number | undefined;
 }
 
 interface UploadResult {
@@ -36,8 +37,8 @@ export class MediaUploadService {
   private mediaServerStorageKey = 'noornote_media_server';
   private uploadAdapter: MediaUploadAdapter;
 
-  private readonly MAX_FILE_SIZE_FREE = 10 * 1024 * 1024;
-  private readonly MAX_FILE_SIZE_BLOSSOM = 50 * 1024 * 1024;
+  private readonly DEFAULT_NIP96_MAX_FILE_SIZE = 25 * 1024 * 1024;
+  private readonly DEFAULT_BLOSSOM_MAX_FILE_SIZE = 100 * 1024 * 1024;
   private readonly SIGN_TIMEOUT_MS = 30000;
 
   private constructor() {
@@ -98,14 +99,15 @@ export class MediaUploadService {
         return JSON.parse(stored);
       }
     } catch (error) {
-      console.warn('Failed to load media server settings:', error);
+      console.debug('Failed to load media server settings:', error);
     }
 
-    return { url: 'https://nostr.build', protocol: 'nip96' };
+    return { url: 'https://blossom.nostr.build', protocol: 'blossom' };
   }
 
-  private validateFile(file: File, protocol: 'blossom' | 'nip96'): { valid: boolean; error?: string } {
-    const maxSize = protocol === 'blossom' ? this.MAX_FILE_SIZE_BLOSSOM : this.MAX_FILE_SIZE_FREE;
+  private validateFile(file: File, settings: MediaServerSettings): { valid: boolean; error?: string } {
+    const maxSize = settings.maxFileSize
+      || (settings.protocol === 'blossom' ? this.DEFAULT_BLOSSOM_MAX_FILE_SIZE : this.DEFAULT_NIP96_MAX_FILE_SIZE);
 
     if (file.size > maxSize) {
       const maxSizeMB = Math.floor(maxSize / 1024 / 1024);
@@ -265,7 +267,7 @@ export class MediaUploadService {
       if (!response.ok) return null;
       return await response.json();
     } catch (error) {
-      console.warn('Failed to fetch NIP-96 config:', error);
+      console.debug('Failed to fetch NIP-96 config:', error);
       return null;
     }
   }
@@ -455,7 +457,7 @@ export class MediaUploadService {
 
       const settings = this.loadMediaServerSettings();
 
-      const validation = this.validateFile(file, settings.protocol);
+      const validation = this.validateFile(file, settings);
       if (!validation.valid) {
         ToastService.show(validation.error || 'Invalid file', 'error');
         return this.errorResult(validation.error || 'Invalid file');

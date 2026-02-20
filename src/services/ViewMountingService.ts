@@ -203,6 +203,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'write-video':
+        return {
+          factory: async () => {
+            const { VideoEditorView } = await import('../components/views/VideoEditorView');
+            const view = new VideoEditorView();
+            return { element: view.getElement() };
+          }
+        };
+
       case 'articles':
         return {
           factory: async () => {

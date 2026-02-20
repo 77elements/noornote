@@ -172,7 +172,7 @@ export class ProfileOrchestrator extends Orchestrator {
 
     const filters: NDKFilter[] = [{
       authors: [pubkey],
-      kinds: [1], // Text notes
+      kinds: [1, 21, 22], // Text notes + videos
       since: 0,   // From epoch
       limit: 5000 // Should cover 99% of users (Nostr started late 2022)
     }];

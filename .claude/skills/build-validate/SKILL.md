@@ -26,6 +26,14 @@ Run all checks before a commit. Every step must pass with zero errors/warnings.
    e. **`console.info`** → FAIL if found. Same rule.
 
    Exception: `console.error` is allowed (intercepted for relay error handling in SystemLogger).
+
+   f. **User-facing messages** → Must use `ToastService` (success/error/warning) or `ErrorService` (catch blocks).
+      Console (`console.debug`, `console.error`) is for developer debugging ONLY — never for user-visible feedback.
+
+   g. **App.ts is glue only** → If `App.ts` is modified, verify it contains NO business logic.
+      App.ts coordinates modules and manages lifecycle — all logic belongs in services/components.
+      FAIL if business logic (data processing, API calls, state mutations) is added to App.ts.
+
    If no modified .ts files exist, skip this step.
 
 3. **Log Review** (on modified .ts files only)

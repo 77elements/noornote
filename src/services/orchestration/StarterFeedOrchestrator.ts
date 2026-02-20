@@ -73,9 +73,9 @@ export class StarterFeedOrchestrator extends Orchestrator {
       const relays = this.relayConfig.getAggregatorRelays();
       const since = Math.floor(Date.now() / 1000) - (timeWindowHours * 3600);
 
-      const filters: NDKFilter[] = [{
+      const filters: NDKFilter<number>[] = [{
         authors: this.starterPubkeysHex,
-        kinds: [1, 6], // Text notes + reposts
+        kinds: [1, 6, 21, 22, 1068], // Text notes + reposts + videos + polls
         since,
         limit: 50
       }];
@@ -133,9 +133,9 @@ export class StarterFeedOrchestrator extends Orchestrator {
       const relays = this.relayConfig.getAggregatorRelays();
       const since = until - (timeWindowHours * 3600);
 
-      const filters: NDKFilter[] = [{
+      const filters: NDKFilter<number>[] = [{
         authors: this.starterPubkeysHex,
-        kinds: [1, 6],
+        kinds: [1, 6, 21, 22],
         until: until - 1,
         since,
         limit: 50
@@ -184,8 +184,8 @@ export class StarterFeedOrchestrator extends Orchestrator {
    */
   private filterReplies(events: NostrEvent[]): NostrEvent[] {
     return events.filter(event => {
-      // Always allow reposts (kind 6)
-      if (event.kind === 6) return true;
+      // Always allow reposts (kind 6), videos (kind 21/22), and polls (kind 1068)
+      if (event.kind === 6 || event.kind === 1068 || event.kind === 21 || event.kind === 22) return true;
 
       // Content-based: starts with @username or npub
       const content = event.content.trim();

@@ -1215,6 +1215,13 @@ export class MainLayout {
                 </svg>
                 Article
               </button>
+              <button class="new-post-dropup__item" data-action="new-video">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="23 7 16 12 23 17 23 7"/>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+                </svg>
+                Video
+              </button>
             </div>
           </div>
           <div class="sidebar-footer">
@@ -1613,6 +1620,12 @@ export class MainLayout {
     articleItem?.addEventListener('click', () => {
       menu.classList.remove('is-open');
       Router.getInstance().navigate('/write-article');
+    });
+
+    const videoItem = menu.querySelector('[data-action="new-video"]');
+    videoItem?.addEventListener('click', () => {
+      menu.classList.remove('is-open');
+      Router.getInstance().navigate('/write-video');
     });
 
     // Close menu when clicking outside

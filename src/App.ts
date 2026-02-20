@@ -211,6 +211,7 @@ export class App {
     this.registerRoute('/settings', 'settings', 'settings', 'sv', true);
     this.registerRoute('/messages', 'messages', 'messages', 'mv', true);
     this.registerRoute('/write-article', 'write-article', 'write-article', 'aev', true);
+    this.registerRoute('/write-video', 'write-video', 'write-video', 'vev', true);
     this.registerRoute('/tribes', 'tribes', 'tribes', 'tribes-view', true);
 
     // Parameterized routes (authenticated)

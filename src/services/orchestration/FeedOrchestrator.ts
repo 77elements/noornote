@@ -151,12 +151,12 @@ export class FeedOrchestrator extends Orchestrator {
       const filters: NDKFilter<number>[] = isProfileView
         ? [{
             authors: followingPubkeys,
-            kinds: [1, 6, 1068],
+            kinds: [1, 6, 21, 22, 1068],
             limit: 50
           }]
         : [{
             authors: followingPubkeys,
-            kinds: [1, 6, 1068],
+            kinds: [1, 6, 21, 22, 1068],
             limit: 50,
             since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
           }];
@@ -266,7 +266,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       const filters: NDKFilter<number>[] = [{
         authors: followingPubkeys,
-        kinds: [1, 6, 1068],
+        kinds: [1, 6, 21, 22, 1068],
         until: until - 1,
         since,
         limit: 50
@@ -418,8 +418,8 @@ export class FeedOrchestrator extends Orchestrator {
    */
   private filterReplies(events: NostrEvent[]): NostrEvent[] {
     return events.filter(event => {
-      // Always allow reposts (kind 6) and polls (kind 1068)
-      if (event.kind === 6 || event.kind === 1068) return true;
+      // Always allow reposts (kind 6), polls (kind 1068), and videos (kind 21/22)
+      if (event.kind === 6 || event.kind === 1068 || event.kind === 21 || event.kind === 22) return true;
 
       const content = event.content.trim();
 
@@ -642,7 +642,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       // Query for new notes since last check
       const filters = [{
-        kinds: [1, 6, 1068], // Text notes + reposts + polls (NIP-88)
+        kinds: [1, 6, 21, 22, 1068], // Text notes + reposts + polls (NIP-88)
         authors: this.pollingFollowingPubkeys,
         since: this.lastCheckedTimestamp + 1,
         until: now,

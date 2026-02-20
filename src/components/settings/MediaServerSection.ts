@@ -13,6 +13,7 @@ import { ToastService } from '../../services/ToastService';
 interface MediaServerSettings {
   url: string;
   protocol: 'blossom' | 'nip96';
+  maxFileSize?: number | undefined;
 }
 
 interface SensitiveMediaSettings {
@@ -24,6 +25,13 @@ export class MediaServerSection extends SettingsSection {
   private sensitiveMediaSettings: SensitiveMediaSettings;
   private readonly mediaServerStorageKey = 'noornote_media_server';
   private readonly sensitiveMediaStorageKey = 'noornote_sensitive_media';
+
+  private static readonly POPULAR_SERVERS = [
+    { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96)', protocol: 'nip96' as const, maxFileSize: 25 * 1024 * 1024 },
+    { url: 'https://blossom.nostr.build', name: 'blossom.nostr.build (Blossom, 100 MiB)', protocol: 'blossom' as const, maxFileSize: 100 * 1024 * 1024 },
+    { url: 'https://blossom.band', name: 'blossom.band (Blossom, 50 MiB)', protocol: 'blossom' as const, maxFileSize: 50 * 1024 * 1024 },
+    { url: 'https://blossom.primal.net', name: 'blossom.primal.net (Blossom)', protocol: 'blossom' as const, maxFileSize: 100 * 1024 * 1024 }
+  ];
 
   constructor() {
     super('media');
@@ -41,7 +49,7 @@ export class MediaServerSection extends SettingsSection {
         return JSON.parse(stored);
       }
     } catch (error) {
-      console.warn('Failed to load media server settings:', error);
+      console.debug('Failed to load media server settings:', error);
     }
 
     return {
@@ -57,7 +65,7 @@ export class MediaServerSection extends SettingsSection {
     try {
       localStorage.setItem(this.mediaServerStorageKey, JSON.stringify(this.mediaServerSettings));
     } catch (error) {
-      console.warn('Failed to save media server settings:', error);
+      console.debug('Failed to save media server settings:', error);
     }
   }
 
@@ -71,7 +79,7 @@ export class MediaServerSection extends SettingsSection {
         return JSON.parse(stored);
       }
     } catch (error) {
-      console.warn('Failed to load sensitive media settings:', error);
+      console.debug('Failed to load sensitive media settings:', error);
     }
 
     return { displayNSFW: false };
@@ -84,7 +92,7 @@ export class MediaServerSection extends SettingsSection {
     try {
       localStorage.setItem(this.sensitiveMediaStorageKey, JSON.stringify(this.sensitiveMediaSettings));
     } catch (error) {
-      console.warn('Failed to save sensitive media settings:', error);
+      console.debug('Failed to save sensitive media settings:', error);
     }
   }
 
@@ -148,12 +156,7 @@ export class MediaServerSection extends SettingsSection {
    * Render media server subsection
    */
   private renderMediaServer(): string {
-    const popularServers = [
-      { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96)', protocol: 'nip96' as const },
-      { url: 'https://blossom.nostr.build', name: 'blossom.nostr.build (Blossom, 100 MiB)', protocol: 'blossom' as const },
-      { url: 'https://blossom.band', name: 'blossom.band (Blossom, 50 MiB)', protocol: 'blossom' as const },
-      { url: 'https://blossom.primal.net', name: 'blossom.primal.net (Blossom)', protocol: 'blossom' as const }
-    ];
+    const popularServers = MediaServerSection.POPULAR_SERVERS;
 
     return `
         <div class="form__info">
@@ -244,8 +247,10 @@ export class MediaServerSection extends SettingsSection {
         customSection?.classList.add('hidden');
         this.mediaServerSettings.url = dropdown.value;
 
-        const detectedProtocol = this.getProtocolForServer(dropdown.value);
+        const selectedServer = MediaServerSection.POPULAR_SERVERS.find(s => s.url === dropdown.value);
+        const detectedProtocol = selectedServer?.protocol || this.getProtocolForServer(dropdown.value);
         this.mediaServerSettings.protocol = detectedProtocol;
+        this.mediaServerSettings.maxFileSize = selectedServer?.maxFileSize;
 
         const protocolButtons = contentContainer.querySelectorAll('.protocol-btn');
         protocolButtons.forEach(btn => {
