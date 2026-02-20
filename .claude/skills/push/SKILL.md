@@ -10,7 +10,30 @@ allowed-tools: Bash(git *)
 
 Merge development into main, push, and return to development.
 
+## Dev-only files
+
+These files/directories exist ONLY on development and must be removed from main after every merge:
+- `CLAUDE.md`
+- `docs/`
+- `screenshots/`
+- `.claude/`
+
 ## Steps
 
-1. Run: `git checkout main && git merge development && git push && git checkout development && git push origin development`
-2. Confirm: "Back at development branch. Awaiting instructions."
+1. Merge development into main:
+   ```
+   git checkout main && git merge development
+   ```
+
+2. Remove dev-only files from main and commit:
+   ```
+   git rm -rf CLAUDE.md docs/ screenshots/ .claude/ 2>/dev/null && git commit -m "Remove dev-only files from main"
+   ```
+   If nothing to remove (already clean), skip the commit.
+
+3. Push both branches:
+   ```
+   git push && git checkout development && git push origin development
+   ```
+
+4. Confirm: "Back at development branch. Awaiting instructions."
