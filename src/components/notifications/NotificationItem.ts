@@ -5,6 +5,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { NotificationType } from '../../services/orchestration/NotificationsOrchestrator';
+import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
@@ -614,7 +615,7 @@ export class NotificationItem {
         readRelays,
         [{
           ids: [noteId],
-          kinds: [1, 30023], // Kind 1 = short notes, Kind 30023 = long-form articles
+          kinds: USER_CONTENT_KINDS,
           limit: 1
         }]
       );

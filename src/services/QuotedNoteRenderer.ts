@@ -13,6 +13,7 @@ import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { ContentProcessor, type QuotedReference } from './ContentProcessor';
 import { replaceMediaPlaceholders } from '../helpers/renderMediaContent';
 import { Router } from './Router';
+import { RENDERABLE_KINDS } from '../types/nostr';
 import { PollOrchestrator } from './orchestration/PollOrchestrator';
 import { MuteOrchestrator } from '../lists/mutes';
 import { AuthService } from './AuthService';
@@ -114,8 +115,7 @@ export class QuotedNoteRenderer {
         }
 
         // Route unsupported kinds to UnsupportedKindRenderer
-        const supportedKinds = [1, 6, 21, 22, 1068, 6969, 9735, 30023];
-        if (result.event.kind !== undefined && !supportedKinds.includes(result.event.kind)) {
+        if (result.event.kind !== undefined && !RENDERABLE_KINDS.includes(result.event.kind)) {
           const { UnsupportedKindRenderer } = await import('../components/ui/note-rendering/UnsupportedKindRenderer');
           const { NoteProcessor } = await import('../components/ui/note-processing/NoteProcessor');
           const processedNote = NoteProcessor.process(result.event);
