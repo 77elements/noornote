@@ -32,7 +32,8 @@ class CrashLoggerService {
    */
   public async init(): Promise<void> {
     if (this.initialized) return;
-    if (!PlatformService.getInstance().isTauri) return;
+    const _p = PlatformService.getInstance();
+    if (!_p.isTauri || _p.isAndroid) return;
 
     try {
       // Attach console to Tauri log plugin (forwards console.* to file)

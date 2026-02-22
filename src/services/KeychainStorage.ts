@@ -29,7 +29,8 @@ export class KeychainStorage {
    * Check if running in Tauri environment
    */
   private static isTauri(): boolean {
-    return PlatformService.getInstance().isTauri;
+    const platform = PlatformService.getInstance();
+    return platform.isTauri && !platform.isAndroid;
   }
 
   /**

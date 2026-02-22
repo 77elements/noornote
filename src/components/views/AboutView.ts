@@ -90,7 +90,7 @@ export class AboutView extends View {
         <section class="about-section">
           <h2>Version</h2>
           <p>NoorNote v${__APP_VERSION__}</p>
-          ${this.platform.isTauri ? '<button class="btn btn--mini" id="about-check-update-btn">Check for updates</button>' : ''}
+          ${this.platform.isTauri && !this.platform.isAndroid ? '<button class="btn btn--mini" id="about-check-update-btn">Check for updates</button>' : ''}
         </section>
 
         <section class="about-section about-section--footer">
@@ -100,6 +100,21 @@ export class AboutView extends View {
   }
 
   private renderDataStorageSection(): string {
+    if (this.platform.isAndroid) {
+      return `
+        <h3>Data Storage</h3>
+        <p>
+          NoorNote is a mobile app that stores all data locally on your device:
+        </p>
+        <ul>
+          <li><strong>Key Storage:</strong> Your private key is managed by Amber (NIP-55 signer) and never shared with NoorNote.</li>
+          <li><strong>Cache:</strong> Temporary data is stored in your device's IndexedDB and localStorage.</li>
+        </ul>
+        <p>
+          <strong>We have no access to your data.</strong> All data remains on your device.
+        </p>`;
+    }
+
     if (this.platform.isBrowser) {
       return `
         <h3>Data Storage</h3>

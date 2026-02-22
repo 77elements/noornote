@@ -95,7 +95,8 @@ export class LayoutService {
     this.applyLayoutClass();
 
     // Handle window resize for phone mode
-    if (PlatformService.getInstance().isTauri) {
+    const _p = PlatformService.getInstance();
+    if (_p.isTauri && !_p.isAndroid) {
       await this.handleWindowResize(previousMode, this.effectiveMode);
     }
 

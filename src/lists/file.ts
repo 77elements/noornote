@@ -21,8 +21,8 @@ let tauriMkdir: typeof import('@tauri-apps/plugin-fs').mkdir | null = null;
 const platform = PlatformService.getInstance();
 const logger = SystemLogger.getInstance();
 
-// Load Tauri APIs if available
-if (platform.isTauri) {
+// Load Tauri APIs if available (desktop only)
+if (platform.isTauri && !platform.isAndroid) {
   import('@tauri-apps/api/path').then(mod => { tauriHomeDir = mod.homeDir; });
   import('@tauri-apps/plugin-fs').then(mod => {
     tauriReadTextFile = mod.readTextFile;
@@ -54,7 +54,7 @@ function getCurrentUserNpub(): string | null {
  * Returns: ~/.noornote/{npub}/{filename}
  */
 export async function getListFilePath(filename: string): Promise<string> {
-  if (!platform.isTauri) {
+  if (!platform.isTauri || platform.isAndroid) {
     throw new Error('File storage requires Tauri environment');
   }
 

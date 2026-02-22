@@ -795,7 +795,8 @@ export class MainLayout {
       downloadLink.addEventListener('click', async (e) => {
         e.preventDefault();
         const url = 'https://noornote.app/download/';
-        if (PlatformService.getInstance().isTauri) {
+        const _p = PlatformService.getInstance();
+        if (_p.isTauri && !_p.isAndroid) {
           const { open } = await import('@tauri-apps/plugin-shell');
           await open(url);
         } else {

@@ -1,0 +1,14 @@
+[package]
+name = "tauri-plugin-amber"
+version = "0.1.0"
+edition = "2021"
+links = "tauri-plugin-amber"
+
+[dependencies]
+tauri = "2.9.0"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
+log = "0.4"
+
+[build-dependencies]
+tauri-plugin = { version = "2.5", features = ["build"] }

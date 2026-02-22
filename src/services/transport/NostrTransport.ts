@@ -33,7 +33,8 @@ interface SubCloser {
  */
 function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
   const STORAGE_KEY = 'ndk_cache_config';
-  const isDesktop = PlatformService.getInstance().isTauri;
+  const platform = PlatformService.getInstance();
+  const isDesktop = platform.isTauri && !platform.isAndroid;
 
   // Desktop: Large caches for performance
   // Web/Phone: Smaller caches for memory efficiency

@@ -1,13 +1,12 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "enables the default permissions",
+  "description": "Shared permissions for all platforms",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
-    "keyring:default",
     "dialog:default",
     "log:default",
     "fs:default",
@@ -57,8 +56,6 @@
         }
       ]
     },
-    "shell:default",
-    "shell:allow-open",
     "core:window:allow-set-badge-count"
   ]
 }

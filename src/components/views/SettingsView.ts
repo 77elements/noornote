@@ -52,8 +52,9 @@ export class SettingsView extends View {
     this.hashtagService = HashtagNotificationService.getInstance();
     this.eventBus = EventBus.getInstance();
 
-    // Initialize KeySigner client (Tauri only)
-    if (PlatformService.getInstance().isTauri) {
+    // Initialize KeySigner client (desktop only, not mobile)
+    const platform = PlatformService.getInstance();
+    if (platform.isTauri && !platform.isAndroid) {
       this.keySignerClient = KeySignerClient.getInstance();
     }
 
@@ -66,7 +67,7 @@ export class SettingsView extends View {
     this.nwcSettingsSection = new NWCSettingsSection();
     this.privacySettingsSection = new PrivacySettingsSection();
     this.listSettingsSection = new ListSettingsSection();
-    if (PlatformService.getInstance().isTauri) {
+    if (platform.isTauri && !platform.isAndroid) {
       this.cacheSettingsSection = new CacheSettingsSection();
     }
     this.uiSettingsSection = new UISettingsSection();

@@ -26,7 +26,7 @@ let tauriMkdir: typeof import('@tauri-apps/plugin-fs').mkdir | null = null;
 
 const platform = PlatformService.getInstance();
 
-if (platform.isTauri) {
+if (platform.isTauri && !platform.isAndroid) {
   import('@tauri-apps/api/path').then(mod => { tauriHomeDir = mod.homeDir; });
   import('@tauri-apps/plugin-fs').then(mod => {
     tauriReadTextFile = mod.readTextFile;
@@ -88,8 +88,8 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
 
     if (this.fileInitialized) return;
 
-    if (!platform.isTauri) {
-      throw new Error(`${this.getLoggerName()} requires Tauri environment`);
+    if (!platform.isTauri || platform.isAndroid) {
+      throw new Error(`${this.getLoggerName()} requires desktop environment`);
     }
 
     if (!tauriHomeDir || !tauriMkdir) {

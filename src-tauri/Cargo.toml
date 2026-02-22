@@ -24,10 +24,17 @@ serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.9.0", features = ["devtools"] }
 tauri-plugin-log = "2"
-tauri-plugin-keyring = "0.1.0"
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 tauri-plugin-http = "2"
+tauri-plugin-deep-link = "2"
+
+# Desktop-only plugins (keyring, shell, global-shortcut don't compile for Android)
+[target.'cfg(not(target_os = "android"))'.dependencies]
+tauri-plugin-keyring = "0.1.0"
 tauri-plugin-shell = "2"
 tauri-plugin-global-shortcut = "2"
-tauri-plugin-deep-link = "2"
+
+# Android-only plugins
+[target.'cfg(target_os = "android")'.dependencies]
+tauri-plugin-amber = { path = "./plugins/amber/" }

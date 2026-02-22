@@ -113,7 +113,8 @@ export class UpdateModal {
 
     downloadBtn?.addEventListener('click', async () => {
       try {
-        if (PlatformService.getInstance().isTauri) {
+        const _p = PlatformService.getInstance();
+        if (_p.isTauri && !_p.isAndroid) {
           const { open } = await import('@tauri-apps/plugin-shell');
           await open(update.downloadUrl);
         } else {

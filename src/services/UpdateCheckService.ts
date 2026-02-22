@@ -48,7 +48,8 @@ export class UpdateCheckService {
    * Check on app startup (respects interval and auto-check setting)
    */
   public async checkOnStartup(): Promise<void> {
-    if (!PlatformService.getInstance().isTauri) return;
+    const platform = PlatformService.getInstance();
+    if (!platform.isTauri || platform.isAndroid) return;
     if (!this.isAutoCheckEnabled()) return;
 
     const lastCheck = Number(localStorage.getItem(STORAGE_KEYS.LAST_CHECK) || '0');

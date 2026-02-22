@@ -1423,7 +1423,7 @@ export class FollowListManager {
       ToastService.show('Saving...', 'info');
       const browserItems = this.adapter.getBrowserItems();
 
-      if (PlatformService.getInstance().isTauri) {
+      if (PlatformService.getInstance().isTauri && !PlatformService.getInstance().isAndroid) {
         await this.adapter.setFileItems(browserItems);
       } else {
         downloadAsJson(browserItems, 'follows');

@@ -79,10 +79,11 @@ export function bindSwitchSyncModeLink(container: HTMLElement, onSwitch: () => v
 
 export function renderListSyncButtons(): string {
   const mode = getListSyncMode();
-  const isTauri = PlatformService.getInstance().isTauri;
+  const platform = PlatformService.getInstance();
+  const isDesktop = platform.isTauri && !platform.isAndroid;
 
   if (mode === 'easy') {
-    const syncText = isTauri
+    const syncText = isDesktop
       ? 'Easy Mode: Changes are automatically synced to your local backup and relays.'
       : 'Easy Mode: Changes are automatically synced to and from relays.';
 

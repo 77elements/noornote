@@ -375,12 +375,29 @@ export class AccountSetupWizard {
     this.storage = PerAccountLocalStorage.getInstance();
 
     // Build steps list based on platform
-    if (platform.isTauri) {
-      // Tauri: Keypair → Backup → NoorSigner → Profile Setup → Lightning → Done
+    const isDesktop = platform.isTauri && !platform.isAndroid;
+    const isMobile = platform.isAndroid;
+
+    if (isDesktop) {
+      // Desktop: Keypair → Backup → NoorSigner → Profile Setup → Lightning → Done
       this.steps = [
         this.createKeypairStep(),
         this.createBackupStep(),
         this.createNoorSignerImportStep(),
+        this.createUsernameStep(),
+        this.createAvatarStep(),
+        this.createBioStep(),
+        this.createRelayStep(),
+        this.createInboxRelayStep(),
+        this.createFollowPacksStep(),
+        this.createLightningStep(),
+        this.createDoneStep(),
+      ];
+    } else if (isMobile) {
+      // Mobile: Keypair → Backup → Profile Setup → Lightning → Done (no NoorSigner, no Extension)
+      this.steps = [
+        this.createKeypairStep(),
+        this.createBackupStep(),
         this.createUsernameStep(),
         this.createAvatarStep(),
         this.createBioStep(),
@@ -682,8 +699,8 @@ export class AccountSetupWizard {
       this.storage.remove(StorageKeys.NEEDS_PROFILE_SETUP);
 
       if (pubkey) {
-        // Remove keypair from NoorSigner filesystem (Tauri only)
-        if (platform.isTauri) {
+        // Remove keypair from NoorSigner filesystem (desktop only)
+        if (platform.isTauri && !platform.isAndroid) {
           try {
             const { hexToNpub } = await import('../../helpers/nip19');
             const npub = hexToNpub(pubkey);
@@ -1169,8 +1186,8 @@ IMPORTANT:
     const defaultFileName = `nostr-backup-${this.currentKeypair.npub.slice(0, 12)}.txt`;
 
     try {
-      if (platform.isTauri) {
-        // Tauri: Use native save dialog
+      if (platform.isTauri && !platform.isAndroid) {
+        // Desktop: Use native save dialog
         const { save } = await import('@tauri-apps/plugin-dialog');
         const { writeTextFile } = await import('@tauri-apps/plugin-fs');
 
@@ -2152,7 +2169,8 @@ IMPORTANT:
         openSection.querySelector('[data-action="open-rizful"]')?.addEventListener('click', async () => {
           try {
             const { PlatformService } = await import('../../services/PlatformService');
-            if (PlatformService.getInstance().isTauri) {
+            const _p = PlatformService.getInstance();
+            if (_p.isTauri && !_p.isAndroid) {
               const { open } = await import('@tauri-apps/plugin-shell');
               await open('https://rizful.com/nostr_onboarding_auth_token/get_token');
             } else {
