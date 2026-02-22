@@ -1,0 +1,14 @@
+{
+  "identifier": "desktop",
+  "description": "Desktop-only permissions (keyring, shell, deep-link)",
+  "platforms": ["linux", "macOS"],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "keyring:default",
+    "shell:default",
+    "shell:allow-open",
+    "deep-link:default"
+  ]
+}

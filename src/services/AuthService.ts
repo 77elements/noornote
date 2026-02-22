@@ -8,6 +8,7 @@
  * - BunkerSignerManager     (NIP-46 bunker:// URI)
  * - NostrConnectSignerManager (NIP-46 nostrconnect:// QR)
  * - KeySignerConnectionManager (NoorSigner daemon, Tauri only)
+ * - AmberSignerManager      (NIP-55 Android signer, Tauri Android only)
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -23,9 +24,10 @@ import { ExtensionSignerManager } from './managers/ExtensionSignerManager';
 import { BunkerSignerManager } from './managers/BunkerSignerManager';
 import { NostrConnectSignerManager } from './managers/NostrConnectSignerManager';
 import { KeySignerConnectionManager } from './managers/KeySignerConnectionManager';
+import { AmberSignerManager } from './managers/AmberSignerManager';
 import type { Nip46BaseManager, NostrConnectSession } from './managers/Nip46BaseManager';
 
-export type AuthMethod = 'npub' | 'extension' | 'nip46' | 'key-signer';
+export type AuthMethod = 'npub' | 'extension' | 'nip46' | 'key-signer' | 'amber';
 export type InputType = 'npub' | 'bunker' | 'nip05' | 'unknown';
 
 export class AuthService {
@@ -36,6 +38,7 @@ export class AuthService {
   private bunkerManager: BunkerSignerManager | null = null;
   private nostrConnectManager: NostrConnectSignerManager | null = null;
   private keySignerManager: KeySignerConnectionManager | null = null;
+  private amberManager: AmberSignerManager | null = null;
 
   // State
   private currentUser: { npub: string; pubkey: string } | null = null;
@@ -110,7 +113,8 @@ export class AuthService {
   }
 
   private initializeKeySignerManager(): void {
-    if (!PlatformService.getInstance().isTauri) return;
+    const platform = PlatformService.getInstance();
+    if (!platform.isTauri || platform.isAndroid) return;
 
     this.keySignerManager = new KeySignerConnectionManager();
     this.keySignerManager.onConnectionLost(() => {
@@ -271,6 +275,23 @@ export class AuthService {
     }
   }
 
+  // ── Amber (NIP-55, Android) ───────────────────────────────────────
+
+  public async isAmberAvailable(): Promise<boolean> {
+    if (!this.amberManager) this.amberManager = new AmberSignerManager();
+    return this.amberManager.isAvailable();
+  }
+
+  public async authenticateWithAmber(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
+    if (!this.amberManager) this.amberManager = new AmberSignerManager();
+
+    const result = await this.amberManager.authenticate();
+    if (result.success && result.npub && result.pubkey) {
+      this.setSession(result.npub, result.pubkey, 'amber');
+    }
+    return result;
+  }
+
   // ── npub (read-only) ─────────────────────────────────────────────
 
   public async authenticateWithNpub(npub: string): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string; readOnly?: boolean }> {
@@ -310,7 +331,8 @@ export class AuthService {
     // Add client tag
     if (!event.tags?.some((tag: string[]) => tag[0] === 'client')) {
       if (!event.tags) event.tags = [];
-      const clientName = PlatformService.getInstance().isTauri ? 'NoorNote (d)' : 'NoorNote (w)';
+      const platform = PlatformService.getInstance();
+      const clientName = platform.isAndroid ? 'NoorNote (m)' : platform.isTauri ? 'NoorNote (d)' : 'NoorNote (w)';
       event.tags.push(['client', clientName]);
     }
 
@@ -340,11 +362,19 @@ export class AuthService {
         event.sig = signature;
         return event;
 
+      } else if (this.authMethod === 'amber' && this.amberManager) {
+        event.pubkey = this.currentUser!.pubkey;
+        event.created_at = event.created_at || Math.floor(Date.now() / 1000);
+        const signedEventJson = await this.amberManager.signEvent(event);
+        const signedEvent = JSON.parse(signedEventJson);
+        return signedEvent;
+
       } else {
         const disconnectErrors: Record<string, string> = {
           'extension': 'Browser extension disconnected — please reload the page',
           'nip46': 'Remote signer disconnected — please reconnect',
           'key-signer': 'Key signer not running — please restart NoorSigner',
+          'amber': 'Amber signer disconnected — please reopen Amber',
         };
         throw new Error(
           (this.authMethod && disconnectErrors[this.authMethod]) || 'No signing method available'
@@ -396,6 +426,10 @@ export class AuthService {
 
       if (this.authMethod === 'nip46' && this.activeNip46Manager) {
         return await this.activeNip46Manager[methodName](data, pubkey);
+      }
+
+      if (this.authMethod === 'amber' && this.amberManager) {
+        return await this.amberManager[methodName](data, pubkey);
       }
 
       throw new Error(`No ${operation}ion method available`);
@@ -490,6 +524,10 @@ export class AuthService {
     if (this.nostrConnectManager) {
       this.nostrConnectManager.cleanup();
       this.nostrConnectManager = null;
+    }
+    if (this.amberManager) {
+      this.amberManager.cleanup();
+      this.amberManager = null;
     }
   }
 
@@ -605,6 +643,11 @@ export class AuthService {
       return this.extensionManager.restoreConnection();
     }
 
+    if (this.authMethod === 'amber') {
+      if (!this.amberManager) this.amberManager = new AmberSignerManager();
+      return this.amberManager.restoreSession();
+    }
+
     return true;
   }
 
@@ -711,6 +754,9 @@ export class AuthService {
         break;
       case 'key-signer':
         result = await this.authenticateWithKeySigner();
+        break;
+      case 'amber':
+        result = await this.authenticateWithAmber();
         break;
       default:
         return { success: false, error: `Unsupported auth method: ${account.authMethod}` };

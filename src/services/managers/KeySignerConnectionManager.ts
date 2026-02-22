@@ -48,7 +48,7 @@ export class KeySignerConnectionManager {
    * Setup window focus/blur listeners for adaptive daemon polling
    */
   private setupWindowFocusListeners(): void {
-    if (!PlatformService.getInstance().isTauri) return;
+    if (!PlatformService.getInstance().isTauri || PlatformService.getInstance().isAndroid) return;
 
     window.addEventListener('focus', () => {
       this.windowFocused = true;
@@ -67,7 +67,7 @@ export class KeySignerConnectionManager {
    * Try auto-login with KeySigner
    */
   public async tryAutoLogin(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
-    if (!PlatformService.getInstance().isTauri) {
+    if (!PlatformService.getInstance().isTauri || PlatformService.getInstance().isAndroid) {
       return { success: false, error: 'Not running in Tauri' };
     }
 
@@ -118,7 +118,7 @@ export class KeySignerConnectionManager {
    * Authenticate with KeySigner
    */
   public async authenticate(): Promise<KeySignerAuthResult> {
-    if (!PlatformService.getInstance().isTauri) {
+    if (!PlatformService.getInstance().isTauri || PlatformService.getInstance().isAndroid) {
       return { success: false, error: 'KeySigner only available in Tauri' };
     }
 

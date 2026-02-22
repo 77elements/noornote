@@ -1,7 +1,8 @@
 /**
  * Authentication Component
  * Handles login/logout UI and authentication flow
- * Supports: NoorSigner (local daemon), Bunker (remote signer), and NostrConnect QR
+ * Supports: NoorSigner (desktop), Amber (Android), Browser Extension (web),
+ *           Bunker (remote signer), and NostrConnect QR (desktop/web)
  */
 
 import { AuthService } from '../../services/AuthService';
@@ -79,7 +80,7 @@ export class AuthComponent {
 
   /**
    * Show login screen in primary-content
-   * Two options: NoorSigner (primary) and Bunker (remote signer)
+   * Platform-aware: Desktop shows NoorSigner, Android shows Amber, Web shows Extension
    */
   public showLoginScreen(): void {
     // Cancel any previous nostrconnect session
@@ -88,8 +89,10 @@ export class AuthComponent {
     const primaryContent = document.querySelector('.primary-content');
     if (!primaryContent) return;
 
-    // Check platform for conditional rendering
     const platform = PlatformService.getInstance();
+    const isDesktop = platform.isTauri && !platform.isAndroid;
+    const isMobile = platform.isAndroid;
+    const isWeb = platform.isBrowser;
 
     // Check if adding account (from AccountSwitcher)
     const isAddingAccount = sessionStorage.getItem('noornote_add_account') === 'true';
@@ -100,13 +103,19 @@ export class AuthComponent {
         <h1>${pageTitle}</h1>
 
         <section class="auth-section auth-section--primary">
-          <div class="auth-primary-action ${!platform.isTauri ? 'hidden' : ''}">
+          <div class="auth-primary-action ${!isDesktop ? 'hidden' : ''}">
             <button class="btn btn--large" data-action="use-key-signer">
               🔑 Use NoorSigner
             </button>
             <p class="auth-hint">Secure local key signer</p>
           </div>
-          <div class="auth-primary-action ${platform.isTauri ? 'hidden' : ''}">
+          <div class="auth-primary-action ${!isMobile ? 'hidden' : ''}">
+            <button class="btn btn--large" data-action="use-amber">
+              🔑 Use Amber
+            </button>
+            <p class="auth-hint">NIP-55 Android signer</p>
+          </div>
+          <div class="auth-primary-action ${!isWeb ? 'hidden' : ''}">
             <button class="btn btn--large" data-action="use-browser-ext-signer">
               🔑 Use Browser extension
             </button>
@@ -120,15 +129,15 @@ export class AuthComponent {
 
         <section class="auth-section">
           <h2>Remote Signer</h2>
-          <div class="auth-nostrconnect" data-container="nostrconnect">
+          <div class="auth-nostrconnect ${isMobile ? 'hidden' : ''}" data-container="nostrconnect">
             <div class="auth-nostrconnect__qr" data-container="nostrconnect-qr">
               <div class="auth-nostrconnect__loading">Generating QR code...</div>
             </div>
             <p class="auth-hint">Scan with Amber or other mobile signer</p>
             <p class="auth-nostrconnect__status" data-status="nostrconnect">Waiting for connection...</p>
           </div>
-          <div class="auth-divider auth-divider--small">
-            <span>or enter bunker:// URI</span>
+          <div class="auth-divider auth-divider--small ${isMobile ? 'hidden' : ''}">
+            <span>${isMobile ? '' : 'or '}enter bunker:// URI</span>
           </div>
           <div class="auth-input-group">
             <input
@@ -150,7 +159,7 @@ export class AuthComponent {
           <a href="#" data-action="create-account">Create a new Nostr account</a>
         </p>
 
-        <p class="auth-hint ${!platform.isTauri ? 'hidden' : ''}" style="text-align: center;">
+        <p class="auth-hint ${!isDesktop ? 'hidden' : ''}" style="text-align: center;">
           <a href="#" data-action="import-to-noorsigner">Import existing key to NoorSigner</a>
         </p>
       </div>
@@ -159,8 +168,10 @@ export class AuthComponent {
     // Setup event listeners for injected UI
     this.setupLoginViewListeners();
 
-    // Start nostrconnect QR flow
-    this.initNostrConnect();
+    // Start nostrconnect QR flow (not on mobile — can't scan QR on same device)
+    if (!isMobile) {
+      this.initNostrConnect();
+    }
   }
 
   /**
@@ -220,13 +231,19 @@ export class AuthComponent {
     const primaryContent = document.querySelector('.primary-content');
     if (!primaryContent) return;
 
-    // NoorSigner button
+    // NoorSigner button (desktop)
     const keySignerBtn = primaryContent.querySelector('[data-action="use-key-signer"]');
     if (keySignerBtn) {
       keySignerBtn.addEventListener('click', this.handleKeySignerLogin.bind(this));
     }
 
-    // Browser Extension button
+    // Amber button (Android)
+    const amberBtn = primaryContent.querySelector('[data-action="use-amber"]');
+    if (amberBtn) {
+      amberBtn.addEventListener('click', this.handleAmberLogin.bind(this));
+    }
+
+    // Browser Extension button (web)
     const browserExtBtn = primaryContent.querySelector('[data-action="use-browser-ext-signer"]');
     if (browserExtBtn) {
       browserExtBtn.addEventListener('click', this.handleBrowserExtLogin.bind(this));
@@ -258,7 +275,7 @@ export class AuthComponent {
       });
     }
 
-    // Import key to NoorSigner link
+    // Import key to NoorSigner link (desktop only)
     const importLink = primaryContent.querySelector('[data-action="import-to-noorsigner"]');
     if (importLink) {
       importLink.addEventListener('click', (e) => {
@@ -337,7 +354,7 @@ export class AuthComponent {
   }
 
   /**
-   * Handle NoorSigner login
+   * Handle NoorSigner login (desktop)
    */
   private async handleKeySignerLogin(): Promise<void> {
     const primaryContent = document.querySelector('.primary-content');
@@ -405,6 +422,35 @@ export class AuthComponent {
       this.showError('Unexpected error during NoorSigner authentication');
       this.resetButton(keySignerBtn, originalText);
       cancelBtn?.remove();
+    }
+  }
+
+  /**
+   * Handle Amber login (Android, NIP-55)
+   */
+  private async handleAmberLogin(): Promise<void> {
+    const primaryContent = document.querySelector('.primary-content');
+    const amberBtn = primaryContent?.querySelector('[data-action="use-amber"]') as HTMLButtonElement;
+    if (!amberBtn) return;
+
+    const originalText = '🔑 Use Amber';
+    amberBtn.disabled = true;
+    amberBtn.textContent = 'Opening Amber...';
+
+    try {
+      const result = await this.authService.authenticateWithAmber();
+
+      if (result.success && result.npub && result.pubkey) {
+        this.handleLoginSuccess(result.npub, result.pubkey, 'Amber');
+      } else {
+        this.showError(result.error || 'Amber authentication failed');
+        this.resetButton(amberBtn, originalText);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Amber login error:', msg);
+      this.showError(`Amber error: ${msg}`);
+      this.resetButton(amberBtn, originalText);
     }
   }
 
@@ -503,14 +549,18 @@ export class AuthComponent {
    * Show error message (auto-removes after 5 seconds)
    */
   private showError(message: string): void {
-    this.element.querySelector('.auth-error')?.remove();
+    // Show error in login view (where user is looking), fallback to component element
+    const loginView = document.querySelector('.view-content--login');
+    const container = loginView || this.element;
+
+    container.querySelector('.auth-error')?.remove();
 
     const errorElement = document.createElement('div');
     errorElement.className = 'auth-error';
     errorElement.innerHTML = `<p class="error">${message}</p>`;
-    this.element.appendChild(errorElement);
+    container.appendChild(errorElement);
 
-    setTimeout(() => errorElement.remove(), 5000);
+    setTimeout(() => errorElement.remove(), 8000);
   }
 
   /**

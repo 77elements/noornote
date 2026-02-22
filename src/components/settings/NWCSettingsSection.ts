@@ -239,8 +239,9 @@ export class NWCSettingsSection extends SettingsSection {
    * Setup NWC storage switch (Keychain vs Encrypted File)
    */
   private async setupStorageSwitch(contentContainer: HTMLElement): Promise<void> {
-    // Only show in Tauri (not browser)
-    if (!PlatformService.getInstance().isTauri) {
+    // Only show on desktop (not browser or mobile)
+    const _p = PlatformService.getInstance();
+    if (!_p.isTauri || _p.isAndroid) {
       return;
     }
 

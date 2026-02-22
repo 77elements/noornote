@@ -1,0 +1,12 @@
+{
+  "identifier": "mobile",
+  "description": "Mobile-only permissions (Amber NIP-55 signer)",
+  "platforms": ["android"],
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "amber:default",
+    "deep-link:default"
+  ]
+}

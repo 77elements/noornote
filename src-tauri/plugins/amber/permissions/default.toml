@@ -1,0 +1,13 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Default permissions for the Amber NIP-55 signer plugin"
+permissions = [
+  "allow-is-amber-installed",
+  "allow-login",
+  "allow-sign-event",
+  "allow-nip04-encrypt",
+  "allow-nip04-decrypt",
+  "allow-nip44-encrypt",
+  "allow-nip44-decrypt",
+]

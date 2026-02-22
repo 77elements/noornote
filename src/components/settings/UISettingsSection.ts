@@ -46,7 +46,8 @@ export class UISettingsSection extends SettingsSection {
    * Render UI settings content
    */
   private renderContent(): string {
-    const isTauri = PlatformService.getInstance().isTauri;
+    const platform = PlatformService.getInstance();
+    const isDesktop = platform.isTauri && !platform.isAndroid;
 
     return `
         <h3 class="subsection-title">Calendar System</h3>
@@ -110,7 +111,7 @@ export class UISettingsSection extends SettingsSection {
           </p>
         </div>
 
-        ${isTauri ? `
+        ${isDesktop ? `
           <h3 class="subsection-title">Updates</h3>
 
           <div id="auto-update-switch-container">

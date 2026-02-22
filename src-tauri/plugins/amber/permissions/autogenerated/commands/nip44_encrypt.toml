@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-nip44-encrypt"
+description = "Enables the nip44_encrypt command without any pre-configured scope."
+commands.allow = ["nip44_encrypt"]
+
+[[permission]]
+identifier = "deny-nip44-encrypt"
+description = "Denies the nip44_encrypt command without any pre-configured scope."
+commands.deny = ["nip44_encrypt"]

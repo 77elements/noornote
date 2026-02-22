@@ -2564,7 +2564,7 @@ export class TribeManager {
   private async handleSaveToFile(): Promise<void> {
     try {
       ToastService.show('Saving to file...', 'info');
-      if (PlatformService.getInstance().isTauri) {
+      if (PlatformService.getInstance().isTauri && !PlatformService.getInstance().isAndroid) {
         await saveToFile();
       } else {
         downloadAsJson(this.adapter.getBrowserItems(), 'tribes');

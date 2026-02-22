@@ -52,7 +52,7 @@ export class AppBadgeService {
    * Initialize Tauri window reference for badge API
    */
   private async initTauriWindow(): Promise<void> {
-    if (this.platform.isTauri) {
+    if (this.platform.isTauri && !this.platform.isAndroid) {
       try {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         this.tauriWindow = getCurrentWindow();

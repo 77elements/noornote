@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-nip04-decrypt"
+description = "Enables the nip04_decrypt command without any pre-configured scope."
+commands.allow = ["nip04_decrypt"]
+
+[[permission]]
+identifier = "deny-nip04-decrypt"
+description = "Denies the nip04_decrypt command without any pre-configured scope."
+commands.deny = ["nip04_decrypt"]

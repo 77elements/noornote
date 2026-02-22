@@ -123,6 +123,9 @@ export default defineConfig({
     }) as PluginOption] : []),
   ],
 
+  // Expose TAURI_ENV_* variables to frontend (set by `tauri build`)
+  envPrefix: ['VITE_', 'TAURI_ENV_'],
+
   // Environment variables
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version),

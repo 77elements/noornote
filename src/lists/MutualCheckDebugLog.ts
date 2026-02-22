@@ -21,7 +21,7 @@ let tauriMkdir: typeof import('@tauri-apps/plugin-fs').mkdir | null = null;
 
 const platform = PlatformService.getInstance();
 
-if (platform.isTauri) {
+if (platform.isTauri && !platform.isAndroid) {
   import('@tauri-apps/api/path').then(mod => { tauriHomeDir = mod.homeDir; });
   import('@tauri-apps/plugin-fs').then(mod => {
     tauriReadTextFile = mod.readTextFile;
@@ -66,7 +66,7 @@ export class MutualCheckDebugLog {
   private async initialize(): Promise<void> {
     if (this.initialized) return;
 
-    if (!platform.isTauri || !tauriHomeDir || !tauriMkdir || !tauriExists) {
+    if (!platform.isTauri || platform.isAndroid || !tauriHomeDir || !tauriMkdir || !tauriExists) {
       return;
     }
 

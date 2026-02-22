@@ -361,7 +361,7 @@ export class NWCService {
       if (pubkey) {
         // Try encrypted file (Tauri only)
         const { PlatformService } = await import('./PlatformService');
-        if (PlatformService.getInstance().isTauri) {
+        if (PlatformService.getInstance().isTauri && !PlatformService.getInstance().isAndroid) {
           const { EncryptedFileStorage } = await import('./EncryptedFileStorage');
           await EncryptedFileStorage.deleteNWC(pubkey);
         }
@@ -477,7 +477,7 @@ export class NWCService {
     const { PlatformService } = await import('./PlatformService');
     const storage = PerAccountLocalStorage.getInstance();
     const useEncryptedFile = storage.get(StorageKeys.NWC_USE_ENCRYPTED_FILE, false);
-    return useEncryptedFile && PlatformService.getInstance().isTauri;
+    return useEncryptedFile && PlatformService.getInstance().isTauri && !PlatformService.getInstance().isAndroid;
   }
 
   /**

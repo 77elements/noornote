@@ -42,6 +42,12 @@ export class PlatformService {
   /** True if running on Linux */
   readonly isLinux: boolean;
 
+  /** True if running on Android (Tauri mobile) */
+  readonly isAndroid: boolean;
+
+  /** True if Amber (NIP-55) signer can be used (Tauri Android only) */
+  readonly supportsAmber: boolean;
+
   private constructor() {
     // Detect Tauri environment
     this.isTauri = typeof window !== 'undefined' &&
@@ -50,19 +56,28 @@ export class PlatformService {
     this.isBrowser = !this.isTauri;
     this.platformType = this.isTauri ? 'tauri' : 'browser';
 
-    // Feature flags
-    this.supportsNoorSigner = this.isTauri;
-    this.supportsKeychain = this.isTauri;
-    this.supportsNativeFileDialog = this.isTauri;
+    // OS detection (must come before feature flags)
+    const navPlatform = navigator.platform?.toLowerCase() || '';
+    const userAgent = navigator.userAgent?.toLowerCase() || '';
+    this.isMac = navPlatform.includes('mac') || userAgent.includes('mac');
+    this.isLinux = navPlatform.includes('linux') || userAgent.includes('linux');
+
+    // Android detection: build-time flag from Tauri CLI (most reliable),
+    // fallback to userAgent check for runtime detection
+    const tauriPlatform = (import.meta as any).env?.TAURI_ENV_PLATFORM || '';
+    this.isAndroid = tauriPlatform === 'android' || userAgent.includes('android');
+
+    // Feature flags (desktop only, not mobile)
+    const isDesktop = this.isTauri && !this.isAndroid;
+    this.supportsNoorSigner = isDesktop;
+    this.supportsKeychain = isDesktop;
+    this.supportsNativeFileDialog = isDesktop;
 
     // NIP-07 available in browser, and potentially in Tauri if extension installed
     this.supportsNip07 = this.isBrowser || this.hasNip07Extension();
 
-    // OS detection
-    const platform = navigator.platform?.toLowerCase() || '';
-    const userAgent = navigator.userAgent?.toLowerCase() || '';
-    this.isMac = platform.includes('mac') || userAgent.includes('mac');
-    this.isLinux = platform.includes('linux') || userAgent.includes('linux');
+    // Amber (NIP-55) only available in Tauri on Android
+    this.supportsAmber = this.isTauri && this.isAndroid;
   }
 
   public static getInstance(): PlatformService {

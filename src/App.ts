@@ -72,8 +72,9 @@ export class App {
       return;
     }
 
-    // Check for app updates (Tauri desktop only, non-blocking)
-    if (PlatformService.getInstance().isTauri) {
+    // Check for app updates (desktop only, non-blocking)
+    const platform = PlatformService.getInstance();
+    if (platform.isTauri && !platform.isAndroid) {
       this.checkForUpdates();
     }
 
@@ -327,7 +328,8 @@ export class App {
   }
 
   private async setupTauriCloseHandler(): Promise<void> {
-    if (!PlatformService.getInstance().isTauri) return;
+    const platform = PlatformService.getInstance();
+    if (!platform.isTauri || platform.isAndroid) return;
 
     try {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
@@ -400,7 +402,8 @@ export class App {
       event.preventDefault();
 
       try {
-        if (PlatformService.getInstance().isTauri) {
+        const _platform = PlatformService.getInstance();
+        if (_platform.isTauri && !_platform.isAndroid) {
           const { open } = await import('@tauri-apps/plugin-shell');
           await open(href);
         } else {

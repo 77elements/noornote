@@ -116,8 +116,9 @@ export class KeySignerClient {
    * Ensure we're running in Tauri
    */
   private ensureTauri(): void {
-    if (!PlatformService.getInstance().isTauri) {
-      throw new Error('KeySigner is only available in Tauri desktop app');
+    const platform = PlatformService.getInstance();
+    if (!platform.isTauri || platform.isAndroid) {
+      throw new Error('KeySigner is only available in desktop app');
     }
   }
 
@@ -387,7 +388,8 @@ export class KeySignerClient {
    * Check if Trust Mode session is valid
    */
   public async checkTrustSession(): Promise<boolean> {
-    if (!PlatformService.getInstance().isTauri) {
+    const _p = PlatformService.getInstance();
+    if (!_p.isTauri || _p.isAndroid) {
       return false;
     }
 

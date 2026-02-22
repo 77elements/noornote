@@ -53,7 +53,8 @@ export class KeyboardShortcutManager {
     // Always setup browser shortcuts (focus-aware)
     this.setupBrowserShortcuts();
 
-    if (!PlatformService.getInstance().isTauri) return;
+    const _p = PlatformService.getInstance();
+    if (!_p.isTauri || _p.isAndroid) return;
 
     try {
       const { listen } = await import('@tauri-apps/api/event');

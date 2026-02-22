@@ -1254,7 +1254,7 @@ export class MuteListView extends View {
     try {
       ToastService.show('Saving to file...', 'info');
       const browserItems = this.adapter.getBrowserItems();
-      if (PlatformService.getInstance().isTauri) {
+      if (PlatformService.getInstance().isTauri && !PlatformService.getInstance().isAndroid) {
         await this.adapter.setFileItems(browserItems);
       } else {
         downloadAsJson(browserItems, 'mutes');
@@ -1602,7 +1602,7 @@ export class MuteListManager {
     try {
       ToastService.show('Saving...', 'info');
       const browserItems = this.adapter.getBrowserItems();
-      if (PlatformService.getInstance().isTauri) {
+      if (PlatformService.getInstance().isTauri && !PlatformService.getInstance().isAndroid) {
         await this.adapter.setFileItems(browserItems);
       } else {
         downloadAsJson(browserItems, 'mutes');

@@ -21,8 +21,8 @@ let tauriFetch: typeof import('@tauri-apps/plugin-http').fetch | null = null;
 
 const platform = PlatformService.getInstance();
 
-// Load Tauri APIs if available
-if (platform.isTauri) {
+// Load Tauri desktop APIs if available (not on mobile)
+if (platform.isTauri && !platform.isAndroid) {
   import('@tauri-apps/plugin-dialog').then(mod => { tauriSave = mod.save; });
   import('@tauri-apps/plugin-fs').then(mod => { tauriWriteFile = mod.writeFile; });
   import('@tauri-apps/plugin-http').then(mod => { tauriFetch = mod.fetch; });
