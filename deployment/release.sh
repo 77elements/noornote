@@ -72,14 +72,21 @@ fi
 echo ""
 echo -e "${GREEN}[1/7] Updating version to ${NEW_VERSION}...${NC}"
 
+# Detect sed in-place flag (macOS uses -i '', Linux uses -i)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    SED_INPLACE=(sed -i '')
+else
+    SED_INPLACE=(sed -i)
+fi
+
 # Update package.json
-sed -i '' "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"/" package.json
+"${SED_INPLACE[@]}" "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"/" package.json
 
 # Update tauri.conf.json
-sed -i '' "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"/" src-tauri/tauri.conf.json
+"${SED_INPLACE[@]}" "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"/" src-tauri/tauri.conf.json
 
 # Update Cargo.toml
-sed -i '' "s/^version = \"${CURRENT_VERSION}\"/version = \"${NEW_VERSION}\"/" src-tauri/Cargo.toml
+"${SED_INPLACE[@]}" "s/^version = \"${CURRENT_VERSION}\"/version = \"${NEW_VERSION}\"/" src-tauri/Cargo.toml
 
 echo -e "${GREEN}[2/7] Committing version bump...${NC}"
 git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml

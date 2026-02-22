@@ -332,7 +332,7 @@ export class AuthService {
     if (!event.tags?.some((tag: string[]) => tag[0] === 'client')) {
       if (!event.tags) event.tags = [];
       const platform = PlatformService.getInstance();
-      const clientName = platform.isAndroid ? 'NoorNote (m)' : platform.isTauri ? 'NoorNote (d)' : 'NoorNote (w)';
+      const clientName = platform.isAndroid ? 'NoorNote (m)' : platform.isTauri ? (platform.isMac ? 'NoorNote (d|m)' : 'NoorNote (d|l)') : 'NoorNote (w)';
       event.tags.push(['client', clientName]);
     }
 
