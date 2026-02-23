@@ -55,8 +55,12 @@ tmp/
 temp/
 
 # Claude Code
-.claude/*
-!.claude/skills/
+.claude/
+
+# Protected local-only directories
+screenshots/
+docs/
+CLAUDE.md
 
 # Optional relay (local data only)
 relay/strfry-db/

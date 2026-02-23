@@ -145,15 +145,42 @@ export enum EventKind {
   SEAL = 13,
   DIRECT_MESSAGE = 14,
   GENERIC_REPOST = 16,
+  VIDEO_LANDSCAPE = 21,
+  VIDEO_PORTRAIT = 22,
   CHANNEL_CREATION = 40,
   CHANNEL_METADATA = 41,
   CHANNEL_MESSAGE = 42,
   CHANNEL_HIDE_MESSAGE = 43,
   CHANNEL_MUTE_USER = 44,
+  POLL = 1068,
   FILE_METADATA = 1063,
   LIVE_CHAT_MESSAGE = 1311,
+  COMIC_STRIP = 6969,
+  ZAP_RECEIPT = 9735,
   LONG_FORM_CONTENT = 30023,
 }
+
+/**
+ * Kinds of user-authored content that can receive reactions, zaps, replies.
+ * Single source of truth — add new content kinds here.
+ */
+export const USER_CONTENT_KINDS: number[] = [
+  EventKind.TEXT_NOTE,
+  EventKind.VIDEO_LANDSCAPE,
+  EventKind.VIDEO_PORTRAIT,
+  EventKind.POLL,
+  EventKind.COMIC_STRIP,
+  EventKind.LONG_FORM_CONTENT,
+];
+
+/**
+ * All kinds the app can render. USER_CONTENT_KINDS + wrapper/system kinds.
+ */
+export const RENDERABLE_KINDS: number[] = [
+  ...USER_CONTENT_KINDS,
+  EventKind.REPOST,
+  EventKind.ZAP_RECEIPT,
+];
 
 /**
  * Error types for better error handling

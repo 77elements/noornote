@@ -26,6 +26,7 @@ import { EventBus } from '../EventBus';
 import { decodeNip19 } from '../NostrToolsAdapter';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { NoteService } from '../NoteService';
+import { USER_CONTENT_KINDS } from '../../types/nostr';
 
 export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag';
 
@@ -541,7 +542,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       const relays = await this.getReadRelays();
       const userEvents = await this.transport.fetch(relays, [{
         authors: [userPubkey],
-        kinds: [1, 30023], // notes + long-form articles
+        kinds: USER_CONTENT_KINDS,
         limit: 50
       }]);
 
