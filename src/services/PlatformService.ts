@@ -78,6 +78,11 @@ export class PlatformService {
 
     // Amber (NIP-55) only available in Tauri on Android
     this.supportsAmber = this.isTauri && this.isAndroid;
+
+    // Set platform CSS class on <html> for platform-specific styling
+    if (this.isAndroid) {
+      document.documentElement.classList.add('platform--mobile');
+    }
   }
 
   public static getInstance(): PlatformService {
