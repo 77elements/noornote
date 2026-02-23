@@ -13,8 +13,44 @@ use tauri::Manager;
 use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
 use tauri_plugin_log::{Target, TargetKind};
 
+/// Write diagnostic info to accessible locations on Android.
+#[cfg(target_os = "android")]
+fn write_crash_log(msg: &str) {
+  for path in [
+    "/sdcard/Download/noornote-crash.log",
+    "/storage/emulated/0/Download/noornote-crash.log",
+  ] {
+    let _ = std::fs::write(path, msg);
+  }
+  eprintln!("NOORNOTE CRASH: {msg}");
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  #[cfg(target_os = "android")]
+  {
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+      let msg = format!("PANIC: {info}");
+      for path in [
+        "/sdcard/Download/noornote-crash.log",
+        "/storage/emulated/0/Download/noornote-crash.log",
+      ] {
+        let _ = std::fs::write(path, &msg);
+      }
+      default_hook(info);
+    }));
+  }
+
+  // LogDir path resolution can fail on Android; use Stdout only on mobile.
+  #[cfg(desktop)]
+  let log_targets = vec![
+    Target::new(TargetKind::Stdout),
+    Target::new(TargetKind::LogDir { file_name: None }),
+  ];
+  #[cfg(mobile)]
+  let log_targets = vec![Target::new(TargetKind::Stdout)];
+
   let mut builder = tauri::Builder::default()
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_fs::init())
@@ -22,15 +58,11 @@ pub fn run() {
     .plugin(tauri_plugin_deep_link::init())
     .plugin(
       tauri_plugin_log::Builder::new()
-        .targets([
-          Target::new(TargetKind::Stdout),
-          Target::new(TargetKind::LogDir { file_name: None }),
-        ])
+        .targets(log_targets)
         .level(log::LevelFilter::Info)
         .build(),
     );
 
-  // Desktop-only plugins
   #[cfg(desktop)]
   {
     builder = builder
@@ -70,13 +102,12 @@ pub fn run() {
       ]);
   }
 
-  // Mobile-only plugins
   #[cfg(target_os = "android")]
   {
     builder = builder.plugin(tauri_plugin_amber::init());
   }
 
-  builder
+  let app = builder
     .setup(|_app| {
       #[cfg(desktop)]
       if cfg!(debug_assertions) {
@@ -110,33 +141,43 @@ pub fn run() {
       }
       Ok(())
     })
-    .build(tauri::generate_context!())
-    .expect("error while building tauri application")
-    .run(|_app_handle, _event| {
-      #[cfg(desktop)]
-      match &_event {
-        RunEvent::WindowEvent { label, event: WindowEvent::CloseRequested { api, .. }, .. } => {
-          #[cfg(target_os = "macos")]
-          {
-            if let Some(window) = _app_handle.get_webview_window(label) {
-              let _ = window.minimize();
-              api.prevent_close();
+    .build(tauri::generate_context!());
+
+  match app {
+    Ok(app) => {
+      app.run(|_app_handle, _event| {
+        #[cfg(desktop)]
+        match &_event {
+          RunEvent::WindowEvent { label, event: WindowEvent::CloseRequested { api, .. }, .. } => {
+            #[cfg(target_os = "macos")]
+            {
+              if let Some(window) = _app_handle.get_webview_window(label) {
+                let _ = window.minimize();
+                api.prevent_close();
+              }
+            }
+            #[cfg(not(target_os = "macos"))]
+            {
+              let _ = (label, api);
+              _app_handle.exit(0);
             }
           }
-          #[cfg(not(target_os = "macos"))]
-          {
-            let _ = (label, api);
-            _app_handle.exit(0);
+          #[cfg(target_os = "macos")]
+          RunEvent::Reopen { .. } => {
+            if let Some(window) = _app_handle.get_webview_window("main") {
+              let _ = window.unminimize();
+              let _ = window.set_focus();
+            }
           }
+          _ => {}
         }
-        #[cfg(target_os = "macos")]
-        RunEvent::Reopen { .. } => {
-          if let Some(window) = _app_handle.get_webview_window("main") {
-            let _ = window.unminimize();
-            let _ = window.set_focus();
-          }
-        }
-        _ => {}
-      }
-    });
+      });
+    }
+    Err(e) => {
+      let msg = format!("Tauri build failed: {e}\nDebug: {e:?}");
+      eprintln!("NOORNOTE FATAL: {msg}");
+      #[cfg(target_os = "android")]
+      write_crash_log(&msg);
+    }
+  }
 }

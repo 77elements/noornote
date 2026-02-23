@@ -93,6 +93,7 @@
 @use 'components/about-view';
 @use 'components/font-size-switcher';
 @use 'components/theme-switcher';
+@use 'components/pull-to-refresh';
 
 // 4. Molecules - Combinations of atoms
 @use 'molecules/buttons';

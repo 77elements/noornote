@@ -37,6 +37,7 @@ import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { LayoutService } from '../../services/LayoutService';
 import { PlatformService } from '../../services/PlatformService';
+import { PullToRefresh } from '../ui/PullToRefresh';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
@@ -80,6 +81,7 @@ export class MainLayout {
   private viewTabManager: ViewTabManager | null = null;
   private viewTabEventSubscriptions: string[] = [];
   private layoutService: LayoutService;
+  private pullToRefresh: PullToRefresh | null = null;
 
   constructor() {
     this.element = this.createElement();
@@ -92,6 +94,7 @@ export class MainLayout {
     this.layoutService = LayoutService.getInstance();
     this.setupNavigationLinks();
     this.setupMobileSidebar();
+    this.setupPullToRefresh();
     this.setupScrollListener();
     this.setupTabSwitching();
     this.setupMentionLinks();
@@ -855,27 +858,6 @@ export class MainLayout {
       });
     }
 
-    // Reload button — Tauri only (no browser reload button)
-    if ((window as any).__TAURI_INTERNALS__) {
-      const cacheLi = clearCacheLink?.closest('li');
-      if (cacheLi) {
-        const reloadLi = document.createElement('li');
-        reloadLi.innerHTML = `
-          <a href="#" class="primary-nav__link primary-nav__link--reload">
-            <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-            </svg>
-            <span class="primary-nav__item-desc">Reload</span>
-          </a>`;
-        cacheLi.after(reloadLi);
-        reloadLi.querySelector('a')!.addEventListener('click', (e) => {
-          e.preventDefault();
-          window.location.reload();
-        });
-      }
-    }
-
     // New Post Dropup
     this.setupNewPostDropup();
   }
@@ -948,6 +930,22 @@ export class MainLayout {
         overlay.classList.remove('sidebar-overlay--visible');
       }
     }, { passive: true });
+  }
+
+  /**
+   * Setup pull-to-refresh on primary-content (mobile only)
+   */
+  private setupPullToRefresh(): void {
+    if (!PlatformService.getInstance().isAndroid) return;
+
+    const primaryContent = this.element.querySelector('.primary-content') as HTMLElement;
+    if (!primaryContent) return;
+
+    this.pullToRefresh = new PullToRefresh(primaryContent, () => {
+      const router = Router.getInstance();
+      const currentPath = router.getCurrentPath();
+      router.navigate(currentPath, true);
+    });
   }
 
   /**
@@ -2172,6 +2170,10 @@ export class MainLayout {
 
     if (this.searchSpotlight) {
       this.searchSpotlight.destroy();
+    }
+
+    if (this.pullToRefresh) {
+      this.pullToRefresh.destroy();
     }
 
     this.element.remove();
