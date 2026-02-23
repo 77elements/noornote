@@ -1,5 +1,0 @@
-docs/** filter=git-crypt diff=git-crypt
-screenshots/** filter=git-crypt diff=git-crypt
-marketing/** filter=git-crypt diff=git-crypt
-.claude/** filter=git-crypt diff=git-crypt
-CLAUDE.md filter=git-crypt diff=git-crypt
