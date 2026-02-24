@@ -782,6 +782,41 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
+   * One-shot poll for new notes (used by pull-to-refresh)
+   * Returns filtered events directly without affecting polling state
+   */
+  public async pollOnce(
+    followingPubkeys: string[],
+    newestTimestamp: number,
+    includeReplies: boolean,
+    specificRelay: string | null,
+    exemptFromMuteFilter?: string
+  ): Promise<NostrEvent[]> {
+    try {
+      const relays = specificRelay
+        ? [specificRelay]
+        : this.transport.getReadRelays();
+
+      if (relays.length === 0) return [];
+
+      const now = Math.floor(Date.now() / 1000);
+      const filters = [{
+        kinds: [1, 6, 21, 22, 1068],
+        authors: followingPubkeys,
+        since: newestTimestamp + 1,
+        until: now,
+        limit: 100
+      }];
+
+      const events = await this.transport.fetch(relays, filters, 5000, true);
+      return await this.processEvents(events, includeReplies, exemptFromMuteFilter);
+    } catch (error) {
+      this.systemLogger.error('FeedOrchestrator', `pollOnce failed: ${error}`);
+      return [];
+    }
+  }
+
+  /**
    * Refresh muted users list (called when mute list is updated)
    */
   public async refreshMutedUsers(): Promise<void> {

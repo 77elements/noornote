@@ -51,6 +51,7 @@ export class Timeline extends View {
   private userLoginSubscriptionId?: string;
   private muteUpdatedSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
+  private pullRefreshSubscriptionId?: string;
 
   constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
@@ -109,6 +110,9 @@ export class Timeline extends View {
 
     // Listen for note deletions
     this.setupDeleteListener();
+
+    // Listen for pull-to-refresh events
+    this.pullRefreshSubscriptionId = this.eventBus.on('timeline:pull-refresh', () => this.handlePullToRefresh());
 
     // Listen for user account switches (only for main timeline, not ProfileView)
     if (!this.filterAuthorPubkey) {
@@ -338,6 +342,45 @@ export class Timeline extends View {
       originalHideMethod();
       this.lookForNotesLink!.style.display = 'block';
     };
+  }
+
+  /**
+   * Handle pull-to-refresh: fetch new notes and prepend them
+   */
+  private async handlePullToRefresh(): Promise<void> {
+    const pubkeys = this.stateManager.getFollowingPubkeys();
+    const newestTimestamp = this.stateManager.getNewestTimestamp();
+    if (pubkeys.length === 0 || newestTimestamp === 0) return;
+
+    const newEvents = await this.feedOrchestrator.pollOnce(
+      pubkeys,
+      newestTimestamp,
+      this.stateManager.getIncludeReplies(),
+      this.stateManager.getSelectedRelay(),
+      this.filterAuthorPubkey
+    );
+
+    if (newEvents.length > 0) {
+      const unique = this.stateManager.prependEvents(newEvents);
+      if (unique.length > 0) {
+        this.renderer.prependNewEvents(unique);
+        this.feedOrchestrator.resetPollingTimestamp(newEvents[0]!.created_at);
+      }
+    }
+
+    // Hide refresh button — polling will show it again when new notes arrive
+    if (this.refreshButton) {
+      this.refreshButton.hide();
+    }
+
+    // Clear polled events cache so next poll cycle starts fresh
+    this.feedOrchestrator.getPolledEvents();
+
+    // Scroll to top
+    this.element.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Restart polling so next cycle is fresh
+    this.restartPolling();
   }
 
   /**
@@ -573,6 +616,9 @@ export class Timeline extends View {
     }
     if (this.noteDeletedSubscriptionId) {
       this.eventBus.off(this.noteDeletedSubscriptionId);
+    }
+    if (this.pullRefreshSubscriptionId) {
+      this.eventBus.off(this.pullRefreshSubscriptionId);
     }
     this.clearLookForNotesTimeout();
     this.lifecycleManager.destroy();
