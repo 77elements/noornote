@@ -942,9 +942,15 @@ export class MainLayout {
     if (!primaryContent) return;
 
     this.pullToRefresh = new PullToRefresh(primaryContent, () => {
-      const router = Router.getInstance();
-      const currentPath = router.getCurrentPath();
-      router.navigate(currentPath, true);
+      const appState = AppState.getInstance();
+      const currentView = appState.getState('view').currentView;
+
+      if (currentView === 'timeline' || currentView === 'profile') {
+        EventBus.getInstance().emit('timeline:pull-refresh');
+      } else {
+        const router = Router.getInstance();
+        router.navigate(router.getCurrentPath(), true);
+      }
     });
   }
 
