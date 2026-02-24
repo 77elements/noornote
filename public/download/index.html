@@ -605,20 +605,33 @@
           </div>
 
           <div class="card">
-<p>
-              NoorNote's web client runs inside
-              <a href="https://keychat.io" target="_blank" rel="noopener" style="color:var(--color-4);text-decoration:none;font-weight:600;">Keychat</a>'s
-              built-in browser on GrapheneOS, Android and iOS. Keychat is a Nostr-based
-              messenger with Signal-level encryption that includes a full web
-              browser with extension support.
-            </p>
+            <span class="badge badge-green">GrapheneOS (and Android)</span> <span class="badge" style="background:rgba(247,147,26,0.12);border:1px solid rgba(247,147,26,0.3);color:#f7931a;">Beta</span>
             <p>
-              Open <strong>NoorNote</strong> in Keychat's Mini-Apps or browser, sign in with
-              your Keychat identity, and you have a full Nostr client on your phone
-              with your keys managed securely by Keychat itself.
+              NoorNote runs natively on GrapheneOS (and other Android devices).
+              Download the APK directly, install it on your phone, and sign in with
+              Amber, the Nostr key signer for Android (available on
+              <a href="https://zapstore.dev/" target="_blank" rel="noopener" style="color:var(--color-4);text-decoration:none;font-weight:600;">Zapstore</a>).
+              No Google Services required.
             </p>
 
-            <div class="btn-row">
+            <div class="btn-row" style="justify-content:flex-start;">
+              <a href="noornote-release.apk" class="btn btn-primary btn-sm" download>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Download APK
+              </a>
+            </div>
+
+            <hr style="border:none;height:1px;background:rgba(155,121,185,0.15);margin:1.8rem 0;">
+
+            <span class="badge badge-purple">Keychat Browser</span>
+            <p>
+              Alternatively, open NoorNote's web client inside
+              <a href="https://keychat.io" target="_blank" rel="noopener" style="color:var(--color-4);text-decoration:none;font-weight:600;">Keychat</a>'s
+              built-in browser on Android or iOS. Sign in with your Keychat
+              identity and your keys are managed securely by Keychat itself.
+            </p>
+
+            <div class="btn-row" style="justify-content:flex-start;">
               <a href="https://keychat.io" class="btn btn-outline btn-sm" target="_blank" rel="noopener">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
                 Get Keychat
