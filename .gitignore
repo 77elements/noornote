@@ -7,6 +7,7 @@ yarn-error.log*
 # Production builds
 dist/
 build/
+apk/
 
 # Rust build artifacts
 src-tauri/target/
