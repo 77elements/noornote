@@ -62,6 +62,12 @@
   }
 }
 
+// Edge-to-edge: offset mobile header below status bar (Tauri Android only)
+html.platform--tauri-android .mobile-header {
+  padding-top: env(safe-area-inset-top, 0px);
+  height: calc(48px + env(safe-area-inset-top, 0px));
+}
+
 // Sidebar overlay - only visible in mobile mode when sidebar is open
 .sidebar-overlay {
   display: none;

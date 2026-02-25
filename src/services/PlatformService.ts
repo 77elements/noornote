@@ -80,8 +80,13 @@ export class PlatformService {
     this.supportsAmber = this.isTauri && this.isAndroid;
 
     // Set platform CSS class on <html> for platform-specific styling
+    // platform--tauri-android: ONLY Tauri native app (edge-to-edge CSS)
+    // platform--mobile: any Android context (Tauri + web browsers)
     if (this.isAndroid) {
       document.documentElement.classList.add('platform--mobile');
+    }
+    if (this.isTauri && this.isAndroid) {
+      document.documentElement.classList.add('platform--tauri-android');
     }
   }
 
