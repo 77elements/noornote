@@ -54,6 +54,12 @@ export class ViewMountingService {
     if (!primaryContent) return;
 
     this.unmountCachedViews(primaryContent);
+
+    // Cleanup welcome page resources when navigating away
+    if (viewType !== 'welcome' && this.mainLayout) {
+      this.mainLayout.cleanupWelcome();
+    }
+
     this.systemLogger.clearPageLogs();
     primaryContent.innerHTML = '';
 

@@ -1,0 +1,513 @@
+/**
+ * Welcome Hero + Public Timeline + Interstitial Styles
+ * Used on /welcome landing page for non-logged-in visitors
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+// ===========================================
+// HERO SECTION (Banner 02 - Benefits)
+// ===========================================
+
+.welcome-hero {
+  text-align: center;
+  max-width: 740px;
+  margin: 0 auto;
+  padding: $gap * 2 $gap;
+
+  @include tablet {
+    padding: $gap * 3 $gap * 2;
+  }
+}
+
+.welcome-hero__headline {
+  @include h1;
+  font-weight: 900;
+  line-height: 1.08;
+  letter-spacing: -1px;
+  margin-bottom: calc($gap / 2);
+
+  @include tablet {
+    @include gigantic;
+    font-weight: 900;
+    line-height: 1.08;
+    letter-spacing: -1px;
+  }
+
+  em {
+    font-style: normal;
+    background: linear-gradient(135deg, $color-4, $color-logo-start);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+.welcome-hero__tagline {
+  @include h4;
+  color: rgba($color-5, 0.4);
+  margin-bottom: $gap * 3;
+}
+
+.welcome-hero__benefits {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $gap;
+  margin-bottom: $gap * 3;
+
+  @include tablet {
+    grid-template-columns: repeat(3, 1fr);
+    gap: $gap * 1.25;
+  }
+}
+
+.welcome-hero__benefit {
+  @include card-base;
+  padding: $gap * 1.5 $gap;
+  text-align: center;
+  background: rgba($color-5, 0.03);
+  border: 1px solid rgba($color-5, 0.06);
+}
+
+.welcome-hero__benefit-icon {
+  @include h1;
+  margin-bottom: calc($gap / 2);
+}
+
+.welcome-hero__benefit-title {
+  @include h4;
+  font-weight: 700;
+  margin-bottom: calc($gap / 4);
+  color: var(--color-5);
+}
+
+.welcome-hero__badge {
+  display: block;
+  @include mini;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  line-height: 1.5;
+  color: $color-6;
+  font-weight: 600;
+  margin-top: calc($gap / 4);
+}
+
+.welcome-hero__benefit-desc {
+  @include compact;
+  color: rgba($color-5, 0.4);
+  line-height: 1.5;
+}
+
+.welcome-hero__cta {
+  display: flex;
+  justify-content: center;
+  gap: $gap;
+  margin-bottom: $gap;
+  flex-wrap: wrap;
+}
+
+.welcome-hero__note {
+  @include compact;
+  color: rgba($color-5, 0.25);
+}
+
+
+// ===========================================
+// PUBLIC TIMELINE
+// ===========================================
+
+.public-timeline {
+  max-width: 740px;
+  margin: 0 auto;
+  padding: 0 $gap;
+}
+
+.public-timeline__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $gap;
+  padding-bottom: calc($gap / 2);
+  border-bottom: 1px solid rgba($color-5, 0.08);
+
+  h2 {
+    @include h3;
+    color: rgba($color-5, 0.5);
+    margin-bottom: 0;
+  }
+}
+
+
+// ===========================================
+// INTERSTITIALS (Confrontation + Bold Minimal + Get Paid + Wake Up)
+// ===========================================
+
+.welcome-interstitial {
+  @include card-base;
+  margin: $gap * 2 0;
+  padding: $gap * 2;
+  background: rgba($color-5, 0.02);
+  border: 1px solid rgba($color-5, 0.08);
+  position: relative;
+  overflow: hidden;
+
+  // Gradient accent top border
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, $color-logo-start, $color-4, $color-logo-start);
+  }
+
+  h2 {
+    text-align: center;
+    @include h1;
+    font-weight: 900;
+    line-height: 1.15;
+    margin-bottom: $gap;
+
+    em {
+      font-style: normal;
+      background: linear-gradient(135deg, $color-4, $color-logo-start);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+  }
+}
+
+// --- Confrontation (Banner 01) ---
+
+.welcome-interstitial--confrontation {
+  .welcome-interstitial__headline {
+    margin-bottom: $gap * 1.5;
+  }
+
+  .welcome-interstitial__sub {
+    text-align: center;
+    @include compact;
+    color: rgba($color-5, 0.4);
+  }
+}
+
+.welcome-interstitial__comparison {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $gap;
+
+  @include tablet {
+    grid-template-columns: 1fr 1fr;
+    gap: $gap * 2;
+  }
+}
+
+.welcome-interstitial__side {
+  padding: $gap * 1.5;
+  border-radius: $radius-lg;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap * 0.75);
+  }
+
+  li {
+    @include compact;
+    line-height: 1.5;
+    display: flex;
+    align-items: flex-start;
+    gap: calc($gap / 2);
+  }
+}
+
+.welcome-interstitial__side--them {
+  background: rgba($color-red, 0.06);
+  border: 1px solid rgba($color-red, 0.15);
+
+  .welcome-interstitial__label {
+    color: rgba($color-red, 0.6);
+  }
+
+  li {
+    color: rgba($color-5, 0.35);
+    text-decoration: line-through;
+    text-decoration-color: rgba($color-red, 0.4);
+
+    &::before {
+      content: '\2715'; // ✕
+      color: rgba($color-red, 0.5);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+  }
+}
+
+.welcome-interstitial__side--us {
+  background: rgba($color-6, 0.06);
+  border: 1px solid rgba($color-6, 0.15);
+
+  .welcome-interstitial__label {
+    color: rgba($color-6, 0.6);
+  }
+
+  li {
+    color: rgba($color-5, 0.85);
+
+    &::before {
+      content: '\2713'; // ✓
+      color: rgba($color-6, 0.7);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+  }
+}
+
+.welcome-interstitial__label {
+  @include small;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: $gap;
+}
+
+// --- Get Paid (Banner 02) ---
+
+.welcome-interstitial--get-paid {
+  text-align: center;
+
+  // Gold gradient top border
+  &::before {
+    background: linear-gradient(90deg, $color-bitcoin-orange, $color-warning, $color-bitcoin-orange);
+  }
+
+  h2 em {
+    background: linear-gradient(135deg, $color-bitcoin-orange, $color-warning);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .welcome-interstitial__sub {
+    @include compact;
+    color: rgba($color-5, 0.4);
+    line-height: 1.6;
+
+    strong {
+      color: rgba($color-5, 0.7);
+      font-weight: 600;
+    }
+  }
+}
+
+.welcome-interstitial__sats-badge {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: $radius-lg;
+  background: rgba($color-bitcoin-orange, 0.1);
+  border: 1px solid rgba($color-bitcoin-orange, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto $gap;
+  @include h2;
+  color: $color-bitcoin-orange;
+}
+
+// --- Wake Up (Banner 05) ---
+
+.welcome-interstitial--wake-up {
+  // Red gradient top border
+  &::before {
+    background: linear-gradient(90deg, rgba($color-red, 0.8), rgba($color-red, 0.3), rgba($color-red, 0.8));
+  }
+
+  h2 em {
+    background: none;
+    -webkit-background-clip: unset;
+    -webkit-text-fill-color: $color-6;
+    color: $color-6;
+  }
+}
+
+.welcome-interstitial__stat {
+  @include gigantic;
+  font-weight: 900;
+  letter-spacing: -2px;
+  background: linear-gradient(135deg, rgba($color-red, 0.8), rgba($color-red, 0.4));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+}
+
+.welcome-interstitial__stat-label {
+  @include h4;
+  font-weight: 600;
+  color: rgba($color-5, 0.45);
+  margin-top: calc($gap / 4);
+  margin-bottom: $gap * 1.5;
+  line-height: 1.4;
+}
+
+.welcome-interstitial__divider {
+  width: 3rem;
+  height: 2px;
+  background: linear-gradient(90deg, $color-logo-start, $color-logo-end);
+  margin-bottom: $gap * 1.5;
+}
+
+// --- Bold Minimal (Banner 03) ---
+
+.welcome-interstitial--bold {
+  text-align: center;
+}
+
+.welcome-interstitial__proofs {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: $gap * 1.5;
+  margin-bottom: $gap * 1.5;
+}
+
+.welcome-interstitial__proof {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  @include compact;
+  color: rgba($color-5, 0.5);
+}
+
+.welcome-interstitial__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: $color-6;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.welcome-interstitial__explainer {
+  @include card-base;
+  background: rgba($color-5, 0.03);
+  border: 1px solid rgba($color-5, 0.06);
+  padding: $gap * 1.5;
+  @include compact;
+  line-height: 1.7;
+  color: rgba($color-5, 0.55);
+  text-align: left;
+  max-width: 600px;
+  margin: 0 auto;
+
+  strong {
+    color: rgba($color-5, 0.85);
+    font-weight: 600;
+  }
+
+  em {
+    color: $color-4;
+    font-style: normal;
+    font-weight: 600;
+  }
+}
+
+
+// ===========================================
+// LOGGED-OUT MODAL (Reaction CTAs)
+// ===========================================
+
+.logged-out-modal {
+  text-align: center;
+  padding: $gap;
+
+  &__icon {
+    @include h1;
+    margin-bottom: $gap;
+  }
+
+  &__text {
+    @include h4;
+    line-height: 1.6;
+    color: var(--color-5);
+    margin-bottom: $gap * 1.5;
+  }
+
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+    align-items: center;
+  }
+
+  &__create {
+    background: linear-gradient(135deg, $color-logo-start, $color-4) !important;
+    color: $color-1 !important;
+    font-weight: 700;
+    width: 100%;
+    max-width: 280px;
+  }
+
+  &__login {
+    width: 100%;
+    max-width: 280px;
+  }
+
+  &__note {
+    @include compact;
+    color: rgba($color-5, 0.25);
+    margin-top: $gap;
+  }
+}
+
+
+// ===========================================
+// SCC ONBOARDING (Secondary Content Carousel)
+// ===========================================
+
+.scc-onboarding {
+  padding: $gap;
+
+  &__title {
+    @include h4;
+    font-weight: 600;
+    margin-bottom: $gap;
+    color: var(--color-5);
+  }
+
+  &__carousel {
+    .nn-carousel-slides {
+      min-height: 200px;
+    }
+  }
+
+  &__cta {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: calc($gap / 2);
+    margin-top: $gap * 1.5;
+    padding-top: $gap;
+    border-top: 1px solid rgba($color-5, 0.08);
+  }
+
+  &__cta-create {
+    background: linear-gradient(135deg, $color-logo-start, $color-4) !important;
+    color: $color-1 !important;
+    font-weight: 700;
+  }
+
+  &__cta-note {
+    width: 100%;
+    text-align: center;
+    @include small;
+    color: rgba($color-5, 0.25);
+    margin-top: calc($gap / 4);
+  }
+}

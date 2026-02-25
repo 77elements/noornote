@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && bun run build:static-css",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .js,.ts,.tsx --report-unused-disable-directives --max-warnings 0",
@@ -20,6 +20,7 @@
     "tauri:dev": "TAURI_DEV_MODE=wide tauri dev",
     "tauri:dev:clean": "TAURI_DEV_MODE=clean tauri dev",
     "tauri:build": "tauri build",
+    "build:static-css": "sass src/styles/static-pages.scss public/static.css --style=compressed --no-source-map",
     "prepare": "husky"
   },
   "keywords": [

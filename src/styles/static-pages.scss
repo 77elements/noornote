@@ -1,0 +1,44 @@
+/**
+ * Static Pages - Shared CSS Foundation
+ * Compiled to public/static.css for all static HTML pages:
+ *   - marketing/banners/
+ *   - marketing/hero-concepts/
+ *   - public/download/
+ *   - future: public/ad-banner/
+ *
+ * Includes: variables, reset, base (:root), fonts, typography
+ * Excludes: all app-specific components, themes, screensize detection
+ *
+ * Build: bun run build:static-css
+ */
+
+// Foundation layers (same as the app)
+@use 'abstracts/variables' as *;
+@use 'abstracts/mixins' as *;
+@use 'base/fonts';
+@use 'base/reset';
+@use 'base/base';
+@use 'base/typography';
+
+// ========================================
+// Additional CSS custom properties for static pages
+// RGB triplets + semantic colors not in _base.scss
+// ========================================
+:root {
+  // Semantic colors (not exposed as CSS vars in the app)
+  --color-red: #{$color-red};
+  --color-bitcoin-orange: #{$color-bitcoin-orange};
+  --color-warning: #{$color-warning};
+
+  // RGB triplets for rgba() usage in static pages
+  --color-1-rgb: 15, 13, 35;
+  --color-2-rgb: 37, 35, 67;
+  --color-3-rgb: 155, 121, 185;
+  --color-4-rgb: 220, 133, 173;
+  --color-5-rgb: 237, 226, 218;
+  --color-6-rgb: 125, 216, 125;
+  --color-red-rgb: 239, 68, 68;
+  --color-logo-start-rgb: 180, 95, 217;
+  --color-logo-end-rgb: 94, 247, 94;
+  --color-bitcoin-orange-rgb: 247, 147, 26;
+}
