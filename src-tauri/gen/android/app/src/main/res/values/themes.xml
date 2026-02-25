@@ -1,7 +1,8 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Theme.noornote" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="android:statusBarColor">#0f0d23</item>
-        <item name="android:navigationBarColor">#0f0d23</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">#0f0d23</item>
     </style>
 </resources>

@@ -38,3 +38,9 @@ tauri-plugin-global-shortcut = "2"
 # Android-only plugins
 [target.'cfg(target_os = "android")'.dependencies]
 tauri-plugin-amber = { path = "./plugins/amber/" }
+
+[profile.release]
+strip = true
+lto = true
+opt-level = "s"
+codegen-units = 1
