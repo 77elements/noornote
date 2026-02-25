@@ -5,11 +5,22 @@
  * Usage:
  * if (!AuthGuard.requireAuth('like this note')) return;
  *
- * Shows login-required modal directly for non-logged-in users.
+ * Shows humorous logged-out modal with CTA buttons for non-logged-in users.
  */
 
 import { AuthService } from './AuthService';
-import { ModalService } from './ModalService';
+import { showLoggedOutReactionModal } from '../helpers/LoggedOutModals';
+
+/** Map action description keywords to reaction types for humorous modals */
+const ACTION_TO_REACTION: Record<string, string> = {
+  'like': 'like',
+  'react': 'like',
+  'zap': 'zap',
+  'repost': 'repost',
+  'quote': 'repost',
+  'reply': 'reply',
+  'bookmark': 'bookmark',
+};
 
 export class AuthGuard {
   /**
@@ -29,26 +40,17 @@ export class AuthGuard {
   }
 
   private static showLoginRequiredModal(actionDescription: string): void {
-    const modalService = ModalService.getInstance();
+    // Detect reaction type from the action description
+    const lowerDesc = actionDescription.toLowerCase();
+    let reactionType = 'like'; // default
 
-    const content = document.createElement('div');
-    content.className = 'auth-required-modal';
-    content.innerHTML = `
-      <div class="auth-required-modal__icon">🔒</div>
-      <h3>Login Required</h3>
-      <p>Please log in to ${actionDescription}.</p>
-      <div class="auth-required-modal__actions">
-        <button class="btn auth-required-modal__close">OK</button>
-      </div>
-    `;
+    for (const [keyword, type] of Object.entries(ACTION_TO_REACTION)) {
+      if (lowerDesc.includes(keyword)) {
+        reactionType = type;
+        break;
+      }
+    }
 
-    content.querySelector('.auth-required-modal__close')
-      ?.addEventListener('click', () => modalService.hide());
-
-    modalService.show({
-      title: 'Authentication Required',
-      content,
-      width: '400px',
-    });
+    showLoggedOutReactionModal(reactionType);
   }
 }

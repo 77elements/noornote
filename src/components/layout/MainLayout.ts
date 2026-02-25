@@ -1772,6 +1772,17 @@ export class MainLayout {
   }
 
   /**
+   * Cleanup welcome page resources (SCC onboarding tab, public timeline)
+   * Called by ViewMountingService when navigating away from /welcome
+   */
+  public cleanupWelcome(): void {
+    if (this.onboardingComponent) {
+      this.onboardingComponent.restoreSCC();
+      this.onboardingComponent.destroyTimeline();
+    }
+  }
+
+  /**
    * Show create account screen (keypair generation)
    */
   public showCreateAccountScreen(): void {
