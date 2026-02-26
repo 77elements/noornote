@@ -21,6 +21,7 @@
     "tauri:dev:clean": "TAURI_DEV_MODE=clean tauri dev",
     "tauri:build": "tauri build",
     "build:static-css": "sass src/styles/static-pages.scss public/static.css --style=compressed --no-source-map",
+    "render-banners": "node marketing/banners/generate-pngs.js",
     "prepare": "husky"
   },
   "keywords": [
