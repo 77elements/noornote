@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NoorNote - Ad Banners &amp; Media Kit</title>
+  <meta name="description" content="Download NoorNote marketing banners for social media. Available in Twitter, Square, Portrait, Story and Wide formats.">
+  <meta property="og:title" content="NoorNote - Ad Banners">
+  <meta property="og:description" content="Spread the word. Download NoorNote banners for social media.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://noornote.app/ad-banners/">
+  <link rel="icon" type="image/png" href="../favicon.png">
+  <link rel="stylesheet" href="../static.css">
+  <style>
+    html { scroll-padding-top: 80px; }
+    body { line-height: 1.65; position: relative; }
+
+    /* ── Background Blobs ── */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .blob-1 {
+      width: 800px; height: 800px;
+      background: radial-gradient(circle, rgba(var(--color-logo-start-rgb),0.3), transparent 70%);
+      top: -300px; right: -250px;
+      animation: blob-float-1 20s ease-in-out infinite;
+    }
+    .blob-2 {
+      width: 650px; height: 650px;
+      background: radial-gradient(circle, rgba(var(--color-logo-start-rgb),0.22), transparent 70%);
+      top: -100px; left: 15%;
+      animation: blob-float-2 26s ease-in-out infinite reverse;
+    }
+    .blob-3 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(var(--color-4-rgb),0.25), transparent 70%);
+      top: 600px; left: -200px;
+      animation: blob-float-3 25s ease-in-out infinite;
+    }
+    .blob-4 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(var(--color-6-rgb),0.15), transparent 70%);
+      top: 1200px; right: -100px;
+      animation: blob-float-1 22s ease-in-out infinite reverse;
+    }
+    .blob-5 {
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(var(--color-3-rgb),0.22), transparent 70%);
+      top: 2000px; left: -280px;
+      animation: blob-float-2 28s ease-in-out infinite;
+    }
+    .blob-6 {
+      width: 550px; height: 550px;
+      background: radial-gradient(circle, rgba(var(--color-4-rgb),0.2), transparent 70%);
+      top: 2800px; right: -150px;
+      animation: blob-float-3 18s ease-in-out infinite;
+    }
+    .blob-7 {
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(var(--color-logo-start-rgb),0.18), transparent 70%);
+      top: 3600px; left: 10%;
+      animation: blob-float-1 24s ease-in-out infinite;
+    }
+    .blob-8 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(var(--color-6-rgb),0.12), transparent 70%);
+      top: 4400px; right: -100px;
+      animation: blob-float-2 20s ease-in-out infinite reverse;
+    }
+
+    @keyframes blob-float-1 {
+      0%, 100% { transform: translate(0, 0); }
+      33% { transform: translate(30px, -25px); }
+      66% { transform: translate(-20px, 15px); }
+    }
+    @keyframes blob-float-2 {
+      0%, 100% { transform: translate(0, 0); }
+      33% { transform: translate(-25px, 30px); }
+      66% { transform: translate(20px, -20px); }
+    }
+    @keyframes blob-float-3 {
+      0%, 100% { transform: translate(0, 0); }
+      33% { transform: translate(20px, 25px); }
+      66% { transform: translate(-30px, -15px); }
+    }
+
+    /* ── Navigation ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(var(--color-1-rgb),0.88);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(var(--color-3-rgb),0.12);
+    }
+    .nav-inner {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 2rem;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 64px;
+    }
+    .nav-logo {
+      font-family: 'Saira', sans-serif;
+      font-size: 1.5rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--color-logo-start), var(--color-logo-end));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex; gap: 2rem; list-style: none;
+    }
+    .nav-links a {
+      color: var(--color-5); text-decoration: none;
+      font-weight: 400; font-size: 0.95rem;
+      opacity: 0.75; transition: opacity 0.2s, color 0.2s;
+    }
+    .nav-links a:hover { opacity: 1; color: var(--color-4); }
+    .nav-toggle {
+      display: none; background: none; border: none;
+      color: var(--color-5); cursor: pointer; padding: 8px;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 2rem; position: relative; z-index: 1;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding-top: 10rem; padding-bottom: 3rem; text-align: center;
+    }
+    .hero-logo {
+      margin-bottom: 0.8rem; line-height: 1.1;
+    }
+    .hero-logo span {
+      display: inline-block;
+      font-family: 'Saira', sans-serif;
+      font-size: clamp(2.5rem, 7vw, 4rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--color-logo-start), var(--color-logo-end));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero-tagline {
+      font-size: clamp(1rem, 2.5vw, 1.25rem);
+      color: var(--color-3); font-weight: 300;
+      max-width: 560px; margin: 0 auto;
+    }
+
+    /* ── Section headers ── */
+    .grad-text {
+      background: linear-gradient(135deg, var(--color-logo-start), var(--color-logo-end));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* ── Banner Grid ── */
+    .banner-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+      padding: 2rem 0 4rem;
+    }
+
+    .banner-card {
+      background: rgba(var(--color-2-rgb),0.45);
+      border: 1px solid rgba(var(--color-3-rgb),0.1);
+      border-radius: 22px;
+      padding: 2rem;
+      backdrop-filter: blur(8px);
+    }
+
+    .banner-preview {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+
+    .banner-title {
+      font-family: 'Saira', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--color-5);
+      margin-bottom: 0.3rem;
+    }
+
+    .banner-tagline {
+      font-size: 0.95rem;
+      color: var(--color-3);
+      margin-bottom: 1.2rem;
+    }
+
+    .format-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .fmt-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.45rem 1rem;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: var(--color-5);
+      background: rgba(var(--color-2-rgb),0.6);
+      border: 1px solid rgba(var(--color-3-rgb),0.2);
+      transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .fmt-btn:hover {
+      border-color: var(--color-4);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .fmt-btn svg {
+      width: 14px; height: 14px; flex-shrink: 0;
+    }
+    .fmt-label {
+      opacity: 0.5;
+      font-weight: 400;
+      font-size: 0.75rem;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px; border: none;
+      background: linear-gradient(90deg, transparent, rgba(var(--color-3-rgb),0.18), transparent);
+      margin: 0;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center; padding: 3rem 2rem;
+      font-size: 0.82rem; opacity: 0.4;
+      position: relative; z-index: 1;
+    }
+    footer a { color: var(--color-4); text-decoration: none; }
+    footer a:hover { color: var(--color-4); }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-links.open {
+        display: flex; flex-direction: column;
+        position: absolute; top: 64px; left: 0; right: 0;
+        background: rgba(var(--color-1-rgb),0.96);
+        backdrop-filter: blur(24px);
+        -webkit-backdrop-filter: blur(24px);
+        padding: 1.2rem 2rem 1.5rem;
+        gap: 0.8rem;
+        border-bottom: 1px solid rgba(var(--color-3-rgb),0.12);
+      }
+      .nav-toggle { display: block; }
+      .hero { padding-top: 7rem; padding-bottom: 2rem; }
+      .banner-card { padding: 1.4rem; border-radius: 16px; }
+      .format-buttons { gap: 0.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Blobs -->
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+  <div class="blob blob-5"></div>
+  <div class="blob blob-6"></div>
+  <div class="blob blob-7"></div>
+  <div class="blob blob-8"></div>
+
+  <!-- Navigation -->
+  <nav>
+    <div class="nav-inner">
+      <a href="https://noornote.app" class="nav-logo">NoorNote</a>
+      <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')" aria-label="Toggle menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="https://noornote.app">Web Client</a></li>
+        <li><a href="../download/">Download</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container">
+        <h1 class="hero-logo"><span>Spread the Word</span></h1>
+        <p class="hero-tagline">Download NoorNote banners for your social media, blog, or website. Free to use, no attribution required.</p>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Banner Grid -->
+    <section>
+      <div class="container">
+        <div class="banner-grid">
+
+          <!-- 01 Off-Switch -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/01-off-switch/1200x628.png" alt="NoorNote Banner — Off-Switch" loading="lazy">
+            <div class="banner-title">We removed the off-switch.</div>
+            <div class="banner-tagline">"We promise not to censor you" — crossed out.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/01-off-switch/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/01-off-switch/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/01-off-switch/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/01-off-switch/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/01-off-switch/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+          <!-- 02 Get Paid -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/02-get-paid/1200x628.png" alt="NoorNote Banner — Get Paid" loading="lazy">
+            <div class="banner-title">Get paid. Not played.</div>
+            <div class="banner-tagline">Every post can earn you real money.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/02-get-paid/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/02-get-paid/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/02-get-paid/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/02-get-paid/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/02-get-paid/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+          <!-- 03 Immortal -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/03-immortal/1200x628.png" alt="NoorNote Banner — Immortal" loading="lazy">
+            <div class="banner-title">Your account is immortal.</div>
+            <div class="banner-tagline">No company on earth can take it from you.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/03-immortal/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/03-immortal/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/03-immortal/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/03-immortal/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/03-immortal/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+          <!-- 04 Confrontation -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/04-confrontation/1200x628.png" alt="NoorNote Banner — Confrontation" loading="lazy">
+            <div class="banner-title">We can't censor you. Nobody can.</div>
+            <div class="banner-tagline">Your keys. Your content. Forever.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/04-confrontation/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/04-confrontation/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/04-confrontation/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/04-confrontation/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/04-confrontation/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+          <!-- 05 Wake-Up -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/05-wake-up/1200x628.png" alt="NoorNote Banner — Wake-Up Call" loading="lazy">
+            <div class="banner-title">500M+ posts deleted. On NoorNote? Zero. Ever.</div>
+            <div class="banner-tagline">The wake-up call for social media users.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/05-wake-up/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/05-wake-up/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/05-wake-up/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/05-wake-up/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/05-wake-up/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+          <!-- 06 Manifesto -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/06-manifesto/1200x628.png" alt="NoorNote Banner — Manifesto" loading="lazy">
+            <div class="banner-title">We don't make promises.</div>
+            <div class="banner-tagline">We made it impossible to break them.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/06-manifesto/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/06-manifesto/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/06-manifesto/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/06-manifesto/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/06-manifesto/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+          <!-- 07 Mic Drop -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/07-mic-drop/1200x628.png" alt="NoorNote Banner — Mic Drop" loading="lazy">
+            <div class="banner-title">The social network that can't betray you.</div>
+            <div class="banner-tagline">Not won't. Can't.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/07-mic-drop/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/07-mic-drop/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/07-mic-drop/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/07-mic-drop/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/07-mic-drop/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+          <!-- 08 Receipt -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/08-receipt/1200x628.png" alt="NoorNote Banner — The Receipt" loading="lazy">
+            <div class="banner-title">NoorNote: None of the above.</div>
+            <div class="banner-tagline">Platform comparison receipt. Except the paying part.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/08-receipt/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/08-receipt/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/08-receipt/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/08-receipt/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/08-receipt/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+          <!-- 09 Ghost -->
+          <div class="banner-card">
+            <img class="banner-preview" src="images/09-ghost/1200x628.png" alt="NoorNote Banner — Ghost" loading="lazy">
+            <div class="banner-title">Absolutely nothing.</div>
+            <div class="banner-tagline">What they collect vs. what NoorNote stores about you.</div>
+            <div class="format-buttons">
+              <a class="fmt-btn" href="images/09-ghost/1200x628.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Twitter/X <span class="fmt-label">1200x628</span></a>
+              <a class="fmt-btn" href="images/09-ghost/1080x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Square <span class="fmt-label">1080x1080</span></a>
+              <a class="fmt-btn" href="images/09-ghost/1080x1350.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Portrait <span class="fmt-label">1080x1350</span></a>
+              <a class="fmt-btn" href="images/09-ghost/1080x1920.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Story <span class="fmt-label">1080x1920</span></a>
+              <a class="fmt-btn" href="images/09-ghost/1920x1080.png" download><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Wide <span class="fmt-label">1920x1080</span></a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>NoorNote - Free &amp; Open Source &middot; <a href="https://noornote.app">noornote.app</a> &middot; <a href="../download/">Download</a></p>
+  </footer>
+
+  <script>
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 768) {
+        document.querySelector('.nav-links').classList.remove('open');
+      }
+    });
+  </script>
+
+</body>
+</html>
