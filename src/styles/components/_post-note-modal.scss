@@ -62,7 +62,6 @@
   gap: calc($gap / 2);
   white-space: nowrap;
   min-width: 0;
-  overflow: hidden;
 }
 
 .relay-selector-label {
@@ -99,8 +98,9 @@
   display: none; // Hidden by default
   position: absolute;
   top: calc(100% + 4px);
-  left: 0;
   right: 0;
+  width: max-content;
+  min-width: 100%;
   max-height: 300px;
   overflow-y: auto;
   background: var(--color-2);
@@ -129,6 +129,7 @@
   }
 
   span {
+    white-space: nowrap;
   }
 }
 
