@@ -62,8 +62,16 @@ export default defineConfig({
       },
       output: {
         manualChunks: {
-          // Vendor chunk for external dependencies
-          vendor: ['nostr-tools'],
+          // Nostr protocol
+          'nostr-tools': ['nostr-tools'],
+          // NDK core
+          ndk: ['@nostr-dev-kit/ndk'],
+          // IndexedDB (Dexie)
+          dexie: ['dexie'],
+          // Crypto primitives (@noble, @scure) used by nostr-tools + NDK
+          crypto: ['@noble/hashes', '@noble/curves', '@noble/ciphers', '@scure/base', '@scure/bip32', '@scure/bip39'],
+          // Calendar / date (dayjs + Hijri)
+          calendar: ['dayjs', '@calidy/dayjs-calendarsystems', '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem'],
         },
         // Asset naming for caching
         chunkFileNames: 'assets/js/[name]-[hash].js',

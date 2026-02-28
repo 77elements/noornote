@@ -17,7 +17,9 @@ import { SystemLogger } from './components/system/SystemLogger';
 import { CrashLogger } from './services/CrashLogger';
 import './styles/main.scss';
 import './services/AuthStateManager'; // Initialize AuthStateManager and window.isLoggedIn()
-import './services/MutualChangeService'; // Initialize MutualChangeService (auto-starts on login)
+// MutualChangeService: import eagerly but module uses only lightweight deps at init.
+// The heavy work (MutualChangeStorage, Scheduler, Detector) only runs after user:login fires.
+import './services/MutualChangeService';
 import './services/AppBadgeService'; // Initialize AppBadgeService (browser tab + dock badge)
 
 // Track failed image loads (URL → log message for removal)

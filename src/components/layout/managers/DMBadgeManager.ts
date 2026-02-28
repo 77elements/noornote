@@ -4,28 +4,39 @@
  *
  * @purpose Update badge count based on unread DMs
  * @used-by MainLayout
+ *
+ * DMService loaded lazily to keep it out of main bundle.
  */
 
 import { EventBus } from '../../../services/EventBus';
-import { DMService } from '../../../services/dm/DMService';
 import { AuthService } from '../../../services/AuthService';
 
 export class DMBadgeManager {
   private eventBus: EventBus;
-  private dmService: DMService;
   private authService: AuthService;
   private badgeElement: HTMLElement | null = null;
   private subscriptionIds: string[] = [];
 
+  // Lazy-loaded dep
+  private dmService: any = null;
+
   constructor(badgeElement: HTMLElement) {
     this.badgeElement = badgeElement;
     this.eventBus = EventBus.getInstance();
-    this.dmService = DMService.getInstance();
     this.authService = AuthService.getInstance();
 
     this.setupEventListeners();
     // Don't call updateBadgeCount() here - wait for dm:fetch-complete or dm:badge-update
     // This fixes the race condition where badge tried to update before DMs were loaded
+  }
+
+  /**
+   * Lazy-load DMService
+   */
+  private async loadDeps(): Promise<void> {
+    if (this.dmService) return;
+    const { DMService } = await import('../../../services/dm/DMService');
+    this.dmService = DMService.getInstance();
   }
 
   /**
@@ -61,6 +72,7 @@ export class DMBadgeManager {
     }
 
     try {
+      await this.loadDeps();
       const unreadCount = await this.dmService.getUnreadCount();
 
       if (unreadCount > 0) {

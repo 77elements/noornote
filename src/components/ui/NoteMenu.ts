@@ -20,6 +20,7 @@ import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { ModalService } from '../../services/ModalService';
+import { ICON_TRASH_16 } from '../../helpers/svgIcons';
 import * as tribes from '../../lists/tribes';
 
 export interface NoteMenuOptions {
@@ -46,9 +47,7 @@ const ICONS = {
   code: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M5 6l-3 2 3 2M11 6l3 2-3 2M10 2l-4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>`,
-  trash: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
+  trash: ICON_TRASH_16,
   report: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M8 2v6M8 11v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
     <circle cx="8" cy="13.5" r="0.5" fill="currentColor"/>
