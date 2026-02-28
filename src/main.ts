@@ -3,6 +3,13 @@
  * Main application entry point
  */
 
+// Capture ?r= relay browser parameter immediately (before any module side-effects or HMR)
+const __capturedRelayParam = new URLSearchParams(window.location.search).get('r');
+if (__capturedRelayParam) {
+  window.history.replaceState({}, '', window.location.pathname);
+  (window as any).__noornote_relay_param = __capturedRelayParam;
+}
+
 import { App } from './App';
 import { AuthService } from './services/AuthService';
 import { UserProfileService } from './services/UserProfileService';

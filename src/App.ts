@@ -28,6 +28,7 @@ const VIEW_PARAM_STATE_KEY: Record<string, string> = {
   'single-note': 'currentNoteId',
   'profile': 'currentProfileNpub',
   'article': 'currentArticleNaddr',
+  'relay-browser': 'currentRelayUrl',
 };
 
 export class App {
@@ -78,10 +79,17 @@ export class App {
       this.checkForUpdates();
     }
 
-    // Capture intended URL: sessionStorage (reload) or browser URL (fresh external link)
+    // Read ?r= relay browser parameter (captured early in main.ts before HMR can strip query params)
+    const relayParam: string | null = (window as any).__noornote_relay_param || null;
+    if (relayParam) {
+      delete (window as any).__noornote_relay_param;
+    }
+
+    // Capture intended URL: ?r= override > sessionStorage (reload) > browser path (external link)
+    const relayPath = relayParam ? `/relay/${encodeURIComponent(relayParam)}` : null;
     const lastURL = this.router.getLastURL();
     const browserPath = window.location.pathname;
-    const intendedURL = lastURL || (browserPath !== '/' ? browserPath : null);
+    const intendedURL = relayPath || lastURL || (browserPath !== '/' ? browserPath : null);
 
     // Wait for auth initialization with safety timeout
     let authTimedOut = false;
@@ -205,6 +213,8 @@ export class App {
       (params) => params.npub ?? '');
     this.registerRoute('/article/:naddr', 'article', 'article', 'av', false,
       (params) => params.naddr);
+    this.registerRoute('/relay/:relayUrl', 'relay-browser', 'relay-browser', 'rbv', false,
+      (params) => params.relayUrl ? decodeURIComponent(params.relayUrl) : undefined);
 
     // Authenticated routes
     this.registerRoute('/', 'timeline', 'timeline', 'tv', true);
@@ -265,7 +275,10 @@ export class App {
 
     this.eventBus.on('relays:updated', () => {
       this.viewMountingService.destroyTimelineCache();
-      this.viewMountingService.mountView('timeline');
+      const viewState = this.appState.getState('view');
+      if (viewState?.currentView === 'timeline') {
+        this.viewMountingService.mountView('timeline');
+      }
     });
 
     this.eventBus.on('user:logout', () => {

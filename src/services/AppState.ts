@@ -33,10 +33,11 @@ export interface TimelineState {
 }
 
 export interface ViewState {
-  currentView: 'timeline' | 'single-note' | 'profile' | 'messages' | 'settings' | 'login' | 'article' | 'notifications' | 'about' | 'conversation' | 'write-article' | 'articles';
+  currentView: 'timeline' | 'single-note' | 'profile' | 'messages' | 'settings' | 'login' | 'article' | 'notifications' | 'about' | 'conversation' | 'write-article' | 'articles' | 'relay-browser';
   currentNoteId?: string;
   currentProfileNpub?: string;
   currentArticleNaddr?: string;
+  currentRelayUrl?: string;
   profileScrollPosition?: number;
   params?: Record<string, string>;
 }
