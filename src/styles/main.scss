@@ -95,6 +95,7 @@
 @use 'components/theme-switcher';
 @use 'components/pull-to-refresh';
 @use 'components/welcome-hero';
+@use 'components/relay-browser';
 
 // 4. Molecules - Combinations of atoms
 @use 'molecules/buttons';

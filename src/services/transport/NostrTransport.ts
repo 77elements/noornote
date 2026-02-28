@@ -311,12 +311,18 @@ export class NostrTransport {
 
       // Standard fetch using NDK (auto-dedupe, auto-verify)
       // Use ONLY_RELAY when skipCache is true (for relay-specific filtering)
-      // Note: timeout parameter currently not used - NDK waits for all relays
-      const eventSet = await this.ndk.fetchEvents(filters, {
+      const fetchPromise = this.ndk.fetchEvents(filters, {
         relayUrls: relays,
         closeOnEose: true,
         cacheUsage: skipCache ? NDKSubscriptionCacheUsage.ONLY_RELAY : NDKSubscriptionCacheUsage.CACHE_FIRST
       });
+
+      // Apply timeout to prevent indefinite hangs on disconnected relays
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Fetch timeout')), timeout)
+      );
+
+      const eventSet = await Promise.race([fetchPromise, timeoutPromise]);
 
       // Convert Set<NDKEvent> to Array<NostrEvent>
       const events = Array.from(eventSet).map(ndkEvent => {

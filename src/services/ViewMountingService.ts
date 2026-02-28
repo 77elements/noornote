@@ -218,6 +218,16 @@ export class ViewMountingService {
           }
         };
 
+      case 'relay-browser':
+        return {
+          requiresParam: true,
+          factory: async (param) => {
+            const { RelayBrowserView } = await import('../components/views/RelayBrowserView');
+            const view = new RelayBrowserView(param!);
+            return { element: view.getElement() };
+          }
+        };
+
       case 'articles':
         return {
           factory: async () => {

@@ -1,0 +1,145 @@
+/**
+ * Relay Browser Styles
+ * Styles for the public relay browsing feature (?r= parameter)
+ */
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.relay-browser {
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $gap;
+    margin-bottom: calc($gap * 1.5);
+  }
+
+  &__header-left {
+    min-width: 0; // Allow text truncation
+  }
+
+  &__title {
+    @extend %h2;
+    font-weight: 600;
+    color: var(--color-5);
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__url {
+    @extend %small;
+    color: var(--color-3);
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__header-right {
+    flex-shrink: 0;
+  }
+
+  &__notes {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  &__loading,
+  &__empty,
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: calc($gap * 3) $gap;
+    color: var(--color-5);
+    text-align: center;
+  }
+
+  &__empty {
+    svg {
+      color: var(--color-3);
+      margin-bottom: $gap;
+      opacity: 0.6;
+    }
+
+    p {
+      @extend %h4;
+      margin: 0 0 calc($gap / 4) 0;
+    }
+
+    span {
+      color: var(--color-3);
+    }
+  }
+
+  &__error {
+    svg {
+      color: $color-red;
+      margin-bottom: $gap;
+      opacity: 0.8;
+    }
+
+    p {
+      @extend %h4;
+      margin: 0 0 calc($gap / 4) 0;
+      color: $color-red;
+    }
+
+    span {
+      color: var(--color-3);
+      margin-bottom: $gap;
+      word-break: break-all;
+    }
+  }
+
+  &__retry {
+    margin-top: calc($gap / 2);
+  }
+}
+
+// Loading skeletons
+.relay-browser__loading {
+  .note-skeleton {
+    padding: $gap;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+    border-bottom: 1px solid var(--color-2);
+
+    .skeleton-line {
+      height: 16px;
+      background: linear-gradient(90deg, var(--color-1) 25%, var(--color-2) 50%, var(--color-1) 75%);
+      background-size: 200% 100%;
+      animation: relay-browser-shimmer 1.5s infinite;
+      border-radius: $radius-base;
+    }
+
+    .skeleton-title {
+      width: 40%;
+      height: 14px;
+    }
+
+    .skeleton-body {
+      width: 90%;
+    }
+
+    .skeleton-meta {
+      width: 30%;
+      height: 14px;
+    }
+  }
+}
+
+@keyframes relay-browser-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
