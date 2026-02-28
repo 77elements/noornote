@@ -17,6 +17,7 @@ license: MIT
 website: https://noornote.app
 
 icon: ./src-tauri/icons/icon.png
+release_notes: ./RELEASE_NOTES.md
 
 images:
   - ./public/download/noornote-sc-mobile1.png

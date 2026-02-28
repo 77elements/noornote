@@ -88,8 +88,9 @@ fi
 # Update Cargo.toml
 "${SED_INPLACE[@]}" "s/^version = \"${CURRENT_VERSION}\"/version = \"${NEW_VERSION}\"/" src-tauri/Cargo.toml
 
-echo -e "${GREEN}[2/7] Committing version bump...${NC}"
-git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml
+echo -e "${GREEN}[2/7] Updating RELEASE_NOTES.md and committing...${NC}"
+cp "$NOTES_COMPACT" RELEASE_NOTES.md
+git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml RELEASE_NOTES.md
 git commit -m "Bump version to ${NEW_VERSION}"
 
 echo -e "${GREEN}[3/7] Merging development → main...${NC}"
