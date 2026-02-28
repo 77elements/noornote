@@ -593,11 +593,12 @@ export class AutoSyncService {
       getDisplayName: async (item: unknown) => this.getDisplayName(listType, item),
       renderItemHtml: async (item: unknown) => this.renderItemHtml(listType, item),
       onKeep: async () => {
-        // Keep local state as-is, only add new items from relay (no push back)
+        // Keep local state + add new items from relay, then push merged state to relays
         this.applyMerge(listType, result.relayItems);
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
         }
+        await this.syncToRelays(listType);
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
       },
       onMerge: async () => {
