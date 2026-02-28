@@ -15,6 +15,8 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { StorageKeys, readList, writeList, deduplicateByPubkey, now, mergeByKey } from './storage';
+import { setupGridDragDrop } from './drag-drop';
+import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {
   fetchEvents, publishEvent, signEvent,
@@ -31,7 +33,7 @@ import { ModalService } from '../services/ModalService';
 import { UserProfileService, type UserProfile } from '../services/UserProfileService';
 import { Router } from '../services/Router';
 import { encodeNpub } from '../services/NostrToolsAdapter';
-import { renderListSyncButtons, bindSwitchSyncModeLink } from '../helpers/ListSyncMode';
+import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncMode';
 import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
 import { FolderCard, type FolderData } from '../components/bookmarks/FolderCard';
@@ -41,6 +43,7 @@ import { View } from '../components/views/View';
 import { Timeline } from '../components/timeline/Timeline';
 import { PlatformService } from '../services/PlatformService';
 import { escapeHtml } from '../helpers/escapeHtml';
+import { ICON_TRASH_16 } from '../helpers/svgIcons';
 import { MoveDropdown } from '../components/ui/MoveDropdown';
 
 const logger = SystemLogger.getInstance();
@@ -1721,58 +1724,17 @@ export class TribeManager {
     return renderListSyncButtons();
   }
 
-  /**
-   * Render header with New dropdown button
-   */
   private renderHeader(folder: TribeFolder | undefined): string {
     const title = folder ? folder.name : 'Tribes';
-
-    return `
-      <div class="bookmark-header">
-        <h2 class="bookmark-header__title">${escapeHtml(title)}</h2>
-        <div class="bookmark-header__new-dropdown">
-            <button class="bookmark-header__new-btn" title="Create new">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              New
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" class="bookmark-header__new-chevron">
-                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <div class="bookmark-header__dropdown-menu">
-              <button class="bookmark-header__dropdown-item" data-action="new-tribe">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 7C3 5.89543 3.89543 5 5 5H9.58579C9.851 5 10.1054 5.10536 10.2929 5.29289L12 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="1.5"/>
-                </svg>
-                Tribe
-              </button>
-              <button class="bookmark-header__dropdown-item" data-action="new-member">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                Member
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    return renderListHeader(title, [
+      { action: 'new-tribe', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 7C3 5.89543 3.89543 5 5 5H9.58579C9.851 5 10.1054 5.10536 10.2929 5.29289L12 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="1.5"/></svg>', label: 'Tribe' },
+      { action: 'new-member', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', label: 'Member' },
+    ]);
   }
 
-  /**
-   * Render breadcrumb navigation
-   */
   private renderBreadcrumb(folder: TribeFolder | undefined): string {
     if (!folder) return '';
-
-    return `
-      <div class="bookmark-breadcrumb">
-        <span class="bookmark-breadcrumb__item" data-navigate="root">Tribes</span>
-        <span class="bookmark-breadcrumb__separator">/</span>
-        <span class="bookmark-breadcrumb__item bookmark-breadcrumb__item--current">${escapeHtml(folder.name)}</span>
-      </div>
-    `;
+    return renderListBreadcrumb('Tribes', folder.name);
   }
 
   /**
@@ -1842,7 +1804,7 @@ export class TribeManager {
     }
 
     // Setup drag & drop for reordering
-    this.setupGridDragDrop(grid);
+    this.initGridDragDrop(grid);
   }
 
   /**
@@ -1917,110 +1879,16 @@ export class TribeManager {
   /**
    * Setup mouse-based drag & drop for grid reordering
    */
-  private setupGridDragDrop(grid: HTMLElement): void {
-    let draggedCard: HTMLElement | null = null;
-    let draggedId: string | null = null;
-    let placeholder: HTMLElement | null = null;
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    const onMouseDown = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('.tribe-member-card__delete') || target.closest('.folder-card__delete') || target.closest('.tribe-member-card__move')) {
-        return;
-      }
-
-      const card = target.closest('.tribe-member-card, .folder-card') as HTMLElement;
-      if (!card || card.classList.contains('up-navigator')) return;
-
-      e.preventDefault();
-      draggedCard = card;
-      draggedId = card.dataset.pubkey || card.dataset.folderId || null;
-      startX = e.clientX;
-      startY = e.clientY;
-
-      const rect = card.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!draggedCard) return;
-
-      const dx = Math.abs(e.clientX - startX);
-      const dy = Math.abs(e.clientY - startY);
-
-      if (!isDragging && (dx > 5 || dy > 5)) {
-        isDragging = true;
-        draggedCard.dataset.wasDragging = 'true';
-        draggedCard.classList.add('dragging');
-
-        placeholder = document.createElement('div');
-        placeholder.className = 'tribe-member-card-placeholder';
-        placeholder.style.width = draggedCard.offsetWidth + 'px';
-        placeholder.style.height = draggedCard.offsetHeight + 'px';
-        draggedCard.parentNode?.insertBefore(placeholder, draggedCard);
-
-        draggedCard.style.position = 'fixed';
-        draggedCard.style.zIndex = '1000';
-        draggedCard.style.width = draggedCard.offsetWidth + 'px';
-        draggedCard.style.pointerEvents = 'none';
-      }
-
-      if (isDragging) {
-        draggedCard.style.left = (e.clientX - offsetX) + 'px';
-        draggedCard.style.top = (e.clientY - offsetY) + 'px';
-
-        const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-        const cardBelow = elemBelow?.closest('.tribe-member-card:not(.dragging), .folder-card:not(.dragging), .up-navigator') as HTMLElement;
-
-        grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-
-        if (cardBelow && cardBelow !== placeholder) {
-          cardBelow.classList.add('drag-over');
-        }
-      }
-    };
-
-    const onMouseUp = (e: MouseEvent) => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-
-      if (!draggedCard || !isDragging) {
-        draggedCard = null;
-        isDragging = false;
-        return;
-      }
-
-      const savedDisplay = draggedCard.style.display;
-      draggedCard.style.display = 'none';
-      const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-      draggedCard.style.display = savedDisplay;
-      const dropTarget = elemBelow?.closest('.tribe-member-card, .folder-card, .up-navigator') as HTMLElement;
-
-      draggedCard.classList.remove('dragging');
-      draggedCard.style.position = '';
-      draggedCard.style.zIndex = '';
-      draggedCard.style.width = '';
-      draggedCard.style.left = '';
-      draggedCard.style.top = '';
-      draggedCard.style.pointerEvents = '';
-
-      grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-
-      placeholder?.remove();
-      placeholder = null;
-
-      if (dropTarget && draggedId && draggedCard) {
+  private initGridDragDrop(grid: HTMLElement): void {
+    setupGridDragDrop(grid, {
+      itemSelector: '.tribe-member-card, .folder-card',
+      excludeSelector: '.tribe-member-card__delete, .folder-card__delete, .tribe-member-card__move',
+      placeholderClass: 'tribe-member-card-placeholder',
+      getItemId: (el) => el.dataset.pubkey || el.dataset.folderId || null,
+      onDrop: (draggedId, draggedEl, dropTarget) => {
         const targetId = dropTarget.dataset.pubkey || dropTarget.dataset.folderId;
-        const isDraggingMember = draggedCard.classList.contains('tribe-member-card');
-        const isDraggingFolder = draggedCard.classList.contains('folder-card');
+        const isDraggingMember = draggedEl.classList.contains('tribe-member-card');
+        const isDraggingFolder = draggedEl.classList.contains('folder-card');
         const isTargetFolder = dropTarget.classList.contains('folder-card');
         const isTargetUpNav = dropTarget.classList.contains('up-navigator');
 
@@ -2034,7 +1902,7 @@ export class TribeManager {
             const targetIndex = membersInFolderList.findIndex(id => id === targetId);
             if (targetIndex !== -1) {
               moveItemToPosition(draggedId, targetIndex);
-              grid.insertBefore(draggedCard, dropTarget);
+              grid.insertBefore(draggedEl, dropTarget);
               eventBus.emit('tribe:updated');
             }
           } else {
@@ -2043,19 +1911,13 @@ export class TribeManager {
             const targetIndex = rootOrderItems.findIndex(item => item.id === targetId);
             if (targetIndex !== -1) {
               moveInRootOrder(draggedType as 'folder' | 'member', draggedId, targetIndex);
-              grid.insertBefore(draggedCard, dropTarget);
+              grid.insertBefore(draggedEl, dropTarget);
               eventBus.emit('tribe:updated');
             }
           }
         }
       }
-
-      draggedCard = null;
-      draggedId = null;
-      isDragging = false;
-    };
-
-    grid.addEventListener('mousedown', onMouseDown);
+    });
   }
 
   private navigateToFolder(folderId: string): void {
@@ -2387,30 +2249,23 @@ export class TribeManager {
    * Bind sync buttons
    */
   private bindSyncButtons(container: HTMLElement): void {
-    container.querySelectorAll('.sync-from-relays-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleSyncFromRelays(container));
+    bindListSyncButtons(container, {
+      onSyncFromRelays: () => this.handleSyncFromRelays(container),
+      onSyncToRelays: () => this.handleSyncToRelays(),
+      onSaveToFile: () => this.handleSaveToFile(),
+      onRestoreFromFile: () => this.handleRestoreFromFile(container),
+      onSwitchMode: () => this.renderCurrentView(container),
     });
-
-    container.querySelectorAll('.sync-to-relays-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleSyncToRelays());
-    });
-
-    container.querySelectorAll('.save-to-file-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleSaveToFile());
-    });
-
-    container.querySelectorAll('.restore-from-file-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleRestoreFromFile(container));
-    });
-
-    bindSwitchSyncModeLink(container, () => this.renderCurrentView(container));
   }
 
   /**
    * Bind header buttons (New dropdown)
    */
   private bindHeaderButtons(container: HTMLElement): void {
-    const newBtn = container.querySelector('.bookmark-header__new-btn');
+    const closeRef = { current: this.closeDropdownHandler };
+    bindHeaderDropdown(container, closeRef);
+    this.closeDropdownHandler = closeRef.current;
+
     const dropdown = container.querySelector('.bookmark-header__new-dropdown');
     const newTribeBtn = container.querySelector('[data-action="new-tribe"]');
     const newMemberBtn = container.querySelector('[data-action="new-member"]');
@@ -2418,32 +2273,15 @@ export class TribeManager {
     const rootNav = container.querySelector('[data-navigate="root"]');
     rootNav?.addEventListener('click', () => this.navigateToRoot());
 
-    if (!newBtn || !dropdown) return;
-
-    newBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dropdown.classList.toggle('bookmark-header__new-dropdown--open');
-    });
-
     newTribeBtn?.addEventListener('click', () => {
-      dropdown.classList.remove('bookmark-header__new-dropdown--open');
+      dropdown?.classList.remove('bookmark-header__new-dropdown--open');
       this.createNewTribe();
     });
 
     newMemberBtn?.addEventListener('click', () => {
-      dropdown.classList.remove('bookmark-header__new-dropdown--open');
+      dropdown?.classList.remove('bookmark-header__new-dropdown--open');
       this.addNewMember();
     });
-
-    if (this.closeDropdownHandler) {
-      document.removeEventListener('click', this.closeDropdownHandler);
-    }
-    this.closeDropdownHandler = (e: Event) => {
-      if (!dropdown.contains(e.target as Node)) {
-        dropdown.classList.remove('bookmark-header__new-dropdown--open');
-      }
-    };
-    document.addEventListener('click', this.closeDropdownHandler);
   }
 
   /**
@@ -2927,9 +2765,7 @@ export class TribeMemberCard {
       <div class="tribe-member-card__actions">
         <span class="tribe-member-card__move"></span>
         <button class="tribe-member-card__delete" aria-label="Remove member" title="Remove member">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          ${ICON_TRASH_16}
         </button>
       </div>
     `;

@@ -28,7 +28,7 @@ import { EventBus } from '../services/EventBus';
 // UI component imports
 import { View } from '../components/views/View';
 import { switchTabWithContent } from '../helpers/TabsHelper';
-import { renderListSyncButtons, bindSwitchSyncModeLink } from '../helpers/ListSyncMode';
+import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncMode';
 import { UserProfileService, type UserProfile } from '../services/UserProfileService';
 import { NoteService } from '../services/NoteService';
 import { AuthService } from '../services/AuthService';
@@ -1537,17 +1537,13 @@ export class MuteListManager {
   }
 
   private bindSyncButtons(container: HTMLElement): void {
-    const bindButton = (className: string, handler: () => Promise<void>): void => {
-      container.querySelectorAll(`.${className}`).forEach(btn => {
-        btn.addEventListener('click', handler);
-      });
-    };
-
-    bindButton('sync-from-relays-btn', () => this.handleSyncFromRelays(container));
-    bindButton('sync-to-relays-btn', () => this.handleSyncToRelays());
-    bindButton('save-to-file-btn', () => this.handleSaveToFile());
-    bindButton('restore-from-file-btn', () => this.handleRestoreFromFile(container));
-    bindSwitchSyncModeLink(container, () => this.renderListTab(container));
+    bindListSyncButtons(container, {
+      onSyncFromRelays: () => this.handleSyncFromRelays(container),
+      onSyncToRelays: () => this.handleSyncToRelays(),
+      onSaveToFile: () => this.handleSaveToFile(),
+      onRestoreFromFile: () => this.handleRestoreFromFile(container),
+      onSwitchMode: () => this.renderListTab(container),
+    });
   }
 
   private async handleSyncFromRelays(container: HTMLElement): Promise<void> {

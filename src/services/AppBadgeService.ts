@@ -4,29 +4,31 @@
  *
  * Browser: Updates document.title with "(X) NoorNote - ..."
  * Tauri macOS: Sets dock icon badge via Tauri API
+ *
+ * Heavy deps (NotificationsOrchestrator, DMService) loaded lazily
+ * to keep them out of the main bundle entry path.
  */
 
 import { EventBus } from './EventBus';
 import { PlatformService } from './PlatformService';
-import { NotificationsOrchestrator } from './orchestration/NotificationsOrchestrator';
-import { DMService } from './dm/DMService';
 import { AuthService } from './AuthService';
 
 export class AppBadgeService {
   private static instance: AppBadgeService;
   private eventBus: EventBus;
-  private notificationsOrch: NotificationsOrchestrator;
-  private dmService: DMService;
   private authService: AuthService;
   private platform: PlatformService;
   private subscriptionIds: string[] = [];
   private originalTitle: string;
   private tauriWindow: any = null;
 
+  // Lazy-loaded deps
+  private notificationsOrch: any = null;
+  private dmService: any = null;
+  private depsLoaded = false;
+
   private constructor() {
     this.eventBus = EventBus.getInstance();
-    this.notificationsOrch = NotificationsOrchestrator.getInstance();
-    this.dmService = DMService.getInstance();
     this.authService = AuthService.getInstance();
     this.platform = PlatformService.getInstance();
     this.originalTitle = document.title;
@@ -46,6 +48,20 @@ export class AppBadgeService {
       AppBadgeService.instance = new AppBadgeService();
     }
     return AppBadgeService.instance;
+  }
+
+  /**
+   * Lazy-load heavy dependencies (NotificationsOrchestrator, DMService)
+   */
+  private async loadDeps(): Promise<void> {
+    if (this.depsLoaded) return;
+    const [{ NotificationsOrchestrator }, { DMService }] = await Promise.all([
+      import('./orchestration/NotificationsOrchestrator'),
+      import('./dm/DMService')
+    ]);
+    this.notificationsOrch = NotificationsOrchestrator.getInstance();
+    this.dmService = DMService.getInstance();
+    this.depsLoaded = true;
   }
 
   /**
@@ -97,6 +113,8 @@ export class AppBadgeService {
       this.clearBadge();
       return;
     }
+
+    await this.loadDeps();
 
     const notificationCount = this.notificationsOrch.getUnreadCount();
     let dmCount = 0;

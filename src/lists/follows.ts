@@ -28,7 +28,7 @@ import { ToastService } from '../services/ToastService';
 import { AppState } from '../services/AppState';
 import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
 import { switchTabWithContent } from '../helpers/TabsHelper';
-import { renderListSyncButtons, bindSwitchSyncModeLink } from '../helpers/ListSyncMode';
+import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncMode';
 import { PlatformService } from '../services/PlatformService';
 import { UserProfileService } from '../services/UserProfileService';
 import { UserService } from '../services/UserService';
@@ -1243,17 +1243,13 @@ export class FollowListManager {
    * Bind sync button handlers (inlined from BaseListManager)
    */
   private bindSyncButtons(container: HTMLElement): void {
-    const bindButton = (className: string, handler: () => Promise<void>): void => {
-      container.querySelectorAll(`.${className}`).forEach(btn => {
-        btn.addEventListener('click', handler);
-      });
-    };
-
-    bindButton('sync-from-relays-btn', () => this.handleSyncFromRelays(container));
-    bindButton('sync-to-relays-btn', () => this.handleSyncToRelays());
-    bindButton('save-to-file-btn', () => this.handleSaveToFile());
-    bindButton('restore-from-file-btn', () => this.handleRestoreFromFile(container));
-    bindSwitchSyncModeLink(container, () => this.renderListTab(container));
+    bindListSyncButtons(container, {
+      onSyncFromRelays: () => this.handleSyncFromRelays(container),
+      onSyncToRelays: () => this.handleSyncToRelays(),
+      onSaveToFile: () => this.handleSaveToFile(),
+      onRestoreFromFile: () => this.handleRestoreFromFile(container),
+      onSwitchMode: () => this.renderListTab(container),
+    });
   }
 
   // ===== Sync Helper Methods (inlined from ListSyncManager) =====

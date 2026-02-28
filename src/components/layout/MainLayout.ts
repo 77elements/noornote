@@ -13,19 +13,23 @@ import { FontSizeService } from '../../services/FontSizeService';
 import { CacheManager } from '../../services/CacheManager';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
-import { PostNoteModal } from '../post/PostNoteModal';
+// PostNoteModal loaded lazily on click (Step 4 bundle optimization)
 import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
 import { AuthService } from '../../services/AuthService';
 import { EventBus } from '../../services/EventBus';
-import { WalletBalanceDisplay } from '../ui/WalletBalanceDisplay';
-import { SearchSpotlight } from '../navigation/SearchSpotlight';
+// WalletBalanceDisplay loaded lazily (Step 5 bundle optimization)
+type WalletBalanceDisplay = import('../ui/WalletBalanceDisplay').WalletBalanceDisplay;
+// SearchSpotlight loaded lazily on Cmd+K (Step 6 bundle optimization)
+type SearchSpotlight = import('../navigation/SearchSpotlight').SearchSpotlight;
 import { KeyboardShortcutManager } from '../../services/KeyboardShortcutManager';
-import { GlobalSearchView } from '../search/GlobalSearchView';
-import { BookmarkManager } from '../../lists/bookmarks';
-import { FollowListManager } from '../../lists/follows';
-import { MuteListManager } from '../../lists/mutes';
-import { TribeManager } from '../../lists/tribes';
+// GlobalSearchView loaded lazily (Step 6 bundle optimization)
+type GlobalSearchView = import('../search/GlobalSearchView').GlobalSearchView;
+// List managers loaded lazily (Step 3 bundle optimization)
+type BookmarkManager = import('../../lists/bookmarks').BookmarkManager;
+type FollowListManager = import('../../lists/follows').FollowListManager;
+type MuteListManager = import('../../lists/mutes').MuteListManager;
+type TribeManager = import('../../lists/tribes').TribeManager;
 import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
@@ -39,9 +43,7 @@ import { LayoutService } from '../../services/LayoutService';
 import { PlatformService } from '../../services/PlatformService';
 import { PullToRefresh } from '../ui/PullToRefresh';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
-import dayjs from 'dayjs';
-import calendarSystems from '@calidy/dayjs-calendarsystems';
-import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
+// dayjs + calendar loaded lazily in initializeDateTimeCalendar (bundle optimization)
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
 // Global type declaration for Vite environment variable
@@ -82,6 +84,7 @@ export class MainLayout {
   private viewTabEventSubscriptions: string[] = [];
   private layoutService: LayoutService;
   private pullToRefresh: PullToRefresh | null = null;
+  private _dayjs: any = null;
 
   constructor() {
     this.element = this.createElement();
@@ -151,12 +154,22 @@ export class MainLayout {
   /**
    * Initialize managers (Bookmark, Follow, Mute, Tribe, Badge, Lists Menu)
    */
-  private initializeManagers(): void {
-    // Initialize list managers
+  private async loadListManagers(): Promise<void> {
+    const [{ BookmarkManager }, { FollowListManager }, { MuteListManager }, { TribeManager }] = await Promise.all([
+      import('../../lists/bookmarks'),
+      import('../../lists/follows'),
+      import('../../lists/mutes'),
+      import('../../lists/tribes')
+    ]);
     this.bookmarkManager = new BookmarkManager(this.element);
     this.followManager = new FollowListManager(this.element);
     this.muteManager = new MuteListManager(this.element);
     this.tribeManager = new TribeManager(this.element);
+  }
+
+  private initializeManagers(): void {
+    // Lazy-load list managers (they pull in heavy deps)
+    this.loadListManagers();
     this.nip51InspectorManager = new Nip51InspectorManager(this.element);
 
     // Initialize NotificationsBadgeManager
@@ -442,9 +455,10 @@ export class MainLayout {
   /**
    * Initialize wallet balance display
    */
-  private initializeWalletBalance(): void {
+  private async initializeWalletBalance(): Promise<void> {
     const walletBalanceContainer = this.element.querySelector('.wallet-balance-container');
     if (walletBalanceContainer) {
+      const { WalletBalanceDisplay } = await import('../ui/WalletBalanceDisplay');
       this.walletBalanceDisplay = new WalletBalanceDisplay();
       walletBalanceContainer.appendChild(this.walletBalanceDisplay.getElement());
     }
@@ -454,7 +468,8 @@ export class MainLayout {
    * Initialize global search view
    * Mounts in scc (default/right-pane mode) or intercepts events for pcc rendering (wide mode)
    */
-  private initializeGlobalSearchView(): void {
+  private async initializeGlobalSearchView(): Promise<void> {
+    const { GlobalSearchView } = await import('../search/GlobalSearchView');
     this.globalSearchView = new GlobalSearchView();
 
     // Mount in secondary content unless wide/mobile mode
@@ -656,8 +671,9 @@ export class MainLayout {
   /**
    * Open search modal
    */
-  private openSearchModal(): void {
+  private async openSearchModal(): Promise<void> {
     if (!this.searchSpotlight) {
+      const { SearchSpotlight } = await import('../navigation/SearchSpotlight');
       this.searchSpotlight = new SearchSpotlight();
     }
     this.searchSpotlight.open();
@@ -1616,10 +1632,10 @@ export class MainLayout {
     const noteItem = menu.querySelector('[data-action="new-note"]');
     const articleItem = menu.querySelector('[data-action="new-article"]');
 
-    noteItem?.addEventListener('click', () => {
+    noteItem?.addEventListener('click', async () => {
       menu.classList.remove('is-open');
-      const postNoteModal = PostNoteModal.getInstance();
-      postNoteModal.show();
+      const { PostNoteModal } = await import('../post/PostNoteModal');
+      PostNoteModal.getInstance().show();
     });
 
     articleItem?.addEventListener('click', () => {
@@ -1678,9 +1694,15 @@ export class MainLayout {
   /**
    * Initialize dayjs calendar system for date/time display
    */
-  private initializeDateTimeCalendar(): void {
-    dayjs.extend(calendarSystems);
-    dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
+  private async initializeDateTimeCalendar(): Promise<void> {
+    const [dayjsModule, calendarSystemsModule, hijriModule] = await Promise.all([
+      import('dayjs'),
+      import('@calidy/dayjs-calendarsystems'),
+      import('@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem')
+    ]);
+    this._dayjs = dayjsModule.default;
+    this._dayjs.extend(calendarSystemsModule.default);
+    this._dayjs.registerCalendarSystem('hijri' as any, new hijriModule.default());
 
     // Listen for calendar system changes
     this.eventBus.on('settings:calendar-system-changed', () => {
@@ -1721,7 +1743,7 @@ export class MainLayout {
       dateString = `${day}. ${month}. ${year}<br>${version}`;
     } else if (calendarSystem === 'hijri') {
       // International format: DD. Month YYYY
-      const hijriDate = dayjs(now).toCalendarSystem('hijri' as any);
+      const hijriDate = this._dayjs(now).toCalendarSystem('hijri' as any);
       const day = hijriDate.date();
       const month = HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
@@ -1732,7 +1754,7 @@ export class MainLayout {
       const gregorianMonth = now.toLocaleString('en-US', { month: 'short' });
       const gregorianYear = now.getFullYear();
 
-      const hijriDate = dayjs(now).toCalendarSystem('hijri' as any);
+      const hijriDate = this._dayjs(now).toCalendarSystem('hijri' as any);
       const hijriDay = hijriDate.date();
       const hijriMonth = HIJRI_MONTHS[hijriDate.month()];
       const hijriYear = hijriDate.year();

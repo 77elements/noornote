@@ -282,6 +282,22 @@ export class UserHoverCard {
   }
 
   /**
+   * Destroy singleton: remove global listeners, clear timeouts, remove card
+   */
+  public destroy(): void {
+    if (this.scrollHandler) {
+      window.removeEventListener('scroll', this.scrollHandler, true);
+    }
+    if (this.clickOutsideHandler) {
+      document.removeEventListener('click', this.clickOutsideHandler, true);
+    }
+    if (this.showTimeout) clearTimeout(this.showTimeout);
+    if (this.hideTimeout) clearTimeout(this.hideTimeout);
+    this.removeCard();
+    UserHoverCard.instance = null;
+  }
+
+  /**
    * Escape HTML
    */
   private escapeHtml(text: string): string {

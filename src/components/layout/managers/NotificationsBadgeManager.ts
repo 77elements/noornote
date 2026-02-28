@@ -4,28 +4,39 @@
  *
  * @purpose Update badge count based on unread notifications
  * @used-by MainLayout
+ *
+ * NotificationsOrchestrator loaded lazily to keep it out of main bundle.
  */
 
 import { EventBus } from '../../../services/EventBus';
-import { NotificationsOrchestrator } from '../../../services/orchestration/NotificationsOrchestrator';
 import { AuthService } from '../../../services/AuthService';
 
 export class NotificationsBadgeManager {
   private eventBus: EventBus;
-  private notificationsOrch: NotificationsOrchestrator;
   private authService: AuthService;
   private badgeElement: HTMLElement | null = null;
   private badgeUpdateSubscriptionId: string | null = null;
   private prioritiesChangedSubscriptionId: string | null = null;
 
+  // Lazy-loaded dep
+  private notificationsOrch: any = null;
+
   constructor(badgeElement: HTMLElement) {
     this.badgeElement = badgeElement;
     this.eventBus = EventBus.getInstance();
-    this.notificationsOrch = NotificationsOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
 
     this.setupEventListeners();
     this.updateBadgeCount();
+  }
+
+  /**
+   * Lazy-load NotificationsOrchestrator
+   */
+  private async loadDeps(): Promise<void> {
+    if (this.notificationsOrch) return;
+    const { NotificationsOrchestrator } = await import('../../../services/orchestration/NotificationsOrchestrator');
+    this.notificationsOrch = NotificationsOrchestrator.getInstance();
   }
 
   /**
@@ -49,7 +60,7 @@ export class NotificationsBadgeManager {
    * - Priority 2: Solid badge (normal: mentions, reactions)
    * - Priority 3: Hollow badge (low: hashtags)
    */
-  public updateBadgeCount(): void {
+  public async updateBadgeCount(): Promise<void> {
     if (!this.badgeElement) return;
 
     // Only show badge if user is logged in
@@ -58,6 +69,8 @@ export class NotificationsBadgeManager {
       this.badgeElement.style.display = 'none';
       return;
     }
+
+    await this.loadDeps();
 
     // Use NotificationsOrchestrator for badge count (uses fetched notifications + lastSeen)
     const unreadCount = this.notificationsOrch.getUnreadCount();

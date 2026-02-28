@@ -43,7 +43,7 @@ export interface RootOrderItem<T extends string = string> {
 import { encodeNevent } from '../services/NostrToolsAdapter';
 import { formatTimestamp } from '../helpers/formatTimestamp';
 import { applyFolderAssignments } from '../helpers/FolderAssignmentHelper';
-import { renderListSyncButtons, bindSwitchSyncModeLink, isEasyMode } from '../helpers/ListSyncMode';
+import { renderListSyncButtons, bindListSyncButtons, isEasyMode } from '../helpers/ListSyncMode';
 import { SyncConfirmationModal, type MovedItemInfo } from '../components/modals/SyncConfirmationModal';
 import { NewFolderModal } from '../components/modals/NewFolderModal';
 import { EditFolderModal } from '../components/modals/EditFolderModal';
@@ -53,6 +53,8 @@ import { MoveDropdown } from '../components/ui/MoveDropdown';
 
 // Shared helpers from /src/lists/
 import { readList, writeList, StorageKeys, now, deduplicateById, mergeByKey } from './storage';
+import { setupGridDragDrop } from './drag-drop';
+import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {
   fetchEvents,
@@ -75,6 +77,7 @@ const logger = SystemLogger.getInstance();
 // =============================================================================
 
 import { escapeHtml } from '../helpers/escapeHtml';
+import { ICON_TRASH_16 } from '../helpers/svgIcons';
 
 /**
  * Validate URL format
@@ -1761,9 +1764,7 @@ export class BookmarkCard {
           <div class="bookmark-card__actions">
             <span class="bookmark-card__move"></span>
             <button class="bookmark-card__delete" aria-label="Remove bookmark" title="Remove bookmark">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              ${ICON_TRASH_16}
             </button>
           </div>
         </div>
@@ -1820,9 +1821,7 @@ export class BookmarkCard {
               </button>
             ` : ''}
             <button class="bookmark-card__delete" aria-label="Remove bookmark" title="Remove bookmark">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 4h10M5 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1M6 7v4M10 7v4M4 4l.5 8.5a1 1 0 0 0 1 .95h5a1 1 0 0 0 1-.95L12 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              ${ICON_TRASH_16}
             </button>
           </div>
         </div>
@@ -2602,51 +2601,15 @@ export class BookmarkManager {
 
   private renderHeader(folder: { id: string; name: string } | null): string {
     const title = folder ? folder.name : 'Bookmarks';
-
-    return `
-      <div class="bookmark-header">
-        <h2 class="bookmark-header__title">${escapeHtml(title)}</h2>
-        <div class="bookmark-header__new-dropdown">
-            <button class="bookmark-header__new-btn" title="Create new item">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              New
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" class="bookmark-header__new-chevron">
-                <path d="M6 9L12 15L18 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </button>
-            <div class="bookmark-header__dropdown-menu">
-              <button class="bookmark-header__dropdown-item" data-action="new-folder">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M3 7C3 5.89543 3.89543 5 5 5H9.58579C9.851 5 10.1054 5.10536 10.2929 5.29289L12 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="1.5"/>
-                </svg>
-                Folder
-              </button>
-              <button class="bookmark-header__dropdown-item" data-action="new-bookmark">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                  <path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-                Bookmark
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+    return renderListHeader(title, [
+      { action: 'new-folder', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 7C3 5.89543 3.89543 5 5 5H9.58579C9.851 5 10.1054 5.10536 10.2929 5.29289L12 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="1.5"/></svg>', label: 'Folder' },
+      { action: 'new-bookmark', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>', label: 'Bookmark' },
+    ]);
   }
 
   private renderBreadcrumb(folder: { id: string; name: string } | null): string {
     if (!folder) return '';
-
-    return `
-      <div class="bookmark-breadcrumb">
-        <span class="bookmark-breadcrumb__item" data-navigate="root">Bookmarks</span>
-        <span class="bookmark-breadcrumb__separator">/</span>
-        <span class="bookmark-breadcrumb__item bookmark-breadcrumb__item--current">${escapeHtml(folder.name)}</span>
-      </div>
-    `;
+    return renderListBreadcrumb('Bookmarks', folder.name);
   }
 
   private async renderGridContent(grid: HTMLElement): Promise<void> {
@@ -2719,7 +2682,7 @@ export class BookmarkManager {
       `;
     }
 
-    this.setupGridDragDrop(grid);
+    this.initGridDragDrop(grid);
   }
 
   private async createBookmarkCard(bookmark: BookmarkWithEvent): Promise<HTMLElement> {
@@ -2821,110 +2784,16 @@ export class BookmarkManager {
     });
   }
 
-  private setupGridDragDrop(grid: HTMLElement): void {
-    let draggedCard: HTMLElement | null = null;
-    let draggedId: string | null = null;
-    let placeholder: HTMLElement | null = null;
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    const onMouseDown = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.closest('.bookmark-card__delete') || target.closest('.folder-card__delete')) {
-        return;
-      }
-
-      const card = target.closest('.bookmark-card, .folder-card') as HTMLElement;
-      if (!card || card.classList.contains('up-navigator')) return;
-
-      e.preventDefault();
-      draggedCard = card;
-      draggedId = card.dataset.bookmarkId || card.dataset.folderId || null;
-      startX = e.clientX;
-      startY = e.clientY;
-
-      const rect = card.getBoundingClientRect();
-      offsetX = e.clientX - rect.left;
-      offsetY = e.clientY - rect.top;
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!draggedCard) return;
-
-      const dx = Math.abs(e.clientX - startX);
-      const dy = Math.abs(e.clientY - startY);
-
-      if (!isDragging && (dx > 5 || dy > 5)) {
-        isDragging = true;
-        draggedCard.dataset.wasDragging = 'true';
-        draggedCard.classList.add('dragging');
-
-        placeholder = document.createElement('div');
-        placeholder.className = 'bookmark-card-placeholder';
-        placeholder.style.width = draggedCard.offsetWidth + 'px';
-        placeholder.style.height = draggedCard.offsetHeight + 'px';
-        draggedCard.parentNode?.insertBefore(placeholder, draggedCard);
-
-        draggedCard.style.position = 'fixed';
-        draggedCard.style.zIndex = '1000';
-        draggedCard.style.width = draggedCard.offsetWidth + 'px';
-        draggedCard.style.pointerEvents = 'none';
-      }
-
-      if (isDragging) {
-        draggedCard.style.left = (e.clientX - offsetX) + 'px';
-        draggedCard.style.top = (e.clientY - offsetY) + 'px';
-
-        const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-        const cardBelow = elemBelow?.closest('.bookmark-card:not(.dragging), .folder-card:not(.dragging), .up-navigator') as HTMLElement;
-
-        grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-
-        if (cardBelow && cardBelow !== placeholder) {
-          cardBelow.classList.add('drag-over');
-        }
-      }
-    };
-
-    const onMouseUp = (e: MouseEvent) => {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-
-      if (!draggedCard || !isDragging) {
-        draggedCard = null;
-        isDragging = false;
-        return;
-      }
-
-      const savedDisplay = draggedCard.style.display;
-      draggedCard.style.display = 'none';
-      const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-      draggedCard.style.display = savedDisplay;
-      const dropTarget = elemBelow?.closest('.bookmark-card, .folder-card, .up-navigator') as HTMLElement;
-
-      draggedCard.classList.remove('dragging');
-      draggedCard.style.position = '';
-      draggedCard.style.zIndex = '';
-      draggedCard.style.width = '';
-      draggedCard.style.left = '';
-      draggedCard.style.top = '';
-      draggedCard.style.pointerEvents = '';
-
-      grid.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
-
-      placeholder?.remove();
-      placeholder = null;
-
-      if (dropTarget && draggedId && draggedCard) {
+  private initGridDragDrop(grid: HTMLElement): void {
+    setupGridDragDrop(grid, {
+      itemSelector: '.bookmark-card, .folder-card',
+      excludeSelector: '.bookmark-card__delete, .folder-card__delete',
+      placeholderClass: 'bookmark-card-placeholder',
+      getItemId: (el) => el.dataset.bookmarkId || el.dataset.folderId || null,
+      onDrop: (draggedId, draggedEl, dropTarget) => {
         const targetId = dropTarget.dataset.bookmarkId || dropTarget.dataset.folderId;
-        const isDraggingBookmark = draggedCard.classList.contains('bookmark-card');
-        const isDraggingFolder = draggedCard.classList.contains('folder-card');
+        const isDraggingBookmark = draggedEl.classList.contains('bookmark-card');
+        const isDraggingFolder = draggedEl.classList.contains('folder-card');
         const isTargetFolder = dropTarget.classList.contains('folder-card');
         const isTargetUpNav = dropTarget.classList.contains('up-navigator');
 
@@ -2938,8 +2807,7 @@ export class BookmarkManager {
             const targetIndex = bookmarksInFolder.findIndex(id => id === targetId);
             if (targetIndex !== -1) {
               this.folderService.moveItemToPosition(draggedId, targetIndex);
-              grid.insertBefore(draggedCard, dropTarget);
-              // Use order-changed event - no re-render needed, DOM already updated
+              grid.insertBefore(draggedEl, dropTarget);
               this.eventBus.emit('bookmark:order-changed');
             }
           } else {
@@ -2948,20 +2816,13 @@ export class BookmarkManager {
             const targetIndex = rootOrder.findIndex(item => item.id === targetId);
             if (targetIndex !== -1) {
               this.folderService.moveInRootOrder(draggedType as 'folder' | 'bookmark', draggedId, targetIndex);
-              grid.insertBefore(draggedCard, dropTarget);
-              // Use order-changed event - no re-render needed, DOM already updated
+              grid.insertBefore(draggedEl, dropTarget);
               this.eventBus.emit('bookmark:order-changed');
             }
           }
         }
       }
-
-      draggedCard = null;
-      draggedId = null;
-      isDragging = false;
-    };
-
-    grid.addEventListener('mousedown', onMouseDown);
+    });
   }
 
   private navigateTo(folderId: string): void {
@@ -3286,45 +3147,21 @@ export class BookmarkManager {
   }
 
   private bindSyncButtons(container: HTMLElement): void {
-    container.querySelectorAll('.sync-from-relays-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleSyncFromRelays(container));
+    bindListSyncButtons(container, {
+      onSyncFromRelays: () => this.handleSyncFromRelays(container),
+      onSyncToRelays: () => this.handleSyncToRelays(),
+      onSaveToFile: () => this.handleSaveToFile(),
+      onRestoreFromFile: () => this.handleRestoreFromFile(container),
+      onSwitchMode: () => this.renderCurrentView(container),
     });
-
-    container.querySelectorAll('.sync-to-relays-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleSyncToRelays());
-    });
-
-    container.querySelectorAll('.save-to-file-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleSaveToFile());
-    });
-
-    container.querySelectorAll('.restore-from-file-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleRestoreFromFile(container));
-    });
-
-    bindSwitchSyncModeLink(container, () => this.renderCurrentView(container));
   }
 
   private bindHeaderButtons(container: HTMLElement): void {
-    const newBtn = container.querySelector('.bookmark-header__new-btn');
+    const closeRef = { current: this.closeDropdownHandler };
+    bindHeaderDropdown(container, closeRef);
+    this.closeDropdownHandler = closeRef.current;
+
     const dropdown = container.querySelector('.bookmark-header__new-dropdown');
-
-    newBtn?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      dropdown?.classList.toggle('bookmark-header__new-dropdown--open');
-    });
-
-    if (this.closeDropdownHandler) {
-      document.removeEventListener('click', this.closeDropdownHandler);
-    }
-
-    this.closeDropdownHandler = (e: Event) => {
-      if (!dropdown?.contains(e.target as Node)) {
-        dropdown?.classList.remove('bookmark-header__new-dropdown--open');
-      }
-    };
-    document.addEventListener('click', this.closeDropdownHandler);
-
     const folderItem = container.querySelector('[data-action="new-folder"]');
     const bookmarkItem = container.querySelector('[data-action="new-bookmark"]');
 

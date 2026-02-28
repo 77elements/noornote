@@ -77,6 +77,30 @@ export function bindSwitchSyncModeLink(container: HTMLElement, onSwitch: () => v
   });
 }
 
+/**
+ * Bind all sync buttons in a container to their respective handlers.
+ * Replaces the identical bindSyncButtons() method in all 4 list files.
+ */
+export function bindListSyncButtons(
+  container: HTMLElement,
+  handlers: {
+    onSyncFromRelays: () => void;
+    onSyncToRelays: () => void;
+    onSaveToFile: () => void;
+    onRestoreFromFile: () => void;
+    onSwitchMode: () => void;
+  }
+): void {
+  const bind = (cls: string, handler: () => void) => {
+    container.querySelectorAll(`.${cls}`).forEach(btn => btn.addEventListener('click', handler));
+  };
+  bind('sync-from-relays-btn', handlers.onSyncFromRelays);
+  bind('sync-to-relays-btn', handlers.onSyncToRelays);
+  bind('save-to-file-btn', handlers.onSaveToFile);
+  bind('restore-from-file-btn', handlers.onRestoreFromFile);
+  bindSwitchSyncModeLink(container, handlers.onSwitchMode);
+}
+
 export function renderListSyncButtons(): string {
   const mode = getListSyncMode();
   const platform = PlatformService.getInstance();
