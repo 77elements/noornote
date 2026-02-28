@@ -9,9 +9,11 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ReactionService } from '../../services/ReactionService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { RelayConfig } from '../../services/RelayConfig';
+import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 
 interface ReactionGroup {
   emoji: string;
+  emojiHtml: string;
   count: number;
 }
 
@@ -43,6 +45,7 @@ export class LikesList {
    */
   private groupReactions(): ReactionGroup[] {
     const groups = new Map<string, number>();
+    const emojiHtmlMap = new Map<string, string>();
 
     for (const event of this.reactionEvents) {
       // NIP-25: content can be "+", "-", emoji, or empty
@@ -57,6 +60,11 @@ export class LikesList {
         continue;
       }
 
+      // Resolve custom emoji :shortcode: to <img> tag (NIP-30)
+      if (emoji.startsWith(':') && emoji.endsWith(':') && !emojiHtmlMap.has(emoji)) {
+        emojiHtmlMap.set(emoji, resolveReactionEmoji(event));
+      }
+
       // Count emoji
       const current = groups.get(emoji) || 0;
       groups.set(emoji, current + 1);
@@ -65,7 +73,7 @@ export class LikesList {
     // Convert to array and sort by count (most popular first)
     const result: ReactionGroup[] = [];
     groups.forEach((count, emoji) => {
-      result.push({ emoji, count });
+      result.push({ emoji, emojiHtml: emojiHtmlMap.get(emoji) || emoji, count });
     });
 
     result.sort((a, b) => b.count - a.count);
@@ -105,7 +113,7 @@ export class LikesList {
       }
 
       badge.innerHTML = `
-        <span class="likes-list__emoji">${group.emoji}</span>
+        <span class="likes-list__emoji">${group.emojiHtml}</span>
         <span class="likes-list__count">${group.count}</span>
       `;
 
