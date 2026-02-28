@@ -47,3 +47,25 @@ export function formatCustomEmojis(html: string, emojis: CustomEmoji[]): string 
     return match;
   });
 }
+
+/**
+ * Resolve a reaction event's emoji content to display HTML
+ * For NIP-30 custom emojis (:shortcode: with emoji tags), returns an <img> tag
+ * For standard emojis, returns the content as-is
+ */
+export function resolveReactionEmoji(event: { content: string; tags: string[][] }): string {
+  const content = event.content.trim();
+
+  // Check for :shortcode: pattern (NIP-30 custom emoji)
+  const match = content.match(/^:([a-zA-Z0-9_-]+):$/);
+  if (match) {
+    const shortcode = match[1];
+    const emojiTag = event.tags.find(t => t[0] === 'emoji' && t[1] === shortcode);
+    if (emojiTag && emojiTag[2]) {
+      const safeUrl = emojiTag[2].replace(/"/g, '&quot;');
+      return `<img class="custom-emoji" src="${safeUrl}" alt=":${shortcode}:" title=":${shortcode}:" loading="lazy" />`;
+    }
+  }
+
+  return content;
+}

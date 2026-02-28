@@ -20,6 +20,7 @@ import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
 import { getRepostsOriginalEvent } from '../../helpers/getRepostsOriginalEvent';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
+import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 
 export interface NotificationItemOptions {
   event: NostrEvent;
@@ -262,9 +263,9 @@ export class NotificationItem {
           return '♥';
         }
 
-        // Custom emojis (e.g., ":leotoast_sm:", ":nostrich:") - use heart as fallback
+        // Custom emojis (NIP-30) - resolve :shortcode: to <img> tag
         if (reactionContent.startsWith(':') && reactionContent.endsWith(':')) {
-          return '♥';
+          return resolveReactionEmoji(this.options.event);
         }
 
         // Otherwise use the actual emoji

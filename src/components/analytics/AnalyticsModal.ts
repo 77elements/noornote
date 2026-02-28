@@ -13,6 +13,7 @@ import { ModalService } from '../../services/ModalService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { renderUserMention, setupUserMentionHandlers, type UserMentionProfile } from '../../helpers/UserMentionHelper';
+import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 
 // Shared modal dimensions for consistent sizing
 const MODAL_CONFIG = {
@@ -307,13 +308,19 @@ export class AnalyticsModal {
       return this.renderEmptySection('Likes (0)', 'No likes yet');
     }
 
-    // Group by emoji
+    // Group by emoji + resolve custom emoji display
     const emojiGroups = new Map<string, NostrEvent[]>();
+    const emojiDisplayMap = new Map<string, string>();
     reactionEvents.forEach(event => {
       const emoji = (event.content === '+' || !event.content) ? '\u2764\uFE0F' : event.content;
       const group = emojiGroups.get(emoji) || [];
       group.push(event);
       emojiGroups.set(emoji, group);
+
+      // Resolve custom emoji :shortcode: to <img> tag (NIP-30)
+      if (!emojiDisplayMap.has(emoji) && emoji.startsWith(':') && emoji.endsWith(':')) {
+        emojiDisplayMap.set(emoji, resolveReactionEmoji(event));
+      }
     });
 
     // Render each emoji group
@@ -323,9 +330,11 @@ export class AnalyticsModal {
         return renderUserMention(event.pubkey, profile);
       }).join(' ');
 
+      const emojiDisplay = emojiDisplayMap.get(emoji) || emoji;
+
       return `
         <div class="analytics-modal__emoji-group">
-          <span class="analytics-modal__emoji">${emoji}:</span>
+          <span class="analytics-modal__emoji">${emojiDisplay}:</span>
           <span class="analytics-modal__list">${userLinks}</span>
         </div>
       `;
