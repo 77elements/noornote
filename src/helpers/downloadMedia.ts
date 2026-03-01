@@ -4,8 +4,17 @@ import { ToastService } from '../services/ToastService';
 const platform = PlatformService.getInstance();
 
 export async function downloadMedia(url: string, defaultFileName: string): Promise<void> {
-  if (platform.isTauri && !platform.isAndroid) {
-    // Desktop: save dialog
+  if (platform.isTauri && platform.isAndroid) {
+    // GrapheneOS: save dialog → content:// URI → Kotlin plugin streams from URL
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const { invoke } = await import('@tauri-apps/api/core');
+    const filePath = await save({ defaultPath: defaultFileName });
+    if (filePath) {
+      await invoke('plugin:media-save|save_media', { uri: filePath, mediaUrl: url });
+      ToastService.show('Saved successfully', 'success');
+    }
+  } else if (platform.isTauri) {
+    // Desktop: save dialog → writeFile
     const { save } = await import('@tauri-apps/plugin-dialog');
     const { writeFile } = await import('@tauri-apps/plugin-fs');
     const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
@@ -16,14 +25,6 @@ export async function downloadMedia(url: string, defaultFileName: string): Promi
       await writeFile(filePath, data);
       ToastService.show('Saved successfully', 'success');
     }
-  } else if (platform.isTauri && platform.isAndroid) {
-    // Android: save to Downloads folder directly
-    const { writeFile, BaseDirectory } = await import('@tauri-apps/plugin-fs');
-    const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
-    const response = await tauriFetch(url, { method: 'GET' });
-    const data = new Uint8Array(await response.arrayBuffer());
-    await writeFile(defaultFileName, data, { baseDir: BaseDirectory.Download });
-    ToastService.show('Saved to Downloads', 'success');
   } else {
     // Web: blob download
     const response = await fetch(url);
