@@ -2344,6 +2344,7 @@ dependencies = [
  "tauri-plugin-http",
  "tauri-plugin-keyring",
  "tauri-plugin-log",
+ "tauri-plugin-media-save",
  "tauri-plugin-shell",
 ]
 
@@ -4531,6 +4532,17 @@ dependencies = [
  "tauri-plugin",
  "thiserror 2.0.17",
  "time",
+]
+
+[[package]]
+name = "tauri-plugin-media-save"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "serde",
+ "tauri",
+ "tauri-plugin",
+ "thiserror 2.0.17",
 ]
 
 [[package]]

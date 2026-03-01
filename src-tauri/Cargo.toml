@@ -38,6 +38,7 @@ tauri-plugin-global-shortcut = "2"
 # Android-only plugins
 [target.'cfg(target_os = "android")'.dependencies]
 tauri-plugin-amber = { path = "./plugins/amber/" }
+tauri-plugin-media-save = { path = "./plugins/media-save/" }
 
 [profile.release]
 strip = true

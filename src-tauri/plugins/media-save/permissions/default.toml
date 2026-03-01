@@ -1,0 +1,7 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = "Default permissions for the media-save plugin"
+permissions = [
+  "allow-save-media",
+]
