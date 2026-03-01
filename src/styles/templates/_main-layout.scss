@@ -131,23 +131,8 @@ html.layout--phone {
   }
 }
 
-// ========================================
-// Edge-to-edge: safe-area offsets (Tauri Android only)
-// ========================================
-html.platform--tauri-android.layout--phone {
-  .main-layout {
-    padding-top: calc(48px + env(safe-area-inset-top, 0px));
-
-    .sidebar .sidebar-content {
-      padding-top: calc($gap + env(safe-area-inset-top, 0px));
-    }
-
-    .primary-content {
-      height: calc(100vh - 48px - env(safe-area-inset-top, 0px));
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-    }
-  }
-}
+// Safe-area is handled natively in MainActivity.kt (ViewCompat.setOnApplyWindowInsetsListener).
+// No CSS env(safe-area-inset-*) needed for Tauri Android.
 
 // ========================================
 // Grid Areas

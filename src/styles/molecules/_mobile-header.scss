@@ -62,11 +62,8 @@
   }
 }
 
-// Edge-to-edge: offset mobile header below status bar (Tauri Android only)
-html.platform--tauri-android .mobile-header {
-  padding-top: env(safe-area-inset-top, 0px);
-  height: calc(48px + env(safe-area-inset-top, 0px));
-}
+// Safe-area is handled natively in MainActivity.kt (ViewCompat.setOnApplyWindowInsetsListener).
+// No CSS env(safe-area-inset-*) needed for Tauri Android.
 
 // Sidebar overlay - only visible in mobile mode when sidebar is open
 .sidebar-overlay {
