@@ -6,6 +6,8 @@
  */
 
 import { PlatformService } from './PlatformService';
+import { ToastService } from './ToastService';
+import { downloadMedia } from '../helpers/downloadMedia';
 
 export class VideoPlayerService {
   private static instance: VideoPlayerService | null = null;
@@ -56,6 +58,7 @@ export class VideoPlayerService {
    */
   private toggleCssFullscreen(video: HTMLVideoElement): void {
     const fsButton = (video as any)._fsButton;
+    const dlButton = (video as any)._dlButton;
 
     if (this.fullscreenVideo === video) {
       // Exit fullscreen
@@ -63,12 +66,16 @@ export class VideoPlayerService {
       if (fsButton) {
         fsButton.classList.remove('video-fullscreen-btn-active');
       }
+      if (dlButton) {
+        dlButton.classList.remove('video-download-btn-active');
+      }
       document.body.style.overflow = '';
 
       // Move video back to original position
       const originalParent = (video as any)._originalParent;
       const originalNextSibling = (video as any)._originalNextSibling;
       const originalButtonParent = (video as any)._originalButtonParent;
+      const originalDlButtonParent = (video as any)._originalDlButtonParent;
 
       if (originalParent) {
         if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
@@ -77,15 +84,19 @@ export class VideoPlayerService {
           originalParent.appendChild(video);
         }
 
-        // Move button back to wrapper
+        // Move buttons back to wrapper
         if (fsButton && originalButtonParent) {
           originalButtonParent.appendChild(fsButton);
+        }
+        if (dlButton && originalDlButtonParent) {
+          originalDlButtonParent.appendChild(dlButton);
         }
 
         // Clean up stored references
         delete (video as any)._originalParent;
         delete (video as any)._originalNextSibling;
         delete (video as any)._originalButtonParent;
+        delete (video as any)._originalDlButtonParent;
       }
 
       this.fullscreenVideo = null;
@@ -95,18 +106,25 @@ export class VideoPlayerService {
       (video as any)._originalParent = video.parentElement;
       (video as any)._originalNextSibling = video.nextSibling;
       (video as any)._originalButtonParent = fsButton ? fsButton.parentElement : null;
+      (video as any)._originalDlButtonParent = dlButton ? dlButton.parentElement : null;
 
       // Move video to end of body (escapes CSS containment)
       document.body.appendChild(video);
 
-      // Move button to body as well (so it stays visible with video)
+      // Move buttons to body as well (so they stay visible with video)
       if (fsButton) {
         document.body.appendChild(fsButton);
+      }
+      if (dlButton) {
+        document.body.appendChild(dlButton);
       }
 
       video.classList.add('video-fullscreen-mode');
       if (fsButton) {
         fsButton.classList.add('video-fullscreen-btn-active');
+      }
+      if (dlButton) {
+        dlButton.classList.add('video-download-btn-active');
       }
       document.body.style.overflow = 'hidden';
       this.fullscreenVideo = video;
@@ -123,7 +141,7 @@ export class VideoPlayerService {
   }
 
   /**
-   * Add fullscreen button to native video controls
+   * Add fullscreen and download buttons to native video controls
    */
   public initializeForContainer(container: HTMLElement): void {
     const videos = container.querySelectorAll<HTMLVideoElement>('video.note-video');
@@ -170,6 +188,45 @@ export class VideoPlayerService {
         this.toggleFullscreen(video);
       });
 
+      // Create download button
+      const dlButton = document.createElement('button');
+      dlButton.className = 'video-download-btn';
+      dlButton.innerHTML = `
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+      `;
+      dlButton.title = 'Download';
+      dlButton.style.cssText = `
+        position: absolute;
+        top: 10px;
+        right: 50px;
+        background: var(--alpha-medium);
+        border: none;
+        border-radius: 4px;
+        padding: 8px;
+        cursor: pointer;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s;
+      `;
+
+      dlButton.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const src = video.currentSrc || video.src;
+        if (!src) return;
+        const defaultFileName = src.split('/').pop()?.split('?')[0] || 'video.mp4';
+        try {
+          await downloadMedia(src, defaultFileName);
+        } catch {
+          ToastService.show('Failed to save video', 'error');
+        }
+      });
+
       // Also allow double-click on video to toggle fullscreen
       video.addEventListener('dblclick', () => {
         this.toggleFullscreen(video);
@@ -189,14 +246,16 @@ export class VideoPlayerService {
       visibilityObserver.observe(video);
       (video as any)._visibilityObserver = visibilityObserver;
 
-      // Position video relatively and add button
+      // Position video relatively and add buttons
       const wrapper = video.parentElement;
       if (wrapper) {
         wrapper.style.position = 'relative';
         wrapper.appendChild(fsButton);
+        wrapper.appendChild(dlButton);
 
-        // Store button reference for cleanup
+        // Store button references for cleanup
         (video as any)._fsButton = fsButton;
+        (video as any)._dlButton = dlButton;
       }
     });
 
@@ -224,6 +283,13 @@ export class VideoPlayerService {
           bottom: auto !important;
           z-index: 10000 !important;
         }
+        .video-download-btn-active {
+          position: fixed !important;
+          top: 20px !important;
+          right: 60px !important;
+          bottom: auto !important;
+          z-index: 10000 !important;
+        }
         body:has(.video-fullscreen-mode) {
           overflow: hidden !important;
         }
@@ -248,6 +314,11 @@ export class VideoPlayerService {
       if (fsButton) {
         fsButton.remove();
         delete (video as any)._fsButton;
+      }
+      const dlButton = (video as any)._dlButton;
+      if (dlButton) {
+        dlButton.remove();
+        delete (video as any)._dlButton;
       }
       const visibilityObserver = (video as any)._visibilityObserver as IntersectionObserver | undefined;
       if (visibilityObserver) {
