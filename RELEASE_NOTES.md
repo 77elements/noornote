@@ -1,9 +1,11 @@
-# What's New in v0.5.1
+# What's New in v0.5.2
 
-**Welcome Page** — Redesigned with hero section and public timeline preview
+**Media Download** — Save images and videos from any note.
 
-**Android** — Edge-to-edge display, crash fix, pull-to-refresh, APK size reduced to 15 MB
+**Relay Browser** — Browse public relay timelines via shareable URLs with auto-refresh.
 
-**Website** — APK download page, ad-banners gallery with 9 banners in 5 formats
+**Custom Emoji Reactions** — NIP-30 emoji shortcodes now render as images everywhere.
 
-**Fixes** — Video event notifications, square app icons, platform-specific client tags
+**List Sync Fix** — Resolved a merge loop when syncing follows/mutes with relays.
+
+**Android Improvements** — Native edge-to-edge display with proper safe-area handling.
