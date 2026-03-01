@@ -104,7 +104,9 @@ pub fn run() {
 
   #[cfg(target_os = "android")]
   {
-    builder = builder.plugin(tauri_plugin_amber::init());
+    builder = builder
+      .plugin(tauri_plugin_amber::init())
+      .plugin(tauri_plugin_media_save::init());
   }
 
   let app = builder
