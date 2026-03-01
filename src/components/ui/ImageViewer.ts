@@ -12,21 +12,7 @@
  */
 
 import { ToastService } from '../../services/ToastService';
-import { PlatformService } from '../../services/PlatformService';
-
-// Conditionally import Tauri APIs (only available in Tauri build)
-let tauriSave: typeof import('@tauri-apps/plugin-dialog').save | null = null;
-let tauriWriteFile: typeof import('@tauri-apps/plugin-fs').writeFile | null = null;
-let tauriFetch: typeof import('@tauri-apps/plugin-http').fetch | null = null;
-
-const platform = PlatformService.getInstance();
-
-// Load Tauri desktop APIs if available (not on mobile)
-if (platform.isTauri && !platform.isAndroid) {
-  import('@tauri-apps/plugin-dialog').then(mod => { tauriSave = mod.save; });
-  import('@tauri-apps/plugin-fs').then(mod => { tauriWriteFile = mod.writeFile; });
-  import('@tauri-apps/plugin-http').then(mod => { tauriFetch = mod.fetch; });
-}
+import { downloadMedia } from '../../helpers/downloadMedia';
 
 export interface ImageViewerOptions {
   images: string[]; // Array of image URLs
@@ -131,47 +117,11 @@ export class ImageViewer {
    */
   private async download(): Promise<void> {
     const imageUrl = this.images[this.currentIndex];
-    if (!imageUrl) {
-      ToastService.show('No image to download', 'error');
-      return;
-    }
+    if (!imageUrl) return;
     const defaultFileName = imageUrl.split('/').pop() || 'image.jpg';
-
     try {
-      // Check if running in Tauri
-      if (platform.isTauri && tauriSave && tauriWriteFile && tauriFetch) {
-        // Tauri: Use Tauri HTTP client (bypasses CORS), show save dialog, and write file
-        const response = await tauriFetch(imageUrl, { method: 'GET' });
-        const arrayBuffer = await response.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        const filePath = await tauriSave({
-          defaultPath: defaultFileName,
-          filters: [{
-            name: 'Images',
-            extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp']
-          }]
-        });
-
-        if (filePath) {
-          await tauriWriteFile(filePath, uint8Array);
-          ToastService.show('Image saved successfully', 'success');
-        }
-      } else {
-        // Web: Use traditional browser download method
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = defaultFileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error('Failed to download image:', error);
+      await downloadMedia(imageUrl, defaultFileName);
+    } catch {
       ToastService.show('Failed to save image', 'error');
     }
   }
