@@ -102,18 +102,19 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
    * Publish reaction to note with selected emoji
    */
   private async publishReaction(emoji: string): Promise<void> {
-    // Disable like button immediately to prevent multiple clicks
-    const likeBtn = this.button as HTMLButtonElement;
-    if (likeBtn) {
-      likeBtn.disabled = true;
-    }
+    // Optimistic UI: update immediately before async publish
+    this.hasInteracted = true;
+    this.updateButtonState(true);
+    this.updateStats('like');
 
     try {
       const writeRelays = await RelayConfig.getInstance().getWriteRelays();
 
       if (writeRelays.length === 0) {
-        console.error('No write relays configured');
-        if (likeBtn) likeBtn.disabled = false;
+        // Revert optimistic update
+        this.hasInteracted = false;
+        this.updateButtonState(false);
+        ToastService.show('No write relays configured', 'error');
         return;
       }
 
@@ -124,20 +125,15 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         relays: writeRelays
       });
 
-      if (result.success) {
-        // Update stats (cache invalidation + optimistic UI update)
-        this.updateStats('like');
-
-        // Update liked state and button appearance
-        this.hasInteracted = true;
-        this.updateButtonState(true);
-      } else {
-        // Re-enable button if publishing failed
-        if (likeBtn) likeBtn.disabled = false;
+      if (!result.success) {
+        // Revert optimistic update on failure
+        this.hasInteracted = false;
+        this.updateButtonState(false);
       }
     } catch (error) {
-      console.error('Failed to publish reaction:', error);
-      if (likeBtn) likeBtn.disabled = false;
+      // Revert optimistic update on error
+      this.hasInteracted = false;
+      this.updateButtonState(false);
     }
   }
 
