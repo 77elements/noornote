@@ -342,18 +342,86 @@ function getStorage(): PerAccountLocalStorage {
 
 // ----- Members -----
 
-export function getMembers(): TribeMember[] {
-  const items = readList<TribeMember>(StorageKeys.TRIBES, []);
-  // Migrate old items that have id=pubkey to composite id=pubkey_category
-  let needsWrite = false;
+let compositeIdMigrationDone = false;
+
+/**
+ * One-time migration: id=pubkey → composite id=pubkey_category
+ * Fixes items, assignments, and rootOrder references.
+ * Covers: fresh migration (pre-composite), and v0.5.3→v0.5.4 (items migrated, assignments not).
+ */
+function migrateToCompositeIds(items: TribeMember[]): void {
+  const idChanges = new Map<string, string>();
+
+  // Build folder lookup for items missing category
+  const assignments = getStorage().get<MemberAssignment[]>(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS, []);
+  const folders = getStorage().get<TribeFolder[]>(StorageKeys.TRIBE_FOLDERS, []);
+  const folderIdToName = new Map(folders.map(f => [f.id, f.name]));
+  const memberIdToFolderName = new Map<string, string>();
+  for (const a of assignments) {
+    const folderName = folderIdToName.get(a.folderId);
+    if (folderName) memberIdToFolderName.set(a.memberId, folderName);
+  }
+
+  // Fix item IDs and fill missing categories
   for (const item of items) {
+    if (!item.category) {
+      const folderName = memberIdToFolderName.get(item.id);
+      if (folderName) item.category = folderName;
+    }
     const expectedId = item.category ? `${item.pubkey}_${item.category}` : item.pubkey;
     if (item.id !== expectedId) {
+      idChanges.set(item.id, expectedId);
       item.id = expectedId;
-      needsWrite = true;
     }
   }
-  if (needsWrite) writeList(StorageKeys.TRIBES, items);
+
+  if (idChanges.size > 0) writeList(StorageKeys.TRIBES, items);
+
+  // Fix assignments: both direct idChanges AND orphaned references (v0.5.3 case)
+  const validIds = new Set(items.map(i => i.id));
+  const pubkeyToId = new Map(items.map(i => [i.pubkey, i.id]));
+
+  let assignmentsChanged = false;
+  for (const a of assignments) {
+    const newId = idChanges.get(a.memberId);
+    if (newId) { a.memberId = newId; assignmentsChanged = true; continue; }
+    if (!validIds.has(a.memberId)) {
+      const pubkey = a.memberId.length === 64 ? a.memberId : a.memberId.substring(0, 64);
+      const correctId = pubkeyToId.get(pubkey);
+      if (correctId && correctId !== a.memberId) {
+        a.memberId = correctId;
+        assignmentsChanged = true;
+      }
+    }
+  }
+  if (assignmentsChanged) getStorage().set(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS, assignments);
+
+  // Fix rootOrder
+  const rootOrder = getStorage().get<RootOrderItem[]>(StorageKeys.TRIBE_ROOT_ORDER, []);
+  let rootOrderChanged = false;
+  for (const entry of rootOrder) {
+    if (entry.type === 'member') {
+      const newId = idChanges.get(entry.id);
+      if (newId) { entry.id = newId; rootOrderChanged = true; continue; }
+      if (!validIds.has(entry.id)) {
+        const pubkey = entry.id.length === 64 ? entry.id : entry.id.substring(0, 64);
+        const correctId = pubkeyToId.get(pubkey);
+        if (correctId && correctId !== entry.id) {
+          entry.id = correctId;
+          rootOrderChanged = true;
+        }
+      }
+    }
+  }
+  if (rootOrderChanged) getStorage().set(StorageKeys.TRIBE_ROOT_ORDER, rootOrder);
+}
+
+export function getMembers(): TribeMember[] {
+  const items = readList<TribeMember>(StorageKeys.TRIBES, []);
+  if (!compositeIdMigrationDone) {
+    migrateToCompositeIds(items);
+    compositeIdMigrationDone = true;
+  }
   return items;
 }
 
