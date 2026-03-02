@@ -1,11 +1,7 @@
-# What's New in v0.5.2
+# NoorNote v0.5.3
 
-**Media Download** — Save images and videos from any note.
+**Sync:** Fixed race condition and folder resurrection in Easy Mode — deleted folders stay deleted, edits during sync no longer trigger false merge conflicts.
 
-**Relay Browser** — Browse public relay timelines via shareable URLs with auto-refresh.
+**Likes:** Instant visual feedback when liking a note.
 
-**Custom Emoji Reactions** — NIP-30 emoji shortcodes now render as images everywhere.
-
-**List Sync Fix** — Resolved a merge loop when syncing follows/mutes with relays.
-
-**Android Improvements** — Native edge-to-edge display with proper safe-area handling.
+**Timeline:** Fixed spacebar scroll and faster reaction stats loading.
