@@ -343,7 +343,18 @@ function getStorage(): PerAccountLocalStorage {
 // ----- Members -----
 
 export function getMembers(): TribeMember[] {
-  return readList<TribeMember>(StorageKeys.TRIBES, []);
+  const items = readList<TribeMember>(StorageKeys.TRIBES, []);
+  // Migrate old items that have id=pubkey to composite id=pubkey_category
+  let needsWrite = false;
+  for (const item of items) {
+    const expectedId = item.category ? `${item.pubkey}_${item.category}` : item.pubkey;
+    if (item.id !== expectedId) {
+      item.id = expectedId;
+      needsWrite = true;
+    }
+  }
+  if (needsWrite) writeList(StorageKeys.TRIBES, items);
+  return items;
 }
 
 export function setMembers(items: TribeMember[]): void {
