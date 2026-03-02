@@ -1,3 +1,3 @@
-# NoorNote v0.5.4
+# NoorNote v0.5.5
 
-**Sync:** Fixed false merge conflict on first launch after v0.5.3 update.
+**Sync:** Fixed false merge conflicts appearing after update for users with existing tribes.
