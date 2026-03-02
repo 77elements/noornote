@@ -74,6 +74,10 @@ export const StorageKeys = {
 
   // Font size preference (per-account)
   FONT_SIZE_SCALE: 'noornote_font_size_scale_map',
+
+  // Deletion tracking (per-account) - prevents folder resurrection from relay garbage collection
+  TRIBES_DELETED_FOLDERS: 'noornote_tribes_deleted_folders_map',
+  BOOKMARK_DELETED_FOLDERS: 'noornote_bookmark_deleted_folders_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

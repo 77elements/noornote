@@ -367,22 +367,24 @@ export class ReactionsOrchestrator extends Orchestrator {
     const relays = this.transport.getReadRelays();
     const filters = this.buildFilters([7], noteId, articleEventId);
 
-    const sub = await this.transport.subscribe(relays, filters, {
-      onEvent: (event: NostrEvent) => {
-        // Only store one reaction per author (latest one)
-        // Accept ALL reactions per NIP-25 (any emoji or content value)
-        if (!seenAuthors.has(event.pubkey)) {
-          reactions.push(event);
-          seenAuthors.add(event.pubkey);
-        }
-      }
-    });
-
     return new Promise((resolve) => {
-      setTimeout(() => {
-        sub.close();
-        resolve(reactions);
-      }, 3000);
+      let timeout: ReturnType<typeof setTimeout>;
+      this.transport.subscribe(relays, filters, {
+        onEvent: (event: NostrEvent) => {
+          // Only store one reaction per author (latest one)
+          // Accept ALL reactions per NIP-25 (any emoji or content value)
+          if (!seenAuthors.has(event.pubkey)) {
+            reactions.push(event);
+            seenAuthors.add(event.pubkey);
+          }
+        },
+        onEose: () => {
+          clearTimeout(timeout);
+          resolve(reactions);
+        }
+      }).then(sub => {
+        timeout = setTimeout(() => { sub.close(); resolve(reactions); }, 5000);
+      });
     });
   }
 
@@ -415,27 +417,29 @@ export class ReactionsOrchestrator extends Orchestrator {
       filters.push({ kinds: [1], '#q': [noteId] });
     }
 
-    const sub = await this.transport.subscribe(relays, filters, {
-      onEvent: (event: NostrEvent) => {
-        if (event.kind === 6) {
-          if (!regularAuthors.has(event.pubkey)) {
-            regularAuthors.add(event.pubkey);
-            regular.push(event);
-          }
-        } else if (event.kind === 1) {
-          if (!quotedAuthors.has(event.pubkey)) {
-            quotedAuthors.add(event.pubkey);
-            quoted.push(event);
-          }
-        }
-      }
-    });
-
     return new Promise((resolve) => {
-      setTimeout(() => {
-        sub.close();
-        resolve({ regular, quoted });
-      }, 3000);
+      let timeout: ReturnType<typeof setTimeout>;
+      this.transport.subscribe(relays, filters, {
+        onEvent: (event: NostrEvent) => {
+          if (event.kind === 6) {
+            if (!regularAuthors.has(event.pubkey)) {
+              regularAuthors.add(event.pubkey);
+              regular.push(event);
+            }
+          } else if (event.kind === 1) {
+            if (!quotedAuthors.has(event.pubkey)) {
+              quotedAuthors.add(event.pubkey);
+              quoted.push(event);
+            }
+          }
+        },
+        onEose: () => {
+          clearTimeout(timeout);
+          resolve({ regular, quoted });
+        }
+      }).then(sub => {
+        timeout = setTimeout(() => { sub.close(); resolve({ regular, quoted }); }, 5000);
+      });
     });
   }
 
@@ -454,30 +458,32 @@ export class ReactionsOrchestrator extends Orchestrator {
     const isArticle = this.isLongFormArticle(noteId);
     const filters = this.buildFilters([1], noteId, articleEventId);
 
-    const sub = await this.transport.subscribe(relays, filters, {
-      onEvent: (event: NostrEvent) => {
-        if (!event.id || seenReplyIds.has(event.id)) return;
-
-        // Verify the event actually references our note
-        const referencesNote = isArticle
-          ? event.tags.some(tag =>
-              (tag[0] === 'a' && tag[1] === noteId) ||
-              (articleEventId && tag[0] === 'e' && tag[1] === articleEventId)
-            )
-          : event.tags.some(tag => tag[0] === 'e' && tag[1] === noteId);
-
-        if (referencesNote) {
-          replies.push(event);
-          seenReplyIds.add(event.id);
-        }
-      }
-    });
-
     return new Promise((resolve) => {
-      setTimeout(() => {
-        sub.close();
-        resolve(replies);
-      }, 3000);
+      let timeout: ReturnType<typeof setTimeout>;
+      this.transport.subscribe(relays, filters, {
+        onEvent: (event: NostrEvent) => {
+          if (!event.id || seenReplyIds.has(event.id)) return;
+
+          // Verify the event actually references our note
+          const referencesNote = isArticle
+            ? event.tags.some(tag =>
+                (tag[0] === 'a' && tag[1] === noteId) ||
+                (articleEventId && tag[0] === 'e' && tag[1] === articleEventId)
+              )
+            : event.tags.some(tag => tag[0] === 'e' && tag[1] === noteId);
+
+          if (referencesNote) {
+            replies.push(event);
+            seenReplyIds.add(event.id);
+          }
+        },
+        onEose: () => {
+          clearTimeout(timeout);
+          resolve(replies);
+        }
+      }).then(sub => {
+        timeout = setTimeout(() => { sub.close(); resolve(replies); }, 5000);
+      });
     });
   }
 
@@ -493,23 +499,25 @@ export class ReactionsOrchestrator extends Orchestrator {
     const relays = this.transport.getReadRelays();
     const filters = this.buildFilters([9735], noteId, articleEventId);
 
-    const sub = await this.transport.subscribe(relays, filters, {
-      onEvent: (event: NostrEvent) => {
-        if (!event.id || seenZapIds.has(event.id)) return;
-
-        const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
-        if (bolt11Tag?.[1]) {
-          zaps.push(event);
-          seenZapIds.add(event.id);
-        }
-      }
-    });
-
     return new Promise((resolve) => {
-      setTimeout(() => {
-        sub.close();
-        resolve(zaps);
-      }, 5000); // 5 seconds for zaps
+      let timeout: ReturnType<typeof setTimeout>;
+      this.transport.subscribe(relays, filters, {
+        onEvent: (event: NostrEvent) => {
+          if (!event.id || seenZapIds.has(event.id)) return;
+
+          const bolt11Tag = event.tags.find(tag => tag[0] === 'bolt11');
+          if (bolt11Tag?.[1]) {
+            zaps.push(event);
+            seenZapIds.add(event.id);
+          }
+        },
+        onEose: () => {
+          clearTimeout(timeout);
+          resolve(zaps);
+        }
+      }).then(sub => {
+        timeout = setTimeout(() => { sub.close(); resolve(zaps); }, 8000);
+      });
     });
   }
 

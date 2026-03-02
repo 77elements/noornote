@@ -123,14 +123,6 @@ export class ReactionService {
       return { success: false, error: 'No relays configured' };
     }
 
-    // Check if user has already liked this note
-    const alreadyLiked = await this.hasUserLiked(noteId);
-    if (alreadyLiked) {
-      this.systemLogger.info('ReactionService', `User has already liked note ${noteId.slice(0, 8)}...`);
-      ToastService.show('You already liked this note', 'info');
-      return { success: false, alreadyLiked: true };
-    }
-
     try {
       // Build tags array (NIP-25)
       const tags: string[][] = [

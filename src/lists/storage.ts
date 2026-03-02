@@ -93,3 +93,55 @@ export function mergeStringArrays(browserItems: string[], newItems: string[]): s
 export function now(): number {
   return Math.floor(Date.now() / 1000);
 }
+
+// ============================================================
+// FOLDER DELETION TRACKING
+// Prevents folder resurrection when relays garbage-collect kind:5 events
+// ============================================================
+
+type DeletedFoldersMap = Record<string, number>; // dTag → deletion timestamp (seconds)
+
+/**
+ * Record a folder deletion with timestamp.
+ * Used to filter out resurrected folders during relay fetch.
+ */
+export function recordFolderDeletion(key: StorageKey, dTag: string): void {
+  const storage = getStorage();
+  const map = storage.get<DeletedFoldersMap>(key, {});
+  map[dTag] = now();
+  storage.set(key, map);
+}
+
+/**
+ * Get all locally recorded folder deletions.
+ */
+export function getDeletedFolders(key: StorageKey): DeletedFoldersMap {
+  return getStorage().get<DeletedFoldersMap>(key, {});
+}
+
+/**
+ * Remove a deletion record (e.g. when relay has a newer folder).
+ */
+export function clearFolderDeletion(key: StorageKey, dTag: string): void {
+  const storage = getStorage();
+  const map = storage.get<DeletedFoldersMap>(key, {});
+  delete map[dTag];
+  storage.set(key, map);
+}
+
+/**
+ * Prune deletion records older than maxAgeDays (default 90 days).
+ */
+export function pruneDeletedFolders(key: StorageKey, maxAgeDays = 90): void {
+  const storage = getStorage();
+  const map = storage.get<DeletedFoldersMap>(key, {});
+  const cutoff = now() - (maxAgeDays * 86400);
+  let changed = false;
+  for (const dTag of Object.keys(map)) {
+    if ((map[dTag] ?? 0) < cutoff) {
+      delete map[dTag];
+      changed = true;
+    }
+  }
+  if (changed) storage.set(key, map);
+}

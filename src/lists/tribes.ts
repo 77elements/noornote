@@ -14,7 +14,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { StorageKeys, readList, writeList, deduplicateByPubkey, now, mergeByKey } from './storage';
+import { StorageKeys, readList, writeList, deduplicateById, now, mergeByKey, getDeletedFolders, recordFolderDeletion, pruneDeletedFolders } from './storage';
 import { setupGridDragDrop } from './drag-drop';
 import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
@@ -347,7 +347,7 @@ export function getMembers(): TribeMember[] {
 }
 
 export function setMembers(items: TribeMember[]): void {
-  writeList(StorageKeys.TRIBES, deduplicateByPubkey(items));
+  writeList(StorageKeys.TRIBES, deduplicateById(items));
   eventBus.emit('tribe:updated');
 }
 
@@ -1139,6 +1139,19 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       }
     }
 
+    // Filter against locally tracked deletions (protection against relay GC of kind:5)
+    pruneDeletedFolders(StorageKeys.TRIBES_DELETED_FOLDERS);
+    const localDeletions = getDeletedFolders(StorageKeys.TRIBES_DELETED_FOLDERS);
+    for (const [dTag, event] of eventsByDTag) {
+      if (dTag === 'tribes/') continue; // never filter root
+      const tribeName = dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
+      const localDeletionTime = localDeletions[dTag] ?? localDeletions[tribeName];
+      if (localDeletionTime && event.created_at < localDeletionTime) {
+        logger.info('Tribes', `Blocked resurrected tribe "${tribeName}" — was deleted locally`);
+        eventsByDTag.delete(dTag);
+      }
+    }
+
     if (eventsByDTag.size === 0) {
       logger.info('Tribes', 'No tribe sets after filtering');
       return { items: [], relayContentWasEmpty: true };
@@ -1206,6 +1219,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       for (const item of publicItems) {
         item.isPrivate = false;
         item.category = tribeName;
+        item.id = tribeName ? `${item.pubkey}_${tribeName}` : item.pubkey;
         categoryAssignments.set(item.pubkey, tribeName);
       }
 
@@ -1217,6 +1231,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
           for (const item of privateItems) {
             item.isPrivate = true;
             item.category = tribeName;
+            item.id = tribeName ? `${item.pubkey}_${tribeName}` : item.pubkey;
             categoryAssignments.set(item.pubkey, tribeName);
           }
         } catch (error) {
@@ -1228,10 +1243,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       logger.info('Tribes', `Fetched tribe "${tribeName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`);
     }
 
-    // Deduplicate by pubkey
+    // Deduplicate by composite id (allows same pubkey in multiple tribes)
     const itemMap = new Map<string, TribeMember>();
     for (const item of allItems) {
-      itemMap.set(item.pubkey, item);
+      itemMap.set(item.id, item);
     }
 
     return {
@@ -2016,6 +2031,13 @@ export class TribeManager {
           for (const pubkey of pubkeys) {
             removeMember(pubkey);
             this.membersCache.delete(pubkey);
+          }
+
+          // Track deletion locally BEFORE deleting (folder won't be found after)
+          const folderForTracking = getFolder(folderId);
+          const tribeName = folderForTracking?.name || '';
+          if (tribeName) {
+            recordFolderDeletion(StorageKeys.TRIBES_DELETED_FOLDERS, `tribes/${tribeName}`);
           }
 
           // Delete folder
@@ -2843,17 +2865,17 @@ export interface TribeAdapterSyncFromRelaysResult {
 }
 
 function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): TribeAdapterSyncDiff {
-  const browserMap = new Map(browserItems.map(item => [item.pubkey, item]));
-  const sourceMap = new Map(sourceItems.map(item => [item.pubkey, item]));
+  const browserMap = new Map(browserItems.map(item => [item.id, item]));
+  const sourceMap = new Map(sourceItems.map(item => [item.id, item]));
 
-  const added = sourceItems.filter(item => !browserMap.has(item.pubkey));
-  const removed = browserItems.filter(item => !sourceMap.has(item.pubkey));
+  const added = sourceItems.filter(item => !browserMap.has(item.id));
+  const removed = browserItems.filter(item => !sourceMap.has(item.id));
 
   const unchanged: TribeMember[] = [];
   const moved: MovedMember[] = [];
 
   for (const browserItem of browserItems) {
-    const sourceItem = sourceMap.get(browserItem.pubkey);
+    const sourceItem = sourceMap.get(browserItem.id);
     if (sourceItem) {
       const browserCategory = browserItem.category || '';
       const sourceCategory = sourceItem.category || '';
@@ -2869,7 +2891,7 @@ function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeM
 }
 
 function mergeTribeItems(browserItems: TribeMember[], newItems: TribeMember[]): TribeMember[] {
-  return mergeByKey(browserItems, newItems, 'pubkey');
+  return mergeByKey(browserItems, newItems, 'id');
 }
 
 // ============================================================
@@ -2878,10 +2900,10 @@ function mergeTribeItems(browserItems: TribeMember[], newItems: TribeMember[]): 
 
 export class TribeStorageAdapter {
   /**
-   * Get unique ID for tribe member (pubkey)
+   * Get unique ID for tribe member (composite: pubkey_tribeName)
    */
   getItemId(item: TribeMember): string {
-    return item.pubkey;
+    return item.id;
   }
 
   /**
@@ -2895,8 +2917,7 @@ export class TribeStorageAdapter {
    * Set browser items and emit event
    */
   setBrowserItems(items: TribeMember[]): void {
-    setMembers(items);
-    eventBus.emit('tribe:updated');
+    setMembers(items); // setMembers already emits 'tribe:updated'
   }
 
   /**
@@ -2960,9 +2981,11 @@ export class TribeStorageAdapter {
 
   // Sync helper methods (for AutoSyncService)
   async syncFromRelays(): Promise<TribeAdapterSyncFromRelaysResult> {
+    // Snapshot browser state BEFORE fetch to prevent race condition:
+    // User changes during fetch would otherwise appear as "removed from relay"
+    const browserItemsSnapshot = this.getBrowserItems();
     const fetchResult = await this.fetchFromRelays();
-    const browserItems = this.getBrowserItems();
-    const diff = calculateTribeSyncDiff(browserItems, fetchResult.items);
+    const diff = calculateTribeSyncDiff(browserItemsSnapshot, fetchResult.items);
 
     // Use full state comparison (checks ALL differences, not just added/removed/moved)
     const requiresConfirmation = hasAnyDifference(fetchResult.items, fetchResult.categories);

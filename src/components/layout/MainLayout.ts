@@ -122,10 +122,10 @@ export class MainLayout {
     window.addEventListener('keydown', (e) => {
       if (e.code === 'Space' && !this.isInputFocused()) {
         e.preventDefault();
-        const primaryContent = document.querySelector('.primary-content');
-        if (primaryContent) {
+        const scrollContainer = document.querySelector('.timeline-view__timeline') || document.querySelector('.primary-content');
+        if (scrollContainer) {
           const scrollAmount = e.shiftKey ? -window.innerHeight * 0.9 : window.innerHeight * 0.9;
-          primaryContent.scrollBy({ top: scrollAmount, behavior: 'smooth' });
+          scrollContainer.scrollBy({ top: scrollAmount, behavior: 'smooth' });
         }
       }
     });
