@@ -52,7 +52,7 @@ import { UpNavigator } from '../components/bookmarks/UpNavigator';
 import { MoveDropdown } from '../components/ui/MoveDropdown';
 
 // Shared helpers from /src/lists/
-import { readList, writeList, StorageKeys, now, deduplicateById, mergeByKey, getDeletedFolders, recordFolderDeletion, pruneDeletedFolders } from './storage';
+import { readList, writeList, StorageKeys, now, deduplicateById, mergeByKey } from './storage';
 import { setupGridDragDrop } from './drag-drop';
 import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
@@ -1318,19 +1318,6 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       logger.info('bookmarks.ts', `Filtered out ${filteredDeletedCount} deleted bookmark sets from relay fetch`);
     }
 
-    // Filter against locally tracked deletions (protection against relay GC of kind:5)
-    pruneDeletedFolders(StorageKeys.BOOKMARK_DELETED_FOLDERS);
-    const localDeletions = getDeletedFolders(StorageKeys.BOOKMARK_DELETED_FOLDERS);
-    for (const [dTag, event] of eventsByDTag) {
-      if (dTag === '') continue; // never filter root
-      const localDeletionTime = localDeletions[dTag];
-      if (localDeletionTime && event.created_at < localDeletionTime) {
-        logger.info('bookmarks.ts', `Blocked resurrected folder "${dTag}" — was deleted locally`);
-        eventsByDTag.delete(dTag);
-        filteredDeletedCount++;
-      }
-    }
-
     if (eventsByDTag.size === 0) {
       logger.info('bookmarks.ts', 'No bookmark sets after filtering deletions');
       return { items: [], relayContentWasEmpty: true };
@@ -1684,11 +1671,9 @@ export class BookmarkStorageAdapter {
 
   // Sync helper methods (for AutoSyncService)
   async syncFromRelays(): Promise<BookmarkAdapterSyncFromRelaysResult> {
-    // Snapshot browser state BEFORE fetch to prevent race condition:
-    // User changes during fetch would otherwise appear as "removed from relay"
-    const browserItemsSnapshot = this.getBrowserItems();
     const fetchResult = await this.fetchFromRelays();
-    const diff = calculateBookmarkSyncDiff(browserItemsSnapshot, fetchResult.items);
+    const browserItems = this.getBrowserItems();
+    const diff = calculateBookmarkSyncDiff(browserItems, fetchResult.items);
 
     return {
       requiresConfirmation: hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories),
@@ -2979,11 +2964,6 @@ export class BookmarkManager {
     try {
       const folder = this.folderService.getFolder(folderId);
       const folderName = folder?.name || '';
-
-      // Track deletion locally BEFORE deleting to prevent resurrection from relays
-      if (folderName) {
-        recordFolderDeletion(StorageKeys.BOOKMARK_DELETED_FOLDERS, folderName);
-      }
 
       this.profileMountsService.handleFolderDelete(folderName);
 

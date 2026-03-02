@@ -92,12 +92,8 @@ export class AutoSyncService {
   private startupSyncTimeout: ReturnType<typeof setTimeout> | null = null;
   private readonly STARTUP_SYNC_DELAY = 10 * 1000; // 10 seconds
 
-  // Flag to prevent concurrent syncFromRelays for same list
+  // Flag to prevent sync loops
   private isSyncing: Set<ListType> = new Set();
-
-  // Track when a local relay push is pending or in-flight
-  // Prevents syncFromRelays from showing modal for local changes
-  private pushInProgress: Set<ListType> = new Set();
 
   private constructor() {
     this.eventBus = EventBus.getInstance();
@@ -259,24 +255,26 @@ export class AutoSyncService {
   private async handleListChange(listType: ListType): Promise<void> {
     if (!isEasyMode()) return;
     if (!this.authService.getCurrentUser()) return;
+    if (this.isSyncing.has(listType)) return;
 
-    // NOTE: Do NOT guard with isSyncing here!
-    // isSyncing is used by syncFromRelays. If we block here during syncFromRelays,
-    // local changes would never get published to relays (the bug that caused
-    // the merge modal to appear for local changes).
+    try {
+      this.isSyncing.add(listType);
 
-    // 1. Save to file immediately (Desktop only - Web/Phone has no file system)
-    const _p = PlatformService.getInstance();
-    if (_p.isTauri && !_p.isAndroid) {
-      await this.saveToFile(listType);
-    }
+      // 1. Save to file immediately (Desktop only - Web/Phone has no file system)
+      const _p = PlatformService.getInstance();
+      if (_p.isTauri && !_p.isAndroid) {
+        await this.saveToFile(listType);
+      }
 
-    // 2. Sync to relays
-    // For mutes: sync immediately (no debounce) to prevent unmute bug
-    if (listType === 'mutes') {
-      await this.syncToRelays(listType);
-    } else {
-      this.scheduleRelaySync(listType);
+      // 2. Sync to relays
+      // For mutes: sync immediately (no debounce) to prevent unmute bug
+      if (listType === 'mutes') {
+        await this.syncToRelays(listType);
+      } else {
+        this.scheduleRelaySync(listType);
+      }
+    } finally {
+      this.isSyncing.delete(listType);
     }
   }
 
@@ -315,9 +313,8 @@ export class AutoSyncService {
     }
 
     const timer = setTimeout(async () => {
-      // Delete timer BEFORE starting push so syncFromRelays checks pushInProgress instead
-      this.relaySyncTimers.delete(listType);
       await this.syncToRelays(listType);
+      this.relaySyncTimers.delete(listType);
     }, this.RELAY_SYNC_DELAY);
 
     this.relaySyncTimers.set(listType, timer);
@@ -335,7 +332,6 @@ export class AutoSyncService {
     }
 
     this.systemLogger.info('ListAutoSync', 'Lists in Easy Mode. AutoSync triggered to relays.');
-    this.pushInProgress.add(listType);
 
     try {
       switch (listType) {
@@ -355,8 +351,6 @@ export class AutoSyncService {
       this.systemLogger.info('ListAutoSync', `${listType}: synced to relays`);
     } catch (error) {
       this.systemLogger.error('ListAutoSync', `${listType}: relay sync failed: ${error}`);
-    } finally {
-      this.pushInProgress.delete(listType);
     }
   }
 
@@ -368,7 +362,6 @@ export class AutoSyncService {
       clearTimeout(timer);
     }
     this.relaySyncTimers.clear();
-    this.pushInProgress.clear();
   }
 
   /**
@@ -421,13 +414,6 @@ export class AutoSyncService {
   private async syncFromRelays(listType: ListType): Promise<void> {
     if (!this.connectivityService.isOnline()) return;
     if (this.isSyncing.has(listType)) return;
-
-    // Skip if a local change is pending relay push (debounce timer) or push is in-flight.
-    // This prevents the modal from appearing for changes the user just made locally.
-    if (this.relaySyncTimers.has(listType) || this.pushInProgress.has(listType)) {
-      this.systemLogger.info('ListAutoSync', `${listType}: skipping periodic sync - local relay push pending/in-progress`);
-      return;
-    }
 
     try {
       this.isSyncing.add(listType);
@@ -607,12 +593,11 @@ export class AutoSyncService {
       getDisplayName: async (item: unknown) => this.getDisplayName(listType, item),
       renderItemHtml: async (item: unknown) => this.renderItemHtml(listType, item),
       onKeep: async () => {
-        // Keep local state + add new items from relay, then push merged state to relays
+        // Keep local state as-is, only add new items from relay (no push back)
         this.applyMerge(listType, result.relayItems);
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
         }
-        await this.syncToRelays(listType);
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
       },
       onMerge: async () => {

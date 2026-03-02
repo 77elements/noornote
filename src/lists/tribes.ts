@@ -14,7 +14,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { StorageKeys, readList, writeList, deduplicateById, now, mergeByKey, getDeletedFolders, recordFolderDeletion, pruneDeletedFolders } from './storage';
+import { StorageKeys, readList, writeList, deduplicateByPubkey, now, mergeByKey } from './storage';
 import { setupGridDragDrop } from './drag-drop';
 import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
@@ -342,91 +342,12 @@ function getStorage(): PerAccountLocalStorage {
 
 // ----- Members -----
 
-let compositeIdMigrationDone = false;
-
-/**
- * One-time migration: id=pubkey → composite id=pubkey_category
- * Fixes items, assignments, and rootOrder references.
- * Covers: fresh migration (pre-composite), and v0.5.3→v0.5.4 (items migrated, assignments not).
- */
-function migrateToCompositeIds(items: TribeMember[]): void {
-  const idChanges = new Map<string, string>();
-
-  // Build folder lookup for items missing category
-  const assignments = getStorage().get<MemberAssignment[]>(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS, []);
-  const folders = getStorage().get<TribeFolder[]>(StorageKeys.TRIBE_FOLDERS, []);
-  const folderIdToName = new Map(folders.map(f => [f.id, f.name]));
-  const memberIdToFolderName = new Map<string, string>();
-  for (const a of assignments) {
-    const folderName = folderIdToName.get(a.folderId);
-    if (folderName) memberIdToFolderName.set(a.memberId, folderName);
-  }
-
-  // Fix item IDs and fill missing categories
-  for (const item of items) {
-    if (!item.category) {
-      const folderName = memberIdToFolderName.get(item.id);
-      if (folderName) item.category = folderName;
-    }
-    const expectedId = item.category ? `${item.pubkey}_${item.category}` : item.pubkey;
-    if (item.id !== expectedId) {
-      idChanges.set(item.id, expectedId);
-      item.id = expectedId;
-    }
-  }
-
-  if (idChanges.size > 0) writeList(StorageKeys.TRIBES, items);
-
-  // Fix assignments: both direct idChanges AND orphaned references (v0.5.3 case)
-  const validIds = new Set(items.map(i => i.id));
-  const pubkeyToId = new Map(items.map(i => [i.pubkey, i.id]));
-
-  let assignmentsChanged = false;
-  for (const a of assignments) {
-    const newId = idChanges.get(a.memberId);
-    if (newId) { a.memberId = newId; assignmentsChanged = true; continue; }
-    if (!validIds.has(a.memberId)) {
-      const pubkey = a.memberId.length === 64 ? a.memberId : a.memberId.substring(0, 64);
-      const correctId = pubkeyToId.get(pubkey);
-      if (correctId && correctId !== a.memberId) {
-        a.memberId = correctId;
-        assignmentsChanged = true;
-      }
-    }
-  }
-  if (assignmentsChanged) getStorage().set(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS, assignments);
-
-  // Fix rootOrder
-  const rootOrder = getStorage().get<RootOrderItem[]>(StorageKeys.TRIBE_ROOT_ORDER, []);
-  let rootOrderChanged = false;
-  for (const entry of rootOrder) {
-    if (entry.type === 'member') {
-      const newId = idChanges.get(entry.id);
-      if (newId) { entry.id = newId; rootOrderChanged = true; continue; }
-      if (!validIds.has(entry.id)) {
-        const pubkey = entry.id.length === 64 ? entry.id : entry.id.substring(0, 64);
-        const correctId = pubkeyToId.get(pubkey);
-        if (correctId && correctId !== entry.id) {
-          entry.id = correctId;
-          rootOrderChanged = true;
-        }
-      }
-    }
-  }
-  if (rootOrderChanged) getStorage().set(StorageKeys.TRIBE_ROOT_ORDER, rootOrder);
-}
-
 export function getMembers(): TribeMember[] {
-  const items = readList<TribeMember>(StorageKeys.TRIBES, []);
-  if (!compositeIdMigrationDone) {
-    migrateToCompositeIds(items);
-    compositeIdMigrationDone = true;
-  }
-  return items;
+  return readList<TribeMember>(StorageKeys.TRIBES, []);
 }
 
 export function setMembers(items: TribeMember[]): void {
-  writeList(StorageKeys.TRIBES, deduplicateById(items));
+  writeList(StorageKeys.TRIBES, deduplicateByPubkey(items));
   eventBus.emit('tribe:updated');
 }
 
@@ -1218,19 +1139,6 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       }
     }
 
-    // Filter against locally tracked deletions (protection against relay GC of kind:5)
-    pruneDeletedFolders(StorageKeys.TRIBES_DELETED_FOLDERS);
-    const localDeletions = getDeletedFolders(StorageKeys.TRIBES_DELETED_FOLDERS);
-    for (const [dTag, event] of eventsByDTag) {
-      if (dTag === 'tribes/') continue; // never filter root
-      const tribeName = dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
-      const localDeletionTime = localDeletions[dTag] ?? localDeletions[tribeName];
-      if (localDeletionTime && event.created_at < localDeletionTime) {
-        logger.info('Tribes', `Blocked resurrected tribe "${tribeName}" — was deleted locally`);
-        eventsByDTag.delete(dTag);
-      }
-    }
-
     if (eventsByDTag.size === 0) {
       logger.info('Tribes', 'No tribe sets after filtering');
       return { items: [], relayContentWasEmpty: true };
@@ -1298,7 +1206,6 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       for (const item of publicItems) {
         item.isPrivate = false;
         item.category = tribeName;
-        item.id = tribeName ? `${item.pubkey}_${tribeName}` : item.pubkey;
         categoryAssignments.set(item.pubkey, tribeName);
       }
 
@@ -1310,7 +1217,6 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
           for (const item of privateItems) {
             item.isPrivate = true;
             item.category = tribeName;
-            item.id = tribeName ? `${item.pubkey}_${tribeName}` : item.pubkey;
             categoryAssignments.set(item.pubkey, tribeName);
           }
         } catch (error) {
@@ -1322,10 +1228,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       logger.info('Tribes', `Fetched tribe "${tribeName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`);
     }
 
-    // Deduplicate by composite id (allows same pubkey in multiple tribes)
+    // Deduplicate by pubkey
     const itemMap = new Map<string, TribeMember>();
     for (const item of allItems) {
-      itemMap.set(item.id, item);
+      itemMap.set(item.pubkey, item);
     }
 
     return {
@@ -2110,13 +2016,6 @@ export class TribeManager {
           for (const pubkey of pubkeys) {
             removeMember(pubkey);
             this.membersCache.delete(pubkey);
-          }
-
-          // Track deletion locally BEFORE deleting (folder won't be found after)
-          const folderForTracking = getFolder(folderId);
-          const tribeName = folderForTracking?.name || '';
-          if (tribeName) {
-            recordFolderDeletion(StorageKeys.TRIBES_DELETED_FOLDERS, `tribes/${tribeName}`);
           }
 
           // Delete folder
@@ -2944,17 +2843,17 @@ export interface TribeAdapterSyncFromRelaysResult {
 }
 
 function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): TribeAdapterSyncDiff {
-  const browserMap = new Map(browserItems.map(item => [item.id, item]));
-  const sourceMap = new Map(sourceItems.map(item => [item.id, item]));
+  const browserMap = new Map(browserItems.map(item => [item.pubkey, item]));
+  const sourceMap = new Map(sourceItems.map(item => [item.pubkey, item]));
 
-  const added = sourceItems.filter(item => !browserMap.has(item.id));
-  const removed = browserItems.filter(item => !sourceMap.has(item.id));
+  const added = sourceItems.filter(item => !browserMap.has(item.pubkey));
+  const removed = browserItems.filter(item => !sourceMap.has(item.pubkey));
 
   const unchanged: TribeMember[] = [];
   const moved: MovedMember[] = [];
 
   for (const browserItem of browserItems) {
-    const sourceItem = sourceMap.get(browserItem.id);
+    const sourceItem = sourceMap.get(browserItem.pubkey);
     if (sourceItem) {
       const browserCategory = browserItem.category || '';
       const sourceCategory = sourceItem.category || '';
@@ -2970,7 +2869,7 @@ function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeM
 }
 
 function mergeTribeItems(browserItems: TribeMember[], newItems: TribeMember[]): TribeMember[] {
-  return mergeByKey(browserItems, newItems, 'id');
+  return mergeByKey(browserItems, newItems, 'pubkey');
 }
 
 // ============================================================
@@ -2979,10 +2878,10 @@ function mergeTribeItems(browserItems: TribeMember[], newItems: TribeMember[]): 
 
 export class TribeStorageAdapter {
   /**
-   * Get unique ID for tribe member (composite: pubkey_tribeName)
+   * Get unique ID for tribe member (pubkey)
    */
   getItemId(item: TribeMember): string {
-    return item.id;
+    return item.pubkey;
   }
 
   /**
@@ -2996,7 +2895,8 @@ export class TribeStorageAdapter {
    * Set browser items and emit event
    */
   setBrowserItems(items: TribeMember[]): void {
-    setMembers(items); // setMembers already emits 'tribe:updated'
+    setMembers(items);
+    eventBus.emit('tribe:updated');
   }
 
   /**
@@ -3060,11 +2960,9 @@ export class TribeStorageAdapter {
 
   // Sync helper methods (for AutoSyncService)
   async syncFromRelays(): Promise<TribeAdapterSyncFromRelaysResult> {
-    // Snapshot browser state BEFORE fetch to prevent race condition:
-    // User changes during fetch would otherwise appear as "removed from relay"
-    const browserItemsSnapshot = this.getBrowserItems();
     const fetchResult = await this.fetchFromRelays();
-    const diff = calculateTribeSyncDiff(browserItemsSnapshot, fetchResult.items);
+    const browserItems = this.getBrowserItems();
+    const diff = calculateTribeSyncDiff(browserItems, fetchResult.items);
 
     // Use full state comparison (checks ALL differences, not just added/removed/moved)
     const requiresConfirmation = hasAnyDifference(fetchResult.items, fetchResult.categories);
