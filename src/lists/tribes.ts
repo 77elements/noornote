@@ -1452,8 +1452,9 @@ export class TribeManager {
   }
 
   private async syncFromRelays(): Promise<SyncFromRelaysResult> {
-    const fetchResult = await this.adapter.fetchFromRelays() as { items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[] };
+    // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.adapter.getBrowserItems();
+    const fetchResult = await this.adapter.fetchFromRelays() as { items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[] };
     const diff = this.calculateDiff(browserItems, fetchResult.items);
 
     // Use full state comparison (checks ALL differences, not just added/removed/moved)
@@ -2960,8 +2961,9 @@ export class TribeStorageAdapter {
 
   // Sync helper methods (for AutoSyncService)
   async syncFromRelays(): Promise<TribeAdapterSyncFromRelaysResult> {
-    const fetchResult = await this.fetchFromRelays();
+    // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
+    const fetchResult = await this.fetchFromRelays();
     const diff = calculateTribeSyncDiff(browserItems, fetchResult.items);
 
     // Use full state comparison (checks ALL differences, not just added/removed/moved)

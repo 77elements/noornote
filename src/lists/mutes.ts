@@ -861,8 +861,9 @@ export class MuteStorageAdapter {
 
   // Sync helper methods
   async syncFromRelays(): Promise<SyncFromRelaysResult> {
-    const fetchResult = await this.fetchFromRelays();
+    // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
+    const fetchResult = await this.fetchFromRelays();
     const diff = calculateSyncDiff(browserItems, fetchResult.items);
 
     // Use full state comparison (now includes threads)
@@ -1221,6 +1222,12 @@ export class MuteListView extends View {
           onKeep: async () => {
             this.adapter.applySyncFromRelays('merge', result.relayItems);
             ToastService.show(`Merged ${result.diff.added.length} new mutes (kept ${result.diff.removed.length} local mutes)`, 'success');
+            await this.loadMuteList();
+          },
+          onMerge: async () => {
+            this.adapter.applySyncFromRelays('merge', result.relayItems);
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show(`Merged ${result.diff.added.length} new mutes and synced to relays`, 'success');
             await this.loadMuteList();
           },
           onDelete: async () => {

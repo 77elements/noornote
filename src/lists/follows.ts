@@ -660,11 +660,12 @@ export class FollowStorageAdapter {
 
   // Sync helper methods (for AutoSyncService)
   async syncFromRelays(): Promise<SyncFromRelaysResult> {
+    // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
+    const browserItems = this.getBrowserItems();
     const fetchResult = await this.fetchFromRelays();
     const relayItems = fetchResult.items;
     const relayContentWasEmpty = fetchResult.relayContentWasEmpty;
     const decryptionFailed = fetchResult.decryptionFailed || false;
-    const browserItems = this.getBrowserItems();
 
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
     const diff = calculateFollowSyncDiff(browserItems, relayItems, preservePrivateItems);
@@ -1287,11 +1288,12 @@ export class FollowListManager {
    * Sync from relays - Phase 1: Fetch and compare
    */
   private async syncFromRelays(): Promise<SyncFromRelaysResult> {
+    // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
+    const browserItems = this.adapter.getBrowserItems();
     const fetchResult = await this.adapter.fetchFromRelays();
     const relayItems = fetchResult.items;
     const relayContentWasEmpty = fetchResult.relayContentWasEmpty;
     const decryptionFailed = fetchResult.decryptionFailed || false;
-    const browserItems = this.adapter.getBrowserItems();
 
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
     const diff = this.calculateDiff(browserItems, relayItems, preservePrivateItems);
@@ -1376,6 +1378,12 @@ export class FollowListManager {
           onKeep: async () => {
             this.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
             ToastService.show(`Merged ${result.diff.added.length} new follows (kept ${result.diff.removed.length} local follows)`, 'success');
+            await this.renderListTab(container);
+          },
+          onMerge: async () => {
+            this.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show(`Merged ${result.diff.added.length} new follows and synced to relays`, 'success');
             await this.renderListTab(container);
           },
           onDelete: async () => {

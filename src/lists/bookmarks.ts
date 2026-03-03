@@ -1671,8 +1671,9 @@ export class BookmarkStorageAdapter {
 
   // Sync helper methods (for AutoSyncService)
   async syncFromRelays(): Promise<BookmarkAdapterSyncFromRelaysResult> {
-    const fetchResult = await this.fetchFromRelays();
+    // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
+    const fetchResult = await this.fetchFromRelays();
     const diff = calculateBookmarkSyncDiff(browserItems, fetchResult.items);
 
     return {
@@ -3227,6 +3228,13 @@ export class BookmarkManager {
           onKeep: async () => {
             mergeFromRelays();
             ToastService.show('Merged bookmarks from relays', 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          },
+          onMerge: async () => {
+            mergeFromRelays();
+            await this.syncToRelays();
+            ToastService.show('Merged bookmarks and synced to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },

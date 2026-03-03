@@ -313,8 +313,9 @@ export class AutoSyncService {
     }
 
     const timer = setTimeout(async () => {
-      await this.syncToRelays(listType);
       this.relaySyncTimers.delete(listType);
+      if (this.isSyncing.has(listType)) return; // Don't push while a sync is running
+      await this.syncToRelays(listType);
     }, this.RELAY_SYNC_DELAY);
 
     this.relaySyncTimers.set(listType, timer);
@@ -430,6 +431,13 @@ export class AutoSyncService {
       // Nothing changed - skip
       const movedCount = result.diff.moved?.length || 0;
       if (result.diff.added.length === 0 && result.diff.removed.length === 0 && movedCount === 0) {
+        return;
+      }
+
+      // Safety: if relay returned empty but we have local items to "remove",
+      // this is almost certainly a fetch failure — skip to prevent data loss
+      if (result.relayContentWasEmpty && result.diff.removed.length > 0) {
+        this.systemLogger.warn('ListAutoSync', `${listType}: relay returned empty, skipping sync to prevent data loss (${result.diff.removed.length} items would be removed)`);
         return;
       }
 
@@ -593,11 +601,13 @@ export class AutoSyncService {
       getDisplayName: async (item: unknown) => this.getDisplayName(listType, item),
       renderItemHtml: async (item: unknown) => this.renderItemHtml(listType, item),
       onKeep: async () => {
-        // Keep local state as-is, only add new items from relay (no push back)
+        // Keep local state + add new items from relay, then push merged state to relays
         this.applyMerge(listType, result.relayItems);
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
         }
+        // Push merged state back so the modal doesn't reappear on next periodic sync
+        await this.syncToRelays(listType);
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
       },
       onMerge: async () => {
