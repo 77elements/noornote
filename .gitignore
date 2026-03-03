@@ -8,6 +8,7 @@ yarn-error.log*
 dist/
 build/
 apk/
+public/download/noornote-release.apk
 
 # Rust build artifacts
 src-tauri/target/
