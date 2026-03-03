@@ -61,6 +61,7 @@ temp/
 screenshots/
 docs/
 CLAUDE.md
+protected-files.zip
 
 # Optional relay (local data only)
 relay/strfry-db/
