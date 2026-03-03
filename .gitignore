@@ -63,6 +63,9 @@ docs/
 CLAUDE.md
 protected-files.zip
 
+# Build artifacts (APK)
+public/download/noornote-release.apk
+
 # Optional relay (local data only)
 relay/strfry-db/
 relay/*.log
