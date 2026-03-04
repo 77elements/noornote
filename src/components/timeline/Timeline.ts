@@ -52,6 +52,7 @@ export class Timeline extends View {
   private muteUpdatedSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
   private pullRefreshSubscriptionId?: string;
+  private nsfwPreferenceHandler?: () => void;
 
   constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
@@ -133,10 +134,10 @@ export class Timeline extends View {
    * Setup listener for NSFW preference changes
    */
   private setupNSFWPreferenceListener(): void {
-    window.addEventListener('nsfw-preference-changed', () => {
-      // Re-render timeline with new blur settings
+    this.nsfwPreferenceHandler = () => {
       this.renderer.renderEvents();
-    });
+    };
+    window.addEventListener('nsfw-preference-changed', this.nsfwPreferenceHandler);
   }
 
   /**
@@ -619,6 +620,9 @@ export class Timeline extends View {
     }
     if (this.pullRefreshSubscriptionId) {
       this.eventBus.off(this.pullRefreshSubscriptionId);
+    }
+    if (this.nsfwPreferenceHandler) {
+      window.removeEventListener('nsfw-preference-changed', this.nsfwPreferenceHandler);
     }
     this.clearLookForNotesTimeout();
     this.lifecycleManager.destroy();
