@@ -31,8 +31,8 @@ if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 fi
 
 # Check that release notes files exist
-NOTES_DETAILED="docs/release-notes-${NEW_VERSION}.md"
-NOTES_COMPACT="docs/release-notes-${NEW_VERSION}-compact.md"
+NOTES_DETAILED="docs/release-notes/release-notes-${NEW_VERSION}.md"
+NOTES_COMPACT="docs/release-notes/release-notes-${NEW_VERSION}-compact.md"
 
 if [[ ! -f "$NOTES_DETAILED" ]]; then
     echo -e "${RED}Error: Detailed release notes not found at ${NOTES_DETAILED}${NC}"
