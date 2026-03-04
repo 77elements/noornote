@@ -41,7 +41,9 @@ const GLOBAL_CATEGORIES = [
   'NWCService',
   'BookmarkOrchestrator',
   'tribes.ts',
-  'ListAutoSync'
+  'ListAutoSync',
+  'DeletionService',
+  'BroadcastDelete'
 ];
 
 // View-specific categories mapping (Router viewClass → allowed categories)

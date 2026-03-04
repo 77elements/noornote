@@ -9,7 +9,7 @@
  * Architecture:
  * - Replaces InteractionStatsService
  * - Uses NostrTransport for all subscriptions
- * - Cache: 5min for Timeline, live for SNV
+ * - Cache: 5min TTL, max 200 entries, periodic eviction sweep
  * - Fetches reactions, reposts, replies, zaps in parallel
  */
 
@@ -46,16 +46,22 @@ export class ReactionsOrchestrator extends Orchestrator {
   private transport: NostrTransport;
   private systemLogger: SystemLogger;
 
-  /** Single source of truth: Detailed stats cache (5min TTL) */
+  /** Single source of truth: Detailed stats cache (5min TTL, max 200 entries) */
   private detailedStatsCache: Map<string, DetailedStats> = new Map();
   private fetchingDetailedStats: Map<string, Promise<DetailedStats>> = new Map();
 
   private cacheDuration = 5 * 60 * 1000; // 5 minutes
+  private readonly MAX_STATS_CACHE_SIZE = 200;
+  private readonly MAX_AUX_CACHE_SIZE = 500;
+
+  /** Eviction sweep interval */
+  private evictionTimer: number | null = null;
+  private static readonly EVICTION_INTERVAL = 60_000; // 60 seconds
 
   /** Fetch counter for logging (first = original note, others = replies) */
   private fetchCounter = 0;
 
-  /** Author pubkey cache for Hollywood-style logging */
+  /** Author pubkey cache for Hollywood-style logging (bounded) */
   private authorPubkeyCache: Map<string, string> = new Map();
 
   /**
@@ -74,6 +80,9 @@ export class ReactionsOrchestrator extends Orchestrator {
     this.transport = NostrTransport.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.systemLogger.info('ReactionsOrchestrator', 'Reactions Orchestrator at your service');
+
+    // Start periodic eviction sweep
+    this.evictionTimer = window.setInterval(() => this.evictExpiredEntries(), ReactionsOrchestrator.EVICTION_INTERVAL);
   }
 
   public static getInstance(): ReactionsOrchestrator {
@@ -81,6 +90,48 @@ export class ReactionsOrchestrator extends Orchestrator {
       ReactionsOrchestrator.instance = new ReactionsOrchestrator();
     }
     return ReactionsOrchestrator.instance;
+  }
+
+  /**
+   * Evict expired cache entries and enforce size limits
+   */
+  private evictExpiredEntries(): void {
+    const now = Date.now();
+
+    // Evict expired detailedStatsCache entries
+    for (const [noteId, stats] of this.detailedStatsCache) {
+      if (now - stats.lastUpdated > this.cacheDuration) {
+        this.detailedStatsCache.delete(noteId);
+      }
+    }
+
+    // Enforce max size on detailedStatsCache (evict oldest)
+    if (this.detailedStatsCache.size > this.MAX_STATS_CACHE_SIZE) {
+      const entries = [...this.detailedStatsCache.entries()]
+        .sort((a, b) => a[1].lastUpdated - b[1].lastUpdated);
+      const toRemove = entries.length - this.MAX_STATS_CACHE_SIZE;
+      for (let i = 0; i < toRemove; i++) {
+        this.detailedStatsCache.delete(entries[i]![0]);
+      }
+    }
+
+    // Enforce max size on auxiliary caches
+    this.trimMap(this.authorPubkeyCache, this.MAX_AUX_CACHE_SIZE);
+    this.trimMap(this.articleEventIdCache, this.MAX_AUX_CACHE_SIZE);
+  }
+
+  /**
+   * Trim a Map to maxSize by removing oldest entries (first inserted)
+   */
+  private trimMap(map: Map<string, string>, maxSize: number): void {
+    if (map.size <= maxSize) return;
+    const iterator = map.keys();
+    let toRemove = map.size - maxSize;
+    while (toRemove > 0) {
+      const key = iterator.next().value;
+      if (key) map.delete(key);
+      toRemove--;
+    }
   }
 
   /**
@@ -721,6 +772,12 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   public override destroy(): void {
+    // Stop eviction timer
+    if (this.evictionTimer) {
+      clearInterval(this.evictionTimer);
+      this.evictionTimer = null;
+    }
+
     // Stop all polling intervals before cleanup
     this.reactionIntervals.forEach((intervalId, noteId) => {
       clearInterval(intervalId);
@@ -731,6 +788,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     this.detailedStatsCache.clear();
     this.fetchingDetailedStats.clear();
+    this.authorPubkeyCache.clear();
     this.articleEventIdCache.clear();
     super.destroy();
     this.systemLogger.info('ReactionsOrchestrator', 'Destroyed');

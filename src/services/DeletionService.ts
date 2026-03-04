@@ -17,6 +17,7 @@ import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { ErrorService } from './ErrorService';
+import { BroadcastDeleteService } from './BroadcastDeleteService';
 import { ToastService } from './ToastService';
 
 export interface DeletionOptions {
@@ -131,6 +132,9 @@ export class DeletionService {
         'DeletionService',
         `Deletion request published for ${totalItems} item(s) to ${targetRelays.length} relay(s)`
       );
+
+      // Broadcast deletion to 1000+ relays in background (fire-and-forget)
+      BroadcastDeleteService.getInstance().broadcastInBackground(signedEvent);
 
       // Show success toast to user
       ToastService.show('Deletion request sent successfully', 'success');

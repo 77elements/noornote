@@ -132,7 +132,7 @@ export class TimelineEventHandler {
       }
 
       // Update polling timestamp to latest event
-      const latestTimestamp = Math.max(...newEvents.map(e => e.created_at));
+      const latestTimestamp = newEvents.reduce((max, e) => e.created_at > max ? e.created_at : max, 0);
       this.feedOrchestrator.resetPollingTimestamp(latestTimestamp);
     } else {
       // Fallback: Full reload if no cached events

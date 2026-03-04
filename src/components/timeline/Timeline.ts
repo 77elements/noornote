@@ -19,6 +19,7 @@ import { TimelineEventHandler } from './timeline-ui/TimelineEventHandler';
 import { TimelineRenderer } from './timeline-ui/TimelineRenderer';
 import { ISLStatsUpdater } from './timeline-features/ISLStatsUpdater';
 import { ScrollPositionManager } from './timeline-features/ScrollPositionManager';
+import { NoteUI } from '../ui/NoteUI';
 import { EventBus } from '../../services/EventBus';
 import { CacheManager } from '../../services/CacheManager';
 
@@ -52,6 +53,7 @@ export class Timeline extends View {
   private muteUpdatedSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
   private pullRefreshSubscriptionId?: string;
+  private nsfwPreferenceHandler?: () => void;
 
   constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
@@ -133,10 +135,10 @@ export class Timeline extends View {
    * Setup listener for NSFW preference changes
    */
   private setupNSFWPreferenceListener(): void {
-    window.addEventListener('nsfw-preference-changed', () => {
-      // Re-render timeline with new blur settings
+    this.nsfwPreferenceHandler = () => {
       this.renderer.renderEvents();
-    });
+    };
+    window.addEventListener('nsfw-preference-changed', this.nsfwPreferenceHandler);
   }
 
   /**
@@ -157,8 +159,12 @@ export class Timeline extends View {
       // Remove note from state
       this.stateManager.removeEvent(data.eventId);
 
-      // Re-render timeline without the deleted note
-      this.renderer.renderEvents();
+      // Remove single note-card from DOM (no full re-render)
+      const card = this.element.querySelector(`.note-card[data-event-id="${data.eventId}"]`);
+      if (card) {
+        NoteUI.cleanup(data.eventId);
+        card.remove();
+      }
     });
   }
 
@@ -619,6 +625,9 @@ export class Timeline extends View {
     }
     if (this.pullRefreshSubscriptionId) {
       this.eventBus.off(this.pullRefreshSubscriptionId);
+    }
+    if (this.nsfwPreferenceHandler) {
+      window.removeEventListener('nsfw-preference-changed', this.nsfwPreferenceHandler);
     }
     this.clearLookForNotesTimeout();
     this.lifecycleManager.destroy();
