@@ -96,8 +96,8 @@ export class TimelineStateManager {
    * Get newest event timestamp
    */
   getNewestTimestamp(): number {
-    if (this.events.length === 0) return 0;
-    return Math.max(...this.events.map(e => e.created_at));
+    // events is always sorted descending (newest first)
+    return this.events[0]?.created_at ?? 0;
   }
 
   /**
