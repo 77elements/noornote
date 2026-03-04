@@ -277,7 +277,11 @@ export class NoteStructureBuilder {
    * Cleanup stored instances
    */
   static cleanup(noteId: string): void {
-    noteHeaderInstances.delete(noteId);
+    const header = noteHeaderInstances.get(noteId);
+    if (header) {
+      header.destroy();
+      noteHeaderInstances.delete(noteId);
+    }
 
     const isl = islInstances.get(noteId);
     if (isl) {
