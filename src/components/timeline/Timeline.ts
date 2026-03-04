@@ -19,6 +19,7 @@ import { TimelineEventHandler } from './timeline-ui/TimelineEventHandler';
 import { TimelineRenderer } from './timeline-ui/TimelineRenderer';
 import { ISLStatsUpdater } from './timeline-features/ISLStatsUpdater';
 import { ScrollPositionManager } from './timeline-features/ScrollPositionManager';
+import { NoteUI } from '../ui/NoteUI';
 import { EventBus } from '../../services/EventBus';
 import { CacheManager } from '../../services/CacheManager';
 
@@ -158,8 +159,12 @@ export class Timeline extends View {
       // Remove note from state
       this.stateManager.removeEvent(data.eventId);
 
-      // Re-render timeline without the deleted note
-      this.renderer.renderEvents();
+      // Remove single note-card from DOM (no full re-render)
+      const card = this.element.querySelector(`.note-card[data-event-id="${data.eventId}"]`);
+      if (card) {
+        NoteUI.cleanup(data.eventId);
+        card.remove();
+      }
     });
   }
 
