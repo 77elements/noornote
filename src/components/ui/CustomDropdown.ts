@@ -206,10 +206,45 @@ export class CustomDropdown {
   }
 
   /**
-   * Set value programmatically
+   * Set value programmatically (does NOT trigger onChange callback)
    */
   public setValue(value: string): void {
-    this.selectOption(value);
+    const selectedOption = this.options.find(opt => opt.value === value);
+    if (!selectedOption) return;
+
+    this.selectedValue = value;
+
+    // Update label
+    const label = this.element.querySelector('.custom-dropdown__label');
+    if (label) {
+      label.textContent = selectedOption.label;
+    }
+
+    // Update selected state
+    const items = this.element.querySelectorAll('.custom-dropdown__item');
+    items.forEach(item => {
+      const itemValue = (item as HTMLElement).dataset.value;
+      if (itemValue === value) {
+        item.classList.add('custom-dropdown__item--selected');
+        item.setAttribute('aria-selected', 'true');
+      } else {
+        item.classList.remove('custom-dropdown__item--selected');
+        item.setAttribute('aria-selected', 'false');
+      }
+    });
+
+    this.close();
+  }
+
+  /**
+   * Set a custom display label without changing the selected value
+   * Used for showing date ranges like "Mar 1 – Mar 3" while value stays "time-range"
+   */
+  public setCustomLabel(text: string): void {
+    const label = this.element.querySelector('.custom-dropdown__label');
+    if (label) {
+      label.textContent = text;
+    }
   }
 
   /**

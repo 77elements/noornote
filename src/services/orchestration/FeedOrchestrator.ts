@@ -28,6 +28,7 @@ export interface FeedLoadRequest {
   includeReplies: boolean;
   timeWindowHours?: number;
   until?: number;
+  since?: number; // Optional: Explicit lower bound (Unix timestamp) for time range mode
   specificRelay?: string; // Optional: Only fetch from this relay (for relay-filtered timeline)
   recursionDepth?: number; // Track recursion depth to prevent infinite loops
   exemptFromMuteFilter?: string; // Optional: Pubkey to exempt from mute filtering (for ProfileView)
@@ -133,33 +134,51 @@ export class FeedOrchestrator extends Orchestrator {
    * Load initial timeline feed (Cache-First Pattern)
    */
   public async loadInitialFeed(request: FeedLoadRequest): Promise<FeedLoadResult> {
-    const { followingPubkeys, includeReplies, timeWindowHours = 1, specificRelay, exemptFromMuteFilter } = request;
+    const { followingPubkeys, includeReplies, timeWindowHours = 1, specificRelay, exemptFromMuteFilter, since: explicitSince, until: explicitUntil } = request;
     const isProfileView = followingPubkeys.length === 1;
+    const isTimeRangeMode = explicitSince !== undefined;
 
     this.systemLogger.info(
       'FeedOrchestrator',
       isProfileView
         ? `Loading profile for ${followingPubkeys[0]?.slice(0, 8)} (direct fetch, no time window)`
-        : `Loading timeline for ${followingPubkeys.length} users (${timeWindowHours}h window)${specificRelay ? ` from ${specificRelay}` : ''}`
+        : isTimeRangeMode
+          ? `Loading time range ${new Date(explicitSince * 1000).toLocaleDateString()} – ${new Date((explicitUntil ?? Date.now() / 1000) * 1000).toLocaleDateString()}`
+          : `Loading timeline for ${followingPubkeys.length} users (${timeWindowHours}h window)${specificRelay ? ` from ${specificRelay}` : ''}`
     );
 
     try {
       const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, isProfileView);
 
       // ProfileView: Direct fetch with limit only (no time window) - gets newest posts regardless of age
+      // Time Range Mode: Use explicit since/until boundaries
       // TimelineView: Time-windowed fetch (default 1h)
-      const filters: NDKFilter<number>[] = isProfileView
-        ? [{
-            authors: followingPubkeys,
-            kinds: [1, 6, 21, 22, 1068],
-            limit: 50
-          }]
-        : [{
-            authors: followingPubkeys,
-            kinds: [1, 6, 21, 22, 1068],
-            limit: 50,
-            since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
-          }];
+      let filters: NDKFilter<number>[];
+      if (isProfileView) {
+        filters = [{
+          authors: followingPubkeys,
+          kinds: [1, 6, 21, 22, 1068],
+          limit: 50
+        }];
+      } else if (isTimeRangeMode) {
+        const filterObj: NDKFilter<number> = {
+          authors: followingPubkeys,
+          kinds: [1, 6, 21, 22, 1068],
+          limit: 50,
+          since: explicitSince
+        };
+        if (explicitUntil !== undefined) {
+          filterObj.until = explicitUntil;
+        }
+        filters = [filterObj];
+      } else {
+        filters = [{
+          authors: followingPubkeys,
+          kinds: [1, 6, 21, 22, 1068],
+          limit: 50,
+          since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
+        }];
+      }
 
       const events = await this.fetchEvents(relays, filters, isProfileView, !!specificRelay);
       const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter);
@@ -168,6 +187,16 @@ export class FeedOrchestrator extends Orchestrator {
         'FeedOrchestrator',
         `Loaded ${filteredEvents.length} notes from relays`
       );
+
+      // Skip auto-expand in time range mode (user selected explicit boundaries)
+      if (isTimeRangeMode) {
+        const resultEvents = filteredEvents.slice(0, 50);
+        this.registerNotes(resultEvents);
+        return {
+          events: resultEvents,
+          hasMore: true
+        };
+      }
 
       // Auto-load more if needed (Timeline only - Profile gets all via direct fetch)
       const minimumNotes = 10;
@@ -250,8 +279,9 @@ export class FeedOrchestrator extends Orchestrator {
    * Load more events (infinite scroll) - Cache-First Pattern
    */
   public async loadMore(request: FeedLoadRequest & { until: number }): Promise<FeedLoadResult> {
-    const { followingPubkeys, includeReplies, until, timeWindowHours = 3, specificRelay, recursionDepth = 0, exemptFromMuteFilter } = request;
+    const { followingPubkeys, includeReplies, until, timeWindowHours = 3, specificRelay, recursionDepth = 0, exemptFromMuteFilter, since: explicitSince } = request;
     const isProfileView = followingPubkeys.length === 1;
+    const isTimeRangeMode = explicitSince !== undefined;
 
     this.systemLogger.info(
       'FeedOrchestrator',
@@ -260,7 +290,17 @@ export class FeedOrchestrator extends Orchestrator {
 
     try {
       const timeWindowSeconds = timeWindowHours * 3600;
-      const since = until - timeWindowSeconds;
+      let since = until - timeWindowSeconds;
+
+      // In time range mode, clamp since to the explicit lower bound
+      if (isTimeRangeMode && since < explicitSince) {
+        since = explicitSince;
+      }
+
+      // If we've already reached the lower bound, no more to load
+      if (isTimeRangeMode && until <= explicitSince) {
+        return { events: [], hasMore: false };
+      }
 
       const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, isProfileView);
 
@@ -281,9 +321,10 @@ export class FeedOrchestrator extends Orchestrator {
       );
 
       // Auto-load more if this chunk returned 0 events (gap in posting history)
+      // Disabled in time range mode — don't search beyond the user's selected range
       // Timeline View: up to 7 days back from current 'until'
       // Profile View: max 3 recursive attempts to find events
-      if (filteredEvents.length === 0) {
+      if (filteredEvents.length === 0 && !isTimeRangeMode) {
         const now = Math.floor(Date.now() / 1000);
         const timeSinceUntil = now - until;
         const hoursSinceUntil = timeSinceUntil / 3600;
@@ -337,9 +378,15 @@ export class FeedOrchestrator extends Orchestrator {
 
       const resultEvents = filteredEvents.slice(0, 50);
       this.registerNotes(resultEvents);
+
+      // In time range mode, check if we've reached the lower boundary
+      const hasMore = isTimeRangeMode
+        ? since > explicitSince
+        : true; // Always more history on Nostr
+
       return {
         events: resultEvents,
-        hasMore: true // Always more history on Nostr
+        hasMore
       };
     } catch (error) {
       this.systemLogger.error('FeedOrchestrator', `Load more failed: ${error}`);

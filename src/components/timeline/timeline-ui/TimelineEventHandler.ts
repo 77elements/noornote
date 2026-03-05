@@ -7,7 +7,9 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { FeedOrchestrator } from '../../../services/orchestration/FeedOrchestrator';
 import { TimelineStateManager } from '../timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './TimelineUIStateHandler';
+import { DateRangeSelector } from './DateRangeSelector';
 import { RefreshButton } from '../../ui/RefreshButton';
+import { CustomDropdown } from '../../ui/CustomDropdown';
 import { AppState } from '../../../services/AppState';
 
 export class TimelineEventHandler {
@@ -17,7 +19,9 @@ export class TimelineEventHandler {
   private refreshButton: RefreshButton | null;
   private element: HTMLElement;
   private filterAuthorPubkey?: string;
+  private viewDropdown: CustomDropdown | null;
   private appState: AppState;
+  private previousView: string = 'latest'; // Track previous view for cancel/revert
 
   // Callbacks
   private onAppendEvents: (events: NostrEvent[]) => void;
@@ -31,6 +35,7 @@ export class TimelineEventHandler {
     refreshButton: RefreshButton | null,
     element: HTMLElement,
     filterAuthorPubkey: string | undefined,
+    viewDropdown: CustomDropdown | null,
     callbacks: {
       onRenderEvents: () => void;
       onAppendEvents: (events: NostrEvent[]) => void;
@@ -46,6 +51,7 @@ export class TimelineEventHandler {
     if (filterAuthorPubkey) {
       this.filterAuthorPubkey = filterAuthorPubkey;
     }
+    this.viewDropdown = viewDropdown;
     this.appState = AppState.getInstance();
     this.onAppendEvents = callbacks.onAppendEvents;
     this.onPrependEvents = callbacks.onPrependEvents;
@@ -65,6 +71,15 @@ export class TimelineEventHandler {
    * Handle timeline view change
    */
   public async handleViewChange(selectedView: string): Promise<void> {
+    // Time Range: open modal instead of immediate reload
+    if (selectedView === 'time-range') {
+      await this.handleTimeRangeSelection();
+      return;
+    }
+
+    // Clear date range when switching away from time range mode
+    this.stateManager.clearDateRange();
+
     // Check if this is a relay-specific filter
     if (selectedView.startsWith('relay:')) {
       const relayUrl = selectedView.substring(6); // Remove 'relay:' prefix
@@ -82,6 +97,9 @@ export class TimelineEventHandler {
       this.appState.setState('timeline', { selectedRelay: null });
     }
 
+    // Track current view for potential revert
+    this.previousView = selectedView;
+
     // View change requires full reload (not just prepending cached events)
     // Stop polling and clear cache from previous filter
     this.feedOrchestrator.stopPolling();
@@ -93,6 +111,48 @@ export class TimelineEventHandler {
     await this.onInitializeTimeline();
 
     // Hide refresh button
+    if (this.refreshButton) {
+      this.refreshButton.hide();
+    }
+  }
+
+  /**
+   * Handle time range selection via modal
+   */
+  private async handleTimeRangeSelection(): Promise<void> {
+    const selector = new DateRangeSelector();
+    const result = await selector.show();
+
+    if (!result) {
+      // User cancelled — revert dropdown to previous value
+      if (this.viewDropdown) {
+        this.viewDropdown.setValue(this.previousView);
+      }
+      return;
+    }
+
+    // Store date range and update dropdown label
+    this.stateManager.setDateRange(result);
+    this.stateManager.setSelectedRelay(null);
+    this.stateManager.setIncludeReplies(false);
+    this.appState.setState('timeline', { selectedRelay: null });
+
+    if (this.viewDropdown) {
+      this.viewDropdown.setCustomLabel(DateRangeSelector.formatRangeLabel(result.since, result.until));
+    }
+
+    this.previousView = 'time-range';
+
+    // Stop polling and clear cache
+    this.feedOrchestrator.stopPolling();
+    this.feedOrchestrator.getPolledEvents();
+
+    // Reset state and reload with date range
+    this.stateManager.reset();
+    this.element.querySelectorAll('.note-card').forEach(card => card.remove());
+    await this.onInitializeTimeline();
+
+    // Hide refresh button (no polling in time range mode)
     if (this.refreshButton) {
       this.refreshButton.hide();
     }
@@ -184,6 +244,11 @@ export class TimelineEventHandler {
       }
       if (this.filterAuthorPubkey) {
         loadMoreRequest.exemptFromMuteFilter = this.filterAuthorPubkey; // Don't filter profile user's notes in ProfileView
+      }
+      // Pass date range lower bound so loadMore stops at boundary
+      const dateRange = this.stateManager.getDateRange();
+      if (dateRange) {
+        loadMoreRequest.since = dateRange.since;
       }
       const result = await this.feedOrchestrator.loadMore(loadMoreRequest);
 

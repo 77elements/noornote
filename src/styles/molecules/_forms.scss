@@ -82,6 +82,25 @@
 }
 
 // ========================================
+// Datepicker (native date input, dark-theme ready)
+// ========================================
+.datepicker {
+  @extend .input;
+  cursor: pointer;
+  color-scheme: dark; // Default: dark calendar popup
+
+  // Light themes: native calendar in light mode
+  [data-theme="bright-superman"] &,
+  [data-theme="soft-lilac"] & {
+    color-scheme: light;
+  }
+
+  &::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+  }
+}
+
+// ========================================
 // Labels (global)
 // ========================================
 label {

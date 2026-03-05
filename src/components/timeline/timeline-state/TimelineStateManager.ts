@@ -13,6 +13,7 @@ export class TimelineStateManager {
   private followingPubkeys: string[] = [];
   private includeReplies = false;
   private selectedRelay: string | null = null; // null = all relays, string = specific relay URL
+  private dateRange: { since: number; until: number } | null = null; // null = live mode, set = time range mode
 
   /**
    * Get all events
@@ -164,6 +165,21 @@ export class TimelineStateManager {
   }
 
   /**
+   * Date range filter (time range mode)
+   */
+  getDateRange(): { since: number; until: number } | null {
+    return this.dateRange;
+  }
+
+  setDateRange(range: { since: number; until: number }): void {
+    this.dateRange = range;
+  }
+
+  clearDateRange(): void {
+    this.dateRange = null;
+  }
+
+  /**
    * Reset all state (for refresh)
    */
   reset(): void {
@@ -181,6 +197,7 @@ export class TimelineStateManager {
     this.loading = false;
     this.hasMore = true;
     this.followingPubkeys = [];
+    this.dateRange = null;
     // Keep filter preferences (includeReplies, selectedRelay) as user preference
   }
 }

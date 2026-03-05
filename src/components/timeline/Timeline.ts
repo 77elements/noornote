@@ -88,7 +88,7 @@ export class Timeline extends View {
     this.setupInfiniteScroll();
     this.setupRefreshButton();
 
-    // Initialize event handler (requires refresh button and renderer to be set up first)
+    // Initialize event handler (requires refresh button, renderer, and dropdown to be set up first)
     this.eventHandler = new TimelineEventHandler(
       this.feedOrchestrator,
       this.stateManager,
@@ -96,6 +96,7 @@ export class Timeline extends View {
       this.refreshButton,
       this.element,
       this.filterAuthorPubkey,
+      this.viewDropdown,
       {
         onRenderEvents: () => this.renderer.renderEvents(),
         onAppendEvents: (events) => this.renderer.appendNewEvents(events),
@@ -243,10 +244,11 @@ export class Timeline extends View {
    * Setup custom dropdown for view selection
    */
   private setupViewDropdown(): void {
-    // Build dropdown options: Latest, Latest+Replies, then user's relays (no aggregators)
+    // Build dropdown options: Latest, Latest+Replies, Time Range, then user's relays (no aggregators)
     const baseOptions = [
       { value: 'latest', label: 'Latest' },
-      { value: 'latest-replies', label: 'Latest + Replies' }
+      { value: 'latest-replies', label: 'Latest + Replies' },
+      { value: 'time-range', label: 'Time Range' }
     ];
 
     // Get user-configured read relays (excludes aggregator relays)
@@ -476,11 +478,17 @@ export class Timeline extends View {
       }
 
       // Use FeedOrchestrator for loading
+      const dateRange = this.stateManager.getDateRange();
       const feedRequest: Parameters<typeof this.feedOrchestrator.loadInitialFeed>[0] = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
         timeWindowHours: 1 // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
       };
+      // Time range mode: use explicit since/until boundaries
+      if (dateRange) {
+        feedRequest.since = dateRange.since;
+        feedRequest.until = dateRange.until;
+      }
       const selectedRelay = this.stateManager.getSelectedRelay();
       if (selectedRelay) {
         feedRequest.specificRelay = selectedRelay;
@@ -498,8 +506,10 @@ export class Timeline extends View {
 
       this.stateManager.setHasMore(result.hasMore);
 
-      // Start polling for new notes after 10 seconds
-      this.startNewNotesPolling();
+      // Start polling for new notes (disabled in time range mode — viewing historical data)
+      if (!dateRange) {
+        this.startNewNotesPolling();
+      }
 
     } catch (error) {
       console.error('Failed to initialize timeline:', error);
