@@ -275,6 +275,44 @@
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
+/* Date Range Selector (modal content) */
+.date-range-selector {
+  padding: calc($gap / 2) 0;
+
+  .date-range-selector__fields {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+
+  .date-range-selector__field {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 4);
+  }
+
+  .date-range-selector__label {
+    font-weight: 500;
+    color: var(--color-5);
+  }
+
+  .date-range-selector__error {
+    margin-top: calc($gap * 0.75);
+    padding: calc($gap / 2) calc($gap * 0.75);
+    background: $bg-error;
+    color: $color-red;
+    border-radius: $radius-base;
+    font-size: 0.875rem;
+  }
+
+  .date-range-selector__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: calc($gap / 2);
+    margin-top: calc($gap * 1.5);
+  }
+}
+
 /* Skeleton animations */
 @keyframes skeleton-shimmer {
   0% {
