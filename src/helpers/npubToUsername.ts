@@ -15,6 +15,10 @@ export interface Profile {
 
 export type ProfileResolver = (hexPubkey: string) => Profile | null;
 
+export interface NpubToUsernameOptions {
+  forceFullMode?: boolean;
+}
+
 // Threshold for switching to simple mention mode (no profile pics)
 const SIMPLE_MENTION_THRESHOLD = 20;
 
@@ -29,11 +33,12 @@ const NPUB_REGEX = new RegExp(`(nostr:)?(npub1[${BECH32_CHARS}]{58})(?=[^${BECH3
  */
 export function npubToUsername(npub: string): string;
 export function npubToUsername(npub: string, mode: 'html-single', profileResolver: ProfileResolver): string;
-export function npubToUsername(htmlText: string, mode: 'html-multi', profileResolver: ProfileResolver): string;
+export function npubToUsername(htmlText: string, mode: 'html-multi', profileResolver: ProfileResolver, options?: NpubToUsernameOptions): string;
 export function npubToUsername(
   input: string,
   mode?: 'html-single' | 'html-multi' | ProfileResolver,
-  profileResolver?: ProfileResolver
+  profileResolver?: ProfileResolver,
+  options?: NpubToUsernameOptions
 ): string {
   // Legacy compatibility: detect old signature (second param is ProfileResolver)
   if (typeof mode === 'function') {
@@ -49,7 +54,7 @@ export function npubToUsername(
   }
 
   if (mode === 'html-multi' && profileResolver) {
-    return npubToUsernameHTMLMulti(input, profileResolver);
+    return npubToUsernameHTMLMulti(input, profileResolver, options);
   }
 
   return input;
@@ -182,12 +187,13 @@ function resolveProfileToMentionHTML(
  */
 function npubToUsernameHTMLMulti(
   htmlText: string,
-  profileResolver: ProfileResolver
+  profileResolver: ProfileResolver,
+  options?: NpubToUsernameOptions
 ): string {
   let text = htmlText;
 
   const mentionCount = countMentions(text);
-  const useSimpleMode = mentionCount > SIMPLE_MENTION_THRESHOLD;
+  const useSimpleMode = options?.forceFullMode ? false : mentionCount > SIMPLE_MENTION_THRESHOLD;
 
   // Step 1: Replace nprofile mentions
   text = text.replace(NPROFILE_REGEX, (fullMatch, _prefix, nprofile) => {

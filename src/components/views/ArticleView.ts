@@ -14,7 +14,11 @@ import { ReactionsOrchestrator } from '../../services/orchestration/ReactionsOrc
 import { AnalyticsModal } from '../analytics/AnalyticsModal';
 import { getAddressableIdentifier } from '../../helpers/getAddressableIdentifier';
 import { npubToUsername } from '../../helpers/npubToUsername';
+import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
+import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
 import { ContentProcessor } from '../../services/ContentProcessor';
+import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
+import { ArticlePreviewRenderer } from '../../services/ArticlePreviewRenderer';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
 
@@ -68,6 +72,9 @@ export class ArticleView {
   private renderArticle(event: NostrEvent & { id: string }): void {
     const metadata = LongFormOrchestrator.extractArticleMetadata(event);
 
+    // Render markdown and extract quoted references
+    const { html: articleHtml, quotedReferences } = this.renderMarkdown(event.content);
+
     // Create article structure with replies container
     this.container.innerHTML = `
       <div class="article-view-content">
@@ -77,10 +84,30 @@ export class ArticleView {
           ${metadata.summary ? `<p class="article-summary">${this.escapeHtml(metadata.summary)}</p>` : ''}
           <div class="article-author-container"></div>
         </div>
-        <div class="article-body">${this.renderMarkdown(event.content)}</div>
+        <div class="article-body">${articleHtml}</div>
         <div class="article-replies-container"></div>
       </div>
     `;
+
+    // Replace quote markers with actual quote boxes (same logic as OriginalNoteRenderer)
+    if (quotedReferences.length > 0) {
+      const quotedNoteRenderer = QuotedNoteRenderer.getInstance();
+      const articleRenderer = ArticlePreviewRenderer.getInstance();
+
+      quotedReferences.forEach(ref => {
+        const marker = this.container.querySelector(`.quote-marker[data-quote-ref="${ref.fullMatch}"]`);
+        if (marker) {
+          if (ref.type === 'addr') {
+            articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
+            marker.remove();
+          } else {
+            const skeleton = quotedNoteRenderer.createQuoteSkeleton();
+            marker.replaceWith(skeleton);
+            quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, false);
+          }
+        }
+      });
+    }
 
     // Mount author header
     const authorContainer = this.container.querySelector('.article-author-container');
@@ -229,8 +256,9 @@ export class ArticleView {
 
   /**
    * Render markdown content using marked.js (NIP-23 support)
+   * Also extracts and formats nostr: quoted references (NIP-27)
    */
-  private renderMarkdown(content: string): string {
+  private renderMarkdown(content: string): { html: string; quotedReferences: QuotedReference[] } {
     try {
       // Configure marked for security and link handling
       marked.setOptions({
@@ -238,8 +266,16 @@ export class ArticleView {
         gfm: true           // GitHub Flavored Markdown
       });
 
+      // Extract quoted references from raw content before markdown parsing
+      const quotedReferences = extractQuotedReferences(content) as QuotedReference[];
+
       // Parse markdown to HTML
       let html = marked.parse(content) as string;
+
+      // Replace nostr: references with quote marker spans
+      if (quotedReferences.length > 0) {
+        html = formatQuotedReferences(html, quotedReferences);
+      }
 
       // Add rel for security - global handler in App.ts opens external links
       html = html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
@@ -254,13 +290,13 @@ export class ArticleView {
           picture: profile.picture
         } : null;
       };
-      html = npubToUsername(html, 'html-multi', profileResolver);
+      html = npubToUsername(html, 'html-multi', profileResolver, { forceFullMode: true });
 
-      return html;
+      return { html, quotedReferences };
     } catch (_error) {
       console.error('Failed to render markdown:', _error);
       // Fallback: return escaped plain text
-      return `<p>${this.escapeHtml(content)}</p>`;
+      return { html: `<p>${this.escapeHtml(content)}</p>`, quotedReferences: [] };
     }
   }
 
