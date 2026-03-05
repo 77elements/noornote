@@ -70,6 +70,14 @@
 
   &__emoji {
     line-height: 1;
+
+    // NIP-30 custom emoji images: constrain to badge size
+    .custom-emoji {
+      display: inline-block;
+      height: 1.4em;
+      width: auto;
+      vertical-align: middle;
+    }
   }
 
   &__count {
