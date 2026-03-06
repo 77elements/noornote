@@ -21,6 +21,7 @@ import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../../services/ArticlePreviewRenderer';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 
 export class ArticleView {
   private container: HTMLElement;
@@ -269,8 +270,14 @@ export class ArticleView {
       // Extract quoted references from raw content before markdown parsing
       const quotedReferences = extractQuotedReferences(content) as QuotedReference[];
 
-      // Parse markdown to HTML
-      let html = marked.parse(content) as string;
+      // Parse markdown to HTML, then sanitize to prevent XSS
+      let html = DOMPurify.sanitize(marked.parse(content) as string, {
+        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'ul', 'ol', 'li',
+          'strong', 'em', 'b', 'i', 'u', 's', 'del', 'code', 'pre', 'blockquote',
+          'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'span', 'div'],
+        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel', 'loading'],
+        ALLOW_DATA_ATTR: false
+      });
 
       // Replace nostr: references with quote marker spans
       if (quotedReferences.length > 0) {
