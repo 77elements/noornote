@@ -10,6 +10,7 @@ import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { hexToNpub, npubToHex } from '../../helpers/nip19';
 import type { UserProfile } from '../../services/UserProfileService';
+import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export class UserHoverCard {
   private static instance: UserHoverCard | null = null;
@@ -131,7 +132,7 @@ export class UserHoverCard {
 
     return `
       <div class="user-hover-card__header">
-        <img src="${avatarUrl}" alt="${displayName}" class="user-hover-card__avatar" />
+        <img src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" class="user-hover-card__avatar" />
         <div class="user-hover-card__info">
           <div class="user-hover-card__name">${this.escapeHtml(displayName)}</div>
           <div class="user-hover-card__username">${this.escapeHtml(handle)}</div>

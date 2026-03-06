@@ -8,6 +8,7 @@ import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
 import { UserSearchService, type UserSearchResult } from '../../services/UserSearchService';
 import { hexToNpub } from '../../helpers/nip19';
+import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 /** Prefixes that bypass user search */
 const SPECIAL_INPUT_PREFIXES = ['/', 'http', 'npub1', 'nevent1'] as const;
@@ -290,7 +291,7 @@ export class SearchSpotlight {
       return `
         <div class="search-spotlight__user-item" data-pubkey="${user.pubkey}" data-user-index="${index}">
           <div class="search-spotlight__user-avatar">
-            ${picture ? `<img src="${picture}" alt="" loading="lazy" />` : '<div class="search-spotlight__user-avatar-placeholder"></div>'}
+            ${picture ? `<img src="${escapeHtmlAttr(picture)}" alt="" loading="lazy" />` : '<div class="search-spotlight__user-avatar-placeholder"></div>'}
           </div>
           <div class="search-spotlight__user-info">
             <span class="search-spotlight__user-name">${this.escapeHtml(displayName)}</span>

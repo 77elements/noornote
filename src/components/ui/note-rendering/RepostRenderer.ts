@@ -13,6 +13,7 @@ import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { QuoteOrchestrator } from '../../../services/orchestration/QuoteOrchestrator';
 import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
+import { escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { hexToNpub } from '../../../helpers/nip19';
 import { npubToUsername } from '../../../helpers/npubToUsername';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
@@ -63,7 +64,7 @@ export class RepostRenderer {
       </span>
       <span class="user-mention" data-pubkey="${reposterPubkey}">
         <a href="/profile/${reposterNpub}" class="mention-link" data-profile-pubkey="${reposterPubkey}">
-          <img src="${reposterPicture}" alt="" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
+          <img src="${escapeHtmlAttr(reposterPicture || '')}" alt="" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
     `;
 
     // Set initial username (may be npub if not cached)

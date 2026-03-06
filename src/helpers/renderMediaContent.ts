@@ -10,6 +10,8 @@
  * // => '<div class="note-media"><img src="..." class="note-image" loading="lazy"></div>'
  */
 
+import { escapeHtmlAttr } from './escapeHtml';
+
 export interface MediaContent {
   type: 'image' | 'video' | 'audio';
   url: string;
@@ -43,17 +45,18 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
   switch (item.type) {
     case 'image':
       const imageClass = isNSFW ? 'note-image note-image--clickable note-image--nsfw-blur' : 'note-image note-image--clickable';
-      return `<img src="${item.url}" alt="${item.alt || ''}" class="${imageClass}" loading="lazy" data-image-index="${index}">`;
+      return `<img src="${escapeHtmlAttr(item.url)}" alt="${escapeHtmlAttr(item.alt || '')}" class="${imageClass}" loading="lazy" data-image-index="${index}">`;
     case 'video':
       // Check if YouTube
       const videoId = getYouTubeVideoId(item.url);
       if (videoId) {
-        return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${videoId}" class="youtube-external-link">Watch on YouTube</a></div>`;
+        const safeId = escapeHtmlAttr(videoId);
+        return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
       }
-      const posterAttr = item.thumbnail ? ` poster="${item.thumbnail}"` : '';
-      return `<video src="${item.url}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="metadata"></video>`;
+      const posterAttr = item.thumbnail ? ` poster="${escapeHtmlAttr(item.thumbnail)}"` : '';
+      return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="metadata"></video>`;
     case 'audio':
-      return `<audio src="${item.url}" controls preload="metadata" class="note-audio"></audio>`;
+      return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
     default:
       return '';
   }
@@ -78,16 +81,17 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
   const mediaHtml = mediaArray.map((item, index) => {
     switch (item.type) {
       case 'image':
-        return `<img src="${item.url}" alt="${item.alt || ''}" class="note-image note-image--clickable" loading="lazy" data-image-index="${index}">`;
+        return `<img src="${escapeHtmlAttr(item.url)}" alt="${escapeHtmlAttr(item.alt || '')}" class="note-image note-image--clickable" loading="lazy" data-image-index="${index}">`;
       case 'video':
         const ytId = getYouTubeVideoId(item.url);
         if (ytId) {
-          return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${ytId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${ytId}" class="youtube-external-link">Watch on YouTube</a></div>`;
+          const safeId = escapeHtmlAttr(ytId);
+          return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
         }
-        const posterAttr = item.thumbnail ? ` poster="${item.thumbnail}"` : '';
-        return `<video src="${item.url}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="metadata"></video>`;
+        const posterAttr = item.thumbnail ? ` poster="${escapeHtmlAttr(item.thumbnail)}"` : '';
+        return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="metadata"></video>`;
       case 'audio':
-        return `<audio src="${item.url}" controls preload="metadata" class="note-audio"></audio>`;
+        return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
       default:
         return '';
     }
@@ -111,8 +115,8 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
 
   // Build data attributes for ImageViewer context
   let dataAttr = imageUrls.length > 0 ? ` data-image-urls="${encodeURIComponent(JSON.stringify(imageUrls))}"` : '';
-  if (eventId) dataAttr += ` data-event-id="${eventId}"`;
-  if (authorPubkey) dataAttr += ` data-author-pubkey="${authorPubkey}"`;
+  if (eventId) dataAttr += ` data-event-id="${escapeHtmlAttr(eventId)}"`;
+  if (authorPubkey) dataAttr += ` data-author-pubkey="${escapeHtmlAttr(authorPubkey)}"`;
   if (isNSFW) dataAttr += ` data-is-nsfw="true"`;
 
   return `<div class="${wrapper}"${dataAttr}>${mediaHtml}</div>`;
@@ -136,8 +140,8 @@ export function replaceMediaPlaceholders(
   // Collect all image URLs for data attribute (for ImageViewer gallery)
   const imageUrls = media.filter(m => m.type === 'image').map(m => m.url);
   let dataAttr = imageUrls.length > 0 ? ` data-image-urls="${encodeURIComponent(JSON.stringify(imageUrls))}"` : '';
-  if (eventId) dataAttr += ` data-event-id="${eventId}"`;
-  if (authorPubkey) dataAttr += ` data-author-pubkey="${authorPubkey}"`;
+  if (eventId) dataAttr += ` data-event-id="${escapeHtmlAttr(eventId)}"`;
+  if (authorPubkey) dataAttr += ` data-author-pubkey="${escapeHtmlAttr(authorPubkey)}"`;
   if (isNSFW) dataAttr += ` data-is-nsfw="true"`;
 
   // Find groups of consecutive media placeholders

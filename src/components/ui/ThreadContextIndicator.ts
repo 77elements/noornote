@@ -15,6 +15,7 @@ import { Router } from '../../services/Router';
 import { truncateNoteContent } from '../../helpers/truncateNoteContent';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { npubToUsername } from '../../helpers/npubToUsername';
+import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export interface ThreadContextIndicatorOptions {
   noteId: string; // The current note (reply) we're showing context for
@@ -154,7 +155,7 @@ export class ThreadContextIndicator {
 
     // Build HTML
     item.innerHTML = `
-      <img class="profile-pic profile-pic--mini" src="${avatarUrl}" alt="${displayName}" />
+      <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" />
       <span class="thread-context-content">${truncated}</span>
     `;
 

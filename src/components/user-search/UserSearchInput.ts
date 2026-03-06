@@ -12,7 +12,7 @@ import { UserSearchService, type UserSearchResult } from '../../services/UserSea
 import { UserProfileService } from '../../services/UserProfileService';
 import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export interface UserSearchInputOptions {
   /** Placeholder text for input */
@@ -299,7 +299,7 @@ export class UserSearchInput {
       return `
         <div class="search-spotlight__user-item${selectedClass}" data-index="${index}">
           <div class="search-spotlight__user-avatar">
-            ${picture ? `<img src="${picture}" alt="" loading="lazy" />` : '<div class="search-spotlight__user-avatar-placeholder"></div>'}
+            ${picture ? `<img src="${escapeHtmlAttr(picture)}" alt="" loading="lazy" />` : '<div class="search-spotlight__user-avatar-placeholder"></div>'}
           </div>
           <div class="search-spotlight__user-info">
             <span class="search-spotlight__user-name">${escapeHtml(displayName)}</span>
