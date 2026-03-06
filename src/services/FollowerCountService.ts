@@ -9,6 +9,7 @@
 
 import { RelayConfig } from './RelayConfig';
 import { SystemLogger } from '../components/system/SystemLogger';
+import { SignatureVerificationService } from './security/SignatureVerificationService';
 
 interface BatchResult {
   followers: string[];
@@ -221,6 +222,9 @@ export class FollowerCountService {
           const [type, id, event] = JSON.parse(msg.data);
 
           if (type === 'EVENT' && id === subId && event) {
+            // Verify signature before trusting pubkey (external WebSocket event)
+            const verification = SignatureVerificationService.getInstance().verifyEvent(event);
+            if (!verification.valid) return;
             // Collect author pubkey (who follows the target)
             followers.push(event.pubkey);
 
