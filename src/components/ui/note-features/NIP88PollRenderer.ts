@@ -155,6 +155,12 @@ export class NIP88PollRenderer {
 
     pollContainer.appendChild(optionsDiv);
 
+    // Add voter count footer
+    const footerDiv = document.createElement('div');
+    footerDiv.className = 'nip88-poll__footer';
+    footerDiv.textContent = '';
+    pollContainer.appendChild(footerDiv);
+
     // Insert poll container INSIDE event-content, at the END
     // This ensures it appears after the text content but before media/quoted notes
     const contentDiv = noteElement.querySelector('.event-content');
@@ -253,7 +259,7 @@ export class NIP88PollRenderer {
     results: any,
     pollData: PollData
   ): void {
-    const totalVotes = results.totalVotes;
+    const totalVoters = results.totalVotes; // Unique voter count
 
     pollData.options.forEach(option => {
       const optionBtn = pollContainer.querySelector(
@@ -264,7 +270,7 @@ export class NIP88PollRenderer {
 
       const resultOption = results.options.find((o: any) => o.id === option.id);
       const voteCount = resultOption?.voteCount || 0;
-      const percentage = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+      const percentage = totalVoters > 0 ? Math.round((voteCount / totalVoters) * 100) : 0;
 
       // Update stats
       const countSpan = optionBtn.querySelector('.nip88-poll__option-count');
@@ -290,6 +296,12 @@ export class NIP88PollRenderer {
         optionBtn.classList.remove('nip88-poll__option--voted');
       }
     });
+
+    // Update footer with unique voter count
+    const footer = pollContainer.querySelector('.nip88-poll__footer');
+    if (footer && totalVoters > 0) {
+      footer.textContent = `${totalVoters} voter${totalVoters !== 1 ? 's' : ''}`;
+    }
   }
 
   /**

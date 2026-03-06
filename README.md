@@ -41,6 +41,9 @@
 - **Who zapped you most** - Sort follows by zap balance to see top supporters
 - **Hijri calendar** - Islamic date display alongside Gregorian dates
 - **Relay browsing** - Filter timeline to show content from specific relays
+- **Time Machine** - Jump to any date range in your timeline with the built-in date picker
+- **Broadcast delete** - Notes are deleted across 159+ relays for thorough removal
+- **Article mentions** - Nostr references and note embeds render inside longform articles
 
 ...and many more to come.
 

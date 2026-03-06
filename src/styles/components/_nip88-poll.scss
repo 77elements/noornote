@@ -119,6 +119,12 @@
     z-index: 1;
   }
 
+  &__footer {
+    margin-top: calc($gap / 2);
+    color: var(--color-3);
+    text-align: right;
+  }
+
   // Preview mode (in PostNoteModal)
   &--preview {
     opacity: 0.9;
