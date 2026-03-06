@@ -16,10 +16,18 @@ interface BatchResult {
   oldestTimestamp: number | null;
 }
 
+interface CachedCount {
+  count: number;
+  timestamp: number;
+}
+
+const CACHE_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+
 export class FollowerCountService {
   private static instance: FollowerCountService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
+  private cache: Map<string, CachedCount> = new Map();
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
@@ -46,7 +54,13 @@ export class FollowerCountService {
     pubkey: string,
     onUpdate?: (count: number, relay: string) => void
   ): Promise<number> {
-    // Fetch from relays sequentially (no cache)
+    // Check cache first
+    const cached = this.cache.get(pubkey);
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL_MS) {
+      if (onUpdate) onUpdate(cached.count, 'cache');
+      return cached.count;
+    }
+
     this.systemLogger.success('FollowerCount', 'Fetching follower counts...');
 
     const relays = [
@@ -113,6 +127,7 @@ export class FollowerCountService {
 
     const finalCount = followers.size;
 
+    this.cache.set(pubkey, { count: finalCount, timestamp: Date.now() });
     this.systemLogger.success('FollowerCount', `✓ Follower count fetching completed: ${finalCount} followers`);
 
     return finalCount;

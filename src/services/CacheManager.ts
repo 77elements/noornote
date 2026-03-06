@@ -109,17 +109,24 @@ export class CacheManager {
 
       const totalCount = counts.reduce((sum, count) => sum + count, 0);
 
-      // Get all items to estimate size
-      const arrays = await Promise.all(
-        existingTables.map(tableName => (db as any)[tableName].toArray())
-      );
-
-      // Calculate approximate size by stringifying
+      // Estimate size by sampling (max 100 items per table)
+      const SAMPLE_SIZE = 100;
       let totalSize = 0;
-      const allData = arrays.flat();
-      allData.forEach(item => {
-        totalSize += JSON.stringify(item).length;
-      });
+
+      for (let i = 0; i < existingTables.length; i++) {
+        const tableName = existingTables[i]!;
+        const tableCount = counts[i]!;
+        if (tableCount === 0) continue;
+
+        const sample = await (db as any)[tableName].limit(SAMPLE_SIZE).toArray();
+        let sampleBytes = 0;
+        sample.forEach((item: any) => {
+          sampleBytes += JSON.stringify(item).length;
+        });
+
+        const avgItemSize = sampleBytes / sample.length;
+        totalSize += Math.round(avgItemSize * tableCount);
+      }
 
       return { size: totalSize, count: totalCount };
     } catch (error) {
