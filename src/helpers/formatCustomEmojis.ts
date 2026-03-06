@@ -67,5 +67,8 @@ export function resolveReactionEmoji(event: { content: string; tags: string[][] 
     }
   }
 
-  return content;
+  // Escape non-shortcode content to prevent XSS via crafted reaction content
+  const div = document.createElement('div');
+  div.textContent = content;
+  return div.innerHTML;
 }
