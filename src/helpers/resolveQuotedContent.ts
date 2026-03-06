@@ -27,26 +27,22 @@ export async function resolveQuotedContent(text: string): Promise<string> {
   }
 
   const quoteOrch = QuoteOrchestrator.getInstance();
+
+  // Fetch all quotes in parallel
+  const results = await Promise.allSettled(
+    quotedRefs.map(ref => quoteOrch.fetchQuotedEvent(ref.id))
+  );
+
+  // Replace sequentially (preserves correct string positions)
   let processedText = text;
-
-  // Fetch and replace each reference
-  for (const ref of quotedRefs) {
-    try {
-      const quotedEvent = await quoteOrch.fetchQuotedEvent(ref.id);
-
-      if (quotedEvent && quotedEvent.content) {
-        // Truncate the quoted content to first line (max 80 chars)
-        const truncated = truncateNoteContent(quotedEvent.content, 80);
-        // Replace the nostr reference with the truncated content (with line break before)
-        processedText = processedText.replace(ref.fullMatch, `\n[${truncated}]`);
-      } else {
-        // If event not found, replace with placeholder
-        processedText = processedText.replace(ref.fullMatch, '\n[Quoted note]');
-      }
-    } catch (error) {
-      console.warn('Failed to fetch quoted event:', ref.id, error);
-      // On error, replace with placeholder
-      processedText = processedText.replace(ref.fullMatch, '[Quoted note]');
+  for (let i = 0; i < quotedRefs.length; i++) {
+    const ref = quotedRefs[i]!;
+    const result = results[i];
+    if (result && result.status === 'fulfilled' && result.value?.content) {
+      const truncated = truncateNoteContent(result.value.content, 80);
+      processedText = processedText.replace(ref.fullMatch, `\n[${truncated}]`);
+    } else {
+      processedText = processedText.replace(ref.fullMatch, '\n[Quoted note]');
     }
   }
 
