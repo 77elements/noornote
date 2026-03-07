@@ -454,6 +454,9 @@ export class AccountSetupWizard {
     this.avatarUploader?.cleanup();
     this.avatarUploader = null;
 
+    // Clear key material from memory
+    this.currentKeypair = null;
+
     if (this.container) {
       this.container.remove();
       this.container = null;
@@ -975,6 +978,7 @@ export class AccountSetupWizard {
           const secretKey = generateSecretKey();
           const privateKeyHex = bytesToHex(secretKey);
           const publicKeyHex = getPublicKey(secretKey);
+          secretKey.fill(0); // Zero out raw key material
           this.currentKeypair = {
             nsec: encodeNsec(privateKeyHex),
             npub: encodeNpub(publicKeyHex),
@@ -1056,6 +1060,7 @@ export class AccountSetupWizard {
       const secretKey = generateSecretKey();
       const privateKeyHex = bytesToHex(secretKey);
       const publicKeyHex = getPublicKey(secretKey);
+      secretKey.fill(0); // Zero out raw key material
       this.currentKeypair = {
         nsec: encodeNsec(privateKeyHex),
         npub: encodeNpub(publicKeyHex),

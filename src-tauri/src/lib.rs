@@ -131,12 +131,14 @@ pub fn run() {
             }
             #[cfg(target_os = "linux")]
             let _ = window.maximize();
+            #[cfg(feature = "devtools")]
             window.open_devtools();
           }
           "clean" => {}
           _ => {
             #[cfg(target_os = "linux")]
             let _ = window.maximize();
+            #[cfg(feature = "devtools")]
             window.open_devtools();
           }
         }

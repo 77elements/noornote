@@ -20,6 +20,7 @@ import { ToastService } from './ToastService';
 import { KeychainStorage } from './KeychainStorage';
 import { AuthService } from './AuthService';
 import { EventBus } from './EventBus';
+import { SignatureVerificationService } from './security/SignatureVerificationService';
 
 export type NWCConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
 
@@ -217,6 +218,15 @@ export class NWCService {
               responseEvent.pubkey === expectedAuthor &&
               responseEvent.tags.some((t: string[]) => t[0] === 'p' && t[1] === expectedPTag)
             ) {
+              // Verify signature before trusting NWC response (external WebSocket event)
+              const verification = SignatureVerificationService.getInstance().verifyEvent(responseEvent);
+              if (!verification.valid) {
+                clearTimeout(timeout);
+                ws.removeEventListener('message', handleMessage);
+                ws.send(JSON.stringify(['CLOSE', subId]));
+                reject(new Error('NWC response failed signature verification'));
+                return;
+              }
               clearTimeout(timeout);
               ws.removeEventListener('message', handleMessage);
               ws.send(JSON.stringify(['CLOSE', subId]));

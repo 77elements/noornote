@@ -727,7 +727,7 @@ function calculateSyncDiff(browserItems: string[], sourceItems: string[]): SyncD
 
 const mergeItemArrays = mergeStringArrays;
 
-import { escapeHtml } from '../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 
 // ============================================================
 // MUTE STORAGE ADAPTER (self-contained, no external dependencies)
@@ -1107,7 +1107,7 @@ export class MuteListView extends View {
           <div class="mute-list-item__info">
             <span class="user-mention" data-pubkey="${pubkey}">
               <a href="/profile/${npub}" class="mention-link mention-link--bg" data-profile-pubkey="${pubkey}">
-                <img class="profile-pic profile-pic--mini" src="${avatarUrl}" alt="${username}" />${username}</a></span>${lockIcon}
+                <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />${escapeHtml(username)}</a></span>${lockIcon}
           </div>
           <button class="btn btn--passive btn--mini unmute-user-btn" data-pubkey="${pubkey}">
             Unmute

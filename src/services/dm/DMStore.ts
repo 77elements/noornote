@@ -223,13 +223,11 @@ export class DMStore {
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction(MESSAGES_STORE, 'readonly');
       const store = tx.objectStore(MESSAGES_STORE);
-      const request = store.getAll();
+      const index = store.index('conversationWith');
+      const request = index.getAll(IDBKeyRange.only(partnerPubkey));
 
       request.onsuccess = () => {
-        const allMessages = request.result as DMMessage[];
-
-        // Filter by conversationWith
-        let result = allMessages.filter(m => m.conversationWith === partnerPubkey);
+        let result = request.result as DMMessage[];
 
         // Apply before filter if specified
         if (before) {

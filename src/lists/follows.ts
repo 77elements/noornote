@@ -19,7 +19,7 @@
 import { StorageKeys, now, deduplicateByPubkey, mergeByKey } from './storage';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey } from './relays';
-import { escapeHtml } from '../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
@@ -2014,7 +2014,7 @@ export class FollowListManager {
     followItemDiv.innerHTML = `
       <div class="follow-item__content-wrapper">
         <div class="follow-item__avatar">
-          <img class="profile-pic profile-pic--medium" src="${avatarUrl}" alt="${username}" />
+          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />
         </div>
         <div class="follow-item__info">
           <div class="follow-item__username">

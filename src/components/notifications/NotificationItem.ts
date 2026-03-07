@@ -268,8 +268,8 @@ export class NotificationItem {
           return resolveReactionEmoji(this.options.event);
         }
 
-        // Otherwise use the actual emoji
-        return reactionContent;
+        // Otherwise use the actual emoji (escape to prevent XSS via crafted reaction content)
+        return this.escapeHtml(reactionContent);
       }
 
       case 'zap':
@@ -436,7 +436,7 @@ export class NotificationItem {
 
             // Truncate plain text FIRST, THEN resolve mentions with loaded profiles
             const truncatedPlain = content.length > 150 ? content.slice(0, 150) + '...' : content;
-            const withMentions = npubToUsername(truncatedPlain, 'html-multi', (hex) => profiles.get(hex) || null);
+            const withMentions = npubToUsername(this.escapeHtml(truncatedPlain), 'html-multi', (hex) => profiles.get(hex) || null);
 
             // Update context line with replied-to note
             const contextElement = this.element.querySelector('.thread-context-content');

@@ -15,6 +15,7 @@ import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { EventBus } from '../EventBus';
 import { PlatformService } from '../PlatformService';
+import { SignatureVerificationService } from '../security/SignatureVerificationService';
 
 export interface SubscriptionCallbacks {
   onEvent: (event: NostrEvent, relay: string) => void;
@@ -385,7 +386,10 @@ export class NostrTransport {
             const [type, _subId, event] = data;
 
             if (type === 'EVENT' && event) {
-              events.set(event.id, event);
+              const verification = SignatureVerificationService.getInstance().verifyEvent(event);
+              if (verification.valid) {
+                events.set(event.id, event);
+              }
             } else if (type === 'EOSE') {
               ws.close();
             }

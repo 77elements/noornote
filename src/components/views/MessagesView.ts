@@ -18,7 +18,7 @@ import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { ToastService } from '../../services/ToastService';
 import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { ProgressBarHelper } from '../../helpers/ProgressBarHelper';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { DMComposeModal } from '../modals/DMComposeModal';
@@ -441,7 +441,7 @@ export class MessagesView extends View {
     // Avatar: use image if available, otherwise letter placeholder
     // Wrap in user-mention for hover card support
     const avatarHtml = avatarUrl
-      ? `<div class="user-mention conversation-item__avatar" data-pubkey="${conversation.pubkey}"><img class="conversation-item__avatar-img" src="${avatarUrl}" alt="" /></div>`
+      ? `<div class="user-mention conversation-item__avatar" data-pubkey="${conversation.pubkey}"><img class="conversation-item__avatar-img" src="${escapeHtmlAttr(avatarUrl)}" alt="" /></div>`
       : `<div class="user-mention conversation-item__avatar-placeholder" data-pubkey="${conversation.pubkey}">${displayName.charAt(0).toUpperCase()}</div>`;
 
     // Only avatar and name trigger hover card

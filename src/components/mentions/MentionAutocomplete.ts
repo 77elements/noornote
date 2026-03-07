@@ -14,6 +14,7 @@
 
 import { AppState } from '../../services/AppState';
 import { MentionProfileCache } from '../../services/MentionProfileCache';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export interface MentionSuggestion {
   pubkey: string;
@@ -240,14 +241,14 @@ export class MentionAutocomplete {
 
       item.innerHTML = `
         <img
-          src="${suggestion.picture || ''}"
-          alt="${suggestion.username}"
+          src="${escapeHtmlAttr(suggestion.picture || '')}"
+          alt="${escapeHtmlAttr(suggestion.username)}"
           class="mention-avatar"
         />
         <div class="mention-info">
-          <div class="mention-name">${suggestion.displayName}</div>
-          <div class="mention-username">@${suggestion.username}</div>
-          ${suggestion.nip05 ? `<div class="mention-nip05">${suggestion.nip05}</div>` : ''}
+          <div class="mention-name">${escapeHtml(suggestion.displayName)}</div>
+          <div class="mention-username">@${escapeHtml(suggestion.username)}</div>
+          ${suggestion.nip05 ? `<div class="mention-nip05">${escapeHtml(suggestion.nip05)}</div>` : ''}
         </div>
       `;
 

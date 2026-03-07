@@ -61,9 +61,13 @@ export class ConversationView extends View {
     // Listen for new messages in this conversation
     this.subscriptionId = this.eventBus.on('dm:new-message', (data: { message: DMMessage; conversationWith: string }) => {
       if (data.conversationWith === this.partnerPubkey) {
-        // Add new message at the end (newest at bottom)
         this.messages.push(data.message);
-        this.renderMessages();
+        const container = this.messagesContainer;
+        if (container) {
+          const emptyState = container.querySelector('.conversation-view__empty');
+          if (emptyState) emptyState.remove();
+          container.appendChild(this.renderMessage(data.message));
+        }
         this.scrollToBottom();
       }
     });
