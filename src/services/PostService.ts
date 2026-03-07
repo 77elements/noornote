@@ -1,11 +1,14 @@
 /**
  * PostService - Note Publishing Service
- * Handles creation and publishing of Kind 1 (short text note) and Kind 1068 (poll) events
+ * Handles creation and publishing of Kind 1 (short text note), Kind 1068 (poll),
+ * and Kind 1111 (NIP-22 comment) events
  *
  * Kind 1: Short text note (basic Nostr post)
  * Kind 1068: Poll (NIP-88)
+ * Kind 1111: Comment (NIP-22)
  * NIP-01: https://github.com/nostr-protocol/nips/blob/master/01.md
  * NIP-10: https://github.com/nostr-protocol/nips/blob/master/10.md (Reply threading)
+ * NIP-22: https://github.com/nostr-protocol/nips/blob/master/22.md (Comments)
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -52,6 +55,8 @@ export interface ReplyOptions {
   relays: string[];
   /** Content warning (NSFW marker) - NIP-36 */
   contentWarning?: boolean;
+  /** NIP-22: Send as kind:1111 comment instead of kind:1 reply */
+  asComment?: boolean;
 }
 
 export class PostService {
@@ -220,18 +225,16 @@ export class PostService {
   }
 
   /**
-   * Create and publish a reply to a note (Kind 1 event with NIP-10 threading)
+   * Create and publish a reply (Kind 1, NIP-10) or comment (Kind 1111, NIP-22)
    *
-   * NIP-10 Threading:
-   * - Reply to root: ["e", <root-id>, <hint>, "root", <root-author>]
-   * - Reply to reply: ["e", <root-id>, <hint>, "root"] + ["e", <parent-id>, <hint>, "reply", <parent-author>]
-   * - P-tags: [<parent-author>, ...all p-tags from parent event]
+   * Kind 1 (Reply): Appears on author's profile, visible in followers' feeds
+   * Kind 1111 (Comment): Stays under the original post, doesn't appear on profile
    *
    * @param options - Reply configuration
-   * @returns Promise<NostrEvent | null> - Signed reply event on success, null on failure
+   * @returns Promise<NostrEvent | null> - Signed event on success, null on failure
    */
   public async createReply(options: ReplyOptions): Promise<NostrEvent | null> {
-    const { content, parentEvent, relays, contentWarning } = options;
+    const { content, parentEvent, relays, contentWarning, asComment } = options;
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
@@ -252,6 +255,10 @@ export class PostService {
       return null;
     }
 
+    const isComment = asComment === true;
+    const kind = isComment ? 1111 : 1;
+    const label = isComment ? 'Comment' : 'Reply';
+
     try {
       // Build tags array
       const tags: string[][] = [];
@@ -261,14 +268,20 @@ export class PostService {
         tags.push(['content-warning', '']);
       }
 
-      // NIP-10: Build e-tags (root/reply markers) and p-tags
-      const { eTags, pTags } = this.buildReplyTags(parentEvent);
-      tags.push(...eTags);
-      tags.push(...pTags);
+      if (isComment) {
+        // NIP-22: Build comment tags (uppercase for root, lowercase for parent)
+        const commentTags = this.buildCommentTags(parentEvent);
+        tags.push(...commentTags);
+      } else {
+        // NIP-10: Build e-tags (root/reply markers) and p-tags
+        const { eTags, pTags } = this.buildReplyTags(parentEvent);
+        tags.push(...eTags);
+        tags.push(...pTags);
+      }
 
       // Build unsigned event
       const unsignedEvent = {
-        kind: 1,
+        kind,
         created_at: Math.floor(Date.now() / 1000),
         tags,
         content: content.trim(),
@@ -279,24 +292,23 @@ export class PostService {
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
       if (!signedEvent) {
-        this.systemLogger.error('PostService', 'Failed to sign reply event');
+        this.systemLogger.error('PostService', `Failed to sign ${label.toLowerCase()} event`);
         return null;
       }
 
-      this.systemLogger.info('PostService', `✅ Reply event signed: ${signedEvent.id?.slice(0, 8)}`);
+      this.systemLogger.info('PostService', `${label} event signed: ${signedEvent.id?.slice(0, 8)}`);
 
       // Publish to specified relays
       await this.transport.publish(relays, signedEvent);
 
       this.systemLogger.info(
         'PostService',
-        `Reply published to ${relays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
+        `${label} published to ${relays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
       );
 
       // Show success toast to user
-      ToastService.show('Reply posted successfully!', 'success');
+      ToastService.show(`${label} posted successfully!`, 'success');
 
-      this.systemLogger.info('PostService', `🎯 Returning signed event: ${signedEvent.id?.slice(0, 8)}`);
       return signedEvent;
     } catch (error) {
       // Centralized error handling with user notification
@@ -304,10 +316,87 @@ export class PostService {
         error,
         'PostService.createReply',
         true,
-        'Failed to post reply. Please try again.'
+        `Failed to post ${label.toLowerCase()}. Please try again.`
       );
       return null;
     }
+  }
+
+  /**
+   * Build NIP-22 comment tags
+   *
+   * NIP-22 uses uppercase tags for root scope and lowercase for parent:
+   * - E/A/I = root event reference, K = root kind, P = root author
+   * - e/a/i = parent event reference, k = parent kind, p = parent author
+   *
+   * For top-level comments, root and parent are the same event.
+   * For replies to comments, root is the original post and parent is the comment.
+   */
+  private buildCommentTags(parentEvent: NostrEvent): string[][] {
+    const tags: string[][] = [];
+    const relayConfig = RelayConfig.getInstance();
+    const relayHint = relayConfig.getWriteRelays()[0] ?? '';
+
+    const parentId = parentEvent.id;
+    const parentPubkey = parentEvent.pubkey;
+    const parentKind = parentEvent.kind ?? 1;
+
+    if (!parentId || !parentPubkey) return tags;
+
+    if (parentKind === 1111) {
+      // Replying to another comment — inherit root scope from parent
+      const rootETag = parentEvent.tags.find(t => t[0] === 'E');
+      const rootATag = parentEvent.tags.find(t => t[0] === 'A');
+      const rootKTag = parentEvent.tags.find(t => t[0] === 'K');
+      const rootPTag = parentEvent.tags.find(t => t[0] === 'P');
+
+      // Carry forward root scope tags
+      if (rootETag) tags.push([...rootETag]);
+      if (rootATag) tags.push([...rootATag]);
+      if (rootKTag) tags.push([...rootKTag]);
+      if (rootPTag) tags.push([...rootPTag]);
+
+      // Parent = this comment
+      tags.push(['e', parentId, relayHint, parentPubkey]);
+      tags.push(['k', '1111']);
+      tags.push(['p', parentPubkey, relayHint]);
+    } else if (this.isAddressableKind(parentKind)) {
+      // Commenting on an addressable event (article, recipe, etc.)
+      const dTag = parentEvent.tags.find(t => t[0] === 'd')?.[1] ?? '';
+      const addressableId = `${parentKind}:${parentPubkey}:${dTag}`;
+
+      // Root scope = addressable event
+      tags.push(['A', addressableId, relayHint]);
+      tags.push(['E', parentId, relayHint, parentPubkey]);
+      tags.push(['K', String(parentKind)]);
+      tags.push(['P', parentPubkey, relayHint]);
+
+      // Parent = same as root (top-level comment)
+      tags.push(['a', addressableId, relayHint]);
+      tags.push(['e', parentId, relayHint, parentPubkey]);
+      tags.push(['k', String(parentKind)]);
+      tags.push(['p', parentPubkey, relayHint]);
+    } else {
+      // Commenting on a regular event (kind:1 note, etc.)
+      // Root scope
+      tags.push(['E', parentId, relayHint, parentPubkey]);
+      tags.push(['K', String(parentKind)]);
+      tags.push(['P', parentPubkey, relayHint]);
+
+      // Parent = same as root (top-level comment)
+      tags.push(['e', parentId, relayHint, parentPubkey]);
+      tags.push(['k', String(parentKind)]);
+      tags.push(['p', parentPubkey, relayHint]);
+    }
+
+    return tags;
+  }
+
+  /**
+   * Check if a kind is addressable (NIP-33: 30000-39999)
+   */
+  private isAddressableKind(kind: number): boolean {
+    return kind >= 30000 && kind <= 39999;
   }
 
   /**

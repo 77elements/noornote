@@ -7,7 +7,7 @@
  * @used-by SingleNoteView, ThreadContextIndicator
  *
  * Architecture:
- * - Fetches replies (kind:1 with #e tag pointing to note) - DOWNWARD
+ * - Fetches replies (kind:1 + kind:1111 with #e tag pointing to note) - DOWNWARD
  * - Fetches parent chain (walk up e-tags to root) - UPWARD
  * - Filters out non-replies (mentions)
  * - Cache: 5min TTL
@@ -99,7 +99,7 @@ export class ThreadOrchestrator extends Orchestrator {
     const isAddressable = noteId.includes(':');
 
     const filters: NDKFilter[] = [{
-      kinds: [1],
+      kinds: [1, 1111],
       ...(isAddressable ? { '#a': [noteId] } : { '#e': [noteId] })
     }];
 
@@ -209,6 +209,13 @@ export class ThreadOrchestrator extends Orchestrator {
   }
 
   private extractParentId(event: NostrEvent): string | null {
+    // NIP-22: kind:1111 uses lowercase 'e' tag for parent reference
+    if (event.kind === 1111) {
+      const parentETag = event.tags.find(t => t[0] === 'e');
+      return parentETag?.[1] ?? null;
+    }
+
+    // NIP-10: kind:1 uses e-tags with markers
     const eTags = event.tags.filter(tag => tag[0] === 'e');
     if (eTags.length === 0) return null;
 
@@ -242,7 +249,7 @@ export class ThreadOrchestrator extends Orchestrator {
     const subId = `live-replies-${noteId}`;
 
     const filters: NDKFilter[] = [{
-      kinds: [1],
+      kinds: [1, 1111],
       '#e': [noteId],
       since: Math.floor(Date.now() / 1000)
     }];
