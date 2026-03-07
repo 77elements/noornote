@@ -89,6 +89,14 @@
   white-space: nowrap;
 }
 
+// NIP-22 comment marker
+.note-header__nip22-marker {
+  @extend %small;
+  color: var(--color-3);
+  opacity: 0.6;
+  white-space: nowrap;
+}
+
 // Menu container
 .note-header__menu-container {
   display: flex;

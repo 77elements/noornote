@@ -106,6 +106,14 @@ export class NoteHeader {
       metaSection.appendChild(verification);
     }
 
+    // NIP-22 comment marker (before timestamp)
+    if (this.options.rawEvent?.kind === 1111) {
+      const commentMarker = document.createElement('span');
+      commentMarker.className = 'note-header__nip22-marker';
+      commentMarker.textContent = 'Kind:1111';
+      metaSection.appendChild(commentMarker);
+    }
+
     if (this.options.showTimestamp) {
       const timestamp = document.createElement('time');
       timestamp.className = 'note-header__timestamp';

@@ -1,18 +1,23 @@
 /**
  * ReplyModal Component
- * Modal dialog for creating replies to notes (Kind 1 reply events with NIP-10 threading)
+ * Modal dialog for creating replies (Kind 1, NIP-10) or comments (Kind 1111, NIP-22)
  *
  * Features:
  * - Shows parent note context above reply editor
  * - Edit/Preview tabs
+ * - Comment/Reply switch for kind:1 parent events (NIP-22)
  * - Multi-relay selector (TEST mode = local relay only)
  * - Content preview with ContentProcessor
- * - Publish reply with proper e-tags (root/reply markers) and p-tags via PostService
+ * - Publish reply with proper tags via PostService
  *
- * NIP-10 Threading:
- * - Reply to root: ["e", <root-id>, <hint>, "root", <root-author>]
- * - Reply to reply: ["e", <root-id>, <hint>, "root"] + ["e", <parent-id>, <hint>, "reply", <parent-author>]
- * - P-tags: [<parent-author>, ...all p-tags from parent event]
+ * NIP-22 Comment Mode (kind:1111):
+ * - Comment stays under the original post, doesn't appear on author's profile
+ * - Forced for non-kind:1 parent events (articles, etc.)
+ * - Optional for kind:1 parent events (user choice via switch)
+ *
+ * NIP-10 Reply Mode (kind:1):
+ * - Reply appears on author's profile and in followers' feeds
+ * - Only available for kind:1 parent events
  */
 
 import { ModalService } from '../../services/ModalService';
@@ -52,6 +57,7 @@ export class ReplyModal {
   private relaySelector: RelaySelector | null = null;
   private toolbar: PostEditorToolbar | null = null;
   private nsfwSwitch: Switch | null = null;
+  private commentSwitch: Switch | null = null;
   private mentionAutocomplete: MentionAutocomplete | null = null;
   private eventHandlerManager: ModalEventHandlerManager | null = null;
 
@@ -62,6 +68,7 @@ export class ReplyModal {
   private availableRelays: string[] = [];
   private isTestMode: boolean = false;
   private isNSFW: boolean = false;
+  private isComment: boolean = true;
   private parentEvent: NostrEvent | null = null;
 
   private constructor() {
@@ -80,6 +87,13 @@ export class ReplyModal {
       ReplyModal.instance = new ReplyModal();
     }
     return ReplyModal.instance;
+  }
+
+  /**
+   * Check if parent event is kind:1 (only then user gets a choice)
+   */
+  private get parentIsKind1(): boolean {
+    return this.parentEvent?.kind === 1 || this.parentEvent?.kind === undefined;
   }
 
   /**
@@ -103,12 +117,15 @@ export class ReplyModal {
     this.parentEvent = parentEvent;
     this.currentTab = 'edit';
     this.content = '';
+    // Default: Reply (kind:1) for kind:1 parents, Comment (kind:1111) for everything else
+    this.isComment = !this.parentIsKind1;
     this.loadRelayConfiguration();
 
     const modalContent = this.renderContent();
+    const title = this.isComment ? 'Comment' : 'Reply';
 
     this.modalService.show({
-      title: 'Reply',
+      title,
       content: modalContent,
       width: '700px',
       height: '580px',
@@ -236,7 +253,7 @@ export class ReplyModal {
   }
 
   /**
-   * Render tabs header (Edit/Preview + Relay Selector)
+   * Render tabs header (Edit/Preview + Comment Switch + Relay Selector)
    */
   private renderTabs(): string {
     // Create relay selector component
@@ -249,6 +266,11 @@ export class ReplyModal {
         this.updatePostButton();
       }
     });
+
+    // Comment/Reply switch — only for kind:1 parent events
+    const commentSwitchHtml = this.parentIsKind1
+      ? `<div class="reply-modal-type-switch" id="comment-switch-container"></div>`
+      : '';
 
     return `
       <div class="post-note-header">
@@ -266,6 +288,7 @@ export class ReplyModal {
             Preview
           </button>
         </div>
+        ${commentSwitchHtml}
         ${this.relaySelector.render()}
       </div>
     `;
@@ -279,7 +302,7 @@ export class ReplyModal {
       return `
         <textarea
           class="textarea"
-          placeholder="Write your reply..."
+          placeholder="Write your ${this.isComment ? 'comment' : 'reply'}..."
           data-textarea
         >${this.content}</textarea>
       `;
@@ -313,6 +336,7 @@ export class ReplyModal {
       selectedRelays: this.selectedRelays
     });
     const isPostDisabled = !validation.isValid;
+    const buttonLabel = this.isComment ? 'Comment' : 'Reply';
 
     return `
       <div class="post-note-actions">
@@ -323,7 +347,7 @@ export class ReplyModal {
           </div>
           <div class="post-note-actions-right">
             <button class="btn btn--passive" data-action="cancel">Cancel</button>
-            <button class="btn" data-action="post" ${isPostDisabled ? 'disabled' : ''}>Reply</button>
+            <button class="btn" data-action="post" ${isPostDisabled ? 'disabled' : ''}>${buttonLabel}</button>
           </div>
         </div>
       </div>
@@ -347,6 +371,11 @@ export class ReplyModal {
     const toolbarContainer = modal.querySelector('.post-note-toolbar');
     if (this.toolbar && toolbarContainer) {
       this.toolbar.setupEventListeners(toolbarContainer as HTMLElement);
+    }
+
+    // Setup Comment/Reply switch (only for kind:1 parents)
+    if (this.parentIsKind1) {
+      this.setupCommentSwitch();
     }
 
     // Setup mention autocomplete
@@ -373,6 +402,77 @@ export class ReplyModal {
       onSubmit: () => this.handlePost()
     });
     this.eventHandlerManager.setupEventListeners();
+  }
+
+  /**
+   * Setup Comment/Reply switch with hint text
+   */
+  private setupCommentSwitch(): void {
+    const container = document.querySelector('#comment-switch-container');
+    if (!container) return;
+
+    // Switch OFF = Reply (default for kind:1), Switch ON = Comment
+    this.commentSwitch = new Switch({
+      label: 'Comment',
+      checked: this.isComment,
+      onChange: (checked) => {
+        this.isComment = checked;
+        this.updateCommentSwitchHint();
+        this.updateModalTitle();
+        this.updatePostButton();
+        this.updatePlaceholder();
+      }
+    });
+
+    container.innerHTML = `
+      <div class="reply-modal-type-switch__inner">
+        ${this.commentSwitch.render()}
+        <span class="reply-modal-type-hint" id="comment-type-hint">
+          ${this.getCommentHint()}
+        </span>
+      </div>
+    `;
+
+    this.commentSwitch.setupEventListeners(container as HTMLElement);
+  }
+
+  /**
+   * Get hint text for current mode
+   */
+  private getCommentHint(): string {
+    return this.isComment
+      ? 'Stays under this post (Kind:1111)'
+      : 'Appears on your profile (Kind:1)';
+  }
+
+  /**
+   * Update hint text when switch changes
+   */
+  private updateCommentSwitchHint(): void {
+    const hint = document.querySelector('#comment-type-hint');
+    if (hint) {
+      hint.textContent = this.getCommentHint();
+    }
+  }
+
+  /**
+   * Update modal title based on Comment/Reply mode
+   */
+  private updateModalTitle(): void {
+    const titleEl = document.querySelector('.modal__header h2');
+    if (titleEl) {
+      titleEl.textContent = this.isComment ? 'Comment' : 'Reply';
+    }
+  }
+
+  /**
+   * Update textarea placeholder
+   */
+  private updatePlaceholder(): void {
+    const textarea = document.querySelector('[data-textarea]') as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.placeholder = `Write your ${this.isComment ? 'comment' : 'reply'}...`;
+    }
   }
 
   /**
@@ -425,11 +525,20 @@ export class ReplyModal {
    * Update post button state
    */
   private updatePostButton(): void {
+    const btn = document.querySelector('[data-action="post"]');
+    if (btn) {
+      btn.textContent = this.isComment ? 'Comment' : 'Reply';
+    }
     EditorStateManager.updatePostButton(
       '[data-action="post"]',
       this.content,
       this.selectedRelays
     );
+    // Restore label after EditorStateManager may have cleared it
+    const btnAfter = document.querySelector('[data-action="post"]');
+    if (btnAfter && btnAfter.textContent !== (this.isComment ? 'Comment' : 'Reply')) {
+      btnAfter.textContent = this.isComment ? 'Comment' : 'Reply';
+    }
   }
 
   /**
@@ -506,7 +615,7 @@ export class ReplyModal {
   }
 
   /**
-   * Handle post button click (publish reply)
+   * Handle post button click (publish reply or comment)
    */
   private async handlePost(): Promise<void> {
     // Validate content before posting
@@ -519,8 +628,10 @@ export class ReplyModal {
       return;
     }
 
+    const label = this.isComment ? 'comment on' : 'reply to';
+
     // Check authentication before posting (Write Event)
-    if (!AuthGuard.requireAuth('reply to this note')) {
+    if (!AuthGuard.requireAuth(`${label} this note`)) {
       return;
     }
 
@@ -543,15 +654,18 @@ export class ReplyModal {
     }
 
     try {
-      this.systemLogger.info('ReplyModal', 'Calling PostService.createReply...');
+      const actionLabel = this.isComment ? 'Comment' : 'Reply';
+      this.systemLogger.info('ReplyModal', `Calling PostService.createReply (${actionLabel})...`);
+
       const replyEvent = await this.postService.createReply({
         content: this.content,
         parentEvent: this.parentEvent,
         relays: Array.from(this.selectedRelays),
-        contentWarning: this.isNSFW
+        contentWarning: this.isNSFW,
+        asComment: this.isComment
       });
 
-      this.systemLogger.info('ReplyModal', `Received reply event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`);
+      this.systemLogger.info('ReplyModal', `Received ${actionLabel.toLowerCase()} event: ${replyEvent ? replyEvent.id?.slice(0, 8) : 'NULL'}`);
 
       if (replyEvent && replyEvent.id) {
         // Update parent note's reply count (cache invalidation + optimistic UI update)
@@ -565,13 +679,14 @@ export class ReplyModal {
 
         this.cleanup();
         this.modalService.hide();
-        this.systemLogger.success('PostService', 'Reply posted successfully');
+        this.systemLogger.success('PostService', `${actionLabel} posted successfully`);
       } else {
-        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Reply');
+        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, actionLabel);
       }
     } catch (error) {
-      console.error('Reply error:', error);
-      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Reply');
+      console.error('Reply/Comment error:', error);
+      const actionLabel = this.isComment ? 'Comment' : 'Reply';
+      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, actionLabel);
     }
   }
 
@@ -616,6 +731,11 @@ export class ReplyModal {
     if (this.nsfwSwitch) {
       this.nsfwSwitch.destroy();
       this.nsfwSwitch = null;
+    }
+
+    if (this.commentSwitch) {
+      this.commentSwitch.destroy();
+      this.commentSwitch = null;
     }
 
     if (this.mentionAutocomplete) {

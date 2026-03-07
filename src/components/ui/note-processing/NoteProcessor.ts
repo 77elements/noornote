@@ -23,6 +23,7 @@ export class NoteProcessor {
     try {
       switch (event.kind) {
         case 1:
+        case 1111:
           return TextNoteProcessor.process(event);
         case 6:
           return RepostProcessor.process(event);

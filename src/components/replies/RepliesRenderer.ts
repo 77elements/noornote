@@ -242,9 +242,16 @@ export class RepliesRenderer {
   }
 
   /**
-   * Extract parent ID from reply's e-tags (NIP-10)
+   * Extract parent ID from reply's tags (NIP-10 for kind:1, NIP-22 for kind:1111)
    */
   private extractReplyParentId(reply: NostrEvent): string | null {
+    // NIP-22: kind:1111 uses lowercase 'e' tag for parent reference
+    if (reply.kind === 1111) {
+      const parentETag = reply.tags.find(t => t[0] === 'e');
+      return parentETag?.[1] ?? null;
+    }
+
+    // NIP-10: kind:1 uses e-tags with markers
     const eTags = reply.tags.filter(tag => tag[0] === 'e');
     if (eTags.length === 0) return null;
 
