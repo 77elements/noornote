@@ -13,6 +13,7 @@
 - **Long-Form Articles** - Read and write NIP-23 articles with dedicated timeline
 - **Polls** - Create and vote on NIP-88 polls
 - **Zaps** - Send and receive Lightning payments via NWC
+- **Comments** - NIP-22 Kind:1111 universal comments with Reply/Comment switch
 
 ### Highlights
 - **Beginner-friendly onboarding** - Step-by-step profile setup with guided explanations, first follows via [calle's Follow Packs](https://github.com/callebtc/following.space), and Lightning wallet setup with [Rizful](https://rizful.com)
@@ -105,6 +106,7 @@ If the app crashes, check the log files:
 | [NIP-17](https://github.com/nostr-protocol/nips/blob/master/17.md) | Private Direct Messages | 13, 14, 1059, 10050 |
 | [NIP-18](https://github.com/nostr-protocol/nips/blob/master/18.md) | Reposts | 6 |
 | [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md) | bech32 encoding (npub, nsec, note, nevent, naddr) | - |
+| [NIP-22](https://github.com/nostr-protocol/nips/blob/master/22.md) | Comments | 1111 |
 | [NIP-23](https://github.com/nostr-protocol/nips/blob/master/23.md) | Long-form content (articles) | 30023 |
 | [NIP-25](https://github.com/nostr-protocol/nips/blob/master/25.md) | Reactions | 7 |
 | [NIP-27](https://github.com/nostr-protocol/nips/blob/master/27.md) | Text note references | - |
