@@ -9,8 +9,6 @@ export interface ModalConfig {
   content: HTMLElement | string;
   width?: string;              // default: '50%'
   height?: string;             // default: '50%'
-  maxWidth?: string;           // default: '90%' on mobile
-  maxHeight?: string;          // default: '50%' on mobile
   showCloseButton?: boolean;   // default: true
   closeOnOverlay?: boolean;    // default: true
   closeOnEsc?: boolean;        // default: true
@@ -65,11 +63,8 @@ export class ModalService {
       document.body.appendChild(this.container);
     }
 
-    // Apply defaults
     const width = config.width || '50%';
     const height = config.height || '50%';
-    const maxWidth = config.maxWidth || '90%';
-    const maxHeight = config.maxHeight || '50%';
     const showCloseButton = config.showCloseButton !== false;
     const closeOnOverlay = config.closeOnOverlay !== false;
     const closeOnEsc = config.closeOnEsc !== false;
@@ -107,16 +102,6 @@ export class ModalService {
 
     // Setup event handlers
     this.setupEventHandlers(showCloseButton, closeOnOverlay, closeOnEsc);
-
-    // Add responsive styles
-    const contentElement = this.container.querySelector('.modal__content') as HTMLElement;
-    if (contentElement) {
-      // Add media query for mobile and tablet
-      contentElement.style.setProperty('--modal-max-width-mobile', maxWidth);
-      contentElement.style.setProperty('--modal-max-height-mobile', maxHeight);
-      contentElement.style.setProperty('--modal-max-width-tablet', width);
-      contentElement.style.setProperty('--modal-max-height-tablet', height);
-    }
   }
 
   /**

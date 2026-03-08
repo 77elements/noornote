@@ -36,8 +36,6 @@ export class QRCodeModal {
       content: loadingContent,
       width: '400px',
       height: 'auto',
-      maxWidth: '90%',
-      maxHeight: '90%'
     });
 
     // Generate QR code
@@ -59,8 +57,6 @@ export class QRCodeModal {
         content: qrContent,
         width: '400px',
         height: 'auto',
-        maxWidth: '90%',
-        maxHeight: '90%'
       });
     } catch (error) {
       console.error('❌ Failed to generate QR code:', error);
@@ -72,8 +68,6 @@ export class QRCodeModal {
         content: errorContent,
         width: '400px',
         height: 'auto',
-        maxWidth: '90%',
-        maxHeight: '90%'
       });
     }
   }
