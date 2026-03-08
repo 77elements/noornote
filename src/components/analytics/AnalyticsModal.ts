@@ -19,9 +19,7 @@ import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 const MODAL_CONFIG = {
   title: 'Analytics',
   width: '40%',
-  height: '40%',
-  maxWidth: '90%',
-  maxHeight: '50%'
+  height: '40%'
 } as const;
 
 export class AnalyticsModal {

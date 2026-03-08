@@ -1362,7 +1362,6 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 
     const allItems: BookmarkItem[] = [];
     const categoryAssignments = new Map<string, string>();
-    let anyContentWasEmpty = true;
 
     const assignCategory = (items: BookmarkItem[], categoryName: string, isPrivate: boolean): void => {
       for (const item of items) {
@@ -1377,7 +1376,6 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       if (!event) continue;
 
       const hasContent = !!event.content?.trim();
-      if (hasContent) anyContentWasEmpty = false;
 
       const publicItems = tagsToItems(event.tags.filter(t => t[0] !== 'd' && t[0] !== 'title'), event.created_at);
       assignCategory(publicItems, categoryName, false);
@@ -1401,7 +1399,7 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 
     return {
       items: deduped,
-      relayContentWasEmpty: anyContentWasEmpty,
+      relayContentWasEmpty: false,
       categoryAssignments,
       categories
     };

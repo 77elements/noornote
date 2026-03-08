@@ -428,9 +428,13 @@ export class AutoSyncService {
 
       this.systemLogger.info('ListAutoSync', `${listType}: diff - added: ${result.diff.added.length}, removed: ${result.diff.removed.length}`);
 
-      // Nothing changed - skip
+      // Nothing changed in diff - but check snapshot for order/property changes
       const movedCount = result.diff.moved?.length || 0;
       if (result.diff.added.length === 0 && result.diff.removed.length === 0 && movedCount === 0) {
+        if (result.requiresConfirmation) {
+          this.systemLogger.info('ListAutoSync', `${listType}: order or property changes detected, showing modal`);
+          await this.showSyncConfirmationModal(listType, result);
+        }
         return;
       }
 
@@ -475,6 +479,7 @@ export class AutoSyncService {
             diff: { added: result.diff.added, removed: result.diff.removed },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
+            requiresConfirmation: result.requiresConfirmation,
             categoryAssignments: undefined,
             categories: undefined
           };
@@ -486,6 +491,7 @@ export class AutoSyncService {
             diff: { added: result.diff.added, removed: result.diff.removed, moved: result.diff.moved },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
+            requiresConfirmation: result.requiresConfirmation,
             categoryAssignments: result.categoryAssignments,
             categories: result.categories
           };
@@ -497,6 +503,7 @@ export class AutoSyncService {
             diff: { added: result.diff.added, removed: result.diff.removed },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
+            requiresConfirmation: result.requiresConfirmation,
             categoryAssignments: undefined,
             categories: undefined
           };
@@ -508,6 +515,7 @@ export class AutoSyncService {
             diff: { added: result.diff.added, removed: result.diff.removed, moved: result.diff.moved },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
+            requiresConfirmation: result.requiresConfirmation,
             categoryAssignments: result.categoryAssignments,
             categories: result.categories
           };
@@ -762,6 +770,7 @@ interface SyncResult {
   diff: { added: unknown[]; removed: unknown[]; moved?: unknown[] };
   relayItems: unknown[];
   relayContentWasEmpty: boolean;
+  requiresConfirmation: boolean;
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
 }

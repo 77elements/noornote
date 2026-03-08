@@ -80,7 +80,7 @@ export class SyncConfirmationModal<T> {
         title: `⚠️ Sync ${this.options.listType}`,
         content,
         width: '550px',
-        maxHeight: '600px',
+        height: '600px',
         showCloseButton: true,
         closeOnOverlay: false,  // Don't allow closing by overlay click
         closeOnEsc: false       // Don't allow closing by Esc key
