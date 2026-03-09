@@ -914,6 +914,132 @@ export function applyRelayFetchResult(
 }
 
 /**
+ * Add folder assignments for NEW members only (onKeep / auto-merge).
+ * Does NOT touch existing browser folder structure — only adds assignments for newly added members.
+ */
+export function addNewMembersToFolders(newMembers: TribeMember[]): void {
+  if (newMembers.length === 0) return;
+
+  const existingFolders = getFolders();
+  const existingAssignments = getAssignments();
+  const existingRootOrder = getRootOrder();
+
+  const folderNameToId = new Map<string, string>();
+  for (const f of existingFolders) {
+    folderNameToId.set(f.name, f.id);
+  }
+
+  const addedFolders: TribeFolder[] = [];
+  const addedAssignments: MemberAssignment[] = [];
+  const addedRootOrderItems: RootOrderItem[] = [];
+
+  for (const member of newMembers) {
+    const tribeName = member.category || '';
+    if (!tribeName) continue;
+
+    // Create folder if it doesn't exist yet
+    let folderId = folderNameToId.get(tribeName);
+    if (!folderId) {
+      folderId = `folder_${tribeName}`;
+      const newFolder: TribeFolder = { id: folderId, name: tribeName, createdAt: now() };
+      addedFolders.push(newFolder);
+      addedRootOrderItems.push({ type: 'folder', id: folderId });
+      folderNameToId.set(tribeName, folderId);
+    }
+
+    // Add assignment if not already assigned
+    const alreadyAssigned = existingAssignments.some(a => a.memberId === member.id);
+    if (!alreadyAssigned) {
+      const orderInFolder = [...existingAssignments, ...addedAssignments].filter(a => a.folderId === folderId).length;
+      addedAssignments.push({ memberId: member.id, folderId: folderId!, order: orderInFolder });
+    }
+  }
+
+  if (addedFolders.length > 0) {
+    setFolders([...existingFolders, ...addedFolders]);
+  }
+  if (addedAssignments.length > 0) {
+    setAssignments([...existingAssignments, ...addedAssignments]);
+  }
+  if (addedRootOrderItems.length > 0) {
+    setRootOrder([...existingRootOrder, ...addedRootOrderItems]);
+  }
+
+  logger.info('Tribes', `Added folder assignments for ${addedAssignments.length} new members, ${addedFolders.length} new folders`);
+}
+
+/**
+ * Merge relay folder structure while preserving browser-only members' assignments (onMerge).
+ * Applies relay folder structure as base, then re-adds any browser-only members that would be lost.
+ */
+export function mergeRelayFolderStructurePreservingBrowserOnly(
+  relayMembers: TribeMember[],
+  categories: string[] | undefined,
+  browserOnlyMembers: TribeMember[]
+): void {
+  // Snapshot browser assignments for browser-only members BEFORE overwriting
+  const existingAssignments = getAssignments();
+  const existingFolders = getFolders();
+
+  // Map browser-only member IDs → their current folder assignment
+  const browserOnlyAssignments = new Map<string, { folderId: string; folderName: string }>();
+  const browserOnlyIds = new Set(browserOnlyMembers.map(m => m.id));
+  for (const assignment of existingAssignments) {
+    if (browserOnlyIds.has(assignment.memberId)) {
+      const folder = existingFolders.find(f => f.id === assignment.folderId);
+      if (folder) {
+        browserOnlyAssignments.set(assignment.memberId, { folderId: assignment.folderId, folderName: folder.name });
+      }
+    }
+  }
+
+  // Apply relay folder structure (this overwrites everything)
+  applyRelayFetchResult(relayMembers, undefined, categories);
+
+  // Now re-add browser-only members' folder assignments
+  if (browserOnlyAssignments.size === 0) return;
+
+  const newFolders = getFolders();
+  const newAssignments = getAssignments();
+  const newRootOrder = getRootOrder();
+
+  const folderNameToId = new Map<string, string>();
+  for (const f of newFolders) {
+    folderNameToId.set(f.name, f.id);
+  }
+
+  const extraFolders: TribeFolder[] = [];
+  const extraAssignments: MemberAssignment[] = [];
+  const extraRootOrder: RootOrderItem[] = [];
+
+  for (const [memberId, info] of browserOnlyAssignments) {
+    let folderId = folderNameToId.get(info.folderName);
+    if (!folderId) {
+      // Folder doesn't exist in relay data — recreate it
+      folderId = info.folderId;
+      extraFolders.push({ id: folderId, name: info.folderName, createdAt: now() });
+      extraRootOrder.push({ type: 'folder', id: folderId });
+      folderNameToId.set(info.folderName, folderId);
+    }
+
+    const orderInFolder = [...newAssignments, ...extraAssignments].filter(a => a.folderId === folderId).length;
+    extraAssignments.push({ memberId, folderId: folderId!, order: orderInFolder });
+  }
+
+  if (extraFolders.length > 0) {
+    setFolders([...newFolders, ...extraFolders]);
+  }
+  if (extraAssignments.length > 0) {
+    setAssignments([...newAssignments, ...extraAssignments]);
+  }
+  if (extraRootOrder.length > 0) {
+    setRootOrder([...newRootOrder, ...extraRootOrder]);
+  }
+
+  logger.info('Tribes', `Merged relay folders, preserved ${extraAssignments.length} browser-only member assignments`);
+}
+
+/**
  * Build TribeSetData from current browser state
  */
 function buildSetDataFromBrowser(): TribeSetData {
