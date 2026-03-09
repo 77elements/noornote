@@ -14,7 +14,10 @@ const SEARCH_RELAYS = [
   'wss://search.nos.today',
   'wss://relay.nostr.band',
   'wss://relay.ditto.pub',
-  'wss://relay.nostrcheck.me'
+  'wss://relay.nostrcheck.me',
+  'wss://antiprimal.net',
+  'wss://nostr.wine',
+  'wss://relay.noswhere.com'
 ];
 
 export interface SearchOptions {

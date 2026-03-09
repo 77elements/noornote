@@ -30,7 +30,7 @@
   // ========================================
   @include tablet {
     // Sidebar: fluid width, skaliert mit viewport (wie Font-Size)
-    grid-template-columns: clamp(200px, 24vw, 240px) 1fr;
+    grid-template-columns: clamp(205px, 24vw, 245px) 1fr;
     grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary";
     gap: $gap;
@@ -41,7 +41,7 @@
   // Desktop (1024px+): 3 columns
   // ========================================
   @include desktop {
-    grid-template-columns: clamp(200px, 18vw, 250px) 1fr 1fr;
+    grid-template-columns: clamp(205px, 18vw, 255px) 1fr 1fr;
     grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary secondary";
   }
@@ -60,14 +60,14 @@ html.layout--wide .main-layout {
 
   @include tablet {
     // Tablet+: 2 columns mit fluid sidebar
-    grid-template-columns: clamp(200px, 24vw, 240px) 1fr;
+    grid-template-columns: clamp(205px, 24vw, 245px) 1fr;
     grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary";
   }
 
   @include desktop {
     // Desktop: etwas schmalere sidebar im wide mode
-    grid-template-columns: clamp(200px, 16vw, 240px) 1fr;
+    grid-template-columns: clamp(205px, 16vw, 245px) 1fr;
     grid-template-rows: 1fr;
   }
 
@@ -102,7 +102,7 @@ html.layout--phone {
       top: 0;
       left: 0;
       bottom: 0;
-      width: 235px;
+      width: 240px;
       max-width: 80vw;
       z-index: 200;
       background: var(--color-1);

@@ -959,6 +959,151 @@ export function applyRelayFetchResult(
   SystemLogger.getInstance().info('bookmarks.ts', `Applied folder structure: ${newFolders.length} folders`);
 }
 
+/**
+ * Add folder assignments for NEW bookmarks only (onKeep / auto-merge).
+ * Does NOT touch existing browser folder structure — only adds assignments for newly added items.
+ */
+export function addNewBookmarksToFolders(newItems: BookmarkItem[]): void {
+  if (newItems.length === 0) return;
+
+  const storage = PerAccountLocalStorage.getInstance();
+  const existingFolders = storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
+  const existingAssignments = storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
+  const existingRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
+
+  const folderNameToId = new Map<string, string>();
+  for (const f of existingFolders) {
+    folderNameToId.set(f.name, f.id);
+  }
+
+  const addedFolders: BookmarkFolder[] = [];
+  const addedAssignments: BookmarkAssignment[] = [];
+  const addedRootOrderItems: RootOrderItem<'bookmark'>[] = [];
+
+  for (const item of newItems) {
+    const categoryName = item.category || '';
+    if (!categoryName) {
+      // Root item — add to root order if not already there
+      const alreadyInRoot = existingRootOrder.some(r => r.type === 'bookmark' && r.id === item.id);
+      if (!alreadyInRoot) {
+        addedRootOrderItems.push({ type: 'bookmark', id: item.id });
+      }
+      continue;
+    }
+
+    // Create folder if it doesn't exist yet
+    let folderId = folderNameToId.get(categoryName);
+    if (!folderId) {
+      folderId = `folder_${categoryName}`;
+      addedFolders.push({ id: folderId, name: categoryName, createdAt: Date.now() });
+      addedRootOrderItems.push({ type: 'folder', id: folderId });
+      folderNameToId.set(categoryName, folderId);
+    }
+
+    // Add assignment if not already assigned
+    const alreadyAssigned = existingAssignments.some(a => a.bookmarkId === item.id);
+    if (!alreadyAssigned) {
+      const orderInFolder = [...existingAssignments, ...addedAssignments].filter(a => a.folderId === folderId).length;
+      addedAssignments.push({ bookmarkId: item.id, folderId: folderId!, order: orderInFolder });
+    }
+  }
+
+  if (addedFolders.length > 0) {
+    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, [...existingFolders, ...addedFolders]);
+  }
+  if (addedAssignments.length > 0) {
+    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, [...existingAssignments, ...addedAssignments]);
+  }
+  if (addedRootOrderItems.length > 0) {
+    storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, [...existingRootOrder, ...addedRootOrderItems]);
+  }
+
+  SystemLogger.getInstance().info('bookmarks.ts', `Added folder assignments for ${addedAssignments.length} new bookmarks, ${addedFolders.length} new folders`);
+}
+
+/**
+ * Merge relay folder structure while preserving browser-only bookmarks' assignments (onMerge).
+ * Applies relay folder structure as base, then re-adds any browser-only items that would be lost.
+ */
+export function mergeRelayBookmarkStructurePreservingBrowserOnly(
+  relayItems: BookmarkItem[],
+  categories: string[] | undefined,
+  browserOnlyItems: BookmarkItem[]
+): void {
+  const storage = PerAccountLocalStorage.getInstance();
+
+  // Snapshot browser assignments for browser-only items BEFORE overwriting
+  const existingAssignments = storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
+  const existingFolders = storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
+  const existingRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
+
+  // Map browser-only item IDs → their current folder assignment (or root)
+  const browserOnlyIds = new Set(browserOnlyItems.map(b => b.id));
+  const browserOnlyFolderAssignments = new Map<string, { folderId: string; folderName: string }>();
+  const browserOnlyInRoot = new Set<string>();
+
+  for (const assignment of existingAssignments) {
+    if (browserOnlyIds.has(assignment.bookmarkId)) {
+      const folder = existingFolders.find(f => f.id === assignment.folderId);
+      if (folder) {
+        browserOnlyFolderAssignments.set(assignment.bookmarkId, { folderId: assignment.folderId, folderName: folder.name });
+      }
+    }
+  }
+  for (const orderItem of existingRootOrder) {
+    if (orderItem.type === 'bookmark' && browserOnlyIds.has(orderItem.id)) {
+      browserOnlyInRoot.add(orderItem.id);
+    }
+  }
+
+  // Apply relay folder structure (this overwrites everything)
+  applyRelayFetchResult(relayItems, undefined, categories);
+
+  // Re-add browser-only items' folder assignments
+  if (browserOnlyFolderAssignments.size === 0 && browserOnlyInRoot.size === 0) return;
+
+  const newFolders = storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
+  const newAssignments = storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
+  const newRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
+
+  const folderNameToId = new Map<string, string>();
+  for (const f of newFolders) {
+    folderNameToId.set(f.name, f.id);
+  }
+
+  const extraFolders: BookmarkFolder[] = [];
+  const extraAssignments: BookmarkAssignment[] = [];
+  const extraRootOrder: RootOrderItem<'bookmark'>[] = [];
+
+  for (const [bookmarkId, info] of browserOnlyFolderAssignments) {
+    let folderId = folderNameToId.get(info.folderName);
+    if (!folderId) {
+      folderId = info.folderId;
+      extraFolders.push({ id: folderId, name: info.folderName, createdAt: Date.now() });
+      extraRootOrder.push({ type: 'folder', id: folderId });
+      folderNameToId.set(info.folderName, folderId);
+    }
+    const orderInFolder = [...newAssignments, ...extraAssignments].filter(a => a.folderId === folderId).length;
+    extraAssignments.push({ bookmarkId, folderId: folderId!, order: orderInFolder });
+  }
+
+  for (const bookmarkId of browserOnlyInRoot) {
+    extraRootOrder.push({ type: 'bookmark', id: bookmarkId });
+  }
+
+  if (extraFolders.length > 0) {
+    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, [...newFolders, ...extraFolders]);
+  }
+  if (extraAssignments.length > 0) {
+    storage.set(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, [...newAssignments, ...extraAssignments]);
+  }
+  if (extraRootOrder.length > 0) {
+    storage.set(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, [...newRootOrder, ...extraRootOrder]);
+  }
+
+  SystemLogger.getInstance().info('bookmarks.ts', `Merged relay folders, preserved ${extraAssignments.length + browserOnlyInRoot.size} browser-only bookmark assignments`);
+}
+
 // =============================================================================
 // RELAY OPERATIONS (NIP-51 kind:30003)
 // =============================================================================

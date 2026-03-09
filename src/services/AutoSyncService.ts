@@ -39,6 +39,8 @@ import {
   publishBookmarksToRelays,
   BookmarkStorageAdapter,
   applyRelayFetchResult as applyBookmarkRelayResult,
+  addNewBookmarksToFolders,
+  mergeRelayBookmarkStructurePreservingBrowserOnly,
   type BookmarkItem
 } from '../lists/bookmarks';
 
@@ -53,6 +55,8 @@ import {
   publishToRelays as publishTribesToRelays,
   TribeStorageAdapter,
   applyRelayFetchResult as applyTribeRelayResult,
+  addNewMembersToFolders,
+  mergeRelayFolderStructurePreservingBrowserOnly,
   type TribeMember
 } from '../lists/tribes';
 
@@ -450,8 +454,11 @@ export class AutoSyncService {
       if (result.diff.added.length > 0 && result.diff.removed.length === 0 && movedCount === 0) {
         this.systemLogger.info('ListAutoSync', `${listType}: auto-merging ${result.diff.added.length} new items`);
         this.applyMerge(listType, result.relayItems);
-        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
-          await this.applyFolderAssignments(listType, result);
+        // Only add folder assignments for NEW items — don't destroy existing browser structure
+        if (listType === 'bookmarks') {
+          addNewBookmarksToFolders(result.diff.added as BookmarkItem[]);
+        } else if (listType === 'tribes') {
+          addNewMembersToFolders(result.diff.added as TribeMember[]);
         }
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: ${result.diff.added.length} new synced from relay`, 'success');
         return;
@@ -611,8 +618,11 @@ export class AutoSyncService {
       onKeep: async () => {
         // Keep local state + add new items from relay, then push merged state to relays
         this.applyMerge(listType, result.relayItems);
-        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
-          await this.applyFolderAssignments(listType, result);
+        // Only add folder assignments for NEW items — don't destroy existing browser structure
+        if (listType === 'bookmarks') {
+          addNewBookmarksToFolders(result.diff.added as BookmarkItem[]);
+        } else if (listType === 'tribes') {
+          addNewMembersToFolders(result.diff.added as TribeMember[]);
         }
         // Push merged state back so the modal doesn't reappear on next periodic sync
         await this.syncToRelays(listType);
@@ -621,8 +631,19 @@ export class AutoSyncService {
       onMerge: async () => {
         // True merge: combine both local + relay, then push back to relays
         this.applyMerge(listType, result.relayItems);
-        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
-          await this.applyFolderAssignments(listType, result);
+        // Apply relay folder structure but preserve browser-only items' assignments
+        if (listType === 'bookmarks') {
+          mergeRelayBookmarkStructurePreservingBrowserOnly(
+            result.relayItems as BookmarkItem[],
+            result.categories,
+            result.diff.removed as BookmarkItem[]
+          );
+        } else if (listType === 'tribes') {
+          mergeRelayFolderStructurePreservingBrowserOnly(
+            result.relayItems as TribeMember[],
+            result.categories,
+            result.diff.removed as TribeMember[]
+          );
         }
         // Push merged state back to relays
         await this.syncToRelays(listType);
@@ -633,6 +654,8 @@ export class AutoSyncService {
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
         }
+        // Push accepted state to relays so all instances are in sync
+        await this.syncToRelays(listType);
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Synced from relays (removed ${result.diff.removed.length})`, 'success');
       }
     });
