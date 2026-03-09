@@ -35,6 +35,8 @@ export class MarketplaceTimeline {
   private tagCounts: Map<string, number> = new Map();
   /** Currently active tag filter (null = show all) */
   private activeTag: string | null = null;
+  /** Tags that cause a listing to be hidden entirely */
+  private static readonly HIDDEN_TAGS = new Set(['gamemod']);
 
   constructor() {
     this.feedOrchestrator = MarketplaceFeedOrchestrator.getInstance();
@@ -69,11 +71,12 @@ export class MarketplaceTimeline {
       const result = await this.feedOrchestrator.loadInitial();
       this.hasMore = result.hasMore;
 
-      if (result.listings.length > 0) {
-        this.allListings = result.listings;
-        this.collectTags(result.listings);
+      const filtered = this.filterHiddenListings(result.listings);
+      if (filtered.length > 0) {
+        this.allListings = filtered;
+        this.collectTags(filtered);
         this.renderFilterBar();
-        this.renderListings(result.listings);
+        this.renderListings(filtered);
         this.infiniteScroll.observe(this.listingsContainer);
       } else {
         this.showEmpty();
@@ -96,11 +99,12 @@ export class MarketplaceTimeline {
       const result = await this.feedOrchestrator.loadMore();
       this.hasMore = result.hasMore;
 
-      if (result.listings.length > 0) {
-        this.allListings.push(...result.listings);
-        this.collectTags(result.listings);
+      const filtered = this.filterHiddenListings(result.listings);
+      if (filtered.length > 0) {
+        this.allListings.push(...filtered);
+        this.collectTags(filtered);
         this.renderFilterBar();
-        this.appendListings(result.listings);
+        this.appendListings(filtered);
 
         // Apply active filter to newly appended cards
         if (this.activeTag) {
@@ -122,11 +126,19 @@ export class MarketplaceTimeline {
 
   // ─── Tag Filter ──────────────────────────────────────────────────
 
+  private filterHiddenListings(listings: NostrEvent[]): NostrEvent[] {
+    return listings.filter(event => {
+      const meta = parseListingMetadata(event);
+      return !meta.tags.some(t => MarketplaceTimeline.HIDDEN_TAGS.has(t.toLowerCase()));
+    });
+  }
+
   private collectTags(listings: NostrEvent[]): void {
     for (const event of listings) {
       const meta = parseListingMetadata(event);
       for (const tag of meta.tags) {
         const lower = tag.toLowerCase();
+        if (MarketplaceTimeline.HIDDEN_TAGS.has(lower)) continue;
         this.tagCounts.set(lower, (this.tagCounts.get(lower) || 0) + 1);
       }
     }
