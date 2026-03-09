@@ -25,8 +25,16 @@ export class MarketplaceTimeline {
   private router: Router;
   private infiniteScroll: InfiniteScroll;
   private listingsContainer: HTMLElement;
+  private filterBar: HTMLElement;
   private isLoading: boolean = false;
   private hasMore: boolean = true;
+
+  /** All fetched listings (unfiltered) */
+  private allListings: NostrEvent[] = [];
+  /** Tags seen across all listings, with occurrence count */
+  private tagCounts: Map<string, number> = new Map();
+  /** Currently active tag filter (null = show all) */
+  private activeTag: string | null = null;
 
   constructor() {
     this.feedOrchestrator = MarketplaceFeedOrchestrator.getInstance();
@@ -34,6 +42,7 @@ export class MarketplaceTimeline {
     this.router = Router.getInstance();
     this.element = this.createElement();
     this.listingsContainer = this.element.querySelector('.marketplace-timeline__grid') as HTMLElement;
+    this.filterBar = this.element.querySelector('.marketplace-timeline__filters') as HTMLElement;
 
     this.infiniteScroll = new InfiniteScroll(
       () => this.handleLoadMore(),
@@ -46,7 +55,10 @@ export class MarketplaceTimeline {
   private createElement(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'marketplace-timeline';
-    container.innerHTML = `<div class="marketplace-timeline__grid"></div>`;
+    container.innerHTML = `
+      <div class="marketplace-timeline__filters"></div>
+      <div class="marketplace-timeline__grid"></div>
+    `;
     return container;
   }
 
@@ -58,6 +70,9 @@ export class MarketplaceTimeline {
       this.hasMore = result.hasMore;
 
       if (result.listings.length > 0) {
+        this.allListings = result.listings;
+        this.collectTags(result.listings);
+        this.renderFilterBar();
         this.renderListings(result.listings);
         this.infiniteScroll.observe(this.listingsContainer);
       } else {
@@ -82,7 +97,15 @@ export class MarketplaceTimeline {
       this.hasMore = result.hasMore;
 
       if (result.listings.length > 0) {
+        this.allListings.push(...result.listings);
+        this.collectTags(result.listings);
+        this.renderFilterBar();
         this.appendListings(result.listings);
+
+        // Apply active filter to newly appended cards
+        if (this.activeTag) {
+          this.setActiveTag(this.activeTag);
+        }
       }
 
       if (!this.hasMore) {
@@ -96,6 +119,67 @@ export class MarketplaceTimeline {
       this.isLoading = false;
     }
   }
+
+  // ─── Tag Filter ──────────────────────────────────────────────────
+
+  private collectTags(listings: NostrEvent[]): void {
+    for (const event of listings) {
+      const meta = parseListingMetadata(event);
+      for (const tag of meta.tags) {
+        const lower = tag.toLowerCase();
+        this.tagCounts.set(lower, (this.tagCounts.get(lower) || 0) + 1);
+      }
+    }
+  }
+
+  private renderFilterBar(): void {
+    if (this.tagCounts.size === 0) {
+      this.filterBar.innerHTML = '';
+      return;
+    }
+
+    // Show top tags sorted by frequency, max 12
+    const sorted = [...this.tagCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12);
+
+    this.filterBar.innerHTML = `
+      <button class="marketplace-filter__chip ${!this.activeTag ? 'marketplace-filter__chip--active' : ''}" data-filter-tag="">All</button>
+      ${sorted.map(([tag, count]) => `
+        <button class="marketplace-filter__chip ${this.activeTag === tag ? 'marketplace-filter__chip--active' : ''}" data-filter-tag="${escapeHtmlAttr(tag)}">#${escapeHtml(tag)} <span class="marketplace-filter__count">${count}</span></button>
+      `).join('')}
+    `;
+
+    this.filterBar.querySelectorAll('.marketplace-filter__chip').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tag = (e.currentTarget as HTMLElement).dataset.filterTag || '';
+        this.setActiveTag(tag || null);
+      });
+    });
+  }
+
+  private setActiveTag(tag: string | null): void {
+    this.activeTag = tag;
+    this.renderFilterBar();
+
+    // Show/hide cards via CSS instead of re-rendering
+    const cards = this.listingsContainer.querySelectorAll('.listing-card');
+    cards.forEach(card => {
+      const cardEl = card as HTMLElement;
+      if (!tag) {
+        cardEl.style.display = '';
+      } else {
+        const cardTags = cardEl.dataset.tags || '';
+        cardEl.style.display = cardTags.includes(tag) ? '' : 'none';
+      }
+    });
+
+    if (!tag) {
+      this.infiniteScroll.observe(this.listingsContainer);
+    }
+  }
+
+  // ─── Rendering ───────────────────────────────────────────────────
 
   private renderListings(listings: NostrEvent[]): void {
     this.listingsContainer.innerHTML = '';
@@ -124,6 +208,9 @@ export class MarketplaceTimeline {
     if (meta.status === 'sold') {
       card.classList.add('listing-card--sold');
     }
+
+    // Store tags for client-side filtering (no re-render needed)
+    card.dataset.tags = meta.tags.map(t => t.toLowerCase()).join(',');
 
     const naddr = encodeNaddr({
       kind: 30402,

@@ -25,20 +25,74 @@
   margin: 0;
 }
 
+// ─── Tag Filter Bar ──────────────────────────────────────────────
+
+.marketplace-timeline__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc($gap / 3);
+  margin-bottom: $gap;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.marketplace-filter {
+  &__chip {
+    @extend %small;
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    padding: calc($gap / 4) calc($gap * 0.75);
+    border-radius: $radius-full;
+    border: 1px solid var(--color-3);
+    background: transparent;
+    color: var(--color-3);
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &:hover {
+      border-color: var(--color-4);
+      color: var(--color-4);
+    }
+
+    &--active {
+      background: var(--color-4);
+      border-color: var(--color-4);
+      color: var(--color-1);
+
+      &:hover {
+        color: var(--color-1);
+      }
+    }
+  }
+
+  &__count {
+    opacity: 0.7;
+  }
+}
+
 // ─── Timeline Grid ────────────────────────────────────────────────
 
 .marketplace-timeline {
+  container-type: inline-size;
+
   &__grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: $gap;
 
-    @include tablet {
+    @container (min-width: 420px) {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    @include desktop {
+    @container (min-width: 720px) {
       grid-template-columns: repeat(3, 1fr);
+    }
+
+    @container (min-width: 1000px) {
+      grid-template-columns: repeat(4, 1fr);
     }
   }
 
@@ -47,12 +101,16 @@
     grid-template-columns: 1fr;
     gap: $gap;
 
-    @include tablet {
+    @container (min-width: 420px) {
       grid-template-columns: repeat(2, 1fr);
     }
 
-    @include desktop {
+    @container (min-width: 720px) {
       grid-template-columns: repeat(3, 1fr);
+    }
+
+    @container (min-width: 1000px) {
+      grid-template-columns: repeat(4, 1fr);
     }
   }
 
@@ -239,7 +297,7 @@
   }
 
   .skeleton-line {
-    height: 16px;
+    height: $gap;
     background: linear-gradient(90deg, var(--color-1) 25%, var(--color-2) 50%, var(--color-1) 75%);
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.5s infinite;
@@ -248,17 +306,17 @@
 
   .skeleton-title {
     width: 70%;
-    height: 18px;
+    height: calc($gap * 1.125);
   }
 
   .skeleton-price {
     width: 30%;
-    height: 18px;
+    height: calc($gap * 1.125);
   }
 
   .skeleton-meta {
     width: 50%;
-    height: 14px;
+    height: calc($gap * 0.875);
   }
 }
 
@@ -272,10 +330,33 @@
   }
 
   &__images {
-    display: flex;
-    flex-direction: column;
-    gap: calc($gap / 2);
     margin-bottom: calc($gap * 1.5);
+
+    &--carousel {
+      .nn-carousel {
+        padding-bottom: 0;
+      }
+
+      .nn-carousel-slides {
+        min-height: auto;
+        background: var(--color-1);
+        border-radius: $radius-lg;
+        overflow: hidden;
+      }
+
+      .nn-carousel-image {
+        max-width: 100%;
+        max-height: 450px;
+        border-radius: 0;
+      }
+
+      .nn-carousel-nav {
+        border-top: none;
+        margin-top: $gap;
+        padding-top: 0;
+        gap: $gap;
+      }
+    }
   }
 
   &__image {

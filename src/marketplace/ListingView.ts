@@ -15,10 +15,12 @@ import { hexToNpub } from '../helpers/nip19';
 import { formatTimestamp } from '../helpers/formatTimestamp';
 import { setupUserMentionHandlers } from '../helpers/UserMentionHelper';
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
+import { createCarousel, type CarouselInstance } from '../helpers/CarouselHelper';
 
 export class ListingView extends View {
   private container: HTMLElement;
   private naddr: string;
+  private carousel: CarouselInstance | null = null;
 
   constructor(naddr: string) {
     super();
@@ -57,13 +59,7 @@ export class ListingView extends View {
         <div class="listing-view">
           <button class="listing-view__back btn btn--passive" data-action="back">Back to Marketplace</button>
 
-          ${meta.images.length > 0 ? `
-            <div class="listing-view__images">
-              ${meta.images.map(img => `
-                <img class="listing-view__image" src="${escapeHtmlAttr(img)}" alt="" loading="lazy" />
-              `).join('')}
-            </div>
-          ` : ''}
+          <div class="listing-view__images"></div>
 
           <div class="listing-view__header">
             <h1 class="listing-view__title">${escapeHtml(meta.title)}</h1>
@@ -107,12 +103,47 @@ export class ListingView extends View {
         </div>
       `;
 
+      this.mountImageCarousel(meta.images);
       this.setupEventHandlers(event.pubkey);
       this.loadSellerProfile(event.pubkey);
 
     } catch {
       this.showError();
     }
+  }
+
+  private mountImageCarousel(images: string[]): void {
+    const imagesContainer = this.container.querySelector('.listing-view__images');
+    if (!imagesContainer || images.length === 0) {
+      imagesContainer?.remove();
+      return;
+    }
+
+    if (images.length === 1) {
+      // Single image — no carousel needed
+      imagesContainer.innerHTML = `
+        <img class="listing-view__image" src="${escapeHtmlAttr(images[0]!)}" alt="" loading="lazy" />
+      `;
+      return;
+    }
+
+    // Multiple images — use carousel
+    const slides = images.map(img => ({
+      content: '',
+      image: img,
+      imageAlt: ''
+    }));
+
+    this.carousel = createCarousel(slides, {
+      showNav: true,
+      showDots: true,
+      prevLabel: '‹',
+      nextLabel: '›'
+    });
+
+    imagesContainer.classList.add('listing-view__images--carousel');
+    imagesContainer.appendChild(this.carousel.element);
+    this.carousel.init();
   }
 
   private setupEventHandlers(sellerPubkey: string): void {
@@ -183,6 +214,10 @@ export class ListingView extends View {
   }
 
   public destroy(): void {
+    if (this.carousel) {
+      this.carousel.destroy();
+      this.carousel = null;
+    }
     this.container.innerHTML = '';
   }
 }

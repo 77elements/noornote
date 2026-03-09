@@ -1745,14 +1745,14 @@ export class MainLayout {
       const year = now.getFullYear();
       dateString = `${day}. ${month}. ${year}<br>${version}`;
     } else if (calendarSystem === 'hijri') {
-      // International format: DD. Month YYYY
+      if (!this._dayjs) return; // dayjs not loaded yet (async init)
       const hijriDate = this._dayjs(now).toCalendarSystem('hijri' as any);
       const day = hijriDate.date();
       const month = HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
       dateString = `${day}. ${month} ${year}<br>${version}`;
     } else if (calendarSystem === 'both') {
-      // International format + Hijri format
+      if (!this._dayjs) return; // dayjs not loaded yet (async init)
       const gregorianDay = now.getDate();
       const gregorianMonth = now.toLocaleString('en-US', { month: 'short' });
       const gregorianYear = now.getFullYear();

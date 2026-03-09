@@ -25,6 +25,7 @@ import { HashtagNotificationService } from '../../services/HashtagNotificationSe
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
 import { NotificationPrioritySection } from '../settings/NotificationPrioritySection';
+import { MarketplaceSettingsSection } from '../settings/MarketplaceSettingsSection';
 
 export class SettingsView extends View {
   private container: HTMLElement;
@@ -44,6 +45,7 @@ export class SettingsView extends View {
   private uiSettingsSection: UISettingsSection;
   private profileRecognitionSettings: ProfileRecognitionSettings;
   private notificationPrioritySection: NotificationPrioritySection;
+  private marketplaceSettingsSection: MarketplaceSettingsSection;
 
   constructor() {
     super();
@@ -73,6 +75,7 @@ export class SettingsView extends View {
     this.uiSettingsSection = new UISettingsSection();
     this.profileRecognitionSettings = new ProfileRecognitionSettings();
     this.notificationPrioritySection = new NotificationPrioritySection();
+    this.marketplaceSettingsSection = new MarketplaceSettingsSection();
 
     this.render();
     this.setupHashtagSubscriptionsListeners();
@@ -148,6 +151,12 @@ export class SettingsView extends View {
           false
         ) : ''}
 
+        ${this.marketplaceSettingsSection.renderAccordionSection(
+          'Marketplace Add-On',
+          'Enable the NIP-99 marketplace to browse classified listings.',
+          false
+        )}
+
         <div class="nn-ui-toggle settings-section">
           <div class="nn-ui-toggle__header">
             <div class="nn-ui-toggle__info">
@@ -196,6 +205,7 @@ export class SettingsView extends View {
     if (this.cacheSettingsSection) {
       this.cacheSettingsSection.mount(this.container);
     }
+    this.marketplaceSettingsSection.mount(this.container);
 
     // Initialize and mount sync status badge
     const badgeContainer = this.container.querySelector('#sync-status-badge-container');
@@ -350,6 +360,7 @@ export class SettingsView extends View {
     this.uiSettingsSection.unmount();
     this.profileRecognitionSettings.unmount();
     this.notificationPrioritySection.unmount();
+    this.marketplaceSettingsSection.unmount();
 
     // Cleanup sync status badge
     if (this.syncStatusBadge) {
