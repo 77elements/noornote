@@ -207,7 +207,7 @@ export class MarketplaceTimeline {
       `;
     }
 
-    setupUserMentionHandlers(authorEl as HTMLElement);
+    setupUserMentionHandlers(card);
   }
 
   private showLoading(): void {
