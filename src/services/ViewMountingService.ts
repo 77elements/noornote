@@ -274,6 +274,25 @@ export class ViewMountingService {
           }
         };
 
+      case 'marketplace':
+        return {
+          factory: async () => {
+            const { MarketplaceView } = await import('../marketplace/MarketplaceView');
+            const view = new MarketplaceView();
+            return { element: view.getElement() };
+          }
+        };
+
+      case 'listing':
+        return {
+          requiresParam: true,
+          factory: async (param) => {
+            const { ListingView } = await import('../marketplace/ListingView');
+            const view = new ListingView(param!);
+            return { element: view.getElement() };
+          }
+        };
+
       default:
         return null;
     }

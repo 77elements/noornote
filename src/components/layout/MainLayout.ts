@@ -206,6 +206,9 @@ export class MainLayout {
       }
     }
 
+    // Marketplace Add-On: Insert sidebar entry if enabled
+    this.insertMarketplaceSidebarEntry(listsMenuContainer);
+
     // Listen for list:open events from Settings → Privacy links and ProfileView
     this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string }) => {
       // Check if this is an external user's follows (not current user)
@@ -1822,6 +1825,47 @@ export class MainLayout {
     const { AccountSetupWizard } = await import('../onboarding/AccountSetupWizard');
     const wizard = new AccountSetupWizard();
     wizard.show();
+  }
+
+  /**
+   * Marketplace Add-On: Insert sidebar entry if feature is enabled.
+   * Inserts before Download link, after Lists accordion.
+   */
+  private async insertMarketplaceSidebarEntry(navContainer: Element | null): Promise<void> {
+    if (!navContainer) return;
+
+    const { isMarketplaceEnabled } = await import('../../marketplace/index');
+    if (!isMarketplaceEnabled()) return;
+
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <a href="/marketplace" class="primary-nav__link primary-nav__link--marketplace">
+        <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <path d="M16 10a4 4 0 0 1-8 0"></path>
+        </svg>
+        <span class="primary-nav__item-desc">Marketplace</span>
+      </a>
+    `;
+
+    const link = li.querySelector('a')!;
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Close sidebar in phone mode
+      if (this.layoutService.isPhone()) {
+        this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
+        this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
+      }
+      Router.getInstance().navigate('/marketplace');
+    });
+
+    const downloadLink = navContainer.querySelector('.primary-nav__link--download')?.parentElement;
+    if (downloadLink) {
+      navContainer.insertBefore(li, downloadLink);
+    } else {
+      navContainer.appendChild(li);
+    }
   }
 
   /**
