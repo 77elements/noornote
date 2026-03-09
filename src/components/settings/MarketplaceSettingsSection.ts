@@ -1,13 +1,13 @@
 /**
  * MarketplaceSettingsSection
  * Toggle the Marketplace Add-On on/off.
- * Requires page reload to register/unregister routes.
+ * Emits 'marketplace:toggle' so sidebar updates instantly (no reload needed).
  */
 
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { isMarketplaceEnabled, setMarketplaceEnabled } from '../../marketplace/index';
-import { ToastService } from '../../services/ToastService';
+import { EventBus } from '../../services/EventBus';
 
 export class MarketplaceSettingsSection extends SettingsSection {
   private marketplaceSwitch: Switch | null = null;
@@ -25,12 +25,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
       checked: isMarketplaceEnabled(),
       onChange: (checked) => {
         setMarketplaceEnabled(checked);
-        ToastService.show(
-          checked
-            ? 'Marketplace enabled — reload to activate'
-            : 'Marketplace disabled — reload to deactivate',
-          'success'
-        );
+        EventBus.getInstance().emit('marketplace:toggle', { enabled: checked });
       }
     });
 

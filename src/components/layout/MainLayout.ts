@@ -209,6 +209,15 @@ export class MainLayout {
     // Marketplace Add-On: Insert sidebar entry if enabled
     this.insertMarketplaceSidebarEntry(listsMenuContainer);
 
+    // Marketplace toggle: insert/remove sidebar entry instantly
+    this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
+      if (data.enabled) {
+        this.insertMarketplaceSidebarEntry(listsMenuContainer, true);
+      } else {
+        this.element.querySelector('.primary-nav__link--marketplace')?.parentElement?.remove();
+      }
+    });
+
     // Listen for list:open events from Settings → Privacy links and ProfileView
     this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string }) => {
       // Check if this is an external user's follows (not current user)
@@ -1831,13 +1840,17 @@ export class MainLayout {
    * Marketplace Add-On: Insert sidebar entry if feature is enabled.
    * Inserts before Download link, after Lists accordion.
    */
-  private async insertMarketplaceSidebarEntry(navContainer: Element | null): Promise<void> {
+  private async insertMarketplaceSidebarEntry(navContainer: Element | null, animate = false): Promise<void> {
     if (!navContainer) return;
+
+    // Don't insert twice
+    if (navContainer.querySelector('.primary-nav__link--marketplace')) return;
 
     const { isMarketplaceEnabled } = await import('../../marketplace/index');
     if (!isMarketplaceEnabled()) return;
 
     const li = document.createElement('li');
+    if (animate) li.classList.add('pulse-once');
     li.innerHTML = `
       <a href="/marketplace" class="primary-nav__link primary-nav__link--marketplace">
         <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
