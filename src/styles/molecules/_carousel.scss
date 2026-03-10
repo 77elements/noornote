@@ -67,12 +67,17 @@
 }
 
 .nn-carousel-dot {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: var(--color-3);
   cursor: pointer;
   transition: background 0.2s;
+
+  .platform--mobile & {
+    width: 14px;
+    height: 14px;
+  }
 
   &.active {
     background: var(--color-4);

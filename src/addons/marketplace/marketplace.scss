@@ -333,10 +333,6 @@
     margin-bottom: calc($gap * 1.5);
 
     &--carousel {
-      .nn-carousel {
-        padding-bottom: 0;
-      }
-
       .nn-carousel-slides {
         min-height: auto;
         background: var(--color-1);
@@ -348,13 +344,6 @@
         max-width: 100%;
         max-height: 450px;
         border-radius: 0;
-      }
-
-      .nn-carousel-nav {
-        border-top: none;
-        margin-top: $gap;
-        padding-top: 0;
-        gap: $gap;
       }
     }
   }
