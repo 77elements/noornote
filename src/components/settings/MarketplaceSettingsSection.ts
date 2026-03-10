@@ -30,10 +30,8 @@ export class MarketplaceSettingsSection extends SettingsSection {
     });
 
     contentContainer.innerHTML = `
-      <div class="settings-field">
-        <p class="settings-field__description">Browse classified listings (NIP-99) from the Nostr network. Adds a Marketplace entry to the sidebar.</p>
-        ${this.marketplaceSwitch.render()}
-      </div>
+      <p class="addon-section__beta">Beta — This feature is still in development. Expect rough edges.</p>
+      ${this.marketplaceSwitch.render()}
     `;
 
     this.marketplaceSwitch.setupEventListeners(contentContainer);

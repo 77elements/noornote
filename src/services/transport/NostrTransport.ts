@@ -513,7 +513,6 @@ export class NostrTransport {
 
     // Subscription already active — skip silently
     if (this.subscriptions.has(subId)) {
-      console.debug(`[NostrTransport] Subscription ${subId} already active, skipping`);
       return;
     }
 
@@ -532,8 +531,6 @@ export class NostrTransport {
     });
 
     this.subscriptions.set(subId, { closer: { close: () => ndkSub.stop() }, relays });
-
-    console.debug(`[NostrTransport] Subscription ${subId} active`);
   }
 
   /**
@@ -542,14 +539,10 @@ export class NostrTransport {
    */
   public unsubscribeLive(subId: string): void {
     const subscription = this.subscriptions.get(subId);
-    if (!subscription) {
-      console.debug(`[NostrTransport] Subscription ${subId} not found`);
-      return;
-    }
+    if (!subscription) return;
 
     subscription.closer.close();
     this.subscriptions.delete(subId);
-    console.debug(`[NostrTransport] Subscription ${subId} closed`);
   }
 
   /**
