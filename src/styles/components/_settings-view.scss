@@ -802,7 +802,7 @@
 }
 
 // Override ui-list__item layout for subscription items
-#hashtag-subscriptions-list .ui-list__item {
+.hashtag-subscriptions-list .ui-list__item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -814,7 +814,9 @@
 }
 
 .subscription-row {
-  flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: calc($gap / 2);
 }
 
@@ -822,6 +824,11 @@
   display: flex;
   align-items: center;
   gap: $gap;
+  flex-shrink: 0;
+
+  .switch-container {
+    margin-bottom: 0;
+  }
 }
 
 // ========================================

@@ -8,8 +8,11 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
-import { HashtagNotificationService } from '../../services/HashtagNotificationService';
+import { isHashtagSubscriptionsEnabled } from '../../addons/hashtag-subscriptions/index';
 import { EventBus } from '../../services/EventBus';
+
+// Lazy-loaded type
+type HashtagNotificationServiceType = import('../../addons/hashtag-subscriptions/HashtagNotificationService').HashtagNotificationService;
 
 export interface SearchResultsConfig {
   title: string;
@@ -31,7 +34,7 @@ export class SearchResultsView {
   private callbacks: SearchResultsCallbacks;
   private infiniteScroll?: InfiniteScroll;
   private listElement?: HTMLElement;
-  private hashtagService: HashtagNotificationService;
+  private hashtagService: HashtagNotificationServiceType | null = null;
   private eventBus: EventBus;
   private subscribeButton?: HTMLButtonElement;
   private subscriptionUpdatedId?: string;
@@ -39,10 +42,8 @@ export class SearchResultsView {
   constructor(config: SearchResultsConfig, callbacks: SearchResultsCallbacks) {
     this.config = config;
     this.callbacks = callbacks;
-    this.hashtagService = HashtagNotificationService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.container = this.createElement();
-    this.setupEventListeners();
   }
 
   /**
@@ -52,18 +53,6 @@ export class SearchResultsView {
     const container = document.createElement('div');
     container.className = 'search-results';
     return container;
-  }
-
-  /**
-   * Setup event listeners
-   */
-  private setupEventListeners(): void {
-    // Listen for subscription updates to update button state
-    this.subscriptionUpdatedId = this.eventBus.on('hashtag-subscription:updated', (data: { hashtag: string; subscribed: boolean }) => {
-      if (data.hashtag === this.config.hashtag) {
-        this.updateSubscribeButton();
-      }
-    });
   }
 
   /**
@@ -108,20 +97,10 @@ export class SearchResultsView {
       headerRow.appendChild(meta);
     }
 
-    // Add subscribe button if hashtag is provided
-    if (this.config.hashtag) {
-      this.subscribeButton = document.createElement('button');
-      this.subscribeButton.className = 'btn btn--medium';
-      this.updateSubscribeButton();
-
-      this.subscribeButton.addEventListener('click', () => {
-        if (this.config.hashtag) {
-          this.hashtagService.toggle(this.config.hashtag);
-          this.updateSubscribeButton();
-        }
-      });
-
-      headerRow.appendChild(this.subscribeButton);
+    // Add subscribe button if hashtag is provided AND addon is enabled
+    // Loaded async to avoid blocking render — button appears after import resolves
+    if (this.config.hashtag && isHashtagSubscriptionsEnabled()) {
+      this.loadSubscribeButton(headerRow);
     }
 
     header.appendChild(headerRow);
@@ -155,10 +134,38 @@ export class SearchResultsView {
   }
 
   /**
+   * Load hashtag service and insert subscribe button into headerRow
+   */
+  private async loadSubscribeButton(headerRow: HTMLElement): Promise<void> {
+    const { HashtagNotificationService } = await import('../../addons/hashtag-subscriptions/HashtagNotificationService');
+    this.hashtagService = HashtagNotificationService.getInstance();
+
+    this.subscribeButton = document.createElement('button');
+    this.subscribeButton.className = 'btn btn--medium';
+    this.updateSubscribeButton();
+
+    this.subscribeButton.addEventListener('click', () => {
+      if (this.config.hashtag && this.hashtagService) {
+        this.hashtagService.toggle(this.config.hashtag);
+        this.updateSubscribeButton();
+      }
+    });
+
+    headerRow.appendChild(this.subscribeButton);
+
+    // Listen for subscription updates to update button state
+    this.subscriptionUpdatedId = this.eventBus.on('hashtag-subscription:updated', (data: { hashtag: string; subscribed: boolean }) => {
+      if (data.hashtag === this.config.hashtag) {
+        this.updateSubscribeButton();
+      }
+    });
+  }
+
+  /**
    * Update subscribe button text and state
    */
   private updateSubscribeButton(): void {
-    if (!this.subscribeButton || !this.config.hashtag) return;
+    if (!this.subscribeButton || !this.config.hashtag || !this.hashtagService) return;
 
     const isSubscribed = this.hashtagService.isSubscribed(this.config.hashtag);
     this.subscribeButton.textContent = isSubscribed

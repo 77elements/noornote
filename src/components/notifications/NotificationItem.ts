@@ -141,7 +141,7 @@ export class NotificationItem {
         e.stopPropagation();
         const hashtag = toggleLink.dataset.hashtag;
         if (hashtag) {
-          const { HashtagNotificationService } = await import('../../services/HashtagNotificationService');
+          const { HashtagNotificationService } = await import('../../addons/hashtag-subscriptions/HashtagNotificationService');
           const hashtagService = HashtagNotificationService.getInstance();
           const { ToastService } = await import('../../services/ToastService');
 

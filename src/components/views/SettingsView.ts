@@ -21,9 +21,7 @@ import { ListSettingsSection } from '../settings/ListSettingsSection';
 import { CacheSettingsSection } from '../settings/CacheSettingsSection';
 import { UISettingsSection } from '../settings/UISettingsSection';
 import { ProfileRecognitionSettings } from '../../addons/profile-recognition/ProfileRecognitionSettings';
-import { HashtagNotificationService } from '../../services/HashtagNotificationService';
-import { EventBus } from '../../services/EventBus';
-import { ToastService } from '../../services/ToastService';
+import { HashtagSubscriptionsSettings } from '../../addons/hashtag-subscriptions/HashtagSubscriptionsSettings';
 import { NotificationPrioritySection } from '../settings/NotificationPrioritySection';
 import { MarketplaceSettingsSection } from '../settings/MarketplaceSettingsSection';
 
@@ -31,8 +29,6 @@ export class SettingsView extends View {
   private container: HTMLElement;
   private keySignerClient: KeySignerClient | null = null;
   private syncStatusBadge: SyncStatusBadge | null = null;
-  private hashtagService: HashtagNotificationService;
-  private eventBus: EventBus;
 
   // Sections
   private relaySettingsSection: RelaySettingsSection;
@@ -44,6 +40,7 @@ export class SettingsView extends View {
   private cacheSettingsSection: CacheSettingsSection | null = null;
   private uiSettingsSection: UISettingsSection;
   private profileRecognitionSettings: ProfileRecognitionSettings;
+  private hashtagSubscriptionsSettings: HashtagSubscriptionsSettings;
   private notificationPrioritySection: NotificationPrioritySection;
   private marketplaceSettingsSection: MarketplaceSettingsSection;
 
@@ -51,8 +48,6 @@ export class SettingsView extends View {
     super();
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--settings';
-    this.hashtagService = HashtagNotificationService.getInstance();
-    this.eventBus = EventBus.getInstance();
 
     // Initialize KeySigner client (desktop only, not mobile)
     const platform = PlatformService.getInstance();
@@ -74,12 +69,11 @@ export class SettingsView extends View {
     }
     this.uiSettingsSection = new UISettingsSection();
     this.profileRecognitionSettings = new ProfileRecognitionSettings();
+    this.hashtagSubscriptionsSettings = new HashtagSubscriptionsSettings();
     this.notificationPrioritySection = new NotificationPrioritySection();
     this.marketplaceSettingsSection = new MarketplaceSettingsSection();
 
     this.render();
-    this.setupHashtagSubscriptionsListeners();
-    this.setupHashtagSearchHandler();
   }
 
   /**
@@ -168,16 +162,7 @@ export class SettingsView extends View {
             <div class="addon-section">
               <h3 class="addon-section__title">Hashtag Subscriptions</h3>
               <p class="addon-section__description">Subscribe to hashtags and get notified when new posts are published.</p>
-              <div class="subscription-search">
-                <input
-                  type="text"
-                  id="hashtag-search-input"
-                  class="subscription-input"
-                  placeholder="Enter hashtag (without #)"
-                />
-                <button id="hashtag-search-btn" class="btn btn--primary">Search</button>
-              </div>
-              <div id="hashtag-subscriptions-list" class="ui-list"></div>
+              <div id="hashtag-subscriptions-settings-content"></div>
             </div>
 
           </div>
@@ -210,6 +195,7 @@ export class SettingsView extends View {
       this.cacheSettingsSection.mount(this.container);
     }
     this.marketplaceSettingsSection.mount(this.container);
+    this.hashtagSubscriptionsSettings.mount(this.container);
 
     // Initialize and mount sync status badge
     const badgeContainer = this.container.querySelector('#sync-status-badge-container');
@@ -217,113 +203,6 @@ export class SettingsView extends View {
       this.syncStatusBadge = new SyncStatusBadge(badgeContainer as HTMLElement);
       this.syncStatusBadge.subscribeToSyncStatus();
     }
-
-    // Render hashtag subscriptions
-    this.renderHashtagSubscriptions();
-  }
-
-  /**
-   * Setup hashtag subscriptions event listeners
-   */
-  private setupHashtagSubscriptionsListeners(): void {
-    // Listen for subscription updates
-    this.eventBus.on('hashtag-subscription:updated', () => {
-      this.renderHashtagSubscriptions();
-    });
-  }
-
-  /**
-   * Setup hashtag search handler
-   */
-  private setupHashtagSearchHandler(): void {
-    const searchBtn = this.container.querySelector('#hashtag-search-btn');
-    const searchInput = this.container.querySelector('#hashtag-search-input') as HTMLInputElement;
-
-    if (!searchBtn || !searchInput) return;
-
-    const handleSearch = () => {
-      const hashtag = searchInput.value.trim().replace(/^#/, ''); // Remove leading # if present
-      if (hashtag) {
-        this.eventBus.emit('hashtagSearch:start', { hashtag });
-        searchInput.value = ''; // Clear input after search
-      }
-    };
-
-    searchBtn.addEventListener('click', handleSearch);
-    searchInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        handleSearch();
-      }
-    });
-  }
-
-  /**
-   * Render hashtag subscriptions list
-   */
-  private renderHashtagSubscriptions(): void {
-    const listContainer = this.container.querySelector('#hashtag-subscriptions-list');
-    if (!listContainer) return;
-
-    const subscriptions = this.hashtagService.getAllSubscriptions();
-
-    if (subscriptions.length === 0) {
-      listContainer.innerHTML = '<p class="muted">No hashtag subscriptions yet</p>';
-      return;
-    }
-
-    listContainer.innerHTML = subscriptions.map(({ hashtag, subscription }) => `
-      <div class="ui-list__item subscription-row">
-        <span class="subscription-hashtag">#${hashtag}</span>
-        <div class="subscription-actions">
-          <div class="switch-container">
-            <label class="switch-label" title="Also search for '${hashtag}' without #">
-              <span class="switch-text">also ${hashtag}</span>
-              <div class="switch-toggle">
-                <input
-                  type="checkbox"
-                  class="switch-input"
-                  data-action="toggle-include-without-hash"
-                  data-hashtag="${hashtag}"
-                  ${subscription.includeWithoutHash ? 'checked' : ''}
-                />
-                <span class="switch-slider"></span>
-              </div>
-            </label>
-          </div>
-          <button class="btn btn--mini btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
-            Unsubscribe
-          </button>
-        </div>
-      </div>
-    `).join('');
-
-    // Attach unsubscribe handlers
-    const unsubscribeButtons = listContainer.querySelectorAll('[data-action="unsubscribe-hashtag"]');
-    unsubscribeButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const hashtag = (button as HTMLElement).dataset.hashtag;
-        if (hashtag) {
-          this.hashtagService.unsubscribe(hashtag);
-          // Re-render will happen via event listener
-        }
-      });
-    });
-
-    // Attach toggle handlers for includeWithoutHash
-    const toggleInputs = listContainer.querySelectorAll('[data-action="toggle-include-without-hash"]');
-    toggleInputs.forEach(input => {
-      input.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        const hashtag = target.dataset.hashtag;
-        if (hashtag) {
-          this.hashtagService.setIncludeWithoutHash(hashtag, target.checked);
-          const msg = target.checked
-            ? `Now also searching for "${hashtag}" without #`
-            : `Only searching for #${hashtag}`;
-          ToastService.show(msg, 'success');
-        }
-      });
-    });
   }
 
   /**
@@ -363,6 +242,7 @@ export class SettingsView extends View {
     }
     this.uiSettingsSection.unmount();
     this.profileRecognitionSettings.unmount();
+    this.hashtagSubscriptionsSettings.unmount();
     this.notificationPrioritySection.unmount();
     this.marketplaceSettingsSection.unmount();
 
