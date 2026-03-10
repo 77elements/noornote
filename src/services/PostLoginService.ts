@@ -67,7 +67,9 @@ export class PostLoginService {
         HashtagNotificationService.getInstance().startPolling();
       }),
       this.startService('profile recognition', async () => {
-        const { ProfileRecognitionService } = await import('./ProfileRecognitionService');
+        const { isProfileRecognitionEnabled } = await import('../addons/profile-recognition/index');
+        if (!isProfileRecognitionEnabled()) return;
+        const { ProfileRecognitionService } = await import('../addons/profile-recognition/ProfileRecognitionService');
         await ProfileRecognitionService.getInstance().init();
       }),
       this.startService('DM service', async () => {

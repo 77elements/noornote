@@ -5,7 +5,7 @@
  * Part of the Marketplace Add-On — only loaded when feature is enabled.
  */
 
-import { View } from '../components/views/View';
+import { View } from '../../components/views/View';
 import { MarketplaceTimeline } from './MarketplaceTimeline';
 
 export class MarketplaceView extends View {

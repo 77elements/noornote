@@ -20,7 +20,7 @@ import { PrivacySettingsSection } from '../settings/PrivacySettingsSection';
 import { ListSettingsSection } from '../settings/ListSettingsSection';
 import { CacheSettingsSection } from '../settings/CacheSettingsSection';
 import { UISettingsSection } from '../settings/UISettingsSection';
-import { ProfileRecognitionSettings } from '../settings/ProfileRecognitionSettings';
+import { ProfileRecognitionSettings } from '../../addons/profile-recognition/ProfileRecognitionSettings';
 import { HashtagNotificationService } from '../../services/HashtagNotificationService';
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
@@ -97,12 +97,6 @@ export class SettingsView extends View {
           false
         )}
 
-        ${this.profileRecognitionSettings.renderAccordionSection(
-          'Profile Recognition',
-          'Help recognize people you follow after they change their profile.',
-          false
-        )}
-
         ${this.notificationPrioritySection.renderAccordionSection(
           'Notification Priorities',
           'Configure which notification types trigger which badge style (pulsing, solid, hollow).',
@@ -139,51 +133,61 @@ export class SettingsView extends View {
           false
         )}
 
-        ${this.listSettingsSection.renderAccordionSection(
-          'List Settings',
-          'Configure how NoorNote syncs your lists (Follows, Bookmarks, Mutes) across local backup and relays.',
-          false
-        )}
+        <section class="nn-ui-toggle settings-section settings-section--addons" data-section="addons">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Add-ons</h2>
+              <p class="nn-ui-toggle__description">Optional features that extend NoorNote's functionality.</p>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content nn-ui-toggle__content--addons">
+
+            <div class="addon-section">
+              <h3 class="addon-section__title">Profile Recognition</h3>
+              <p class="addon-section__description">Help recognize people you follow after they change their profile.</p>
+              <div id="profile-recognition-settings-content"></div>
+            </div>
+
+            <div class="addon-section">
+              <h3 class="addon-section__title">List Settings</h3>
+              <p class="addon-section__description">Configure how NoorNote syncs your lists (Follows, Bookmarks, Mutes) across local backup and relays.</p>
+              <div id="list-settings-content"></div>
+            </div>
+
+            <div class="addon-section">
+              <h3 class="addon-section__title">Marketplace</h3>
+              <p class="addon-section__description">Browse classified listings (NIP-99) from the Nostr network.</p>
+              <div id="marketplace-settings-content"></div>
+            </div>
+
+            <div class="addon-section">
+              <h3 class="addon-section__title">Hashtag Subscriptions</h3>
+              <p class="addon-section__description">Subscribe to hashtags and get notified when new posts are published.</p>
+              <div class="subscription-search">
+                <input
+                  type="text"
+                  id="hashtag-search-input"
+                  class="subscription-input"
+                  placeholder="Enter hashtag (without #)"
+                />
+                <button id="hashtag-search-btn" class="btn btn--primary">Search</button>
+              </div>
+              <div id="hashtag-subscriptions-list" class="ui-list"></div>
+            </div>
+
+          </div>
+        </section>
 
         ${this.cacheSettingsSection ? this.cacheSettingsSection.renderAccordionSection(
           'Cache Settings',
           'Configure NDK cache sizes and clear cache data.',
           false
         ) : ''}
-
-        ${this.marketplaceSettingsSection.renderAccordionSection(
-          'Marketplace Add-On',
-          'Enable the NIP-99 marketplace to browse classified listings.',
-          false
-        )}
-
-        <div class="nn-ui-toggle settings-section">
-          <div class="nn-ui-toggle__header">
-            <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Hashtag Subscriptions</h2>
-              <p class="nn-ui-toggle__description">
-                Subscribe to hashtags and get notified when new posts are published.
-              </p>
-            </div>
-            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </div>
-          <div class="nn-ui-toggle__content">
-            <div class="subscription-search">
-              <input
-                type="text"
-                id="hashtag-search-input"
-                class="subscription-input"
-                placeholder="Enter hashtag (without #)"
-              />
-              <button id="hashtag-search-btn" class="btn btn--primary">Search</button>
-            </div>
-            <div id="hashtag-subscriptions-list" class="ui-list"></div>
-          </div>
-        </div>
       </div>
     `;
 

@@ -5,17 +5,17 @@
  * Fetches a single kind:30402 event by naddr and renders it.
  */
 
-import { View } from '../components/views/View';
-import { LongFormOrchestrator } from '../services/orchestration/LongFormOrchestrator';
+import { View } from '../../components/views/View';
+import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
-import { UserProfileService } from '../services/UserProfileService';
-import { ContentProcessor } from '../services/ContentProcessor';
-import { Router } from '../services/Router';
-import { hexToNpub } from '../helpers/nip19';
-import { formatTimestamp } from '../helpers/formatTimestamp';
-import { setupUserMentionHandlers } from '../helpers/UserMentionHelper';
-import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
-import { createCarousel, type CarouselInstance } from '../helpers/CarouselHelper';
+import { UserProfileService } from '../../services/UserProfileService';
+import { ContentProcessor } from '../../services/ContentProcessor';
+import { Router } from '../../services/Router';
+import { hexToNpub } from '../../helpers/nip19';
+import { formatTimestamp } from '../../helpers/formatTimestamp';
+import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { createCarousel, type CarouselInstance } from '../../helpers/CarouselHelper';
 
 export class ListingView extends View {
   private container: HTMLElement;

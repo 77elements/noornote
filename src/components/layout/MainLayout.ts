@@ -1846,7 +1846,7 @@ export class MainLayout {
     // Don't insert twice
     if (navContainer.querySelector('.primary-nav__link--marketplace')) return;
 
-    const { isMarketplaceEnabled } = await import('../../marketplace/index');
+    const { isMarketplaceEnabled } = await import('../../addons/marketplace/index');
     if (!isMarketplaceEnabled()) return;
 
     const li = document.createElement('li');

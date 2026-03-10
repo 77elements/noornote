@@ -6,11 +6,11 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { Orchestrator } from '../services/orchestration/Orchestrator';
-import { NostrTransport } from '../services/transport/NostrTransport';
+import { Orchestrator } from '../../services/orchestration/Orchestrator';
+import { NostrTransport } from '../../services/transport/NostrTransport';
 import { parseListingMetadata } from './marketplace-helpers';
-import { RelayConfig } from '../services/RelayConfig';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { RelayConfig } from '../../services/RelayConfig';
+import { SystemLogger } from '../../components/system/SystemLogger';
 
 export interface ListingFeedResult {
   listings: NostrEvent[];

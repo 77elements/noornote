@@ -16,11 +16,15 @@
 
 import { UserProfileService, UserProfile } from '../../services/UserProfileService';
 import { UserHoverCard } from '../ui/UserHoverCard';
-import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
-import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
+import { isProfileRecognitionEnabled } from '../../addons/profile-recognition/index';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { hexToNpub } from '../../helpers/nip19';
+
+// Lazy-loaded types for profile recognition
+type ProfileRecognitionServiceType = import('../../addons/profile-recognition/ProfileRecognitionService').ProfileRecognitionService;
+type ProfileBlinkerType = import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
+type TextBlinkerType = import('../../addons/profile-recognition/profileBlinking').TextBlinker;
 
 export interface UserIdentityConfig {
   pubkey: string;
@@ -37,13 +41,17 @@ export class UserIdentity {
   private element: HTMLElement;
   private config: Required<Omit<UserIdentityConfig, 'onClick'>> & Pick<UserIdentityConfig, 'onClick'>;
   private userProfileService: UserProfileService;
-  private recognitionService: ProfileRecognitionService;
   private authService: AuthService;
   private router: Router;
   private profile: UserProfile | null = null;
   private unsubscribe?: () => void;
-  private blinker: ProfileBlinker | null = null;
-  private nameBlinker: TextBlinker | null = null;
+
+  // Profile Recognition (lazy-loaded)
+  private recognitionService: ProfileRecognitionServiceType | null = null;
+  private blinker: ProfileBlinkerType | null = null;
+  private nameBlinker: TextBlinkerType | null = null;
+  private ProfileBlinkerClass: (new (el: HTMLImageElement) => ProfileBlinkerType) | null = null;
+  private TextBlinkerClass: (new (el: HTMLElement) => TextBlinkerType) | null = null;
 
   constructor(config: UserIdentityConfig) {
     this.config = {
@@ -57,9 +65,9 @@ export class UserIdentity {
     };
 
     this.userProfileService = UserProfileService.getInstance();
-    this.recognitionService = ProfileRecognitionService.getInstance();
     this.authService = AuthService.getInstance();
     this.router = Router.getInstance();
+    this.loadRecognitionIfEnabled();
 
     this.element = this.createElement();
     this.loadIdentity();
@@ -73,6 +81,20 @@ export class UserIdentity {
     if (this.config.clickable) {
       this.setupClickHandler();
     }
+  }
+
+  /** Lazy-load profile recognition addon if enabled */
+  private async loadRecognitionIfEnabled(): Promise<void> {
+    if (!isProfileRecognitionEnabled()) return;
+
+    const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
+      import('../../addons/profile-recognition/ProfileRecognitionService'),
+      import('../../addons/profile-recognition/profileBlinking')
+    ]);
+
+    this.recognitionService = ProfileRecognitionService.getInstance();
+    this.ProfileBlinkerClass = ProfileBlinker;
+    this.TextBlinkerClass = TextBlinker;
   }
 
   /**
@@ -164,16 +186,16 @@ export class UserIdentity {
     const currentUser = this.authService.getCurrentUser();
     const isOwnProfile = currentUser && currentUser.pubkey === this.config.pubkey;
 
-    // Profile Recognition logic (shared between username and avatar)
-    const encounter = this.recognitionService.getEncounter(this.config.pubkey);
+    // Profile Recognition logic (only if addon loaded)
+    const encounter = this.recognitionService?.getEncounter(this.config.pubkey);
 
     // Update last known metadata if changed
     if (encounter && (username !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl)) {
-      this.recognitionService.updateLastKnown(this.config.pubkey, username, picture);
+      this.recognitionService?.updateLastKnown(this.config.pubkey, username, picture);
     }
 
     // Check if should blink (but not for own profile)
-    const shouldBlink = !isOwnProfile && encounter && this.recognitionService.hasChangedWithinWindow(this.config.pubkey);
+    const shouldBlink = !isOwnProfile && encounter && this.recognitionService?.hasChangedWithinWindow(this.config.pubkey);
 
     // Update username with blinking
     if (this.config.showUsername) {
@@ -181,12 +203,12 @@ export class UserIdentity {
       if (usernameEl) {
         if (shouldBlink && encounter) {
           // Initialize name blinker if needed
-          if (!this.nameBlinker) {
-            this.nameBlinker = new TextBlinker(usernameEl);
+          if (!this.nameBlinker && this.TextBlinkerClass) {
+            this.nameBlinker = new this.TextBlinkerClass(usernameEl);
           }
 
           // Start blinking between current and first encounter
-          if (!this.nameBlinker.isBlinking()) {
+          if (this.nameBlinker && !this.nameBlinker.isBlinking()) {
             this.nameBlinker.start(username, encounter.firstName);
           }
         } else {
@@ -206,12 +228,12 @@ export class UserIdentity {
       if (avatarEl) {
         if (shouldBlink && encounter) {
           // Initialize blinker if needed
-          if (!this.blinker) {
-            this.blinker = new ProfileBlinker(avatarEl);
+          if (!this.blinker && this.ProfileBlinkerClass) {
+            this.blinker = new this.ProfileBlinkerClass(avatarEl);
           }
 
           // Start blinking between current and first encounter
-          if (!this.blinker.isBlinking()) {
+          if (this.blinker && !this.blinker.isBlinking()) {
             this.blinker.start(picture, encounter.firstPictureUrl);
           }
         } else {

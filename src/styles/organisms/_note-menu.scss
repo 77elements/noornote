@@ -136,7 +136,7 @@
 .note-menu-relay-item {
   padding: calc($gap / 2) $gap;
   @extend %small;
-  color: var(--text-alpha-medium);
+  color: $color-3;
   font-family: monospace;
   word-break: break-all;
   line-height: 1.4;

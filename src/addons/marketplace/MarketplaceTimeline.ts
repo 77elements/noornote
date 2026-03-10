@@ -9,14 +9,14 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { MarketplaceFeedOrchestrator } from './MarketplaceFeedOrchestrator';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
-import { UserProfileService } from '../services/UserProfileService';
-import { Router } from '../services/Router';
-import { InfiniteScroll } from '../components/ui/InfiniteScroll';
-import { encodeNaddr } from '../services/NostrToolsAdapter';
-import { hexToNpub } from '../helpers/nip19';
-import { formatTimestamp } from '../helpers/formatTimestamp';
-import { setupUserMentionHandlers } from '../helpers/UserMentionHelper';
-import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
+import { UserProfileService } from '../../services/UserProfileService';
+import { Router } from '../../services/Router';
+import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
+import { encodeNaddr } from '../../services/NostrToolsAdapter';
+import { hexToNpub } from '../../helpers/nip19';
+import { formatTimestamp } from '../../helpers/formatTimestamp';
+import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export class MarketplaceTimeline {
   private element: HTMLElement;

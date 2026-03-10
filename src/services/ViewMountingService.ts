@@ -277,7 +277,7 @@ export class ViewMountingService {
       case 'marketplace':
         return {
           factory: async () => {
-            const { MarketplaceView } = await import('../marketplace/MarketplaceView');
+            const { MarketplaceView } = await import('../addons/marketplace/MarketplaceView');
             const view = new MarketplaceView();
             return { element: view.getElement() };
           }
@@ -287,7 +287,7 @@ export class ViewMountingService {
         return {
           requiresParam: true,
           factory: async (param) => {
-            const { ListingView } = await import('../marketplace/ListingView');
+            const { ListingView } = await import('../addons/marketplace/ListingView');
             const view = new ListingView(param!);
             return { element: view.getElement() };
           }

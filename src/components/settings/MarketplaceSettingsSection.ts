@@ -6,7 +6,7 @@
 
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
-import { isMarketplaceEnabled, setMarketplaceEnabled } from '../../marketplace/index';
+import { isMarketplaceEnabled, setMarketplaceEnabled } from '../../addons/marketplace/index';
 import { EventBus } from '../../services/EventBus';
 
 export class MarketplaceSettingsSection extends SettingsSection {

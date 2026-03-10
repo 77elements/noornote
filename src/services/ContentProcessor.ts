@@ -18,8 +18,7 @@ import { extractCustomEmojis, formatCustomEmojis } from '../helpers/formatCustom
 import { hexToNpub } from '../helpers/nip19';
 import { UserProfileService } from './UserProfileService';
 import type { MediaContent } from '../helpers/renderMediaContent';
-import { ProfileRecognitionService } from './ProfileRecognitionService';
-import { ProfileBlinker, TextBlinker } from '../helpers/profileBlinking';
+import { isProfileRecognitionEnabled } from '../addons/profile-recognition/index';
 import { AuthService } from './AuthService';
 
 export interface QuotedReference {
@@ -37,19 +36,28 @@ export interface ProcessedContent {
   quotedReferences: QuotedReference[];
 }
 
+// Lazy-loaded types for profile recognition
+type ProfileRecognitionServiceType = import('../addons/profile-recognition/ProfileRecognitionService').ProfileRecognitionService;
+type ProfileBlinkerType = import('../addons/profile-recognition/profileBlinking').ProfileBlinker;
+type TextBlinkerType = import('../addons/profile-recognition/profileBlinking').TextBlinker;
+
 export class ContentProcessor {
   private static instance: ContentProcessor;
   private userProfileService: UserProfileService;
-  private recognitionService: ProfileRecognitionService;
   private authService: AuthService;
   private profileCache: Map<string, any> = new Map();
-  // Store blinkers per mention element (keyed by unique element ID)
-  private mentionBlinkers: Map<string, { avatar: ProfileBlinker; name: TextBlinker }> = new Map();
+
+  // Profile Recognition (lazy-loaded)
+  private recognitionService: ProfileRecognitionServiceType | null = null;
+  private ProfileBlinkerClass: (new (el: HTMLImageElement) => ProfileBlinkerType) | null = null;
+  private TextBlinkerClass: (new (el: HTMLElement) => TextBlinkerType) | null = null;
+  private mentionBlinkers: Map<string, { avatar: ProfileBlinkerType; name: TextBlinkerType }> = new Map();
+  private recognitionLoaded = false;
 
   private constructor() {
     this.userProfileService = UserProfileService.getInstance();
-    this.recognitionService = ProfileRecognitionService.getInstance();
     this.authService = AuthService.getInstance();
+    this.loadRecognitionIfEnabled();
   }
 
   static getInstance(): ContentProcessor {
@@ -57,6 +65,21 @@ export class ContentProcessor {
       ContentProcessor.instance = new ContentProcessor();
     }
     return ContentProcessor.instance;
+  }
+
+  /** Lazy-load profile recognition addon if enabled */
+  private async loadRecognitionIfEnabled(): Promise<void> {
+    if (this.recognitionLoaded || !isProfileRecognitionEnabled()) return;
+    this.recognitionLoaded = true;
+
+    const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
+      import('../addons/profile-recognition/ProfileRecognitionService'),
+      import('../addons/profile-recognition/profileBlinking')
+    ]);
+
+    this.recognitionService = ProfileRecognitionService.getInstance();
+    this.ProfileBlinkerClass = ProfileBlinker;
+    this.TextBlinkerClass = TextBlinker;
   }
 
   /**
@@ -171,7 +194,7 @@ export class ContentProcessor {
 
   /**
    * Update mentions in DOM after profile loads (progressive enhancement)
-   * Applies profile recognition blinking if needed
+   * Applies profile recognition blinking if addon is loaded
    */
   private updateMentionsInDOM(hexPubkey: string, profile: any): void {
     const username = profile.name || profile.display_name;
@@ -185,16 +208,16 @@ export class ContentProcessor {
     const currentUser = this.authService.getCurrentUser();
     const isOwnProfile = currentUser && currentUser.pubkey === hexPubkey;
 
-    // Profile Recognition logic
-    const encounter = this.recognitionService.getEncounter(hexPubkey);
+    // Profile Recognition logic (only if addon loaded)
+    const encounter = this.recognitionService?.getEncounter(hexPubkey);
 
     // Update last known metadata if changed
     if (encounter && (username !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl)) {
-      this.recognitionService.updateLastKnown(hexPubkey, username, picture);
+      this.recognitionService?.updateLastKnown(hexPubkey, username, picture);
     }
 
     // Check if should blink (but not for own profile)
-    const shouldBlink = !isOwnProfile && encounter && this.recognitionService.hasChangedWithinWindow(hexPubkey);
+    const shouldBlink = !isOwnProfile && encounter && this.recognitionService?.hasChangedWithinWindow(hexPubkey);
 
     // Find all mention links for this profile (both loading and already loaded)
     const mentionLinks = document.querySelectorAll(`a[href="/profile/${npub}"][data-mention]`);
@@ -225,13 +248,13 @@ export class ContentProcessor {
       }
       const mentionId = linkElement.dataset.mentionId;
 
-      if (shouldBlink && encounter && img && nameSpan) {
+      if (shouldBlink && encounter && img && nameSpan && this.ProfileBlinkerClass && this.TextBlinkerClass) {
         // Get or create blinkers for this mention
         let blinkers = this.mentionBlinkers.get(mentionId);
         if (!blinkers) {
           blinkers = {
-            avatar: new ProfileBlinker(img),
-            name: new TextBlinker(nameSpan)
+            avatar: new this.ProfileBlinkerClass(img),
+            name: new this.TextBlinkerClass(nameSpan)
           };
           this.mentionBlinkers.set(mentionId, blinkers);
         }
