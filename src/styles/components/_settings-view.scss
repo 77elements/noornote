@@ -55,6 +55,40 @@
     }
   }
 
+  // Add-ons group: sub-sections within the toggle content
+  &--addons {
+    &.open .nn-ui-toggle__header {
+      border-bottom: none;
+    }
+
+    .nn-ui-toggle__content--addons {
+      padding: 0;
+    }
+  }
+
+}
+
+// ========================================
+// Add-on Sub-Sections
+// ========================================
+
+.addon-section {
+  padding: $gap;
+  border: 1px solid var(--color-3);
+  border-radius: $radius-sm;
+  margin: calc($gap / 2);
+
+  &__title {
+    @extend %h3;
+    color: var(--color-5);
+    margin: 0 0 calc($gap / 4) 0;
+  }
+
+  &__description {
+    color: $color-3;
+    line-height: 1.4;
+    margin: 0 0 $gap 0;
+  }
 }
 
 // ========================================
@@ -71,7 +105,7 @@
 }
 
 .health-summary-empty {
-  color: var(--text-alpha-medium);
+  color: $color-3;
   font-style: italic;
 }
 
@@ -283,7 +317,7 @@
 
 // Media server info text (standalone)
 .media-server-info-text {
-  color: var(--text-alpha-medium);
+  color: $color-3;
   line-height: 1.5;
 }
 
@@ -360,7 +394,7 @@
 
 // Sensitive media info text (standalone)
 .sensitive-media-info-text {
-  color: var(--text-alpha-medium);
+  color: $color-3;
   line-height: 1.5;
 }
 
@@ -487,7 +521,7 @@
 
   .wallet-ln-address {
     @extend %small;
-    color: var(--text-alpha-medium);
+    color: $color-3;
   }
 }
 
@@ -657,7 +691,7 @@
 
 .setting-description {
   @extend %small;
-  color: var(--text-alpha-medium);
+  color: $color-3;
   line-height: 1.4;
 }
 
@@ -668,7 +702,7 @@
   border-radius: $radius-sm;
 
   p {
-    color: var(--text-alpha-medium);
+    color: $color-3;
     line-height: 1.5;
   }
 }
@@ -768,7 +802,7 @@
 }
 
 // Override ui-list__item layout for subscription items
-#hashtag-subscriptions-list .ui-list__item {
+.hashtag-subscriptions-list .ui-list__item {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -780,7 +814,9 @@
 }
 
 .subscription-row {
-  flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: calc($gap / 2);
 }
 
@@ -788,6 +824,11 @@
   display: flex;
   align-items: center;
   gap: $gap;
+  flex-shrink: 0;
+
+  .switch-container {
+    margin-bottom: 0;
+  }
 }
 
 // ========================================
@@ -851,7 +892,7 @@
 
   &__description {
     @extend %small;
-    color: var(--text-alpha-medium);
+    color: $color-3;
     margin: calc($gap / 4) 0 0 0;
   }
 
@@ -985,7 +1026,7 @@
 
       p {
         @extend %small;
-        color: var(--text-alpha-medium);
+        color: $color-3;
         line-height: 1.4;
         margin: 0;
 
@@ -1047,7 +1088,7 @@
     ul {
       margin: 0 0 0 $gap;
       @extend %small;
-      color: var(--text-alpha-medium);
+      color: $color-3;
     }
   }
 

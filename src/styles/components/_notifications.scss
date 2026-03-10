@@ -29,7 +29,7 @@
 .notifications-view__loading {
   text-align: center;
   padding: $gap * 2;
-  color: var(--text-alpha-medium);
+  color: $color-3;
   font-style: italic;
 }
 
@@ -92,7 +92,7 @@
 }
 
 .notification-item__action {
-  color: var(--text-alpha-medium);
+  color: $color-3;
 }
 
 .notification-item__timestamp {

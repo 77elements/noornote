@@ -36,7 +36,7 @@
   @include custom-scrollbar;
   -webkit-overflow-scrolling: touch;
   // Reserve space for the fixed "New Post" button at the bottom
-  padding-bottom: 70px;
+  padding-bottom: calc($gap * 2.75);
 }
 
 // Sidebar header (logo)
@@ -69,7 +69,7 @@
     gap: calc($gap / 2);
 
     svg {
-      width: 40px;
+      width: 30px;
     }
 
     .dropup-arrow {

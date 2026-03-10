@@ -146,7 +146,7 @@
   }
 
   p {
-    color: var(--text-alpha-medium);
+    color: $color-3;
     @extend %h4;
   }
 }

@@ -20,18 +20,15 @@ import { PrivacySettingsSection } from '../settings/PrivacySettingsSection';
 import { ListSettingsSection } from '../settings/ListSettingsSection';
 import { CacheSettingsSection } from '../settings/CacheSettingsSection';
 import { UISettingsSection } from '../settings/UISettingsSection';
-import { ProfileRecognitionSettings } from '../settings/ProfileRecognitionSettings';
-import { HashtagNotificationService } from '../../services/HashtagNotificationService';
-import { EventBus } from '../../services/EventBus';
-import { ToastService } from '../../services/ToastService';
+import { ProfileRecognitionSettings } from '../../addons/profile-recognition/ProfileRecognitionSettings';
+import { HashtagSubscriptionsSettings } from '../../addons/hashtag-subscriptions/HashtagSubscriptionsSettings';
 import { NotificationPrioritySection } from '../settings/NotificationPrioritySection';
+import { MarketplaceSettingsSection } from '../settings/MarketplaceSettingsSection';
 
 export class SettingsView extends View {
   private container: HTMLElement;
   private keySignerClient: KeySignerClient | null = null;
   private syncStatusBadge: SyncStatusBadge | null = null;
-  private hashtagService: HashtagNotificationService;
-  private eventBus: EventBus;
 
   // Sections
   private relaySettingsSection: RelaySettingsSection;
@@ -43,14 +40,14 @@ export class SettingsView extends View {
   private cacheSettingsSection: CacheSettingsSection | null = null;
   private uiSettingsSection: UISettingsSection;
   private profileRecognitionSettings: ProfileRecognitionSettings;
+  private hashtagSubscriptionsSettings: HashtagSubscriptionsSettings;
   private notificationPrioritySection: NotificationPrioritySection;
+  private marketplaceSettingsSection: MarketplaceSettingsSection;
 
   constructor() {
     super();
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--settings';
-    this.hashtagService = HashtagNotificationService.getInstance();
-    this.eventBus = EventBus.getInstance();
 
     // Initialize KeySigner client (desktop only, not mobile)
     const platform = PlatformService.getInstance();
@@ -72,11 +69,11 @@ export class SettingsView extends View {
     }
     this.uiSettingsSection = new UISettingsSection();
     this.profileRecognitionSettings = new ProfileRecognitionSettings();
+    this.hashtagSubscriptionsSettings = new HashtagSubscriptionsSettings();
     this.notificationPrioritySection = new NotificationPrioritySection();
+    this.marketplaceSettingsSection = new MarketplaceSettingsSection();
 
     this.render();
-    this.setupHashtagSubscriptionsListeners();
-    this.setupHashtagSearchHandler();
   }
 
   /**
@@ -91,12 +88,6 @@ export class SettingsView extends View {
         ${this.uiSettingsSection.renderAccordionSection(
           'UI Settings',
           'Configure UI behavior and experimental view navigation features.',
-          false
-        )}
-
-        ${this.profileRecognitionSettings.renderAccordionSection(
-          'Profile Recognition',
-          'Help recognize people you follow after they change their profile.',
           false
         )}
 
@@ -136,45 +127,52 @@ export class SettingsView extends View {
           false
         )}
 
-        ${this.listSettingsSection.renderAccordionSection(
-          'List Settings',
-          'Configure how NoorNote syncs your lists (Follows, Bookmarks, Mutes) across local backup and relays.',
-          false
-        )}
+        <section class="nn-ui-toggle settings-section settings-section--addons" data-section="addons">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Add-ons</h2>
+              <p class="nn-ui-toggle__description">Optional features that extend NoorNote's functionality.</p>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content nn-ui-toggle__content--addons">
+
+            <div class="addon-section">
+              <h3 class="addon-section__title">Profile Recognition</h3>
+              <p class="addon-section__description">Help recognize people you follow after they change their profile.</p>
+              <div id="profile-recognition-settings-content"></div>
+            </div>
+
+            <div class="addon-section">
+              <h3 class="addon-section__title">List Settings</h3>
+              <p class="addon-section__description">By default, NoorNote syncs your lists automatically (Easy Mode). Enable for manual sync control and advanced options.</p>
+              <div id="list-settings-content"></div>
+            </div>
+
+            <div class="addon-section">
+              <h3 class="addon-section__title">Marketplace</h3>
+              <p class="addon-section__description">Browse classified listings (NIP-99) from the Nostr network.</p>
+              <div id="marketplace-settings-content"></div>
+            </div>
+
+            <div class="addon-section">
+              <h3 class="addon-section__title">Hashtag Subscriptions</h3>
+              <p class="addon-section__description">Subscribe to hashtags and get notified when new posts are published.</p>
+              <div id="hashtag-subscriptions-settings-content"></div>
+            </div>
+
+          </div>
+        </section>
 
         ${this.cacheSettingsSection ? this.cacheSettingsSection.renderAccordionSection(
           'Cache Settings',
           'Configure NDK cache sizes and clear cache data.',
           false
         ) : ''}
-
-        <div class="nn-ui-toggle settings-section">
-          <div class="nn-ui-toggle__header">
-            <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Hashtag Subscriptions</h2>
-              <p class="nn-ui-toggle__description">
-                Subscribe to hashtags and get notified when new posts are published.
-              </p>
-            </div>
-            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </button>
-          </div>
-          <div class="nn-ui-toggle__content">
-            <div class="subscription-search">
-              <input
-                type="text"
-                id="hashtag-search-input"
-                class="subscription-input"
-                placeholder="Enter hashtag (without #)"
-              />
-              <button id="hashtag-search-btn" class="btn btn--primary">Search</button>
-            </div>
-            <div id="hashtag-subscriptions-list" class="ui-list"></div>
-          </div>
-        </div>
       </div>
     `;
 
@@ -196,6 +194,8 @@ export class SettingsView extends View {
     if (this.cacheSettingsSection) {
       this.cacheSettingsSection.mount(this.container);
     }
+    this.marketplaceSettingsSection.mount(this.container);
+    this.hashtagSubscriptionsSettings.mount(this.container);
 
     // Initialize and mount sync status badge
     const badgeContainer = this.container.querySelector('#sync-status-badge-container');
@@ -203,113 +203,6 @@ export class SettingsView extends View {
       this.syncStatusBadge = new SyncStatusBadge(badgeContainer as HTMLElement);
       this.syncStatusBadge.subscribeToSyncStatus();
     }
-
-    // Render hashtag subscriptions
-    this.renderHashtagSubscriptions();
-  }
-
-  /**
-   * Setup hashtag subscriptions event listeners
-   */
-  private setupHashtagSubscriptionsListeners(): void {
-    // Listen for subscription updates
-    this.eventBus.on('hashtag-subscription:updated', () => {
-      this.renderHashtagSubscriptions();
-    });
-  }
-
-  /**
-   * Setup hashtag search handler
-   */
-  private setupHashtagSearchHandler(): void {
-    const searchBtn = this.container.querySelector('#hashtag-search-btn');
-    const searchInput = this.container.querySelector('#hashtag-search-input') as HTMLInputElement;
-
-    if (!searchBtn || !searchInput) return;
-
-    const handleSearch = () => {
-      const hashtag = searchInput.value.trim().replace(/^#/, ''); // Remove leading # if present
-      if (hashtag) {
-        this.eventBus.emit('hashtagSearch:start', { hashtag });
-        searchInput.value = ''; // Clear input after search
-      }
-    };
-
-    searchBtn.addEventListener('click', handleSearch);
-    searchInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        handleSearch();
-      }
-    });
-  }
-
-  /**
-   * Render hashtag subscriptions list
-   */
-  private renderHashtagSubscriptions(): void {
-    const listContainer = this.container.querySelector('#hashtag-subscriptions-list');
-    if (!listContainer) return;
-
-    const subscriptions = this.hashtagService.getAllSubscriptions();
-
-    if (subscriptions.length === 0) {
-      listContainer.innerHTML = '<p class="muted">No hashtag subscriptions yet</p>';
-      return;
-    }
-
-    listContainer.innerHTML = subscriptions.map(({ hashtag, subscription }) => `
-      <div class="ui-list__item subscription-row">
-        <span class="subscription-hashtag">#${hashtag}</span>
-        <div class="subscription-actions">
-          <div class="switch-container">
-            <label class="switch-label" title="Also search for '${hashtag}' without #">
-              <span class="switch-text">also ${hashtag}</span>
-              <div class="switch-toggle">
-                <input
-                  type="checkbox"
-                  class="switch-input"
-                  data-action="toggle-include-without-hash"
-                  data-hashtag="${hashtag}"
-                  ${subscription.includeWithoutHash ? 'checked' : ''}
-                />
-                <span class="switch-slider"></span>
-              </div>
-            </label>
-          </div>
-          <button class="btn btn--mini btn--danger" data-action="unsubscribe-hashtag" data-hashtag="${hashtag}">
-            Unsubscribe
-          </button>
-        </div>
-      </div>
-    `).join('');
-
-    // Attach unsubscribe handlers
-    const unsubscribeButtons = listContainer.querySelectorAll('[data-action="unsubscribe-hashtag"]');
-    unsubscribeButtons.forEach(button => {
-      button.addEventListener('click', () => {
-        const hashtag = (button as HTMLElement).dataset.hashtag;
-        if (hashtag) {
-          this.hashtagService.unsubscribe(hashtag);
-          // Re-render will happen via event listener
-        }
-      });
-    });
-
-    // Attach toggle handlers for includeWithoutHash
-    const toggleInputs = listContainer.querySelectorAll('[data-action="toggle-include-without-hash"]');
-    toggleInputs.forEach(input => {
-      input.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        const hashtag = target.dataset.hashtag;
-        if (hashtag) {
-          this.hashtagService.setIncludeWithoutHash(hashtag, target.checked);
-          const msg = target.checked
-            ? `Now also searching for "${hashtag}" without #`
-            : `Only searching for #${hashtag}`;
-          ToastService.show(msg, 'success');
-        }
-      });
-    });
   }
 
   /**
@@ -349,7 +242,9 @@ export class SettingsView extends View {
     }
     this.uiSettingsSection.unmount();
     this.profileRecognitionSettings.unmount();
+    this.hashtagSubscriptionsSettings.unmount();
     this.notificationPrioritySection.unmount();
+    this.marketplaceSettingsSection.unmount();
 
     // Cleanup sync status badge
     if (this.syncStatusBadge) {

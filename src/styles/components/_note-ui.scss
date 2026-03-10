@@ -32,7 +32,7 @@
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    color: var(--text-alpha-medium);
+    color: $color-3;
     margin-bottom: calc($gap / 2);
     cursor: pointer;
     transition: color 0.2s ease;
@@ -90,7 +90,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--text-alpha-medium);
+  color: $color-3;
 }
 
 .thread-context-item {
@@ -234,7 +234,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 4);
-  color: var(--text-alpha-medium);
+  color: $color-3;
   white-space: nowrap;
 }
 
@@ -275,7 +275,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  color: var(--text-alpha-medium);
+  color: $color-3;
   margin: calc($gap * 0.75) 0;
 }
 
@@ -286,7 +286,7 @@
   width: 16px;
   height: 20px;
   line-height: 20px;
-  color: var(--text-alpha-medium);
+  color: $color-3;
 
   svg {
     width: 100%;
@@ -371,7 +371,7 @@
   }
 
   &__anonymous {
-    color: var(--text-alpha-medium);
+    color: $color-3;
     font-style: italic;
   }
 
@@ -384,7 +384,7 @@
   }
 
   &--error {
-    color: var(--text-alpha-medium);
+    color: $color-3;
     text-align: center;
   }
 }
@@ -409,6 +409,6 @@
   text-align: center;
 
   &__message {
-    color: var(--text-alpha-medium);
+    color: $color-3;
   }
 }

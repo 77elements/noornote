@@ -9,7 +9,7 @@
  * - Single source of truth for profile recognition
  */
 
-import { BaseFileStorage, type BaseFileData } from './BaseFileStorage';
+import { BaseFileStorage, type BaseFileData } from '../../services/BaseFileStorage';
 
 /**
  * Profile encounter snapshot

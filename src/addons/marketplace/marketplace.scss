@@ -1,0 +1,484 @@
+/**
+ * Marketplace Add-On Styles
+ * All marketplace styles isolated in this single file.
+ */
+
+@use '../../styles/abstracts/variables' as *;
+@use '../../styles/abstracts/mixins' as *;
+@use '../../styles/base/typography' as *;
+
+// ─── View Header ──────────────────────────────────────────────────
+
+.marketplace-view__header {
+  margin-bottom: calc($gap * 1.5);
+}
+
+.marketplace-view__title {
+  @extend %h1;
+  font-weight: 600;
+  color: var(--color-5);
+  margin: 0 0 calc($gap / 4) 0;
+}
+
+.marketplace-view__subtitle {
+  color: var(--color-3);
+  margin: 0;
+}
+
+// ─── Tag Filter Bar ──────────────────────────────────────────────
+
+.marketplace-timeline__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc($gap / 3);
+  margin-bottom: $gap;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.marketplace-filter {
+  &__chip {
+    @extend %small;
+    display: inline-flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    padding: calc($gap / 4) calc($gap * 0.75);
+    border-radius: $radius-full;
+    border: 1px solid var(--color-3);
+    background: transparent;
+    color: var(--color-3);
+    cursor: pointer;
+    transition: all $transition-fast;
+
+    &:hover {
+      border-color: var(--color-4);
+      color: var(--color-4);
+    }
+
+    &--active {
+      background: var(--color-4);
+      border-color: var(--color-4);
+      color: var(--color-1);
+
+      &:hover {
+        color: var(--color-1);
+      }
+    }
+  }
+
+  &__count {
+    opacity: 0.7;
+  }
+}
+
+// ─── Timeline Grid ────────────────────────────────────────────────
+
+.marketplace-timeline {
+  container-type: inline-size;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $gap;
+
+    @container (min-width: 420px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @container (min-width: 720px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @container (min-width: 1000px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  &__loading {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $gap;
+
+    @container (min-width: 420px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @container (min-width: 720px) {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @container (min-width: 1000px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  &__empty,
+  &__error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: calc($gap * 3) $gap;
+    color: var(--color-5);
+    text-align: center;
+    grid-column: 1 / -1;
+  }
+
+  &__empty {
+    svg {
+      color: var(--color-3);
+      margin-bottom: $gap;
+      opacity: 0.6;
+    }
+
+    p {
+      @extend %h4;
+      margin: 0 0 calc($gap / 4) 0;
+    }
+
+    span {
+      color: var(--color-3);
+    }
+  }
+
+  &__error {
+    p {
+      @extend %h4;
+      margin: 0 0 $gap 0;
+      color: $color-red;
+    }
+  }
+}
+
+// ─── Listing Card ─────────────────────────────────────────────────
+
+.listing-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-2);
+  border-radius: $radius-lg;
+  overflow: hidden;
+  transition: transform $transition-fast, box-shadow $transition-fast;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $box-hover;
+  }
+
+  &--sold {
+    opacity: 0.7;
+  }
+
+  &__image {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    background: var(--color-1);
+    position: relative;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &--empty {
+      @include flex-center;
+      color: var(--color-3);
+    }
+  }
+
+  &__sold-badge {
+    position: absolute;
+    top: calc($gap / 2);
+    right: calc($gap / 2);
+    background: $color-red;
+    color: var(--color-5);
+    padding: calc($gap / 8) calc($gap / 2);
+    border-radius: $radius-full;
+    @extend %small;
+    font-weight: 600;
+  }
+
+  &__content {
+    padding: $gap;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 4);
+  }
+
+  &__title {
+    font-weight: 600;
+    color: var(--color-5);
+    margin: 0;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__price {
+    color: var(--color-4);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__location {
+    @extend %small;
+    color: var(--color-3);
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 4);
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    @extend %small;
+    color: var(--color-3);
+    margin-top: calc($gap / 4);
+  }
+
+  &__author {
+    .mention-link {
+      @extend %small;
+    }
+  }
+
+  &__date {
+    &::before {
+      content: '·';
+      margin-right: calc($gap / 4);
+    }
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc($gap / 4);
+    margin-top: calc($gap / 4);
+  }
+
+  &__tag {
+    @extend %small;
+    color: var(--color-3);
+    background: var(--color-1);
+    padding: calc($gap / 8) calc($gap / 2);
+    border-radius: $radius-full;
+  }
+}
+
+// ─── Listing Card Skeleton ────────────────────────────────────────
+
+.listing-card-skeleton {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-2);
+  border-radius: $radius-lg;
+  overflow: hidden;
+
+  .skeleton-image {
+    width: 100%;
+    height: 180px;
+    background: linear-gradient(90deg, var(--color-1) 25%, var(--color-2) 50%, var(--color-1) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+  }
+
+  .skeleton-content {
+    padding: $gap;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  .skeleton-line {
+    height: $gap;
+    background: linear-gradient(90deg, var(--color-1) 25%, var(--color-2) 50%, var(--color-1) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s infinite;
+    border-radius: $radius-base;
+  }
+
+  .skeleton-title {
+    width: 70%;
+    height: calc($gap * 1.125);
+  }
+
+  .skeleton-price {
+    width: 30%;
+    height: calc($gap * 1.125);
+  }
+
+  .skeleton-meta {
+    width: 50%;
+    height: calc($gap * 0.875);
+  }
+}
+
+// ─── Single Listing View ──────────────────────────────────────────
+
+.listing-view {
+  max-width: 800px;
+
+  &__back {
+    margin-bottom: $gap;
+  }
+
+  &__images {
+    margin-bottom: calc($gap * 1.5);
+
+    &--carousel {
+      .nn-carousel {
+        padding-bottom: 0;
+      }
+
+      .nn-carousel-slides {
+        min-height: auto;
+        background: var(--color-1);
+        border-radius: $radius-lg;
+        overflow: hidden;
+      }
+
+      .nn-carousel-image {
+        max-width: 100%;
+        max-height: 450px;
+        border-radius: 0;
+      }
+
+      .nn-carousel-nav {
+        border-top: none;
+        margin-top: $gap;
+        padding-top: 0;
+        gap: $gap;
+      }
+    }
+  }
+
+  &__image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: $radius-lg;
+    background: var(--color-1);
+  }
+
+  &__header {
+    margin-bottom: $gap;
+  }
+
+  &__title {
+    @extend %h1;
+    font-weight: 600;
+    color: var(--color-5);
+    margin: 0 0 calc($gap / 2) 0;
+  }
+
+  &__price {
+    @extend %h2;
+    color: var(--color-4);
+    font-weight: 600;
+    margin: 0;
+  }
+
+  &__sold-badge {
+    display: inline-block;
+    background: $color-red;
+    color: var(--color-5);
+    padding: calc($gap / 4) calc($gap / 2);
+    border-radius: $radius-full;
+    @extend %small;
+    font-weight: 600;
+    margin-top: calc($gap / 2);
+  }
+
+  &__location {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    color: var(--color-3);
+    margin-bottom: $gap;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  &__seller {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    margin-bottom: $gap;
+    @extend %small;
+    color: var(--color-3);
+
+    &-label {
+      font-weight: 600;
+      color: var(--color-5);
+    }
+  }
+
+  &__actions {
+    margin-bottom: calc($gap * 1.5);
+  }
+
+  &__description {
+    color: var(--color-5);
+    line-height: 1.6;
+    margin-bottom: $gap;
+
+    // Markdown content styles
+    h1, h2, h3, h4 {
+      color: var(--color-5);
+      margin-top: calc($gap * 1.5);
+      margin-bottom: calc($gap / 2);
+    }
+
+    p {
+      margin-bottom: $gap;
+    }
+
+    ul, ol {
+      padding-left: calc($gap * 1.5);
+      margin-bottom: $gap;
+    }
+
+    img {
+      max-width: 100%;
+      border-radius: $radius-lg;
+    }
+  }
+
+  &__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc($gap / 2);
+  }
+
+  &__tag {
+    color: var(--color-3);
+    background: var(--color-1);
+    padding: calc($gap / 4) calc($gap / 2);
+    border-radius: $radius-full;
+  }
+
+  &__loading {
+    @include flex-center;
+    flex-direction: column;
+    padding: calc($gap * 4);
+    color: var(--color-3);
+  }
+
+  &__not-found,
+  &__error {
+    @include flex-center;
+    flex-direction: column;
+    padding: calc($gap * 4);
+    color: var(--color-3);
+    gap: $gap;
+  }
+}

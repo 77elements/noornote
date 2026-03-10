@@ -9,11 +9,11 @@
  * - ONE notification per hashtag (not per post)
  */
 
-import { SearchOrchestrator } from './orchestration/SearchOrchestrator';
-import { EventBus } from './EventBus';
-import { SystemLogger } from '../components/system/SystemLogger';
-import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { NoteService } from './NoteService';
+import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
+import { EventBus } from '../../services/EventBus';
+import { SystemLogger } from '../../components/system/SystemLogger';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { NoteService } from '../../services/NoteService';
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 

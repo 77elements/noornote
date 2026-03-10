@@ -15,14 +15,14 @@
  * - Relay storage: ProfileRecognitionOrchestrator (NIP-78)
  */
 
-import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ProfileEncounterFileStorage, type ProfileEncounter } from './ProfileEncounterFileStorage';
-import { EventBus } from './EventBus';
-import { SystemLogger } from '../components/system/SystemLogger';
-import { FollowStorageAdapter } from '../lists/follows';
-import { UserProfileService } from './UserProfileService';
-import { ProfileRecognitionOrchestrator } from './orchestration/ProfileRecognitionOrchestrator';
-import { AuthService } from './AuthService';
+import { EventBus } from '../../services/EventBus';
+import { SystemLogger } from '../../components/system/SystemLogger';
+import { FollowStorageAdapter } from '../../lists/follows';
+import { UserProfileService } from '../../services/UserProfileService';
+import { ProfileRecognitionOrchestrator } from './ProfileRecognitionOrchestrator';
+import { AuthService } from '../../services/AuthService';
 
 const FILE_SAVE_DEBOUNCE = 500; // 500ms
 const RELAY_SAVE_DEBOUNCE = 5000; // 5s

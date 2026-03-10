@@ -206,6 +206,18 @@ export class MainLayout {
       }
     }
 
+    // Marketplace Add-On: Insert sidebar entry if enabled
+    this.insertMarketplaceSidebarEntry(listsMenuContainer);
+
+    // Marketplace toggle: insert/remove sidebar entry instantly
+    this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
+      if (data.enabled) {
+        this.insertMarketplaceSidebarEntry(listsMenuContainer, true);
+      } else {
+        this.element.querySelector('.primary-nav__link--marketplace')?.parentElement?.remove();
+      }
+    });
+
     // Listen for list:open events from Settings → Privacy links and ProfileView
     this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string }) => {
       // Check if this is an external user's follows (not current user)
@@ -1742,14 +1754,14 @@ export class MainLayout {
       const year = now.getFullYear();
       dateString = `${day}. ${month}. ${year}<br>${version}`;
     } else if (calendarSystem === 'hijri') {
-      // International format: DD. Month YYYY
+      if (!this._dayjs) return; // dayjs not loaded yet (async init)
       const hijriDate = this._dayjs(now).toCalendarSystem('hijri' as any);
       const day = hijriDate.date();
       const month = HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
       dateString = `${day}. ${month} ${year}<br>${version}`;
     } else if (calendarSystem === 'both') {
-      // International format + Hijri format
+      if (!this._dayjs) return; // dayjs not loaded yet (async init)
       const gregorianDay = now.getDate();
       const gregorianMonth = now.toLocaleString('en-US', { month: 'short' });
       const gregorianYear = now.getFullYear();
@@ -1822,6 +1834,51 @@ export class MainLayout {
     const { AccountSetupWizard } = await import('../onboarding/AccountSetupWizard');
     const wizard = new AccountSetupWizard();
     wizard.show();
+  }
+
+  /**
+   * Marketplace Add-On: Insert sidebar entry if feature is enabled.
+   * Inserts before Download link, after Lists accordion.
+   */
+  private async insertMarketplaceSidebarEntry(navContainer: Element | null, animate = false): Promise<void> {
+    if (!navContainer) return;
+
+    // Don't insert twice
+    if (navContainer.querySelector('.primary-nav__link--marketplace')) return;
+
+    const { isMarketplaceEnabled } = await import('../../addons/marketplace/index');
+    if (!isMarketplaceEnabled()) return;
+
+    const li = document.createElement('li');
+    if (animate) li.classList.add('pulse-once');
+    li.innerHTML = `
+      <a href="/marketplace" class="primary-nav__link primary-nav__link--marketplace">
+        <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <path d="M16 10a4 4 0 0 1-8 0"></path>
+        </svg>
+        <span class="primary-nav__item-desc">Marketplace</span>
+      </a>
+    `;
+
+    const link = li.querySelector('a')!;
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Close sidebar in phone mode
+      if (this.layoutService.isPhone()) {
+        this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
+        this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
+      }
+      Router.getInstance().navigate('/marketplace');
+    });
+
+    const downloadLink = navContainer.querySelector('.primary-nav__link--download')?.parentElement;
+    if (downloadLink) {
+      navContainer.insertBefore(li, downloadLink);
+    } else {
+      navContainer.appendChild(li);
+    }
   }
 
   /**

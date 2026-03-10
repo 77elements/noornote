@@ -6,14 +6,14 @@
  * @used-by SettingsView
  */
 
-import { SettingsSection } from './SettingsSection';
+import { SettingsSection } from '../../components/settings/SettingsSection';
+import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 
 const STORAGE_KEY = 'noornote_profile_recognition_window';
 
 // Window values: 0 = disabled, -1 = always, or number of days
 const WINDOW_OPTIONS = [
-  { value: 0, label: 'Disabled', description: 'Never show profile change indicators' },
   { value: 1, label: '1 Day', description: 'Show for 1 day after profile changes' },
   { value: 7, label: '7 Days', description: 'Show for 1 week after profile changes' },
   { value: 30, label: '30 Days', description: 'Show for 1 month after profile changes' },
@@ -22,18 +22,16 @@ const WINDOW_OPTIONS = [
 ];
 
 export class ProfileRecognitionSettings extends SettingsSection {
+  private enableSwitch: Switch | null = null;
+
   constructor() {
     super('profile-recognition-settings');
   }
 
-  /**
-   * Get current window setting from localStorage
-   */
   private getCurrentWindow(): number {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return 90; // Default: 90 days
-
+      if (!stored) return 90;
       const value = parseInt(stored, 10);
       return isNaN(value) ? 90 : value;
     } catch {
@@ -41,29 +39,33 @@ export class ProfileRecognitionSettings extends SettingsSection {
     }
   }
 
-  /**
-   * Save window setting to localStorage
-   */
   private saveWindow(value: number): void {
     localStorage.setItem(STORAGE_KEY, value.toString());
   }
 
-  /**
-   * Mount section content into the DOM
-   */
   public mount(parentContainer: HTMLElement): void {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
-    contentContainer.innerHTML = this.renderContent();
-    this.bindListeners(contentContainer);
-  }
-
-  /**
-   * Render profile recognition settings content
-   */
-  private renderContent(): string {
     const currentWindow = this.getCurrentWindow();
+    const enabled = currentWindow !== 0;
+
+    this.enableSwitch = new Switch({
+      label: 'Enable Profile Recognition',
+      checked: enabled,
+      onChange: (checked) => {
+        if (checked) {
+          this.saveWindow(90);
+          ToastService.show('Profile Recognition enabled (90 days)', 'success');
+        } else {
+          this.saveWindow(0);
+          ToastService.show('Profile Recognition disabled', 'success');
+        }
+        // Show/hide options
+        const options = contentContainer.querySelector('.profile-recognition-options') as HTMLElement;
+        if (options) options.style.display = checked ? '' : 'none';
+      }
+    });
 
     const optionsHtml = WINDOW_OPTIONS.map(option => {
       const isChecked = option.value === currentWindow;
@@ -83,12 +85,18 @@ export class ProfileRecognitionSettings extends SettingsSection {
       `;
     }).join('');
 
-    return `
+    contentContainer.innerHTML = `
+      <div class="form__info">
+        <p>
+          Profile Recognition helps you recognize people you follow even after they change their name or profile picture.
+          When someone you follow changes their profile, the app will show visual cues (blinking profile pictures) to help you remember who they are.
+        </p>
+      </div>
+
+      ${this.enableSwitch.render()}
+
+      <div class="profile-recognition-options" style="${enabled ? '' : 'display: none'}">
         <div class="form__info">
-          <p>
-            Profile Recognition helps you recognize people you follow even after they change their name or profile picture.
-            When someone you follow changes their profile, the app will show visual cues (blinking profile pictures) to help you remember who they are.
-          </p>
           <p style="margin-top: 0.75rem;">
             Choose how long to show these recognition cues after a profile change:
           </p>
@@ -107,12 +115,13 @@ export class ProfileRecognitionSettings extends SettingsSection {
             • Only applies to people you follow (not everyone you see)
           </p>
         </div>
+      </div>
     `;
+
+    this.enableSwitch.setupEventListeners(contentContainer);
+    this.bindListeners(contentContainer);
   }
 
-  /**
-   * Bind event listeners
-   */
   private bindListeners(contentContainer: HTMLElement): void {
     const radioInputs = contentContainer.querySelectorAll<HTMLInputElement>('input[name="profile-recognition-window"]');
     const modeOptions = contentContainer.querySelectorAll('.mode-option');
@@ -120,33 +129,25 @@ export class ProfileRecognitionSettings extends SettingsSection {
     radioInputs.forEach(input => {
       input.addEventListener('change', () => {
         if (input.checked) {
-          // Update active state on all options
           modeOptions.forEach(opt => opt.classList.remove('mode-option--active'));
           input.closest('.mode-option')?.classList.add('mode-option--active');
 
           const value = parseInt(input.value, 10);
           this.saveWindow(value);
 
-          // Show toast based on selection
-          let message = 'Profile Recognition updated';
-          if (value === 0) {
-            message = 'Profile Recognition disabled';
-          } else if (value === -1) {
-            message = 'Profile Recognition set to Always';
-          } else {
-            message = `Profile Recognition set to ${value} day${value > 1 ? 's' : ''}`;
-          }
-
+          const message = value === -1
+            ? 'Profile Recognition set to Always'
+            : `Profile Recognition set to ${value} day${value > 1 ? 's' : ''}`;
           ToastService.show(message, 'success');
         }
       });
     });
   }
 
-  /**
-   * Unmount section and cleanup
-   */
   public unmount(): void {
-    // No cleanup needed
+    if (this.enableSwitch) {
+      this.enableSwitch.destroy();
+      this.enableSwitch = null;
+    }
   }
 }

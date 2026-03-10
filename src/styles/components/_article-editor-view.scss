@@ -189,7 +189,7 @@
 
   &__preview-summary {
     @extend %h4;
-    color: var(--text-alpha-medium);
+    color: $color-3;
     margin: 0 0 $gap * 1.5;
     padding-bottom: $gap;
   }

@@ -26,8 +26,12 @@ import { ArticleNotificationService } from '../../services/ArticleNotificationSe
 import { ProfileListsComponent } from '../profile/ProfileListsComponent';
 import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
 import { FollowerCountService } from '../../services/FollowerCountService';
-import { ProfileRecognitionService } from '../../services/ProfileRecognitionService';
-import { ProfileBlinker, TextBlinker } from '../../helpers/profileBlinking';
+import { isProfileRecognitionEnabled } from '../../addons/profile-recognition/index';
+
+// Lazy-loaded types for profile recognition
+type ProfileRecognitionServiceType = import('../../addons/profile-recognition/ProfileRecognitionService').ProfileRecognitionService;
+type ProfileBlinkerType = import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
+type TextBlinkerType = import('../../addons/profile-recognition/profileBlinking').TextBlinker;
 import { ProfileOrchestrator } from '../../services/orchestration/ProfileOrchestrator';
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
@@ -86,10 +90,12 @@ export class ProfileView extends View {
   private followerCountService: FollowerCountService;
   private profileOrchestrator: ProfileOrchestrator;
 
-  // Profile recognition (blinking)
-  private recognitionService: ProfileRecognitionService;
-  private blinker: ProfileBlinker | null = null;
-  private nameBlinker: TextBlinker | null = null;
+  // Profile recognition (lazy-loaded)
+  private recognitionService: ProfileRecognitionServiceType | null = null;
+  private blinker: ProfileBlinkerType | null = null;
+  private nameBlinker: TextBlinkerType | null = null;
+  private ProfileBlinkerClass: (new (el: HTMLImageElement) => ProfileBlinkerType) | null = null;
+  private TextBlinkerClass: (new (el: HTMLElement) => TextBlinkerType) | null = null;
 
   // Tribe dropdown
   private tribeDropdown: CustomDropdown | null = null;
@@ -110,8 +116,6 @@ export class ProfileView extends View {
     this.eventBus = EventBus.getInstance();
     this.followerCountService = FollowerCountService.getInstance();
     this.profileOrchestrator = ProfileOrchestrator.getInstance();
-    this.recognitionService = ProfileRecognitionService.getInstance();
-
     // Decode npub or nprofile to pubkey
     try {
       const decoded = decodeNip19(npub);
@@ -145,6 +149,23 @@ export class ProfileView extends View {
 
     // Listen for follow changes (from FollowList or other sources)
     this.setupFollowChangeListener();
+
+    // Load recognition addon before rendering to avoid race condition
+    this.initAsync();
+  }
+
+  /** Load recognition addon first, then render */
+  private async initAsync(): Promise<void> {
+    if (isProfileRecognitionEnabled()) {
+      const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
+        import('../../addons/profile-recognition/ProfileRecognitionService'),
+        import('../../addons/profile-recognition/profileBlinking')
+      ]);
+
+      this.recognitionService = ProfileRecognitionService.getInstance();
+      this.ProfileBlinkerClass = ProfileBlinker;
+      this.TextBlinkerClass = TextBlinker;
+    }
 
     this.render();
   }
@@ -1150,23 +1171,23 @@ export class ProfileView extends View {
       return;
     }
 
-    const encounter = this.recognitionService.getEncounter(this.pubkey);
+    const encounter = this.recognitionService?.getEncounter(this.pubkey);
 
     // Check if we need to update lastKnown metadata
     if (encounter && (currentPicture !== encounter.lastKnownPictureUrl || currentName !== encounter.lastKnownName)) {
-      this.recognitionService.updateLastKnown(this.pubkey, currentName, currentPicture);
+      this.recognitionService?.updateLastKnown(this.pubkey, currentName, currentPicture);
     }
 
     // Determine if blinking should be active
-    const shouldBlink = encounter && this.recognitionService.hasChangedWithinWindow(this.pubkey);
+    const shouldBlink = encounter && this.recognitionService?.hasChangedWithinWindow(this.pubkey);
 
     // Update avatar with blinking
     if (shouldBlink && encounter) {
       // Start avatar blinking
-      if (!this.blinker) {
-        this.blinker = new ProfileBlinker(avatar);
+      if (!this.blinker && this.ProfileBlinkerClass) {
+        this.blinker = new this.ProfileBlinkerClass(avatar);
       }
-      if (!this.blinker.isBlinking()) {
+      if (this.blinker && !this.blinker.isBlinking()) {
         this.blinker.start(currentPicture, encounter.firstPictureUrl);
       }
     } else {
@@ -1181,10 +1202,10 @@ export class ProfileView extends View {
     // Update name with blinking
     if (shouldBlink && encounter) {
       // Start name blinking
-      if (!this.nameBlinker) {
-        this.nameBlinker = new TextBlinker(nameEl);
+      if (!this.nameBlinker && this.TextBlinkerClass) {
+        this.nameBlinker = new this.TextBlinkerClass(nameEl);
       }
-      if (!this.nameBlinker.isBlinking()) {
+      if (this.nameBlinker && !this.nameBlinker.isBlinking()) {
         this.nameBlinker.start(currentName, encounter.firstName);
       }
     } else {

@@ -164,6 +164,12 @@ export class App {
 
   // ─── Route Registration ──────────────────────────────────────────────
 
+  private registerMarketplaceRoutes(): void {
+    this.registerRoute('/marketplace', 'marketplace', 'marketplace', 'mpv', true);
+    this.registerRoute('/listing/:naddr', 'listing', 'listing', 'lv', true,
+      (params) => params.naddr);
+  }
+
   private registerRoute(
     path: string,
     viewName: string,
@@ -228,6 +234,16 @@ export class App {
     // Parameterized routes (authenticated)
     this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true,
       (params) => params.pubkey);
+
+    // Marketplace Add-On (synchronous flag check, lazy view loading)
+    if (localStorage.getItem('noornote_marketplace_enabled') === 'true') {
+      this.registerMarketplaceRoutes();
+    }
+
+    // Register marketplace routes dynamically when toggled in settings
+    this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
+      if (data.enabled) this.registerMarketplaceRoutes();
+    });
 
     // Catch-all: bare nip19 entities in URL path (njump.me links like noornote.app/nprofile1...)
     this.router.register(

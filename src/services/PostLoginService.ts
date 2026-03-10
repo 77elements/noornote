@@ -63,11 +63,15 @@ export class PostLoginService {
         ArticleNotificationService.getInstance().startPolling();
       }),
       this.startService('hashtag notifications', async () => {
-        const { HashtagNotificationService } = await import('./HashtagNotificationService');
+        const { isHashtagSubscriptionsEnabled } = await import('../addons/hashtag-subscriptions/index');
+        if (!isHashtagSubscriptionsEnabled()) return;
+        const { HashtagNotificationService } = await import('../addons/hashtag-subscriptions/HashtagNotificationService');
         HashtagNotificationService.getInstance().startPolling();
       }),
       this.startService('profile recognition', async () => {
-        const { ProfileRecognitionService } = await import('./ProfileRecognitionService');
+        const { isProfileRecognitionEnabled } = await import('../addons/profile-recognition/index');
+        if (!isProfileRecognitionEnabled()) return;
+        const { ProfileRecognitionService } = await import('../addons/profile-recognition/ProfileRecognitionService');
         await ProfileRecognitionService.getInstance().init();
       }),
       this.startService('DM service', async () => {

@@ -97,6 +97,9 @@
 @use 'components/welcome-hero';
 @use 'components/relay-browser';
 
+// Add-Ons
+@use '../addons/marketplace/marketplace';
+
 // 4. Molecules - Combinations of atoms
 @use 'molecules/buttons';
 @use 'molecules/carousel';
