@@ -38,7 +38,7 @@ export class MediaUploadService {
   private uploadAdapter: MediaUploadAdapter;
 
   private readonly DEFAULT_NIP96_MAX_FILE_SIZE = 25 * 1024 * 1024;
-  private readonly DEFAULT_BLOSSOM_MAX_FILE_SIZE = 100 * 1024 * 1024;
+  private readonly DEFAULT_BLOSSOM_MAX_FILE_SIZE = 20 * 1024 * 1024;
   private readonly SIGN_TIMEOUT_MS = 30000;
 
   private constructor() {
