@@ -8,9 +8,11 @@
  */
 
 import { SettingsSection } from './SettingsSection';
+import { Switch } from '../ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { ModalService } from '../../services/ModalService';
 import { StorageKeys } from '../../services/PerAccountLocalStorage';
+import { isListSettingsEnabled, setListSettingsEnabled } from '../../addons/list-settings/index';
 import {
   getListSyncMode,
   setListSyncMode,
@@ -20,6 +22,7 @@ import {
 export class ListSettingsSection extends SettingsSection {
   private currentMode: ListSyncMode;
   private modalService: ModalService;
+  private enableSwitch: Switch | null = null;
 
   constructor() {
     super('list-settings');
@@ -34,21 +37,56 @@ export class ListSettingsSection extends SettingsSection {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
-    contentContainer.innerHTML = this.renderContent();
-    this.bindListeners(contentContainer);
+    const enabled = isListSettingsEnabled();
+
+    // Switch toggle
+    this.enableSwitch = new Switch({
+      label: 'Enable Advanced List Management',
+      checked: enabled,
+      onChange: (checked) => {
+        setListSettingsEnabled(checked);
+        if (!checked) {
+          // Force Easy Mode when disabling
+          this.currentMode = 'easy';
+          setListSyncMode('easy');
+        }
+        this.renderAdvancedContent(contentContainer, checked);
+        const label = checked ? 'Advanced List Management enabled' : 'Advanced List Management disabled (Easy Mode)';
+        ToastService.show(label, 'success');
+      }
+    });
+
+    const switchWrapper = document.createElement('div');
+    switchWrapper.innerHTML = this.enableSwitch.render();
+    contentContainer.appendChild(switchWrapper);
+    this.enableSwitch.setupEventListeners(switchWrapper);
+    this.renderAdvancedContent(contentContainer, enabled);
   }
 
   /**
-   * Render list settings content
+   * Render or clear the advanced content (mode selector + danger zone)
+   */
+  private renderAdvancedContent(contentContainer: HTMLElement, enabled: boolean): void {
+    // Remove existing advanced content
+    const existing = contentContainer.querySelector('.list-settings__advanced');
+    if (existing) existing.remove();
+
+    if (!enabled) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'list-settings__advanced';
+    wrapper.innerHTML = this.renderContent();
+    contentContainer.appendChild(wrapper);
+    this.bindListeners(wrapper);
+  }
+
+  /**
+   * Render list settings content (mode selector + danger zone)
    */
   private renderContent(): string {
     return `
-        <div class="form__info">
-          <p>Choose how NoorNote syncs your lists (Follows, Bookmarks, Mutes) across your local backup and relays.</p>
-        </div>
-
         <div class="list-settings__mode-selector">
-          <h3 class="subsection-title">Synchronisation Mode</h3>
+          <h4 class="subsection-title">Synchronisation Mode</h4>
 
           <div class="mode-options">
             <label class="mode-option ${this.currentMode === 'manual' ? 'mode-option--active' : ''}">
@@ -90,7 +128,7 @@ export class ListSettingsSection extends SettingsSection {
 
         <!-- Danger Zone -->
         <div class="danger-zone">
-          <h3 class="subsection-title">Danger Zone</h3>
+          <h4 class="subsection-title">Danger Zone</h4>
 
           <div class="danger-zone__warning">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -394,6 +432,6 @@ export class ListSettingsSection extends SettingsSection {
    * Unmount section and cleanup
    */
   public unmount(): void {
-    // Cleanup if needed
+    this.enableSwitch = null;
   }
 }

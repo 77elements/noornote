@@ -100,11 +100,10 @@ export class RepostRenderer {
     let avatarBlinker: ProfileBlinkerType | null = null;
     let nameBlinker: TextBlinkerType | null = null;
 
-    // Trigger lazy-load of recognition addon
-    RepostRenderer.loadRecognitionIfEnabled();
-
-    // Subscribe to profile updates to refresh username AND avatar when loaded
+    // Load recognition addon first, then subscribe to profile updates
+    // Avoids race condition where cached profile arrives before recognition is ready
     if (reposterPubkey) {
+      RepostRenderer.loadRecognitionIfEnabled().then(() => {
       RepostRenderer.userProfileService.subscribeToProfile(reposterPubkey, (profile) => {
         const newUsername = profile.display_name || profile.name || reposterNpub;
         const newPicture = profile.picture || '';
@@ -162,6 +161,7 @@ export class RepostRenderer {
           }
         }
       });
+      }); // end loadRecognitionIfEnabled().then()
 
       // Setup UserHoverCard for the user-mention container
       const userHoverCard = UserHoverCard.getInstance();

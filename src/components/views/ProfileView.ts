@@ -116,8 +116,6 @@ export class ProfileView extends View {
     this.eventBus = EventBus.getInstance();
     this.followerCountService = FollowerCountService.getInstance();
     this.profileOrchestrator = ProfileOrchestrator.getInstance();
-    this.loadRecognitionIfEnabled();
-
     // Decode npub or nprofile to pubkey
     try {
       const decoded = decodeNip19(npub);
@@ -152,21 +150,24 @@ export class ProfileView extends View {
     // Listen for follow changes (from FollowList or other sources)
     this.setupFollowChangeListener();
 
-    this.render();
+    // Load recognition addon before rendering to avoid race condition
+    this.initAsync();
   }
 
-  /** Lazy-load profile recognition addon if enabled */
-  private async loadRecognitionIfEnabled(): Promise<void> {
-    if (!isProfileRecognitionEnabled()) return;
+  /** Load recognition addon first, then render */
+  private async initAsync(): Promise<void> {
+    if (isProfileRecognitionEnabled()) {
+      const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
+        import('../../addons/profile-recognition/ProfileRecognitionService'),
+        import('../../addons/profile-recognition/profileBlinking')
+      ]);
 
-    const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
-      import('../../addons/profile-recognition/ProfileRecognitionService'),
-      import('../../addons/profile-recognition/profileBlinking')
-    ]);
+      this.recognitionService = ProfileRecognitionService.getInstance();
+      this.ProfileBlinkerClass = ProfileBlinker;
+      this.TextBlinkerClass = TextBlinker;
+    }
 
-    this.recognitionService = ProfileRecognitionService.getInstance();
-    this.ProfileBlinkerClass = ProfileBlinker;
-    this.TextBlinkerClass = TextBlinker;
+    this.render();
   }
 
   /**

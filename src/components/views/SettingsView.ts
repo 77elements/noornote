@@ -155,7 +155,7 @@ export class SettingsView extends View {
 
             <div class="addon-section">
               <h3 class="addon-section__title">List Settings</h3>
-              <p class="addon-section__description">Configure how NoorNote syncs your lists (Follows, Bookmarks, Mutes) across local backup and relays.</p>
+              <p class="addon-section__description">By default, NoorNote syncs your lists automatically (Easy Mode). Enable for manual sync control and advanced options.</p>
               <div id="list-settings-content"></div>
             </div>
 

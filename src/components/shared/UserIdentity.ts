@@ -67,10 +67,9 @@ export class UserIdentity {
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.router = Router.getInstance();
-    this.loadRecognitionIfEnabled();
 
     this.element = this.createElement();
-    this.loadIdentity();
+    this.initAsync();
 
     // Setup hover card if enabled
     if (this.config.enableHoverCard) {
@@ -83,18 +82,25 @@ export class UserIdentity {
     }
   }
 
-  /** Lazy-load profile recognition addon if enabled */
-  private async loadRecognitionIfEnabled(): Promise<void> {
-    if (!isProfileRecognitionEnabled()) return;
+  /** Load recognition addon first, then subscribe to profile updates */
+  private async initAsync(): Promise<void> {
+    // Hide element until profile loads
+    this.element.style.display = 'none';
 
-    const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
-      import('../../addons/profile-recognition/ProfileRecognitionService'),
-      import('../../addons/profile-recognition/profileBlinking')
-    ]);
+    // Load recognition BEFORE subscribing to avoid race condition
+    if (isProfileRecognitionEnabled()) {
+      const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
+        import('../../addons/profile-recognition/ProfileRecognitionService'),
+        import('../../addons/profile-recognition/profileBlinking')
+      ]);
 
-    this.recognitionService = ProfileRecognitionService.getInstance();
-    this.ProfileBlinkerClass = ProfileBlinker;
-    this.TextBlinkerClass = TextBlinker;
+      this.recognitionService = ProfileRecognitionService.getInstance();
+      this.ProfileBlinkerClass = ProfileBlinker;
+      this.TextBlinkerClass = TextBlinker;
+    }
+
+    // Now subscribe — recognition service is ready
+    this.subscribeToUpdates();
   }
 
   /**
@@ -139,17 +145,6 @@ export class UserIdentity {
     }
 
     return container;
-  }
-
-  /**
-   * Load identity - ONLY render when profile is loaded (like Jumble)
-   */
-  private async loadIdentity(): Promise<void> {
-    // Hide element until profile loads (no cache)
-    this.element.style.display = 'none';
-
-    // Subscribe to updates so UI shows when real profile loads
-    this.subscribeToUpdates();
   }
 
   /**
