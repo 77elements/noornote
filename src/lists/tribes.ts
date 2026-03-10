@@ -1111,6 +1111,9 @@ function buildSetDataFromBrowser(): TribeSetData {
   const orphanedItems = allMembers.filter(item => !assignedIds.has(item.id));
   if (orphanedItems.length > 0) {
     logger.warn('Tribes', `Skipping ${orphanedItems.length} orphaned members (not allowed in tribes)`);
+    console.warn(`[Tribes] ORPHANED MEMBERS (will NOT be published):`, orphanedItems.map(m => ({ id: m.id, pubkey: m.pubkey.slice(0, 8), category: m.category })));
+    console.warn(`[Tribes] All folder IDs:`, folders.map(f => f.id));
+    console.warn(`[Tribes] All assignments:`, getAssignments().map(a => ({ memberId: a.memberId.slice(0, 20), folderId: a.folderId })));
   }
 
   // Build setOrder from rootOrder (respects user's custom folder order)
@@ -1396,7 +1399,9 @@ export async function publishToRelays(): Promise<void> {
     }
   }
 
-  logger.info('Tribes', `Publishing: ${setData.sets.length} sets, ${deletedTribes.length} deleted`);
+  const totalMembers = setData.sets.reduce((sum, s) => sum + s.publicMembers.length + s.privateMembers.length, 0);
+  logger.info('Tribes', `Publishing: ${setData.sets.length} sets, ${totalMembers} total members, ${deletedTribes.length} deleted`);
+  console.log(`[Tribes] publishToRelays: ${setData.sets.length} sets, ${totalMembers} members, ${deletedTribes.length} deletions`, setData.sets.map(s => ({ d: s.d, pub: s.publicMembers.length, priv: s.privateMembers.length })));
 
   // Publish deletions
   if (deletedTribes.length > 0) {

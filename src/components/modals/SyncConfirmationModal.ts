@@ -30,11 +30,11 @@ export interface SyncConfirmationOptions<T> {
   /** Optional: Function to render item as HTML (for mentions with avatar) */
   renderItemHtml?: (item: T) => string | Promise<string>;
   /** Callback when user chooses "Only add new ones" (keep local, ignore relay removals) */
-  onKeep: () => void;
+  onKeep: () => void | Promise<void>;
   /** Callback when user chooses "Merge both" (combine local + relay, then sync back) */
-  onMerge?: () => void;
+  onMerge?: () => void | Promise<void>;
   /** Callback when user chooses "Accept changes" (replace local with relay) */
-  onDelete: () => void;
+  onDelete: () => void | Promise<void>;
 }
 
 interface ResolvedItem {
@@ -299,7 +299,7 @@ export class SyncConfirmationModal<T> {
   }
 
   /**
-   * Setup event handlers
+   * Setup event handlers — all callbacks are awaited before resolving the modal promise
    */
   private setupEventHandlers(): void {
     const keepBtn = document.getElementById('sync-keep-btn');
@@ -317,9 +317,15 @@ export class SyncConfirmationModal<T> {
     }
 
     // Keep button (keep local, ignore relay changes)
-    keepBtn.addEventListener('click', () => {
+    keepBtn.addEventListener('click', async () => {
       this.modalService.hide();
-      this.options.onKeep();
+      console.log('[SyncModal] onKeep: starting callback...');
+      try {
+        await this.options.onKeep();
+        console.log('[SyncModal] onKeep: callback completed successfully');
+      } catch (error) {
+        console.error('[SyncModal] onKeep: callback FAILED:', error);
+      }
       if (this.resolvePromise) {
         this.resolvePromise();
         this.resolvePromise = null;
@@ -328,9 +334,15 @@ export class SyncConfirmationModal<T> {
 
     // Merge button (combine both and sync back to relays)
     if (mergeBtn && this.options.onMerge) {
-      mergeBtn.addEventListener('click', () => {
+      mergeBtn.addEventListener('click', async () => {
         this.modalService.hide();
-        this.options.onMerge!();
+        console.log('[SyncModal] onMerge: starting callback...');
+        try {
+          await this.options.onMerge!();
+          console.log('[SyncModal] onMerge: callback completed successfully');
+        } catch (error) {
+          console.error('[SyncModal] onMerge: callback FAILED:', error);
+        }
         if (this.resolvePromise) {
           this.resolvePromise();
           this.resolvePromise = null;
@@ -339,9 +351,15 @@ export class SyncConfirmationModal<T> {
     }
 
     // Delete button (overwrite with relay)
-    deleteBtn.addEventListener('click', () => {
+    deleteBtn.addEventListener('click', async () => {
       this.modalService.hide();
-      this.options.onDelete();
+      console.log('[SyncModal] onDelete: starting callback...');
+      try {
+        await this.options.onDelete();
+        console.log('[SyncModal] onDelete: callback completed successfully');
+      } catch (error) {
+        console.error('[SyncModal] onDelete: callback FAILED:', error);
+      }
       if (this.resolvePromise) {
         this.resolvePromise();
         this.resolvePromise = null;
