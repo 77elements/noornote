@@ -12,10 +12,11 @@
 
 import type { View } from '../components/views/View';
 import type { MainLayout } from '../components/layout/MainLayout';
+import { Router } from './Router';
 import { ViewLifecycleManager } from './ViewLifecycleManager';
 import { SystemLogger } from '../components/system/SystemLogger';
 
-type ViewFactory = (param?: string) => Promise<{ element: HTMLElement; view?: View }>;
+type ViewFactory = (param?: string) => Promise<{ element: HTMLElement; view?: View } | null>;
 
 interface ViewConfig {
   factory: ViewFactory;
@@ -71,7 +72,9 @@ export class ViewMountingService {
     if (!config) return;
     if (config.requiresParam && !param) return;
 
-    const { element, view } = await config.factory(param);
+    const result = await config.factory(param);
+    if (!result) return;
+    const { element, view } = result;
     primaryContent.appendChild(element);
 
     if (view) {
@@ -277,6 +280,11 @@ export class ViewMountingService {
       case 'marketplace':
         return {
           factory: async () => {
+            const { isMarketplaceEnabled } = await import('../addons/marketplace/index');
+            if (!isMarketplaceEnabled()) {
+              Router.getInstance().navigate('/');
+              return null;
+            }
             const { MarketplaceView } = await import('../addons/marketplace/MarketplaceView');
             const view = new MarketplaceView();
             return { element: view.getElement() };
@@ -287,6 +295,11 @@ export class ViewMountingService {
         return {
           requiresParam: true,
           factory: async (param) => {
+            const { isMarketplaceEnabled } = await import('../addons/marketplace/index');
+            if (!isMarketplaceEnabled()) {
+              Router.getInstance().navigate('/');
+              return null;
+            }
             const { ListingView } = await import('../addons/marketplace/ListingView');
             const view = new ListingView(param!);
             return { element: view.getElement() };
