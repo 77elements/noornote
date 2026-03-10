@@ -466,6 +466,7 @@ export class AutoSyncService {
 
       // Complex case (removals, moves) - show modal to let user decide
       this.systemLogger.info('ListAutoSync', `${listType}: showing merge modal`);
+      console.log(`[AutoSync] ${listType}: SHOWING MODAL — added: ${result.diff.added.length}, removed: ${result.diff.removed.length}, moved: ${result.diff.moved?.length || 0}`);
       await this.showSyncConfirmationModal(listType, result);
     } catch (error) {
       this.systemLogger.error('ListAutoSync', `Periodic sync failed for ${listType}: ${error}`);
@@ -617,6 +618,7 @@ export class AutoSyncService {
       renderItemHtml: async (item: unknown) => this.renderItemHtml(listType, item),
       onKeep: async () => {
         // Keep local state + add new items from relay, then push merged state to relays
+        console.log(`[AutoSync] onKeep(${listType}): applyMerge with ${result.relayItems.length} relay items`);
         this.applyMerge(listType, result.relayItems);
         // Only add folder assignments for NEW items — don't destroy existing browser structure
         if (listType === 'bookmarks') {
@@ -625,11 +627,14 @@ export class AutoSyncService {
           addNewMembersToFolders(result.diff.added as TribeMember[]);
         }
         // Push merged state back so the modal doesn't reappear on next periodic sync
+        console.log(`[AutoSync] onKeep(${listType}): publishing to relays...`);
         await this.syncToRelays(listType);
+        console.log(`[AutoSync] onKeep(${listType}): publish completed`);
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
       },
       onMerge: async () => {
         // True merge: combine both local + relay, then push back to relays
+        console.log(`[AutoSync] onMerge(${listType}): applyMerge with ${result.relayItems.length} relay items`);
         this.applyMerge(listType, result.relayItems);
         // Apply relay folder structure but preserve browser-only items' assignments
         if (listType === 'bookmarks') {
@@ -646,16 +651,21 @@ export class AutoSyncService {
           );
         }
         // Push merged state back to relays
+        console.log(`[AutoSync] onMerge(${listType}): publishing to relays...`);
         await this.syncToRelays(listType);
+        console.log(`[AutoSync] onMerge(${listType}): publish completed`);
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Merged and synced to relays`, 'success');
       },
       onDelete: async () => {
+        console.log(`[AutoSync] onDelete(${listType}): overwriting with ${result.relayItems.length} relay items`);
         this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
         }
         // Push accepted state to relays so all instances are in sync
+        console.log(`[AutoSync] onDelete(${listType}): publishing to relays...`);
         await this.syncToRelays(listType);
+        console.log(`[AutoSync] onDelete(${listType}): publish completed`);
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Synced from relays (removed ${result.diff.removed.length})`, 'success');
       }
     });
