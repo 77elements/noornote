@@ -9,6 +9,11 @@
 @use '../base/typography' as *;
 @use '../base/icons' as *;
 
+// Shared hide utility for profile-search elements
+.profile-search .is-hidden {
+  display: none;
+}
+
 // ProfileSearchComponent - Search overlay
 .profile-search {
   // Position is handled by .profile-search-mount container
@@ -34,11 +39,15 @@
     }
   }
 
-  // Search overlay (expanded state)
+  // Search overlay (hidden by default, visible when .is-hidden is removed)
   &__overlay {
     position: relative;
     display: flex;
     flex-direction: column;
+
+    &.is-hidden {
+      display: none;
+    }
     gap: calc($gap / 2);
     background: $alpha-heavy;
     backdrop-filter: blur(8px);
