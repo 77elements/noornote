@@ -14,6 +14,7 @@
 - **Polls** - Create and vote on NIP-88 polls
 - **Zaps** - Send and receive Lightning payments via NWC
 - **Comments** - NIP-22 Kind:1111 universal comments with Reply/Comment switch
+- **Marketplace** - Browse and publish NIP-99 classified listings, tag filters, image carousel, listings from people you follow injected into your timeline
 
 ### Highlights
 - **Beginner-friendly onboarding** - Step-by-step profile setup with guided explanations, first follows via [calle's Follow Packs](https://github.com/callebtc/following.space), and Lightning wallet setup with [Rizful](https://rizful.com)
@@ -123,6 +124,7 @@ If the app crashes, check the log files:
 | [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) | Polls | 1068, 1018 |
 | [NIP-96](https://github.com/nostr-protocol/nips/blob/master/96.md) | HTTP file storage | 24242 |
 | [NIP-98](https://github.com/nostr-protocol/nips/blob/master/98.md) | HTTP auth | 27235 |
+| [NIP-99](https://github.com/nostr-protocol/nips/blob/master/99.md) | Classified listings (marketplace) | 30402 |
 
 ## Build from Source
 

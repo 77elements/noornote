@@ -414,37 +414,29 @@ export function isInMutedThread(event: NostrEvent): boolean {
  * Check if private mutes feature is enabled
  */
 export function isPrivateMutesEnabled(): boolean {
-  try {
-    return localStorage.getItem('noornote_nip51_private_mutes_enabled') === 'true';
-  } catch {
-    return false;
-  }
+  return storage.get<boolean>(StorageKeys.PRIVATE_MUTES_ENABLED, false);
 }
 
 /**
  * Set private mutes feature flag
  */
 export function setPrivateMutesEnabled(enabled: boolean): void {
-  localStorage.setItem('noornote_nip51_private_mutes_enabled', enabled.toString());
+  storage.set(StorageKeys.PRIVATE_MUTES_ENABLED, enabled);
 }
 
 /**
  * Get encryption method preference (NIP-44 or NIP-04)
  */
 export function getEncryptionMethod(): 'nip44' | 'nip04' {
-  try {
-    const method = localStorage.getItem('noornote_mute_encryption_method');
-    return method === 'nip04' ? 'nip04' : 'nip44';
-  } catch {
-    return 'nip44';
-  }
+  const method = storage.get<string>(StorageKeys.MUTE_ENCRYPTION_METHOD, 'nip44');
+  return method === 'nip04' ? 'nip04' : 'nip44';
 }
 
 /**
  * Set encryption method preference
  */
 export function setEncryptionMethod(method: 'nip44' | 'nip04'): void {
-  localStorage.setItem('noornote_mute_encryption_method', method);
+  storage.set(StorageKeys.MUTE_ENCRYPTION_METHOD, method);
 }
 
 // ============================================================

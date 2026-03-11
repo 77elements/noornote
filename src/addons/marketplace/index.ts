@@ -7,9 +7,7 @@
  * Timeline integration: periodic listing injection into main timeline.
  */
 
-const FLAG_KEY = 'noornote_marketplace_enabled';
-const TIMELINE_ENABLED_KEY = 'noornote_marketplace_timeline_enabled';
-const TIMELINE_FREQUENCY_KEY = 'noornote_marketplace_timeline_frequency';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export type ListingFrequency = 'rare' | 'moderate' | 'frequent';
 
@@ -24,27 +22,27 @@ export const FREQUENCY_INTERVALS: Record<ListingFrequency, number> = {
 export const DEV_FREQUENCY_INTERVAL = 60 * 1000;
 
 export function isMarketplaceEnabled(): boolean {
-  return localStorage.getItem(FLAG_KEY) === 'true';
+  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.MARKETPLACE_ENABLED, false);
 }
 
 export function setMarketplaceEnabled(enabled: boolean): void {
-  localStorage.setItem(FLAG_KEY, enabled.toString());
+  PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_ENABLED, enabled);
 }
 
 export function isTimelineListingsEnabled(): boolean {
-  return localStorage.getItem(TIMELINE_ENABLED_KEY) === 'true';
+  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.MARKETPLACE_TIMELINE_ENABLED, false);
 }
 
 export function setTimelineListingsEnabled(enabled: boolean): void {
-  localStorage.setItem(TIMELINE_ENABLED_KEY, enabled.toString());
+  PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_TIMELINE_ENABLED, enabled);
 }
 
 export function getTimelineListingFrequency(): ListingFrequency {
-  const stored = localStorage.getItem(TIMELINE_FREQUENCY_KEY);
+  const stored = PerAccountLocalStorage.getInstance().get<string>(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, 'rare');
   if (stored === 'rare' || stored === 'moderate' || stored === 'frequent') return stored;
   return 'rare';
 }
 
 export function setTimelineListingFrequency(frequency: ListingFrequency): void {
-  localStorage.setItem(TIMELINE_FREQUENCY_KEY, frequency);
+  PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, frequency);
 }

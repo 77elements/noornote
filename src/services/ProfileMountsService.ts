@@ -10,6 +10,7 @@
  */
 
 import { EventBus } from './EventBus';
+import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 interface ProfileMountData {
   folderName: string;  // Folder name (= d-tag of kind:30003)
@@ -21,7 +22,7 @@ interface ProfileMountsStorage {
   mounts: ProfileMountData[];
 }
 
-const STORAGE_KEY = 'noornote_profile_mounts';
+
 const MAX_MOUNTS = 5;
 
 export class ProfileMountsService {
@@ -195,7 +196,7 @@ export class ProfileMountsService {
    * Clear all mounts (for logout)
    */
   public clear(): void {
-    localStorage.removeItem(STORAGE_KEY);
+    PerAccountLocalStorage.getInstance().remove(StorageKeys.PROFILE_MOUNTS);
   }
 
   // ========================================
@@ -203,23 +204,13 @@ export class ProfileMountsService {
   // ========================================
 
   private loadFromStorage(): ProfileMountsStorage {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        return { version: 1, mounts: [] };
-      }
-      const data = JSON.parse(raw);
-      if (data.version === 1) {
-        return data;
-      }
-      // Unknown version - return empty
-      return { version: 1, mounts: [] };
-    } catch {
-      return { version: 1, mounts: [] };
-    }
+    return PerAccountLocalStorage.getInstance().get<ProfileMountsStorage>(
+      StorageKeys.PROFILE_MOUNTS,
+      { version: 1, mounts: [] }
+    );
   }
 
   private saveToStorage(data: ProfileMountsStorage): void {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    PerAccountLocalStorage.getInstance().set(StorageKeys.PROFILE_MOUNTS, data);
   }
 }

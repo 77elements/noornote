@@ -9,27 +9,27 @@
 import { EventBus } from '../services/EventBus';
 import { ToastService } from '../services/ToastService';
 import { PlatformService } from '../services/PlatformService';
+import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
 
 export type ListSyncMode = 'manual' | 'easy';
 
-const STORAGE_KEY = 'noornote_list_sync_mode';
 const MODE_CHANGED_EVENT = 'list-sync-mode:changed';
 
 /**
- * Get current sync mode from localStorage
+ * Get current sync mode
  */
 export function getListSyncMode(): ListSyncMode {
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = PerAccountLocalStorage.getInstance().get<string>(StorageKeys.LIST_SYNC_MODE, 'easy');
   if (stored === 'manual') return 'manual';
-  return 'easy'; // default for new users
+  return 'easy';
 }
 
 /**
- * Set sync mode in localStorage and emit change event
+ * Set sync mode and emit change event
  */
 export function setListSyncMode(mode: ListSyncMode): void {
   const previousMode = getListSyncMode();
-  localStorage.setItem(STORAGE_KEY, mode);
+  PerAccountLocalStorage.getInstance().set(StorageKeys.LIST_SYNC_MODE, mode);
 
   if (previousMode !== mode) {
     EventBus.getInstance().emit(MODE_CHANGED_EVENT, { mode });

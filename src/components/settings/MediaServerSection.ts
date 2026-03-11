@@ -9,6 +9,7 @@
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { ToastService } from '../../services/ToastService';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 interface MediaServerSettings {
   url: string;
@@ -24,7 +25,6 @@ export class MediaServerSection extends SettingsSection {
   private mediaServerSettings: MediaServerSettings;
   private sensitiveMediaSettings: SensitiveMediaSettings;
   private readonly mediaServerStorageKey = 'noornote_media_server';
-  private readonly sensitiveMediaStorageKey = 'noornote_sensitive_media';
 
   private static readonly POPULAR_SERVERS = [
     { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96, free: 25 MiB)', protocol: 'nip96' as const, maxFileSize: 25 * 1024 * 1024 },
@@ -73,27 +73,14 @@ export class MediaServerSection extends SettingsSection {
    * Load sensitive media settings from storage
    */
   private loadSensitiveMediaSettings(): SensitiveMediaSettings {
-    try {
-      const stored = localStorage.getItem(this.sensitiveMediaStorageKey);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.debug('Failed to load sensitive media settings:', error);
-    }
-
-    return { displayNSFW: false };
+    return PerAccountLocalStorage.getInstance().get<SensitiveMediaSettings>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
   }
 
   /**
    * Save sensitive media settings to storage
    */
   private saveSensitiveMediaSettings(): void {
-    try {
-      localStorage.setItem(this.sensitiveMediaStorageKey, JSON.stringify(this.sensitiveMediaSettings));
-    } catch (error) {
-      console.debug('Failed to save sensitive media settings:', error);
-    }
+    PerAccountLocalStorage.getInstance().set(StorageKeys.SENSITIVE_MEDIA, this.sensitiveMediaSettings);
   }
 
   /**

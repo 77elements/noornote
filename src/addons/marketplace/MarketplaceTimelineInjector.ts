@@ -18,6 +18,7 @@ import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export class MarketplaceTimelineInjector {
   private static instance: MarketplaceTimelineInjector;
@@ -80,7 +81,7 @@ export class MarketplaceTimelineInjector {
 
   private getIntervalMs(): number {
     if (import.meta.env.DEV) {
-      const raw = localStorage.getItem('noornote_marketplace_timeline_frequency');
+      const raw = PerAccountLocalStorage.getInstance().get<string>(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, 'rare');
       if (raw === 'dev') return DEV_FREQUENCY_INTERVAL;
     }
     return FREQUENCY_INTERVALS[getTimelineListingFrequency()] || FREQUENCY_INTERVALS.rare;

@@ -297,11 +297,7 @@ export class ProfileRecognitionService {
    */
   private getRecognitionWindowDays(): number {
     try {
-      const setting = localStorage.getItem('noornote_profile_recognition_window');
-      if (!setting) return 90; // Default: 90 days
-
-      const value = parseInt(setting, 10);
-      return isNaN(value) ? 90 : value;
+      return PerAccountLocalStorage.getInstance().get<number>(StorageKeys.PROFILE_RECOGNITION_WINDOW, 90);
     } catch {
       return 90;
     }

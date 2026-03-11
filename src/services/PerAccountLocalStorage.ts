@@ -74,6 +74,37 @@ export const StorageKeys = {
 
   // Font size preference (per-account)
   FONT_SIZE_SCALE: 'noornote_font_size_scale_map',
+
+  // Addon feature flags (per-account)
+  MARKETPLACE_ENABLED: 'noornote_marketplace_enabled_map',
+  MARKETPLACE_TIMELINE_ENABLED: 'noornote_marketplace_timeline_enabled_map',
+  MARKETPLACE_TIMELINE_FREQUENCY: 'noornote_marketplace_timeline_frequency_map',
+  HASHTAG_SUBSCRIPTIONS_ENABLED: 'noornote_hashtag_subscriptions_enabled_map',
+  PROFILE_RECOGNITION_WINDOW: 'noornote_profile_recognition_window_map',
+  LIST_SETTINGS_ENABLED: 'noornote_list_settings_enabled_map',
+
+  // List privacy flags (per-account)
+  PRIVATE_TRIBES_ENABLED: 'noornote_private_tribes_enabled_map',
+  PRIVATE_FOLLOWS_ENABLED: 'noornote_private_follows_enabled_map',
+  FOLLOWS_FILE_MIGRATION: 'noornote_follows_file_migration_map',
+  PRIVATE_BOOKMARKS_ENABLED: 'noornote_private_bookmarks_enabled_map',
+  PRIVATE_MUTES_ENABLED: 'noornote_private_mutes_enabled_map',
+  MUTE_ENCRYPTION_METHOD: 'noornote_mute_encryption_method_map',
+
+  // Media & display (per-account)
+  SENSITIVE_MEDIA: 'noornote_sensitive_media_map',
+  WALLET_BALANCE_VISIBLE: 'noornote_wallet_balance_visible_map',
+
+  // Service data (per-account)
+  PROFILE_MOUNTS: 'noornote_profile_mounts_map',
+  LIST_SYNC_MODE: 'noornote_list_sync_mode_map',
+  EMOJI_FREQUENTLY_USED: 'noornote_emoji_frequently_used_map',
+  ARTICLE_NOTIFICATIONS: 'noornote_article_notifications_map',
+  NOTIFICATIONS_CACHE_VERSION: 'noornote_notifications_cache_version_map',
+  NOTIFICATIONS_CACHE_LIMIT: 'noornote_notifications_cache_limit_map',
+  SUBMITTED_REPORTS: 'noornote_submitted_reports_map',
+  FIAT_CURRENCY: 'noornote_fiat_currency_map',
+  USER_ZAPS: 'noornote_user_zaps_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];

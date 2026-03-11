@@ -17,6 +17,7 @@ import { getImageClickHandler } from '../../../services/ImageClickHandler';
 import { getVideoPlayerService } from '../../../services/VideoPlayerService';
 import { UserHoverCard } from '../UserHoverCard';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
+import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
 
 // Store component instances for cleanup
 const noteHeaderInstances: Map<string, NoteHeader> = new Map();
@@ -80,11 +81,8 @@ export class NoteStructureBuilder {
    */
   private static getUserNSFWPreference(): boolean {
     try {
-      const stored = localStorage.getItem('noornote_sensitive_media');
-      if (stored) {
-        const settings = JSON.parse(stored);
-        return settings.displayNSFW || false;
-      }
+      const settings = PerAccountLocalStorage.getInstance().get<{ displayNSFW: boolean }>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
+      return settings.displayNSFW || false;
     } catch (error) {
       console.warn('Failed to load NSFW preference:', error);
     }

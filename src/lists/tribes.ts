@@ -738,18 +738,14 @@ export function getFoldersInRootOrder(): TribeFolder[] {
  * Check if private tribes feature is enabled
  */
 export function isPrivateTribesEnabled(): boolean {
-  try {
-    return localStorage.getItem('noornote_nip51_private_tribes_enabled') === 'true';
-  } catch {
-    return false;
-  }
+  return getStorage().get<boolean>(StorageKeys.PRIVATE_TRIBES_ENABLED, false);
 }
 
 /**
  * Set private tribes feature flag
  */
 export function setPrivateTribesEnabled(enabled: boolean): void {
-  localStorage.setItem('noornote_nip51_private_tribes_enabled', enabled.toString());
+  getStorage().set(StorageKeys.PRIVATE_TRIBES_ENABLED, enabled);
 }
 
 // ============================================================

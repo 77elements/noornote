@@ -1,9 +1,9 @@
-const STORAGE_KEY = 'noornote_hashtag_subscriptions_enabled';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export function isHashtagSubscriptionsEnabled(): boolean {
-  return localStorage.getItem(STORAGE_KEY) === 'true';
+  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.HASHTAG_SUBSCRIPTIONS_ENABLED, false);
 }
 
 export function setHashtagSubscriptionsEnabled(enabled: boolean): void {
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  PerAccountLocalStorage.getInstance().set(StorageKeys.HASHTAG_SUBSCRIPTIONS_ENABLED, enabled);
 }
