@@ -54,6 +54,8 @@ export class Timeline extends View {
   private muteUpdatedSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
   private pullRefreshSubscriptionId?: string;
+  private marketplaceToggleSubId?: string;
+  private marketplaceTimelineToggleSubId?: string;
   private nsfwPreferenceHandler?: () => void;
 
   // Marketplace timeline injection (addon, lazy-loaded)
@@ -124,6 +126,24 @@ export class Timeline extends View {
     // Listen for user account switches (only for main timeline, not ProfileView)
     if (!this.filterAuthorPubkey) {
       this.setupUserLoginListener();
+    }
+
+    // Listen for marketplace addon toggle (stop injector immediately when disabled)
+    if (!this.filterAuthorPubkey && !this.tribePubkeys) {
+      this.marketplaceToggleSubId = this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
+        if (!data.enabled) {
+          this.stopMarketplaceInjector();
+        } else if (isTimelineListingsEnabled()) {
+          this.startMarketplaceInjector();
+        }
+      });
+      this.marketplaceTimelineToggleSubId = this.eventBus.on('marketplace:timeline-toggle', (data: { enabled: boolean }) => {
+        if (!data.enabled) {
+          this.stopMarketplaceInjector();
+        } else if (isMarketplaceEnabled()) {
+          this.startMarketplaceInjector();
+        }
+      });
     }
 
     this.initializeTimeline();
@@ -590,6 +610,18 @@ export class Timeline extends View {
   }
 
   /**
+   * Stop marketplace injector and remove injected cards from DOM
+   */
+  private stopMarketplaceInjector(): void {
+    if (this.marketplaceInjector) {
+      this.marketplaceInjector.destroy();
+      this.marketplaceInjector = null;
+    }
+    // Remove any already-injected listing cards
+    this.element.querySelectorAll('.timeline-listing-card').forEach(card => card.remove());
+  }
+
+  /**
    * Save view state (implements View base class)
    */
   public override saveState(): void {
@@ -663,6 +695,12 @@ export class Timeline extends View {
     }
     if (this.pullRefreshSubscriptionId) {
       this.eventBus.off(this.pullRefreshSubscriptionId);
+    }
+    if (this.marketplaceToggleSubId) {
+      this.eventBus.off(this.marketplaceToggleSubId);
+    }
+    if (this.marketplaceTimelineToggleSubId) {
+      this.eventBus.off(this.marketplaceTimelineToggleSubId);
     }
     if (this.nsfwPreferenceHandler) {
       window.removeEventListener('nsfw-preference-changed', this.nsfwPreferenceHandler);
