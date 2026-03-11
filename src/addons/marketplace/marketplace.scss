@@ -9,8 +9,16 @@
 
 // ─── View Header ──────────────────────────────────────────────────
 
+.marketplace-timeline__sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--color-1);
+  padding-bottom: calc($gap / 2);
+}
+
 .marketplace-view__header {
-  margin-bottom: calc($gap * 1.5);
+  margin-bottom: calc($gap / 2);
 }
 
 .marketplace-view__title {
@@ -31,7 +39,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: calc($gap / 3);
-  margin-bottom: $gap;
+  margin-bottom: 0;
 
   &:empty {
     display: none;
@@ -333,10 +341,6 @@
     margin-bottom: calc($gap * 1.5);
 
     &--carousel {
-      .nn-carousel {
-        padding-bottom: 0;
-      }
-
       .nn-carousel-slides {
         min-height: auto;
         background: var(--color-1);
@@ -348,13 +352,6 @@
         max-width: 100%;
         max-height: 450px;
         border-radius: 0;
-      }
-
-      .nn-carousel-nav {
-        border-top: none;
-        margin-top: $gap;
-        padding-top: 0;
-        gap: $gap;
       }
     }
   }
@@ -480,5 +477,122 @@
     padding: calc($gap * 4);
     color: var(--color-3);
     gap: $gap;
+  }
+}
+
+// ─── Timeline Listing Card (injected into main timeline) ─────────
+
+.timeline-listing-card {
+  display: flex;
+  gap: $gap;
+  padding: $gap;
+  border: 1px solid var(--color-3);
+  border-radius: $radius-lg;
+  background: $alpha-light;
+  margin-bottom: $gap;
+  transition: border-color 0.2s ease;
+
+  &:hover {
+    border-color: var(--color-4);
+  }
+
+  &__image {
+    flex-shrink: 0;
+    width: 120px;
+    height: 120px;
+    border-radius: $radius-md;
+    overflow: hidden;
+    background: var(--color-1);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .platform--mobile & {
+      width: 90px;
+      height: 90px;
+    }
+  }
+
+  &__body {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__seller {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    margin-bottom: calc($gap / 4);
+    @extend %small;
+  }
+
+  &__badge {
+    background: var(--color-3);
+    color: var(--color-1);
+    padding: 1px calc($gap / 2);
+    border-radius: $radius-full;
+    font-weight: 600;
+    font-size: 0.7rem;
+  }
+
+  &__title {
+    @extend %h3;
+    color: var(--color-5);
+    margin: 0 0 calc($gap / 4) 0;
+    @include text-truncate;
+  }
+
+  &__price {
+    color: var(--color-4);
+    font-weight: 600;
+    margin-bottom: calc($gap / 4);
+  }
+
+  &__summary {
+    @extend %small;
+    color: var(--color-3);
+    margin: 0;
+    line-height: 1.4;
+    @include text-truncate-lines(2);
+  }
+}
+
+// ─── Marketplace Settings (frequency selector) ──────────────────
+
+.marketplace-timeline-settings {
+  margin-top: $gap;
+
+  &.is-hidden {
+    display: none;
+  }
+}
+
+.frequency-selector {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+  margin-top: calc($gap / 2);
+  padding: calc($gap / 2) $gap;
+  background: var(--color-1);
+  border-radius: $radius-sm;
+
+  &.is-hidden {
+    display: none;
+  }
+}
+
+.frequency-option {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  cursor: pointer;
+  color: var(--color-5);
+  @extend %small;
+
+  input[type="radio"] {
+    accent-color: var(--color-4);
   }
 }

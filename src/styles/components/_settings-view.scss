@@ -89,6 +89,13 @@
     line-height: 1.4;
     margin: 0 0 $gap 0;
   }
+
+  &__beta {
+    @extend %small;
+    color: $color-warning;
+    font-style: italic;
+    margin: 0 0 $gap 0;
+  }
 }
 
 // ========================================

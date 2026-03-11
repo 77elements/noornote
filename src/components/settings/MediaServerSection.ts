@@ -27,10 +27,10 @@ export class MediaServerSection extends SettingsSection {
   private readonly sensitiveMediaStorageKey = 'noornote_sensitive_media';
 
   private static readonly POPULAR_SERVERS = [
-    { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96)', protocol: 'nip96' as const, maxFileSize: 25 * 1024 * 1024 },
-    { url: 'https://blossom.nostr.build', name: 'blossom.nostr.build (Blossom, 100 MiB)', protocol: 'blossom' as const, maxFileSize: 100 * 1024 * 1024 },
-    { url: 'https://blossom.band', name: 'blossom.band (Blossom, 50 MiB)', protocol: 'blossom' as const, maxFileSize: 50 * 1024 * 1024 },
-    { url: 'https://blossom.primal.net', name: 'blossom.primal.net (Blossom)', protocol: 'blossom' as const, maxFileSize: 100 * 1024 * 1024 }
+    { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96, free: 25 MiB)', protocol: 'nip96' as const, maxFileSize: 25 * 1024 * 1024 },
+    { url: 'https://blossom.nostr.build', name: 'blossom.nostr.build (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 },
+    { url: 'https://blossom.band', name: 'blossom.band (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 },
+    { url: 'https://blossom.primal.net', name: 'blossom.primal.net (Blossom, free: 20 MiB)', protocol: 'blossom' as const, maxFileSize: 20 * 1024 * 1024 }
   ];
 
   constructor() {

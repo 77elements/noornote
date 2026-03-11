@@ -22,6 +22,7 @@ import { ScrollPositionManager } from './timeline-features/ScrollPositionManager
 import { NoteUI } from '../ui/NoteUI';
 import { EventBus } from '../../services/EventBus';
 import { CacheManager } from '../../services/CacheManager';
+import { isMarketplaceEnabled, isTimelineListingsEnabled } from '../../addons/marketplace/index';
 
 export class Timeline extends View {
   private element: HTMLElement;
@@ -53,7 +54,12 @@ export class Timeline extends View {
   private muteUpdatedSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
   private pullRefreshSubscriptionId?: string;
+  private marketplaceToggleSubId?: string;
+  private marketplaceTimelineToggleSubId?: string;
   private nsfwPreferenceHandler?: () => void;
+
+  // Marketplace timeline injection (addon, lazy-loaded)
+  private marketplaceInjector: import('../../addons/marketplace/MarketplaceTimelineInjector').MarketplaceTimelineInjector | null = null;
 
   constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
@@ -120,6 +126,24 @@ export class Timeline extends View {
     // Listen for user account switches (only for main timeline, not ProfileView)
     if (!this.filterAuthorPubkey) {
       this.setupUserLoginListener();
+    }
+
+    // Listen for marketplace addon toggle (stop injector immediately when disabled)
+    if (!this.filterAuthorPubkey && !this.tribePubkeys) {
+      this.marketplaceToggleSubId = this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
+        if (!data.enabled) {
+          this.stopMarketplaceInjector();
+        } else if (isTimelineListingsEnabled()) {
+          this.startMarketplaceInjector();
+        }
+      });
+      this.marketplaceTimelineToggleSubId = this.eventBus.on('marketplace:timeline-toggle', (data: { enabled: boolean }) => {
+        if (!data.enabled) {
+          this.stopMarketplaceInjector();
+        } else if (isMarketplaceEnabled()) {
+          this.startMarketplaceInjector();
+        }
+      });
     }
 
     this.initializeTimeline();
@@ -511,6 +535,11 @@ export class Timeline extends View {
         this.startNewNotesPolling();
       }
 
+      // Marketplace timeline injection (only on main timeline, not ProfileView/TribeView)
+      if (!this.filterAuthorPubkey && !this.tribePubkeys) {
+        this.startMarketplaceInjector();
+      }
+
     } catch (error) {
       console.error('Failed to initialize timeline:', error);
       this.uiStateHandler.hideSkeletonLoaders();
@@ -565,6 +594,34 @@ export class Timeline extends View {
   }
 
   /**
+   * Start marketplace listing injection if addon is enabled
+   */
+  private async startMarketplaceInjector(): Promise<void> {
+    if (!isMarketplaceEnabled() || !isTimelineListingsEnabled()) return;
+
+    const { MarketplaceTimelineInjector } = await import('../../addons/marketplace/MarketplaceTimelineInjector');
+    this.marketplaceInjector = MarketplaceTimelineInjector.getInstance();
+    await this.marketplaceInjector.start((card) => {
+      const header = this.element.querySelector('.timeline-header');
+      if (header?.nextSibling) {
+        this.element.insertBefore(card, header.nextSibling);
+      }
+    });
+  }
+
+  /**
+   * Stop marketplace injector and remove injected cards from DOM
+   */
+  private stopMarketplaceInjector(): void {
+    if (this.marketplaceInjector) {
+      this.marketplaceInjector.destroy();
+      this.marketplaceInjector = null;
+    }
+    // Remove any already-injected listing cards
+    this.element.querySelectorAll('.timeline-listing-card').forEach(card => card.remove());
+  }
+
+  /**
    * Save view state (implements View base class)
    */
   public override saveState(): void {
@@ -590,6 +647,7 @@ export class Timeline extends View {
    */
   public override pause(): void {
     this.lifecycleManager.pause();
+    this.marketplaceInjector?.pause();
     this.clearLookForNotesTimeout();
     if (this.lookForNotesLink) {
       this.lookForNotesLink.style.display = 'none';
@@ -618,6 +676,8 @@ export class Timeline extends View {
 
     // Update ISL with cached stats (from SNV visits)
     this.islStatsUpdater.updateFromCache(this.stateManager.getEvents());
+
+    this.marketplaceInjector?.resume();
   }
 
   /**
@@ -636,10 +696,18 @@ export class Timeline extends View {
     if (this.pullRefreshSubscriptionId) {
       this.eventBus.off(this.pullRefreshSubscriptionId);
     }
+    if (this.marketplaceToggleSubId) {
+      this.eventBus.off(this.marketplaceToggleSubId);
+    }
+    if (this.marketplaceTimelineToggleSubId) {
+      this.eventBus.off(this.marketplaceTimelineToggleSubId);
+    }
     if (this.nsfwPreferenceHandler) {
       window.removeEventListener('nsfw-preference-changed', this.nsfwPreferenceHandler);
     }
     this.clearLookForNotesTimeout();
+    this.marketplaceInjector?.destroy();
+    this.marketplaceInjector = null;
     this.lifecycleManager.destroy();
     this.element.remove();
   }

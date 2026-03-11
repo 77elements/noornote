@@ -136,9 +136,7 @@ export class ListingView extends View {
 
     this.carousel = createCarousel(slides, {
       showNav: true,
-      showDots: true,
-      prevLabel: '‹',
-      nextLabel: '›'
+      showDots: true
     });
 
     imagesContainer.classList.add('listing-view__images--carousel');

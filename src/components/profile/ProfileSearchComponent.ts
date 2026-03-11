@@ -33,7 +33,7 @@ export class ProfileSearchComponent {
       <div class="profile-search__trigger">
         <a href="#" class="profile-search__link">Search in this npub</a>
       </div>
-      <div class="profile-search__overlay" style="display: none;">
+      <div class="profile-search__overlay is-hidden">
         <button class="profile-search__close" type="button" title="Close (ESC)">×</button>
         <div class="profile-search__form">
           <input
@@ -45,7 +45,7 @@ export class ProfileSearchComponent {
             Search
           </button>
         </div>
-        <div class="profile-search__status" style="display: none;"></div>
+        <div class="profile-search__status is-hidden"></div>
       </div>
     `;
 
@@ -95,8 +95,8 @@ export class ProfileSearchComponent {
     const trigger = this.container.querySelector('.profile-search__trigger') as HTMLElement;
     const overlay = this.container.querySelector('.profile-search__overlay') as HTMLElement;
 
-    trigger.style.display = 'none';
-    overlay.style.display = 'flex';
+    trigger.classList.add('is-hidden');
+    overlay.classList.remove('is-hidden');
     this.isExpanded = true;
 
     // Focus input
@@ -122,8 +122,8 @@ export class ProfileSearchComponent {
     const overlay = this.container.querySelector('.profile-search__overlay') as HTMLElement;
     const input = this.container.querySelector('.profile-search__input') as HTMLInputElement;
 
-    overlay.style.display = 'none';
-    trigger.style.display = 'block';
+    overlay.classList.add('is-hidden');
+    trigger.classList.remove('is-hidden');
     this.isExpanded = false;
 
     // Clear input
@@ -192,7 +192,7 @@ export class ProfileSearchComponent {
     if (status) {
       status.textContent = message;
       status.className = `profile-search__status profile-search__status--${type}`;
-      status.style.display = 'block';
+      status.classList.remove('is-hidden');
     }
   }
 
@@ -202,7 +202,7 @@ export class ProfileSearchComponent {
   private hideStatus(): void {
     const status = this.container.querySelector('.profile-search__status') as HTMLElement;
     if (status) {
-      status.style.display = 'none';
+      status.classList.add('is-hidden');
     }
   }
 

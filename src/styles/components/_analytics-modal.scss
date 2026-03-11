@@ -80,6 +80,9 @@
 
 // Emoji group (for likes)
 .analytics-modal__emoji-group {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
   margin-bottom: calc($gap / 2);
   line-height: 1.5;
 
@@ -92,6 +95,14 @@
 .analytics-modal__emoji {
   @extend %h3;
   margin-right: calc($gap / 4);
+
+  .custom-emoji {
+    display: inline-block;
+    height: 1.2em;
+    width: auto;
+    vertical-align: middle;
+    margin-right: 0.2em;
+  }
 }
 
 // Client info (bottom right)

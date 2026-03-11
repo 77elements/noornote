@@ -235,15 +235,8 @@ export class App {
     this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true,
       (params) => params.pubkey);
 
-    // Marketplace Add-On (synchronous flag check, lazy view loading)
-    if (localStorage.getItem('noornote_marketplace_enabled') === 'true') {
-      this.registerMarketplaceRoutes();
-    }
-
-    // Register marketplace routes dynamically when toggled in settings
-    this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
-      if (data.enabled) this.registerMarketplaceRoutes();
-    });
+    // Marketplace Add-On (always register before catch-all, guard in handler)
+    this.registerMarketplaceRoutes();
 
     // Catch-all: bare nip19 entities in URL path (njump.me links like noornote.app/nprofile1...)
     this.router.register(
