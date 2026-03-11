@@ -1,9 +1,7 @@
-# What's New in v0.6.0
+# What's New in v0.6.1
 
-**Marketplace Timeline** — Listings from people you follow now appear periodically in your timeline. Choose how often: Rare, Moderate, or Frequent. Disabling the feature removes all injected cards instantly.
+**Fixes:** Notification thread no longer shows irrelevant reactions. Marketplace sidebar and frequency settings now persist across reloads. Seller profile correctly shown in DMs.
 
-**Marketplace Improvements** — Sticky header with tag filters, unified image carousel, better mobile controls, and toast notifications for settings changes.
+**Multi-Account:** Full per-account data isolation — switching accounts no longer leaks settings between profiles on desktop.
 
-**Add-on System** — All optional features (Marketplace, Profile Recognition, Hashtag Subscriptions, List Settings) now lazy-load only when enabled — zero overhead when off.
-
-**Sync Fixes** — More reliable list sync with folder preservation, proper change detection, and fixed sync modal behavior.
+**Marketplace:** Two new timeline listing frequencies: "More Frequent" (5 min) and "Every 60 seconds".
