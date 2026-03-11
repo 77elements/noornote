@@ -23,6 +23,7 @@ import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
 import { replaceMediaPlaceholders } from '../../helpers/renderMediaContent';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { UserIdentity } from '../shared/UserIdentity';
+import { npubToHex } from '../../helpers/nip19';
 
 export class ConversationView extends View {
   private container: HTMLElement;
@@ -44,7 +45,7 @@ export class ConversationView extends View {
   constructor(partnerPubkey: string) {
     super();
 
-    this.partnerPubkey = partnerPubkey;
+    this.partnerPubkey = npubToHex(partnerPubkey) || partnerPubkey;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--conversation';
     this.dmService = DMService.getInstance();
