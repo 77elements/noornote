@@ -52,8 +52,9 @@ export class MarketplaceSettingsSection extends SettingsSection {
       }
     });
 
-    const rawFreq = getTimelineListingFrequency();
-    const currentFreq = rawFreq;
+    const currentFreq = import.meta.env.DEV
+      ? PerAccountLocalStorage.getInstance().get<string>(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, 'rare')
+      : getTimelineListingFrequency();
     const devOption = import.meta.env.DEV
       ? `<label class="frequency-option">
            <input type="radio" name="listing-freq" value="dev" ${currentFreq === ('dev' as string) ? 'checked' : ''} />

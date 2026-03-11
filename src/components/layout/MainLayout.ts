@@ -209,6 +209,11 @@ export class MainLayout {
     // Marketplace Add-On: Insert sidebar entry if enabled
     this.insertMarketplaceSidebarEntry(listsMenuContainer);
 
+    // Re-check after login (PerAccountLocalStorage needs auth to read saved state)
+    this.eventBus.on('user:login', () => {
+      this.insertMarketplaceSidebarEntry(listsMenuContainer);
+    });
+
     // Marketplace toggle: insert/remove sidebar entry instantly
     this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
       if (data.enabled) {
