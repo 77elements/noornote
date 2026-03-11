@@ -168,6 +168,10 @@ export class App {
     this.registerRoute('/marketplace', 'marketplace', 'marketplace', 'mpv', true);
     this.registerRoute('/listing/:naddr', 'listing', 'listing', 'lv', true,
       (params) => params.naddr);
+    this.registerRoute('/write-listing', 'write-listing', 'write-listing', 'lev', true);
+    this.registerRoute('/write-listing/:naddr', 'edit-listing', 'edit-listing', 'elv', true,
+      (params) => params.naddr);
+    this.registerRoute('/my-listings', 'my-listings', 'my-listings', 'mlv', true);
   }
 
   private registerRoute(

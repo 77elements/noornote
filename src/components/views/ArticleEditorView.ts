@@ -214,8 +214,8 @@ export class ArticleEditorView extends View {
   private renderEditMode(): string {
     return `
       <div class="article-editor__form">
-        <div class="article-editor__field">
-          <label class="article-editor__label" for="article-title">Title</label>
+        <div class="form__row">
+          <label for="article-title">Title</label>
           <input
             type="text"
             id="article-title"
@@ -226,8 +226,8 @@ export class ArticleEditorView extends View {
           />
         </div>
 
-        <div class="article-editor__field">
-          <label class="article-editor__label" for="article-content">Content (Markdown)</label>
+        <div class="form__row">
+          <label for="article-content">Content (Markdown)</label>
           ${this.renderMarkdownToolbar()}
           <textarea
             id="article-content"
@@ -237,11 +237,20 @@ export class ArticleEditorView extends View {
           >${this.escapeHtml(this.content)}</textarea>
         </div>
 
-        <details class="article-editor__details" open>
-          <summary class="article-editor__summary">Details</summary>
-          <div class="article-editor__details-content">
-            <div class="article-editor__field">
-              <label class="article-editor__label">Cover Image</label>
+        <section class="nn-ui-toggle">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Details</h2>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            <div class="form__row">
+              <label for="article-image">Cover Image</label>
               <div class="article-editor__cover-input">
                 <input
                   type="text"
@@ -262,8 +271,8 @@ export class ArticleEditorView extends View {
               </div>
             </div>
 
-            <div class="article-editor__field">
-              <label class="article-editor__label" for="article-summary">Summary</label>
+            <div class="form__row">
+              <label for="article-summary">Summary</label>
               <textarea
                 id="article-summary"
                 class="textarea textarea--small"
@@ -272,8 +281,8 @@ export class ArticleEditorView extends View {
               >${this.escapeHtml(this.summary)}</textarea>
             </div>
 
-            <div class="article-editor__field">
-              <label class="article-editor__label" for="article-tags">Tags</label>
+            <div class="form__row">
+              <label for="article-tags">Tags</label>
               <input
                 type="text"
                 id="article-tags"
@@ -284,10 +293,10 @@ export class ArticleEditorView extends View {
               />
             </div>
 
-            <div class="article-editor__field">
-              <label class="article-editor__label" for="article-identifier">
+            <div class="form__row">
+              <label for="article-identifier">
                 Slug / Identifier
-                <span class="article-editor__hint">(auto-generated, change only if you know what you're doing)</span>
+                <span class="form__note">(auto-generated, change only if you know what you're doing)</span>
               </label>
               <input
                 type="text"
@@ -300,7 +309,7 @@ export class ArticleEditorView extends View {
               />
             </div>
           </div>
-        </details>
+        </section>
       </div>
     `;
   }
@@ -339,6 +348,11 @@ export class ArticleEditorView extends View {
 
     // Field inputs
     this.setupFieldListeners();
+
+    // Accordion toggle
+    this.container.querySelectorAll('.nn-ui-toggle__header').forEach(header => {
+      header.addEventListener('click', () => header.closest('.nn-ui-toggle')?.classList.toggle('open'));
+    });
 
     // Relay selector
     const relaySelectorContainer = this.container.querySelector('.post-note-relay-selector');

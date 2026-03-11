@@ -11,6 +11,7 @@ import { MarketplaceFeedOrchestrator } from './MarketplaceFeedOrchestrator';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
+import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
@@ -60,14 +61,68 @@ export class MarketplaceTimeline {
     container.innerHTML = `
       <div class="marketplace-timeline__sticky-header">
         <header class="marketplace-view__header">
-          <h1 class="marketplace-view__title">Marketplace</h1>
+          <div class="marketplace-view__header-row">
+            <h1 class="marketplace-view__title">Marketplace</h1>
+            <div class="marketplace-view__header-actions">
+              <a href="/my-listings" class="btn btn--passive btn--medium marketplace-view__dashboard-btn" style="display: none;">Dashboard</a>
+              <a href="/write-listing" class="btn btn--medium marketplace-view__add-btn" style="display: none;">Add Product</a>
+            </div>
+          </div>
           <p class="marketplace-view__subtitle">Classified listings from the Nostr network</p>
         </header>
         <div class="marketplace-timeline__filters"></div>
       </div>
       <div class="marketplace-timeline__grid"></div>
     `;
+
+    this.setupHeaderButtons(container);
     return container;
+  }
+
+  private setupHeaderButtons(container: HTMLElement): void {
+    const addBtn = container.querySelector('.marketplace-view__add-btn') as HTMLElement;
+    const dashboardBtn = container.querySelector('.marketplace-view__dashboard-btn') as HTMLElement;
+
+    // Prevent default link behavior, use router
+    addBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.router.navigate('/write-listing');
+    });
+
+    dashboardBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+      this.router.navigate('/my-listings');
+    });
+
+    // Show buttons only when logged in
+    const currentUser = AuthService.getInstance().getCurrentUser();
+    if (currentUser) {
+      if (addBtn) addBtn.style.display = '';
+      this.checkUserHasListings(currentUser.pubkey, dashboardBtn);
+    }
+  }
+
+  private async checkUserHasListings(pubkey: string, dashboardBtn: HTMLElement | null): Promise<void> {
+    if (!dashboardBtn) return;
+
+    try {
+      const { NostrTransport } = await import('../../services/transport/NostrTransport');
+      const { RelayConfig } = await import('../../services/RelayConfig');
+      const transport = NostrTransport.getInstance();
+      const relays = RelayConfig.getInstance().getReadRelays();
+
+      const events = await transport.fetch(relays, [{
+        kinds: [30402 as number],
+        authors: [pubkey],
+        limit: 1
+      }], 5000);
+
+      if (events.length > 0) {
+        dashboardBtn.style.display = '';
+      }
+    } catch {
+      // Silently fail — button stays hidden
+    }
   }
 
   private async initialize(): Promise<void> {

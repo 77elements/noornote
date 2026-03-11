@@ -94,57 +94,6 @@
   }
 
 
-  // Details (collapsible)
-  &__details {
-    border-radius: $radius-md;
-    overflow: hidden;
-
-    &[open] {
-      .article-editor__summary::after {
-        transform: rotate(90deg);
-      }
-    }
-  }
-
-  &__summary {
-    display: flex;
-    align-items: center;
-    padding: calc($gap * 0.75) $gap;
-    background: var(--surface-tint);
-    color: var(--color-5);
-    font-weight: 500;
-    cursor: pointer;
-    user-select: none;
-    list-style: none;
-
-    &::-webkit-details-marker {
-      display: none;
-    }
-
-    &::after {
-      content: '';
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      margin-left: auto;
-      border-right: 2px solid currentColor;
-      border-bottom: 2px solid currentColor;
-      transform: rotate(-45deg);
-      transition: transform 0.2s ease;
-    }
-
-    &:hover {
-      background: color-mix(in srgb, var(--color-4) 5%, transparent);
-    }
-  }
-
-  &__details-content {
-    display: flex;
-    flex-direction: column;
-    gap: $gap;
-    padding: $gap;
-  }
-
   // Footer with toolbar and actions
   &__footer {
     display: flex;

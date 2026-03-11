@@ -33,6 +33,18 @@
   margin: 0;
 }
 
+.marketplace-view__header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap;
+}
+
+.marketplace-view__header-actions {
+  display: flex;
+  gap: calc($gap / 2);
+}
+
 // ─── Tag Filter Bar ──────────────────────────────────────────────
 
 .marketplace-timeline__filters {
@@ -595,4 +607,134 @@
   input[type="radio"] {
     accent-color: var(--color-4);
   }
+}
+
+// ─── Listing Editor ──────────────────────────────────────────────
+
+.listing-editor__price-row {
+  display: flex;
+  gap: calc($gap / 2);
+
+  .listing-editor__currency-select,
+  .listing-editor__frequency-select {
+    width: auto;
+    min-width: 80px;
+  }
+}
+
+.listing-editor__images {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.listing-editor__image-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc($gap / 2);
+}
+
+.listing-editor__image-item {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: var(--color-1);
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.listing-editor__image-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: $radius-full;
+  padding: 2px;
+}
+
+.listing-editor__image-add {
+  display: flex;
+  gap: calc($gap / 4);
+  align-items: center;
+}
+
+// ─── My Listings (Seller Dashboard) ─────────────────────────────
+
+.my-listings__list {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.my-listings__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap;
+  padding: calc($gap * 0.75) $gap;
+}
+
+.my-listings__row-content {
+  display: flex;
+  align-items: center;
+  gap: calc($gap * 0.75);
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+}
+
+.my-listings__thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: $radius-md;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--color-1);
+
+  &--empty {
+    @include flex-center;
+    color: var(--color-3);
+  }
+}
+
+.my-listings__info {
+  display: flex;
+  align-items: center;
+  gap: calc($gap * 0.75);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.my-listings__title {
+  font-weight: 600;
+  color: var(--color-5);
+  @include text-truncate;
+}
+
+.my-listings__price {
+  color: var(--color-4);
+  font-weight: 600;
+  @extend %small;
+}
+
+.my-listings__badge--active {
+  background: $color-success;
+  color: var(--color-1);
+}
+
+.my-listings__badge--inactive {
+  background: var(--color-3);
+  color: var(--color-1);
+}
+
+.my-listings__actions {
+  display: flex;
+  gap: calc($gap / 4);
+  flex-shrink: 0;
 }

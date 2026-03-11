@@ -153,13 +153,13 @@ export class VideoEditorView extends View {
   private renderForm(): string {
     return `
       <div class="video-editor__form">
-        <div class="video-editor__field">
-          <label class="video-editor__label">Video</label>
+        <div class="form__row">
+          <label>Video</label>
           ${this.renderUploadZone()}
         </div>
 
-        <div class="video-editor__field">
-          <label class="video-editor__label" for="video-title">Title</label>
+        <div class="form__row">
+          <label for="video-title">Title</label>
           <input
             type="text"
             id="video-title"
@@ -170,8 +170,8 @@ export class VideoEditorView extends View {
           />
         </div>
 
-        <div class="video-editor__field">
-          <label class="video-editor__label" for="video-description">Description</label>
+        <div class="form__row">
+          <label for="video-description">Description</label>
           <textarea
             id="video-description"
             class="textarea video-editor-description"
@@ -180,11 +180,20 @@ export class VideoEditorView extends View {
           >${escapeHtml(this.content)}</textarea>
         </div>
 
-        <details class="video-editor__details">
-          <summary class="video-editor__summary">Details</summary>
-          <div class="video-editor__details-content">
-            <div class="video-editor__field">
-              <label class="video-editor__label">Thumbnail</label>
+        <section class="nn-ui-toggle">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Details</h2>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            <div class="form__row">
+              <label>Thumbnail</label>
               <div class="video-editor__thumb-input">
                 <input
                   type="text"
@@ -204,8 +213,8 @@ export class VideoEditorView extends View {
               </div>
             </div>
 
-            <div class="video-editor__field">
-              <label class="video-editor__label" for="video-tags">Tags</label>
+            <div class="form__row">
+              <label for="video-tags">Tags</label>
               <input
                 type="text"
                 id="video-tags"
@@ -216,7 +225,7 @@ export class VideoEditorView extends View {
               />
             </div>
           </div>
-        </details>
+        </section>
       </div>
     `;
   }
@@ -285,6 +294,11 @@ export class VideoEditorView extends View {
 
     // Field inputs
     this.setupFieldListeners();
+
+    // Accordion toggle
+    this.container.querySelectorAll('.nn-ui-toggle__header').forEach(header => {
+      header.addEventListener('click', () => header.closest('.nn-ui-toggle')?.classList.toggle('open'));
+    });
 
     // Relay selector
     const relaySelectorContainer = this.container.querySelector('.post-note-relay-selector');
@@ -422,10 +436,10 @@ export class VideoEditorView extends View {
   }
 
   private refreshUploadZone(): void {
-    const field = this.container.querySelector('.video-editor__field:first-child');
+    const field = this.container.querySelector('.form__row:first-child');
     if (!field) return;
 
-    const label = field.querySelector('.video-editor__label');
+    const label = field.querySelector('label');
     const oldZone = field.querySelector('.video-editor__upload-zone, .video-editor__preview');
     if (oldZone) {
       const temp = document.createElement('div');
