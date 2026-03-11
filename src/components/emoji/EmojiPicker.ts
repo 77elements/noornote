@@ -5,6 +5,7 @@
  */
 
 import emojilibData from 'emojilib';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 // Handle both default and named export patterns
 const emojilib: Record<string, string[]> = (emojilibData as any).default || emojilibData;
@@ -181,10 +182,7 @@ export class EmojiPicker {
    */
   private loadFrequentlyUsed(): void {
     try {
-      const stored = localStorage.getItem('noornote_emoji_frequently_used');
-      if (stored) {
-        this.frequentlyUsed = JSON.parse(stored);
-      }
+      this.frequentlyUsed = PerAccountLocalStorage.getInstance().get<string[]>(StorageKeys.EMOJI_FREQUENTLY_USED, []);
     } catch (error) {
       console.warn('Failed to load frequently used emojis:', error);
     }
@@ -201,11 +199,7 @@ export class EmojiPicker {
     // Keep only last 24
     this.frequentlyUsed = this.frequentlyUsed.slice(0, 24);
 
-    try {
-      localStorage.setItem('noornote_emoji_frequently_used', JSON.stringify(this.frequentlyUsed));
-    } catch (error) {
-      console.warn('Failed to save frequently used emoji:', error);
-    }
+    PerAccountLocalStorage.getInstance().set(StorageKeys.EMOJI_FREQUENTLY_USED, this.frequentlyUsed);
   }
 
   /**

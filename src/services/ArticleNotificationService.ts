@@ -13,8 +13,9 @@ import { RelayConfig } from './RelayConfig';
 import { EventBus } from './EventBus';
 import { encodeNaddr } from './NostrToolsAdapter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
-const STORAGE_KEY = 'noornote_article_notifications';
+
 const POLL_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 export interface ArticleNotification {
@@ -227,25 +228,13 @@ export class ArticleNotificationService {
    * Load data from localStorage
    */
   private loadData(): StorageData {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.warn('Failed to load article notification data:', error);
-    }
-    return { subscriptions: {} };
+    return PerAccountLocalStorage.getInstance().get<StorageData>(StorageKeys.ARTICLE_NOTIFICATIONS, { subscriptions: {} });
   }
 
   /**
-   * Save data to localStorage
+   * Save data to per-account storage
    */
   private saveData(data: StorageData): void {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (error) {
-      console.warn('Failed to save article notification data:', error);
-    }
+    PerAccountLocalStorage.getInstance().set(StorageKeys.ARTICLE_NOTIFICATIONS, data);
   }
 }

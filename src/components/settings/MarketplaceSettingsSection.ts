@@ -10,10 +10,11 @@ import { Switch } from '../ui/Switch';
 import {
   isMarketplaceEnabled, setMarketplaceEnabled,
   isTimelineListingsEnabled, setTimelineListingsEnabled,
-  setTimelineListingFrequency
+  getTimelineListingFrequency, setTimelineListingFrequency
 } from '../../addons/marketplace/index';
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export class MarketplaceSettingsSection extends SettingsSection {
   private marketplaceSwitch: Switch | null = null;
@@ -51,7 +52,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
       }
     });
 
-    const rawFreq = localStorage.getItem('noornote_marketplace_timeline_frequency') || 'rare';
+    const rawFreq = getTimelineListingFrequency();
     const currentFreq = rawFreq;
     const devOption = import.meta.env.DEV
       ? `<label class="frequency-option">
@@ -94,7 +95,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
         if (value === 'rare' || value === 'moderate' || value === 'frequent') {
           setTimelineListingFrequency(value);
         } else if (import.meta.env.DEV) {
-          localStorage.setItem('noornote_marketplace_timeline_frequency', value);
+          PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, value);
         }
         EventBus.getInstance().emit('marketplace:timeline-frequency-change', { frequency: value });
         const labels: Record<string, string> = { rare: 'Rare (60 min)', moderate: 'Moderate (30 min)', frequent: 'Frequent (15 min)', dev: 'Dev (60s)' };

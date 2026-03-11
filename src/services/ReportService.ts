@@ -20,6 +20,7 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { AuthGuard } from './AuthGuard';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
+import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 export type ReportType =
   | 'nudity'
@@ -46,7 +47,7 @@ export class ReportService {
   private authService: AuthService;
   private transport: NostrTransport;
   private systemLogger: SystemLogger;
-  private readonly STORAGE_KEY = 'noornote_submitted_reports';
+
 
   private constructor() {
     this.authService = AuthService.getInstance();
@@ -209,33 +210,19 @@ export class ReportService {
    * Check if a report already exists (localStorage-based)
    */
   private hasReport(reportedPubkey: string, type: ReportType, reportedEventId?: string): boolean {
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (!stored) return false;
-
-      const reports = JSON.parse(stored) as Record<string, boolean>;
-      const key = this.generateReportKey(reportedPubkey, type, reportedEventId);
-      return reports[key] === true;
-    } catch (_error) {
-      return false;
-    }
+    const reports = PerAccountLocalStorage.getInstance().get<Record<string, boolean>>(StorageKeys.SUBMITTED_REPORTS, {});
+    const key = this.generateReportKey(reportedPubkey, type, reportedEventId);
+    return reports[key] === true;
   }
 
   /**
-   * Store a submitted report (localStorage-based)
+   * Store a submitted report
    */
   private storeReport(reportedPubkey: string, type: ReportType, reportedEventId?: string): void {
-    try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      const reports = stored ? JSON.parse(stored) : {};
-
-      const key = this.generateReportKey(reportedPubkey, type, reportedEventId);
-      reports[key] = true;
-
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(reports));
-    } catch (_error) {
-      this.systemLogger.error('ReportService', `Failed to store report: ${_error}`);
-    }
+    const reports = PerAccountLocalStorage.getInstance().get<Record<string, boolean>>(StorageKeys.SUBMITTED_REPORTS, {});
+    const key = this.generateReportKey(reportedPubkey, type, reportedEventId);
+    reports[key] = true;
+    PerAccountLocalStorage.getInstance().set(StorageKeys.SUBMITTED_REPORTS, reports);
   }
 
   /**

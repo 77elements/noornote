@@ -10,6 +10,7 @@
  */
 
 import { getImageViewer } from '../components/ui/ImageViewer';
+import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 export class ImageClickHandler {
   private static instance: ImageClickHandler | null = null;
@@ -58,20 +59,9 @@ export class ImageClickHandler {
     const isNSFW = mediaContainer.classList.contains('nsfw-media');
 
     if (isNSFW) {
-      // Check if sensitive media display is enabled (from localStorage)
-      try {
-        const sensitiveMediaSettings = localStorage.getItem('noornote_sensitive_media');
-        const displayNSFW = sensitiveMediaSettings
-          ? JSON.parse(sensitiveMediaSettings).displayNSFW
-          : false;
-
-        if (!displayNSFW) {
-          // Don't open viewer for blocked NSFW images
-          return;
-        }
-      } catch (error) {
-        console.error('Failed to read sensitive media settings:', error);
-        // Default: don't show NSFW
+      // Check if sensitive media display is enabled
+      const sensitiveSettings = PerAccountLocalStorage.getInstance().get<{ displayNSFW: boolean }>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
+      if (!sensitiveSettings.displayNSFW) {
         return;
       }
     }

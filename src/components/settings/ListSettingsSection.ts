@@ -11,7 +11,7 @@ import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { ModalService } from '../../services/ModalService';
-import { StorageKeys } from '../../services/PerAccountLocalStorage';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { isListSettingsEnabled, setListSettingsEnabled } from '../../addons/list-settings/index';
 import {
   getListSyncMode,
@@ -386,10 +386,11 @@ export class ListSettingsSection extends SettingsSection {
    * Reset Tribes data
    */
   private resetTribes(): void {
-    localStorage.removeItem(StorageKeys.TRIBES);
-    localStorage.removeItem(StorageKeys.TRIBE_FOLDERS);
-    localStorage.removeItem(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS);
-    localStorage.removeItem(StorageKeys.TRIBE_ROOT_ORDER);
+    const storage = PerAccountLocalStorage.getInstance();
+    storage.remove(StorageKeys.TRIBES);
+    storage.remove(StorageKeys.TRIBE_FOLDERS);
+    storage.remove(StorageKeys.TRIBE_MEMBER_ASSIGNMENTS);
+    storage.remove(StorageKeys.TRIBE_ROOT_ORDER);
 
     ToastService.show('Tribes reset. Reloading...', 'success');
     setTimeout(() => window.location.reload(), 1000);
@@ -399,10 +400,11 @@ export class ListSettingsSection extends SettingsSection {
    * Reset Bookmarks data
    */
   private resetBookmarks(): void {
-    localStorage.removeItem(StorageKeys.BOOKMARKS);
-    localStorage.removeItem(StorageKeys.BOOKMARK_FOLDERS);
-    localStorage.removeItem(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS);
-    localStorage.removeItem(StorageKeys.BOOKMARK_ROOT_ORDER);
+    const storage = PerAccountLocalStorage.getInstance();
+    storage.remove(StorageKeys.BOOKMARKS);
+    storage.remove(StorageKeys.BOOKMARK_FOLDERS);
+    storage.remove(StorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS);
+    storage.remove(StorageKeys.BOOKMARK_ROOT_ORDER);
 
     ToastService.show('Bookmarks reset. Reloading...', 'success');
     setTimeout(() => window.location.reload(), 1000);
@@ -412,7 +414,7 @@ export class ListSettingsSection extends SettingsSection {
    * Reset Mutes data
    */
   private resetMutes(): void {
-    localStorage.removeItem(StorageKeys.MUTES);
+    PerAccountLocalStorage.getInstance().remove(StorageKeys.MUTES);
 
     ToastService.show('Mutes reset. Reloading...', 'success');
     setTimeout(() => window.location.reload(), 1000);
@@ -422,7 +424,7 @@ export class ListSettingsSection extends SettingsSection {
    * Reset Follows data
    */
   private resetFollows(): void {
-    localStorage.removeItem(StorageKeys.FOLLOWS);
+    PerAccountLocalStorage.getInstance().remove(StorageKeys.FOLLOWS);
 
     ToastService.show('Follows reset. Reloading...', 'success');
     setTimeout(() => window.location.reload(), 1000);

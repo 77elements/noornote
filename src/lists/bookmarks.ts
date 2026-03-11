@@ -1108,28 +1108,18 @@ export function mergeRelayBookmarkStructurePreservingBrowserOnly(
 // RELAY OPERATIONS (NIP-51 kind:30003)
 // =============================================================================
 
-const FEATURE_FLAG_KEY = 'noornote_nip51_private_bookmarks_enabled';
-
 /**
  * Check if private bookmarks feature is enabled
  */
 export function isPrivateBookmarksEnabled(): boolean {
-  try {
-    return localStorage.getItem(FEATURE_FLAG_KEY) === 'true';
-  } catch {
-    return false;
-  }
+  return PerAccountLocalStorage.getInstance().get<boolean>(PerAccountStorageKeys.PRIVATE_BOOKMARKS_ENABLED, false);
 }
 
 /**
  * Set private bookmarks feature flag
  */
 export function setPrivateBookmarksEnabled(enabled: boolean): void {
-  try {
-    localStorage.setItem(FEATURE_FLAG_KEY, enabled.toString());
-  } catch (error) {
-    logger.error('bookmarks.ts', `Failed to save NIP-51 private bookmarks flag: ${error}`);
-  }
+  PerAccountLocalStorage.getInstance().set(PerAccountStorageKeys.PRIVATE_BOOKMARKS_ENABLED, enabled);
 }
 
 /**

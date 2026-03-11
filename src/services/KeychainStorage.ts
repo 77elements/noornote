@@ -246,24 +246,16 @@ export class KeychainStorage {
    * Non-sensitive data, localStorage is fine
    */
   static async saveFiatCurrency(currencyCode: string): Promise<void> {
-    try {
-      localStorage.setItem('noornote_fiat_currency', currencyCode);
-    } catch (_error) {
-      console.error('Failed to save fiat currency to localStorage:', _error);
-      throw new Error('Failed to save fiat currency');
-    }
+    const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
+    PerAccountLocalStorage.getInstance().set(StorageKeys.FIAT_CURRENCY, currencyCode);
   }
 
   /**
-   * Load fiat currency preference from localStorage
+   * Load fiat currency preference
    */
   static async loadFiatCurrency(): Promise<string | null> {
-    try {
-      return localStorage.getItem('noornote_fiat_currency');
-    } catch (_error) {
-      console.error('Failed to load fiat currency from localStorage:', _error);
-      return null;
-    }
+    const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
+    return PerAccountLocalStorage.getInstance().get<string | null>(StorageKeys.FIAT_CURRENCY, null);
   }
 
   /**

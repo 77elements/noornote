@@ -302,35 +302,32 @@ export function unfollowUser(pubkey: string): void {
 // SETTINGS
 // ============================================================
 
-const PRIVATE_FOLLOWS_FLAG_KEY = 'noornote_nip51_private_follows_enabled';
-const MIGRATION_FLAG_KEY = 'noornote_follows_file_storage_migrated';
-
 /**
  * Check if private follows feature is enabled
  */
 export function isPrivateFollowsEnabled(): boolean {
-  return localStorage.getItem(PRIVATE_FOLLOWS_FLAG_KEY) === 'true';
+  return storage.get<boolean>(StorageKeys.PRIVATE_FOLLOWS_ENABLED, false);
 }
 
 /**
  * Set private follows feature flag
  */
 export function setPrivateFollowsEnabled(enabled: boolean): void {
-  localStorage.setItem(PRIVATE_FOLLOWS_FLAG_KEY, enabled.toString());
+  storage.set(StorageKeys.PRIVATE_FOLLOWS_ENABLED, enabled);
 }
 
 /**
  * Check if migrated to file storage
  */
 export function isMigratedToFileStorage(): boolean {
-  return localStorage.getItem(MIGRATION_FLAG_KEY) === 'true';
+  return storage.get<boolean>(StorageKeys.FOLLOWS_FILE_MIGRATION, false);
 }
 
 /**
  * Set migration flag
  */
 export function setMigratedToFileStorage(): void {
-  localStorage.setItem(MIGRATION_FLAG_KEY, 'true');
+  storage.set(StorageKeys.FOLLOWS_FILE_MIGRATION, true);
 }
 
 // ============================================================

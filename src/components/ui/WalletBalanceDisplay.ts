@@ -7,6 +7,7 @@ import { NWCService } from '../../services/NWCService';
 import { SystemLogger } from '../system/SystemLogger';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { KeychainStorage } from '../../services/KeychainStorage';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import satsIconUrl from '../../assets/sats.svg';
 
 export class WalletBalanceDisplay {
@@ -18,18 +19,14 @@ export class WalletBalanceDisplay {
   private balanceVisible: boolean = false; // Default: hidden
   private selectedCurrency: string = 'EUR';
   private updateInterval: number | null = null;
-  private readonly STORAGE_KEY = 'wallet_balance_visible';
 
   constructor() {
     this.nwcService = NWCService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.exchangeRateService = ExchangeRateService.getInstance();
 
-    // Load visibility preference from localStorage
-    const storedVisibility = localStorage.getItem(this.STORAGE_KEY);
-    if (storedVisibility !== null) {
-      this.balanceVisible = storedVisibility === 'true';
-    }
+    // Load visibility preference
+    this.balanceVisible = PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.WALLET_BALANCE_VISIBLE, false);
 
     // Load currency preference
     this.loadCurrencyPreference();
@@ -182,8 +179,7 @@ export class WalletBalanceDisplay {
   private toggleVisibility(): void {
     this.balanceVisible = !this.balanceVisible;
 
-    // Persist to localStorage
-    localStorage.setItem(this.STORAGE_KEY, String(this.balanceVisible));
+    PerAccountLocalStorage.getInstance().set(StorageKeys.WALLET_BALANCE_VISIBLE, this.balanceVisible);
 
     this.updateEyeIcon();
     this.updateDisplay(this.balanceInMsats);

@@ -20,12 +20,10 @@ interface NotificationsCache {
 
 export class NotificationsCacheService {
   private static instance: NotificationsCacheService;
-  private limitKey = 'noornote_notifications_cache_limit'; // Global setting, not per-user
   private defaultLimit = 100;
   private perAccountStorage: PerAccountLocalStorage;
   // Bump this version to force cache clear (e.g., after fixing hashtag notification caching bug)
   private static readonly CACHE_VERSION = 2;
-  private static readonly CACHE_VERSION_KEY = 'noornote_notifications_cache_version';
 
   private constructor() {
     this.perAccountStorage = PerAccountLocalStorage.getInstance();
@@ -36,12 +34,11 @@ export class NotificationsCacheService {
    * Run one-time migrations (e.g., clear cache after bug fixes)
    */
   private runMigrations(): void {
-    const storedVersion = parseInt(localStorage.getItem(NotificationsCacheService.CACHE_VERSION_KEY) || '0', 10);
+    const storedVersion = this.perAccountStorage.get<number>(StorageKeys.NOTIFICATIONS_CACHE_VERSION, 0);
 
     if (storedVersion < NotificationsCacheService.CACHE_VERSION) {
-      // Clear notifications cache to fix hashtag notifications being re-classified as mentions
       this.perAccountStorage.remove(StorageKeys.NOTIFICATIONS_CACHE);
-      localStorage.setItem(NotificationsCacheService.CACHE_VERSION_KEY, NotificationsCacheService.CACHE_VERSION.toString());
+      this.perAccountStorage.set(StorageKeys.NOTIFICATIONS_CACHE_VERSION, NotificationsCacheService.CACHE_VERSION);
     }
   }
 
@@ -56,27 +53,15 @@ export class NotificationsCacheService {
    * Get cache limit (user-configurable in Settings) - global, not per-user
    */
   public getLimit(): number {
-    try {
-      const stored = localStorage.getItem(this.limitKey);
-      if (stored) {
-        const limit = parseInt(stored, 10);
-        return limit > 0 ? limit : this.defaultLimit;
-      }
-    } catch (error) {
-      console.error('Failed to load cache limit:', error);
-    }
-    return this.defaultLimit;
+    const limit = this.perAccountStorage.get<number>(StorageKeys.NOTIFICATIONS_CACHE_LIMIT, this.defaultLimit);
+    return limit > 0 ? limit : this.defaultLimit;
   }
 
   /**
    * Set cache limit
    */
   public setLimit(limit: number): void {
-    try {
-      localStorage.setItem(this.limitKey, limit.toString());
-    } catch (error) {
-      console.error('Failed to save cache limit:', error);
-    }
+    this.perAccountStorage.set(StorageKeys.NOTIFICATIONS_CACHE_LIMIT, limit);
   }
 
   /**

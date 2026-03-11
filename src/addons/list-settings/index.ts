@@ -1,9 +1,9 @@
-const STORAGE_KEY = 'noornote_list_settings_enabled';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export function isListSettingsEnabled(): boolean {
-  return localStorage.getItem(STORAGE_KEY) === 'true';
+  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.LIST_SETTINGS_ENABLED, false);
 }
 
 export function setListSettingsEnabled(enabled: boolean): void {
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  PerAccountLocalStorage.getInstance().set(StorageKeys.LIST_SETTINGS_ENABLED, enabled);
 }

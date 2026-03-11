@@ -18,6 +18,7 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
 import { PlatformService } from './PlatformService';
+import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 export interface ZapRequest {
   noteId: string;
@@ -676,33 +677,19 @@ export class ZapService {
    * Format: zap_{userPubkey}_{noteId} = amount (in sats)
    */
   private storeUserZap(noteId: string, amount: number): void {
-    try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) return;
-
-      const zapKey = `zap_${currentUser.pubkey}_${noteId}`;
-      localStorage.setItem(zapKey, amount.toString());
-      this.systemLogger.info('ZapService', `Stored zap: ${amount} sats for note ${noteId.slice(0, 8)}`);
-    } catch (error) {
-      this.systemLogger.warn('ZapService', 'Failed to store zap in localStorage', error);
-    }
+    const zaps = PerAccountLocalStorage.getInstance().get<Record<string, number>>(StorageKeys.USER_ZAPS, {});
+    zaps[noteId] = amount;
+    PerAccountLocalStorage.getInstance().set(StorageKeys.USER_ZAPS, zaps);
+    this.systemLogger.info('ZapService', `Stored zap: ${amount} sats for note ${noteId.slice(0, 8)}`);
   }
 
   /**
-   * Get user's zap amount for a note from localStorage
+   * Get user's zap amount for a note
    * Returns 0 if user has not zapped this note
    */
   public getUserZapAmount(noteId: string): number {
-    try {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser) return 0;
-
-      const zapKey = `zap_${currentUser.pubkey}_${noteId}`;
-      const stored = localStorage.getItem(zapKey);
-      return stored ? parseInt(stored, 10) : 0;
-    } catch (error) {
-      return 0;
-    }
+    const zaps = PerAccountLocalStorage.getInstance().get<Record<string, number>>(StorageKeys.USER_ZAPS, {});
+    return zaps[noteId] || 0;
   }
 
   /**

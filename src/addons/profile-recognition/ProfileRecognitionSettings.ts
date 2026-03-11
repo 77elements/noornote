@@ -9,8 +9,7 @@
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
-
-const STORAGE_KEY = 'noornote_profile_recognition_window';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 // Window values: 0 = disabled, -1 = always, or number of days
 const WINDOW_OPTIONS = [
@@ -29,18 +28,11 @@ export class ProfileRecognitionSettings extends SettingsSection {
   }
 
   private getCurrentWindow(): number {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return 90;
-      const value = parseInt(stored, 10);
-      return isNaN(value) ? 90 : value;
-    } catch {
-      return 90;
-    }
+    return PerAccountLocalStorage.getInstance().get<number>(StorageKeys.PROFILE_RECOGNITION_WINDOW, 90);
   }
 
   private saveWindow(value: number): void {
-    localStorage.setItem(STORAGE_KEY, value.toString());
+    PerAccountLocalStorage.getInstance().set(StorageKeys.PROFILE_RECOGNITION_WINDOW, value);
   }
 
   public mount(parentContainer: HTMLElement): void {
