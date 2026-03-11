@@ -7,7 +7,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { FREQUENCY_INTERVALS, DEV_FREQUENCY_INTERVAL, getTimelineListingFrequency } from './index';
+import { FREQUENCY_INTERVALS, getTimelineListingFrequency } from './index';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
@@ -18,7 +18,6 @@ import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export class MarketplaceTimelineInjector {
   private static instance: MarketplaceTimelineInjector;
@@ -80,10 +79,6 @@ export class MarketplaceTimelineInjector {
   }
 
   private getIntervalMs(): number {
-    if (import.meta.env.DEV) {
-      const raw = PerAccountLocalStorage.getInstance().get<string>(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, 'rare');
-      if (raw === 'dev') return DEV_FREQUENCY_INTERVAL;
-    }
     return FREQUENCY_INTERVALS[getTimelineListingFrequency()] || FREQUENCY_INTERVALS.rare;
   }
 

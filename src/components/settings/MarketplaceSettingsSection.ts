@@ -10,11 +10,11 @@ import { Switch } from '../ui/Switch';
 import {
   isMarketplaceEnabled, setMarketplaceEnabled,
   isTimelineListingsEnabled, setTimelineListingsEnabled,
-  getTimelineListingFrequency, setTimelineListingFrequency
+  getTimelineListingFrequency, setTimelineListingFrequency,
+  type ListingFrequency
 } from '../../addons/marketplace/index';
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
-import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export class MarketplaceSettingsSection extends SettingsSection {
   private marketplaceSwitch: Switch | null = null;
@@ -52,14 +52,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
       }
     });
 
-    const rawFreq = getTimelineListingFrequency();
-    const currentFreq = rawFreq;
-    const devOption = import.meta.env.DEV
-      ? `<label class="frequency-option">
-           <input type="radio" name="listing-freq" value="dev" ${currentFreq === ('dev' as string) ? 'checked' : ''} />
-           <span>Every 60s (Dev)</span>
-         </label>`
-      : '';
+    const currentFreq = getTimelineListingFrequency();
 
     contentContainer.innerHTML = `
       <p class="addon-section__beta">Beta — This feature is still in development. Expect rough edges.</p>
@@ -79,7 +72,14 @@ export class MarketplaceSettingsSection extends SettingsSection {
             <input type="radio" name="listing-freq" value="frequent" ${currentFreq === 'frequent' ? 'checked' : ''} />
             <span>Frequent (every 15 min)</span>
           </label>
-          ${devOption}
+          <label class="frequency-option">
+            <input type="radio" name="listing-freq" value="more-frequent" ${currentFreq === 'more-frequent' ? 'checked' : ''} />
+            <span>More Frequent (every 5 min)</span>
+          </label>
+          <label class="frequency-option">
+            <input type="radio" name="listing-freq" value="realtime" ${currentFreq === 'realtime' ? 'checked' : ''} />
+            <span>Every 60 seconds</span>
+          </label>
         </div>
       </div>
     `;
@@ -90,15 +90,16 @@ export class MarketplaceSettingsSection extends SettingsSection {
     // Frequency radio buttons
     contentContainer.querySelectorAll('input[name="listing-freq"]').forEach(radio => {
       radio.addEventListener('change', (e) => {
-        const value = (e.target as HTMLInputElement).value;
-        // Dev option stores raw string; production values are typed
-        if (value === 'rare' || value === 'moderate' || value === 'frequent') {
-          setTimelineListingFrequency(value);
-        } else if (import.meta.env.DEV) {
-          PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, value);
-        }
+        const value = (e.target as HTMLInputElement).value as ListingFrequency;
+        setTimelineListingFrequency(value);
         EventBus.getInstance().emit('marketplace:timeline-frequency-change', { frequency: value });
-        const labels: Record<string, string> = { rare: 'Rare (60 min)', moderate: 'Moderate (30 min)', frequent: 'Frequent (15 min)', dev: 'Dev (60s)' };
+        const labels: Record<ListingFrequency, string> = {
+          rare: 'Rare (60 min)',
+          moderate: 'Moderate (30 min)',
+          frequent: 'Frequent (15 min)',
+          'more-frequent': 'More Frequent (5 min)',
+          realtime: 'Every 60 seconds'
+        };
         ToastService.show(`Listing frequency: ${labels[value] || value}`, 'success');
       });
     });
