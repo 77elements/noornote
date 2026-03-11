@@ -11,6 +11,7 @@ import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { ModalService } from '../../services/ModalService';
+import { EventBus } from '../../services/EventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { isListSettingsEnabled, setListSettingsEnabled } from '../../addons/list-settings/index';
 import {
@@ -23,6 +24,7 @@ export class ListSettingsSection extends SettingsSection {
   private currentMode: ListSyncMode;
   private modalService: ModalService;
   private enableSwitch: Switch | null = null;
+  private modeChangedSubscriptionId: string | null = null;
 
   constructor() {
     super('list-settings');
@@ -61,6 +63,26 @@ export class ListSettingsSection extends SettingsSection {
     contentContainer.appendChild(switchWrapper);
     this.enableSwitch.setupEventListeners(switchWrapper);
     this.renderAdvancedContent(contentContainer, enabled);
+
+    // Sync when mode changes externally (e.g. "Switch to manual mode" link in list views)
+    this.modeChangedSubscriptionId = EventBus.getInstance().on(
+      'list-sync-mode:changed',
+      ({ mode }: { mode: string }) => {
+        this.currentMode = mode as ListSyncMode;
+
+        if (mode === 'manual' && !isListSettingsEnabled()) {
+          // Switching to manual: enable advanced list management
+          setListSettingsEnabled(true);
+          this.enableSwitch?.setChecked(true);
+        } else if (mode === 'easy' && isListSettingsEnabled()) {
+          // Switching to easy: disable advanced list management
+          setListSettingsEnabled(false);
+          this.enableSwitch?.setChecked(false);
+        }
+
+        this.renderAdvancedContent(contentContainer, isListSettingsEnabled());
+      }
+    );
   }
 
   /**
@@ -435,5 +457,9 @@ export class ListSettingsSection extends SettingsSection {
    */
   public unmount(): void {
     this.enableSwitch = null;
+    if (this.modeChangedSubscriptionId) {
+      EventBus.getInstance().off(this.modeChangedSubscriptionId);
+      this.modeChangedSubscriptionId = null;
+    }
   }
 }
