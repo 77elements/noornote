@@ -1,9 +1,9 @@
-# What's New in v0.5.9
+# What's New in v0.6.0
 
-**NIP-22 Comments** — Reply to any event type with Kind:1111 comments. Choose between Comment (stays under the post) and Reply (appears on your profile) when replying to notes.
+**Marketplace Timeline** — Listings from people you follow now appear periodically in your timeline. Choose how often: Rare, Moderate, or Frequent. Disabling the feature removes all injected cards instantly.
 
-**Security Hardening** — Restrictive CSP, signature verification on all external data paths, HTML attribute escaping, memory-safe key handling, and devtools gated to dev builds.
+**Marketplace Improvements** — Sticky header with tag filters, unified image carousel, better mobile controls, and toast notifications for settings changes.
 
-**Performance** — Faster DM loading, smarter DB size estimation, and parallel quote resolution.
+**Add-on System** — All optional features (Marketplace, Profile Recognition, Hashtag Subscriptions, List Settings) now lazy-load only when enabled — zero overhead when off.
 
-**Polls** — Unique voter count shown for clearer multiple-choice percentages.
+**Sync Fixes** — More reliable list sync with folder preservation, proper change detection, and fixed sync modal behavior.
