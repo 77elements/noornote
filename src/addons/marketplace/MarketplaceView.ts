@@ -20,13 +20,7 @@ export class MarketplaceView extends View {
   }
 
   private render(): void {
-    this.container.innerHTML = `
-      <header class="marketplace-view__header">
-        <h1 class="marketplace-view__title">Marketplace</h1>
-        <p class="marketplace-view__subtitle">Classified listings from the Nostr network</p>
-      </header>
-      <div class="marketplace-view__content"></div>
-    `;
+    this.container.innerHTML = `<div class="marketplace-view__content"></div>`;
 
     this.timeline = new MarketplaceTimeline();
     const contentArea = this.container.querySelector('.marketplace-view__content');

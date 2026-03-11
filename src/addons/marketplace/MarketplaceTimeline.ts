@@ -58,7 +58,13 @@ export class MarketplaceTimeline {
     const container = document.createElement('div');
     container.className = 'marketplace-timeline';
     container.innerHTML = `
-      <div class="marketplace-timeline__filters"></div>
+      <div class="marketplace-timeline__sticky-header">
+        <header class="marketplace-view__header">
+          <h1 class="marketplace-view__title">Marketplace</h1>
+          <p class="marketplace-view__subtitle">Classified listings from the Nostr network</p>
+        </header>
+        <div class="marketplace-timeline__filters"></div>
+      </div>
       <div class="marketplace-timeline__grid"></div>
     `;
     return container;
