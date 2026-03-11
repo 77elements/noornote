@@ -9,17 +9,16 @@
 
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
-export type ListingFrequency = 'rare' | 'moderate' | 'frequent';
+export type ListingFrequency = 'rare' | 'moderate' | 'frequent' | 'more-frequent' | 'realtime';
 
 /** Interval in ms for each frequency level */
 export const FREQUENCY_INTERVALS: Record<ListingFrequency, number> = {
-  rare: 60 * 60 * 1000,      // 60 minutes
-  moderate: 30 * 60 * 1000,  // 30 minutes
-  frequent: 15 * 60 * 1000,  // 15 minutes
+  rare: 60 * 60 * 1000,           // 60 minutes
+  moderate: 30 * 60 * 1000,       // 30 minutes
+  frequent: 15 * 60 * 1000,       // 15 minutes
+  'more-frequent': 5 * 60 * 1000, // 5 minutes
+  realtime: 60 * 1000,            // 60 seconds
 };
-
-/** Dev-only: 60-second interval for testing */
-export const DEV_FREQUENCY_INTERVAL = 60 * 1000;
 
 export function isMarketplaceEnabled(): boolean {
   return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.MARKETPLACE_ENABLED, false);
@@ -39,7 +38,7 @@ export function setTimelineListingsEnabled(enabled: boolean): void {
 
 export function getTimelineListingFrequency(): ListingFrequency {
   const stored = PerAccountLocalStorage.getInstance().get<string>(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, 'rare');
-  if (stored === 'rare' || stored === 'moderate' || stored === 'frequent') return stored;
+  if (stored === 'rare' || stored === 'moderate' || stored === 'frequent' || stored === 'more-frequent' || stored === 'realtime') return stored;
   return 'rare';
 }
 
