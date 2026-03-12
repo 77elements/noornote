@@ -306,6 +306,49 @@ export class ViewMountingService {
           }
         };
 
+      case 'write-listing':
+        return {
+          factory: async () => {
+            const { isMarketplaceEnabled } = await import('../addons/marketplace/index');
+            if (!isMarketplaceEnabled()) {
+              Router.getInstance().navigate('/');
+              return null;
+            }
+            const { ListingEditorView } = await import('../addons/marketplace/ListingEditorView');
+            const view = new ListingEditorView();
+            return { element: view.getElement() };
+          }
+        };
+
+      case 'edit-listing':
+        return {
+          requiresParam: true,
+          factory: async (param) => {
+            const { isMarketplaceEnabled } = await import('../addons/marketplace/index');
+            if (!isMarketplaceEnabled()) {
+              Router.getInstance().navigate('/');
+              return null;
+            }
+            const { ListingEditorView } = await import('../addons/marketplace/ListingEditorView');
+            const view = new ListingEditorView(param!);
+            return { element: view.getElement() };
+          }
+        };
+
+      case 'my-listings':
+        return {
+          factory: async () => {
+            const { isMarketplaceEnabled } = await import('../addons/marketplace/index');
+            if (!isMarketplaceEnabled()) {
+              Router.getInstance().navigate('/');
+              return null;
+            }
+            const { MyListingsView } = await import('../addons/marketplace/MyListingsView');
+            const view = new MyListingsView();
+            return { element: view.getElement() };
+          }
+        };
+
       default:
         return null;
     }

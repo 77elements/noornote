@@ -786,11 +786,13 @@ export class DMService {
    * Get current user's inbox relays (configured or fallback)
    */
   private getMyInboxRelays(): string[] {
-    const configured = this.relayConfig.getInboxRelays();
-    if (configured.length > 0) {
-      return configured;
-    }
-    return [...this.FALLBACK_INBOX_RELAYS];
+    const inbox = this.relayConfig.getInboxRelays();
+    const readRelays = this.relayConfig.getReadRelays();
+    const combined = [...new Set([
+      ...(inbox.length > 0 ? inbox : this.FALLBACK_INBOX_RELAYS),
+      ...readRelays
+    ])];
+    return combined;
   }
 
   /**

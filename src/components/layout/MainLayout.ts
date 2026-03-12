@@ -220,6 +220,7 @@ export class MainLayout {
         this.insertMarketplaceSidebarEntry(listsMenuContainer, true);
       } else {
         this.element.querySelector('.primary-nav__link--marketplace')?.parentElement?.remove();
+        this._marketplaceInsertPending = false;
       }
     });
 
@@ -1260,6 +1261,14 @@ export class MainLayout {
                 </svg>
                 Video
               </button>
+              <button class="new-post-dropup__item new-post-dropup__item--product" data-action="new-product" style="display: none;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+                  <line x1="3" y1="6" x2="21" y2="6"/>
+                  <path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                Product
+              </button>
             </div>
           </div>
           <div class="sidebar-footer">
@@ -1666,6 +1675,24 @@ export class MainLayout {
       Router.getInstance().navigate('/write-video');
     });
 
+    // Product item (only visible when marketplace is enabled)
+    const productItem = menu.querySelector('[data-action="new-product"]');
+    productItem?.addEventListener('click', () => {
+      menu.classList.remove('is-open');
+      Router.getInstance().navigate('/write-listing');
+    });
+
+    // Show/hide product item based on marketplace state
+    const updateProductVisibility = async () => {
+      const { isMarketplaceEnabled } = await import('../../addons/marketplace/index');
+      if (productItem) {
+        (productItem as HTMLElement).style.display = isMarketplaceEnabled() ? '' : 'none';
+      }
+    };
+    updateProductVisibility();
+    this.eventBus.on('marketplace:toggle', () => updateProductVisibility());
+    this.eventBus.on('user:login', () => updateProductVisibility());
+
     // Close menu when clicking outside
     document.addEventListener('click', (e) => {
       if (!dropup.contains(e.target as Node)) {
@@ -1845,14 +1872,21 @@ export class MainLayout {
    * Marketplace Add-On: Insert sidebar entry if feature is enabled.
    * Inserts before Download link, after Lists accordion.
    */
+  private _marketplaceInsertPending = false;
+
   private async insertMarketplaceSidebarEntry(navContainer: Element | null, animate = false): Promise<void> {
     if (!navContainer) return;
 
-    // Don't insert twice
+    // Don't insert twice (DOM check + pending flag to prevent async race)
     if (navContainer.querySelector('.primary-nav__link--marketplace')) return;
+    if (this._marketplaceInsertPending) return;
+    this._marketplaceInsertPending = true;
 
     const { isMarketplaceEnabled } = await import('../../addons/marketplace/index');
-    if (!isMarketplaceEnabled()) return;
+    if (!isMarketplaceEnabled()) {
+      this._marketplaceInsertPending = false;
+      return;
+    }
 
     const li = document.createElement('li');
     if (animate) li.classList.add('pulse-once');
