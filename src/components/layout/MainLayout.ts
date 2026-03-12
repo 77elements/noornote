@@ -220,6 +220,7 @@ export class MainLayout {
         this.insertMarketplaceSidebarEntry(listsMenuContainer, true);
       } else {
         this.element.querySelector('.primary-nav__link--marketplace')?.parentElement?.remove();
+        this._marketplaceInsertPending = false;
       }
     });
 
@@ -1871,14 +1872,21 @@ export class MainLayout {
    * Marketplace Add-On: Insert sidebar entry if feature is enabled.
    * Inserts before Download link, after Lists accordion.
    */
+  private _marketplaceInsertPending = false;
+
   private async insertMarketplaceSidebarEntry(navContainer: Element | null, animate = false): Promise<void> {
     if (!navContainer) return;
 
-    // Don't insert twice
+    // Don't insert twice (DOM check + pending flag to prevent async race)
     if (navContainer.querySelector('.primary-nav__link--marketplace')) return;
+    if (this._marketplaceInsertPending) return;
+    this._marketplaceInsertPending = true;
 
     const { isMarketplaceEnabled } = await import('../../addons/marketplace/index');
-    if (!isMarketplaceEnabled()) return;
+    if (!isMarketplaceEnabled()) {
+      this._marketplaceInsertPending = false;
+      return;
+    }
 
     const li = document.createElement('li');
     if (animate) li.classList.add('pulse-once');
