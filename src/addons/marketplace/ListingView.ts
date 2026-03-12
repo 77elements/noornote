@@ -16,6 +16,12 @@ import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { createCarousel, type CarouselInstance } from '../../helpers/CarouselHelper';
+import { AuthService } from '../../services/AuthService';
+import { EventBus } from '../../services/EventBus';
+import { ToastService } from '../../services/ToastService';
+
+const BOOKMARK_SVG_OUTLINE = `<svg class="listing-view__bookmark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
+const BOOKMARK_SVG_FILLED = `<svg class="listing-view__bookmark-icon listing-view__bookmark-icon--active" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
 
 export class ListingView extends View {
   private container: HTMLElement;
@@ -55,6 +61,16 @@ export class ListingView extends View {
       const contentProcessor = ContentProcessor.getInstance();
       const renderedContent = contentProcessor.processContent(event.content || '').html;
 
+      // Build a-tag coordinate for bookmarking
+      const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+      const aTagValue = `30402:${event.pubkey}:${dTag}`;
+      const bookmarkDescription = `${meta.title}${priceDisplay ? ' — ' + priceDisplay : ''}`;
+
+      // Check if already bookmarked
+      const { isNoteBookmarked } = await import('../../lists/bookmarks');
+      const isBookmarked = isNoteBookmarked(aTagValue);
+      const bookmarkedNow = isBookmarked.public || isBookmarked.private;
+
       this.container.innerHTML = `
         <div class="listing-view">
           <button class="listing-view__back btn btn--passive" data-action="back">Back to Marketplace</button>
@@ -87,6 +103,9 @@ export class ListingView extends View {
 
           <div class="listing-view__actions">
             <button class="btn btn--primary listing-view__contact-btn" data-pubkey="${event.pubkey}">Contact Seller</button>
+            <button class="listing-view__bookmark-btn${bookmarkedNow ? ' listing-view__bookmark-btn--active' : ''}" data-a-tag="${escapeHtmlAttr(aTagValue)}" data-description="${escapeHtmlAttr(bookmarkDescription)}" aria-label="Bookmark listing" title="${bookmarkedNow ? 'Remove bookmark' : 'Bookmark listing'}">
+              ${bookmarkedNow ? BOOKMARK_SVG_FILLED : BOOKMARK_SVG_OUTLINE}
+            </button>
           </div>
 
           ${event.content ? `
@@ -157,6 +176,52 @@ export class ListingView extends View {
         router.navigate(`/messages/${npub}`);
       }
     });
+
+    const bookmarkBtn = this.container.querySelector('.listing-view__bookmark-btn');
+    bookmarkBtn?.addEventListener('click', async () => {
+      await this.toggleBookmark(bookmarkBtn as HTMLElement);
+    });
+  }
+
+  private async toggleBookmark(btn: HTMLElement): Promise<void> {
+    const authService = AuthService.getInstance();
+    const currentUser = authService.getCurrentUser();
+    if (!currentUser) {
+      ToastService.show('Log in to bookmark listings', 'info');
+      return;
+    }
+
+    const aTagValue = btn.dataset.aTag!;
+    const description = btn.dataset.description || '';
+    const isActive = btn.classList.contains('listing-view__bookmark-btn--active');
+
+    try {
+      const { addBookmark, removeBookmark, isNoteBookmarked } = await import('../../lists/bookmarks');
+
+      if (isActive) {
+        await removeBookmark(aTagValue);
+        btn.classList.remove('listing-view__bookmark-btn--active');
+        btn.innerHTML = BOOKMARK_SVG_OUTLINE;
+        btn.title = 'Bookmark listing';
+        ToastService.show('Bookmark removed', 'success');
+      } else {
+        await addBookmark(aTagValue, false, '', 'a', description);
+        btn.classList.add('listing-view__bookmark-btn--active');
+        btn.innerHTML = BOOKMARK_SVG_FILLED;
+        btn.title = 'Remove bookmark';
+        ToastService.show('Listing bookmarked', 'success');
+      }
+
+      // Check actual state to be safe
+      const status = isNoteBookmarked(aTagValue);
+      const nowBookmarked = status.public || status.private;
+      btn.classList.toggle('listing-view__bookmark-btn--active', nowBookmarked);
+      btn.innerHTML = nowBookmarked ? BOOKMARK_SVG_FILLED : BOOKMARK_SVG_OUTLINE;
+
+      EventBus.getInstance().emit('bookmark:updated', {});
+    } catch {
+      ToastService.show('Failed to update bookmark', 'error');
+    }
   }
 
   private async loadSellerProfile(pubkey: string): Promise<void> {
