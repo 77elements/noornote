@@ -47,12 +47,13 @@
   }
 }
 
-// Header (Tabs + Relay Selector in same row)
+// Header (Tabs + Relay Selector in same row, wraps on mobile)
 .post-note-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: $gap;
+  gap: calc($gap / 2) $gap;
+  flex-wrap: wrap;
 }
 
 // Relay Selector
@@ -228,23 +229,22 @@ svg.upload-progress {
 }
 
 .post-note-buttons {
-  display: inline-block;
-  text-align: right;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: calc($gap / 2);
 }
 
 .post-note-options {
-  display: inline-block;
-  margin-right: $gap;
-  vertical-align: middle;
+  display: flex;
+  align-items: center;
 }
 
 .post-note-actions-right {
-  display: inline-block;
-  vertical-align: middle;
-
-  .btn {
-    margin-left: calc($gap / 2);
-  }
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
 }
 
 // Rosa button styling for "New Post" in Sidebar
@@ -287,16 +287,14 @@ svg.upload-progress {
   }
 
   .post-note-actions {
-    flex-direction: column;
-    gap: $gap;
+    grid-template-columns: 1fr;
   }
 
   .post-note-buttons {
-    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: calc($gap / 2);
     margin-left: 0;
-
-    .btn {
-      flex: 1;
-    }
   }
 }
