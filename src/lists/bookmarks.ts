@@ -1134,7 +1134,7 @@ export function isNoteBookmarked(noteId: string): BookmarkStatus {
 /**
  * Add a bookmark
  */
-export async function addBookmark(noteId: string, isPrivate: boolean, category: string = ''): Promise<boolean> {
+export async function addBookmark(noteId: string, isPrivate: boolean, category: string = '', tagType: 'e' | 'a' = 'e', description?: string): Promise<boolean> {
   requireAuth();
 
   const items = readBrowserBookmarks();
@@ -1142,11 +1142,12 @@ export async function addBookmark(noteId: string, isPrivate: boolean, category: 
 
   items.push({
     id: noteId,
-    type: 'e',
+    type: tagType,
     value: noteId,
     addedAt: now(),
     isPrivate,
-    category
+    category,
+    ...(description ? { description } : {})
   });
   writeBrowserBookmarks(items);
   getBookmarkFolderService().ensureBookmarkAssignment(noteId);
@@ -1929,8 +1930,13 @@ export class BookmarkCard {
         displayLabel = 'Hashtag';
         displayContent = `#${value}`;
       } else if (type === 'a' && value) {
-        displayLabel = 'Address';
-        displayContent = value.slice(0, 40) + '...';
+        const isListing = value.startsWith('30402:');
+        displayLabel = isListing ? 'Listing' : 'Address';
+        if (description) {
+          displayContent = description.length > 60 ? description.slice(0, 60) + '...' : description;
+        } else {
+          displayContent = value.slice(0, 40) + '...';
+        }
       } else {
         displayLabel = 'Note not found';
         displayContent = id.slice(0, 8) + '...';
@@ -1989,6 +1995,17 @@ export class BookmarkCard {
           await open(href);
           return;
         }
+      }
+
+      // Navigate to listing for 'a' tag bookmarks (kind:30402)
+      if (this.data.type === 'a' && this.data.value?.startsWith('30402:')) {
+        const parts = this.data.value.split(':');
+        if (parts.length >= 3) {
+          const { encodeNaddr } = await import('../services/NostrToolsAdapter');
+          const naddr = encodeNaddr({ kind: 30402, pubkey: parts[1]!, identifier: parts.slice(2).join(':') });
+          this.router.navigate(`/listing/${naddr}`);
+        }
+        return;
       }
 
       if (event?.id) {

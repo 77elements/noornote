@@ -432,7 +432,30 @@
   }
 
   &__actions {
+    display: flex;
+    align-items: center;
+    gap: $gap;
     margin-bottom: calc($gap * 1.5);
+  }
+
+  &__bookmark-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-4);
+    padding: calc($gap / 4);
+    border-radius: $radius-base;
+    transition: $transition-fast;
+    display: flex;
+    align-items: center;
+
+    &:hover {
+      opacity: 0.8;
+    }
+
+    &--active {
+      color: var(--color-4);
+    }
   }
 
   &__description {
