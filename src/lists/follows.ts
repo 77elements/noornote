@@ -101,6 +101,12 @@ interface SyncDiff {
  * Does NOT compare order (user can't reorder, displayed by date)
  */
 function hasFollowDifference(browserItems: FollowItem[], sourceItems: FollowItem[]): boolean {
+  console.debug('[DIAG:follows] hasFollowDifference:', {
+    browserCount: browserItems.length,
+    sourceCount: sourceItems.length,
+    browserPubkeys: browserItems.map(i => i.pubkey.slice(0, 8)),
+    sourcePubkeys: sourceItems.map(i => i.pubkey.slice(0, 8))
+  });
   // Different count = different
   if (browserItems.length !== sourceItems.length) return true;
 
@@ -513,6 +519,14 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     // Deduplicate
     const deduped = deduplicateByPubkey(items);
 
+    console.debug('[DIAG:follows] fetchFromRelays result:', {
+      totalBeforeDedup: items.length,
+      afterDedup: deduped.length,
+      publicCount: deduped.filter(i => !i.isPrivate).length,
+      privateCount: deduped.filter(i => i.isPrivate).length,
+      decryptionFailed,
+      pubkeys: deduped.map(i => i.pubkey.slice(0, 8))
+    });
     logger.info('follows.ts', `Fetched from relays: ${deduped.length} items`);
 
     return {
@@ -538,6 +552,13 @@ export async function publishToRelays(): Promise<void> {
   // Separate public and private
   const publicItems = items.filter(item => !item.isPrivate);
   const privateItems = items.filter(item => item.isPrivate === true);
+  console.debug('[DIAG:follows] publishToRelays:', {
+    totalItems: items.length,
+    publicCount: publicItems.length,
+    privateCount: privateItems.length,
+    publicPubkeys: publicItems.map(i => i.pubkey.slice(0, 8)),
+    privatePubkeys: privateItems.map(i => i.pubkey.slice(0, 8))
+  });
 
   // Build kind:3 tags (p, pubkey, relay?, petname?)
   const publicTags: string[][] = publicItems.map(item => [
@@ -611,6 +632,17 @@ function calculateFollowSyncDiff(browserItems: FollowItem[], relayItems: FollowI
   });
   const unchanged = browserItems.filter(item => relayIds.has(item.pubkey));
 
+  console.debug('[DIAG:follows] calculateFollowSyncDiff:', {
+    browserCount: browserItems.length,
+    relayCount: relayItems.length,
+    preservePrivateItems,
+    added: added.length,
+    removed: removed.length,
+    unchanged: unchanged.length,
+    addedPubkeys: added.map(i => i.pubkey.slice(0, 8)),
+    removedPubkeys: removed.map(i => i.pubkey.slice(0, 8))
+  });
+
   return { added, removed, unchanged };
 }
 
@@ -659,16 +691,32 @@ export class FollowStorageAdapter {
   async syncFromRelays(): Promise<SyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
+    console.debug('[DIAG:follows] FollowStorageAdapter.syncFromRelays: browserItems:', {
+      count: browserItems.length,
+      pubkeys: browserItems.map(i => i.pubkey.slice(0, 8))
+    });
     const fetchResult = await this.fetchFromRelays();
     const relayItems = fetchResult.items;
     const relayContentWasEmpty = fetchResult.relayContentWasEmpty;
     const decryptionFailed = fetchResult.decryptionFailed || false;
+    console.debug('[DIAG:follows] FollowStorageAdapter.syncFromRelays: fetchResult:', {
+      relayItemCount: relayItems.length,
+      relayContentWasEmpty,
+      decryptionFailed
+    });
 
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
     const diff = calculateFollowSyncDiff(browserItems, relayItems, preservePrivateItems);
 
     // Use full state comparison (checks ALL differences including order and properties)
     const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
+    console.debug('[DIAG:follows] FollowStorageAdapter.syncFromRelays: result:', {
+      requiresConfirmation,
+      added: diff.added.length,
+      removed: diff.removed.length,
+      unchanged: diff.unchanged.length,
+      preservePrivateItems
+    });
 
     return {
       requiresConfirmation,
@@ -1287,16 +1335,32 @@ export class FollowListManager {
   private async syncFromRelays(): Promise<SyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.adapter.getBrowserItems();
+    console.debug('[DIAG:follows] FollowListManager.syncFromRelays: browserItems:', {
+      count: browserItems.length,
+      pubkeys: browserItems.map(i => i.pubkey.slice(0, 8))
+    });
     const fetchResult = await this.adapter.fetchFromRelays();
     const relayItems = fetchResult.items;
     const relayContentWasEmpty = fetchResult.relayContentWasEmpty;
     const decryptionFailed = fetchResult.decryptionFailed || false;
+    console.debug('[DIAG:follows] FollowListManager.syncFromRelays: fetchResult:', {
+      relayItemCount: relayItems.length,
+      relayContentWasEmpty,
+      decryptionFailed
+    });
 
     const preservePrivateItems = relayContentWasEmpty || decryptionFailed;
     const diff = this.calculateDiff(browserItems, relayItems, preservePrivateItems);
 
     // Use full state comparison (checks ALL differences including order and properties)
     const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
+    console.debug('[DIAG:follows] FollowListManager.syncFromRelays: result:', {
+      requiresConfirmation,
+      added: diff.added.length,
+      removed: diff.removed.length,
+      unchanged: diff.unchanged.length,
+      preservePrivateItems
+    });
 
     return {
       requiresConfirmation,
