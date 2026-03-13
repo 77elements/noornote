@@ -1417,8 +1417,18 @@ export async function publishBookmarksToRelays(): Promise<void> {
       ...folderOrder.map(dTag => ['a', `30003:${pubkey}:${dTag}`])
     ];
 
-    const signedOrderEvent = await signEvent({ kind: 30078, created_at: now(), tags: orderTags, content: '', pubkey });
+    const publishTimestamp = now();
+    // Store order in content JSON — tag order is NOT preserved by all relays
+    const orderContent = JSON.stringify({ order: folderOrder });
+    const signedOrderEvent = await signEvent({ kind: 30078, created_at: publishTimestamp, tags: orderTags, content: orderContent, pubkey });
     if (signedOrderEvent) {
+      console.debug('[DIAG:bookmarks] publishBookmarksToRelays: kind:30078 PUBLISH details:', {
+        created_at: publishTimestamp,
+        created_at_ISO: new Date(publishTimestamp * 1000).toISOString(),
+        tagOrder: orderTags.filter(t => t[0] === 'a').map(t => t[1]?.split(':')[2]),
+        content: orderContent,
+        eventId: signedOrderEvent.id
+      });
       await publishEvent(signedOrderEvent);
       logger.info('bookmarks.ts', `Published folder order metadata (kind:30078) with ${folderOrder.length} folders`);
     }
@@ -1510,17 +1520,39 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     const sortedOrderEvents = orderEvents.sort((a, b) => b.created_at - a.created_at);
     const orderEvent = sortedOrderEvents[0];
     if (orderEvent) {
-      folderOrder = orderEvent.tags
-        .filter((t): t is [string, string, ...string[]] => t[0] === 'a' && !!t[1]?.startsWith('30003:'))
-        .map(t => {
-          const parts = t[1].split(':');
-          return parts[2] || '';
-        });
+      // Prefer content-based order (reliable) — tag order is NOT preserved by all relays
+      let usedContentOrder = false;
+      if (orderEvent.content) {
+        try {
+          const parsed = JSON.parse(orderEvent.content);
+          if (Array.isArray(parsed.order) && parsed.order.length > 0) {
+            folderOrder = parsed.order;
+            usedContentOrder = true;
+          }
+        } catch { /* not JSON, fall through to tag-based extraction */ }
+      }
 
-      logger.info('bookmarks.ts', `Loaded folder order from NIP-78 metadata: ${folderOrder.join(', ')}`);
+      if (!usedContentOrder) {
+        // Legacy fallback: extract from tag order (unreliable — relays may sort tags)
+        folderOrder = orderEvent.tags
+          .filter((t): t is [string, string, ...string[]] => t[0] === 'a' && !!t[1]?.startsWith('30003:'))
+          .map(t => {
+            const parts = t[1].split(':');
+            return parts[2] || '';
+          });
+      }
+
+      logger.info('bookmarks.ts', `Loaded folder order from NIP-78 metadata (${usedContentOrder ? 'content' : 'tags'}): ${folderOrder.join(', ')}`);
     }
 
-    console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: folder order from NIP-78:', folderOrder);
+    console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: NIP-78 event details:', {
+      totalEventsReturned: orderEvents.length,
+      selectedCreatedAt: orderEvent?.created_at,
+      selectedCreatedAtISO: orderEvent ? new Date(orderEvent.created_at * 1000).toISOString() : 'none',
+      allEventTimestamps: orderEvents.map(e => ({ created_at: e.created_at, iso: new Date(e.created_at * 1000).toISOString() })),
+      rawTags: orderEvent?.tags,
+      folderOrder
+    });
 
     // Build categories array in correct order (root always first)
     const categories: string[] = [''];
