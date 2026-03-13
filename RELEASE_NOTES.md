@@ -1,7 +1,6 @@
-# What's New in v0.6.1
+# What's New in v0.6.2
 
-**Fixes:** Notification thread no longer shows irrelevant reactions. Marketplace sidebar and frequency settings now persist across reloads. Seller profile correctly shown in DMs.
-
-**Multi-Account:** Full per-account data isolation — switching accounts no longer leaks settings between profiles on desktop.
-
-**Marketplace:** Two new timeline listing frequencies: "More Frequent" (5 min) and "Every 60 seconds".
+- **Marketplace:** Listing editor, seller dashboard, and bookmark support for listings
+- **DMs:** Improved message delivery across relays
+- **Sync:** Fixed recurring "Sync Bookmarks" modal that appeared every 5 minutes
+- **UI:** Fixed mobile reply buttons and click-through on nested reposts
