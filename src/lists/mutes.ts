@@ -104,6 +104,7 @@ interface SyncDiff {
  * Does NOT compare order (user can't reorder, displayed by date)
  */
 function hasMuteDifference(browserItems: string[], sourceItems: string[]): boolean {
+  console.debug('[DIAG:mutes] hasMuteDifference:', { browserCount: browserItems.length, sourceCount: sourceItems.length, browserItems, sourceItems });
   // Different count = different
   if (browserItems.length !== sourceItems.length) return true;
 
@@ -628,6 +629,15 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     }
 
     const deduped = deduplicateMuteItems(items);
+    console.debug('[DIAG:mutes] fetchFromRelays result:', {
+      totalBeforeDedup: items.length,
+      afterDedup: deduped.length,
+      publicUsers: deduped.filter(i => i.type === 'user' && !i.isPrivate).length,
+      privateUsers: deduped.filter(i => i.type === 'user' && i.isPrivate).length,
+      publicThreads: deduped.filter(i => i.type === 'thread' && !i.isPrivate).length,
+      privateThreads: deduped.filter(i => i.type === 'thread' && i.isPrivate).length,
+      items: deduped.map(i => ({ type: i.type, id: i.id.slice(0, 8), isPrivate: i.isPrivate }))
+    });
     logger.info('mutes.ts', `Fetched from relays: ${deduped.length} items`);
 
     return { items: deduped, relayContentWasEmpty: items.length === 0 };
@@ -643,6 +653,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 export async function publishToRelays(): Promise<void> {
   const user = requireAuth();
   const items = getMuteItems();
+  console.debug('[DIAG:mutes] publishToRelays:', {
+    totalItems: items.length,
+    items: items.map(i => ({ type: i.type, id: i.id.slice(0, 8), isPrivate: i.isPrivate }))
+  });
 
   const publicTags: string[][] = [];
   const privateTags: string[][] = [];
@@ -710,11 +724,21 @@ function calculateSyncDiff(browserItems: string[], sourceItems: string[]): SyncD
   const browserSet = new Set(browserItems);
   const sourceSet = new Set(sourceItems);
 
-  return {
-    added: sourceItems.filter(item => !browserSet.has(item)),
-    removed: browserItems.filter(item => !sourceSet.has(item)),
-    unchanged: browserItems.filter(item => sourceSet.has(item))
-  };
+  const added = sourceItems.filter(item => !browserSet.has(item));
+  const removed = browserItems.filter(item => !sourceSet.has(item));
+  const unchanged = browserItems.filter(item => sourceSet.has(item));
+
+  console.debug('[DIAG:mutes] calculateSyncDiff:', {
+    browserCount: browserItems.length,
+    sourceCount: sourceItems.length,
+    added: added.length,
+    removed: removed.length,
+    unchanged: unchanged.length,
+    addedItems: added,
+    removedItems: removed
+  });
+
+  return { added, removed, unchanged };
 }
 
 const mergeItemArrays = mergeStringArrays;
@@ -834,6 +858,12 @@ export class MuteStorageAdapter {
       const result = await fetchFromRelays();
       // Encode all items (users AND threads) with prefixes
       const encodedItems = result.items.map(encodeMuteItem);
+      console.debug('[DIAG:mutes] MuteStorageAdapter.fetchFromRelays: encoded:', {
+        rawItemCount: result.items.length,
+        encodedCount: encodedItems.length,
+        relayContentWasEmpty: result.relayContentWasEmpty,
+        encodedItems
+      });
 
       return { items: encodedItems, relayContentWasEmpty: result.relayContentWasEmpty };
     } catch (error) {
@@ -855,11 +885,26 @@ export class MuteStorageAdapter {
   async syncFromRelays(): Promise<SyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
+    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: browserItems:', {
+      count: browserItems.length,
+      items: browserItems
+    });
     const fetchResult = await this.fetchFromRelays();
+    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: fetchResult:', {
+      itemCount: fetchResult.items.length,
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
+      items: fetchResult.items
+    });
     const diff = calculateSyncDiff(browserItems, fetchResult.items);
 
     // Use full state comparison (now includes threads)
     const requiresConfirmation = hasMuteDifference(browserItems, fetchResult.items);
+    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: result:', {
+      requiresConfirmation,
+      added: diff.added.length,
+      removed: diff.removed.length,
+      unchanged: diff.unchanged.length
+    });
 
     return {
       requiresConfirmation,

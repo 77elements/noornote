@@ -22,13 +22,16 @@ export function getStorage(): PerAccountLocalStorage {
  * Read list data from per-account localStorage
  */
 export function readList<T>(key: StorageKey, defaultValue: T[] = []): T[] {
-  return getStorage().get<T[]>(key, defaultValue);
+  const result = getStorage().get<T[]>(key, defaultValue);
+  console.debug('[DIAG:storage] readList:', { key, itemCount: result.length });
+  return result;
 }
 
 /**
  * Write list data to per-account localStorage
  */
 export function writeList<T>(key: StorageKey, items: T[]): void {
+  console.debug('[DIAG:storage] writeList:', { key, itemCount: items.length });
   getStorage().set(key, items);
 }
 
