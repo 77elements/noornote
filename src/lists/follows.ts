@@ -496,6 +496,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
         undefined
       );
       if (kind30000Event?.content) {
+        console.debug('[DIAG:follows] fetchFromRelays: kind:30000 event has encrypted content (length:', kind30000Event.content.length, '), decrypting...');
         try {
           const { decryptPrivateFollows } = await import('../helpers/decryptPrivateFollows');
           const privatePubkeys = await decryptPrivateFollows(kind30000Event.content, pubkey);
@@ -509,10 +510,14 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
               isPrivate: true
             });
           }
+          console.debug('[DIAG:follows] fetchFromRelays: decrypted', privatePubkeys.length, 'private follows');
         } catch (error) {
+          console.debug('[DIAG:follows] fetchFromRelays: DECRYPT FAILED for private follows:', error);
           logger.error('follows.ts', `Failed to decrypt private follows: ${error}`);
           decryptionFailed = true;
         }
+      } else {
+        console.debug('[DIAG:follows] fetchFromRelays: kind:30000 event has no content (no private follows)');
       }
     }
 
@@ -587,10 +592,12 @@ export async function publishToRelays(): Promise<void> {
 
   // Publish kind:30000 event for private follows (if feature enabled)
   if (isPrivateFollowsEnabled() && privateItems.length > 0) {
+    console.debug('[DIAG:follows] publishToRelays: encrypting', privateItems.length, 'private follows for kind:30000');
     try {
       const { encryptPrivateFollows } = await import('../helpers/encryptPrivateFollows');
       const privatePubkeys = privateItems.map(item => item.pubkey);
       const encryptedContent = await encryptPrivateFollows(privatePubkeys, user.pubkey);
+      console.debug('[DIAG:follows] publishToRelays: encrypted content length:', encryptedContent.length);
 
       const kind30000Event = {
         kind: 30000,

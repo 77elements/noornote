@@ -614,6 +614,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     // Decrypt private mutes from content
     if (muteEvent.content?.trim()) {
+      console.debug('[DIAG:mutes] fetchFromRelays: event has encrypted content (length:', muteEvent.content.length, '), decrypting...');
       try {
         const privateTags = await decryptPrivateMutes(muteEvent.content, pubkey);
         for (const tag of privateTags) {
@@ -667,9 +668,12 @@ export async function publishToRelays(): Promise<void> {
     (item.isPrivate ? privateTags : publicTags).push(tag);
   }
 
-  const content = privateTags.length > 0
-    ? await encryptContent(JSON.stringify(privateTags), user.pubkey)
-    : '';
+  let content = '';
+  if (privateTags.length > 0) {
+    console.debug('[DIAG:mutes] publishToRelays: encrypting', privateTags.length, 'private tags');
+    content = await encryptContent(JSON.stringify(privateTags), user.pubkey);
+    console.debug('[DIAG:mutes] publishToRelays: encrypted content length:', content.length);
+  }
 
   const event = {
     kind: 10000,
@@ -693,12 +697,19 @@ export async function publishToRelays(): Promise<void> {
 // ============================================================
 
 async function decryptPrivateMutes(ciphertext: string, pubkey: string): Promise<string[][]> {
+  console.debug('[DIAG:mutes] decryptPrivateMutes: attempting decryption, ciphertext length:', ciphertext.length);
   const plaintext = await decryptContent(ciphertext, pubkey);
-  if (!plaintext) return [];
+  if (!plaintext) {
+    console.debug('[DIAG:mutes] decryptPrivateMutes: decryption returned null — private mutes LOST');
+    return [];
+  }
 
   try {
-    return JSON.parse(plaintext);
-  } catch {
+    const tags = JSON.parse(plaintext);
+    console.debug('[DIAG:mutes] decryptPrivateMutes: SUCCESS — decrypted', tags.length, 'private tags');
+    return tags;
+  } catch (error) {
+    console.debug('[DIAG:mutes] decryptPrivateMutes: FAILED to parse decrypted content:', error, 'raw:', plaintext.slice(0, 200));
     return [];
   }
 }

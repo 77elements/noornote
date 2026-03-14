@@ -25,6 +25,8 @@ export interface SyncConfirmationOptions<T> {
   removed: T[];
   /** Items with different folder assignments */
   moved?: MovedItemInfo<T>[];
+  /** Human-readable descriptions of snapshot differences (order, properties, etc.) */
+  snapshotDetails?: string[];
   /** Function to get displayable name for an item (text only) */
   getDisplayName: (item: T) => string | Promise<string>;
   /** Optional: Function to render item as HTML (for mentions with avatar) */
@@ -174,6 +176,8 @@ export class SyncConfirmationModal<T> {
     // Build the question text based on what differs
     const hasRemoved = removed.length > 0;
     const hasMoved = movedCount > 0;
+    const snapshotDetails = this.options.snapshotDetails || [];
+    const hasSnapshotDetails = snapshotDetails.length > 0;
 
     let questionText = '';
     if (hasRemoved && hasMoved) {
@@ -182,6 +186,8 @@ export class SyncConfirmationModal<T> {
       questionText = `What should happen with the ${removed.length} item${removed.length > 1 ? 's' : ''} only in NoorNote Memory?`;
     } else if (hasMoved) {
       questionText = `What should happen with the ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders?`;
+    } else if (hasSnapshotDetails) {
+      questionText = `What should happen with these differences?`;
     }
 
     container.innerHTML = `
@@ -221,6 +227,17 @@ export class SyncConfirmationModal<T> {
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedAddedItems)}
+            </div>
+          </div>
+        ` : ''}
+
+        ${hasSnapshotDetails ? `
+          <div class="sync-confirmation-modal__section">
+            <h3 class="sync-confirmation-modal__section-title">
+              🔄 Detected differences
+            </h3>
+            <div class="sync-confirmation-modal__list">
+              ${snapshotDetails.map(d => `<div class="sync-confirmation-modal__item">${this.escapeHtml(d)}</div>`).join('')}
             </div>
           </div>
         ` : ''}

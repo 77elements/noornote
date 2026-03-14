@@ -1336,14 +1336,25 @@ async function encryptPrivateItems(items: BookmarkItem[], pubkey: string): Promi
  * Decrypt private items from relay event
  */
 async function decryptPrivateItems(event: NostrEvent, pubkey: string): Promise<BookmarkItem[]> {
-  if (!event.content?.trim()) return [];
+  if (!event.content?.trim()) {
+    console.debug('[DIAG:bookmarks] decryptPrivateItems: empty content, skipping');
+    return [];
+  }
 
+  console.debug('[DIAG:bookmarks] decryptPrivateItems: attempting decryption, content length:', event.content.length);
   const decrypted = await decryptContent(event.content, pubkey);
-  if (!decrypted) return [];
+  if (!decrypted) {
+    console.debug('[DIAG:bookmarks] decryptPrivateItems: decryption returned null — private items LOST');
+    return [];
+  }
 
   try {
-    return tagsToItems(JSON.parse(decrypted) as string[][], event.created_at);
+    const tags = JSON.parse(decrypted) as string[][];
+    const items = tagsToItems(tags, event.created_at);
+    console.debug('[DIAG:bookmarks] decryptPrivateItems: SUCCESS — decrypted', items.length, 'private items from', tags.length, 'tags');
+    return items;
   } catch (error) {
+    console.debug('[DIAG:bookmarks] decryptPrivateItems: FAILED to parse decrypted content:', error, 'raw:', decrypted.slice(0, 200));
     logger.error('bookmarks.ts', `Failed to parse decrypted content: ${error}`);
     return [];
   }
@@ -1389,11 +1400,14 @@ export async function publishBookmarksToRelays(): Promise<void> {
       tags.push(tag.description ? [tag.type, tag.value, tag.description] : [tag.type, tag.value]);
     }
 
-    const content = set.privateTags.length > 0
-      ? await encryptPrivateItems(set.privateTags.map(t => ({
-          id: t.value, type: t.type, value: t.value, isPrivate: true
-        })), pubkey)
-      : '';
+    let content = '';
+    if (set.privateTags.length > 0) {
+      console.debug('[DIAG:bookmarks] publishBookmarksToRelays: encrypting', set.privateTags.length, 'private tags for category', JSON.stringify(set.d));
+      content = await encryptPrivateItems(set.privateTags.map(t => ({
+        id: t.value, type: t.type, value: t.value, isPrivate: true
+      })), pubkey);
+      console.debug('[DIAG:bookmarks] publishBookmarksToRelays: encrypted content length:', content.length);
+    }
 
     const signed = await signEvent({ kind: 30003, created_at: now(), tags, content, pubkey });
     if (!signed) {
@@ -1592,12 +1606,16 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 
       let privateItems: BookmarkItem[] = [];
       if (hasContent) {
+        console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: category', JSON.stringify(categoryName), 'has encrypted content (length:', event.content.length, '), decrypting...');
         try {
           privateItems = await decryptPrivateItems(event, pubkey);
           assignCategory(privateItems, categoryName, true);
         } catch (error) {
+          console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: DECRYPT FAILED for category', JSON.stringify(categoryName), ':', error);
           logger.error('bookmarks.ts', `Failed to decrypt private items for category "${categoryName}": ${error}`);
         }
+      } else {
+        console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: category', JSON.stringify(categoryName), 'has no encrypted content');
       }
 
       allItems.push(...publicItems, ...privateItems);
@@ -1640,8 +1658,15 @@ interface BookmarkAdapterSyncDiff {
   moved: BookmarkMovedItem[];
 }
 
+export interface SnapshotDiffInfo {
+  hasDifference: boolean;
+  isOrderOnly: boolean;
+  details: string[];
+}
+
 export interface BookmarkAdapterSyncFromRelaysResult {
   requiresConfirmation: boolean;
+  snapshotDiffInfo: SnapshotDiffInfo;
   diff: BookmarkAdapterSyncDiff;
   relayItems: BookmarkItem[];
   relayContentWasEmpty: boolean;
@@ -1803,72 +1828,80 @@ function createSourceBookmarkSnapshot(
   return snapshot;
 }
 
+
 /**
- * Compare two snapshots for equality
+ * Detailed diff between browser and source snapshots.
+ * Distinguishes order-only changes (auto-resolvable) from content changes (need modal).
  */
-function bookmarkSnapshotsAreEqual(a: BookmarkStateSnapshot, b: BookmarkStateSnapshot): boolean {
-  // Compare folder order
-  if (a.folderOrder.length !== b.folderOrder.length) {
-    console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - folder order length mismatch:', a.folderOrder.length, 'vs', b.folderOrder.length, 'a:', a.folderOrder, 'b:', b.folderOrder);
-    return false;
-  }
-  for (let i = 0; i < a.folderOrder.length; i++) {
-    if (a.folderOrder[i] !== b.folderOrder[i]) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - folder order mismatch at index', i, ':', JSON.stringify(a.folderOrder[i]), 'vs', JSON.stringify(b.folderOrder[i]));
-      return false;
+function getBookmarkSnapshotDiffInfo(
+  sourceItems: BookmarkItem[],
+  categories?: string[]
+): SnapshotDiffInfo {
+  const a = createBrowserBookmarkSnapshot();
+  const b = createSourceBookmarkSnapshot(sourceItems, categories);
+
+  const details: string[] = [];
+  let hasContentDiff = false;
+  let hasOrderDiff = false;
+
+  // 1. Folder sets
+  const aFolders = new Set(a.folderOrder);
+  const bFolders = new Set(b.folderOrder);
+  const newFromRelay = [...bFolders].filter(f => !aFolders.has(f));
+  const onlyInBrowser = [...aFolders].filter(f => !bFolders.has(f));
+  if (newFromRelay.length > 0) { hasContentDiff = true; details.push(`New folders from relay: ${newFromRelay.join(', ')}`); }
+  if (onlyInBrowser.length > 0) { hasContentDiff = true; details.push(`Folders only in browser: ${onlyInBrowser.join(', ')}`); }
+
+  // 2. Folder order (only if same folders)
+  if (newFromRelay.length === 0 && onlyInBrowser.length === 0) {
+    if (a.folderOrder.length !== b.folderOrder.length || a.folderOrder.some((f, i) => f !== b.folderOrder[i])) {
+      hasOrderDiff = true;
+      details.push('Folder order differs');
     }
   }
 
-  // Compare items in each folder (with order)
+  // 3. Items per folder
   for (const [folderName, aItems] of a.itemsByFolder) {
     const bItems = b.itemsByFolder.get(folderName);
-    if (!bItems) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - folder', JSON.stringify(folderName), 'missing in b');
-      return false;
-    }
-    if (aItems.length !== bItems.length) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - item count mismatch in folder', JSON.stringify(folderName), ':', aItems.length, 'vs', bItems.length, 'a:', aItems, 'b:', bItems);
-      return false;
-    }
-    for (let i = 0; i < aItems.length; i++) {
-      if (aItems[i] !== bItems[i]) {
-        console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - item order mismatch in folder', JSON.stringify(folderName), 'at index', i, ':', aItems[i], 'vs', bItems[i]);
-        return false;
-      }
+    if (!bItems) continue; // folder missing handled above
+    const aSet = new Set(aItems);
+    const bSet = new Set(bItems);
+    const newItems = [...bSet].filter(id => !aSet.has(id));
+    const removedItems = [...aSet].filter(id => !bSet.has(id));
+    const label = folderName || 'Root';
+    if (newItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${newItems.length} new item(s) from relay`); }
+    if (removedItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${removedItems.length} item(s) only in browser`); }
+    if (newItems.length === 0 && removedItems.length === 0 && aItems.some((id, i) => id !== bItems[i])) {
+      hasOrderDiff = true;
+      details.push(`${label}: Item order differs`);
     }
   }
-
-  // Check for folders in b not in a
   for (const folderName of b.itemsByFolder.keys()) {
-    if (!a.itemsByFolder.has(folderName)) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - folder', JSON.stringify(folderName), 'in b but missing in a');
-      return false;
+    if (!a.itemsByFolder.has(folderName) && !newFromRelay.includes(folderName)) {
+      hasContentDiff = true;
+      details.push(`Folder "${folderName}" only on relay`);
     }
   }
 
-  // Compare item properties
-  if (a.itemProperties.size !== b.itemProperties.size) {
-    console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - itemProperties size mismatch:', a.itemProperties.size, 'vs', b.itemProperties.size);
-    return false;
-  }
+  // 4. Item properties
   for (const [itemId, aProps] of a.itemProperties) {
     const bProps = b.itemProperties.get(itemId);
-    if (!bProps) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - item', itemId, 'missing properties in b');
-      return false;
-    }
+    if (!bProps) continue; // item missing handled in set comparison
     if (aProps.isPrivate !== bProps.isPrivate) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - isPrivate mismatch for item', itemId, ':', aProps.isPrivate, 'vs', bProps.isPrivate);
-      return false;
+      hasContentDiff = true;
+      details.push(`Item ${itemId.slice(0, 8)}: privacy setting differs`);
     }
     if (aProps.description !== bProps.description) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - description mismatch for item', itemId, ':', JSON.stringify(aProps.description), 'vs', JSON.stringify(bProps.description));
-      return false;
+      hasContentDiff = true;
+      details.push(`Item ${itemId.slice(0, 8)}: description differs`);
     }
   }
 
-  console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: TRUE - snapshots equal');
-  return true;
+  const hasDifference = hasContentDiff || hasOrderDiff;
+  const isOrderOnly = !hasContentDiff && hasOrderDiff;
+
+  console.debug('[DIAG:bookmarks] getBookmarkSnapshotDiffInfo:', { hasDifference, isOrderOnly, hasContentDiff, hasOrderDiff, details });
+  return { hasDifference, isOrderOnly, details };
 }
 
 /**
@@ -1879,11 +1912,8 @@ function hasAnyBookmarkDifference(
   sourceItems: BookmarkItem[],
   categories?: string[]
 ): boolean {
-  const browserSnapshot = createBrowserBookmarkSnapshot();
-  const sourceSnapshot = createSourceBookmarkSnapshot(sourceItems, categories);
-  const result = !bookmarkSnapshotsAreEqual(browserSnapshot, sourceSnapshot);
-  console.debug('[DIAG:bookmarks] hasAnyBookmarkDifference: result:', result, 'browserSnapshot:', { folderOrder: browserSnapshot.folderOrder, itemsByFolder: Object.fromEntries(browserSnapshot.itemsByFolder), itemProperties: Object.fromEntries(browserSnapshot.itemProperties) }, 'sourceSnapshot:', { folderOrder: sourceSnapshot.folderOrder, itemsByFolder: Object.fromEntries(sourceSnapshot.itemsByFolder), itemProperties: Object.fromEntries(sourceSnapshot.itemProperties) });
-  return result;
+  const info = getBookmarkSnapshotDiffInfo(sourceItems, categories);
+  return info.hasDifference;
 }
 
 // =============================================================================
@@ -1932,11 +1962,13 @@ export class BookmarkStorageAdapter {
     const diff = calculateBookmarkSyncDiff(browserItems, fetchResult.items);
     console.debug('[DIAG:bookmarks] syncFromRelays: diff - added:', diff.added.map(i => i.id), 'removed:', diff.removed.map(i => i.id), 'moved:', diff.moved.map(m => ({ id: m.browserItem.id, from: m.browserItem.category, to: m.sourceItem.category })), 'unchanged:', diff.unchanged.length);
 
-    const requiresConfirmation = hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories);
-    console.debug('[DIAG:bookmarks] syncFromRelays: requiresConfirmation:', requiresConfirmation);
+    const snapshotDiffInfo = getBookmarkSnapshotDiffInfo(fetchResult.items, fetchResult.categories);
+    const requiresConfirmation = snapshotDiffInfo.hasDifference;
+    console.debug('[DIAG:bookmarks] syncFromRelays: requiresConfirmation:', requiresConfirmation, 'snapshotDiffInfo:', snapshotDiffInfo);
 
     return {
       requiresConfirmation,
+      snapshotDiffInfo,
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,

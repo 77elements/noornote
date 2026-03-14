@@ -462,8 +462,15 @@ export class AutoSyncService {
       const movedCount = result.diff.moved?.length || 0;
       if (result.diff.added.length === 0 && result.diff.removed.length === 0 && movedCount === 0) {
         if (result.requiresConfirmation) {
-          console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=order/property changes — showing modal`);
-          this.systemLogger.info('ListAutoSync', `${listType}: order or property changes detected, showing modal`);
+          // Order-only difference: browser is authoritative, push to relay silently
+          if (result.snapshotDiffInfo?.isOrderOnly) {
+            console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=order-only — auto-pushing browser state to relay`);
+            this.systemLogger.info('ListAutoSync', `${listType}: order differs, syncing browser order to relay`);
+            await this.syncToRelays(listType);
+            return;
+          }
+          console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=property changes — showing modal`);
+          this.systemLogger.info('ListAutoSync', `${listType}: property changes detected, showing modal`);
           await this.showSyncConfirmationModal(listType, result);
         } else {
           console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=no changes at all — skipping`);
@@ -529,12 +536,13 @@ export class AutoSyncService {
 
         case 'bookmarks': {
           const result = await this.bookmarkAdapter.syncFromRelays();
-          console.debug(`[DIAG:autosync] fetchAndCompare(bookmarks): raw adapter result:`, { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, diffMoved: result.diff.moved?.length || 0, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation, categories: result.categories });
+          console.debug(`[DIAG:autosync] fetchAndCompare(bookmarks): raw adapter result:`, { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, diffMoved: result.diff.moved?.length || 0, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation, snapshotDiffInfo: result.snapshotDiffInfo, categories: result.categories });
           return {
             diff: { added: result.diff.added, removed: result.diff.removed, moved: result.diff.moved },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
+            snapshotDiffInfo: result.snapshotDiffInfo,
             categoryAssignments: result.categoryAssignments,
             categories: result.categories
           };
@@ -661,6 +669,7 @@ export class AutoSyncService {
       added: result.diff.added,
       removed: result.diff.removed,
       ...(movedForModal.length > 0 && { moved: movedForModal }),
+      ...(result.snapshotDiffInfo?.details && result.snapshotDiffInfo.details.length > 0 && { snapshotDetails: result.snapshotDiffInfo.details }),
       getDisplayName: async (item: unknown) => this.getDisplayName(listType, item),
       renderItemHtml: async (item: unknown) => this.renderItemHtml(listType, item),
       onKeep: async () => {
@@ -870,6 +879,7 @@ interface SyncResult {
   relayItems: unknown[];
   relayContentWasEmpty: boolean;
   requiresConfirmation: boolean;
+  snapshotDiffInfo?: { isOrderOnly: boolean; details: string[] };
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
 }

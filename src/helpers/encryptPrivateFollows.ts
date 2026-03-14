@@ -28,11 +28,13 @@ export async function encryptPrivateFollows(
 
   // Serialize to JSON
   const plaintext = JSON.stringify(privateTags);
+  console.debug('[DIAG:follows] encryptPrivateFollows: encrypting', pubkeys.length, 'private follows, plaintext length:', plaintext.length);
 
   // Detect auth method and encrypt accordingly
   const { AuthService } = await import('../services/AuthService');
   const authService = AuthService.getInstance();
   const authMethod = authService.getAuthMethod();
+  console.debug('[DIAG:follows] encryptPrivateFollows: authMethod:', authMethod);
 
   if (authMethod === 'key-signer') {
     // Use KeySigner for encryption (NIP-44 → NIP-04 fallback)

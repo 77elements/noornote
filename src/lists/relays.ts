@@ -108,9 +108,14 @@ async function tryEncryptWithFallback(
   pubkey: string
 ): Promise<string> {
   try {
-    return await nip44Fn(plaintext, pubkey);
-  } catch {
-    return await nip04Fn(plaintext, pubkey);
+    const result = await nip44Fn(plaintext, pubkey);
+    console.debug('[DIAG:relays] tryEncryptWithFallback: NIP-44 succeeded, ciphertext length:', result.length);
+    return result;
+  } catch (nip44Error) {
+    console.debug('[DIAG:relays] tryEncryptWithFallback: NIP-44 failed, falling back to NIP-04:', nip44Error);
+    const result = await nip04Fn(plaintext, pubkey);
+    console.debug('[DIAG:relays] tryEncryptWithFallback: NIP-04 succeeded, ciphertext length:', result.length);
+    return result;
   }
 }
 
@@ -125,14 +130,19 @@ async function tryDecryptWithFallback(
 ): Promise<string | null> {
   if (nip44Fn) {
     try {
-      return await nip44Fn(ciphertext, pubkey);
-    } catch {
-      // Fall through to NIP-04
+      const result = await nip44Fn(ciphertext, pubkey);
+      console.debug('[DIAG:relays] tryDecryptWithFallback: NIP-44 succeeded, plaintext length:', result.length);
+      return result;
+    } catch (nip44Error) {
+      console.debug('[DIAG:relays] tryDecryptWithFallback: NIP-44 failed, trying NIP-04:', nip44Error);
     }
   }
   if (nip04Fn) {
-    return await nip04Fn(ciphertext, pubkey);
+    const result = await nip04Fn(ciphertext, pubkey);
+    console.debug('[DIAG:relays] tryDecryptWithFallback: NIP-04 succeeded, plaintext length:', result.length);
+    return result;
   }
+  console.debug('[DIAG:relays] tryDecryptWithFallback: no decrypt function available, returning null');
   return null;
 }
 
@@ -153,6 +163,7 @@ function getNip46Manager(): import('../services/managers/Nip46BaseManager').Nip4
  */
 export async function encryptContent(plaintext: string, pubkey: string): Promise<string> {
   const authMethod = AuthService.getInstance().getAuthMethod();
+  console.debug('[DIAG:relays] encryptContent: authMethod:', authMethod, 'plaintext length:', plaintext.length);
 
   if (authMethod === 'key-signer') {
     const { KeySignerClient } = await import('../services/KeySignerClient');
@@ -197,8 +208,12 @@ export async function encryptContent(plaintext: string, pubkey: string): Promise
  */
 export async function decryptContent(ciphertext: string, senderPubkey: string): Promise<string | null> {
   const authService = AuthService.getInstance();
-  if (authService.isBunkerAuth()) return null;
+  if (authService.isBunkerAuth()) {
+    console.debug('[DIAG:relays] decryptContent: skipping — bunker auth has no decryption support');
+    return null;
+  }
   const authMethod = authService.getAuthMethod();
+  console.debug('[DIAG:relays] decryptContent: authMethod:', authMethod, 'ciphertext length:', ciphertext.length, 'isNip04:', ciphertext.includes('?iv='));
 
   try {
     if (authMethod === 'key-signer') {
@@ -235,9 +250,11 @@ export async function decryptContent(ciphertext: string, senderPubkey: string): 
       );
     }
   } catch (error) {
+    console.debug('[DIAG:relays] decryptContent: FAILED —', error);
     logger.error('relays.ts', `Decryption failed: ${error}`);
   }
 
+  console.debug('[DIAG:relays] decryptContent: returning null (no supported auth method or all attempts failed)');
   return null;
 }
 
