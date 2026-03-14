@@ -2445,9 +2445,13 @@ IMPORTANT:
 
     const { NostrTransport } = await import('../../services/transport/NostrTransport');
     const transport = NostrTransport.getInstance();
-    const publishRelays = await this.getPublishRelays();
+    // Kind 10050 (inbox) only goes to write relays, not metadata indexers
+    const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
+    const { RelayConfig: RC } = await import('../../services/RelayConfig');
+    const aggregators = RC.getInstance().getAggregatorRelays();
+    const inboxPublishRelays = [...new Set([...writeRelays, ...aggregators])];
 
-    await transport.publish(publishRelays, signedEvent);
+    await transport.publish(inboxPublishRelays, signedEvent);
 
     // Register inbox relays in RelayConfig so DMService can find them
     const { RelayConfig } = await import('../../services/RelayConfig');
@@ -2484,12 +2488,12 @@ IMPORTANT:
     parent.appendChild(p);
   }
 
-  /** Get deduplicated list of write relays + aggregator relays for publishing */
+  /** Get deduplicated list of write relays + aggregator + metadata indexer relays for publishing */
   private async getPublishRelays(): Promise<string[]> {
     const { RelayConfig } = await import('../../services/RelayConfig');
-    const aggregators = RelayConfig.getInstance().getAggregatorRelays();
+    const metadataRelays = RelayConfig.getInstance().getMetadataRelays();
     const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
-    return [...new Set([...writeRelays, ...aggregators])];
+    return [...new Set([...writeRelays, ...metadataRelays])];
   }
 
   private escapeHtml(text: string): string {

@@ -86,7 +86,6 @@ export class ProfileOrchestrator extends Orchestrator {
   private async fetchProfileFromRelays(pubkey: string): Promise<Profile | null> {
     // Use aggregator relays (big, fast relays) for profile fetching
     // These relays have ~99% of all profiles and respond quickly
-    // User's custom relays can be slow/dead and cause timeouts
     const relays = this.relayConfig.getAggregatorRelays();
 
     const filters: NDKFilter[] = [{
