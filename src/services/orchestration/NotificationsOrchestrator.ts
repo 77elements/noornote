@@ -509,14 +509,15 @@ export class NotificationsOrchestrator extends Orchestrator {
       return;
     }
 
-    // Skip reactions/zaps whose direct target is NOT the user's own event
-    // NIP-25: last e-tag is the direct target. Some clients copy root/parent thread tags,
-    // which causes reactions to other people's replies to appear as "reacted to your note"
-    if ((event.kind === 7 || event.kind === 9735) && this.userPubkey) {
-      const eTags = event.tags.filter(t => t[0] === 'e');
-      const directTargetId = eTags[eTags.length - 1]?.[1];
-      const userEventIds = this.getUserEventIds();
-      if (directTargetId && !userEventIds.includes(directTargetId)) {
+    // Skip reactions whose direct target is NOT the user's own event
+    // NIP-25: last p-tag is the direct target (Jumble pattern). Some clients copy
+    // root/parent thread p-tags, causing false "reacted to your note" notifications.
+    // Zaps (9735) are NOT filtered here — their p-tag is set by the LNURL server,
+    // so the #p subscription filter is authoritative.
+    if (event.kind === 7 && this.userPubkey) {
+      const pTags = event.tags.filter(t => t[0] === 'p');
+      const directTargetPubkey = pTags[pTags.length - 1]?.[1];
+      if (directTargetPubkey && directTargetPubkey !== this.userPubkey) {
         return;
       }
     }
