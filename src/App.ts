@@ -18,6 +18,7 @@ import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { FontSizeService } from './services/FontSizeService';
 import { ThemeService } from './services/ThemeService';
+import { initDiagnosticLogger, destroyDiagnosticLogger } from './services/DiagnosticLogger';
 import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
 import { decodeNip19 } from './services/NostrToolsAdapter';
@@ -283,6 +284,7 @@ export class App {
     this.setupDeepLinkHandler();
 
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
+      initDiagnosticLogger();
       this.postLoginService.handleLogin(data);
     });
 
@@ -295,6 +297,7 @@ export class App {
     });
 
     this.eventBus.on('user:logout', () => {
+      destroyDiagnosticLogger();
       this.viewMountingService.destroyAllCaches();
       const primaryContent = document.querySelector('.primary-content');
       if (primaryContent) {
