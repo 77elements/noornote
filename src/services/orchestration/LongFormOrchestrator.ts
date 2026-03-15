@@ -117,7 +117,7 @@ export class LongFormOrchestrator extends Orchestrator {
 
     // Stage 3: Try with outbound relays
     try {
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays([], true);
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays([data.pubkey], true);
       return await this.fetchByCoordinates(data, outboundRelays);
     } catch (error) {
       this.systemLogger.error('LongFormOrchestrator', `Stage 3 failed: ${error}`);
