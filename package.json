@@ -79,6 +79,7 @@
     "dayjs": "^1.11.19",
     "dompurify": "^3.3.2",
     "emojilib": "^4.0.2",
+    "fflate": "^0.8.2",
     "marked": "^16.4.0",
     "qrcode": "^1.5.4",
     "tauri-plugin-keyring-api": "^0.1.1"

@@ -173,6 +173,20 @@ export class SettingsView extends View {
           'Configure NDK cache sizes and clear cache data.',
           false
         ) : ''}
+
+        ${PlatformService.getInstance().isTauri ? `
+        <section class="nn-ui-toggle settings-section" data-section="diagnostic-export">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Diagnostic Logs</h2>
+              <p class="nn-ui-toggle__description">Export logs for debugging sync and crash issues.</p>
+            </div>
+            <button class="nn-button nn-button--secondary" id="export-diagnostic-logs-btn">
+              Export Logs
+            </button>
+          </div>
+        </section>
+        ` : ''}
       </div>
     `;
 
@@ -196,6 +210,27 @@ export class SettingsView extends View {
     }
     this.marketplaceSettingsSection.mount(this.container);
     this.hashtagSubscriptionsSettings.mount(this.container);
+
+    // Diagnostic logs export button
+    this.container.querySelector('#export-diagnostic-logs-btn')?.addEventListener('click', async (e) => {
+      const btn = e.target as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = 'Exporting...';
+      try {
+        const { exportDiagnosticLogs } = await import('../../services/DiagLogExportService');
+        const success = await exportDiagnosticLogs();
+        if (success) {
+          const { ToastService } = await import('../../services/ToastService');
+          ToastService.show('Logs exported', 'success');
+        }
+      } catch (error) {
+        const { ErrorService } = await import('../../services/ErrorService');
+        ErrorService.handle(error, 'SettingsView.exportLogs');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Export Logs';
+      }
+    });
 
     // Initialize and mount sync status badge
     const badgeContainer = this.container.querySelector('#sync-status-badge-container');
