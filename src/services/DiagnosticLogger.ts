@@ -18,7 +18,7 @@
  *   2. Week files older than 7 days → compress to archive/
  *   3. Archive files older than 60 days → delete
  *
- * - Tauri Desktop only (Web/Android: no-op)
+ * - Tauri only (Web: no-op)
  * - Uses atomic append (open + write, no read-modify-write)
  * - Crash entries flush ALL areas immediately
  */
@@ -37,37 +37,11 @@ interface DiagLogEntry {
   data?: unknown;
 }
 
-// ===== Tauri APIs (lazy import) =====
+// ===== Tauri FS module (loaded once on first init) =====
 
-let tauriOpen: typeof import('@tauri-apps/plugin-fs').open | null = null;
-let tauriHomeDir: typeof import('@tauri-apps/api/path').homeDir | null = null;
-let tauriReadTextFile: typeof import('@tauri-apps/plugin-fs').readTextFile | null = null;
-let tauriExists: typeof import('@tauri-apps/plugin-fs').exists | null = null;
-let tauriMkdir: typeof import('@tauri-apps/plugin-fs').mkdir | null = null;
-let tauriReadDir: typeof import('@tauri-apps/plugin-fs').readDir | null = null;
-let tauriRename: typeof import('@tauri-apps/plugin-fs').rename | null = null;
-let tauriRemove: typeof import('@tauri-apps/plugin-fs').remove | null = null;
-let tauriReadFile: typeof import('@tauri-apps/plugin-fs').readFile | null = null;
-let tauriWriteFile: typeof import('@tauri-apps/plugin-fs').writeFile | null = null;
+let fs: typeof import('@tauri-apps/plugin-fs') | null = null;
 
 const platform = PlatformService.getInstance();
-
-if (platform.isTauri) {
-  if (!platform.isAndroid) {
-    import('@tauri-apps/api/path').then(mod => { tauriHomeDir = mod.homeDir; });
-  }
-  import('@tauri-apps/plugin-fs').then(mod => {
-    tauriOpen = mod.open;
-    tauriReadTextFile = mod.readTextFile;
-    tauriExists = mod.exists;
-    tauriMkdir = mod.mkdir;
-    tauriReadDir = mod.readDir;
-    tauriRename = mod.rename;
-    tauriRemove = mod.remove;
-    tauriReadFile = mod.readFile;
-    tauriWriteFile = mod.writeFile;
-  });
-}
 
 // ===== Constants =====
 
@@ -97,6 +71,14 @@ function daysBetween(dateStr: string, referenceStr: string): number {
   return Math.floor((r.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
 }
 
+/** Load Tauri FS module (once) */
+async function ensureFs(): Promise<typeof import('@tauri-apps/plugin-fs')> {
+  if (!fs) {
+    fs = await import('@tauri-apps/plugin-fs');
+  }
+  return fs;
+}
+
 // ===== Service =====
 
 class DiagnosticLogger {
@@ -104,16 +86,24 @@ class DiagnosticLogger {
 
   private logsDir: string | null = null;
   private initialized = false;
-  private initPromise: Promise<void> | null = null;
+  private initializing = false;
 
   private buffers: Map<DiagArea, string[]> = new Map();
   private currentDate: string = todayDate();
   private flushTimer: ReturnType<typeof setInterval> | null = null;
   private rotationTimer: ReturnType<typeof setInterval> | null = null;
-  private enabled = false;
 
   private constructor() {
-    this.flushTimer = setInterval(() => this.flushAll(), FLUSH_INTERVAL_MS);
+    if (platform.isTauri) {
+      this.flushTimer = setInterval(() => {
+        // Auto-init: if not initialized yet, try with current user
+        if (!this.initialized && !this.initializing) {
+          const user = AuthService.getInstance().getCurrentUser();
+          if (user?.npub) this.init(user.npub);
+        }
+        this.flushAll();
+      }, FLUSH_INTERVAL_MS);
+    }
   }
 
   static getInstance(): DiagnosticLogger {
@@ -125,45 +115,37 @@ class DiagnosticLogger {
 
   // ===== Initialization =====
 
-  async init(): Promise<void> {
-    if (this.initialized) return;
-    if (this.initPromise) return this.initPromise;
-    this.initPromise = this._init();
-    await this.initPromise;
-  }
-
-  private async _init(): Promise<void> {
-    if (!platform.isTauri || !tauriMkdir || !tauriExists) {
-      return;
-    }
+  async init(npub: string): Promise<void> {
+    if (this.initialized || this.initializing || !platform.isTauri) return;
+    this.initializing = true;
 
     try {
-      const user = AuthService.getInstance().getCurrentUser();
-      if (!user?.npub) return;
+      const fsMod = await ensureFs();
 
       // Desktop: ~/.noornote/{npub}/logs/
       // Android: {appDataDir}/logs/ (no npub nesting — single user on mobile)
-      let basePath: string;
       if (platform.isAndroid) {
         const { appDataDir } = await import('@tauri-apps/api/path');
-        basePath = await appDataDir();
+        const basePath = await appDataDir();
         this.logsDir = `${basePath}logs`;
       } else {
-        if (!tauriHomeDir) return;
-        const homePath = await tauriHomeDir();
-        this.logsDir = `${homePath}/.noornote/${user.npub}/logs`;
+        const { homeDir } = await import('@tauri-apps/api/path');
+        const homePath = await homeDir();
+        this.logsDir = `${homePath}/.noornote/${npub}/logs`;
       }
 
       // Ensure directories exist
       for (const sub of ['', '/week', '/archive']) {
         const dir = `${this.logsDir}${sub}`;
-        if (!(await tauriExists(dir))) {
-          await tauriMkdir(dir, { recursive: true });
+        if (!(await fsMod.exists(dir))) {
+          await fsMod.mkdir(dir, { recursive: true });
         }
       }
 
-      this.enabled = true;
       this.initialized = true;
+
+      // Flush any buffered entries that arrived before init
+      this.flushAll();
 
       // Run rotation on startup, then hourly
       this.rotate();
@@ -173,6 +155,8 @@ class DiagnosticLogger {
       this.migrateLegacyFiles();
     } catch {
       // Silent failure — logging should never break the app
+    } finally {
+      this.initializing = false;
     }
   }
 
@@ -189,15 +173,13 @@ class DiagnosticLogger {
       console.debug(`[DIAG:${area}] ${msg}`);
     }
 
-    if (!this.enabled && this.initialized) return;
+    if (!platform.isTauri) return;
 
     // Check for date rollover
     const now = todayDate();
     if (now !== this.currentDate) {
-      // Flush old day's buffers, then update date
       this.flushAll();
       this.currentDate = now;
-      // Trigger rotation for the new day
       this.rotate();
     }
 
@@ -229,17 +211,14 @@ class DiagnosticLogger {
   private async flush(area: DiagArea): Promise<void> {
     const buffer = this.buffers.get(area);
     if (!buffer || buffer.length === 0) return;
+    if (!this.initialized || !this.logsDir || !fs) return;
 
     const lines = buffer.splice(0, buffer.length);
-
-    await this.init();
-    if (!this.enabled || !this.logsDir || !tauriOpen) return;
-
     const filePath = `${this.logsDir}/${this.currentFilename(area)}`;
     const payload = lines.join('\n') + '\n';
 
     try {
-      const file = await tauriOpen(filePath, { append: true, create: true });
+      const file = await fs.open(filePath, { append: true, create: true });
       await file.write(new TextEncoder().encode(payload));
       await file.close();
     } catch {
@@ -264,20 +243,19 @@ class DiagnosticLogger {
    * 3. Archive files older than 60 days → delete
    */
   private async rotate(): Promise<void> {
-    if (!this.enabled || !this.logsDir || !tauriReadDir || !tauriRename || !tauriRemove) return;
+    if (!this.initialized || !this.logsDir || !fs) return;
 
     const today = todayDate();
 
     try {
       // 1. Root → week/ (files older than today)
-      const rootEntries = await tauriReadDir(this.logsDir);
+      const rootEntries = await fs.readDir(this.logsDir);
       for (const entry of rootEntries) {
         if (!entry.isFile || !entry.name.endsWith('.jsonl')) continue;
         const fileDate = parseDateFromFilename(entry.name);
         if (!fileDate || fileDate === today) continue;
 
-        // Move to week/
-        await tauriRename(
+        await fs.rename(
           `${this.logsDir}/${entry.name}`,
           `${this.logsDir}/week/${entry.name}`
         );
@@ -285,7 +263,7 @@ class DiagnosticLogger {
 
       // 2. week/ → archive/ (files older than 7 days, compress)
       const weekDir = `${this.logsDir}/week`;
-      const weekEntries = await tauriReadDir(weekDir);
+      const weekEntries = await fs.readDir(weekDir);
       for (const entry of weekEntries) {
         if (!entry.isFile || !entry.name.endsWith('.jsonl')) continue;
         const fileDate = parseDateFromFilename(entry.name);
@@ -297,13 +275,13 @@ class DiagnosticLogger {
             `${weekDir}/${entry.name}`,
             `${this.logsDir}/archive/${entry.name}.gz`
           );
-          await tauriRemove(`${weekDir}/${entry.name}`);
+          await fs.remove(`${weekDir}/${entry.name}`);
         }
       }
 
       // 3. archive/ cleanup (files older than 60 days)
       const archiveDir = `${this.logsDir}/archive`;
-      const archiveEntries = await tauriReadDir(archiveDir);
+      const archiveEntries = await fs.readDir(archiveDir);
       for (const entry of archiveEntries) {
         if (!entry.isFile) continue;
         const fileDate = parseDateFromFilename(entry.name);
@@ -311,7 +289,7 @@ class DiagnosticLogger {
 
         const age = daysBetween(fileDate, today);
         if (age > ARCHIVE_RETENTION_DAYS) {
-          await tauriRemove(`${archiveDir}/${entry.name}`);
+          await fs.remove(`${archiveDir}/${entry.name}`);
         }
       }
     } catch {
@@ -323,13 +301,12 @@ class DiagnosticLogger {
    * Compress a JSONL file to gzip using CompressionStream API
    */
   private async compressToArchive(srcPath: string, destPath: string): Promise<void> {
-    if (!tauriReadFile || !tauriWriteFile) return;
+    if (!fs) return;
 
-    const rawData = await tauriReadFile(srcPath);
+    const rawData = await fs.readFile(srcPath);
     const inputStream = new Blob([rawData]).stream();
     const compressedStream = inputStream.pipeThrough(new CompressionStream('gzip'));
 
-    // Collect compressed data
     const reader = compressedStream.getReader();
     const chunks: Uint8Array[] = [];
     let done = false;
@@ -339,7 +316,6 @@ class DiagnosticLogger {
       done = result.done;
     }
 
-    // Concat chunks
     const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
     const compressed = new Uint8Array(totalLength);
     let offset = 0;
@@ -348,17 +324,17 @@ class DiagnosticLogger {
       offset += chunk.length;
     }
 
-    await tauriWriteFile(destPath, compressed);
+    await fs.writeFile(destPath, compressed);
   }
 
   /**
    * Migrate legacy non-dated files (one-time, e.g. lists.jsonl → lists-{date}.jsonl)
    */
   private async migrateLegacyFiles(): Promise<void> {
-    if (!this.logsDir || !tauriReadDir || !tauriRename) return;
+    if (!this.logsDir || !fs) return;
 
     try {
-      const entries = await tauriReadDir(this.logsDir);
+      const entries = await fs.readDir(this.logsDir);
       const today = todayDate();
 
       for (const entry of entries) {
@@ -369,9 +345,8 @@ class DiagnosticLogger {
         const area = entry.name.replace('.jsonl', '') as DiagArea;
         if (!['lists', 'dms', 'crashes', 'relays'].includes(area)) continue;
 
-        // Rename to today's date, then rotation will move it to week/ if needed
         const newName = `${area}-${today}.jsonl`;
-        await tauriRename(
+        await fs.rename(
           `${this.logsDir}/${entry.name}`,
           `${this.logsDir}/${newName}`
         );
@@ -387,12 +362,12 @@ class DiagnosticLogger {
    * Read all entries from today's log file for an area
    */
   async readLog(area: DiagArea): Promise<DiagLogEntry[]> {
-    await this.init();
-    if (!this.enabled || !this.logsDir || !tauriReadTextFile) return [];
+    await this.ensureInitForRead();
+    if (!this.initialized || !this.logsDir || !fs) return [];
     await this.flush(area);
 
     try {
-      const content = await tauriReadTextFile(`${this.logsDir}/${this.currentFilename(area)}`);
+      const content = await fs.readTextFile(`${this.logsDir}/${this.currentFilename(area)}`);
       return this.parseJsonl(content);
     } catch {
       return [];
@@ -411,18 +386,27 @@ class DiagnosticLogger {
    * Clear today's log file for an area
    */
   async clearLog(area: DiagArea): Promise<void> {
-    await this.init();
-    if (!this.enabled || !this.logsDir || !tauriOpen) return;
+    await this.ensureInitForRead();
+    if (!this.initialized || !this.logsDir || !fs) return;
 
     this.buffers.delete(area);
 
     try {
-      const file = await tauriOpen(`${this.logsDir}/${this.currentFilename(area)}`, {
+      const file = await fs.open(`${this.logsDir}/${this.currentFilename(area)}`, {
         write: true, create: true, truncate: true
       });
       await file.close();
     } catch {
       // Silent
+    }
+  }
+
+  /** Try to init from AuthService if not already initialized (for console helpers) */
+  private async ensureInitForRead(): Promise<void> {
+    if (this.initialized) return;
+    const user = AuthService.getInstance().getCurrentUser();
+    if (user?.npub) {
+      await this.init(user.npub);
     }
   }
 
@@ -475,8 +459,8 @@ class DiagnosticLogger {
     this.buffers.clear();
     this.logsDir = null;
     this.initialized = false;
-    this.enabled = false;
-    this.initPromise = null;
+    this.initializing = false;
+    fs = null;
   }
 }
 
@@ -484,15 +468,15 @@ class DiagnosticLogger {
 
 /**
  * Log a diagnostic entry to file.
- * No-op on Web and Android. Fire-and-forget — never throws.
+ * No-op on Web. Fire-and-forget — never throws.
  */
 export function diagLog(area: DiagArea, msg: string, data?: unknown): void {
   DiagnosticLogger.getInstance().log(area, msg, data);
 }
 
-/** Initialize the DiagnosticLogger (call after login) */
-export async function initDiagnosticLogger(): Promise<void> {
-  await DiagnosticLogger.getInstance().init();
+/** Initialize the DiagnosticLogger (call after login with npub) */
+export async function initDiagnosticLogger(npub: string): Promise<void> {
+  await DiagnosticLogger.getInstance().init(npub);
 }
 
 /** Clean up the DiagnosticLogger (call on logout) */
