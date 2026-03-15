@@ -7,6 +7,7 @@
  */
 
 import { EventBus } from './EventBus';
+import { diagLog } from './DiagnosticLogger';
 
 export interface RelayHealthMetrics {
   url: string;
@@ -112,6 +113,7 @@ export class RelayHealthMonitor {
     metrics.errorCount++;
     metrics.isConnected = false;
 
+    diagLog('relays', 'Relay error', { url, errorCount: metrics.errorCount });
     this.eventBus.emit('relay:health:updated', { url, metrics });
   }
 
