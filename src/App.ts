@@ -114,6 +114,7 @@ export class App {
     if (isLoggedIn) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
+        initDiagnosticLogger(currentUser.npub);
         this.postLoginService.handleLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
       }
     }
@@ -284,7 +285,7 @@ export class App {
     this.setupDeepLinkHandler();
 
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
-      initDiagnosticLogger();
+      initDiagnosticLogger(data.npub);
       this.postLoginService.handleLogin(data);
     });
 
