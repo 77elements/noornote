@@ -25,6 +25,7 @@ import {
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
+import { diagLog } from '../services/DiagnosticLogger';
 // UI component imports
 import { View } from '../components/views/View';
 import { switchTabWithContent } from '../helpers/TabsHelper';
@@ -104,7 +105,7 @@ interface SyncDiff {
  * Does NOT compare order (user can't reorder, displayed by date)
  */
 function hasMuteDifference(browserItems: string[], sourceItems: string[]): boolean {
-  console.debug('[DIAG:mutes] hasMuteDifference:', { browserCount: browserItems.length, sourceCount: sourceItems.length, browserItems, sourceItems });
+  diagLog('lists', 'hasMuteDifference', { browserCount: browserItems.length, sourceCount: sourceItems.length, browserItems, sourceItems });
   // Different count = different
   if (browserItems.length !== sourceItems.length) return true;
 
@@ -614,6 +615,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     // Decrypt private mutes from content
     if (muteEvent.content?.trim()) {
+      diagLog('lists', 'mutes fetchFromRelays: event has encrypted content, decrypting', { contentLength: muteEvent.content.length });
       try {
         const privateTags = await decryptPrivateMutes(muteEvent.content, pubkey);
         for (const tag of privateTags) {
@@ -629,7 +631,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     }
 
     const deduped = deduplicateMuteItems(items);
-    console.debug('[DIAG:mutes] fetchFromRelays result:', {
+    diagLog('lists', 'mutes fetchFromRelays result', {
       totalBeforeDedup: items.length,
       afterDedup: deduped.length,
       publicUsers: deduped.filter(i => i.type === 'user' && !i.isPrivate).length,
@@ -653,7 +655,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 export async function publishToRelays(): Promise<void> {
   const user = requireAuth();
   const items = getMuteItems();
-  console.debug('[DIAG:mutes] publishToRelays:', {
+  diagLog('lists', 'mutes publishToRelays', {
     totalItems: items.length,
     items: items.map(i => ({ type: i.type, id: i.id.slice(0, 8), isPrivate: i.isPrivate }))
   });
@@ -667,9 +669,12 @@ export async function publishToRelays(): Promise<void> {
     (item.isPrivate ? privateTags : publicTags).push(tag);
   }
 
-  const content = privateTags.length > 0
-    ? await encryptContent(JSON.stringify(privateTags), user.pubkey)
-    : '';
+  let content = '';
+  if (privateTags.length > 0) {
+    diagLog('lists', 'mutes publishToRelays: encrypting private tags', { count: privateTags.length });
+    content = await encryptContent(JSON.stringify(privateTags), user.pubkey);
+    diagLog('lists', 'mutes publishToRelays: encrypted content', { contentLength: content.length });
+  }
 
   const event = {
     kind: 10000,
@@ -693,12 +698,19 @@ export async function publishToRelays(): Promise<void> {
 // ============================================================
 
 async function decryptPrivateMutes(ciphertext: string, pubkey: string): Promise<string[][]> {
+  diagLog('lists', 'decryptPrivateMutes: attempting decryption', { ciphertextLength: ciphertext.length });
   const plaintext = await decryptContent(ciphertext, pubkey);
-  if (!plaintext) return [];
+  if (!plaintext) {
+    diagLog('lists', 'decryptPrivateMutes: decryption returned null — private mutes LOST');
+    return [];
+  }
 
   try {
-    return JSON.parse(plaintext);
-  } catch {
+    const tags = JSON.parse(plaintext);
+    diagLog('lists', 'decryptPrivateMutes: SUCCESS', { decryptedTags: tags.length });
+    return tags;
+  } catch (error) {
+    diagLog('lists', 'decryptPrivateMutes: FAILED to parse decrypted content', { error: String(error), rawPreview: plaintext.slice(0, 200) });
     return [];
   }
 }
@@ -728,7 +740,7 @@ function calculateSyncDiff(browserItems: string[], sourceItems: string[]): SyncD
   const removed = browserItems.filter(item => !sourceSet.has(item));
   const unchanged = browserItems.filter(item => sourceSet.has(item));
 
-  console.debug('[DIAG:mutes] calculateSyncDiff:', {
+  diagLog('lists', 'mutes calculateSyncDiff', {
     browserCount: browserItems.length,
     sourceCount: sourceItems.length,
     added: added.length,
@@ -858,7 +870,7 @@ export class MuteStorageAdapter {
       const result = await fetchFromRelays();
       // Encode all items (users AND threads) with prefixes
       const encodedItems = result.items.map(encodeMuteItem);
-      console.debug('[DIAG:mutes] MuteStorageAdapter.fetchFromRelays: encoded:', {
+      diagLog('lists', 'MuteStorageAdapter.fetchFromRelays: encoded', {
         rawItemCount: result.items.length,
         encodedCount: encodedItems.length,
         relayContentWasEmpty: result.relayContentWasEmpty,
@@ -885,12 +897,12 @@ export class MuteStorageAdapter {
   async syncFromRelays(): Promise<SyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
-    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: browserItems:', {
+    diagLog('lists', 'MuteStorageAdapter.syncFromRelays: browserItems', {
       count: browserItems.length,
       items: browserItems
     });
     const fetchResult = await this.fetchFromRelays();
-    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: fetchResult:', {
+    diagLog('lists', 'MuteStorageAdapter.syncFromRelays: fetchResult', {
       itemCount: fetchResult.items.length,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       items: fetchResult.items
@@ -899,7 +911,7 @@ export class MuteStorageAdapter {
 
     // Use full state comparison (now includes threads)
     const requiresConfirmation = hasMuteDifference(browserItems, fetchResult.items);
-    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: result:', {
+    diagLog('lists', 'MuteStorageAdapter.syncFromRelays: result', {
       requiresConfirmation,
       added: diff.added.length,
       removed: diff.removed.length,

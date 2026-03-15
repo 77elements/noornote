@@ -1,17 +1,19 @@
 /**
- * CrashLogger - Persistent crash logging for debugging
+ * CrashLogger - Persistent crash logging via DiagnosticLogger
  *
- * Writes all SystemLogger logs + error context to a file when crashes occur.
- * Uses Tauri's log plugin for cross-platform file logging.
+ * Routes all crash/error data to ~/.noornote/{npub}/logs/crashes.jsonl
+ * via DiagnosticLogger (single point of truth for all diagnostic logs).
  *
- * Log locations:
- * - Linux: ~/.local/share/com.noornote.desktop/logs/
- * - macOS: ~/Library/Logs/com.noornote.desktop/
+ * Captures:
+ * - Uncaught errors (window.onerror)
+ * - Unhandled promise rejections
+ * - Critical errors from ErrorService
+ * - Manual logCrash() calls
  */
 
-import { error as tauriError, info as tauriInfo, attachConsole } from '@tauri-apps/plugin-log';
 import { SystemLogger, type LogEntry } from '../components/system/SystemLogger';
 import { PlatformService } from './PlatformService';
+import { diagLog } from './DiagnosticLogger';
 
 class CrashLoggerService {
   private static instance: CrashLoggerService;
@@ -36,19 +38,11 @@ class CrashLoggerService {
     if (!_p.isTauri || _p.isAndroid) return;
 
     try {
-      // Attach console to Tauri log plugin (forwards console.* to file)
-      await attachConsole();
-
-      // Get SystemLogger instance for accessing logs
       this.systemLogger = SystemLogger.getInstance();
-
-      // Setup global error handlers
       this.setupGlobalErrorHandlers();
-
       this.initialized = true;
-      await tauriInfo('[CrashLogger] Initialized - crash logs will be saved to OS log directory');
+      diagLog('crashes', 'CrashLogger initialized');
     } catch (err) {
-      // Silently fail if not in Tauri environment (e.g., during testing)
       console.warn('[CrashLogger] Could not initialize:', err);
     }
   }
@@ -57,7 +51,6 @@ class CrashLoggerService {
    * Setup global error handlers for uncaught errors and promise rejections
    */
   private setupGlobalErrorHandlers(): void {
-    // Catch uncaught errors
     window.addEventListener('error', (event) => {
       this.logCrash('UncaughtError', event.error || event.message, {
         filename: event.filename,
@@ -66,7 +59,6 @@ class CrashLoggerService {
       });
     });
 
-    // Catch unhandled promise rejections
     window.addEventListener('unhandledrejection', (event) => {
       this.logCrash('UnhandledPromiseRejection', event.reason);
     });
@@ -75,66 +67,38 @@ class CrashLoggerService {
   /**
    * Log a crash with full context from SystemLogger
    */
-  public async logCrash(type: string, error: unknown, extra?: Record<string, unknown>): Promise<void> {
-    try {
-      const timestamp = new Date().toISOString();
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      const errorStack = error instanceof Error ? error.stack : undefined;
+  public logCrash(type: string, error: unknown, extra?: Record<string, unknown>): void {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
 
-      // Build crash report
-      const crashReport = [
-        '========================================',
-        `CRASH REPORT - ${timestamp}`,
-        '========================================',
-        '',
-        `Type: ${type}`,
-        `Error: ${errorMessage}`,
-        errorStack ? `Stack:\n${errorStack}` : '',
-        '',
-        '--- Extra Context ---',
-        extra ? JSON.stringify(extra, null, 2) : 'None',
-        '',
-        '--- System Logs (Recent) ---',
-        this.getRecentLogs(),
-        '',
-        '========================================'
-      ].join('\n');
+    diagLog('crashes', `${type}: ${errorMessage}`, {
+      type,
+      error: errorMessage,
+      stack: errorStack,
+      extra,
+      recentLogs: this.getRecentLogs()
+    });
 
-      // Write to Tauri log file
-      await tauriError(crashReport);
-
-      // Also log to console for dev visibility
-      console.error('[CrashLogger] Crash logged:', type, errorMessage);
-    } catch (logError) {
-      // Last resort - at least try console
-      console.error('[CrashLogger] Failed to write crash log:', logError);
-      console.error('[CrashLogger] Original error:', type, error);
-    }
+    console.error(`[CrashLogger] ${type}:`, errorMessage);
   }
 
   /**
-   * Get recent logs from SystemLogger formatted as string
+   * Get recent logs from SystemLogger as structured array
    */
-  private getRecentLogs(): string {
-    if (!this.systemLogger) {
-      return 'SystemLogger not available';
-    }
+  private getRecentLogs(): Record<string, unknown>[] {
+    if (!this.systemLogger) return [];
 
     try {
-      // Access internal logs via the SystemLogger
-      // We need to expose logs - for now use a workaround via global/page logs
       const logs = this.getLogsFromSystemLogger();
-
-      if (logs.length === 0) {
-        return 'No recent logs';
-      }
-
-      return logs
-        .slice(-100) // Last 100 entries
-        .map(entry => this.formatLogEntry(entry))
-        .join('\n');
+      return logs.slice(-50).map(entry => ({
+        time: new Date(entry.timestamp).toISOString(),
+        level: entry.level,
+        category: entry.category,
+        message: entry.message,
+        count: entry.count && entry.count > 1 ? entry.count : undefined
+      }));
     } catch {
-      return 'Could not retrieve logs';
+      return [];
     }
   }
 
@@ -142,32 +106,17 @@ class CrashLoggerService {
    * Get logs from SystemLogger (accessing internal state)
    */
   private getLogsFromSystemLogger(): LogEntry[] {
-    // SystemLogger stores logs internally - we access them via the instance
-    // This requires exposing logs or using a getter method
     const logger = this.systemLogger as any;
     const globalLogs: LogEntry[] = logger.globalLogs || [];
     const pageLogs: LogEntry[] = logger.pageLogs || [];
-
-    // Combine and sort by timestamp
     return [...globalLogs, ...pageLogs].sort((a, b) => a.timestamp - b.timestamp);
-  }
-
-  /**
-   * Format a log entry for the crash report
-   */
-  private formatLogEntry(entry: LogEntry): string {
-    const time = new Date(entry.timestamp).toISOString();
-    const level = entry.level.toUpperCase().padEnd(5);
-    const category = entry.category.padEnd(20);
-    const count = entry.count && entry.count > 1 ? ` (x${entry.count})` : '';
-    return `[${time}] ${level} [${category}] ${entry.message}${count}`;
   }
 
   /**
    * Manually log a critical error (call from ErrorService for severe errors)
    */
-  public async logCriticalError(context: string, error: unknown): Promise<void> {
-    await this.logCrash('CriticalError', error, { context });
+  public logCriticalError(context: string, error: unknown): void {
+    this.logCrash('CriticalError', error, { context });
   }
 }
 

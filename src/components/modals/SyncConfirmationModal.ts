@@ -6,6 +6,7 @@
 
 import { ModalService } from '../../services/ModalService';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { diagLog } from '../../services/DiagnosticLogger';
 
 /**
  * Moved item with folder assignment change
@@ -25,6 +26,8 @@ export interface SyncConfirmationOptions<T> {
   removed: T[];
   /** Items with different folder assignments */
   moved?: MovedItemInfo<T>[];
+  /** Human-readable descriptions of snapshot differences (order, properties, etc.) */
+  snapshotDetails?: string[];
   /** Function to get displayable name for an item (text only) */
   getDisplayName: (item: T) => string | Promise<string>;
   /** Optional: Function to render item as HTML (for mentions with avatar) */
@@ -67,7 +70,7 @@ export class SyncConfirmationModal<T> {
    * Returns a Promise that resolves when user makes a choice
    */
   public async show(): Promise<void> {
-    console.debug('[DIAG:SyncConfirmationModal] show:', {
+    diagLog('lists', 'SyncConfirmationModal show', {
       listType: this.options.listType,
       addedCount: this.options.added.length,
       removedCount: this.options.removed.length,
@@ -174,6 +177,8 @@ export class SyncConfirmationModal<T> {
     // Build the question text based on what differs
     const hasRemoved = removed.length > 0;
     const hasMoved = movedCount > 0;
+    const snapshotDetails = this.options.snapshotDetails || [];
+    const hasSnapshotDetails = snapshotDetails.length > 0;
 
     let questionText = '';
     if (hasRemoved && hasMoved) {
@@ -182,6 +187,8 @@ export class SyncConfirmationModal<T> {
       questionText = `What should happen with the ${removed.length} item${removed.length > 1 ? 's' : ''} only in NoorNote Memory?`;
     } else if (hasMoved) {
       questionText = `What should happen with the ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders?`;
+    } else if (hasSnapshotDetails) {
+      questionText = `What should happen with these differences?`;
     }
 
     container.innerHTML = `
@@ -221,6 +228,17 @@ export class SyncConfirmationModal<T> {
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedAddedItems)}
+            </div>
+          </div>
+        ` : ''}
+
+        ${hasSnapshotDetails ? `
+          <div class="sync-confirmation-modal__section">
+            <h3 class="sync-confirmation-modal__section-title">
+              🔄 Detected differences
+            </h3>
+            <div class="sync-confirmation-modal__list">
+              ${snapshotDetails.map(d => `<div class="sync-confirmation-modal__item">${this.escapeHtml(d)}</div>`).join('')}
             </div>
           </div>
         ` : ''}
@@ -326,7 +344,7 @@ export class SyncConfirmationModal<T> {
     // Keep button (keep local, ignore relay changes)
     keepBtn.addEventListener('click', async () => {
       this.modalService.hide();
-      console.debug('[DIAG:SyncConfirmationModal] onKeep clicked for listType:', this.options.listType);
+      diagLog('lists', 'SyncConfirmationModal onKeep clicked', { listType: this.options.listType });
       console.log('[SyncModal] onKeep: starting callback...');
       try {
         await this.options.onKeep();
@@ -344,7 +362,7 @@ export class SyncConfirmationModal<T> {
     if (mergeBtn && this.options.onMerge) {
       mergeBtn.addEventListener('click', async () => {
         this.modalService.hide();
-        console.debug('[DIAG:SyncConfirmationModal] onMerge clicked for listType:', this.options.listType);
+        diagLog('lists', 'SyncConfirmationModal onMerge clicked', { listType: this.options.listType });
         console.log('[SyncModal] onMerge: starting callback...');
         try {
           await this.options.onMerge!();
@@ -362,7 +380,7 @@ export class SyncConfirmationModal<T> {
     // Delete button (overwrite with relay)
     deleteBtn.addEventListener('click', async () => {
       this.modalService.hide();
-      console.debug('[DIAG:SyncConfirmationModal] onDelete (Accept changes) clicked for listType:', this.options.listType);
+      diagLog('lists', 'SyncConfirmationModal onDelete (Accept changes) clicked', { listType: this.options.listType });
       console.log('[SyncModal] onDelete: starting callback...');
       try {
         await this.options.onDelete();

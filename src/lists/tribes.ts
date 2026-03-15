@@ -27,6 +27,7 @@ import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
 import { DeletionService } from '../services/DeletionService';
+import { diagLog } from '../services/DiagnosticLogger';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';
 import { ModalService } from '../services/ModalService';
@@ -151,7 +152,7 @@ function createRelaySnapshot(
 }
 
 function snapshotsAreEqual(a: TribeStateSnapshot, b: TribeStateSnapshot): boolean {
-  console.debug('[DIAG:tribes] snapshotsAreEqual comparing:', {
+  diagLog('lists', 'tribes snapshotsAreEqual comparing', {
     a: { folders: a.folderOrder, memberCounts: Object.fromEntries([...a.membersByFolder].map(([k, v]) => [k, v.length])) },
     b: { folders: b.folderOrder, memberCounts: Object.fromEntries([...b.membersByFolder].map(([k, v]) => [k, v.length])) }
   });
@@ -180,12 +181,12 @@ function snapshotsAreEqual(a: TribeStateSnapshot, b: TribeStateSnapshot): boolea
   // Check if b has any folders that a doesn't have
   for (const folderName of b.folderOrder) {
     if (!a.folderOrder.includes(folderName)) {
-      console.debug('[DIAG:tribes] snapshotsAreEqual: b has folder not in a:', folderName);
+      diagLog('lists', 'tribes snapshotsAreEqual: b has folder not in a', { folderName });
       return false;
     }
   }
 
-  console.debug('[DIAG:tribes] snapshotsAreEqual: result=true (identical)');
+  diagLog('lists', 'tribes snapshotsAreEqual: result=true (identical)');
   return true;
 }
 
@@ -199,7 +200,7 @@ function hasAnyDifference(
   const browserSnapshot = createBrowserSnapshot();
   const relaySnapshot = createRelaySnapshot(relayItems, categories);
   const result = !snapshotsAreEqual(browserSnapshot, relaySnapshot);
-  console.debug('[DIAG:tribes] hasAnyDifference:', result, { relayItemCount: relayItems.length, categories });
+  diagLog('lists', 'tribes hasAnyDifference', { result, relayItemCount: relayItems.length, categories });
   return result;
 }
 
@@ -860,7 +861,7 @@ export function applyRelayFetchResult(
   _categoryAssignments: Map<string, string> | undefined,
   categories: string[] | undefined
 ): void {
-  console.debug('[DIAG:tribes] applyRelayFetchResult inputs:', {
+  diagLog('lists', 'tribes applyRelayFetchResult inputs', {
     memberCount: members.length,
     members: members.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category, isPrivate: m.isPrivate })),
     categories
@@ -929,7 +930,7 @@ export function applyRelayFetchResult(
  * Does NOT touch existing browser folder structure — only adds assignments for newly added members.
  */
 export function addNewMembersToFolders(newMembers: TribeMember[]): void {
-  console.debug('[DIAG:tribes] addNewMembersToFolders:', {
+  diagLog('lists', 'tribes addNewMembersToFolders', {
     newMemberCount: newMembers.length,
     newMembers: newMembers.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category }))
   });
@@ -992,7 +993,7 @@ export function mergeRelayFolderStructurePreservingBrowserOnly(
   categories: string[] | undefined,
   browserOnlyMembers: TribeMember[]
 ): void {
-  console.debug('[DIAG:tribes] mergeRelayFolderStructurePreservingBrowserOnly:', {
+  diagLog('lists', 'tribes mergeRelayFolderStructurePreservingBrowserOnly', {
     relayMemberCount: relayMembers.length,
     categories,
     browserOnlyCount: browserOnlyMembers.length,
@@ -1385,7 +1386,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     }
 
     const finalItems = Array.from(itemMap.values());
-    console.debug('[DIAG:tribes] fetchFromRelays result:', {
+    diagLog('lists', 'tribes fetchFromRelays result', {
       itemCount: finalItems.length,
       items: finalItems.map(i => ({ pubkey: i.pubkey.slice(0, 8), category: i.category, isPrivate: i.isPrivate })),
       categories,
@@ -1429,7 +1430,7 @@ export async function publishToRelays(): Promise<void> {
   }
 
   const totalMembers = setData.sets.reduce((sum, s) => sum + s.publicMembers.length + s.privateMembers.length, 0);
-  console.debug('[DIAG:tribes] publishToRelays:', {
+  diagLog('lists', 'tribes publishToRelays', {
     setCount: setData.sets.length,
     totalMembers,
     deletedTribes,
@@ -1587,7 +1588,7 @@ export class TribeManager {
   // ===== Sync Helper Methods (inlined) =====
 
   private calculateDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): SyncDiff {
-    console.debug('[DIAG:tribes] TribeListManager.calculateDiff:', {
+    diagLog('lists', 'TribeListManager.calculateDiff', {
       browserCount: browserItems.length,
       sourceCount: sourceItems.length
     });
@@ -1624,12 +1625,12 @@ export class TribeManager {
   private async syncFromRelays(): Promise<SyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.adapter.getBrowserItems();
-    console.debug('[DIAG:tribes] TribeListManager.syncFromRelays: browserItems:', {
+    diagLog('lists', 'TribeListManager.syncFromRelays: browserItems', {
       count: browserItems.length,
       items: browserItems.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category }))
     });
     const fetchResult = await this.adapter.fetchFromRelays() as { items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[] };
-    console.debug('[DIAG:tribes] TribeListManager.syncFromRelays: fetchResult:', {
+    diagLog('lists', 'TribeListManager.syncFromRelays: fetchResult', {
       itemCount: fetchResult.items.length,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       categories: fetchResult.categories
@@ -1638,7 +1639,7 @@ export class TribeManager {
 
     // Use full state comparison (checks ALL differences, not just added/removed/moved)
     const requiresConfirmation = hasAnyDifference(fetchResult.items, fetchResult.categories);
-    console.debug('[DIAG:tribes] TribeListManager.syncFromRelays: diff:', {
+    diagLog('lists', 'TribeListManager.syncFromRelays: diff', {
       added: diff.added.length,
       removed: diff.removed.length,
       unchanged: diff.unchanged.length,
@@ -3030,7 +3031,7 @@ export interface TribeAdapterSyncFromRelaysResult {
 }
 
 function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): TribeAdapterSyncDiff {
-  console.debug('[DIAG:tribes] calculateTribeSyncDiff:', {
+  diagLog('lists', 'calculateTribeSyncDiff', {
     browserCount: browserItems.length,
     sourceCount: sourceItems.length
   });
@@ -3153,12 +3154,12 @@ export class TribeStorageAdapter {
   async syncFromRelays(): Promise<TribeAdapterSyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
-    console.debug('[DIAG:tribes] TribeStorageAdapter.syncFromRelays: browserItems:', {
+    diagLog('lists', 'TribeStorageAdapter.syncFromRelays: browserItems', {
       count: browserItems.length,
       items: browserItems.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category }))
     });
     const fetchResult = await this.fetchFromRelays();
-    console.debug('[DIAG:tribes] TribeStorageAdapter.syncFromRelays: fetchResult:', {
+    diagLog('lists', 'TribeStorageAdapter.syncFromRelays: fetchResult', {
       itemCount: fetchResult.items.length,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       categories: fetchResult.categories
@@ -3167,7 +3168,7 @@ export class TribeStorageAdapter {
 
     // Use full state comparison (checks ALL differences, not just added/removed/moved)
     const requiresConfirmation = hasAnyDifference(fetchResult.items, fetchResult.categories);
-    console.debug('[DIAG:tribes] TribeStorageAdapter.syncFromRelays: result:', {
+    diagLog('lists', 'TribeStorageAdapter.syncFromRelays: result', {
       added: diff.added.length,
       removed: diff.removed.length,
       unchanged: diff.unchanged.length,
