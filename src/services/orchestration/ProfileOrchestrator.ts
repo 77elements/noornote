@@ -11,13 +11,16 @@
  * - Cache: 7 days TTL (UserProfileService handles localStorage)
  * - Silent logging
  * - Batch fetching support
+ * - 2-stage fetch: aggregator relays → outbound relays (NIP-65)
  */
 
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
+import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { diagLog } from '../DiagnosticLogger';
 
 export interface Profile {
   pubkey: string;
@@ -40,6 +43,7 @@ export class ProfileOrchestrator extends Orchestrator {
   private static instance: ProfileOrchestrator;
   private transport: NostrTransport;
   private relayConfig: RelayConfig;
+  private relayDiscovery: OutboundRelaysOrchestrator;
   private systemLogger: SystemLogger;
 
   /** Profile cache (managed externally by UserProfileService) */
@@ -49,6 +53,7 @@ export class ProfileOrchestrator extends Orchestrator {
     super('ProfileOrchestrator');
     this.transport = NostrTransport.getInstance();
     this.relayConfig = RelayConfig.getInstance();
+    this.relayDiscovery = OutboundRelaysOrchestrator.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.systemLogger.info('ProfileOrchestrator', 'Initialized');
   }
@@ -81,42 +86,65 @@ export class ProfileOrchestrator extends Orchestrator {
   }
 
   /**
-   * Fetch single profile from relays
+   * Fetch single profile from relays (2-stage: aggregator → outbound)
    */
   private async fetchProfileFromRelays(pubkey: string): Promise<Profile | null> {
-    // Use aggregator relays (big, fast relays) for profile fetching
-    // These relays have ~99% of all profiles and respond quickly
-    const relays = this.relayConfig.getAggregatorRelays();
-
     const filters: NDKFilter[] = [{
       authors: [pubkey],
       kinds: [0],
       limit: 1
     }];
 
+    // Stage 1: Aggregator relays (big, fast relays — have ~99% of profiles)
+    const relays = this.relayConfig.getAggregatorRelays();
+
     try {
       const events = await this.transport.fetch(relays, filters, 4000);
-
       const event = events[0];
-      if (!event) {
-        return null;
+      if (event) {
+        return this.parseProfileEvent(pubkey, event);
       }
-
-      // Parse most recent profile metadata
-      const metadata = JSON.parse(event.content);
-
-      // Extract multiple NIP-05 addresses from tags (Animestr-style)
-      const nip05s = this.extractNip05sFromTags(event.tags);
-
-      return this.buildProfile(pubkey, metadata, nip05s);
-    } catch (error) {
-      this.systemLogger.error('ProfileOrchestrator', `Fetch profile failed for ${pubkey.slice(0, 8)}: ${error}`);
-      return null;
+    } catch {
+      // Aggregator fetch failed, continue to outbound
     }
+
+    // Stage 2: Outbound relays (NIP-65 write relays of the user)
+    // skipCache=true forces relay-only fetch (bypasses NDK cache from stage 1)
+    try {
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkey], true);
+      const newRelays = outboundRelays.filter(r => !relays.includes(r));
+      diagLog('relays', 'ProfileOrchestrator: stage 2 trying outbound', {
+        pubkey: pubkey.slice(0, 8),
+        totalRelays: outboundRelays.length,
+        newRelays: newRelays.slice(0, 5)
+      });
+
+      const events = await this.transport.fetch(outboundRelays, filters, 8000, true);
+      if (events[0]) {
+        diagLog('relays', 'ProfileOrchestrator: outbound fallback found profile', { pubkey: pubkey.slice(0, 8) });
+        return this.parseProfileEvent(pubkey, events[0]);
+      }
+      diagLog('relays', 'ProfileOrchestrator: stage 2 returned empty', { pubkey: pubkey.slice(0, 8) });
+    } catch (error) {
+      diagLog('relays', 'ProfileOrchestrator: stage 2 failed', { pubkey: pubkey.slice(0, 8), error: String(error) });
+    }
+
+    return null;
+  }
+
+  /**
+   * Parse a kind:0 event into a Profile
+   */
+  private parseProfileEvent(pubkey: string, event: NostrEvent): Profile {
+    const metadata = JSON.parse(event.content);
+    const nip05s = this.extractNip05sFromTags(event.tags);
+    return this.buildProfile(pubkey, metadata, nip05s);
   }
 
   /**
    * Fetch multiple profiles in batch
+   * No outbound fallback here — batch fetches are for UI lists where
+   * aggregator coverage is sufficient and latency matters more
    */
   public async fetchMultipleProfiles(pubkeys: string[]): Promise<Map<string, Profile>> {
     // Use aggregator relays (big, fast relays) for profile fetching
@@ -143,10 +171,7 @@ export class ProfileOrchestrator extends Orchestrator {
       // Parse profiles
       latestEvents.forEach((event, pubkey) => {
         try {
-          const metadata = JSON.parse(event.content);
-          // Extract multiple NIP-05 addresses from tags (Animestr-style)
-          const nip05s = this.extractNip05sFromTags(event.tags);
-          profiles.set(pubkey, this.buildProfile(pubkey, metadata, nip05s));
+          profiles.set(pubkey, this.parseProfileEvent(pubkey, event));
         } catch (error) {
           this.systemLogger.error('ProfileOrchestrator', `Parse error for ${pubkey.slice(0, 8)}: ${error}`);
         }
