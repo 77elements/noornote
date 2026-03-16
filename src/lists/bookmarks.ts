@@ -908,6 +908,45 @@ export function getBookmarkFolderService(): BookmarkFolderServiceImpl {
 }
 
 /**
+ * Apply only the folder order from relay categories to browser RootOrder.
+ * Does NOT touch items, folders, or assignments — only reorders existing folders.
+ */
+export function applyRelayFolderOrder(categories: string[]): void {
+  const folderService = getBookmarkFolderService();
+  const existingFolders = folderService.getFolders();
+  const currentRootOrder = folderService.getRootOrder();
+
+  const folderNameToId = new Map<string, string>();
+  for (const f of existingFolders) {
+    folderNameToId.set(f.name, f.id);
+  }
+
+  // Build new order: relay folder order first, then remaining items as-is
+  const newRootOrder: RootOrderItem<'bookmark'>[] = [];
+  const usedIds = new Set<string>();
+
+  // Add folders in relay order
+  for (const cat of categories) {
+    if (!cat) continue;
+    const folderId = folderNameToId.get(cat);
+    if (folderId) {
+      newRootOrder.push({ type: 'folder', id: folderId });
+      usedIds.add(folderId);
+    }
+  }
+
+  // Keep all non-folder items and any folders not in relay in their existing order
+  for (const item of currentRootOrder) {
+    if (!usedIds.has(item.id)) {
+      newRootOrder.push(item);
+    }
+  }
+
+  diagLog('lists', 'applyRelayFolderOrder', { categories, newRootOrder });
+  folderService.saveRootOrder(newRootOrder);
+}
+
+/**
  * Apply relay fetch result to browser storage
  * Creates folders and assignments based on bookmark categories
  */
@@ -1853,12 +1892,12 @@ function getBookmarkSnapshotDiffInfo(
   if (newFromRelay.length > 0) { hasContentDiff = true; details.push(`New folders from relay: ${newFromRelay.join(', ')}`); }
   if (onlyInBrowser.length > 0) { hasContentDiff = true; details.push(`Folders only in browser: ${onlyInBrowser.join(', ')}`); }
 
-  // 2. Folder order (only if same folders)
-  if (newFromRelay.length === 0 && onlyInBrowser.length === 0) {
-    if (a.folderOrder.length !== b.folderOrder.length || a.folderOrder.some((f, i) => f !== b.folderOrder[i])) {
-      hasOrderDiff = true;
-      details.push('Folder order differs');
-    }
+  // 2. Folder order (compare common folders in both)
+  const aCommonOrder = a.folderOrder.filter(f => bFolders.has(f));
+  const bCommonOrder = b.folderOrder.filter(f => aFolders.has(f));
+  if (aCommonOrder.length > 0 && aCommonOrder.some((f, i) => f !== bCommonOrder[i])) {
+    hasOrderDiff = true;
+    details.push('Folder order differs');
   }
 
   // 3. Items per folder
@@ -1872,7 +1911,9 @@ function getBookmarkSnapshotDiffInfo(
     const label = folderName || 'Root';
     if (newItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${newItems.length} new item(s) from relay`); }
     if (removedItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${removedItems.length} item(s) only in browser`); }
-    if (newItems.length === 0 && removedItems.length === 0 && aItems.some((id, i) => id !== bItems[i])) {
+    const commonItems = aItems.filter(id => bSet.has(id));
+    const bCommonItems = bItems.filter(id => aSet.has(id));
+    if (commonItems.length > 1 && commonItems.some((id, i) => id !== bCommonItems[i])) {
       hasOrderDiff = true;
       details.push(`${label}: Item order differs`);
     }

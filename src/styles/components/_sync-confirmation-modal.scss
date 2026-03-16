@@ -74,5 +74,9 @@
     justify-content: center;
     gap: $gap;
     padding-top: calc($gap / 2);
+    position: sticky;
+    bottom: 0;
+    background: var(--color-1);
+    padding-bottom: $gap;
   }
 }

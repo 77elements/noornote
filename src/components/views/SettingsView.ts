@@ -175,16 +175,12 @@ export class SettingsView extends View {
         ) : ''}
 
         ${PlatformService.getInstance().isTauri ? `
-        <section class="nn-ui-toggle settings-section" data-section="diagnostic-export">
-          <div class="nn-ui-toggle__header">
-            <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Diagnostic Logs</h2>
-              <p class="nn-ui-toggle__description">Export logs for debugging sync and crash issues.</p>
-            </div>
-            <button class="nn-button nn-button--secondary" id="export-diagnostic-logs-btn">
-              Export Logs
-            </button>
-          </div>
+        <section class="settings-section diagnostic-export-section">
+          <h2>Diagnostic Logs</h2>
+          <p class="settings-description">Export logs for debugging sync and crash issues.</p>
+          <button class="nn-button nn-button--secondary" id="export-diagnostic-logs-btn">
+            Export Logs
+          </button>
         </section>
         ` : ''}
       </div>
@@ -219,9 +215,11 @@ export class SettingsView extends View {
       try {
         const { exportDiagnosticLogs } = await import('../../services/DiagLogExportService');
         const success = await exportDiagnosticLogs();
+        const { ToastService } = await import('../../services/ToastService');
         if (success) {
-          const { ToastService } = await import('../../services/ToastService');
           ToastService.show('Logs exported', 'success');
+        } else {
+          ToastService.show('No log files found', 'error');
         }
       } catch (error) {
         const { ErrorService } = await import('../../services/ErrorService');

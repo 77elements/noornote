@@ -47,6 +47,7 @@
     // Responsive: cap modals on small screens
     @include mobile-down {
       max-width: 90% !important;
+      max-height: 80vh !important;
     }
   }
 
