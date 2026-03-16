@@ -125,7 +125,14 @@ export class ThreadOrchestrator extends Orchestrator {
     if (note) {
       try {
         const outboundRelays = await this.relayDiscovery.getCombinedRelays([note.pubkey], true);
-        const outboundEvents = await this.transport.fetch(outboundRelays, filters, 8000);
+        const newRelays = outboundRelays.filter(r => !relays.includes(r));
+
+        // Pre-connect to new outbound relays (NDK may not connect to unknown relays via relayUrls)
+        if (newRelays.length > 0) {
+          await Promise.allSettled(newRelays.map(r => this.transport.connectToRelay(r, 5000)));
+        }
+
+        const outboundEvents = await this.transport.fetch(outboundRelays, filters, 8000, true);
         const countBefore = allReplies.size;
         outboundEvents.forEach(e => { if (e.id && !allReplies.has(e.id)) allReplies.set(e.id, e); });
         const newFromOutbound = allReplies.size - countBefore;
@@ -265,7 +272,8 @@ export class ThreadOrchestrator extends Orchestrator {
     // Try relay hint first (fastest, most targeted)
     if (relayHint) {
       try {
-        const events = await this.transport.fetch([relayHint], [filter], 5000);
+        await this.transport.connectToRelay(relayHint, 5000);
+        const events = await this.transport.fetch([relayHint], [filter], 5000, true);
         if (events[0]) {
           diagLog('relays', 'ThreadOrchestrator: relay hint found parent note', {
             eventId: eventId.slice(0, 8),
@@ -282,7 +290,15 @@ export class ThreadOrchestrator extends Orchestrator {
     // Try outbound relays of the child's author (they likely share relays with the parent)
     try {
       const outboundRelays = await this.relayDiscovery.getCombinedRelays([knownAuthorPubkey], true);
-      const events = await this.transport.fetch(outboundRelays, [filter], 8000);
+      const standardRelays = this.transport.getReadRelays();
+      const newRelays = outboundRelays.filter(r => !standardRelays.includes(r));
+
+      // Pre-connect to new outbound relays
+      if (newRelays.length > 0) {
+        await Promise.allSettled(newRelays.map(r => this.transport.connectToRelay(r, 5000)));
+      }
+
+      const events = await this.transport.fetch(outboundRelays, [filter], 8000, true);
       if (events[0]) {
         diagLog('relays', 'ThreadOrchestrator: outbound fallback found parent note', {
           eventId: eventId.slice(0, 8),

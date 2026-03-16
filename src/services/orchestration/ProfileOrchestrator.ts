@@ -109,16 +109,29 @@ export class ProfileOrchestrator extends Orchestrator {
     }
 
     // Stage 2: Outbound relays (NIP-65 write relays of the user)
+    // skipCache=true forces relay-only fetch (bypasses NDK cache from stage 1)
     try {
       const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkey], true);
-      const events = await this.transport.fetch(outboundRelays, filters, 8000);
-      const event = events[0];
-      if (event) {
-        diagLog('relays', 'ProfileOrchestrator: outbound fallback found profile', { pubkey: pubkey.slice(0, 8) });
-        return this.parseProfileEvent(pubkey, event);
+      const newRelays = outboundRelays.filter(r => !relays.includes(r));
+      diagLog('relays', 'ProfileOrchestrator: stage 2 trying outbound', {
+        pubkey: pubkey.slice(0, 8),
+        totalRelays: outboundRelays.length,
+        newRelays: newRelays.slice(0, 5)
+      });
+
+      // Pre-connect to new outbound relays (NDK may not connect to unknown relays via relayUrls)
+      if (newRelays.length > 0) {
+        await Promise.allSettled(newRelays.map(r => this.transport.connectToRelay(r, 5000)));
       }
+
+      const events = await this.transport.fetch(outboundRelays, filters, 8000, true);
+      if (events[0]) {
+        diagLog('relays', 'ProfileOrchestrator: outbound fallback found profile', { pubkey: pubkey.slice(0, 8) });
+        return this.parseProfileEvent(pubkey, events[0]);
+      }
+      diagLog('relays', 'ProfileOrchestrator: stage 2 returned empty', { pubkey: pubkey.slice(0, 8) });
     } catch (error) {
-      this.systemLogger.error('ProfileOrchestrator', `Outbound fallback failed for ${pubkey.slice(0, 8)}: ${error}`);
+      diagLog('relays', 'ProfileOrchestrator: stage 2 failed', { pubkey: pubkey.slice(0, 8), error: String(error) });
     }
 
     return null;

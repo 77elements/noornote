@@ -11,7 +11,6 @@
  * - Delegates addressable events (naddr) to LongFormOrchestrator
  * - Uses NoteService cache (cache-first, then relay fetch)
  * - Three-stage fetch: cache → standard relays → outbound relays fallback
- * - Silent logging (only errors)
  */
 
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
@@ -22,6 +21,7 @@ import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
 import { NoteService } from '../NoteService';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { diagLog } from '../DiagnosticLogger';
 
 export class QuoteOrchestrator extends Orchestrator {
   private static instance: QuoteOrchestrator;
@@ -152,25 +152,6 @@ export class QuoteOrchestrator extends Orchestrator {
   }
 
   /**
-   * Fetch from relays with timeout wrapper
-   * Returns event if found and registers it in NoteService cache
-   */
-  private async fetchFromRelays(relays: string[], filter: NDKFilter, timeout: number): Promise<NostrEvent | null> {
-    const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('Relay timeout')), timeout)
-    );
-    const events = await Promise.race([
-      this.transport.fetch(relays, [filter], timeout),
-      timeoutPromise
-    ]);
-    const event = events[0];
-    if (event) {
-      this.noteService.registerNote(event);
-    }
-    return event ?? null;
-  }
-
-  /**
    * Fetch event by ID with four-stage strategy
    * Stage 0: Check NoteService cache first
    * Stage 1: Try relay hints (from nevent)
@@ -178,6 +159,8 @@ export class QuoteOrchestrator extends Orchestrator {
    * Stage 3: If not found, try standard + outbound relays
    */
   private async fetchEventById(eventId: string, relayHints: string[] = [], author: string | null = null): Promise<NostrEvent | null> {
+    const shortId = eventId.slice(0, 8);
+
     // Stage 0: Check NoteService cache first
     const cached = this.noteService.getCachedNote(eventId);
     if (cached) {
@@ -189,32 +172,61 @@ export class QuoteOrchestrator extends Orchestrator {
     // Stage 1: Try relay hints first (highest priority)
     if (relayHints.length > 0) {
       try {
-        const event = await this.fetchFromRelays(relayHints, filter, 5000);
-        if (event) return event;
-      } catch {
-        // Relay hints failed, continue to standard relays
+        const events = await this.transport.fetch(relayHints, [filter], 5000);
+        if (events[0]) {
+          this.noteService.registerNote(events[0]);
+          return events[0];
+        }
+      } catch (error) {
+        diagLog('relays', 'QuoteOrchestrator: stage 1 (hints) failed', { eventId: shortId, error: String(error) });
       }
     }
 
     // Stage 2: Try standard relays
     try {
-      const event = await this.fetchFromRelays(this.transport.getReadRelays(), filter, 5000);
-      if (event) return event;
-    } catch {
-      // Standard relays failed, continue to outbound relays
+      const events = await this.transport.fetch(this.transport.getReadRelays(), [filter], 5000);
+      if (events[0]) {
+        this.noteService.registerNote(events[0]);
+        return events[0];
+      }
+    } catch (error) {
+      diagLog('relays', 'QuoteOrchestrator: stage 2 (standard) failed', { eventId: shortId, error: String(error) });
     }
 
     // Stage 3: Not found on standard relays, try with outbound relays
-    // Pass author pubkey so OutboundRelaysOrchestrator can discover their write relays
-    try {
-      const authorPubkeys = author ? [author] : [];
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays(authorPubkeys, true);
-      const event = await this.fetchFromRelays(outboundRelays, filter, 10000);
-      if (event) return event;
-    } catch {
-      // Outbound relays failed
+    // skipCache=true forces relay-only fetch (bypasses NDK cache from stage 2)
+    if (author) {
+      try {
+        const outboundRelays = await this.relayDiscovery.getCombinedRelays([author], true);
+        const standardRelays = new Set(this.transport.getReadRelays());
+        const newRelays = outboundRelays.filter(r => !standardRelays.has(r));
+        diagLog('relays', 'QuoteOrchestrator: stage 3 trying outbound', {
+          eventId: shortId,
+          author: author.slice(0, 8),
+          relayCount: outboundRelays.length,
+          newRelays: newRelays.slice(0, 5)
+        });
+
+        // Pre-connect to new outbound relays (NDK may not connect to unknown relays via relayUrls)
+        if (newRelays.length > 0) {
+          await Promise.allSettled(newRelays.map(r => this.transport.connectToRelay(r, 5000)));
+        }
+
+        const events = await this.transport.fetch(outboundRelays, [filter], 10000, true);
+        if (events[0]) {
+          diagLog('relays', 'QuoteOrchestrator: outbound fallback found quote', { eventId: shortId });
+          this.noteService.registerNote(events[0]);
+          return events[0];
+        }
+        diagLog('relays', 'QuoteOrchestrator: stage 3 returned empty', { eventId: shortId, relayCount: outboundRelays.length });
+      } catch (error) {
+        diagLog('relays', 'QuoteOrchestrator: stage 3 (outbound) failed', { eventId: shortId, error: String(error) });
+      }
+    } else {
+      diagLog('relays', 'QuoteOrchestrator: no author for outbound fallback', { eventId: shortId });
     }
 
+    diagLog('relays', 'QuoteOrchestrator: NOT FOUND after all stages', { eventId: shortId, hasAuthor: !!author, hasHints: relayHints.length > 0 });
     return null;
   }
 
