@@ -1446,18 +1446,18 @@ export class FollowListManager {
           },
           onKeep: async () => {
             this.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
-            ToastService.show(`Merged ${result.diff.added.length} new follows (kept ${result.diff.removed.length} local follows)`, 'success');
-            await this.renderListTab(container);
-          },
-          onMerge: async () => {
-            this.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show(`Merged ${result.diff.added.length} new follows and synced to relays`, 'success');
             await this.renderListTab(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             this.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
             ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.renderListTab(container);
+          },
+          onLocal: async () => {
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Local follows pushed to relays', 'success');
             await this.renderListTab(container);
           }
         });
@@ -1544,12 +1544,18 @@ export class FollowListManager {
           },
           onKeep: async () => {
             this.applySyncFromFile('merge', result.fileItems);
-            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
             await this.renderListTab(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             this.applySyncFromFile('overwrite', result.fileItems);
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.renderListTab(container);
+          },
+          onLocal: async () => {
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Local follows pushed to relays', 'success');
             await this.renderListTab(container);
           }
         });

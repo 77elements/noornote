@@ -1270,18 +1270,18 @@ export class MuteListView extends View {
           },
           onKeep: async () => {
             this.adapter.applySyncFromRelays('merge', result.relayItems);
-            ToastService.show(`Merged ${result.diff.added.length} new mutes (kept ${result.diff.removed.length} local mutes)`, 'success');
-            await this.loadMuteList();
-          },
-          onMerge: async () => {
-            this.adapter.applySyncFromRelays('merge', result.relayItems);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show(`Merged ${result.diff.added.length} new mutes and synced to relays`, 'success');
             await this.loadMuteList();
           },
-          onDelete: async () => {
+          onRelay: async () => {
             this.adapter.applySyncFromRelays('overwrite', result.relayItems);
             ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.loadMuteList();
+          },
+          onLocal: async () => {
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Local mutes pushed to relays', 'success');
             await this.loadMuteList();
           }
         });
@@ -1352,12 +1352,18 @@ export class MuteListView extends View {
           },
           onKeep: async () => {
             this.adapter.applySyncFromFile('merge', result.fileItems);
-            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
             await this.loadMuteList();
           },
-          onDelete: async () => {
+          onRelay: async () => {
             this.adapter.applySyncFromFile('overwrite', result.fileItems);
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.loadMuteList();
+          },
+          onLocal: async () => {
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Local mutes pushed to relays', 'success');
             await this.loadMuteList();
           }
         });
@@ -1618,12 +1624,18 @@ export class MuteListManager {
           },
           onKeep: async () => {
             this.adapter.applySyncFromRelays('merge', result.relayItems);
-            ToastService.show(`Merged ${result.diff.added.length} new mutes (kept ${result.diff.removed.length} local mutes)`, 'success');
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show(`Merged ${result.diff.added.length} new mutes and synced to relays`, 'success');
             await this.renderListTab(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             this.adapter.applySyncFromRelays('overwrite', result.relayItems);
             ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.renderListTab(container);
+          },
+          onLocal: async () => {
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Local mutes pushed to relays', 'success');
             await this.renderListTab(container);
           }
         });
@@ -1697,12 +1709,18 @@ export class MuteListManager {
           },
           onKeep: async () => {
             this.adapter.applySyncFromFile('merge', result.fileItems);
-            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
             await this.renderListTab(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             this.adapter.applySyncFromFile('overwrite', result.fileItems);
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.renderListTab(container);
+          },
+          onLocal: async () => {
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Local mutes pushed to relays', 'success');
             await this.renderListTab(container);
           }
         });

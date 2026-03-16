@@ -32,12 +32,14 @@ export interface SyncConfirmationOptions<T> {
   getDisplayName: (item: T) => string | Promise<string>;
   /** Optional: Function to render item as HTML (for mentions with avatar) */
   renderItemHtml?: (item: T) => string | Promise<string>;
-  /** Callback when user chooses "Only add new ones" (keep local, ignore relay removals) */
+  /** Callback: "Keep all" — merge local + relay, push result */
   onKeep: () => void | Promise<void>;
-  /** Callback when user chooses "Merge both" (combine local + relay, then sync back) */
+  /** Callback: "Keep relay" — replace local with relay */
+  onRelay: () => void | Promise<void>;
+  /** Callback: "Keep local" — push local to relay, discard relay-only items */
+  onLocal: () => void | Promise<void>;
+  /** Callback: "Merge both" — for bookmarks/tribes with folder structure merge */
   onMerge?: () => void | Promise<void>;
-  /** Callback when user chooses "Accept changes" (replace local with relay) */
-  onDelete: () => void | Promise<void>;
 }
 
 interface ResolvedItem {
@@ -224,16 +226,14 @@ export class SyncConfirmationModal<T> {
         ` : ''}
 
         <div class="sync-confirmation-modal__actions">
-          <button type="button" class="btn btn--passive" id="sync-keep-btn">
-            Add from relays
+          <button type="button" class="btn btn--success" id="sync-keep-btn">
+            Keep all
           </button>
-          ${this.options.onMerge ? `
-          <button type="button" class="btn btn--primary" id="sync-merge-btn">
-            Merge both
+          <button type="button" class="btn btn--primary" id="sync-relay-btn">
+            Keep relay
           </button>
-          ` : ''}
-          <button type="button" class="btn btn--success" id="sync-delete-btn">
-            Accept changes
+          <button type="button" class="btn btn--passive" id="sync-local-btn">
+            Keep local
           </button>
         </div>
       </div>
@@ -304,12 +304,11 @@ export class SyncConfirmationModal<T> {
    */
   private setupEventHandlers(): void {
     const keepBtn = document.getElementById('sync-keep-btn');
-    const mergeBtn = document.getElementById('sync-merge-btn');
-    const deleteBtn = document.getElementById('sync-delete-btn');
+    const relayBtn = document.getElementById('sync-relay-btn');
+    const localBtn = document.getElementById('sync-local-btn');
 
-    if (!keepBtn || !deleteBtn) {
+    if (!keepBtn || !relayBtn || !localBtn) {
       console.error('[SyncConfirmationModal] Failed to find modal buttons');
-      // Resolve anyway to prevent hanging
       if (this.resolvePromise) {
         this.resolvePromise();
         this.resolvePromise = null;
@@ -317,58 +316,25 @@ export class SyncConfirmationModal<T> {
       return;
     }
 
-    // Keep button (keep local, ignore relay changes)
-    keepBtn.addEventListener('click', async () => {
-      this.modalService.hide();
-      diagLog('lists', 'SyncConfirmationModal onKeep clicked', { listType: this.options.listType });
-      console.log('[SyncModal] onKeep: starting callback...');
-      try {
-        await this.options.onKeep();
-        console.log('[SyncModal] onKeep: callback completed successfully');
-      } catch (error) {
-        console.error('[SyncModal] onKeep: callback FAILED:', error);
-      }
-      if (this.resolvePromise) {
-        this.resolvePromise();
-        this.resolvePromise = null;
-      }
-    });
-
-    // Merge button (combine both and sync back to relays)
-    if (mergeBtn && this.options.onMerge) {
-      mergeBtn.addEventListener('click', async () => {
+    const handle = (name: string, callback: () => void | Promise<void>) => {
+      return async () => {
         this.modalService.hide();
-        diagLog('lists', 'SyncConfirmationModal onMerge clicked', { listType: this.options.listType });
-        console.log('[SyncModal] onMerge: starting callback...');
+        diagLog('lists', `SyncConfirmationModal ${name} clicked`, { listType: this.options.listType });
         try {
-          await this.options.onMerge!();
-          console.log('[SyncModal] onMerge: callback completed successfully');
+          await callback();
         } catch (error) {
-          console.error('[SyncModal] onMerge: callback FAILED:', error);
+          console.error(`[SyncModal] ${name}: callback FAILED:`, error);
         }
         if (this.resolvePromise) {
           this.resolvePromise();
           this.resolvePromise = null;
         }
-      });
-    }
+      };
+    };
 
-    // Delete button (overwrite with relay)
-    deleteBtn.addEventListener('click', async () => {
-      this.modalService.hide();
-      diagLog('lists', 'SyncConfirmationModal onDelete (Accept changes) clicked', { listType: this.options.listType });
-      console.log('[SyncModal] onDelete: starting callback...');
-      try {
-        await this.options.onDelete();
-        console.log('[SyncModal] onDelete: callback completed successfully');
-      } catch (error) {
-        console.error('[SyncModal] onDelete: callback FAILED:', error);
-      }
-      if (this.resolvePromise) {
-        this.resolvePromise();
-        this.resolvePromise = null;
-      }
-    });
+    keepBtn.addEventListener('click', handle('Keep all', this.options.onKeep));
+    relayBtn.addEventListener('click', handle('Keep relay', this.options.onRelay));
+    localBtn.addEventListener('click', handle('Keep local', this.options.onLocal));
   }
 
   /**

@@ -3578,20 +3578,20 @@ export class BookmarkManager {
           getDisplayName: (item) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             mergeFromRelays();
-            ToastService.show('Merged bookmarks from relays', 'success');
-            await this.loadBookmarks();
-            this.renderCurrentView(container);
-          },
-          onMerge: async () => {
-            mergeFromRelays();
             await this.syncToRelays();
             ToastService.show('Merged bookmarks and synced to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             fullOverwriteFromRelays();
             ToastService.show('Synced from relays', 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          },
+          onLocal: async () => {
+            await this.syncToRelays();
+            ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           }
@@ -3705,13 +3705,20 @@ export class BookmarkManager {
           getDisplayName: (item: BookmarkItem) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             await mergeFromFile(result.diff.added);
-            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.syncToRelays();
+            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             await fullRestoreFromFile();
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          },
+          onLocal: async () => {
+            await this.syncToRelays();
+            ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           }

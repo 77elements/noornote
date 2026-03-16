@@ -13,6 +13,7 @@
  */
 
 import { EventBus } from './EventBus';
+import { classifySyncAction } from '../lists/storage';
 import { ToastService } from './ToastService';
 import { AuthService } from './AuthService';
 import { ConnectivityService } from './ConnectivityService';
@@ -41,7 +42,6 @@ import {
   BookmarkStorageAdapter,
   applyRelayFetchResult as applyBookmarkRelayResult,
   addNewBookmarksToFolders,
-  mergeRelayBookmarkStructurePreservingBrowserOnly,
   type BookmarkItem
 } from '../lists/bookmarks';
 
@@ -57,7 +57,6 @@ import {
   TribeStorageAdapter,
   applyRelayFetchResult as applyTribeRelayResult,
   addNewMembersToFolders,
-  mergeRelayFolderStructurePreservingBrowserOnly,
   type TribeMember
 } from '../lists/tribes';
 
@@ -459,69 +458,46 @@ export class AutoSyncService {
 
       this.systemLogger.info('ListAutoSync', `${listType}: diff - added: ${result.diff.added.length}, removed: ${result.diff.removed.length}`);
 
-      // Nothing changed in diff - but check snapshot for order/property changes
       const movedCount = result.diff.moved?.length || 0;
-      if (result.diff.added.length === 0 && result.diff.removed.length === 0 && movedCount === 0) {
-        if (result.requiresConfirmation) {
-          if (result.snapshotDiffInfo?.isOrderOnly) {
-            diagLog('lists', `syncFromRelays(${listType}): PATH=order-only — applying relay order locally`);
-            this.systemLogger.info('ListAutoSync', `${listType}: order differs, applying relay order locally`);
-            if (listType === 'bookmarks' && result.categories) {
-              const { applyRelayFolderOrder } = await import('../lists/bookmarks');
-              applyRelayFolderOrder(result.categories);
-            }
-            return;
-          }
-          // Folder set differs (folder only in browser or only on relay) → needs modal
-          if (result.snapshotDiffInfo?.hasFolderSetDiff) {
-            diagLog('lists', `syncFromRelays(${listType}): PATH=folder set differs — showing modal`);
-            this.systemLogger.info('ListAutoSync', `${listType}: folder set differs, showing modal`);
-            await this.showSyncConfirmationModal(listType, result);
-          } else {
-            // No items added/removed/moved, no folder set diff — only properties or order+properties → auto-apply
-            diagLog('lists', `syncFromRelays(${listType}): PATH=property/order changes — auto-applying relay state`);
-            this.systemLogger.info('ListAutoSync', `${listType}: property/order changes, auto-applying`);
-            this.applyMerge(listType, result.relayItems);
-            if (listType === 'bookmarks' && result.categories) {
-              const { applyRelayFolderOrder } = await import('../lists/bookmarks');
-              applyRelayFolderOrder(result.categories);
-            }
-          }
-        } else {
-          diagLog('lists', `syncFromRelays(${listType}): PATH=no changes at all — skipping`);
-        }
+      const action = classifySyncAction({
+        added: result.diff.added.length,
+        removed: result.diff.removed.length,
+        moved: movedCount,
+        requiresConfirmation: result.requiresConfirmation,
+        relayContentWasEmpty: result.relayContentWasEmpty,
+        snapshotDiffInfo: result.snapshotDiffInfo
+      });
+
+      diagLog('lists', `syncFromRelays(${listType}): action=${action}`, {
+        added: result.diff.added.length, removed: result.diff.removed.length, moved: movedCount,
+        requiresConfirmation: result.requiresConfirmation, snapshotDiffInfo: result.snapshotDiffInfo
+      });
+
+      if (action === 'skip') {
+        this.systemLogger.info('ListAutoSync', `${listType}: no actionable changes`);
         return;
       }
 
-      // Safety: if relay returned empty but we have local items to "remove",
-      // this is almost certainly a fetch failure — skip to prevent data loss
-      if (result.relayContentWasEmpty && result.diff.removed.length > 0) {
-        diagLog('lists', `syncFromRelays(${listType}): PATH=relay empty safety — skipping`, { wouldRemove: result.diff.removed.length });
-        this.systemLogger.warn('ListAutoSync', `${listType}: relay returned empty, skipping sync to prevent data loss (${result.diff.removed.length} items would be removed)`);
-        return;
-      }
-
-      // Simple case: only new items from relay, nothing removed or moved
-      // → auto-merge without bothering the user
-      if (result.diff.added.length > 0 && result.diff.removed.length === 0 && movedCount === 0) {
-        diagLog('lists', `syncFromRelays(${listType}): PATH=auto-merge`, { newItems: result.diff.added.length, relayItems: result.relayItems.length });
-        diagLog('lists', `syncFromRelays(${listType}): auto-merge items`, { items: result.diff.added });
-        this.systemLogger.info('ListAutoSync', `${listType}: auto-merging ${result.diff.added.length} new items`);
+      if (action === 'auto') {
+        this.systemLogger.info('ListAutoSync', `${listType}: auto-applying ${result.diff.added.length} new items`);
         this.applyMerge(listType, result.relayItems);
-        // Only add folder assignments for NEW items — don't destroy existing browser structure
         if (listType === 'bookmarks') {
           addNewBookmarksToFolders(result.diff.added as BookmarkItem[]);
+          if (result.categories) {
+            const { applyRelayFolderOrder } = await import('../lists/bookmarks');
+            applyRelayFolderOrder(result.categories);
+          }
         } else if (listType === 'tribes') {
           addNewMembersToFolders(result.diff.added as TribeMember[]);
         }
-        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: ${result.diff.added.length} new synced from relay`, 'success');
+        if (result.diff.added.length > 0) {
+          ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: ${result.diff.added.length} new synced from relay`, 'success');
+        }
         return;
       }
 
-      // Complex case (removals, moves) - show modal to let user decide
-      diagLog('lists', `syncFromRelays(${listType}): PATH=complex (removals/moves) — showing modal`);
+      // action === 'modal'
       this.systemLogger.info('ListAutoSync', `${listType}: showing merge modal`);
-      console.log(`[AutoSync] ${listType}: SHOWING MODAL — added: ${result.diff.added.length}, removed: ${result.diff.removed.length}, moved: ${result.diff.moved?.length || 0}`);
       await this.showSyncConfirmationModal(listType, result);
     } catch (error) {
       this.systemLogger.error('ListAutoSync', `Periodic sync failed for ${listType}: ${error}`);
@@ -704,45 +680,21 @@ export class AutoSyncService {
         diagLog('lists', `onKeep(${listType}): operation complete`, { browserStateAfterMerge: this.getBrowserItemCount(listType) });
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
       },
-      ...((listType === 'bookmarks' || listType === 'tribes') && {
-        onMerge: async () => {
-          // True merge: combine both local + relay, then push back to relays
-          console.log(`[AutoSync] onMerge(${listType}): applyMerge with ${result.relayItems.length} relay items`);
-          this.applyMerge(listType, result.relayItems);
-          // Apply relay folder structure but preserve browser-only items' assignments
-          if (listType === 'bookmarks') {
-            mergeRelayBookmarkStructurePreservingBrowserOnly(
-              result.relayItems as BookmarkItem[],
-              result.categories,
-              result.diff.removed as BookmarkItem[]
-            );
-          } else if (listType === 'tribes') {
-            mergeRelayFolderStructurePreservingBrowserOnly(
-              result.relayItems as TribeMember[],
-              result.categories,
-              result.diff.removed as TribeMember[]
-            );
-          }
-          // Push merged state back to relays
-          console.log(`[AutoSync] onMerge(${listType}): publishing to relays...`);
-          await this.syncToRelays(listType);
-          console.log(`[AutoSync] onMerge(${listType}): publish completed`);
-          diagLog('lists', `onMerge(${listType}): operation complete`, { browserStateAfterMerge: this.getBrowserItemCount(listType) });
-          ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Merged and synced to relays`, 'success');
-        }
-      }),
-      onDelete: async () => {
-        console.log(`[AutoSync] onDelete(${listType}): overwriting with ${result.relayItems.length} relay items`);
+      onRelay: async () => {
+        diagLog('lists', `onRelay(${listType}): overwriting with relay state`);
         this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
         }
-        // Push accepted state to relays so all instances are in sync
-        console.log(`[AutoSync] onDelete(${listType}): publishing to relays...`);
         await this.syncToRelays(listType);
-        console.log(`[AutoSync] onDelete(${listType}): publish completed`);
-        diagLog('lists', `onDelete(${listType}): operation complete`, { browserStateAfterOverwrite: this.getBrowserItemCount(listType) });
-        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Synced from relays (removed ${result.diff.removed.length})`, 'success');
+        diagLog('lists', `onRelay(${listType}): complete`, { count: this.getBrowserItemCount(listType) });
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Relay version applied`, 'success');
+      },
+      onLocal: async () => {
+        diagLog('lists', `onLocal(${listType}): keeping local, pushing to relay`);
+        await this.syncToRelays(listType);
+        diagLog('lists', `onLocal(${listType}): complete`, { count: this.getBrowserItemCount(listType) });
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Local version pushed to relays`, 'success');
       }
     });
 

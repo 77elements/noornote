@@ -97,3 +97,64 @@ export function mergeStringArrays(browserItems: string[], newItems: string[]): s
 export function now(): number {
   return Math.floor(Date.now() / 1000);
 }
+
+/**
+ * Sync action classification.
+ *
+ * Central decision: does a sync diff require user confirmation (modal) or can it be auto-applied?
+ *
+ * AUTO cases (no modal):
+ *  - Only new items from relay (added > 0, removed = 0, moved = 0)
+ *  - Only property changes (isPrivate, description)
+ *  - Only order changes (folder order, item order)
+ *  - Only new folders from relay (with new items)
+ *  - Any combination of the above
+ *
+ * MODAL cases (user must decide):
+ *  - Items only in browser (removed > 0) — could be locally added or relay-deleted
+ *  - Folders only in browser (hasFolderSetDiff with onlyInBrowser) — could be locally created or relay-deleted
+ *  - Items in different folders (moved > 0)
+ *  - Any combination containing one of the above
+ *
+ * SKIP cases:
+ *  - No differences at all
+ *  - Relay returned empty (safety)
+ */
+export type SyncAction = 'auto' | 'modal' | 'skip';
+
+export interface SyncDiffInput {
+  added: number;
+  removed: number;
+  moved: number;
+  requiresConfirmation: boolean;
+  relayContentWasEmpty: boolean;
+  snapshotDiffInfo?: {
+    isOrderOnly: boolean;
+    hasFolderSetDiff: boolean;
+  } | undefined;
+}
+
+export function classifySyncAction(diff: SyncDiffInput): SyncAction {
+  // No differences
+  if (!diff.requiresConfirmation && diff.added === 0 && diff.removed === 0 && diff.moved === 0) {
+    return 'skip';
+  }
+
+  // Relay returned empty but we'd remove items — unsafe
+  if (diff.relayContentWasEmpty && diff.removed > 0) {
+    return 'skip';
+  }
+
+  // Items removed or moved → user must decide
+  if (diff.removed > 0 || diff.moved > 0) {
+    return 'modal';
+  }
+
+  // Folder set differs (folders only in browser) → user must decide
+  if (diff.snapshotDiffInfo?.hasFolderSetDiff) {
+    return 'modal';
+  }
+
+  // Everything else is auto-resolvable: new items, properties, order, new folders
+  return 'auto';
+}

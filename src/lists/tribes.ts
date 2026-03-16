@@ -2505,23 +2505,13 @@ export class TribeManager {
             return member.pubkey.slice(0, 8) + '...';
           },
           onKeep: async () => {
-            this.applySync('merge', result.relayItems);
-            applyRelayFetchResult(this.adapter.getBrowserItems(), result.categoryAssignments, result.categories);
-            ToastService.show(`Merged ${result.diff.added.length} from relays (kept ${result.diff.removed.length} local)`, 'success');
-            this.membersCache.clear();
-            await this.loadMembers();
-            await this.renderCurrentView(container);
-          },
-          onMerge: async () => {
-            // True merge: combine both local + relay, then push back to relays
-            // Keep existing folder structure, only add new members with their folders
+            // Merge: combine both local + relay, then push back to relays
             const browserItems = this.adapter.getBrowserItems();
             const existingPubkeys = new Set(browserItems.map(m => m.pubkey));
             const newFromRelay = result.relayItems.filter(m => !existingPubkeys.has(m.pubkey));
 
             if (newFromRelay.length > 0) {
               this.adapter.setBrowserItems([...browserItems, ...newFromRelay]);
-              // Ensure folders exist for new members and assign them
               for (const member of newFromRelay) {
                 if (member.category) {
                   const folderId = `folder_${member.category}`;
@@ -2539,10 +2529,17 @@ export class TribeManager {
             await this.loadMembers();
             await this.renderCurrentView(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             this.applySync('overwrite', result.relayItems);
             applyRelayFetchResult(result.relayItems, result.categoryAssignments, result.categories);
             ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          },
+          onLocal: async () => {
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Local tribes pushed to relays', 'success');
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
@@ -2651,27 +2648,17 @@ export class TribeManager {
             return member.pubkey.slice(0, 8) + '...';
           },
           onKeep: async () => {
-            // Merge: add new members from file with their folder assignments
-            await this.mergeFromFile(result.diff.added);
-            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
-            this.membersCache.clear();
-            await this.loadMembers();
-            await this.renderCurrentView(container);
-          },
-          onMerge: async () => {
-            // True merge: combine both local + file, then save to file AND relays
+            // Merge: add new members from file, then push to relays
             await this.mergeFromFile(result.diff.added);
             const mergedItems = this.adapter.getBrowserItems();
-            // Save to file (so Tauri sees the merged result)
             await this.adapter.setFileItems(mergedItems);
-            // Publish to relays
             await this.adapter.publishToRelays(mergedItems);
             ToastService.show('Merged and synced to file + relays', 'success');
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             // Full restore: replace everything with file/uploaded data
             if (isBrowser) {
               fullRestoreFromItems(result.fileItems);
@@ -2679,6 +2666,13 @@ export class TribeManager {
               await restoreFromFile();
             }
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            this.membersCache.clear();
+            await this.loadMembers();
+            await this.renderCurrentView(container);
+          },
+          onLocal: async () => {
+            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
+            ToastService.show('Local tribes pushed to relays', 'success');
             this.membersCache.clear();
             await this.loadMembers();
             await this.renderCurrentView(container);
