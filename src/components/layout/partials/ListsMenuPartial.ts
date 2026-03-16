@@ -8,6 +8,7 @@
 
 import type { ListType } from './ListViewPartial';
 import { ToastService } from '../../../services/ToastService';
+import { PlatformService } from '../../../services/PlatformService';
 
 export interface ListsMenuConfig {
   onListClick: (listType: ListType) => void; // Callback when a list link is clicked
@@ -27,7 +28,8 @@ export class ListsMenuPartial {
 
   constructor(config: ListsMenuConfig) {
     this.config = config;
-    this.easterEggUnlocked = sessionStorage.getItem(STORAGE_KEY) === 'true';
+    // No easter egg on mobile (no keyboard to type the code)
+    this.easterEggUnlocked = !PlatformService.getInstance().isAndroid && sessionStorage.getItem(STORAGE_KEY) === 'true';
   }
 
   /**
@@ -122,8 +124,8 @@ export class ListsMenuPartial {
 
     this.element = li;
 
-    // Setup easter egg listener if not already unlocked
-    if (!this.easterEggUnlocked) {
+    // Setup easter egg listener if not already unlocked (skip on mobile — no keyboard)
+    if (!this.easterEggUnlocked && !PlatformService.getInstance().isAndroid) {
       this.setupEasterEggListener();
     }
 
