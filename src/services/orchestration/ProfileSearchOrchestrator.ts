@@ -242,12 +242,6 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
     try {
       const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkeyHex], true);
-      const newRelays = outboundRelays.filter(r => !relays.includes(r));
-
-      // Pre-connect to new outbound relays (NDK may not connect to unknown relays via relayUrls)
-      if (newRelays.length > 0) {
-        await Promise.allSettled(newRelays.map(r => this.transport.connectToRelay(r, 5000)));
-      }
 
       const outboundFilters: NDKFilter[] = [{
         kinds: [1],

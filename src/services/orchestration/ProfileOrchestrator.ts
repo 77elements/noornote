@@ -119,11 +119,6 @@ export class ProfileOrchestrator extends Orchestrator {
         newRelays: newRelays.slice(0, 5)
       });
 
-      // Pre-connect to new outbound relays (NDK may not connect to unknown relays via relayUrls)
-      if (newRelays.length > 0) {
-        await Promise.allSettled(newRelays.map(r => this.transport.connectToRelay(r, 5000)));
-      }
-
       const events = await this.transport.fetch(outboundRelays, filters, 8000, true);
       if (events[0]) {
         diagLog('relays', 'ProfileOrchestrator: outbound fallback found profile', { pubkey: pubkey.slice(0, 8) });

@@ -125,12 +125,6 @@ export class ThreadOrchestrator extends Orchestrator {
     if (note) {
       try {
         const outboundRelays = await this.relayDiscovery.getCombinedRelays([note.pubkey], true);
-        const newRelays = outboundRelays.filter(r => !relays.includes(r));
-
-        // Pre-connect to new outbound relays (NDK may not connect to unknown relays via relayUrls)
-        if (newRelays.length > 0) {
-          await Promise.allSettled(newRelays.map(r => this.transport.connectToRelay(r, 5000)));
-        }
 
         const outboundEvents = await this.transport.fetch(outboundRelays, filters, 8000, true);
         const countBefore = allReplies.size;
@@ -272,7 +266,6 @@ export class ThreadOrchestrator extends Orchestrator {
     // Try relay hint first (fastest, most targeted)
     if (relayHint) {
       try {
-        await this.transport.connectToRelay(relayHint, 5000);
         const events = await this.transport.fetch([relayHint], [filter], 5000, true);
         if (events[0]) {
           diagLog('relays', 'ThreadOrchestrator: relay hint found parent note', {
@@ -290,14 +283,6 @@ export class ThreadOrchestrator extends Orchestrator {
     // Try outbound relays of the child's author (they likely share relays with the parent)
     try {
       const outboundRelays = await this.relayDiscovery.getCombinedRelays([knownAuthorPubkey], true);
-      const standardRelays = this.transport.getReadRelays();
-      const newRelays = outboundRelays.filter(r => !standardRelays.includes(r));
-
-      // Pre-connect to new outbound relays
-      if (newRelays.length > 0) {
-        await Promise.allSettled(newRelays.map(r => this.transport.connectToRelay(r, 5000)));
-      }
-
       const events = await this.transport.fetch(outboundRelays, [filter], 8000, true);
       if (events[0]) {
         diagLog('relays', 'ThreadOrchestrator: outbound fallback found parent note', {
