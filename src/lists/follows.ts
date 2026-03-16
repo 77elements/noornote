@@ -80,6 +80,7 @@ export interface FetchFromRelaysResult {
   items: FollowItem[];
   relayContentWasEmpty: boolean;
   decryptionFailed?: boolean;
+  relayTimestamp: number;
 }
 
 /**
@@ -157,6 +158,7 @@ interface SyncFromRelaysResult {
   diff: SyncDiff;
   relayItems: FollowItem[];
   relayContentWasEmpty: boolean;
+  relayTimestamp: number;
 }
 
 /**
@@ -445,7 +447,7 @@ export async function getFileFollows(): Promise<FollowItem[]> {
 export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   const pubkey = getCurrentUserPubkey();
   if (!pubkey) {
-    return { items: [], relayContentWasEmpty: true };
+    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 
   try {
@@ -535,14 +537,18 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     });
     logger.info('follows.ts', `Fetched from relays: ${deduped.length} items`);
 
+    // Compute relay timestamp from the event(s) created_at
+    const eventTimestamp = Math.max(kind3Event?.created_at || 0, kind30000Events.length > 0 ? (kind30000Events.reduce<typeof kind30000Events[0] | undefined>((latest, ev) => (!latest || ev.created_at > latest.created_at ? ev : latest), undefined)?.created_at || 0) : 0);
+
     return {
       items: deduped,
       relayContentWasEmpty: items.length === 0,
-      decryptionFailed
+      decryptionFailed,
+      relayTimestamp: eventTimestamp
     };
   } catch (error) {
     logger.error('follows.ts', `Failed to fetch from relays: ${error}`);
-    return { items: [], relayContentWasEmpty: true };
+    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
 
@@ -730,7 +736,8 @@ export class FollowStorageAdapter {
       requiresConfirmation,
       diff,
       relayItems,
-      relayContentWasEmpty: preservePrivateItems
+      relayContentWasEmpty: preservePrivateItems,
+      relayTimestamp: fetchResult.relayTimestamp
     };
   }
 
@@ -1374,7 +1381,8 @@ export class FollowListManager {
       requiresConfirmation,
       diff,
       relayItems,
-      relayContentWasEmpty: preservePrivateItems
+      relayContentWasEmpty: preservePrivateItems,
+      relayTimestamp: fetchResult.relayTimestamp
     };
   }
 

@@ -83,6 +83,7 @@ export interface MuteListData {
 export interface FetchFromRelaysResult {
   items: MuteItem[];
   relayContentWasEmpty: boolean;
+  relayTimestamp: number;
 }
 
 /**
@@ -131,6 +132,7 @@ interface SyncFromRelaysResult {
   diff: SyncDiff;
   relayItems: string[];
   relayContentWasEmpty: boolean;
+  relayTimestamp: number;
 }
 
 /**
@@ -580,7 +582,7 @@ export async function getFileMutes(): Promise<MuteItem[]> {
 export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   const pubkey = getCurrentUserPubkey();
   if (!pubkey) {
-    return { items: [], relayContentWasEmpty: true };
+    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 
   try {
@@ -593,12 +595,12 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     if (events.length === 0) {
       logger.info('mutes.ts', 'No mute list found on relays');
-      return { items: [], relayContentWasEmpty: true };
+      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
     const muteEvent = events.sort((a, b) => b.created_at - a.created_at)[0];
     if (!muteEvent) {
-      return { items: [], relayContentWasEmpty: true };
+      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
     const items: MuteItem[] = [];
@@ -642,10 +644,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     });
     logger.info('mutes.ts', `Fetched from relays: ${deduped.length} items`);
 
-    return { items: deduped, relayContentWasEmpty: items.length === 0 };
+    return { items: deduped, relayContentWasEmpty: items.length === 0, relayTimestamp: timestamp };
   } catch (error) {
     logger.error('mutes.ts', `Failed to fetch from relays: ${error}`);
-    return { items: [], relayContentWasEmpty: true };
+    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
 
@@ -865,7 +867,7 @@ export class MuteStorageAdapter {
     }
   }
 
-  async fetchFromRelays(): Promise<{ items: string[]; relayContentWasEmpty: boolean }> {
+  async fetchFromRelays(): Promise<{ items: string[]; relayContentWasEmpty: boolean; relayTimestamp: number }> {
     try {
       const result = await fetchFromRelays();
       // Encode all items (users AND threads) with prefixes
@@ -877,7 +879,7 @@ export class MuteStorageAdapter {
         encodedItems
       });
 
-      return { items: encodedItems, relayContentWasEmpty: result.relayContentWasEmpty };
+      return { items: encodedItems, relayContentWasEmpty: result.relayContentWasEmpty, relayTimestamp: result.relayTimestamp };
     } catch (error) {
       logger.error('MuteStorageAdapter', `Failed to fetch from relays: ${error}`);
       throw error;
@@ -922,7 +924,8 @@ export class MuteStorageAdapter {
       requiresConfirmation,
       diff,
       relayItems: fetchResult.items,
-      relayContentWasEmpty: fetchResult.relayContentWasEmpty
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
+      relayTimestamp: fetchResult.relayTimestamp
     };
   }
 

@@ -13,22 +13,14 @@
  */
 
 import { EventBus } from './EventBus';
-import { classifySyncAction } from '../lists/storage';
-import { ToastService } from './ToastService';
+import { getListLastModified, setListLastModified, type ListType as StorageListType } from '../lists/storage';
 import { AuthService } from './AuthService';
 import { ConnectivityService } from './ConnectivityService';
 import { PlatformService } from './PlatformService';
 import { SystemLogger } from '../components/system/SystemLogger';
-import { UserProfileService } from './UserProfileService';
-import { NoteService } from './NoteService';
-import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
 import { isEasyMode } from '../helpers/ListSyncMode';
-import { extractDisplayName } from '../helpers/extractDisplayName';
-import { renderUserMention } from '../helpers/UserMentionHelper';
-import { escapeHtml } from '../helpers/escapeHtml';
 import { diagLog } from './DiagnosticLogger';
 
-// Import list functions and adapters
 import {
   saveToFile as saveFollowsToFile,
   publishToRelays as publishFollowsToRelays,
@@ -41,7 +33,6 @@ import {
   publishBookmarksToRelays,
   BookmarkStorageAdapter,
   applyRelayFetchResult as applyBookmarkRelayResult,
-  addNewBookmarksToFolders,
   type BookmarkItem
 } from '../lists/bookmarks';
 
@@ -56,18 +47,10 @@ import {
   publishToRelays as publishTribesToRelays,
   TribeStorageAdapter,
   applyRelayFetchResult as applyTribeRelayResult,
-  addNewMembersToFolders,
   type TribeMember
 } from '../lists/tribes';
 
 type ListType = 'follows' | 'bookmarks' | 'mutes' | 'tribes';
-
-const LIST_DISPLAY_NAMES: Record<ListType, string> = {
-  follows: 'Follows',
-  bookmarks: 'Bookmarks',
-  mutes: 'Mutes',
-  tribes: 'Tribes'
-};
 
 export class AutoSyncService {
   private static instance: AutoSyncService;
@@ -76,7 +59,7 @@ export class AutoSyncService {
   private authService: AuthService;
   private connectivityService: ConnectivityService;
   private systemLogger: SystemLogger;
-  private userProfileService: UserProfileService;
+  // UserProfileService removed — no longer needed for Easy Mode (no modal)
 
   // Adapters for each list type
   private followAdapter: FollowStorageAdapter;
@@ -104,7 +87,7 @@ export class AutoSyncService {
     this.authService = AuthService.getInstance();
     this.connectivityService = ConnectivityService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.userProfileService = UserProfileService.getInstance();
+    // UserProfileService no longer needed (no modal in Easy Mode)
 
     // Initialize adapters
     this.followAdapter = new FollowStorageAdapter();
@@ -267,6 +250,9 @@ export class AutoSyncService {
 
     try {
       this.isSyncing.add(listType);
+
+      // 0. Update local timestamp
+      setListLastModified(listType as StorageListType);
 
       // 1. Save to file immediately (Desktop only - Web/Phone has no file system)
       const _p = PlatformService.getInstance();
@@ -458,47 +444,44 @@ export class AutoSyncService {
 
       this.systemLogger.info('ListAutoSync', `${listType}: diff - added: ${result.diff.added.length}, removed: ${result.diff.removed.length}`);
 
-      const movedCount = result.diff.moved?.length || 0;
-      const action = classifySyncAction({
-        added: result.diff.added.length,
-        removed: result.diff.removed.length,
-        moved: movedCount,
-        requiresConfirmation: result.requiresConfirmation,
-        relayContentWasEmpty: result.relayContentWasEmpty,
-        snapshotDiffInfo: result.snapshotDiffInfo
-      });
-
-      diagLog('lists', `syncFromRelays(${listType}): action=${action}`, {
-        added: result.diff.added.length, removed: result.diff.removed.length, moved: movedCount,
-        requiresConfirmation: result.requiresConfirmation, snapshotDiffInfo: result.snapshotDiffInfo
-      });
-
-      if (action === 'skip') {
-        this.systemLogger.info('ListAutoSync', `${listType}: no actionable changes`);
+      // Safety: relay returned empty but we have local items — skip
+      if (result.relayContentWasEmpty && result.diff.removed.length > 0) {
+        diagLog('lists', `syncFromRelays(${listType}): relay empty safety — skipping`);
+        this.systemLogger.warn('ListAutoSync', `${listType}: relay returned empty, skipping`);
         return;
       }
 
-      if (action === 'auto') {
-        this.systemLogger.info('ListAutoSync', `${listType}: auto-applying ${result.diff.added.length} new items`);
-        this.applyMerge(listType, result.relayItems);
-        if (listType === 'bookmarks') {
-          addNewBookmarksToFolders(result.diff.added as BookmarkItem[]);
-          if (result.categories) {
-            const { applyRelayFolderOrder } = await import('../lists/bookmarks');
-            applyRelayFolderOrder(result.categories);
-          }
-        } else if (listType === 'tribes') {
-          addNewMembersToFolders(result.diff.added as TribeMember[]);
-        }
-        if (result.diff.added.length > 0) {
-          ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: ${result.diff.added.length} new synced from relay`, 'success');
-        }
+      // No differences at all
+      if (!result.requiresConfirmation && result.diff.added.length === 0 && result.diff.removed.length === 0 && (result.diff.moved?.length || 0) === 0) {
+        diagLog('lists', `syncFromRelays(${listType}): no changes`);
         return;
       }
 
-      // action === 'modal'
-      this.systemLogger.info('ListAutoSync', `${listType}: showing merge modal`);
-      await this.showSyncConfirmationModal(listType, result);
+      // Timestamp-based sync: newest version wins
+      const localTs = getListLastModified(listType as StorageListType);
+      const relayTs = this.getRelayTimestamp(result);
+
+      diagLog('lists', `syncFromRelays(${listType}): timestamp compare`, { localTs, relayTs, localISO: new Date(localTs * 1000).toISOString(), relayISO: new Date(relayTs * 1000).toISOString() });
+
+      if (relayTs > localTs) {
+        // Relay is newer → apply relay version
+        diagLog('lists', `syncFromRelays(${listType}): relay is newer — applying`);
+        this.systemLogger.info('ListAutoSync', `${listType}: relay is newer, applying`);
+        this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
+        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
+          await this.applyFolderAssignments(listType, result);
+        }
+        if (listType === 'bookmarks' && result.categories) {
+          const { applyRelayFolderOrder } = await import('../lists/bookmarks');
+          applyRelayFolderOrder(result.categories);
+        }
+        setListLastModified(listType as StorageListType, relayTs);
+      } else {
+        // Local is newer or equal → push local to relay
+        diagLog('lists', `syncFromRelays(${listType}): local is newer — pushing`);
+        this.systemLogger.info('ListAutoSync', `${listType}: local is newer, pushing to relay`);
+        await this.syncToRelays(listType);
+      }
     } catch (error) {
       this.systemLogger.error('ListAutoSync', `Periodic sync failed for ${listType}: ${error}`);
     } finally {
@@ -520,6 +503,7 @@ export class AutoSyncService {
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
+            relayTimestamp: result.relayTimestamp,
             categoryAssignments: undefined,
             categories: undefined
           };
@@ -533,6 +517,7 @@ export class AutoSyncService {
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
+            relayTimestamp: result.relayTimestamp,
             snapshotDiffInfo: result.snapshotDiffInfo,
             categoryAssignments: result.categoryAssignments,
             categories: result.categories
@@ -547,6 +532,7 @@ export class AutoSyncService {
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
+            relayTimestamp: result.relayTimestamp,
             categoryAssignments: undefined,
             categories: undefined
           };
@@ -560,6 +546,7 @@ export class AutoSyncService {
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
+            relayTimestamp: result.relayTimestamp,
             categoryAssignments: result.categoryAssignments,
             categories: result.categories
           };
@@ -574,24 +561,6 @@ export class AutoSyncService {
   /**
    * Apply merge strategy (keep browser + add new from relay)
    */
-  private applyMerge(listType: ListType, relayItems: unknown[]): void {
-    diagLog('lists', `applyMerge(${listType})`, { relayItemsCount: relayItems.length });
-    switch (listType) {
-      case 'follows':
-        this.followAdapter.applySyncFromRelays('merge', relayItems as FollowItem[], false);
-        break;
-      case 'bookmarks':
-        this.bookmarkAdapter.applySyncFromRelays('merge', relayItems as BookmarkItem[]);
-        break;
-      case 'mutes':
-        this.muteAdapter.applySyncFromRelays('merge', relayItems as string[]);
-        break;
-      case 'tribes':
-        this.tribeAdapter.applySyncFromRelays('merge', relayItems as TribeMember[]);
-        break;
-    }
-  }
-
   /**
    * Apply overwrite strategy (replace browser with relay)
    */
@@ -635,211 +604,22 @@ export class AutoSyncService {
     }
   }
 
-  /**
-   * Show sync confirmation modal
-   */
-  private async showSyncConfirmationModal(listType: ListType, result: SyncResult): Promise<void> {
-    diagLog('lists', `showSyncConfirmationModal(${listType})`, {
-      added: result.diff.added,
-      removed: result.diff.removed,
-      moved: result.diff.moved,
-      relayItemsCount: result.relayItems.length,
-      relayContentWasEmpty: result.relayContentWasEmpty
-    });
-    // Transform moved items for the modal format
-    interface MovedRaw { browserItem?: { category?: string }; sourceItem?: { category?: string } }
-    const rawMoved = (result.diff.moved || []) as MovedRaw[];
-    const movedForModal = rawMoved.map(m => ({
-      item: m.browserItem as unknown,
-      browserFolder: (m.browserItem?.category) || '(root)',
-      sourceFolder: (m.sourceItem?.category) || '(root)'
-    }));
-
-    const modal = new SyncConfirmationModal({
-      listType: LIST_DISPLAY_NAMES[listType],
-      added: result.diff.added,
-      removed: result.diff.removed,
-      ...(movedForModal.length > 0 && { moved: movedForModal }),
-      ...(result.snapshotDiffInfo?.details && result.snapshotDiffInfo.details.length > 0 && { snapshotDetails: result.snapshotDiffInfo.details }),
-      getDisplayName: async (item: unknown) => this.getDisplayName(listType, item),
-      renderItemHtml: async (item: unknown) => this.renderItemHtml(listType, item),
-      onKeep: async () => {
-        // Keep local state + add new items from relay, then push merged state to relays
-        console.log(`[AutoSync] onKeep(${listType}): applyMerge with ${result.relayItems.length} relay items`);
-        this.applyMerge(listType, result.relayItems);
-        // Only add folder assignments for NEW items — don't destroy existing browser structure
-        if (listType === 'bookmarks') {
-          addNewBookmarksToFolders(result.diff.added as BookmarkItem[]);
-        } else if (listType === 'tribes') {
-          addNewMembersToFolders(result.diff.added as TribeMember[]);
-        }
-        // Push merged state back so the modal doesn't reappear on next periodic sync
-        console.log(`[AutoSync] onKeep(${listType}): publishing to relays...`);
-        await this.syncToRelays(listType);
-        console.log(`[AutoSync] onKeep(${listType}): publish completed`);
-        diagLog('lists', `onKeep(${listType}): operation complete`, { browserStateAfterMerge: this.getBrowserItemCount(listType) });
-        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
-      },
-      onRelay: async () => {
-        diagLog('lists', `onRelay(${listType}): overwriting with relay state`);
-        this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
-        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
-          await this.applyFolderAssignments(listType, result);
-        }
-        await this.syncToRelays(listType);
-        diagLog('lists', `onRelay(${listType}): complete`, { count: this.getBrowserItemCount(listType) });
-        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Relay version applied`, 'success');
-      },
-      onLocal: async () => {
-        diagLog('lists', `onLocal(${listType}): keeping local, pushing to relay`);
-        await this.syncToRelays(listType);
-        diagLog('lists', `onLocal(${listType}): complete`, { count: this.getBrowserItemCount(listType) });
-        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Local version pushed to relays`, 'success');
-      }
-    });
-
-    await modal.show();
-  }
 
   /**
-   * Get display name for an item
+   * Get the newest timestamp from relay items (max addedAt) or from SyncResult.relayTimestamp
    */
-  private async getDisplayName(listType: ListType, item: unknown): Promise<string> {
-    try {
-      switch (listType) {
-        case 'follows': {
-          const followItem = item as FollowItem;
-          const profile = await this.userProfileService.getUserProfile(followItem.pubkey);
-          return extractDisplayName(profile);
-        }
-
-        case 'bookmarks': {
-          const bookmarkItem = item as BookmarkItem;
-
-          // Handle different bookmark types
-          if (bookmarkItem.type === 'r') {
-            // URL bookmark - show the URL directly
-            return bookmarkItem.value || bookmarkItem.id;
-          }
-
-          if (bookmarkItem.type === 't') {
-            // Hashtag bookmark
-            return `#${bookmarkItem.value || bookmarkItem.id}`;
-          }
-
-          // Event or article bookmark - try to fetch note content
-          if (bookmarkItem.type === 'e' || bookmarkItem.type === 'a') {
-            const noteService = NoteService.getInstance();
-            const event = await noteService.getNote(bookmarkItem.id);
-            if (event?.content) {
-              return event.content.slice(0, 60) || bookmarkItem.id.slice(0, 12) + '...';
-            }
-          }
-
-          return bookmarkItem.id.slice(0, 12) + '...';
-        }
-
-        case 'mutes': {
-          const encoded = item as string;
-          // Handle prefixed format: p:pubkey for users, e:eventid for threads
-          if (encoded.startsWith('p:')) {
-            const pubkey = encoded.slice(2);
-            const profile = await this.userProfileService.getUserProfile(pubkey);
-            return extractDisplayName(profile);
-          }
-          if (encoded.startsWith('e:')) {
-            const eventId = encoded.slice(2);
-            const noteService = NoteService.getInstance();
-            const event = await noteService.getNote(eventId);
-            if (event?.content) {
-              return `Thread: ${event.content.slice(0, 40)}...`;
-            }
-            return `Thread: ${eventId.slice(0, 12)}...`;
-          }
-          // Legacy format (no prefix) - treat as pubkey
-          const profile = await this.userProfileService.getUserProfile(encoded);
-          return extractDisplayName(profile);
-        }
-
-        case 'tribes': {
-          const tribeItem = item as TribeMember;
-          const profile = await this.userProfileService.getUserProfile(tribeItem.pubkey);
-          return extractDisplayName(profile);
-        }
-      }
-    } catch {
-      if (typeof item === 'string') {
-        return item.slice(0, 12) + '...';
-      }
-      const pubkey = (item as FollowItem | TribeMember).pubkey || (item as BookmarkItem).id;
-      return pubkey?.slice(0, 12) + '...' || 'Unknown';
+  private getRelayTimestamp(result: SyncResult): number {
+    // Use explicit relayTimestamp if available (set by adapters from event.created_at)
+    if (result.relayTimestamp && result.relayTimestamp > 0) return result.relayTimestamp;
+    // Fallback: extract from items
+    let max = 0;
+    for (const item of result.relayItems) {
+      const obj = item as Record<string, unknown>;
+      const addedAt = typeof obj.addedAt === 'number' ? obj.addedAt : 0;
+      if (addedAt > max) max = addedAt;
     }
+    return max;
   }
-
-  /**
-   * Get current browser item count for diagnostic logging
-   */
-  private getBrowserItemCount(listType: ListType): { count: number } {
-    try {
-      switch (listType) {
-        case 'follows': return { count: this.followAdapter.getBrowserItems().length };
-        case 'bookmarks': return { count: this.bookmarkAdapter.getBrowserItems().length };
-        case 'mutes': return { count: this.muteAdapter.getBrowserItems().length };
-        case 'tribes': return { count: this.tribeAdapter.getBrowserItems().length };
-      }
-    } catch {
-      return { count: -1 };
-    }
-  }
-
-  /**
-   * Render item as HTML (for mentions with avatar)
-   */
-  private async renderItemHtml(listType: ListType, item: unknown): Promise<string> {
-    try {
-      let pubkey: string | null = null;
-
-      switch (listType) {
-        case 'follows':
-          pubkey = (item as FollowItem).pubkey;
-          break;
-        case 'tribes':
-          pubkey = (item as TribeMember).pubkey;
-          break;
-        case 'mutes': {
-          const encoded = item as string;
-          // Handle prefixed format: p:pubkey for users, e:eventid for threads
-          if (encoded.startsWith('p:')) {
-            pubkey = encoded.slice(2);
-          } else if (encoded.startsWith('e:')) {
-            // Threads don't have avatars - return text-only display
-            const eventId = encoded.slice(2);
-            const noteService = NoteService.getInstance();
-            const event = await noteService.getNote(eventId);
-            const content = event?.content?.slice(0, 40) || eventId.slice(0, 12);
-            return `<span class="sync-item-thread">🔇 Thread: ${escapeHtml(content)}...</span>`;
-          } else {
-            // Legacy format (no prefix) - treat as pubkey
-            pubkey = encoded;
-          }
-          break;
-        }
-        case 'bookmarks':
-          return ''; // Bookmarks don't have user mentions
-      }
-
-      if (pubkey) {
-        const profile = await this.userProfileService.getUserProfile(pubkey);
-        const username = extractDisplayName(profile);
-        const avatarUrl = profile?.picture || '';
-        return renderUserMention(pubkey, { username, avatarUrl });
-      }
-      return '';
-    } catch {
-      return '';
-    }
-  }
-
 }
 
 // Internal type for sync results
@@ -847,6 +627,7 @@ interface SyncResult {
   diff: { added: unknown[]; removed: unknown[]; moved?: unknown[] };
   relayItems: unknown[];
   relayContentWasEmpty: boolean;
+  relayTimestamp?: number;
   requiresConfirmation: boolean;
   snapshotDiffInfo?: { isOrderOnly: boolean; hasFolderSetDiff: boolean; details: string[] };
   categoryAssignments: Map<string, string> | undefined;

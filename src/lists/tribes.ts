@@ -251,6 +251,7 @@ interface SyncFromRelaysResult {
   relayContentWasEmpty: boolean;
   categoryAssignments?: Map<string, string>;
   categories?: string[];
+  relayTimestamp: number;
 }
 
 interface SyncFromFileResult {
@@ -336,6 +337,7 @@ export interface FetchFromRelaysResult {
   relayContentWasEmpty: boolean;
   categoryAssignments?: Map<string, string>; // pubkey -> tribeName
   categories?: string[]; // d-tags with "tribes/" prefix
+  relayTimestamp: number;
 }
 
 interface MemberWithProfile extends TribeMember {
@@ -1232,7 +1234,7 @@ function extractFromSetData(data: TribeSetData): {
 export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   const pubkey = getCurrentUserPubkey();
   if (!pubkey) {
-    return { items: [], relayContentWasEmpty: true };
+    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 
   try {
@@ -1265,7 +1267,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     if (events.length === 0 && deletedCoordinates.size === 0) {
       logger.info('Tribes', 'No tribe sets found on relays');
-      return { items: [], relayContentWasEmpty: true };
+      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
     // Deduplicate by d-tag (keep newest per tribe)
@@ -1292,7 +1294,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     if (eventsByDTag.size === 0) {
       logger.info('Tribes', 'No tribe sets after filtering');
-      return { items: [], relayContentWasEmpty: true };
+      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
     // Fetch folder order metadata (NIP-78)
@@ -1393,15 +1395,22 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       categoryAssignmentCount: categoryAssignments.size
     });
 
+    // Compute relay timestamp: MAX created_at across all tribe events
+    let maxEventTimestamp = 0;
+    for (const event of eventsByDTag.values()) {
+      if (event.created_at > maxEventTimestamp) maxEventTimestamp = event.created_at;
+    }
+
     return {
       items: finalItems,
       relayContentWasEmpty: false,
       categoryAssignments,
-      categories
+      categories,
+      relayTimestamp: maxEventTimestamp
     };
   } catch (error) {
     logger.error('Tribes', `Failed to fetch from relays: ${error}`);
-    return { items: [], relayContentWasEmpty: true };
+    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
 
@@ -1629,7 +1638,7 @@ export class TribeManager {
       count: browserItems.length,
       items: browserItems.map(m => ({ pubkey: m.pubkey.slice(0, 8), category: m.category }))
     });
-    const fetchResult = await this.adapter.fetchFromRelays() as { items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[] };
+    const fetchResult = await this.adapter.fetchFromRelays() as { items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[]; relayTimestamp: number };
     diagLog('lists', 'TribeListManager.syncFromRelays: fetchResult', {
       itemCount: fetchResult.items.length,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
@@ -1651,7 +1660,8 @@ export class TribeManager {
       requiresConfirmation,
       diff,
       relayItems: fetchResult.items,
-      relayContentWasEmpty: fetchResult.relayContentWasEmpty
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
+      relayTimestamp: fetchResult.relayTimestamp
     };
     if (fetchResult.categoryAssignments) result.categoryAssignments = fetchResult.categoryAssignments;
     if (fetchResult.categories) result.categories = fetchResult.categories;
@@ -3022,6 +3032,7 @@ export interface TribeAdapterSyncFromRelaysResult {
   relayContentWasEmpty: boolean;
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
+  relayTimestamp: number;
 }
 
 function calculateTribeSyncDiff(browserItems: TribeMember[], sourceItems: TribeMember[]): TribeAdapterSyncDiff {
@@ -3123,7 +3134,7 @@ export class TribeStorageAdapter {
   /**
    * Relay Storage - fetch from relays
    */
-  async fetchFromRelays(): Promise<{ items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[] }> {
+  async fetchFromRelays(): Promise<{ items: TribeMember[]; relayContentWasEmpty: boolean; categoryAssignments?: Map<string, string>; categories?: string[]; relayTimestamp: number }> {
     try {
       return await fetchFromRelays();
     } catch (error) {
@@ -3176,7 +3187,8 @@ export class TribeStorageAdapter {
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       categoryAssignments: fetchResult.categoryAssignments,
-      categories: fetchResult.categories
+      categories: fetchResult.categories,
+      relayTimestamp: fetchResult.relayTimestamp
     };
   }
 

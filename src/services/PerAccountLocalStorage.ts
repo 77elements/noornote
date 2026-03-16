@@ -105,6 +105,12 @@ export const StorageKeys = {
   SUBMITTED_REPORTS: 'noornote_submitted_reports_map',
   FIAT_CURRENCY: 'noornote_fiat_currency_map',
   USER_ZAPS: 'noornote_user_zaps_map',
+
+  // List sync timestamps (Easy Mode timestamp-based sync)
+  LIST_LAST_MODIFIED_FOLLOWS: 'noornote_list_lm_follows_map',
+  LIST_LAST_MODIFIED_BOOKMARKS: 'noornote_list_lm_bookmarks_map',
+  LIST_LAST_MODIFIED_MUTES: 'noornote_list_lm_mutes_map',
+  LIST_LAST_MODIFIED_TRIBES: 'noornote_list_lm_tribes_map',
 } as const;
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
