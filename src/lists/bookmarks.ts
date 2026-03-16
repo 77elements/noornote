@@ -188,6 +188,7 @@ export interface FetchFromRelaysResult {
   relayContentWasEmpty: boolean;
   categoryAssignments?: Map<string, string>;
   categories?: string[];
+  relayTimestamp: number;
 }
 
 // =============================================================================
@@ -1529,7 +1530,7 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 
     if (events.length === 0 && deletedCoordinates.size === 0) {
       logger.info('bookmarks.ts', 'No bookmark sets found on relays');
-      return { items: [], relayContentWasEmpty: true };
+      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
     // Deduplicate by d-tag and filter out deleted ones
@@ -1560,7 +1561,7 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 
     if (eventsByDTag.size === 0) {
       logger.info('bookmarks.ts', 'No bookmark sets after filtering deletions');
-      return { items: [], relayContentWasEmpty: true };
+      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
     // Fetch folder order metadata (NIP-78 kind:30078) - also skip cache
@@ -1670,15 +1671,22 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 
     diagLog('lists', 'fetchBookmarksFromRelays: final deduped result', { count: deduped.length, items: deduped.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })) });
 
+    // Compute relay timestamp: MAX created_at across all bookmark events
+    let maxEventTimestamp = 0;
+    for (const event of eventsByDTag.values()) {
+      if (event.created_at > maxEventTimestamp) maxEventTimestamp = event.created_at;
+    }
+
     return {
       items: deduped,
       relayContentWasEmpty: false,
       categoryAssignments,
-      categories
+      categories,
+      relayTimestamp: maxEventTimestamp
     };
   } catch (error) {
     logger.error('bookmarks.ts', `Failed to fetch from relays: ${error}`);
-    return { items: [], relayContentWasEmpty: true };
+    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
 
@@ -1701,6 +1709,7 @@ interface BookmarkAdapterSyncDiff {
 export interface SnapshotDiffInfo {
   hasDifference: boolean;
   isOrderOnly: boolean;
+  hasFolderSetDiff: boolean;
   details: string[];
 }
 
@@ -1712,6 +1721,7 @@ export interface BookmarkAdapterSyncFromRelaysResult {
   relayContentWasEmpty: boolean;
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
+  relayTimestamp: number;
 }
 
 function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: BookmarkItem[]): BookmarkAdapterSyncDiff {
@@ -1941,9 +1951,10 @@ function getBookmarkSnapshotDiffInfo(
 
   const hasDifference = hasContentDiff || hasOrderDiff;
   const isOrderOnly = !hasContentDiff && hasOrderDiff;
+  const hasFolderSetDiff = onlyInBrowser.length > 0 || newFromRelay.length > 0;
 
-  diagLog('lists', 'getBookmarkSnapshotDiffInfo', { hasDifference, isOrderOnly, hasContentDiff, hasOrderDiff, details });
-  return { hasDifference, isOrderOnly, details };
+  diagLog('lists', 'getBookmarkSnapshotDiffInfo', { hasDifference, isOrderOnly, hasFolderSetDiff, hasContentDiff, hasOrderDiff, details });
+  return { hasDifference, isOrderOnly, hasFolderSetDiff, details };
 }
 
 /**
@@ -2015,7 +2026,8 @@ export class BookmarkStorageAdapter {
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       categoryAssignments: fetchResult.categoryAssignments,
-      categories: fetchResult.categories
+      categories: fetchResult.categories,
+      relayTimestamp: fetchResult.relayTimestamp
     };
   }
 
@@ -2588,6 +2600,7 @@ interface BookmarkSyncFromRelaysResult {
   relayContentWasEmpty: boolean;
   categoryAssignments?: Map<string, string>;
   categories?: string[];
+  relayTimestamp: number;
 }
 
 /**
@@ -2675,7 +2688,8 @@ export class BookmarkManager {
       requiresConfirmation: hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories),
       diff,
       relayItems: fetchResult.items,
-      relayContentWasEmpty: fetchResult.relayContentWasEmpty
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
+      relayTimestamp: fetchResult.relayTimestamp
     };
     if (fetchResult.categoryAssignments) result.categoryAssignments = fetchResult.categoryAssignments;
     if (fetchResult.categories) result.categories = fetchResult.categories;
@@ -3576,20 +3590,20 @@ export class BookmarkManager {
           getDisplayName: (item) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             mergeFromRelays();
-            ToastService.show('Merged bookmarks from relays', 'success');
-            await this.loadBookmarks();
-            this.renderCurrentView(container);
-          },
-          onMerge: async () => {
-            mergeFromRelays();
             await this.syncToRelays();
             ToastService.show('Merged bookmarks and synced to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             fullOverwriteFromRelays();
             ToastService.show('Synced from relays', 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          },
+          onLocal: async () => {
+            await this.syncToRelays();
+            ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           }
@@ -3703,13 +3717,20 @@ export class BookmarkManager {
           getDisplayName: (item: BookmarkItem) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             await mergeFromFile(result.diff.added);
-            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.syncToRelays();
+            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             await fullRestoreFromFile();
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          },
+          onLocal: async () => {
+            await this.syncToRelays();
+            ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           }

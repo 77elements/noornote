@@ -97,3 +97,27 @@ export function mergeStringArrays(browserItems: string[], newItems: string[]): s
 export function now(): number {
   return Math.floor(Date.now() / 1000);
 }
+
+// =============================================================================
+// LIST TIMESTAMPS (Easy Mode timestamp-based sync)
+// =============================================================================
+
+const LIST_TIMESTAMP_KEYS = {
+  follows: StorageKeys.LIST_LAST_MODIFIED_FOLLOWS,
+  bookmarks: StorageKeys.LIST_LAST_MODIFIED_BOOKMARKS,
+  mutes: StorageKeys.LIST_LAST_MODIFIED_MUTES,
+  tribes: StorageKeys.LIST_LAST_MODIFIED_TRIBES,
+} as const;
+
+export type ListType = keyof typeof LIST_TIMESTAMP_KEYS;
+
+export function getListLastModified(listType: ListType): number {
+  return getStorage().get<number>(LIST_TIMESTAMP_KEYS[listType], 0);
+}
+
+export function setListLastModified(listType: ListType, timestamp?: number): void {
+  const ts = timestamp ?? now();
+  getStorage().set(LIST_TIMESTAMP_KEYS[listType], ts);
+  diagLog('lists', `setListLastModified(${listType})`, { timestamp: ts });
+}
+
