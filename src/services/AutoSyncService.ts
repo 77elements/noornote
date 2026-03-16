@@ -463,15 +463,17 @@ export class AutoSyncService {
       const movedCount = result.diff.moved?.length || 0;
       if (result.diff.added.length === 0 && result.diff.removed.length === 0 && movedCount === 0) {
         if (result.requiresConfirmation) {
-          // Order-only difference: browser is authoritative, push to relay silently
           if (result.snapshotDiffInfo?.isOrderOnly) {
-            diagLog('lists', `syncFromRelays(${listType}): PATH=order-only — auto-pushing browser state to relay`);
-            this.systemLogger.info('ListAutoSync', `${listType}: order differs, syncing browser order to relay`);
-            await this.syncToRelays(listType);
+            diagLog('lists', `syncFromRelays(${listType}): PATH=order-only — applying relay order locally`);
+            this.systemLogger.info('ListAutoSync', `${listType}: order differs, applying relay order locally`);
+            if (listType === 'bookmarks' && result.categories) {
+              const { applyRelayFolderOrder } = await import('../lists/bookmarks');
+              applyRelayFolderOrder(result.categories);
+            }
             return;
           }
-          diagLog('lists', `syncFromRelays(${listType}): PATH=property changes — showing modal`);
-          this.systemLogger.info('ListAutoSync', `${listType}: property changes detected, showing modal`);
+          diagLog('lists', `syncFromRelays(${listType}): PATH=content changes — showing modal`);
+          this.systemLogger.info('ListAutoSync', `${listType}: content changes detected, showing modal`);
           await this.showSyncConfirmationModal(listType, result);
         } else {
           diagLog('lists', `syncFromRelays(${listType}): PATH=no changes at all — skipping`);

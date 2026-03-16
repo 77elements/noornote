@@ -908,6 +908,45 @@ export function getBookmarkFolderService(): BookmarkFolderServiceImpl {
 }
 
 /**
+ * Apply only the folder order from relay categories to browser RootOrder.
+ * Does NOT touch items, folders, or assignments — only reorders existing folders.
+ */
+export function applyRelayFolderOrder(categories: string[]): void {
+  const folderService = getBookmarkFolderService();
+  const existingFolders = folderService.getFolders();
+  const currentRootOrder = folderService.getRootOrder();
+
+  const folderNameToId = new Map<string, string>();
+  for (const f of existingFolders) {
+    folderNameToId.set(f.name, f.id);
+  }
+
+  // Build new order: relay folder order first, then remaining items as-is
+  const newRootOrder: RootOrderItem<'bookmark'>[] = [];
+  const usedIds = new Set<string>();
+
+  // Add folders in relay order
+  for (const cat of categories) {
+    if (!cat) continue;
+    const folderId = folderNameToId.get(cat);
+    if (folderId) {
+      newRootOrder.push({ type: 'folder', id: folderId });
+      usedIds.add(folderId);
+    }
+  }
+
+  // Keep all non-folder items and any folders not in relay in their existing order
+  for (const item of currentRootOrder) {
+    if (!usedIds.has(item.id)) {
+      newRootOrder.push(item);
+    }
+  }
+
+  diagLog('lists', 'applyRelayFolderOrder', { categories, newRootOrder });
+  folderService.saveRootOrder(newRootOrder);
+}
+
+/**
  * Apply relay fetch result to browser storage
  * Creates folders and assignments based on bookmark categories
  */
