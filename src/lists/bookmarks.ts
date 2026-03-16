@@ -1853,12 +1853,12 @@ function getBookmarkSnapshotDiffInfo(
   if (newFromRelay.length > 0) { hasContentDiff = true; details.push(`New folders from relay: ${newFromRelay.join(', ')}`); }
   if (onlyInBrowser.length > 0) { hasContentDiff = true; details.push(`Folders only in browser: ${onlyInBrowser.join(', ')}`); }
 
-  // 2. Folder order (only if same folders)
-  if (newFromRelay.length === 0 && onlyInBrowser.length === 0) {
-    if (a.folderOrder.length !== b.folderOrder.length || a.folderOrder.some((f, i) => f !== b.folderOrder[i])) {
-      hasOrderDiff = true;
-      details.push('Folder order differs');
-    }
+  // 2. Folder order (compare common folders in both)
+  const aCommonOrder = a.folderOrder.filter(f => bFolders.has(f));
+  const bCommonOrder = b.folderOrder.filter(f => aFolders.has(f));
+  if (aCommonOrder.length > 0 && aCommonOrder.some((f, i) => f !== bCommonOrder[i])) {
+    hasOrderDiff = true;
+    details.push('Folder order differs');
   }
 
   // 3. Items per folder
@@ -1872,7 +1872,9 @@ function getBookmarkSnapshotDiffInfo(
     const label = folderName || 'Root';
     if (newItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${newItems.length} new item(s) from relay`); }
     if (removedItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${removedItems.length} item(s) only in browser`); }
-    if (newItems.length === 0 && removedItems.length === 0 && aItems.some((id, i) => id !== bItems[i])) {
+    const commonItems = aItems.filter(id => bSet.has(id));
+    const bCommonItems = bItems.filter(id => aSet.has(id));
+    if (commonItems.length > 1 && commonItems.some((id, i) => id !== bCommonItems[i])) {
       hasOrderDiff = true;
       details.push(`${label}: Item order differs`);
     }

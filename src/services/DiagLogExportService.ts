@@ -2,8 +2,8 @@
  * DiagLogExportService — Export diagnostic logs as ZIP and share/save
  *
  * Collects all log files (root + week/ + archive/), creates a ZIP,
- * then triggers the platform-appropriate share/save mechanism:
- * - Android: navigator.share() → Share dialog (Signal, Email, etc.)
+ * then triggers the platform-appropriate save mechanism:
+ * - Android: Blob download via <a> tag → Downloads folder
  * - Desktop: tauri-plugin-dialog save dialog
  */
 
@@ -20,25 +20,29 @@ const platform = PlatformService.getInstance();
  */
 export async function exportDiagnosticLogs(): Promise<boolean> {
   try {
-    logger.info('DiagLogExport', 'Starting log export...');
+    logger.info('DiagLogExport', 'Collecting logs...');
 
-    // 1. Collect all log files
+    // 1. Flush buffered logs before collecting
+    const { diagLog } = await import('./DiagnosticLogger');
+    diagLog('crashes', 'Log export triggered');
+
+    // 2. Collect all log files
     const files = await collectLogFiles();
     if (Object.keys(files).length === 0) {
       logger.warn('DiagLogExport', 'No log files found');
       return false;
     }
 
-    // 2. Create ZIP
+    // 3. Create ZIP
     const zipData = zipSync(files, { level: 6 });
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const filename = `noornote-logs-${timestamp}.zip`;
 
-    logger.info('DiagLogExport', `Created ZIP: ${filename} (${(zipData.length / 1024).toFixed(1)} KB, ${Object.keys(files).length} files)`);
+    logger.info('DiagLogExport', `ZIP ready — ${(zipData.length / 1024).toFixed(1)} KB, ${Object.keys(files).length} files`);
 
-    // 3. Share or save
+    // 4. Save (platform-specific)
     if (platform.isAndroid) {
-      return await shareViaNavigator(zipData, filename);
+      return saveViaBlobDownload(zipData, filename);
     } else {
       return await saveViaDialog(zipData, filename);
     }
@@ -55,13 +59,11 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
 async function collectLogFiles(): Promise<Record<string, Uint8Array>> {
   const { readDir, readFile, exists } = await import('@tauri-apps/plugin-fs');
 
-  // Get logs directory from DiagnosticLogger
   const logsDir = await getLogsDir();
   if (!logsDir) return {};
 
   const files: Record<string, Uint8Array> = {};
 
-  // Collect from root, week/, archive/
   const subdirs = [
     { path: logsDir, prefix: '' },
     { path: `${logsDir}/week`, prefix: 'week/' },
@@ -90,40 +92,48 @@ async function collectLogFiles(): Promise<Record<string, Uint8Array>> {
 
 /**
  * Get the logs directory path.
+ * Android: {appDataDir}/logs/ (no npub nesting)
+ * Desktop: ~/.noornote/{npub}/logs/
  */
 async function getLogsDir(): Promise<string | null> {
-  const { AuthService } = await import('./AuthService');
-  const user = AuthService.getInstance().getCurrentUser();
-  if (!user?.npub) return null;
-
   if (platform.isAndroid) {
     const { appDataDir } = await import('@tauri-apps/api/path');
     const base = await appDataDir();
     return `${base}logs`;
-  } else {
-    const { homeDir } = await import('@tauri-apps/api/path');
-    const home = await homeDir();
-    return `${home}/.noornote/${user.npub}/logs`;
   }
+
+  const { AuthService } = await import('./AuthService');
+  const user = AuthService.getInstance().getCurrentUser();
+  if (!user?.npub) return null;
+
+  const { homeDir } = await import('@tauri-apps/api/path');
+  const home = await homeDir();
+  return `${home}/.noornote/${user.npub}/logs`;
 }
 
 /**
- * Android: Share via navigator.share() — opens native share dialog.
+ * Android: Trigger download via Blob URL + <a> click.
+ * This works in any WebView — the Android download manager picks it up
+ * and saves it to the Downloads folder.
  */
-async function shareViaNavigator(zipData: Uint8Array, filename: string): Promise<boolean> {
-  if (!navigator.share) {
-    logger.error('DiagLogExport', 'navigator.share not available');
-    return false;
-  }
+function saveViaBlobDownload(zipData: Uint8Array, filename: string): boolean {
+  const blob = new Blob([zipData as BlobPart], { type: 'application/zip' });
+  const url = URL.createObjectURL(blob);
 
-  const file = new File([zipData as BlobPart], filename, { type: 'application/zip' });
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
 
-  await navigator.share({
-    title: 'Noornote Diagnostic Logs',
-    files: [file],
-  });
+  // Cleanup after a short delay to ensure download starts
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 1000);
 
-  logger.info('DiagLogExport', 'Shared via navigator.share');
+  logger.success('DiagLogExport', `Logs exported — ${filename}`);
   return true;
 }
 
@@ -140,11 +150,11 @@ async function saveViaDialog(zipData: Uint8Array, filename: string): Promise<boo
   });
 
   if (!filePath) {
-    logger.info('DiagLogExport', 'Save dialog cancelled');
+    logger.info('DiagLogExport', 'Save cancelled');
     return false;
   }
 
   await writeFile(filePath, zipData);
-  logger.info('DiagLogExport', `Saved to ${filePath}`);
+  logger.success('DiagLogExport', `Logs saved`);
   return true;
 }
