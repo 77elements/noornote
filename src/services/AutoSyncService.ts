@@ -472,9 +472,21 @@ export class AutoSyncService {
             }
             return;
           }
-          diagLog('lists', `syncFromRelays(${listType}): PATH=content changes — showing modal`);
-          this.systemLogger.info('ListAutoSync', `${listType}: content changes detected, showing modal`);
-          await this.showSyncConfirmationModal(listType, result);
+          // Folder set differs (folder only in browser or only on relay) → needs modal
+          if (result.snapshotDiffInfo?.hasFolderSetDiff) {
+            diagLog('lists', `syncFromRelays(${listType}): PATH=folder set differs — showing modal`);
+            this.systemLogger.info('ListAutoSync', `${listType}: folder set differs, showing modal`);
+            await this.showSyncConfirmationModal(listType, result);
+          } else {
+            // No items added/removed/moved, no folder set diff — only properties or order+properties → auto-apply
+            diagLog('lists', `syncFromRelays(${listType}): PATH=property/order changes — auto-applying relay state`);
+            this.systemLogger.info('ListAutoSync', `${listType}: property/order changes, auto-applying`);
+            this.applyMerge(listType, result.relayItems);
+            if (listType === 'bookmarks' && result.categories) {
+              const { applyRelayFolderOrder } = await import('../lists/bookmarks');
+              applyRelayFolderOrder(result.categories);
+            }
+          }
         } else {
           diagLog('lists', `syncFromRelays(${listType}): PATH=no changes at all — skipping`);
         }
@@ -692,31 +704,33 @@ export class AutoSyncService {
         diagLog('lists', `onKeep(${listType}): operation complete`, { browserStateAfterMerge: this.getBrowserItemCount(listType) });
         ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
       },
-      onMerge: async () => {
-        // True merge: combine both local + relay, then push back to relays
-        console.log(`[AutoSync] onMerge(${listType}): applyMerge with ${result.relayItems.length} relay items`);
-        this.applyMerge(listType, result.relayItems);
-        // Apply relay folder structure but preserve browser-only items' assignments
-        if (listType === 'bookmarks') {
-          mergeRelayBookmarkStructurePreservingBrowserOnly(
-            result.relayItems as BookmarkItem[],
-            result.categories,
-            result.diff.removed as BookmarkItem[]
-          );
-        } else if (listType === 'tribes') {
-          mergeRelayFolderStructurePreservingBrowserOnly(
-            result.relayItems as TribeMember[],
-            result.categories,
-            result.diff.removed as TribeMember[]
-          );
+      ...((listType === 'bookmarks' || listType === 'tribes') && {
+        onMerge: async () => {
+          // True merge: combine both local + relay, then push back to relays
+          console.log(`[AutoSync] onMerge(${listType}): applyMerge with ${result.relayItems.length} relay items`);
+          this.applyMerge(listType, result.relayItems);
+          // Apply relay folder structure but preserve browser-only items' assignments
+          if (listType === 'bookmarks') {
+            mergeRelayBookmarkStructurePreservingBrowserOnly(
+              result.relayItems as BookmarkItem[],
+              result.categories,
+              result.diff.removed as BookmarkItem[]
+            );
+          } else if (listType === 'tribes') {
+            mergeRelayFolderStructurePreservingBrowserOnly(
+              result.relayItems as TribeMember[],
+              result.categories,
+              result.diff.removed as TribeMember[]
+            );
+          }
+          // Push merged state back to relays
+          console.log(`[AutoSync] onMerge(${listType}): publishing to relays...`);
+          await this.syncToRelays(listType);
+          console.log(`[AutoSync] onMerge(${listType}): publish completed`);
+          diagLog('lists', `onMerge(${listType}): operation complete`, { browserStateAfterMerge: this.getBrowserItemCount(listType) });
+          ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Merged and synced to relays`, 'success');
         }
-        // Push merged state back to relays
-        console.log(`[AutoSync] onMerge(${listType}): publishing to relays...`);
-        await this.syncToRelays(listType);
-        console.log(`[AutoSync] onMerge(${listType}): publish completed`);
-        diagLog('lists', `onMerge(${listType}): operation complete`, { browserStateAfterMerge: this.getBrowserItemCount(listType) });
-        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Merged and synced to relays`, 'success');
-      },
+      }),
       onDelete: async () => {
         console.log(`[AutoSync] onDelete(${listType}): overwriting with ${result.relayItems.length} relay items`);
         this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
@@ -882,7 +896,7 @@ interface SyncResult {
   relayItems: unknown[];
   relayContentWasEmpty: boolean;
   requiresConfirmation: boolean;
-  snapshotDiffInfo?: { isOrderOnly: boolean; details: string[] };
+  snapshotDiffInfo?: { isOrderOnly: boolean; hasFolderSetDiff: boolean; details: string[] };
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
 }

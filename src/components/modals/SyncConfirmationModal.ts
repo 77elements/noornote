@@ -169,40 +169,20 @@ export class SyncConfirmationModal<T> {
     const { added, removed, moved, listType } = this.options;
     const movedCount = moved?.length || 0;
 
-    // Determine if this is a file sync or relay sync based on listType
     const isFileSync = listType.toLowerCase().includes('file');
     const sourceLabel = isFileSync ? 'file' : 'relay';
-    const cleanListType = listType.replace(/\s*\(File\)\s*/i, '').toLowerCase();
 
-    // Build the question text based on what differs
-    const hasRemoved = removed.length > 0;
-    const hasMoved = movedCount > 0;
     const snapshotDetails = this.options.snapshotDetails || [];
     const hasSnapshotDetails = snapshotDetails.length > 0;
 
-    let questionText = '';
-    if (hasRemoved && hasMoved) {
-      questionText = `What should happen with these differences?`;
-    } else if (hasRemoved) {
-      questionText = `What should happen with the ${removed.length} item${removed.length > 1 ? 's' : ''} only in NoorNote Memory?`;
-    } else if (hasMoved) {
-      questionText = `What should happen with the ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders?`;
-    } else if (hasSnapshotDetails) {
-      questionText = `What should happen with these differences?`;
-    }
+    const sourceUp = sourceLabel.charAt(0).toUpperCase() + sourceLabel.slice(1);
 
     container.innerHTML = `
       <div class="sync-confirmation-modal__content">
-        <div class="sync-confirmation-modal__warning">
-          <p class="sync-confirmation-modal__message">
-            Your ${cleanListType} in NoorNote Memory differs from the ${sourceLabel} version.
-          </p>
-        </div>
-
         ${removed.length > 0 ? `
           <div class="sync-confirmation-modal__section">
-            <h3 class="sync-confirmation-modal__section-title">
-              ❌ Only in NoorNote Memory (${removed.length} item${removed.length > 1 ? 's' : ''})
+            <h2 class="sync-confirmation-modal__section-title">
+              Locally: + ${removed.length} item${removed.length > 1 ? 's' : ''}, not in the ${sourceLabel}s
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedRemovedItems)}
@@ -212,8 +192,8 @@ export class SyncConfirmationModal<T> {
 
         ${movedCount > 0 ? `
           <div class="sync-confirmation-modal__section">
-            <h3 class="sync-confirmation-modal__section-title">
-              📁 Different folder (${movedCount} item${movedCount > 1 ? 's' : ''})
+            <h2 class="sync-confirmation-modal__section-title">
+              ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderMovedItems(this.resolvedMovedItems, sourceLabel)}
@@ -223,8 +203,8 @@ export class SyncConfirmationModal<T> {
 
         ${added.length > 0 ? `
           <div class="sync-confirmation-modal__section">
-            <h3 class="sync-confirmation-modal__section-title">
-              ✅ New from ${sourceLabel} (${added.length} item${added.length > 1 ? 's' : ''})
+            <h2 class="sync-confirmation-modal__section-title">
+              ${sourceUp}s: ${added.length} item${added.length > 1 ? 's' : ''}, not stored locally
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedAddedItems)}
@@ -234,8 +214,8 @@ export class SyncConfirmationModal<T> {
 
         ${hasSnapshotDetails ? `
           <div class="sync-confirmation-modal__section">
-            <h3 class="sync-confirmation-modal__section-title">
-              🔄 Detected differences
+            <h2 class="sync-confirmation-modal__section-title">
+              Other differences
             </h3>
             <div class="sync-confirmation-modal__list">
               ${snapshotDetails.map(d => `<div class="sync-confirmation-modal__item">${this.escapeHtml(d)}</div>`).join('')}
@@ -243,13 +223,9 @@ export class SyncConfirmationModal<T> {
           </div>
         ` : ''}
 
-        <div class="sync-confirmation-modal__question">
-          <p><strong>${questionText}</strong></p>
-        </div>
-
         <div class="sync-confirmation-modal__actions">
           <button type="button" class="btn btn--passive" id="sync-keep-btn">
-            Only add new ones
+            Add from relays
           </button>
           ${this.options.onMerge ? `
           <button type="button" class="btn btn--primary" id="sync-merge-btn">

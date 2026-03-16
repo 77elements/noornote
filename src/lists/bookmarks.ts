@@ -1701,6 +1701,7 @@ interface BookmarkAdapterSyncDiff {
 export interface SnapshotDiffInfo {
   hasDifference: boolean;
   isOrderOnly: boolean;
+  hasFolderSetDiff: boolean;
   details: string[];
 }
 
@@ -1941,9 +1942,10 @@ function getBookmarkSnapshotDiffInfo(
 
   const hasDifference = hasContentDiff || hasOrderDiff;
   const isOrderOnly = !hasContentDiff && hasOrderDiff;
+  const hasFolderSetDiff = onlyInBrowser.length > 0 || newFromRelay.length > 0;
 
-  diagLog('lists', 'getBookmarkSnapshotDiffInfo', { hasDifference, isOrderOnly, hasContentDiff, hasOrderDiff, details });
-  return { hasDifference, isOrderOnly, details };
+  diagLog('lists', 'getBookmarkSnapshotDiffInfo', { hasDifference, isOrderOnly, hasFolderSetDiff, hasContentDiff, hasOrderDiff, details });
+  return { hasDifference, isOrderOnly, hasFolderSetDiff, details };
 }
 
 /**
