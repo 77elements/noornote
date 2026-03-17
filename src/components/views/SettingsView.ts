@@ -175,10 +175,8 @@ export class SettingsView extends View {
         ) : ''}
 
         ${PlatformService.getInstance().isTauri ? `
-        <section class="settings-section diagnostic-export-section">
-          <h2>Diagnostic Logs</h2>
-          <p class="settings-description">Export logs for debugging sync and crash issues.</p>
-          <button class="nn-button nn-button--secondary" id="export-diagnostic-logs-btn">
+        <section class="settings-section diagnostic-export-section" style="text-align: center;">
+          <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
             Export Logs
           </button>
         </section>
