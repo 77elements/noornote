@@ -212,6 +212,16 @@ export class ViewMountingService {
           }
         };
 
+      case 'edit-article':
+        return {
+          requiresParam: true,
+          factory: async (param) => {
+            const { ArticleEditorView } = await import('../components/views/ArticleEditorView');
+            const view = new ArticleEditorView(param!);
+            return { element: view.getElement() };
+          }
+        };
+
       case 'write-video':
         return {
           factory: async () => {
