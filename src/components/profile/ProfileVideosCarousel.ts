@@ -3,11 +3,16 @@
  * Displays a user's video notes (NIP-71, kind:21/22) in a horizontal carousel
  * with video thumbnail previews and titles.
  *
+ * On Android: uses <img> for thumbnails (avoids <video preload="metadata"> which
+ * exhausts the WebView connection pool and blocks timeline/image loading).
+ * On Desktop/Web: uses <video preload="metadata"> for first-frame thumbnails.
+ *
  * @component ProfileVideosCarousel
  * @used-by ProfileView
  */
 
 import { NostrTransport } from '../../services/transport/NostrTransport';
+import { PlatformService } from '../../services/PlatformService';
 import { Router } from '../../services/Router';
 import { VideoNoteProcessor } from '../ui/note-processing/VideoNoteProcessor';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
@@ -26,10 +31,12 @@ export class ProfileVideosCarousel {
   private videos: VideoCardData[] = [];
   private transport: NostrTransport;
   private carousel: ScrollCarouselInstance | null = null;
+  private isAndroid: boolean;
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;
     this.transport = NostrTransport.getInstance();
+    this.isAndroid = PlatformService.getInstance().isAndroid;
     this.element = document.createElement('div');
     this.element.className = 'profile-videos-carousel';
   }
@@ -84,12 +91,11 @@ export class ProfileVideosCarousel {
   private renderCarousel(): void {
     const cards = this.videos.map(video => {
       const eventId = video.event.id || '';
-      const posterAttr = video.thumbnail ? ` poster="${this.escapeHtml(video.thumbnail)}"` : '';
 
       return {
         html: `
           <div class="profile-videos-carousel__card-thumb">
-            <video src="${this.escapeHtml(video.videoUrl)}"${posterAttr} preload="metadata" muted></video>
+            ${this.renderThumbnail(video)}
             <div class="profile-videos-carousel__play-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </div>
@@ -111,6 +117,25 @@ export class ProfileVideosCarousel {
     });
 
     this.element.appendChild(this.carousel.element);
+  }
+
+  /**
+   * Render thumbnail element — platform-dependent:
+   * Android: <img> with thumbnail URL (no <video> to avoid connection pool exhaustion)
+   * Desktop/Web: <video preload="metadata"> for first-frame extraction
+   */
+  private renderThumbnail(video: VideoCardData): string {
+    if (this.isAndroid) {
+      // Android: use <img> if thumbnail available, otherwise CSS placeholder
+      if (video.thumbnail) {
+        return `<img src="${this.escapeHtml(video.thumbnail)}" alt="" loading="lazy" />`;
+      }
+      return `<div class="profile-videos-carousel__placeholder"></div>`;
+    }
+
+    // Desktop/Web: <video> with preload for first-frame thumbnail
+    const posterAttr = video.thumbnail ? ` poster="${this.escapeHtml(video.thumbnail)}"` : '';
+    return `<video src="${this.escapeHtml(video.videoUrl)}"${posterAttr} preload="metadata" muted></video>`;
   }
 
   private escapeHtml(text: string): string {
