@@ -25,6 +25,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { ArticleNotificationService } from '../../services/ArticleNotificationService';
 import { ProfileListsComponent } from '../profile/ProfileListsComponent';
 import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
+import { ProfileVideosCarousel } from '../profile/ProfileVideosCarousel';
 import { FollowerCountService } from '../../services/FollowerCountService';
 import { isProfileRecognitionEnabled } from '../../addons/profile-recognition/index';
 
@@ -85,6 +86,9 @@ export class ProfileView extends View {
 
   // Articles carousel component
   private articlesCarousel: ProfileArticlesCarousel | null = null;
+
+  // Videos carousel component
+  private videosCarousel: ProfileVideosCarousel | null = null;
 
   // Services
   private followerCountService: FollowerCountService;
@@ -573,6 +577,7 @@ export class ProfileView extends View {
       </div>
 
       <div class="profile-articles-mount"></div>
+      <div class="profile-videos-mount"></div>
       <div class="profile-timeline-container"></div>
     `;
 
@@ -589,6 +594,9 @@ export class ProfileView extends View {
 
       // Load articles carousel
       this.loadArticlesCarousel();
+
+      // Load videos carousel
+      this.loadVideosCarousel();
 
       // Setup QR code button handler
       this.setupQRButton();
@@ -1122,6 +1130,18 @@ export class ProfileView extends View {
   }
 
   /**
+   * Load videos carousel (user's video notes)
+   */
+  private async loadVideosCarousel(): Promise<void> {
+    const videosMount = this.container.querySelector('.profile-videos-mount');
+    if (!videosMount) return;
+
+    this.videosCarousel = new ProfileVideosCarousel(this.pubkey);
+    const element = await this.videosCarousel.render();
+    videosMount.appendChild(element);
+  }
+
+  /**
    * Save view state (implements View base class)
    */
   public override saveState(): void {
@@ -1269,6 +1289,9 @@ export class ProfileView extends View {
     }
     if (this.articlesCarousel) {
       this.articlesCarousel.destroy();
+    }
+    if (this.videosCarousel) {
+      this.videosCarousel.destroy();
     }
     this.container.remove();
   }
