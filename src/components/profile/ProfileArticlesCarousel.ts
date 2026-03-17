@@ -96,8 +96,6 @@ export class ProfileArticlesCarousel {
         month: 'short', day: 'numeric', year: 'numeric'
       });
 
-      const excerpt = this.extractExcerpt(article.event.content, 100);
-
       const imageHtml = metadata.image
         ? `<div class="profile-articles-carousel__card-image" style="background-image: url('${this.escapeHtml(metadata.image)}')"></div>`
         : `<div class="profile-articles-carousel__card-image profile-articles-carousel__card-image--placeholder"></div>`;
@@ -112,7 +110,6 @@ export class ProfileArticlesCarousel {
               <span>·</span>
               <span>${formattedDate}</span>
             </div>
-            <p class="profile-articles-carousel__card-excerpt">${this.escapeHtml(excerpt)}</p>
           </div>
         `,
         data: { naddr }
@@ -146,24 +143,6 @@ export class ProfileArticlesCarousel {
 
   private getAuthorDisplayName(): string {
     return this.authorName || 'Anonymous';
-  }
-
-  private extractExcerpt(content: string, maxLength: number): string {
-    let text = content
-      .replace(/^#+\s+/gm, '')
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/\*([^*]+)\*/g, '$1')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
-      .replace(/`[^`]+`/g, '')
-      .replace(/```[\s\S]*?```/g, '')
-      .replace(/\n+/g, ' ')
-      .trim();
-
-    if (text.length > maxLength) {
-      text = text.substring(0, maxLength).trim() + '...';
-    }
-    return text;
   }
 
   private escapeHtml(text: string): string {
