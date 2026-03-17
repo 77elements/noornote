@@ -1,99 +1,20 @@
 /**
  * Profile Articles Carousel
- * Horizontal carousel for displaying user's long-form articles
+ * Card content styles for article cards (structure from nn-scroll-carousel)
  */
 
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
 
 .profile-articles-carousel {
-  margin: $gap 0;
-
-  // Header with title and nav buttons
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: calc($gap * 0.75);
-  }
-
-  // Navigation buttons container
-  &__nav {
-    display: flex;
-    gap: calc($gap / 2);
-  }
-
-  &__nav-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    padding: 0;
-    border: none;
-    border-radius: $radius-base;
-    background: var(--color-4);
-    color: var(--color-1);
-    cursor: pointer;
-    transition: all 0.15s ease;
-
-    &:hover:not(&--disabled) {
-      opacity: 0.9;
-    }
-
-    &--disabled {
-      background: var(--color-1);
-      color: var(--color-4);
-      cursor: not-allowed;
-    }
-
-    svg {
-      width: 14px;
-      height: 14px;
-    }
-  }
-
-  // Viewport (overflow hidden container)
-  &__viewport {
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-behavior: smooth;
-    scrollbar-width: none; // Firefox
-    -ms-overflow-style: none; // IE/Edge
-
-    &::-webkit-scrollbar {
-      display: none; // Chrome/Safari
-    }
-  }
-
-  // Track (flex container for cards)
-  &__track {
-    display: flex;
-    gap: $gap;
-  }
-
-  // Individual article card
-  &__card {
-    flex: 0 0 auto;
+  .nn-scroll-carousel__card {
     width: 280px;
-    background: var(--color-2);
-    border-radius: $radius-lg;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
 
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: $box-shadow;
-    }
-
-    // Responsive widths
     @media (max-width: 600px) {
       width: 220px;
     }
   }
 
-  // Card image
   &__card-image {
     width: 100%;
     height: 120px;
@@ -106,12 +27,10 @@
     }
   }
 
-  // Card content area
   &__card-content {
     padding: calc($gap * 0.75);
   }
 
-  // Card title
   &__card-title {
     margin: 0 0 calc($gap / 2) 0;
     font-weight: 600;
@@ -123,7 +42,6 @@
     overflow: hidden;
   }
 
-  // Card meta (author + date)
   &__card-meta {
     display: flex;
     align-items: center;
@@ -133,26 +51,4 @@
     color: $color-3;
   }
 
-  &__card-author {
-    // Author name
-  }
-
-  &__card-separator {
-    // Dot separator
-  }
-
-  &__card-date {
-    // Date
-  }
-
-  // Card excerpt
-  &__card-excerpt {
-    margin: 0;
-    color: $color-3;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
 }

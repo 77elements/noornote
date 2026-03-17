@@ -23,6 +23,7 @@ import { FollowStorageAdapter } from '../../lists/follows';
 import { UserProfileService } from '../../services/UserProfileService';
 import { ProfileRecognitionOrchestrator } from './ProfileRecognitionOrchestrator';
 import { AuthService } from '../../services/AuthService';
+import { PlatformService } from '../../services/PlatformService';
 
 const FILE_SAVE_DEBOUNCE = 500; // 500ms
 const RELAY_SAVE_DEBOUNCE = 5000; // 5s
@@ -82,20 +83,22 @@ export class ProfileRecognitionService {
       return;
     }
 
-    // localStorage empty - try loading from file
-    try {
-      await this.fileStorage.initialize();
-      const fileData = await this.fileStorage.read();
+    // localStorage empty - try loading from file (desktop only)
+    if (PlatformService.getInstance().isTauri) {
+      try {
+        await this.fileStorage.initialize();
+        const fileData = await this.fileStorage.read();
 
-      if (Object.keys(fileData.encounters).length > 0) {
-        this.systemLogger.info('ProfileRecognitionService', `Loaded ${Object.keys(fileData.encounters).length} encounters from file`);
-        this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, fileData.encounters);
-        this.initialized = true;
-        this.setupEventListeners();
-        return;
+        if (Object.keys(fileData.encounters).length > 0) {
+          this.systemLogger.info('ProfileRecognitionService', `Loaded ${Object.keys(fileData.encounters).length} encounters from file`);
+          this.storage.set(StorageKeys.PROFILE_ENCOUNTERS, fileData.encounters);
+          this.initialized = true;
+          this.setupEventListeners();
+          return;
+        }
+      } catch (error) {
+        this.systemLogger.error('ProfileRecognitionService', `Failed to load from file: ${error}`);
       }
-    } catch (error) {
-      this.systemLogger.error('ProfileRecognitionService', `Failed to load from file: ${error}`);
     }
 
     // File also empty - try loading from relays
@@ -325,9 +328,10 @@ export class ProfileRecognitionService {
   }
 
   /**
-   * Save encounters to Tauri file
+   * Save encounters to Tauri file (desktop only)
    */
   private async saveToFile(): Promise<void> {
+    if (!PlatformService.getInstance().isTauri) return;
     try {
       await this.fileStorage.initialize();
       const encounters = this.getEncountersFromStorage();
