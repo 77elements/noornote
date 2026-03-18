@@ -16,6 +16,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { SystemLogger } from '../components/system/SystemLogger';
+import { diagLog } from '../services/DiagnosticLogger';
 import { EventBus } from '../services/EventBus';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';
@@ -1366,6 +1367,7 @@ export async function publishBookmarksToRelays(): Promise<void> {
   if (getWriteRelays().length === 0) throw new Error('No write relays available');
 
   const setData = buildSetDataFromLocalStorage();
+  diagLog('lists', 'publishBookmarksToRelays: full setData', { setOrder: setData.metadata.setOrder, setCount: setData.sets.length });
   console.debug('[DIAG:bookmarks] publishBookmarksToRelays: full setData:', JSON.stringify({ setOrder: setData.metadata.setOrder, sets: setData.sets.map(s => ({ d: s.d, publicTags: s.publicTags, privateTags: s.privateTags })) }));
   const localCategories = new Set(setData.sets.map(s => s.d));
   const relayResult = await fetchBookmarksFromRelays(pubkey);

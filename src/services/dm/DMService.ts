@@ -21,6 +21,7 @@ import { RelayConfig } from '../RelayConfig';
 import { DMStore, type DMMessage, type DMConversation } from './DMStore';
 import { EventBus } from '../EventBus';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { diagLog } from '../DiagnosticLogger';
 import { FollowCheckService } from '../FollowCheckService';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { generateSecretKey, getPublicKey, calculateEventHash } from '../../services/NostrToolsAdapter';
@@ -113,6 +114,7 @@ export class DMService {
 
       // Bunker URL login cannot do NIP-44 — DMs not available
       if (this.authService.isBunkerAuth()) {
+        diagLog('dms', 'DM service skipped — bunker auth cannot do NIP-44');
         this.eventBus.emit('dm:unsupported');
         return;
       }
@@ -133,11 +135,13 @@ export class DMService {
       this.userPubkey = currentUser.pubkey;
 
       this.systemLogger.info('DMService', `Starting DM service for ${currentUser.npub.slice(0, 12)}...`);
+      diagLog('dms', 'DM service starting', { npub: currentUser.npub.slice(0, 12) });
 
       // Fetch historical messages first (don't block on errors)
       try {
         await this.fetchHistoricalMessages();
       } catch (fetchError) {
+        diagLog('dms', 'Historical fetch failed', { error: String(fetchError) });
         this.systemLogger.warn('DMService', 'Error fetching historical messages:', fetchError);
       }
 
@@ -145,12 +149,14 @@ export class DMService {
       try {
         await this.startSubscription();
       } catch (subError) {
+        diagLog('dms', 'Subscription start failed', { error: String(subError) });
         this.systemLogger.warn('DMService', 'Error starting subscription:', subError);
       }
 
       // Start periodic refresh timer (browser WebSocket connections go stale)
       this.startRefreshTimer();
 
+      diagLog('dms', 'DM service started');
       this.systemLogger.info('DMService', 'DM service started');
     } catch (error) {
       this.systemLogger.error('DMService', 'Failed to start DM service:', error);
@@ -171,6 +177,7 @@ export class DMService {
 
     this.userPubkey = null;
     this.activeInboxRelays = [];
+    diagLog('dms', 'DM service stopped');
     this.systemLogger.info('DMService', 'DM service stopped');
   }
 
@@ -186,6 +193,7 @@ export class DMService {
                             currentRelays.every((url, i) => url === this.activeInboxRelays[i]);
     if (relaysUnchanged) return;
 
+    diagLog('dms', 'Inbox relays changed, refreshing subscription', { old: this.activeInboxRelays.length, new: currentRelays.length });
     this.systemLogger.info('DMService', 'Inbox relays changed, refreshing DM subscription');
     this.refreshSubscriptions();
   }
@@ -199,6 +207,7 @@ export class DMService {
 
     this.isRefreshing = true;
     try {
+      diagLog('dms', 'Refreshing DM subscription');
       this.systemLogger.info('DMService', '🔄 Refreshing DM subscription...');
 
       // 1. Close existing subscription
@@ -257,10 +266,12 @@ export class DMService {
       }
 
       if (nip17Events.length > 0 || legacyEvents.length > 0) {
+        diagLog('dms', 'Catch-up complete', { nip17: nip17Events.length, legacy: legacyEvents.length });
         this.systemLogger.info('DMService', `Caught up: ${nip17Events.length} NIP-17, ${legacyEvents.length} legacy events`);
         this.eventBus.emit('dm:badge-update');
       }
     } catch (error) {
+      diagLog('dms', 'Catch-up fetch failed', { error: String(error) });
       this.systemLogger.error('DMService', 'Failed to fetch missed messages:', error);
     }
   }
@@ -315,8 +326,10 @@ export class DMService {
         limit: 500
       };
 
+      diagLog('dms', 'Fetching NIP-17 DMs', { relayCount: inboxRelays.length, relays: inboxRelays.slice(0, 3) });
       this.systemLogger.info('DMService', `Fetching NIP-17 DMs from ${inboxRelays.length} inbox relays: ${inboxRelays.slice(0, 3).join(', ')}${inboxRelays.length > 3 ? '...' : ''}`);
       const nip17Events = await this.transport.fetch(inboxRelays, [nip17Filter], 15000);
+      diagLog('dms', 'NIP-17 fetch complete', { count: nip17Events.length });
       this.systemLogger.info('DMService', `Fetched ${nip17Events.length} NIP-17 events`);
 
       // Legacy NIP-04 uses READ relays (they're on normal relays, not specialized inbox)
@@ -337,8 +350,10 @@ export class DMService {
         }
       ];
 
+      diagLog('dms', 'Fetching legacy NIP-04 DMs', { relayCount: readRelays.length });
       this.systemLogger.info('DMService', `Fetching legacy NIP-04 DMs from ${readRelays.length} read relays: ${readRelays.slice(0, 3).join(', ')}${readRelays.length > 3 ? '...' : ''}`);
       const legacyEvents = await this.transport.fetch(readRelays, legacyFilters, 15000);
+      diagLog('dms', 'Legacy NIP-04 fetch complete', { count: legacyEvents.length });
       this.systemLogger.info('DMService', `Fetched ${legacyEvents.length} legacy DM events`);
 
       // Set total for progress tracking
@@ -426,6 +441,7 @@ export class DMService {
       }
     );
 
+    diagLog('dms', 'Live subscription active', { relayCount: relays.length, relays: relays.slice(0, 3) });
     this.systemLogger.info('DMService', `Live subscription active on ${relays.length} relays`);
   }
 
@@ -520,6 +536,7 @@ export class DMService {
         decryptedContent = await this.authService.nip04Decrypt(event.content, decryptPubkey);
       } catch (decryptError) {
         // Decryption failed - could be corrupted or not meant for us
+        diagLog('dms', 'Legacy DM decrypt failed', { eventId: eventId.slice(0, 8) });
         // Only log during live subscription, not during batch fetch
         if (!this.isFetchingHistorical) {
           this.systemLogger.warn('DMService', `Failed to decrypt legacy DM ${eventId.slice(0, 8)}`);
@@ -578,8 +595,7 @@ export class DMService {
 
       // Verify seal is kind:13
       if (seal.kind !== KIND_SEAL) {
-        // Expected for non-NIP-17 events - console only
-        console.debug('[DMService] Expected seal (kind:13), got kind:', seal.kind);
+        diagLog('dms', 'Unexpected seal kind', { expected: KIND_SEAL, got: seal.kind });
         return null;
       }
 
@@ -600,14 +616,14 @@ export class DMService {
 
       // Anti-spoofing: verify rumor.pubkey === seal.pubkey
       if (rumor.pubkey !== seal.pubkey) {
+        diagLog('dms', 'Spoofing detected: rumor.pubkey !== seal.pubkey', { rumor: rumor.pubkey.slice(0, 8), seal: seal.pubkey.slice(0, 8) });
         this.systemLogger.warn('DMService', 'Spoofing detected: rumor.pubkey !== seal.pubkey');
         return null;
       }
 
       return rumor;
     } catch (error) {
-      // Silent fail for console only - decryption errors are expected for non-owned messages
-      console.debug('[DMService] Failed to unwrap gift wrap:', error);
+      diagLog('dms', 'Gift wrap unwrap failed', { error: error instanceof Error ? error.message : String(error) });
       return null;
     }
   }
@@ -623,6 +639,7 @@ export class DMService {
     }
 
     try {
+      diagLog('dms', 'Sending DM', { to: recipientPubkey.slice(0, 8) });
       this.systemLogger.info('DMService', `Sending DM to ${recipientPubkey.slice(0, 8)}...`);
 
       // Step 1: Create rumor (kind:14, UNSIGNED but with calculated id)
@@ -662,6 +679,7 @@ export class DMService {
       // Step 4: Publish to recipient's relays
       await this.transport.publish(recipientRelays, recipientWrap);
 
+      diagLog('dms', 'DM published to recipient', { relayCount: recipientRelays.length });
       this.systemLogger.info('DMService', `Sent to recipient on ${recipientRelays.length} relays`);
 
       // Step 5: Create and publish self-copy
@@ -696,6 +714,7 @@ export class DMService {
 
       return true;
     } catch (error) {
+      diagLog('dms', 'Send message failed', { to: recipientPubkey.slice(0, 8), error: String(error) });
       this.systemLogger.error('DMService', 'Failed to send message:', error);
       return false;
     }
@@ -760,6 +779,7 @@ export class DMService {
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : '';
+      diagLog('dms', 'Gift wrap creation failed', { error: errorMsg });
       this.systemLogger.error('DMService', `Failed to create gift wrap: ${errorMsg}`);
       console.error('[DMService] Gift wrap error:', error, errorStack);
       return null;

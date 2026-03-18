@@ -22,6 +22,7 @@ import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
+import { diagLog } from '../services/DiagnosticLogger';
 import { EventBus } from '../services/EventBus';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';
@@ -552,6 +553,7 @@ export async function publishToRelays(): Promise<void> {
   // Separate public and private
   const publicItems = items.filter(item => !item.isPrivate);
   const privateItems = items.filter(item => item.isPrivate === true);
+  diagLog('lists', 'follows publishToRelays', { totalItems: items.length, publicCount: publicItems.length, privateCount: privateItems.length });
   console.debug('[DIAG:follows] publishToRelays:', {
     totalItems: items.length,
     publicCount: publicItems.length,

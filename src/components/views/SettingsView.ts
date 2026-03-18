@@ -173,6 +173,14 @@ export class SettingsView extends View {
           'Configure NDK cache sizes and clear cache data.',
           false
         ) : ''}
+
+        ${PlatformService.getInstance().isTauri ? `
+        <section class="settings-section diagnostic-export-section" style="text-align: center;">
+          <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
+            Export Logs
+          </button>
+        </section>
+        ` : ''}
       </div>
     `;
 
@@ -196,6 +204,29 @@ export class SettingsView extends View {
     }
     this.marketplaceSettingsSection.mount(this.container);
     this.hashtagSubscriptionsSettings.mount(this.container);
+
+    // Diagnostic logs export button
+    this.container.querySelector('#export-diagnostic-logs-btn')?.addEventListener('click', async (e) => {
+      const btn = e.target as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = 'Exporting...';
+      try {
+        const { exportDiagnosticLogs } = await import('../../services/DiagLogExportService');
+        const success = await exportDiagnosticLogs();
+        const { ToastService } = await import('../../services/ToastService');
+        if (success) {
+          ToastService.show('Logs exported', 'success');
+        } else {
+          ToastService.show('No log files found', 'error');
+        }
+      } catch (error) {
+        const { ErrorService } = await import('../../services/ErrorService');
+        ErrorService.handle(error, 'SettingsView.exportLogs');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Export Logs';
+      }
+    });
 
     // Initialize and mount sync status badge
     const badgeContainer = this.container.querySelector('#sync-status-badge-container');

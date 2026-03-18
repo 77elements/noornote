@@ -13,6 +13,7 @@
 import { ToastService } from './ToastService';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { CrashLogger } from './CrashLogger';
+import { diagLog } from './DiagnosticLogger';
 
 export class ErrorService {
   private static instance: ErrorService;
@@ -80,8 +81,17 @@ export class ErrorService {
     // 2. Log to console (always, for debugging)
     console.error(`[${context}]`, err);
 
-    // 3. Log critical errors to file for crash debugging
-    if (critical || this.isCriticalError(err)) {
+    // 3. Log to DiagnosticLogger (all errors -> crashes.jsonl)
+    const isCritical = critical || this.isCriticalError(err);
+    diagLog('crashes', `${isCritical ? 'CRITICAL' : 'Error'}: [${context}] ${err.message}`, {
+      context,
+      error: err.message,
+      stack: err.stack,
+      critical: isCritical
+    });
+
+    // 4. Also route critical errors through CrashLogger (adds SystemLogger context)
+    if (isCritical) {
       void CrashLogger.logCriticalError(context, err);
     }
 

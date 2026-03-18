@@ -25,6 +25,7 @@ import {
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
+import { diagLog } from '../services/DiagnosticLogger';
 import { EventBus } from '../services/EventBus';
 import { DeletionService } from '../services/DeletionService';
 import { AuthService } from '../services/AuthService';
@@ -1410,6 +1411,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 export async function publishToRelays(): Promise<void> {
   const user = requireAuth();
   const setData = buildSetDataFromBrowser();
+  diagLog('lists', 'tribes publishToRelays', { setCount: setData.sets.length });
 
   // Get local tribes (with "tribes/" prefix for comparison)
   const localTribes = new Set(

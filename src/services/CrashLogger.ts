@@ -12,6 +12,7 @@
 import { error as tauriError, info as tauriInfo, attachConsole } from '@tauri-apps/plugin-log';
 import { SystemLogger, type LogEntry } from '../components/system/SystemLogger';
 import { PlatformService } from './PlatformService';
+import { diagLog } from './DiagnosticLogger';
 
 class CrashLoggerService {
   private static instance: CrashLoggerService;
@@ -46,6 +47,7 @@ class CrashLoggerService {
       this.setupGlobalErrorHandlers();
 
       this.initialized = true;
+      diagLog('crashes', 'CrashLogger initialized');
       await tauriInfo('[CrashLogger] Initialized - crash logs will be saved to OS log directory');
     } catch (err) {
       // Silently fail if not in Tauri environment (e.g., during testing)
@@ -80,6 +82,13 @@ class CrashLoggerService {
       const timestamp = new Date().toISOString();
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
+
+      diagLog('crashes', `${type}: ${errorMessage}`, {
+        type,
+        error: errorMessage,
+        stack: errorStack,
+        extra
+      });
 
       // Build crash report
       const crashReport = [

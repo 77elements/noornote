@@ -24,6 +24,7 @@ import {
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
+import { diagLog } from '../services/DiagnosticLogger';
 import { EventBus } from '../services/EventBus';
 // UI component imports
 import { View } from '../components/views/View';
@@ -653,6 +654,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 export async function publishToRelays(): Promise<void> {
   const user = requireAuth();
   const items = getMuteItems();
+  diagLog('lists', 'mutes publishToRelays', { totalItems: items.length });
   console.debug('[DIAG:mutes] publishToRelays:', {
     totalItems: items.length,
     items: items.map(i => ({ type: i.type, id: i.id.slice(0, 8), isPrivate: i.isPrivate }))

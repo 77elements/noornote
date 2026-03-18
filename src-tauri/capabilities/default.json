@@ -20,35 +20,72 @@
       "identifier": "fs:allow-exists",
       "allow": [
         { "path": "$HOME/.noornote" },
-        { "path": "$HOME/.noornote/**/*" }
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA" },
+        { "path": "$APPDATA/**/*" }
       ]
     },
     {
       "identifier": "fs:allow-read-text-file",
       "allow": [
         { "path": "$HOME/.noornote" },
-        { "path": "$HOME/.noornote/**/*" }
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA/**/*" }
       ]
     },
     {
       "identifier": "fs:allow-write-text-file",
       "allow": [
         { "path": "$HOME/.noornote" },
-        { "path": "$HOME/.noornote/**/*" }
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA/**/*" }
       ]
     },
     {
       "identifier": "fs:allow-mkdir",
       "allow": [
         { "path": "$HOME/.noornote" },
-        { "path": "$HOME/.noornote/**/*" }
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA" },
+        { "path": "$APPDATA/**/*" }
       ]
     },
     {
       "identifier": "fs:allow-remove",
       "allow": [
         { "path": "$HOME/.noornote" },
-        { "path": "$HOME/.noornote/**/*" }
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA/**/*" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-open",
+      "allow": [
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA/**/*" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-dir",
+      "allow": [
+        { "path": "$HOME/.noornote" },
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA" },
+        { "path": "$APPDATA/**/*" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-rename",
+      "allow": [
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA/**/*" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [
+        { "path": "$HOME/.noornote/**/*" },
+        { "path": "$APPDATA/**/*" }
       ]
     },
     "http:default",

@@ -42,13 +42,7 @@ pub fn run() {
     }));
   }
 
-  // LogDir path resolution can fail on Android; use Stdout only on mobile.
-  #[cfg(desktop)]
-  let log_targets = vec![
-    Target::new(TargetKind::Stdout),
-    Target::new(TargetKind::LogDir { file_name: None }),
-  ];
-  #[cfg(mobile)]
+  // Stdout only — file logging handled by DiagnosticLogger (JS side)
   let log_targets = vec![Target::new(TargetKind::Stdout)];
 
   let mut builder = tauri::Builder::default()

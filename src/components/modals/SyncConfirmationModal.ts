@@ -6,6 +6,7 @@
 
 import { ModalService } from '../../services/ModalService';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { diagLog } from '../../services/DiagnosticLogger';
 
 /**
  * Moved item with folder assignment change
@@ -67,12 +68,11 @@ export class SyncConfirmationModal<T> {
    * Returns a Promise that resolves when user makes a choice
    */
   public async show(): Promise<void> {
-    console.debug('[DIAG:SyncConfirmationModal] show:', {
+    diagLog('lists', 'SyncConfirmationModal show', {
       listType: this.options.listType,
       addedCount: this.options.added.length,
       removedCount: this.options.removed.length,
-      movedCount: this.options.moved?.length || 0,
-      hasOnMerge: !!this.options.onMerge
+      movedCount: this.options.moved?.length || 0
     });
     // Resolve all display names first
     await this.resolveDisplayNames();
@@ -326,7 +326,7 @@ export class SyncConfirmationModal<T> {
     // Keep button (keep local, ignore relay changes)
     keepBtn.addEventListener('click', async () => {
       this.modalService.hide();
-      console.debug('[DIAG:SyncConfirmationModal] onKeep clicked for listType:', this.options.listType);
+      diagLog('lists', 'SyncConfirmationModal onKeep clicked', { listType: this.options.listType });
       console.log('[SyncModal] onKeep: starting callback...');
       try {
         await this.options.onKeep();
@@ -344,7 +344,7 @@ export class SyncConfirmationModal<T> {
     if (mergeBtn && this.options.onMerge) {
       mergeBtn.addEventListener('click', async () => {
         this.modalService.hide();
-        console.debug('[DIAG:SyncConfirmationModal] onMerge clicked for listType:', this.options.listType);
+        diagLog('lists', 'SyncConfirmationModal onMerge clicked', { listType: this.options.listType });
         console.log('[SyncModal] onMerge: starting callback...');
         try {
           await this.options.onMerge!();
@@ -362,7 +362,7 @@ export class SyncConfirmationModal<T> {
     // Delete button (overwrite with relay)
     deleteBtn.addEventListener('click', async () => {
       this.modalService.hide();
-      console.debug('[DIAG:SyncConfirmationModal] onDelete (Accept changes) clicked for listType:', this.options.listType);
+      diagLog('lists', 'SyncConfirmationModal onDelete clicked', { listType: this.options.listType });
       console.log('[SyncModal] onDelete: starting callback...');
       try {
         await this.options.onDelete();

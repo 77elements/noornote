@@ -40,6 +40,12 @@
   // Settings-specific content padding
   padding: 0;
 
+  &.diagnostic-export-section {
+    display: flex;
+    justify-content: center;
+    padding: $gap;
+  }
+
   // Settings-specific header padding
   .nn-ui-toggle__header {
     padding: $gap;
