@@ -117,11 +117,15 @@ async function getLogsDir(): Promise<string | null> {
  * and saves it to the Downloads folder.
  */
 async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<boolean> {
-  const { writeFile } = await import('@tauri-apps/plugin-fs');
-  const { downloadDir } = await import('@tauri-apps/api/path');
-  const dir = (await downloadDir()).replace(/\/+$/, '');
-  await writeFile(`${dir}/${filename}`, zipData);
-  logger.success('DiagLogExport', `Logs exported — ${filename}`);
+  const { invoke } = await import('@tauri-apps/api/core');
+  // Convert to base64 for passing through Tauri invoke to Kotlin
+  const base64 = btoa(String.fromCharCode(...zipData));
+  await invoke('plugin:media-save|save_to_downloads', {
+    filename,
+    data: base64,
+    mimeType: 'application/zip'
+  });
+  logger.success('DiagLogExport', `Logs exported to Downloads — ${filename}`);
   return true;
 }
 

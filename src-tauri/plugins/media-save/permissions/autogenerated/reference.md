@@ -5,6 +5,7 @@ Default permissions for the media-save plugin
 #### This default permission set includes the following:
 
 - `allow-save-media`
+- `allow-save-to-downloads`
 
 ## Permission Table
 

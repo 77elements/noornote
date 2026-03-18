@@ -115,8 +115,12 @@ class DiagnosticLogger {
 
   // ===== Initialization =====
 
-  async init(npub: string): Promise<void> {
+  async init(npub?: string): Promise<void> {
     if (this.initialized || this.initializing || !platform.isTauri) return;
+
+    // Desktop requires npub for path; Android doesn't
+    if (!platform.isAndroid && !npub) return;
+
     this.initializing = true;
 
     try {
@@ -475,7 +479,7 @@ export function diagLog(area: DiagArea, msg: string, data?: unknown): void {
 }
 
 /** Initialize the DiagnosticLogger (call after login with npub) */
-export async function initDiagnosticLogger(npub: string): Promise<void> {
+export async function initDiagnosticLogger(npub?: string): Promise<void> {
   await DiagnosticLogger.getInstance().init(npub);
 }
 

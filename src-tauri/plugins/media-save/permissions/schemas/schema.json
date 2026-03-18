@@ -319,10 +319,10 @@
           "markdownDescription": "Denies the save_to_downloads command without any pre-configured scope."
         },
         {
-          "description": "Default permissions for the media-save plugin\n#### This default permission set includes:\n\n- `allow-save-media`",
+          "description": "Default permissions for the media-save plugin\n#### This default permission set includes:\n\n- `allow-save-media`\n- `allow-save-to-downloads`",
           "type": "string",
           "const": "default",
-          "markdownDescription": "Default permissions for the media-save plugin\n#### This default permission set includes:\n\n- `allow-save-media`"
+          "markdownDescription": "Default permissions for the media-save plugin\n#### This default permission set includes:\n\n- `allow-save-media`\n- `allow-save-to-downloads`"
         }
       ]
     }

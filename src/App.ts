@@ -105,6 +105,11 @@ export class App {
       console.warn('[App] Auth initialization timed out after 10s — continuing without session');
     }
 
+    // Initialize DiagnosticLogger early (Android: no npub needed, Desktop: after login)
+    if (PlatformService.getInstance().isAndroid) {
+      initDiagnosticLogger();
+    }
+
     const isLoggedIn = this.authService.hasValidSession();
     const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
     this.router.navigate(targetPath);

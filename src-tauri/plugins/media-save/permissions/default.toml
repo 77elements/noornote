@@ -4,4 +4,5 @@
 description = "Default permissions for the media-save plugin"
 permissions = [
   "allow-save-media",
+  "allow-save-to-downloads",
 ]
