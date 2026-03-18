@@ -7,6 +7,7 @@
 
 import { Router } from '../../services/Router';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { diagLog } from '../../services/DiagnosticLogger';
 
 export type LogLevel = 'info' | 'debug' | 'warn' | 'error' | 'success';
 export type LogCategory = 'global' | 'page';
@@ -174,6 +175,9 @@ export class SystemLogger {
    * Deduplicates repeated logs by incrementing count instead of creating new entries
    */
   public log(level: LogLevel, category: string, message: string, data?: any): void {
+    // Mirror to DiagnosticLogger (writes to JSONL on mobile, no-op on web)
+    diagLog('system', `[${level}] ${category}: ${message}`, data);
+
     const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
     const normalizedMessage = this.normalizeMessageForDeduplication(message);
     const logs = logCategory === 'global' ? this.globalLogs : this.pageLogs;

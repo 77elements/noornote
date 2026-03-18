@@ -102,7 +102,7 @@ export class ArticleFeedOrchestrator extends Orchestrator {
         `Fetching articles until ${new Date(this.oldestTimestamp * 1000).toISOString()}`
       );
 
-      const events = await this.transport.fetch(relays, [filter], 8000);
+      const events = await this.transport.fetch(relays, [filter], 8000, false, 'ArticleFeedOrch');
 
       // Deduplicate by addressable identifier (pubkey + d-tag)
       const uniqueArticles = this.deduplicateArticles(events);

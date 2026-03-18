@@ -479,7 +479,7 @@ export class FeedOrchestrator extends Orchestrator {
     isProfileView: boolean,
     skipCache: boolean
   ): Promise<NostrEvent[]> {
-    return await this.transport.fetch(relays, filters, isProfileView ? 15000 : 5000, skipCache);
+    return await this.transport.fetch(relays, filters, isProfileView ? 15000 : 5000, skipCache, 'FeedOrch');
   }
 
   /**
@@ -638,7 +638,7 @@ export class FeedOrchestrator extends Orchestrator {
         limit: 100
       }];
 
-      const events = await this.transport.fetch(relays, filters, 5000, true); // Skip cache for polling
+      const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch'); // Skip cache for polling
       const filteredEvents = await this.processEvents(events, this.pollingIncludeReplies, this.pollingExemptFromMuteFilter);
 
       if (filteredEvents.length > 0) {
@@ -797,7 +797,7 @@ export class FeedOrchestrator extends Orchestrator {
         limit: 100
       }];
 
-      const events = await this.transport.fetch(relays, filters, 5000, true);
+      const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch');
       return await this.processEvents(events, includeReplies, exemptFromMuteFilter);
     } catch (error) {
       this.systemLogger.error('FeedOrchestrator', `pollOnce failed: ${error}`);

@@ -208,7 +208,7 @@ export class NoteService {
     }];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 5000);
+      const events = await this.transport.fetch(relays, filters, 5000, false, 'NoteService');
       return events[0] || null;
     } catch (error) {
       console.warn(`NoteService: Failed to fetch note ${eventId}:`, error);
@@ -228,7 +228,7 @@ export class NoteService {
     }];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 5000);
+      const events = await this.transport.fetch(relays, filters, 5000, false, 'NoteService');
       for (const event of events) {
         if (event.id) {
           result.set(event.id, event);

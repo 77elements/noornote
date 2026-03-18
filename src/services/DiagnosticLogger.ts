@@ -28,7 +28,7 @@ import { AuthService } from './AuthService';
 
 // ===== Types =====
 
-export type DiagArea = 'lists' | 'dms' | 'crashes' | 'relays';
+export type DiagArea = 'lists' | 'dms' | 'crashes' | 'relays' | 'system';
 
 interface DiagLogEntry {
   ts: string;

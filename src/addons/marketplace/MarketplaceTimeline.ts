@@ -115,7 +115,7 @@ export class MarketplaceTimeline {
         kinds: [30402 as number],
         authors: [pubkey],
         limit: 1
-      }], 5000);
+      }], 5000, false, 'MarketplaceTimeline');
 
       if (events.length > 0) {
         dashboardBtn.style.display = '';

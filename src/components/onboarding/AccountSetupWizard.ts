@@ -2070,7 +2070,7 @@ IMPORTANT:
       const transport = NostrTransport.getInstance();
       const relays = RelayConfig.getInstance().getAggregatorRelays();
 
-      const events = await transport.fetch(relays, [{ kinds: [39089 as any], limit: 50 }], 8000);
+      const events = await transport.fetch(relays, [{ kinds: [39089 as any], limit: 50 }], 8000, false, 'AccountSetup');
 
       this.followPacks = events
         .map(event => this.parseFollowPackEvent(event))

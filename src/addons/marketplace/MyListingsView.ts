@@ -77,7 +77,7 @@ export class MyListingsView extends View {
       const events = await transport.fetch(relays, [{
         kinds: [30402 as number],
         authors: [currentUser.pubkey]
-      }], 10000);
+      }], 10000, false, 'MyListings');
 
       // Deduplicate by d-tag (keep newest)
       const deduped = new Map<string, NostrEvent>();

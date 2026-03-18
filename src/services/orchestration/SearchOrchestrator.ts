@@ -136,7 +136,7 @@ export class SearchOrchestrator extends Orchestrator {
     this.systemLogger.info('SearchOrchestrator', `🔍 Searching for: "${query}"${authorInfo} on ${searchRelays.length} relays`);
 
     // Fetch events from search relays
-    const events = await this.transport.fetch(searchRelays, [filter]);
+    const events = await this.transport.fetch(searchRelays, [filter], 5000, false, 'SearchOrch');
 
     this.systemLogger.info('SearchOrchestrator', `✓ Found ${events.length} results`);
 
@@ -188,7 +188,7 @@ export class SearchOrchestrator extends Orchestrator {
     filter.search = searchString;
 
     const searchRelays = this.getSearchRelays();
-    const events = await this.transport.fetch(searchRelays, [filter]);
+    const events = await this.transport.fetch(searchRelays, [filter], 5000, false, 'SearchOrch');
 
     return events;
   }
@@ -215,7 +215,7 @@ export class SearchOrchestrator extends Orchestrator {
     this.systemLogger.info('SearchOrchestrator', `🔍 Searching profiles for: "${query}"`);
 
     try {
-      const events = await this.transport.fetch(searchRelays, [filter], 5000);
+      const events = await this.transport.fetch(searchRelays, [filter], 5000, false, 'SearchOrch');
 
       // Parse profile events
       const profiles: ProfileSearchResult[] = [];

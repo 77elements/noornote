@@ -99,7 +99,7 @@ export class ProfileOrchestrator extends Orchestrator {
     const relays = this.relayConfig.getAggregatorRelays();
 
     try {
-      const events = await this.transport.fetch(relays, filters, 4000);
+      const events = await this.transport.fetch(relays, filters, 4000, false, 'ProfileOrch');
       const event = events[0];
       if (event) {
         return this.parseProfileEvent(pubkey, event);
@@ -119,7 +119,7 @@ export class ProfileOrchestrator extends Orchestrator {
         newRelays: newRelays.slice(0, 5)
       });
 
-      const events = await this.transport.fetch(outboundRelays, filters, 8000, true);
+      const events = await this.transport.fetch(outboundRelays, filters, 8000, true, 'ProfileOrch');
       if (events[0]) {
         diagLog('relays', 'ProfileOrchestrator: outbound fallback found profile', { pubkey: pubkey.slice(0, 8) });
         return this.parseProfileEvent(pubkey, events[0]);
@@ -157,7 +157,7 @@ export class ProfileOrchestrator extends Orchestrator {
     }];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 5000);
+      const events = await this.transport.fetch(relays, filters, 5000, false, 'ProfileOrch');
 
       // Group events by pubkey, keep most recent
       const latestEvents = new Map<string, NostrEvent>();
@@ -202,7 +202,7 @@ export class ProfileOrchestrator extends Orchestrator {
     }];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 8000);
+      const events = await this.transport.fetch(relays, filters, 8000, false, 'ProfileOrch');
 
       if (events.length === 0) {
         return null;

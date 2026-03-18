@@ -92,7 +92,7 @@ export class PollOrchestrator extends Orchestrator {
       limit: 1000 // Fetch up to 1000 responses
     };
 
-    const events = await this.transport.fetch(relays, [filter], 5000);
+    const events = await this.transport.fetch(relays, [filter], 5000, false, 'PollOrch');
     return events;
   }
 

@@ -57,7 +57,7 @@ export class ProfileVideosCarousel {
         kinds: [21, 22],
         authors: [this.pubkey],
         limit: 20
-      }], 8000);
+      }], 8000, false, 'VideosCarousel');
 
       events.sort((a, b) => b.created_at - a.created_at);
 

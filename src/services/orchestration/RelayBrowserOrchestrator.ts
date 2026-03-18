@@ -90,7 +90,7 @@ export class RelayBrowserOrchestrator extends Orchestrator {
         limit: 50
       };
 
-      const events = await this.transport.fetch([this.relayUrl], [filter], 8000, true);
+      const events = await this.transport.fetch([this.relayUrl], [filter], 8000, true, 'RelayBrowserOrch');
 
       // Deduplicate against already-seen events
       const newEvents = events.filter(e => {
@@ -135,7 +135,7 @@ export class RelayBrowserOrchestrator extends Orchestrator {
         limit: this.PAGE_SIZE + 5
       };
 
-      const events = await this.transport.fetch([this.relayUrl], [filter], 8000, true);
+      const events = await this.transport.fetch([this.relayUrl], [filter], 8000, true, 'RelayBrowserOrch');
 
       // Deduplicate
       const unique = events.filter(e => {

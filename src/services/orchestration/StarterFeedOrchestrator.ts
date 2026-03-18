@@ -80,7 +80,7 @@ export class StarterFeedOrchestrator extends Orchestrator {
         limit: 50
       }];
 
-      const events = await this.transport.fetch(relays, filters, 8000);
+      const events = await this.transport.fetch(relays, filters, 8000, false, 'StarterFeedOrch');
 
       // Deduplicate
       const uniqueEvents = Array.from(
@@ -141,7 +141,7 @@ export class StarterFeedOrchestrator extends Orchestrator {
         limit: 50
       }];
 
-      const events = await this.transport.fetch(relays, filters, 8000);
+      const events = await this.transport.fetch(relays, filters, 8000, false, 'StarterFeedOrch');
 
       // Deduplicate
       const uniqueEvents = Array.from(

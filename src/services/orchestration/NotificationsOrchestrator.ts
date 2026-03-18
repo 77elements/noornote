@@ -306,7 +306,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       };
 
       // skipCache: true — bypass NDK Dexie cache to always get fresh relay data
-      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter], 5000, true);
+      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter], 5000, true, 'NotifOrch');
 
       this.systemLogger.info('NotificationsOrchestrator', `✅ Fetched ${ptagNotifications.length} #p notifications`);
 
@@ -320,7 +320,7 @@ export class NotificationsOrchestrator extends Orchestrator {
           limit: 100
         };
 
-        etagNotifications = await this.transport.fetch(relays, [etagFilter], 5000, true);
+        etagNotifications = await this.transport.fetch(relays, [etagFilter], 5000, true, 'NotifOrch');
 
         this.systemLogger.info('NotificationsOrchestrator', `✅ Fetched ${etagNotifications.length} #e notifications`);
       }
@@ -376,7 +376,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       };
 
       // Fetch #p notifications (skipCache for fresh data)
-      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter], 5000, true);
+      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter], 5000, true, 'NotifOrch');
 
       // Fetch #e notifications (skipCache for fresh data)
       const userEventIds = this.getUserEventIds();
@@ -388,7 +388,7 @@ export class NotificationsOrchestrator extends Orchestrator {
           since: since
         };
 
-        etagNotifications = await this.transport.fetch(relays, [etagFilter], 5000, true);
+        etagNotifications = await this.transport.fetch(relays, [etagFilter], 5000, true, 'NotifOrch');
       }
 
       // Process all fetched notifications
@@ -442,7 +442,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       };
 
       // Fetch #p notifications
-      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter]);
+      const ptagNotifications = await this.transport.fetch(relays, [ptagFilter], 5000, false, 'NotifOrch');
 
       // Fetch #e notifications
       const userEventIds = this.getUserEventIds();
@@ -455,7 +455,7 @@ export class NotificationsOrchestrator extends Orchestrator {
           limit: limit
         };
 
-        etagNotifications = await this.transport.fetch(relays, [etagFilter]);
+        etagNotifications = await this.transport.fetch(relays, [etagFilter], 5000, false, 'NotifOrch');
       }
 
       // Process all fetched notifications
@@ -557,7 +557,7 @@ export class NotificationsOrchestrator extends Orchestrator {
         authors: [userPubkey],
         kinds: USER_CONTENT_KINDS,
         limit: 50
-      }]);
+      }], 5000, false, 'NotifOrch');
 
       const eventIds = userEvents.map(e => e.id);
       this.perAccountStorage.set(StorageKeys.USER_EVENT_IDS, eventIds);

@@ -118,7 +118,7 @@ export class ProfileRecognitionOrchestrator {
         authors: [pubkey],
         '#d': [D_TAG],
         limit: 1
-      }], 5000);
+      }], 5000, false, 'ProfileRecogOrch');
 
       if (events.length === 0) {
         // No profile encounters found - cache empty result

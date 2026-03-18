@@ -89,31 +89,31 @@ export class Nip51InspectorManager {
       this.transport.fetch(relays, [{
         authors: [pubkey],
         kinds: [30003]
-      }], 5000),
+      }], 5000, false, 'Nip51Inspector'),
 
       // Tribes: kind:30000
       this.transport.fetch(relays, [{
         authors: [pubkey],
         kinds: [30000]
-      }], 5000),
+      }], 5000, false, 'Nip51Inspector'),
 
       // Mutes: kind:10000
       this.transport.fetch(relays, [{
         authors: [pubkey],
         kinds: [10000]
-      }], 5000),
+      }], 5000, false, 'Nip51Inspector'),
 
       // Deletions: kind:5
       this.transport.fetch(relays, [{
         authors: [pubkey],
         kinds: [5]
-      }], 5000),
+      }], 5000, false, 'Nip51Inspector'),
 
       // Metadata (NIP-78): kind:30078
       this.transport.fetch(relays, [{
         authors: [pubkey],
         kinds: [30078]
-      }], 5000)
+      }], 5000, false, 'Nip51Inspector')
     ]);
 
     // Sort each group by created_at DESC (newest first)

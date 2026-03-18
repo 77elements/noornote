@@ -36,7 +36,7 @@ export async function renderQuotePreview(nostrRef: string): Promise<HTMLElement>
     // Combine both relay sources (read relays first, then nevent hints)
     const allRelays = [...new Set([...readRelays, ...neventRelays])];
 
-    const events = await transport.fetch(allRelays, [{ ids: [neventData.id], limit: 1 }], 5000);
+    const events = await transport.fetch(allRelays, [{ ids: [neventData.id], limit: 1 }], 5000, false, 'renderQuotePreview');
 
     const event = events[0];
     if (!event) {

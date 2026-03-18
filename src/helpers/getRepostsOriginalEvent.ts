@@ -44,7 +44,7 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
       const transport = NostrTransport.getInstance();
       const relays = RelayConfig.getInstance().getReadRelays();
 
-      const events = await transport.fetch(relays, [{ ids: [eTag[1]] }]);
+      const events = await transport.fetch(relays, [{ ids: [eTag[1]] }], 5000, false, 'getRepostsOriginal');
       const originalEvent = events[0];
       if (originalEvent) {
         return originalEvent;

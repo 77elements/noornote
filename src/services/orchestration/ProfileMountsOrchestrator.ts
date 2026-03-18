@@ -128,7 +128,7 @@ export class ProfileMountsOrchestrator {
         authors: [pubkey],
         '#d': [D_TAG],
         limit: 1
-      }], 5000);
+      }], 5000, false, 'ProfileMountsOrch');
 
       if (events.length === 0) {
         // No profile mounts found - cache empty result

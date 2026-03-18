@@ -61,7 +61,7 @@ export class ProfileArticlesCarousel {
         kinds: [30023],
         authors: [this.pubkey],
         limit: 20
-      }], 8000);
+      }], 8000, false, 'ArticlesCarousel');
 
       events.sort((a, b) => {
         const aPublished = parseInt(a.tags.find(t => t[0] === 'published_at')?.[1] || String(a.created_at));

@@ -93,7 +93,7 @@ export class PublicTimelineComponent {
         limit: 30
       }];
 
-      const events = await this.transport.fetch(relays, filters, 8000);
+      const events = await this.transport.fetch(relays, filters, 8000, false, 'PublicTimeline');
       const filtered = this.filterAndSort(events);
 
       if (filtered.length > 0) {
@@ -136,7 +136,7 @@ export class PublicTimelineComponent {
         limit: 30
       }];
 
-      const events = await this.transport.fetch(relays, filters, 8000);
+      const events = await this.transport.fetch(relays, filters, 8000, false, 'PublicTimeline');
       const filtered = this.filterAndSort(events);
       const newEvents = this.deduplicateAgainstExisting(filtered);
 
@@ -245,7 +245,7 @@ export class PublicTimelineComponent {
         limit: 50
       }];
 
-      const events = await this.transport.fetch(relays, filters, 5000);
+      const events = await this.transport.fetch(relays, filters, 5000, false, 'PublicTimeline');
       const filtered = this.filterAndSort(events);
       const newEvents = this.deduplicateAgainstExisting(filtered);
 

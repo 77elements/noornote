@@ -97,7 +97,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     };
 
     try {
-      const events = await this.transport.fetch(baseRelays, [filter], 5000);
+      const events = await this.transport.fetch(baseRelays, [filter], 5000, false, 'OutboundOrch');
       this.systemLogger.info(this.LOG_TAG, `Received ${events.length} relay list events`);
 
       const processedPubkeys = new Set<string>();
