@@ -515,6 +515,18 @@ export class NotificationItem {
     if (!previewElement) return;
 
     try {
+      // Check for addressable event reference (a-tag) first — articles (kind:30023)
+      const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
+      if (aTag?.[1]) {
+        const article = await this.fetchAddressableEvent(aTag[1]);
+        if (article) {
+          const { LongFormOrchestrator } = await import('../../services/orchestration/LongFormOrchestrator');
+          const metadata = LongFormOrchestrator.extractArticleMetadata(article);
+          previewElement.textContent = metadata.title;
+          return;
+        }
+      }
+
       // For reactions/zaps, use the LAST e-tag (NIP-25: direct reference to reacted note)
       // Some clients copy all e-tags from the thread, but the last one is always the direct target
       const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
@@ -548,7 +560,7 @@ export class NotificationItem {
   /**
    * Handle notification click (navigate to note)
    */
-  private handleClick(e: MouseEvent): void {
+  private async handleClick(e: MouseEvent): Promise<void> {
     // Don't navigate if clicking on ISL buttons
     const target = e.target as HTMLElement;
     if (target.closest('.isl, .isl-action')) {
@@ -560,6 +572,22 @@ export class NotificationItem {
 
     // For zaps and reactions, navigate to referenced event
     if (type === 'zap' || type === 'reaction') {
+      // Check for addressable event reference (a-tag) — articles
+      const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
+      if (aTag?.[1]) {
+        const parts = aTag[1].split(':');
+        if (parts.length >= 3) {
+          const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
+          const naddr = encodeNaddr({
+            kind: parseInt(parts[0]!),
+            pubkey: parts[1]!,
+            identifier: parts[2]!,
+            relays: []
+          });
+          router.navigate(`/article/${naddr}`);
+          return;
+        }
+      }
       const noteId = this.getReferencedNoteId();
       if (noteId) {
         router.navigate(`/note/${noteId}`);
@@ -624,6 +652,39 @@ export class NotificationItem {
       return events[0] || null;
     } catch (error) {
       console.error('[NotificationItem] Failed to fetch original note:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Fetch addressable event by a-tag coordinate (e.g. "30023:pubkey:identifier")
+   */
+  private async fetchAddressableEvent(coordinate: string): Promise<NostrEvent | null> {
+    const { NostrTransport } = await import('../../services/transport/NostrTransport');
+    const transport = NostrTransport.getInstance();
+
+    try {
+      const parts = coordinate.split(':');
+      if (parts.length < 3) return null;
+
+      const kind = parseInt(parts[0]!);
+      const pubkey = parts[1]!;
+      const identifier = parts[2]!;
+
+      const readRelays = transport.getReadRelays();
+      const events = await transport.fetch(
+        readRelays,
+        [{
+          kinds: [kind],
+          authors: [pubkey],
+          '#d': [identifier],
+          limit: 1
+        }]
+      );
+
+      return events[0] || null;
+    } catch (error) {
+      console.error('[NotificationItem] Failed to fetch addressable event:', error);
       return null;
     }
   }

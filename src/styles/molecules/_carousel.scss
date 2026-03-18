@@ -101,3 +101,84 @@
     border: 1px solid var(--color-3);
   }
 }
+
+// ========================================
+// Scroll Carousel (horizontal, multiple items)
+// ========================================
+
+.nn-scroll-carousel {
+  margin: $gap 0;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: calc($gap * 0.75);
+  }
+
+  &__nav {
+    display: flex;
+    gap: calc($gap / 2);
+  }
+
+  &__nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: $radius-base;
+    background: var(--color-4);
+    color: var(--color-1);
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover:not(&--disabled) {
+      opacity: 0.9;
+    }
+
+    &--disabled {
+      background: var(--color-1);
+      color: var(--color-4);
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+
+  &__viewport {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &__track {
+    display: flex;
+    gap: $gap;
+  }
+
+  &__card {
+    flex: 0 0 auto;
+    background: var(--color-2);
+    border-radius: $radius-lg;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: $box-shadow;
+    }
+  }
+}

@@ -81,7 +81,7 @@ export class ErrorService {
     // 2. Log to console (always, for debugging)
     console.error(`[${context}]`, err);
 
-    // 3. Log to DiagnosticLogger (all errors -> crashes.jsonl)
+    // 3. Log to DiagnosticLogger (all errors → crashes.jsonl)
     const isCritical = critical || this.isCriticalError(err);
     diagLog('crashes', `${isCritical ? 'CRITICAL' : 'Error'}: [${context}] ${err.message}`, {
       context,
@@ -92,7 +92,7 @@ export class ErrorService {
 
     // 4. Also route critical errors through CrashLogger (adds SystemLogger context)
     if (isCritical) {
-      void CrashLogger.logCriticalError(context, err);
+      CrashLogger.logCriticalError(context, err);
     }
 
     // 4. Show toast to user (if user-facing)

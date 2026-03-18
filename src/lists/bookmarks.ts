@@ -16,7 +16,6 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { SystemLogger } from '../components/system/SystemLogger';
-import { diagLog } from '../services/DiagnosticLogger';
 import { EventBus } from '../services/EventBus';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';
@@ -29,6 +28,7 @@ import { ProfileMountsService } from '../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../services/orchestration/ProfileMountsOrchestrator';
 import { PerAccountLocalStorage, StorageKeys as PerAccountStorageKeys } from '../services/PerAccountLocalStorage';
 import { PlatformService } from '../services/PlatformService';
+import { diagLog } from '../services/DiagnosticLogger';
 
 // Types for folder management (inlined from GenericFolderService)
 export interface Folder {
@@ -188,6 +188,7 @@ export interface FetchFromRelaysResult {
   relayContentWasEmpty: boolean;
   categoryAssignments?: Map<string, string>;
   categories?: string[];
+  relayTimestamp: number;
 }
 
 // =============================================================================
@@ -427,7 +428,7 @@ const VALID_TAG_TYPES = new Set(['e', 'a', 't', 'r']);
  * Convert tags to items (for relay fetch)
  */
 function tagsToItems(tags: string[][], timestamp: number): BookmarkItem[] {
-  console.debug('[DIAG:bookmarks] tagsToItems: input tag count:', tags.length);
+  diagLog('lists', 'tagsToItems: input tag count', { count: tags.length });
   const items: BookmarkItem[] = [];
   for (const tag of tags) {
     const [tagType, tagValue, description] = tag;
@@ -441,7 +442,7 @@ function tagsToItems(tags: string[][], timestamp: number): BookmarkItem[] {
     if (description) item.description = description;
     items.push(item);
   }
-  console.debug('[DIAG:bookmarks] tagsToItems: output item count:', items.length, 'items:', items.map(i => ({ id: i.id, type: i.type })));
+  diagLog('lists', 'tagsToItems: output', { count: items.length, items: items.map(i => ({ id: i.id, type: i.type })) });
   return items;
 }
 
@@ -454,7 +455,7 @@ function tagsToItems(tags: string[][], timestamp: number): BookmarkItem[] {
  */
 export function readBrowserBookmarks(): BookmarkItem[] {
   const items = readList<BookmarkItem>(StorageKeys.BOOKMARKS, []);
-  console.debug('[DIAG:bookmarks] readBrowserBookmarks: count:', items.length, 'IDs:', items.map(i => i.id));
+  diagLog('lists', 'readBrowserBookmarks', { count: items.length, ids: items.map(i => i.id) });
   return items;
 }
 
@@ -462,7 +463,7 @@ export function readBrowserBookmarks(): BookmarkItem[] {
  * Write bookmarks to browser localStorage
  */
 export function writeBrowserBookmarks(items: BookmarkItem[]): void {
-  console.debug('[DIAG:bookmarks] writeBrowserBookmarks: count:', items.length, 'IDs:', items.map(i => i.id));
+  diagLog('lists', 'writeBrowserBookmarks', { count: items.length, ids: items.map(i => i.id) });
   writeList(StorageKeys.BOOKMARKS, items);
   EventBus.getInstance().emit('bookmark:updated');
 }
@@ -670,7 +671,7 @@ class BookmarkFolderServiceImpl {
 
   public getFolders(): BookmarkFolder[] {
     const folders = this.getFoldersFromStorage();
-    console.debug('[DIAG:bookmarks] getFolders:', folders.map(f => ({ id: f.id, name: f.name })));
+    diagLog('lists', 'getFolders', { folders: folders.map(f => ({ id: f.id, name: f.name })) });
     return folders;
   }
 
@@ -735,7 +736,7 @@ class BookmarkFolderServiceImpl {
       .filter(a => a.folderId === folderId)
       .sort((a, b) => a.order - b.order)
       .map(a => a.bookmarkId);
-    console.debug('[DIAG:bookmarks] getBookmarksInFolder:', folderId, 'result:', result);
+    diagLog('lists', 'getBookmarksInFolder', { folderId, result });
     return result;
   }
 
@@ -745,7 +746,7 @@ class BookmarkFolderServiceImpl {
   }
 
   public moveBookmarkToFolder(bookmarkId: string, targetFolderId: string, explicitOrder?: number): void {
-    console.debug('[DIAG:bookmarks] moveBookmarkToFolder: bookmarkId:', bookmarkId, 'targetFolderId:', targetFolderId, 'explicitOrder:', explicitOrder);
+    diagLog('lists', 'moveBookmarkToFolder', { bookmarkId, targetFolderId, explicitOrder });
     const assignments = this.getAssignmentsFromStorage();
 
     // Remove existing assignment
@@ -765,7 +766,7 @@ class BookmarkFolderServiceImpl {
   public ensureBookmarkAssignment(bookmarkId: string, _explicitOrder?: number): void {
     const assignments = this.getAssignmentsFromStorage();
     const existing = assignments.find(a => a.bookmarkId === bookmarkId);
-    console.debug('[DIAG:bookmarks] ensureBookmarkAssignment:', bookmarkId, 'existing:', !!existing);
+    diagLog('lists', 'ensureBookmarkAssignment', { bookmarkId, existing: !!existing });
 
     if (!existing) {
       // Add to root (no folder)
@@ -860,7 +861,7 @@ class BookmarkFolderServiceImpl {
 
     const validAssignments = assignments.filter(a => a.folderId === '' || folderIds.has(a.folderId));
     const removedCount = assignments.length - validAssignments.length;
-    console.debug('[DIAG:bookmarks] cleanupOrphanedAssignments: total assignments:', assignments.length, 'valid:', validAssignments.length, 'removed:', removedCount);
+    diagLog('lists', 'cleanupOrphanedAssignments', { total: assignments.length, valid: validAssignments.length, removed: removedCount });
 
     if (removedCount > 0) {
       this.saveAssignmentsToStorage(validAssignments);
@@ -889,7 +890,7 @@ class BookmarkFolderServiceImpl {
     assignments: FolderAssignment[],
     rootOrder: RootOrderItem<'bookmark'>[]
   ): void {
-    console.debug('[DIAG:bookmarks] restoreAllFolderData: folders:', folders.map(f => ({ id: f.id, name: f.name })), 'assignments count:', assignments.length, 'rootOrder:', rootOrder);
+    diagLog('lists', 'restoreAllFolderData', { folders: folders.map(f => ({ id: f.id, name: f.name })), assignmentCount: assignments.length, rootOrder });
     this.saveFoldersToStorage(folders);
     this.saveAssignmentsToStorage(assignments.map(a => ({
       bookmarkId: a.bookmarkId,
@@ -908,6 +909,45 @@ export function getBookmarkFolderService(): BookmarkFolderServiceImpl {
 }
 
 /**
+ * Apply only the folder order from relay categories to browser RootOrder.
+ * Does NOT touch items, folders, or assignments — only reorders existing folders.
+ */
+export function applyRelayFolderOrder(categories: string[]): void {
+  const folderService = getBookmarkFolderService();
+  const existingFolders = folderService.getFolders();
+  const currentRootOrder = folderService.getRootOrder();
+
+  const folderNameToId = new Map<string, string>();
+  for (const f of existingFolders) {
+    folderNameToId.set(f.name, f.id);
+  }
+
+  // Build new order: relay folder order first, then remaining items as-is
+  const newRootOrder: RootOrderItem<'bookmark'>[] = [];
+  const usedIds = new Set<string>();
+
+  // Add folders in relay order
+  for (const cat of categories) {
+    if (!cat) continue;
+    const folderId = folderNameToId.get(cat);
+    if (folderId) {
+      newRootOrder.push({ type: 'folder', id: folderId });
+      usedIds.add(folderId);
+    }
+  }
+
+  // Keep all non-folder items and any folders not in relay in their existing order
+  for (const item of currentRootOrder) {
+    if (!usedIds.has(item.id)) {
+      newRootOrder.push(item);
+    }
+  }
+
+  diagLog('lists', 'applyRelayFolderOrder', { categories, newRootOrder });
+  folderService.saveRootOrder(newRootOrder);
+}
+
+/**
  * Apply relay fetch result to browser storage
  * Creates folders and assignments based on bookmark categories
  */
@@ -916,7 +956,7 @@ export function applyRelayFetchResult(
   _categoryAssignments: Map<string, string> | undefined,
   categories: string[] | undefined
 ): void {
-  console.debug('[DIAG:bookmarks] applyRelayFetchResult: input items count:', items.length, 'categories:', categories);
+  diagLog('lists', 'applyRelayFetchResult: input', { itemCount: items.length, categories });
   // Build folders from categories (skip empty/root category)
   const newFolders: BookmarkFolder[] = [];
   const folderNameToId = new Map<string, string>();
@@ -965,7 +1005,7 @@ export function applyRelayFetchResult(
     }
   }
 
-  console.debug('[DIAG:bookmarks] applyRelayFetchResult: output newFolders:', newFolders.map(f => ({ id: f.id, name: f.name })), 'newAssignments count:', newAssignments.length, 'newRootOrder:', newRootOrder);
+  diagLog('lists', 'applyRelayFetchResult: output', { newFolders: newFolders.map(f => ({ id: f.id, name: f.name })), newAssignmentCount: newAssignments.length, newRootOrder });
 
   // Apply folder structure only (NOT items - that's done by applySyncFromRelays)
   const storage = PerAccountLocalStorage.getInstance();
@@ -981,14 +1021,14 @@ export function applyRelayFetchResult(
  * Does NOT touch existing browser folder structure — only adds assignments for newly added items.
  */
 export function addNewBookmarksToFolders(newItems: BookmarkItem[]): void {
-  console.debug('[DIAG:bookmarks] addNewBookmarksToFolders: input items:', newItems.map(i => ({ id: i.id, category: i.category })));
+  diagLog('lists', 'addNewBookmarksToFolders: input', { items: newItems.map(i => ({ id: i.id, category: i.category })) });
   if (newItems.length === 0) return;
 
   const storage = PerAccountLocalStorage.getInstance();
   const existingFolders = storage.get<BookmarkFolder[]>(PerAccountStorageKeys.BOOKMARK_FOLDERS, []);
   const existingAssignments = storage.get<BookmarkAssignment[]>(PerAccountStorageKeys.BOOKMARK_FOLDER_ASSIGNMENTS, []);
   const existingRootOrder = storage.get<RootOrderItem<'bookmark'>[]>(PerAccountStorageKeys.BOOKMARK_ROOT_ORDER, []);
-  console.debug('[DIAG:bookmarks] addNewBookmarksToFolders: existing state - folders:', existingFolders.map(f => ({ id: f.id, name: f.name })), 'assignments count:', existingAssignments.length, 'rootOrder:', existingRootOrder);
+  diagLog('lists', 'addNewBookmarksToFolders: existing state', { folders: existingFolders.map(f => ({ id: f.id, name: f.name })), assignmentCount: existingAssignments.length, rootOrder: existingRootOrder });
 
   const folderNameToId = new Map<string, string>();
   for (const f of existingFolders) {
@@ -1027,7 +1067,7 @@ export function addNewBookmarksToFolders(newItems: BookmarkItem[]): void {
     }
   }
 
-  console.debug('[DIAG:bookmarks] addNewBookmarksToFolders: adding - folders:', addedFolders.map(f => ({ id: f.id, name: f.name })), 'assignments:', addedAssignments, 'rootOrderItems:', addedRootOrderItems);
+  diagLog('lists', 'addNewBookmarksToFolders: adding', { folders: addedFolders.map(f => ({ id: f.id, name: f.name })), assignments: addedAssignments, rootOrderItems: addedRootOrderItems });
 
   if (addedFolders.length > 0) {
     storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, [...existingFolders, ...addedFolders]);
@@ -1051,7 +1091,7 @@ export function mergeRelayBookmarkStructurePreservingBrowserOnly(
   categories: string[] | undefined,
   browserOnlyItems: BookmarkItem[]
 ): void {
-  console.debug('[DIAG:bookmarks] mergeRelayBookmarkStructurePreservingBrowserOnly: browser-only items:', browserOnlyItems.map(i => ({ id: i.id, category: i.category })));
+  diagLog('lists', 'mergeRelayBookmarkStructurePreservingBrowserOnly: browser-only items', { items: browserOnlyItems.map(i => ({ id: i.id, category: i.category })) });
   const storage = PerAccountLocalStorage.getInstance();
 
   // Snapshot browser assignments for browser-only items BEFORE overwriting
@@ -1078,7 +1118,7 @@ export function mergeRelayBookmarkStructurePreservingBrowserOnly(
     }
   }
 
-  console.debug('[DIAG:bookmarks] mergeRelayBookmarkStructurePreservingBrowserOnly: snapshot before applyRelayFetchResult - assignments:', existingAssignments.length, 'folders:', existingFolders.map(f => f.name), 'rootOrder:', existingRootOrder.length);
+  diagLog('lists', 'mergeRelayBookmarkStructurePreservingBrowserOnly: snapshot before applyRelayFetchResult', { assignmentCount: existingAssignments.length, folders: existingFolders.map(f => f.name), rootOrderLength: existingRootOrder.length });
 
   // Apply relay folder structure (this overwrites everything)
   applyRelayFetchResult(relayItems, undefined, categories);
@@ -1115,7 +1155,7 @@ export function mergeRelayBookmarkStructurePreservingBrowserOnly(
     extraRootOrder.push({ type: 'bookmark', id: bookmarkId });
   }
 
-  console.debug('[DIAG:bookmarks] mergeRelayBookmarkStructurePreservingBrowserOnly: re-adding after applyRelayFetchResult - extraFolders:', extraFolders.map(f => f.name), 'extraAssignments:', extraAssignments, 'extraRootOrder:', extraRootOrder);
+  diagLog('lists', 'mergeRelayBookmarkStructurePreservingBrowserOnly: re-adding after applyRelayFetchResult', { extraFolders: extraFolders.map(f => f.name), extraAssignments, extraRootOrder });
 
   if (extraFolders.length > 0) {
     storage.set(PerAccountStorageKeys.BOOKMARK_FOLDERS, [...newFolders, ...extraFolders]);
@@ -1253,7 +1293,7 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
   const existingFolders = folderService.getFolders();
   const allAssignments = folderService.getBookmarksInFolder('');
   const allRootOrder = folderService.getRootOrder();
-  console.debug('[DIAG:bookmarks] buildSetDataFromLocalStorage START: items count:', allItems.length, 'folders:', existingFolders.map(f => ({ id: f.id, name: f.name })), 'root assignments:', allAssignments, 'rootOrder:', allRootOrder);
+  diagLog('lists', 'buildSetDataFromLocalStorage START', { itemCount: allItems.length, folders: existingFolders.map(f => ({ id: f.id, name: f.name })), rootAssignments: allAssignments, rootOrder: allRootOrder });
   const itemMap = new Map(allItems.map(item => [item.id, item]));
   const setsMap = new Map<string, BookmarkSet>();
 
@@ -1276,7 +1316,7 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
 
   const processFolder = (folderId: string, set: BookmarkSet): void => {
     const folderBookmarkIds = folderService.getBookmarksInFolder(folderId);
-    console.debug('[DIAG:bookmarks] buildSetDataFromLocalStorage processFolder:', folderId, 'set d-tag:', set.d, 'items found:', folderBookmarkIds);
+    diagLog('lists', 'buildSetDataFromLocalStorage processFolder', { folderId, dTag: set.d, itemsFound: folderBookmarkIds });
     for (const bookmarkId of folderBookmarkIds) {
       const item = itemMap.get(bookmarkId);
       if (item) {
@@ -1295,7 +1335,7 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
   // Handle orphaned items - add to root
   const rootSet = setsMap.get('')!;
   const orphanedItems = allItems.filter(item => !assignedItemIds.has(item.id));
-  console.debug('[DIAG:bookmarks] buildSetDataFromLocalStorage orphaned items:', orphanedItems.map(i => i.id));
+  diagLog('lists', 'buildSetDataFromLocalStorage orphaned items', { ids: orphanedItems.map(i => i.id) });
   for (const item of orphanedItems) {
     addItemToSet(rootSet, item);
     folderService.ensureBookmarkAssignment(item.id);
@@ -1317,7 +1357,7 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
       lastModified: now()
     }
   };
-  console.debug('[DIAG:bookmarks] buildSetDataFromLocalStorage END: setOrder:', setOrder, 'per set:', result.sets.map(s => ({ d: s.d, publicTags: s.publicTags.length, privateTags: s.privateTags.length, publicTagValues: s.publicTags.map(t => [t.type, t.value, t.description]), privateTagValues: s.privateTags.map(t => [t.type, t.value, t.description]) })));
+  diagLog('lists', 'buildSetDataFromLocalStorage END', { setOrder, sets: result.sets.map(s => ({ d: s.d, publicTags: s.publicTags.length, privateTags: s.privateTags.length, publicTagValues: s.publicTags.map(t => [t.type, t.value, t.description]), privateTagValues: s.privateTags.map(t => [t.type, t.value, t.description]) })) });
   return result;
 }
 
@@ -1325,7 +1365,7 @@ function buildSetDataFromLocalStorage(): BookmarkSetData {
  * Encrypt private items for relay publishing
  */
 async function encryptPrivateItems(items: BookmarkItem[], pubkey: string): Promise<string> {
-  console.debug('[DIAG:bookmarks] encryptPrivateItems: items:', items.map(i => ({ type: i.type, value: i.value, description: i.description })));
+  diagLog('lists', 'encryptPrivateItems', { items: items.map(i => ({ type: i.type, value: i.value, description: i.description })) });
   if (items.length === 0) return '';
   const tags = items.map(item =>
     item.description ? [item.type, item.value, item.description] : [item.type, item.value]
@@ -1337,14 +1377,25 @@ async function encryptPrivateItems(items: BookmarkItem[], pubkey: string): Promi
  * Decrypt private items from relay event
  */
 async function decryptPrivateItems(event: NostrEvent, pubkey: string): Promise<BookmarkItem[]> {
-  if (!event.content?.trim()) return [];
+  if (!event.content?.trim()) {
+    diagLog('lists', 'decryptPrivateItems: empty content, skipping');
+    return [];
+  }
 
+  diagLog('lists', 'decryptPrivateItems: attempting decryption', { contentLength: event.content.length });
   const decrypted = await decryptContent(event.content, pubkey);
-  if (!decrypted) return [];
+  if (!decrypted) {
+    diagLog('lists', 'decryptPrivateItems: decryption returned null — private items LOST');
+    return [];
+  }
 
   try {
-    return tagsToItems(JSON.parse(decrypted) as string[][], event.created_at);
+    const tags = JSON.parse(decrypted) as string[][];
+    const items = tagsToItems(tags, event.created_at);
+    diagLog('lists', 'decryptPrivateItems: SUCCESS', { itemCount: items.length, tagCount: tags.length });
+    return items;
   } catch (error) {
+    diagLog('lists', 'decryptPrivateItems: FAILED to parse decrypted content', { error: String(error), rawPreview: decrypted.slice(0, 200) });
     logger.error('bookmarks.ts', `Failed to parse decrypted content: ${error}`);
     return [];
   }
@@ -1367,8 +1418,7 @@ export async function publishBookmarksToRelays(): Promise<void> {
   if (getWriteRelays().length === 0) throw new Error('No write relays available');
 
   const setData = buildSetDataFromLocalStorage();
-  diagLog('lists', 'publishBookmarksToRelays: full setData', { setOrder: setData.metadata.setOrder, setCount: setData.sets.length });
-  console.debug('[DIAG:bookmarks] publishBookmarksToRelays: full setData:', JSON.stringify({ setOrder: setData.metadata.setOrder, sets: setData.sets.map(s => ({ d: s.d, publicTags: s.publicTags, privateTags: s.privateTags })) }));
+  diagLog('lists', 'publishBookmarksToRelays: full setData', { setOrder: setData.metadata.setOrder, sets: setData.sets.map(s => ({ d: s.d, publicTags: s.publicTags, privateTags: s.privateTags })) });
   const localCategories = new Set(setData.sets.map(s => s.d));
   const relayResult = await fetchBookmarksFromRelays(pubkey);
   const deletedCategories = (relayResult.categories || []).filter(cat => !localCategories.has(cat));
@@ -1385,17 +1435,20 @@ export async function publishBookmarksToRelays(): Promise<void> {
   for (const set of setData.sets) {
     if (set.publicTags.length === 0 && set.privateTags.length === 0 && set.d !== '') continue;
 
-    console.debug('[DIAG:bookmarks] publishBookmarksToRelays: publishing set d-tag:', JSON.stringify(set.d), 'public tag count:', set.publicTags.length, 'private tag count:', set.privateTags.length, 'public tags:', set.publicTags.map(t => [t.type, t.value, t.description]));
+    diagLog('lists', 'publishBookmarksToRelays: publishing set', { dTag: set.d, publicTagCount: set.publicTags.length, privateTagCount: set.privateTags.length, publicTags: set.publicTags.map(t => [t.type, t.value, t.description]) });
     const tags: string[][] = [['d', set.d], ['title', set.d]];
     for (const tag of set.publicTags) {
       tags.push(tag.description ? [tag.type, tag.value, tag.description] : [tag.type, tag.value]);
     }
 
-    const content = set.privateTags.length > 0
-      ? await encryptPrivateItems(set.privateTags.map(t => ({
-          id: t.value, type: t.type, value: t.value, isPrivate: true
-        })), pubkey)
-      : '';
+    let content = '';
+    if (set.privateTags.length > 0) {
+      diagLog('lists', 'publishBookmarksToRelays: encrypting private tags', { count: set.privateTags.length, category: set.d });
+      content = await encryptPrivateItems(set.privateTags.map(t => ({
+        id: t.value, type: t.type, value: t.value, isPrivate: true
+      })), pubkey);
+      diagLog('lists', 'publishBookmarksToRelays: encrypted content', { length: content.length });
+    }
 
     const signed = await signEvent({ kind: 30003, created_at: now(), tags, content, pubkey });
     if (!signed) {
@@ -1412,7 +1465,7 @@ export async function publishBookmarksToRelays(): Promise<void> {
 
   // Publish folder order metadata (NIP-78 kind:30078)
   const folderOrder = setData.metadata.setOrder.filter(d => d !== '');
-  console.debug('[DIAG:bookmarks] publishBookmarksToRelays: folder order for kind:30078:', folderOrder);
+  diagLog('lists', 'publishBookmarksToRelays: folder order for kind:30078', { folderOrder });
   if (folderOrder.length > 0) {
     const orderTags: string[][] = [
       ['d', 'noornote:bookmark-folders-order'],
@@ -1424,7 +1477,7 @@ export async function publishBookmarksToRelays(): Promise<void> {
     const orderContent = JSON.stringify({ order: folderOrder });
     const signedOrderEvent = await signEvent({ kind: 30078, created_at: publishTimestamp, tags: orderTags, content: orderContent, pubkey });
     if (signedOrderEvent) {
-      console.debug('[DIAG:bookmarks] publishBookmarksToRelays: kind:30078 PUBLISH details:', {
+      diagLog('lists', 'publishBookmarksToRelays: kind:30078 PUBLISH details', {
         created_at: publishTimestamp,
         created_at_ISO: new Date(publishTimestamp * 1000).toISOString(),
         tagOrder: orderTags.filter(t => t[0] === 'a').map(t => t[1]?.split(':')[2]),
@@ -1449,7 +1502,7 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       limit: 100
     }], 10000, true);
 
-    console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: raw event count received:', events.length);
+    diagLog('lists', 'fetchBookmarksFromRelays: raw event count received', { count: events.length });
 
     // Fetch deletion events (kind:5) - also skip cache
     const deletionEvents = await fetchEvents([{
@@ -1470,14 +1523,14 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       }
     }
 
-    console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: deletion events found:', deletionEvents.length, 'deleted coordinates:', Array.from(deletedCoordinates.entries()));
+    diagLog('lists', 'fetchBookmarksFromRelays: deletion events', { count: deletionEvents.length, deletedCoordinates: Array.from(deletedCoordinates.entries()) });
     if (deletedCoordinates.size > 0) {
       logger.info('bookmarks.ts', `Found ${deletedCoordinates.size} deletion requests for bookmark sets`);
     }
 
     if (events.length === 0 && deletedCoordinates.size === 0) {
       logger.info('bookmarks.ts', 'No bookmark sets found on relays');
-      return { items: [], relayContentWasEmpty: true };
+      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
     // Deduplicate by d-tag and filter out deleted ones
@@ -1501,14 +1554,14 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       }
     }
 
-    console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: events after d-tag dedup:', eventsByDTag.size, 'd-tags:', Array.from(eventsByDTag.keys()), 'filtered deleted count:', filteredDeletedCount);
+    diagLog('lists', 'fetchBookmarksFromRelays: events after d-tag dedup', { count: eventsByDTag.size, dTags: Array.from(eventsByDTag.keys()), filteredDeletedCount });
     if (filteredDeletedCount > 0) {
       logger.info('bookmarks.ts', `Filtered out ${filteredDeletedCount} deleted bookmark sets from relay fetch`);
     }
 
     if (eventsByDTag.size === 0) {
       logger.info('bookmarks.ts', 'No bookmark sets after filtering deletions');
-      return { items: [], relayContentWasEmpty: true };
+      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
     }
 
     // Fetch folder order metadata (NIP-78 kind:30078) - also skip cache
@@ -1547,7 +1600,7 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       logger.info('bookmarks.ts', `Loaded folder order from NIP-78 metadata (${usedContentOrder ? 'content' : 'tags'}): ${folderOrder.join(', ')}`);
     }
 
-    console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: NIP-78 event details:', {
+    diagLog('lists', 'fetchBookmarksFromRelays: NIP-78 event details', {
       totalEventsReturned: orderEvents.length,
       selectedCreatedAt: orderEvent?.created_at,
       selectedCreatedAtISO: orderEvent ? new Date(orderEvent.created_at * 1000).toISOString() : 'none',
@@ -1594,35 +1647,46 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
 
       let privateItems: BookmarkItem[] = [];
       if (hasContent) {
+        diagLog('lists', 'fetchBookmarksFromRelays: category has encrypted content, decrypting', { category: categoryName, contentLength: event.content.length });
         try {
           privateItems = await decryptPrivateItems(event, pubkey);
           assignCategory(privateItems, categoryName, true);
         } catch (error) {
+          diagLog('lists', 'fetchBookmarksFromRelays: DECRYPT FAILED', { category: categoryName, error: String(error) });
           logger.error('bookmarks.ts', `Failed to decrypt private items for category "${categoryName}": ${error}`);
         }
+      } else {
+        diagLog('lists', 'fetchBookmarksFromRelays: category has no encrypted content', { category: categoryName });
       }
 
       allItems.push(...publicItems, ...privateItems);
-      console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: category:', JSON.stringify(categoryName), 'public items:', publicItems.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })), 'private items:', privateItems.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })));
+      diagLog('lists', 'fetchBookmarksFromRelays: category items', { category: categoryName, publicItems: publicItems.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })), privateItems: privateItems.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })) });
       logger.info('bookmarks.ts', `Fetched category "${categoryName || 'root'}": ${publicItems.length} public + ${privateItems.length} private`);
     }
 
-    console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: final categories array:', categories);
+    diagLog('lists', 'fetchBookmarksFromRelays: final categories array', { categories });
 
     // Deduplicate by ID
     const deduped = deduplicateById(allItems);
 
-    console.debug('[DIAG:bookmarks] fetchBookmarksFromRelays: final deduped count:', deduped.length, 'items:', deduped.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })));
+    diagLog('lists', 'fetchBookmarksFromRelays: final deduped result', { count: deduped.length, items: deduped.map(i => ({ id: i.id, category: i.category, isPrivate: i.isPrivate, description: i.description })) });
+
+    // Compute relay timestamp: MAX created_at across all bookmark events
+    let maxEventTimestamp = 0;
+    for (const event of eventsByDTag.values()) {
+      if (event.created_at > maxEventTimestamp) maxEventTimestamp = event.created_at;
+    }
 
     return {
       items: deduped,
       relayContentWasEmpty: false,
       categoryAssignments,
-      categories
+      categories,
+      relayTimestamp: maxEventTimestamp
     };
   } catch (error) {
     logger.error('bookmarks.ts', `Failed to fetch from relays: ${error}`);
-    return { items: [], relayContentWasEmpty: true };
+    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
   }
 }
 
@@ -1642,17 +1706,26 @@ interface BookmarkAdapterSyncDiff {
   moved: BookmarkMovedItem[];
 }
 
+export interface SnapshotDiffInfo {
+  hasDifference: boolean;
+  isOrderOnly: boolean;
+  hasFolderSetDiff: boolean;
+  details: string[];
+}
+
 export interface BookmarkAdapterSyncFromRelaysResult {
   requiresConfirmation: boolean;
+  snapshotDiffInfo: SnapshotDiffInfo;
   diff: BookmarkAdapterSyncDiff;
   relayItems: BookmarkItem[];
   relayContentWasEmpty: boolean;
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
+  relayTimestamp: number;
 }
 
 function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: BookmarkItem[]): BookmarkAdapterSyncDiff {
-  console.debug('[DIAG:bookmarks] calculateBookmarkSyncDiff: browser items:', browserItems.map(i => ({ id: i.id, category: i.category })), 'source items:', sourceItems.map(i => ({ id: i.id, category: i.category })));
+  diagLog('lists', 'calculateBookmarkSyncDiff: inputs', { browserItems: browserItems.map(i => ({ id: i.id, category: i.category })), sourceItems: sourceItems.map(i => ({ id: i.id, category: i.category })) });
   const browserMap = new Map(browserItems.map(item => [item.id, item]));
   const sourceMap = new Map(sourceItems.map(item => [item.id, item]));
 
@@ -1683,7 +1756,7 @@ function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: Bo
   }
 
   const result = { added, removed, unchanged, moved };
-  console.debug('[DIAG:bookmarks] calculateBookmarkSyncDiff: result - added:', added.map(i => i.id), 'removed:', removed.map(i => i.id), 'moved:', moved.map(m => ({ id: m.browserItem.id, browserCategory: m.browserItem.category, sourceCategory: m.sourceItem.category })), 'unchanged:', unchanged.length);
+  diagLog('lists', 'calculateBookmarkSyncDiff: result', { added: added.map(i => i.id), removed: removed.map(i => i.id), moved: moved.map(m => ({ id: m.browserItem.id, browserCategory: m.browserItem.category, sourceCategory: m.sourceItem.category })), unchangedCount: unchanged.length });
   return result;
 }
 
@@ -1761,7 +1834,7 @@ function createBrowserBookmarkSnapshot(): BookmarkStateSnapshot {
   }
 
   const snapshot = { folderOrder, itemsByFolder, itemProperties };
-  console.debug('[DIAG:bookmarks] createBrowserBookmarkSnapshot:', { folderOrder, itemsByFolder: Object.fromEntries(itemsByFolder), itemProperties: Object.fromEntries(itemProperties) });
+  diagLog('lists', 'createBrowserBookmarkSnapshot', { folderOrder, itemsByFolder: Object.fromEntries(itemsByFolder), itemProperties: Object.fromEntries(itemProperties) });
   return snapshot;
 }
 
@@ -1801,76 +1874,87 @@ function createSourceBookmarkSnapshot(
   }
 
   const snapshot = { folderOrder, itemsByFolder, itemProperties };
-  console.debug('[DIAG:bookmarks] createSourceBookmarkSnapshot:', { folderOrder, itemsByFolder: Object.fromEntries(itemsByFolder), itemProperties: Object.fromEntries(itemProperties) });
+  diagLog('lists', 'createSourceBookmarkSnapshot', { folderOrder, itemsByFolder: Object.fromEntries(itemsByFolder), itemProperties: Object.fromEntries(itemProperties) });
   return snapshot;
 }
 
+
 /**
- * Compare two snapshots for equality
+ * Detailed diff between browser and source snapshots.
+ * Distinguishes order-only changes (auto-resolvable) from content changes (need modal).
  */
-function bookmarkSnapshotsAreEqual(a: BookmarkStateSnapshot, b: BookmarkStateSnapshot): boolean {
-  // Compare folder order
-  if (a.folderOrder.length !== b.folderOrder.length) {
-    console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - folder order length mismatch:', a.folderOrder.length, 'vs', b.folderOrder.length, 'a:', a.folderOrder, 'b:', b.folderOrder);
-    return false;
-  }
-  for (let i = 0; i < a.folderOrder.length; i++) {
-    if (a.folderOrder[i] !== b.folderOrder[i]) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - folder order mismatch at index', i, ':', JSON.stringify(a.folderOrder[i]), 'vs', JSON.stringify(b.folderOrder[i]));
-      return false;
-    }
+function getBookmarkSnapshotDiffInfo(
+  sourceItems: BookmarkItem[],
+  categories?: string[]
+): SnapshotDiffInfo {
+  const a = createBrowserBookmarkSnapshot();
+  const b = createSourceBookmarkSnapshot(sourceItems, categories);
+
+  const details: string[] = [];
+  let hasContentDiff = false;
+  let hasOrderDiff = false;
+
+  // 1. Folder sets
+  const aFolders = new Set(a.folderOrder);
+  const bFolders = new Set(b.folderOrder);
+  const newFromRelay = [...bFolders].filter(f => !aFolders.has(f));
+  const onlyInBrowser = [...aFolders].filter(f => !bFolders.has(f));
+  if (newFromRelay.length > 0) { hasContentDiff = true; details.push(`New folders from relay: ${newFromRelay.join(', ')}`); }
+  if (onlyInBrowser.length > 0) { hasContentDiff = true; details.push(`Folders only in browser: ${onlyInBrowser.join(', ')}`); }
+
+  // 2. Folder order (compare common folders in both)
+  const aCommonOrder = a.folderOrder.filter(f => bFolders.has(f));
+  const bCommonOrder = b.folderOrder.filter(f => aFolders.has(f));
+  if (aCommonOrder.length > 0 && aCommonOrder.some((f, i) => f !== bCommonOrder[i])) {
+    hasOrderDiff = true;
+    details.push('Folder order differs');
   }
 
-  // Compare items in each folder (with order)
+  // 3. Items per folder
   for (const [folderName, aItems] of a.itemsByFolder) {
     const bItems = b.itemsByFolder.get(folderName);
-    if (!bItems) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - folder', JSON.stringify(folderName), 'missing in b');
-      return false;
-    }
-    if (aItems.length !== bItems.length) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - item count mismatch in folder', JSON.stringify(folderName), ':', aItems.length, 'vs', bItems.length, 'a:', aItems, 'b:', bItems);
-      return false;
-    }
-    for (let i = 0; i < aItems.length; i++) {
-      if (aItems[i] !== bItems[i]) {
-        console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - item order mismatch in folder', JSON.stringify(folderName), 'at index', i, ':', aItems[i], 'vs', bItems[i]);
-        return false;
-      }
+    if (!bItems) continue; // folder missing handled above
+    const aSet = new Set(aItems);
+    const bSet = new Set(bItems);
+    const newItems = [...bSet].filter(id => !aSet.has(id));
+    const removedItems = [...aSet].filter(id => !bSet.has(id));
+    const label = folderName || 'Root';
+    if (newItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${newItems.length} new item(s) from relay`); }
+    if (removedItems.length > 0) { hasContentDiff = true; details.push(`${label}: ${removedItems.length} item(s) only in browser`); }
+    const commonItems = aItems.filter(id => bSet.has(id));
+    const bCommonItems = bItems.filter(id => aSet.has(id));
+    if (commonItems.length > 1 && commonItems.some((id, i) => id !== bCommonItems[i])) {
+      hasOrderDiff = true;
+      details.push(`${label}: Item order differs`);
     }
   }
-
-  // Check for folders in b not in a
   for (const folderName of b.itemsByFolder.keys()) {
-    if (!a.itemsByFolder.has(folderName)) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - folder', JSON.stringify(folderName), 'in b but missing in a');
-      return false;
+    if (!a.itemsByFolder.has(folderName) && !newFromRelay.includes(folderName)) {
+      hasContentDiff = true;
+      details.push(`Folder "${folderName}" only on relay`);
     }
   }
 
-  // Compare item properties
-  if (a.itemProperties.size !== b.itemProperties.size) {
-    console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - itemProperties size mismatch:', a.itemProperties.size, 'vs', b.itemProperties.size);
-    return false;
-  }
+  // 4. Item properties
   for (const [itemId, aProps] of a.itemProperties) {
     const bProps = b.itemProperties.get(itemId);
-    if (!bProps) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - item', itemId, 'missing properties in b');
-      return false;
-    }
+    if (!bProps) continue; // item missing handled in set comparison
     if (aProps.isPrivate !== bProps.isPrivate) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - isPrivate mismatch for item', itemId, ':', aProps.isPrivate, 'vs', bProps.isPrivate);
-      return false;
+      hasContentDiff = true;
+      details.push(`Item ${itemId.slice(0, 8)}: privacy setting differs`);
     }
     if (aProps.description !== bProps.description) {
-      console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: FALSE - description mismatch for item', itemId, ':', JSON.stringify(aProps.description), 'vs', JSON.stringify(bProps.description));
-      return false;
+      hasContentDiff = true;
+      details.push(`Item ${itemId.slice(0, 8)}: description differs`);
     }
   }
 
-  console.debug('[DIAG:bookmarks] bookmarkSnapshotsAreEqual: TRUE - snapshots equal');
-  return true;
+  const hasDifference = hasContentDiff || hasOrderDiff;
+  const isOrderOnly = !hasContentDiff && hasOrderDiff;
+  const hasFolderSetDiff = onlyInBrowser.length > 0 || newFromRelay.length > 0;
+
+  diagLog('lists', 'getBookmarkSnapshotDiffInfo', { hasDifference, isOrderOnly, hasFolderSetDiff, hasContentDiff, hasOrderDiff, details });
+  return { hasDifference, isOrderOnly, hasFolderSetDiff, details };
 }
 
 /**
@@ -1881,11 +1965,8 @@ function hasAnyBookmarkDifference(
   sourceItems: BookmarkItem[],
   categories?: string[]
 ): boolean {
-  const browserSnapshot = createBrowserBookmarkSnapshot();
-  const sourceSnapshot = createSourceBookmarkSnapshot(sourceItems, categories);
-  const result = !bookmarkSnapshotsAreEqual(browserSnapshot, sourceSnapshot);
-  console.debug('[DIAG:bookmarks] hasAnyBookmarkDifference: result:', result, 'browserSnapshot:', { folderOrder: browserSnapshot.folderOrder, itemsByFolder: Object.fromEntries(browserSnapshot.itemsByFolder), itemProperties: Object.fromEntries(browserSnapshot.itemProperties) }, 'sourceSnapshot:', { folderOrder: sourceSnapshot.folderOrder, itemsByFolder: Object.fromEntries(sourceSnapshot.itemsByFolder), itemProperties: Object.fromEntries(sourceSnapshot.itemProperties) });
-  return result;
+  const info = getBookmarkSnapshotDiffInfo(sourceItems, categories);
+  return info.hasDifference;
 }
 
 // =============================================================================
@@ -1928,22 +2009,25 @@ export class BookmarkStorageAdapter {
   async syncFromRelays(): Promise<BookmarkAdapterSyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
-    console.debug('[DIAG:bookmarks] syncFromRelays: browser items snapshot count:', browserItems.length, 'IDs:', browserItems.map(i => i.id));
+    diagLog('lists', 'syncFromRelays: browser items snapshot', { count: browserItems.length, ids: browserItems.map(i => i.id) });
     const fetchResult = await this.fetchFromRelays();
-    console.debug('[DIAG:bookmarks] syncFromRelays: fetch result items count:', fetchResult.items.length, 'categories:', fetchResult.categories, 'categoryAssignments:', fetchResult.categoryAssignments ? Object.fromEntries(fetchResult.categoryAssignments) : undefined);
+    diagLog('lists', 'syncFromRelays: fetch result', { itemCount: fetchResult.items.length, categories: fetchResult.categories, categoryAssignments: fetchResult.categoryAssignments ? Object.fromEntries(fetchResult.categoryAssignments) : undefined });
     const diff = calculateBookmarkSyncDiff(browserItems, fetchResult.items);
-    console.debug('[DIAG:bookmarks] syncFromRelays: diff - added:', diff.added.map(i => i.id), 'removed:', diff.removed.map(i => i.id), 'moved:', diff.moved.map(m => ({ id: m.browserItem.id, from: m.browserItem.category, to: m.sourceItem.category })), 'unchanged:', diff.unchanged.length);
+    diagLog('lists', 'syncFromRelays: diff', { added: diff.added.map(i => i.id), removed: diff.removed.map(i => i.id), moved: diff.moved.map(m => ({ id: m.browserItem.id, from: m.browserItem.category, to: m.sourceItem.category })), unchangedCount: diff.unchanged.length });
 
-    const requiresConfirmation = hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories);
-    console.debug('[DIAG:bookmarks] syncFromRelays: requiresConfirmation:', requiresConfirmation);
+    const snapshotDiffInfo = getBookmarkSnapshotDiffInfo(fetchResult.items, fetchResult.categories);
+    const requiresConfirmation = snapshotDiffInfo.hasDifference;
+    diagLog('lists', 'syncFromRelays: requiresConfirmation', { requiresConfirmation, snapshotDiffInfo });
 
     return {
       requiresConfirmation,
+      snapshotDiffInfo,
       diff,
       relayItems: fetchResult.items,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       categoryAssignments: fetchResult.categoryAssignments,
-      categories: fetchResult.categories
+      categories: fetchResult.categories,
+      relayTimestamp: fetchResult.relayTimestamp
     };
   }
 
@@ -2516,6 +2600,7 @@ interface BookmarkSyncFromRelaysResult {
   relayContentWasEmpty: boolean;
   categoryAssignments?: Map<string, string>;
   categories?: string[];
+  relayTimestamp: number;
 }
 
 /**
@@ -2603,7 +2688,8 @@ export class BookmarkManager {
       requiresConfirmation: hasAnyBookmarkDifference(fetchResult.items, fetchResult.categories),
       diff,
       relayItems: fetchResult.items,
-      relayContentWasEmpty: fetchResult.relayContentWasEmpty
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
+      relayTimestamp: fetchResult.relayTimestamp
     };
     if (fetchResult.categoryAssignments) result.categoryAssignments = fetchResult.categoryAssignments;
     if (fetchResult.categories) result.categories = fetchResult.categories;
@@ -3504,20 +3590,20 @@ export class BookmarkManager {
           getDisplayName: (item) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             mergeFromRelays();
-            ToastService.show('Merged bookmarks from relays', 'success');
-            await this.loadBookmarks();
-            this.renderCurrentView(container);
-          },
-          onMerge: async () => {
-            mergeFromRelays();
             await this.syncToRelays();
             ToastService.show('Merged bookmarks and synced to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             fullOverwriteFromRelays();
             ToastService.show('Synced from relays', 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          },
+          onLocal: async () => {
+            await this.syncToRelays();
+            ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           }
@@ -3631,13 +3717,20 @@ export class BookmarkManager {
           getDisplayName: (item: BookmarkItem) => this.getDisplayNameForSync(item),
           onKeep: async () => {
             await mergeFromFile(result.diff.added);
-            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
+            await this.syncToRelays();
+            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           },
-          onDelete: async () => {
+          onRelay: async () => {
             await fullRestoreFromFile();
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
+            await this.loadBookmarks();
+            this.renderCurrentView(container);
+          },
+          onLocal: async () => {
+            await this.syncToRelays();
+            ToastService.show('Local bookmarks pushed to relays', 'success');
             await this.loadBookmarks();
             this.renderCurrentView(container);
           }

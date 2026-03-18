@@ -1,14 +1,22 @@
 /**
- * CarouselHelper - Reusable carousel component
+ * CarouselHelper - Reusable carousel components
  *
- * Usage:
- * const slides = [
- *   { content: '<p>Slide 1</p>' },
- *   { content: '<h3>Title</h3><p>Slide 2</p>', image: '/path/to/img.jpg' }
- * ];
+ * Two variants:
+ *
+ * 1. Step Carousel (createCarousel / setupCarouselNavigation)
+ *    One slide at a time, dots + prev/next buttons. Used in onboarding.
+ *
+ * 2. Scroll Carousel (createScrollCarousel)
+ *    Multiple items visible, horizontal scroll with arrow buttons. Used in profile view.
+ *
+ * Step Carousel Usage:
  * const carousel = createCarousel(slides);
  * container.appendChild(carousel.element);
  * carousel.init();
+ *
+ * Scroll Carousel Usage:
+ * const carousel = createScrollCarousel({ title: 'Videos', cards: [...] });
+ * container.appendChild(carousel.element);
  */
 
 export interface CarouselSlide {
@@ -288,5 +296,121 @@ export function setupCarouselNavigation(
   return {
     goTo: updateSlide,
     getCurrentIndex: () => currentIndex,
+  };
+}
+
+// ========================================
+// Scroll Carousel (horizontal, multiple items visible)
+// ========================================
+
+export interface ScrollCarouselCard {
+  html: string;
+  data?: Record<string, string>;
+}
+
+export interface ScrollCarouselOptions {
+  title: string;
+  cards: ScrollCarouselCard[];
+  /** Minimum cards before showing nav arrows (default: 2) */
+  navThreshold?: number;
+  onCardClick?: (index: number, data: Record<string, string>) => void;
+}
+
+export interface ScrollCarouselInstance {
+  element: HTMLElement;
+  destroy: () => void;
+}
+
+/**
+ * Create a horizontal scroll carousel with cards
+ * Used for profile articles, videos, etc.
+ */
+export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCarouselInstance {
+  const { title, cards, navThreshold = 2, onCardClick } = options;
+  const showNav = cards.length > navThreshold;
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'nn-scroll-carousel';
+
+  wrapper.innerHTML = `
+    <div class="nn-scroll-carousel__header">
+      <h2 class="nn-scroll-carousel__title">${title}</h2>
+      ${showNav ? `
+        <div class="nn-scroll-carousel__nav">
+          <button class="nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--prev" aria-label="Previous">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button class="nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--next" aria-label="Next">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+          </button>
+        </div>
+      ` : ''}
+    </div>
+    <div class="nn-scroll-carousel__viewport">
+      <div class="nn-scroll-carousel__track">
+        ${cards.map((card, i) => {
+          const dataAttrs = card.data
+            ? Object.entries(card.data).map(([k, v]) => `data-${k}="${v}"`).join(' ')
+            : '';
+          return `<div class="nn-scroll-carousel__card" data-index="${i}" ${dataAttrs}>${card.html}</div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  // Nav button state
+  const updateNavButtons = () => {
+    const viewport = wrapper.querySelector('.nn-scroll-carousel__viewport') as HTMLElement;
+    const prevBtn = wrapper.querySelector('.nn-scroll-carousel__nav-btn--prev') as HTMLElement;
+    const nextBtn = wrapper.querySelector('.nn-scroll-carousel__nav-btn--next') as HTMLElement;
+    if (!viewport || !prevBtn || !nextBtn) return;
+
+    prevBtn.classList.toggle('nn-scroll-carousel__nav-btn--disabled', viewport.scrollLeft <= 0);
+    const remaining = viewport.scrollWidth - (viewport.scrollLeft + viewport.clientWidth);
+    nextBtn.classList.toggle('nn-scroll-carousel__nav-btn--disabled', remaining < 50);
+  };
+
+  // Scroll by one card width
+  const scroll = (direction: number) => {
+    const viewport = wrapper.querySelector('.nn-scroll-carousel__viewport') as HTMLElement;
+    const card = wrapper.querySelector('.nn-scroll-carousel__card') as HTMLElement;
+    if (!viewport || !card) return;
+    viewport.scrollBy({ left: (card.offsetWidth + 16) * direction, behavior: 'smooth' });
+  };
+
+  // Event listeners
+  const prevBtn = wrapper.querySelector('.nn-scroll-carousel__nav-btn--prev');
+  const nextBtn = wrapper.querySelector('.nn-scroll-carousel__nav-btn--next');
+  prevBtn?.addEventListener('click', (e) => { e.stopPropagation(); scroll(-1); });
+  nextBtn?.addEventListener('click', (e) => { e.stopPropagation(); scroll(1); });
+
+  const viewport = wrapper.querySelector('.nn-scroll-carousel__viewport');
+  viewport?.addEventListener('scroll', updateNavButtons);
+
+  // Card click
+  if (onCardClick) {
+    wrapper.querySelectorAll('.nn-scroll-carousel__card').forEach(card => {
+      card.addEventListener('click', () => {
+        const el = card as HTMLElement;
+        const index = parseInt(el.dataset.index || '0');
+        const data: Record<string, string> = {};
+        for (const [key, value] of Object.entries(el.dataset)) {
+          if (key !== 'index') data[key] = value!;
+        }
+        onCardClick(index, data);
+      });
+    });
+  }
+
+  // Initial nav state
+  requestAnimationFrame(updateNavButtons);
+
+  return {
+    element: wrapper,
+    destroy: () => wrapper.remove()
   };
 }

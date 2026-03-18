@@ -315,6 +315,14 @@ export class NostrTransport {
         return this.fetchWithSearch(relays, filters, timeout);
       }
 
+      // Ensure all relay URLs are in the NDK pool (NDK won't connect to unknown relays via relayUrls)
+      // Similar to nostr-tools SimplePool.ensureRelay() — connection happens in parallel with fetch
+      for (const url of relays) {
+        if (!this.ndk.pool.relays.get(url)) {
+          this.ndk.pool.getRelay(url, true); // add to pool, starts connecting
+        }
+      }
+
       // Standard fetch using NDK (auto-dedupe, auto-verify)
       // Use ONLY_RELAY when skipCache is true (for relay-specific filtering)
       const fetchPromise = this.ndk.fetchEvents(filters, {

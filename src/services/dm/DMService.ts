@@ -778,10 +778,8 @@ export class DMService {
       return wrapEvent.rawEvent();
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      const errorStack = error instanceof Error ? error.stack : '';
       diagLog('dms', 'Gift wrap creation failed', { error: errorMsg });
       this.systemLogger.error('DMService', `Failed to create gift wrap: ${errorMsg}`);
-      console.error('[DMService] Gift wrap error:', error, errorStack);
       return null;
     }
   }

@@ -191,7 +191,8 @@ export class RelayConfig {
   }
 
   /**
-   * Get aggregator relays that index events from many other relays
+   * Get aggregator relays that index events from many other relays.
+   * Used for content fetching (timeline, notes).
    */
   public getAggregatorRelays(): string[] {
     return [
@@ -201,6 +202,20 @@ export class RelayConfig {
       'wss://relay.primal.net',
       'wss://purplepag.es',
       'wss://relay.mostr.pub'
+    ];
+  }
+
+  /**
+   * Get relays optimized for metadata queries (Kind 0, 3, 10002, 10050).
+   * Combines general aggregators with dedicated metadata indexers
+   * for better coverage of profiles, follows, and relay lists.
+   */
+  public getMetadataRelays(): string[] {
+    return [
+      ...this.getAggregatorRelays(),
+      'wss://index.hzrd149.com/',
+      'wss://indexer.coracle.social/',
+      'wss://user.kindpag.es/'
     ];
   }
 
