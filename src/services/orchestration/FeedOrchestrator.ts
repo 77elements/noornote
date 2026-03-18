@@ -404,61 +404,6 @@ export class FeedOrchestrator extends Orchestrator {
     return [];
   }
 
-  /**
-   * Fetch events via subscription (used for ProfileView)
-   * Waits for EOSE from majority of relays before returning
-   */
-  private async fetchViaSubscription(relays: string[], filters: NDKFilter[]): Promise<NostrEvent[]> {
-    return new Promise(async (resolve) => {
-      const events: NostrEvent[] = [];
-      const eventIds = new Set<string>();
-      const relayEoseCount = new Map<string, boolean>();
-      const requiredEose = Math.max(1, Math.floor(relays.length / 2)); // Wait for at least half of relays
-      const timeout = 10000; // 10 second timeout
-
-      let resolved = false;
-      const resolveOnce = () => {
-        if (resolved) return;
-        resolved = true;
-        sub.close();
-        this.systemLogger.info(
-          'FeedOrchestrator',
-          `Subscription: Received ${events.length} events from ${relayEoseCount.size}/${relays.length} relays`
-        );
-        resolve(events);
-      };
-
-      // Subscribe with callbacks
-      const sub = await this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent, _relay: string) => {
-          // Deduplicate events
-          const eventId = event.id;
-          if (eventId && !eventIds.has(eventId)) {
-            eventIds.add(eventId);
-            events.push(event);
-          }
-        },
-        onEose: () => {
-          // Track EOSE from relays (we don't know which relay sent EOSE in current implementation)
-          // So we just count total EOSE signals
-          const eoseCount = relayEoseCount.size + 1;
-          relayEoseCount.set(`eose-${eoseCount}`, true);
-
-          // Resolve when we have EOSE from majority of relays
-          if (relayEoseCount.size >= requiredEose) {
-            resolveOnce();
-          }
-        }
-      });
-
-      // Timeout fallback
-      setTimeout(() => {
-        if (!resolved) {
-          resolveOnce();
-        }
-      }, timeout);
-    });
-  }
 
   /**
    * Filter out replies
@@ -534,10 +479,7 @@ export class FeedOrchestrator extends Orchestrator {
     isProfileView: boolean,
     skipCache: boolean
   ): Promise<NostrEvent[]> {
-    if (isProfileView) {
-      return await this.fetchViaSubscription(relays, filters);
-    }
-    return await this.transport.fetch(relays, filters, 5000, skipCache);
+    return await this.transport.fetch(relays, filters, isProfileView ? 15000 : 5000, skipCache);
   }
 
   /**
