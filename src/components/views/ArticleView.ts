@@ -11,9 +11,6 @@ import { ZapsList } from '../ui/ZapsList';
 import { LikesList } from '../ui/LikesList';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { ReactionsOrchestrator } from '../../services/orchestration/ReactionsOrchestrator';
-import { AuthService } from '../../services/AuthService';
-import { Router } from '../../services/Router';
-import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { AnalyticsModal } from '../analytics/AnalyticsModal';
 import { getAddressableIdentifier } from '../../helpers/getAddressableIdentifier';
 import { npubToUsername } from '../../helpers/npubToUsername';
@@ -76,10 +73,6 @@ export class ArticleView {
   private renderArticle(event: NostrEvent & { id: string }): void {
     const metadata = LongFormOrchestrator.extractArticleMetadata(event);
 
-    // Check if current user is the author
-    const currentUser = AuthService.getInstance().getCurrentUser();
-    const isOwnArticle = currentUser?.pubkey === event.pubkey;
-
     // Render markdown and extract quoted references
     const { html: articleHtml, quotedReferences } = this.renderMarkdown(event.content);
 
@@ -88,18 +81,7 @@ export class ArticleView {
       <div class="article-view-content">
         <div class="article-header">
           ${metadata.image ? `<img src="${metadata.image}" alt="${this.escapeHtml(metadata.title)}" class="article-banner" />` : ''}
-          <div class="article-title-row">
-            <h1 class="article-title">${this.escapeHtml(metadata.title)}</h1>
-            ${isOwnArticle ? `
-              <button class="btn btn--medium btn--passive article-edit-btn" data-action="edit-article" title="Edit article">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Edit
-              </button>
-            ` : ''}
-          </div>
+          <h1 class="article-title">${this.escapeHtml(metadata.title)}</h1>
           ${metadata.summary ? `<p class="article-summary">${this.escapeHtml(metadata.summary)}</p>` : ''}
           <div class="article-author-container"></div>
         </div>
@@ -141,20 +123,6 @@ export class ArticleView {
         showMenu: true
       });
       authorContainer.appendChild(noteHeader.getElement());
-    }
-
-    // Edit button click handler
-    if (isOwnArticle) {
-      const editBtn = this.container.querySelector('[data-action="edit-article"]');
-      editBtn?.addEventListener('click', () => {
-        const naddr = encodeNaddr({
-          kind: 30023,
-          pubkey: event.pubkey,
-          identifier: metadata.identifier,
-          relays: []
-        });
-        Router.getInstance().navigate(`/edit-article/${naddr}`);
-      });
     }
 
     // For addressable events (kind 30023), use addressable identifier instead of event ID

@@ -8,7 +8,6 @@
  *
  * Architecture:
  * - Fetches user notes in time-chunked queries (3-month chunks)
- * - 2-stage relay strategy: read relays → outbound relays (NIP-65)
  * - Performs client-side search with AND logic
  * - Caches search results for session
  * - Provides progress callbacks for UI feedback
@@ -17,9 +16,7 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
-import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { SystemLogger } from '../../components/system/SystemLogger';
-import { diagLog } from '../DiagnosticLogger';
 
 export interface SearchRequest {
   pubkeyHex: string;
@@ -47,7 +44,6 @@ interface CachedSearch {
 export class ProfileSearchOrchestrator extends Orchestrator {
   private static instance: ProfileSearchOrchestrator;
   private transport: NostrTransport;
-  private relayDiscovery: OutboundRelaysOrchestrator;
   private systemLogger: SystemLogger;
 
   /** Search cache (per session) */
@@ -62,7 +58,6 @@ export class ProfileSearchOrchestrator extends Orchestrator {
   private constructor() {
     super('ProfileSearchOrchestrator');
     this.transport = NostrTransport.getInstance();
-    this.relayDiscovery = OutboundRelaysOrchestrator.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.systemLogger.info('ProfileSearch', '🔍 Search ready to explore notes');
   }
@@ -155,7 +150,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
   }
 
   /**
-   * Fetch all notes from a user (2-stage: read relays chunked → outbound relays single fetch)
+   * Fetch all notes from a user (with chunking to avoid relay limits)
    */
   private async fetchAllUserNotes(
     pubkeyHex: string,
@@ -193,9 +188,10 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
     onProgress?.(`Fetching notes in ${chunks.length} time chunks...`);
 
-    // Stage 1: Read relays (chunked)
+    // Get relays
     const relays = this.transport.getReadRelays();
 
+    // Query each chunk
     for (const [i, chunk] of chunks.entries()) {
       const formatDate = (timestamp: number) => {
         const date = new Date(timestamp * 1000);
@@ -233,39 +229,6 @@ export class ProfileSearchOrchestrator extends Orchestrator {
       } catch (error) {
         this.systemLogger.warn('ProfileSearch', `Chunk ${i + 1} failed: ${error}`);
       }
-    }
-
-    // Stage 2: Outbound relays (single fetch, no chunking)
-    // Catches notes that only exist on the user's own NIP-65 write relays
-    const countBeforeOutbound = allEvents.size;
-    onProgress?.('Checking author relays for additional notes...');
-
-    try {
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkeyHex], true);
-      const outboundFilters: NDKFilter[] = [{
-        kinds: [1],
-        authors: [pubkeyHex],
-        limit: 5000
-      }];
-
-      const outboundEvents = await this.transport.fetch(outboundRelays, outboundFilters, 10000);
-
-      outboundEvents.forEach(event => {
-        const eventId = event.id;
-        if (eventId && !allEvents.has(eventId)) {
-          allEvents.set(eventId, event);
-        }
-      });
-
-      const newFromOutbound = allEvents.size - countBeforeOutbound;
-      if (newFromOutbound > 0) {
-        diagLog('relays', 'ProfileSearchOrchestrator: outbound fallback found additional notes', {
-          pubkey: pubkeyHex.slice(0, 8),
-          newNotes: newFromOutbound
-        });
-      }
-    } catch (error) {
-      this.systemLogger.warn('ProfileSearch', `Outbound relay fetch failed: ${error}`);
     }
 
     onProgress?.('Processing notes...');

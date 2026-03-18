@@ -75,15 +75,15 @@ export class QuoteOrchestrator extends Orchestrator {
       }
     }
 
-    // Extract event ID, relay hints, and author from reference (note, nevent, hex)
-    const { eventId, relayHints, author } = this.extractEventIdAndHints(nostrRef);
+    // Extract event ID and relay hints from reference (note, nevent, hex)
+    const { eventId, relayHints } = this.extractEventIdAndHints(nostrRef);
     if (!eventId) {
       this.systemLogger.error('QuoteOrchestrator', `Invalid reference format: ${nostrRef.slice(0, 20)}...`);
       return null;
     }
 
-    // Start new fetch with relay hints and author for outbound relay discovery
-    const fetchPromise = this.fetchEventById(eventId, relayHints, author);
+    // Start new fetch with relay hints
+    const fetchPromise = this.fetchEventById(eventId, relayHints);
     this.fetchingQuotes.set(nostrRef, fetchPromise);
 
     try {
@@ -111,7 +111,7 @@ export class QuoteOrchestrator extends Orchestrator {
    * Supports: note1, nevent1, hex event IDs
    * Returns relay hints from nevent for priority fetching
    */
-  private extractEventIdAndHints(nostrRef: string): { eventId: string | null; relayHints: string[]; author: string | null } {
+  private extractEventIdAndHints(nostrRef: string): { eventId: string | null; relayHints: string[] } {
     try {
       // Remove nostr: prefix if present
       const cleanRef = nostrRef.replace(/^nostr:/, '');
@@ -122,13 +122,12 @@ export class QuoteOrchestrator extends Orchestrator {
 
         switch (decoded.type) {
           case 'note':
-            return { eventId: decoded.data as string, relayHints: [], author: null };
+            return { eventId: decoded.data as string, relayHints: [] };
           case 'nevent': {
             const neventData = decoded.data as { id: string; relays?: string[]; author?: string };
             return {
               eventId: neventData.id,
-              relayHints: neventData.relays || [],
-              author: neventData.author || null
+              relayHints: neventData.relays || []
             };
           }
           default:
@@ -140,14 +139,14 @@ export class QuoteOrchestrator extends Orchestrator {
 
       // Check if it's already a hex event ID (64 chars)
       if (cleanRef.match(/^[a-f0-9]{64}$/)) {
-        return { eventId: cleanRef, relayHints: [], author: null };
+        return { eventId: cleanRef, relayHints: [] };
       }
 
-      return { eventId: null, relayHints: [], author: null };
+      return { eventId: null, relayHints: [] };
 
     } catch (error) {
       this.systemLogger.error('QuoteOrchestrator', `Extract ID error: ${error}`);
-      return { eventId: null, relayHints: [], author: null };
+      return { eventId: null, relayHints: [] };
     }
   }
 
@@ -177,7 +176,7 @@ export class QuoteOrchestrator extends Orchestrator {
    * Stage 2: Try standard relays
    * Stage 3: If not found, try standard + outbound relays
    */
-  private async fetchEventById(eventId: string, relayHints: string[] = [], author: string | null = null): Promise<NostrEvent | null> {
+  private async fetchEventById(eventId: string, relayHints: string[] = []): Promise<NostrEvent | null> {
     // Stage 0: Check NoteService cache first
     const cached = this.noteService.getCachedNote(eventId);
     if (cached) {
@@ -205,10 +204,8 @@ export class QuoteOrchestrator extends Orchestrator {
     }
 
     // Stage 3: Not found on standard relays, try with outbound relays
-    // Pass author pubkey so OutboundRelaysOrchestrator can discover their write relays
     try {
-      const authorPubkeys = author ? [author] : [];
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays(authorPubkeys, true);
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays([], true);
       const event = await this.fetchFromRelays(outboundRelays, filter, 10000);
       if (event) return event;
     } catch {

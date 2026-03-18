@@ -47,7 +47,6 @@
     // Responsive: cap modals on small screens
     @include mobile-down {
       max-width: 90% !important;
-      max-height: 80vh !important;
     }
   }
 
@@ -58,8 +57,6 @@
     justify-content: space-between;
     padding: $gap;
     border-bottom: 1px solid var(--color-2);
-
-    h1 { margin-bottom: 0; }
   }
 
   // Close button
@@ -82,7 +79,7 @@
 
   // Body (content area)
   &__body {
-    padding: $gap $gap 0 $gap;
+    padding: 0 $gap $gap $gap;
     overflow-y: auto;
     flex: 1;
     @include custom-scrollbar;

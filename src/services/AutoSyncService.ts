@@ -13,14 +13,20 @@
  */
 
 import { EventBus } from './EventBus';
-import { getListLastModified, setListLastModified, type ListType as StorageListType } from '../lists/storage';
+import { ToastService } from './ToastService';
 import { AuthService } from './AuthService';
 import { ConnectivityService } from './ConnectivityService';
 import { PlatformService } from './PlatformService';
 import { SystemLogger } from '../components/system/SystemLogger';
+import { UserProfileService } from './UserProfileService';
+import { NoteService } from './NoteService';
+import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
 import { isEasyMode } from '../helpers/ListSyncMode';
-import { diagLog } from './DiagnosticLogger';
+import { extractDisplayName } from '../helpers/extractDisplayName';
+import { renderUserMention } from '../helpers/UserMentionHelper';
+import { escapeHtml } from '../helpers/escapeHtml';
 
+// Import list functions and adapters
 import {
   saveToFile as saveFollowsToFile,
   publishToRelays as publishFollowsToRelays,
@@ -33,6 +39,8 @@ import {
   publishBookmarksToRelays,
   BookmarkStorageAdapter,
   applyRelayFetchResult as applyBookmarkRelayResult,
+  addNewBookmarksToFolders,
+  mergeRelayBookmarkStructurePreservingBrowserOnly,
   type BookmarkItem
 } from '../lists/bookmarks';
 
@@ -47,10 +55,19 @@ import {
   publishToRelays as publishTribesToRelays,
   TribeStorageAdapter,
   applyRelayFetchResult as applyTribeRelayResult,
+  addNewMembersToFolders,
+  mergeRelayFolderStructurePreservingBrowserOnly,
   type TribeMember
 } from '../lists/tribes';
 
 type ListType = 'follows' | 'bookmarks' | 'mutes' | 'tribes';
+
+const LIST_DISPLAY_NAMES: Record<ListType, string> = {
+  follows: 'Follows',
+  bookmarks: 'Bookmarks',
+  mutes: 'Mutes',
+  tribes: 'Tribes'
+};
 
 export class AutoSyncService {
   private static instance: AutoSyncService;
@@ -59,7 +76,7 @@ export class AutoSyncService {
   private authService: AuthService;
   private connectivityService: ConnectivityService;
   private systemLogger: SystemLogger;
-  // UserProfileService removed — no longer needed for Easy Mode (no modal)
+  private userProfileService: UserProfileService;
 
   // Adapters for each list type
   private followAdapter: FollowStorageAdapter;
@@ -87,7 +104,7 @@ export class AutoSyncService {
     this.authService = AuthService.getInstance();
     this.connectivityService = ConnectivityService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    // UserProfileService no longer needed (no modal in Easy Mode)
+    this.userProfileService = UserProfileService.getInstance();
 
     // Initialize adapters
     this.followAdapter = new FollowStorageAdapter();
@@ -243,16 +260,13 @@ export class AutoSyncService {
     if (!isEasyMode()) return;
     if (!this.authService.getCurrentUser()) return;
     if (this.isSyncing.has(listType)) {
-      diagLog('lists', `handleListChange(${listType}): BLOCKED by isSyncing`, { currentlySyncing: [...this.isSyncing] });
+      console.debug(`[DIAG:autosync] handleListChange(${listType}): BLOCKED by isSyncing (currently syncing: ${[...this.isSyncing].join(', ')})`);
       return;
     }
-    diagLog('lists', `handleListChange(${listType}): proceeding`, { isSyncingSet: [...this.isSyncing] });
+    console.debug(`[DIAG:autosync] handleListChange(${listType}): proceeding (isSyncing set: ${[...this.isSyncing].join(', ') || 'empty'})`);
 
     try {
       this.isSyncing.add(listType);
-
-      // 0. Update local timestamp
-      setListLastModified(listType as StorageListType);
 
       // 1. Save to file immediately (Desktop only - Web/Phone has no file system)
       const _p = PlatformService.getInstance();
@@ -301,10 +315,10 @@ export class AutoSyncService {
    * Schedule relay sync with debouncing
    */
   private scheduleRelaySync(listType: ListType): void {
-    diagLog('lists', `scheduleRelaySync(${listType}): scheduling`, { delayMs: this.RELAY_SYNC_DELAY });
+    console.debug(`[DIAG:autosync] scheduleRelaySync(${listType}): scheduling with ${this.RELAY_SYNC_DELAY}ms delay`);
     const existingTimer = this.relaySyncTimers.get(listType);
     if (existingTimer) {
-      diagLog('lists', `scheduleRelaySync(${listType}): clearing existing timer`);
+      console.debug(`[DIAG:autosync] scheduleRelaySync(${listType}): clearing existing timer`);
       clearTimeout(existingTimer);
     }
 
@@ -331,7 +345,7 @@ export class AutoSyncService {
     this.systemLogger.info('ListAutoSync', 'Lists in Easy Mode. AutoSync triggered to relays.');
 
     try {
-      diagLog('lists', `syncToRelays(${listType}): BEFORE publish`);
+      console.debug(`[DIAG:autosync] syncToRelays(${listType}): BEFORE publish`);
       switch (listType) {
         case 'follows':
           await publishFollowsToRelays();
@@ -346,7 +360,7 @@ export class AutoSyncService {
           await publishTribesToRelays();
           break;
       }
-      diagLog('lists', `syncToRelays(${listType}): AFTER publish — success`);
+      console.debug(`[DIAG:autosync] syncToRelays(${listType}): AFTER publish — success`);
       this.systemLogger.info('ListAutoSync', `${listType}: synced to relays`);
     } catch (error) {
       this.systemLogger.error('ListAutoSync', `${listType}: relay sync failed: ${error}`);
@@ -401,7 +415,7 @@ export class AutoSyncService {
     }
 
     this.systemLogger.info('ListAutoSync', 'Lists in Easy Mode. AutoSync triggered from relays.');
-    diagLog('lists', 'syncFromRelaysAll(): starting sync for all list types');
+    console.debug(`[DIAG:autosync] syncFromRelaysAll(): starting sync for all list types`);
 
     for (const listType of ['follows', 'bookmarks', 'mutes', 'tribes'] as ListType[]) {
       await this.syncFromRelays(listType);
@@ -421,12 +435,12 @@ export class AutoSyncService {
 
       const result = await this.fetchAndCompare(listType);
       if (!result) {
-        diagLog('lists', `syncFromRelays(${listType}): fetchAndCompare returned null — aborting`);
+        console.debug(`[DIAG:autosync] syncFromRelays(${listType}): fetchAndCompare returned null — aborting`);
         this.systemLogger.warn('ListAutoSync', `${listType}: fetch returned null`);
         return;
       }
 
-      diagLog('lists', `syncFromRelays(${listType}): fetchAndCompare result`, {
+      console.debug(`[DIAG:autosync] syncFromRelays(${listType}): fetchAndCompare result:`, {
         addedCount: result.diff.added.length,
         removedCount: result.diff.removed.length,
         movedCount: result.diff.moved?.length || 0,
@@ -436,52 +450,57 @@ export class AutoSyncService {
         hasCategoryAssignments: !!result.categoryAssignments,
         categories: result.categories
       });
-      diagLog('lists', `syncFromRelays(${listType}): diff.added`, { items: result.diff.added });
-      diagLog('lists', `syncFromRelays(${listType}): diff.removed`, { items: result.diff.removed });
+      console.debug(`[DIAG:autosync] syncFromRelays(${listType}): diff.added:`, result.diff.added);
+      console.debug(`[DIAG:autosync] syncFromRelays(${listType}): diff.removed:`, result.diff.removed);
       if (result.diff.moved?.length) {
-        diagLog('lists', `syncFromRelays(${listType}): diff.moved`, { items: result.diff.moved });
+        console.debug(`[DIAG:autosync] syncFromRelays(${listType}): diff.moved:`, result.diff.moved);
       }
 
       this.systemLogger.info('ListAutoSync', `${listType}: diff - added: ${result.diff.added.length}, removed: ${result.diff.removed.length}`);
 
-      // Safety: relay returned empty but we have local items — skip
+      // Nothing changed in diff - but check snapshot for order/property changes
+      const movedCount = result.diff.moved?.length || 0;
+      if (result.diff.added.length === 0 && result.diff.removed.length === 0 && movedCount === 0) {
+        if (result.requiresConfirmation) {
+          console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=order/property changes — showing modal`);
+          this.systemLogger.info('ListAutoSync', `${listType}: order or property changes detected, showing modal`);
+          await this.showSyncConfirmationModal(listType, result);
+        } else {
+          console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=no changes at all — skipping`);
+        }
+        return;
+      }
+
+      // Safety: if relay returned empty but we have local items to "remove",
+      // this is almost certainly a fetch failure — skip to prevent data loss
       if (result.relayContentWasEmpty && result.diff.removed.length > 0) {
-        diagLog('lists', `syncFromRelays(${listType}): relay empty safety — skipping`);
-        this.systemLogger.warn('ListAutoSync', `${listType}: relay returned empty, skipping`);
+        console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=relay empty safety — skipping (would remove ${result.diff.removed.length} items)`);
+        this.systemLogger.warn('ListAutoSync', `${listType}: relay returned empty, skipping sync to prevent data loss (${result.diff.removed.length} items would be removed)`);
         return;
       }
 
-      // No differences at all
-      if (!result.requiresConfirmation && result.diff.added.length === 0 && result.diff.removed.length === 0 && (result.diff.moved?.length || 0) === 0) {
-        diagLog('lists', `syncFromRelays(${listType}): no changes`);
+      // Simple case: only new items from relay, nothing removed or moved
+      // → auto-merge without bothering the user
+      if (result.diff.added.length > 0 && result.diff.removed.length === 0 && movedCount === 0) {
+        console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=auto-merge — ${result.diff.added.length} new items, merging with ${result.relayItems.length} relay items`);
+        console.debug(`[DIAG:autosync] syncFromRelays(${listType}): auto-merge items:`, result.diff.added);
+        this.systemLogger.info('ListAutoSync', `${listType}: auto-merging ${result.diff.added.length} new items`);
+        this.applyMerge(listType, result.relayItems);
+        // Only add folder assignments for NEW items — don't destroy existing browser structure
+        if (listType === 'bookmarks') {
+          addNewBookmarksToFolders(result.diff.added as BookmarkItem[]);
+        } else if (listType === 'tribes') {
+          addNewMembersToFolders(result.diff.added as TribeMember[]);
+        }
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: ${result.diff.added.length} new synced from relay`, 'success');
         return;
       }
 
-      // Timestamp-based sync: newest version wins
-      const localTs = getListLastModified(listType as StorageListType);
-      const relayTs = this.getRelayTimestamp(result);
-
-      diagLog('lists', `syncFromRelays(${listType}): timestamp compare`, { localTs, relayTs, localISO: new Date(localTs * 1000).toISOString(), relayISO: new Date(relayTs * 1000).toISOString() });
-
-      if (relayTs > localTs) {
-        // Relay is newer → apply relay version
-        diagLog('lists', `syncFromRelays(${listType}): relay is newer — applying`);
-        this.systemLogger.info('ListAutoSync', `${listType}: relay is newer, applying`);
-        this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
-        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
-          await this.applyFolderAssignments(listType, result);
-        }
-        if (listType === 'bookmarks' && result.categories) {
-          const { applyRelayFolderOrder } = await import('../lists/bookmarks');
-          applyRelayFolderOrder(result.categories);
-        }
-        setListLastModified(listType as StorageListType, relayTs);
-      } else {
-        // Local is newer or equal → push local to relay
-        diagLog('lists', `syncFromRelays(${listType}): local is newer — pushing`);
-        this.systemLogger.info('ListAutoSync', `${listType}: local is newer, pushing to relay`);
-        await this.syncToRelays(listType);
-      }
+      // Complex case (removals, moves) - show modal to let user decide
+      console.debug(`[DIAG:autosync] syncFromRelays(${listType}): PATH=complex (removals/moves) — showing modal`);
+      this.systemLogger.info('ListAutoSync', `${listType}: showing merge modal`);
+      console.log(`[AutoSync] ${listType}: SHOWING MODAL — added: ${result.diff.added.length}, removed: ${result.diff.removed.length}, moved: ${result.diff.moved?.length || 0}`);
+      await this.showSyncConfirmationModal(listType, result);
     } catch (error) {
       this.systemLogger.error('ListAutoSync', `Periodic sync failed for ${listType}: ${error}`);
     } finally {
@@ -497,13 +516,12 @@ export class AutoSyncService {
       switch (listType) {
         case 'follows': {
           const result = await this.followAdapter.syncFromRelays();
-          diagLog('lists', 'fetchAndCompare(follows): raw adapter result', { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation });
+          console.debug(`[DIAG:autosync] fetchAndCompare(follows): raw adapter result:`, { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation });
           return {
             diff: { added: result.diff.added, removed: result.diff.removed },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
-            relayTimestamp: result.relayTimestamp,
             categoryAssignments: undefined,
             categories: undefined
           };
@@ -511,14 +529,12 @@ export class AutoSyncService {
 
         case 'bookmarks': {
           const result = await this.bookmarkAdapter.syncFromRelays();
-          diagLog('lists', 'fetchAndCompare(bookmarks): raw adapter result', { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, diffMoved: result.diff.moved?.length || 0, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation, snapshotDiffInfo: result.snapshotDiffInfo, categories: result.categories });
+          console.debug(`[DIAG:autosync] fetchAndCompare(bookmarks): raw adapter result:`, { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, diffMoved: result.diff.moved?.length || 0, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation, categories: result.categories });
           return {
             diff: { added: result.diff.added, removed: result.diff.removed, moved: result.diff.moved },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
-            relayTimestamp: result.relayTimestamp,
-            snapshotDiffInfo: result.snapshotDiffInfo,
             categoryAssignments: result.categoryAssignments,
             categories: result.categories
           };
@@ -526,13 +542,12 @@ export class AutoSyncService {
 
         case 'mutes': {
           const result = await this.muteAdapter.syncFromRelays();
-          diagLog('lists', 'fetchAndCompare(mutes): raw adapter result', { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation });
+          console.debug(`[DIAG:autosync] fetchAndCompare(mutes): raw adapter result:`, { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation });
           return {
             diff: { added: result.diff.added, removed: result.diff.removed },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
-            relayTimestamp: result.relayTimestamp,
             categoryAssignments: undefined,
             categories: undefined
           };
@@ -540,13 +555,12 @@ export class AutoSyncService {
 
         case 'tribes': {
           const result = await this.tribeAdapter.syncFromRelays();
-          diagLog('lists', 'fetchAndCompare(tribes): raw adapter result', { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, diffMoved: result.diff.moved?.length || 0, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation, categories: result.categories });
+          console.debug(`[DIAG:autosync] fetchAndCompare(tribes): raw adapter result:`, { diffAdded: result.diff.added.length, diffRemoved: result.diff.removed.length, diffMoved: result.diff.moved?.length || 0, relayItems: result.relayItems.length, relayContentWasEmpty: result.relayContentWasEmpty, requiresConfirmation: result.requiresConfirmation, categories: result.categories });
           return {
             diff: { added: result.diff.added, removed: result.diff.removed, moved: result.diff.moved },
             relayItems: result.relayItems,
             relayContentWasEmpty: result.relayContentWasEmpty,
             requiresConfirmation: result.requiresConfirmation,
-            relayTimestamp: result.relayTimestamp,
             categoryAssignments: result.categoryAssignments,
             categories: result.categories
           };
@@ -561,11 +575,29 @@ export class AutoSyncService {
   /**
    * Apply merge strategy (keep browser + add new from relay)
    */
+  private applyMerge(listType: ListType, relayItems: unknown[]): void {
+    console.debug(`[DIAG:autosync] applyMerge(${listType}): relayItems count=${relayItems.length}`);
+    switch (listType) {
+      case 'follows':
+        this.followAdapter.applySyncFromRelays('merge', relayItems as FollowItem[], false);
+        break;
+      case 'bookmarks':
+        this.bookmarkAdapter.applySyncFromRelays('merge', relayItems as BookmarkItem[]);
+        break;
+      case 'mutes':
+        this.muteAdapter.applySyncFromRelays('merge', relayItems as string[]);
+        break;
+      case 'tribes':
+        this.tribeAdapter.applySyncFromRelays('merge', relayItems as TribeMember[]);
+        break;
+    }
+  }
+
   /**
    * Apply overwrite strategy (replace browser with relay)
    */
   private applyOverwrite(listType: ListType, relayItems: unknown[], relayContentWasEmpty: boolean): void {
-    diagLog('lists', `applyOverwrite(${listType})`, { relayItemsCount: relayItems.length, relayContentWasEmpty });
+    console.debug(`[DIAG:autosync] applyOverwrite(${listType}): relayItems count=${relayItems.length}, relayContentWasEmpty=${relayContentWasEmpty}`);
     switch (listType) {
       case 'follows':
         this.followAdapter.applySyncFromRelays('overwrite', relayItems as FollowItem[], relayContentWasEmpty);
@@ -586,7 +618,7 @@ export class AutoSyncService {
    * Apply folder assignments for bookmarks/tribes
    */
   private async applyFolderAssignments(listType: ListType, result: SyncResult): Promise<void> {
-    diagLog('lists', `applyFolderAssignments(${listType})`, { relayItemsCount: result.relayItems.length, categories: result.categories, categoryAssignmentsSize: result.categoryAssignments?.size || 0 });
+    console.debug(`[DIAG:autosync] applyFolderAssignments(${listType}): relayItems count=${result.relayItems.length}, categories=${JSON.stringify(result.categories)}, categoryAssignments size=${result.categoryAssignments?.size || 0}`);
     if (listType === 'bookmarks' && result.categoryAssignments) {
       applyBookmarkRelayResult(
         result.relayItems as BookmarkItem[],
@@ -604,22 +636,232 @@ export class AutoSyncService {
     }
   }
 
+  /**
+   * Show sync confirmation modal
+   */
+  private async showSyncConfirmationModal(listType: ListType, result: SyncResult): Promise<void> {
+    console.debug(`[DIAG:autosync] showSyncConfirmationModal(${listType}): diff being shown:`, {
+      added: result.diff.added,
+      removed: result.diff.removed,
+      moved: result.diff.moved,
+      relayItemsCount: result.relayItems.length,
+      relayContentWasEmpty: result.relayContentWasEmpty
+    });
+    // Transform moved items for the modal format
+    interface MovedRaw { browserItem?: { category?: string }; sourceItem?: { category?: string } }
+    const rawMoved = (result.diff.moved || []) as MovedRaw[];
+    const movedForModal = rawMoved.map(m => ({
+      item: m.browserItem as unknown,
+      browserFolder: (m.browserItem?.category) || '(root)',
+      sourceFolder: (m.sourceItem?.category) || '(root)'
+    }));
+
+    const modal = new SyncConfirmationModal({
+      listType: LIST_DISPLAY_NAMES[listType],
+      added: result.diff.added,
+      removed: result.diff.removed,
+      ...(movedForModal.length > 0 && { moved: movedForModal }),
+      getDisplayName: async (item: unknown) => this.getDisplayName(listType, item),
+      renderItemHtml: async (item: unknown) => this.renderItemHtml(listType, item),
+      onKeep: async () => {
+        // Keep local state + add new items from relay, then push merged state to relays
+        console.log(`[AutoSync] onKeep(${listType}): applyMerge with ${result.relayItems.length} relay items`);
+        this.applyMerge(listType, result.relayItems);
+        // Only add folder assignments for NEW items — don't destroy existing browser structure
+        if (listType === 'bookmarks') {
+          addNewBookmarksToFolders(result.diff.added as BookmarkItem[]);
+        } else if (listType === 'tribes') {
+          addNewMembersToFolders(result.diff.added as TribeMember[]);
+        }
+        // Push merged state back so the modal doesn't reappear on next periodic sync
+        console.log(`[AutoSync] onKeep(${listType}): publishing to relays...`);
+        await this.syncToRelays(listType);
+        console.log(`[AutoSync] onKeep(${listType}): publish completed`);
+        console.debug(`[DIAG:autosync] onKeep(${listType}): operation complete — browser state after merge:`, this.getBrowserItemCount(listType));
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Added ${result.diff.added.length} new, kept ${result.diff.removed.length} local`, 'success');
+      },
+      onMerge: async () => {
+        // True merge: combine both local + relay, then push back to relays
+        console.log(`[AutoSync] onMerge(${listType}): applyMerge with ${result.relayItems.length} relay items`);
+        this.applyMerge(listType, result.relayItems);
+        // Apply relay folder structure but preserve browser-only items' assignments
+        if (listType === 'bookmarks') {
+          mergeRelayBookmarkStructurePreservingBrowserOnly(
+            result.relayItems as BookmarkItem[],
+            result.categories,
+            result.diff.removed as BookmarkItem[]
+          );
+        } else if (listType === 'tribes') {
+          mergeRelayFolderStructurePreservingBrowserOnly(
+            result.relayItems as TribeMember[],
+            result.categories,
+            result.diff.removed as TribeMember[]
+          );
+        }
+        // Push merged state back to relays
+        console.log(`[AutoSync] onMerge(${listType}): publishing to relays...`);
+        await this.syncToRelays(listType);
+        console.log(`[AutoSync] onMerge(${listType}): publish completed`);
+        console.debug(`[DIAG:autosync] onMerge(${listType}): operation complete — browser state after merge:`, this.getBrowserItemCount(listType));
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Merged and synced to relays`, 'success');
+      },
+      onDelete: async () => {
+        console.log(`[AutoSync] onDelete(${listType}): overwriting with ${result.relayItems.length} relay items`);
+        this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
+        if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
+          await this.applyFolderAssignments(listType, result);
+        }
+        // Push accepted state to relays so all instances are in sync
+        console.log(`[AutoSync] onDelete(${listType}): publishing to relays...`);
+        await this.syncToRelays(listType);
+        console.log(`[AutoSync] onDelete(${listType}): publish completed`);
+        console.debug(`[DIAG:autosync] onDelete(${listType}): operation complete — browser state after overwrite:`, this.getBrowserItemCount(listType));
+        ToastService.show(`${LIST_DISPLAY_NAMES[listType]}: Synced from relays (removed ${result.diff.removed.length})`, 'success');
+      }
+    });
+
+    await modal.show();
+  }
 
   /**
-   * Get the newest timestamp from relay items (max addedAt) or from SyncResult.relayTimestamp
+   * Get display name for an item
    */
-  private getRelayTimestamp(result: SyncResult): number {
-    // Use explicit relayTimestamp if available (set by adapters from event.created_at)
-    if (result.relayTimestamp && result.relayTimestamp > 0) return result.relayTimestamp;
-    // Fallback: extract from items
-    let max = 0;
-    for (const item of result.relayItems) {
-      const obj = item as Record<string, unknown>;
-      const addedAt = typeof obj.addedAt === 'number' ? obj.addedAt : 0;
-      if (addedAt > max) max = addedAt;
+  private async getDisplayName(listType: ListType, item: unknown): Promise<string> {
+    try {
+      switch (listType) {
+        case 'follows': {
+          const followItem = item as FollowItem;
+          const profile = await this.userProfileService.getUserProfile(followItem.pubkey);
+          return extractDisplayName(profile);
+        }
+
+        case 'bookmarks': {
+          const bookmarkItem = item as BookmarkItem;
+
+          // Handle different bookmark types
+          if (bookmarkItem.type === 'r') {
+            // URL bookmark - show the URL directly
+            return bookmarkItem.value || bookmarkItem.id;
+          }
+
+          if (bookmarkItem.type === 't') {
+            // Hashtag bookmark
+            return `#${bookmarkItem.value || bookmarkItem.id}`;
+          }
+
+          // Event or article bookmark - try to fetch note content
+          if (bookmarkItem.type === 'e' || bookmarkItem.type === 'a') {
+            const noteService = NoteService.getInstance();
+            const event = await noteService.getNote(bookmarkItem.id);
+            if (event?.content) {
+              return event.content.slice(0, 60) || bookmarkItem.id.slice(0, 12) + '...';
+            }
+          }
+
+          return bookmarkItem.id.slice(0, 12) + '...';
+        }
+
+        case 'mutes': {
+          const encoded = item as string;
+          // Handle prefixed format: p:pubkey for users, e:eventid for threads
+          if (encoded.startsWith('p:')) {
+            const pubkey = encoded.slice(2);
+            const profile = await this.userProfileService.getUserProfile(pubkey);
+            return extractDisplayName(profile);
+          }
+          if (encoded.startsWith('e:')) {
+            const eventId = encoded.slice(2);
+            const noteService = NoteService.getInstance();
+            const event = await noteService.getNote(eventId);
+            if (event?.content) {
+              return `Thread: ${event.content.slice(0, 40)}...`;
+            }
+            return `Thread: ${eventId.slice(0, 12)}...`;
+          }
+          // Legacy format (no prefix) - treat as pubkey
+          const profile = await this.userProfileService.getUserProfile(encoded);
+          return extractDisplayName(profile);
+        }
+
+        case 'tribes': {
+          const tribeItem = item as TribeMember;
+          const profile = await this.userProfileService.getUserProfile(tribeItem.pubkey);
+          return extractDisplayName(profile);
+        }
+      }
+    } catch {
+      if (typeof item === 'string') {
+        return item.slice(0, 12) + '...';
+      }
+      const pubkey = (item as FollowItem | TribeMember).pubkey || (item as BookmarkItem).id;
+      return pubkey?.slice(0, 12) + '...' || 'Unknown';
     }
-    return max;
   }
+
+  /**
+   * Get current browser item count for diagnostic logging
+   */
+  private getBrowserItemCount(listType: ListType): { count: number } {
+    try {
+      switch (listType) {
+        case 'follows': return { count: this.followAdapter.getBrowserItems().length };
+        case 'bookmarks': return { count: this.bookmarkAdapter.getBrowserItems().length };
+        case 'mutes': return { count: this.muteAdapter.getBrowserItems().length };
+        case 'tribes': return { count: this.tribeAdapter.getBrowserItems().length };
+      }
+    } catch {
+      return { count: -1 };
+    }
+  }
+
+  /**
+   * Render item as HTML (for mentions with avatar)
+   */
+  private async renderItemHtml(listType: ListType, item: unknown): Promise<string> {
+    try {
+      let pubkey: string | null = null;
+
+      switch (listType) {
+        case 'follows':
+          pubkey = (item as FollowItem).pubkey;
+          break;
+        case 'tribes':
+          pubkey = (item as TribeMember).pubkey;
+          break;
+        case 'mutes': {
+          const encoded = item as string;
+          // Handle prefixed format: p:pubkey for users, e:eventid for threads
+          if (encoded.startsWith('p:')) {
+            pubkey = encoded.slice(2);
+          } else if (encoded.startsWith('e:')) {
+            // Threads don't have avatars - return text-only display
+            const eventId = encoded.slice(2);
+            const noteService = NoteService.getInstance();
+            const event = await noteService.getNote(eventId);
+            const content = event?.content?.slice(0, 40) || eventId.slice(0, 12);
+            return `<span class="sync-item-thread">🔇 Thread: ${escapeHtml(content)}...</span>`;
+          } else {
+            // Legacy format (no prefix) - treat as pubkey
+            pubkey = encoded;
+          }
+          break;
+        }
+        case 'bookmarks':
+          return ''; // Bookmarks don't have user mentions
+      }
+
+      if (pubkey) {
+        const profile = await this.userProfileService.getUserProfile(pubkey);
+        const username = extractDisplayName(profile);
+        const avatarUrl = profile?.picture || '';
+        return renderUserMention(pubkey, { username, avatarUrl });
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  }
+
 }
 
 // Internal type for sync results
@@ -627,9 +869,7 @@ interface SyncResult {
   diff: { added: unknown[]; removed: unknown[]; moved?: unknown[] };
   relayItems: unknown[];
   relayContentWasEmpty: boolean;
-  relayTimestamp?: number;
   requiresConfirmation: boolean;
-  snapshotDiffInfo?: { isOrderOnly: boolean; hasFolderSetDiff: boolean; details: string[] };
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
 }

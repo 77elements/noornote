@@ -146,14 +146,12 @@ export class ProfileEditorService {
         return null;
       }
 
-      // Publish to write relays + metadata indexers for maximum discoverability
-      const metadataRelays = this.relayConfig.getMetadataRelays();
-      const publishRelays = [...new Set([...writeRelays, ...metadataRelays])];
-      await this.transport.publish(publishRelays, signedEvent);
+      // Publish to write relays
+      await this.transport.publish(writeRelays, signedEvent);
 
       this.systemLogger.info(
         'ProfileEditorService',
-        `Profile updated and published to ${publishRelays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
+        `Profile updated and published to ${writeRelays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
       );
 
       // Show success toast

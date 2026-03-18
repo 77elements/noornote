@@ -18,7 +18,6 @@ import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
 import { FontSizeService } from './services/FontSizeService';
 import { ThemeService } from './services/ThemeService';
-import { initDiagnosticLogger, destroyDiagnosticLogger } from './services/DiagnosticLogger';
 import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
 import { decodeNip19 } from './services/NostrToolsAdapter';
@@ -114,7 +113,6 @@ export class App {
     if (isLoggedIn) {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser) {
-        initDiagnosticLogger(currentUser.npub);
         this.postLoginService.handleLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
       }
     }
@@ -234,8 +232,6 @@ export class App {
     this.registerRoute('/settings', 'settings', 'settings', 'sv', true);
     this.registerRoute('/messages', 'messages', 'messages', 'mv', true);
     this.registerRoute('/write-article', 'write-article', 'write-article', 'aev', true);
-    this.registerRoute('/edit-article/:naddr', 'edit-article', 'edit-article', 'aev', true,
-      (params) => params.naddr);
     this.registerRoute('/write-video', 'write-video', 'write-video', 'vev', true);
     this.registerRoute('/tribes', 'tribes', 'tribes', 'tribes-view', true);
 
@@ -287,7 +283,6 @@ export class App {
     this.setupDeepLinkHandler();
 
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
-      initDiagnosticLogger(data.npub);
       this.postLoginService.handleLogin(data);
     });
 
@@ -300,7 +295,6 @@ export class App {
     });
 
     this.eventBus.on('user:logout', () => {
-      destroyDiagnosticLogger();
       this.viewMountingService.destroyAllCaches();
       const primaryContent = document.querySelector('.primary-content');
       if (primaryContent) {

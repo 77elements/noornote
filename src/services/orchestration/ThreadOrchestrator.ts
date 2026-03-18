@@ -9,7 +9,6 @@
  * Architecture:
  * - Fetches replies (kind:1 + kind:1111 with #e tag pointing to note) - DOWNWARD
  * - Fetches parent chain (walk up e-tags to root) - UPWARD
- * - 2-stage relay strategy: read relays → outbound relays (NIP-65)
  * - Filters out non-replies (mentions)
  * - Cache: 5min TTL
  */
@@ -17,12 +16,10 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
-import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { NoteService } from '../NoteService';
 import { AuthService } from '../AuthService';
 import { SystemLogger } from '../../components/system/SystemLogger';
-import { diagLog } from '../DiagnosticLogger';
 
 export interface ThreadContextItem {
   eventId: string;
@@ -42,7 +39,6 @@ export interface ThreadContext {
 export class ThreadOrchestrator extends Orchestrator {
   private static instance: ThreadOrchestrator;
   private transport: NostrTransport;
-  private relayDiscovery: OutboundRelaysOrchestrator;
   private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private noteService: NoteService;
   private authService: AuthService;
@@ -60,7 +56,6 @@ export class ThreadOrchestrator extends Orchestrator {
   private constructor() {
     super('ThreadOrchestrator');
     this.transport = NostrTransport.getInstance();
-    this.relayDiscovery = OutboundRelaysOrchestrator.getInstance();
     this.muteOrchestrator = MuteOrchestrator.getInstance();
     this.noteService = NoteService.getInstance();
     this.authService = AuthService.getInstance();
@@ -99,63 +94,36 @@ export class ThreadOrchestrator extends Orchestrator {
     }
   }
 
-  /**
-   * Fetch replies with 2-stage strategy: read relays → outbound relays of note author
-   */
   private async fetchRepliesFromRelays(noteId: string): Promise<NostrEvent[]> {
+    const relays = this.transport.getReadRelays();
     const isAddressable = noteId.includes(':');
+
     const filters: NDKFilter[] = [{
       kinds: [1, 1111],
       ...(isAddressable ? { '#a': [noteId] } : { '#e': [noteId] })
     }];
 
-    const allReplies = new Map<string, NostrEvent>();
-
-    // Stage 1: Read relays
-    const relays = this.transport.getReadRelays();
     try {
       const events = await this.transport.fetch(relays, filters, 5000);
-      events.forEach(e => { if (e.id) allReplies.set(e.id, e); });
-    } catch (error) {
-      this.systemLogger.error(this.LOG_TAG, `Stage 1 replies failed: ${error}`);
-    }
+      let actualReplies = events.filter(event => this.isActualReply(event, noteId));
 
-    // Stage 2: Outbound relays of the note's author (replies often land on same relays)
-    const note = this.noteService.getCachedNote(noteId);
-    if (note) {
-      try {
-        const outboundRelays = await this.relayDiscovery.getCombinedRelays([note.pubkey], true);
-        const outboundEvents = await this.transport.fetch(outboundRelays, filters, 8000);
-        const countBefore = allReplies.size;
-        outboundEvents.forEach(e => { if (e.id && !allReplies.has(e.id)) allReplies.set(e.id, e); });
-        const newFromOutbound = allReplies.size - countBefore;
-        if (newFromOutbound > 0) {
-          diagLog('relays', 'ThreadOrchestrator: outbound fallback found additional replies', {
-            noteId: noteId.slice(0, 8),
-            newReplies: newFromOutbound
-          });
-        }
-      } catch {
-        // Outbound fallback failed, continue with what we have
+      const currentUser = this.authService.getCurrentUser();
+      if (currentUser) {
+        const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(currentUser.pubkey);
+        const mutedSet = new Set(mutedPubkeys);
+        actualReplies = actualReplies.filter(event => !mutedSet.has(event.pubkey));
       }
+
+      actualReplies.sort((a, b) => a.created_at - b.created_at);
+
+      // Register replies in NoteService for later reuse
+      this.noteService.registerNotes(actualReplies);
+
+      return actualReplies;
+    } catch (error) {
+      this.systemLogger.error(this.LOG_TAG, `Fetch replies failed: ${error}`);
+      return [];
     }
-
-    // Filter and sort
-    let actualReplies = Array.from(allReplies.values()).filter(event => this.isActualReply(event, noteId));
-
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser) {
-      const mutedPubkeys = await this.muteOrchestrator.getAllMutedUsers(currentUser.pubkey);
-      const mutedSet = new Set(mutedPubkeys);
-      actualReplies = actualReplies.filter(event => !mutedSet.has(event.pubkey));
-    }
-
-    actualReplies.sort((a, b) => a.created_at - b.created_at);
-
-    // Register replies in NoteService for later reuse
-    this.noteService.registerNotes(actualReplies);
-
-    return actualReplies;
   }
 
   private isActualReply(event: NostrEvent, noteId: string): boolean {
@@ -187,12 +155,6 @@ export class ThreadOrchestrator extends Orchestrator {
     }
   }
 
-  /**
-   * Walk parent chain upward with outbound relay fallback
-   * When NoteService.getNote() fails (aggregator-only), try:
-   * 1. Relay hints from e-tag (NIP-10)
-   * 2. Outbound relays of the child note's author
-   */
   private async fetchParentChainFromRelays(noteId: string): Promise<ThreadContext> {
     try {
       // Try NoteService cache first, then fetch
@@ -207,18 +169,12 @@ export class ThreadOrchestrator extends Orchestrator {
       const maxDepth = 50;
 
       for (let depth = 0; depth < maxDepth; depth++) {
-        const parentRef = this.extractParentRef(noteToProcess);
-        if (!parentRef || parentRef.id === noteToProcess.id) break;
-        if (chain.some(item => item.eventId === parentRef.id)) break;
+        const parentId = this.extractParentId(noteToProcess);
+        if (!parentId || parentId === noteToProcess.id) break;
+        if (chain.some(item => item.eventId === parentId)) break;
 
-        // Try NoteService cache first (uses aggregator relays)
-        let parentNote = await this.noteService.getNote(parentRef.id);
-
-        // Outbound fallback: relay hints + child author's outbound relays
-        if (!parentNote) {
-          parentNote = await this.fetchNoteWithOutbound(parentRef.id, parentRef.relayHint, noteToProcess.pubkey);
-        }
-
+        // Try NoteService cache first, then fetch
+        const parentNote = await this.noteService.getNote(parentId);
         if (!parentNote) break;
 
         chain.push({
@@ -252,81 +208,25 @@ export class ThreadOrchestrator extends Orchestrator {
     }
   }
 
-  /**
-   * Fetch a single note using relay hints + outbound relays of a known author
-   */
-  private async fetchNoteWithOutbound(
-    eventId: string,
-    relayHint: string | null,
-    knownAuthorPubkey: string
-  ): Promise<NostrEvent | null> {
-    const filter: NDKFilter = { ids: [eventId], limit: 1 };
-
-    // Try relay hint first (fastest, most targeted)
-    if (relayHint) {
-      try {
-        const events = await this.transport.fetch([relayHint], [filter], 5000);
-        if (events[0]) {
-          diagLog('relays', 'ThreadOrchestrator: relay hint found parent note', {
-            eventId: eventId.slice(0, 8),
-            relay: relayHint
-          });
-          this.noteService.registerNotes([events[0]]);
-          return events[0];
-        }
-      } catch {
-        // Hint relay failed, continue
-      }
-    }
-
-    // Try outbound relays of the child's author (they likely share relays with the parent)
-    try {
-      const outboundRelays = await this.relayDiscovery.getCombinedRelays([knownAuthorPubkey], true);
-      const events = await this.transport.fetch(outboundRelays, [filter], 8000);
-      if (events[0]) {
-        diagLog('relays', 'ThreadOrchestrator: outbound fallback found parent note', {
-          eventId: eventId.slice(0, 8),
-          childAuthor: knownAuthorPubkey.slice(0, 8)
-        });
-        this.noteService.registerNotes([events[0]]);
-        return events[0];
-      }
-    } catch {
-      // Outbound failed
-    }
-
-    return null;
-  }
-
-  /**
-   * Extract parent event ID and optional relay hint from e-tags
-   */
-  private extractParentRef(event: NostrEvent): { id: string; relayHint: string | null } | null {
+  private extractParentId(event: NostrEvent): string | null {
     // NIP-22: kind:1111 uses lowercase 'e' tag for parent reference
     if (event.kind === 1111) {
       const parentETag = event.tags.find(t => t[0] === 'e');
-      if (!parentETag?.[1]) return null;
-      return { id: parentETag[1], relayHint: parentETag[2] || null };
+      return parentETag?.[1] ?? null;
     }
 
     // NIP-10: kind:1 uses e-tags with markers
     const eTags = event.tags.filter(tag => tag[0] === 'e');
     if (eTags.length === 0) return null;
 
-    // Prefer 'reply' marker
     const replyTag = eTags.find(tag => tag[3] === 'reply');
-    if (replyTag?.[1]) return { id: replyTag[1], relayHint: replyTag[2] || null };
+    if (replyTag) return replyTag[1] ?? null;
 
-    // Single e-tag = parent
-    if (eTags.length === 1 && eTags[0]?.[1]) {
-      return { id: eTags[0][1], relayHint: eTags[0][2] || null };
-    }
+    const firstTag = eTags[0];
+    if (eTags.length === 1 && firstTag) return firstTag[1] ?? null;
 
-    // Last e-tag = parent (deprecated NIP-10 positional)
     const lastTag = eTags[eTags.length - 1];
-    if (lastTag?.[1]) return { id: lastTag[1], relayHint: lastTag[2] || null };
-
-    return null;
+    return lastTag?.[1] ?? null;
   }
 
   public clearCache(noteId: string): void {

@@ -33,7 +33,7 @@ export interface TimelineState {
 }
 
 export interface ViewState {
-  currentView: 'timeline' | 'single-note' | 'profile' | 'messages' | 'settings' | 'login' | 'article' | 'notifications' | 'about' | 'conversation' | 'write-article' | 'edit-article' | 'articles' | 'relay-browser';
+  currentView: 'timeline' | 'single-note' | 'profile' | 'messages' | 'settings' | 'login' | 'article' | 'notifications' | 'about' | 'conversation' | 'write-article' | 'articles' | 'relay-browser';
   currentNoteId?: string;
   currentProfileNpub?: string;
   currentArticleNaddr?: string;

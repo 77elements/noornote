@@ -19,9 +19,6 @@
  *   myPubkey
  * );
  */
-
-import { diagLog } from '../services/DiagnosticLogger';
-
 export async function encryptPrivateFollows(
   pubkeys: string[],
   authorPubkey: string
@@ -31,13 +28,11 @@ export async function encryptPrivateFollows(
 
   // Serialize to JSON
   const plaintext = JSON.stringify(privateTags);
-  diagLog('lists', 'encryptPrivateFollows: encrypting', { count: pubkeys.length, plaintextLength: plaintext.length });
 
   // Detect auth method and encrypt accordingly
   const { AuthService } = await import('../services/AuthService');
   const authService = AuthService.getInstance();
   const authMethod = authService.getAuthMethod();
-  diagLog('lists', 'encryptPrivateFollows: authMethod', { authMethod });
 
   if (authMethod === 'key-signer') {
     // Use KeySigner for encryption (NIP-44 → NIP-04 fallback)

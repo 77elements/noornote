@@ -61,7 +61,6 @@ temp/
 # Protected local-only directories
 screenshots/
 docs/
-diagnose/
 CLAUDE.md
 sync-protected.sh
 protected-files.zip

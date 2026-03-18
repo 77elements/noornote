@@ -16,7 +16,6 @@ import { SystemLogger } from '../../components/system/SystemLogger';
 import { EventBus } from '../EventBus';
 import { PlatformService } from '../PlatformService';
 import { SignatureVerificationService } from '../security/SignatureVerificationService';
-import { diagLog } from '../DiagnosticLogger';
 
 export interface SubscriptionCallbacks {
   onEvent: (event: NostrEvent, relay: string) => void;
@@ -135,8 +134,6 @@ export class NostrTransport {
     // Setup listeners for relay disconnect events
     this.setupRelayEventListeners();
 
-    diagLog('relays', 'NDK connected', { connected: connectedRelays.length, total: this.ndk.pool.relays.size });
-
     if (connectedRelays.length > 0) {
       this.systemLogger.success(
         'NostrTransport',
@@ -154,11 +151,9 @@ export class NostrTransport {
   private setupRelayEventListeners(): void {
     const setupRelayListeners = (relay: NDKRelay): void => {
       relay.on('disconnect', () => {
-        diagLog('relays', 'Relay disconnected', { url: relay.url });
         this.eventBus.emit('relay:error', { url: relay.url });
       });
       relay.on('connect', () => {
-        diagLog('relays', 'Relay connected', { url: relay.url });
         this.eventBus.emit('relay:connected', { url: relay.url });
       });
     };
@@ -346,7 +341,6 @@ export class NostrTransport {
 
       return events;
     } catch (error) {
-      diagLog('relays', 'Fetch failed', { relayCount: relays.length, kinds: filters.map(f => f.kinds).flat(), error: String(error) });
       this.systemLogger.error('NostrTransport', 'Failed to fetch events from relays');
       return [];
     }
@@ -445,8 +439,6 @@ export class NostrTransport {
         this.eventBus.emit('relay:connected', { url: relay.url });
       });
 
-      diagLog('relays', 'Publish result', { successful, failed, total: relays.length, kind: event.kind });
-
       if (successful > 0) {
         this.systemLogger.success('NostrTransport', `Delivered to ${successful} of ${relays.length} relays`);
       }
@@ -464,7 +456,6 @@ export class NostrTransport {
       // Return relay URLs (convert NDKRelay objects to strings)
       return new Set(Array.from(publishedRelays).map(relay => relay.url));
     } catch (error) {
-      diagLog('relays', 'Publish failed', { relayCount: relays.length, kind: event.kind, error: String(error) });
       this.systemLogger.error('NostrTransport', 'Publish failed');
       throw error;
     }

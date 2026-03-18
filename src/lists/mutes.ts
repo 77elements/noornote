@@ -25,7 +25,6 @@ import {
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
-import { diagLog } from '../services/DiagnosticLogger';
 // UI component imports
 import { View } from '../components/views/View';
 import { switchTabWithContent } from '../helpers/TabsHelper';
@@ -83,7 +82,6 @@ export interface MuteListData {
 export interface FetchFromRelaysResult {
   items: MuteItem[];
   relayContentWasEmpty: boolean;
-  relayTimestamp: number;
 }
 
 /**
@@ -106,7 +104,7 @@ interface SyncDiff {
  * Does NOT compare order (user can't reorder, displayed by date)
  */
 function hasMuteDifference(browserItems: string[], sourceItems: string[]): boolean {
-  diagLog('lists', 'hasMuteDifference', { browserCount: browserItems.length, sourceCount: sourceItems.length, browserItems, sourceItems });
+  console.debug('[DIAG:mutes] hasMuteDifference:', { browserCount: browserItems.length, sourceCount: sourceItems.length, browserItems, sourceItems });
   // Different count = different
   if (browserItems.length !== sourceItems.length) return true;
 
@@ -132,7 +130,6 @@ interface SyncFromRelaysResult {
   diff: SyncDiff;
   relayItems: string[];
   relayContentWasEmpty: boolean;
-  relayTimestamp: number;
 }
 
 /**
@@ -582,7 +579,7 @@ export async function getFileMutes(): Promise<MuteItem[]> {
 export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   const pubkey = getCurrentUserPubkey();
   if (!pubkey) {
-    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
+    return { items: [], relayContentWasEmpty: true };
   }
 
   try {
@@ -595,12 +592,12 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     if (events.length === 0) {
       logger.info('mutes.ts', 'No mute list found on relays');
-      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
+      return { items: [], relayContentWasEmpty: true };
     }
 
     const muteEvent = events.sort((a, b) => b.created_at - a.created_at)[0];
     if (!muteEvent) {
-      return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
+      return { items: [], relayContentWasEmpty: true };
     }
 
     const items: MuteItem[] = [];
@@ -617,7 +614,6 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     // Decrypt private mutes from content
     if (muteEvent.content?.trim()) {
-      diagLog('lists', 'mutes fetchFromRelays: event has encrypted content, decrypting', { contentLength: muteEvent.content.length });
       try {
         const privateTags = await decryptPrivateMutes(muteEvent.content, pubkey);
         for (const tag of privateTags) {
@@ -633,7 +629,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     }
 
     const deduped = deduplicateMuteItems(items);
-    diagLog('lists', 'mutes fetchFromRelays result', {
+    console.debug('[DIAG:mutes] fetchFromRelays result:', {
       totalBeforeDedup: items.length,
       afterDedup: deduped.length,
       publicUsers: deduped.filter(i => i.type === 'user' && !i.isPrivate).length,
@@ -644,10 +640,10 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     });
     logger.info('mutes.ts', `Fetched from relays: ${deduped.length} items`);
 
-    return { items: deduped, relayContentWasEmpty: items.length === 0, relayTimestamp: timestamp };
+    return { items: deduped, relayContentWasEmpty: items.length === 0 };
   } catch (error) {
     logger.error('mutes.ts', `Failed to fetch from relays: ${error}`);
-    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
+    return { items: [], relayContentWasEmpty: true };
   }
 }
 
@@ -657,7 +653,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 export async function publishToRelays(): Promise<void> {
   const user = requireAuth();
   const items = getMuteItems();
-  diagLog('lists', 'mutes publishToRelays', {
+  console.debug('[DIAG:mutes] publishToRelays:', {
     totalItems: items.length,
     items: items.map(i => ({ type: i.type, id: i.id.slice(0, 8), isPrivate: i.isPrivate }))
   });
@@ -671,12 +667,9 @@ export async function publishToRelays(): Promise<void> {
     (item.isPrivate ? privateTags : publicTags).push(tag);
   }
 
-  let content = '';
-  if (privateTags.length > 0) {
-    diagLog('lists', 'mutes publishToRelays: encrypting private tags', { count: privateTags.length });
-    content = await encryptContent(JSON.stringify(privateTags), user.pubkey);
-    diagLog('lists', 'mutes publishToRelays: encrypted content', { contentLength: content.length });
-  }
+  const content = privateTags.length > 0
+    ? await encryptContent(JSON.stringify(privateTags), user.pubkey)
+    : '';
 
   const event = {
     kind: 10000,
@@ -700,19 +693,12 @@ export async function publishToRelays(): Promise<void> {
 // ============================================================
 
 async function decryptPrivateMutes(ciphertext: string, pubkey: string): Promise<string[][]> {
-  diagLog('lists', 'decryptPrivateMutes: attempting decryption', { ciphertextLength: ciphertext.length });
   const plaintext = await decryptContent(ciphertext, pubkey);
-  if (!plaintext) {
-    diagLog('lists', 'decryptPrivateMutes: decryption returned null — private mutes LOST');
-    return [];
-  }
+  if (!plaintext) return [];
 
   try {
-    const tags = JSON.parse(plaintext);
-    diagLog('lists', 'decryptPrivateMutes: SUCCESS', { decryptedTags: tags.length });
-    return tags;
-  } catch (error) {
-    diagLog('lists', 'decryptPrivateMutes: FAILED to parse decrypted content', { error: String(error), rawPreview: plaintext.slice(0, 200) });
+    return JSON.parse(plaintext);
+  } catch {
     return [];
   }
 }
@@ -742,7 +728,7 @@ function calculateSyncDiff(browserItems: string[], sourceItems: string[]): SyncD
   const removed = browserItems.filter(item => !sourceSet.has(item));
   const unchanged = browserItems.filter(item => sourceSet.has(item));
 
-  diagLog('lists', 'mutes calculateSyncDiff', {
+  console.debug('[DIAG:mutes] calculateSyncDiff:', {
     browserCount: browserItems.length,
     sourceCount: sourceItems.length,
     added: added.length,
@@ -867,19 +853,19 @@ export class MuteStorageAdapter {
     }
   }
 
-  async fetchFromRelays(): Promise<{ items: string[]; relayContentWasEmpty: boolean; relayTimestamp: number }> {
+  async fetchFromRelays(): Promise<{ items: string[]; relayContentWasEmpty: boolean }> {
     try {
       const result = await fetchFromRelays();
       // Encode all items (users AND threads) with prefixes
       const encodedItems = result.items.map(encodeMuteItem);
-      diagLog('lists', 'MuteStorageAdapter.fetchFromRelays: encoded', {
+      console.debug('[DIAG:mutes] MuteStorageAdapter.fetchFromRelays: encoded:', {
         rawItemCount: result.items.length,
         encodedCount: encodedItems.length,
         relayContentWasEmpty: result.relayContentWasEmpty,
         encodedItems
       });
 
-      return { items: encodedItems, relayContentWasEmpty: result.relayContentWasEmpty, relayTimestamp: result.relayTimestamp };
+      return { items: encodedItems, relayContentWasEmpty: result.relayContentWasEmpty };
     } catch (error) {
       logger.error('MuteStorageAdapter', `Failed to fetch from relays: ${error}`);
       throw error;
@@ -899,12 +885,12 @@ export class MuteStorageAdapter {
   async syncFromRelays(): Promise<SyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
-    diagLog('lists', 'MuteStorageAdapter.syncFromRelays: browserItems', {
+    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: browserItems:', {
       count: browserItems.length,
       items: browserItems
     });
     const fetchResult = await this.fetchFromRelays();
-    diagLog('lists', 'MuteStorageAdapter.syncFromRelays: fetchResult', {
+    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: fetchResult:', {
       itemCount: fetchResult.items.length,
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       items: fetchResult.items
@@ -913,7 +899,7 @@ export class MuteStorageAdapter {
 
     // Use full state comparison (now includes threads)
     const requiresConfirmation = hasMuteDifference(browserItems, fetchResult.items);
-    diagLog('lists', 'MuteStorageAdapter.syncFromRelays: result', {
+    console.debug('[DIAG:mutes] MuteStorageAdapter.syncFromRelays: result:', {
       requiresConfirmation,
       added: diff.added.length,
       removed: diff.removed.length,
@@ -924,8 +910,7 @@ export class MuteStorageAdapter {
       requiresConfirmation,
       diff,
       relayItems: fetchResult.items,
-      relayContentWasEmpty: fetchResult.relayContentWasEmpty,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayContentWasEmpty: fetchResult.relayContentWasEmpty
     };
   }
 
@@ -1273,18 +1258,18 @@ export class MuteListView extends View {
           },
           onKeep: async () => {
             this.adapter.applySyncFromRelays('merge', result.relayItems);
+            ToastService.show(`Merged ${result.diff.added.length} new mutes (kept ${result.diff.removed.length} local mutes)`, 'success');
+            await this.loadMuteList();
+          },
+          onMerge: async () => {
+            this.adapter.applySyncFromRelays('merge', result.relayItems);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show(`Merged ${result.diff.added.length} new mutes and synced to relays`, 'success');
             await this.loadMuteList();
           },
-          onRelay: async () => {
+          onDelete: async () => {
             this.adapter.applySyncFromRelays('overwrite', result.relayItems);
             ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
-            await this.loadMuteList();
-          },
-          onLocal: async () => {
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local mutes pushed to relays', 'success');
             await this.loadMuteList();
           }
         });
@@ -1355,18 +1340,12 @@ export class MuteListView extends View {
           },
           onKeep: async () => {
             this.adapter.applySyncFromFile('merge', result.fileItems);
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
+            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
             await this.loadMuteList();
           },
-          onRelay: async () => {
+          onDelete: async () => {
             this.adapter.applySyncFromFile('overwrite', result.fileItems);
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
-            await this.loadMuteList();
-          },
-          onLocal: async () => {
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local mutes pushed to relays', 'success');
             await this.loadMuteList();
           }
         });
@@ -1627,18 +1606,12 @@ export class MuteListManager {
           },
           onKeep: async () => {
             this.adapter.applySyncFromRelays('merge', result.relayItems);
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} new mutes and synced to relays`, 'success');
+            ToastService.show(`Merged ${result.diff.added.length} new mutes (kept ${result.diff.removed.length} local mutes)`, 'success');
             await this.renderListTab(container);
           },
-          onRelay: async () => {
+          onDelete: async () => {
             this.adapter.applySyncFromRelays('overwrite', result.relayItems);
             ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
-            await this.renderListTab(container);
-          },
-          onLocal: async () => {
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local mutes pushed to relays', 'success');
             await this.renderListTab(container);
           }
         });
@@ -1712,18 +1685,12 @@ export class MuteListManager {
           },
           onKeep: async () => {
             this.adapter.applySyncFromFile('merge', result.fileItems);
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
+            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
             await this.renderListTab(container);
           },
-          onRelay: async () => {
+          onDelete: async () => {
             this.adapter.applySyncFromFile('overwrite', result.fileItems);
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
-            await this.renderListTab(container);
-          },
-          onLocal: async () => {
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local mutes pushed to relays', 'success');
             await this.renderListTab(container);
           }
         });

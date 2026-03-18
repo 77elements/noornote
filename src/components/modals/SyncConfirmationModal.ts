@@ -6,7 +6,6 @@
 
 import { ModalService } from '../../services/ModalService';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
-import { diagLog } from '../../services/DiagnosticLogger';
 
 /**
  * Moved item with folder assignment change
@@ -26,20 +25,16 @@ export interface SyncConfirmationOptions<T> {
   removed: T[];
   /** Items with different folder assignments */
   moved?: MovedItemInfo<T>[];
-  /** Human-readable descriptions of snapshot differences (order, properties, etc.) */
-  snapshotDetails?: string[];
   /** Function to get displayable name for an item (text only) */
   getDisplayName: (item: T) => string | Promise<string>;
   /** Optional: Function to render item as HTML (for mentions with avatar) */
   renderItemHtml?: (item: T) => string | Promise<string>;
-  /** Callback: "Keep all" — merge local + relay, push result */
+  /** Callback when user chooses "Only add new ones" (keep local, ignore relay removals) */
   onKeep: () => void | Promise<void>;
-  /** Callback: "Keep relay" — replace local with relay */
-  onRelay: () => void | Promise<void>;
-  /** Callback: "Keep local" — push local to relay, discard relay-only items */
-  onLocal: () => void | Promise<void>;
-  /** Callback: "Merge both" — for bookmarks/tribes with folder structure merge */
+  /** Callback when user chooses "Merge both" (combine local + relay, then sync back) */
   onMerge?: () => void | Promise<void>;
+  /** Callback when user chooses "Accept changes" (replace local with relay) */
+  onDelete: () => void | Promise<void>;
 }
 
 interface ResolvedItem {
@@ -72,7 +67,7 @@ export class SyncConfirmationModal<T> {
    * Returns a Promise that resolves when user makes a choice
    */
   public async show(): Promise<void> {
-    diagLog('lists', 'SyncConfirmationModal show', {
+    console.debug('[DIAG:SyncConfirmationModal] show:', {
       listType: this.options.listType,
       addedCount: this.options.added.length,
       removedCount: this.options.removed.length,
@@ -171,20 +166,36 @@ export class SyncConfirmationModal<T> {
     const { added, removed, moved, listType } = this.options;
     const movedCount = moved?.length || 0;
 
+    // Determine if this is a file sync or relay sync based on listType
     const isFileSync = listType.toLowerCase().includes('file');
     const sourceLabel = isFileSync ? 'file' : 'relay';
+    const cleanListType = listType.replace(/\s*\(File\)\s*/i, '').toLowerCase();
 
-    const snapshotDetails = this.options.snapshotDetails || [];
-    const hasSnapshotDetails = snapshotDetails.length > 0;
+    // Build the question text based on what differs
+    const hasRemoved = removed.length > 0;
+    const hasMoved = movedCount > 0;
 
-    const sourceUp = sourceLabel.charAt(0).toUpperCase() + sourceLabel.slice(1);
+    let questionText = '';
+    if (hasRemoved && hasMoved) {
+      questionText = `What should happen with these differences?`;
+    } else if (hasRemoved) {
+      questionText = `What should happen with the ${removed.length} item${removed.length > 1 ? 's' : ''} only in NoorNote Memory?`;
+    } else if (hasMoved) {
+      questionText = `What should happen with the ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders?`;
+    }
 
     container.innerHTML = `
       <div class="sync-confirmation-modal__content">
+        <div class="sync-confirmation-modal__warning">
+          <p class="sync-confirmation-modal__message">
+            Your ${cleanListType} in NoorNote Memory differs from the ${sourceLabel} version.
+          </p>
+        </div>
+
         ${removed.length > 0 ? `
           <div class="sync-confirmation-modal__section">
-            <h2 class="sync-confirmation-modal__section-title">
-              Locally: + ${removed.length} item${removed.length > 1 ? 's' : ''}, not in the ${sourceLabel}s
+            <h3 class="sync-confirmation-modal__section-title">
+              ❌ Only in NoorNote Memory (${removed.length} item${removed.length > 1 ? 's' : ''})
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedRemovedItems)}
@@ -194,8 +205,8 @@ export class SyncConfirmationModal<T> {
 
         ${movedCount > 0 ? `
           <div class="sync-confirmation-modal__section">
-            <h2 class="sync-confirmation-modal__section-title">
-              ${movedCount} item${movedCount > 1 ? 's' : ''} in different folders
+            <h3 class="sync-confirmation-modal__section-title">
+              📁 Different folder (${movedCount} item${movedCount > 1 ? 's' : ''})
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderMovedItems(this.resolvedMovedItems, sourceLabel)}
@@ -205,8 +216,8 @@ export class SyncConfirmationModal<T> {
 
         ${added.length > 0 ? `
           <div class="sync-confirmation-modal__section">
-            <h2 class="sync-confirmation-modal__section-title">
-              ${sourceUp}s: ${added.length} item${added.length > 1 ? 's' : ''}, not stored locally
+            <h3 class="sync-confirmation-modal__section-title">
+              ✅ New from ${sourceLabel} (${added.length} item${added.length > 1 ? 's' : ''})
             </h3>
             <div class="sync-confirmation-modal__list">
               ${this.renderItems(this.resolvedAddedItems)}
@@ -214,26 +225,21 @@ export class SyncConfirmationModal<T> {
           </div>
         ` : ''}
 
-        ${hasSnapshotDetails ? `
-          <div class="sync-confirmation-modal__section">
-            <h2 class="sync-confirmation-modal__section-title">
-              Other differences
-            </h3>
-            <div class="sync-confirmation-modal__list">
-              ${snapshotDetails.map(d => `<div class="sync-confirmation-modal__item">${this.escapeHtml(d)}</div>`).join('')}
-            </div>
-          </div>
-        ` : ''}
+        <div class="sync-confirmation-modal__question">
+          <p><strong>${questionText}</strong></p>
+        </div>
 
         <div class="sync-confirmation-modal__actions">
-          <button type="button" class="btn btn--success" id="sync-keep-btn">
-            Keep all
+          <button type="button" class="btn btn--passive" id="sync-keep-btn">
+            Only add new ones
           </button>
-          <button type="button" class="btn btn--primary" id="sync-relay-btn">
-            Keep relay
+          ${this.options.onMerge ? `
+          <button type="button" class="btn btn--primary" id="sync-merge-btn">
+            Merge both
           </button>
-          <button type="button" class="btn btn--passive" id="sync-local-btn">
-            Keep local
+          ` : ''}
+          <button type="button" class="btn btn--success" id="sync-delete-btn">
+            Accept changes
           </button>
         </div>
       </div>
@@ -304,11 +310,12 @@ export class SyncConfirmationModal<T> {
    */
   private setupEventHandlers(): void {
     const keepBtn = document.getElementById('sync-keep-btn');
-    const relayBtn = document.getElementById('sync-relay-btn');
-    const localBtn = document.getElementById('sync-local-btn');
+    const mergeBtn = document.getElementById('sync-merge-btn');
+    const deleteBtn = document.getElementById('sync-delete-btn');
 
-    if (!keepBtn || !relayBtn || !localBtn) {
+    if (!keepBtn || !deleteBtn) {
       console.error('[SyncConfirmationModal] Failed to find modal buttons');
+      // Resolve anyway to prevent hanging
       if (this.resolvePromise) {
         this.resolvePromise();
         this.resolvePromise = null;
@@ -316,25 +323,58 @@ export class SyncConfirmationModal<T> {
       return;
     }
 
-    const handle = (name: string, callback: () => void | Promise<void>) => {
-      return async () => {
+    // Keep button (keep local, ignore relay changes)
+    keepBtn.addEventListener('click', async () => {
+      this.modalService.hide();
+      console.debug('[DIAG:SyncConfirmationModal] onKeep clicked for listType:', this.options.listType);
+      console.log('[SyncModal] onKeep: starting callback...');
+      try {
+        await this.options.onKeep();
+        console.log('[SyncModal] onKeep: callback completed successfully');
+      } catch (error) {
+        console.error('[SyncModal] onKeep: callback FAILED:', error);
+      }
+      if (this.resolvePromise) {
+        this.resolvePromise();
+        this.resolvePromise = null;
+      }
+    });
+
+    // Merge button (combine both and sync back to relays)
+    if (mergeBtn && this.options.onMerge) {
+      mergeBtn.addEventListener('click', async () => {
         this.modalService.hide();
-        diagLog('lists', `SyncConfirmationModal ${name} clicked`, { listType: this.options.listType });
+        console.debug('[DIAG:SyncConfirmationModal] onMerge clicked for listType:', this.options.listType);
+        console.log('[SyncModal] onMerge: starting callback...');
         try {
-          await callback();
+          await this.options.onMerge!();
+          console.log('[SyncModal] onMerge: callback completed successfully');
         } catch (error) {
-          console.error(`[SyncModal] ${name}: callback FAILED:`, error);
+          console.error('[SyncModal] onMerge: callback FAILED:', error);
         }
         if (this.resolvePromise) {
           this.resolvePromise();
           this.resolvePromise = null;
         }
-      };
-    };
+      });
+    }
 
-    keepBtn.addEventListener('click', handle('Keep all', this.options.onKeep));
-    relayBtn.addEventListener('click', handle('Keep relay', this.options.onRelay));
-    localBtn.addEventListener('click', handle('Keep local', this.options.onLocal));
+    // Delete button (overwrite with relay)
+    deleteBtn.addEventListener('click', async () => {
+      this.modalService.hide();
+      console.debug('[DIAG:SyncConfirmationModal] onDelete (Accept changes) clicked for listType:', this.options.listType);
+      console.log('[SyncModal] onDelete: starting callback...');
+      try {
+        await this.options.onDelete();
+        console.log('[SyncModal] onDelete: callback completed successfully');
+      } catch (error) {
+        console.error('[SyncModal] onDelete: callback FAILED:', error);
+      }
+      if (this.resolvePromise) {
+        this.resolvePromise();
+        this.resolvePromise = null;
+      }
+    });
   }
 
   /**

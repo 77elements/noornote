@@ -8,7 +8,6 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys, type StorageKey } from '../services/PerAccountLocalStorage';
-import { diagLog } from '../services/DiagnosticLogger';
 
 export { StorageKeys };
 
@@ -24,7 +23,7 @@ export function getStorage(): PerAccountLocalStorage {
  */
 export function readList<T>(key: StorageKey, defaultValue: T[] = []): T[] {
   const result = getStorage().get<T[]>(key, defaultValue);
-  diagLog('lists', 'readList', { key, itemCount: result.length });
+  console.debug('[DIAG:storage] readList:', { key, itemCount: result.length });
   return result;
 }
 
@@ -32,7 +31,7 @@ export function readList<T>(key: StorageKey, defaultValue: T[] = []): T[] {
  * Write list data to per-account localStorage
  */
 export function writeList<T>(key: StorageKey, items: T[]): void {
-  diagLog('lists', 'writeList', { key, itemCount: items.length });
+  console.debug('[DIAG:storage] writeList:', { key, itemCount: items.length });
   getStorage().set(key, items);
 }
 
@@ -97,27 +96,3 @@ export function mergeStringArrays(browserItems: string[], newItems: string[]): s
 export function now(): number {
   return Math.floor(Date.now() / 1000);
 }
-
-// =============================================================================
-// LIST TIMESTAMPS (Easy Mode timestamp-based sync)
-// =============================================================================
-
-const LIST_TIMESTAMP_KEYS = {
-  follows: StorageKeys.LIST_LAST_MODIFIED_FOLLOWS,
-  bookmarks: StorageKeys.LIST_LAST_MODIFIED_BOOKMARKS,
-  mutes: StorageKeys.LIST_LAST_MODIFIED_MUTES,
-  tribes: StorageKeys.LIST_LAST_MODIFIED_TRIBES,
-} as const;
-
-export type ListType = keyof typeof LIST_TIMESTAMP_KEYS;
-
-export function getListLastModified(listType: ListType): number {
-  return getStorage().get<number>(LIST_TIMESTAMP_KEYS[listType], 0);
-}
-
-export function setListLastModified(listType: ListType, timestamp?: number): void {
-  const ts = timestamp ?? now();
-  getStorage().set(LIST_TIMESTAMP_KEYS[listType], ts);
-  diagLog('lists', `setListLastModified(${listType})`, { timestamp: ts });
-}
-

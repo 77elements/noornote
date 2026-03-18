@@ -22,7 +22,6 @@ import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { MediaUploadService } from '../../services/MediaUploadService';
-import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 
@@ -54,10 +53,8 @@ export class ArticleEditorView extends View {
   private isTestMode: boolean = false;
   private isPublishing: boolean = false;
   private isCoverUploading: boolean = false;
-  private isEditMode: boolean = false;
-  private originalPublishedAt: number | null = null;
 
-  constructor(editNaddr?: string) {
+  constructor() {
     super();
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article-editor';
@@ -71,54 +68,7 @@ export class ArticleEditorView extends View {
     this.identifier = ArticleService.generateIdentifier();
 
     this.loadRelayConfiguration();
-
-    if (editNaddr) {
-      this.isEditMode = true;
-      this.loadExistingArticle(editNaddr);
-    } else {
-      this.render();
-    }
-  }
-
-  /**
-   * Load existing article for editing
-   */
-  private async loadExistingArticle(naddr: string): Promise<void> {
-    // Show loading state
-    this.container.innerHTML = `
-      <div class="article-view-loading">
-        <div class="loading-spinner"></div>
-        <p>Loading article...</p>
-      </div>
-    `;
-
-    try {
-      this.systemLogger.info('ArticleEditorView', `Loading article: ${naddr.slice(0, 30)}...`);
-      const orchestrator = LongFormOrchestrator.getInstance();
-      const event = await orchestrator.fetchAddressableEvent(naddr);
-
-      if (!event) {
-        this.systemLogger.error('ArticleEditorView', 'Article not found on relays');
-        this.container.innerHTML = `<div class="article-view-error"><p>Article not found</p></div>`;
-        return;
-      }
-
-      // Extract metadata and pre-fill fields
-      const metadata = LongFormOrchestrator.extractArticleMetadata(event);
-      this.title = metadata.title;
-      this.content = event.content;
-      this.summary = metadata.summary;
-      this.image = metadata.image;
-      this.identifier = metadata.identifier;
-      this.tags = metadata.topics.join(', ');
-      this.originalPublishedAt = metadata.publishedAt;
-
-      this.systemLogger.info('ArticleEditorView', `Article loaded: "${metadata.title}"`);
-      this.render();
-    } catch (error) {
-      this.systemLogger.error('ArticleEditorView', `Failed to load article: ${error}`);
-      this.container.innerHTML = `<div class="article-view-error"><p>Failed to load article</p></div>`;
-    }
+    this.render();
   }
 
   /**
@@ -188,7 +138,7 @@ export class ArticleEditorView extends View {
             </svg>
             Back
           </button>
-          <h1 class="article-editor__title">${this.isEditMode ? 'Edit Article' : 'Write Article'}</h1>
+          <h1 class="article-editor__title">Write Article</h1>
         </header>
 
         <div class="article-editor__toolbar">
@@ -207,7 +157,7 @@ export class ArticleEditorView extends View {
           ${this.toolbar.render()}
           <div class="article-editor__actions">
             <button class="btn btn--passive" data-action="save-draft">Save Draft</button>
-            <button class="btn" data-action="publish">${this.isEditMode ? 'Update' : 'Publish'}</button>
+            <button class="btn" data-action="publish">Publish</button>
           </div>
         </footer>
       </div>
@@ -438,20 +388,18 @@ export class ArticleEditorView extends View {
     const publishBtn = this.container.querySelector('[data-action="publish"]');
     publishBtn?.addEventListener('click', () => this.handlePublish());
 
-    // Auto-generate slug from title (only for new articles, not when editing)
-    if (!this.isEditMode) {
-      const titleInput = this.container.querySelector('[data-field="title"]') as HTMLInputElement;
-      titleInput?.addEventListener('blur', () => {
-        if (this.title && !this.identifier.includes('-')) {
-          // Only auto-generate if identifier hasn't been customized
-          this.identifier = ArticleService.generateIdentifier(this.title);
-          const identifierInput = this.container.querySelector('[data-field="identifier"]') as HTMLInputElement;
-          if (identifierInput) {
-            identifierInput.value = this.identifier;
-          }
+    // Auto-generate slug from title
+    const titleInput = this.container.querySelector('[data-field="title"]') as HTMLInputElement;
+    titleInput?.addEventListener('blur', () => {
+      if (this.title && !this.identifier.includes('-')) {
+        // Only auto-generate if identifier hasn't been customized
+        this.identifier = ArticleService.generateIdentifier(this.title);
+        const identifierInput = this.container.querySelector('[data-field="identifier"]') as HTMLInputElement;
+        if (identifierInput) {
+          identifierInput.value = this.identifier;
         }
-      });
-    }
+      }
+    });
   }
 
   /**
@@ -702,7 +650,7 @@ export class ArticleEditorView extends View {
    */
   private handleBack(): void {
     // See docs/todos/article-editor-unsaved-changes.md
-    this.router.back();
+    this.router.navigate('/');
   }
 
   /**
@@ -791,7 +739,6 @@ export class ArticleEditorView extends View {
       if (this.summary) articleData.summary = this.summary;
       if (this.image) articleData.image = this.image;
       if (topics.length > 0) articleData.topics = topics;
-      if (this.isEditMode && this.originalPublishedAt) articleData.publishedAt = this.originalPublishedAt;
 
       const naddr = isDraft
         ? await this.articleService.saveDraft(articleData)

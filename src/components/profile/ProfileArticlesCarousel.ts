@@ -149,6 +149,9 @@ export class ProfileArticlesCarousel {
     // Get author name (async, but we'll use placeholder for now)
     const authorName = this.getAuthorDisplayName();
 
+    // Extract first ~100 chars of content as excerpt
+    const excerpt = this.extractExcerpt(article.event.content, 100);
+
     // Image or placeholder
     const imageHtml = metadata.image
       ? `<div class="profile-articles-carousel__card-image" style="background-image: url('${this.escapeHtml(metadata.image)}')"></div>`
@@ -164,6 +167,7 @@ export class ProfileArticlesCarousel {
             <span class="profile-articles-carousel__card-separator">·</span>
             <span class="profile-articles-carousel__card-date">${formattedDate}</span>
           </div>
+          <p class="profile-articles-carousel__card-excerpt">${this.escapeHtml(excerpt)}</p>
         </div>
       </article>
     `;
@@ -186,6 +190,29 @@ export class ProfileArticlesCarousel {
 
   private getAuthorDisplayName(): string {
     return this.authorName || 'Anonymous';
+  }
+
+  /**
+   * Extract excerpt from markdown content
+   */
+  private extractExcerpt(content: string, maxLength: number): string {
+    // Remove markdown formatting
+    let text = content
+      .replace(/^#+\s+/gm, '') // Remove headers
+      .replace(/\*\*([^*]+)\*\*/g, '$1') // Remove bold
+      .replace(/\*([^*]+)\*/g, '$1') // Remove italic
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove links
+      .replace(/!\[[^\]]*\]\([^)]+\)/g, '') // Remove images
+      .replace(/`[^`]+`/g, '') // Remove inline code
+      .replace(/```[\s\S]*?```/g, '') // Remove code blocks
+      .replace(/\n+/g, ' ') // Replace newlines with spaces
+      .trim();
+
+    if (text.length > maxLength) {
+      text = text.substring(0, maxLength).trim() + '...';
+    }
+
+    return text;
   }
 
   /**

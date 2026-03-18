@@ -512,12 +512,9 @@ export class RelaySettingsSection extends SettingsSection {
 
       const signedEvent = await this.authService.signEvent(unsignedEvent);
 
-      // Publish to write relays + metadata indexers for discoverability
-      const metadataRelays = this.relayConfig.getMetadataRelays();
-      const publishRelays = [...new Set([...context.writeRelays, ...metadataRelays])];
       await this.relayListOrchestrator.publishRelayList(
         this.tempRelays,
-        publishRelays,
+        context.writeRelays,
         signedEvent
       );
 

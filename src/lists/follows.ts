@@ -24,7 +24,6 @@ import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
 import { AuthService } from '../services/AuthService';
-import { diagLog } from '../services/DiagnosticLogger';
 import { ToastService } from '../services/ToastService';
 import { AppState } from '../services/AppState';
 import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
@@ -80,7 +79,6 @@ export interface FetchFromRelaysResult {
   items: FollowItem[];
   relayContentWasEmpty: boolean;
   decryptionFailed?: boolean;
-  relayTimestamp: number;
 }
 
 /**
@@ -103,7 +101,7 @@ interface SyncDiff {
  * Does NOT compare order (user can't reorder, displayed by date)
  */
 function hasFollowDifference(browserItems: FollowItem[], sourceItems: FollowItem[]): boolean {
-  diagLog('lists', 'hasFollowDifference', {
+  console.debug('[DIAG:follows] hasFollowDifference:', {
     browserCount: browserItems.length,
     sourceCount: sourceItems.length,
     browserPubkeys: browserItems.map(i => i.pubkey.slice(0, 8)),
@@ -158,7 +156,6 @@ interface SyncFromRelaysResult {
   diff: SyncDiff;
   relayItems: FollowItem[];
   relayContentWasEmpty: boolean;
-  relayTimestamp: number;
 }
 
 /**
@@ -447,7 +444,7 @@ export async function getFileFollows(): Promise<FollowItem[]> {
 export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   const pubkey = getCurrentUserPubkey();
   if (!pubkey) {
-    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
+    return { items: [], relayContentWasEmpty: true };
   }
 
   try {
@@ -499,7 +496,6 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
         undefined
       );
       if (kind30000Event?.content) {
-        diagLog('lists', 'follows fetchFromRelays: kind:30000 event has encrypted content, decrypting', { contentLength: kind30000Event.content.length });
         try {
           const { decryptPrivateFollows } = await import('../helpers/decryptPrivateFollows');
           const privatePubkeys = await decryptPrivateFollows(kind30000Event.content, pubkey);
@@ -513,21 +509,17 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
               isPrivate: true
             });
           }
-          diagLog('lists', 'follows fetchFromRelays: decrypted private follows', { count: privatePubkeys.length });
         } catch (error) {
-          diagLog('lists', 'follows fetchFromRelays: DECRYPT FAILED for private follows', { error: String(error) });
           logger.error('follows.ts', `Failed to decrypt private follows: ${error}`);
           decryptionFailed = true;
         }
-      } else {
-        diagLog('lists', 'follows fetchFromRelays: kind:30000 event has no content (no private follows)');
       }
     }
 
     // Deduplicate
     const deduped = deduplicateByPubkey(items);
 
-    diagLog('lists', 'follows fetchFromRelays result', {
+    console.debug('[DIAG:follows] fetchFromRelays result:', {
       totalBeforeDedup: items.length,
       afterDedup: deduped.length,
       publicCount: deduped.filter(i => !i.isPrivate).length,
@@ -537,18 +529,14 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     });
     logger.info('follows.ts', `Fetched from relays: ${deduped.length} items`);
 
-    // Compute relay timestamp from the event(s) created_at
-    const eventTimestamp = Math.max(kind3Event?.created_at || 0, kind30000Events.length > 0 ? (kind30000Events.reduce<typeof kind30000Events[0] | undefined>((latest, ev) => (!latest || ev.created_at > latest.created_at ? ev : latest), undefined)?.created_at || 0) : 0);
-
     return {
       items: deduped,
       relayContentWasEmpty: items.length === 0,
-      decryptionFailed,
-      relayTimestamp: eventTimestamp
+      decryptionFailed
     };
   } catch (error) {
     logger.error('follows.ts', `Failed to fetch from relays: ${error}`);
-    return { items: [], relayContentWasEmpty: true, relayTimestamp: 0 };
+    return { items: [], relayContentWasEmpty: true };
   }
 }
 
@@ -564,7 +552,7 @@ export async function publishToRelays(): Promise<void> {
   // Separate public and private
   const publicItems = items.filter(item => !item.isPrivate);
   const privateItems = items.filter(item => item.isPrivate === true);
-  diagLog('lists', 'follows publishToRelays', {
+  console.debug('[DIAG:follows] publishToRelays:', {
     totalItems: items.length,
     publicCount: publicItems.length,
     privateCount: privateItems.length,
@@ -599,12 +587,10 @@ export async function publishToRelays(): Promise<void> {
 
   // Publish kind:30000 event for private follows (if feature enabled)
   if (isPrivateFollowsEnabled() && privateItems.length > 0) {
-    diagLog('lists', 'follows publishToRelays: encrypting private follows for kind:30000', { count: privateItems.length });
     try {
       const { encryptPrivateFollows } = await import('../helpers/encryptPrivateFollows');
       const privatePubkeys = privateItems.map(item => item.pubkey);
       const encryptedContent = await encryptPrivateFollows(privatePubkeys, user.pubkey);
-      diagLog('lists', 'follows publishToRelays: encrypted content', { contentLength: encryptedContent.length });
 
       const kind30000Event = {
         kind: 30000,
@@ -646,7 +632,7 @@ function calculateFollowSyncDiff(browserItems: FollowItem[], relayItems: FollowI
   });
   const unchanged = browserItems.filter(item => relayIds.has(item.pubkey));
 
-  diagLog('lists', 'calculateFollowSyncDiff', {
+  console.debug('[DIAG:follows] calculateFollowSyncDiff:', {
     browserCount: browserItems.length,
     relayCount: relayItems.length,
     preservePrivateItems,
@@ -705,7 +691,7 @@ export class FollowStorageAdapter {
   async syncFromRelays(): Promise<SyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.getBrowserItems();
-    diagLog('lists', 'FollowStorageAdapter.syncFromRelays: browserItems', {
+    console.debug('[DIAG:follows] FollowStorageAdapter.syncFromRelays: browserItems:', {
       count: browserItems.length,
       pubkeys: browserItems.map(i => i.pubkey.slice(0, 8))
     });
@@ -713,7 +699,7 @@ export class FollowStorageAdapter {
     const relayItems = fetchResult.items;
     const relayContentWasEmpty = fetchResult.relayContentWasEmpty;
     const decryptionFailed = fetchResult.decryptionFailed || false;
-    diagLog('lists', 'FollowStorageAdapter.syncFromRelays: fetchResult', {
+    console.debug('[DIAG:follows] FollowStorageAdapter.syncFromRelays: fetchResult:', {
       relayItemCount: relayItems.length,
       relayContentWasEmpty,
       decryptionFailed
@@ -724,7 +710,7 @@ export class FollowStorageAdapter {
 
     // Use full state comparison (checks ALL differences including order and properties)
     const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
-    diagLog('lists', 'FollowStorageAdapter.syncFromRelays: result', {
+    console.debug('[DIAG:follows] FollowStorageAdapter.syncFromRelays: result:', {
       requiresConfirmation,
       added: diff.added.length,
       removed: diff.removed.length,
@@ -736,8 +722,7 @@ export class FollowStorageAdapter {
       requiresConfirmation,
       diff,
       relayItems,
-      relayContentWasEmpty: preservePrivateItems,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayContentWasEmpty: preservePrivateItems
     };
   }
 
@@ -1350,7 +1335,7 @@ export class FollowListManager {
   private async syncFromRelays(): Promise<SyncFromRelaysResult> {
     // Snapshot browser state BEFORE fetch (fetch takes 2-10s, user could change list meanwhile)
     const browserItems = this.adapter.getBrowserItems();
-    diagLog('lists', 'FollowListManager.syncFromRelays: browserItems', {
+    console.debug('[DIAG:follows] FollowListManager.syncFromRelays: browserItems:', {
       count: browserItems.length,
       pubkeys: browserItems.map(i => i.pubkey.slice(0, 8))
     });
@@ -1358,7 +1343,7 @@ export class FollowListManager {
     const relayItems = fetchResult.items;
     const relayContentWasEmpty = fetchResult.relayContentWasEmpty;
     const decryptionFailed = fetchResult.decryptionFailed || false;
-    diagLog('lists', 'FollowListManager.syncFromRelays: fetchResult', {
+    console.debug('[DIAG:follows] FollowListManager.syncFromRelays: fetchResult:', {
       relayItemCount: relayItems.length,
       relayContentWasEmpty,
       decryptionFailed
@@ -1369,7 +1354,7 @@ export class FollowListManager {
 
     // Use full state comparison (checks ALL differences including order and properties)
     const requiresConfirmation = hasFollowDifference(browserItems, relayItems);
-    diagLog('lists', 'FollowListManager.syncFromRelays: result', {
+    console.debug('[DIAG:follows] FollowListManager.syncFromRelays: result:', {
       requiresConfirmation,
       added: diff.added.length,
       removed: diff.removed.length,
@@ -1381,8 +1366,7 @@ export class FollowListManager {
       requiresConfirmation,
       diff,
       relayItems,
-      relayContentWasEmpty: preservePrivateItems,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayContentWasEmpty: preservePrivateItems
     };
   }
 
@@ -1454,18 +1438,18 @@ export class FollowListManager {
           },
           onKeep: async () => {
             this.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
+            ToastService.show(`Merged ${result.diff.added.length} new follows (kept ${result.diff.removed.length} local follows)`, 'success');
+            await this.renderListTab(container);
+          },
+          onMerge: async () => {
+            this.applySyncFromRelays('merge', result.relayItems, result.relayContentWasEmpty);
             await this.adapter.publishToRelays(this.adapter.getBrowserItems());
             ToastService.show(`Merged ${result.diff.added.length} new follows and synced to relays`, 'success');
             await this.renderListTab(container);
           },
-          onRelay: async () => {
+          onDelete: async () => {
             this.applySyncFromRelays('overwrite', result.relayItems, result.relayContentWasEmpty);
             ToastService.show(`Synced from relays (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
-            await this.renderListTab(container);
-          },
-          onLocal: async () => {
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local follows pushed to relays', 'success');
             await this.renderListTab(container);
           }
         });
@@ -1552,18 +1536,12 @@ export class FollowListManager {
           },
           onKeep: async () => {
             this.applySyncFromFile('merge', result.fileItems);
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show(`Merged ${result.diff.added.length} from file and synced to relays`, 'success');
+            ToastService.show(`Merged ${result.diff.added.length} from file (kept ${result.diff.removed.length} local)`, 'success');
             await this.renderListTab(container);
           },
-          onRelay: async () => {
+          onDelete: async () => {
             this.applySyncFromFile('overwrite', result.fileItems);
             ToastService.show(`Restored from file (added ${result.diff.added.length}, removed ${result.diff.removed.length})`, 'success');
-            await this.renderListTab(container);
-          },
-          onLocal: async () => {
-            await this.adapter.publishToRelays(this.adapter.getBrowserItems());
-            ToastService.show('Local follows pushed to relays', 'success');
             await this.renderListTab(container);
           }
         });
