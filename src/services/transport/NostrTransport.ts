@@ -352,6 +352,7 @@ export class NostrTransport {
         return rawEvent;
       });
 
+      diagLog('relays', 'Fetch OK', { relayCount: relays.length, kinds: filters.map(f => f.kinds).flat(), eventCount: events.length });
       return events;
     } catch (error) {
       diagLog('relays', 'Fetch failed', { relayCount: relays.length, kinds: filters.map(f => f.kinds).flat(), error: String(error) });
