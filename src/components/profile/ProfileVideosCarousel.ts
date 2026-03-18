@@ -8,7 +8,6 @@
  */
 
 import { NostrTransport } from '../../services/transport/NostrTransport';
-import { PlatformService } from '../../services/PlatformService';
 import { Router } from '../../services/Router';
 import { VideoNoteProcessor } from '../ui/note-processing/VideoNoteProcessor';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
@@ -85,17 +84,12 @@ export class ProfileVideosCarousel {
   private renderCarousel(): void {
     const cards = this.videos.map(video => {
       const eventId = video.event.id || '';
-      const isAndroid = PlatformService.getInstance().isAndroid;
+      const posterAttr = video.thumbnail ? ` poster="${this.escapeHtml(video.thumbnail)}"` : '';
 
       return {
         html: `
           <div class="profile-videos-carousel__card-thumb">
-            ${isAndroid
-              ? (video.thumbnail
-                ? `<img src="${this.escapeHtml(video.thumbnail)}" alt="" loading="lazy" />`
-                : `<div class="profile-videos-carousel__placeholder"></div>`)
-              : `<video src="${this.escapeHtml(video.videoUrl)}"${video.thumbnail ? ` poster="${this.escapeHtml(video.thumbnail)}"` : ''} preload="metadata" muted></video>`
-            }
+            <video src="${this.escapeHtml(video.videoUrl)}"${posterAttr} preload="metadata" muted></video>
             <div class="profile-videos-carousel__play-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </div>
