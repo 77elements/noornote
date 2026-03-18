@@ -125,8 +125,7 @@ export class ThreadOrchestrator extends Orchestrator {
     if (note) {
       try {
         const outboundRelays = await this.relayDiscovery.getCombinedRelays([note.pubkey], true);
-
-        const outboundEvents = await this.transport.fetch(outboundRelays, filters, 8000, true);
+        const outboundEvents = await this.transport.fetch(outboundRelays, filters, 8000);
         const countBefore = allReplies.size;
         outboundEvents.forEach(e => { if (e.id && !allReplies.has(e.id)) allReplies.set(e.id, e); });
         const newFromOutbound = allReplies.size - countBefore;
@@ -266,7 +265,7 @@ export class ThreadOrchestrator extends Orchestrator {
     // Try relay hint first (fastest, most targeted)
     if (relayHint) {
       try {
-        const events = await this.transport.fetch([relayHint], [filter], 5000, true);
+        const events = await this.transport.fetch([relayHint], [filter], 5000);
         if (events[0]) {
           diagLog('relays', 'ThreadOrchestrator: relay hint found parent note', {
             eventId: eventId.slice(0, 8),
@@ -283,7 +282,7 @@ export class ThreadOrchestrator extends Orchestrator {
     // Try outbound relays of the child's author (they likely share relays with the parent)
     try {
       const outboundRelays = await this.relayDiscovery.getCombinedRelays([knownAuthorPubkey], true);
-      const events = await this.transport.fetch(outboundRelays, [filter], 8000, true);
+      const events = await this.transport.fetch(outboundRelays, [filter], 8000);
       if (events[0]) {
         diagLog('relays', 'ThreadOrchestrator: outbound fallback found parent note', {
           eventId: eventId.slice(0, 8),

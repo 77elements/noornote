@@ -242,14 +242,13 @@ export class ProfileSearchOrchestrator extends Orchestrator {
 
     try {
       const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkeyHex], true);
-
       const outboundFilters: NDKFilter[] = [{
         kinds: [1],
         authors: [pubkeyHex],
         limit: 5000
       }];
 
-      const outboundEvents = await this.transport.fetch(outboundRelays, outboundFilters, 10000, true);
+      const outboundEvents = await this.transport.fetch(outboundRelays, outboundFilters, 10000);
 
       outboundEvents.forEach(event => {
         const eventId = event.id;
