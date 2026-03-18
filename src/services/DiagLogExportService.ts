@@ -42,7 +42,7 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
 
     // 4. Save (platform-specific)
     if (platform.isAndroid) {
-      return saveViaBlobDownload(zipData, filename);
+      return await saveToDownloads(zipData, filename);
     } else {
       return await saveViaDialog(zipData, filename);
     }
@@ -98,8 +98,8 @@ async function collectLogFiles(): Promise<Record<string, Uint8Array>> {
 async function getLogsDir(): Promise<string | null> {
   if (platform.isAndroid) {
     const { appDataDir } = await import('@tauri-apps/api/path');
-    const base = await appDataDir();
-    return `${base}logs`;
+    const base = (await appDataDir()).replace(/\/+$/, '');
+    return `${base}/logs`;
   }
 
   const { AuthService } = await import('./AuthService');
@@ -116,23 +116,11 @@ async function getLogsDir(): Promise<string | null> {
  * This works in any WebView — the Android download manager picks it up
  * and saves it to the Downloads folder.
  */
-function saveViaBlobDownload(zipData: Uint8Array, filename: string): boolean {
-  const blob = new Blob([zipData as BlobPart], { type: 'application/zip' });
-  const url = URL.createObjectURL(blob);
-
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-
-  // Cleanup after a short delay to ensure download starts
-  setTimeout(() => {
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  }, 1000);
-
+async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<boolean> {
+  const { writeFile } = await import('@tauri-apps/plugin-fs');
+  const { downloadDir } = await import('@tauri-apps/api/path');
+  const dir = (await downloadDir()).replace(/\/+$/, '');
+  await writeFile(`${dir}/${filename}`, zipData);
   logger.success('DiagLogExport', `Logs exported — ${filename}`);
   return true;
 }

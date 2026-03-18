@@ -126,8 +126,8 @@ class DiagnosticLogger {
       // Android: {appDataDir}/logs/ (no npub nesting — single user on mobile)
       if (platform.isAndroid) {
         const { appDataDir } = await import('@tauri-apps/api/path');
-        const basePath = await appDataDir();
-        this.logsDir = `${basePath}logs`;
+        const basePath = (await appDataDir()).replace(/\/+$/, '');
+        this.logsDir = `${basePath}/logs`;
       } else {
         const { homeDir } = await import('@tauri-apps/api/path');
         const homePath = await homeDir();
