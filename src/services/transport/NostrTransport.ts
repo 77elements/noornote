@@ -128,7 +128,7 @@ export class NostrTransport {
     await this.ndk.connect(3000);
 
     const connectedRelays = Array.from(this.ndk.pool.relays.values())
-      .filter(relay => relay.status === 1);
+      .filter(relay => relay.status >= 5);
 
     this.ndkConnected = true;
 
@@ -206,7 +206,7 @@ export class NostrTransport {
     }
 
     // If already connected, return immediately
-    if (relay.status === 1) {
+    if (relay.status >= 5) {
       return true;
     }
 
