@@ -35,10 +35,19 @@ export function parseFollowPackEvent(event: NostrEvent): FollowPack {
 }
 
 export function filterFollowPacks(packs: FollowPack[]): FollowPack[] {
-  return packs
-    .filter(pack => {
-      const title = pack.title.toLowerCase();
-      return !title.includes('spam') && pack.userPubkeys.length > 0 && pack.title.length > 0;
-    })
-    .sort((a, b) => b.userPubkeys.length - a.userPubkeys.length);
+  const filtered = packs.filter(pack => {
+    const title = pack.title.toLowerCase();
+    return !title.includes('spam') && pack.userPubkeys.length > 0 && pack.title.length > 0;
+  });
+
+  // Deduplicate by title + author + member count
+  const seen = new Set<string>();
+  const deduped = filtered.filter(pack => {
+    const key = `${pack.title.toLowerCase()}|${pack.authorPubkey}|${pack.userPubkeys.length}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return deduped.sort((a, b) => b.userPubkeys.length - a.userPubkeys.length);
 }
