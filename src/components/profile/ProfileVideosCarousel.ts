@@ -75,6 +75,13 @@ export class ProfileVideosCarousel {
           };
         })
         .filter((v): v is VideoCardData => v !== null);
+
+      // Log video URLs for debugging
+      const { diagLog } = await import('../../services/DiagnosticLogger');
+      diagLog('system', 'VideosCarousel: loaded', {
+        count: this.videos.length,
+        videos: this.videos.map(v => ({ title: v.title?.slice(0, 30), thumbnail: v.thumbnail || 'none', videoUrl: v.videoUrl?.slice(0, 60) }))
+      });
     } catch (error) {
       console.error('[ProfileVideosCarousel] Failed to fetch videos:', error);
       this.videos = [];
@@ -111,6 +118,14 @@ export class ProfileVideosCarousel {
     });
 
     this.element.appendChild(this.carousel.element);
+
+    // Force first-frame render by seeking to 0.5s after mount
+    const videos = this.element.querySelectorAll('video');
+    videos.forEach(video => {
+      video.addEventListener('loadeddata', () => {
+        video.currentTime = 0.5;
+      }, { once: true });
+    });
   }
 
   private escapeHtml(text: string): string {
