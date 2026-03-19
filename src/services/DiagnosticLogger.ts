@@ -170,13 +170,6 @@ class DiagnosticLogger {
    * Log a diagnostic entry. Fire-and-forget — never throws, never blocks.
    */
   log(area: DiagArea, msg: string, data?: unknown): void {
-    // Phase 2: Dual output — console + file (remove console in Phase 3)
-    if (data !== undefined) {
-      console.debug(`[DIAG:${area}] ${msg}`, data);
-    } else {
-      console.debug(`[DIAG:${area}] ${msg}`);
-    }
-
     if (!platform.isTauri) return;
 
     // Check for date rollover
