@@ -122,7 +122,7 @@ export class ProfileVideosCarousel {
     // Force first-frame render by seeking to 0.5s after mount
     const videos = this.element.querySelectorAll('video');
     videos.forEach(video => {
-      video.addEventListener('loadeddata', () => {
+      video.addEventListener('loadedmetadata', () => {
         video.currentTime = 0.5;
       }, { once: true });
     });
