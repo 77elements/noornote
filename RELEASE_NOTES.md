@@ -1,10 +1,9 @@
-# NoorNote v0.6.4
+# NoorNote v0.6.5
 
-**Better content discovery & article editing**
+**Follow Packs & Picture Notes**
 
-- Notes and profiles from NIP-65 users now load reliably (outbound relay fallback)
-- Edit your published articles directly from the article view
-- Video carousel on profile pages with thumbnail previews
-- Article reaction notifications now show article title and link correctly
-- Improved list sync with clearer conflict resolution
-- Diagnostic logging with ZIP export for easier debugging
+- New Add-On: Follow Packs — browse curated people lists, follow entire communities at once
+- Picture notes (NIP-68) now render with inline images in timelines
+- Tracking parameters stripped from media URLs for cleaner display
+- Android: fixed profile page freeze and diagnostic log export
+- Improved diagnostic logging with caller tracking and fetch monitoring
