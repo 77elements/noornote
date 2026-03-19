@@ -68,6 +68,9 @@ export class App {
     FontSizeService.getInstance();
     ThemeService.getInstance();
 
+    // Auto-seek video thumbnails for all videos added to the DOM
+    import('./helpers/renderMediaContent').then(m => m.startVideoThumbnailObserver());
+
     const isOnline = await ConnectivityService.getInstance().checkConnectivity();
     if (!isOnline) {
       OfflineOverlay.getInstance().show();
@@ -103,6 +106,11 @@ export class App {
     ]);
     if (authTimedOut) {
       console.warn('[App] Auth initialization timed out after 10s — continuing without session');
+    }
+
+    // Initialize DiagnosticLogger early (Android: no npub needed, Desktop: after login)
+    if (PlatformService.getInstance().isAndroid) {
+      initDiagnosticLogger();
     }
 
     const isLoggedIn = this.authService.hasValidSession();

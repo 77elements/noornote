@@ -75,12 +75,12 @@ export class StarterFeedOrchestrator extends Orchestrator {
 
       const filters: NDKFilter<number>[] = [{
         authors: this.starterPubkeysHex,
-        kinds: [1, 6, 21, 22, 1068], // Text notes + reposts + videos + polls
+        kinds: [1, 6, 20, 21, 22, 1068], // Text notes + reposts + videos + polls
         since,
         limit: 50
       }];
 
-      const events = await this.transport.fetch(relays, filters, 8000);
+      const events = await this.transport.fetch(relays, filters, 8000, false, 'StarterFeedOrch');
 
       // Deduplicate
       const uniqueEvents = Array.from(
@@ -141,7 +141,7 @@ export class StarterFeedOrchestrator extends Orchestrator {
         limit: 50
       }];
 
-      const events = await this.transport.fetch(relays, filters, 8000);
+      const events = await this.transport.fetch(relays, filters, 8000, false, 'StarterFeedOrch');
 
       // Deduplicate
       const uniqueEvents = Array.from(

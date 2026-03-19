@@ -61,7 +61,7 @@ export class ProfileArticlesCarousel {
         kinds: [30023],
         authors: [this.pubkey],
         limit: 20
-      }], 8000);
+      }], 8000, false, 'ArticlesCarousel');
 
       events.sort((a, b) => {
         const aPublished = parseInt(a.tags.find(t => t[0] === 'published_at')?.[1] || String(a.created_at));
@@ -78,6 +78,13 @@ export class ProfileArticlesCarousel {
           relays: relays.slice(0, 2)
         });
         return { event, metadata, naddr };
+      });
+
+      // Log article image URLs for debugging
+      const { diagLog } = await import('../../services/DiagnosticLogger');
+      diagLog('system', 'ArticlesCarousel: loaded', {
+        count: this.articles.length,
+        images: this.articles.map(a => ({ title: a.metadata.title?.slice(0, 30), image: a.metadata.image || 'none' }))
       });
     } catch (error) {
       console.error('[ProfileArticlesCarousel] Failed to fetch articles:', error);
@@ -97,7 +104,7 @@ export class ProfileArticlesCarousel {
       });
 
       const imageHtml = metadata.image
-        ? `<div class="profile-articles-carousel__card-image" style="background-image: url('${this.escapeHtml(metadata.image)}')"></div>`
+        ? `<div class="profile-articles-carousel__card-image"><img src="${this.escapeHtml(metadata.image)}" alt="" loading="lazy" /></div>`
         : `<div class="profile-articles-carousel__card-image profile-articles-carousel__card-image--placeholder"></div>`;
 
       return {

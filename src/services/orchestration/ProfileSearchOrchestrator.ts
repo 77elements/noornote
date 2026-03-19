@@ -218,7 +218,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
       }];
 
       try {
-        const events = await this.transport.fetch(relays, filters);
+        const events = await this.transport.fetch(relays, filters, 5000, false, 'ProfileSearchOrch');
 
         // Deduplicate
         events.forEach(event => {
@@ -249,7 +249,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
         limit: 5000
       }];
 
-      const outboundEvents = await this.transport.fetch(outboundRelays, outboundFilters, 10000, true);
+      const outboundEvents = await this.transport.fetch(outboundRelays, outboundFilters, 10000, true, 'ProfileSearchOrch');
 
       outboundEvents.forEach(event => {
         const eventId = event.id;

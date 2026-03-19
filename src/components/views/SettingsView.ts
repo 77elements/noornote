@@ -24,6 +24,7 @@ import { ProfileRecognitionSettings } from '../../addons/profile-recognition/Pro
 import { HashtagSubscriptionsSettings } from '../../addons/hashtag-subscriptions/HashtagSubscriptionsSettings';
 import { NotificationPrioritySection } from '../settings/NotificationPrioritySection';
 import { MarketplaceSettingsSection } from '../settings/MarketplaceSettingsSection';
+type FollowPacksSettings = import('../../addons/follow-packs/FollowPacksSettings').FollowPacksSettings;
 
 export class SettingsView extends View {
   private container: HTMLElement;
@@ -43,6 +44,7 @@ export class SettingsView extends View {
   private hashtagSubscriptionsSettings: HashtagSubscriptionsSettings;
   private notificationPrioritySection: NotificationPrioritySection;
   private marketplaceSettingsSection: MarketplaceSettingsSection;
+  private followPacksSettings: FollowPacksSettings | null = null;
 
   constructor() {
     super();
@@ -72,7 +74,6 @@ export class SettingsView extends View {
     this.hashtagSubscriptionsSettings = new HashtagSubscriptionsSettings();
     this.notificationPrioritySection = new NotificationPrioritySection();
     this.marketplaceSettingsSection = new MarketplaceSettingsSection();
-
     this.render();
   }
 
@@ -165,6 +166,12 @@ export class SettingsView extends View {
               <div id="hashtag-subscriptions-settings-content"></div>
             </div>
 
+            <div class="addon-section">
+              <h3 class="addon-section__title">Follow Packs</h3>
+              <p class="addon-section__description">Browse curated people lists and follow entire communities at once.</p>
+              <div id="follow-packs-settings-content"></div>
+            </div>
+
           </div>
         </section>
 
@@ -204,6 +211,10 @@ export class SettingsView extends View {
     }
     this.marketplaceSettingsSection.mount(this.container);
     this.hashtagSubscriptionsSettings.mount(this.container);
+    import('../../addons/follow-packs/FollowPacksSettings').then(({ FollowPacksSettings }) => {
+      this.followPacksSettings = new FollowPacksSettings();
+      this.followPacksSettings.mount(this.container);
+    });
 
     // Diagnostic logs export button
     this.container.querySelector('#export-diagnostic-logs-btn')?.addEventListener('click', async (e) => {
@@ -276,6 +287,9 @@ export class SettingsView extends View {
     this.hashtagSubscriptionsSettings.unmount();
     this.notificationPrioritySection.unmount();
     this.marketplaceSettingsSection.unmount();
+    if (this.followPacksSettings) {
+      this.followPacksSettings.unmount();
+    }
 
     // Cleanup sync status badge
     if (this.syncStatusBadge) {

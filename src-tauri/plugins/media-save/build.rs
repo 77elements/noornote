@@ -1,4 +1,4 @@
-const COMMANDS: &[&str] = &["save_media"];
+const COMMANDS: &[&str] = &["save_media", "save_to_downloads"];
 
 fn main() {
     tauri_plugin::Builder::new(COMMANDS)

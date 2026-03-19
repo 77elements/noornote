@@ -128,7 +128,7 @@ export class MarketplaceTimelineInjector {
         kinds: [30402 as number],
         authors: follows,
         limit: 200
-      }], 10000);
+      }], 10000, false, 'MarketplaceInjector');
 
       // Deduplicate by pubkey:d-tag, keep newest
       const deduped = new Map<string, NostrEvent>();

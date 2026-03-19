@@ -173,7 +173,7 @@ export class ArticleNotificationService {
           limit: 10
         };
 
-        const events = await this.transport.fetch(relays, [filter], 5000);
+        const events = await this.transport.fetch(relays, [filter], 5000, false, 'ArticleNotifService');
 
         for (const event of events) {
           const metadata = this.extractMetadata(event);

@@ -131,8 +131,9 @@ export class ContentProcessor {
     // Replace media URLs with placeholders (keep them at original position)
     let cleanedText = text;
     media.forEach((item, index) => {
-      // Replace media URL with placeholder that we'll render later
-      cleanedText = cleanedText.replace(item.url, `__MEDIA_${index}__`);
+      // Replace original URL (with tracking params) from text with placeholder
+      const urlToReplace = item.originalUrl || item.url;
+      cleanedText = cleanedText.replace(urlToReplace, `__MEDIA_${index}__`);
     });
     // Don't remove quoted references - they stay at their original position
     cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n').trim();

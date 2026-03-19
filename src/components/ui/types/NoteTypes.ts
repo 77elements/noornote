@@ -52,6 +52,7 @@ export interface ZapReceiptData {
 export interface MediaContent {
   type: 'image' | 'video' | 'audio';
   url: string;
+  originalUrl?: string;
   alt?: string;
   thumbnail?: string;
   dimensions?: { width: number; height: number };

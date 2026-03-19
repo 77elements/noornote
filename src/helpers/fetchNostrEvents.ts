@@ -132,7 +132,7 @@ export async function fetchNostrEvents(
 
     // Fetch via NostrTransport (NDK handles dedupe, verification, timeout)
     const transport = NostrTransport.getInstance();
-    const events = await transport.fetch(relays, [filter], timeout);
+    const events = await transport.fetch(relays, [filter], timeout, false, 'fetchNostrEvents');
 
     // Sort by created_at (newest first)
     events.sort((a, b) => b.created_at - a.created_at);

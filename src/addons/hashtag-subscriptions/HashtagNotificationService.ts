@@ -227,7 +227,25 @@ export class HashtagNotificationService {
           }
         }
 
-        // Register all found notes in NoteService for cache reuse
+        // Client-side verification: search relays return fuzzy matches,
+        // so verify the hashtag actually appears in #t tags or content text
+        const hashtagLower = hashtag.toLowerCase();
+        allResults = allResults.filter(event => {
+          // Check #t tags (canonical hashtag location per NIP-12)
+          const hasTag = event.tags?.some(
+            t => t[0] === 't' && t[1]?.toLowerCase() === hashtagLower
+          );
+          if (hasTag) return true;
+
+          // Check content text (case-insensitive)
+          const content = event.content?.toLowerCase() || '';
+          if (content.includes(`#${hashtagLower}`)) return true;
+          if (includeWithoutHash && content.includes(hashtagLower)) return true;
+
+          return false;
+        });
+
+        // Register verified notes in NoteService for cache reuse
         this.noteService.registerNotes(allResults);
 
         // Filter: only posts newer than lastSeenTimestamp

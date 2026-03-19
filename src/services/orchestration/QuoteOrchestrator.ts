@@ -172,7 +172,7 @@ export class QuoteOrchestrator extends Orchestrator {
     // Stage 1: Try relay hints first (highest priority)
     if (relayHints.length > 0) {
       try {
-        const events = await this.transport.fetch(relayHints, [filter], 5000);
+        const events = await this.transport.fetch(relayHints, [filter], 5000, false, 'QuoteOrch');
         if (events[0]) {
           this.noteService.registerNote(events[0]);
           return events[0];
@@ -184,7 +184,7 @@ export class QuoteOrchestrator extends Orchestrator {
 
     // Stage 2: Try standard relays
     try {
-      const events = await this.transport.fetch(this.transport.getReadRelays(), [filter], 5000);
+      const events = await this.transport.fetch(this.transport.getReadRelays(), [filter], 5000, false, 'QuoteOrch');
       if (events[0]) {
         this.noteService.registerNote(events[0]);
         return events[0];
@@ -207,7 +207,7 @@ export class QuoteOrchestrator extends Orchestrator {
           newRelays: newRelays.slice(0, 5)
         });
 
-        const events = await this.transport.fetch(outboundRelays, [filter], 10000, true);
+        const events = await this.transport.fetch(outboundRelays, [filter], 10000, true, 'QuoteOrch');
         if (events[0]) {
           diagLog('relays', 'QuoteOrchestrator: outbound fallback found quote', { eventId: shortId });
           this.noteService.registerNote(events[0]);

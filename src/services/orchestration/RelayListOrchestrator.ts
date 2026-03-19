@@ -55,7 +55,7 @@ export class RelayListOrchestrator extends Orchestrator {
     }];
 
     try {
-      const events = await this.transport.fetch(bootstrapRelays, filters, 5000);
+      const events = await this.transport.fetch(bootstrapRelays, filters, 5000, false, 'RelayListOrch');
 
       const event = events[0];
       if (!event) return null;

@@ -248,7 +248,7 @@ export class DMService {
         kinds: [KIND_GIFT_WRAP],
         '#p': [this.userPubkey],
         since
-      }], 10000);
+      }], 10000, false, 'DMService');
 
       // Legacy NIP-04
       const readRelays = this.relayConfig.getReadRelays();
@@ -256,7 +256,7 @@ export class DMService {
         kinds: [KIND_LEGACY_DM],
         '#p': [this.userPubkey],
         since
-      }], 10000);
+      }], 10000, false, 'DMService');
 
       for (const event of nip17Events) {
         await this.processGiftWrap(event);
@@ -328,7 +328,7 @@ export class DMService {
 
       diagLog('dms', 'Fetching NIP-17 DMs', { relayCount: inboxRelays.length, relays: inboxRelays.slice(0, 3) });
       this.systemLogger.info('DMService', `Fetching NIP-17 DMs from ${inboxRelays.length} inbox relays: ${inboxRelays.slice(0, 3).join(', ')}${inboxRelays.length > 3 ? '...' : ''}`);
-      const nip17Events = await this.transport.fetch(inboxRelays, [nip17Filter], 15000);
+      const nip17Events = await this.transport.fetch(inboxRelays, [nip17Filter], 15000, false, 'DMService');
       diagLog('dms', 'NIP-17 fetch complete', { count: nip17Events.length });
       this.systemLogger.info('DMService', `Fetched ${nip17Events.length} NIP-17 events`);
 
@@ -352,7 +352,7 @@ export class DMService {
 
       diagLog('dms', 'Fetching legacy NIP-04 DMs', { relayCount: readRelays.length });
       this.systemLogger.info('DMService', `Fetching legacy NIP-04 DMs from ${readRelays.length} read relays: ${readRelays.slice(0, 3).join(', ')}${readRelays.length > 3 ? '...' : ''}`);
-      const legacyEvents = await this.transport.fetch(readRelays, legacyFilters, 15000);
+      const legacyEvents = await this.transport.fetch(readRelays, legacyFilters, 15000, false, 'DMService');
       diagLog('dms', 'Legacy NIP-04 fetch complete', { count: legacyEvents.length });
       this.systemLogger.info('DMService', `Fetched ${legacyEvents.length} legacy DM events`);
 
@@ -832,7 +832,7 @@ export class DMService {
         limit: 1
       };
 
-      const events = await this.transport.fetch(relays, [filter], 5000);
+      const events = await this.transport.fetch(relays, [filter], 5000, false, 'DMService');
 
       const event = events[0];
       if (event) {

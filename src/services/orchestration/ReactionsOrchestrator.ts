@@ -688,7 +688,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     }
 
     try {
-      const newReactions = await this.transport.fetch(relays, filters, 5000);
+      const newReactions = await this.transport.fetch(relays, filters, 5000, false, 'ReactionsOrch');
 
       if (newReactions.length > 0) {
         this.systemLogger.info(

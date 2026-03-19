@@ -128,7 +128,7 @@ export class NostrTransport {
     await this.ndk.connect(3000);
 
     const connectedRelays = Array.from(this.ndk.pool.relays.values())
-      .filter(relay => relay.status === 1);
+      .filter(relay => relay.status >= 5);
 
     this.ndkConnected = true;
 
@@ -206,7 +206,7 @@ export class NostrTransport {
     }
 
     // If already connected, return immediately
-    if (relay.status === 1) {
+    if (relay.status >= 5) {
       return true;
     }
 
@@ -302,7 +302,8 @@ export class NostrTransport {
     relays: string[],
     filters: NDKFilter[],
     timeout: number = 5000,
-    skipCache: boolean = false
+    skipCache: boolean = false,
+    caller: string = ''
   ): Promise<NostrEvent[]> {
     try {
       await this.ensureConnected();
@@ -352,9 +353,10 @@ export class NostrTransport {
         return rawEvent;
       });
 
+      diagLog('relays', 'Fetch OK', { caller, relayCount: relays.length, kinds: filters.map(f => f.kinds || f.ids?.map(() => 'id-lookup') || ['unknown']).flat(), eventCount: events.length });
       return events;
     } catch (error) {
-      diagLog('relays', 'Fetch failed', { relayCount: relays.length, kinds: filters.map(f => f.kinds).flat(), error: String(error) });
+      diagLog('relays', 'Fetch failed', { caller, relayCount: relays.length, kinds: filters.map(f => f.kinds || f.ids?.map(() => 'id-lookup') || ['unknown']).flat(), error: String(error) });
       this.systemLogger.error('NostrTransport', 'Failed to fetch events from relays');
       return [];
     }

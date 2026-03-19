@@ -157,13 +157,13 @@ export class FeedOrchestrator extends Orchestrator {
       if (isProfileView) {
         filters = [{
           authors: followingPubkeys,
-          kinds: [1, 6, 21, 22, 1068],
+          kinds: [1, 6, 20, 21, 22, 1068],
           limit: 50
         }];
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
           authors: followingPubkeys,
-          kinds: [1, 6, 21, 22, 1068],
+          kinds: [1, 6, 20, 21, 22, 1068],
           limit: 50,
           since: explicitSince
         };
@@ -174,7 +174,7 @@ export class FeedOrchestrator extends Orchestrator {
       } else {
         filters = [{
           authors: followingPubkeys,
-          kinds: [1, 6, 21, 22, 1068],
+          kinds: [1, 6, 20, 21, 22, 1068],
           limit: 50,
           since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
         }];
@@ -306,7 +306,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       const filters: NDKFilter<number>[] = [{
         authors: followingPubkeys,
-        kinds: [1, 6, 21, 22, 1068],
+        kinds: [1, 6, 20, 21, 22, 1068],
         until: until - 1,
         since,
         limit: 50
@@ -404,69 +404,14 @@ export class FeedOrchestrator extends Orchestrator {
     return [];
   }
 
-  /**
-   * Fetch events via subscription (used for ProfileView)
-   * Waits for EOSE from majority of relays before returning
-   */
-  private async fetchViaSubscription(relays: string[], filters: NDKFilter[]): Promise<NostrEvent[]> {
-    return new Promise(async (resolve) => {
-      const events: NostrEvent[] = [];
-      const eventIds = new Set<string>();
-      const relayEoseCount = new Map<string, boolean>();
-      const requiredEose = Math.max(1, Math.floor(relays.length / 2)); // Wait for at least half of relays
-      const timeout = 10000; // 10 second timeout
-
-      let resolved = false;
-      const resolveOnce = () => {
-        if (resolved) return;
-        resolved = true;
-        sub.close();
-        this.systemLogger.info(
-          'FeedOrchestrator',
-          `Subscription: Received ${events.length} events from ${relayEoseCount.size}/${relays.length} relays`
-        );
-        resolve(events);
-      };
-
-      // Subscribe with callbacks
-      const sub = await this.transport.subscribe(relays, filters, {
-        onEvent: (event: NostrEvent, _relay: string) => {
-          // Deduplicate events
-          const eventId = event.id;
-          if (eventId && !eventIds.has(eventId)) {
-            eventIds.add(eventId);
-            events.push(event);
-          }
-        },
-        onEose: () => {
-          // Track EOSE from relays (we don't know which relay sent EOSE in current implementation)
-          // So we just count total EOSE signals
-          const eoseCount = relayEoseCount.size + 1;
-          relayEoseCount.set(`eose-${eoseCount}`, true);
-
-          // Resolve when we have EOSE from majority of relays
-          if (relayEoseCount.size >= requiredEose) {
-            resolveOnce();
-          }
-        }
-      });
-
-      // Timeout fallback
-      setTimeout(() => {
-        if (!resolved) {
-          resolveOnce();
-        }
-      }, timeout);
-    });
-  }
 
   /**
    * Filter out replies
    */
   private filterReplies(events: NostrEvent[]): NostrEvent[] {
     return events.filter(event => {
-      // Always allow reposts (kind 6), polls (kind 1068), and videos (kind 21/22)
-      if (event.kind === 6 || event.kind === 1068 || event.kind === 21 || event.kind === 22) return true;
+      // Always allow reposts (kind 6), pictures (kind 20), videos (kind 21/22), polls (kind 1068)
+      if (event.kind === 6 || event.kind === 20 || event.kind === 1068 || event.kind === 21 || event.kind === 22) return true;
 
       const content = event.content.trim();
 
@@ -534,10 +479,7 @@ export class FeedOrchestrator extends Orchestrator {
     isProfileView: boolean,
     skipCache: boolean
   ): Promise<NostrEvent[]> {
-    if (isProfileView) {
-      return await this.fetchViaSubscription(relays, filters);
-    }
-    return await this.transport.fetch(relays, filters, 5000, skipCache);
+    return await this.transport.fetch(relays, filters, isProfileView ? 15000 : 5000, skipCache, 'FeedOrch');
   }
 
   /**
@@ -689,14 +631,14 @@ export class FeedOrchestrator extends Orchestrator {
 
       // Query for new notes since last check
       const filters = [{
-        kinds: [1, 6, 21, 22, 1068], // Text notes + reposts + polls (NIP-88)
+        kinds: [1, 6, 20, 21, 22, 1068], // Text notes + reposts + polls (NIP-88)
         authors: this.pollingFollowingPubkeys,
         since: this.lastCheckedTimestamp + 1,
         until: now,
         limit: 100
       }];
 
-      const events = await this.transport.fetch(relays, filters, 5000, true); // Skip cache for polling
+      const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch'); // Skip cache for polling
       const filteredEvents = await this.processEvents(events, this.pollingIncludeReplies, this.pollingExemptFromMuteFilter);
 
       if (filteredEvents.length > 0) {
@@ -848,14 +790,14 @@ export class FeedOrchestrator extends Orchestrator {
 
       const now = Math.floor(Date.now() / 1000);
       const filters = [{
-        kinds: [1, 6, 21, 22, 1068],
+        kinds: [1, 6, 20, 21, 22, 1068],
         authors: followingPubkeys,
         since: newestTimestamp + 1,
         until: now,
         limit: 100
       }];
 
-      const events = await this.transport.fetch(relays, filters, 5000, true);
+      const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch');
       return await this.processEvents(events, includeReplies, exemptFromMuteFilter);
     } catch (error) {
       this.systemLogger.error('FeedOrchestrator', `pollOnce failed: ${error}`);

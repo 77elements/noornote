@@ -140,7 +140,7 @@ export class LongFormOrchestrator extends Orchestrator {
     }];
 
     try {
-      const events = await this.transport.fetch(relays, filters, 5000);
+      const events = await this.transport.fetch(relays, filters, 5000, false, 'LongFormOrch');
       return events[0] ?? null;
     } catch {
       return null;

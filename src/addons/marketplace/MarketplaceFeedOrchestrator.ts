@@ -82,7 +82,7 @@ export class MarketplaceFeedOrchestrator extends Orchestrator {
         `Fetching listings until ${new Date(this.oldestTimestamp * 1000).toISOString()}`
       );
 
-      const events = await this.transport.fetch(relays, [filter], 8000);
+      const events = await this.transport.fetch(relays, [filter], 8000, false, 'MarketplaceFeedOrch');
       const uniqueListings = this.deduplicateListings(events)
         .filter(e => this.isValidListing(e));
 

@@ -28,7 +28,7 @@ import { AuthService } from './AuthService';
 
 // ===== Types =====
 
-export type DiagArea = 'lists' | 'dms' | 'crashes' | 'relays';
+export type DiagArea = 'lists' | 'dms' | 'crashes' | 'relays' | 'system';
 
 interface DiagLogEntry {
   ts: string;
@@ -115,8 +115,12 @@ class DiagnosticLogger {
 
   // ===== Initialization =====
 
-  async init(npub: string): Promise<void> {
+  async init(npub?: string): Promise<void> {
     if (this.initialized || this.initializing || !platform.isTauri) return;
+
+    // Desktop requires npub for path; Android doesn't
+    if (!platform.isAndroid && !npub) return;
+
     this.initializing = true;
 
     try {
@@ -126,8 +130,8 @@ class DiagnosticLogger {
       // Android: {appDataDir}/logs/ (no npub nesting — single user on mobile)
       if (platform.isAndroid) {
         const { appDataDir } = await import('@tauri-apps/api/path');
-        const basePath = await appDataDir();
-        this.logsDir = `${basePath}logs`;
+        const basePath = (await appDataDir()).replace(/\/+$/, '');
+        this.logsDir = `${basePath}/logs`;
       } else {
         const { homeDir } = await import('@tauri-apps/api/path');
         const homePath = await homeDir();
@@ -166,13 +170,6 @@ class DiagnosticLogger {
    * Log a diagnostic entry. Fire-and-forget — never throws, never blocks.
    */
   log(area: DiagArea, msg: string, data?: unknown): void {
-    // Phase 2: Dual output — console + file (remove console in Phase 3)
-    if (data !== undefined) {
-      console.debug(`[DIAG:${area}] ${msg}`, data);
-    } else {
-      console.debug(`[DIAG:${area}] ${msg}`);
-    }
-
     if (!platform.isTauri) return;
 
     // Check for date rollover
@@ -475,7 +472,7 @@ export function diagLog(area: DiagArea, msg: string, data?: unknown): void {
 }
 
 /** Initialize the DiagnosticLogger (call after login with npub) */
-export async function initDiagnosticLogger(npub: string): Promise<void> {
+export async function initDiagnosticLogger(npub?: string): Promise<void> {
   await DiagnosticLogger.getInstance().init(npub);
 }
 

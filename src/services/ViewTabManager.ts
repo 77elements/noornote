@@ -347,7 +347,9 @@ export class ViewTabManager {
       const events = await this.transport.fetch(
         readRelays,
         [{ ids: [hexId] }],
-        5000 // 5s timeout
+        5000, // 5s timeout
+        false,
+        'ViewTabManager'
       );
 
       const firstEvent = events[0];

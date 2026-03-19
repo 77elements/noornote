@@ -1,0 +1,221 @@
+// FollowPacks — Grid, Detail, Timeline views
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.follow-packs {
+  padding: $gap;
+  overflow: hidden;
+  max-width: 100%;
+
+  &__header {
+    margin-bottom: $gap;
+  }
+
+  &__title {
+    @include heading-base;
+    font-size: 1.2rem;
+    margin: 0;
+  }
+
+  &__loading,
+  &__empty {
+    text-align: center;
+    padding: $gap * 2;
+    color: var(--color-5);
+    opacity: 0.7;
+  }
+
+  // ===== Grid =====
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $gap;
+
+    @include tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    @include desktop {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  &__card {
+    @include card-interactive;
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  &__card-cover {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+
+    &--placeholder {
+      background: var(--color-2);
+    }
+  }
+
+  &__card-body {
+    padding: calc($gap / 2);
+  }
+
+  &__card-title {
+    font-weight: 600;
+    color: var(--color-5);
+    @include text-truncate;
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: calc($gap / 4);
+    font-size: 0.85rem;
+    opacity: 0.7;
+  }
+
+  &__card-author {
+    @include text-truncate;
+    max-width: 60%;
+  }
+
+  &__card-count {
+    white-space: nowrap;
+  }
+
+  // ===== Detail =====
+
+  &__detail-header {
+    margin-bottom: $gap;
+  }
+
+  &__detail-cover {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: $radius-lg;
+    margin-bottom: $gap;
+  }
+
+  &__detail-info {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  &__detail-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $gap;
+  }
+
+  &__detail-title {
+    @include heading-base;
+    font-size: 1.3rem;
+    margin: 0;
+  }
+
+  &__detail-desc {
+    color: var(--color-5);
+    opacity: 0.8;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+
+  &__detail-meta {
+    font-size: 0.85rem;
+    opacity: 0.7;
+
+    > * {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: calc($gap / 2);
+    }
+  }
+
+  &__detail-actions {
+    display: flex;
+    gap: calc($gap / 2);
+    flex-wrap: wrap;
+    margin-top: calc($gap / 2);
+  }
+
+  // ===== Members =====
+
+  &__members {
+    margin-top: $gap;
+  }
+
+  &__members-loading {
+    padding: $gap;
+    text-align: center;
+    opacity: 0.7;
+  }
+
+  &__members-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: calc($gap / 2);
+    overflow: hidden;
+
+    @include tablet {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    @include desktop {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  &__member-card {
+    @include card-interactive;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: $gap calc($gap / 2) calc($gap / 2);
+    gap: calc($gap / 4);
+    text-align: center;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  &__member-avatar-wrap {
+    cursor: pointer;
+  }
+
+  &__member-name {
+    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--color-5);
+    @include text-truncate;
+    max-width: 100%;
+    cursor: pointer;
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__member-follow-btn {
+    margin-top: auto;
+    white-space: nowrap;
+  }
+
+  // ===== Timeline =====
+
+  &__timeline-header {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    margin-bottom: $gap;
+  }
+
+  &__timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+}

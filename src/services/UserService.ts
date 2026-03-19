@@ -99,7 +99,7 @@ export class UserService {
         authors: [pubkey],
         kinds: [3],
         limit: 1
-      }], 5000, forceRefresh);
+      }], 5000, forceRefresh, 'UserService');
 
       if (events.length === 0) {
         return [];

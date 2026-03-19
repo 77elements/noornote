@@ -15,6 +15,7 @@ import { escapeHtmlAttr } from './escapeHtml';
 export interface MediaContent {
   type: 'image' | 'video' | 'audio';
   url: string;
+  originalUrl?: string;
   alt?: string;
   thumbnail?: string;
   dimensions?: { width: number; height: number };
@@ -54,7 +55,7 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
         return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
       }
       const posterAttr = item.thumbnail ? ` poster="${escapeHtmlAttr(item.thumbnail)}"` : '';
-      return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="metadata"></video>`;
+      return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="none"></video>`;
     case 'audio':
       return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
     default:
@@ -89,7 +90,7 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
           return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
         }
         const posterAttr = item.thumbnail ? ` poster="${escapeHtmlAttr(item.thumbnail)}"` : '';
-        return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="metadata"></video>`;
+        return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="none"></video>`;
       case 'audio':
         return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
       default:
@@ -120,6 +121,50 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
   if (isNSFW) dataAttr += ` data-is-nsfw="true"`;
 
   return `<div class="${wrapper}"${dataAttr}>${mediaHtml}</div>`;
+}
+
+/**
+ * Force video thumbnail rendering by seeking to 0.5s.
+ * Call after inserting media HTML into the DOM.
+ */
+export function initVideoThumbnails(container: HTMLElement): void {
+  const videos = container.querySelectorAll('video');
+  videos.forEach(video => initVideoThumb(video as HTMLVideoElement));
+}
+
+/**
+ * Auto-init video thumbnails for any video added to the DOM.
+ * Call once at app startup.
+ */
+function initVideoThumb(el: HTMLVideoElement): void {
+  if (el.dataset.thumbInit) return;
+  el.dataset.thumbInit = '1';
+  el.addEventListener('loadedmetadata', () => {
+    el.currentTime = 0.5;
+  }, { once: true });
+  // With preload="none", we must trigger load manually
+  if (el.preload === 'none' || el.readyState === 0) {
+    el.preload = 'metadata';
+    el.load();
+  } else if (el.readyState >= 1) {
+    el.currentTime = 0.5;
+  }
+}
+
+export function startVideoThumbnailObserver(): void {
+  const observer = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node instanceof HTMLElement) {
+          const videos = node.tagName === 'VIDEO' ? [node] : Array.from(node.querySelectorAll('video'));
+          for (const video of videos) {
+            initVideoThumb(video as HTMLVideoElement);
+          }
+        }
+      }
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
 /**

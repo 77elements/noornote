@@ -646,7 +646,10 @@ export class NotificationItem {
           ids: [noteId],
           kinds: USER_CONTENT_KINDS,
           limit: 1
-        }]
+        }],
+        5000,
+        false,
+        'NotifItem'
       );
 
       return events[0] || null;
@@ -679,7 +682,10 @@ export class NotificationItem {
           authors: [pubkey],
           '#d': [identifier],
           limit: 1
-        }]
+        }],
+        5000,
+        false,
+        'NotifItem'
       );
 
       return events[0] || null;

@@ -149,6 +149,12 @@ export class QuotedNoteRenderer {
       ? this.contentProcessor.processContentWithTags(event.content, event.tags)
       : this.contentProcessor.processContent(event.content);
 
+    // For picture events (Kind 20), extract images from imeta tags and prepend title
+    if (event.kind === 20) {
+      const { PictureNoteProcessor } = await import('../components/ui/note-processing/PictureNoteProcessor');
+      PictureNoteProcessor.prependPictureContent(processedContent, event.tags);
+    }
+
     // For video events (Kind 21/22), extract video from imeta tags and prepend title
     if (event.kind === 21 || event.kind === 22) {
       const { VideoNoteProcessor } = await import('../components/ui/note-processing/VideoNoteProcessor');

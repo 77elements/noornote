@@ -165,7 +165,7 @@ export class ZapStatsService {
       kinds: [9735],
       '#p': [currentUserPubkey],
       limit: ZAP_QUERY_LIMIT
-    }], FETCH_TIMEOUT_MS);
+    }], FETCH_TIMEOUT_MS, false, 'ZapStatsService');
 
     console.log(`[ZapStatsService] Received ${incomingZaps.length} incoming zap events`);
 
@@ -191,7 +191,7 @@ export class ZapStatsService {
         kinds: [9735],
         '#p': batch,
         limit: ZAP_QUERY_LIMIT
-      }], FETCH_TIMEOUT_MS);
+      }], FETCH_TIMEOUT_MS, false, 'ZapStatsService');
 
       this.processZapEvents(outgoingZaps, seenEventIds, (zap) => {
         if (extractZapperPubkey(zap) !== currentUserPubkey) return;

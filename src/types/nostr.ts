@@ -145,6 +145,7 @@ export enum EventKind {
   SEAL = 13,
   DIRECT_MESSAGE = 14,
   GENERIC_REPOST = 16,
+  PICTURE = 20,
   VIDEO_LANDSCAPE = 21,
   VIDEO_PORTRAIT = 22,
   CHANNEL_CREATION = 40,
@@ -166,6 +167,7 @@ export enum EventKind {
  */
 export const USER_CONTENT_KINDS: number[] = [
   EventKind.TEXT_NOTE,
+  EventKind.PICTURE,
   EventKind.VIDEO_LANDSCAPE,
   EventKind.VIDEO_PORTRAIT,
   EventKind.POLL,

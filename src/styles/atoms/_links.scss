@@ -42,11 +42,13 @@ a {
 
   img.profile-pic {
     display: inline-block;
-    vertical-align: text-bottom;
+    vertical-align: middle;
     margin: 0 5px 0 0;
   }
 
   .mention-name {
+    display: inline-block;
+    vertical-align: middle;
     transition: opacity 0.3s ease;
   }
 }
