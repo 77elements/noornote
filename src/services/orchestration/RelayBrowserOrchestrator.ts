@@ -85,7 +85,7 @@ export class RelayBrowserOrchestrator extends Orchestrator {
 
     try {
       const filter = {
-        kinds: [1, 6, 21, 22, 1068],
+        kinds: [1, 6, 20, 21, 22, 1068],
         since: this.newestTimestamp + 1,
         limit: 50
       };
@@ -130,7 +130,7 @@ export class RelayBrowserOrchestrator extends Orchestrator {
       await this.transport.connectToRelay(this.relayUrl);
 
       const filter = {
-        kinds: [1, 6, 21, 22, 1068],
+        kinds: [1, 6, 20, 21, 22, 1068],
         until: this.oldestTimestamp,
         limit: this.PAGE_SIZE + 5
       };
