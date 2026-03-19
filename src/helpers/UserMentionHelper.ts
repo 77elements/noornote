@@ -43,7 +43,7 @@ export function renderUserMention(
   const { withBackground = true } = options;
   const bgClass = withBackground ? ' mention-link--bg' : '';
 
-  return `<span class="user-mention" data-pubkey="${pubkey}"><a href="#" class="mention-link${bgClass}" data-profile-pubkey="${pubkey}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl}" alt="" />${escapeHtml(profile.username)}</a></span>`;
+  return `<span class="user-mention" data-pubkey="${pubkey}"><a href="#" class="mention-link${bgClass}" data-profile-pubkey="${pubkey}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl}" alt="" /><span class="mention-name">${escapeHtml(profile.username)}</span></a></span>`;
 }
 
 /**

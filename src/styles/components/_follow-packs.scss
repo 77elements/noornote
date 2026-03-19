@@ -122,10 +122,14 @@
   }
 
   &__detail-meta {
-    display: flex;
-    gap: $gap;
     font-size: 0.85rem;
     opacity: 0.7;
+
+    > * {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: calc($gap / 2);
+    }
   }
 
   &__detail-actions {
