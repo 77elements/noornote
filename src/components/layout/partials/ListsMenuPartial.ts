@@ -90,6 +90,16 @@ export class ListsMenuPartial {
             <span class="primary-nav__sublink-desc">Tribes</span>
           </a>
         </li>
+        <li>
+          <a href="#" class="primary-nav__sublink" data-list-type="follow-packs">
+            <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M22 8v6M19 11h6"></path>
+            </svg>
+            <span class="primary-nav__sublink-desc">Follow Packs</span>
+          </a>
+        </li>
         <li class="nip51-inspector-item" style="${this.easterEggUnlocked ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="nip51-inspector">
             <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

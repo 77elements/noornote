@@ -30,6 +30,7 @@ type BookmarkManager = import('../../lists/bookmarks').BookmarkManager;
 type FollowListManager = import('../../lists/follows').FollowListManager;
 type MuteListManager = import('../../lists/mutes').MuteListManager;
 type TribeManager = import('../../lists/tribes').TribeManager;
+type FollowPackManager = import('../../lists/follow-packs').FollowPackManager;
 import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
@@ -75,6 +76,7 @@ export class MainLayout {
   private followManager: FollowListManager | null = null;
   private muteManager: MuteListManager | null = null;
   private tribeManager: TribeManager | null = null;
+  private followPackManager: FollowPackManager | null = null;
   private nip51InspectorManager: Nip51InspectorManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
   private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
@@ -155,16 +157,18 @@ export class MainLayout {
    * Initialize managers (Bookmark, Follow, Mute, Tribe, Badge, Lists Menu)
    */
   private async loadListManagers(): Promise<void> {
-    const [{ BookmarkManager }, { FollowListManager }, { MuteListManager }, { TribeManager }] = await Promise.all([
+    const [{ BookmarkManager }, { FollowListManager }, { MuteListManager }, { TribeManager }, { FollowPackManager }] = await Promise.all([
       import('../../lists/bookmarks'),
       import('../../lists/follows'),
       import('../../lists/mutes'),
-      import('../../lists/tribes')
+      import('../../lists/tribes'),
+      import('../../lists/follow-packs')
     ]);
     this.bookmarkManager = new BookmarkManager(this.element);
     this.followManager = new FollowListManager(this.element);
     this.muteManager = new MuteListManager(this.element);
     this.tribeManager = new TribeManager(this.element);
+    this.followPackManager = new FollowPackManager(this.element);
   }
 
   private initializeManagers(): void {
@@ -2088,6 +2092,7 @@ export class MainLayout {
       follows: 'List: Follows',
       mutes: 'List: Muted',
       tribes: 'List: Tribes',
+      'follow-packs': 'Follow Packs',
       'nip51-inspector': 'NIP-51 Inspector'
     };
 
@@ -2097,6 +2102,7 @@ export class MainLayout {
       follows: this.followManager,
       mutes: this.muteManager,
       tribes: this.tribeManager,
+      'follow-packs': this.followPackManager,
       'nip51-inspector': this.nip51InspectorManager
     };
 
@@ -2176,6 +2182,7 @@ export class MainLayout {
       follows: 'List: Follows',
       mutes: 'List: Muted',
       tribes: 'List: Tribes',
+      'follow-packs': 'Follow Packs',
       'nip51-inspector': 'NIP-51 Inspector'
     };
 
@@ -2185,6 +2192,7 @@ export class MainLayout {
       follows: this.followManager,
       mutes: this.muteManager,
       tribes: this.tribeManager,
+      'follow-packs': this.followPackManager,
       'nip51-inspector': this.nip51InspectorManager
     };
 

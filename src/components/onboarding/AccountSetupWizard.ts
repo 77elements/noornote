@@ -72,17 +72,7 @@ interface WizardStep {
   collect: () => void;
 }
 
-interface FollowPack {
-  id: string;
-  eventId: string;
-  title: string;
-  description: string;
-  coverImage: string;
-  authorPubkey: string;
-  authorName?: string;
-  userPubkeys: string[];
-  userProfiles?: Map<string, { name?: string; picture?: string; about?: string }>;
-}
+import { type FollowPack, parseFollowPackEvent, filterFollowPacks } from '../../helpers/parseFollowPack';
 
 // Word lists for random username generation
 const ADJECTIVES = [
@@ -2072,14 +2062,7 @@ IMPORTANT:
 
       const events = await transport.fetch(relays, [{ kinds: [39089 as any], limit: 50 }], 8000, false, 'AccountSetup');
 
-      this.followPacks = events
-        .map(event => this.parseFollowPackEvent(event))
-        .filter(pack => {
-          // Filter out spam packs and empty packs
-          const title = pack.title.toLowerCase();
-          return !title.includes('spam') && pack.userPubkeys.length > 0 && pack.title.length > 0;
-        })
-        .sort((a, b) => b.userPubkeys.length - a.userPubkeys.length); // Sort by user count
+      this.followPacks = filterFollowPacks(events.map(e => parseFollowPackEvent(e)));
 
       this.followPacksLoaded = true;
     } catch {
@@ -2088,20 +2071,6 @@ IMPORTANT:
     }
   }
 
-  private parseFollowPackEvent(event: any): FollowPack {
-    const tags = event.tags || [];
-    const getTag = (name: string) => tags.find((t: string[]) => t[0] === name)?.[1] || '';
-
-    return {
-      id: getTag('d'),
-      eventId: event.id || '',
-      title: getTag('title') || getTag('n') || 'Untitled',
-      description: getTag('description') || '',
-      coverImage: getTag('image') || '',
-      authorPubkey: event.pubkey || '',
-      userPubkeys: tags.filter((t: string[]) => t[0] === 'p' && t[1]).map((t: string[]) => t[1]!),
-    };
-  }
 
   private async loadPackProfiles(packIndex: number): Promise<void> {
     const pack = this.followPacks[packIndex];
