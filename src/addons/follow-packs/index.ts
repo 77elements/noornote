@@ -1,9 +1,9 @@
-const STORAGE_KEY = 'noornote_follow_packs_enabled';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export function isFollowPacksEnabled(): boolean {
-  return localStorage.getItem(STORAGE_KEY) === 'true';
+  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.FOLLOW_PACKS_ENABLED, false);
 }
 
 export function setFollowPacksEnabled(enabled: boolean): void {
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+  PerAccountLocalStorage.getInstance().set(StorageKeys.FOLLOW_PACKS_ENABLED, enabled);
 }

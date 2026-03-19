@@ -76,6 +76,7 @@ export const StorageKeys = {
   FONT_SIZE_SCALE: 'noornote_font_size_scale_map',
 
   // Addon feature flags (per-account)
+  FOLLOW_PACKS_ENABLED: 'noornote_follow_packs_enabled_map',
   MARKETPLACE_ENABLED: 'noornote_marketplace_enabled_map',
   MARKETPLACE_TIMELINE_ENABLED: 'noornote_marketplace_timeline_enabled_map',
   MARKETPLACE_TIMELINE_FREQUENCY: 'noornote_marketplace_timeline_frequency_map',
