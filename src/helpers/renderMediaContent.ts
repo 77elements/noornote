@@ -123,6 +123,56 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
 }
 
 /**
+ * Force video thumbnail rendering by seeking to 0.5s.
+ * Call after inserting media HTML into the DOM.
+ */
+export function initVideoThumbnails(container: HTMLElement): void {
+  const videos = container.querySelectorAll('video');
+  videos.forEach(video => {
+    const el = video as HTMLVideoElement;
+    if (el.dataset.thumbInit) return;
+    el.dataset.thumbInit = '1';
+    if (el.readyState >= 1) {
+      el.currentTime = 0.5;
+    } else {
+      el.addEventListener('loadedmetadata', () => {
+        el.currentTime = 0.5;
+      }, { once: true });
+    }
+  });
+}
+
+/**
+ * Auto-init video thumbnails for any video added to the DOM.
+ * Call once at app startup.
+ */
+export function startVideoThumbnailObserver(): void {
+  const observer = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node instanceof HTMLElement) {
+          // Check if the added node itself is a video or contains videos
+          const videos = node.tagName === 'VIDEO' ? [node] : Array.from(node.querySelectorAll('video'));
+          for (const video of videos) {
+            const el = video as HTMLVideoElement;
+            if (el.dataset.thumbInit) continue;
+            el.dataset.thumbInit = '1';
+            if (el.readyState >= 1) {
+              el.currentTime = 0.5;
+            } else {
+              el.addEventListener('loadedmetadata', () => {
+                el.currentTime = 0.5;
+              }, { once: true });
+            }
+          }
+        }
+      }
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+/**
  * Replace media placeholders in HTML with actual media elements
  * Placeholders format: __MEDIA_0__, __MEDIA_1__, etc.
  *

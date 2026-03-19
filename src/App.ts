@@ -68,6 +68,9 @@ export class App {
     FontSizeService.getInstance();
     ThemeService.getInstance();
 
+    // Auto-seek video thumbnails for all videos added to the DOM
+    import('./helpers/renderMediaContent').then(m => m.startVideoThumbnailObserver());
+
     const isOnline = await ConnectivityService.getInstance().checkConnectivity();
     if (!isOnline) {
       OfflineOverlay.getInstance().show();
