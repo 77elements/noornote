@@ -12,17 +12,18 @@
  * @used-by MainLayout (via ListViewPartial)
  */
 
-import { type FollowPack, parseFollowPackEvent, filterFollowPacks } from '../helpers/parseFollowPack';
-import { NostrTransport } from '../services/transport/NostrTransport';
-import { RelayConfig } from '../services/RelayConfig';
-import { UserProfileService } from '../services/UserProfileService';
-import { AuthService } from '../services/AuthService';
-import { ToastService } from '../services/ToastService';
-import { Router } from '../services/Router';
-import { SystemLogger } from '../components/system/SystemLogger';
-import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
-import { hexToNpub } from '../helpers/nip19';
-import { npubToUsername } from '../helpers/npubToUsername';
+import { type FollowPack, parseFollowPackEvent, filterFollowPacks } from '../../helpers/parseFollowPack';
+import { NostrTransport } from '../../services/transport/NostrTransport';
+import { RelayConfig } from '../../services/RelayConfig';
+import { UserProfileService } from '../../services/UserProfileService';
+import { AuthService } from '../../services/AuthService';
+import { ToastService } from '../../services/ToastService';
+import { Router } from '../../services/Router';
+import { SystemLogger } from '../../components/system/SystemLogger';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { hexToNpub } from '../../helpers/nip19';
+import { npubToUsername } from '../../helpers/npubToUsername';
+import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 
 type ViewMode = 'grid' | 'detail' | 'timeline';
 
@@ -212,7 +213,14 @@ export class FollowPackManager {
         <h2 class="follow-packs__detail-title">${escapeHtml(pack.title)}</h2>
         ${pack.description ? `<p class="follow-packs__detail-desc">${escapeHtml(pack.description)}</p>` : ''}
         <div class="follow-packs__detail-meta">
-          <span class="follow-packs__detail-author" data-pubkey="${pack.authorPubkey}">by ...</span>
+          <span class="follow-packs__detail-author-label">by </span>
+          <span class="follow-packs__detail-author-mention"></span>
+          <button class="follow-packs__dm-btn btn-icon" title="Send DM">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+          </button>
           <span>${pack.userPubkeys.length} people</span>
         </div>
         <div class="follow-packs__detail-actions">
@@ -256,12 +264,22 @@ export class FollowPackManager {
 
     container.appendChild(wrapper);
 
-    // Load author profile
-    this.loadProfileForElement(
-      pack.authorPubkey,
-      header.querySelector('.follow-packs__detail-author') as HTMLElement,
-      'by '
-    );
+    // Render author as UserMention
+    const authorMentionContainer = header.querySelector('.follow-packs__detail-author-mention') as HTMLElement;
+    if (authorMentionContainer) {
+      const profiles = await this.profileService.getUserProfiles([pack.authorPubkey]);
+      const profile = profiles.get(pack.authorPubkey);
+      const username = profile?.display_name || profile?.name || 'Unknown';
+      const avatarUrl = profile?.picture || '';
+      authorMentionContainer.innerHTML = renderUserMention(pack.authorPubkey, { username, avatarUrl });
+      setupUserMentionHandlers(authorMentionContainer);
+    }
+
+    // DM button → navigate to DM conversation
+    header.querySelector('.follow-packs__dm-btn')?.addEventListener('click', () => {
+      const npub = hexToNpub(pack.authorPubkey);
+      if (npub) Router.getInstance().navigate(`/messages/${npub}`);
+    });
 
     // Load member profiles
     await this.loadMembers(pack, memberList);
@@ -270,7 +288,7 @@ export class FollowPackManager {
   private async loadMembers(pack: FollowPack, memberList: HTMLElement): Promise<void> {
     const [profiles, { getFollowItems, setFollowItems }] = await Promise.all([
       this.profileService.getUserProfiles(pack.userPubkeys),
-      import('./follows')
+      import('../../lists/follows')
     ]);
 
     const followedPubkeys = new Set(getFollowItems().map(f => f.pubkey));
@@ -299,12 +317,11 @@ export class FollowPackManager {
                 data-pubkey="${pubkey}">${isFollowing ? 'Unfollow' : 'Follow'}</button>
       `;
 
-      // Avatar + name click → profile
-      const avatarWrap = card.querySelector('.follow-packs__member-avatar-wrap') as HTMLElement;
-      const nameEl = card.querySelector('.follow-packs__member-name') as HTMLElement;
-      const navigateToProfile = () => { if (npub) Router.getInstance().navigate(`/profile/${npub}`); };
-      avatarWrap?.addEventListener('click', navigateToProfile);
-      nameEl?.addEventListener('click', navigateToProfile);
+      // Card click → profile (Follow button has stopPropagation)
+      card.addEventListener('click', () => {
+        if (npub) Router.getInstance().navigate(`/profile/${npub}`);
+      });
+      card.style.cursor = 'pointer';
 
       // Follow button
       const followBtn = card.querySelector('.follow-packs__member-follow-btn') as HTMLButtonElement;
@@ -330,15 +347,6 @@ export class FollowPackManager {
     });
 
     memberList.appendChild(grid);
-  }
-
-  private async loadProfileForElement(pubkey: string, el: HTMLElement | null, prefix: string = ''): Promise<void> {
-    if (!el) return;
-    const profiles = await this.profileService.getUserProfiles([pubkey]);
-    const profile = profiles.get(pubkey);
-    if (profile) {
-      el.textContent = prefix + (profile.display_name || profile.name || el.textContent || '');
-    }
   }
 
   // ===== Timeline View =====
@@ -374,7 +382,7 @@ export class FollowPackManager {
 
     // Load timeline
     try {
-      const { FeedOrchestrator } = await import('../services/orchestration/FeedOrchestrator');
+      const { FeedOrchestrator } = await import('../../services/orchestration/FeedOrchestrator');
       const feedOrch = FeedOrchestrator.getInstance();
 
       const result = await feedOrch.loadInitialFeed({
@@ -390,7 +398,7 @@ export class FollowPackManager {
         return;
       }
 
-      const { NoteUI } = await import('../components/ui/NoteUI');
+      const { NoteUI } = await import('../../components/ui/NoteUI');
 
       result.events.forEach(event => {
         const noteEl = NoteUI.createNoteElement(event, {
@@ -413,7 +421,7 @@ export class FollowPackManager {
 
   private async followAll(pack: FollowPack): Promise<void> {
     try {
-      const { getFollowItems, setFollowItems } = await import('./follows');
+      const { getFollowItems, setFollowItems } = await import('../../lists/follows');
 
       const currentFollows = getFollowItems();
       const currentPubkeys = new Set(currentFollows.map(f => f.pubkey));

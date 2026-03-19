@@ -24,6 +24,7 @@ import { ProfileRecognitionSettings } from '../../addons/profile-recognition/Pro
 import { HashtagSubscriptionsSettings } from '../../addons/hashtag-subscriptions/HashtagSubscriptionsSettings';
 import { NotificationPrioritySection } from '../settings/NotificationPrioritySection';
 import { MarketplaceSettingsSection } from '../settings/MarketplaceSettingsSection';
+import { FollowPacksSettings } from '../../addons/follow-packs/FollowPacksSettings';
 
 export class SettingsView extends View {
   private container: HTMLElement;
@@ -43,6 +44,7 @@ export class SettingsView extends View {
   private hashtagSubscriptionsSettings: HashtagSubscriptionsSettings;
   private notificationPrioritySection: NotificationPrioritySection;
   private marketplaceSettingsSection: MarketplaceSettingsSection;
+  private followPacksSettings: FollowPacksSettings;
 
   constructor() {
     super();
@@ -72,6 +74,7 @@ export class SettingsView extends View {
     this.hashtagSubscriptionsSettings = new HashtagSubscriptionsSettings();
     this.notificationPrioritySection = new NotificationPrioritySection();
     this.marketplaceSettingsSection = new MarketplaceSettingsSection();
+    this.followPacksSettings = new FollowPacksSettings();
 
     this.render();
   }
@@ -165,6 +168,12 @@ export class SettingsView extends View {
               <div id="hashtag-subscriptions-settings-content"></div>
             </div>
 
+            <div class="addon-section">
+              <h3 class="addon-section__title">Follow Packs</h3>
+              <p class="addon-section__description">Browse curated people lists and follow entire communities at once.</p>
+              <div id="follow-packs-settings-content"></div>
+            </div>
+
           </div>
         </section>
 
@@ -204,6 +213,7 @@ export class SettingsView extends View {
     }
     this.marketplaceSettingsSection.mount(this.container);
     this.hashtagSubscriptionsSettings.mount(this.container);
+    this.followPacksSettings.mount(this.container);
 
     // Diagnostic logs export button
     this.container.querySelector('#export-diagnostic-logs-btn')?.addEventListener('click', async (e) => {

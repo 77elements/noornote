@@ -30,7 +30,8 @@ type BookmarkManager = import('../../lists/bookmarks').BookmarkManager;
 type FollowListManager = import('../../lists/follows').FollowListManager;
 type MuteListManager = import('../../lists/mutes').MuteListManager;
 type TribeManager = import('../../lists/tribes').TribeManager;
-type FollowPackManager = import('../../lists/follow-packs').FollowPackManager;
+type FollowPackManager = import('../../addons/follow-packs/FollowPackManager').FollowPackManager;
+import { isFollowPacksEnabled } from '../../addons/follow-packs/index';
 import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
@@ -157,18 +158,22 @@ export class MainLayout {
    * Initialize managers (Bookmark, Follow, Mute, Tribe, Badge, Lists Menu)
    */
   private async loadListManagers(): Promise<void> {
-    const [{ BookmarkManager }, { FollowListManager }, { MuteListManager }, { TribeManager }, { FollowPackManager }] = await Promise.all([
+    const [{ BookmarkManager }, { FollowListManager }, { MuteListManager }, { TribeManager }] = await Promise.all([
       import('../../lists/bookmarks'),
       import('../../lists/follows'),
       import('../../lists/mutes'),
-      import('../../lists/tribes'),
-      import('../../lists/follow-packs')
+      import('../../lists/tribes')
     ]);
     this.bookmarkManager = new BookmarkManager(this.element);
     this.followManager = new FollowListManager(this.element);
     this.muteManager = new MuteListManager(this.element);
     this.tribeManager = new TribeManager(this.element);
-    this.followPackManager = new FollowPackManager(this.element);
+
+    // FollowPacks addon: lazy-load only when enabled
+    if (isFollowPacksEnabled()) {
+      const { FollowPackManager } = await import('../../addons/follow-packs/FollowPackManager');
+      this.followPackManager = new FollowPackManager(this.element);
+    }
   }
 
   private initializeManagers(): void {
@@ -225,6 +230,18 @@ export class MainLayout {
       } else {
         this.element.querySelector('.primary-nav__link--marketplace')?.parentElement?.remove();
         this._marketplaceInsertPending = false;
+      }
+    });
+
+    // Follow Packs toggle: show/hide sidebar entry + lazy-load manager
+    this.eventBus.on('follow-packs:toggle', async (data: { enabled: boolean }) => {
+      const menuItem = this.element.querySelector('.follow-packs-item') as HTMLElement;
+      if (menuItem) {
+        menuItem.style.display = data.enabled ? '' : 'none';
+      }
+      if (data.enabled && !this.followPackManager) {
+        const { FollowPackManager } = await import('../../addons/follow-packs/FollowPackManager');
+        this.followPackManager = new FollowPackManager(this.element);
       }
     });
 
