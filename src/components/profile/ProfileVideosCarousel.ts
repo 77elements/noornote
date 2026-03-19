@@ -96,7 +96,7 @@ export class ProfileVideosCarousel {
       return {
         html: `
           <div class="profile-videos-carousel__card-thumb">
-            <video src="${this.escapeHtml(video.videoUrl)}"${posterAttr} preload="metadata" muted></video>
+            <video src="${this.escapeHtml(video.videoUrl)}"${posterAttr} preload="none" muted></video>
             <div class="profile-videos-carousel__play-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </div>
@@ -118,14 +118,7 @@ export class ProfileVideosCarousel {
     });
 
     this.element.appendChild(this.carousel.element);
-
-    // Force first-frame render by seeking to 0.5s after mount
-    const videos = this.element.querySelectorAll('video');
-    videos.forEach(video => {
-      video.addEventListener('loadedmetadata', () => {
-        video.currentTime = 0.5;
-      }, { once: true });
-    });
+    // Video thumbnail seek handled by global MutationObserver (startVideoThumbnailObserver)
   }
 
   private escapeHtml(text: string): string {

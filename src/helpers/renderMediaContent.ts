@@ -54,7 +54,7 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
         return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
       }
       const posterAttr = item.thumbnail ? ` poster="${escapeHtmlAttr(item.thumbnail)}"` : '';
-      return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="metadata"></video>`;
+      return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="none"></video>`;
     case 'audio':
       return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
     default:
@@ -89,7 +89,7 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
           return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
         }
         const posterAttr = item.thumbnail ? ` poster="${escapeHtmlAttr(item.thumbnail)}"` : '';
-        return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="metadata"></video>`;
+        return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="none"></video>`;
       case 'audio':
         return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
       default:
@@ -128,42 +128,36 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
  */
 export function initVideoThumbnails(container: HTMLElement): void {
   const videos = container.querySelectorAll('video');
-  videos.forEach(video => {
-    const el = video as HTMLVideoElement;
-    if (el.dataset.thumbInit) return;
-    el.dataset.thumbInit = '1';
-    if (el.readyState >= 1) {
-      el.currentTime = 0.5;
-    } else {
-      el.addEventListener('loadedmetadata', () => {
-        el.currentTime = 0.5;
-      }, { once: true });
-    }
-  });
+  videos.forEach(video => initVideoThumb(video as HTMLVideoElement));
 }
 
 /**
  * Auto-init video thumbnails for any video added to the DOM.
  * Call once at app startup.
  */
+function initVideoThumb(el: HTMLVideoElement): void {
+  if (el.dataset.thumbInit) return;
+  el.dataset.thumbInit = '1';
+  el.addEventListener('loadedmetadata', () => {
+    el.currentTime = 0.5;
+  }, { once: true });
+  // With preload="none", we must trigger load manually
+  if (el.preload === 'none' || el.readyState === 0) {
+    el.preload = 'metadata';
+    el.load();
+  } else if (el.readyState >= 1) {
+    el.currentTime = 0.5;
+  }
+}
+
 export function startVideoThumbnailObserver(): void {
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (node instanceof HTMLElement) {
-          // Check if the added node itself is a video or contains videos
           const videos = node.tagName === 'VIDEO' ? [node] : Array.from(node.querySelectorAll('video'));
           for (const video of videos) {
-            const el = video as HTMLVideoElement;
-            if (el.dataset.thumbInit) continue;
-            el.dataset.thumbInit = '1';
-            if (el.readyState >= 1) {
-              el.currentTime = 0.5;
-            } else {
-              el.addEventListener('loadedmetadata', () => {
-                el.currentTime = 0.5;
-              }, { once: true });
-            }
+            initVideoThumb(video as HTMLVideoElement);
           }
         }
       }
