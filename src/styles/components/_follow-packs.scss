@@ -60,13 +60,14 @@
   }
 
   &__card-body {
-    padding: calc($gap / 2) $gap;
+    padding: calc($gap / 2);
   }
 
   &__card-title {
     font-weight: 600;
     color: var(--color-5);
     @include text-truncate;
+    margin-bottom: calc($gap / 2);
   }
 
   &__card-meta {
@@ -81,6 +82,10 @@
   &__card-author {
     @include text-truncate;
     max-width: 60%;
+  }
+
+  &__card-count {
+    white-space: nowrap;
   }
 
   // ===== Detail =====
@@ -103,9 +108,11 @@
     gap: calc($gap / 2);
   }
 
-  &__back-btn {
-    align-self: flex-start;
-    margin-bottom: calc($gap / 2);
+  &__detail-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $gap;
   }
 
   &__detail-title {
@@ -189,6 +196,7 @@
     @include text-truncate;
     max-width: 100%;
     cursor: pointer;
+    margin-bottom: calc($gap / 2);
   }
 
   &__member-follow-btn {

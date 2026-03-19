@@ -209,8 +209,10 @@ export class FollowPackManager {
     header.innerHTML = `
       ${coverHtml}
       <div class="follow-packs__detail-info">
-        <button class="follow-packs__back-btn btn btn--mini btn--secondary">&larr; Back</button>
-        <h2 class="follow-packs__detail-title">${escapeHtml(pack.title)}</h2>
+        <div class="follow-packs__detail-title-row">
+          <h2 class="follow-packs__detail-title">${escapeHtml(pack.title)}</h2>
+          <button class="follow-packs__back-btn btn btn--mini btn--secondary">&larr; Back</button>
+        </div>
         ${pack.description ? `<p class="follow-packs__detail-desc">${escapeHtml(pack.description)}</p>` : ''}
         <div class="follow-packs__detail-meta">
           <span class="follow-packs__detail-author-label">by </span>
