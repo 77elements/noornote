@@ -60,6 +60,14 @@ class CrashLoggerService {
     });
 
     window.addEventListener('unhandledrejection', (event) => {
+      // NDK v3 throws on events with invalid tags (e.g. number instead of string).
+      // These are malformed events from other clients — not our bug, not a crash.
+      const msg = String(event.reason);
+      if (msg.includes("Can't serialize event with invalid properties")) {
+        event.preventDefault();
+        return;
+      }
+
       this.logCrash('UnhandledPromiseRejection', event.reason);
     });
   }

@@ -27,9 +27,11 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
     diagLog('crashes', 'Log export triggered');
 
     // 2. Collect all log files
-    const files = await collectLogFiles();
+    const { files, debugInfo } = await collectLogFiles();
     if (Object.keys(files).length === 0) {
-      logger.warn('DiagLogExport', 'No log files found');
+      // Surface debug info for mobile where SystemLog isn't visible
+      (exportDiagnosticLogs as any).lastDebugInfo = debugInfo;
+      logger.warn('DiagLogExport', `No logs: ${debugInfo}`);
       return false;
     }
 
@@ -47,6 +49,7 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
       return await saveViaDialog(zipData, filename);
     }
   } catch (error) {
+    (exportDiagnosticLogs as any).lastDebugInfo = `THROW: ${error}`;
     logger.error('DiagLogExport', `Export failed: ${error}`);
     return false;
   }
@@ -56,13 +59,14 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
  * Collect all log files from root/, week/, archive/ into a flat structure for ZIP.
  * Returns { "filename": Uint8Array } for fflate's zipSync.
  */
-async function collectLogFiles(): Promise<Record<string, Uint8Array>> {
+async function collectLogFiles(): Promise<{ files: Record<string, Uint8Array>; debugInfo: string }> {
   const { readDir, readFile, exists } = await import('@tauri-apps/plugin-fs');
 
   const logsDir = await getLogsDir();
-  if (!logsDir) return {};
+  if (!logsDir) return { files: {}, debugInfo: 'no logsDir' };
 
   const files: Record<string, Uint8Array> = {};
+  const debug: string[] = [];
 
   const subdirs = [
     { path: logsDir, prefix: '' },
@@ -71,11 +75,16 @@ async function collectLogFiles(): Promise<Record<string, Uint8Array>> {
   ];
 
   for (const { path, prefix } of subdirs) {
-    if (!(await exists(path))) continue;
+    if (!(await exists(path))) {
+      debug.push(`${prefix || 'root'}:missing`);
+      continue;
+    }
 
     const entries = await readDir(path);
+    const names = entries.map(e => `${e.name}(file=${e.isFile})`);
+    debug.push(`${prefix || 'root'}:[${names.join(',')}]`);
+
     for (const entry of entries) {
-      if (!entry.isFile) continue;
       if (!entry.name.endsWith('.jsonl') && !entry.name.endsWith('.jsonl.gz')) continue;
 
       try {
@@ -87,7 +96,7 @@ async function collectLogFiles(): Promise<Record<string, Uint8Array>> {
     }
   }
 
-  return files;
+  return { files, debugInfo: debug.join(' | ') };
 }
 
 /**
@@ -119,7 +128,13 @@ async function getLogsDir(): Promise<string | null> {
 async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<boolean> {
   const { invoke } = await import('@tauri-apps/api/core');
   // Convert to base64 for passing through Tauri invoke to Kotlin
-  const base64 = btoa(String.fromCharCode(...zipData));
+  // Chunk-based to avoid call stack overflow with spread operator on large arrays
+  const CHUNK = 8192;
+  let binary = '';
+  for (let i = 0; i < zipData.length; i += CHUNK) {
+    binary += String.fromCharCode(...zipData.subarray(i, i + CHUNK));
+  }
+  const base64 = btoa(binary);
   await invoke('plugin:media-save|save_to_downloads', {
     filename,
     data: base64,
