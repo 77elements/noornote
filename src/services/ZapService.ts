@@ -203,11 +203,21 @@ export class ZapService {
     return this.sendZap(zapRequest);
   }
 
+  /** Debounce guard: prevent double-zaps from rapid taps */
+  private lastZapTime = 0;
+  private static readonly ZAP_DEBOUNCE_MS = 3000;
+
   /**
    * Core zap flow: Create zap request → Fetch invoice → Pay with NWC → Verify receipt
    * Includes 45-second timeout for entire operation (15s for receipt verification)
    */
   private async sendZap(request: ZapRequest): Promise<ZapResult> {
+    const now = Date.now();
+    if (now - this.lastZapTime < ZapService.ZAP_DEBOUNCE_MS) {
+      return { success: false, error: 'Zap already in progress' };
+    }
+    this.lastZapTime = now;
+
     try {
       // Wrap entire zap flow in 45-second timeout (payment + 15s receipt verification)
       const zapPromise = this.executeZapFlow(request);
