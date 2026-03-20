@@ -45,8 +45,7 @@ export function npubToHex(npub: string): string | null {
 export function hexToNpub(hex: string): string | null {
   try {
     return encodeNpub(hex);
-  } catch (error) {
-    console.warn('Failed to encode hex to npub:', hex, error);
+  } catch {
     return null;
   }
 }
