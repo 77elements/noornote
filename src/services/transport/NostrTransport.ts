@@ -340,6 +340,7 @@ export class NostrTransport {
       const fetchPromise = this.ndk.fetchEvents(filters, {
         relayUrls: relays,
         closeOnEose: true,
+        groupable: false,
         cacheUsage: skipCache ? NDKSubscriptionCacheUsage.ONLY_RELAY : NDKSubscriptionCacheUsage.CACHE_FIRST
       });
 
