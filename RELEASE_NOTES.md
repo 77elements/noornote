@@ -1,4 +1,4 @@
-# What's New in v0.6.6
+# What's New in v0.6.7
 
 - **Faster & more reliable** — Upgraded to NDK v3 for improved relay connections
 - **Double-zap protection** — Prevents accidental duplicate zaps
