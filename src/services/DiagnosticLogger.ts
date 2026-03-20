@@ -81,12 +81,16 @@ async function ensureFs(): Promise<typeof import('@tauri-apps/plugin-fs')> {
 
 // ===== Service =====
 
-class DiagnosticLogger {
+export class DiagnosticLogger {
   private static instance: DiagnosticLogger;
 
   private logsDir: string | null = null;
   private initialized = false;
   private initializing = false;
+  private initError: string | null = null;
+  private flushErrors: number = 0;
+  private lastFlushError: string | null = null;
+  private flushing = false;
 
   private buffers: Map<DiagArea, string[]> = new Map();
   private currentDate: string = todayDate();
@@ -111,6 +115,12 @@ class DiagnosticLogger {
       DiagnosticLogger.instance = new DiagnosticLogger();
     }
     return DiagnosticLogger.instance;
+  }
+
+  /** Diagnostic status for export UI */
+  getStatus() {
+    const bufferSize = Array.from(this.buffers.values()).reduce((sum, b) => sum + b.length, 0);
+    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: fs !== null, bufferSize };
   }
 
   // ===== Initialization =====
@@ -157,8 +167,8 @@ class DiagnosticLogger {
 
       // Migrate legacy files (one-time: lists.jsonl → lists-{date}.jsonl)
       this.migrateLegacyFiles();
-    } catch {
-      // Silent failure — logging should never break the app
+    } catch (error) {
+      this.initError = String(error);
     } finally {
       this.initializing = false;
     }
@@ -169,8 +179,19 @@ class DiagnosticLogger {
   /**
    * Log a diagnostic entry. Fire-and-forget — never throws, never blocks.
    */
+  private logging = false;
+
   log(area: DiagArea, msg: string, data?: unknown): void {
-    if (!platform.isTauri) return;
+    if (!platform.isTauri || this.logging) return;
+    this.logging = true;
+    try {
+      this._log(area, msg, data);
+    } finally {
+      this.logging = false;
+    }
+  }
+
+  private _log(area: DiagArea, msg: string, data?: unknown): void {
 
     // Check for date rollover
     const now = todayDate();
@@ -218,12 +239,23 @@ class DiagnosticLogger {
       const file = await fs.open(filePath, { append: true, create: true });
       await file.write(new TextEncoder().encode(payload));
       await file.close();
-    } catch {
-      // Silent — logging must never break the app
+    } catch (error) {
+      this.flushErrors++;
+      this.lastFlushError = String(error);
     }
   }
 
   private async flushAll(): Promise<void> {
+    if (this.flushing) return;
+    this.flushing = true;
+    try {
+      await this._flushAll();
+    } finally {
+      this.flushing = false;
+    }
+  }
+
+  private async _flushAll(): Promise<void> {
     const promises: Promise<void>[] = [];
     for (const area of this.buffers.keys()) {
       promises.push(this.flush(area));

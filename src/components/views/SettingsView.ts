@@ -223,16 +223,33 @@ export class SettingsView extends View {
       btn.textContent = 'Exporting...';
       try {
         const { exportDiagnosticLogs } = await import('../../services/DiagLogExportService');
-        const success = await exportDiagnosticLogs();
+        const { DiagnosticLogger } = await import('../../services/DiagnosticLogger');
+        const status = DiagnosticLogger.getInstance().getStatus();
         const { ToastService } = await import('../../services/ToastService');
+
+        if (!status.initialized) {
+          const reason = status.error || 'Logger not initialized';
+          ToastService.show(`DiagLog: ${reason}`, 'error', 8000);
+          return;
+        }
+
+        let exportError: string | null = null;
+        let success = false;
+        try {
+          success = await exportDiagnosticLogs();
+        } catch (e) {
+          exportError = String(e);
+        }
+
         if (success) {
           ToastService.show('Logs exported', 'success');
         } else {
-          ToastService.show('No log files found', 'error');
+          const debugInfo = (exportDiagnosticLogs as any).lastDebugInfo || '';
+          ToastService.show(exportError || debugInfo || 'export returned false', 'error', 15000);
         }
       } catch (error) {
-        const { ErrorService } = await import('../../services/ErrorService');
-        ErrorService.handle(error, 'SettingsView.exportLogs');
+        const { ToastService } = await import('../../services/ToastService');
+        ToastService.show(`Import error: ${error}`, 'error', 15000);
       } finally {
         btn.disabled = false;
         btn.textContent = 'Export Logs';
