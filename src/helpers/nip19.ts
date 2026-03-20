@@ -20,14 +20,14 @@ import { bech32 } from 'bech32';
  * // => "3bf0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d"
  */
 export function npubToHex(npub: string): string | null {
+  if (!npub.startsWith('npub1')) return null;
   try {
     const decoded = decodeNip19(npub);
     if (decoded.type === 'npub') {
       return decoded.data as string;
     }
     return null;
-  } catch (error) {
-    console.warn('Failed to decode npub:', npub, error);
+  } catch {
     return null;
   }
 }

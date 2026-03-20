@@ -10,6 +10,13 @@ if (__capturedRelayParam) {
   (window as any).__noornote_relay_param = __capturedRelayParam;
 }
 
+// Suppress NDK v3 serialization errors for malformed events from other clients
+window.addEventListener('unhandledrejection', (event) => {
+  if (String(event.reason).includes("Can't serialize event with invalid properties")) {
+    event.preventDefault();
+  }
+});
+
 import { App } from './App';
 import { AuthService } from './services/AuthService';
 import { UserProfileService } from './services/UserProfileService';

@@ -434,7 +434,6 @@ export class AuthService {
 
       throw new Error(`No ${operation}ion method available`);
     } catch (error) {
-      console.error(`${nip.toUpperCase()} ${operation} error:`, error);
       throw error;
     }
   }

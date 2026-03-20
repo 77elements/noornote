@@ -33,6 +33,17 @@ interface SubCloser {
  * Desktop (Tauri): Large cache sizes for better performance
  * Web/Phone: Smaller cache sizes to reduce memory usage
  */
+/** One-time migration: delete old Dexie DB if schema is incompatible with NDK v3 */
+const NDK_CACHE_VERSION_KEY = 'ndk_cache_version';
+const NDK_CACHE_VERSION = 3;
+if (typeof indexedDB !== 'undefined') {
+  const currentVersion = parseInt(localStorage.getItem(NDK_CACHE_VERSION_KEY) || '0');
+  if (currentVersion < NDK_CACHE_VERSION) {
+    indexedDB.deleteDatabase('noornote');
+    localStorage.setItem(NDK_CACHE_VERSION_KEY, String(NDK_CACHE_VERSION));
+  }
+}
+
 function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
   const STORAGE_KEY = 'ndk_cache_config';
   const platform = PlatformService.getInstance();
