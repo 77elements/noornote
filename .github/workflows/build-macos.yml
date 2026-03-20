@@ -15,16 +15,16 @@ jobs:
     runs-on: macos-14  # Apple Silicon only (Intel runners require paid tier)
     steps:
       - name: Checkout NoorNote
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Checkout NoorSigner
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: 77elements/noorsigner
           path: noorsigner-src
 
       - name: Setup Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
           go-version: '1.24'
           cache: false
