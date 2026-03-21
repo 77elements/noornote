@@ -210,6 +210,17 @@
 }
 
 // ========================================
+// Heading + Back Button Container
+// ========================================
+
+.heading-back-btn-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap;
+}
+
+// ========================================
 // Show More/Less Button Modifier
 // ========================================
 

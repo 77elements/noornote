@@ -2054,7 +2054,11 @@ export class MainLayout {
 
     // Add header with title and back button
     const header = document.createElement('div');
-    header.className = 'list-view-primary__header';
+    header.className = 'list-view-primary__header heading-back-btn-container';
+
+    const title = document.createElement('h2');
+    title.className = 'list-view-primary__title';
+    title.textContent = 'Following';
 
     const backBtn = document.createElement('button');
     backBtn.className = 'list-view-primary__back btn btn--passive';
@@ -2063,12 +2067,8 @@ export class MainLayout {
       history.back();
     });
 
-    const title = document.createElement('h2');
-    title.className = 'list-view-primary__title';
-    title.textContent = 'Following';
-
-    header.appendChild(backBtn);
     header.appendChild(title);
+    header.appendChild(backBtn);
 
     // Create content container
     const contentContainer = document.createElement('div');
@@ -2225,7 +2225,11 @@ export class MainLayout {
 
     // Add header with title and back button
     const header = document.createElement('div');
-    header.className = 'list-view-primary__header';
+    header.className = 'list-view-primary__header heading-back-btn-container';
+
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'list-view-primary__title';
+    titleEl.textContent = titles[listType];
 
     // Create back button with direct event handler
     const backBtn = document.createElement('button');
@@ -2241,12 +2245,8 @@ export class MainLayout {
       Router.getInstance().navigate('/');
     });
 
-    const titleEl = document.createElement('h1');
-    titleEl.className = 'list-view-primary__title';
-    titleEl.textContent = titles[listType];
-
-    header.appendChild(backBtn);
     header.appendChild(titleEl);
+    header.appendChild(backBtn);
 
     // Add content container with data-tab-content for manager selectors
     const content = document.createElement('div');
