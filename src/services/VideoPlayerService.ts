@@ -1,8 +1,9 @@
 /**
  * VideoPlayerService
  * Native HTML5 video player with fullscreen support
- * - Browser: Uses native Fullscreen API (real fullscreen)
- * - Tauri: Falls back to CSS-based fullscreen (WebView limitation)
+ * - Browser (Web): No custom fullscreen — native controls work
+ * - Tauri Desktop: Overlay with cloned video (document.fullscreenEnabled is false)
+ * - Tauri Android: No fullscreen support (WebView limitation, no fix available)
  */
 
 import { PlatformService } from './PlatformService';
@@ -11,11 +12,15 @@ import { downloadMedia } from '../helpers/downloadMedia';
 
 export class VideoPlayerService {
   private static instance: VideoPlayerService | null = null;
+  private originalVideo: HTMLVideoElement | null = null;
+  private fullscreenOverlay: HTMLElement | null = null;
   private fullscreenVideo: HTMLVideoElement | null = null;
-  private readonly isBrowser: boolean;
+  private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
+
+  private readonly platform: PlatformService;
 
   private constructor() {
-    this.isBrowser = PlatformService.getInstance().isBrowser;
+    this.platform = PlatformService.getInstance();
   }
 
   public static getInstance(): VideoPlayerService {
@@ -25,314 +30,259 @@ export class VideoPlayerService {
     return VideoPlayerService.instance;
   }
 
-  /**
-   * Toggle fullscreen for video
-   * Browser: Uses native Fullscreen API (real fullscreen)
-   * Tauri: CSS-based fullscreen (moves video to body to escape containment)
-   */
+  // ===== Fullscreen Toggle =====
+
   private toggleFullscreen(video: HTMLVideoElement): void {
-    if (this.isBrowser) {
-      this.toggleNativeFullscreen(video);
-    } else {
-      this.toggleCssFullscreen(video);
+    if (this.fullscreenOverlay) {
+      this.exitFullscreen();
+      return;
     }
+    this.enterOverlayFullscreen(video);
   }
 
-  /**
-   * Native Fullscreen API (Browser only)
-   */
-  private toggleNativeFullscreen(video: HTMLVideoElement): void {
-    if (document.fullscreenElement === video) {
-      document.exitFullscreen();
+  // ===== Overlay Fullscreen (Tauri Desktop) =====
+
+  private enterOverlayFullscreen(video: HTMLVideoElement): void {
+    const src = video.currentSrc || video.src;
+    if (!src) return;
+
+    const savedTime = video.currentTime;
+    const wasPlaying = !video.paused;
+    video.pause();
+    this.originalVideo = video;
+
+    // Overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'video-fs-overlay';
+
+    // Fresh video element (no reparenting — reparenting breaks Android WebView)
+    const fsVideo = document.createElement('video');
+    fsVideo.src = src;
+    fsVideo.className = 'video-fs-overlay__video';
+    fsVideo.controls = true;
+    fsVideo.playsInline = true;
+    fsVideo.preload = 'auto';
+
+    // Close button (X)
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'video-fs-overlay__close';
+    closeBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    closeBtn.addEventListener('click', () => this.exitFullscreen());
+
+    // Download button
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'video-fs-overlay__dl';
+    dlBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+    dlBtn.addEventListener('click', async () => {
+      const fileName = src.split('/').pop()?.split('?')[0] || 'video.mp4';
+      try { await downloadMedia(src, fileName); }
+      catch { ToastService.show('Failed to save video', 'error'); }
+    });
+
+    overlay.appendChild(fsVideo);
+    overlay.appendChild(closeBtn);
+    overlay.appendChild(dlBtn);
+    document.body.appendChild(overlay);
+
+    this.fullscreenOverlay = overlay;
+    this.fullscreenVideo = fsVideo;
+    document.body.classList.add('video-fs-active');
+
+    // Seek to saved position and play when video is ready
+    const seekAndPlay = () => {
+      fsVideo.currentTime = savedTime;
+      if (wasPlaying) {
+        fsVideo.addEventListener('seeked', () => {
+          fsVideo.play().catch(() => {});
+        }, { once: true });
+      }
+    };
+
+    // canplay = enough data to play at current position (more reliable than loadedmetadata for seek)
+    if (fsVideo.readyState >= 3) {
+      seekAndPlay();
     } else {
-      video.requestFullscreen().catch(() => {
-        // Fallback to CSS if native fails
-        this.toggleCssFullscreen(video);
-      });
+      fsVideo.addEventListener('canplay', seekAndPlay, { once: true });
     }
+
+    // Escape to exit
+    this.escapeHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') this.exitFullscreen();
+    };
+    document.addEventListener('keydown', this.escapeHandler);
+
+    // Tap overlay background to exit
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) this.exitFullscreen();
+    });
   }
 
-  /**
-   * CSS-based fullscreen (Tauri fallback)
-   * Moves video to body to escape CSS containment in .primary-content
-   */
-  private toggleCssFullscreen(video: HTMLVideoElement): void {
-    const fsButton = (video as any)._fsButton;
-    const dlButton = (video as any)._dlButton;
+  private exitFullscreen(): void {
+    if (!this.fullscreenOverlay || !this.fullscreenVideo) return;
 
-    if (this.fullscreenVideo === video) {
-      // Exit fullscreen
-      video.classList.remove('video-fullscreen-mode');
-      if (fsButton) {
-        fsButton.classList.remove('video-fullscreen-btn-active');
-      }
-      if (dlButton) {
-        dlButton.classList.remove('video-download-btn-active');
-      }
-      document.body.style.overflow = '';
+    const currentTime = this.fullscreenVideo.currentTime;
+    const wasPlaying = !this.fullscreenVideo.paused;
+    this.fullscreenVideo.pause();
 
-      // Move video back to original position
-      const originalParent = (video as any)._originalParent;
-      const originalNextSibling = (video as any)._originalNextSibling;
-      const originalButtonParent = (video as any)._originalButtonParent;
-      const originalDlButtonParent = (video as any)._originalDlButtonParent;
-
-      if (originalParent) {
-        if (originalNextSibling && originalNextSibling.parentNode === originalParent) {
-          originalParent.insertBefore(video, originalNextSibling);
-        } else {
-          originalParent.appendChild(video);
-        }
-
-        // Move buttons back to wrapper
-        if (fsButton && originalButtonParent) {
-          originalButtonParent.appendChild(fsButton);
-        }
-        if (dlButton && originalDlButtonParent) {
-          originalDlButtonParent.appendChild(dlButton);
-        }
-
-        // Clean up stored references
-        delete (video as any)._originalParent;
-        delete (video as any)._originalNextSibling;
-        delete (video as any)._originalButtonParent;
-        delete (video as any)._originalDlButtonParent;
-      }
-
-      this.fullscreenVideo = null;
-    } else {
-      // Enter fullscreen
-      // Store original positions before moving
-      (video as any)._originalParent = video.parentElement;
-      (video as any)._originalNextSibling = video.nextSibling;
-      (video as any)._originalButtonParent = fsButton ? fsButton.parentElement : null;
-      (video as any)._originalDlButtonParent = dlButton ? dlButton.parentElement : null;
-
-      // Move video to end of body (escapes CSS containment)
-      document.body.appendChild(video);
-
-      // Move buttons to body as well (so they stay visible with video)
-      if (fsButton) {
-        document.body.appendChild(fsButton);
-      }
-      if (dlButton) {
-        document.body.appendChild(dlButton);
-      }
-
-      video.classList.add('video-fullscreen-mode');
-      if (fsButton) {
-        fsButton.classList.add('video-fullscreen-btn-active');
-      }
-      if (dlButton) {
-        dlButton.classList.add('video-download-btn-active');
-      }
-      document.body.style.overflow = 'hidden';
-      this.fullscreenVideo = video;
-
-      // Exit fullscreen on Escape key
-      const handleEscape = (e: KeyboardEvent) => {
-        if (e.key === 'Escape' && this.fullscreenVideo) {
-          this.toggleCssFullscreen(this.fullscreenVideo);
-          document.removeEventListener('keydown', handleEscape);
-        }
-      };
-      document.addEventListener('keydown', handleEscape);
+    if (this.originalVideo) {
+      this.originalVideo.currentTime = currentTime;
+      if (wasPlaying) this.originalVideo.play().catch(() => {});
     }
+
+    if (this.escapeHandler) {
+      document.removeEventListener('keydown', this.escapeHandler);
+      this.escapeHandler = null;
+    }
+
+    this.fullscreenOverlay.remove();
+    this.fullscreenOverlay = null;
+    this.fullscreenVideo = null;
+    this.originalVideo = null;
+    document.body.classList.remove('video-fs-active');
   }
 
+  // ===== Button Setup =====
+
   /**
-   * Add fullscreen and download buttons to native video controls
+   * Adds fullscreen + download buttons to videos.
+   * - Browser (Web): skipped entirely — native controls have fullscreen
+   * - Tauri Android: only download button (fullscreen not possible in WebView)
+   * - Tauri Desktop: fullscreen + download buttons
    */
   public initializeForContainer(container: HTMLElement): void {
+    // Web browser: native fullscreen works, no custom buttons needed
+    if (this.platform.isBrowser) return;
+
+    const isAndroid = this.platform.isAndroid;
     const videos = container.querySelectorAll<HTMLVideoElement>('video.note-video');
+
     videos.forEach(video => {
-      // Skip if already initialized
       if (video.dataset.fsInitialized) return;
       video.dataset.fsInitialized = 'true';
 
-      // Create fullscreen button
-      const fsButton = document.createElement('button');
-      fsButton.className = 'video-fullscreen-btn';
-      fsButton.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
-          <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
-        </svg>
-      `;
-      fsButton.title = 'Fullscreen (Double-click video or press Escape to exit)';
-      fsButton.style.cssText = `
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        background: var(--alpha-medium);
-        border: none;
-        border-radius: 4px;
-        padding: 8px;
-        cursor: pointer;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s;
-      `;
+      // Fullscreen button — Tauri Desktop only
+      if (!isAndroid) {
+        const fsButton = document.createElement('button');
+        fsButton.className = 'video-fullscreen-btn';
+        fsButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>';
+        fsButton.title = 'Fullscreen';
+        fsButton.style.cssText = 'position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);border:none;border-radius:4px;padding:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
+        fsButton.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleFullscreen(video);
+        });
 
-      fsButton.addEventListener('mouseenter', () => {
-        fsButton.style.background = 'var(--alpha-medium)';
-      });
+        // Double-click to fullscreen (Desktop only)
+        video.addEventListener('dblclick', () => this.toggleFullscreen(video));
 
-      fsButton.addEventListener('mouseleave', () => {
-        fsButton.style.background = 'var(--alpha-medium)';
-      });
+        const wrapper = video.parentElement;
+        if (wrapper) {
+          wrapper.style.position = 'relative';
+          wrapper.appendChild(fsButton);
+          (video as any)._fsButton = fsButton;
+        }
+      }
 
-      fsButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        this.toggleFullscreen(video);
-      });
-
-      // Create download button
+      // Download button — both Desktop and Android
       const dlButton = document.createElement('button');
       dlButton.className = 'video-download-btn';
-      dlButton.innerHTML = `
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-      `;
+      dlButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
       dlButton.title = 'Download';
-      dlButton.style.cssText = `
-        position: absolute;
-        top: 10px;
-        right: 50px;
-        background: var(--alpha-medium);
-        border: none;
-        border-radius: 4px;
-        padding: 8px;
-        cursor: pointer;
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: background 0.2s;
-      `;
-
+      const dlRight = isAndroid ? '10px' : '50px';
+      dlButton.style.cssText = `position:absolute;top:10px;right:${dlRight};background:rgba(0,0,0,0.5);border:none;border-radius:4px;padding:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;`;
       dlButton.addEventListener('click', async (e) => {
         e.stopPropagation();
         const src = video.currentSrc || video.src;
         if (!src) return;
-        const defaultFileName = src.split('/').pop()?.split('?')[0] || 'video.mp4';
-        try {
-          await downloadMedia(src, defaultFileName);
-        } catch {
-          ToastService.show('Failed to save video', 'error');
-        }
+        const fileName = src.split('/').pop()?.split('?')[0] || 'video.mp4';
+        try { await downloadMedia(src, fileName); }
+        catch { ToastService.show('Failed to save video', 'error'); }
       });
 
-      // Also allow double-click on video to toggle fullscreen
-      video.addEventListener('dblclick', () => {
-        this.toggleFullscreen(video);
-      });
-
-      // Pause video when scrolled out of viewport
-      const visibilityObserver = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting && !video.paused) {
-              video.pause();
-            }
-          });
-        },
-        { threshold: 0 }
-      );
-      visibilityObserver.observe(video);
-      (video as any)._visibilityObserver = visibilityObserver;
-
-      // Position video relatively and add buttons
       const wrapper = video.parentElement;
       if (wrapper) {
         wrapper.style.position = 'relative';
-        wrapper.appendChild(fsButton);
         wrapper.appendChild(dlButton);
-
-        // Store button references for cleanup
-        (video as any)._fsButton = fsButton;
         (video as any)._dlButton = dlButton;
       }
+
+      // Auto-pause when scrolled away
+      const observer = new IntersectionObserver(
+        (entries) => { entries.forEach(e => { if (!e.isIntersecting && !video.paused) video.pause(); }); },
+        { threshold: 0 }
+      );
+      observer.observe(video);
+      (video as any)._visibilityObserver = observer;
     });
 
-    // Add CSS for fullscreen mode (if not already added)
-    if (!document.getElementById('video-fullscreen-css')) {
+    // Inject overlay CSS once (Desktop only)
+    if (!isAndroid && !document.getElementById('video-fs-css')) {
       const style = document.createElement('style');
-      style.id = 'video-fullscreen-css';
+      style.id = 'video-fs-css';
       style.textContent = `
-        .video-fullscreen-mode {
-          position: fixed !important;
-          top: 0 !important;
-          left: 0 !important;
-          width: 100vw !important;
-          height: 100vh !important;
-          max-width: 100vw !important;
-          max-height: 100vh !important;
-          z-index: 9999 !important;
-          background: black !important;
-          object-fit: contain !important;
+        .video-fs-overlay {
+          position: fixed;
+          top: 0; left: 0;
+          width: 100vw; height: 100vh;
+          z-index: 9999;
+          background: #000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        .video-fullscreen-btn-active {
-          position: fixed !important;
-          top: 20px !important;
-          right: 20px !important;
-          bottom: auto !important;
-          z-index: 10000 !important;
+        .video-fs-overlay__video {
+          width: 100%; height: 100%;
+          object-fit: contain;
         }
-        .video-download-btn-active {
-          position: fixed !important;
-          top: 20px !important;
-          right: 60px !important;
-          bottom: auto !important;
-          z-index: 10000 !important;
+        .video-fs-overlay__close {
+          position: absolute;
+          top: 12px; right: 12px;
+          z-index: 10000;
+          background: rgba(0,0,0,0.6);
+          border: none;
+          border-radius: 50%;
+          width: 40px; height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
         }
-        body:has(.video-fullscreen-mode) {
+        .video-fs-overlay__dl {
+          position: absolute;
+          top: 12px; right: 64px;
+          z-index: 10000;
+          background: rgba(0,0,0,0.6);
+          border: none;
+          border-radius: 4px;
+          padding: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+        }
+        .video-fs-active {
           overflow: hidden !important;
-        }
-        body:has(.video-fullscreen-mode) * {
-          scrollbar-width: none !important;
-        }
-        body:has(.video-fullscreen-mode) *::-webkit-scrollbar {
-          display: none !important;
         }
       `;
       document.head.appendChild(style);
     }
   }
 
-  /**
-   * Cleanup
-   */
+  // ===== Cleanup =====
+
   public cleanupForContainer(container: HTMLElement): void {
     const videos = container.querySelectorAll<HTMLVideoElement>('video.note-video');
     videos.forEach(video => {
-      const fsButton = (video as any)._fsButton;
-      if (fsButton) {
-        fsButton.remove();
-        delete (video as any)._fsButton;
-      }
-      const dlButton = (video as any)._dlButton;
-      if (dlButton) {
-        dlButton.remove();
-        delete (video as any)._dlButton;
-      }
-      const visibilityObserver = (video as any)._visibilityObserver as IntersectionObserver | undefined;
-      if (visibilityObserver) {
-        visibilityObserver.disconnect();
-        delete (video as any)._visibilityObserver;
-      }
-      video.classList.remove('video-fullscreen-mode');
+      (video as any)._fsButton?.remove();
+      (video as any)._dlButton?.remove();
+      delete (video as any)._fsButton;
+      delete (video as any)._dlButton;
+      const obs = (video as any)._visibilityObserver as IntersectionObserver | undefined;
+      if (obs) { obs.disconnect(); delete (video as any)._visibilityObserver; }
       delete video.dataset.fsInitialized;
     });
 
-    if (this.fullscreenVideo) {
-      document.body.style.overflow = '';
-      this.fullscreenVideo = null;
-    }
+    if (this.fullscreenOverlay) this.exitFullscreen();
   }
 }
 
