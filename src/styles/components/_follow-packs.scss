@@ -108,8 +108,6 @@
     gap: calc($gap / 2);
   }
 
-  // detail-title-row removed — uses .heading-back-btn-container
-
   &__detail-title {
     @include heading-base;
     font-size: 1.3rem;
