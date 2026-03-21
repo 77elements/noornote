@@ -1,4 +1,4 @@
-// FollowPacks — Grid, Detail, Timeline views
+// FollowPacks — Grid, Detail, Timeline, Edit views
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
@@ -146,7 +146,7 @@
     margin-top: calc($gap / 2);
   }
 
-  // ===== Members =====
+  // ===== Members (list style) =====
 
   &__members {
     margin-top: $gap;
@@ -158,50 +158,106 @@
     opacity: 0.7;
   }
 
-  &__members-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: calc($gap / 2);
-    overflow: hidden;
-
-    @include tablet {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-    @include desktop {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-
-  &__member-card {
-    @include card-interactive;
+  &__member-item {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: $gap calc($gap / 2) calc($gap / 2);
-    gap: calc($gap / 4);
-    text-align: center;
-    min-width: 0;
-    overflow: hidden;
+    justify-content: space-between;
+    gap: $gap;
   }
 
-  &__member-avatar-wrap {
+  &__member-content {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    min-width: 0;
     cursor: pointer;
+    flex: 1;
+  }
+
+  &__member-avatar {
+    flex-shrink: 0;
+  }
+
+  &__member-info {
+    min-width: 0;
+    flex: 1;
   }
 
   &__member-name {
     font-weight: 500;
-    font-size: 0.8rem;
     color: var(--color-5);
     @include text-truncate;
-    max-width: 100%;
-    cursor: pointer;
+  }
+
+  &__member-action-btn {
+    flex-shrink: 0;
+  }
+
+  // ===== Edit =====
+
+  &__edit-header {
+    margin-bottom: $gap;
+  }
+
+  &__edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+    margin-bottom: $gap;
+  }
+
+  &__edit-field {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 4);
+  }
+
+  &__edit-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--color-5);
+    opacity: 0.8;
+  }
+
+  &__edit-textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  &__edit-preview {
     margin-bottom: calc($gap / 2);
   }
 
-  &__member-follow-btn {
-    margin-top: auto;
-    white-space: nowrap;
+  &__edit-add-section {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 4);
+    margin-bottom: $gap;
+  }
+
+  &__edit-add-row {
+    display: flex;
+    gap: calc($gap / 2);
+    align-items: flex-start;
+
+    .user-search-input {
+      flex: 1;
+    }
+  }
+
+  &__edit-add-btn {
+    flex-shrink: 0;
+    align-self: flex-start;
+    margin-top: 0;
+  }
+
+  &__edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: calc($gap / 2);
+    margin-top: $gap;
+    padding-top: $gap;
+    border-top: 1px solid var(--color-2);
   }
 
   // ===== Timeline =====

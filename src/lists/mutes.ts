@@ -1161,7 +1161,7 @@ export class MuteListView extends View {
               <a href="/profile/${npub}" class="mention-link mention-link--bg" data-profile-pubkey="${pubkey}">
                 <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />${escapeHtml(username)}</a></span>${lockIcon}
           </div>
-          <button class="btn btn--passive btn--mini unmute-user-btn" data-pubkey="${pubkey}">
+          <button class="btn btn--passive btn--medium unmute-user-btn" data-pubkey="${pubkey}">
             Unmute
           </button>
         </div>
@@ -1202,7 +1202,7 @@ export class MuteListView extends View {
             </div>
             <span class="mute-list-item__event-id" title="${eventId}">${shortId}${lockIcon}</span>
           </div>
-          <button class="btn btn--passive btn--mini unmute-thread-btn" data-event-id="${eventId}">
+          <button class="btn btn--passive btn--medium unmute-thread-btn" data-event-id="${eventId}">
             Unmute
           </button>
         </div>
@@ -1762,7 +1762,7 @@ export class MuteListManager {
             </div>
           </div>
         </div>
-        <button class="mute-item__unmute-btn btn btn--passive btn--mini" data-pubkey="${item.pubkey}">
+        <button class="mute-item__unmute-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
           Unmute
         </button>
       `;
@@ -1803,7 +1803,7 @@ export class MuteListManager {
             </div>
           </div>
         </div>
-        <button class="mute-item__unmute-btn btn btn--passive btn--mini" data-event-id="${thread.eventId}">
+        <button class="mute-item__unmute-btn btn btn--passive btn--medium" data-event-id="${thread.eventId}">
           Unmute
         </button>
       `;

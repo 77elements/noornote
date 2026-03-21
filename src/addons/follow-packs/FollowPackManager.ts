@@ -4,10 +4,10 @@
  *
  * Features:
  * - Grid view of all available packs
- * - Detail view with member list
+ * - Detail view with member list (ui-list__item style)
  * - "Follow All" to batch-follow pack members
  * - "See Notes" to open pack timeline
- * - "Edit List" for pack owners (Phase 2)
+ * - "Edit List" for pack owners
  *
  * @used-by MainLayout (via ListViewPartial)
  */
@@ -25,7 +25,7 @@ import { hexToNpub } from '../../helpers/nip19';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 
-type ViewMode = 'grid' | 'detail' | 'timeline';
+type ViewMode = 'grid' | 'detail' | 'timeline' | 'edit';
 
 export class FollowPackManager {
   private transport: NostrTransport;
@@ -38,6 +38,12 @@ export class FollowPackManager {
   private viewMode: ViewMode = 'grid';
   private selectedPack: FollowPack | null = null;
   private currentContainer: HTMLElement | null = null;
+
+  /** Edit state — pending changes before "Update Follow Pack" */
+  private editTitle = '';
+  private editDescription = '';
+  private editCoverImage = '';
+  private editMembers: string[] = [];
 
   constructor(_containerElement: HTMLElement) {
     this.transport = NostrTransport.getInstance();
@@ -96,6 +102,9 @@ export class FollowPackManager {
         break;
       case 'timeline':
         if (this.selectedPack) this.renderTimeline(this.selectedPack);
+        break;
+      case 'edit':
+        if (this.selectedPack) this.renderEdit(this.selectedPack);
         break;
     }
   }
@@ -253,9 +262,11 @@ export class FollowPackManager {
       this.renderCurrentView();
     });
 
-    // Edit List (Phase 2)
+    // Edit List
     header.querySelector('.follow-packs__btn-edit')?.addEventListener('click', () => {
-      ToastService.show('Edit List coming soon', 'info');
+      this.initEditState(pack);
+      this.viewMode = 'edit';
+      this.renderCurrentView();
     });
 
     // Member list
@@ -283,7 +294,7 @@ export class FollowPackManager {
       if (npub) Router.getInstance().navigate(`/messages/${npub}`);
     });
 
-    // Load member profiles
+    // Load member profiles and render list
     await this.loadMembers(pack, memberList);
   }
 
@@ -297,8 +308,8 @@ export class FollowPackManager {
 
     memberList.innerHTML = '';
 
-    const grid = document.createElement('div');
-    grid.className = 'follow-packs__members-grid';
+    const list = document.createElement('div');
+    list.className = 'ui-list';
 
     pack.userPubkeys.forEach(pubkey => {
       const profile = profiles.get(pubkey);
@@ -307,48 +318,354 @@ export class FollowPackManager {
       const picture = profile?.picture || '';
       const isFollowing = followedPubkeys.has(pubkey);
 
-      const card = document.createElement('div');
-      card.className = 'follow-packs__member-card';
-
-      card.innerHTML = `
-        <div class="follow-packs__member-avatar-wrap">
-          <img src="${escapeHtmlAttr(picture)}" alt="" class="profile-pic profile-pic--medium" />
+      const item = document.createElement('div');
+      item.className = 'ui-list__item follow-packs__member-item';
+      item.dataset.pubkey = pubkey;
+      item.innerHTML = `
+        <div class="follow-packs__member-content">
+          <div class="follow-packs__member-avatar">
+            <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(picture)}" alt="${escapeHtmlAttr(name)}" />
+          </div>
+          <div class="follow-packs__member-info">
+            <div class="follow-packs__member-name">${escapeHtml(name)}</div>
+          </div>
         </div>
-        <span class="follow-packs__member-name">${escapeHtml(name)}</span>
-        <button class="btn btn--mini ${isFollowing ? 'btn--passive' : ''} follow-packs__member-follow-btn"
+        <button class="follow-packs__member-action-btn btn ${isFollowing ? 'btn--passive ' : ''}btn--medium"
                 data-pubkey="${pubkey}">${isFollowing ? 'Unfollow' : 'Follow'}</button>
       `;
 
-      // Card click → profile (Follow button has stopPropagation)
-      card.addEventListener('click', () => {
+      // Click content → profile
+      item.querySelector('.follow-packs__member-content')?.addEventListener('click', () => {
         if (npub) Router.getInstance().navigate(`/profile/${npub}`);
       });
-      card.style.cursor = 'pointer';
 
-      // Follow button
-      const followBtn = card.querySelector('.follow-packs__member-follow-btn') as HTMLButtonElement;
-      followBtn?.addEventListener('click', (e) => {
+      // Follow/Unfollow button
+      const actionBtn = item.querySelector('.follow-packs__member-action-btn') as HTMLButtonElement;
+      actionBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
         const currentFollows = getFollowItems();
         const alreadyFollowing = currentFollows.some(f => f.pubkey === pubkey);
 
         if (alreadyFollowing) {
-          // Unfollow
           setFollowItems(currentFollows.filter(f => f.pubkey !== pubkey));
-          followBtn.textContent = 'Follow';
-          followBtn.classList.remove('btn--passive');
+          actionBtn.textContent = 'Follow';
+          actionBtn.classList.remove('btn--passive');
         } else {
-          // Follow
           setFollowItems([...currentFollows, { id: pubkey, pubkey, relay: '', addedAt: Math.floor(Date.now() / 1000) }]);
-          followBtn.textContent = 'Unfollow';
-          followBtn.classList.add('btn--passive');
+          actionBtn.textContent = 'Unfollow';
+          actionBtn.classList.add('btn--passive');
         }
       });
 
-      grid.appendChild(card);
+      list.appendChild(item);
     });
 
-    memberList.appendChild(grid);
+    memberList.appendChild(list);
+  }
+
+  // ===== Edit View =====
+
+  private initEditState(pack: FollowPack): void {
+    this.editTitle = pack.title;
+    this.editDescription = pack.description;
+    this.editCoverImage = pack.coverImage;
+    this.editMembers = [...pack.userPubkeys];
+  }
+
+  private async renderEdit(pack: FollowPack): Promise<void> {
+    const container = this.currentContainer!;
+    container.innerHTML = '';
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'follow-packs';
+
+    // Header
+    const header = document.createElement('div');
+    header.className = 'follow-packs__edit-header';
+    header.innerHTML = `
+      <div class="follow-packs__detail-title-row">
+        <h2 class="follow-packs__detail-title">Edit Follow Pack</h2>
+        <button class="follow-packs__back-btn btn btn--mini btn--secondary">Cancel</button>
+      </div>
+    `;
+    wrapper.appendChild(header);
+
+    header.querySelector('.follow-packs__back-btn')?.addEventListener('click', () => {
+      this.viewMode = 'detail';
+      this.renderCurrentView();
+    });
+
+    // Form
+    const form = document.createElement('div');
+    form.className = 'follow-packs__edit-form';
+    form.innerHTML = `
+      <div class="follow-packs__edit-field">
+        <label class="follow-packs__edit-label">List Name</label>
+        <input type="text" class="input follow-packs__edit-input" data-field="title"
+               value="${escapeHtmlAttr(this.editTitle)}" placeholder="Pack name" />
+      </div>
+      <div class="follow-packs__edit-field">
+        <label class="follow-packs__edit-label">Cover Image URL</label>
+        <input type="text" class="input follow-packs__edit-input" data-field="coverImage"
+               value="${escapeHtmlAttr(this.editCoverImage)}" placeholder="https://..." />
+      </div>
+      ${this.editCoverImage ? `
+        <div class="follow-packs__edit-preview">
+          <img src="${escapeHtmlAttr(this.editCoverImage)}" alt="Cover preview" class="follow-packs__detail-cover" />
+        </div>
+      ` : ''}
+      <div class="follow-packs__edit-field">
+        <label class="follow-packs__edit-label">Description</label>
+        <textarea class="input follow-packs__edit-textarea" data-field="description"
+                  placeholder="Describe this pack..." rows="3">${escapeHtml(this.editDescription)}</textarea>
+      </div>
+    `;
+    wrapper.appendChild(form);
+
+    // Bind form field changes to edit state
+    form.querySelectorAll('[data-field]').forEach(el => {
+      el.addEventListener('input', () => {
+        const field = (el as HTMLElement).dataset.field as 'title' | 'description' | 'coverImage';
+        const value = (el as HTMLInputElement | HTMLTextAreaElement).value;
+        if (field === 'title') this.editTitle = value;
+        else if (field === 'description') this.editDescription = value;
+        else if (field === 'coverImage') {
+          this.editCoverImage = value;
+          this.updateCoverPreview(wrapper);
+        }
+      });
+    });
+
+    // Add user section
+    const addSection = document.createElement('div');
+    addSection.className = 'follow-packs__edit-add-section';
+
+    const addLabel = document.createElement('label');
+    addLabel.className = 'follow-packs__edit-label';
+    addLabel.textContent = 'Add User';
+    addSection.appendChild(addLabel);
+
+    const addRow = document.createElement('div');
+    addRow.className = 'follow-packs__edit-add-row';
+
+    const { UserSearchInput } = await import('../../components/user-search/UserSearchInput');
+    const userSearch = new UserSearchInput({
+      placeholder: 'Search by name or paste npub...',
+      onUserSelected: () => {
+        addBtn.disabled = false;
+      },
+      onSelectionCleared: () => {
+        addBtn.disabled = true;
+      }
+    });
+    addRow.appendChild(userSearch.getElement());
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn follow-packs__edit-add-btn';
+    addBtn.textContent = 'Add';
+    addBtn.disabled = true;
+    addRow.appendChild(addBtn);
+
+    addSection.appendChild(addRow);
+    wrapper.appendChild(addSection);
+
+    // Member list
+    const membersLabel = document.createElement('label');
+    membersLabel.className = 'follow-packs__edit-label';
+    membersLabel.textContent = `Members (${this.editMembers.length})`;
+    wrapper.appendChild(membersLabel);
+
+    const memberList = document.createElement('div');
+    memberList.className = 'follow-packs__members';
+    memberList.innerHTML = '<div class="follow-packs__members-loading pulsate">Loading members...</div>';
+    wrapper.appendChild(memberList);
+
+    // Action buttons
+    const actions = document.createElement('div');
+    actions.className = 'follow-packs__edit-actions';
+    actions.innerHTML = `
+      <button class="btn follow-packs__btn-update">Update Follow Pack</button>
+    `;
+    wrapper.appendChild(actions);
+
+    container.appendChild(wrapper);
+
+    // Add button handler
+    addBtn.addEventListener('click', () => {
+      const pubkey = userSearch.getSelectedPubkey();
+      if (!pubkey) return;
+
+      if (this.editMembers.includes(pubkey)) {
+        ToastService.show('User is already in this pack', 'info');
+        userSearch.clearSelection();
+        addBtn.disabled = true;
+        return;
+      }
+
+      this.editMembers.push(pubkey);
+      userSearch.clearSelection();
+      addBtn.disabled = true;
+      this.renderEditMembers(memberList, membersLabel);
+    });
+
+    // Update button handler
+    actions.querySelector('.follow-packs__btn-update')?.addEventListener('click', async () => {
+      await this.publishPackUpdate(pack, actions);
+    });
+
+    // Load members
+    await this.renderEditMembers(memberList, membersLabel);
+  }
+
+  private updateCoverPreview(wrapper: HTMLElement): void {
+    const existing = wrapper.querySelector('.follow-packs__edit-preview');
+    if (this.editCoverImage) {
+      if (existing) {
+        (existing.querySelector('img') as HTMLImageElement).src = this.editCoverImage;
+      } else {
+        const preview = document.createElement('div');
+        preview.className = 'follow-packs__edit-preview';
+        preview.innerHTML = `<img src="${escapeHtmlAttr(this.editCoverImage)}" alt="Cover preview" class="follow-packs__detail-cover" />`;
+        const coverField = wrapper.querySelector('[data-field="coverImage"]')?.closest('.follow-packs__edit-field');
+        coverField?.after(preview);
+      }
+    } else if (existing) {
+      existing.remove();
+    }
+  }
+
+  private async renderEditMembers(memberList: HTMLElement, membersLabel: HTMLElement): Promise<void> {
+    membersLabel.textContent = `Members (${this.editMembers.length})`;
+
+    if (this.editMembers.length === 0) {
+      memberList.innerHTML = '<div class="follow-packs__empty">No members yet</div>';
+      return;
+    }
+
+    const profiles = await this.profileService.getUserProfiles(this.editMembers);
+
+    memberList.innerHTML = '';
+    const list = document.createElement('div');
+    list.className = 'ui-list';
+
+    this.editMembers.forEach(pubkey => {
+      const profile = profiles.get(pubkey);
+      const npub = hexToNpub(pubkey) || '';
+      const name = profile?.display_name || profile?.name || npubToUsername(npub) || npub.slice(0, 12);
+      const picture = profile?.picture || '';
+
+      const item = document.createElement('div');
+      item.className = 'ui-list__item follow-packs__member-item';
+      item.dataset.pubkey = pubkey;
+      item.innerHTML = `
+        <div class="follow-packs__member-content">
+          <div class="follow-packs__member-avatar">
+            <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(picture)}" alt="${escapeHtmlAttr(name)}" />
+          </div>
+          <div class="follow-packs__member-info">
+            <div class="follow-packs__member-name">${escapeHtml(name)}</div>
+          </div>
+        </div>
+        <button class="follow-packs__member-action-btn btn btn--passive btn--medium"
+                data-pubkey="${pubkey}">Remove</button>
+      `;
+
+      // Click content → profile
+      item.querySelector('.follow-packs__member-content')?.addEventListener('click', () => {
+        if (npub) Router.getInstance().navigate(`/profile/${npub}`);
+      });
+
+      // Remove button
+      item.querySelector('.follow-packs__member-action-btn')?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.editMembers = this.editMembers.filter(pk => pk !== pubkey);
+        item.remove();
+        membersLabel.textContent = `Members (${this.editMembers.length})`;
+      });
+
+      list.appendChild(item);
+    });
+
+    memberList.appendChild(list);
+  }
+
+  private async publishPackUpdate(pack: FollowPack, actionsContainer: HTMLElement): Promise<void> {
+    const updateBtn = actionsContainer.querySelector('.follow-packs__btn-update') as HTMLButtonElement;
+    if (!updateBtn) return;
+
+    if (!this.editTitle.trim()) {
+      ToastService.show('Pack name is required', 'error');
+      return;
+    }
+
+    updateBtn.disabled = true;
+    updateBtn.textContent = 'Publishing...';
+
+    try {
+      const currentUser = this.authService.getCurrentUser();
+      if (!currentUser) {
+        ToastService.show('Not logged in', 'error');
+        return;
+      }
+
+      const tags: string[][] = [
+        ['d', pack.id],
+        ['title', this.editTitle.trim()],
+      ];
+
+      if (this.editDescription.trim()) {
+        tags.push(['description', this.editDescription.trim()]);
+      }
+
+      if (this.editCoverImage.trim()) {
+        tags.push(['image', this.editCoverImage.trim()]);
+      }
+
+      // Add all members as p-tags
+      this.editMembers.forEach(pubkey => {
+        tags.push(['p', pubkey]);
+      });
+
+      const unsignedEvent = {
+        kind: 39089,
+        created_at: Math.floor(Date.now() / 1000),
+        tags,
+        content: '',
+        pubkey: currentUser.pubkey
+      };
+
+      const signedEvent = await this.authService.signEvent(unsignedEvent);
+      if (!signedEvent) {
+        ToastService.show('Failed to sign event', 'error');
+        updateBtn.disabled = false;
+        updateBtn.textContent = 'Update Follow Pack';
+        return;
+      }
+
+      const writeRelays = RelayConfig.getInstance().getWriteRelays();
+      const aggregatorRelays = RelayConfig.getInstance().getAggregatorRelays();
+      const publishRelays = [...new Set([...writeRelays, ...aggregatorRelays])];
+
+      await this.transport.publish(publishRelays, signedEvent);
+
+      // Update local pack data
+      pack.title = this.editTitle.trim();
+      pack.description = this.editDescription.trim();
+      pack.coverImage = this.editCoverImage.trim();
+      pack.userPubkeys = [...this.editMembers];
+
+      ToastService.show('Follow Pack updated', 'success');
+      this.systemLogger.info('FollowPacks', `Updated pack "${pack.title}" with ${pack.userPubkeys.length} members`);
+
+      // Go back to detail view
+      this.viewMode = 'detail';
+      this.renderCurrentView();
+    } catch (error) {
+      ToastService.show('Failed to update pack', 'error');
+      this.systemLogger.error('FollowPacks', `Pack update failed: ${error}`);
+      updateBtn.disabled = false;
+      updateBtn.textContent = 'Update Follow Pack';
+    }
   }
 
   // ===== Timeline View =====
