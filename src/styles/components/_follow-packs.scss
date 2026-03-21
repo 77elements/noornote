@@ -108,12 +108,7 @@
     gap: calc($gap / 2);
   }
 
-  &__detail-title-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: $gap;
-  }
+  // detail-title-row removed — uses .heading-back-btn-container
 
   &__detail-title {
     @include heading-base;
@@ -262,10 +257,7 @@
 
   // ===== Timeline =====
 
-  &__timeline-header {
-    display: flex;
-    align-items: center;
-    gap: $gap;
+  &__section-header {
     margin-bottom: $gap;
   }
 

@@ -218,7 +218,7 @@ export class FollowPackManager {
     header.innerHTML = `
       ${coverHtml}
       <div class="follow-packs__detail-info">
-        <div class="follow-packs__detail-title-row">
+        <div class="heading-back-btn-container">
           <h2 class="follow-packs__detail-title">${escapeHtml(pack.title)}</h2>
           <button class="follow-packs__back-btn btn btn--mini btn--secondary">&larr; Back</button>
         </div>
@@ -383,7 +383,7 @@ export class FollowPackManager {
     const header = document.createElement('div');
     header.className = 'follow-packs__edit-header';
     header.innerHTML = `
-      <div class="follow-packs__detail-title-row">
+      <div class="heading-back-btn-container">
         <h2 class="follow-packs__detail-title">Edit Follow Pack</h2>
         <button class="follow-packs__back-btn btn btn--mini btn--secondary">Cancel</button>
       </div>
@@ -679,10 +679,10 @@ export class FollowPackManager {
 
     // Header
     const header = document.createElement('div');
-    header.className = 'follow-packs__timeline-header';
+    header.className = 'heading-back-btn-container follow-packs__section-header';
     header.innerHTML = `
-      <button class="follow-packs__back-btn btn btn--mini btn--secondary">&larr; Back</button>
       <h2 class="follow-packs__title">${escapeHtml(pack.title)}</h2>
+      <button class="follow-packs__back-btn btn btn--mini btn--secondary">&larr; Back</button>
     `;
     wrapper.appendChild(header);
 
