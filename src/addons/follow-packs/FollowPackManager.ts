@@ -399,14 +399,14 @@ export class FollowPackManager {
     const form = document.createElement('div');
     form.className = 'follow-packs__edit-form';
     form.innerHTML = `
-      <div class="follow-packs__edit-field">
-        <label class="follow-packs__edit-label">List Name</label>
-        <input type="text" class="input follow-packs__edit-input" data-field="title"
+      <div class="form__row">
+        <label>List Name</label>
+        <input type="text" class="input" data-field="title"
                value="${escapeHtmlAttr(this.editTitle)}" placeholder="Pack name" />
       </div>
-      <div class="follow-packs__edit-field">
-        <label class="follow-packs__edit-label">Cover Image URL</label>
-        <input type="text" class="input follow-packs__edit-input" data-field="coverImage"
+      <div class="form__row">
+        <label>Cover Image URL</label>
+        <input type="text" class="input" data-field="coverImage"
                value="${escapeHtmlAttr(this.editCoverImage)}" placeholder="https://..." />
       </div>
       ${this.editCoverImage ? `
@@ -414,9 +414,9 @@ export class FollowPackManager {
           <img src="${escapeHtmlAttr(this.editCoverImage)}" alt="Cover preview" class="follow-packs__detail-cover" />
         </div>
       ` : ''}
-      <div class="follow-packs__edit-field">
-        <label class="follow-packs__edit-label">Description</label>
-        <textarea class="input follow-packs__edit-textarea" data-field="description"
+      <div class="form__row">
+        <label>Description</label>
+        <textarea class="textarea" data-field="description"
                   placeholder="Describe this pack..." rows="3">${escapeHtml(this.editDescription)}</textarea>
       </div>
     `;
@@ -438,10 +438,9 @@ export class FollowPackManager {
 
     // Add user section
     const addSection = document.createElement('div');
-    addSection.className = 'follow-packs__edit-add-section';
+    addSection.className = 'form__row';
 
     const addLabel = document.createElement('label');
-    addLabel.className = 'follow-packs__edit-label';
     addLabel.textContent = 'Add User';
     addSection.appendChild(addLabel);
 
@@ -470,8 +469,7 @@ export class FollowPackManager {
     wrapper.appendChild(addSection);
 
     // Member list
-    const membersLabel = document.createElement('label');
-    membersLabel.className = 'follow-packs__edit-label';
+    const membersLabel = document.createElement('h3');
     membersLabel.textContent = `Members (${this.editMembers.length})`;
     wrapper.appendChild(membersLabel);
 

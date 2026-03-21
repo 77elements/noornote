@@ -194,40 +194,8 @@
     margin-bottom: $gap;
   }
 
-  &__edit-form {
-    display: flex;
-    flex-direction: column;
-    gap: $gap;
-    margin-bottom: $gap;
-  }
-
-  &__edit-field {
-    display: flex;
-    flex-direction: column;
-    gap: calc($gap / 4);
-  }
-
-  &__edit-label {
-    font-weight: 600;
-    font-size: 0.85rem;
-    color: var(--color-5);
-    opacity: 0.8;
-  }
-
-  &__edit-textarea {
-    resize: vertical;
-    min-height: 60px;
-  }
-
   &__edit-preview {
     margin-bottom: calc($gap / 2);
-  }
-
-  &__edit-add-section {
-    display: flex;
-    flex-direction: column;
-    gap: calc($gap / 4);
-    margin-bottom: $gap;
   }
 
   &__edit-add-row {
