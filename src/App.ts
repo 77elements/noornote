@@ -237,6 +237,8 @@ export class App {
       (params) => params.relayUrl ? decodeURIComponent(params.relayUrl) : undefined);
     this.registerRoute('/follow-pack/:naddr', 'follow-pack', 'follow-pack', 'fpv', false,
       (params) => params.naddr);
+    this.registerRoute('/zapstore/:naddr', 'zapstore', 'zapstore', 'zsv', false,
+      (params) => params.naddr);
 
     // Authenticated routes
     this.registerRoute('/', 'timeline', 'timeline', 'tv', true);
@@ -286,6 +288,8 @@ export class App {
    */
   static getRouteForAddressableEvent(kind: number, naddr: string): string {
     switch (kind) {
+      case 32267:
+        return `/zapstore/${naddr}`;
       case 39089:
         return `/follow-pack/${naddr}`;
       default:

@@ -186,6 +186,16 @@ export class ViewMountingService {
           }
         };
 
+      case 'zapstore':
+        return {
+          requiresParam: true,
+          factory: async (param) => {
+            const { ZapstoreAppView } = await import('../components/views/ZapstoreAppView');
+            const view = new ZapstoreAppView(param!);
+            return { element: view.getElement() };
+          }
+        };
+
       case 'notifications':
         return {
           factory: async () => {

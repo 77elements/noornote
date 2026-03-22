@@ -303,6 +303,41 @@ export class RepostRenderer {
       });
 
       repostDiv.appendChild(packContainer);
+    } else if (note.repostedEvent.kind === 32267) {
+      // Reposted event is a Zapstore app (kind:32267)
+      const appContainer = document.createElement('div');
+      appContainer.className = 'repost-article-container';
+
+      const tags = note.repostedEvent.tags;
+      const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
+      const name = getTag('name') || 'Untitled App';
+      const summary = getTag('summary');
+      const icon = getTag('icon');
+
+      const dTag = getTag('d');
+      const naddr = encodeNaddr({
+        kind: 32267,
+        pubkey: note.repostedEvent.pubkey,
+        identifier: dTag,
+        relays: ['wss://relay.zapstore.dev']
+      });
+
+      appContainer.innerHTML = `
+        <a href="/zapstore/${naddr}" class="repost-pack-preview" data-route="/zapstore/${naddr}">
+          ${icon ? `<img src="${icon}" alt="" class="repost-pack-preview__image" loading="lazy" style="border-radius: 8px;" />` : ''}
+          <div class="repost-pack-preview__info">
+            <strong>${name}</strong>
+            ${summary ? `<span>${summary}</span>` : ''}
+          </div>
+        </a>
+      `;
+
+      appContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        Router.getInstance().navigate(`/zapstore/${naddr}`);
+      });
+
+      repostDiv.appendChild(appContainer);
     } else {
       // Standard repost: Original note content with original author (depth > 0 to prevent double collapsible)
       // Check if original author is muted (async check)

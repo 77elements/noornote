@@ -104,29 +104,42 @@ export class ThreadOrchestrator extends Orchestrator {
    */
   private async fetchRepliesFromRelays(noteId: string): Promise<NostrEvent[]> {
     const isAddressable = noteId.includes(':');
-    const filters: NDKFilter[] = [{
-      kinds: [1, 1111],
-      ...(isAddressable ? { '#a': [noteId] } : { '#e': [noteId] })
-    }];
+    const filterLowerA: NDKFilter[] = isAddressable
+      ? [{ kinds: [1, 1111], '#a': [noteId] }]
+      : [{ kinds: [1, 1111], '#e': [noteId] }];
+
+    // NIP-22 comments use uppercase A tag as root scope
+    const filterUpperA: NDKFilter[] = isAddressable
+      ? [{ kinds: [1, 1111], '#A': [noteId] }]
+      : [];
 
     const allReplies = new Map<string, NostrEvent>();
 
     // Stage 1: Read relays
     const relays = this.transport.getReadRelays();
     try {
-      const events = await this.transport.fetch(relays, filters, 5000, false, 'ThreadOrch');
-      events.forEach(e => { if (e.id) allReplies.set(e.id, e); });
+      const fetches = [this.transport.fetch(relays, filterLowerA, 5000, false, 'ThreadOrch')];
+      if (filterUpperA.length > 0) {
+        fetches.push(this.transport.fetch(relays, filterUpperA, 5000, false, 'ThreadOrch-A'));
+      }
+      const results = await Promise.all(fetches);
+      results.flat().forEach(e => { if (e.id) allReplies.set(e.id, e); });
     } catch (error) {
       this.systemLogger.error(this.LOG_TAG, `Stage 1 replies failed: ${error}`);
     }
 
     // Stage 2: Outbound relays of the note's author (replies often land on same relays)
-    const note = this.noteService.getCachedNote(noteId);
-    if (note) {
+    // For addressable events (kind:pubkey:d-tag), extract pubkey directly from the identifier
+    const authorPubkey = isAddressable ? noteId.split(':')[1] : this.noteService.getCachedNote(noteId)?.pubkey;
+    if (authorPubkey) {
       try {
-        const outboundRelays = await this.relayDiscovery.getCombinedRelays([note.pubkey], true);
+        const outboundRelays = await this.relayDiscovery.getCombinedRelays([authorPubkey], true);
 
-        const outboundEvents = await this.transport.fetch(outboundRelays, filters, 8000, true, 'ThreadOrch');
+        const outFetches = [this.transport.fetch(outboundRelays, filterLowerA, 8000, true, 'ThreadOrch')];
+        if (filterUpperA.length > 0) {
+          outFetches.push(this.transport.fetch(outboundRelays, filterUpperA, 8000, true, 'ThreadOrch-A'));
+        }
+        const outboundEvents = (await Promise.all(outFetches)).flat();
         const countBefore = allReplies.size;
         outboundEvents.forEach(e => { if (e.id && !allReplies.has(e.id)) allReplies.set(e.id, e); });
         const newFromOutbound = allReplies.size - countBefore;
@@ -161,9 +174,13 @@ export class ThreadOrchestrator extends Orchestrator {
 
   private isActualReply(event: NostrEvent, noteId: string): boolean {
     const isAddressable = noteId.includes(':');
-    const tagType = isAddressable ? 'a' : 'e';
-    const tags = event.tags.filter(tag => tag[0] === tagType);
-    return tags.length > 0 && tags.some(tag => tag[1] === noteId);
+    if (isAddressable) {
+      // NIP-01 uses lowercase 'a', NIP-22 uses uppercase 'A' for root scope
+      const tags = event.tags.filter(tag => (tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId);
+      return tags.length > 0;
+    }
+    const tags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === noteId);
+    return tags.length > 0;
   }
 
   public async fetchParentChain(noteId: string): Promise<ThreadContext> {

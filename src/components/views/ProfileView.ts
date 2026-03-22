@@ -578,6 +578,8 @@ export class ProfileView extends View {
 
       <div class="profile-articles-mount"></div>
       <div class="profile-videos-mount"></div>
+      <div class="profile-zapstore-mount"></div>
+      <h2 class="nn-scroll-carousel__title">Notes</h2>
       <div class="profile-timeline-container"></div>
     `;
 
@@ -597,6 +599,9 @@ export class ProfileView extends View {
 
       // Load videos carousel
       this.loadVideosCarousel();
+
+      // Load Zapstore apps
+      this.loadZapstoreApps();
 
       // Setup QR code button handler
       this.setupQRButton();
@@ -1139,6 +1144,63 @@ export class ProfileView extends View {
     this.videosCarousel = new ProfileVideosCarousel(this.pubkey);
     const element = await this.videosCarousel.render();
     videosMount.appendChild(element);
+  }
+
+  /**
+   * Load Zapstore apps for this user
+   */
+  private async loadZapstoreApps(): Promise<void> {
+    const mount = this.container.querySelector('.profile-zapstore-mount');
+    if (!mount) return;
+
+    try {
+      const { NostrTransport } = await import('../../services/transport/NostrTransport');
+      const transport = NostrTransport.getInstance();
+      const events = await transport.fetch(
+        ['wss://relay.zapstore.dev'],
+        [{ kinds: [32267 as any], authors: [this.pubkey], limit: 10 }],
+        8000, false, 'ZapstoreApps'
+      );
+
+      if (events.length === 0) return;
+
+      const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
+      const { escapeHtml } = await import('../../helpers/escapeHtml');
+
+      const links = events.map(event => {
+        const tags = event.tags || [];
+        const name = tags.find(t => t[0] === 'name')?.[1] || 'Untitled';
+        const summary = tags.find(t => t[0] === 'summary')?.[1] || '';
+        const identifier = tags.find(t => t[0] === 'd')?.[1] || '';
+        const naddr = encodeNaddr({
+          kind: 32267,
+          pubkey: event.pubkey,
+          identifier,
+          relays: ['wss://relay.zapstore.dev'],
+        });
+        const truncatedSummary = summary.length > 60 ? summary.slice(0, 60) + '...' : summary;
+        return `<p><a href="/zapstore/${naddr}" class="zapstore-profile-link" data-route="/zapstore/${naddr}">${escapeHtml(name)}</a>${truncatedSummary ? ` - ${escapeHtml(truncatedSummary)}` : ''}</p>`;
+      });
+
+      mount.innerHTML = `
+        <div class="profile-zapstore-apps">
+          <h2>Apps on Zapstore</h2>
+          ${links.join('')}
+        </div>
+      `;
+
+      // Click handlers for internal navigation
+      const { Router } = await import('../../services/Router');
+      mount.querySelectorAll('.zapstore-profile-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const route = (link as HTMLElement).dataset.route;
+          if (route) Router.getInstance().navigate(route);
+        });
+      });
+    } catch {
+      // Silently fail — Zapstore relay might be unreachable
+    }
   }
 
   /**
