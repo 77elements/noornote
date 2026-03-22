@@ -305,6 +305,7 @@ export class NotificationItem {
     if (aTag?.[1]) {
       const kind = parseInt(aTag[1].split(':')[0] || '');
       if (kind === 30023) return 'article';
+      if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
     }
     return 'note';
@@ -535,7 +536,10 @@ export class NotificationItem {
         const aKind = parseInt(aTag[1].split(':')[0] || '');
         const refEvent = await this.fetchAddressableEvent(aTag[1]);
         if (refEvent) {
-          if (aKind === 39089) {
+          if (aKind === 32267) {
+            const name = refEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] || 'App';
+            previewElement.textContent = `App: ${name}`;
+          } else if (aKind === 39089) {
             const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
             const pack = parseFollowPackEvent(refEvent);
             previewElement.textContent = `Follow Pack: ${pack.title}`;

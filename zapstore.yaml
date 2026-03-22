@@ -3,7 +3,7 @@ repository: https://github.com/77elements/noornote
 release_source: ./apk/noornote-release.apk
 
 name: NoorNote
-summary: A feature-rich Nostr client for GrapheneOS, Linux & macOS
+summary: A feature-rich Nostr client for GrapheneOS/Android, Web and Desktop (Linux & macOS)
 description: |
   NoorNote is a free, open-source Nostr client built for the desktop and mobile.
   Browse your timeline, write and discover long-form articles, manage follows,

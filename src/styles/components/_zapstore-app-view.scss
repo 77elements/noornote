@@ -1,0 +1,161 @@
+/**
+ * Zapstore App View
+ * Styles for the Zapstore app detail page (kind 32267)
+ */
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.zapstore-app {
+  padding: $gap;
+
+  &__header {
+    display: flex;
+    gap: $gap;
+    margin-bottom: $gap;
+  }
+
+  &__icon {
+    width: 80px;
+    height: 80px;
+    border-radius: $radius-lg;
+    flex-shrink: 0;
+    object-fit: cover;
+  }
+
+  &__header-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title-row {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    margin-bottom: calc($gap / 4);
+  }
+
+  &__name {
+    @extend %h1;
+    margin: 0;
+    color: $color-5;
+  }
+
+  &__summary {
+    @extend %small;
+    color: $color-3;
+    margin: 0 0 calc($gap / 2) 0;
+  }
+
+  &__open-btn {
+    margin-top: calc($gap / 4);
+  }
+
+  &__author-mention {
+    @extend %small;
+    color: $color-3;
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__author-header {
+    margin-bottom: $gap;
+  }
+
+  &__screenshots {
+    display: flex;
+    gap: calc($gap / 2);
+    overflow-x: auto;
+    padding-bottom: calc($gap / 2);
+    margin-bottom: $gap;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  &__screenshot {
+    height: 200px;
+    border-radius: $radius-md;
+    flex-shrink: 0;
+
+    @media (max-width: 600px) {
+      height: 160px;
+    }
+  }
+
+  &__section {
+    margin-bottom: $gap;
+
+    h2 {
+      @extend %h2;
+      color: $color-5;
+      margin: 0 0 calc($gap / 2) 0;
+    }
+  }
+
+  &__description {
+    color: $color-5;
+    line-height: 1.6;
+
+    a {
+      color: $color-4;
+    }
+  }
+
+  &__release-notes {
+    color: $color-5;
+    line-height: 1.6;
+
+    a {
+      color: $color-4;
+    }
+  }
+
+  &__info-grid {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__info-row {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    align-items: center;
+    gap: calc($gap / 2);
+    padding: calc($gap / 4) 0;
+    border-bottom: 1px solid $color-2;
+    @extend %small;
+
+    &--hash {
+      grid-template-columns: 120px 1fr auto;
+    }
+
+    a {
+      color: $color-4;
+    }
+  }
+
+  &__info-label {
+    color: $color-3;
+    white-space: nowrap;
+  }
+
+  &__info-value {
+    color: $color-5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__hash {
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__isl {
+    margin: $gap 0;
+  }
+}
+
+.profile-zapstore-apps {
+  margin-bottom: $gap;
+}
+

@@ -109,6 +109,10 @@
 .nn-scroll-carousel {
   margin: $gap 0;
 
+  &__title {
+    margin-bottom: 0;
+  }
+
   &__header {
     display: flex;
     align-items: center;

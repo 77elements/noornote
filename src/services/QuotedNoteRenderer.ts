@@ -227,10 +227,14 @@ export class QuotedNoteRenderer {
       if (
         target.tagName === 'A' ||
         target.tagName === 'BUTTON' ||
+        target.tagName === 'IMG' ||
+        target.tagName === 'VIDEO' ||
         target.closest('a') ||
         target.closest('button') ||
         target.closest('.note-header') ||
-        target.closest('.hashtag')
+        target.closest('.hashtag') ||
+        target.closest('.note-media') ||
+        target.closest('.note-media-inline')
       ) {
         return;
       }

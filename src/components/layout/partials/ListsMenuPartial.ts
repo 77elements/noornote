@@ -101,6 +101,7 @@ export class ListsMenuPartial {
             <span class="primary-nav__sublink-desc">Follow Packs</span>
           </a>
         </li>
+        ${PlatformService.getInstance().isAndroid ? '' : `
         <li class="nip51-inspector-item" style="${this.easterEggUnlocked ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="nip51-inspector">
             <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -111,6 +112,7 @@ export class ListsMenuPartial {
             <span class="primary-nav__sublink-desc">NIP-51 Inspector</span>
           </a>
         </li>
+        `}
       </ul>
     `;
 
