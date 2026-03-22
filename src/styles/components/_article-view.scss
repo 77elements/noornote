@@ -33,6 +33,13 @@
     align-items: flex-start;
     gap: $gap;
     margin-bottom: $gap;
+
+    &__actions {
+      display: flex;
+      align-items: center;
+      gap: calc($gap / 2);
+      flex-shrink: 0;
+    }
   }
 
   .article-title {
@@ -44,12 +51,10 @@
     flex: 1;
   }
 
-  .article-edit-btn {
+  .article-title-row__actions .btn {
     display: inline-flex;
     align-items: center;
     gap: calc($gap / 4);
-    flex-shrink: 0;
-    margin-top: calc($gap / 4);
   }
 
   .article-summary {
