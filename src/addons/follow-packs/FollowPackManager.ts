@@ -68,6 +68,29 @@ export class FollowPackManager {
     this.renderCurrentView();
   }
 
+  /**
+   * Open a specific pack in a given view mode (called externally via EventBus)
+   */
+  public async openPackView(container: HTMLElement, packId: string, mode: 'timeline' | 'edit'): Promise<void> {
+    this.currentContainer = container;
+
+    if (!this.loaded) {
+      container.innerHTML = '<div class="follow-packs__loading pulsate">Loading Follow Packs...</div>';
+      await this.fetchPacks();
+    }
+
+    const pack = this.packs.find(p => p.id === packId);
+    if (!pack) {
+      container.innerHTML = '<div class="follow-packs__loading">Pack not found</div>';
+      return;
+    }
+
+    this.selectedPack = pack;
+    this.viewMode = mode;
+    if (mode === 'edit') this.initEditState(pack);
+    this.renderCurrentView();
+  }
+
   // ===== Fetch =====
 
   private async fetchPacks(): Promise<void> {

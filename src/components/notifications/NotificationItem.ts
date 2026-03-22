@@ -298,18 +298,32 @@ export class NotificationItem {
   }
 
   /**
+   * Get kind-aware label for the target content ("note", "article", "follow pack")
+   */
+  private getTargetLabel(): string {
+    const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
+    if (aTag?.[1]) {
+      const kind = parseInt(aTag[1].split(':')[0] || '');
+      if (kind === 30023) return 'article';
+      if (kind === 39089) return 'follow pack';
+    }
+    return 'note';
+  }
+
+  /**
    * Get action text based on notification type
    */
   private getActionText(type: NotificationType): string {
+    const target = this.getTargetLabel();
     switch (type) {
-      case 'mention': return 'mentioned you in a note';
-      case 'reply': return 'replied to your note';
-      case 'thread-reply': return 'replied to a note that mentioned you';
-      case 'repost': return 'reposted your note';
-      case 'reaction': return 'reacted to your note';
+      case 'mention': return `mentioned you in a ${target}`;
+      case 'reply': return `replied to your ${target}`;
+      case 'thread-reply': return `replied to a ${target} that mentioned you`;
+      case 'repost': return `reposted your ${target}`;
+      case 'reaction': return `reacted to your ${target}`;
       case 'zap': {
         const amount = this.getZapAmount();
-        return amount ? `zapped ${amount.toLocaleString()} sats` : 'zapped your note';
+        return amount ? `zapped your ${target} ${amount.toLocaleString()} sats` : `zapped your ${target}`;
       }
       case 'article': return 'posted a new article';
       case 'hashtag': {
@@ -321,7 +335,7 @@ export class NotificationItem {
       }
       case 'mutual_unfollow': return 'stopped following you back';
       case 'mutual_new': return 'started following you back!';
-      default: return 'interacted with your note';
+      default: return `interacted with your ${target}`;
     }
   }
 
@@ -515,14 +529,21 @@ export class NotificationItem {
     if (!previewElement) return;
 
     try {
-      // Check for addressable event reference (a-tag) first — articles (kind:30023)
+      // Check for addressable event reference (a-tag) first — articles, follow packs, etc.
       const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
       if (aTag?.[1]) {
-        const article = await this.fetchAddressableEvent(aTag[1]);
-        if (article) {
-          const { LongFormOrchestrator } = await import('../../services/orchestration/LongFormOrchestrator');
-          const metadata = LongFormOrchestrator.extractArticleMetadata(article);
-          previewElement.textContent = metadata.title;
+        const aKind = parseInt(aTag[1].split(':')[0] || '');
+        const refEvent = await this.fetchAddressableEvent(aTag[1]);
+        if (refEvent) {
+          if (aKind === 39089) {
+            const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
+            const pack = parseFollowPackEvent(refEvent);
+            previewElement.textContent = `Follow Pack: ${pack.title}`;
+          } else {
+            const { LongFormOrchestrator } = await import('../../services/orchestration/LongFormOrchestrator');
+            const metadata = LongFormOrchestrator.extractArticleMetadata(refEvent);
+            previewElement.textContent = metadata.title;
+          }
           return;
         }
       }
@@ -572,19 +593,21 @@ export class NotificationItem {
 
     // For zaps and reactions, navigate to referenced event
     if (type === 'zap' || type === 'reaction') {
-      // Check for addressable event reference (a-tag) — articles
+      // Check for addressable event reference (a-tag) — articles, follow packs, etc.
       const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
       if (aTag?.[1]) {
         const parts = aTag[1].split(':');
         if (parts.length >= 3) {
           const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
+          const kind = parseInt(parts[0]!);
           const naddr = encodeNaddr({
-            kind: parseInt(parts[0]!),
+            kind,
             pubkey: parts[1]!,
             identifier: parts[2]!,
             relays: []
           });
-          router.navigate(`/article/${naddr}`);
+          const { App } = await import('../../App');
+          router.navigate(App.getRouteForAddressableEvent(kind, naddr));
           return;
         }
       }

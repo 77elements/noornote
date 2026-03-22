@@ -18,6 +18,7 @@ import { hexToNpub } from '../../../helpers/nip19';
 import { npubToUsername } from '../../../helpers/npubToUsername';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
+import { Router } from '../../../services/Router';
 import { isProfileRecognitionEnabled } from '../../../addons/profile-recognition/index';
 
 // Lazy-loaded types for profile recognition
@@ -267,6 +268,41 @@ export class RepostRenderer {
       RepostRenderer.articlePreviewRenderer.renderArticlePreview(`nostr:${naddr}`, articleContainer);
 
       repostDiv.appendChild(articleContainer);
+    } else if (note.repostedEvent.kind === 39089) {
+      // Reposted event is a follow pack (kind:39089)
+      const packContainer = document.createElement('div');
+      packContainer.className = 'repost-article-container';
+
+      const tags = note.repostedEvent.tags;
+      const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
+      const title = getTag('title') || getTag('n') || 'Untitled';
+      const image = getTag('image');
+      const memberCount = tags.filter(t => t[0] === 'p').length;
+
+      const dTag = getTag('d');
+      const naddr = encodeNaddr({
+        kind: 39089,
+        pubkey: note.repostedEvent.pubkey,
+        identifier: dTag,
+        relays: []
+      });
+
+      packContainer.innerHTML = `
+        <a href="/follow-pack/${naddr}" class="repost-pack-preview" data-route="/follow-pack/${naddr}">
+          ${image ? `<img src="${image}" alt="" class="repost-pack-preview__image" loading="lazy" />` : ''}
+          <div class="repost-pack-preview__info">
+            <strong>${title}</strong>
+            <span>${memberCount} people</span>
+          </div>
+        </a>
+      `;
+
+      packContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        Router.getInstance().navigate(`/follow-pack/${naddr}`);
+      });
+
+      repostDiv.appendChild(packContainer);
     } else {
       // Standard repost: Original note content with original author (depth > 0 to prevent double collapsible)
       // Check if original author is muted (async check)

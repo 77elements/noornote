@@ -176,6 +176,16 @@ export class ViewMountingService {
           }
         };
 
+      case 'follow-pack':
+        return {
+          requiresParam: true,
+          factory: async (param) => {
+            const { FollowPackDetailView } = await import('../components/views/FollowPackDetailView');
+            const view = new FollowPackDetailView(param!);
+            return { element: view.getElement() };
+          }
+        };
+
       case 'notifications':
         return {
           factory: async () => {
