@@ -126,30 +126,6 @@
   margin-bottom: calc($gap / 2);
 }
 
-.health-summary-badge {
-  display: inline-block;
-  padding: calc($gap / 4) calc($gap / 2);
-  border-radius: $radius-sm;
-  font-weight: 600;
-
-  &--good {
-    background: $bg-success;
-    color: $color-success;
-    border: 1px solid rgba($color-success, 0.3);
-  }
-
-  &--warning {
-    background: $bg-warning;
-    color: $color-warning;
-    border: 1px solid rgba($color-warning, 0.3);
-  }
-
-  &--critical {
-    background: $bg-error;
-    color: $color-red;
-    border: 1px solid rgba($color-red, 0.5);
-  }
-}
 
 .health-summary-warnings {
   margin-top: calc($gap / 2);

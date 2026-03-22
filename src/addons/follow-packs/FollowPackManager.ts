@@ -3,11 +3,11 @@
  * Browse and interact with FollowPacks (Kind 39089)
  *
  * Features:
- * - Grid view of all available packs
- * - Detail view with member list (ui-list__item style)
+ * - Grid view of all available packs with "Create" CTA
+ * - Detail view with member list
  * - "Follow All" to batch-follow pack members
  * - "See Notes" to open pack timeline
- * - "Edit List" for pack owners
+ * - "Edit List" / "Create New Follow Pack" share the same form
  *
  * @used-by MainLayout (via ListViewPartial)
  */
@@ -24,8 +24,9 @@ import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { hexToNpub } from '../../helpers/nip19';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { MediaUploadService } from '../../services/MediaUploadService';
 
-type ViewMode = 'grid' | 'detail' | 'timeline' | 'edit';
+type ViewMode = 'grid' | 'detail' | 'timeline' | 'edit' | 'create';
 
 export class FollowPackManager {
   private transport: NostrTransport;
@@ -39,7 +40,7 @@ export class FollowPackManager {
   private selectedPack: FollowPack | null = null;
   private currentContainer: HTMLElement | null = null;
 
-  /** Edit state — pending changes before "Update Follow Pack" */
+  /** Edit/Create state — pending changes before publish */
   private editTitle = '';
   private editDescription = '';
   private editCoverImage = '';
@@ -104,7 +105,10 @@ export class FollowPackManager {
         if (this.selectedPack) this.renderTimeline(this.selectedPack);
         break;
       case 'edit':
-        if (this.selectedPack) this.renderEdit(this.selectedPack);
+        if (this.selectedPack) this.renderPackForm('edit', this.selectedPack);
+        break;
+      case 'create':
+        this.renderPackForm('create', null);
         break;
     }
   }
@@ -118,10 +122,29 @@ export class FollowPackManager {
     const wrapper = document.createElement('div');
     wrapper.className = 'follow-packs';
 
+    // Header with title
     const header = document.createElement('div');
     header.className = 'follow-packs__header';
     header.innerHTML = `<h2 class="follow-packs__title">Follow Packs</h2>`;
     wrapper.appendChild(header);
+
+    // Teaser + Create button (only if logged in)
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser) {
+      const teaser = document.createElement('div');
+      teaser.className = 'follow-packs__teaser';
+      teaser.innerHTML = `
+        <p class="follow-packs__teaser-text">Discover and share curated lists of Nostr users to follow. Find the users that are most interesting to you or create your own lists.</p>
+        <button class="btn follow-packs__btn-create">Create New Follow Pack</button>
+      `;
+      wrapper.appendChild(teaser);
+
+      teaser.querySelector('.follow-packs__btn-create')?.addEventListener('click', () => {
+        this.initCreateState();
+        this.viewMode = 'create';
+        this.renderCurrentView();
+      });
+    }
 
     if (this.packs.length === 0) {
       wrapper.innerHTML += '<div class="follow-packs__empty">No follow packs found</div>';
@@ -363,7 +386,7 @@ export class FollowPackManager {
     memberList.appendChild(list);
   }
 
-  // ===== Edit View =====
+  // ===== Create / Edit Form (shared) =====
 
   private initEditState(pack: FollowPack): void {
     this.editTitle = pack.title;
@@ -372,9 +395,26 @@ export class FollowPackManager {
     this.editMembers = [...pack.userPubkeys];
   }
 
-  private async renderEdit(pack: FollowPack): Promise<void> {
+  private initCreateState(): void {
+    this.editTitle = '';
+    this.editDescription = '';
+    this.editCoverImage = '';
+    this.editMembers = [];
+  }
+
+  /**
+   * Shared form for Create and Edit.
+   * @param mode 'create' or 'edit'
+   * @param pack existing pack (edit) or null (create)
+   */
+  private async renderPackForm(mode: 'create' | 'edit', pack: FollowPack | null): Promise<void> {
     const container = this.currentContainer!;
     container.innerHTML = '';
+
+    const isCreate = mode === 'create';
+    const heading = isCreate ? 'Create Follow Pack' : 'Edit Follow Pack';
+    const publishLabel = isCreate ? 'Publish Follow Pack' : 'Update Follow Pack';
+    const cancelTarget = isCreate ? 'grid' : 'detail';
 
     const wrapper = document.createElement('div');
     wrapper.className = 'follow-packs';
@@ -384,30 +424,40 @@ export class FollowPackManager {
     header.className = 'follow-packs__edit-header';
     header.innerHTML = `
       <div class="heading-back-btn-container">
-        <h2 class="follow-packs__detail-title">Edit Follow Pack</h2>
+        <h2 class="follow-packs__detail-title">${heading}</h2>
         <button class="follow-packs__back-btn btn btn--mini btn--secondary">Cancel</button>
       </div>
     `;
     wrapper.appendChild(header);
 
     header.querySelector('.follow-packs__back-btn')?.addEventListener('click', () => {
-      this.viewMode = 'detail';
+      this.viewMode = cancelTarget as ViewMode;
       this.renderCurrentView();
     });
 
-    // Form
+    // Form fields
     const form = document.createElement('div');
     form.className = 'follow-packs__edit-form';
     form.innerHTML = `
       <div class="form__row">
         <label>List Name</label>
         <input type="text" class="input" data-field="title"
-               value="${escapeHtmlAttr(this.editTitle)}" placeholder="Pack name" />
+               value="${escapeHtmlAttr(this.editTitle)}" placeholder="e.g. Nostr Developers to Follow" />
       </div>
       <div class="form__row">
-        <label>Cover Image URL</label>
-        <input type="text" class="input" data-field="coverImage"
-               value="${escapeHtmlAttr(this.editCoverImage)}" placeholder="https://..." />
+        <label>Cover Image</label>
+        <div class="follow-packs__edit-add-row">
+          <input type="text" class="input" data-field="coverImage"
+                 value="${escapeHtmlAttr(this.editCoverImage)}" placeholder="https://..." />
+          <input type="file" accept="image/*" style="display:none" data-cover-file-input />
+          <button type="button" class="btn btn--secondary follow-packs__edit-add-btn" data-cover-upload title="Upload image">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            </svg>
+          </button>
+        </div>
       </div>
       ${this.editCoverImage ? `
         <div class="follow-packs__edit-preview">
@@ -417,7 +467,7 @@ export class FollowPackManager {
       <div class="form__row">
         <label>Description</label>
         <textarea class="textarea" data-field="description"
-                  placeholder="Describe this pack..." rows="3">${escapeHtml(this.editDescription)}</textarea>
+                  placeholder="A description for this follow list..." rows="3">${escapeHtml(this.editDescription)}</textarea>
       </div>
     `;
     wrapper.appendChild(form);
@@ -435,6 +485,34 @@ export class FollowPackManager {
         }
       });
     });
+
+    // Cover image upload button
+    const coverUploadBtn = form.querySelector('[data-cover-upload]') as HTMLButtonElement;
+    const coverFileInput = form.querySelector('[data-cover-file-input]') as HTMLInputElement;
+    const coverInput = form.querySelector('[data-field="coverImage"]') as HTMLInputElement;
+    if (coverUploadBtn && coverFileInput && coverInput) {
+      coverUploadBtn.addEventListener('click', () => coverFileInput.click());
+      coverFileInput.addEventListener('change', async () => {
+        const file = coverFileInput.files?.[0];
+        if (!file) return;
+        coverUploadBtn.disabled = true;
+        const originalHTML = coverUploadBtn.innerHTML;
+        coverUploadBtn.textContent = '...';
+        try {
+          const result = await MediaUploadService.getInstance().uploadFile(file);
+          if (result.success && result.url) {
+            coverInput.value = result.url;
+            this.editCoverImage = result.url;
+            this.updateCoverPreview(wrapper);
+          }
+        } catch {
+          ToastService.show('Failed to upload image', 'error');
+        }
+        coverUploadBtn.disabled = false;
+        coverUploadBtn.innerHTML = originalHTML;
+        coverFileInput.value = '';
+      });
+    }
 
     // Add user section
     const addSection = document.createElement('div');
@@ -475,14 +553,18 @@ export class FollowPackManager {
 
     const memberList = document.createElement('div');
     memberList.className = 'follow-packs__members';
-    memberList.innerHTML = '<div class="follow-packs__members-loading pulsate">Loading members...</div>';
+    if (this.editMembers.length === 0) {
+      memberList.innerHTML = '<div class="follow-packs__empty">No members yet</div>';
+    } else {
+      memberList.innerHTML = '<div class="follow-packs__members-loading pulsate">Loading members...</div>';
+    }
     wrapper.appendChild(memberList);
 
     // Action buttons
     const actions = document.createElement('div');
     actions.className = 'follow-packs__edit-actions';
     actions.innerHTML = `
-      <button class="btn follow-packs__btn-update">Update Follow Pack</button>
+      <button class="btn follow-packs__btn-publish">${publishLabel}</button>
     `;
     wrapper.appendChild(actions);
 
@@ -506,13 +588,15 @@ export class FollowPackManager {
       this.renderEditMembers(memberList, membersLabel);
     });
 
-    // Update button handler
-    actions.querySelector('.follow-packs__btn-update')?.addEventListener('click', async () => {
-      await this.publishPackUpdate(pack, actions);
+    // Publish button handler
+    actions.querySelector('.follow-packs__btn-publish')?.addEventListener('click', async () => {
+      await this.publishPack(mode, pack, actions);
     });
 
-    // Load members
-    await this.renderEditMembers(memberList, membersLabel);
+    // Load existing members (if any)
+    if (this.editMembers.length > 0) {
+      await this.renderEditMembers(memberList, membersLabel);
+    }
   }
 
   private updateCoverPreview(wrapper: HTMLElement): void {
@@ -524,7 +608,7 @@ export class FollowPackManager {
         const preview = document.createElement('div');
         preview.className = 'follow-packs__edit-preview';
         preview.innerHTML = `<img src="${escapeHtmlAttr(this.editCoverImage)}" alt="Cover preview" class="follow-packs__detail-cover" />`;
-        const coverField = wrapper.querySelector('[data-field="coverImage"]')?.closest('.follow-packs__edit-field');
+        const coverField = wrapper.querySelector('[data-field="coverImage"]')?.closest('.form__row');
         coverField?.after(preview);
       }
     } else if (existing) {
@@ -587,17 +671,21 @@ export class FollowPackManager {
     memberList.appendChild(list);
   }
 
-  private async publishPackUpdate(pack: FollowPack, actionsContainer: HTMLElement): Promise<void> {
-    const updateBtn = actionsContainer.querySelector('.follow-packs__btn-update') as HTMLButtonElement;
-    if (!updateBtn) return;
+  /**
+   * Publish a new pack (create) or update an existing one (edit).
+   * Create generates a new d-tag, edit reuses the existing one.
+   */
+  private async publishPack(mode: 'create' | 'edit', pack: FollowPack | null, actionsContainer: HTMLElement): Promise<void> {
+    const publishBtn = actionsContainer.querySelector('.follow-packs__btn-publish') as HTMLButtonElement;
+    if (!publishBtn) return;
 
     if (!this.editTitle.trim()) {
       ToastService.show('Pack name is required', 'error');
       return;
     }
 
-    updateBtn.disabled = true;
-    updateBtn.textContent = 'Publishing...';
+    publishBtn.disabled = true;
+    publishBtn.textContent = 'Publishing...';
 
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -606,8 +694,13 @@ export class FollowPackManager {
         return;
       }
 
+      // d-tag: reuse for edit, generate for create
+      const dTag = mode === 'edit' && pack
+        ? pack.id
+        : this.editTitle.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30) + '-' + Math.random().toString(36).slice(2, 8);
+
       const tags: string[][] = [
-        ['d', pack.id],
+        ['d', dTag],
         ['title', this.editTitle.trim()],
       ];
 
@@ -635,8 +728,8 @@ export class FollowPackManager {
       const signedEvent = await this.authService.signEvent(unsignedEvent);
       if (!signedEvent) {
         ToastService.show('Failed to sign event', 'error');
-        updateBtn.disabled = false;
-        updateBtn.textContent = 'Update Follow Pack';
+        publishBtn.disabled = false;
+        publishBtn.textContent = mode === 'create' ? 'Publish Follow Pack' : 'Update Follow Pack';
         return;
       }
 
@@ -646,23 +739,44 @@ export class FollowPackManager {
 
       await this.transport.publish(publishRelays, signedEvent);
 
-      // Update local pack data
-      pack.title = this.editTitle.trim();
-      pack.description = this.editDescription.trim();
-      pack.coverImage = this.editCoverImage.trim();
-      pack.userPubkeys = [...this.editMembers];
+      if (mode === 'edit' && pack) {
+        // Update local pack data
+        pack.title = this.editTitle.trim();
+        pack.description = this.editDescription.trim();
+        pack.coverImage = this.editCoverImage.trim();
+        pack.userPubkeys = [...this.editMembers];
 
-      ToastService.show('Follow Pack updated', 'success');
-      this.systemLogger.info('FollowPacks', `Updated pack "${pack.title}" with ${pack.userPubkeys.length} members`);
+        ToastService.show('Follow Pack updated', 'success');
+        this.systemLogger.info('FollowPacks', `Updated pack "${pack.title}" with ${pack.userPubkeys.length} members`);
 
-      // Go back to detail view
-      this.viewMode = 'detail';
+        this.viewMode = 'detail';
+      } else {
+        // Add to local packs list
+        const newPack: FollowPack = {
+          id: dTag,
+          eventId: signedEvent.id || '',
+          title: this.editTitle.trim(),
+          description: this.editDescription.trim(),
+          coverImage: this.editCoverImage.trim(),
+          authorPubkey: currentUser.pubkey,
+          createdAt: Math.floor(Date.now() / 1000),
+          userPubkeys: [...this.editMembers]
+        };
+        this.packs.unshift(newPack);
+
+        ToastService.show('Follow Pack published', 'success');
+        this.systemLogger.info('FollowPacks', `Created pack "${newPack.title}" with ${newPack.userPubkeys.length} members`);
+
+        this.selectedPack = newPack;
+        this.viewMode = 'detail';
+      }
+
       this.renderCurrentView();
     } catch (error) {
-      ToastService.show('Failed to update pack', 'error');
-      this.systemLogger.error('FollowPacks', `Pack update failed: ${error}`);
-      updateBtn.disabled = false;
-      updateBtn.textContent = 'Update Follow Pack';
+      ToastService.show('Failed to publish pack', 'error');
+      this.systemLogger.error('FollowPacks', `Pack publish failed: ${error}`);
+      publishBtn.disabled = false;
+      publishBtn.textContent = mode === 'create' ? 'Publish Follow Pack' : 'Update Follow Pack';
     }
   }
 

@@ -212,7 +212,7 @@ export class RelaySettingsSection extends SettingsSection {
 
     return `
       <div class="health-summary-status">
-        <span class="health-summary-badge health-summary-badge--${healthClass}">
+        <span class="badge badge--${healthClass === 'good' ? 'green' : healthClass === 'warning' ? 'warning' : 'danger'}">
           ${summary.healthy}/${summary.total} relays healthy (${healthPercentage}%)
         </span>
       </div>

@@ -1,6 +1,7 @@
 /**
  * ProfileArticlesCarousel Component
  * Displays a user's long-form articles (NIP-23, kind:30023) in a horizontal carousel.
+ * On own profile: also shows drafts (kind:30024) with a "Draft" badge.
  *
  * @component ProfileArticlesCarousel
  * @used-by ProfileView
@@ -9,6 +10,7 @@
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { LongFormOrchestrator, type ArticleMetadata } from '../../services/orchestration/LongFormOrchestrator';
 import { UserProfileService } from '../../services/UserProfileService';
+import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
@@ -18,6 +20,7 @@ interface ArticleCardData {
   event: NostrEvent;
   metadata: ArticleMetadata;
   naddr: string;
+  isDraft: boolean;
 }
 
 export class ProfileArticlesCarousel {
@@ -27,6 +30,7 @@ export class ProfileArticlesCarousel {
   private transport: NostrTransport;
   private userProfileService: UserProfileService;
   private carousel: ScrollCarouselInstance | null = null;
+  private isOwnProfile: boolean;
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;
@@ -34,6 +38,9 @@ export class ProfileArticlesCarousel {
     this.userProfileService = UserProfileService.getInstance();
     this.element = document.createElement('div');
     this.element.className = 'profile-articles-carousel';
+
+    const currentUser = AuthService.getInstance().getCurrentUser();
+    this.isOwnProfile = currentUser?.pubkey === this.pubkey;
   }
 
   /**
@@ -57,8 +64,11 @@ export class ProfileArticlesCarousel {
     const relays = this.transport.getReadRelays();
 
     try {
+      // Fetch published articles (+ drafts for own profile)
+      const kinds = this.isOwnProfile ? [30023, 30024] : [30023];
+
       const events = await this.transport.fetch(relays, [{
-        kinds: [30023],
+        kinds,
         authors: [this.pubkey],
         limit: 20
       }], 8000, false, 'ArticlesCarousel');
@@ -70,20 +80,32 @@ export class ProfileArticlesCarousel {
       });
 
       this.articles = events.map(event => {
+        const isDraft = event.kind === 30024;
         const metadata = LongFormOrchestrator.extractArticleMetadata(event);
         const naddr = encodeNaddr({
-          kind: 30023,
+          kind: event.kind!,
           pubkey: event.pubkey,
           identifier: metadata.identifier,
           relays: relays.slice(0, 2)
         });
-        return { event, metadata, naddr };
+        return { event, metadata, naddr, isDraft };
       });
+
+      // Drafts first, then published (within each group: newest first)
+      if (this.isOwnProfile) {
+        this.articles.sort((a, b) => {
+          if (a.isDraft !== b.isDraft) return a.isDraft ? -1 : 1;
+          const aTime = parseInt(a.event.tags.find(t => t[0] === 'published_at')?.[1] || String(a.event.created_at));
+          const bTime = parseInt(b.event.tags.find(t => t[0] === 'published_at')?.[1] || String(b.event.created_at));
+          return bTime - aTime;
+        });
+      }
 
       // Log article image URLs for debugging
       const { diagLog } = await import('../../services/DiagnosticLogger');
       diagLog('system', 'ArticlesCarousel: loaded', {
         count: this.articles.length,
+        drafts: this.articles.filter(a => a.isDraft).length,
         images: this.articles.map(a => ({ title: a.metadata.title?.slice(0, 30), image: a.metadata.image || 'none' }))
       });
     } catch (error) {
@@ -96,16 +118,20 @@ export class ProfileArticlesCarousel {
     const authorName = this.getAuthorDisplayName();
 
     const cards = this.articles.map(article => {
-      const { metadata, naddr } = article;
+      const { metadata, naddr, isDraft } = article;
 
       const date = new Date(metadata.publishedAt * 1000);
       const formattedDate = date.toLocaleDateString('en-US', {
         month: 'short', day: 'numeric', year: 'numeric'
       });
 
+      const draftBadge = isDraft
+        ? '<span class="badge badge--warning badge--overlay">Draft</span>'
+        : '';
+
       const imageHtml = metadata.image
-        ? `<div class="profile-articles-carousel__card-image"><img src="${this.escapeHtml(metadata.image)}" alt="" loading="lazy" /></div>`
-        : `<div class="profile-articles-carousel__card-image profile-articles-carousel__card-image--placeholder"></div>`;
+        ? `<div class="profile-articles-carousel__card-image">${draftBadge}<img src="${this.escapeHtml(metadata.image)}" alt="" loading="lazy" /></div>`
+        : `<div class="profile-articles-carousel__card-image profile-articles-carousel__card-image--placeholder">${draftBadge}</div>`;
 
       return {
         html: `
@@ -119,7 +145,7 @@ export class ProfileArticlesCarousel {
             </div>
           </div>
         `,
-        data: { naddr }
+        data: { naddr, isDraft: isDraft ? 'true' : 'false' }
       };
     });
 
@@ -128,7 +154,10 @@ export class ProfileArticlesCarousel {
       cards,
       onCardClick: (_index, data) => {
         if (data.naddr) {
-          Router.getInstance().navigate(`/article/${data.naddr}`);
+          const route = data.isDraft === 'true'
+            ? `/edit-article/${data.naddr}`
+            : `/article/${data.naddr}`;
+          Router.getInstance().navigate(route);
         }
       }
     });

@@ -166,14 +166,8 @@
     stroke: none;
   }
 
-  .zap-amount-badge {
-    color: $color-warning;
-    font-weight: 600;
-    @extend %small;
+  .badge--warning {
     margin-left: calc($gap / 4);
-    padding: 2px calc($gap / 4);
-    background: $bg-warning;
-    border-radius: $radius-base;
   }
 }
 
