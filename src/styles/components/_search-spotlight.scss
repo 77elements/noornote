@@ -218,13 +218,3 @@
   text-overflow: ellipsis;
 }
 
-.search-spotlight__user-badge {
-  padding: 2px 6px;
-  @extend %mini;
-  font-weight: 600;
-  text-transform: uppercase;
-  background: color-mix(in srgb, var(--color-4) 20%, transparent);
-  color: var(--color-4);
-  border-radius: $radius-sm;
-  flex-shrink: 0;
-}

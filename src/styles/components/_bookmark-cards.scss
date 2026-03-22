@@ -236,7 +236,7 @@
     top: calc($gap / 2);
     right: calc($gap / 2);
     @extend %mini;
-    color: var(--color-3);
+    color: $color-3;
   }
 
   // External/URL content style

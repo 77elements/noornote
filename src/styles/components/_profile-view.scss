@@ -327,11 +327,11 @@
 
 // Follows You Badge
 .follows-you-badge {
-  display: inline-box;
+  display: inline-block;
   align-items: center;
   padding: calc($gap / 4) calc($gap / 2);
   @extend %small;
-  color: var(--color-3);
+  color: $color-3;
   font-weight: 500;
   white-space: nowrap;
 }

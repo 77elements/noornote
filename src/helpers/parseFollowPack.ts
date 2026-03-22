@@ -15,6 +15,7 @@ export interface FollowPack {
   coverImage: string;
   authorPubkey: string;
   authorName?: string;
+  createdAt: number;    // event.created_at (unix timestamp)
   userPubkeys: string[];
   userProfiles?: Map<string, { name?: string; picture?: string; about?: string }>;
 }
@@ -30,6 +31,7 @@ export function parseFollowPackEvent(event: NostrEvent): FollowPack {
     description: getTag('description') || '',
     coverImage: getTag('image') || '',
     authorPubkey: event.pubkey || '',
+    createdAt: (event as any).created_at ?? 0,
     userPubkeys: tags.filter((t: string[]) => t[0] === 'p' && t[1]).map((t: string[]) => t[1]!),
   };
 }
@@ -49,5 +51,5 @@ export function filterFollowPacks(packs: FollowPack[]): FollowPack[] {
     return true;
   });
 
-  return deduped.sort((a, b) => b.userPubkeys.length - a.userPubkeys.length);
+  return deduped.sort((a, b) => b.createdAt - a.createdAt);
 }

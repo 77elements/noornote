@@ -246,17 +246,17 @@ export class ZapManager {
       if (zapped && this.zappedAmount > 0) {
         this.zapButton.classList.add('active', 'zapped');
 
-        let amountBadge = this.zapButton.querySelector('.zap-amount-badge') as HTMLElement;
+        let amountBadge = this.zapButton.querySelector('.badge--warning') as HTMLElement;
         if (!amountBadge) {
           amountBadge = document.createElement('span');
-          amountBadge.className = 'zap-amount-badge';
+          amountBadge.className = 'badge badge--warning';
           zapIcon.insertAdjacentElement('afterend', amountBadge);
         }
         amountBadge.textContent = this.zappedAmount.toString();
       } else {
         this.zapButton.classList.remove('active', 'zapped');
 
-        const amountBadge = this.zapButton.querySelector('.zap-amount-badge');
+        const amountBadge = this.zapButton.querySelector('.badge--warning');
         if (amountBadge) {
           amountBadge.remove();
         }

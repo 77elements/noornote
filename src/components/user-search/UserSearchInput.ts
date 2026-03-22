@@ -293,7 +293,7 @@ export class UserSearchInput {
     const usersHtml = this.userResults.slice(0, 8).map((user, index) => {
       const displayName = user.displayName || user.name || 'Anonymous';
       const picture = user.picture || '';
-      const followBadge = user.isFollowing ? '<span class="search-spotlight__user-badge">Following</span>' : '';
+      const followBadge = user.isFollowing ? '<span class="badge badge--accent">Following</span>' : '';
       const selectedClass = index === this.selectedIndex ? ' search-spotlight__suggestion--selected' : '';
 
       return `

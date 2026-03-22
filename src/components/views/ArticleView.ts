@@ -91,13 +91,16 @@ export class ArticleView {
           <div class="article-title-row">
             <h1 class="article-title">${this.escapeHtml(metadata.title)}</h1>
             ${isOwnArticle ? `
-              <button class="btn btn--medium btn--passive article-edit-btn" data-action="edit-article" title="Edit article">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
-                Edit
-              </button>
+              <div class="article-title-row__actions">
+                <button class="btn btn--medium btn--passive" data-action="edit-article" title="Edit article">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                  </svg>
+                  Edit
+                </button>
+                <button class="btn btn--medium btn--danger" data-action="delete-article" title="Delete article">Delete</button>
+              </div>
             ` : ''}
           </div>
           ${metadata.summary ? `<p class="article-summary">${this.escapeHtml(metadata.summary)}</p>` : ''}
@@ -143,7 +146,7 @@ export class ArticleView {
       authorContainer.appendChild(noteHeader.getElement());
     }
 
-    // Edit button click handler
+    // Edit & delete button click handlers
     if (isOwnArticle) {
       const editBtn = this.container.querySelector('[data-action="edit-article"]');
       editBtn?.addEventListener('click', () => {
@@ -154,6 +157,28 @@ export class ArticleView {
           relays: []
         });
         Router.getInstance().navigate(`/edit-article/${naddr}`);
+      });
+
+      const deleteBtn = this.container.querySelector('[data-action="delete-article"]');
+      deleteBtn?.addEventListener('click', async () => {
+        const { ModalService } = await import('../../services/ModalService');
+        const confirmed = await ModalService.getInstance().confirm({
+          title: 'Delete Article',
+          message: 'This will send a deletion request to all relays. This cannot be undone.',
+          confirmText: 'Delete',
+          cancelText: 'Cancel',
+          confirmDestructive: true,
+        });
+
+        if (!confirmed) return;
+
+        const { DeletionService } = await import('../../services/DeletionService');
+        const coordinate = `30023:${event.pubkey}:${metadata.identifier}`;
+        const deleted = await DeletionService.getInstance().deleteByCoordinates([coordinate]);
+
+        if (deleted) {
+          Router.getInstance().back();
+        }
       });
     }
 

@@ -286,7 +286,7 @@ export class SearchSpotlight {
     const usersHtml = this.userResults.slice(0, 8).map((user, index) => {
       const displayName = user.displayName || user.name || 'Anonymous';
       const picture = user.picture || '';
-      const followBadge = user.isFollowing ? '<span class="search-spotlight__user-badge">Following</span>' : '';
+      const followBadge = user.isFollowing ? '<span class="badge badge--accent">Following</span>' : '';
 
       return `
         <div class="search-spotlight__user-item" data-pubkey="${user.pubkey}" data-user-index="${index}">

@@ -1,32 +1,69 @@
 /**
- * Badges Atom
- * Reusable badge components
+ * Badges - Unified Badge System
+ * All badge classes in one place
+ * Purpose-agnostic with modifier classes for color and position
+ *
+ * NOT badges (don't use .badge for these):
+ * - Positioned lock icons (🔒) → just a span with component-specific positioning
+ * - Subtle inline text ("Follows you", "Private") → component-specific text styling
  */
 
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
 
 // ========================================
-// Counter Badge (unread counts, notifications)
+// Base Badge
 // ========================================
 .badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: $radius-full;
-  background: var(--color-6);
-  color: var(--color-1);
+  padding: 0 calc($gap / 4);
+  border-radius: $radius-sm;
   @extend %small;
   font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.5;
 }
 
 // ========================================
-// Private Badge (for follows list)
+// Color Modifiers
 // ========================================
-.private-badge {
-  @extend %small;
-  opacity: 0.7;
+
+// Green (counters, status "good")
+.badge--green {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 calc($gap / 4);
+  border-radius: $radius-full;
+  background: $color-6;
+  color: $color-1;
+}
+
+// Warning (zap amounts, health warning, drafts)
+.badge--warning {
+  background: $bg-warning;
+  color: $color-warning;
+}
+
+// Danger (health critical, errors)
+.badge--danger {
+  background: $bg-error;
+  color: $color-red;
+}
+
+// Accent (interactive highlights, "Following")
+.badge--accent {
+  color: $color-4;
+}
+
+// ========================================
+// Position Modifiers
+// ========================================
+
+// Overlay (absolute top-right, for cards)
+.badge--overlay {
+  position: absolute;
+  top: calc($gap / 2);
+  right: calc($gap / 2);
 }

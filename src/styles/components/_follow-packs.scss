@@ -18,6 +18,23 @@
     margin: 0;
   }
 
+  &__teaser {
+    text-align: center;
+    padding: $gap;
+    margin-bottom: $gap;
+    border-bottom: 1px solid var(--color-2);
+  }
+
+  &__teaser-text {
+    color: var(--color-5);
+    opacity: 0.8;
+    font-size: 0.9rem;
+    margin: 0 0 $gap;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   &__loading,
   &__empty {
     text-align: center;

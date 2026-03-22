@@ -245,12 +245,17 @@ export class MainLayout {
       }
     });
 
-    // Listen for list:open events from Settings → Privacy links and ProfileView
-    this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string }) => {
+    // Listen for list:open events from Settings → Privacy links, ProfileView, FollowPackDetailView
+    this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string; packId?: string; packMode?: 'timeline' | 'edit' }) => {
       // Check if this is an external user's follows (not current user)
       const currentUser = this.authService.getCurrentUser();
       if (data.listType === 'follows' && data.pubkey && currentUser?.pubkey !== data.pubkey) {
         this.openExternalFollowsTab(data.pubkey);
+      } else if (data.listType === 'follow-packs' && data.packId && data.packMode && this.followPackManager) {
+        // Open specific pack in timeline or edit mode
+        this.openListTab(data.listType, (container) => {
+          this.followPackManager!.openPackView(container, data.packId!, data.packMode!);
+        });
       } else {
         this.openListTab(data.listType);
       }
@@ -1946,7 +1951,7 @@ export class MainLayout {
    * Replaces any existing list tab
    * Renders in pcc (Wide) or scc (Default/Right-pane) based on layout mode
    */
-  public openListTab(listType: ListType): void {
+  public openListTab(listType: ListType, customRender?: (container: HTMLElement) => void): void {
     // Close sidebar in phone mode (sublinks are added after setupMobileSidebar)
     if (this.layoutService.isPhone()) {
       this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
@@ -1956,10 +1961,10 @@ export class MainLayout {
     // Check layout mode and delegate to appropriate renderer
     if (!this.layoutService.isSecondaryVisible()) {
       // Wide/Mobile mode: Render in primary content (scc is hidden)
-      this.renderListInPrimaryContent(listType);
+      this.renderListInPrimaryContent(listType, customRender);
     } else {
       // Default or Right-pane mode: Render in secondary content
-      this.renderListInSecondaryContent(listType);
+      this.renderListInSecondaryContent(listType, customRender);
     }
   }
 
@@ -2093,7 +2098,7 @@ export class MainLayout {
   /**
    * Render list in secondary content (default/right-pane mode)
    */
-  private renderListInSecondaryContent(listType: ListType): void {
+  private renderListInSecondaryContent(listType: ListType, customRender?: (container: HTMLElement) => void): void {
     // Close existing list tab if any
     if (this.currentListView) {
       this.currentListView.destroy();
@@ -2135,8 +2140,12 @@ export class MainLayout {
       title: titles[listType],
       onClose: () => this.closeListTab(),
       onRender: (container) => {
-        // Delegate rendering to the appropriate manager
-        manager.renderListTab(container);
+        // Use custom render callback if provided, otherwise delegate to manager
+        if (customRender) {
+          customRender(container);
+        } else {
+          manager.renderListTab(container);
+        }
       }
     });
 
@@ -2181,7 +2190,7 @@ export class MainLayout {
    * Render list in primary content (wide mode only)
    * Replaces timeline/existing content
    */
-  private renderListInPrimaryContent(listType: ListType): void {
+  private renderListInPrimaryContent(listType: ListType, customRender?: (container: HTMLElement) => void): void {
     const primaryContent = this.element.querySelector('.primary-content');
     if (!primaryContent) return;
 
@@ -2257,8 +2266,12 @@ export class MainLayout {
     listContainer.appendChild(content);
     primaryContent.appendChild(listContainer);
 
-    // Render list content via manager
-    manager.renderListTab(content);
+    // Render list content via manager or custom callback
+    if (customRender) {
+      customRender(content);
+    } else {
+      manager.renderListTab(content);
+    }
   }
 
   /**

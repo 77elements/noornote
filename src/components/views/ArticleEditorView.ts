@@ -10,6 +10,7 @@
  * - Media upload & emoji picker (via PostEditorToolbar)
  * - Relay selector
  * - Save as Draft (kind 30024) or Publish (kind 30023)
+ * - Unsaved changes confirmation on back navigation and tab close
  */
 
 import { View } from './View';
@@ -23,10 +24,19 @@ import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
+import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 
 type TabMode = 'edit' | 'preview';
+
+interface EditorSnapshot {
+  title: string;
+  content: string;
+  summary: string;
+  image: string;
+  tags: string;
+}
 
 export class ArticleEditorView extends View {
   private container: HTMLElement;
@@ -55,7 +65,17 @@ export class ArticleEditorView extends View {
   private isPublishing: boolean = false;
   private isCoverUploading: boolean = false;
   private isEditMode: boolean = false;
+  private isDraftMode: boolean = false;
+  private editPubkey: string = '';
   private originalPublishedAt: number | null = null;
+
+  // Dirty-state tracking
+  private snapshot: EditorSnapshot = { title: '', content: '', summary: '', image: '', tags: '' };
+  private beforeUnloadHandler = (e: BeforeUnloadEvent): void => {
+    if (this.isDirty()) {
+      e.preventDefault();
+    }
+  };
 
   constructor(editNaddr?: string) {
     super();
@@ -112,6 +132,8 @@ export class ArticleEditorView extends View {
       this.identifier = metadata.identifier;
       this.tags = metadata.topics.join(', ');
       this.originalPublishedAt = metadata.publishedAt;
+      this.isDraftMode = event.kind === 30024;
+      this.editPubkey = event.pubkey;
 
       this.systemLogger.info('ArticleEditorView', `Article loaded: "${metadata.title}"`);
       this.render();
@@ -154,6 +176,32 @@ export class ArticleEditorView extends View {
       // Ignore
     }
     return { enabled: false, url: 'ws://localhost:7777' };
+  }
+
+  /**
+   * Save a snapshot of the current editor state for dirty-checking
+   */
+  private saveSnapshot(): void {
+    this.snapshot = {
+      title: this.title,
+      content: this.content,
+      summary: this.summary,
+      image: this.image,
+      tags: this.tags,
+    };
+  }
+
+  /**
+   * Check if the editor has unsaved changes compared to the snapshot
+   */
+  private isDirty(): boolean {
+    return (
+      this.title !== this.snapshot.title ||
+      this.content !== this.snapshot.content ||
+      this.summary !== this.snapshot.summary ||
+      this.image !== this.snapshot.image ||
+      this.tags !== this.snapshot.tags
+    );
   }
 
   /**
@@ -206,7 +254,8 @@ export class ArticleEditorView extends View {
         <footer class="article-editor__footer">
           ${this.toolbar.render()}
           <div class="article-editor__actions">
-            <button class="btn btn--passive" data-action="save-draft">Save Draft</button>
+            ${this.isDraftMode ? '<button class="btn btn--danger btn--medium" data-action="delete-draft">Delete Draft</button>' : ''}
+            <button class="btn btn--passive" data-action="save-draft">Save Draft <span class="form__note">(beta)</span></button>
             <button class="btn" data-action="publish">${this.isEditMode ? 'Update' : 'Publish'}</button>
           </div>
         </footer>
@@ -214,6 +263,7 @@ export class ArticleEditorView extends View {
     `;
 
     this.setupEventListeners();
+    this.saveSnapshot();
   }
 
   /**
@@ -438,6 +488,9 @@ export class ArticleEditorView extends View {
     const publishBtn = this.container.querySelector('[data-action="publish"]');
     publishBtn?.addEventListener('click', () => this.handlePublish());
 
+    const deleteDraftBtn = this.container.querySelector('[data-action="delete-draft"]');
+    deleteDraftBtn?.addEventListener('click', () => this.handleDeleteDraft());
+
     // Auto-generate slug from title (only for new articles, not when editing)
     if (!this.isEditMode) {
       const titleInput = this.container.querySelector('[data-field="title"]') as HTMLInputElement;
@@ -452,6 +505,9 @@ export class ArticleEditorView extends View {
         }
       });
     }
+
+    // Unsaved changes: warn on browser tab close / reload
+    window.addEventListener('beforeunload', this.beforeUnloadHandler);
   }
 
   /**
@@ -698,11 +754,25 @@ export class ArticleEditorView extends View {
   }
 
   /**
-   * Handle back navigation
+   * Handle back navigation with unsaved changes confirmation
    */
-  private handleBack(): void {
-    // See docs/todos/article-editor-unsaved-changes.md
-    this.router.back();
+  private async handleBack(): Promise<void> {
+    if (!this.isDirty()) {
+      this.router.back();
+      return;
+    }
+
+    const discard = await ModalService.getInstance().confirm({
+      title: 'Unsaved Changes',
+      message: 'You have unsaved changes. Discard them?',
+      confirmText: 'Discard',
+      cancelText: 'Keep Editing',
+      confirmDestructive: true,
+    });
+
+    if (discard) {
+      this.router.back();
+    }
   }
 
   /**
@@ -761,6 +831,32 @@ export class ArticleEditorView extends View {
   }
 
   /**
+   * Handle delete draft via NIP-09
+   */
+  private async handleDeleteDraft(): Promise<void> {
+    if (!AuthGuard.requireAuth('delete this draft')) return;
+
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete Draft',
+      message: 'This will send a deletion request to all relays. This cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmDestructive: true,
+    });
+
+    if (!confirmed) return;
+
+    const { DeletionService } = await import('../../services/DeletionService');
+    const coordinate = `30024:${this.editPubkey}:${this.identifier}`;
+    const deleted = await DeletionService.getInstance().deleteByCoordinates([coordinate]);
+
+    if (deleted) {
+      this.saveSnapshot(); // Prevent unsaved changes warning
+      this.router.back();
+    }
+  }
+
+  /**
    * Submit article (draft or publish)
    */
   private async submitArticle(isDraft: boolean): Promise<void> {
@@ -796,6 +892,9 @@ export class ArticleEditorView extends View {
       const naddr = isDraft
         ? await this.articleService.saveDraft(articleData)
         : await this.articleService.publishArticle(articleData);
+
+      // After successful save, update snapshot so dirty-check won't trigger
+      this.saveSnapshot();
 
       if (naddr && !isDraft) {
         this.router.navigate(`/article/${naddr}`);
@@ -849,6 +948,7 @@ export class ArticleEditorView extends View {
    * Destroy view
    */
   public destroy(): void {
+    window.removeEventListener('beforeunload', this.beforeUnloadHandler);
     if (this.relaySelector) {
       this.relaySelector.destroy();
       this.relaySelector = null;

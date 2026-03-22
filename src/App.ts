@@ -235,6 +235,8 @@ export class App {
       (params) => params.naddr);
     this.registerRoute('/relay/:relayUrl', 'relay-browser', 'relay-browser', 'rbv', false,
       (params) => params.relayUrl ? decodeURIComponent(params.relayUrl) : undefined);
+    this.registerRoute('/follow-pack/:naddr', 'follow-pack', 'follow-pack', 'fpv', false,
+      (params) => params.naddr);
 
     // Authenticated routes
     this.registerRoute('/', 'timeline', 'timeline', 'tv', true);
@@ -268,7 +270,8 @@ export class App {
           } else if (decoded.type === 'note' || decoded.type === 'nevent') {
             this.router.navigate(`/note/${entity}`);
           } else if (decoded.type === 'naddr') {
-            this.router.navigate(`/article/${entity}`);
+            const addrData = decoded.data as { kind: number };
+            this.router.navigate(App.getRouteForAddressableEvent(addrData.kind, entity));
           }
         } catch {
           this.router.navigate('/');
@@ -276,6 +279,18 @@ export class App {
       },
       'nip19-entity'
     );
+  }
+
+  /**
+   * Route an addressable event (naddr) to the correct view based on kind
+   */
+  static getRouteForAddressableEvent(kind: number, naddr: string): string {
+    switch (kind) {
+      case 39089:
+        return `/follow-pack/${naddr}`;
+      default:
+        return `/article/${naddr}`;
+    }
   }
 
   // ─── UI & Event Listeners ────────────────────────────────────────────
@@ -356,7 +371,8 @@ export class App {
           }
 
           if (type === 'naddr') {
-            this.router.navigate(`/article/${nip19String}`);
+            const addrData = decoded.data as { kind: number };
+            this.router.navigate(App.getRouteForAddressableEvent(addrData.kind, nip19String));
           }
         } catch {
           this.systemLogger.warn('Deep Link', `Failed to handle nostr: URL: ${url}`);
