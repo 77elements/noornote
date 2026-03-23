@@ -9,14 +9,13 @@
 
 // Container
 .switch-container {
-  display: inline-flex;
-  align-items: center;
   margin-bottom: $gap;
 }
 
-// Label wrapper
+// Label wrapper — grid ensures switch stays right-aligned
 .switch-label {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: calc($gap / 2);
   cursor: pointer;

@@ -215,23 +215,8 @@ export class MainLayout {
       }
     }
 
-    // Marketplace Add-On: Insert sidebar entry if enabled
-    this.insertMarketplaceSidebarEntry(listsMenuContainer);
-
-    // Re-check after login (PerAccountLocalStorage needs auth to read saved state)
-    this.eventBus.on('user:login', () => {
-      this.insertMarketplaceSidebarEntry(listsMenuContainer);
-    });
-
-    // Marketplace toggle: insert/remove sidebar entry instantly
-    this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
-      if (data.enabled) {
-        this.insertMarketplaceSidebarEntry(listsMenuContainer, true);
-      } else {
-        this.element.querySelector('.primary-nav__link--marketplace')?.parentElement?.remove();
-        this._marketplaceInsertPending = false;
-      }
-    });
+    // Addons: always-visible sidebar entry
+    this.insertAddonsSidebarEntry(listsMenuContainer);
 
     // Follow Packs toggle: show/hide sidebar entry + lazy-load manager
     this.eventBus.on('follow-packs:toggle', async (data: { enabled: boolean }) => {
@@ -688,7 +673,8 @@ export class MainLayout {
       'aev': '.primary-nav__link--articles',      // Article Editor View
       'mv': '.primary-nav__link--messages',       // Messages View
       'cv': '.primary-nav__link--messages',       // Conversation View
-      'sv': '.primary-nav__link--settings'        // Settings View
+      'sv': '.primary-nav__link--settings',        // Settings View
+      'adv': '.primary-nav__link--addons'           // Addons View
     };
 
     const selector = viewToSelector[viewClass];
@@ -1895,47 +1881,32 @@ export class MainLayout {
   }
 
   /**
-   * Marketplace Add-On: Insert sidebar entry if feature is enabled.
+   * Addons: Insert sidebar entry (always visible, not gated by any single addon).
    * Inserts before Download link, after Lists accordion.
    */
-  private _marketplaceInsertPending = false;
-
-  private async insertMarketplaceSidebarEntry(navContainer: Element | null, animate = false): Promise<void> {
+  private insertAddonsSidebarEntry(navContainer: Element | null): void {
     if (!navContainer) return;
-
-    // Don't insert twice (DOM check + pending flag to prevent async race)
-    if (navContainer.querySelector('.primary-nav__link--marketplace')) return;
-    if (this._marketplaceInsertPending) return;
-    this._marketplaceInsertPending = true;
-
-    const { isMarketplaceEnabled } = await import('../../addons/marketplace/index');
-    if (!isMarketplaceEnabled()) {
-      this._marketplaceInsertPending = false;
-      return;
-    }
+    if (navContainer.querySelector('.primary-nav__link--addons')) return;
 
     const li = document.createElement('li');
-    if (animate) li.classList.add('pulse-once');
     li.innerHTML = `
-      <a href="/marketplace" class="primary-nav__link primary-nav__link--marketplace">
+      <a href="/addons" class="primary-nav__link primary-nav__link--addons">
         <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <path d="M16 10a4 4 0 0 1-8 0"></path>
+          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+          <circle cx="12" cy="12" r="3"/>
         </svg>
-        <span class="primary-nav__item-desc">Marketplace</span>
+        <span class="primary-nav__item-desc">Addons</span>
       </a>
     `;
 
     const link = li.querySelector('a')!;
     link.addEventListener('click', (e) => {
       e.preventDefault();
-      // Close sidebar in phone mode
       if (this.layoutService.isPhone()) {
         this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
         this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
       }
-      Router.getInstance().navigate('/marketplace');
+      Router.getInstance().navigate('/addons');
     });
 
     const downloadLink = navContainer.querySelector('.primary-nav__link--download')?.parentElement;

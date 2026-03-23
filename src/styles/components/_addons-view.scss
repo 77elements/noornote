@@ -1,0 +1,93 @@
+/**
+ * Addons View - Vertical sub-nav + content panel
+ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.view-content--addons {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+
+  .layout--phone & {
+    flex-direction: column;
+  }
+}
+
+// Left navigation: simple text links, border-right separator
+.addons-nav {
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--color-3);
+  padding: $gap 0;
+  overflow-y: auto;
+  @include custom-scrollbar;
+
+  &__link {
+    padding: $gap;
+    color: var(--color-4);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color $transition-fast;
+
+    &:hover {
+      color: var(--color-5);
+      text-decoration: none;
+    }
+
+    &--active {
+      color: var(--color-5);
+      font-weight: 600;
+    }
+  }
+
+  .layout--phone & {
+    flex-direction: row;
+    border-right: none;
+    border-bottom: 1px solid var(--color-3);
+    padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+}
+
+// Right content panel
+.addons-panel {
+  flex: 1;
+  overflow-y: auto;
+  padding: $gap;
+  @include custom-scrollbar;
+
+  &__item {
+    display: none;
+
+    &--active {
+      display: block;
+    }
+  }
+
+  &__content {
+    text-align: center;
+  }
+
+  &__title {
+    @extend %h2;
+    color: var(--color-5);
+    margin: 0 0 calc($gap / 4) 0;
+  }
+
+  &__description {
+    color: $color-3;
+    line-height: 1.4;
+    margin: 0 0 $gap 0;
+  }
+}
+
+// Reusable wrapper for addon settings content inside a panel
+.addon-settings {
+  padding-bottom: $gap;
+  margin-bottom: $gap;
+  border-bottom: 1px solid var(--color-3);
+}

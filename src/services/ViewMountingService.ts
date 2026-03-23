@@ -307,6 +307,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addons':
+        return {
+          factory: async (param) => {
+            const { AddonsView } = await import('../components/views/AddonsView');
+            const view = new AddonsView(param);
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'marketplace':
         return {
           factory: async () => {
