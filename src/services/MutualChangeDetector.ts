@@ -90,7 +90,7 @@ export class MutualChangeDetector {
    * NOTE: Snapshot is NOT updated here - only on markAsSeen()
    * @returns Detection result with unfollows, new mutuals, and timing
    */
-  public async detect(): Promise<DetectionResult> {
+  public async detect(onProgress?: (checked: number, total: number) => void): Promise<DetectionResult> {
     const startTime = Date.now();
     const currentUser = this.authService.getCurrentUser();
 
@@ -123,7 +123,7 @@ export class MutualChangeDetector {
         previousSnapshot?.timestamp
       );
 
-      const followsWithStatus = await this.mutualService.checkMutualStatusBatch(follows);
+      const followsWithStatus = await this.mutualService.checkMutualStatusBatch(follows, onProgress);
       const fetchDurationMs = Date.now() - fetchStartTime;
 
       const currentMutualPubkeys = followsWithStatus
