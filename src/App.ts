@@ -255,7 +255,10 @@ export class App {
     this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true,
       (params) => params.pubkey);
 
-    // Marketplace Add-On (always register before catch-all, guard in handler)
+    // Add-Ons hub + Marketplace routes (always register before catch-all)
+    this.registerRoute('/addons', 'addons', 'addons', 'adv', true);
+    this.registerRoute('/addons/:addonId', 'addons', 'addons', 'adv', true,
+      (params) => params.addonId);
     this.registerMarketplaceRoutes();
 
     // Catch-all: bare nip19 entities in URL path (njump.me links like noornote.app/nprofile1...)

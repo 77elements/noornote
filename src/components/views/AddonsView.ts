@@ -1,0 +1,291 @@
+/**
+ * AddonsView
+ *
+ * Central hub for all add-ons. Vertical sub-navigation on the left,
+ * content panel on the right. Each panel has two zones:
+ *   1. Settings (top, separated by border-bottom via .addon-settings)
+ *   2. Content (below, optional per addon)
+ */
+
+import { View } from './View';
+import { Switch } from '../ui/Switch';
+import { EventBus } from '../../services/EventBus';
+import { ToastService } from '../../services/ToastService';
+import type { SettingsSection } from '../settings/SettingsSection';
+
+interface AddonDef {
+  id: string;
+  name: string;
+  description: string;
+  settingsContainerId: string;
+  isEnabled: () => Promise<boolean>;
+  setEnabled: (v: boolean) => Promise<void>;
+  toggleEvent?: string;
+  /** Mount the settings component (reused from SettingsView). */
+  mountSettings?: (panel: HTMLElement) => Promise<SettingsSection>;
+  /** Mount content below the settings separator. */
+  mountContent?: (contentEl: HTMLElement) => void;
+}
+
+const ADDONS: AddonDef[] = [
+  {
+    id: 'profile-recognition',
+    name: 'Profile Recognition',
+    description: 'Help recognize people you follow after they change their profile.',
+    settingsContainerId: 'profile-recognition-settings-content',
+    isEnabled: async () => {
+      const { isProfileRecognitionEnabled } = await import('../../addons/profile-recognition/index');
+      return isProfileRecognitionEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setProfileRecognitionWindow } = await import('../../addons/profile-recognition/index');
+      setProfileRecognitionWindow(v ? 90 : 0);
+    },
+    mountSettings: async (panel) => {
+      const { ProfileRecognitionSettings } = await import('../../addons/profile-recognition/ProfileRecognitionSettings');
+      const settings = new ProfileRecognitionSettings();
+      settings.mount(panel);
+      return settings;
+    },
+  },
+  {
+    id: 'marketplace',
+    name: 'Marketplace',
+    description: 'Browse classified listings (NIP-99) from the Nostr network.',
+    settingsContainerId: 'marketplace-settings-content',
+    isEnabled: async () => {
+      const { isMarketplaceEnabled } = await import('../../addons/marketplace/index');
+      return isMarketplaceEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setMarketplaceEnabled } = await import('../../addons/marketplace/index');
+      setMarketplaceEnabled(v);
+    },
+    toggleEvent: 'marketplace:toggle',
+    mountSettings: async (panel) => {
+      const { MarketplaceSettingsSection } = await import('../settings/MarketplaceSettingsSection');
+      const settings = new MarketplaceSettingsSection();
+      settings.mount(panel);
+      return settings;
+    },
+    mountContent: (contentEl) => {
+      contentEl.innerHTML = `<button class="btn" data-action="open-marketplace">Open Marketplace</button>`;
+      contentEl.querySelector('[data-action="open-marketplace"]')?.addEventListener('click', () => {
+        import('../../services/Router').then(({ Router }) => Router.getInstance().navigate('/marketplace'));
+      });
+    },
+  },
+  {
+    id: 'follow-packs',
+    name: 'Follow Packs',
+    description: 'Browse curated people lists and follow entire communities at once.',
+    settingsContainerId: 'follow-packs-settings-content',
+    isEnabled: async () => {
+      const { isFollowPacksEnabled } = await import('../../addons/follow-packs/index');
+      return isFollowPacksEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setFollowPacksEnabled } = await import('../../addons/follow-packs/index');
+      setFollowPacksEnabled(v);
+    },
+    toggleEvent: 'follow-packs:toggle',
+    mountSettings: async (panel) => {
+      const { FollowPacksSettings } = await import('../../addons/follow-packs/FollowPacksSettings');
+      const settings = new FollowPacksSettings();
+      settings.mount(panel);
+      return settings;
+    },
+    mountContent: (contentEl) => {
+      contentEl.innerHTML = `<button class="btn" data-action="show-follow-packs">Show Follow Packs</button>`;
+      contentEl.querySelector('[data-action="show-follow-packs"]')?.addEventListener('click', () => {
+        EventBus.getInstance().emit('list:open', { listType: 'follow-packs' });
+      });
+    },
+  },
+  {
+    id: 'hashtag-subscriptions',
+    name: 'Hashtag Subscriptions',
+    description: 'Subscribe to hashtags and get notified when new posts are published.',
+    settingsContainerId: 'hashtag-subscriptions-settings-content',
+    isEnabled: async () => {
+      const { isHashtagSubscriptionsEnabled } = await import('../../addons/hashtag-subscriptions/index');
+      return isHashtagSubscriptionsEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setHashtagSubscriptionsEnabled } = await import('../../addons/hashtag-subscriptions/index');
+      setHashtagSubscriptionsEnabled(v);
+    },
+    mountSettings: async (panel) => {
+      const { HashtagSubscriptionsSettings } = await import('../../addons/hashtag-subscriptions/HashtagSubscriptionsSettings');
+      const settings = new HashtagSubscriptionsSettings();
+      settings.mount(panel);
+      return settings;
+    },
+  },
+  {
+    id: 'list-settings',
+    name: 'List Sync Mode',
+    description: 'Enable manual sync control and advanced list options.',
+    settingsContainerId: 'list-settings-content',
+    isEnabled: async () => {
+      const { isListSettingsEnabled } = await import('../../addons/list-settings/index');
+      return isListSettingsEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setListSettingsEnabled } = await import('../../addons/list-settings/index');
+      setListSettingsEnabled(v);
+    },
+    mountSettings: async (panel) => {
+      const { ListSettingsSection } = await import('../settings/ListSettingsSection');
+      const settings = new ListSettingsSection();
+      settings.mount(panel);
+      return settings;
+    },
+  },
+];
+
+export class AddonsView extends View {
+  private container: HTMLElement;
+  private switches: Map<string, Switch> = new Map();
+  private mountedSettings: Map<string, SettingsSection> = new Map();
+  private activeAddonId: string;
+
+  constructor(addonId?: string) {
+    super();
+    this.activeAddonId = ADDONS.find(a => a.id === addonId)?.id ?? ADDONS[0]!.id;
+    this.container = document.createElement('div');
+    this.container.className = 'view-content view-content--addons';
+    this.init();
+  }
+
+  private async init(): Promise<void> {
+    const states = new Map<string, boolean>();
+    await Promise.all(ADDONS.map(async (a) => {
+      states.set(a.id, await a.isEnabled());
+    }));
+
+    this.container.innerHTML = `
+      <nav class="addons-nav">
+        ${ADDONS.map(a => `
+          <a href="#" class="addons-nav__link${a.id === this.activeAddonId ? ' addons-nav__link--active' : ''}"
+             data-addon="${a.id}">${a.name}</a>
+        `).join('')}
+      </nav>
+      <div class="addons-panel">
+        ${ADDONS.map(a => `
+          <div class="addons-panel__item${a.id === this.activeAddonId ? ' addons-panel__item--active' : ''}"
+               data-addon-panel="${a.id}">
+            <div id="${a.settingsContainerId}" class="addon-settings"></div>
+            <div class="addons-panel__content" data-addon-content="${a.id}"></div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    // Mount settings components or fallback switches
+    for (const addon of ADDONS) {
+      if (addon.mountSettings) {
+        const settings = await addon.mountSettings(this.container);
+        this.mountedSettings.set(addon.id, settings);
+      } else {
+        this.mountFallbackSwitch(addon, states.get(addon.id) ?? false);
+      }
+    }
+
+    // Mount content sections + set initial visibility
+    for (const addon of ADDONS) {
+      const contentEl = this.container.querySelector(`[data-addon-content="${addon.id}"]`) as HTMLElement;
+      if (!contentEl) continue;
+
+      const enabled = states.get(addon.id) ?? false;
+      contentEl.style.display = enabled ? '' : 'none';
+
+      if (addon.mountContent) {
+        addon.mountContent(contentEl);
+      }
+    }
+
+    // Toggle content visibility when addons are enabled/disabled
+    this.bindContentVisibility();
+
+    this.bindNavigation();
+  }
+
+  private mountFallbackSwitch(addon: AddonDef, enabled: boolean): void {
+    const sw = new Switch({
+      label: `Enable ${addon.name}`,
+      checked: enabled,
+      onChange: (checked) => this.handleToggle(addon, checked),
+    });
+
+    const mountPoint = this.container.querySelector(`#${addon.settingsContainerId}`) as HTMLElement;
+    if (mountPoint) {
+      mountPoint.innerHTML = `
+        <h2 class="addons-panel__title">${addon.name}</h2>
+        <p class="addons-panel__description">${addon.description}</p>
+        ${sw.render()}
+      `;
+      sw.setupEventListeners(mountPoint);
+    }
+    this.switches.set(addon.id, sw);
+  }
+
+  private bindContentVisibility(): void {
+    const eventBus = EventBus.getInstance();
+    for (const addon of ADDONS) {
+      if (!addon.toggleEvent) continue;
+      const contentEl = this.container.querySelector(`[data-addon-content="${addon.id}"]`) as HTMLElement;
+      if (!contentEl) continue;
+
+      eventBus.on(addon.toggleEvent, (data: { enabled: boolean }) => {
+        contentEl.style.display = data.enabled ? '' : 'none';
+      });
+    }
+  }
+
+  private bindNavigation(): void {
+    this.container.querySelectorAll('.addons-nav__link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const addonId = (link as HTMLElement).dataset.addon!;
+        this.selectAddon(addonId);
+      });
+    });
+  }
+
+  private selectAddon(addonId: string): void {
+    this.activeAddonId = addonId;
+
+    this.container.querySelectorAll('.addons-nav__link').forEach(el => {
+      el.classList.toggle('addons-nav__link--active', (el as HTMLElement).dataset.addon === addonId);
+    });
+
+    this.container.querySelectorAll('.addons-panel__item').forEach(el => {
+      el.classList.toggle('addons-panel__item--active', (el as HTMLElement).dataset.addonPanel === addonId);
+    });
+
+    history.replaceState(null, '', `/addons/${addonId}`);
+  }
+
+  private handleToggle(addon: AddonDef, checked: boolean): void {
+    addon.setEnabled(checked);
+    const contentEl = this.container.querySelector(`[data-addon-content="${addon.id}"]`) as HTMLElement;
+    if (contentEl) contentEl.style.display = checked ? '' : 'none';
+    if (addon.toggleEvent) {
+      EventBus.getInstance().emit(addon.toggleEvent, { enabled: checked });
+    }
+    ToastService.show(checked ? `${addon.name} enabled` : `${addon.name} disabled`, 'success');
+  }
+
+  public getElement(): HTMLElement {
+    return this.container;
+  }
+
+  public destroy(): void {
+    this.switches.forEach(sw => sw.destroy());
+    this.switches.clear();
+    this.mountedSettings.forEach(s => s.unmount());
+    this.mountedSettings.clear();
+    this.container.innerHTML = '';
+  }
+}
