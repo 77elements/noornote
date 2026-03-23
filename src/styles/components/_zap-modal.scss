@@ -104,5 +104,6 @@
     justify-content: flex-end;
     gap: $gap;
     padding-top: calc($gap / 2);
+    margin-bottom: $gap;
   }
 }
