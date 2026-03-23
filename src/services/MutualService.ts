@@ -75,36 +75,64 @@ export class MutualService {
   }
 
   /**
-   * Check mutual status for a batch of pubkeys
-   * Returns items with mutual status attached
-   * Uses in-memory cache + UserService for data
+   * Check mutual status for a batch of pubkeys.
+   * Default: parallel (fast, for list rendering).
+   * With onProgress: sequential (reliable, for change detection).
    */
   public async checkMutualStatusBatch(
-    items: FollowItem[]
+    items: FollowItem[],
+    onProgress?: (checked: number, total: number) => void
   ): Promise<MutualItemWithStatus[]> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) return items.map(item => ({ ...item, isMutual: false }));
 
-    // Check each item (in parallel)
-    const results = await Promise.all(
+    // Sequential mode: reliable for change detection (no relay overload)
+    if (onProgress) {
+      return this.checkBatchSequential(items, currentUser.pubkey, onProgress);
+    }
+
+    // Parallel mode: fast for list rendering
+    return this.checkBatchParallel(items, currentUser.pubkey);
+  }
+
+  private async checkBatchParallel(
+    items: FollowItem[],
+    currentUserPubkey: string
+  ): Promise<MutualItemWithStatus[]> {
+    return Promise.all(
       items.map(async (item) => {
-        // Check in-memory cache first
         if (this.mutualStatusCache.has(item.pubkey)) {
-          return {
-            ...item,
-            isMutual: this.mutualStatusCache.get(item.pubkey)!
-          };
+          return { ...item, isMutual: this.mutualStatusCache.get(item.pubkey)! };
         }
-
-        // Use UserService to get their follow list (single source of truth)
-        const isMutual = await this.checkIfMutual(item.pubkey, currentUser.pubkey);
-
-        // Store in in-memory cache
+        const isMutual = await this.checkIfMutual(item.pubkey, currentUserPubkey);
         this.mutualStatusCache.set(item.pubkey, isMutual);
-
         return { ...item, isMutual };
       })
     );
+  }
+
+  private static readonly CONCURRENCY_LIMIT = 5;
+
+  private async checkBatchSequential(
+    items: FollowItem[],
+    currentUserPubkey: string,
+    onProgress: (checked: number, total: number) => void
+  ): Promise<MutualItemWithStatus[]> {
+    const results: MutualItemWithStatus[] = new Array(items.length);
+    let checked = 0;
+
+    // Process in chunks of CONCURRENCY_LIMIT
+    for (let i = 0; i < items.length; i += MutualService.CONCURRENCY_LIMIT) {
+      const chunk = items.slice(i, i + MutualService.CONCURRENCY_LIMIT);
+
+      await Promise.all(chunk.map(async (item, j) => {
+        const isMutual = await this.checkIfMutual(item.pubkey, currentUserPubkey);
+        this.mutualStatusCache.set(item.pubkey, isMutual);
+        results[i + j] = { ...item, isMutual };
+        checked++;
+        onProgress(checked, items.length);
+      }));
+    }
 
     return results;
   }

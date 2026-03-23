@@ -1832,14 +1832,26 @@ export class FollowListManager {
   private async handleCheckForChanges(container: HTMLElement): Promise<void> {
     const checkLink = container.querySelector('.follows-check-changes__link');
     const lastCheckSpan = container.querySelector('.follows-check-changes__last-check');
+    const followsHeader = container.querySelector('.follows-header') as HTMLElement;
 
     if (checkLink) {
       checkLink.textContent = 'Checking...';
       (checkLink as HTMLElement).style.pointerEvents = 'none';
     }
 
+    // Progress bar on .follows-header
+    const progressBar = followsHeader ? new ProgressBarHelper(followsHeader) : null;
+    progressBar?.start();
+
     try {
-      const result = await this.mutualChangeDetector.detect();
+      const result = await this.mutualChangeDetector.detect((checked, total) => {
+        if (checkLink) {
+          checkLink.textContent = `Checking ${checked} of ${total} follows`;
+        }
+        if (progressBar) {
+          progressBar.update((checked / total) * 100);
+        }
+      });
 
       // Update last check text
       if (lastCheckSpan) {
@@ -1858,6 +1870,7 @@ export class FollowListManager {
       console.error('Failed to check for changes:', error);
       ToastService.show('Failed to check for changes', 'error');
     } finally {
+      progressBar?.complete();
       if (checkLink) {
         checkLink.textContent = 'Check for changes';
         (checkLink as HTMLElement).style.pointerEvents = '';
