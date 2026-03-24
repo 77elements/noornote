@@ -1192,7 +1192,7 @@ export class MainLayout {
                   <polyline points="22,6 12,13 2,6"></polyline>
                 </svg>
                 <span class="primary-nav__item-desc">Messages</span>
-                <span class="badge dm-badge" style="display: none"></span>
+                <span class="badge badge--green dm-badge" style="display: none"></span>
               </a>
             </li>
             <li>

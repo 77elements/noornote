@@ -22,6 +22,7 @@ import { NoteService } from '../NoteService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
+import { diagLog } from '../DiagnosticLogger';
 
 export interface FeedLoadRequest {
   followingPubkeys: string[];
@@ -449,6 +450,19 @@ export class FeedOrchestrator extends Orchestrator {
 
     // Filter muted users
     filteredEvents = await this.filterMutedUsers(filteredEvents, exemptFromMuteFilter);
+
+    // Filter content words (skip for ProfileView — exemptFromMuteFilter means PV)
+    if (!exemptFromMuteFilter) {
+      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } = await import('../../addons/content-word-filter/index');
+      if (isContentWordFilterEnabled()) {
+        const before = filteredEvents.length;
+        filteredEvents = filterContentWords(filteredEvents);
+        const removed = before - filteredEvents.length;
+        if (removed > 0) {
+          diagLog('system', `Word filter: removed ${removed} notes from timeline`, { words: getFilterWords() });
+        }
+      }
+    }
 
     // Sort by timestamp (newest first)
     filteredEvents.sort((a, b) => b.created_at - a.created_at);

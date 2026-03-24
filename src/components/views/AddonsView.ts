@@ -142,6 +142,32 @@ const ADDONS: AddonDef[] = [
       return settings;
     },
   },
+  {
+    id: 'wordfilter',
+    name: 'Word Filter',
+    description: 'Hide notes containing specific words from all timelines.',
+    settingsContainerId: 'content-word-filter-settings-content',
+    isEnabled: async () => {
+      const { isContentWordFilterEnabled } = await import('../../addons/content-word-filter/index');
+      return isContentWordFilterEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setContentWordFilterEnabled } = await import('../../addons/content-word-filter/index');
+      setContentWordFilterEnabled(v);
+    },
+    toggleEvent: 'content-word-filter:toggle',
+    mountSettings: async (panel) => {
+      const { ContentWordFilterSettings } = await import('../../addons/content-word-filter/ContentWordFilterSettings');
+      const settings = new ContentWordFilterSettings();
+      settings.mount(panel);
+      return settings;
+    },
+    mountContent: (contentEl) => {
+      import('../../addons/content-word-filter/ContentWordFilterSettings').then(({ mountWordFilterContent }) => {
+        mountWordFilterContent(contentEl);
+      });
+    },
+  },
 ];
 
 export class AddonsView extends View {

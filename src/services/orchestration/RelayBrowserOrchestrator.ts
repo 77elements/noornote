@@ -8,6 +8,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { diagLog } from '../DiagnosticLogger';
 
 export interface RelayBrowserResult {
   events: NostrEvent[];
@@ -103,6 +104,7 @@ export class RelayBrowserOrchestrator extends Orchestrator {
       // Sort newest first
       newEvents.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
+      // Track newest timestamp BEFORE filtering (so next poll doesn't miss events)
       const newestPolled = newEvents[0];
       if (newestPolled) {
         this.newestTimestamp = newestPolled.created_at || this.newestTimestamp;
@@ -112,6 +114,16 @@ export class RelayBrowserOrchestrator extends Orchestrator {
         );
       }
 
+      // Filter content words
+      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } = await import('../../addons/content-word-filter/index');
+      if (isContentWordFilterEnabled()) {
+        const filtered = filterContentWords(newEvents);
+        const removed = newEvents.length - filtered.length;
+        if (removed > 0) {
+          diagLog('system', `Word filter: removed ${removed} polled notes from relay browser (${this.relayUrl})`, { words: getFilterWords() });
+        }
+        return filtered;
+      }
       return newEvents;
     } catch {
       return [];
@@ -148,8 +160,16 @@ export class RelayBrowserOrchestrator extends Orchestrator {
       // Sort newest first
       unique.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
 
-      const hasMore = unique.length > this.PAGE_SIZE;
-      const toReturn = unique.slice(0, this.PAGE_SIZE);
+      // Filter content words
+      const { isContentWordFilterEnabled, filterContentWords, getFilterWords } = await import('../../addons/content-word-filter/index');
+      const filtered = isContentWordFilterEnabled() ? filterContentWords(unique) : unique;
+      const removedCount = unique.length - filtered.length;
+      if (removedCount > 0) {
+        diagLog('system', `Word filter: removed ${removedCount} notes from relay browser (${this.relayUrl})`, { words: getFilterWords() });
+      }
+
+      const hasMore = filtered.length > this.PAGE_SIZE;
+      const toReturn = filtered.slice(0, this.PAGE_SIZE);
 
       // Update oldest timestamp for next page
       const oldest = toReturn[toReturn.length - 1];
