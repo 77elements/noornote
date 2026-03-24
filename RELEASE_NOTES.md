@@ -1,10 +1,8 @@
-# NoorNote v0.6.11
+# NoorNote v0.6.12
 
-## Follow Packs
-Edit your own Follow Packs — change title, description, cover, and members. Follow Pack reactions now show correctly in notifications.
+**Add-ons Hub, Word Filter & Zapstore**
 
-## Articles
-Save article drafts and continue editing later. Drafts appear on your profile with a "Draft" badge. Unsaved changes warning protects your work. Delete articles and drafts directly.
-
-## Video & Android
-Fixed video fullscreen per platform. Fixed profile loading on Android.
+- New Add-ons Hub — all add-ons in one place with dedicated settings
+- Content Word Filter Addon — hide notes containing specific words from your timelines
+- Zapstore app listings now visible on profiles and in timelines
+- Fix YouTube embeds on Android, DM badge styling, mutual check reliability
