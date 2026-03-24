@@ -186,38 +186,89 @@ export class ProfileOrchestrator extends Orchestrator {
 
   /**
    * Fetch oldest event from user (for "Joined Nostr" date)
-   * Fetches kind:1 text notes and returns the oldest one
-   *
-   * @param pubkey - User's public key
-   * @returns Timestamp of oldest event, or null if no events found
+   * Primary: Primal Cache API (pre-computed time_joined)
+   * Fallback: Fetch from standard relays
    */
   public async fetchOldestEvent(pubkey: string): Promise<number | null> {
-    const relays = this.relayConfig.getReadRelays();
+    // Try Primal Cache first (reliable, pre-computed)
+    try {
+      const primalResult = await this.fetchTimeJoinedFromPrimal(pubkey);
+      if (primalResult) return primalResult;
+    } catch {
+      // Primal unavailable, fall through to relay fetch
+    }
 
+    // Fallback: fetch from standard relays
+    const relays = this.relayConfig.getReadRelays();
     const filters: NDKFilter[] = [{
       authors: [pubkey],
-      kinds: [1, 21, 22], // Text notes + videos
-      since: 0,   // From epoch
-      limit: 5000 // Should cover 99% of users (Nostr started late 2022)
+      kinds: [1, 21, 22],
+      since: 0,
+      limit: 5000
     }];
 
     try {
       const events = await this.transport.fetch(relays, filters, 8000, false, 'ProfileOrch');
+      if (events.length === 0) return null;
 
-      if (events.length === 0) {
-        return null;
-      }
-
-      // Find event with smallest created_at timestamp
       const oldest = events.reduce((min, event) =>
         event.created_at < min.created_at ? event : min
       );
-
       return oldest.created_at;
     } catch (error) {
       this.systemLogger.error('ProfileOrchestrator', `Fetch oldest event failed for ${pubkey.slice(0, 8)}: ${error}`);
       return null;
     }
+  }
+
+  /**
+   * Query Primal Cache API for pre-computed time_joined.
+   * Returns the timestamp of the user's earliest known event.
+   */
+  private fetchTimeJoinedFromPrimal(pubkey: string): Promise<number | null> {
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        ws.close();
+        resolve(null);
+      }, 5000);
+
+      let ws: WebSocket;
+      try {
+        ws = new WebSocket('wss://cache2.primal.net/v1');
+      } catch {
+        clearTimeout(timeout);
+        resolve(null);
+        return;
+      }
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify(['REQ', 'joined', { cache: ['user_profile', { pubkey }] }]));
+      };
+
+      ws.onmessage = (msg) => {
+        try {
+          const data = JSON.parse(msg.data);
+          // Look for kind 10000105 (USER_PROFILE_INFO) which contains time_joined
+          if (Array.isArray(data) && data[2]?.kind === 10000105) {
+            const content = JSON.parse(data[2].content);
+            if (content.time_joined && content.time_joined > 0) {
+              clearTimeout(timeout);
+              ws.close();
+              resolve(content.time_joined);
+              return;
+            }
+          }
+        } catch {
+          // Parse error, continue listening
+        }
+      };
+
+      ws.onerror = () => {
+        clearTimeout(timeout);
+        ws.close();
+        resolve(null);
+      };
+    });
   }
 
   /**

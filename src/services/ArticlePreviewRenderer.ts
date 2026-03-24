@@ -1,7 +1,7 @@
 /**
  * ArticlePreviewRenderer Service
- * Single responsibility: Render long-form article previews (NIP-23)
- * Used by NoteUI and SingleNoteView when encountering naddr references
+ * Renders preview cards for addressable events (NIP-23 articles, Zapstore apps, etc.)
+ * Used by QuoteRenderer and OriginalNoteRenderer when encountering naddr references
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -24,7 +24,7 @@ export class ArticlePreviewRenderer {
   }
 
   /**
-   * Render article preview card (NON-BLOCKING)
+   * Render addressable event preview card (NON-BLOCKING)
    * Creates skeleton immediately, fetches in background
    */
   public renderArticlePreview(naddrRef: string, container: Element): void {
@@ -32,51 +32,52 @@ export class ArticlePreviewRenderer {
     skeleton.dataset.naddrRef = naddrRef;
     container.appendChild(skeleton);
 
-    // Fetch article in background
-    this.fetchAndRenderArticle(naddrRef, skeleton);
+    this.fetchAndRender(naddrRef, skeleton);
   }
 
-  /**
-   * Fetch article and update DOM when ready (background task)
-   */
-  private async fetchAndRenderArticle(naddrRef: string, skeleton: HTMLElement): Promise<void> {
+  private async fetchAndRender(naddrRef: string, skeleton: HTMLElement): Promise<void> {
     try {
       const event = await this.orchestrator.fetchAddressableEvent(naddrRef);
 
       if (event) {
-        const previewCard = this.createArticlePreviewCard(event, naddrRef);
+        const previewCard = this.createPreviewCard(event, naddrRef);
         skeleton.replaceWith(previewCard);
       } else {
         const errorElement = this.createArticleError();
         skeleton.replaceWith(errorElement);
       }
     } catch (error) {
-      console.error('❌ Article fetch failed:', error);
+      console.debug('Addressable event fetch failed:', error);
       skeleton.remove();
     }
   }
 
+  private createPreviewCard(event: NostrEvent, naddrRef: string): HTMLElement {
+    if (event.kind === 32267) {
+      return this.createZapstorePreviewCard(event, naddrRef);
+    }
+    return this.createArticlePreviewCard(event, naddrRef);
+  }
+
   /**
-   * Create article preview card with horizontal layout
-   * Layout: [Image] [Title + Summary]
+   * Article preview card (kind 30023)
    */
   private createArticlePreviewCard(event: NostrEvent, naddrRef: string): HTMLElement {
     const metadata = LongFormOrchestrator.extractArticleMetadata(event);
 
     const card = document.createElement('div');
     card.className = 'article-preview-card';
-
-    // Make entire card clickable
     card.style.cursor = 'pointer';
     card.addEventListener('click', (e) => {
       e.stopPropagation();
-      this.navigateToArticle(naddrRef);
+      const cleanNaddr = naddrRef.replace(/^nostr:/, '');
+      Router.getInstance().navigate(`/article/${cleanNaddr}`);
     });
 
     card.innerHTML = `
       ${metadata.image ? `
         <div class="article-preview-image">
-          <img src="${metadata.image}" alt="${metadata.title}" loading="lazy" />
+          <img src="${metadata.image}" alt="${this.escapeHtml(metadata.title)}" loading="lazy" />
         </div>
       ` : ''}
       <div class="article-preview-content">
@@ -89,18 +90,39 @@ export class ArticlePreviewRenderer {
   }
 
   /**
-   * Navigate to article view
+   * Zapstore app preview card (kind 32267)
    */
-  private navigateToArticle(naddrRef: string): void {
-    // Remove nostr: prefix for URL
-    const cleanNaddr = naddrRef.replace(/^nostr:/, '');
-    const router = Router.getInstance();
-    router.navigate(`/article/${cleanNaddr}`);
+  private createZapstorePreviewCard(event: NostrEvent, naddrRef: string): HTMLElement {
+    const tags = event.tags;
+    const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
+    const name = getTag('name') || 'Untitled App';
+    const summary = getTag('summary');
+    const icon = getTag('icon');
+
+    const card = document.createElement('div');
+    card.className = 'article-preview-card';
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const cleanNaddr = naddrRef.replace(/^nostr:/, '');
+      Router.getInstance().navigate(`/zapstore/${cleanNaddr}`);
+    });
+
+    card.innerHTML = `
+      ${icon ? `
+        <div class="article-preview-image" style="display: flex; align-items: center; justify-content: center; padding: calc(var(--gap, 1rem) / 2); background: transparent;">
+          <img src="${icon}" alt="${this.escapeHtml(name)}" loading="lazy" style="width: 64px; height: 64px; border-radius: 8px; object-fit: contain;" />
+        </div>
+      ` : ''}
+      <div class="article-preview-content">
+        <h3 class="article-preview-title">${this.escapeHtml(name)}</h3>
+        ${summary ? `<p class="article-preview-summary">${this.escapeHtml(summary)}</p>` : ''}
+      </div>
+    `;
+
+    return card;
   }
 
-  /**
-   * Create error element for failed article fetch
-   */
   private createArticleError(): HTMLElement {
     const errorDiv = document.createElement('div');
     errorDiv.className = 'article-preview-error';
@@ -113,13 +135,9 @@ export class ArticlePreviewRenderer {
     return errorDiv;
   }
 
-  /**
-   * Create skeleton loader for article preview during fetch
-   */
   private createArticleSkeleton(): HTMLElement {
     const skeleton = document.createElement('div');
     skeleton.className = 'article-preview-skeleton';
-
     skeleton.innerHTML = `
       <div class="skeleton-image"></div>
       <div class="skeleton-content">
@@ -128,13 +146,9 @@ export class ArticlePreviewRenderer {
         <div class="skeleton-line skeleton-summary short"></div>
       </div>
     `;
-
     return skeleton;
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
   private escapeHtml(text: string): string {
     const div = document.createElement('div');
     div.textContent = text;
