@@ -201,7 +201,8 @@ export class RelayConfig {
       'wss://nos.lol',
       'wss://relay.primal.net',
       'wss://purplepag.es',
-      'wss://relay.mostr.pub'
+      'wss://relay.mostr.pub',
+      'wss://relay.zapstore.dev'
     ];
   }
 
