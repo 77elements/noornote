@@ -1,9 +1,8 @@
 /**
  * Render simple quote preview for PostNoteModal
- * Single purpose: Fetch and render quoted note as 3-line truncated preview
- * NO dependency on QuotedNoteRenderer to avoid circular dependency
+ * Single purpose: Fetch and render quoted note/article as truncated preview
  *
- * @param nostrRef - nostr:nevent reference
+ * @param nostrRef - nostr:nevent or nostr:naddr reference
  * @returns Promise<HTMLElement> - Quote preview element
  */
 
@@ -18,56 +17,110 @@ export async function renderQuotePreview(nostrRef: string): Promise<HTMLElement>
   container.innerHTML = '<div class="quote-preview__loading">Loading quoted note...</div>';
 
   try {
-    // Extract event ID from nevent
     const cleanRef = nostrRef.replace(/^nostr:/, '');
     const decoded = decodeNip19(cleanRef);
 
-    if (decoded.type !== 'nevent') {
-      throw new Error('Invalid nevent reference');
+    if (decoded.type === 'naddr') {
+      return await renderNaddrPreview(container, decoded.data as NaddrData);
     }
 
-    const neventData = decoded.data as { id: string; author?: string; relays?: string[] };
-
-    // Fetch event - use read relays AND nevent hints
-    const transport = NostrTransport.getInstance();
-    const readRelays = transport.getReadRelays();
-    const neventRelays = neventData.relays || [];
-
-    // Combine both relay sources (read relays first, then nevent hints)
-    const allRelays = [...new Set([...readRelays, ...neventRelays])];
-
-    const events = await transport.fetch(allRelays, [{ ids: [neventData.id], limit: 1 }], 5000, false, 'renderQuotePreview');
-
-    const event = events[0];
-    if (!event) {
-      container.innerHTML = '<div class="quote-preview__error">Quoted note not found</div>';
-      return container;
+    if (decoded.type === 'nevent') {
+      return await renderNeventPreview(container, decoded.data as NeventData);
     }
 
-    // Fetch author profile
-    const profileService = UserProfileService.getInstance();
-    const profile = await profileService.getUserProfile(event.pubkey);
-    const authorName = profile?.name || profile?.display_name || 'Anonymous';
-
-    // Truncate content to 3 lines
-    const content = event.content;
-    const lines = content.split('\n');
-    const truncated = lines.slice(0, 3).join('\n');
-    const isTruncated = lines.length > 3 || truncated.length > 200;
-    const displayContent = isTruncated ? truncated.slice(0, 200) + '...' : truncated;
-
-    // Render quote preview
-    container.innerHTML = `
-      <div class="quote-preview__header">
-        <span class="quote-preview__author">${escapeHtml(authorName)}</span>
-      </div>
-      <div class="quote-preview__content">${escapeHtml(displayContent)}</div>
-    `;
-
-    return container;
+    throw new Error(`Unsupported reference type: ${decoded.type}`);
   } catch (error) {
-    console.error('Failed to render quote preview:', error);
+    console.debug('Failed to render quote preview:', error);
     container.innerHTML = '<div class="quote-preview__error">Failed to load quoted note</div>';
     return container;
   }
+}
+
+interface NeventData {
+  id: string;
+  author?: string;
+  relays?: string[];
+}
+
+interface NaddrData {
+  kind: number;
+  pubkey: string;
+  identifier: string;
+  relays?: string[];
+}
+
+async function renderNeventPreview(container: HTMLElement, data: NeventData): Promise<HTMLElement> {
+  const transport = NostrTransport.getInstance();
+  const readRelays = transport.getReadRelays();
+  const hintRelays = data.relays || [];
+  const allRelays = [...new Set([...readRelays, ...hintRelays])];
+
+  const events = await transport.fetch(allRelays, [{ ids: [data.id], limit: 1 }], 5000, false, 'renderQuotePreview');
+
+  const event = events[0];
+  if (!event) {
+    container.innerHTML = '<div class="quote-preview__error">Quoted note not found</div>';
+    return container;
+  }
+
+  const authorName = await getAuthorName(event.pubkey);
+  const displayContent = truncateContent(event.content);
+
+  container.innerHTML = `
+    <div class="quote-preview__header">
+      <span class="quote-preview__author">${escapeHtml(authorName)}</span>
+    </div>
+    <div class="quote-preview__content">${escapeHtml(displayContent)}</div>
+  `;
+  return container;
+}
+
+async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Promise<HTMLElement> {
+  const transport = NostrTransport.getInstance();
+  const readRelays = transport.getReadRelays();
+  const hintRelays = data.relays || [];
+  const allRelays = [...new Set([...readRelays, ...hintRelays])];
+
+  const events = await transport.fetch(
+    allRelays,
+    [{ kinds: [data.kind], authors: [data.pubkey], '#d': [data.identifier], limit: 1 }],
+    5000,
+    false,
+    'renderQuotePreview'
+  );
+
+  const event = events[0];
+  if (!event) {
+    container.innerHTML = '<div class="quote-preview__error">Quoted note not found</div>';
+    return container;
+  }
+
+  const authorName = await getAuthorName(event.pubkey);
+  const title = event.tags.find(t => t[0] === 'title')?.[1]
+    || event.tags.find(t => t[0] === 'name')?.[1]
+    || '';
+  const summary = event.tags.find(t => t[0] === 'summary')?.[1] || '';
+  const displayContent = title
+    ? (summary ? `${title}\n${summary}` : title)
+    : truncateContent(event.content);
+
+  container.innerHTML = `
+    <div class="quote-preview__header">
+      <span class="quote-preview__author">${escapeHtml(authorName)}</span>
+    </div>
+    <div class="quote-preview__content">${escapeHtml(truncateContent(displayContent))}</div>
+  `;
+  return container;
+}
+
+async function getAuthorName(pubkey: string): Promise<string> {
+  const profile = await UserProfileService.getInstance().getUserProfile(pubkey);
+  return profile?.name || profile?.display_name || 'Anonymous';
+}
+
+function truncateContent(content: string): string {
+  const lines = content.split('\n');
+  const truncated = lines.slice(0, 3).join('\n');
+  const isTruncated = lines.length > 3 || truncated.length > 200;
+  return isTruncated ? truncated.slice(0, 200) + '...' : truncated;
 }
