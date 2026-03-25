@@ -15,6 +15,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { isNostrInEnabled } from '../addons/nostrin/index';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
 import { AuthService } from '../services/AuthService';
@@ -3118,7 +3119,7 @@ export class BookmarkManager {
       },
       onDragStart: (_folderId) => {},
       onDragEnd: () => {},
-      showMountCheckbox: isLoggedIn,
+      showMountCheckbox: isLoggedIn && isNostrInEnabled(),
       onMountToggle: (_folderId, folderName) => this.handleMountToggle(folderName)
     });
 

@@ -206,8 +206,11 @@ export class AutoSyncService {
 
       // Sync profile mounts from relays (startup only, not periodic)
       try {
-        const { ProfileMountsOrchestrator } = await import('./orchestration/ProfileMountsOrchestrator');
-        await ProfileMountsOrchestrator.getInstance().syncFromRelays();
+        const { isNostrInEnabled } = await import('../addons/nostrin/index');
+        if (isNostrInEnabled()) {
+          const { ProfileMountsOrchestrator } = await import('./orchestration/ProfileMountsOrchestrator');
+          await ProfileMountsOrchestrator.getInstance().syncFromRelays();
+        }
       } catch {
         // Profile mounts sync failed silently
       }

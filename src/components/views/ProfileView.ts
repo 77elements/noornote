@@ -1113,11 +1113,18 @@ export class ProfileView extends View {
    * Load profile lists (mounted bookmark folders)
    */
   private async loadProfileLists(): Promise<void> {
-    const profileHeader = this.container.querySelector('.profile-nip01');
-    if (!profileHeader) return;
+    const currentUser = this.authService.getCurrentUser();
+    const isOwnProfile = currentUser?.pubkey === this.pubkey;
+    if (isOwnProfile) {
+      const { isNostrInEnabled } = await import('../../addons/nostrin/index');
+      if (!isNostrInEnabled()) return;
+    }
+
+    const profileNip01 = this.container.querySelector('.profile-nip01');
+    if (!profileNip01) return;
 
     this.profileListsComponent = new ProfileListsComponent(this.pubkey);
-    await this.profileListsComponent.render(profileHeader);
+    await this.profileListsComponent.render(profileNip01);
   }
 
   /**

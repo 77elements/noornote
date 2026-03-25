@@ -103,6 +103,27 @@ const ADDONS: AddonDef[] = [
     },
   },
   {
+    id: 'nostrin',
+    name: 'NostrIn',
+    description: 'Professional identity on Nostr — portfolio, skills, reputation.',
+    settingsContainerId: 'nostrin-settings-content',
+    isEnabled: async () => {
+      const { isNostrInEnabled } = await import('../../addons/nostrin/index');
+      return isNostrInEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setNostrInEnabled } = await import('../../addons/nostrin/index');
+      setNostrInEnabled(v);
+    },
+    toggleEvent: 'nostrin:toggle',
+    mountSettings: async (panel) => {
+      const { NostrInSettings } = await import('../../addons/nostrin/NostrInSettings');
+      const settings = new NostrInSettings();
+      settings.mount(panel);
+      return settings;
+    },
+  },
+  {
     id: 'hashtag-subscriptions',
     name: 'Hashtag Subscriptions',
     description: 'Subscribe to hashtags and get notified when new posts are published.',
