@@ -504,7 +504,7 @@ export class ProfileView extends View {
     const shortNpub = `${this.npub.slice(0, 12)}...${this.npub.slice(-6)}`;
 
     const headerHTML = `
-      <div class="profile-header">
+      <div class="profile-nip01">
         ${banner ? `
           <div class="profile-banner" style="background-image: url('${this.escapeHtml(banner)}')"></div>
         ` : `
@@ -574,14 +574,14 @@ export class ProfileView extends View {
           </div>
         </div>
 
-        <div class="profile-lists-mount"></div>
       </div>
 
       <div class="profile-articles-mount"></div>
       <div class="profile-videos-mount"></div>
       <div class="profile-zapstore-mount"></div>
-      <h2 class="nn-scroll-carousel__title">Notes</h2>
-      <div class="profile-timeline-container"></div>
+      <div class="profile-timeline">
+        <h2 class="profile-timeline-heading">Notes</h2>
+      </div>
     `;
 
     // Only use innerHTML on first render to avoid destroying mounted timeline
@@ -1048,7 +1048,7 @@ export class ProfileView extends View {
    * Mount timeline with author filter
    */
   private async mountTimeline(): Promise<void> {
-    const timelineContainer = this.container.querySelector('.profile-timeline-container');
+    const timelineContainer = this.container.querySelector('.profile-timeline');
     if (!timelineContainer) {
       console.error('❌ PV: Timeline container not found');
       return;
@@ -1113,13 +1113,18 @@ export class ProfileView extends View {
    * Load profile lists (mounted bookmark folders)
    */
   private async loadProfileLists(): Promise<void> {
-    const listsMount = this.container.querySelector('.profile-lists-mount');
-    if (!listsMount) return;
+    const currentUser = this.authService.getCurrentUser();
+    const isOwnProfile = currentUser?.pubkey === this.pubkey;
+    if (isOwnProfile) {
+      const { isNostrInEnabled } = await import('../../addons/nostrin/index');
+      if (!isNostrInEnabled()) return;
+    }
 
-    // Create and render profile lists component
+    const profileNip01 = this.container.querySelector('.profile-nip01');
+    if (!profileNip01) return;
+
     this.profileListsComponent = new ProfileListsComponent(this.pubkey);
-    const element = await this.profileListsComponent.render();
-    listsMount.appendChild(element);
+    await this.profileListsComponent.render(profileNip01);
   }
 
   /**

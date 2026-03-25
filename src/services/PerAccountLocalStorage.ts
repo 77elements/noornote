@@ -83,6 +83,7 @@ export const StorageKeys = {
   HASHTAG_SUBSCRIPTIONS_ENABLED: 'noornote_hashtag_subscriptions_enabled_map',
   PROFILE_RECOGNITION_WINDOW: 'noornote_profile_recognition_window_map',
   LIST_SETTINGS_ENABLED: 'noornote_list_settings_enabled_map',
+  NOSTRIN_ENABLED: 'noornote_nostrin_enabled_map',
   CONTENT_WORD_FILTER_ENABLED: 'noornote_content_word_filter_enabled_map',
   CONTENT_WORD_FILTER_WORDS: 'noornote_content_word_filter_words_map',
 

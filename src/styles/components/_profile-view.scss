@@ -9,7 +9,7 @@
 @use '../base/icons' as *;
 
 // Profile Header Section
-.profile-header {
+.profile-nip01 {
   position: relative;
   margin: 0;
 }
@@ -91,7 +91,7 @@
 }
 
 .profile-meta {
-  padding: $gap 0;
+  padding: 0;
 }
 
 .profile-name {
@@ -291,6 +291,7 @@
   margin: 0;
   padding: calc($gap / 2) 0;
   border-top: 1px solid var(--color-2);
+  border-bottom: 1px solid var(--color-2);
 }
 
 // Stat item (standalone)
@@ -435,29 +436,21 @@
 }
 
 // Profile Timeline Container
-.profile-timeline-container {
-  // TimelineUI component mounts here
-  // All timeline styles inherited from _timeline.scss
+.profile-timeline {
+  border-top: 1px solid var(--color-2);
+  padding-top: calc($gap / 2);
+}
+
+.profile-timeline-heading {
+  margin-bottom: 0;
 }
 
 // =========================================
 // Profile Lists (Mounted Bookmark Folders)
 // =========================================
 
-.profile-lists {
-  padding: $gap 0;
-  border-top: 1px solid var(--color-2);
-
-  &__loading {
-    padding: $gap;
-    color: var(--color-3);
-    @extend %small;
-    text-align: center;
-  }
-}
-
-.profile-list-section {
-  margin-bottom: $gap * 1.5;
+.profile-lists-mount {
+  padding-top: $gap;
   transition: transform 0.15s ease, opacity 0.15s ease;
 
   &.dragging {
@@ -512,7 +505,7 @@
   }
 }
 
-.profile-list-section:hover .profile-list-drag-handle {
+.profile-lists-mount:hover .profile-list-drag-handle {
   opacity: 1;
 }
 

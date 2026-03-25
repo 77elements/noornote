@@ -21,7 +21,7 @@ import {
 } from '../../lists/bookmarks';
 import { AuthService } from '../../services/AuthService';
 
-const MAX_ITEMS_COLLAPSED = 5;
+const MAX_ITEMS_COLLAPSED = 3;
 
 interface ProfileListData {
   folderName: string;
@@ -30,7 +30,6 @@ interface ProfileListData {
 }
 
 export class ProfileListsComponent {
-  private container: HTMLElement;
   private pubkey: string;
   private isOwnProfile: boolean;
   private profileMountsService: ProfileMountsService;
@@ -40,11 +39,11 @@ export class ProfileListsComponent {
   private authService: AuthService;
 
   private lists: ProfileListData[] = [];
+  private elements: HTMLElement[] = [];
+  private insertAfterEl: Element | null = null;
 
   constructor(pubkey: string) {
     this.pubkey = pubkey;
-    this.container = document.createElement('div');
-    // Note: 'profile-lists' class added in render() only if folders exist
 
     this.profileMountsService = ProfileMountsService.getInstance();
     this.profileMountsOrch = ProfileMountsOrchestrator.getInstance();
@@ -52,50 +51,43 @@ export class ProfileListsComponent {
     this.folderService = getBookmarkFolderService();
     this.authService = AuthService.getInstance();
 
-    // Check if viewing own profile
     const currentUser = this.authService.getCurrentUser();
     this.isOwnProfile = currentUser?.pubkey === pubkey;
   }
 
   /**
-   * Load and render profile lists
+   * Render mounted lists into the DOM after the given element
    */
-  public async render(): Promise<HTMLElement> {
-    this.container.innerHTML = '<div class="profile-lists__loading">Loading lists...</div>';
+  public async render(insertAfter: Element): Promise<void> {
+    this.insertAfterEl = insertAfter;
 
     try {
-      // Get mounted folder names
       let mountedFolders: string[];
 
       if (this.isOwnProfile) {
-        // Own profile: read from localStorage
         mountedFolders = this.profileMountsService.getMounts();
+
+        // Sync from relays to catch mounts set on other instances
+        try {
+          const relayMounts = await this.profileMountsOrch.fetchFromRelays(this.pubkey, true);
+          if (relayMounts.length > 0 && JSON.stringify(relayMounts) !== JSON.stringify(mountedFolders)) {
+            this.profileMountsService.setMountsFromRelay(relayMounts);
+            mountedFolders = relayMounts;
+          }
+        } catch {
+          // Relay fetch failed, use local mounts
+        }
       } else {
-        // Other profile: fetch from relays
         mountedFolders = await this.profileMountsOrch.fetchFromRelays(this.pubkey, true);
       }
 
-      if (mountedFolders.length === 0) {
-        this.container.innerHTML = '';
-        this.container.className = '';
-        return this.container;
-      }
+      if (mountedFolders.length === 0) return;
 
-      // Add class now that we know folders exist
-      this.container.className = 'profile-lists';
-
-      // Fetch bookmark items for each folder
       await this.loadListItems(mountedFolders);
-
-      // Render lists
       this.renderLists();
     } catch (error) {
       console.error('Failed to load profile lists:', error);
-      this.container.innerHTML = '';
-      this.container.className = '';
     }
-
-    return this.container;
   }
 
   /**
@@ -105,50 +97,35 @@ export class ProfileListsComponent {
     this.lists = [];
 
     if (this.isOwnProfile) {
-      // Own profile: read from localStorage with correct folder order
       const allItems = this.bookmarkOrch.getBrowserItems();
       const folders = this.folderService.getFolders();
 
       for (const folderName of folderNames) {
-        // Find folder by name to get its ID
         const folder = folders.find(f => f.name === folderName);
 
         if (folder) {
-          // Get ordered bookmark IDs from folder service
           const orderedIds = this.folderService.getBookmarksInFolder(folder.id);
-
-          // Map to actual items, maintaining order
           const folderItems = orderedIds
             .map(id => allItems.find(item => item.id === id))
             .filter((item): item is BookmarkItem => item !== undefined && !item.isPrivate);
 
           if (folderItems.length > 0) {
-            this.lists.push({
-              folderName,
-              items: folderItems,
-              isExpanded: false
-            });
+            this.lists.push({ folderName, items: folderItems, isExpanded: false });
           }
         }
       }
     } else {
-      // Other profile: fetch bookmarks from relays
       try {
         const fetchResult = await this.bookmarkOrch.fetchBookmarksFromRelays(this.pubkey);
 
         for (const folderName of folderNames) {
-          // Find items in this category
           const folderItems = fetchResult.items.filter(item => {
             const itemCategory = fetchResult.categoryAssignments?.get(item.id) || '';
             return itemCategory === folderName && !item.isPrivate;
           });
 
           if (folderItems.length > 0) {
-            this.lists.push({
-              folderName,
-              items: folderItems,
-              isExpanded: false
-            });
+            this.lists.push({ folderName, items: folderItems, isExpanded: false });
           }
         }
       } catch (error) {
@@ -158,55 +135,61 @@ export class ProfileListsComponent {
   }
 
   /**
-   * Render all lists
+   * Render all lists as individual .profile-lists-mount elements
    */
   private renderLists(): void {
-    if (this.lists.length === 0) {
-      this.container.innerHTML = '';
-      return;
-    }
+    // Remove previous elements
+    this.elements.forEach(el => el.remove());
+    this.elements = [];
 
-    this.container.innerHTML = this.lists.map((list, index) =>
-      this.renderList(list, index)
-    ).join('');
+    if (this.lists.length === 0 || !this.insertAfterEl) return;
+
+    let insertAfter = this.insertAfterEl;
+    for (let i = 0; i < this.lists.length; i++) {
+      const el = document.createElement('div');
+      el.className = 'profile-lists-mount';
+      el.dataset.listIndex = String(i);
+      el.innerHTML = this.renderListInner(this.lists[i]!, i);
+      insertAfter.after(el);
+      this.elements.push(el);
+      insertAfter = el;
+    }
 
     this.bindEvents();
   }
 
   /**
-   * Render a single list
+   * Render inner HTML for a single list
    */
-  private renderList(list: ProfileListData, index: number): string {
+  private renderListInner(list: ProfileListData, index: number): string {
     const { folderName, items, isExpanded } = list;
     const visibleItems = isExpanded ? items : items.slice(0, MAX_ITEMS_COLLAPSED);
     const hasMore = items.length > MAX_ITEMS_COLLAPSED;
 
     return `
-      <div class="profile-list-section" data-list-index="${index}">
-        <div class="profile-list-header">
-          <h3 class="profile-list-title">${this.escapeHtml(folderName)}</h3>
-          ${this.isOwnProfile ? `
-            <button class="profile-list-drag-handle" title="Drag to reorder">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-                <circle cx="3" cy="2" r="1.5"/>
-                <circle cx="9" cy="2" r="1.5"/>
-                <circle cx="3" cy="6" r="1.5"/>
-                <circle cx="9" cy="6" r="1.5"/>
-                <circle cx="3" cy="10" r="1.5"/>
-                <circle cx="9" cy="10" r="1.5"/>
-              </svg>
-            </button>
-          ` : ''}
-        </div>
-        <div class="profile-list-items">
-          ${visibleItems.map(item => this.renderItem(item)).join('')}
-        </div>
-        ${hasMore ? `
-          <button class="profile-list-toggle" data-list-index="${index}">
-            ${isExpanded ? 'Show less' : `Show more (${items.length - MAX_ITEMS_COLLAPSED})`}
+      <div class="profile-list-header">
+        <h2 class="profile-list-title">${this.escapeHtml(folderName)}</h2>
+        ${this.isOwnProfile ? `
+          <button class="profile-list-drag-handle" title="Drag to reorder">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+              <circle cx="3" cy="2" r="1.5"/>
+              <circle cx="9" cy="2" r="1.5"/>
+              <circle cx="3" cy="6" r="1.5"/>
+              <circle cx="9" cy="6" r="1.5"/>
+              <circle cx="3" cy="10" r="1.5"/>
+              <circle cx="9" cy="10" r="1.5"/>
+            </svg>
           </button>
         ` : ''}
       </div>
+      <div class="profile-list-items">
+        ${visibleItems.map(item => this.renderItem(item)).join('')}
+      </div>
+      ${hasMore ? `
+        <button class="profile-list-toggle" data-list-index="${index}">
+          ${isExpanded ? 'Show less' : `Show more (${items.length - MAX_ITEMS_COLLAPSED})`}
+        </button>
+      ` : ''}
     `;
   }
 
@@ -215,7 +198,6 @@ export class ProfileListsComponent {
    */
   private renderItem(item: BookmarkItem): string {
     if (item.type === 'r') {
-      // URL bookmark
       const url = item.value || item.id;
       const description = item.description || '';
 
@@ -244,7 +226,6 @@ export class ProfileListsComponent {
         </div>
       `;
     } else if (item.type === 'e') {
-      // Event reference - show truncated ID
       return `
         <div class="profile-list-item profile-list-item--note">
           <span class="profile-list-item__icon">
@@ -258,7 +239,6 @@ export class ProfileListsComponent {
         </div>
       `;
     } else {
-      // Other types
       return `
         <div class="profile-list-item">
           <span class="profile-list-item__icon">•</span>
@@ -274,15 +254,15 @@ export class ProfileListsComponent {
    * Bind event listeners
    */
   private bindEvents(): void {
-    // Toggle show more/less
-    this.container.querySelectorAll('.profile-list-toggle').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const index = parseInt((e.target as HTMLElement).dataset.listIndex || '0');
-        this.toggleListExpansion(index);
+    for (const el of this.elements) {
+      el.querySelectorAll('.profile-list-toggle').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const index = parseInt((e.target as HTMLElement).dataset.listIndex || '0');
+          this.toggleListExpansion(index);
+        });
       });
-    });
+    }
 
-    // Drag & drop for reordering (own profile only)
     if (this.isOwnProfile) {
       this.setupDragDrop();
     }
@@ -302,19 +282,18 @@ export class ProfileListsComponent {
    * Setup drag & drop for reordering
    */
   private setupDragDrop(): void {
-    const sections = this.container.querySelectorAll('.profile-list-section');
     let draggedSection: HTMLElement | null = null;
     let startY = 0;
     let startIndex = 0;
 
-    sections.forEach((section) => {
+    for (const section of this.elements) {
       const handle = section.querySelector('.profile-list-drag-handle');
-      if (!handle) return;
+      if (!handle) continue;
 
       handle.addEventListener('mousedown', (_e: Event) => {
         const mouseEvent = _e as MouseEvent;
         mouseEvent.preventDefault();
-        draggedSection = section as HTMLElement;
+        draggedSection = section;
         startY = mouseEvent.clientY;
         startIndex = parseInt(draggedSection.dataset.listIndex || '0');
 
@@ -322,7 +301,7 @@ export class ProfileListsComponent {
         document.addEventListener('mousemove', onMouseMove);
         document.addEventListener('mouseup', onMouseUp);
       });
-    });
+    }
 
     const onMouseMove = (e: MouseEvent) => {
       if (!draggedSection) return;
@@ -330,9 +309,8 @@ export class ProfileListsComponent {
       const deltaY = e.clientY - startY;
       draggedSection.style.transform = `translateY(${deltaY}px)`;
 
-      // Find drop target
-      sections.forEach((section, _index) => {
-        if (section === draggedSection) return;
+      for (const section of this.elements) {
+        if (section === draggedSection) continue;
         const rect = section.getBoundingClientRect();
         const midY = rect.top + rect.height / 2;
 
@@ -343,18 +321,17 @@ export class ProfileListsComponent {
         } else {
           section.classList.remove('drop-above', 'drop-below');
         }
-      });
+      }
     };
 
-    const onMouseUp = (_e: MouseEvent) => {
+    const onMouseUp = () => {
       document.removeEventListener('mousemove', onMouseMove);
       document.removeEventListener('mouseup', onMouseUp);
 
       if (!draggedSection) return;
 
-      // Find new position
       let newIndex = startIndex;
-      sections.forEach((section, index) => {
+      this.elements.forEach((section, index) => {
         if (section.classList.contains('drop-above')) {
           newIndex = index;
         } else if (section.classList.contains('drop-below')) {
@@ -366,7 +343,6 @@ export class ProfileListsComponent {
       draggedSection.classList.remove('dragging');
       draggedSection.style.transform = '';
 
-      // Reorder if position changed
       if (newIndex !== startIndex) {
         this.reorderList(startIndex, newIndex);
       }
@@ -379,21 +355,17 @@ export class ProfileListsComponent {
    * Reorder list and save
    */
   private reorderList(fromIndex: number, toIndex: number): void {
-    // Reorder in local array
     const [moved] = this.lists.splice(fromIndex, 1);
     if (!moved) return;
     this.lists.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, moved);
 
-    // Update service
     const newOrder = this.lists.map(l => l.folderName);
     this.profileMountsService.reorderMounts(newOrder);
 
-    // Publish to relays (async)
     this.profileMountsOrch.publishToRelays().catch(err => {
       console.error('Failed to publish reordered mounts:', err);
     });
 
-    // Re-render
     this.renderLists();
   }
 
@@ -407,16 +379,10 @@ export class ProfileListsComponent {
   }
 
   /**
-   * Get container element
-   */
-  public getElement(): HTMLElement {
-    return this.container;
-  }
-
-  /**
    * Cleanup
    */
   public destroy(): void {
-    this.container.remove();
+    this.elements.forEach(el => el.remove());
+    this.elements = [];
   }
 }

@@ -36,10 +36,20 @@ export function parseFollowPackEvent(event: NostrEvent): FollowPack {
   };
 }
 
+/**
+ * Manually curated blacklist of packs to hide.
+ * Key format: `authorPubkey:d-tag` (stable across updates)
+ */
+const BLACKLISTED_PACKS = new Set<string>([
+  '7c43cf89d4fce44812d76def0377bc1b3f02756b27ab5207f0ba2dbe8718e4ae:cphk7xlq93m5', // boobstr
+]);
+
 export function filterFollowPacks(packs: FollowPack[]): FollowPack[] {
   const filtered = packs.filter(pack => {
     const title = pack.title.toLowerCase();
-    return !title.includes('spam') && pack.userPubkeys.length > 0 && pack.title.length > 0;
+    if (title.includes('spam') || pack.userPubkeys.length === 0 || pack.title.length === 0) return false;
+    if (BLACKLISTED_PACKS.has(`${pack.authorPubkey}:${pack.id}`)) return false;
+    return true;
   });
 
   // Deduplicate by title + author + member count
