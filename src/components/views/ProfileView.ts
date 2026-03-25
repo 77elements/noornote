@@ -42,6 +42,7 @@ import { CustomDropdown } from '../ui/CustomDropdown';
 import { ToastService } from '../../services/ToastService';
 import * as tribes from '../../lists/tribes';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
+import { diagLog } from '../../services/DiagnosticLogger';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
@@ -1151,16 +1152,27 @@ export class ProfileView extends View {
    */
   private async loadZapstoreApps(): Promise<void> {
     const mount = this.container.querySelector('.profile-zapstore-mount');
-    if (!mount) return;
+    if (!mount) {
+      diagLog('system', 'ZapstoreApps: mount element not found', { pubkey: this.pubkey.slice(0, 8) });
+      return;
+    }
 
     try {
       const { NostrTransport } = await import('../../services/transport/NostrTransport');
       const transport = NostrTransport.getInstance();
+
+      diagLog('system', 'ZapstoreApps: fetching', { pubkey: this.pubkey.slice(0, 8) });
+
       const events = await transport.fetch(
         ['wss://relay.zapstore.dev'],
         [{ kinds: [32267 as any], authors: [this.pubkey], limit: 10 }],
         8000, false, 'ZapstoreApps'
       );
+
+      diagLog('system', `ZapstoreApps: fetch result`, {
+        pubkey: this.pubkey.slice(0, 8),
+        eventCount: events.length,
+      });
 
       if (events.length === 0) return;
 
@@ -1198,8 +1210,11 @@ export class ProfileView extends View {
           if (route) Router.getInstance().navigate(route);
         });
       });
-    } catch {
-      // Silently fail — Zapstore relay might be unreachable
+    } catch (error) {
+      diagLog('system', 'ZapstoreApps: fetch failed', {
+        pubkey: this.pubkey.slice(0, 8),
+        error: String(error),
+      });
     }
   }
 
