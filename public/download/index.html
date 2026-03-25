@@ -213,6 +213,19 @@
       transform: translateY(-2px);
     }
 
+    /* ── Zapstore Badge ── */
+    .zapstore-badge {
+      display: inline-flex; align-items: center;
+      transition: transform 0.25s ease;
+    }
+    .zapstore-badge:hover { transform: translateY(-3px); }
+    .zapstore-badge img { display: block; }
+    .zapstore-badge .badge-hover { display: none; }
+    .zapstore-badge:hover .badge-normal { display: none; }
+    .zapstore-badge:hover .badge-hover { display: block; }
+    .zapstore-badge--hero img { height: 59px; }
+    .zapstore-badge--sm img { height: 40px; }
+
     /* ── Sub-links ── */
     .sub-links {
       display: flex; gap: 0.8rem; justify-content: center;
@@ -486,6 +499,10 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
               Web Client
             </a>
+            <a href="https://zapstore.dev/apps/naddr1qqgxxmmd9ehx7mmjdehhgefwv9c8qqgcwaehxw309aex2mrp0yh85ctswd6x7un99ejx2aszyr6j0nuhpn3xpe6zvys5hasjarm45kwmrq676ljq2vexc0m9ugewuqcyqqq8uzc3edrvv" class="zapstore-badge zapstore-badge--hero" target="_blank" rel="noopener">
+              <img class="badge-normal" src="zapstore_badge_3a.svg" alt="Available on Zapstore">
+              <img class="badge-hover" src="zapstore_badge_3b.svg" alt="Available on Zapstore">
+            </a>
           </div>
 
           <p style="opacity:0.6;font-size:0.85rem;margin-top:0.5rem;margin-bottom:1rem;">Mac users: After installing, run <code style="background:rgba(255,255,255,0.1);padding:2px 6px;border-radius:4px;">xattr -cr /Applications/Noornote.app</code> in Terminal.</p>
@@ -575,8 +592,7 @@
           </div>
 
           <div class="card">
-            <span class="badge badge-green">GrapheneOS (and Android)</span> <span class="badge" style="background:rgba(var(--color-bitcoin-orange-rgb),0.12);border:1px solid rgba(var(--color-bitcoin-orange-rgb),0.3);color:var(--color-bitcoin-orange);">Beta</span>
-            <p>
+            <span class="badge badge-green">GrapheneOS (and Android)</span>            <p>
               NoorNote runs natively on GrapheneOS (and other Android devices).
               Download the APK directly, install it on your phone, and sign in with
               Amber, the Nostr key signer for Android (available on
@@ -588,6 +604,10 @@
               <a href="noornote-release.apk" class="btn btn-primary btn-sm" download>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Download APK
+              </a>
+              <a href="https://zapstore.dev/apps/naddr1qqgxxmmd9ehx7mmjdehhgefwv9c8qqgcwaehxw309aex2mrp0yh85ctswd6x7un99ejx2aszyr6j0nuhpn3xpe6zvys5hasjarm45kwmrq676ljq2vexc0m9ugewuqcyqqq8uzc3edrvv" class="zapstore-badge zapstore-badge--sm" target="_blank" rel="noopener">
+                <img class="badge-normal" src="zapstore_badge_3a.svg" alt="Available on Zapstore">
+                <img class="badge-hover" src="zapstore_badge_3b.svg" alt="Available on Zapstore">
               </a>
             </div>
 
