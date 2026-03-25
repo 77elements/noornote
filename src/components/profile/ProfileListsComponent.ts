@@ -68,8 +68,19 @@ export class ProfileListsComponent {
       let mountedFolders: string[];
 
       if (this.isOwnProfile) {
-        // Own profile: read from localStorage
+        // Own profile: read from localStorage, then sync from relays in background
         mountedFolders = this.profileMountsService.getMounts();
+
+        // Sync from relays to catch mounts set on other instances
+        try {
+          const relayMounts = await this.profileMountsOrch.fetchFromRelays(this.pubkey, true);
+          if (relayMounts.length > 0 && JSON.stringify(relayMounts) !== JSON.stringify(mountedFolders)) {
+            this.profileMountsService.setMountsFromRelay(relayMounts);
+            mountedFolders = relayMounts;
+          }
+        } catch {
+          // Relay fetch failed, use local mounts
+        }
       } else {
         // Other profile: fetch from relays
         mountedFolders = await this.profileMountsOrch.fetchFromRelays(this.pubkey, true);

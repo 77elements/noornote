@@ -203,6 +203,14 @@ export class AutoSyncService {
       this.systemLogger.info('ListAutoSync', 'Running startup sync');
       await this.syncFromRelaysAll();
       this.startPeriodicSync();
+
+      // Sync profile mounts from relays (startup only, not periodic)
+      try {
+        const { ProfileMountsOrchestrator } = await import('./orchestration/ProfileMountsOrchestrator');
+        await ProfileMountsOrchestrator.getInstance().syncFromRelays();
+      } catch {
+        // Profile mounts sync failed silently
+      }
     }, this.STARTUP_SYNC_DELAY);
   }
 
