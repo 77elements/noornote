@@ -21,7 +21,7 @@ import {
 } from '../../lists/bookmarks';
 import { AuthService } from '../../services/AuthService';
 
-const MAX_ITEMS_COLLAPSED = 5;
+const MAX_ITEMS_COLLAPSED = 3;
 
 interface ProfileListData {
   folderName: string;

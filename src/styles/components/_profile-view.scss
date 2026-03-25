@@ -450,6 +450,7 @@
 // =========================================
 
 .profile-lists-mount {
+  padding-top: $gap;
   transition: transform 0.15s ease, opacity 0.15s ease;
 
   &.dragging {
