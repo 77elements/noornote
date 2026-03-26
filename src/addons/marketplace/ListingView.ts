@@ -73,7 +73,7 @@ export class ListingView extends View {
 
       this.container.innerHTML = `
         <div class="listing-view">
-          <button class="listing-view__back btn btn--passive" data-action="back">Back to Marketplace</button>
+          <button class="listing-view__back btn btn--medium btn--passive" data-action="back">← Back to Marketplace</button>
 
           <div class="listing-view__images"></div>
 
@@ -254,7 +254,7 @@ export class ListingView extends View {
     this.container.innerHTML = `
       <div class="listing-view__not-found">
         <p>Listing not found</p>
-        <button class="btn btn--passive" data-action="back">Back to Marketplace</button>
+        <button class="btn btn--medium btn--passive" data-action="back">← Back to Marketplace</button>
       </div>
     `;
     const backBtn = this.container.querySelector('[data-action="back"]');
@@ -265,7 +265,7 @@ export class ListingView extends View {
     this.container.innerHTML = `
       <div class="listing-view__error">
         <p>Failed to load listing</p>
-        <button class="btn btn--passive" data-action="back">Back to Marketplace</button>
+        <button class="btn btn--medium btn--passive" data-action="back">← Back to Marketplace</button>
       </div>
     `;
     const backBtn = this.container.querySelector('[data-action="back"]');

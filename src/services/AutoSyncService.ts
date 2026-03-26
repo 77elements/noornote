@@ -204,15 +204,18 @@ export class AutoSyncService {
       await this.syncFromRelaysAll();
       this.startPeriodicSync();
 
-      // Sync profile mounts from relays (startup only, not periodic)
+      // Sync NostrIn data from relays (startup only, not periodic)
       try {
         const { isNostrInEnabled } = await import('../addons/nostrin/index');
         if (isNostrInEnabled()) {
           const { ProfileMountsOrchestrator } = await import('./orchestration/ProfileMountsOrchestrator');
           await ProfileMountsOrchestrator.getInstance().syncFromRelays();
+
+          const { NostrInListOrchestrator } = await import('./orchestration/NostrInListOrchestrator');
+          await NostrInListOrchestrator.getInstance().syncFromRelays();
         }
       } catch {
-        // Profile mounts sync failed silently
+        // NostrIn sync failed silently
       }
     }, this.STARTUP_SYNC_DELAY);
   }

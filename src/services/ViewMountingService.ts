@@ -176,6 +176,26 @@ export class ViewMountingService {
           }
         };
 
+      case 'nostrin-list':
+        return {
+          requiresParam: true,
+          factory: async (param) => {
+            const { NostrInListView } = await import('../addons/nostrin/NostrInListView');
+            const view = new NostrInListView(param!);
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'nostrin-list-edit':
+        return {
+          requiresParam: true,
+          factory: async (param) => {
+            const { NostrInListEditorView } = await import('../addons/nostrin/NostrInListEditorView');
+            const view = new NostrInListEditorView(param!);
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'follow-pack':
         return {
           requiresParam: true,

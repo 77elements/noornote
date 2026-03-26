@@ -229,6 +229,10 @@ export class App {
     // Parameterized routes (public)
     this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false,
       (params) => params.noteId ?? '');
+    this.registerRoute('/profile/:npub/list/edit', 'nostrin-list-edit', 'nostrin-list-edit', 'nlev', true,
+      (params) => params.npub ?? '');
+    this.registerRoute('/profile/:npub/list', 'nostrin-list', 'nostrin-list', 'nlv', false,
+      (params) => params.npub ?? '');
     this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false,
       (params) => params.npub ?? '');
     this.registerRoute('/article/:naddr', 'article', 'article', 'av', false,

@@ -44,7 +44,7 @@ export class MyListingsView extends View {
             <div class="marketplace-view__header-row">
               <h1 class="marketplace-view__title">My Listings</h1>
               <div class="marketplace-view__header-actions">
-                <a href="/marketplace" class="btn btn--passive btn--medium">Back to Marketplace</a>
+                <a href="/marketplace" class="btn btn--medium btn--passive">← Back to Marketplace</a>
                 <a href="/write-listing" class="btn btn--medium">Add Product</a>
               </div>
             </div>

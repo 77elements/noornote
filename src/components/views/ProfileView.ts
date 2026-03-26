@@ -269,9 +269,13 @@ export class ProfileView extends View {
         const { ProfileMountsOrchestrator } = await import('../../services/orchestration/ProfileMountsOrchestrator');
         await ProfileMountsOrchestrator.getInstance().syncFromRelays();
         this.loadProfileLists();
-      } else if (this.profileListsComponent) {
-        this.profileListsComponent.destroy();
-        this.profileListsComponent = null;
+        this.loadNostrInListLink();
+      } else {
+        if (this.profileListsComponent) {
+          this.profileListsComponent.destroy();
+          this.profileListsComponent = null;
+        }
+        this.container.querySelector('.profile-nostrin-list-link')?.remove();
       }
     });
     this.eventBusSubscriptions.push(id);
@@ -637,6 +641,9 @@ export class ProfileView extends View {
 
       // Load profile lists (mounted bookmark folders)
       this.loadProfileLists();
+
+      // Load NostrIn list link
+      this.loadNostrInListLink();
 
       // Load articles carousel
       this.loadArticlesCarousel();
@@ -1200,6 +1207,50 @@ export class ProfileView extends View {
 
     this.profileListsComponent = new ProfileListsComponent(this.pubkey);
     await this.profileListsComponent.render(profileNip01);
+  }
+
+  /**
+   * Load "See my list" link for NostrIn professional list
+   */
+  private async loadNostrInListLink(): Promise<void> {
+    const { isNostrInEnabled } = await import('../../addons/nostrin/index');
+    if (!isNostrInEnabled()) return;
+
+    try {
+      const currentUser = this.authService.getCurrentUser();
+      const isOwn = currentUser?.pubkey === this.pubkey;
+
+      const { NostrInListOrchestrator } = await import('../../services/orchestration/NostrInListOrchestrator');
+      const listData = await NostrInListOrchestrator.getInstance().fetchFromRelays(this.pubkey, false);
+      const hasExistingList = listData && listData.sections.length > 0;
+
+      // No list and not owner → nothing to show
+      if (!hasExistingList && !isOwn) return;
+
+      const linkEl = document.createElement('div');
+      linkEl.className = 'profile-nostrin-list-link';
+
+      if (hasExistingList) {
+        linkEl.innerHTML = `<a href="/profile/${this.npub}/list" data-action="view-list">See my list &rarr;</a>`;
+      } else {
+        linkEl.innerHTML = `<a href="/profile/${this.npub}/list/edit" data-action="edit-list">Edit personal list &rarr;</a>`;
+      }
+
+      // Insert after .profile-nip01 (above mounted bookmark folders)
+      const insertAfter = this.container.querySelector('.profile-nip01');
+      if (insertAfter) {
+        insertAfter.after(linkEl);
+      }
+
+      linkEl.querySelector('a')?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const { Router } = await import('../../services/Router');
+        const href = (e.currentTarget as HTMLAnchorElement).getAttribute('href')!;
+        Router.getInstance().navigate(href);
+      });
+    } catch {
+      // Silently fail
+    }
   }
 
   /**

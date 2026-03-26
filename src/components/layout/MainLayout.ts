@@ -2037,7 +2037,7 @@ export class MainLayout {
     title.textContent = 'Following';
 
     const backBtn = document.createElement('button');
-    backBtn.className = 'list-view-primary__back btn btn--passive';
+    backBtn.className = 'list-view-primary__back btn btn--medium btn--passive';
     backBtn.innerHTML = '← Back';
     backBtn.addEventListener('click', () => {
       history.back();

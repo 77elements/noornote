@@ -101,6 +101,7 @@ export const StorageKeys = {
 
   // Service data (per-account)
   PROFILE_MOUNTS: 'noornote_profile_mounts_map',
+  NOSTRIN_LIST: 'noornote_nostrin_list_map',
   LIST_SYNC_MODE: 'noornote_list_sync_mode_map',
   EMOJI_FREQUENTLY_USED: 'noornote_emoji_frequently_used_map',
   ARTICLE_NOTIFICATIONS: 'noornote_article_notifications_map',
