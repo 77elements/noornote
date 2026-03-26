@@ -158,6 +158,9 @@ export class ProfileView extends View {
     // Listen for follow changes (from FollowList or other sources)
     this.setupFollowChangeListener();
 
+    // Listen for NostrIn addon toggle (mount/unmount profile lists)
+    this.setupNostrInToggleListener();
+
     // Load recognition addon before rendering to avoid race condition
     this.initAsync();
   }
@@ -249,6 +252,26 @@ export class ProfileView extends View {
         this.lastKnownFollowStatus = isFollowing;
         this.isInitialRender = true;
         this.render();
+      }
+    });
+    this.eventBusSubscriptions.push(id);
+  }
+
+  /**
+   * Setup listener for NostrIn addon toggle (mount/unmount profile lists without app restart)
+   */
+  private setupNostrInToggleListener(): void {
+    const id = this.eventBus.on('nostrin:toggle', async (data: { enabled: boolean }) => {
+      const currentUser = this.authService.getCurrentUser();
+      if (!currentUser || currentUser.pubkey !== this.pubkey) return;
+
+      if (data.enabled) {
+        const { ProfileMountsOrchestrator } = await import('../../services/orchestration/ProfileMountsOrchestrator');
+        await ProfileMountsOrchestrator.getInstance().syncFromRelays();
+        this.loadProfileLists();
+      } else if (this.profileListsComponent) {
+        this.profileListsComponent.destroy();
+        this.profileListsComponent = null;
       }
     });
     this.eventBusSubscriptions.push(id);
