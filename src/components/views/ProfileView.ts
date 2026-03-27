@@ -91,6 +91,9 @@ export class ProfileView extends View {
   // Videos carousel component
   private videosCarousel: ProfileVideosCarousel | null = null;
 
+  // Lightning address (for profile zap buttons)
+  private lud16: string = '';
+
   // Services
   private followerCountService: FollowerCountService;
   private profileOrchestrator: ProfileOrchestrator;
@@ -495,6 +498,7 @@ export class ProfileView extends View {
       ? profile.nip05s
       : (profile.nip05 ? [profile.nip05] : []);
     const lud16 = profile.lud16 || '';
+    this.lud16 = lud16;
 
 
     // Process about text: escape HTML, convert line breaks, linkify URLs
@@ -540,7 +544,7 @@ export class ProfileView extends View {
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                   </svg>
                 </button>
-                <button class="qr-btn" title="Show QR Code">
+                <button class="qr-btn" title="npub QR Code">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="7" height="7"></rect>
                     <rect x="14" y="3" width="7" height="7"></rect>
@@ -548,6 +552,22 @@ export class ProfileView extends View {
                     <rect x="3" y="14" width="7" height="7"></rect>
                   </svg>
                 </button>
+                ${lud16 ? `
+                <button class="lightning-qr-btn" title="Lightning QR Code">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <path d="M12 7l-2 5h4l-2 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </button>
+                <button class="profile-zap-btn" title="Zap this user">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
+                  </svg>
+                </button>
+                ` : ''}
                 ${this.renderTribeButton()}
                 <span class="copy-feedback">Copied!</span>
               </div>
@@ -606,6 +626,9 @@ export class ProfileView extends View {
 
       // Setup QR code button handler
       this.setupQRButton();
+
+      // Setup Lightning QR + Profile Zap buttons
+      this.setupLightningButtons();
 
       // Setup tribe button handler
       this.setupTribeButton();
@@ -855,6 +878,35 @@ export class ProfileView extends View {
         e.preventDefault();
         const qrModal = QRCodeModal.getInstance();
         qrModal.show(this.npub);
+      });
+    }
+  }
+
+  /**
+   * Setup Lightning QR and Profile Zap button handlers
+   */
+  private setupLightningButtons(): void {
+    const lightningQrBtn = this.container.querySelector('.lightning-qr-btn');
+    if (lightningQrBtn) {
+      lightningQrBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (this.lud16) {
+          const qrModal = QRCodeModal.getInstance();
+          qrModal.showLightning(this.lud16);
+        }
+      });
+    }
+
+    const profileZapBtn = this.container.querySelector('.profile-zap-btn');
+    if (profileZapBtn) {
+      profileZapBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!AuthGuard.requireAuth('zap')) return;
+        const { ZapModal } = await import('../modals/ZapModal');
+        const zapModal = new ZapModal({
+          authorPubkey: this.pubkey,
+        });
+        zapModal.show();
       });
     }
   }

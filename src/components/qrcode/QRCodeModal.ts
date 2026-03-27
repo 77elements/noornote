@@ -116,6 +116,55 @@ export class QRCodeModal {
   }
 
   /**
+   * Show modal with QR code for Lightning address (lud16)
+   */
+  public async showLightning(lud16: string): Promise<void> {
+    const loadingContent = this.renderLoadingContent();
+    this.modalService.show({
+      title: 'Lightning QR Code',
+      content: loadingContent,
+      width: '400px',
+      height: 'auto',
+    });
+
+    try {
+      const qrCodeDataUrl = await QRCode.toDataURL(`lightning:${lud16}`, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+
+      const container = document.createElement('div');
+      container.className = 'qrcode-content';
+      container.innerHTML = `
+        <div class="qrcode-modal__qr-container">
+          <img src="${qrCodeDataUrl}" alt="Lightning QR Code" class="qrcode-modal__qr-image" />
+          <p class="qrcode-modal__npub-text">${this.escapeHtml(lud16)}</p>
+          <p class="qrcode-modal__instruction">Scan with Lightning wallet</p>
+        </div>
+      `;
+
+      this.modalService.show({
+        title: 'Lightning QR Code',
+        content: container,
+        width: '400px',
+        height: 'auto',
+      });
+    } catch (error) {
+      console.error('Failed to generate Lightning QR code:', error);
+      this.modalService.show({
+        title: 'Lightning QR Code',
+        content: this.renderErrorContent('Failed to generate QR code'),
+        width: '400px',
+        height: 'auto',
+      });
+    }
+  }
+
+  /**
    * Escape HTML to prevent XSS
    */
   private escapeHtml(text: string): string {

@@ -24,8 +24,8 @@ const PRESET_AMOUNTS = [
 ];
 
 export interface ZapModalOptions {
-  /** Note ID being zapped */
-  noteId: string;
+  /** Note ID being zapped (omit for profile zaps) */
+  noteId?: string;
   /** Author pubkey receiving the zap */
   authorPubkey: string;
   /** Callback when zap is successfully sent */

@@ -154,6 +154,7 @@ export enum EventKind {
   CHANNEL_HIDE_MESSAGE = 43,
   CHANNEL_MUTE_USER = 44,
   POLL = 1068,
+  COMMENT = 1111,
   FILE_METADATA = 1063,
   LIVE_CHAT_MESSAGE = 1311,
   COMIC_STRIP = 6969,
@@ -171,6 +172,7 @@ export const USER_CONTENT_KINDS: number[] = [
   EventKind.VIDEO_LANDSCAPE,
   EventKind.VIDEO_PORTRAIT,
   EventKind.POLL,
+  EventKind.COMMENT,
   EventKind.COMIC_STRIP,
   EventKind.LONG_FORM_CONTENT,
 ];
