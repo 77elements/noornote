@@ -1,0 +1,236 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// ==========================================
+// PV link to professional list
+// ==========================================
+
+.profile-nostrin-list-link {
+  padding: $gap calc($gap * 1.5);
+  text-align: center;
+
+  a {
+    color: $color-4;
+    text-decoration: none;
+    font-size: 0.9rem;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+// ==========================================
+// List View (readonly)
+// ==========================================
+
+.nostrin-list-loading,
+.nostrin-list-empty,
+.nostrin-list-error {
+  padding: $gap * 2;
+  text-align: center;
+  color: $text-alpha-medium;
+}
+
+.nostrin-list-empty .btn {
+  margin-top: $gap;
+}
+
+.nostrin-list-view {
+  padding: $gap;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.nostrin-list-header {
+  @include flex-between;
+  align-items: center;
+  margin-bottom: $gap * 2;
+}
+
+.nostrin-list-header__actions {
+  display: flex;
+  gap: calc($gap / 2);
+}
+
+.nostrin-list-section {
+  margin-bottom: $gap * 2;
+}
+
+.nostrin-list-section__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: calc($gap / 2);
+  color: $color-5;
+}
+
+.nostrin-list-section__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nostrin-list-section__item {
+  padding: calc($gap / 4) 0;
+  color: $text-alpha-medium;
+  border-bottom: 1px solid $color-2;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// ==========================================
+// List Editor
+// ==========================================
+
+.nostrin-list-editor {
+  padding: $gap;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.nostrin-list-editor__header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: $gap * 2;
+}
+
+.nostrin-list-editor__empty {
+  padding: $gap * 2;
+  text-align: center;
+  color: $text-alpha-medium;
+}
+
+.nostrin-list-editor__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: $gap * 2;
+}
+
+// Section
+.nostrin-list-editor__section {
+  margin-bottom: $gap;
+  border: 1px solid $color-2;
+  border-radius: $radius-md;
+  padding: $gap;
+}
+
+.nostrin-list-editor__section-header {
+  @include flex-between;
+  align-items: center;
+  margin-bottom: calc($gap / 2);
+}
+
+.nostrin-list-editor__section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.nostrin-list-editor__section-delete {
+  background: none;
+  border: none;
+  color: $text-alpha-medium;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: calc($gap / 4);
+
+  &:hover {
+    color: $color-red;
+  }
+}
+
+// Items
+.nostrin-list-editor__item {
+  @include flex-between;
+  align-items: center;
+  padding: calc($gap / 4) 0;
+  border-bottom: 1px solid $color-2;
+}
+
+.nostrin-list-editor__item-text {
+  flex: 1;
+  color: $color-5;
+}
+
+.nostrin-list-editor__item-delete {
+  background: none;
+  border: none;
+  color: $text-alpha-medium;
+  font-size: 1.1rem;
+  cursor: pointer;
+  padding: 0 calc($gap / 4);
+
+  &:hover {
+    color: $color-red;
+  }
+}
+
+// New item row
+.nostrin-list-editor__new-item-row {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  margin-top: calc($gap / 2);
+}
+
+.nostrin-list-editor__new-item-input {
+  flex: 1;
+  padding: calc($gap / 4) calc($gap / 2);
+  border: 1px solid $color-2;
+  border-radius: $radius-sm;
+  background: $color-1;
+  color: $color-5;
+  font-size: 0.9rem;
+
+  &::placeholder {
+    color: $text-alpha-light;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-4;
+  }
+}
+
+.nostrin-list-editor__new-item-add {
+  background: none;
+  border: 1px solid $color-2;
+  border-radius: $radius-sm;
+  color: $color-4;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: calc($gap / 4) calc($gap / 2);
+  line-height: 1;
+
+  &:hover {
+    background: $surface-tint;
+  }
+}
+
+// New section title input
+.nostrin-list-editor__new-section-row {
+  margin-bottom: $gap;
+}
+
+.nostrin-list-editor__section-title-input {
+  width: 100%;
+  padding: calc($gap / 2);
+  border: 1px dashed $color-2;
+  border-radius: $radius-sm;
+  background: $color-1;
+  color: $color-5;
+  font-size: 1.1rem;
+  font-weight: 600;
+
+  &::placeholder {
+    color: $text-alpha-light;
+    font-weight: 400;
+  }
+
+  &:focus {
+    outline: none;
+    border-color: $color-4;
+  }
+}

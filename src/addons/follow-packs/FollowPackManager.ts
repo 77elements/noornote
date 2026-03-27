@@ -266,7 +266,7 @@ export class FollowPackManager {
       <div class="follow-packs__detail-info">
         <div class="heading-back-btn-container">
           <h2 class="follow-packs__detail-title">${escapeHtml(pack.title)}</h2>
-          <button class="follow-packs__back-btn btn btn--mini btn--secondary">&larr; Back</button>
+          <button class="follow-packs__back-btn btn btn--medium btn--passive">&larr; Back</button>
         </div>
         ${pack.description ? `<p class="follow-packs__detail-desc">${escapeHtml(pack.description)}</p>` : ''}
         <div class="follow-packs__detail-meta">
@@ -448,7 +448,7 @@ export class FollowPackManager {
     header.innerHTML = `
       <div class="heading-back-btn-container">
         <h2 class="follow-packs__detail-title">${heading}</h2>
-        <button class="follow-packs__back-btn btn btn--mini btn--secondary">Cancel</button>
+        <button class="follow-packs__back-btn btn btn--medium btn--passive">Cancel</button>
       </div>
     `;
     wrapper.appendChild(header);
@@ -817,7 +817,7 @@ export class FollowPackManager {
     header.className = 'heading-back-btn-container follow-packs__section-header';
     header.innerHTML = `
       <h2 class="follow-packs__title">${escapeHtml(pack.title)}</h2>
-      <button class="follow-packs__back-btn btn btn--mini btn--secondary">&larr; Back</button>
+      <button class="follow-packs__back-btn btn btn--medium btn--passive">&larr; Back</button>
     `;
     wrapper.appendChild(header);
 

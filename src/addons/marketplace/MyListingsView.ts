@@ -44,8 +44,8 @@ export class MyListingsView extends View {
             <div class="marketplace-view__header-row">
               <h1 class="marketplace-view__title">My Listings</h1>
               <div class="marketplace-view__header-actions">
-                <a href="/marketplace" class="btn btn--passive btn--medium">Back to Marketplace</a>
-                <a href="/write-listing" class="btn btn--medium">Add Product</a>
+                <button class="btn btn--medium btn--passive" data-action="back-to-marketplace">← Back to Marketplace</button>
+                <button class="btn btn--medium" data-action="add-product">Add Product</button>
               </div>
             </div>
           </header>
@@ -55,11 +55,11 @@ export class MyListingsView extends View {
     `;
 
     // Wire up header buttons
-    this.container.querySelectorAll('.marketplace-view__header-actions a').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.router.navigate((e.currentTarget as HTMLAnchorElement).getAttribute('href')!);
-      });
+    this.container.querySelector('[data-action="back-to-marketplace"]')?.addEventListener('click', () => {
+      this.router.navigate('/marketplace');
+    });
+    this.container.querySelector('[data-action="add-product"]')?.addEventListener('click', () => {
+      this.router.navigate('/write-listing');
     });
   }
 
