@@ -77,8 +77,11 @@ export class NostrInListEditorView extends View {
   private render(): void {
     this.container.innerHTML = `
       <div class="nostrin-list-editor">
+        <div class="heading-back-btn-container">
+          <h1>Create your list</h1>
+          <button class="btn btn--medium btn--passive" data-action="back">&larr; Back</button>
+        </div>
         <div class="nostrin-list-editor__header">
-          <a href="/profile/${this.npub}/list" class="btn btn--medium btn--passive" data-action="back">&larr; Back</a>
           <button class="btn btn--medium btn--primary" data-action="new-section">+ New Section</button>
         </div>
         <div class="nostrin-list-editor__sections" data-sections></div>
@@ -211,7 +214,11 @@ export class NostrInListEditorView extends View {
     const titleInput = titleRow.querySelector('input')!;
     titleInput.focus();
 
+    let committed = false;
     const commitTitle = () => {
+      if (committed) return;
+      committed = true;
+
       const title = titleInput.value.trim();
       if (!title) {
         titleRow.remove();
@@ -233,6 +240,7 @@ export class NostrInListEditorView extends View {
         e.preventDefault();
         commitTitle();
       } else if (e.key === 'Escape') {
+        committed = true;
         titleRow.remove();
         if (this.sections.length === 0) this.renderSections();
       }

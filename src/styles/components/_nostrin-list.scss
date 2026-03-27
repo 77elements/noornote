@@ -91,8 +91,8 @@
 }
 
 .nostrin-list-editor__header {
-  @include flex-between;
-  align-items: center;
+  display: flex;
+  justify-content: flex-end;
   margin-bottom: $gap * 2;
 }
 
