@@ -21,7 +21,7 @@ import { PlatformService } from './PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 export interface ZapRequest {
-  noteId: string;
+  noteId?: string;
   authorPubkey: string;
   amount: number; // in sats
   comment?: string;
@@ -187,7 +187,7 @@ export class ZapService {
    * Send custom zap with specified amount and comment
    */
   public async sendCustomZap(
-    noteId: string,
+    noteId: string | undefined,
     authorPubkey: string,
     amount: number,
     comment?: string,
@@ -196,7 +196,8 @@ export class ZapService {
     const connectionError = await this.checkPaymentAvailability();
     if (connectionError) return connectionError;
 
-    const zapRequest: ZapRequest = { noteId, authorPubkey, amount };
+    const zapRequest: ZapRequest = { authorPubkey, amount };
+    if (noteId) zapRequest.noteId = noteId;
     if (comment) zapRequest.comment = comment;
     if (articleEventId) zapRequest.articleEventId = articleEventId;
 
@@ -293,7 +294,9 @@ export class ZapService {
     this.systemLogger.info('ZapService', 'Payment successful');
 
     // Store zap locally for consistent UI (optimistic update)
-    this.storeUserZap(request.noteId, request.amount);
+    if (request.noteId) {
+      this.storeUserZap(request.noteId, request.amount);
+    }
 
     // Show success immediately (UX like Jumble - don't wait for receipt)
     ToastService.show(`${request.amount} sats zapped`, 'success');
@@ -524,20 +527,23 @@ export class ZapService {
         ...relays.map(relay => ['relays', relay]) // Relays for zap receipt
       ];
 
-      const isArticle = this.isLongFormArticle(request.noteId);
+      if (request.noteId) {
+        const isArticle = this.isLongFormArticle(request.noteId);
 
-      if (isArticle) {
-        // LONG-FORM ARTICLE: Use #a tag with addressable identifier
-        tags.push(['a', request.noteId]);
-        // Also add #e tag with event ID if provided (for better discoverability)
-        if (request.articleEventId) {
-          tags.push(['e', request.articleEventId]);
+        if (isArticle) {
+          // LONG-FORM ARTICLE: Use #a tag with addressable identifier
+          tags.push(['a', request.noteId]);
+          // Also add #e tag with event ID if provided (for better discoverability)
+          if (request.articleEventId) {
+            tags.push(['e', request.articleEventId]);
+          }
+          this.systemLogger.info('ZapService', `Creating zap request for article: #a=${request.noteId}, #e=${request.articleEventId || 'none'}`);
+        } else {
+          // NORMAL NOTE: Use #e tag with event ID
+          tags.push(['e', request.noteId]);
         }
-        this.systemLogger.info('ZapService', `Creating zap request for article: #a=${request.noteId}, #e=${request.articleEventId || 'none'}`);
-      } else {
-        // NORMAL NOTE: Use #e tag with event ID
-        tags.push(['e', request.noteId]);
       }
+      // else: PROFILE ZAP — only #p tag, no #e/#a (NIP-57)
 
       const unsignedEvent = {
         kind: 9734,
