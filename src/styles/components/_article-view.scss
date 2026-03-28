@@ -51,12 +51,6 @@
     flex: 1;
   }
 
-  .article-title-row__actions .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: calc($gap / 4);
-  }
-
   .article-summary {
     line-height: 1.6;
     color: var(--text-alpha-heavy);
