@@ -13,6 +13,7 @@ import { ArticleProcessor } from './ArticleProcessor';
 import { ZapReceiptProcessor } from './ZapReceiptProcessor';
 import { VideoNoteProcessor } from './VideoNoteProcessor';
 import { PictureNoteProcessor } from './PictureNoteProcessor';
+import { FileMetadataProcessor } from './FileMetadataProcessor';
 
 export class NoteProcessor {
   /**
@@ -33,6 +34,8 @@ export class NoteProcessor {
         case 21:
         case 22:
           return VideoNoteProcessor.process(event);
+        case 1063:
+          return FileMetadataProcessor.process(event);
         case 1068:
           return PollProcessor.process(event);
         case 9735:

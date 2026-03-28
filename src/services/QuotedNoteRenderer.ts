@@ -160,6 +160,12 @@ export class QuotedNoteRenderer {
       VideoNoteProcessor.prependVideoContent(processedContent, event.tags);
     }
 
+    // For file metadata events (Kind 1063), extract file from NIP-94 tags
+    if (event.kind === 1063) {
+      const { FileMetadataProcessor } = await import('../components/ui/note-processing/FileMetadataProcessor');
+      FileMetadataProcessor.prependFileContent(processedContent, event.tags);
+    }
+
     // Create header (small size for quotes)
     const eventId = event.id;
     if (!eventId) {

@@ -308,6 +308,14 @@ export class NotificationItem {
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
     }
+    const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
+    if (kTag?.[1]) {
+      const kind = parseInt(kTag[1]);
+      if (kind === 1063) return 'file';
+      if (kind === 20) return 'picture';
+      if (kind === 21 || kind === 22) return 'video';
+      if (kind === 1068) return 'poll';
+    }
     return 'note';
   }
 
