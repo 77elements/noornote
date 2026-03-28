@@ -1,8 +1,8 @@
-# NoorNote v0.6.12
+# NoorNote v0.7.0
 
-**Add-ons Hub, Word Filter & Zapstore**
+**NostrIn Lists, Profile Zaps & Comment Rendering**
 
-- New Add-ons Hub — all add-ons in one place with dedicated settings
-- Content Word Filter Addon — hide notes containing specific words from your timelines
-- Zapstore app listings now visible on profiles and in timelines
-- Fix YouTube embeds on Android, DM badge styling, mutual check reliability
+- NostrIn Addon — create and manage professional curated lists on your Nostr profile
+- Profile Zap & Lightning QR buttons for quick zapping and address sharing
+- NIP-22 Comments and quoted addressable events now render correctly
+- Follow Pack blacklist filter, joined date fix, profile view polish
