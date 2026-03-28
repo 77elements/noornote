@@ -136,7 +136,7 @@ export class NostrInListView extends View {
       <div class="nostrin-list-view">
         <div class="nostrin-list-header">
           <div class="nostrin-list-header__left">
-            <button class="btn btn--medium btn--passive" data-action="back">&larr; ${DOMPurify.sanitize(username)}</button>
+            <button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>
           </div>
           ${this.isOwnProfile ? `
             <div class="nostrin-list-header__actions">
