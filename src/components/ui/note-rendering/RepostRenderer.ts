@@ -30,7 +30,6 @@ type TextBlinkerType = import('../../../addons/profile-recognition/profileBlinki
 export class RepostRenderer {
   private static userProfileService = UserProfileService.getInstance();
   private static articlePreviewRenderer = ArticlePreviewRenderer.getInstance();
-  private static authService = AuthService.getInstance();
 
   // Profile Recognition (lazy-loaded)
   private static recognitionService: ProfileRecognitionServiceType | null = null;
@@ -112,28 +111,17 @@ export class RepostRenderer {
         const usernameEl = repostHeader.querySelector('.reposter-username') as HTMLElement;
         const avatarElement = repostHeader.querySelector('.profile-pic--mini') as HTMLImageElement;
 
-        // Don't apply profile recognition to your own profile
-        const isOwnProfile = RepostRenderer.authService.isCurrentUser(reposterPubkey);
-
-        // Profile Recognition logic (only if addon loaded)
-        const encounter = RepostRenderer.recognitionService?.getEncounter(reposterPubkey);
-
-        // Update last known metadata if changed
-        if (encounter && (newUsername !== encounter.lastKnownName || newPicture !== encounter.lastKnownPictureUrl)) {
-          RepostRenderer.recognitionService?.updateLastKnown(reposterPubkey, newUsername, newPicture);
-        }
-
-        // Check if should blink (but not for own profile)
-        const shouldBlink = !isOwnProfile && encounter && RepostRenderer.recognitionService?.hasChangedWithinWindow(reposterPubkey);
+        // Profile Recognition: check if name/picture changed and should blink
+        const shouldBlink = RepostRenderer.recognitionService?.checkRecognition(reposterPubkey, newUsername, newPicture);
 
         // Update username with blinking
         if (usernameEl) {
-          if (shouldBlink && encounter) {
+          if (shouldBlink) {
             if (!nameBlinker && RepostRenderer.TextBlinkerClass) {
               nameBlinker = new RepostRenderer.TextBlinkerClass(usernameEl);
             }
             if (nameBlinker && !nameBlinker.isBlinking()) {
-              nameBlinker.start(newUsername, encounter.firstName);
+              nameBlinker.start(newUsername, shouldBlink.firstName);
             }
           } else {
             if (nameBlinker && nameBlinker.isBlinking()) {
@@ -146,12 +134,12 @@ export class RepostRenderer {
 
         // Update avatar with blinking
         if (avatarElement) {
-          if (shouldBlink && encounter) {
+          if (shouldBlink) {
             if (!avatarBlinker && RepostRenderer.ProfileBlinkerClass) {
               avatarBlinker = new RepostRenderer.ProfileBlinkerClass(avatarElement);
             }
             if (avatarBlinker && !avatarBlinker.isBlinking()) {
-              avatarBlinker.start(newPicture, encounter.firstPictureUrl);
+              avatarBlinker.start(newPicture, shouldBlink.firstPictureUrl);
             }
           } else {
             if (avatarBlinker && avatarBlinker.isBlinking()) {

@@ -15,6 +15,7 @@ import { ErrorService } from './ErrorService';
 import { PlatformService } from './PlatformService';
 import { ToastService } from './ToastService';
 import { createMediaUploadAdapter, type MediaUploadAdapter } from './media';
+import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 interface MediaServerSettings {
   url: string;
@@ -34,7 +35,6 @@ export class MediaUploadService {
   private static instance: MediaUploadService;
   private authService: AuthService;
   private platform: PlatformService;
-  private mediaServerStorageKey = 'noornote_media_server';
   private uploadAdapter: MediaUploadAdapter;
 
   private readonly DEFAULT_NIP96_MAX_FILE_SIZE = 25 * 1024 * 1024;
@@ -93,16 +93,10 @@ export class MediaUploadService {
   }
 
   private loadMediaServerSettings(): MediaServerSettings {
-    try {
-      const stored = localStorage.getItem(this.mediaServerStorageKey);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.debug('Failed to load media server settings:', error);
-    }
-
-    return { url: 'https://blossom.nostr.build', protocol: 'blossom' };
+    return PerAccountLocalStorage.getInstance().get<MediaServerSettings>(
+      StorageKeys.MEDIA_SERVER,
+      { url: 'https://blossom.nostr.build', protocol: 'blossom' }
+    );
   }
 
   private validateFile(file: File, settings: MediaServerSettings): { valid: boolean; error?: string } {

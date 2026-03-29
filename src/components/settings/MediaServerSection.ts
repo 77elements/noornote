@@ -24,7 +24,7 @@ interface SensitiveMediaSettings {
 export class MediaServerSection extends SettingsSection {
   private mediaServerSettings: MediaServerSettings;
   private sensitiveMediaSettings: SensitiveMediaSettings;
-  private readonly mediaServerStorageKey = 'noornote_media_server';
+
 
   private static readonly POPULAR_SERVERS = [
     { url: 'https://nostr.build', name: 'nostr.build (Most popular, NIP-96, free: 25 MiB)', protocol: 'nip96' as const, maxFileSize: 25 * 1024 * 1024 },
@@ -43,30 +43,17 @@ export class MediaServerSection extends SettingsSection {
    * Load media server settings from storage
    */
   private loadMediaServerSettings(): MediaServerSettings {
-    try {
-      const stored = localStorage.getItem(this.mediaServerStorageKey);
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.debug('Failed to load media server settings:', error);
-    }
-
-    return {
-      url: 'https://blossom.nostr.build',
-      protocol: 'blossom'
-    };
+    return PerAccountLocalStorage.getInstance().get<MediaServerSettings>(
+      StorageKeys.MEDIA_SERVER,
+      { url: 'https://blossom.nostr.build', protocol: 'blossom' }
+    );
   }
 
   /**
    * Save media server settings to storage
    */
   private saveMediaServerSettings(): void {
-    try {
-      localStorage.setItem(this.mediaServerStorageKey, JSON.stringify(this.mediaServerSettings));
-    } catch (error) {
-      console.debug('Failed to save media server settings:', error);
-    }
+    PerAccountLocalStorage.getInstance().set(StorageKeys.MEDIA_SERVER, this.mediaServerSettings);
   }
 
   /**

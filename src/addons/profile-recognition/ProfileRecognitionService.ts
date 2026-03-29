@@ -295,6 +295,23 @@ export class ProfileRecognitionService {
   }
 
   /**
+   * Combined check: update last known metadata and return whether to blink.
+   * Skips own profile. Returns null if recognition is not active or shouldn't blink.
+   */
+  public checkRecognition(pubkey: string, username: string, picture: string): ProfileEncounter | null {
+    if (this.authService.isCurrentUser(pubkey)) return null;
+
+    const encounter = this.getEncounter(pubkey);
+    if (!encounter) return null;
+
+    if (username !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl) {
+      this.updateLastKnown(pubkey, username, picture);
+    }
+
+    return this.hasChangedWithinWindow(pubkey) ? encounter : null;
+  }
+
+  /**
    * Get recognition window in days from settings
    * Returns: 0 = disabled, -1 = always, or number of days
    */
