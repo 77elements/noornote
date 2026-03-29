@@ -526,6 +526,8 @@ export class ProfileView extends View {
       : (profile.nip05 ? [profile.nip05] : []);
     const lud16 = profile.lud16 || '';
     this.lud16 = lud16;
+    const currentUser = this.authService.getCurrentUser();
+    const isOwnProfile = currentUser?.pubkey === this.pubkey;
 
 
     // Process about text: escape HTML, convert line breaks, linkify URLs
@@ -579,7 +581,7 @@ export class ProfileView extends View {
                     <rect x="3" y="14" width="7" height="7"></rect>
                   </svg>
                 </button>
-                ${lud16 ? `
+                ${lud16 && !isOwnProfile ? `
                 <button class="lightning-qr-btn" title="Lightning QR Code">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="7" height="7"></rect>
