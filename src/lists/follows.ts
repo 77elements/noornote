@@ -2713,8 +2713,7 @@ export class ExternalFollowListManager {
     const username = extractDisplayName(item.profile);
     const npub = hexToNpub(item.pubkey);
     const avatarUrl = item.profile?.picture || '';
-    const currentUser = this.authService.getCurrentUser();
-    const isMe = currentUser?.pubkey === item.pubkey;
+    const isMe = this.authService.isCurrentUser(item.pubkey);
 
     const itemDiv = document.createElement('div');
     itemDiv.className = 'ui-list__item follow-item external-follow-item';
@@ -2722,7 +2721,7 @@ export class ExternalFollowListManager {
 
     // Determine button state
     let buttonHtml = '';
-    if (!isMe && currentUser) {
+    if (!isMe && this.authService.getCurrentUser()) {
       if (item.isFollowedByMe) {
         buttonHtml = `<span class="external-follow-item__status">Following</span>`;
       } else {

@@ -186,8 +186,7 @@ export class ProfileView extends View {
    */
   private setupProfileUpdateListener(): void {
     const id = this.eventBus.on('profile:updated', (data: { pubkey: string }) => {
-      const currentUser = this.authService.getCurrentUser();
-      if (currentUser && data.pubkey === currentUser.pubkey && this.pubkey === currentUser.pubkey) {
+      if (this.authService.isCurrentUser(data.pubkey) && this.authService.isCurrentUser(this.pubkey)) {
         // Reload own profile after edit
         this.refreshProfile();
       }
@@ -526,8 +525,7 @@ export class ProfileView extends View {
       : (profile.nip05 ? [profile.nip05] : []);
     const lud16 = profile.lud16 || '';
     this.lud16 = lud16;
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser?.pubkey === this.pubkey;
+    const isOwnProfile = this.authService.isCurrentUser(this.pubkey);
 
 
     // Process about text: escape HTML, convert line breaks, linkify URLs
@@ -789,9 +787,7 @@ export class ProfileView extends View {
     const muteButton = this.muteManager.renderMuteButton();
 
     // Add article notification checkbox (only if logged in and not own profile)
-    const currentUser = this.authService.getCurrentUser();
-
-    if (!currentUser || this.pubkey === currentUser.pubkey) {
+    if (!this.authService.getCurrentUser() || this.authService.isCurrentUser(this.pubkey)) {
       return muteButton;
     }
 
@@ -812,15 +808,8 @@ export class ProfileView extends View {
    * Render Tribe button (only if logged in and not own profile)
    */
   private renderTribeButton(): string {
-    const currentUser = this.authService.getCurrentUser();
-
-    // Don't show if not logged in
-    if (!currentUser) {
-      return '';
-    }
-
-    // Don't show on own profile
-    if (currentUser.pubkey === this.pubkey) {
+    // Don't show if not logged in or on own profile
+    if (!this.authService.getCurrentUser() || this.authService.isCurrentUser(this.pubkey)) {
       return '';
     }
 
@@ -1197,9 +1186,7 @@ export class ProfileView extends View {
    * Load profile lists (mounted bookmark folders)
    */
   private async loadProfileLists(): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser?.pubkey === this.pubkey;
-    if (isOwnProfile) {
+    if (this.authService.isCurrentUser(this.pubkey)) {
       const { isNostrInEnabled } = await import('../../addons/nostrin/index');
       if (!isNostrInEnabled()) return;
     }
@@ -1219,8 +1206,7 @@ export class ProfileView extends View {
     if (!isNostrInEnabled()) return;
 
     try {
-      const currentUser = this.authService.getCurrentUser();
-      const isOwn = currentUser?.pubkey === this.pubkey;
+      const isOwn = this.authService.isCurrentUser(this.pubkey);
 
       const { NostrInListOrchestrator } = await import('../../services/orchestration/NostrInListOrchestrator');
       const listData = await NostrInListOrchestrator.getInstance().fetchFromRelays(this.pubkey, false);
@@ -1393,8 +1379,7 @@ export class ProfileView extends View {
     currentPicture: string
   ): void {
     // Don't apply profile recognition to your own profile
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser && currentUser.pubkey === this.pubkey) {
+    if (this.authService.isCurrentUser(this.pubkey)) {
       // Just set the image and name directly
       avatar.src = currentPicture;
       nameEl.textContent = currentName;

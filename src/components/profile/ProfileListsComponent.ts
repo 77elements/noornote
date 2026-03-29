@@ -51,8 +51,7 @@ export class ProfileListsComponent {
     this.folderService = getBookmarkFolderService();
     this.authService = AuthService.getInstance();
 
-    const currentUser = this.authService.getCurrentUser();
-    this.isOwnProfile = currentUser?.pubkey === pubkey;
+    this.isOwnProfile = this.authService.isCurrentUser(pubkey);
   }
 
   /**

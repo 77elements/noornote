@@ -250,8 +250,7 @@ export class FollowPackManager {
     const wrapper = document.createElement('div');
     wrapper.className = 'follow-packs';
 
-    const currentUser = this.authService.getCurrentUser();
-    const isOwner = currentUser?.pubkey === pack.authorPubkey;
+    const isOwner = this.authService.isCurrentUser(pack.authorPubkey);
 
     // Header with back button
     const header = document.createElement('div');

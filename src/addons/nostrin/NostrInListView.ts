@@ -45,8 +45,7 @@ export class NostrInListView extends View {
       this.pubkey = '';
     }
 
-    const currentUser = AuthService.getInstance().getCurrentUser();
-    this.isOwnProfile = currentUser?.pubkey === this.pubkey;
+    this.isOwnProfile = AuthService.getInstance().isCurrentUser(this.pubkey);
 
     this.loadAndRender();
   }

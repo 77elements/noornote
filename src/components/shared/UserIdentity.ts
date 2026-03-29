@@ -178,8 +178,7 @@ export class UserIdentity {
    */
   private updateUI(username: string, picture: string, handle: string): void {
     // Don't apply profile recognition to your own profile
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser && currentUser.pubkey === this.config.pubkey;
+    const isOwnProfile = this.authService.isCurrentUser(this.config.pubkey);
 
     // Profile Recognition logic (only if addon loaded)
     const encounter = this.recognitionService?.getEncounter(this.config.pubkey);

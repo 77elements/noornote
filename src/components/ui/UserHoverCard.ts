@@ -117,8 +117,7 @@ export class UserHoverCard {
    * Generate card HTML
    */
   private getCardHTML(pubkey: string, profile: UserProfile): string {
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser?.pubkey === pubkey;
+    const isOwnProfile = this.authService.isCurrentUser(pubkey);
 
     const displayName = profile.display_name || profile.name || 'Anonymous';
     // Use NIP-05(s) if available - prefer nip05s from tags, fallback to single nip05

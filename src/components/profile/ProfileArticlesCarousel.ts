@@ -39,8 +39,7 @@ export class ProfileArticlesCarousel {
     this.element = document.createElement('div');
     this.element.className = 'profile-articles-carousel';
 
-    const currentUser = AuthService.getInstance().getCurrentUser();
-    this.isOwnProfile = currentUser?.pubkey === this.pubkey;
+    this.isOwnProfile = AuthService.getInstance().isCurrentUser(this.pubkey);
   }
 
   /**

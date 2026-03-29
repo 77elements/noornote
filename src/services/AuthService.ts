@@ -446,6 +446,14 @@ export class AuthService {
     return this.currentUser;
   }
 
+  /**
+   * Check if a given pubkey belongs to the currently logged-in user.
+   * Replaces the repeated `getCurrentUser()?.pubkey === pubkey` pattern.
+   */
+  public isCurrentUser(pubkey: string): boolean {
+    return this.currentUser?.pubkey === pubkey;
+  }
+
   public isReadOnlyMode(): boolean {
     return this.isReadOnly;
   }

@@ -110,7 +110,7 @@ export class NoteMenu {
     // Check if this is the current user's note
     const authService = AuthService.getInstance();
     const currentUser = authService.getCurrentUser();
-    const isOwnNote = currentUser && currentUser.pubkey === this.options.authorPubkey;
+    const isOwnNote = authService.isCurrentUser(this.options.authorPubkey);
 
     // Check if private bookmarks are enabled
     const bookmarkOrch = BookmarkOrchestrator.getInstance();

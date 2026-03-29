@@ -112,8 +112,7 @@ export class RepostRenderer {
         const avatarElement = repostHeader.querySelector('.profile-pic--mini') as HTMLImageElement;
 
         // Don't apply profile recognition to your own profile
-        const currentUser = RepostRenderer.authService.getCurrentUser();
-        const isOwnProfile = currentUser && currentUser.pubkey === reposterPubkey;
+        const isOwnProfile = RepostRenderer.authService.isCurrentUser(reposterPubkey);
 
         // Profile Recognition logic (only if addon loaded)
         const encounter = RepostRenderer.recognitionService?.getEncounter(reposterPubkey);

@@ -83,7 +83,7 @@ export class FollowPackDetailView extends View {
   private async renderPack(event: NostrEvent): Promise<void> {
     const pack = parseFollowPackEvent(event);
     const currentUser = AuthService.getInstance().getCurrentUser();
-    const isOwner = currentUser?.pubkey === pack.authorPubkey;
+    const isOwner = AuthService.getInstance().isCurrentUser(pack.authorPubkey);
     const isLoggedIn = currentUser !== null;
 
     const coverHtml = pack.coverImage

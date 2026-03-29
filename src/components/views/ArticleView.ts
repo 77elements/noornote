@@ -77,8 +77,7 @@ export class ArticleView {
     const metadata = LongFormOrchestrator.extractArticleMetadata(event);
 
     // Check if current user is the author
-    const currentUser = AuthService.getInstance().getCurrentUser();
-    const isOwnArticle = currentUser?.pubkey === event.pubkey;
+    const isOwnArticle = AuthService.getInstance().isCurrentUser(event.pubkey);
 
     // Render markdown and extract quoted references
     const { html: articleHtml, quotedReferences } = this.renderMarkdown(event.content);

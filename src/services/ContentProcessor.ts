@@ -206,8 +206,7 @@ export class ContentProcessor {
     const picture = profile.picture || '';
 
     // Don't apply profile recognition to your own profile
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser && currentUser.pubkey === hexPubkey;
+    const isOwnProfile = this.authService.isCurrentUser(hexPubkey);
 
     // Profile Recognition logic (only if addon loaded)
     const encounter = this.recognitionService?.getEncounter(hexPubkey);
