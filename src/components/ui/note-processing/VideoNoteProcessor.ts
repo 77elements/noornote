@@ -9,6 +9,7 @@ import type { MediaContent } from '../../../helpers/renderMediaContent';
 import type { ProcessedContent } from '../../../services/ContentProcessor';
 import { ContentProcessor } from '../../../services/ContentProcessor';
 import { escapeHtml } from '../../../helpers/escapeHtml';
+import { getTag } from '../../../helpers/tagUtils';
 
 export class VideoNoteProcessor {
   private static contentProcessor = ContentProcessor.getInstance();
@@ -61,7 +62,7 @@ export class VideoNoteProcessor {
    */
   static prependVideoContent(processedContent: ProcessedContent, tags: string[][]): void {
     const videoMedia = VideoNoteProcessor.extractVideoFromTags(tags);
-    const title = tags.find(tag => tag[0] === 'title')?.[1] || '';
+    const title = getTag(tags, 'title');
 
     let html = '';
 

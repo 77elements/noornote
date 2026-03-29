@@ -17,6 +17,7 @@ import { NostrTransport } from '../../../services/transport/NostrTransport';
 import { RelayConfig } from '../../../services/RelayConfig';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml } from '../../../helpers/escapeHtml';
+import { getTag } from '../../../helpers/tagUtils';
 
 interface GroupedEvents {
   bookmarks: NostrEvent[];
@@ -232,7 +233,7 @@ export class Nip51InspectorManager {
     if (!eventId) return '';
 
     const timestamp = new Date(event.created_at * 1000).toLocaleString();
-    const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+    const dTag = getTag(event.tags, 'd');
     const tagCount = event.tags.length;
     const hasContent = event.content && event.content.trim().length > 0;
 

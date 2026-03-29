@@ -13,6 +13,7 @@ import { VideoNoteProcessor } from '../ui/note-processing/VideoNoteProcessor';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { getTag } from '../../helpers/tagUtils';
 
 interface VideoCardData {
   event: NostrEvent;
@@ -70,7 +71,7 @@ export class ProfileVideosCarousel {
 
           return {
             event,
-            title: event.tags.find(t => t[0] === 'title')?.[1] || '',
+            title: getTag(event.tags, 'title'),
             thumbnail: firstVideo.thumbnail || '',
             videoUrl: firstVideo.url
           };

@@ -10,6 +10,7 @@ import { decodeNip19 } from '../services/NostrToolsAdapter';
 import { NostrTransport } from '../services/transport/NostrTransport';
 import { UserProfileService } from '../services/UserProfileService';
 import { escapeHtml } from './escapeHtml';
+import { getTag } from './tagUtils';
 
 export async function renderQuotePreview(nostrRef: string): Promise<HTMLElement> {
   const container = document.createElement('div');
@@ -99,7 +100,7 @@ async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Prom
   const title = event.tags.find(t => t[0] === 'title')?.[1]
     || event.tags.find(t => t[0] === 'name')?.[1]
     || '';
-  const summary = event.tags.find(t => t[0] === 'summary')?.[1] || '';
+  const summary = getTag(event.tags, 'summary');
   const displayContent = title
     ? (summary ? `${title}\n${summary}` : title)
     : truncateContent(event.content);

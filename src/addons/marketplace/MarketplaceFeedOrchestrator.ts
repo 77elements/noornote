@@ -11,6 +11,7 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { parseListingMetadata } from './marketplace-helpers';
 import { RelayConfig } from '../../services/RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { getTag } from '../../helpers/tagUtils';
 
 export interface ListingFeedResult {
   listings: NostrEvent[];
@@ -129,13 +130,13 @@ export class MarketplaceFeedOrchestrator extends Orchestrator {
   }
 
   private getListingKey(event: NostrEvent): string {
-    const dTag = event.tags?.find(t => t[0] === 'd')?.[1] || '';
+    const dTag = getTag(event.tags, 'd');
     return `${event.pubkey}:${dTag}`;
   }
 
   /** Filter out spam/test listings, image-less listings, and NSFW content */
   private isValidListing(event: NostrEvent): boolean {
-    const title = event.tags?.find(t => t[0] === 'title')?.[1] || '';
+    const title = getTag(event.tags, 'title');
     if (!title || title === 'Untitled Listing') return false;
 
     // Must have at least one image

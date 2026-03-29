@@ -8,6 +8,7 @@ import type { ProcessedNote } from '../types/NoteTypes';
 import type { MediaContent } from '../../../helpers/renderMediaContent';
 import { ContentProcessor } from '../../../services/ContentProcessor';
 import { escapeHtml } from '../../../helpers/escapeHtml';
+import { getTag } from '../../../helpers/tagUtils';
 
 export class FileMetadataProcessor {
   private static contentProcessor = ContentProcessor.getInstance();
@@ -57,11 +58,11 @@ export class FileMetadataProcessor {
     const url = tags.find(tag => tag[0] === 'url')?.[1];
     if (!url) return;
 
-    const mimeType = tags.find(tag => tag[0] === 'm')?.[1] || '';
-    const alt = tags.find(tag => tag[0] === 'alt')?.[1] || '';
-    const title = tags.find(tag => tag[0] === 'title')?.[1] || '';
-    const size = tags.find(tag => tag[0] === 'size')?.[1] || '';
-    const dimTag = tags.find(tag => tag[0] === 'dim')?.[1] || '';
+    const mimeType = getTag(tags, 'm');
+    const alt = getTag(tags, 'alt');
+    const title = getTag(tags, 'title');
+    const size = getTag(tags, 'size');
+    const dimTag = getTag(tags, 'dim');
 
     let dimensions: { width: number; height: number } | undefined;
     const dimMatch = dimTag.match(/^(\d+)x(\d+)$/);

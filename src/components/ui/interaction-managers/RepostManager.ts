@@ -13,6 +13,7 @@ import { PostNoteModal } from '../../post/PostNoteModal';
 import { getRepostsOriginalEvent } from '../../../helpers/getRepostsOriginalEvent';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { BaseInteractionManager, BaseInteractionConfig } from './BaseInteractionManager';
+import { getTag } from '../../../helpers/tagUtils';
 
 export interface RepostManagerConfig extends BaseInteractionConfig {
   originalEvent?: NostrEvent;
@@ -158,7 +159,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       // For long-form articles (kind 30023), use naddr encoding
       if (unwrappedEvent.kind === 30023) {
         const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
-        const dTag = unwrappedEvent.tags.find(t => t[0] === 'd')?.[1] || '';
+        const dTag = getTag(unwrappedEvent.tags, 'd');
         reference = 'nostr:' + encodeNaddr({
           kind: unwrappedEvent.kind,
           pubkey: unwrappedEvent.pubkey,

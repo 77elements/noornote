@@ -46,6 +46,7 @@ import { PlatformService } from '../services/PlatformService';
 import { escapeHtml } from '../helpers/escapeHtml';
 import { ICON_TRASH_16 } from '../helpers/svgIcons';
 import { MoveDropdown } from '../components/ui/MoveDropdown';
+import { getTag } from '../helpers/tagUtils';
 
 const logger = SystemLogger.getInstance();
 
@@ -1274,7 +1275,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
     const eventsByDTag = new Map<string, NostrEvent>();
 
     for (const event of events) {
-      const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+      const dTag = getTag(event.tags, 'd');
 
       // Only process events with "tribes/" prefix
       if (!dTag.startsWith('tribes/')) continue;

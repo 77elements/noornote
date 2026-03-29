@@ -20,6 +20,7 @@ import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { getTag } from '../../helpers/tagUtils';
 
 export interface AddressableEventData {
   kind: number;
@@ -181,11 +182,11 @@ export class LongFormOrchestrator extends Orchestrator {
     const tags = event.tags;
 
     return {
-      title: tags.find(t => t[0] === 'title')?.[1] || 'Untitled Article',
-      image: tags.find(t => t[0] === 'image')?.[1] || '',
-      summary: tags.find(t => t[0] === 'summary')?.[1] || '',
+      title: getTag(tags, 'title', 'Untitled Article'),
+      image: getTag(tags, 'image'),
+      summary: getTag(tags, 'summary'),
       publishedAt: parseInt(tags.find(t => t[0] === 'published_at')?.[1] || String(event.created_at)),
-      identifier: tags.find(t => t[0] === 'd')?.[1] || '',
+      identifier: getTag(tags, 'd'),
       topics: tags.filter(t => t[0] === 't').map(t => t[1]).filter((v): v is string => v !== undefined)
     };
   }

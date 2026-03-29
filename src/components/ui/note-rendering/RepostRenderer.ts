@@ -20,6 +20,7 @@ import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
 import { Router } from '../../../services/Router';
 import { isProfileRecognitionEnabled } from '../../../addons/profile-recognition/index';
+import { getTag } from '../../../helpers/tagUtils';
 
 // Lazy-loaded types for profile recognition
 type ProfileRecognitionServiceType = import('../../../addons/profile-recognition/ProfileRecognitionService').ProfileRecognitionService;
@@ -255,7 +256,7 @@ export class RepostRenderer {
       articleContainer.className = 'repost-article-container';
 
       // Generate naddr for the article
-      const dTag = note.repostedEvent.tags.find(t => t[0] === 'd')?.[1] || '';
+      const dTag = getTag(note.repostedEvent.tags, 'd');
       const naddr = encodeNaddr({
         kind: note.repostedEvent.kind,
         pubkey: note.repostedEvent.pubkey,

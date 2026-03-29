@@ -16,6 +16,7 @@ import { parseListingMetadata, formatPrice } from './marketplace-helpers';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { getTag } from '../../helpers/tagUtils';
 
 export class MyListingsView extends View {
   private container: HTMLElement;
@@ -82,7 +83,7 @@ export class MyListingsView extends View {
       // Deduplicate by d-tag (keep newest)
       const deduped = new Map<string, NostrEvent>();
       for (const event of events) {
-        const dTag = event.tags?.find(t => t[0] === 'd')?.[1] || '';
+        const dTag = getTag(event.tags, 'd');
         const key = `${event.pubkey}:${dTag}`;
         const existing = deduped.get(key);
         if (!existing || (event.created_at || 0) > (existing.created_at || 0)) {

@@ -44,6 +44,7 @@ import * as tribes from '../../lists/tribes';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { getTag } from '../../helpers/tagUtils';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
@@ -1301,9 +1302,9 @@ export class ProfileView extends View {
 
       const links = events.map(event => {
         const tags = event.tags || [];
-        const name = tags.find(t => t[0] === 'name')?.[1] || 'Untitled';
-        const summary = tags.find(t => t[0] === 'summary')?.[1] || '';
-        const identifier = tags.find(t => t[0] === 'd')?.[1] || '';
+        const name = getTag(tags, 'name', 'Untitled');
+        const summary = getTag(tags, 'summary');
+        const identifier = getTag(tags, 'd');
         const naddr = encodeNaddr({
           kind: 32267,
           pubkey: event.pubkey,

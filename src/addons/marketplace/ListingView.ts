@@ -19,6 +19,7 @@ import { createCarousel, type CarouselInstance } from '../../helpers/CarouselHel
 import { AuthService } from '../../services/AuthService';
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
+import { getTag } from '../../helpers/tagUtils';
 
 const BOOKMARK_SVG_OUTLINE = `<svg class="listing-view__bookmark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
 const BOOKMARK_SVG_FILLED = `<svg class="listing-view__bookmark-icon listing-view__bookmark-icon--active" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
@@ -62,7 +63,7 @@ export class ListingView extends View {
       const renderedContent = contentProcessor.processContent(event.content || '').html;
 
       // Build a-tag coordinate for bookmarking
-      const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+      const dTag = getTag(event.tags, 'd');
       const aTagValue = `30402:${event.pubkey}:${dTag}`;
       const bookmarkDescription = `${meta.title}${priceDisplay ? ' — ' + priceDisplay : ''}`;
 
