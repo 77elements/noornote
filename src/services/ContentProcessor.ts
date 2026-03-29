@@ -19,7 +19,6 @@ import { hexToNpub } from '../helpers/nip19';
 import { UserProfileService } from './UserProfileService';
 import type { MediaContent } from '../helpers/renderMediaContent';
 import { isProfileRecognitionEnabled } from '../addons/profile-recognition/index';
-import { AuthService } from './AuthService';
 
 export interface QuotedReference {
   type: 'event' | 'note' | 'addr';
@@ -44,7 +43,6 @@ type TextBlinkerType = import('../addons/profile-recognition/profileBlinking').T
 export class ContentProcessor {
   private static instance: ContentProcessor;
   private userProfileService: UserProfileService;
-  private authService: AuthService;
   private profileCache: Map<string, any> = new Map();
 
   // Profile Recognition (lazy-loaded)
@@ -56,7 +54,6 @@ export class ContentProcessor {
 
   private constructor() {
     this.userProfileService = UserProfileService.getInstance();
-    this.authService = AuthService.getInstance();
     this.loadRecognitionIfEnabled();
   }
 
@@ -205,20 +202,8 @@ export class ContentProcessor {
     const npub = hexToNpub(hexPubkey);
     const picture = profile.picture || '';
 
-    // Don't apply profile recognition to your own profile
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser && currentUser.pubkey === hexPubkey;
-
-    // Profile Recognition logic (only if addon loaded)
-    const encounter = this.recognitionService?.getEncounter(hexPubkey);
-
-    // Update last known metadata if changed
-    if (encounter && (username !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl)) {
-      this.recognitionService?.updateLastKnown(hexPubkey, username, picture);
-    }
-
-    // Check if should blink (but not for own profile)
-    const shouldBlink = !isOwnProfile && encounter && this.recognitionService?.hasChangedWithinWindow(hexPubkey);
+    // Profile Recognition: check if name/picture changed and should blink
+    const shouldBlink = this.recognitionService?.checkRecognition(hexPubkey, username, picture);
 
     // Find all mention links for this profile (both loading and already loaded)
     const mentionLinks = document.querySelectorAll(`a[href="/profile/${npub}"][data-mention]`);
@@ -249,7 +234,7 @@ export class ContentProcessor {
       }
       const mentionId = linkElement.dataset.mentionId;
 
-      if (shouldBlink && encounter && img && nameSpan && this.ProfileBlinkerClass && this.TextBlinkerClass) {
+      if (shouldBlink && img && nameSpan && this.ProfileBlinkerClass && this.TextBlinkerClass) {
         // Get or create blinkers for this mention
         let blinkers = this.mentionBlinkers.get(mentionId);
         if (!blinkers) {
@@ -262,10 +247,10 @@ export class ContentProcessor {
 
         // Start blinking
         if (!blinkers.avatar.isBlinking()) {
-          blinkers.avatar.start(picture, encounter.firstPictureUrl);
+          blinkers.avatar.start(picture, shouldBlink.firstPictureUrl);
         }
         if (!blinkers.name.isBlinking()) {
-          blinkers.name.start(username, encounter.firstName);
+          blinkers.name.start(username, shouldBlink.firstName);
         }
       } else {
         // Stop blinking or update normally

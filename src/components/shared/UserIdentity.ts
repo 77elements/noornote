@@ -17,7 +17,6 @@
 import { UserProfileService, UserProfile } from '../../services/UserProfileService';
 import { UserHoverCard } from '../ui/UserHoverCard';
 import { isProfileRecognitionEnabled } from '../../addons/profile-recognition/index';
-import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { hexToNpub } from '../../helpers/nip19';
 
@@ -41,7 +40,6 @@ export class UserIdentity {
   private element: HTMLElement;
   private config: Required<Omit<UserIdentityConfig, 'onClick'>> & Pick<UserIdentityConfig, 'onClick'>;
   private userProfileService: UserProfileService;
-  private authService: AuthService;
   private router: Router;
   private profile: UserProfile | null = null;
   private unsubscribe?: () => void;
@@ -65,7 +63,6 @@ export class UserIdentity {
     };
 
     this.userProfileService = UserProfileService.getInstance();
-    this.authService = AuthService.getInstance();
     this.router = Router.getInstance();
 
     this.element = this.createElement();
@@ -177,26 +174,14 @@ export class UserIdentity {
    * Update UI with username, picture, and handle
    */
   private updateUI(username: string, picture: string, handle: string): void {
-    // Don't apply profile recognition to your own profile
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser && currentUser.pubkey === this.config.pubkey;
-
-    // Profile Recognition logic (only if addon loaded)
-    const encounter = this.recognitionService?.getEncounter(this.config.pubkey);
-
-    // Update last known metadata if changed
-    if (encounter && (username !== encounter.lastKnownName || picture !== encounter.lastKnownPictureUrl)) {
-      this.recognitionService?.updateLastKnown(this.config.pubkey, username, picture);
-    }
-
-    // Check if should blink (but not for own profile)
-    const shouldBlink = !isOwnProfile && encounter && this.recognitionService?.hasChangedWithinWindow(this.config.pubkey);
+    // Profile Recognition: check if name/picture changed and should blink
+    const shouldBlink = this.recognitionService?.checkRecognition(this.config.pubkey, username, picture);
 
     // Update username with blinking
     if (this.config.showUsername) {
       const usernameEl = this.element.querySelector('.user-identity__username') as HTMLElement;
       if (usernameEl) {
-        if (shouldBlink && encounter) {
+        if (shouldBlink) {
           // Initialize name blinker if needed
           if (!this.nameBlinker && this.TextBlinkerClass) {
             this.nameBlinker = new this.TextBlinkerClass(usernameEl);
@@ -204,7 +189,7 @@ export class UserIdentity {
 
           // Start blinking between current and first encounter
           if (this.nameBlinker && !this.nameBlinker.isBlinking()) {
-            this.nameBlinker.start(username, encounter.firstName);
+            this.nameBlinker.start(username, shouldBlink.firstName);
           }
         } else {
           // Stop blinking and show current name
@@ -221,7 +206,7 @@ export class UserIdentity {
     if (this.config.showAvatar) {
       const avatarEl = this.element.querySelector('.user-identity__avatar') as HTMLImageElement;
       if (avatarEl) {
-        if (shouldBlink && encounter) {
+        if (shouldBlink) {
           // Initialize blinker if needed
           if (!this.blinker && this.ProfileBlinkerClass) {
             this.blinker = new this.ProfileBlinkerClass(avatarEl);
@@ -229,7 +214,7 @@ export class UserIdentity {
 
           // Start blinking between current and first encounter
           if (this.blinker && !this.blinker.isBlinking()) {
-            this.blinker.start(picture, encounter.firstPictureUrl);
+            this.blinker.start(picture, shouldBlink.firstPictureUrl);
           }
         } else {
           // Stop blinking and show current pic

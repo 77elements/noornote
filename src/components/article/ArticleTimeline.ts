@@ -152,12 +152,12 @@ export class ArticleTimeline {
     card.innerHTML = `
       ${metadata.image ? `
         <div class="article-card__image">
-          <img src="${this.escapeHtml(metadata.image)}" alt="" loading="lazy" />
+          <img src="${escapeHtml(metadata.image)}" alt="" loading="lazy" />
         </div>
       ` : ''}
       <div class="article-card__content">
-        <h2 class="article-card__title">${this.escapeHtml(metadata.title || 'Untitled')}</h2>
-        ${metadata.summary ? `<p class="article-card__summary">${this.escapeHtml(metadata.summary)}</p>` : ''}
+        <h2 class="article-card__title">${escapeHtml(metadata.title || 'Untitled')}</h2>
+        ${metadata.summary ? `<p class="article-card__summary">${escapeHtml(metadata.summary)}</p>` : ''}
         <div class="article-card__meta">
           <span class="article-card__author user-mention" data-pubkey="${event.pubkey}">
             <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">
@@ -167,7 +167,7 @@ export class ArticleTimeline {
         </div>
         ${metadata.topics.length > 0 ? `
           <div class="article-card__tags">
-            ${metadata.topics.slice(0, 3).map(tag => `<span class="article-card__tag">#${this.escapeHtml(tag)}</span>`).join('')}
+            ${metadata.topics.slice(0, 3).map(tag => `<span class="article-card__tag">#${escapeHtml(tag)}</span>`).join('')}
           </div>
         ` : ''}
       </div>
@@ -274,14 +274,6 @@ export class ArticleTimeline {
     retryBtn?.addEventListener('click', () => this.initialize());
   }
 
-  /**
-   * Escape HTML
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Get element

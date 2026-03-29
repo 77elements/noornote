@@ -14,6 +14,7 @@ import { EventBus } from './EventBus';
 import { encodeNaddr } from './NostrToolsAdapter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { getTag } from '../helpers/tagUtils';
 
 
 const POLL_INTERVAL = 60 * 60 * 1000; // 1 hour in milliseconds
@@ -219,8 +220,8 @@ export class ArticleNotificationService {
    */
   private extractMetadata(event: NostrEvent): { title: string; identifier: string } {
     const tags = event.tags || [];
-    const title = tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
-    const identifier = tags.find(t => t[0] === 'd')?.[1] || '';
+    const title = getTag(tags, 'title', 'Untitled');
+    const identifier = getTag(tags, 'd');
     return { title, identifier };
   }
 

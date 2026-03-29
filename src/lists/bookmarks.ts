@@ -80,6 +80,7 @@ const logger = SystemLogger.getInstance();
 
 import { escapeHtml } from '../helpers/escapeHtml';
 import { ICON_TRASH_16 } from '../helpers/svgIcons';
+import { getTag } from '../helpers/tagUtils';
 
 /**
  * Validate URL format
@@ -1539,7 +1540,7 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     let filteredDeletedCount = 0;
 
     for (const event of events) {
-      const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+      const dTag = getTag(event.tags, 'd');
 
       // Check if this event is deleted
       const coordinate = `30003:${pubkey}:${dTag}`;

@@ -19,6 +19,7 @@ import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import type { PollData } from '../components/poll/PollCreator';
 import { RelayConfig } from './RelayConfig';
+import { getTag } from '../helpers/tagUtils';
 
 export interface PostOptions {
   /** Note content (plain text) */
@@ -362,7 +363,7 @@ export class PostService {
       tags.push(['p', parentPubkey, relayHint]);
     } else if (this.isAddressableKind(parentKind)) {
       // Commenting on an addressable event (article, recipe, etc.)
-      const dTag = parentEvent.tags.find(t => t[0] === 'd')?.[1] ?? '';
+      const dTag = getTag(parentEvent.tags, 'd');
       const addressableId = `${parentKind}:${parentPubkey}:${dTag}`;
 
       // Root scope = addressable event

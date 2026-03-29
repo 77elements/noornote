@@ -4,6 +4,7 @@
  */
 
 import { ModalService } from '../../services/ModalService';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export interface EditFolderModalOptions {
   currentName: string;
@@ -49,7 +50,7 @@ export class EditFolderModal {
           type="text"
           id="edit-folder-input"
           class="input"
-          value="${this.escapeHtml(this.options.currentName)}"
+          value="${escapeHtml(this.options.currentName)}"
           placeholder="Enter folder name..."
           maxlength="50"
           autocomplete="off"
@@ -100,9 +101,4 @@ export class EditFolderModal {
     });
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 }

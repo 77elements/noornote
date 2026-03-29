@@ -9,6 +9,7 @@ import type { MediaContent } from '../../../helpers/renderMediaContent';
 import type { ProcessedContent } from '../../../services/ContentProcessor';
 import { ContentProcessor } from '../../../services/ContentProcessor';
 import { escapeHtml } from '../../../helpers/escapeHtml';
+import { getTag } from '../../../helpers/tagUtils';
 
 export class PictureNoteProcessor {
   private static contentProcessor = ContentProcessor.getInstance();
@@ -56,7 +57,7 @@ export class PictureNoteProcessor {
    */
   static prependPictureContent(processedContent: ProcessedContent, tags: string[][]): void {
     const imageMedia = PictureNoteProcessor.extractImagesFromTags(tags);
-    const title = tags.find(tag => tag[0] === 'title')?.[1] || '';
+    const title = getTag(tags, 'title');
 
     let html = '';
 

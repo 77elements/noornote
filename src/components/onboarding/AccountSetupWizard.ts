@@ -73,6 +73,7 @@ interface WizardStep {
 }
 
 import { type FollowPack, parseFollowPackEvent, filterFollowPacks } from '../../helpers/parseFollowPack';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 // Word lists for random username generation
 const ADJECTIVES = [
@@ -1764,7 +1765,7 @@ IMPORTANT:
       row.className = 'wizard-relay-row';
 
       row.innerHTML = `
-        <div class="wizard-relay-url">${this.escapeHtml(relay.url.replace('wss://', ''))}</div>
+        <div class="wizard-relay-url">${escapeHtml(relay.url.replace('wss://', ''))}</div>
         <div class="wizard-relay-toggles">
           <label class="wizard-relay-toggle">
             <input type="checkbox" data-relay-index="${index}" data-type="read" ${relay.read ? 'checked' : ''} />
@@ -1840,7 +1841,7 @@ IMPORTANT:
       row.innerHTML = `
         <label class="wizard-inbox-relay-label">
           <input type="checkbox" data-inbox-index="${index}" ${relay.selected ? 'checked' : ''} />
-          <span class="wizard-relay-url">${this.escapeHtml(relay.url.replace('wss://', ''))}</span>
+          <span class="wizard-relay-url">${escapeHtml(relay.url.replace('wss://', ''))}</span>
         </label>
       `;
 
@@ -1951,7 +1952,7 @@ IMPORTANT:
       const info = document.createElement('div');
       info.className = 'wizard-pack-info';
       info.innerHTML = `
-        <div class="wizard-pack-title">${this.escapeHtml(pack.title)}</div>
+        <div class="wizard-pack-title">${escapeHtml(pack.title)}</div>
         <div class="wizard-pack-meta">${pack.userPubkeys.length} users</div>
       `;
       card.appendChild(info);
@@ -1987,8 +1988,8 @@ IMPORTANT:
     const header = document.createElement('div');
     header.className = 'wizard-pack-detail-header';
     header.innerHTML = `
-      <h2>${this.escapeHtml(pack.title)}</h2>
-      ${pack.description ? `<p class="wizard-intro">${this.escapeHtml(pack.description)}</p>` : ''}
+      <h2>${escapeHtml(pack.title)}</h2>
+      ${pack.description ? `<p class="wizard-intro">${escapeHtml(pack.description)}</p>` : ''}
     `;
     el.appendChild(header);
 
@@ -2027,8 +2028,8 @@ IMPORTANT:
       const info = document.createElement('div');
       info.className = 'wizard-pack-user-info';
       info.innerHTML = `
-        <div class="wizard-pack-user-name">${this.escapeHtml(profile?.name || pubkey.slice(0, 12) + '...')}</div>
-        ${profile?.about ? `<div class="wizard-pack-user-bio">${this.escapeHtml(profile.about.slice(0, 120))}${profile.about.length > 120 ? '...' : ''}</div>` : ''}
+        <div class="wizard-pack-user-name">${escapeHtml(profile?.name || pubkey.slice(0, 12) + '...')}</div>
+        ${profile?.about ? `<div class="wizard-pack-user-bio">${escapeHtml(profile.about.slice(0, 120))}${profile.about.length > 120 ? '...' : ''}</div>` : ''}
       `;
       row.appendChild(info);
 
@@ -2118,7 +2119,7 @@ IMPORTANT:
           const done = document.createElement('div');
           done.className = 'wizard-lightning-done';
           done.innerHTML = `
-            <p class="wizard-intro">Lightning address configured: <strong>${this.escapeHtml(this.profileData.lud16)}</strong></p>
+            <p class="wizard-intro">Lightning address configured: <strong>${escapeHtml(this.profileData.lud16)}</strong></p>
           `;
           el.appendChild(done);
           return el;
@@ -2220,7 +2221,7 @@ IMPORTANT:
             // Set lud16 in profile data
             this.profileData.lud16 = data.lightning_address;
 
-            statusEl.innerHTML = `Connected! Your Lightning address: <strong>${this.escapeHtml(data.lightning_address)}</strong>`;
+            statusEl.innerHTML = `Connected! Your Lightning address: <strong>${escapeHtml(data.lightning_address)}</strong>`;
             statusEl.classList.add('wizard-lightning-status--success');
           } catch (error) {
             statusEl.textContent = `Failed: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -2252,12 +2253,12 @@ IMPORTANT:
           <h1>You're All Set!</h1>
           <div class="wizard-done-preview">
             <div class="wizard-done-avatar" style="background-image: url('${this.profileData.picture || ''}')"></div>
-            <h3>${this.escapeHtml(this.profileData.name || '')}</h3>
-            <p class="wizard-done-username">@${this.escapeHtml(this.profileData.name || '')}</p>
-            ${this.profileData.about ? `<p class="wizard-done-bio">${this.escapeHtml(this.profileData.about)}</p>` : ''}
+            <h3>${escapeHtml(this.profileData.name || '')}</h3>
+            <p class="wizard-done-username">@${escapeHtml(this.profileData.name || '')}</p>
+            ${this.profileData.about ? `<p class="wizard-done-bio">${escapeHtml(this.profileData.about)}</p>` : ''}
             <p class="wizard-done-bio">${this.selectedRelays.length} relay${this.selectedRelays.length !== 1 ? 's' : ''}, ${this.inboxRelays.filter(r => r.selected).length} inbox relay${this.inboxRelays.filter(r => r.selected).length !== 1 ? 's' : ''}</p>
             ${this.followedPubkeys.size > 0 ? `<p class="wizard-done-bio">Following ${this.followedPubkeys.size} account${this.followedPubkeys.size !== 1 ? 's' : ''}</p>` : ''}
-            ${this.profileData.lud16 ? `<p class="wizard-done-bio">⚡ ${this.escapeHtml(this.profileData.lud16)}</p>` : ''}
+            ${this.profileData.lud16 ? `<p class="wizard-done-bio">⚡ ${escapeHtml(this.profileData.lud16)}</p>` : ''}
           </div>
           <div class="wizard-nav" style="border-top: none;">
             <button class="btn btn--large btn--passive" data-wizard-action="prev"><</button>
@@ -2465,9 +2466,4 @@ IMPORTANT:
     return [...new Set([...writeRelays, ...metadataRelays])];
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 }

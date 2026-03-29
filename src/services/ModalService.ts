@@ -4,6 +4,8 @@
  * Handles overlay, ESC key, close button, and cleanup
  */
 
+import { escapeHtml } from '../helpers/escapeHtml';
+
 export interface ModalConfig {
   title: string;
   content: HTMLElement | string;
@@ -77,9 +79,9 @@ export class ModalService {
     // Render modal structure
     this.container.innerHTML = `
       <div class="modal__overlay"></div>
-      <div class="modal__content" style="max-width: ${this.escapeHtml(width)}; max-height: ${this.escapeHtml(height)};">
+      <div class="modal__content" style="max-width: ${escapeHtml(width)}; max-height: ${escapeHtml(height)};">
         <div class="modal__header">
-          <h1>${this.escapeHtml(config.title)}</h1>
+          <h1>${escapeHtml(config.title)}</h1>
           ${closeButtonHtml}
         </div>
         <div class="modal__body"></div>
@@ -147,10 +149,10 @@ export class ModalService {
       const content = document.createElement('div');
       content.className = 'modal-confirm';
       content.innerHTML = `
-        <p class="modal-confirm__message">${this.escapeHtml(config.message)}</p>
+        <p class="modal-confirm__message">${escapeHtml(config.message)}</p>
         <div class="modal-confirm__actions">
-          <button class="btn btn-secondary modal-confirm__cancel">${this.escapeHtml(cancelText)}</button>
-          <button class="btn ${confirmClass} modal-confirm__confirm">${this.escapeHtml(confirmText)}</button>
+          <button class="btn btn-secondary modal-confirm__cancel">${escapeHtml(cancelText)}</button>
+          <button class="btn ${confirmClass} modal-confirm__confirm">${escapeHtml(confirmText)}</button>
         </div>
       `;
 
@@ -213,14 +215,6 @@ export class ModalService {
     }
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Destroy modal service (cleanup)

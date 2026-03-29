@@ -12,6 +12,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
+import { getTag } from '../../helpers/tagUtils';
 
 export interface ArticleFeedResult {
   articles: NostrEvent[];
@@ -164,7 +165,7 @@ export class ArticleFeedOrchestrator extends Orchestrator {
    * Get unique key for article (pubkey + d-tag)
    */
   private getArticleKey(event: NostrEvent): string {
-    const dTag = event.tags?.find(t => t[0] === 'd')?.[1] || '';
+    const dTag = getTag(event.tags, 'd');
     return `${event.pubkey}:${dTag}`;
   }
 

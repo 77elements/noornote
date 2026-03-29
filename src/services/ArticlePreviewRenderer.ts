@@ -7,6 +7,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { LongFormOrchestrator } from './orchestration/LongFormOrchestrator';
 import { Router } from './Router';
+import { escapeHtml } from '../helpers/escapeHtml';
 
 export class ArticlePreviewRenderer {
   private static instance: ArticlePreviewRenderer;
@@ -77,12 +78,12 @@ export class ArticlePreviewRenderer {
     card.innerHTML = `
       ${metadata.image ? `
         <div class="article-preview-image">
-          <img src="${metadata.image}" alt="${this.escapeHtml(metadata.title)}" loading="lazy" />
+          <img src="${metadata.image}" alt="${escapeHtml(metadata.title)}" loading="lazy" />
         </div>
       ` : ''}
       <div class="article-preview-content">
-        <h3 class="article-preview-title">${this.escapeHtml(metadata.title)}</h3>
-        ${metadata.summary ? `<p class="article-preview-summary">${this.escapeHtml(metadata.summary)}</p>` : ''}
+        <h3 class="article-preview-title">${escapeHtml(metadata.title)}</h3>
+        ${metadata.summary ? `<p class="article-preview-summary">${escapeHtml(metadata.summary)}</p>` : ''}
       </div>
     `;
 
@@ -111,12 +112,12 @@ export class ArticlePreviewRenderer {
     card.innerHTML = `
       ${icon ? `
         <div class="article-preview-image" style="display: flex; align-items: center; justify-content: center; padding: calc(var(--gap, 1rem) / 2); background: transparent;">
-          <img src="${icon}" alt="${this.escapeHtml(name)}" loading="lazy" style="width: 64px; height: 64px; border-radius: 8px; object-fit: contain;" />
+          <img src="${icon}" alt="${escapeHtml(name)}" loading="lazy" style="width: 64px; height: 64px; border-radius: 8px; object-fit: contain;" />
         </div>
       ` : ''}
       <div class="article-preview-content">
-        <h3 class="article-preview-title">${this.escapeHtml(name)}</h3>
-        ${summary ? `<p class="article-preview-summary">${this.escapeHtml(summary)}</p>` : ''}
+        <h3 class="article-preview-title">${escapeHtml(name)}</h3>
+        ${summary ? `<p class="article-preview-summary">${escapeHtml(summary)}</p>` : ''}
       </div>
     `;
 
@@ -149,9 +150,4 @@ export class ArticlePreviewRenderer {
     return skeleton;
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 }

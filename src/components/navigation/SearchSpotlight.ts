@@ -8,7 +8,7 @@ import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
 import { UserSearchService, type UserSearchResult } from '../../services/UserSearchService';
 import { hexToNpub } from '../../helpers/nip19';
-import { escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 /** Prefixes that bypass user search */
 const SPECIAL_INPUT_PREFIXES = ['/', 'http', 'npub1', 'nevent1'] as const;
@@ -294,8 +294,8 @@ export class SearchSpotlight {
             ${picture ? `<img src="${escapeHtmlAttr(picture)}" alt="" loading="lazy" />` : '<div class="search-spotlight__user-avatar-placeholder"></div>'}
           </div>
           <div class="search-spotlight__user-info">
-            <span class="search-spotlight__user-name">${this.escapeHtml(displayName)}</span>
-            ${user.nip05 ? `<span class="search-spotlight__user-nip05">${this.escapeHtml(user.nip05)}</span>` : ''}
+            <span class="search-spotlight__user-name">${escapeHtml(displayName)}</span>
+            ${user.nip05 ? `<span class="search-spotlight__user-nip05">${escapeHtml(user.nip05)}</span>` : ''}
           </div>
           ${followBadge}
         </div>
@@ -525,14 +525,6 @@ export class SearchSpotlight {
     this.navigateToInputURL();
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   public destroy(): void {
     if (this.escHandler) {

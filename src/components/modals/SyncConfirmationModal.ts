@@ -7,6 +7,7 @@
 import { ModalService } from '../../services/ModalService';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { diagLog } from '../../services/DiagnosticLogger';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 /**
  * Moved item with folder assignment change
@@ -220,7 +221,7 @@ export class SyncConfirmationModal<T> {
               Other differences
             </h3>
             <div class="sync-confirmation-modal__list">
-              ${snapshotDetails.map(d => `<div class="sync-confirmation-modal__item">${this.escapeHtml(d)}</div>`).join('')}
+              ${snapshotDetails.map(d => `<div class="sync-confirmation-modal__item">${escapeHtml(d)}</div>`).join('')}
             </div>
           </div>
         ` : ''}
@@ -253,7 +254,7 @@ export class SyncConfirmationModal<T> {
     let html = itemsToShow
       .map(item => {
         // Use HTML if available, otherwise escape text
-        const content = item.html || this.escapeHtml(item.name);
+        const content = item.html || escapeHtml(item.name);
         return `<div class="sync-confirmation-modal__item">${content}</div>`;
       })
       .join('');
@@ -275,16 +276,16 @@ export class SyncConfirmationModal<T> {
 
     let html = itemsToShow
       .map(item => {
-        const content = item.html || this.escapeHtml(item.name);
+        const content = item.html || escapeHtml(item.name);
         const browserFolderDisplay = item.browserFolder || '(root)';
         const sourceFolderDisplay = item.sourceFolder || '(root)';
         return `
           <div class="sync-confirmation-modal__item sync-confirmation-modal__item--moved">
             <span class="sync-confirmation-modal__item-name">${content}</span>
             <span class="sync-confirmation-modal__item-folders">
-              <span class="sync-confirmation-modal__folder sync-confirmation-modal__folder--local">${this.escapeHtml(browserFolderDisplay)}</span>
+              <span class="sync-confirmation-modal__folder sync-confirmation-modal__folder--local">${escapeHtml(browserFolderDisplay)}</span>
               <span class="sync-confirmation-modal__folder-arrow">→</span>
-              <span class="sync-confirmation-modal__folder sync-confirmation-modal__folder--source">${this.escapeHtml(sourceFolderDisplay)}</span>
+              <span class="sync-confirmation-modal__folder sync-confirmation-modal__folder--source">${escapeHtml(sourceFolderDisplay)}</span>
               <span class="sync-confirmation-modal__folder-label">(${sourceLabel})</span>
             </span>
           </div>
@@ -337,12 +338,4 @@ export class SyncConfirmationModal<T> {
     localBtn.addEventListener('click', handle('Keep local', this.options.onLocal));
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 }

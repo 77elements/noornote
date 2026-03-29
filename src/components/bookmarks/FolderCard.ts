@@ -7,6 +7,7 @@
  */
 
 import { ICON_TRASH_14 } from '../../helpers/svgIcons';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export interface FolderData {
   id: string;           // d-tag identifier
@@ -51,7 +52,7 @@ export class FolderCard {
           <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V9C21 7.89543 20.1046 7 19 7H12L10 5H5C3.89543 5 3 5.89543 3 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-      <div class="folder-card__name">${this.escapeHtml(name)}</div>
+      <div class="folder-card__name">${escapeHtml(name)}</div>
       <div class="folder-card__count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</div>
       <div class="folder-card__actions">
         <button class="folder-card__edit" aria-label="Rename folder" title="Rename folder">
@@ -153,11 +154,6 @@ export class FolderCard {
     });
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   public getElement(): HTMLElement | null {
     return this.element;

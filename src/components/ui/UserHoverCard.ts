@@ -10,7 +10,7 @@ import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { hexToNpub, npubToHex } from '../../helpers/nip19';
 import type { UserProfile } from '../../services/UserProfileService';
-import { escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export class UserHoverCard {
   private static instance: UserHoverCard | null = null;
@@ -117,8 +117,7 @@ export class UserHoverCard {
    * Generate card HTML
    */
   private getCardHTML(pubkey: string, profile: UserProfile): string {
-    const currentUser = this.authService.getCurrentUser();
-    const isOwnProfile = currentUser?.pubkey === pubkey;
+    const isOwnProfile = this.authService.isCurrentUser(pubkey);
 
     const displayName = profile.display_name || profile.name || 'Anonymous';
     // Use NIP-05(s) if available - prefer nip05s from tags, fallback to single nip05
@@ -134,11 +133,11 @@ export class UserHoverCard {
       <div class="user-hover-card__header">
         <img src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" class="user-hover-card__avatar" />
         <div class="user-hover-card__info">
-          <div class="user-hover-card__name">${this.escapeHtml(displayName)}</div>
-          <div class="user-hover-card__username">${this.escapeHtml(handle)}</div>
+          <div class="user-hover-card__name">${escapeHtml(displayName)}</div>
+          <div class="user-hover-card__username">${escapeHtml(handle)}</div>
         </div>
       </div>
-      ${truncatedAbout ? `<div class="user-hover-card__bio">${this.escapeHtml(truncatedAbout)}</div>` : ''}
+      ${truncatedAbout ? `<div class="user-hover-card__bio">${escapeHtml(truncatedAbout)}</div>` : ''}
       ${!isOwnProfile ? `<div class="user-hover-card__actions" data-pubkey="${pubkey}"></div>` : ''}
     `;
   }
@@ -298,14 +297,6 @@ export class UserHoverCard {
     UserHoverCard.instance = null;
   }
 
-  /**
-   * Escape HTML
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Initialize hover card for all mention links in a container

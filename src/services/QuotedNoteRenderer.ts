@@ -18,6 +18,7 @@ import { PollOrchestrator } from './orchestration/PollOrchestrator';
 import { MuteOrchestrator } from '../lists/mutes';
 import { AuthService } from './AuthService';
 import { escapeHtml } from '../helpers/escapeHtml';
+import { getTag } from '../helpers/tagUtils';
 
 export class QuotedNoteRenderer {
   private static instance: QuotedNoteRenderer;
@@ -90,7 +91,7 @@ export class QuotedNoteRenderer {
         // Route addressable events (kind 30000-39999) to ArticlePreviewRenderer
         if (result.event.kind !== undefined && result.event.kind >= 30000 && result.event.kind < 40000) {
           const { encodeNaddr } = await import('./NostrToolsAdapter');
-          const dTag = result.event.tags.find(t => t[0] === 'd')?.[1] || '';
+          const dTag = getTag(result.event.tags, 'd');
           const naddrRef = 'nostr:' + encodeNaddr({
             kind: result.event.kind,
             pubkey: result.event.pubkey,
@@ -158,6 +159,12 @@ export class QuotedNoteRenderer {
     if (event.kind === 21 || event.kind === 22) {
       const { VideoNoteProcessor } = await import('../components/ui/note-processing/VideoNoteProcessor');
       VideoNoteProcessor.prependVideoContent(processedContent, event.tags);
+    }
+
+    // For file metadata events (Kind 1063), extract file from NIP-94 tags
+    if (event.kind === 1063) {
+      const { FileMetadataProcessor } = await import('../components/ui/note-processing/FileMetadataProcessor');
+      FileMetadataProcessor.prependFileContent(processedContent, event.tags);
     }
 
     // Create header (small size for quotes)

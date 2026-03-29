@@ -38,6 +38,14 @@ function extractCleanMediaUrl(url: string, extensions: string[]): string {
   return lastExtEnd !== -1 ? url.substring(0, lastExtEnd) : url;
 }
 
+/** Regex for matching image URLs in text (global, for extraction) */
+export const IMAGE_URL_REGEX = /https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:[?&][^\s]*)?/gi;
+
+/** Check if a string is an image URL */
+export function isImageUrl(text: string): boolean {
+  return /^https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s]*)?$/i.test(text.trim());
+}
+
 export function extractMedia(text: string): MediaContent[] {
   const media: MediaContent[] = [];
 
@@ -46,8 +54,8 @@ export function extractMedia(text: string): MediaContent[] {
   const audioExts = ['mp3', 'wav', 'ogg', 'flac', 'm4a', 'aac'];
 
   // Image patterns — capture full URL including any trailing params after extension
-  const imageRegex = /https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:[?&][^\s]*)?/gi;
-  const images = text.match(imageRegex) || [];
+  IMAGE_URL_REGEX.lastIndex = 0;
+  const images = text.match(IMAGE_URL_REGEX) || [];
 
   images.forEach(fullUrl => {
     media.push({

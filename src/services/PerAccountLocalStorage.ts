@@ -96,6 +96,7 @@ export const StorageKeys = {
   MUTE_ENCRYPTION_METHOD: 'noornote_mute_encryption_method_map',
 
   // Media & display (per-account)
+  MEDIA_SERVER: 'noornote_media_server_map',
   SENSITIVE_MEDIA: 'noornote_sensitive_media_map',
   WALLET_BALANCE_VISIBLE: 'noornote_wallet_balance_visible_map',
 

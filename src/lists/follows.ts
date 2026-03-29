@@ -20,6 +20,7 @@ import { StorageKeys, now, deduplicateByPubkey, mergeByKey } from './storage';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey } from './relays';
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
+import { formatTimeAgo } from '../helpers/formatTimeAgo';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
@@ -1734,7 +1735,7 @@ export class FollowListManager {
 
       // Get last check info for display
       const lastCheckTimestamp = this.mutualChangeStorage.getLastCheckTimestamp();
-      const lastCheckText = lastCheckTimestamp ? this.formatTimeAgo(lastCheckTimestamp) : 'Never';
+      const lastCheckText = lastCheckTimestamp ? formatTimeAgo(lastCheckTimestamp) : 'Never';
 
       // Render container with sticky header, controls and list
       container.innerHTML = `
@@ -1990,20 +1991,6 @@ export class FollowListManager {
     }
   }
 
-  /**
-   * Format timestamp as relative time
-   */
-  private formatTimeAgo(timestamp: number): string {
-    const diffMs = Date.now() - timestamp;
-    const minutes = Math.floor(diffMs / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days}d ago`;
-    if (hours > 0) return `${hours}h ago`;
-    if (minutes > 0) return `${minutes}m ago`;
-    return 'Just now';
-  }
 
   /**
    * Load batch with mutual status check
@@ -2713,8 +2700,7 @@ export class ExternalFollowListManager {
     const username = extractDisplayName(item.profile);
     const npub = hexToNpub(item.pubkey);
     const avatarUrl = item.profile?.picture || '';
-    const currentUser = this.authService.getCurrentUser();
-    const isMe = currentUser?.pubkey === item.pubkey;
+    const isMe = this.authService.isCurrentUser(item.pubkey);
 
     const itemDiv = document.createElement('div');
     itemDiv.className = 'ui-list__item follow-item external-follow-item';
@@ -2722,7 +2708,7 @@ export class ExternalFollowListManager {
 
     // Determine button state
     let buttonHtml = '';
-    if (!isMe && currentUser) {
+    if (!isMe && this.authService.getCurrentUser()) {
       if (item.isFollowedByMe) {
         buttonHtml = `<span class="external-follow-item__status">Following</span>`;
       } else {

@@ -20,6 +20,7 @@ import {
   type BookmarkItem
 } from '../../lists/bookmarks';
 import { AuthService } from '../../services/AuthService';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 const MAX_ITEMS_COLLAPSED = 3;
 
@@ -51,8 +52,7 @@ export class ProfileListsComponent {
     this.folderService = getBookmarkFolderService();
     this.authService = AuthService.getInstance();
 
-    const currentUser = this.authService.getCurrentUser();
-    this.isOwnProfile = currentUser?.pubkey === pubkey;
+    this.isOwnProfile = this.authService.isCurrentUser(pubkey);
   }
 
   /**
@@ -168,7 +168,7 @@ export class ProfileListsComponent {
 
     return `
       <div class="profile-list-header">
-        <h2 class="profile-list-title">${this.escapeHtml(folderName)}</h2>
+        <h2 class="profile-list-title">${escapeHtml(folderName)}</h2>
         ${this.isOwnProfile ? `
           <button class="profile-list-drag-handle" title="Drag to reorder">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
@@ -219,9 +219,9 @@ export class ProfileListsComponent {
           </span>
           <div class="profile-list-item__content">
             <a href="${url.startsWith('http') ? url : `https://${url}`}" rel="noopener noreferrer" class="profile-list-item__url">
-              ${this.escapeHtml(displayUrl)}
+              ${escapeHtml(displayUrl)}
             </a>
-            ${description ? `<span class="profile-list-item__desc">${this.escapeHtml(description)}</span>` : ''}
+            ${description ? `<span class="profile-list-item__desc">${escapeHtml(description)}</span>` : ''}
           </div>
         </div>
       `;
@@ -243,7 +243,7 @@ export class ProfileListsComponent {
         <div class="profile-list-item">
           <span class="profile-list-item__icon">•</span>
           <div class="profile-list-item__content">
-            <span>${this.escapeHtml(item.value || item.id)}</span>
+            <span>${escapeHtml(item.value || item.id)}</span>
           </div>
         </div>
       `;
@@ -369,14 +369,6 @@ export class ProfileListsComponent {
     this.renderLists();
   }
 
-  /**
-   * Escape HTML
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Cleanup

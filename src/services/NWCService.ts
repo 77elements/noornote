@@ -13,7 +13,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { decodeNip19, nip04, finalizeEvent, getPublicKeyFromPrivate } from './NostrToolsAdapter';
+import { decodeNip19, nip04, finalizeEvent, getPublicKeyFromPrivate, hexToBytes } from './NostrToolsAdapter';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
@@ -322,7 +322,7 @@ export class NWCService {
       ws = await this.connectToNwcRelay(connection.relay);
 
       const content = JSON.stringify({ method, params });
-      const appSecretKey = this.hexToBytes(connection.secret);
+      const appSecretKey = hexToBytes(connection.secret);
       const appPubkey = getPublicKeyFromPrivate(connection.secret);
       const encryptedContent = await nip04.encrypt(connection.secret, connection.walletPubkey, content);
 
@@ -555,14 +555,4 @@ export class NWCService {
     }
   }
 
-  /**
-   * Convert hex string to Uint8Array
-   */
-  private hexToBytes(hex: string): Uint8Array {
-    const bytes = new Uint8Array(hex.length / 2);
-    for (let i = 0; i < hex.length; i += 2) {
-      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-    }
-    return bytes;
-  }
 }

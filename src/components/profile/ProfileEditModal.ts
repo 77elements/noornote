@@ -17,6 +17,7 @@ import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../system/SystemLogger';
 import { ImageUploader } from './ImageUploader';
 import { EventBus } from '../../services/EventBus';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export class ProfileEditModal {
   private static instance: ProfileEditModal;
@@ -153,7 +154,7 @@ export class ProfileEditModal {
             id="display_name"
             name="display_name"
             class="input"
-            value="${this.escapeHtml(this.currentProfile.display_name || '')}"
+            value="${escapeHtml(this.currentProfile.display_name || '')}"
             placeholder="Your full name"
             data-input="display_name"
           />
@@ -166,7 +167,7 @@ export class ProfileEditModal {
             id="name"
             name="name"
             class="input"
-            value="${this.escapeHtml(this.currentProfile.name || '')}"
+            value="${escapeHtml(this.currentProfile.name || '')}"
             placeholder="username"
             data-input="name"
           />
@@ -181,7 +182,7 @@ export class ProfileEditModal {
             rows="3"
             placeholder="Tell us about yourself..."
             data-input="about"
-          >${this.escapeHtml(this.currentProfile.about || '')}</textarea>
+          >${escapeHtml(this.currentProfile.about || '')}</textarea>
         </div>
 
         <div class="form-group">
@@ -191,7 +192,7 @@ export class ProfileEditModal {
             id="website"
             name="website"
             class="input"
-            value="${this.escapeHtml(this.currentProfile.website || '')}"
+            value="${escapeHtml(this.currentProfile.website || '')}"
             placeholder="https://example.com"
             data-input="website"
           />
@@ -204,7 +205,7 @@ export class ProfileEditModal {
             id="nip05"
             name="nip05"
             class="input"
-            value="${this.escapeHtml(this.currentProfile.nip05 || '')}"
+            value="${escapeHtml(this.currentProfile.nip05 || '')}"
             placeholder="user@domain.com"
             data-input="nip05"
           />
@@ -218,7 +219,7 @@ export class ProfileEditModal {
             id="lud16"
             name="lud16"
             class="input"
-            value="${this.escapeHtml(this.currentProfile.lud16 || '')}"
+            value="${escapeHtml(this.currentProfile.lud16 || '')}"
             placeholder="user@getalby.com"
             data-input="lud16"
           />
@@ -345,9 +346,4 @@ export class ProfileEditModal {
     this.bannerUploader = null;
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 }

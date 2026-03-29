@@ -6,6 +6,7 @@
 
 import QRCode from 'qrcode';
 import { ModalService } from '../../services/ModalService';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export class QRCodeModal {
   private static instance: QRCodeModal | null = null;
@@ -90,7 +91,7 @@ export class QRCodeModal {
   private renderErrorContent(message: string): string {
     return `
       <div class="modal__error">
-        <p>❌ ${this.escapeHtml(message)}</p>
+        <p>❌ ${escapeHtml(message)}</p>
       </div>
     `;
   }
@@ -106,8 +107,8 @@ export class QRCodeModal {
     container.className = 'qrcode-content';
     container.innerHTML = `
       <div class="qrcode-modal__qr-container">
-        <img src="${qrCodeDataUrl}" alt="QR Code for ${this.escapeHtml(npub)}" class="qrcode-modal__qr-image" />
-        <p class="qrcode-modal__npub-text">${this.escapeHtml(shortNpub)}</p>
+        <img src="${qrCodeDataUrl}" alt="QR Code for ${escapeHtml(npub)}" class="qrcode-modal__qr-image" />
+        <p class="qrcode-modal__npub-text">${escapeHtml(shortNpub)}</p>
         <p class="qrcode-modal__instruction">Scan for npub</p>
       </div>
     `;
@@ -142,7 +143,7 @@ export class QRCodeModal {
       container.innerHTML = `
         <div class="qrcode-modal__qr-container">
           <img src="${qrCodeDataUrl}" alt="Lightning QR Code" class="qrcode-modal__qr-image" />
-          <p class="qrcode-modal__npub-text">${this.escapeHtml(lud16)}</p>
+          <p class="qrcode-modal__npub-text">${escapeHtml(lud16)}</p>
           <p class="qrcode-modal__instruction">Scan with Lightning wallet</p>
         </div>
       `;
@@ -164,14 +165,6 @@ export class QRCodeModal {
     }
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Cleanup and destroy modal

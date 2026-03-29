@@ -7,6 +7,8 @@
  * ToastService.show('Failed to load', 'error');
  */
 
+import { escapeHtml } from '../helpers/escapeHtml';
+
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 export interface ToastOptions {
@@ -92,7 +94,7 @@ export class ToastService {
 
     toast.innerHTML = `
       <div class="toast__icon">${icon}</div>
-      <div class="toast__message">${this.escapeHtml(options.message)}</div>
+      <div class="toast__message">${escapeHtml(options.message)}</div>
       <button class="toast__close" aria-label="Close">×</button>
     `;
 
@@ -153,12 +155,4 @@ export class ToastService {
     }
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 }

@@ -15,6 +15,7 @@ import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 interface ArticleCardData {
   event: NostrEvent;
@@ -39,8 +40,7 @@ export class ProfileArticlesCarousel {
     this.element = document.createElement('div');
     this.element.className = 'profile-articles-carousel';
 
-    const currentUser = AuthService.getInstance().getCurrentUser();
-    this.isOwnProfile = currentUser?.pubkey === this.pubkey;
+    this.isOwnProfile = AuthService.getInstance().isCurrentUser(this.pubkey);
   }
 
   /**
@@ -130,16 +130,16 @@ export class ProfileArticlesCarousel {
         : '';
 
       const imageHtml = metadata.image
-        ? `<div class="profile-articles-carousel__card-image">${draftBadge}<img src="${this.escapeHtml(metadata.image)}" alt="" loading="lazy" /></div>`
+        ? `<div class="profile-articles-carousel__card-image">${draftBadge}<img src="${escapeHtml(metadata.image)}" alt="" loading="lazy" /></div>`
         : `<div class="profile-articles-carousel__card-image profile-articles-carousel__card-image--placeholder">${draftBadge}</div>`;
 
       return {
         html: `
           ${imageHtml}
           <div class="profile-articles-carousel__card-content">
-            <h3 class="profile-articles-carousel__card-title">${this.escapeHtml(metadata.title)}</h3>
+            <h3 class="profile-articles-carousel__card-title">${escapeHtml(metadata.title)}</h3>
             <div class="profile-articles-carousel__card-meta">
-              <span>${this.escapeHtml(authorName)}</span>
+              <span>${escapeHtml(authorName)}</span>
               <span>·</span>
               <span>${formattedDate}</span>
             </div>
@@ -181,11 +181,6 @@ export class ProfileArticlesCarousel {
     return this.authorName || 'Anonymous';
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   public getElement(): HTMLElement {
     return this.element;

@@ -31,6 +31,7 @@ import { ContentValidationManager } from './ContentValidationManager';
 import { EditorStateManager } from './EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export class PostNoteModal {
   private static instance: PostNoteModal;
@@ -105,7 +106,7 @@ export class PostNoteModal {
    * Load relay configuration based on TEST mode and timeline filter
    */
   private loadRelayConfiguration(): void {
-    const localRelaySettings = this.loadLocalRelaySettings();
+    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
 
     if (localRelaySettings.enabled) {
       this.isTestMode = true;
@@ -135,25 +136,6 @@ export class PostNoteModal {
     }
   }
 
-  /**
-   * Load local relay settings from localStorage
-   */
-  private loadLocalRelaySettings(): { enabled: boolean; url: string; mode: string } {
-    try {
-      const stored = localStorage.getItem('noornote_local_relay');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (error) {
-      console.warn('Failed to load local relay settings:', error);
-    }
-
-    return {
-      enabled: false,
-      mode: 'test',
-      url: 'ws://localhost:7777'
-    };
-  }
 
   /**
    * Render modal content
@@ -628,7 +610,7 @@ export class PostNoteModal {
 
     const optionsHtml = validOptions.map(option => `
       <div class="nip88-poll__option nip88-poll__option--preview">
-        <span class="nip88-poll__option-label">${this.escapeHtml(option.label)}</span>
+        <span class="nip88-poll__option-label">${escapeHtml(option.label)}</span>
         <span class="nip88-poll__option-stats">
           <span class="nip88-poll__option-count">0 votes</span>
           <span class="nip88-poll__option-percentage">0%</span>
@@ -647,14 +629,6 @@ export class PostNoteModal {
     `;
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Cleanup sub-components

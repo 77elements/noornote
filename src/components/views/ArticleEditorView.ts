@@ -27,6 +27,7 @@ import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrche
 import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 type TabMode = 'edit' | 'preview';
 
@@ -147,7 +148,7 @@ export class ArticleEditorView extends View {
    * Load relay configuration
    */
   private loadRelayConfiguration(): void {
-    const localRelaySettings = this.loadLocalRelaySettings();
+    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
 
     if (localRelaySettings.enabled) {
       this.isTestMode = true;
@@ -163,20 +164,6 @@ export class ArticleEditorView extends View {
     }
   }
 
-  /**
-   * Load local relay settings
-   */
-  private loadLocalRelaySettings(): { enabled: boolean; url: string } {
-    try {
-      const stored = localStorage.getItem('noornote_local_relay');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (_err) {
-      // Ignore
-    }
-    return { enabled: false, url: 'ws://localhost:7777' };
-  }
 
   /**
    * Save a snapshot of the current editor state for dirty-checking
@@ -321,7 +308,7 @@ export class ArticleEditorView extends View {
             id="article-title"
             class="input input--title"
             placeholder="Article title..."
-            value="${this.escapeHtml(this.title)}"
+            value="${escapeHtml(this.title)}"
             data-field="title"
           />
         </div>
@@ -334,7 +321,7 @@ export class ArticleEditorView extends View {
             class="textarea textarea--code textarea--large article-editor-content"
             placeholder="Write your article in Markdown..."
             data-field="content"
-          >${this.escapeHtml(this.content)}</textarea>
+          >${escapeHtml(this.content)}</textarea>
         </div>
 
         <section class="nn-ui-toggle">
@@ -357,7 +344,7 @@ export class ArticleEditorView extends View {
                   id="article-image"
                   class="input"
                   placeholder="https://... or upload"
-                  value="${this.escapeHtml(this.image)}"
+                  value="${escapeHtml(this.image)}"
                   data-field="image"
                 />
                 <button type="button" class="article-editor__upload-btn" data-action="upload-cover" title="Upload image">
@@ -378,7 +365,7 @@ export class ArticleEditorView extends View {
                 class="textarea textarea--small"
                 placeholder="Brief description of your article..."
                 data-field="summary"
-              >${this.escapeHtml(this.summary)}</textarea>
+              >${escapeHtml(this.summary)}</textarea>
             </div>
 
             <div class="form__row">
@@ -388,7 +375,7 @@ export class ArticleEditorView extends View {
                 id="article-tags"
                 class="input"
                 placeholder="nostr, bitcoin, technology (comma separated)"
-                value="${this.escapeHtml(this.tags)}"
+                value="${escapeHtml(this.tags)}"
                 data-field="tags"
               />
             </div>
@@ -403,7 +390,7 @@ export class ArticleEditorView extends View {
                 id="article-identifier"
                 class="input"
                 placeholder="my-article-slug"
-                value="${this.escapeHtml(this.identifier)}"
+                value="${escapeHtml(this.identifier)}"
                 data-field="identifier"
                 title="Unique identifier for this article. Changing this after publishing creates a new article instead of updating."
               />
@@ -422,13 +409,13 @@ export class ArticleEditorView extends View {
 
     return `
       <div class="article-editor__preview">
-        ${this.image ? `<img src="${this.escapeHtml(this.image)}" alt="${this.escapeHtml(this.title)}" class="article-editor__preview-image" />` : ''}
-        <h1 class="article-editor__preview-title">${this.escapeHtml(this.title) || 'Untitled'}</h1>
-        ${this.summary ? `<p class="article-editor__preview-summary">${this.escapeHtml(this.summary)}</p>` : ''}
+        ${this.image ? `<img src="${escapeHtml(this.image)}" alt="${escapeHtml(this.title)}" class="article-editor__preview-image" />` : ''}
+        <h1 class="article-editor__preview-title">${escapeHtml(this.title) || 'Untitled'}</h1>
+        ${this.summary ? `<p class="article-editor__preview-summary">${escapeHtml(this.summary)}</p>` : ''}
         <div class="article-editor__preview-content">${htmlContent}</div>
         ${this.tags ? `
           <div class="article-editor__preview-tags">
-            ${this.tags.split(',').map(tag => `<span class="article-editor__preview-tag">#${this.escapeHtml(tag.trim())}</span>`).join('')}
+            ${this.tags.split(',').map(tag => `<span class="article-editor__preview-tag">#${escapeHtml(tag.trim())}</span>`).join('')}
           </div>
         ` : ''}
       </div>
@@ -924,18 +911,10 @@ export class ArticleEditorView extends View {
       // Add rel for security - global handler in App.ts opens external links
       return html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
     } catch (_err) {
-      return `<p>${this.escapeHtml(content)}</p>`;
+      return `<p>${escapeHtml(content)}</p>`;
     }
   }
 
-  /**
-   * Escape HTML
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Get element

@@ -18,6 +18,7 @@ import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { getTag } from '../../helpers/tagUtils';
 
 export class MarketplaceTimelineInjector {
   private static instance: MarketplaceTimelineInjector;
@@ -133,7 +134,7 @@ export class MarketplaceTimelineInjector {
       // Deduplicate by pubkey:d-tag, keep newest
       const deduped = new Map<string, NostrEvent>();
       for (const event of events) {
-        const dTag = event.tags?.find(t => t[0] === 'd')?.[1] || '';
+        const dTag = getTag(event.tags, 'd');
         const key = `${event.pubkey}:${dTag}`;
         const existing = deduped.get(key);
         if (!existing || (event.created_at || 0) > (existing.created_at || 0)) {

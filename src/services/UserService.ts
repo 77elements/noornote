@@ -39,11 +39,8 @@ export class UserService {
    * @param forceRefresh - Skip NDK cache and fetch fresh from relays
    */
   public async getUserFollowing(pubkey: string, forceRefresh: boolean = false): Promise<string[]> {
-    const currentUser = AuthService.getInstance().getCurrentUser();
-    const isCurrentUser = currentUser?.pubkey === pubkey;
-
     // For current user: read from browserItems (localStorage)
-    if (isCurrentUser) {
+    if (AuthService.getInstance().isCurrentUser(pubkey)) {
       return this.getCurrentUserFollowing();
     }
 

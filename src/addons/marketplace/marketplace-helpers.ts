@@ -4,6 +4,8 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { getTag } from '../../helpers/tagUtils';
+import { IMAGE_URL_REGEX } from '../../helpers/extractMedia';
 
 export interface ListingMetadata {
   title: string;
@@ -23,8 +25,6 @@ export interface ListingMetadata {
 /** Tag names that may contain image URLs (non-standard clients use various names) */
 const IMAGE_TAG_NAMES = ['image', 'thumb', 'thumbnail', 'featuredImageUrl', 'screenshotsUrls'];
 
-/** Regex to find image URLs in content */
-const IMAGE_URL_REGEX = /https?:\/\/\S+\.(?:jpg|jpeg|png|gif|webp)(?:\?\S*)?/gi;
 
 /**
  * Extract images from event tags and content.
@@ -83,18 +83,18 @@ export function parseListingMetadata(event: NostrEvent): ListingMetadata {
   const currencyTag = tags.find(t => t[0] === 'currency');
 
   return {
-    title: tags.find(t => t[0] === 'title')?.[1] || 'Untitled Listing',
-    summary: tags.find(t => t[0] === 'summary')?.[1] || '',
+    title: getTag(tags, 'title', 'Untitled Listing'),
+    summary: getTag(tags, 'summary'),
     images: extractImages(event),
     price: priceTag?.[1] || '',
     priceCurrency: priceTag?.[2] || currencyTag?.[1] || '',
     priceFrequency: priceTag?.[3] || '',
-    location: tags.find(t => t[0] === 'location')?.[1] || '',
-    status: tags.find(t => t[0] === 'status')?.[1] || 'active',
-    identifier: tags.find(t => t[0] === 'd')?.[1] || '',
+    location: getTag(tags, 'location'),
+    status: getTag(tags, 'status', 'active'),
+    identifier: getTag(tags, 'd'),
     publishedAt: parseInt(tags.find(t => t[0] === 'published_at')?.[1] || String(event.created_at || 0)),
     tags: tags.filter(t => t[0] === 't').map(t => t[1]).filter((v): v is string => !!v),
-    geohash: tags.find(t => t[0] === 'g')?.[1] || '',
+    geohash: getTag(tags, 'g'),
   };
 }
 

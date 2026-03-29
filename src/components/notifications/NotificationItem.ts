@@ -21,6 +21,7 @@ import { getRepostsOriginalEvent } from '../../helpers/getRepostsOriginalEvent';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export interface NotificationItemOptions {
   event: NostrEvent;
@@ -88,7 +89,7 @@ export class NotificationItem {
           ${formatTimestamp(this.options.timestamp)}
         </div>
         ${contextHtml}
-        ${preview ? `<div class="notification-item__preview">${this.escapeHtml(preview)}</div>` : ''}
+        ${preview ? `<div class="notification-item__preview">${escapeHtml(preview)}</div>` : ''}
         <div class="notification-item__zaps"></div>
         <div class="notification-item__isl"></div>
         ${hashtagFooterHtml}
@@ -269,7 +270,7 @@ export class NotificationItem {
         }
 
         // Otherwise use the actual emoji (escape to prevent XSS via crafted reaction content)
-        return this.escapeHtml(reactionContent);
+        return escapeHtml(reactionContent);
       }
 
       case 'zap':
@@ -307,6 +308,14 @@ export class NotificationItem {
       if (kind === 30023) return 'article';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
+    }
+    const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
+    if (kTag?.[1]) {
+      const kind = parseInt(kTag[1]);
+      if (kind === 1063) return 'file';
+      if (kind === 20) return 'picture';
+      if (kind === 21 || kind === 22) return 'video';
+      if (kind === 1068) return 'poll';
     }
     return 'note';
   }
@@ -451,7 +460,7 @@ export class NotificationItem {
 
             // Truncate plain text FIRST, THEN resolve mentions with loaded profiles
             const truncatedPlain = content.length > 150 ? content.slice(0, 150) + '...' : content;
-            const withMentions = npubToUsername(this.escapeHtml(truncatedPlain), 'html-multi', (hex) => profiles.get(hex) || null);
+            const withMentions = npubToUsername(escapeHtml(truncatedPlain), 'html-multi', (hex) => profiles.get(hex) || null);
 
             // Update context line with replied-to note
             const contextElement = this.element.querySelector('.thread-context-content');
@@ -723,14 +732,6 @@ export class NotificationItem {
   }
 
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Get the element

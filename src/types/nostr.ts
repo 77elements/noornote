@@ -173,6 +173,7 @@ export const USER_CONTENT_KINDS: number[] = [
   EventKind.VIDEO_PORTRAIT,
   EventKind.POLL,
   EventKind.COMMENT,
+  EventKind.FILE_METADATA,
   EventKind.COMIC_STRIP,
   EventKind.LONG_FORM_CONTENT,
 ];
