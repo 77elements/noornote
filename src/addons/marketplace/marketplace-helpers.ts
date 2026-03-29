@@ -5,6 +5,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { getTag } from '../../helpers/tagUtils';
+import { IMAGE_URL_REGEX } from '../../helpers/extractMedia';
 
 export interface ListingMetadata {
   title: string;
@@ -24,8 +25,6 @@ export interface ListingMetadata {
 /** Tag names that may contain image URLs (non-standard clients use various names) */
 const IMAGE_TAG_NAMES = ['image', 'thumb', 'thumbnail', 'featuredImageUrl', 'screenshotsUrls'];
 
-/** Regex to find image URLs in content */
-const IMAGE_URL_REGEX = /https?:\/\/\S+\.(?:jpg|jpeg|png|gif|webp)(?:\?\S*)?/gi;
 
 /**
  * Extract images from event tags and content.

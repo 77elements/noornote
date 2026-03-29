@@ -15,6 +15,7 @@ import { SystemLogger } from '../../system/SystemLogger';
 import { EventBus } from '../../../services/EventBus';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { escapeHtml } from '../../../helpers/escapeHtml';
+import { isImageUrl } from '../../../helpers/extractMedia';
 
 // Store pollData by eventId for cross-view updates
 const pollDataCache = new Map<string, PollData>();
@@ -307,19 +308,10 @@ export class NIP88PollRenderer {
 
 
   /**
-   * Check if text is an image URL
-   */
-  private static isImageUrl(text: string): boolean {
-    // Same pattern as extractMedia.ts
-    const imageRegex = /^https?:\/\/[^\s]+\.(?:jpg|jpeg|png|gif|webp|svg)(?:\?[^\s]*)?$/i;
-    return imageRegex.test(text.trim());
-  }
-
-  /**
    * Render option label - as image if it's an image URL, otherwise as text
    */
   private static renderOptionLabel(label: string): string {
-    if (this.isImageUrl(label)) {
+    if (isImageUrl(label)) {
       return `<img src="${escapeHtml(label)}" alt="Poll option" class="nip88-poll__option-image" loading="lazy">`;
     }
     return escapeHtml(label);
