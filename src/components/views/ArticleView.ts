@@ -25,6 +25,7 @@ import { ArticlePreviewRenderer } from '../../services/ArticlePreviewRenderer';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export class ArticleView {
   private container: HTMLElement;
@@ -86,9 +87,9 @@ export class ArticleView {
     this.container.innerHTML = `
       <div class="article-view-content">
         <div class="article-header">
-          ${metadata.image ? `<img src="${metadata.image}" alt="${this.escapeHtml(metadata.title)}" class="article-banner" />` : ''}
+          ${metadata.image ? `<img src="${metadata.image}" alt="${escapeHtml(metadata.title)}" class="article-banner" />` : ''}
           <div class="article-title-row">
-            <h1 class="article-title">${this.escapeHtml(metadata.title)}</h1>
+            <h1 class="article-title">${escapeHtml(metadata.title)}</h1>
             ${isOwnArticle ? `
               <div class="article-title-row__actions">
                 <button class="btn btn--medium btn--passive" data-action="edit-article" title="Edit article">
@@ -102,7 +103,7 @@ export class ArticleView {
               </div>
             ` : ''}
           </div>
-          ${metadata.summary ? `<p class="article-summary">${this.escapeHtml(metadata.summary)}</p>` : ''}
+          ${metadata.summary ? `<p class="article-summary">${escapeHtml(metadata.summary)}</p>` : ''}
           <div class="article-author-container"></div>
         </div>
         <div class="article-body">${articleHtml}</div>
@@ -359,7 +360,7 @@ export class ArticleView {
     } catch (_error) {
       console.error('Failed to render markdown:', _error);
       // Fallback: return escaped plain text
-      return { html: `<p>${this.escapeHtml(content)}</p>`, quotedReferences: [] };
+      return { html: `<p>${escapeHtml(content)}</p>`, quotedReferences: [] };
     }
   }
 
@@ -375,14 +376,6 @@ export class ArticleView {
     `;
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Get the container element

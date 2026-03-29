@@ -5,7 +5,7 @@
 
 import { UserProfileService } from '../services/UserProfileService';
 import { npubToHex, nprofileToNpub } from './nip19';
-import { escapeHtml } from './escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from './escapeHtml';
 
 export interface Profile {
   name?: string;
@@ -96,30 +96,19 @@ function npubToUsernameHTMLSingle(npub: string, profileResolver: ProfileResolver
     const username = profile?.display_name || profile?.name || npub;
     const escapedUsername = escapeHtml(username);
     const picture = profile?.picture || '';
-    const escapedPicture = picture ? escapeHtmlAttribute(picture) : '';
+    const escapedPicture = picture ? escapeHtmlAttr(picture) : '';
     return `<a href="/profile/${npub}" class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${escapedPicture}" alt="" />${escapedUsername}</a>`;
   } catch {
     return npub;
   }
 }
 
-/**
- * Escape text for safe use in HTML attributes
- */
-function escapeHtmlAttribute(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 /**
  * Build mention HTML with profile picture (full mode)
  */
 function buildMentionHTML(npub: string, username: string, picture?: string, isLoading = false): string {
-  const avatarSrc = picture ? escapeHtmlAttribute(picture) : '';
+  const avatarSrc = picture ? escapeHtmlAttr(picture) : '';
   const escapedUsername = escapeHtml(username);
   const attrs = isLoading ? 'data-mention data-loading' : 'data-mention';
   return `<a href="/profile/${npub}" ${attrs} class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${avatarSrc}" alt="" />${escapedUsername}</a>`;

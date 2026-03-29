@@ -12,6 +12,7 @@ import { Router } from '../../services/Router';
 import { VideoNoteProcessor } from '../ui/note-processing/VideoNoteProcessor';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 interface VideoCardData {
   event: NostrEvent;
@@ -91,17 +92,17 @@ export class ProfileVideosCarousel {
   private renderCarousel(): void {
     const cards = this.videos.map(video => {
       const eventId = video.event.id || '';
-      const posterAttr = video.thumbnail ? ` poster="${this.escapeHtml(video.thumbnail)}"` : '';
+      const posterAttr = video.thumbnail ? ` poster="${escapeHtml(video.thumbnail)}"` : '';
 
       return {
         html: `
           <div class="profile-videos-carousel__card-thumb">
-            <video src="${this.escapeHtml(video.videoUrl)}"${posterAttr} preload="none" muted></video>
+            <video src="${escapeHtml(video.videoUrl)}"${posterAttr} preload="none" muted></video>
             <div class="profile-videos-carousel__play-icon">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             </div>
           </div>
-          ${video.title ? `<div class="profile-videos-carousel__card-title">${this.escapeHtml(video.title)}</div>` : ''}
+          ${video.title ? `<div class="profile-videos-carousel__card-title">${escapeHtml(video.title)}</div>` : ''}
         `,
         data: { noteid: eventId }
       };
@@ -121,11 +122,6 @@ export class ProfileVideosCarousel {
     // Video thumbnail seek handled by global MutationObserver (startVideoThumbnailObserver)
   }
 
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   public getElement(): HTMLElement {
     return this.element;

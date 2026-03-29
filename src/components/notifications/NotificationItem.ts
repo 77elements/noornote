@@ -21,6 +21,7 @@ import { getRepostsOriginalEvent } from '../../helpers/getRepostsOriginalEvent';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export interface NotificationItemOptions {
   event: NostrEvent;
@@ -88,7 +89,7 @@ export class NotificationItem {
           ${formatTimestamp(this.options.timestamp)}
         </div>
         ${contextHtml}
-        ${preview ? `<div class="notification-item__preview">${this.escapeHtml(preview)}</div>` : ''}
+        ${preview ? `<div class="notification-item__preview">${escapeHtml(preview)}</div>` : ''}
         <div class="notification-item__zaps"></div>
         <div class="notification-item__isl"></div>
         ${hashtagFooterHtml}
@@ -269,7 +270,7 @@ export class NotificationItem {
         }
 
         // Otherwise use the actual emoji (escape to prevent XSS via crafted reaction content)
-        return this.escapeHtml(reactionContent);
+        return escapeHtml(reactionContent);
       }
 
       case 'zap':
@@ -459,7 +460,7 @@ export class NotificationItem {
 
             // Truncate plain text FIRST, THEN resolve mentions with loaded profiles
             const truncatedPlain = content.length > 150 ? content.slice(0, 150) + '...' : content;
-            const withMentions = npubToUsername(this.escapeHtml(truncatedPlain), 'html-multi', (hex) => profiles.get(hex) || null);
+            const withMentions = npubToUsername(escapeHtml(truncatedPlain), 'html-multi', (hex) => profiles.get(hex) || null);
 
             // Update context line with replied-to note
             const contextElement = this.element.querySelector('.thread-context-content');
@@ -731,14 +732,6 @@ export class NotificationItem {
   }
 
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Get the element

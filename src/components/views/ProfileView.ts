@@ -43,6 +43,7 @@ import { ToastService } from '../../services/ToastService';
 import * as tribes from '../../lists/tribes';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 import { diagLog } from '../../services/DiagnosticLogger';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 // Initialize dayjs calendar system
 dayjs.extend(calendarSystems);
@@ -529,7 +530,7 @@ export class ProfileView extends View {
 
 
     // Process about text: escape HTML, convert line breaks, linkify URLs
-    const processedAbout = about ? linkifyUrls(convertLineBreaks(this.escapeHtml(about))) : '';
+    const processedAbout = about ? linkifyUrls(convertLineBreaks(escapeHtml(about))) : '';
 
     // Shorten npub for display (first 8 + last 6 chars)
     const shortNpub = `${this.npub.slice(0, 12)}...${this.npub.slice(-6)}`;
@@ -537,7 +538,7 @@ export class ProfileView extends View {
     const headerHTML = `
       <div class="profile-nip01">
         ${banner ? `
-          <div class="profile-banner" style="background-image: url('${this.escapeHtml(banner)}')"></div>
+          <div class="profile-banner" style="background-image: url('${escapeHtml(banner)}')"></div>
         ` : `
           <div class="profile-banner profile-banner-fallback"></div>
         `}
@@ -545,13 +546,13 @@ export class ProfileView extends View {
 
         <div class="profile-info">
           <div class="profile-avatar-wrapper">
-            <img src="${this.escapeHtml(picture)}" alt="${this.escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
+            <img src="${escapeHtml(picture)}" alt="${escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
             ${this.followsYou ? '<div class="follows-you-badge">Follows you</div>' : ''}
           </div>
 
           <div class="profile-meta">
-            <h1 class="profile-name">${this.escapeHtml(displayName)}</h1>
-            ${nip05s.length > 0 ? `<p class="profile-nip05">${nip05s.map(n => this.escapeHtml(n)).join(', ')}</p>` : ''}
+            <h1 class="profile-name">${escapeHtml(displayName)}</h1>
+            ${nip05s.length > 0 ? `<p class="profile-nip05">${nip05s.map(n => escapeHtml(n)).join(', ')}</p>` : ''}
 
             <div class="profile-identifiers">
               ${lud16 ? `
@@ -559,13 +560,13 @@ export class ProfileView extends View {
                   <svg class="lightning-icon" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
                   </svg>
-                  <span>${this.escapeHtml(lud16)}</span>
+                  <span>${escapeHtml(lud16)}</span>
                 </div>
               ` : ''}
 
               <div class="profile-npub">
-                <span class="npub-text" title="${this.escapeHtml(this.npub)}">${shortNpub}</span>
-                <button class="copy-btn" data-copy="${this.escapeHtml(this.npub)}" title="Copy npub">
+                <span class="npub-text" title="${escapeHtml(this.npub)}">${shortNpub}</span>
+                <button class="copy-btn" data-copy="${escapeHtml(this.npub)}" title="Copy npub">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -603,7 +604,7 @@ export class ProfileView extends View {
             <div class="profile-joined-date" id="profile-joined-date"></div>
 
             ${processedAbout ? `<p class="profile-about">${processedAbout}</p>` : ''}
-            ${website ? `<p class="profile-website"><a href="${this.escapeHtml(website)}" rel="noopener noreferrer">${this.escapeHtml(website)}</a></p>` : ''}
+            ${website ? `<p class="profile-website"><a href="${escapeHtml(website)}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
 
             <div class="profile-stats">
               ${this.renderEditButton()}
@@ -1151,7 +1152,7 @@ export class ProfileView extends View {
   private showError(message: string): void {
     this.container.innerHTML = `
       <div class="profile-error">
-        <p>❌ ${this.escapeHtml(message)}</p>
+        <p>❌ ${escapeHtml(message)}</p>
       </div>
     `;
   }
@@ -1160,7 +1161,7 @@ export class ProfileView extends View {
    * Show muted profile placeholder with unmute options
    */
   private async showMutedProfile(): Promise<void> {
-    this.container.innerHTML = await this.muteManager.renderMutedProfile(this.escapeHtml.bind(this));
+    this.container.innerHTML = await this.muteManager.renderMutedProfile(escapeHtml);
     this.muteManager.setupUnmuteButton(this.container, () => {
       // Reload profile after unmute
       this.render();
@@ -1433,14 +1434,6 @@ export class ProfileView extends View {
     }
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Get the npub for this profile

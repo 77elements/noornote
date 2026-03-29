@@ -14,6 +14,7 @@ import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../system/SystemLogger';
 import { EventBus } from '../../../services/EventBus';
 import { RelayConfig } from '../../../services/RelayConfig';
+import { escapeHtml } from '../../../helpers/escapeHtml';
 
 // Store pollData by eventId for cross-view updates
 const pollDataCache = new Map<string, PollData>();
@@ -304,14 +305,6 @@ export class NIP88PollRenderer {
     }
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private static escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Check if text is an image URL
@@ -327,8 +320,8 @@ export class NIP88PollRenderer {
    */
   private static renderOptionLabel(label: string): string {
     if (this.isImageUrl(label)) {
-      return `<img src="${this.escapeHtml(label)}" alt="Poll option" class="nip88-poll__option-image" loading="lazy">`;
+      return `<img src="${escapeHtml(label)}" alt="Poll option" class="nip88-poll__option-image" loading="lazy">`;
     }
-    return this.escapeHtml(label);
+    return escapeHtml(label);
   }
 }

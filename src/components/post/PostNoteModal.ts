@@ -31,6 +31,7 @@ import { ContentValidationManager } from './ContentValidationManager';
 import { EditorStateManager } from './EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
+import { escapeHtml } from '../../helpers/escapeHtml';
 
 export class PostNoteModal {
   private static instance: PostNoteModal;
@@ -628,7 +629,7 @@ export class PostNoteModal {
 
     const optionsHtml = validOptions.map(option => `
       <div class="nip88-poll__option nip88-poll__option--preview">
-        <span class="nip88-poll__option-label">${this.escapeHtml(option.label)}</span>
+        <span class="nip88-poll__option-label">${escapeHtml(option.label)}</span>
         <span class="nip88-poll__option-stats">
           <span class="nip88-poll__option-count">0 votes</span>
           <span class="nip88-poll__option-percentage">0%</span>
@@ -647,14 +648,6 @@ export class PostNoteModal {
     `;
   }
 
-  /**
-   * Escape HTML to prevent XSS
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Cleanup sub-components

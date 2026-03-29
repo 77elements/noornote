@@ -16,6 +16,7 @@ import { AuthService } from '../../../services/AuthService';
 import { NostrTransport } from '../../../services/transport/NostrTransport';
 import { RelayConfig } from '../../../services/RelayConfig';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { escapeHtml } from '../../../helpers/escapeHtml';
 
 interface GroupedEvents {
   bookmarks: NostrEvent[];
@@ -243,7 +244,7 @@ export class Nip51InspectorManager {
         <div class="nip51-inspector-event__header">
           <div class="nip51-inspector-event__meta">
             <span class="nip51-inspector-event__id" title="${eventId}">${eventId.slice(0, 8)}...${eventId.slice(-8)}</span>
-            ${dTag ? `<span class="nip51-inspector-event__dtag">${this.escapeHtml(dTag)}</span>` : ''}
+            ${dTag ? `<span class="nip51-inspector-event__dtag">${escapeHtml(dTag)}</span>` : ''}
             <span class="nip51-inspector-event__time">${timestamp}</span>
           </div>
           <button class="nip51-inspector-event__toggle" data-kind="${kind}" data-index="${index}">
@@ -262,17 +263,17 @@ export class Nip51InspectorManager {
         <div class="nip51-inspector-event__details" style="display: none;">
           <div class="nip51-inspector-event__section">
             <h4>Tags (${tagCount})</h4>
-            <pre>${this.escapeHtml(JSON.stringify(event.tags, null, 2))}</pre>
+            <pre>${escapeHtml(JSON.stringify(event.tags, null, 2))}</pre>
           </div>
           ${hasContent ? `
             <div class="nip51-inspector-event__section">
               <h4>Content</h4>
-              <pre>${this.escapeHtml(event.content)}</pre>
+              <pre>${escapeHtml(event.content)}</pre>
             </div>
           ` : ''}
           <div class="nip51-inspector-event__section">
             <h4>Full Event (JSON)</h4>
-            <pre>${this.escapeHtml(JSON.stringify(event, null, 2))}</pre>
+            <pre>${escapeHtml(JSON.stringify(event, null, 2))}</pre>
           </div>
         </div>
       </div>
@@ -364,14 +365,6 @@ export class Nip51InspectorManager {
     });
   }
 
-  /**
-   * Escape HTML for safe display
-   */
-  private escapeHtml(text: string): string {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-  }
 
   /**
    * Cleanup
