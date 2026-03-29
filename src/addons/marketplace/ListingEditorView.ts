@@ -83,7 +83,7 @@ export class ListingEditorView extends View {
   }
 
   private loadRelayConfiguration(): void {
-    const localRelaySettings = this.loadLocalRelaySettings();
+    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
     if (localRelaySettings.enabled) {
       this.isTestMode = true;
       this.availableRelays = [localRelaySettings.url];
@@ -96,13 +96,6 @@ export class ListingEditorView extends View {
     }
   }
 
-  private loadLocalRelaySettings(): { enabled: boolean; url: string } {
-    try {
-      const stored = localStorage.getItem('noornote_local_relay');
-      if (stored) return JSON.parse(stored);
-    } catch (_err) { /* ignore */ }
-    return { enabled: false, url: 'ws://localhost:7777' };
-  }
 
   /**
    * Load existing listing for edit mode

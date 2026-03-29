@@ -70,7 +70,7 @@ export class VideoEditorView extends View {
   }
 
   private loadRelayConfiguration(): void {
-    const localRelaySettings = this.loadLocalRelaySettings();
+    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
 
     if (localRelaySettings.enabled) {
       this.isTestMode = true;
@@ -86,17 +86,6 @@ export class VideoEditorView extends View {
     }
   }
 
-  private loadLocalRelaySettings(): { enabled: boolean; url: string } {
-    try {
-      const stored = localStorage.getItem('noornote_local_relay');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch {
-      // Ignore
-    }
-    return { enabled: false, url: 'ws://localhost:7777' };
-  }
 
   private render(): void {
     this.relaySelector = new RelaySelector({

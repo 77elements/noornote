@@ -161,7 +161,7 @@ export class DeletionService {
    */
   private getTargetRelays(): string[] {
     // Load local relay settings from localStorage
-    const localRelaySettings = this.loadLocalRelaySettings();
+    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
 
     // Check if local relay is active (TEST mode)
     if (localRelaySettings.enabled) {
@@ -185,25 +185,6 @@ export class DeletionService {
     return allRelays;
   }
 
-  /**
-   * Load local relay settings from localStorage
-   */
-  private loadLocalRelaySettings(): { enabled: boolean; url: string; mode: string } {
-    try {
-      const stored = localStorage.getItem('noornote_local_relay');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (_error) {
-      console.warn('Failed to load local relay settings:', _error);
-    }
-
-    return {
-      enabled: false,
-      mode: 'test',
-      url: 'ws://localhost:7777'
-    };
-  }
 
   /**
    * Delete a single event (convenience method)

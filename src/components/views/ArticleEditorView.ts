@@ -148,7 +148,7 @@ export class ArticleEditorView extends View {
    * Load relay configuration
    */
   private loadRelayConfiguration(): void {
-    const localRelaySettings = this.loadLocalRelaySettings();
+    const localRelaySettings = this.relayConfig.loadLocalRelaySettings();
 
     if (localRelaySettings.enabled) {
       this.isTestMode = true;
@@ -164,20 +164,6 @@ export class ArticleEditorView extends View {
     }
   }
 
-  /**
-   * Load local relay settings
-   */
-  private loadLocalRelaySettings(): { enabled: boolean; url: string } {
-    try {
-      const stored = localStorage.getItem('noornote_local_relay');
-      if (stored) {
-        return JSON.parse(stored);
-      }
-    } catch (_err) {
-      // Ignore
-    }
-    return { enabled: false, url: 'ws://localhost:7777' };
-  }
 
   /**
    * Save a snapshot of the current editor state for dirty-checking

@@ -109,7 +109,7 @@ export class RelayConfig {
   /**
    * Load local relay settings from localStorage
    */
-  private loadLocalRelaySettings(): { enabled: boolean; url: string; mode: string } {
+  public loadLocalRelaySettings(): { enabled: boolean; url: string; mode: string } {
     try {
       const stored = localStorage.getItem('noornote_local_relay');
       if (stored) {
