@@ -67,10 +67,14 @@ export class ListingView extends View {
       const aTagValue = `30402:${event.pubkey}:${dTag}`;
       const bookmarkDescription = `${meta.title}${priceDisplay ? ' — ' + priceDisplay : ''}`;
 
-      // Check if already bookmarked
-      const { isNoteBookmarked } = await import('../../lists/bookmarks');
-      const isBookmarked = isNoteBookmarked(aTagValue);
-      const bookmarkedNow = isBookmarked.public || isBookmarked.private;
+      // Check if already bookmarked (only if bookmarks addon enabled)
+      const { isBookmarksEnabled } = await import('../bookmarks/index');
+      let bookmarkedNow = false;
+      if (isBookmarksEnabled()) {
+        const { isNoteBookmarked } = await import('../../lists/bookmarks');
+        const isBookmarked = isNoteBookmarked(aTagValue);
+        bookmarkedNow = isBookmarked.public || isBookmarked.private;
+      }
 
       this.container.innerHTML = `
         <div class="listing-view">
@@ -104,7 +108,7 @@ export class ListingView extends View {
 
           <div class="listing-view__actions">
             <button class="btn btn--primary listing-view__contact-btn" data-pubkey="${event.pubkey}">Contact Seller</button>
-            <button class="listing-view__bookmark-btn${bookmarkedNow ? ' listing-view__bookmark-btn--active' : ''}" data-a-tag="${escapeHtmlAttr(aTagValue)}" data-description="${escapeHtmlAttr(bookmarkDescription)}" aria-label="Bookmark listing" title="${bookmarkedNow ? 'Remove bookmark' : 'Bookmark listing'}">
+            <button class="listing-view__bookmark-btn${bookmarkedNow ? ' listing-view__bookmark-btn--active' : ''}" data-a-tag="${escapeHtmlAttr(aTagValue)}" data-description="${escapeHtmlAttr(bookmarkDescription)}" aria-label="Bookmark listing" title="${bookmarkedNow ? 'Remove bookmark' : 'Bookmark listing'}" style="${isBookmarksEnabled() ? '' : 'display:none'}">
               ${bookmarkedNow ? BOOKMARK_SVG_FILLED : BOOKMARK_SVG_OUTLINE}
             </button>
           </div>

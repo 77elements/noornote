@@ -29,6 +29,36 @@ interface AddonDef {
 
 const ADDONS: AddonDef[] = [
   {
+    id: 'bookmarks',
+    name: 'Bookmarks',
+    description: 'Save notes and links to bookmark folders with drag-and-drop organization.',
+    settingsContainerId: 'bookmarks-addon-settings-content',
+    isEnabled: async () => {
+      const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
+      return isBookmarksEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setBookmarksEnabled } = await import('../../addons/bookmarks/index');
+      setBookmarksEnabled(v);
+    },
+    toggleEvent: 'bookmarks:addon-toggle',
+  },
+  {
+    id: 'tribes',
+    name: 'Tribes',
+    description: 'Create custom user groups and view dedicated tribe timelines.',
+    settingsContainerId: 'tribes-addon-settings-content',
+    isEnabled: async () => {
+      const { isTribesEnabled } = await import('../../addons/tribes/index');
+      return isTribesEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setTribesEnabled } = await import('../../addons/tribes/index');
+      setTribesEnabled(v);
+    },
+    toggleEvent: 'tribes:addon-toggle',
+  },
+  {
     id: 'profile-recognition',
     name: 'Profile Recognition',
     description: 'Help recognize people you follow after they change their profile.',

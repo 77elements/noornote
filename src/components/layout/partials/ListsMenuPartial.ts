@@ -10,6 +10,8 @@ import type { ListType } from './ListViewPartial';
 import { ToastService } from '../../../services/ToastService';
 import { PlatformService } from '../../../services/PlatformService';
 import { isFollowPacksEnabled } from '../../../addons/follow-packs/index';
+import { isBookmarksEnabled } from '../../../addons/bookmarks/index';
+import { isTribesEnabled } from '../../../addons/tribes/index';
 
 export interface ListsMenuConfig {
   onListClick: (listType: ListType) => void; // Callback when a list link is clicked
@@ -48,7 +50,7 @@ export class ListsMenuPartial {
         Lists
       </button>
       <ul class="primary-nav__submenu">
-        <li>
+        <li class="bookmarks-item" style="${isBookmarksEnabled() ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="bookmarks">
             <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
@@ -78,7 +80,7 @@ export class ListsMenuPartial {
             <span class="primary-nav__sublink-desc">Muted</span>
           </a>
         </li>
-        <li>
+        <li class="tribes-item" style="${isTribesEnabled() ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="tribes">
             <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="6" cy="7" r="3"></circle>

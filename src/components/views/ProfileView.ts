@@ -23,7 +23,7 @@ import { ClipboardActionsService } from '../../services/ClipboardActionsService'
 import { EventBus } from '../../services/EventBus';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ArticleNotificationService } from '../../services/ArticleNotificationService';
-import { ProfileListsComponent } from '../profile/ProfileListsComponent';
+import type { ProfileListsComponent } from '../profile/ProfileListsComponent';
 import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
 import { ProfileVideosCarousel } from '../profile/ProfileVideosCarousel';
 import { FollowerCountService } from '../../services/FollowerCountService';
@@ -40,7 +40,7 @@ import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/H
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { CustomDropdown } from '../ui/CustomDropdown';
 import { ToastService } from '../../services/ToastService';
-import * as tribes from '../../lists/tribes';
+import { isTribesEnabled } from '../../addons/tribes/index';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { escapeHtml } from '../../helpers/escapeHtml';
@@ -817,7 +817,7 @@ export class ProfileView extends View {
     }
 
     return `
-      <button class="tribe-btn" title="Add to Tribe">
+      <button class="tribe-btn" title="Add to Tribe" style="display:none">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
@@ -939,8 +939,12 @@ export class ProfileView extends View {
    * Setup tribe button event handler
    */
   private setupTribeButton(): void {
-    const tribeButton = this.container.querySelector('.tribe-btn');
+    const tribeButton = this.container.querySelector('.tribe-btn') as HTMLElement;
     if (!tribeButton) return;
+    if (!isTribesEnabled()) return;
+
+    // Show button (hidden by default in HTML)
+    tribeButton.style.display = '';
 
     tribeButton.addEventListener('click', async (e) => {
       e.preventDefault();
@@ -950,6 +954,7 @@ export class ProfileView extends View {
       if (!isAuthenticated) return;
 
       // Get all tribes
+      const tribes = await import('../../lists/tribes');
       const tribeFolders = tribes.getFolders();
 
       if (tribeFolders.length === 0) {
@@ -1052,6 +1057,7 @@ export class ProfileView extends View {
    */
   private async handleTribeSelection(folderId: string): Promise<void> {
     try {
+      const tribes = await import('../../lists/tribes');
       // Get folder details
       const folder = tribes.getFolder(folderId);
       if (!folder) {
@@ -1197,7 +1203,11 @@ export class ProfileView extends View {
     const profileNip01 = this.container.querySelector('.profile-nip01');
     if (!profileNip01) return;
 
-    this.profileListsComponent = new ProfileListsComponent(this.pubkey);
+    const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
+    if (!isBookmarksEnabled()) return;
+
+    const { ProfileListsComponent: PLC } = await import('../profile/ProfileListsComponent');
+    this.profileListsComponent = new PLC(this.pubkey);
     await this.profileListsComponent.render(profileNip01);
   }
 

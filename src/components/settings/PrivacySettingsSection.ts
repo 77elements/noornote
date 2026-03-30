@@ -10,6 +10,7 @@ import { SettingsSection } from './SettingsSection';
 import { FollowListOrchestrator } from '../../lists/follows';
 import { BookmarkOrchestrator } from '../../lists/bookmarks';
 import { MuteOrchestrator } from '../../lists/mutes';
+import { isBookmarksEnabled } from '../../addons/bookmarks/index';
 import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
@@ -65,16 +66,16 @@ export class PrivacySettingsSection extends SettingsSection {
         isEnabled: () => this.followListOrch.isPrivateFollowsEnabled(),
         setEnabled: (enabled) => this.followListOrch.setPrivateFollowsEnabled(enabled)
       },
-      {
-        id: 'bookmarks',
+      ...(isBookmarksEnabled() ? [{
+        id: 'bookmarks' as const,
         title: 'Bookmark List',
         listName: 'bookmarks',
         switchLabel: 'Use private bookmarks (NIP-51)',
         description: 'Private bookmarks (NIP-51) allow you to bookmark notes without publicly revealing what you bookmarked. Your bookmarks are encrypted and only you can see them.',
         viewButtonLabel: 'View Bookmarks',
         isEnabled: () => this.bookmarkOrch.isPrivateBookmarksEnabled(),
-        setEnabled: (enabled) => this.bookmarkOrch.setPrivateBookmarksEnabled(enabled)
-      },
+        setEnabled: (enabled: boolean) => this.bookmarkOrch.setPrivateBookmarksEnabled(enabled)
+      }] : []),
       {
         id: 'mutes',
         title: 'Mute List',

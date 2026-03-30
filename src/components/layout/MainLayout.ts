@@ -158,16 +158,26 @@ export class MainLayout {
    * Initialize managers (Bookmark, Follow, Mute, Tribe, Badge, Lists Menu)
    */
   private async loadListManagers(): Promise<void> {
-    const [{ BookmarkManager }, { FollowListManager }, { MuteListManager }, { TribeManager }] = await Promise.all([
-      import('../../lists/bookmarks'),
+    const [{ FollowListManager }, { MuteListManager }] = await Promise.all([
       import('../../lists/follows'),
-      import('../../lists/mutes'),
-      import('../../lists/tribes')
+      import('../../lists/mutes')
     ]);
-    this.bookmarkManager = new BookmarkManager(this.element);
     this.followManager = new FollowListManager(this.element);
     this.muteManager = new MuteListManager(this.element);
-    this.tribeManager = new TribeManager(this.element);
+
+    // Bookmarks addon: lazy-load only when enabled
+    const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
+    if (isBookmarksEnabled()) {
+      const { BookmarkManager } = await import('../../lists/bookmarks');
+      this.bookmarkManager = new BookmarkManager(this.element);
+    }
+
+    // Tribes addon: lazy-load only when enabled
+    const { isTribesEnabled } = await import('../../addons/tribes/index');
+    if (isTribesEnabled()) {
+      const { TribeManager } = await import('../../lists/tribes');
+      this.tribeManager = new TribeManager(this.element);
+    }
 
     // FollowPacks addon: lazy-load only when enabled
     if (isFollowPacksEnabled()) {
@@ -217,6 +227,42 @@ export class MainLayout {
 
     // Addons: always-visible sidebar entry
     this.insertAddonsSidebarEntry(listsMenuContainer);
+
+    // Bookmarks toggle: show/hide sidebar entry + lazy-load manager + close open tab
+    this.eventBus.on('bookmarks:addon-toggle', async (data: { enabled: boolean }) => {
+      const menuItem = this.element.querySelector('.bookmarks-item') as HTMLElement;
+      if (menuItem) {
+        menuItem.style.display = data.enabled ? '' : 'none';
+      }
+      if (data.enabled && !this.bookmarkManager) {
+        const { BookmarkManager } = await import('../../lists/bookmarks');
+        this.bookmarkManager = new BookmarkManager(this.element);
+        // Sync from relays after 10s (like startup sync) to pull existing data
+        const { AutoSyncService } = await import('../../services/AutoSyncService');
+        AutoSyncService.getInstance().scheduleSyncForList('bookmarks');
+      }
+      if (!data.enabled && this.currentListView?.getType() === 'bookmarks') {
+        this.closeListTab();
+      }
+    });
+
+    // Tribes toggle: show/hide sidebar entry + lazy-load manager + close open tab
+    this.eventBus.on('tribes:addon-toggle', async (data: { enabled: boolean }) => {
+      const menuItem = this.element.querySelector('.tribes-item') as HTMLElement;
+      if (menuItem) {
+        menuItem.style.display = data.enabled ? '' : 'none';
+      }
+      if (data.enabled && !this.tribeManager) {
+        const { TribeManager } = await import('../../lists/tribes');
+        this.tribeManager = new TribeManager(this.element);
+        // Sync from relays after 10s (like startup sync) to pull existing data
+        const { AutoSyncService } = await import('../../services/AutoSyncService');
+        AutoSyncService.getInstance().scheduleSyncForList('tribes');
+      }
+      if (!data.enabled && this.currentListView?.getType() === 'tribes') {
+        this.closeListTab();
+      }
+    });
 
     // Follow Packs toggle: show/hide sidebar entry + lazy-load manager
     this.eventBus.on('follow-packs:toggle', async (data: { enabled: boolean }) => {
