@@ -104,6 +104,7 @@ export class ProfileView extends View {
   private recognitionService: ProfileRecognitionServiceType | null = null;
   private blinker: ProfileBlinkerType | null = null;
   private nameBlinker: TextBlinkerType | null = null;
+  private profileUnsubscribe: (() => void) | null = null;
   private ProfileBlinkerClass: (new (el: HTMLImageElement) => ProfileBlinkerType) | null = null;
   private TextBlinkerClass: (new (el: HTMLElement) => TextBlinkerType) | null = null;
 
@@ -350,7 +351,7 @@ export class ProfileView extends View {
       this.loadJoinedDate();
 
       // Subscribe to profile updates for live avatar/name updates
-      this.userProfileService.subscribeToProfile(this.pubkey, (updatedProfile) => {
+      this.profileUnsubscribe = this.userProfileService.subscribeToProfile(this.pubkey, (updatedProfile) => {
         this.renderProfileHeader(updatedProfile);
       });
 
@@ -1454,6 +1455,10 @@ export class ProfileView extends View {
    * Cleanup resources (implements View base class)
    */
   public destroy(): void {
+    // Cleanup profile subscription
+    this.profileUnsubscribe?.();
+    this.profileUnsubscribe = null;
+
     // Cleanup EventBus subscriptions
     this.eventBusSubscriptions.forEach(id => this.eventBus.off(id));
     this.eventBusSubscriptions = [];
