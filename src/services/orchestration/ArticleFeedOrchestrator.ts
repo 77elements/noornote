@@ -13,6 +13,7 @@ import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
 import { getTag } from '../../helpers/tagUtils';
+import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 
 export interface ArticleFeedResult {
   articles: NostrEvent[];
@@ -25,8 +26,8 @@ export class ArticleFeedOrchestrator extends Orchestrator {
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
 
-  /** Cache of fetched articles */
-  private articleCache: Map<string, NostrEvent> = new Map();
+  /** Cache of fetched articles (LRU-bounded) */
+  private articleCache = new LRUCache<NostrEvent>(getCacheSize(200, 100, 50));
 
   /** Oldest timestamp for pagination */
   private oldestTimestamp: number = Math.floor(Date.now() / 1000);

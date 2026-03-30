@@ -27,6 +27,7 @@ import { decodeNip19 } from '../NostrToolsAdapter';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { NoteService } from '../NoteService';
 import { USER_CONTENT_KINDS } from '../../types/nostr';
+import { getCacheSize } from '../../helpers/LRUCache';
 
 export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag';
 
@@ -78,6 +79,7 @@ export class NotificationsOrchestrator extends Orchestrator {
   private refreshTimer: number | null = null;
   private isRefreshing: boolean = false;
   private static readonly REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+  private readonly MAX_NOTIFICATIONS = getCacheSize(500, 300, 200);
 
   private constructor() {
     super('NotificationsOrchestrator');
@@ -532,19 +534,33 @@ export class NotificationsOrchestrator extends Orchestrator {
       timestamp: event.created_at
     };
 
-    // Add to notifications (avoid duplicates)
-    const exists = this.notifications.some(n => n.event.id === event.id);
-    if (!exists) {
-      this.notifications.push(notification);
-
-      // Sort by timestamp (newest first)
-      this.notifications.sort((a, b) => b.timestamp - a.timestamp);
-
+    // Add to notifications (dedup + sort + trim handled by addNotification)
+    if (this.addNotification(notification)) {
       // Register kind 1 events in NoteService for cache reuse
       if (event.kind === 1) {
         this.noteService.registerNote(event);
       }
     }
+  }
+
+  /**
+   * Central method: add a notification with dedup, sort, and size limit.
+   * Returns true if notification was added (not a duplicate).
+   */
+  private addNotification(notification: NotificationEvent, dedupKey?: string): boolean {
+    const key = dedupKey ?? notification.event.id;
+    const exists = this.notifications.some(n => n.event.id === key);
+    if (exists) return false;
+
+    this.notifications.push(notification);
+    this.notifications.sort((a, b) => b.timestamp - a.timestamp);
+
+    // Trim to max size (oldest removed, can be re-fetched via loadMore)
+    if (this.notifications.length > this.MAX_NOTIFICATIONS) {
+      this.notifications.length = this.MAX_NOTIFICATIONS;
+    }
+
+    return true;
   }
 
   /**
@@ -1022,14 +1038,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       timestamp: data.createdAt
     };
 
-    // Check for duplicates
-    const isDuplicate = this.notifications.some(n => n.event.id === data.articleId);
-    if (isDuplicate) {
-      return;
-    }
-
-    // Add to notifications list (at the beginning for newest first)
-    this.notifications.unshift(notification);
+    if (!this.addNotification(notification)) return;
 
     this.systemLogger.info('NotificationsOrchestrator', `📰 New article notification: ${data.title.slice(0, 30)}...`);
 
@@ -1053,14 +1062,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       timestamp: data.event.created_at
     };
 
-    // Check for duplicates
-    const isDuplicate = this.notifications.some(n => n.event.id === data.event.id);
-    if (isDuplicate) {
-      return;
-    }
-
-    // Add to notifications list (at the beginning for newest first)
-    this.notifications.unshift(notification);
+    if (!this.addNotification(notification)) return;
 
     const typeLabel = data.type === 'mutual_unfollow' ? 'unfollowed' : 'new mutual';
     this.systemLogger.info('NotificationsOrchestrator', `🔔 Mutual notification: ${typeLabel}`);
@@ -1084,16 +1086,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       meta: { hashtag: data.hashtag, count: data.count }
     };
 
-    // Check for duplicates
-    const isDuplicate = this.notifications.some(n =>
-      n.type === 'hashtag' && n.event.id === data.latestEvent.id
-    );
-    if (isDuplicate) {
-      return;
-    }
-
-    // Add to notifications list (at the beginning for newest first)
-    this.notifications.unshift(notification);
+    if (!this.addNotification(notification)) return;
 
     this.systemLogger.info('NotificationsOrchestrator', `🏷️ Hashtag notification: ${data.count} new posts for #${data.hashtag}`);
 
@@ -1130,12 +1123,6 @@ export class NotificationsOrchestrator extends Orchestrator {
         continue;
       }
 
-      // Check for duplicates
-      const isDuplicate = this.notifications.some(n => n.event.id === eventId);
-      if (isDuplicate) {
-        continue;
-      }
-
       // Create synthetic event
       const syntheticEvent: NostrEvent = {
         id: eventId,
@@ -1156,12 +1143,8 @@ export class NotificationsOrchestrator extends Orchestrator {
         timestamp: syntheticEvent.created_at
       };
 
-      // Add to notifications list
-      this.notifications.push(notification);
+      this.addNotification(notification);
     }
-
-    // Sort notifications by timestamp (newest first)
-    this.notifications.sort((a, b) => b.timestamp - a.timestamp);
 
     this.systemLogger.info('NotificationsOrchestrator', `Restored ${changes.length} mutual change notifications`);
   }

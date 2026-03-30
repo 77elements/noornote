@@ -23,6 +23,7 @@ import { NoteService } from '../NoteService';
 import { AuthService } from '../AuthService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
+import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 
 export interface ThreadContextItem {
   eventId: string;
@@ -48,13 +49,12 @@ export class ThreadOrchestrator extends Orchestrator {
   private authService: AuthService;
   private systemLogger: SystemLogger;
 
-  private repliesMetaCache: Map<string, { replyIds: string[]; lastUpdated: number }> = new Map();
+  private readonly cacheDuration = 5 * 60 * 1000;
+  private repliesMetaCache = new LRUCache<{ replyIds: string[]; lastUpdated: number }>(getCacheSize(200, 100, 50), this.cacheDuration);
   private fetchingReplies: Map<string, Promise<NostrEvent[]>> = new Map();
-  private parentChainCache: Map<string, { context: ThreadContext; lastUpdated: number }> = new Map();
+  private parentChainCache = new LRUCache<{ context: ThreadContext; lastUpdated: number }>(getCacheSize(200, 100, 50), this.cacheDuration);
   private fetchingParentChain: Map<string, Promise<ThreadContext>> = new Map();
   private liveSubscriptions: Map<string, string> = new Map();
-
-  private readonly cacheDuration = 5 * 60 * 1000;
   private readonly LOG_TAG = 'ThreadOrchestrator';
 
   private constructor() {
@@ -185,7 +185,7 @@ export class ThreadOrchestrator extends Orchestrator {
 
   public async fetchParentChain(noteId: string): Promise<ThreadContext> {
     const cached = this.parentChainCache.get(noteId);
-    if (cached && Date.now() - cached.lastUpdated < this.cacheDuration) {
+    if (cached) {
       return cached.context;
     }
 
