@@ -43,6 +43,9 @@ export class RelayHealthMonitor {
   /** Round-robin index for batched checking */
   private batchIndex = 0;
 
+  /** First health check pings all relays (no batching) */
+  private isFirstCheck = true;
+
   private constructor() {
     this.eventBus = EventBus.getInstance();
     this.setupEventListeners();
@@ -286,7 +289,17 @@ export class RelayHealthMonitor {
     const allRelays = relayConfig.getAllRelays();
     if (allRelays.length === 0) return;
 
-    // Separate relays that need checking from those that can be skipped
+    // First check: ping ALL relays to establish initial health status
+    if (this.isFirstCheck) {
+      this.isFirstCheck = false;
+      for (const relay of allRelays) {
+        this.pingRelay(relay.url, transport);
+        this.connectionChecks.set(relay.url, Date.now());
+      }
+      return;
+    }
+
+    // Subsequent checks: batched with backoff
     const needsChecking = allRelays.filter(r => this.needsCheck(r.url));
 
     // Take a batch: prioritize unhealthy relays, then round-robin the rest
