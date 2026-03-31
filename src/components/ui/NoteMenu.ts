@@ -12,7 +12,6 @@ import { RawEventModal } from '../raw-event/RawEventModal';
 import { ReportModal } from '../report/ReportModal';
 import { DeleteNoteModal } from '../delete/DeleteNoteModal';
 import { AuthService } from '../../services/AuthService';
-import { BookmarkOrchestrator } from '../../lists/bookmarks';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { ArticleNotificationService } from '../../services/ArticleNotificationService';
 import { AuthGuard } from '../../services/AuthGuard';
@@ -21,7 +20,8 @@ import { EventBus } from '../../services/EventBus';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { ModalService } from '../../services/ModalService';
 import { ICON_TRASH_16 } from '../../helpers/svgIcons';
-import * as tribes from '../../lists/tribes';
+import { isBookmarksEnabled } from '../../addons/bookmarks/index';
+import { isTribesEnabled } from '../../addons/tribes/index';
 
 export interface NoteMenuOptions {
   eventId: string;
@@ -112,17 +112,36 @@ export class NoteMenu {
     const currentUser = authService.getCurrentUser();
     const isOwnNote = authService.isCurrentUser(this.options.authorPubkey);
 
-    // Check if private bookmarks are enabled
-    const bookmarkOrch = BookmarkOrchestrator.getInstance();
-    const privateBookmarksEnabled = bookmarkOrch.isPrivateBookmarksEnabled();
+    // Check bookmark status (only if addon enabled)
+    let bookmarkButtons = '';
+    if (isBookmarksEnabled()) {
+      const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
+      const bookmarkOrch = BookmarkOrchestrator.getInstance();
+      const privateBookmarksEnabled = bookmarkOrch.isPrivateBookmarksEnabled();
 
-    // Check current bookmark status
-    let isPublicBookmarked = false;
-    let isPrivateBookmarked = false;
-    if (currentUser) {
-      const status = await bookmarkOrch.isBookmarked(this.options.eventId, currentUser.pubkey);
-      isPublicBookmarked = status.public;
-      isPrivateBookmarked = status.private;
+      let isPublicBookmarked = false;
+      let isPrivateBookmarked = false;
+      if (currentUser) {
+        const status = await bookmarkOrch.isBookmarked(this.options.eventId, currentUser.pubkey);
+        isPublicBookmarked = status.public;
+        isPrivateBookmarked = status.private;
+      }
+
+      bookmarkButtons = privateBookmarksEnabled ? `
+        <button class="note-menu-item" data-action="bookmark-public">
+          ${ICONS.bookmark}
+          ${isPublicBookmarked ? 'Remove Public Bookmark' : 'Public Bookmark'}
+        </button>
+        <button class="note-menu-item" data-action="bookmark-private">
+          ${ICONS.bookmark}
+          ${isPrivateBookmarked ? 'Remove Private Bookmark' : 'Private Bookmark'}
+        </button>
+      ` : `
+        <button class="note-menu-item" data-action="bookmark-public">
+          ${ICONS.bookmark}
+          ${isPublicBookmarked ? 'Remove Bookmark' : 'Bookmark'}
+        </button>
+      `;
     }
 
     // Check if thread is muted
@@ -133,23 +152,6 @@ export class NoteMenu {
     // Check if subscribed to article notifications for this user
     const articleNotifService = ArticleNotificationService.getInstance();
     const isSubscribedToArticles = articleNotifService.isSubscribed(this.options.authorPubkey);
-
-    // Build bookmark buttons based on private bookmarks setting
-    const bookmarkButtons = privateBookmarksEnabled ? `
-      <button class="note-menu-item" data-action="bookmark-public">
-        ${ICONS.bookmark}
-        ${isPublicBookmarked ? 'Remove Public Bookmark' : 'Public Bookmark'}
-      </button>
-      <button class="note-menu-item" data-action="bookmark-private">
-        ${ICONS.bookmark}
-        ${isPrivateBookmarked ? 'Remove Private Bookmark' : 'Private Bookmark'}
-      </button>
-    ` : `
-      <button class="note-menu-item" data-action="bookmark-public">
-        ${ICONS.bookmark}
-        ${isPublicBookmarked ? 'Remove Bookmark' : 'Bookmark'}
-      </button>
-    `;
 
     // Build mute user buttons based on private mutes setting
     const muteUserButtons = privateMutesEnabled ? `
@@ -186,7 +188,7 @@ export class NoteMenu {
 
       ${bookmarkButtons}
 
-      ${!isOwnNote ? `
+      ${!isOwnNote && isTribesEnabled() ? `
         <button class="note-menu-item" data-action="add-author-to-tribe">
           ${ICONS.tribe}
           Add author to Tribe
@@ -590,6 +592,7 @@ export class NoteMenu {
     const currentUser = authService.getCurrentUser();
     if (!currentUser) return;
 
+    const { BookmarkOrchestrator } = await import('../../lists/bookmarks');
     const bookmarkOrch = BookmarkOrchestrator.getInstance();
 
     try {
@@ -641,6 +644,7 @@ export class NoteMenu {
       return;
     }
 
+    const tribes = await import('../../lists/tribes');
     const tribeFolders = tribes.getFolders();
 
     if (tribeFolders.length === 0) {
@@ -690,6 +694,7 @@ export class NoteMenu {
    */
   private async performAddAuthorToTribe(tribeFolderId: string): Promise<void> {
     try {
+      const tribes = await import('../../lists/tribes');
       // Get tribe folder to get the name (for NIP-51 category)
       const folder = tribes.getFolder(tribeFolderId);
       const tribeName = folder?.name || '';

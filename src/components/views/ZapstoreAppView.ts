@@ -357,5 +357,6 @@ export class ZapstoreAppView extends View {
 
   public destroy(): void {
     this.container.innerHTML = '';
+    this.container.remove();
   }
 }

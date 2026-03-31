@@ -154,14 +154,9 @@ export class ListingEditorView extends View {
 
     this.container.innerHTML = `
       <div class="article-editor">
-        <header class="article-editor__header">
-          <button class="article-editor__back" data-action="back">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-            Back
-          </button>
-          <h1 class="article-editor__title">${this.isEditMode ? 'Edit Listing' : 'New Listing'}</h1>
+        <header class="heading-back-btn-container">
+          <h1>${this.isEditMode ? 'Edit Listing' : 'New Listing'}</h1>
+          <button class="btn btn--passive btn--medium" data-action="back">Back</button>
         </header>
 
         <div class="article-editor__toolbar">

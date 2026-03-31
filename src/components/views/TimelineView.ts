@@ -16,7 +16,7 @@ import { Timeline } from '../timeline/Timeline';
 import { EventBus } from '../../services/EventBus';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../system/SystemLogger';
-import * as tribes from '../../lists/tribes';
+import { isTribesEnabled } from '../../addons/tribes/index';
 
 type TabType = 'timeline' | 'tribe';
 
@@ -181,7 +181,7 @@ export class TimelineView extends View {
   /**
    * Build tabs array: Timeline + all tribes
    */
-  private buildTabs(): void {
+  private async buildTabs(): Promise<void> {
     this.tabs = [];
 
     // First tab: Timeline (all follows)
@@ -191,17 +191,19 @@ export class TimelineView extends View {
       name: 'Timeline'
     });
 
-    // Get tribes in root order
-    const tribeFolders = tribes.getFoldersInRootOrder();
+    // Add tribe tabs (only if addon enabled)
+    if (isTribesEnabled()) {
+      const tribes = await import('../../lists/tribes');
+      const tribeFolders = tribes.getFoldersInRootOrder();
 
-    // Add tribe tabs
-    tribeFolders.forEach(folder => {
-      this.tabs.push({
-        type: 'tribe',
-        id: folder.id,
-        name: folder.name
+      tribeFolders.forEach(folder => {
+        this.tabs.push({
+          type: 'tribe',
+          id: folder.id,
+          name: folder.name
+        });
       });
-    });
+    }
   }
 
   /**
@@ -235,9 +237,11 @@ export class TimelineView extends View {
    */
   private async updateTimeline(): Promise<void> {
     // Determine filter pubkeys (undefined = all follows, array = specific tribe members)
-    const filterPubkeys = this.currentTabId !== 'timeline'
-      ? tribes.getMemberPubkeysInFolder(this.currentTabId)
-      : undefined;
+    let filterPubkeys: string[] | undefined;
+    if (this.currentTabId !== 'timeline' && isTribesEnabled()) {
+      const tribes = await import('../../lists/tribes');
+      filterPubkeys = tribes.getMemberPubkeysInFolder(this.currentTabId);
+    }
 
     // Destroy existing timeline
     if (this.timeline) {

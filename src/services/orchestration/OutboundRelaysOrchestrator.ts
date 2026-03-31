@@ -19,6 +19,7 @@ import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 
 export interface UserRelayList {
   pubkey: string;
@@ -39,15 +40,14 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
   private transport: NostrTransport;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private relayListCache: Map<string, UserRelayList> = new Map();
+  private readonly CACHE_TTL = 60 * 60 * 1000;
+  private relayListCache = new LRUCache<UserRelayList>(getCacheSize(200, 100, 50), this.CACHE_TTL);
   private stats: RelayDiscoveryStats = {
     totalUsers: 0,
     discoveredRelays: 0,
     cacheHits: 0,
     cacheMisses: 0
   };
-
-  private readonly CACHE_TTL = 60 * 60 * 1000;
   private readonly LOG_TAG = 'OutboundRelaysOrchestrator';
 
   private constructor() {
@@ -214,14 +214,7 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
   }
 
   private getCachedRelayList(pubkey: string): UserRelayList | null {
-    const cached = this.relayListCache.get(pubkey);
-    if (cached && Date.now() - cached.lastUpdated < this.CACHE_TTL) {
-      return cached;
-    }
-    if (cached) {
-      this.relayListCache.delete(pubkey);
-    }
-    return null;
+    return this.relayListCache.get(pubkey) ?? null;
   }
 
   private cacheRelayList(relayList: UserRelayList): void {

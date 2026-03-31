@@ -20,6 +20,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
+import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 
 export interface SearchRequest {
   pubkeyHex: string;
@@ -41,7 +42,6 @@ interface CachedSearch {
   pubkeyHex: string;
   searchTerms: string;
   result: SearchResult;
-  timestamp: number;
 }
 
 export class ProfileSearchOrchestrator extends Orchestrator {
@@ -50,14 +50,14 @@ export class ProfileSearchOrchestrator extends Orchestrator {
   private relayDiscovery: OutboundRelaysOrchestrator;
   private systemLogger: SystemLogger;
 
-  /** Search cache (per session) */
-  private searchCache: Map<string, CachedSearch> = new Map();
-
-  /** Fetched notes cache (per pubkey) */
-  private notesCache: Map<string, NostrEvent[]> = new Map();
-
   /** Cache TTL: 30 minutes */
   private readonly CACHE_TTL = 30 * 60 * 1000;
+
+  /** Search cache (per session, LRU-bounded) */
+  private searchCache = new LRUCache<CachedSearch>(getCacheSize(20, 15, 10), this.CACHE_TTL);
+
+  /** Fetched notes cache (per pubkey, LRU-bounded) */
+  private notesCache = new LRUCache<NostrEvent[]>(getCacheSize(10, 8, 5), this.CACHE_TTL);
 
   private constructor() {
     super('ProfileSearchOrchestrator');
@@ -80,10 +80,10 @@ export class ProfileSearchOrchestrator extends Orchestrator {
   public async searchUserNotes(request: SearchRequest): Promise<SearchResult> {
     const { pubkeyHex, searchTerms, onProgress } = request;
 
-    // Check cache first
+    // Check cache first (TTL handled by LRUCache)
     const cacheKey = `${pubkeyHex}:${searchTerms.toLowerCase()}`;
     const cached = this.searchCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp) < this.CACHE_TTL) {
+    if (cached) {
       this.systemLogger.info('ProfileSearch', '📦 Using cached search results');
       return cached.result;
     }
@@ -138,8 +138,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
       this.searchCache.set(cacheKey, {
         pubkeyHex,
         searchTerms: searchTerms.toLowerCase(),
-        result,
-        timestamp: Date.now()
+        result
       });
 
       this.systemLogger.info(
@@ -161,7 +160,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
     pubkeyHex: string,
     onProgress?: (message: string) => void
   ): Promise<NostrEvent[]> {
-    // Check notes cache first
+    // Check notes cache first (TTL handled by LRUCache)
     const cached = this.notesCache.get(pubkeyHex);
     if (cached) {
       this.systemLogger.info('ProfileSearch', '📦 Using cached user notes');
@@ -306,7 +305,7 @@ export class ProfileSearchOrchestrator extends Orchestrator {
     // Clear notes cache
     this.notesCache.delete(pubkeyHex);
 
-    // Clear search results cache
+    // Clear search results cache for this pubkey
     const keysToDelete: string[] = [];
     this.searchCache.forEach((cached, key) => {
       if (cached.pubkeyHex === pubkeyHex) {

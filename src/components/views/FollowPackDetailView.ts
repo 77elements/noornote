@@ -293,5 +293,6 @@ export class FollowPackDetailView extends View {
 
   public destroy(): void {
     this.container.innerHTML = '';
+    this.container.remove();
   }
 }

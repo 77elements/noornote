@@ -1,5 +1,5 @@
 /**
- * Addons View - Vertical sub-nav + content panel
+ * Addons View - Content panel (navigation moved to sidebar accordion)
  */
 
 @use '../abstracts/variables' as *;
@@ -7,55 +7,13 @@
 @use '../base/typography' as *;
 
 .view-content--addons {
-  display: flex;
   height: 100%;
   overflow: hidden;
-
-  .layout--phone & {
-    flex-direction: column;
-  }
 }
 
-// Left navigation: simple text links, border-right separator
-.addons-nav {
-  display: flex;
-  flex-direction: column;
-  border-right: 1px solid var(--color-3);
-  padding: $gap 0;
-  overflow-y: auto;
-  @include custom-scrollbar;
-
-  &__link {
-    padding: $gap;
-    color: var(--color-4);
-    text-decoration: none;
-    white-space: nowrap;
-    transition: color $transition-fast;
-
-    &:hover {
-      color: var(--color-5);
-      text-decoration: none;
-    }
-
-    &--active {
-      color: var(--color-5);
-      font-weight: 600;
-    }
-  }
-
-  .layout--phone & {
-    flex-direction: row;
-    border-right: none;
-    border-bottom: 1px solid var(--color-3);
-    padding: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-}
-
-// Right content panel
+// Content panel
 .addons-panel {
-  flex: 1;
+  height: 100%;
   overflow-y: auto;
   padding: $gap;
   @include custom-scrollbar;
@@ -73,9 +31,9 @@
   }
 
   &__title {
-    @extend %h2;
+    @extend %h1;
     color: var(--color-5);
-    margin: 0 0 calc($gap / 4) 0;
+    margin: 0 0 calc($gap / 2) 0;
   }
 
   &__description {

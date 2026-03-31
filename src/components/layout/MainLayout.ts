@@ -30,8 +30,6 @@ type BookmarkManager = import('../../lists/bookmarks').BookmarkManager;
 type FollowListManager = import('../../lists/follows').FollowListManager;
 type MuteListManager = import('../../lists/mutes').MuteListManager;
 type TribeManager = import('../../lists/tribes').TribeManager;
-type FollowPackManager = import('../../addons/follow-packs/FollowPackManager').FollowPackManager;
-import { isFollowPacksEnabled } from '../../addons/follow-packs/index';
 import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
@@ -77,7 +75,6 @@ export class MainLayout {
   private followManager: FollowListManager | null = null;
   private muteManager: MuteListManager | null = null;
   private tribeManager: TribeManager | null = null;
-  private followPackManager: FollowPackManager | null = null;
   private nip51InspectorManager: Nip51InspectorManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
   private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
@@ -158,22 +155,27 @@ export class MainLayout {
    * Initialize managers (Bookmark, Follow, Mute, Tribe, Badge, Lists Menu)
    */
   private async loadListManagers(): Promise<void> {
-    const [{ BookmarkManager }, { FollowListManager }, { MuteListManager }, { TribeManager }] = await Promise.all([
-      import('../../lists/bookmarks'),
+    const [{ FollowListManager }, { MuteListManager }] = await Promise.all([
       import('../../lists/follows'),
-      import('../../lists/mutes'),
-      import('../../lists/tribes')
+      import('../../lists/mutes')
     ]);
-    this.bookmarkManager = new BookmarkManager(this.element);
     this.followManager = new FollowListManager(this.element);
     this.muteManager = new MuteListManager(this.element);
-    this.tribeManager = new TribeManager(this.element);
 
-    // FollowPacks addon: lazy-load only when enabled
-    if (isFollowPacksEnabled()) {
-      const { FollowPackManager } = await import('../../addons/follow-packs/FollowPackManager');
-      this.followPackManager = new FollowPackManager(this.element);
+    // Bookmarks addon: lazy-load only when enabled
+    const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
+    if (isBookmarksEnabled()) {
+      const { BookmarkManager } = await import('../../lists/bookmarks');
+      this.bookmarkManager = new BookmarkManager(this.element);
     }
+
+    // Tribes addon: lazy-load only when enabled
+    const { isTribesEnabled } = await import('../../addons/tribes/index');
+    if (isTribesEnabled()) {
+      const { TribeManager } = await import('../../lists/tribes');
+      this.tribeManager = new TribeManager(this.element);
+    }
+
   }
 
   private initializeManagers(): void {
@@ -218,17 +220,43 @@ export class MainLayout {
     // Addons: always-visible sidebar entry
     this.insertAddonsSidebarEntry(listsMenuContainer);
 
-    // Follow Packs toggle: show/hide sidebar entry + lazy-load manager
-    this.eventBus.on('follow-packs:toggle', async (data: { enabled: boolean }) => {
-      const menuItem = this.element.querySelector('.follow-packs-item') as HTMLElement;
+    // Bookmarks toggle: show/hide sidebar entry + lazy-load manager + close open tab
+    this.eventBus.on('bookmarks:addon-toggle', async (data: { enabled: boolean }) => {
+      const menuItem = this.element.querySelector('.bookmarks-item') as HTMLElement;
       if (menuItem) {
         menuItem.style.display = data.enabled ? '' : 'none';
       }
-      if (data.enabled && !this.followPackManager) {
-        const { FollowPackManager } = await import('../../addons/follow-packs/FollowPackManager');
-        this.followPackManager = new FollowPackManager(this.element);
+      if (data.enabled && !this.bookmarkManager) {
+        const { BookmarkManager } = await import('../../lists/bookmarks');
+        this.bookmarkManager = new BookmarkManager(this.element);
+        // Sync from relays after 10s (like startup sync) to pull existing data
+        const { AutoSyncService } = await import('../../services/AutoSyncService');
+        AutoSyncService.getInstance().scheduleSyncForList('bookmarks');
+      }
+      if (!data.enabled && this.currentListView?.getType() === 'bookmarks') {
+        this.closeListTab();
       }
     });
+
+    // Tribes toggle: show/hide sidebar entry + lazy-load manager + close open tab
+    this.eventBus.on('tribes:addon-toggle', async (data: { enabled: boolean }) => {
+      const menuItem = this.element.querySelector('.tribes-item') as HTMLElement;
+      if (menuItem) {
+        menuItem.style.display = data.enabled ? '' : 'none';
+      }
+      if (data.enabled && !this.tribeManager) {
+        const { TribeManager } = await import('../../lists/tribes');
+        this.tribeManager = new TribeManager(this.element);
+        // Sync from relays after 10s (like startup sync) to pull existing data
+        const { AutoSyncService } = await import('../../services/AutoSyncService');
+        AutoSyncService.getInstance().scheduleSyncForList('tribes');
+      }
+      if (!data.enabled && this.currentListView?.getType() === 'tribes') {
+        this.closeListTab();
+      }
+    });
+
+
 
     // Listen for list:open events from Settings → Privacy links, ProfileView, FollowPackDetailView
     this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string; packId?: string; packMode?: 'timeline' | 'edit' }) => {
@@ -236,11 +264,6 @@ export class MainLayout {
       const currentUser = this.authService.getCurrentUser();
       if (data.listType === 'follows' && data.pubkey && currentUser?.pubkey !== data.pubkey) {
         this.openExternalFollowsTab(data.pubkey);
-      } else if (data.listType === 'follow-packs' && data.packId && data.packMode && this.followPackManager) {
-        // Open specific pack in timeline or edit mode
-        this.openListTab(data.listType, (container) => {
-          this.followPackManager!.openPackView(container, data.packId!, data.packMode!);
-        });
       } else {
         this.openListTab(data.listType);
       }
@@ -658,10 +681,11 @@ export class MainLayout {
    * Update active navigation based on view class (e.g., 'tv', 'pv', 'nv')
    */
   private updateActiveNavigation(viewClass: string): void {
-    // Clear all active states (main nav + list sublinks)
+    // Clear all active states (main nav + list sublinks + addon sublinks)
     const navLinks = this.element.querySelectorAll('.primary-nav > li > a');
     navLinks.forEach(link => link.classList.remove('is-active'));
     this.setActiveListSublink(null);
+    this.setActiveAddonSublink(null);
 
     // Map viewClass abbreviations to nav selectors
     const viewToSelector: Record<string, string> = {
@@ -682,6 +706,15 @@ export class MainLayout {
       const activeLink = this.element.querySelector(`.primary-nav ${selector}`);
       activeLink?.classList.add('is-active');
     }
+
+    // For AddonsView: highlight the specific addon sublink
+    if (viewClass === 'adv') {
+      const path = window.location.pathname;
+      const match = path.match(/^\/addons\/(.+)$/);
+      if (match) {
+        this.setActiveAddonSublink(match[1]!);
+      }
+    }
   }
 
   /**
@@ -689,11 +722,21 @@ export class MainLayout {
    */
   private setActiveListSublink(listType: ListType | null): void {
     // Clear all list sublinks
-    const sublinks = this.element.querySelectorAll('.primary-nav__sublink');
-    sublinks.forEach(link => link.classList.remove('is-active'));
+    const listSublinks = this.element.querySelectorAll('.primary-nav__sublink[data-list-type]');
+    listSublinks.forEach(link => link.classList.remove('is-active'));
 
     if (listType) {
       const activeSublink = this.element.querySelector(`.primary-nav__sublink[data-list-type="${listType}"]`);
+      activeSublink?.classList.add('is-active');
+    }
+  }
+
+  private setActiveAddonSublink(addonId: string | null): void {
+    const addonSublinks = this.element.querySelectorAll('.primary-nav__sublink[data-addon-type]');
+    addonSublinks.forEach(link => link.classList.remove('is-active'));
+
+    if (addonId) {
+      const activeSublink = this.element.querySelector(`.primary-nav__sublink[data-addon-type="${addonId}"]`);
       activeSublink?.classList.add('is-active');
     }
   }
@@ -1884,29 +1927,68 @@ export class MainLayout {
    * Addons: Insert sidebar entry (always visible, not gated by any single addon).
    * Inserts before Download link, after Lists accordion.
    */
+  private addonsAccordionOpen = false;
+
   private insertAddonsSidebarEntry(navContainer: Element | null): void {
     if (!navContainer) return;
     if (navContainer.querySelector('.primary-nav__link--addons')) return;
 
+    const addonItems = [
+      { id: 'bookmarks', name: 'Bookmarks' },
+      { id: 'tribes', name: 'Tribes' },
+      { id: 'extended-follows', name: 'Extended Follows' },
+      { id: 'profile-recognition', name: 'Profile Recognition' },
+      { id: 'marketplace', name: 'Marketplace' },
+      { id: 'follow-packs', name: 'Follow Packs' },
+      { id: 'nostrin', name: 'NostrIn' },
+      { id: 'hashtag-subscriptions', name: 'Hashtag Subscriptions' },
+      { id: 'list-settings', name: 'List Sync Mode' },
+      { id: 'wordfilter', name: 'Word Filter' },
+    ];
+
     const li = document.createElement('li');
+    li.className = 'primary-nav__item primary-nav__item--accordion primary-nav__link--addons';
     li.innerHTML = `
-      <a href="/addons" class="primary-nav__link primary-nav__link--addons">
+      <button class="primary-nav__accordion-trigger">
         <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
           <circle cx="12" cy="12" r="3"/>
         </svg>
-        <span class="primary-nav__item-desc">Addons</span>
-      </a>
+        Addons
+      </button>
+      <ul class="primary-nav__submenu">
+        ${addonItems.map(a => `
+          <li>
+            <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}" style="grid-template-columns: 1fr;">
+              <span class="primary-nav__sublink-desc">${a.name}</span>
+            </a>
+          </li>
+        `).join('')}
+      </ul>
     `;
 
-    const link = li.querySelector('a')!;
-    link.addEventListener('click', (e) => {
+    // Accordion trigger
+    const trigger = li.querySelector('.primary-nav__accordion-trigger');
+    trigger?.addEventListener('click', (e) => {
       e.preventDefault();
-      if (this.layoutService.isPhone()) {
-        this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
-        this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
-      }
-      Router.getInstance().navigate('/addons');
+      this.addonsAccordionOpen = !this.addonsAccordionOpen;
+      li.classList.toggle('primary-nav__item--expanded', this.addonsAccordionOpen);
+    });
+
+    // Sublink handlers
+    li.querySelectorAll('.primary-nav__sublink').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const addonId = (link as HTMLElement).dataset.addonType;
+        if (addonId) {
+          if (this.layoutService.isPhone()) {
+            this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
+            this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
+          }
+          this.setActiveAddonSublink(addonId);
+          Router.getInstance().navigate(`/addons/${addonId}`);
+        }
+      });
     });
 
     const downloadLink = navContainer.querySelector('.primary-nav__link--download')?.parentElement;
@@ -2085,7 +2167,6 @@ export class MainLayout {
       follows: 'List: Follows',
       mutes: 'List: Muted',
       tribes: 'List: Tribes',
-      'follow-packs': 'Follow Packs',
       'nip51-inspector': 'NIP-51 Inspector'
     };
 
@@ -2095,7 +2176,6 @@ export class MainLayout {
       follows: this.followManager,
       mutes: this.muteManager,
       tribes: this.tribeManager,
-      'follow-packs': this.followPackManager,
       'nip51-inspector': this.nip51InspectorManager
     };
 
@@ -2179,7 +2259,6 @@ export class MainLayout {
       follows: 'List: Follows',
       mutes: 'List: Muted',
       tribes: 'List: Tribes',
-      'follow-packs': 'Follow Packs',
       'nip51-inspector': 'NIP-51 Inspector'
     };
 
@@ -2189,7 +2268,6 @@ export class MainLayout {
       follows: this.followManager,
       mutes: this.muteManager,
       tribes: this.tribeManager,
-      'follow-packs': this.followPackManager,
       'nip51-inspector': this.nip51InspectorManager
     };
 

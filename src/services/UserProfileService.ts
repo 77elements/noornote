@@ -4,12 +4,13 @@
  * Uses ProfileOrchestrator for fetching
  *
  * LRU CACHE STRATEGY:
- * - Memory-only cache (no localStorage)
- * - LRU eviction when cache exceeds MAX_CACHE_SIZE
+ * - Memory-only LRU cache (via LRUCache helper)
+ * - Platform-aware size: Tauri Desktop > Web > Mobile
  * - Fresh on every app start
  */
 
 import { ProfileOrchestrator } from './orchestration/ProfileOrchestrator';
+import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export interface UserProfile {
   pubkey: string;
@@ -31,9 +32,8 @@ export interface UserProfile {
 export class UserProfileService {
   private static instance: UserProfileService;
 
-  /** LRU Cache for profiles */
-  private profileCache: Map<string, UserProfile> = new Map();
-  private readonly MAX_CACHE_SIZE = 500;
+  /** LRU Cache for profiles (platform-aware size) */
+  private profileCache = new LRUCache<UserProfile>(getCacheSize(500, 300, 200));
 
   private orchestrator: ProfileOrchestrator;
   private fetchingProfiles: Map<string, Promise<UserProfile>> = new Map();
@@ -52,41 +52,6 @@ export class UserProfileService {
       UserProfileService.instance = new UserProfileService();
     }
     return UserProfileService.instance;
-  }
-
-  /**
-   * Add profile to LRU cache
-   * Moves to end if exists, evicts oldest if full
-   */
-  private addToCache(pubkey: string, profile: UserProfile): void {
-    // Delete first to move to end (LRU: most recent at end)
-    if (this.profileCache.has(pubkey)) {
-      this.profileCache.delete(pubkey);
-    }
-
-    // Evict oldest entries if cache is full
-    while (this.profileCache.size >= this.MAX_CACHE_SIZE) {
-      const oldestKey = this.profileCache.keys().next().value;
-      if (oldestKey) {
-        this.profileCache.delete(oldestKey);
-      }
-    }
-
-    this.profileCache.set(pubkey, profile);
-  }
-
-  /**
-   * Get from cache and mark as recently used
-   */
-  private getFromCache(pubkey: string): UserProfile | null {
-    const profile = this.profileCache.get(pubkey);
-    if (profile) {
-      // Move to end (mark as recently used)
-      this.profileCache.delete(pubkey);
-      this.profileCache.set(pubkey, profile);
-      return profile;
-    }
-    return null;
   }
 
   /**
@@ -121,7 +86,7 @@ export class UserProfileService {
    * Get cached profile (without fetching)
    */
   public getCachedProfile(pubkey: string): UserProfile | null {
-    return this.getFromCache(pubkey);
+    return this.profileCache.get(pubkey) ?? null;
   }
 
   /**
@@ -129,8 +94,8 @@ export class UserProfileService {
    * Returns cached profile or fetches from relays
    */
   public async getUserProfile(pubkey: string): Promise<UserProfile> {
-    // Check cache first
-    const cached = this.getFromCache(pubkey);
+    // Check cache first (LRU touch handled by LRUCache.get())
+    const cached = this.profileCache.get(pubkey);
     if (cached) {
       return cached;
     }
@@ -157,7 +122,7 @@ export class UserProfileService {
       this.failedFetches.delete(pubkey);
 
       // Add to cache
-      this.addToCache(pubkey, profile);
+      this.profileCache.set(pubkey, profile);
 
       // Notify subscribers
       this.notifyProfileUpdate(pubkey, profile);
@@ -188,7 +153,7 @@ export class UserProfileService {
 
     // Check cache first
     for (const pubkey of pubkeys) {
-      const cached = this.getFromCache(pubkey);
+      const cached = this.profileCache.get(pubkey);
       if (cached) {
         result.set(pubkey, cached);
       } else {
@@ -201,7 +166,7 @@ export class UserProfileService {
       try {
         const fetchedProfiles = await this.fetchMultipleProfilesFromRelays(toFetch);
         fetchedProfiles.forEach((profile, pubkey) => {
-          this.addToCache(pubkey, profile);
+          this.profileCache.set(pubkey, profile);
           result.set(pubkey, profile);
         });
       } catch (error) {
@@ -274,7 +239,7 @@ export class UserProfileService {
     this.profileUpdateCallbacks.get(pubkey)!.add(callback);
 
     // Check cache first, fetch only if not cached
-    const cached = this.getFromCache(pubkey);
+    const cached = this.profileCache.get(pubkey);
     if (cached) {
       // Immediate callback with cached data
       callback(cached);
@@ -311,7 +276,7 @@ export class UserProfileService {
    * Manually set a profile in cache (e.g., after onboarding publish)
    */
   public setCachedProfile(pubkey: string, profile: UserProfile): void {
-    this.addToCache(pubkey, profile);
+    this.profileCache.set(pubkey, profile);
     this.notifyProfileUpdate(pubkey, profile);
   }
 
@@ -336,7 +301,7 @@ export class UserProfileService {
   public getCacheStats(): { size: number; maxSize: number } {
     return {
       size: this.profileCache.size,
-      maxSize: this.MAX_CACHE_SIZE
+      maxSize: getCacheSize(500, 300, 200)
     };
   }
 }

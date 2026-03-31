@@ -1,12 +1,20 @@
 /**
  * TimelineRenderer
  * Handles rendering of timeline events (notes/cards)
+ *
+ * DOM Ceiling: Limits the number of top-level .note-card elements in the DOM.
+ * When appending new cards at the bottom, excess cards are removed from the top
+ * (with scroll position compensation). Events stay in StateManager for dedup/pagination.
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { NoteUI } from '../../ui/NoteUI';
 import { TimelineStateManager } from '../timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './TimelineUIStateHandler';
+import { getCacheSize } from '../../../helpers/LRUCache';
+
+/** Max top-level .note-card elements in the DOM before trimming */
+const MAX_DOM_CARDS = getCacheSize(150, 100, 60);
 
 export class TimelineRenderer {
   private element: HTMLElement;
@@ -81,6 +89,9 @@ export class TimelineRenderer {
       // Insert notes before load trigger
       this.element.insertBefore(fragment, loadTrigger);
 
+      // Trim excess cards from the top of the timeline
+      this.trimExcessCards();
+
     } catch (error) {
       console.error(`❌ APPEND FAILED:`, error);
     }
@@ -109,6 +120,46 @@ export class TimelineRenderer {
     } catch (error) {
       console.error(`❌ PREPEND FAILED:`, error);
     }
+  }
+
+  /**
+   * Remove top-level .note-card elements from the top when DOM exceeds MAX_DOM_CARDS.
+   * Compensates scroll position so the user doesn't see a jump.
+   */
+  private trimExcessCards(): void {
+    // Get only top-level note-cards (not nested quotes)
+    const topLevelCards = this.getTopLevelCards();
+    const excess = topLevelCards.length - MAX_DOM_CARDS;
+    if (excess <= 0) return;
+
+    // Find the scroll container (.timeline-view__timeline)
+    const scrollContainer = this.element.parentElement;
+    if (!scrollContainer) return;
+
+    // Measure total height of cards to remove (for scroll compensation)
+    let removedHeight = 0;
+    for (let i = 0; i < excess; i++) {
+      const card = topLevelCards[i]!;
+      removedHeight += card.getBoundingClientRect().height;
+
+      // Cleanup NoteUI internals (ISL, headers, etc.)
+      const eventId = card.getAttribute('data-event-id');
+      if (eventId) {
+        NoteUI.cleanup(eventId);
+      }
+      card.remove();
+    }
+
+    // Compensate scroll position so viewport doesn't jump
+    scrollContainer.scrollTop = Math.max(0, scrollContainer.scrollTop - removedHeight);
+  }
+
+  /**
+   * Get top-level .note-card elements (excludes nested quotes/embeds)
+   */
+  private getTopLevelCards(): HTMLElement[] {
+    const allCards = this.element.querySelectorAll(':scope > .note-card');
+    return Array.from(allCards) as HTMLElement[];
   }
 
   /**

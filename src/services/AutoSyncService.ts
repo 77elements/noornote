@@ -35,6 +35,8 @@ import {
   applyRelayFetchResult as applyBookmarkRelayResult,
   type BookmarkItem
 } from '../lists/bookmarks';
+import { isBookmarksEnabled } from '../addons/bookmarks/index';
+import { isTribesEnabled } from '../addons/tribes/index';
 
 import {
   saveToFile as saveMutesToFile,
@@ -256,6 +258,9 @@ export class AutoSyncService {
   private async handleListChange(listType: ListType): Promise<void> {
     if (!isEasyMode()) return;
     if (!this.authService.getCurrentUser()) return;
+    // Skip sync for disabled addons (data stays in localStorage, just no sync)
+    if (listType === 'bookmarks' && !isBookmarksEnabled()) return;
+    if (listType === 'tribes' && !isTribesEnabled()) return;
     if (this.isSyncing.has(listType)) {
       diagLog('lists', `handleListChange(${listType}): BLOCKED by isSyncing`, { currentlySyncing: [...this.isSyncing] });
       return;
@@ -403,6 +408,20 @@ export class AutoSyncService {
   }
 
   /**
+   * Trigger sync for a single list after addon activation.
+   * Runs with a 10-second delay (like startup sync) to avoid hammering relays.
+   */
+  public scheduleSyncForList(listType: ListType): void {
+    if (!isEasyMode()) return;
+    if (!this.authService.getCurrentUser()) return;
+
+    this.systemLogger.info('ListAutoSync', `${listType}: addon activated, scheduling sync in 10s`);
+    setTimeout(() => {
+      this.syncFromRelays(listType);
+    }, 10000);
+  }
+
+  /**
    * Sync all lists from relays
    */
   private async syncFromRelaysAll(): Promise<void> {
@@ -417,7 +436,11 @@ export class AutoSyncService {
     this.systemLogger.info('ListAutoSync', 'Lists in Easy Mode. AutoSync triggered from relays.');
     diagLog('lists', 'syncFromRelaysAll(): starting sync for all list types');
 
-    for (const listType of ['follows', 'bookmarks', 'mutes', 'tribes'] as ListType[]) {
+    const listsToSync: ListType[] = ['follows', 'mutes'];
+    if (isBookmarksEnabled()) listsToSync.push('bookmarks');
+    if (isTribesEnabled()) listsToSync.push('tribes');
+
+    for (const listType of listsToSync) {
       await this.syncFromRelays(listType);
     }
   }

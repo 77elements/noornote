@@ -8,13 +8,15 @@
  * - Other orchestrators check cache before fetching
  *
  * LRU CACHE STRATEGY:
- * - Memory-only cache with LRU eviction
- * - Evicts oldest entries when cache exceeds MAX_CACHE_SIZE
+ * - Memory-only LRU cache (via LRUCache helper)
+ * - Platform-aware size: Tauri Desktop > Web > Mobile
+ * - Evicts oldest entries when cache exceeds limit
  */
 
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
+import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export interface CachedNote {
   event: NostrEvent;
@@ -25,8 +27,7 @@ export class NoteService {
   private static instance: NoteService;
 
   /** LRU Note cache (event.id → CachedNote) */
-  private cache: Map<string, CachedNote> = new Map();
-  private readonly MAX_CACHE_SIZE = 2000;
+  private cache = new LRUCache<CachedNote>(getCacheSize(2000, 1000, 500));
 
   /** Deduplication for parallel fetches */
   private fetchingNotes: Map<string, Promise<NostrEvent | null>> = new Map();
@@ -47,36 +48,13 @@ export class NoteService {
   }
 
   /**
-   * LRU: Move key to end (most recent) and evict oldest if over limit
-   */
-  private setCacheEntry(id: string, entry: CachedNote): void {
-    // Re-insert to move to end (LRU)
-    if (this.cache.has(id)) {
-      this.cache.delete(id);
-    }
-
-    // Evict oldest entries if cache is full
-    while (this.cache.size >= this.MAX_CACHE_SIZE) {
-      const oldestKey = this.cache.keys().next().value;
-      if (oldestKey) {
-        this.cache.delete(oldestKey);
-      }
-    }
-
-    this.cache.set(id, entry);
-  }
-
-  /**
    * Get a single note by ID
    * Returns from cache if available, fetches from relays otherwise
    */
   public async getNote(eventId: string): Promise<NostrEvent | null> {
-    // Check cache
+    // Check cache (LRU touch handled by LRUCache.get())
     const cached = this.cache.get(eventId);
     if (cached) {
-      // LRU touch: move to end
-      this.cache.delete(eventId);
-      this.cache.set(eventId, cached);
       return cached.event;
     }
 
@@ -92,7 +70,7 @@ export class NoteService {
     try {
       const event = await fetchPromise;
       if (event) {
-        this.setCacheEntry(eventId, {
+        this.cache.set(eventId, {
           event,
           fetchedAt: Date.now()
         });
@@ -111,13 +89,10 @@ export class NoteService {
     const result = new Map<string, NostrEvent>();
     const toFetch: string[] = [];
 
-    // Check cache first
+    // Check cache first (LRU touch handled by LRUCache.get())
     for (const id of eventIds) {
       const cached = this.cache.get(id);
       if (cached) {
-        // LRU touch
-        this.cache.delete(id);
-        this.cache.set(id, cached);
         result.set(id, cached.event);
       } else {
         toFetch.push(id);
@@ -128,7 +103,7 @@ export class NoteService {
     if (toFetch.length > 0) {
       const fetched = await this.fetchMultipleFromRelays(toFetch);
       fetched.forEach((event, id) => {
-        this.setCacheEntry(id, {
+        this.cache.set(id, {
           event,
           fetchedAt: Date.now()
         });
@@ -145,7 +120,7 @@ export class NoteService {
    */
   public registerNote(event: NostrEvent): void {
     if (event.id && !this.cache.has(event.id)) {
-      this.setCacheEntry(event.id, {
+      this.cache.set(event.id, {
         event,
         fetchedAt: Date.now()
       });
@@ -193,7 +168,7 @@ export class NoteService {
    * Get cache stats (for debugging)
    */
   public getCacheStats(): { size: number; maxSize: number } {
-    return { size: this.cache.size, maxSize: this.MAX_CACHE_SIZE };
+    return { size: this.cache.size, maxSize: getCacheSize(2000, 1000, 500) };
   }
 
   /**

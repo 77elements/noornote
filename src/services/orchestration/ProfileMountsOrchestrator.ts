@@ -15,6 +15,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { ProfileMountsService } from '../ProfileMountsService';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 
 const NIP78_KIND = 30078;
 const D_TAG = 'noornote/profile-mounts';
@@ -32,8 +33,7 @@ export class ProfileMountsOrchestrator {
   private systemLogger: SystemLogger;
 
   // Cache for fetched profile mounts (pubkey -> mounts[])
-  private cache: Map<string, { mounts: string[]; fetchedAt: number }> = new Map();
-  private readonly CACHE_TTL = 60000; // 1 minute cache
+  private cache = new LRUCache<string[]>(getCacheSize(100, 50, 30), 60000); // 1 minute TTL
 
   private constructor() {
     this.transport = NostrTransport.getInstance();
@@ -93,10 +93,7 @@ export class ProfileMountsOrchestrator {
     await this.transport.publish(writeRelays, signed);
 
     // Update cache for own profile
-    this.cache.set(currentUser.pubkey, {
-      mounts: mounts,
-      fetchedAt: Date.now()
-    });
+    this.cache.set(currentUser.pubkey, mounts);
 
     this.systemLogger.info('ProfileMountsOrchestrator',
       `Published profile mounts: ${mounts.length} folders`
@@ -112,8 +109,8 @@ export class ProfileMountsOrchestrator {
     // Check cache first (unless force refresh)
     if (!forceRefresh) {
       const cached = this.cache.get(pubkey);
-      if (cached && (Date.now() - cached.fetchedAt) < this.CACHE_TTL) {
-        return cached.mounts;
+      if (cached !== undefined) {
+        return cached;
       }
     }
 
@@ -132,7 +129,7 @@ export class ProfileMountsOrchestrator {
 
       if (events.length === 0) {
         // No profile mounts found - cache empty result
-        this.cache.set(pubkey, { mounts: [], fetchedAt: Date.now() });
+        this.cache.set(pubkey, []);
         return [];
       }
 
@@ -144,7 +141,7 @@ export class ProfileMountsOrchestrator {
       const mounts = this.parseContent(event.content);
 
       // Cache result
-      this.cache.set(pubkey, { mounts, fetchedAt: Date.now() });
+      this.cache.set(pubkey, mounts);
 
       return mounts;
     } catch (error) {

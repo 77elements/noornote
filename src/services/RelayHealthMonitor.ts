@@ -4,6 +4,11 @@
  *
  * @purpose Track relay health metrics for UI visibility and diagnostics
  * @architecture Singleton service, integrates with NostrTransport
+ *
+ * Memory optimization:
+ * - Batched health checks (max 3 relays per cycle)
+ * - Exponential backoff for healthy relays (5min → 15min → 30min)
+ * - Unhealthy relays checked every cycle
  */
 
 import { EventBus } from './EventBus';
@@ -19,13 +24,27 @@ export interface RelayHealthMetrics {
   uptimePercentage: number; // 0-100
 }
 
+/** How many consecutive healthy checks before backoff increases */
+const HEALTHY_STREAK_FOR_BACKOFF = 2;
+/** Max relays to ping per health check cycle */
+const BATCH_SIZE = 3;
+
 export class RelayHealthMonitor {
   private static instance: RelayHealthMonitor;
   private metrics: Map<string, RelayHealthMetrics> = new Map();
   private eventBus: EventBus;
   private connectionChecks: Map<string, number> = new Map(); // url -> timestamp of last check
   private healthCheckInterval: number | null = null;
-  private readonly HEALTH_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  private readonly HEALTH_CHECK_INTERVAL = 10 * 60 * 1000; // 10 minutes (was 5)
+
+  /** Track consecutive healthy checks per relay for backoff */
+  private healthyStreaks: Map<string, number> = new Map();
+
+  /** Round-robin index for batched checking */
+  private batchIndex = 0;
+
+  /** First health check pings all relays (no batching) */
+  private isFirstCheck = true;
 
   private constructor() {
     this.eventBus = EventBus.getInstance();
@@ -89,6 +108,9 @@ export class RelayHealthMonitor {
       metrics.latency = latency;
     }
 
+    // Track healthy streak for backoff
+    this.healthyStreaks.set(url, (this.healthyStreaks.get(url) || 0) + 1);
+
     this.updateUptimePercentage(url);
     this.eventBus.emit('relay:health:updated', { url, metrics });
   }
@@ -101,6 +123,9 @@ export class RelayHealthMonitor {
     metrics.isConnected = false;
     metrics.lastDisconnected = new Date();
 
+    // Reset healthy streak
+    this.healthyStreaks.set(url, 0);
+
     this.updateUptimePercentage(url);
     this.eventBus.emit('relay:health:updated', { url, metrics });
   }
@@ -112,6 +137,9 @@ export class RelayHealthMonitor {
     const metrics = this.getOrCreateMetrics(url);
     metrics.errorCount++;
     metrics.isConnected = false;
+
+    // Reset healthy streak
+    this.healthyStreaks.set(url, 0);
 
     diagLog('relays', 'Relay error', { url, errorCount: metrics.errorCount });
     this.eventBus.emit('relay:health:updated', { url, metrics });
@@ -198,6 +226,7 @@ export class RelayHealthMonitor {
   public clearMetrics(url: string): void {
     this.metrics.delete(url);
     this.connectionChecks.delete(url);
+    this.healthyStreaks.delete(url);
   }
 
   /**
@@ -206,23 +235,48 @@ export class RelayHealthMonitor {
   public reset(): void {
     this.metrics.clear();
     this.connectionChecks.clear();
+    this.healthyStreaks.clear();
+    this.batchIndex = 0;
   }
 
   /**
-   * Start periodic health check (every 5 minutes)
+   * Start periodic health check (every 10 minutes)
    */
   private startPeriodicHealthCheck(): void {
     // Initial check after 10 seconds
     setTimeout(() => this.performHealthCheck(), 10000);
 
-    // Periodic checks every 5 minutes
+    // Periodic checks every 10 minutes
     this.healthCheckInterval = window.setInterval(() => {
       this.performHealthCheck();
     }, this.HEALTH_CHECK_INTERVAL);
   }
 
   /**
-   * Perform health check on all configured relays
+   * Check if a relay needs checking this cycle (backoff logic)
+   * Healthy relays are checked less frequently:
+   * - 0-1 healthy streaks: every cycle
+   * - 2-3 healthy streaks: every 2nd cycle (skip 1)
+   * - 4+ healthy streaks: every 3rd cycle (skip 2)
+   */
+  private needsCheck(url: string): boolean {
+    const streak = this.healthyStreaks.get(url) || 0;
+    const lastCheck = this.connectionChecks.get(url) || 0;
+    const elapsed = Date.now() - lastCheck;
+
+    if (streak < HEALTHY_STREAK_FOR_BACKOFF) {
+      // Unhealthy or new: always check
+      return true;
+    }
+
+    // Backoff: multiply interval by streak tier
+    const backoffMultiplier = streak >= 4 ? 3 : 2;
+    return elapsed >= this.HEALTH_CHECK_INTERVAL * backoffMultiplier;
+  }
+
+  /**
+   * Perform batched health check on configured relays
+   * Checks max BATCH_SIZE relays per cycle, prioritizing unhealthy ones
    */
   private async performHealthCheck(): Promise<void> {
     // Dynamically import to avoid circular dependencies
@@ -233,10 +287,44 @@ export class RelayHealthMonitor {
     const transport = NostrTransport.getInstance();
 
     const allRelays = relayConfig.getAllRelays();
+    if (allRelays.length === 0) return;
 
-    // Ping each relay with minimal subscription
-    for (const relay of allRelays) {
+    // First check: ping ALL relays to establish initial health status
+    if (this.isFirstCheck) {
+      this.isFirstCheck = false;
+      for (const relay of allRelays) {
+        this.pingRelay(relay.url, transport);
+        this.connectionChecks.set(relay.url, Date.now());
+      }
+      return;
+    }
+
+    // Subsequent checks: batched with backoff
+    const needsChecking = allRelays.filter(r => this.needsCheck(r.url));
+
+    // Take a batch: prioritize unhealthy relays, then round-robin the rest
+    const batch: { url: string }[] = [];
+
+    // First: unhealthy relays (streak 0)
+    const unhealthy = needsChecking.filter(r => (this.healthyStreaks.get(r.url) || 0) === 0);
+    batch.push(...unhealthy.slice(0, BATCH_SIZE));
+
+    // Fill remaining slots with healthy relays that need checking
+    if (batch.length < BATCH_SIZE) {
+      const healthy = needsChecking.filter(r => (this.healthyStreaks.get(r.url) || 0) > 0);
+      const remaining = BATCH_SIZE - batch.length;
+      // Round-robin through healthy relays
+      const startIdx = this.batchIndex % Math.max(1, healthy.length);
+      for (let i = 0; i < remaining && i < healthy.length; i++) {
+        batch.push(healthy[(startIdx + i) % healthy.length]!);
+      }
+      this.batchIndex += remaining;
+    }
+
+    // Ping selected relays
+    for (const relay of batch) {
       this.pingRelay(relay.url, transport);
+      this.connectionChecks.set(relay.url, Date.now());
     }
   }
 
