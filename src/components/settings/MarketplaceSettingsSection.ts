@@ -55,7 +55,6 @@ export class MarketplaceSettingsSection extends SettingsSection {
     const currentFreq = getTimelineListingFrequency();
 
     contentContainer.innerHTML = `
-      <p class="addon-section__beta">Beta — This feature is still in development. Expect rough edges.</p>
       ${this.marketplaceSwitch.render()}
       <div class="marketplace-timeline-settings${marketplaceEnabled ? '' : ' is-hidden'}">
         ${this.timelineSwitch.render()}

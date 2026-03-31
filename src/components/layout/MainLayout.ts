@@ -704,10 +704,11 @@ export class MainLayout {
    * Update active navigation based on view class (e.g., 'tv', 'pv', 'nv')
    */
   private updateActiveNavigation(viewClass: string): void {
-    // Clear all active states (main nav + list sublinks)
+    // Clear all active states (main nav + list sublinks + addon sublinks)
     const navLinks = this.element.querySelectorAll('.primary-nav > li > a');
     navLinks.forEach(link => link.classList.remove('is-active'));
     this.setActiveListSublink(null);
+    this.setActiveAddonSublink(null);
 
     // Map viewClass abbreviations to nav selectors
     const viewToSelector: Record<string, string> = {
@@ -728,6 +729,15 @@ export class MainLayout {
       const activeLink = this.element.querySelector(`.primary-nav ${selector}`);
       activeLink?.classList.add('is-active');
     }
+
+    // For AddonsView: highlight the specific addon sublink
+    if (viewClass === 'adv') {
+      const path = window.location.pathname;
+      const match = path.match(/^\/addons\/(.+)$/);
+      if (match) {
+        this.setActiveAddonSublink(match[1]!);
+      }
+    }
   }
 
   /**
@@ -735,11 +745,21 @@ export class MainLayout {
    */
   private setActiveListSublink(listType: ListType | null): void {
     // Clear all list sublinks
-    const sublinks = this.element.querySelectorAll('.primary-nav__sublink');
-    sublinks.forEach(link => link.classList.remove('is-active'));
+    const listSublinks = this.element.querySelectorAll('.primary-nav__sublink[data-list-type]');
+    listSublinks.forEach(link => link.classList.remove('is-active'));
 
     if (listType) {
       const activeSublink = this.element.querySelector(`.primary-nav__sublink[data-list-type="${listType}"]`);
+      activeSublink?.classList.add('is-active');
+    }
+  }
+
+  private setActiveAddonSublink(addonId: string | null): void {
+    const addonSublinks = this.element.querySelectorAll('.primary-nav__sublink[data-addon-type]');
+    addonSublinks.forEach(link => link.classList.remove('is-active'));
+
+    if (addonId) {
+      const activeSublink = this.element.querySelector(`.primary-nav__sublink[data-addon-type="${addonId}"]`);
       activeSublink?.classList.add('is-active');
     }
   }
@@ -1930,29 +1950,68 @@ export class MainLayout {
    * Addons: Insert sidebar entry (always visible, not gated by any single addon).
    * Inserts before Download link, after Lists accordion.
    */
+  private addonsAccordionOpen = false;
+
   private insertAddonsSidebarEntry(navContainer: Element | null): void {
     if (!navContainer) return;
     if (navContainer.querySelector('.primary-nav__link--addons')) return;
 
+    const addonItems = [
+      { id: 'bookmarks', name: 'Bookmarks' },
+      { id: 'tribes', name: 'Tribes' },
+      { id: 'extended-follows', name: 'Extended Follows' },
+      { id: 'profile-recognition', name: 'Profile Recognition' },
+      { id: 'marketplace', name: 'Marketplace' },
+      { id: 'follow-packs', name: 'Follow Packs' },
+      { id: 'nostrin', name: 'NostrIn' },
+      { id: 'hashtag-subscriptions', name: 'Hashtag Subscriptions' },
+      { id: 'list-settings', name: 'List Sync Mode' },
+      { id: 'wordfilter', name: 'Word Filter' },
+    ];
+
     const li = document.createElement('li');
+    li.className = 'primary-nav__item primary-nav__item--accordion primary-nav__link--addons';
     li.innerHTML = `
-      <a href="/addons" class="primary-nav__link primary-nav__link--addons">
+      <button class="primary-nav__accordion-trigger">
         <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
           <circle cx="12" cy="12" r="3"/>
         </svg>
-        <span class="primary-nav__item-desc">Addons</span>
-      </a>
+        Addons
+      </button>
+      <ul class="primary-nav__submenu">
+        ${addonItems.map(a => `
+          <li>
+            <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}" style="grid-template-columns: 1fr;">
+              <span class="primary-nav__sublink-desc">${a.name}</span>
+            </a>
+          </li>
+        `).join('')}
+      </ul>
     `;
 
-    const link = li.querySelector('a')!;
-    link.addEventListener('click', (e) => {
+    // Accordion trigger
+    const trigger = li.querySelector('.primary-nav__accordion-trigger');
+    trigger?.addEventListener('click', (e) => {
       e.preventDefault();
-      if (this.layoutService.isPhone()) {
-        this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
-        this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
-      }
-      Router.getInstance().navigate('/addons');
+      this.addonsAccordionOpen = !this.addonsAccordionOpen;
+      li.classList.toggle('primary-nav__item--expanded', this.addonsAccordionOpen);
+    });
+
+    // Sublink handlers
+    li.querySelectorAll('.primary-nav__sublink').forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const addonId = (link as HTMLElement).dataset.addonType;
+        if (addonId) {
+          if (this.layoutService.isPhone()) {
+            this.element.querySelector('.sidebar')?.classList.remove('sidebar--open');
+            this.element.querySelector('.sidebar-overlay')?.classList.remove('sidebar-overlay--visible');
+          }
+          this.setActiveAddonSublink(addonId);
+          Router.getInstance().navigate(`/addons/${addonId}`);
+        }
+      });
     });
 
     const downloadLink = navContainer.querySelector('.primary-nav__link--download')?.parentElement;

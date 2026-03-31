@@ -24,7 +24,7 @@ interface AddonDef {
   /** Mount the settings component (reused from SettingsView). */
   mountSettings?: (panel: HTMLElement) => Promise<SettingsSection>;
   /** Mount content below the settings separator. */
-  mountContent?: (contentEl: HTMLElement) => void;
+  mountContent?: (contentEl: HTMLElement) => void | Promise<void>;
 }
 
 const ADDONS: AddonDef[] = [
@@ -113,11 +113,10 @@ const ADDONS: AddonDef[] = [
       settings.mount(panel);
       return settings;
     },
-    mountContent: (contentEl) => {
-      contentEl.innerHTML = `<button class="btn" data-action="open-marketplace">Open Marketplace</button>`;
-      contentEl.querySelector('[data-action="open-marketplace"]')?.addEventListener('click', () => {
-        import('../../services/Router').then(({ Router }) => Router.getInstance().navigate('/marketplace'));
-      });
+    mountContent: async (contentEl) => {
+      const { MarketplaceTimeline } = await import('../../addons/marketplace/MarketplaceTimeline');
+      const timeline = new MarketplaceTimeline();
+      contentEl.appendChild(timeline.getElement());
     },
   },
   {
@@ -140,11 +139,10 @@ const ADDONS: AddonDef[] = [
       settings.mount(panel);
       return settings;
     },
-    mountContent: (contentEl) => {
-      contentEl.innerHTML = `<button class="btn" data-action="show-follow-packs">Show Follow Packs</button>`;
-      contentEl.querySelector('[data-action="show-follow-packs"]')?.addEventListener('click', () => {
-        EventBus.getInstance().emit('list:open', { listType: 'follow-packs' });
-      });
+    mountContent: async (contentEl) => {
+      const { FollowPackManager } = await import('../../addons/follow-packs/FollowPackManager');
+      const manager = new FollowPackManager(contentEl);
+      await manager.renderListTab(contentEl);
     },
   },
   {
@@ -257,16 +255,11 @@ export class AddonsView extends View {
     }));
 
     this.container.innerHTML = `
-      <nav class="addons-nav">
-        ${ADDONS.map(a => `
-          <a href="#" class="addons-nav__link${a.id === this.activeAddonId ? ' addons-nav__link--active' : ''}"
-             data-addon="${a.id}">${a.name}</a>
-        `).join('')}
-      </nav>
       <div class="addons-panel">
         ${ADDONS.map(a => `
           <div class="addons-panel__item${a.id === this.activeAddonId ? ' addons-panel__item--active' : ''}"
                data-addon-panel="${a.id}">
+            <h1 class="addons-panel__title">${a.name}</h1>
             <div id="${a.settingsContainerId}" class="addon-settings"></div>
             <div class="addons-panel__content" data-addon-content="${a.id}"></div>
           </div>
@@ -299,8 +292,6 @@ export class AddonsView extends View {
 
     // Toggle content visibility when addons are enabled/disabled
     this.bindContentVisibility();
-
-    this.bindNavigation();
   }
 
   private mountFallbackSwitch(addon: AddonDef, enabled: boolean): void {
@@ -313,7 +304,6 @@ export class AddonsView extends View {
     const mountPoint = this.container.querySelector(`#${addon.settingsContainerId}`) as HTMLElement;
     if (mountPoint) {
       mountPoint.innerHTML = `
-        <h2 class="addons-panel__title">${addon.name}</h2>
         <p class="addons-panel__description">${addon.description}</p>
         ${sw.render()}
       `;
@@ -333,30 +323,6 @@ export class AddonsView extends View {
         contentEl.style.display = data.enabled ? '' : 'none';
       });
     }
-  }
-
-  private bindNavigation(): void {
-    this.container.querySelectorAll('.addons-nav__link').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const addonId = (link as HTMLElement).dataset.addon!;
-        this.selectAddon(addonId);
-      });
-    });
-  }
-
-  private selectAddon(addonId: string): void {
-    this.activeAddonId = addonId;
-
-    this.container.querySelectorAll('.addons-nav__link').forEach(el => {
-      el.classList.toggle('addons-nav__link--active', (el as HTMLElement).dataset.addon === addonId);
-    });
-
-    this.container.querySelectorAll('.addons-panel__item').forEach(el => {
-      el.classList.toggle('addons-panel__item--active', (el as HTMLElement).dataset.addonPanel === addonId);
-    });
-
-    history.replaceState(null, '', `/addons/${addonId}`);
   }
 
   private async handleToggle(addon: AddonDef, checked: boolean): Promise<void> {
