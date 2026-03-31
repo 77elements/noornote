@@ -77,7 +77,6 @@ export async function publishEvent(event: NostrEvent): Promise<Set<string>> {
     throw new Error('No write relays available');
   }
   const confirmedRelays = await getTransport().publish(relays, event);
-  console.log(`[Relays] publishEvent kind:${event.kind} → ${confirmedRelays.size}/${relays.length} relays confirmed`, [...confirmedRelays]);
   return confirmedRelays;
 }
 

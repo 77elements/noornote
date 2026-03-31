@@ -52,11 +52,11 @@ function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
   // Desktop: Large caches for performance
   // Web/Phone: Smaller caches for memory efficiency
   const DEFAULT_CONFIG = isDesktop ? {
-    profileCacheSize: 100000,
+    profileCacheSize: 10000,
     zapperCacheSize: 200,
-    nip05CacheSize: 1000,
-    eventCacheSize: 50000,
-    eventTagsCacheSize: 100000,
+    nip05CacheSize: 500,
+    eventCacheSize: 10000,
+    eventTagsCacheSize: 20000,
     saveSig: false
   } : {
     profileCacheSize: 5000,
