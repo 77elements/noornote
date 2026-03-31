@@ -30,7 +30,6 @@ type BookmarkManager = import('../../lists/bookmarks').BookmarkManager;
 type FollowListManager = import('../../lists/follows').FollowListManager;
 type MuteListManager = import('../../lists/mutes').MuteListManager;
 type TribeManager = import('../../lists/tribes').TribeManager;
-import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
 import { HamburgerBadgeManager } from './managers/HamburgerBadgeManager';
@@ -75,7 +74,6 @@ export class MainLayout {
   private followManager: FollowListManager | null = null;
   private muteManager: MuteListManager | null = null;
   private tribeManager: TribeManager | null = null;
-  private nip51InspectorManager: Nip51InspectorManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
   private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
@@ -181,8 +179,6 @@ export class MainLayout {
   private initializeManagers(): void {
     // Lazy-load list managers (they pull in heavy deps)
     this.loadListManagers();
-    this.nip51InspectorManager = new Nip51InspectorManager(this.element);
-
     // Initialize NotificationsBadgeManager
     const badgeElement = this.element.querySelector('.notifications-badge') as HTMLElement;
     if (badgeElement) {
@@ -2167,7 +2163,6 @@ export class MainLayout {
       follows: 'List: Follows',
       mutes: 'List: Muted',
       tribes: 'List: Tribes',
-      'nip51-inspector': 'NIP-51 Inspector'
     };
 
     // Map list types to managers
@@ -2176,7 +2171,6 @@ export class MainLayout {
       follows: this.followManager,
       mutes: this.muteManager,
       tribes: this.tribeManager,
-      'nip51-inspector': this.nip51InspectorManager
     };
 
     const manager = managers[listType];
@@ -2259,7 +2253,6 @@ export class MainLayout {
       follows: 'List: Follows',
       mutes: 'List: Muted',
       tribes: 'List: Tribes',
-      'nip51-inspector': 'NIP-51 Inspector'
     };
 
     // Map list types to managers
@@ -2268,7 +2261,6 @@ export class MainLayout {
       follows: this.followManager,
       mutes: this.muteManager,
       tribes: this.tribeManager,
-      'nip51-inspector': this.nip51InspectorManager
     };
 
     const manager = managers[listType];

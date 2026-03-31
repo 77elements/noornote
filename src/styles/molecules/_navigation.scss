@@ -216,7 +216,7 @@
     display: none;
     list-style: none;
     padding: 0;
-    padding-left: $gap;
+    padding-left: calc(1.5 * $gap);
     margin: calc($gap / 4) 0 0 0;
   }
 
