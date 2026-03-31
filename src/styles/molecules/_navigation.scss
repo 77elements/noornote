@@ -254,6 +254,10 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  &__sublink--no-icon {
+    display: block;
+  }
 }
 
 @keyframes badge-pulse {

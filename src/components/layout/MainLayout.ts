@@ -1955,7 +1955,7 @@ export class MainLayout {
       <ul class="primary-nav__submenu">
         ${addonItems.map(a => `
           <li>
-            <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}" style="grid-template-columns: 1fr;">
+            <a href="#" class="primary-nav__sublink primary-nav__sublink--no-icon" data-addon-type="${a.id}">
               <span class="primary-nav__sublink-desc">${a.name}</span>
             </a>
           </li>
