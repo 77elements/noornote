@@ -20,7 +20,6 @@ import { StorageKeys, now, deduplicateByPubkey, mergeByKey } from './storage';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey } from './relays';
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
-import { formatTimeAgo } from '../helpers/formatTimeAgo';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { EventBus } from '../services/EventBus';
@@ -34,17 +33,13 @@ import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncM
 import { PlatformService } from '../services/PlatformService';
 import { UserProfileService } from '../services/UserProfileService';
 import { UserService } from '../services/UserService';
-import { MutualService } from '../services/MutualService';
-import { MutualChangeDetector } from '../services/MutualChangeDetector';
-import { MutualChangeStorage } from './MutualChangeStorage';
-import { ZapStatsService } from '../services/ZapStatsService';
+import { FollowsExtendedFeatures } from './follows-extended';
 import { Router } from '../services/Router';
 import { hexToNpub } from '../helpers/nip19';
 import { extractDisplayName } from '../helpers/extractDisplayName';
 import { InfiniteScroll } from '../components/ui/InfiniteScroll';
 import { ProgressBarHelper } from '../helpers/ProgressBarHelper';
 import { ArticleNotificationService } from '../services/ArticleNotificationService';
-import { renderUserMention, setupUserMentionHandlers } from '../helpers/UserMentionHelper';
 import type { UserProfile } from '../services/UserProfileService';
 
 const logger = SystemLogger.getInstance();
@@ -1176,18 +1171,13 @@ export class FollowListManager {
   // Follow-specific properties
   private followOrch: ReturnType<typeof FollowListOrchestrator.getInstance>;
   private userProfileService: UserProfileService;
-  private mutualService: MutualService;
-  private mutualChangeDetector: MutualChangeDetector;
-  private mutualChangeStorage: MutualChangeStorage;
-  private zapStatsService: ZapStatsService;
+  private extended: FollowsExtendedFeatures;
   private router: Router;
   private adapter: FollowStorageAdapter;
 
   // Stats and filter
   private totalFollowing: number = 0;
-  private mutualCount: number = 0;
   private showOnlyNonMutuals: boolean = false;
-  private zapStatsLoaded: boolean = false;
 
   // Sorting and loading state
   private isFullyLoaded: boolean = false;
@@ -1204,10 +1194,7 @@ export class FollowListManager {
     this.adapter = new FollowStorageAdapter();
     this.followOrch = FollowListOrchestrator.getInstance();
     this.userProfileService = UserProfileService.getInstance();
-    this.mutualService = MutualService.getInstance();
-    this.mutualChangeDetector = MutualChangeDetector.getInstance();
-    this.mutualChangeStorage = MutualChangeStorage.getInstance();
-    this.zapStatsService = ZapStatsService.getInstance();
+    this.extended = new FollowsExtendedFeatures();
     this.router = Router.getInstance();
 
     this.setupEventListeners();
@@ -1227,32 +1214,25 @@ export class FollowListManager {
       this.refreshListIfActive();
       // Follow-specific resets
       this.totalFollowing = 0;
-      this.mutualCount = 0;
-      this.zapStatsLoaded = false;
+      this.extended.reset();
       this.isFullyLoaded = false;
       this.originalOrder = [];
       this.usernameFilter = '';
     });
     this.eventBus.on('list-sync-mode:changed', () => this.refreshListIfActive());
 
-    // Listen for zap stats loaded event
-    this.eventBus.on('zapstats:loaded', () => {
-      this.zapStatsLoaded = true;
-      this.updateAllZapBadges();
-      const container = this.containerElement.querySelector('[data-tab-content="list-follows"]') as HTMLElement;
-      if (container) {
-        this.updateSortControlsUI(container);
+    // Extended features EventBus listeners (mutual changes, zap stats)
+    this.extended.setupEventListeners({
+      onZapStatsLoaded: () => {
+        this.extended.updateAllZapBadges(this.containerElement);
+        const container = this.containerElement.querySelector('[data-tab-content="list-follows"]') as HTMLElement;
+        if (container) {
+          this.updateSortControlsUI(container);
+        }
+      },
+      onMutualChangesUpdate: () => {
+        this.extended.updateGreenDot();
       }
-    });
-
-    // Listen for mutual changes detected (update green dot)
-    this.eventBus.on('mutual-changes:detected', () => {
-      this.updateGreenDot();
-    });
-
-    // Listen for mutual changes seen (remove green dot)
-    this.eventBus.on('mutual-changes:seen', () => {
-      this.updateGreenDot();
     });
   }
 
@@ -1683,17 +1663,13 @@ export class FollowListManager {
     this.currentOffset = 0;
     this.hasMore = true;
     this.isLoading = false;
-    this.mutualCount = 0;
-    this.zapStatsLoaded = false;
+    this.extended.reset();
     this.isFullyLoaded = false;
     this.currentSort = 'date';
     this.isLoadingAll = false;
 
-    // Clear unseen changes when tab is opened
-    if (this.mutualChangeStorage.hasUnseenChanges()) {
-      this.mutualChangeStorage.setUnseenChanges(false);
-      this.updateGreenDot();
-    }
+    // Clear unseen changes when tab is opened (via extended features)
+    this.extended.clearUnseenChanges();
 
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -1733,10 +1709,6 @@ export class FollowListManager {
       // Store original order for date sorting
       this.originalOrder = itemsWithProfiles.map(item => item.pubkey);
 
-      // Get last check info for display
-      const lastCheckTimestamp = this.mutualChangeStorage.getLastCheckTimestamp();
-      const lastCheckText = lastCheckTimestamp ? formatTimeAgo(lastCheckTimestamp) : 'Never';
-
       // Render container with sticky header, controls and list
       container.innerHTML = `
         ${this.renderControlButtons()}
@@ -1744,10 +1716,7 @@ export class FollowListManager {
           <div class="follows-stats">
             Following: ${this.totalFollowing} | Mutuals: <span class="mutual-count">...</span> (<span class="mutual-percentage">...</span>%)
           </div>
-          <div class="follows-check-changes">
-            <a href="#" class="follows-check-changes__link">Check for changes</a>
-            <span class="follows-check-changes__last-check">Last: ${lastCheckText}</span>
-          </div>
+          ${this.extended.renderCheckForChangesHtml()}
         </div>
         <div class="follows-sort-controls">
           <a href="#" class="follows-sort-controls__load-all">Load all</a>
@@ -1784,7 +1753,7 @@ export class FollowListManager {
       this.bindSortControls(container);
 
       // Bind check for changes link
-      this.bindCheckForChanges(container);
+      this.extended.bindCheckForChanges(container);
 
       const list = container.querySelector('.follows-list');
       if (!list) return;
@@ -1805,7 +1774,7 @@ export class FollowListManager {
 
       // Start loading zap stats asynchronously (don't await)
       const allPubkeys = this.allItemsWithProfiles.map(item => item.pubkey);
-      this.zapStatsService.loadStatsForPubkeys(allPubkeys);
+      this.extended.startZapStatsLoading(allPubkeys);
     } catch (error) {
       console.error('Failed to render follows:', error);
       container.innerHTML = `
@@ -1819,179 +1788,6 @@ export class FollowListManager {
   /**
    * Bind "Check for Changes" link handler
    */
-  private bindCheckForChanges(container: HTMLElement): void {
-    const checkLink = container.querySelector('.follows-check-changes__link');
-    checkLink?.addEventListener('click', async (e) => {
-      e.preventDefault();
-      await this.handleCheckForChanges(container);
-    });
-  }
-
-  /**
-   * Handle "Check for Changes" click
-   */
-  private async handleCheckForChanges(container: HTMLElement): Promise<void> {
-    const checkLink = container.querySelector('.follows-check-changes__link');
-    const lastCheckSpan = container.querySelector('.follows-check-changes__last-check');
-    const followsHeader = container.querySelector('.follows-header') as HTMLElement;
-
-    if (checkLink) {
-      checkLink.textContent = 'Checking...';
-      (checkLink as HTMLElement).style.pointerEvents = 'none';
-    }
-
-    // Progress bar on .follows-header
-    const progressBar = followsHeader ? new ProgressBarHelper(followsHeader) : null;
-    progressBar?.start();
-
-    try {
-      const result = await this.mutualChangeDetector.detect((checked, total) => {
-        if (checkLink) {
-          checkLink.textContent = `Checking ${checked} of ${total} follows`;
-        }
-        if (progressBar) {
-          progressBar.update((checked / total) * 100);
-        }
-      });
-
-      // Update last check text
-      if (lastCheckSpan) {
-        lastCheckSpan.textContent = 'Last: Just now';
-      }
-
-      if (result.isFirstCheck) {
-        ToastService.show('Initial snapshot saved. Changes will be detected on next check.', 'info');
-      } else if (result.totalChanges === 0) {
-        ToastService.show('No changes detected', 'success');
-      } else {
-        // Show modal with results
-        this.showChangesModal(container, result);
-      }
-    } catch (error) {
-      console.error('Failed to check for changes:', error);
-      ToastService.show('Failed to check for changes', 'error');
-    } finally {
-      progressBar?.complete();
-      if (checkLink) {
-        checkLink.textContent = 'Check for changes';
-        (checkLink as HTMLElement).style.pointerEvents = '';
-      }
-    }
-  }
-
-  /**
-   * Show modal with detected changes
-   */
-  private async showChangesModal(
-    container: HTMLElement,
-    result: { unfollows: string[]; newMutuals: string[]; totalChanges: number }
-  ): Promise<void> {
-    const modal = container.querySelector('.mutual-changes-modal') as HTMLElement;
-    if (!modal) return;
-
-    // Fetch profiles for display (keep pubkey + profile together)
-    const unfollowData = await Promise.all(
-      result.unfollows.map(async (pubkey) => {
-        const profile = await this.userProfileService.getUserProfile(pubkey);
-        return {
-          pubkey,
-          username: extractDisplayName(profile),
-          avatarUrl: profile?.picture || ''
-        };
-      })
-    );
-
-    const newMutualData = await Promise.all(
-      result.newMutuals.map(async (pubkey) => {
-        const profile = await this.userProfileService.getUserProfile(pubkey);
-        return {
-          pubkey,
-          username: extractDisplayName(profile),
-          avatarUrl: profile?.picture || ''
-        };
-      })
-    );
-
-    modal.innerHTML = `
-      <div class="mutual-changes-modal__backdrop"></div>
-      <div class="mutual-changes-modal__content">
-        <h3>Mutual Changes Detected</h3>
-        <p class="mutual-changes-modal__summary">
-          ${result.totalChanges} ${result.totalChanges === 1 ? 'change' : 'changes'} detected
-        </p>
-
-        ${newMutualData.length > 0 ? `
-          <div class="mutual-changes-modal__section mutual-changes-modal__section--positive">
-            <h4>New Mutuals (${newMutualData.length})</h4>
-            <ul class="mutual-changes-modal__list">
-              ${newMutualData.map(data => `
-                <li class="mutual-changes-modal__item mutual-changes-modal__item--positive">
-                  ${renderUserMention(data.pubkey, { username: data.username, avatarUrl: data.avatarUrl })} started following you back!
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-        ` : ''}
-
-        ${unfollowData.length > 0 ? `
-          <div class="mutual-changes-modal__section mutual-changes-modal__section--negative">
-            <h4>Unfollows (${unfollowData.length})</h4>
-            <ul class="mutual-changes-modal__list">
-              ${unfollowData.map(data => `
-                <li class="mutual-changes-modal__item mutual-changes-modal__item--negative">
-                  ${renderUserMention(data.pubkey, { username: data.username, avatarUrl: data.avatarUrl })} stopped following back
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-        ` : ''}
-
-        <div class="mutual-changes-modal__actions">
-          <button class="btn btn--primary mutual-changes-modal__mark-seen">Mark as Seen</button>
-          <button class="btn btn--passive mutual-changes-modal__close">Close</button>
-        </div>
-      </div>
-    `;
-
-    modal.style.display = 'flex';
-
-    setupUserMentionHandlers(modal);
-
-    const closeModal = (): void => {
-      modal.style.display = 'none';
-    };
-
-    modal.querySelector('.mutual-changes-modal__mark-seen')?.addEventListener('click', async () => {
-      await this.mutualChangeDetector.markAsSeen();
-      closeModal();
-      ToastService.show('Changes marked as seen', 'success');
-    });
-
-    modal.querySelector('.mutual-changes-modal__close')?.addEventListener('click', closeModal);
-    modal.querySelector('.mutual-changes-modal__backdrop')?.addEventListener('click', closeModal);
-  }
-
-  /**
-   * Update green dot indicator in sidebar
-   */
-  private updateGreenDot(): void {
-    const hasUnseen = this.mutualChangeStorage.hasUnseenChanges();
-
-    // Find the follows tab button in sidebar and update dot
-    const tabButton = document.querySelector('[data-tab="list-follows"]');
-    if (tabButton) {
-      const existingDot = tabButton.querySelector('.follows-unseen-dot');
-      if (hasUnseen && !existingDot) {
-        const dot = document.createElement('span');
-        dot.className = 'follows-unseen-dot';
-        tabButton.appendChild(dot);
-      } else if (!hasUnseen && existingDot) {
-        existingDot.remove();
-      }
-    }
-  }
-
-
   /**
    * Load batch with mutual status check
    */
@@ -2019,18 +1815,8 @@ export class FollowListManager {
         return;
       }
 
-      // Check mutual status for this batch
-      const batchWithMutualStatus = await this.mutualService.checkMutualStatusBatch(
-        batch.map(item => ({ id: item.pubkey, pubkey: item.pubkey }))
-      );
-
-      // Update items with mutual status
-      batch.forEach((item, idx) => {
-        item.isMutual = batchWithMutualStatus[idx]?.isMutual ?? false;
-        if (item.isMutual) {
-          this.mutualCount++;
-        }
-      });
+      // Check mutual status for this batch (via extended features)
+      await this.extended.checkMutualStatusBatch(batch);
 
       // Render batch
       this.renderBatch(listElement, batch);
@@ -2087,9 +1873,8 @@ export class FollowListManager {
     const npub = hexToNpub(item.pubkey);
     const avatarUrl = item.profile?.picture || '';
 
-    const mutualBadgeClass = item.isMutual ? 'mutual-badge--yes' : 'mutual-badge--no';
-    const mutualBadgeText = item.isMutual ? 'Mutual' : 'Not following back';
-    const zapBadgeHtml = this.renderZapBadge(item.pubkey);
+    const mutualBadgeHtml = this.extended.renderMutualBadge(item.isMutual);
+    const zapBadgeHtml = this.extended.renderZapBadge(item.pubkey);
 
     const followItemDiv = document.createElement('div');
     followItemDiv.className = 'ui-list__item follow-item';
@@ -2106,7 +1891,7 @@ export class FollowListManager {
             ${this.renderArticleNotifLabel(item.pubkey)}
           </div>
           <div class="follow-item__badges">
-            <span class="mutual-badge ${mutualBadgeClass}">${mutualBadgeText}</span>
+            ${mutualBadgeHtml}
             ${zapBadgeHtml}
           </div>
           ${item.petname ? `<div class="follow-item__petname">${escapeHtml(item.petname)}</div>` : ''}
@@ -2129,49 +1914,6 @@ export class FollowListManager {
     });
 
     return followItemDiv;
-  }
-
-  /**
-   * Render zap badge HTML
-   */
-  private renderZapBadge(pubkey: string): string {
-    if (!this.zapStatsLoaded) {
-      // Loading state with pulsing animation
-      return `<span class="zap-stats-badge zap-stats-badge--loading" data-pubkey="${pubkey}">Zaps: Loading...</span>`;
-    }
-
-    const stats = this.zapStatsService.getStats(pubkey);
-    if (!stats) {
-      return `<span class="zap-stats-badge" data-pubkey="${pubkey}">Zaps: In (0) 0 | Out (0) 0</span>`;
-    }
-
-    const inSats = this.zapStatsService.formatSats(stats.incomingSats);
-    const outSats = this.zapStatsService.formatSats(stats.outgoingSats);
-
-    return `<span class="zap-stats-badge" data-pubkey="${pubkey}">Zaps: In (${stats.incomingCount}) ${inSats} | Out (${stats.outgoingCount}) ${outSats}</span>`;
-  }
-
-  /**
-   * Update all zap badges after stats are loaded
-   */
-  private updateAllZapBadges(): void {
-    const badges = this.containerElement.querySelectorAll('.zap-stats-badge');
-    badges.forEach(badge => {
-      const pubkey = badge.getAttribute('data-pubkey');
-      if (!pubkey) return;
-
-      const stats = this.zapStatsService.getStats(pubkey);
-      badge.classList.remove('zap-stats-badge--loading');
-
-      if (!stats) {
-        badge.textContent = 'Zaps: In (0) 0 | Out (0) 0';
-        return;
-      }
-
-      const inSats = this.zapStatsService.formatSats(stats.incomingSats);
-      const outSats = this.zapStatsService.formatSats(stats.outgoingSats);
-      badge.textContent = `Zaps: In (${stats.incomingCount}) ${inSats} | Out (${stats.outgoingCount}) ${outSats}`;
-    });
   }
 
   /**
@@ -2213,33 +1955,13 @@ export class FollowListManager {
    * Update stats display (mutual count and percentage only)
    */
   private updateStats(container: HTMLElement): void {
-    const percentage = this.calculateMutualPercentage();
+    const percentage = this.totalFollowing === 0 ? 0 : Math.round((this.extended.mutualCount / this.totalFollowing) * 100);
 
     const countEl = container.querySelector('.mutual-count');
     const percentEl = container.querySelector('.mutual-percentage');
 
-    if (countEl) countEl.textContent = String(this.mutualCount);
+    if (countEl) countEl.textContent = String(this.extended.mutualCount);
     if (percentEl) percentEl.textContent = String(percentage);
-  }
-
-  /**
-   * Update full stats header including total following count
-   */
-  private updateStatsHeader(container: HTMLElement): void {
-    const percentage = this.calculateMutualPercentage();
-    const statsEl = container.querySelector('.follows-stats');
-
-    if (statsEl) {
-      statsEl.innerHTML = `Following: ${this.totalFollowing} | Mutuals: <span class="mutual-count">${this.mutualCount}</span> (<span class="mutual-percentage">${percentage}</span>%)`;
-    }
-  }
-
-  /**
-   * Calculate mutual percentage
-   */
-  private calculateMutualPercentage(): number {
-    if (this.totalFollowing === 0) return 0;
-    return Math.round((this.mutualCount / this.totalFollowing) * 100);
   }
 
   /**
@@ -2260,14 +1982,14 @@ export class FollowListManager {
       itemElement.remove();
 
       if (item.isMutual) {
-        this.mutualCount--;
+        this.extended.mutualCount--;
       }
       this.totalFollowing--;
       this.allItemsWithProfiles = this.allItemsWithProfiles.filter(f => f.pubkey !== item.pubkey);
 
       const container = this.containerElement.querySelector('[data-tab-content="list-follows"]') as HTMLElement;
       if (container) {
-        this.updateStatsHeader(container);
+        this.extended.updateStatsHeader(container, this.totalFollowing);
       }
 
       this.eventBus.emit('follow:updated', {});
@@ -2315,9 +2037,9 @@ export class FollowListManager {
     const sortZapsLink = container.querySelector('.follows-sort-controls__sort-zaps');
     sortZapsLink?.addEventListener('click', (e) => {
       e.preventDefault();
-      if (this.isFullyLoaded && this.zapStatsLoaded && this.currentSort !== 'zaps') {
+      if (this.isFullyLoaded && this.extended.zapStatsLoaded && this.currentSort !== 'zaps') {
         this.currentSort = 'zaps';
-        this.sortByZaps();
+        this.extended.sortByZaps(this.allItemsWithProfiles);
         this.updateSortControlsUI(container);
         this.reRenderList(container);
       }
@@ -2412,7 +2134,7 @@ export class FollowListManager {
     }
 
     // Zaps sort requires both fully loaded AND zap stats loaded
-    if (this.isFullyLoaded && this.zapStatsLoaded) {
+    if (this.isFullyLoaded && this.extended.zapStatsLoaded) {
       sortZapsLink?.classList.remove('follows-sort-controls__link--disabled');
     }
 
@@ -2432,20 +2154,7 @@ export class FollowListManager {
     });
   }
 
-  /**
-   * Sort items by zap sum (highest first)
-   */
-  private sortByZaps(): void {
-    this.allItemsWithProfiles.sort((a, b) => {
-      const statsA = this.zapStatsService.getStats(a.pubkey);
-      const statsB = this.zapStatsService.getStats(b.pubkey);
 
-      const sumA = (statsA?.incomingSats || 0) + (statsA?.outgoingSats || 0);
-      const sumB = (statsB?.incomingSats || 0) + (statsB?.outgoingSats || 0);
-
-      return sumB - sumA; // Highest first
-    });
-  }
 
   /**
    * Render article notification label if user is subscribed
