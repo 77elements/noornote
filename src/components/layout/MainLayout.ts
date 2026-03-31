@@ -30,8 +30,6 @@ type BookmarkManager = import('../../lists/bookmarks').BookmarkManager;
 type FollowListManager = import('../../lists/follows').FollowListManager;
 type MuteListManager = import('../../lists/mutes').MuteListManager;
 type TribeManager = import('../../lists/tribes').TribeManager;
-type FollowPackManager = import('../../addons/follow-packs/FollowPackManager').FollowPackManager;
-import { isFollowPacksEnabled } from '../../addons/follow-packs/index';
 import { Nip51InspectorManager } from './managers/Nip51InspectorManager';
 import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager';
 import { DMBadgeManager } from './managers/DMBadgeManager';
@@ -77,7 +75,6 @@ export class MainLayout {
   private followManager: FollowListManager | null = null;
   private muteManager: MuteListManager | null = null;
   private tribeManager: TribeManager | null = null;
-  private followPackManager: FollowPackManager | null = null;
   private nip51InspectorManager: Nip51InspectorManager | null = null;
   private badgeManager: NotificationsBadgeManager | null = null;
   private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
@@ -179,11 +176,6 @@ export class MainLayout {
       this.tribeManager = new TribeManager(this.element);
     }
 
-    // FollowPacks addon: lazy-load only when enabled
-    if (isFollowPacksEnabled()) {
-      const { FollowPackManager } = await import('../../addons/follow-packs/FollowPackManager');
-      this.followPackManager = new FollowPackManager(this.element);
-    }
   }
 
   private initializeManagers(): void {
@@ -264,17 +256,7 @@ export class MainLayout {
       }
     });
 
-    // Follow Packs toggle: show/hide sidebar entry + lazy-load manager
-    this.eventBus.on('follow-packs:toggle', async (data: { enabled: boolean }) => {
-      const menuItem = this.element.querySelector('.follow-packs-item') as HTMLElement;
-      if (menuItem) {
-        menuItem.style.display = data.enabled ? '' : 'none';
-      }
-      if (data.enabled && !this.followPackManager) {
-        const { FollowPackManager } = await import('../../addons/follow-packs/FollowPackManager');
-        this.followPackManager = new FollowPackManager(this.element);
-      }
-    });
+
 
     // Listen for list:open events from Settings → Privacy links, ProfileView, FollowPackDetailView
     this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string; packId?: string; packMode?: 'timeline' | 'edit' }) => {
@@ -282,11 +264,6 @@ export class MainLayout {
       const currentUser = this.authService.getCurrentUser();
       if (data.listType === 'follows' && data.pubkey && currentUser?.pubkey !== data.pubkey) {
         this.openExternalFollowsTab(data.pubkey);
-      } else if (data.listType === 'follow-packs' && data.packId && data.packMode && this.followPackManager) {
-        // Open specific pack in timeline or edit mode
-        this.openListTab(data.listType, (container) => {
-          this.followPackManager!.openPackView(container, data.packId!, data.packMode!);
-        });
       } else {
         this.openListTab(data.listType);
       }
@@ -2190,7 +2167,6 @@ export class MainLayout {
       follows: 'List: Follows',
       mutes: 'List: Muted',
       tribes: 'List: Tribes',
-      'follow-packs': 'Follow Packs',
       'nip51-inspector': 'NIP-51 Inspector'
     };
 
@@ -2200,7 +2176,6 @@ export class MainLayout {
       follows: this.followManager,
       mutes: this.muteManager,
       tribes: this.tribeManager,
-      'follow-packs': this.followPackManager,
       'nip51-inspector': this.nip51InspectorManager
     };
 
@@ -2284,7 +2259,6 @@ export class MainLayout {
       follows: 'List: Follows',
       mutes: 'List: Muted',
       tribes: 'List: Tribes',
-      'follow-packs': 'Follow Packs',
       'nip51-inspector': 'NIP-51 Inspector'
     };
 
@@ -2294,7 +2268,6 @@ export class MainLayout {
       follows: this.followManager,
       mutes: this.muteManager,
       tribes: this.tribeManager,
-      'follow-packs': this.followPackManager,
       'nip51-inspector': this.nip51InspectorManager
     };
 

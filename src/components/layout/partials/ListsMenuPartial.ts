@@ -9,7 +9,6 @@
 import type { ListType } from './ListViewPartial';
 import { ToastService } from '../../../services/ToastService';
 import { PlatformService } from '../../../services/PlatformService';
-import { isFollowPacksEnabled } from '../../../addons/follow-packs/index';
 import { isBookmarksEnabled } from '../../../addons/bookmarks/index';
 import { isTribesEnabled } from '../../../addons/tribes/index';
 
@@ -91,16 +90,6 @@ export class ListsMenuPartial {
               <path d="M15 19v-1a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v1"></path>
             </svg>
             <span class="primary-nav__sublink-desc">Tribes</span>
-          </a>
-        </li>
-        <li class="follow-packs-item" style="${isFollowPacksEnabled() ? '' : 'display: none;'}">
-          <a href="#" class="primary-nav__sublink" data-list-type="follow-packs">
-            <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M22 8v6M19 11h6"></path>
-            </svg>
-            <span class="primary-nav__sublink-desc">Follow Packs</span>
           </a>
         </li>
         ${PlatformService.getInstance().isAndroid ? '' : `
