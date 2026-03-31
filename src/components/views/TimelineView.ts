@@ -61,6 +61,12 @@ export class TimelineView extends View {
         this.rerender();
       }
     });
+
+    // Re-render when Tribes addon is toggled (adds/removes tribe tabs)
+    this.eventBus.on('tribes:addon-toggle', () => {
+      this.currentTabId = 'timeline';
+      this.rerender();
+    });
   }
 
   /**
@@ -117,8 +123,8 @@ export class TimelineView extends View {
     pageHeading.textContent = 'Notes - Timeline';
     this.container.appendChild(pageHeading);
 
-    // Build tabs: Timeline first, then tribes
-    this.buildTabs();
+    // Build tabs: Timeline first, then tribes (async for addon lazy-loading)
+    await this.buildTabs();
 
     // Check if user has tribes defined
     const hasTribes = this.tabs.length > 1;
