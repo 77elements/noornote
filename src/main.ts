@@ -24,9 +24,11 @@ import { SystemLogger } from './components/system/SystemLogger';
 import { CrashLogger } from './services/CrashLogger';
 import './styles/main.scss';
 import './services/AuthStateManager'; // Initialize AuthStateManager and window.isLoggedIn()
-// MutualChangeService: import eagerly but module uses only lightweight deps at init.
-// The heavy work (MutualChangeStorage, Scheduler, Detector) only runs after user:login fires.
-import './services/MutualChangeService';
+// MutualChangeService: only load if Extended Follows addon is enabled
+import { isExtendedFollowsEnabled } from './addons/extended-follows/index';
+if (isExtendedFollowsEnabled()) {
+  import('./services/MutualChangeService');
+}
 import './services/AppBadgeService'; // Initialize AppBadgeService (browser tab + dock badge)
 
 // Track failed image loads (URL → log message for removal)

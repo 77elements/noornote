@@ -88,6 +88,7 @@ export const StorageKeys = {
   CONTENT_WORD_FILTER_WORDS: 'noornote_content_word_filter_words_map',
   BOOKMARKS_ADDON_ENABLED: 'noornote_bookmarks_addon_enabled_map',
   TRIBES_ADDON_ENABLED: 'noornote_tribes_addon_enabled_map',
+  EXTENDED_FOLLOWS_ADDON_ENABLED: 'noornote_extended_follows_addon_enabled_map',
 
   // List privacy flags (per-account)
   PRIVATE_TRIBES_ENABLED: 'noornote_private_tribes_enabled_map',

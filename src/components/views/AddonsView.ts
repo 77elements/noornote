@@ -59,6 +59,21 @@ const ADDONS: AddonDef[] = [
     toggleEvent: 'tribes:addon-toggle',
   },
   {
+    id: 'extended-follows',
+    name: 'Extended Follows',
+    description: 'Mutual badges, Zap In/Out stats, and mutual change detection for your follows list.',
+    settingsContainerId: 'extended-follows-settings-content',
+    isEnabled: async () => {
+      const { isExtendedFollowsEnabled } = await import('../../addons/extended-follows/index');
+      return isExtendedFollowsEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setExtendedFollowsEnabled } = await import('../../addons/extended-follows/index');
+      setExtendedFollowsEnabled(v);
+    },
+    toggleEvent: 'extended-follows:toggle',
+  },
+  {
     id: 'profile-recognition',
     name: 'Profile Recognition',
     description: 'Help recognize people you follow after they change their profile.',
@@ -344,8 +359,8 @@ export class AddonsView extends View {
     history.replaceState(null, '', `/addons/${addonId}`);
   }
 
-  private handleToggle(addon: AddonDef, checked: boolean): void {
-    addon.setEnabled(checked);
+  private async handleToggle(addon: AddonDef, checked: boolean): Promise<void> {
+    await addon.setEnabled(checked);
     const contentEl = this.container.querySelector(`[data-addon-content="${addon.id}"]`) as HTMLElement;
     if (contentEl) contentEl.style.display = checked ? '' : 'none';
     if (addon.toggleEvent) {

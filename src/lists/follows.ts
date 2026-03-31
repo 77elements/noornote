@@ -33,7 +33,8 @@ import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncM
 import { PlatformService } from '../services/PlatformService';
 import { UserProfileService } from '../services/UserProfileService';
 import { UserService } from '../services/UserService';
-import { FollowsExtendedFeatures } from './follows-extended';
+import type { FollowsExtendedFeatures } from './follows-extended';
+import { isExtendedFollowsEnabled } from '../addons/extended-follows/index';
 import { Router } from '../services/Router';
 import { hexToNpub } from '../helpers/nip19';
 import { extractDisplayName } from '../helpers/extractDisplayName';
@@ -1171,7 +1172,8 @@ export class FollowListManager {
   // Follow-specific properties
   private followOrch: ReturnType<typeof FollowListOrchestrator.getInstance>;
   private userProfileService: UserProfileService;
-  private extended: FollowsExtendedFeatures;
+  private extended: FollowsExtendedFeatures | null = null;
+  private extendedReady: Promise<void> | null = null;
   private router: Router;
   private adapter: FollowStorageAdapter;
 
@@ -1194,10 +1196,20 @@ export class FollowListManager {
     this.adapter = new FollowStorageAdapter();
     this.followOrch = FollowListOrchestrator.getInstance();
     this.userProfileService = UserProfileService.getInstance();
-    this.extended = new FollowsExtendedFeatures();
     this.router = Router.getInstance();
 
+    this.extendedReady = this.initExtended();
     this.setupEventListeners();
+  }
+
+  /**
+   * Initialize extended features (mutuals, zaps, change detection) if addon enabled
+   */
+  private async initExtended(): Promise<void> {
+    if (!isExtendedFollowsEnabled()) return;
+    const { FollowsExtendedFeatures } = await import('./follows-extended');
+    this.extended = new FollowsExtendedFeatures();
+    this.setupExtendedEventListeners();
   }
 
   /**
@@ -1214,24 +1226,41 @@ export class FollowListManager {
       this.refreshListIfActive();
       // Follow-specific resets
       this.totalFollowing = 0;
-      this.extended.reset();
+      this.extended?.reset();
       this.isFullyLoaded = false;
       this.originalOrder = [];
       this.usernameFilter = '';
     });
     this.eventBus.on('list-sync-mode:changed', () => this.refreshListIfActive());
 
-    // Extended features EventBus listeners (mutual changes, zap stats)
+    // Extended Follows addon toggle: load/unload extended features and refresh
+    this.eventBus.on('extended-follows:toggle', async (data: { enabled: boolean }) => {
+      if (data.enabled && !this.extended) {
+        this.extendedReady = this.initExtended();
+        await this.extendedReady;
+      } else if (!data.enabled && this.extended) {
+        this.extended = null;
+        this.extendedReady = null;
+      }
+      this.refreshListIfActive();
+    });
+  }
+
+  /**
+   * Setup extended features EventBus listeners (called after extended is initialized)
+   */
+  private setupExtendedEventListeners(): void {
+    if (!this.extended) return;
     this.extended.setupEventListeners({
       onZapStatsLoaded: () => {
-        this.extended.updateAllZapBadges(this.containerElement);
+        this.extended!.updateAllZapBadges(this.containerElement);
         const container = this.containerElement.querySelector('[data-tab-content="list-follows"]') as HTMLElement;
         if (container) {
           this.updateSortControlsUI(container);
         }
       },
       onMutualChangesUpdate: () => {
-        this.extended.updateGreenDot();
+        this.extended!.updateGreenDot();
       }
     });
   }
@@ -1649,6 +1678,9 @@ export class FollowListManager {
    * Render list tab content with sticky header, stats and filter
    */
   private async renderListTab(container: HTMLElement): Promise<void> {
+    // Wait for extended features to be initialized (if enabled)
+    if (this.extendedReady) await this.extendedReady;
+
     // Initialize browser storage from file on first render
     await this.initializeBrowserStorage();
 
@@ -1663,13 +1695,13 @@ export class FollowListManager {
     this.currentOffset = 0;
     this.hasMore = true;
     this.isLoading = false;
-    this.extended.reset();
+    this.extended?.reset();
     this.isFullyLoaded = false;
     this.currentSort = 'date';
     this.isLoadingAll = false;
 
     // Clear unseen changes when tab is opened (via extended features)
-    this.extended.clearUnseenChanges();
+    this.extended?.clearUnseenChanges();
 
     try {
       const currentUser = this.authService.getCurrentUser();
@@ -1714,29 +1746,33 @@ export class FollowListManager {
         ${this.renderControlButtons()}
         <div class="follows-header">
           <div class="follows-stats">
-            Following: ${this.totalFollowing} | Mutuals: <span class="mutual-count">...</span> (<span class="mutual-percentage">...</span>%)
+            Following: ${this.totalFollowing}${this.extended ? ' | Mutuals: <span class="mutual-count">...</span> (<span class="mutual-percentage">...</span>%)' : ''}
           </div>
-          ${this.extended.renderCheckForChangesHtml()}
+          ${this.extended?.renderCheckForChangesHtml() ?? ''}
         </div>
         <div class="follows-sort-controls">
           <a href="#" class="follows-sort-controls__load-all">Load all</a>
+          ${this.extended ? `
           <span class="follows-sort-controls__sort">
             Sort by:
             <a href="#" class="follows-sort-controls__sort-date follows-sort-controls__link--disabled ${this.currentSort === 'date' ? 'active' : ''}">Date</a>
             /
             <a href="#" class="follows-sort-controls__sort-zaps follows-sort-controls__link--disabled ${this.currentSort !== 'date' ? 'active' : ''}">Zaps</a>
           </span>
+          ` : ''}
           <input type="text"
                  class="follows-sort-controls__search ${this.isFullyLoaded ? '' : 'follows-sort-controls__search--disabled'}"
                  placeholder="Filter by name..."
                  ${this.isFullyLoaded ? '' : 'disabled'} />
+          ${this.extended ? `
           <label class="follows-sort-controls__non-mutuals ${this.isFullyLoaded ? '' : 'follows-sort-controls__non-mutuals--disabled'}">
             <input type="checkbox" class="follows-filter__toggle" ${this.showOnlyNonMutuals ? 'checked' : ''} ${this.isFullyLoaded ? '' : 'disabled'}>
             Non-mutuals only
           </label>
+          ` : ''}
         </div>
         <div class="follows-list"></div>
-        <div class="mutual-changes-modal" style="display: none;"></div>
+        ${this.extended ? '<div class="mutual-changes-modal" style="display: none;"></div>' : ''}
       `;
 
       // Bind sync button handlers
@@ -1753,7 +1789,7 @@ export class FollowListManager {
       this.bindSortControls(container);
 
       // Bind check for changes link
-      this.extended.bindCheckForChanges(container);
+      this.extended?.bindCheckForChanges(container);
 
       const list = container.querySelector('.follows-list');
       if (!list) return;
@@ -1774,7 +1810,7 @@ export class FollowListManager {
 
       // Start loading zap stats asynchronously (don't await)
       const allPubkeys = this.allItemsWithProfiles.map(item => item.pubkey);
-      this.extended.startZapStatsLoading(allPubkeys);
+      this.extended?.startZapStatsLoading(allPubkeys);
     } catch (error) {
       console.error('Failed to render follows:', error);
       container.innerHTML = `
@@ -1816,7 +1852,9 @@ export class FollowListManager {
       }
 
       // Check mutual status for this batch (via extended features)
-      await this.extended.checkMutualStatusBatch(batch);
+      if (this.extended) {
+        await this.extended.checkMutualStatusBatch(batch);
+      }
 
       // Render batch
       this.renderBatch(listElement, batch);
@@ -1873,8 +1911,8 @@ export class FollowListManager {
     const npub = hexToNpub(item.pubkey);
     const avatarUrl = item.profile?.picture || '';
 
-    const mutualBadgeHtml = this.extended.renderMutualBadge(item.isMutual);
-    const zapBadgeHtml = this.extended.renderZapBadge(item.pubkey);
+    const mutualBadgeHtml = this.extended?.renderMutualBadge(item.isMutual) ?? '';
+    const zapBadgeHtml = this.extended?.renderZapBadge(item.pubkey) ?? '';
 
     const followItemDiv = document.createElement('div');
     followItemDiv.className = 'ui-list__item follow-item';
@@ -1955,12 +1993,13 @@ export class FollowListManager {
    * Update stats display (mutual count and percentage only)
    */
   private updateStats(container: HTMLElement): void {
-    const percentage = this.totalFollowing === 0 ? 0 : Math.round((this.extended.mutualCount / this.totalFollowing) * 100);
+    const mutualCount = this.extended?.mutualCount ?? 0;
+    const percentage = this.totalFollowing === 0 ? 0 : Math.round((mutualCount / this.totalFollowing) * 100);
 
     const countEl = container.querySelector('.mutual-count');
     const percentEl = container.querySelector('.mutual-percentage');
 
-    if (countEl) countEl.textContent = String(this.extended.mutualCount);
+    if (countEl) countEl.textContent = String(mutualCount);
     if (percentEl) percentEl.textContent = String(percentage);
   }
 
@@ -1981,7 +2020,7 @@ export class FollowListManager {
 
       itemElement.remove();
 
-      if (item.isMutual) {
+      if (item.isMutual && this.extended) {
         this.extended.mutualCount--;
       }
       this.totalFollowing--;
@@ -1989,7 +2028,9 @@ export class FollowListManager {
 
       const container = this.containerElement.querySelector('[data-tab-content="list-follows"]') as HTMLElement;
       if (container) {
-        this.extended.updateStatsHeader(container, this.totalFollowing);
+        if (this.extended) {
+          this.extended.updateStatsHeader(container, this.totalFollowing);
+        }
       }
 
       this.eventBus.emit('follow:updated', {});
@@ -2037,7 +2078,7 @@ export class FollowListManager {
     const sortZapsLink = container.querySelector('.follows-sort-controls__sort-zaps');
     sortZapsLink?.addEventListener('click', (e) => {
       e.preventDefault();
-      if (this.isFullyLoaded && this.extended.zapStatsLoaded && this.currentSort !== 'zaps') {
+      if (this.isFullyLoaded && this.extended?.zapStatsLoaded && this.currentSort !== 'zaps') {
         this.currentSort = 'zaps';
         this.extended.sortByZaps(this.allItemsWithProfiles);
         this.updateSortControlsUI(container);
@@ -2134,7 +2175,7 @@ export class FollowListManager {
     }
 
     // Zaps sort requires both fully loaded AND zap stats loaded
-    if (this.isFullyLoaded && this.extended.zapStatsLoaded) {
+    if (this.isFullyLoaded && this.extended?.zapStatsLoaded) {
       sortZapsLink?.classList.remove('follows-sort-controls__link--disabled');
     }
 
