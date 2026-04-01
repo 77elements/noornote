@@ -28,6 +28,7 @@ import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { NoteService } from '../NoteService';
 import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
+import { isDataSaverEnabled } from '../DataSaverService';
 
 export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag';
 
@@ -78,7 +79,7 @@ export class NotificationsOrchestrator extends Orchestrator {
   /** Refresh timer for periodic re-subscription (browser WebSocket connections go stale) */
   private refreshTimer: number | null = null;
   private isRefreshing: boolean = false;
-  private static readonly REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+  private static readonly REFRESH_INTERVAL = isDataSaverEnabled() ? 60 * 60 * 1000 : 30 * 60 * 1000;
   private readonly MAX_NOTIFICATIONS = getCacheSize(500, 300, 200);
 
   private constructor() {

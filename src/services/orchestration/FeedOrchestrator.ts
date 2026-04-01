@@ -23,6 +23,7 @@ import { SystemLogger } from '../../components/system/SystemLogger';
 import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
+import { isDataSaverEnabled } from '../DataSaverService';
 
 export interface FeedLoadRequest {
   followingPubkeys: string[];
@@ -61,7 +62,9 @@ export class FeedOrchestrator extends Orchestrator {
   private callbacks: Set<FeedCallback> = new Set();
 
   /** New notes polling */
-  private pollingInterval: number = 60000; // 60 seconds
+  private pollingInterval: number = isDataSaverEnabled() ? 180000 : 60000;
+  private readonly fetchLimit = isDataSaverEnabled() ? 20 : 50;
+  private readonly pollLimit = isDataSaverEnabled() ? 30 : 100;
   private pollingIntervalId: number | null = null;
   private pollingTimeoutId: number | null = null; // Track setTimeout for cancellation
   private pollingScheduled: boolean = false; // Track if polling is scheduled (before interval starts)
@@ -159,13 +162,13 @@ export class FeedOrchestrator extends Orchestrator {
         filters = [{
           authors: followingPubkeys,
           kinds: [1, 6, 20, 21, 22, 1063, 1068],
-          limit: 50
+          limit: this.fetchLimit
         }];
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
           authors: followingPubkeys,
           kinds: [1, 6, 20, 21, 22, 1063, 1068],
-          limit: 50,
+          limit: this.fetchLimit,
           since: explicitSince
         };
         if (explicitUntil !== undefined) {
@@ -176,7 +179,7 @@ export class FeedOrchestrator extends Orchestrator {
         filters = [{
           authors: followingPubkeys,
           kinds: [1, 6, 20, 21, 22, 1063, 1068],
-          limit: 50,
+          limit: this.fetchLimit,
           since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
         }];
       }
@@ -191,7 +194,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       // Skip auto-expand in time range mode (user selected explicit boundaries)
       if (isTimeRangeMode) {
-        const resultEvents = filteredEvents.slice(0, 50);
+        const resultEvents = filteredEvents.slice(0, this.fetchLimit);
         this.registerNotes(resultEvents);
         return {
           events: resultEvents,
@@ -253,7 +256,7 @@ export class FeedOrchestrator extends Orchestrator {
           }
         }
 
-        const resultEvents = accumulatedEvents.slice(0, 50);
+        const resultEvents = accumulatedEvents.slice(0, this.fetchLimit);
         this.registerNotes(resultEvents);
         return {
           events: resultEvents,
@@ -261,7 +264,7 @@ export class FeedOrchestrator extends Orchestrator {
         };
       }
 
-      const resultEvents = filteredEvents.slice(0, 50);
+      const resultEvents = filteredEvents.slice(0, this.fetchLimit);
       this.registerNotes(resultEvents);
       return {
         events: resultEvents,
@@ -377,7 +380,7 @@ export class FeedOrchestrator extends Orchestrator {
         return await this.loadMore(recursiveRequest);
       }
 
-      const resultEvents = filteredEvents.slice(0, 50);
+      const resultEvents = filteredEvents.slice(0, this.fetchLimit);
       this.registerNotes(resultEvents);
 
       // In time range mode, check if we've reached the lower boundary
@@ -649,7 +652,7 @@ export class FeedOrchestrator extends Orchestrator {
         authors: this.pollingFollowingPubkeys,
         since: this.lastCheckedTimestamp + 1,
         until: now,
-        limit: 100
+        limit: this.pollLimit
       }];
 
       const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch'); // Skip cache for polling
@@ -808,7 +811,7 @@ export class FeedOrchestrator extends Orchestrator {
         authors: followingPubkeys,
         since: newestTimestamp + 1,
         until: now,
-        limit: 100
+        limit: this.pollLimit
       }];
 
       const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch');
