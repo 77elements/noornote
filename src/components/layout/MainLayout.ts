@@ -254,6 +254,19 @@ export class MainLayout {
 
 
 
+    // Wallet Balance toggle: show/hide + start/stop polling
+    this.eventBus.on('wallet-balance:addon-toggle', async (data: { enabled: boolean }) => {
+      const walletBalanceContainer = this.element.querySelector('.wallet-balance-container');
+      if (data.enabled && !this.walletBalanceDisplay && walletBalanceContainer) {
+        const { WalletBalanceDisplay } = await import('../ui/WalletBalanceDisplay');
+        this.walletBalanceDisplay = new WalletBalanceDisplay();
+        walletBalanceContainer.appendChild(this.walletBalanceDisplay.getElement());
+      } else if (!data.enabled && this.walletBalanceDisplay) {
+        this.walletBalanceDisplay.destroy();
+        this.walletBalanceDisplay = null;
+      }
+    });
+
     // Listen for list:open events from Settings → Privacy links, ProfileView, FollowPackDetailView
     this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string; packId?: string; packMode?: 'timeline' | 'edit' }) => {
       // Check if this is an external user's follows (not current user)
@@ -504,6 +517,9 @@ export class MainLayout {
    * Initialize wallet balance display
    */
   private async initializeWalletBalance(): Promise<void> {
+    const { isWalletBalanceEnabled } = await import('../../addons/wallet-balance/index');
+    if (!isWalletBalanceEnabled()) return;
+
     const walletBalanceContainer = this.element.querySelector('.wallet-balance-container');
     if (walletBalanceContainer) {
       const { WalletBalanceDisplay } = await import('../ui/WalletBalanceDisplay');
@@ -1933,6 +1949,7 @@ export class MainLayout {
       { id: 'bookmarks', name: 'Bookmarks' },
       { id: 'tribes', name: 'Tribes' },
       { id: 'extended-follows', name: 'Extended Follows' },
+      { id: 'wallet-balance', name: 'Wallet Balance' },
       { id: 'profile-recognition', name: 'Profile Recognition' },
       { id: 'marketplace', name: 'Marketplace' },
       { id: 'follow-packs', name: 'Follow Packs' },
@@ -1955,7 +1972,11 @@ export class MainLayout {
       <ul class="primary-nav__submenu">
         ${addonItems.map(a => `
           <li>
-            <a href="#" class="primary-nav__sublink primary-nav__sublink--no-icon" data-addon-type="${a.id}">
+            <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}">
+              <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
               <span class="primary-nav__sublink-desc">${a.name}</span>
             </a>
           </li>
