@@ -13,6 +13,7 @@
 
 import { EventBus } from './EventBus';
 import { diagLog } from './DiagnosticLogger';
+import { isDataSaverEnabled } from './DataSaverService';
 
 export interface RelayHealthMetrics {
   url: string;
@@ -35,7 +36,7 @@ export class RelayHealthMonitor {
   private eventBus: EventBus;
   private connectionChecks: Map<string, number> = new Map(); // url -> timestamp of last check
   private healthCheckInterval: number | null = null;
-  private readonly HEALTH_CHECK_INTERVAL = 10 * 60 * 1000; // 10 minutes (was 5)
+  private readonly HEALTH_CHECK_INTERVAL = isDataSaverEnabled() ? 30 * 60 * 1000 : 10 * 60 * 1000;
 
   /** Track consecutive healthy checks per relay for backoff */
   private healthyStreaks: Map<string, number> = new Map();

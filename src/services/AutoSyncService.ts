@@ -37,6 +37,7 @@ import {
 } from '../lists/bookmarks';
 import { isBookmarksEnabled } from '../addons/bookmarks/index';
 import { isTribesEnabled } from '../addons/tribes/index';
+import { isDataSaverEnabled } from './DataSaverService';
 
 import {
   saveToFile as saveMutesToFile,
@@ -75,7 +76,7 @@ export class AutoSyncService {
 
   // Periodic sync interval (5 minutes)
   private periodicSyncInterval: ReturnType<typeof setInterval> | null = null;
-  private readonly PERIODIC_SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+  private readonly PERIODIC_SYNC_INTERVAL = isDataSaverEnabled() ? 15 * 60 * 1000 : 5 * 60 * 1000;
 
   // Startup sync delay (10 seconds after login)
   private startupSyncTimeout: ReturnType<typeof setTimeout> | null = null;

@@ -74,6 +74,21 @@ const ADDONS: AddonDef[] = [
     toggleEvent: 'extended-follows:toggle',
   },
   {
+    id: 'wallet-balance',
+    name: 'Wallet Balance',
+    description: 'Show your Lightning wallet balance in the sidebar with fiat conversion.',
+    settingsContainerId: 'wallet-balance-settings-content',
+    isEnabled: async () => {
+      const { isWalletBalanceEnabled } = await import('../../addons/wallet-balance/index');
+      return isWalletBalanceEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setWalletBalanceEnabled } = await import('../../addons/wallet-balance/index');
+      setWalletBalanceEnabled(v);
+    },
+    toggleEvent: 'wallet-balance:addon-toggle',
+  },
+  {
     id: 'profile-recognition',
     name: 'Profile Recognition',
     description: 'Help recognize people you follow after they change their profile.',

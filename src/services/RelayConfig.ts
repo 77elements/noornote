@@ -14,6 +14,7 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { UserProfileService } from './UserProfileService';
 import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { isDataSaverEnabled } from './DataSaverService';
 
 export type RelayType = 'read' | 'write' | 'inbox';
 
@@ -195,6 +196,14 @@ export class RelayConfig {
    * Used for content fetching (timeline, notes).
    */
   public getAggregatorRelays(): string[] {
+    // Data Saver: fewer relays to reduce duplicate events and connections
+    if (isDataSaverEnabled()) {
+      return [
+        'wss://relay.damus.io',
+        'wss://nos.lol',
+        'wss://relay.primal.net'
+      ];
+    }
     return [
       'wss://relay.damus.io',
       'wss://relay.snort.social',
@@ -212,6 +221,13 @@ export class RelayConfig {
    * for better coverage of profiles, follows, and relay lists.
    */
   public getMetadataRelays(): string[] {
+    // Data Saver: only 1 metadata indexer instead of 3
+    if (isDataSaverEnabled()) {
+      return [
+        ...this.getAggregatorRelays(),
+        'wss://purplepag.es'
+      ];
+    }
     return [
       ...this.getAggregatorRelays(),
       'wss://index.hzrd149.com/',

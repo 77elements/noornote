@@ -11,6 +11,17 @@
  */
 
 import { escapeHtmlAttr } from './escapeHtml';
+import { isDataSaverEnabled } from '../services/DataSaverService';
+
+/**
+ * Render a tap-to-load placeholder (Data Saver mode).
+ * On tap, replaced by actual media element via initMediaPlaceholderHandler().
+ */
+function renderPlaceholder(type: string, url: string, index: number, alt?: string, poster?: string): string {
+  const icon = type === 'video' ? '▶' : type === 'audio' ? '♪' : '🖼';
+  const label = type === 'video' ? 'Tap to load video' : type === 'audio' ? 'Tap to load audio' : 'Tap to load image';
+  return `<div class="media-placeholder media-placeholder--${type}" data-src="${escapeHtmlAttr(url)}" data-type="${type}" data-index="${index}"${poster ? ` data-poster="${escapeHtmlAttr(poster)}"` : ''}${alt ? ` data-alt="${escapeHtmlAttr(alt)}"` : ''}><span class="media-placeholder__icon">${icon}</span><span class="media-placeholder__label">${label}</span></div>`;
+}
 
 export interface MediaContent {
   type: 'image' | 'video' | 'audio';
@@ -43,6 +54,8 @@ function getYouTubeVideoId(url: string): string | null {
  * Used for inline media placement where placeholders are
  */
 export function renderSingleMedia(item: MediaContent, index: number, isNSFW = false): string {
+  if (isDataSaverEnabled()) return renderPlaceholder(item.type, item.url, index, item.alt, item.thumbnail);
+
   switch (item.type) {
     case 'image':
       const imageClass = isNSFW ? 'note-image note-image--clickable note-image--nsfw-blur' : 'note-image note-image--clickable';
@@ -79,7 +92,11 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
 
   if (mediaArray.length === 0) return '';
 
+  const dataSaver = isDataSaverEnabled();
+
   const mediaHtml = mediaArray.map((item, index) => {
+    if (dataSaver) return renderPlaceholder(item.type, item.url, index, item.alt, item.thumbnail);
+
     switch (item.type) {
       case 'image':
         return `<img src="${escapeHtmlAttr(item.url)}" alt="${escapeHtmlAttr(item.alt || '')}" class="note-image note-image--clickable" loading="lazy" data-image-index="${index}">`;
@@ -165,6 +182,52 @@ export function startVideoThumbnailObserver(): void {
     }
   });
   observer.observe(document.body, { childList: true, subtree: true });
+}
+
+/**
+ * Global tap-to-load handler for Data Saver placeholders.
+ * Uses capture phase to fire BEFORE note-card click handlers (prevents SNV navigation).
+ * Call once at app startup.
+ */
+export function initMediaPlaceholderHandler(): void {
+  document.body.addEventListener('click', (e) => {
+    const placeholder = (e.target as HTMLElement).closest('.media-placeholder') as HTMLElement;
+    if (!placeholder) return;
+
+    const src = placeholder.dataset.src;
+    const type = placeholder.dataset.type;
+    if (!src || !type) return;
+
+    let el: HTMLElement;
+    if (type === 'image') {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = placeholder.dataset.alt || '';
+      img.className = 'note-image note-image--clickable';
+      img.loading = 'lazy';
+      img.dataset.imageIndex = placeholder.dataset.index || '0';
+      el = img;
+    } else if (type === 'video') {
+      const video = document.createElement('video');
+      video.src = src;
+      video.controls = true;
+      video.className = 'note-video';
+      video.preload = 'metadata';
+      if (placeholder.dataset.poster) video.poster = placeholder.dataset.poster;
+      el = video;
+    } else if (type === 'audio') {
+      const audio = document.createElement('audio');
+      audio.src = src;
+      audio.controls = true;
+      audio.preload = 'metadata';
+      audio.className = 'note-audio';
+      el = audio;
+    } else {
+      return;
+    }
+
+    placeholder.replaceWith(el);
+  });
 }
 
 /**

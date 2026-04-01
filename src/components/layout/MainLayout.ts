@@ -9,6 +9,8 @@ import { SystemLogger } from '../system/SystemLogger';
 import { AccountSwitcher } from '../ui/AccountSwitcher';
 import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
 import { ThemeSwitcher } from '../ui/ThemeSwitcher';
+import { Switch } from '../ui/Switch';
+import { isDataSaverEnabled, setDataSaverEnabled } from '../../services/DataSaverService';
 import { FontSizeService } from '../../services/FontSizeService';
 import { CacheManager } from '../../services/CacheManager';
 import { AppState } from '../../services/AppState';
@@ -253,6 +255,19 @@ export class MainLayout {
     });
 
 
+
+    // Wallet Balance toggle: show/hide + start/stop polling
+    this.eventBus.on('wallet-balance:addon-toggle', async (data: { enabled: boolean }) => {
+      const walletBalanceContainer = this.element.querySelector('.wallet-balance-container');
+      if (data.enabled && !this.walletBalanceDisplay && walletBalanceContainer) {
+        const { WalletBalanceDisplay } = await import('../ui/WalletBalanceDisplay');
+        this.walletBalanceDisplay = new WalletBalanceDisplay();
+        walletBalanceContainer.appendChild(this.walletBalanceDisplay.getElement());
+      } else if (!data.enabled && this.walletBalanceDisplay) {
+        this.walletBalanceDisplay.destroy();
+        this.walletBalanceDisplay = null;
+      }
+    });
 
     // Listen for list:open events from Settings → Privacy links, ProfileView, FollowPackDetailView
     this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string; packId?: string; packMode?: 'timeline' | 'edit' }) => {
@@ -504,6 +519,9 @@ export class MainLayout {
    * Initialize wallet balance display
    */
   private async initializeWalletBalance(): Promise<void> {
+    const { isWalletBalanceEnabled } = await import('../../addons/wallet-balance/index');
+    if (!isWalletBalanceEnabled()) return;
+
     const walletBalanceContainer = this.element.querySelector('.wallet-balance-container');
     if (walletBalanceContainer) {
       const { WalletBalanceDisplay } = await import('../ui/WalletBalanceDisplay');
@@ -1436,6 +1454,56 @@ export class MainLayout {
       themeRow.appendChild(this.sidebarThemeSwitcher.getElement());
       sidebarMount.appendChild(themeRow);
       sidebarMount.appendChild(this.sidebarFontSizeSwitcher.getElement());
+
+      // Data Saver toggle (Android only, synchronous to avoid race condition)
+      if (PlatformService.getInstance().isAndroid) {
+        const sw = new Switch({
+          label: 'Data Saver',
+          checked: isDataSaverEnabled(),
+          onChange: (checked) => {
+            setDataSaverEnabled(checked);
+            this.eventBus.emit('data-saver:toggle', { enabled: checked });
+            // When turning OFF: replace all placeholders with actual media
+            if (!checked) {
+              document.querySelectorAll('.media-placeholder').forEach(ph => {
+                const el = ph as HTMLElement;
+                const src = el.dataset.src;
+                const type = el.dataset.type;
+                if (!src || !type) return;
+                if (type === 'image') {
+                  const img = document.createElement('img');
+                  img.src = src;
+                  img.alt = el.dataset.alt || '';
+                  img.className = 'note-image note-image--clickable';
+                  img.loading = 'lazy';
+                  img.dataset.imageIndex = el.dataset.index || '0';
+                  el.replaceWith(img);
+                } else if (type === 'video') {
+                  const video = document.createElement('video');
+                  video.src = src;
+                  video.controls = true;
+                  video.className = 'note-video';
+                  video.preload = 'metadata';
+                  if (el.dataset.poster) video.poster = el.dataset.poster;
+                  el.replaceWith(video);
+                } else if (type === 'audio') {
+                  const audio = document.createElement('audio');
+                  audio.src = src;
+                  audio.controls = true;
+                  audio.preload = 'metadata';
+                  audio.className = 'note-audio';
+                  el.replaceWith(audio);
+                }
+              });
+            }
+          }
+        });
+        const wrapper = document.createElement('div');
+        wrapper.className = 'data-saver-toggle';
+        wrapper.innerHTML = sw.render();
+        sidebarMount.appendChild(wrapper);
+        sw.setupEventListeners(wrapper);
+      }
     }
 
     // Update profile link href (event listener is set up in setupNavigationLinks)
@@ -1933,6 +2001,7 @@ export class MainLayout {
       { id: 'bookmarks', name: 'Bookmarks' },
       { id: 'tribes', name: 'Tribes' },
       { id: 'extended-follows', name: 'Extended Follows' },
+      { id: 'wallet-balance', name: 'Wallet Balance' },
       { id: 'profile-recognition', name: 'Profile Recognition' },
       { id: 'marketplace', name: 'Marketplace' },
       { id: 'follow-packs', name: 'Follow Packs' },
@@ -1955,7 +2024,11 @@ export class MainLayout {
       <ul class="primary-nav__submenu">
         ${addonItems.map(a => `
           <li>
-            <a href="#" class="primary-nav__sublink primary-nav__sublink--no-icon" data-addon-type="${a.id}">
+            <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}">
+              <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+              </svg>
               <span class="primary-nav__sublink-desc">${a.name}</span>
             </a>
           </li>

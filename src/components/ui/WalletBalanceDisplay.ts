@@ -212,6 +212,7 @@ export class WalletBalanceDisplay {
       clearInterval(this.updateInterval);
       this.updateInterval = null;
     }
+    this.element.remove();
   }
 
   public getElement(): HTMLElement {
