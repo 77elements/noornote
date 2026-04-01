@@ -1,8 +1,9 @@
-# NoorNote v0.7.0
+# NoorNote v0.7.1
 
-**NostrIn Lists, Profile Zaps & Comment Rendering**
+**Memory Optimization, Data Saver & More Addons**
 
-- NostrIn Addon — create and manage professional curated lists on your Nostr profile
-- Profile Zap & Lightning QR buttons for quick zapping and address sharing
-- NIP-22 Comments and quoted addressable events now render correctly
-- Follow Pack blacklist filter, joined date fix, profile view polish
+- Significant memory reduction on all platforms (~35-55% less RAM usage)
+- Data Saver mode for Android: tap-to-load media, fewer relay connections, longer polling intervals
+- Bookmarks, Tribes, Extended Follows, and Wallet Balance are now optional addons
+- Addon navigation moved to sidebar for easier access
+- NIP-94 file metadata support, NostrIn professional lists, profile zap buttons
