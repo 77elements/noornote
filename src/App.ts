@@ -68,8 +68,11 @@ export class App {
     FontSizeService.getInstance();
     ThemeService.getInstance();
 
-    // Auto-seek video thumbnails for all videos added to the DOM
-    import('./helpers/renderMediaContent').then(m => m.startVideoThumbnailObserver());
+    // Auto-seek video thumbnails + tap-to-load handler for Data Saver placeholders
+    import('./helpers/renderMediaContent').then(m => {
+      m.startVideoThumbnailObserver();
+      m.initMediaPlaceholderHandler();
+    });
 
     const isOnline = await ConnectivityService.getInstance().checkConnectivity();
     if (!isOnline) {

@@ -36,7 +36,7 @@
   @include custom-scrollbar;
   -webkit-overflow-scrolling: touch;
   // Reserve space for the fixed "New Post" button at the bottom
-  padding-bottom: calc($gap * 2.75);
+  padding-bottom: $gap * 4;
 }
 
 // Sidebar header (logo)

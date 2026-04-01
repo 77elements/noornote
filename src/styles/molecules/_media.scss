@@ -200,3 +200,31 @@
     z-index: 1;
   }
 }
+
+// Data Saver: tap-to-load placeholder
+.media-placeholder {
+  @include flex-center;
+  @include flex-column;
+  gap: calc($gap / 4);
+  background: var(--color-2);
+  border: 1px dashed var(--color-3);
+  border-radius: $radius-md;
+  padding: $gap * 2;
+  cursor: pointer;
+  transition: $transition-colors;
+
+  &:hover,
+  &:active {
+    background: color-mix(in srgb, var(--color-3) 20%, transparent);
+  }
+
+  &__icon {
+    font-size: 1.5rem;
+    opacity: 0.6;
+  }
+
+  &__label {
+    @extend %small;
+    color: var(--color-3);
+  }
+}

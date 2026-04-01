@@ -49,4 +49,17 @@
     color: var(--color-3);
     white-space: nowrap;
   }
+
+  .data-saver-toggle {
+    margin-top: calc($gap / 2);
+
+    .switch-container {
+      margin-bottom: 0;
+    }
+
+    .switch-text {
+      @extend %small;
+      color: var(--color-3);
+    }
+  }
 }

@@ -9,6 +9,8 @@ import { SystemLogger } from '../system/SystemLogger';
 import { AccountSwitcher } from '../ui/AccountSwitcher';
 import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
 import { ThemeSwitcher } from '../ui/ThemeSwitcher';
+import { Switch } from '../ui/Switch';
+import { isDataSaverEnabled, setDataSaverEnabled } from '../../services/DataSaverService';
 import { FontSizeService } from '../../services/FontSizeService';
 import { CacheManager } from '../../services/CacheManager';
 import { AppState } from '../../services/AppState';
@@ -1452,6 +1454,56 @@ export class MainLayout {
       themeRow.appendChild(this.sidebarThemeSwitcher.getElement());
       sidebarMount.appendChild(themeRow);
       sidebarMount.appendChild(this.sidebarFontSizeSwitcher.getElement());
+
+      // Data Saver toggle (Android only, synchronous to avoid race condition)
+      if (PlatformService.getInstance().isAndroid) {
+        const sw = new Switch({
+          label: 'Data Saver',
+          checked: isDataSaverEnabled(),
+          onChange: (checked) => {
+            setDataSaverEnabled(checked);
+            this.eventBus.emit('data-saver:toggle', { enabled: checked });
+            // When turning OFF: replace all placeholders with actual media
+            if (!checked) {
+              document.querySelectorAll('.media-placeholder').forEach(ph => {
+                const el = ph as HTMLElement;
+                const src = el.dataset.src;
+                const type = el.dataset.type;
+                if (!src || !type) return;
+                if (type === 'image') {
+                  const img = document.createElement('img');
+                  img.src = src;
+                  img.alt = el.dataset.alt || '';
+                  img.className = 'note-image note-image--clickable';
+                  img.loading = 'lazy';
+                  img.dataset.imageIndex = el.dataset.index || '0';
+                  el.replaceWith(img);
+                } else if (type === 'video') {
+                  const video = document.createElement('video');
+                  video.src = src;
+                  video.controls = true;
+                  video.className = 'note-video';
+                  video.preload = 'metadata';
+                  if (el.dataset.poster) video.poster = el.dataset.poster;
+                  el.replaceWith(video);
+                } else if (type === 'audio') {
+                  const audio = document.createElement('audio');
+                  audio.src = src;
+                  audio.controls = true;
+                  audio.preload = 'metadata';
+                  audio.className = 'note-audio';
+                  el.replaceWith(audio);
+                }
+              });
+            }
+          }
+        });
+        const wrapper = document.createElement('div');
+        wrapper.className = 'data-saver-toggle';
+        wrapper.innerHTML = sw.render();
+        sidebarMount.appendChild(wrapper);
+        sw.setupEventListeners(wrapper);
+      }
     }
 
     // Update profile link href (event listener is set up in setupNavigationLinks)
