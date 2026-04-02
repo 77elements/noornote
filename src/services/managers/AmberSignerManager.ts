@@ -60,10 +60,11 @@ export class AmberSignerManager {
 
       this.pubkey = pubkey;
 
-      // Save package name for session restore
+      // Save package name + npub for session restore
       localStorage.setItem(AMBER_SESSION_KEY, JSON.stringify({
         packageName: result.packageName,
-        pubkey
+        pubkey,
+        npub
       }));
 
       return { success: true, npub, pubkey };
@@ -83,6 +84,14 @@ export class AmberSignerManager {
       if (session.packageName && session.pubkey) {
         this.amberService.setPackageName(session.packageName);
         this.pubkey = session.pubkey;
+        // Restore npub for signing (required by nostr-signer-capacitor-plugin)
+        if (session.npub) {
+          this.amberService.setNpub(session.npub);
+        } else {
+          // Legacy session without npub — convert from hex
+          const npub = encodeNpub(session.pubkey);
+          this.amberService.setNpub(npub);
+        }
         return true;
       }
       return false;

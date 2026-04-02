@@ -78,7 +78,8 @@ export class AmberSignerService {
     if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.signEvent(this.packageName, eventJson, '', this.npub);
+    const id = `sign-${Date.now()}`;
+    const result = await signer.signEvent(this.packageName, eventJson, id, this.npub);
     return { signature: result.signature, event: result.event };
   }
 
@@ -86,7 +87,7 @@ export class AmberSignerService {
     if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.nip04Encrypt(this.packageName, plaintext, '', recipientPubkey, this.npub);
+    const result = await signer.nip04Encrypt(this.packageName, plaintext, `enc-${Date.now()}`, recipientPubkey, this.npub);
     return result.result;
   }
 
@@ -94,7 +95,7 @@ export class AmberSignerService {
     if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.nip04Decrypt(this.packageName, ciphertext, '', senderPubkey, this.npub);
+    const result = await signer.nip04Decrypt(this.packageName, ciphertext, `dec-${Date.now()}`, senderPubkey, this.npub);
     return result.result;
   }
 
@@ -102,7 +103,7 @@ export class AmberSignerService {
     if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.nip44Encrypt(this.packageName, plaintext, '', recipientPubkey, this.npub);
+    const result = await signer.nip44Encrypt(this.packageName, plaintext, `enc-${Date.now()}`, recipientPubkey, this.npub);
     return result.result;
   }
 
@@ -110,7 +111,7 @@ export class AmberSignerService {
     if (!platform.isCapacitor) throw new Error('Amber is only available on Capacitor (Android)');
 
     const signer = await getSignerPlugin();
-    const result = await signer.nip44Decrypt(this.packageName, ciphertext, '', senderPubkey, this.npub);
+    const result = await signer.nip44Decrypt(this.packageName, ciphertext, `dec-${Date.now()}`, senderPubkey, this.npub);
     return result.result;
   }
 
@@ -120,5 +121,9 @@ export class AmberSignerService {
 
   setPackageName(name: string): void {
     this.packageName = name;
+  }
+
+  setNpub(npub: string): void {
+    this.npub = npub;
   }
 }
