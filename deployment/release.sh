@@ -54,7 +54,7 @@ echo "----------------------------------------"
 echo ""
 
 echo -e "${YELLOW}This will:${NC}"
-echo "  1. Update version in package.json, tauri.conf.json, Cargo.toml"
+echo "  1. Update version in package.json"
 echo "  2. Commit version bump"
 echo "  3. Merge development → main"
 echo "  4. Create tag v${NEW_VERSION}"
@@ -82,15 +82,9 @@ fi
 # Update package.json
 "${SED_INPLACE[@]}" "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"/" package.json
 
-# Update tauri.conf.json
-"${SED_INPLACE[@]}" "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"/" src-tauri/tauri.conf.json
-
-# Update Cargo.toml
-"${SED_INPLACE[@]}" "s/^version = \"${CURRENT_VERSION}\"/version = \"${NEW_VERSION}\"/" src-tauri/Cargo.toml
-
 echo -e "${GREEN}[2/7] Updating RELEASE_NOTES.md and committing...${NC}"
 cp "$NOTES_COMPACT" RELEASE_NOTES.md
-git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml RELEASE_NOTES.md
+git add package.json RELEASE_NOTES.md
 git commit -m "Bump version to ${NEW_VERSION}"
 
 echo -e "${GREEN}[3/7] Merging development → main...${NC}"

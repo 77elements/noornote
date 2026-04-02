@@ -1,0 +1,154 @@
+name: Build Desktop
+run-name: Build Desktop ${{ github.ref_name }}
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+            go_arch: arm64
+            go_os: darwin
+            binary_dir: darwin-arm64
+            electron_args: --mac --arm64
+          - os: ubuntu-22.04
+            arch: x64
+            go_arch: amd64
+            go_os: linux
+            binary_dir: linux-x64
+            electron_args: --linux --x64
+          - os: ubuntu-24.04-arm
+            arch: arm64
+            go_arch: arm64
+            go_os: linux
+            binary_dir: linux-arm64
+            electron_args: --linux --arm64
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout NoorNote
+        uses: actions/checkout@v5
+
+      - name: Checkout NoorSigner
+        uses: actions/checkout@v5
+        with:
+          repository: 77elements/noorsigner
+          path: noorsigner-src
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24'
+          cache: false
+
+      - name: Build NoorSigner
+        run: |
+          cd noorsigner-src
+          GOOS=${{ matrix.go_os }} GOARCH=${{ matrix.go_arch }} go build -o noorsigner -ldflags="-s -w" .
+          mkdir -p ../binaries/${{ matrix.binary_dir }}
+          mv noorsigner ../binaries/${{ matrix.binary_dir }}/
+          chmod +x ../binaries/${{ matrix.binary_dir }}/noorsigner
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node (for electron-builder)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Build frontend
+        run: bun run build
+
+      - name: Build Electron
+        run: npx electron-builder ${{ matrix.electron_args }}
+
+      - name: Get version
+        id: version
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          else
+            VERSION=$(grep '"version"' package.json | head -1 | sed 's/.*"version": "\(.*\)".*/\1/')
+            echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Rename macOS outputs
+        if: runner.os == 'macOS'
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          DMG=$(find dist-electron -name "*.dmg" | head -1)
+          if [ -n "$DMG" ]; then
+            mv "$DMG" "dist-electron/noornote-${VERSION}-macos-arm64.dmg"
+          fi
+
+      - name: Rename Linux outputs
+        if: runner.os == 'Linux'
+        run: |
+          VERSION=${{ steps.version.outputs.VERSION }}
+          ARCH=${{ matrix.arch == 'x64' && 'amd64' || 'arm64' }}
+
+          DEB=$(find dist-electron -name "*.deb" | head -1)
+          [ -n "$DEB" ] && mv "$DEB" "dist-electron/noornote-${VERSION}-linux-${ARCH}.deb"
+
+          APPIMAGE=$(find dist-electron -name "*.AppImage" | head -1)
+          [ -n "$APPIMAGE" ] && mv "$APPIMAGE" "dist-electron/noornote-${VERSION}-linux-${ARCH}.AppImage"
+
+          TARBALL=$(find dist-electron -name "*.tar.gz" | head -1)
+          [ -n "$TARBALL" ] && mv "$TARBALL" "dist-electron/noornote-${VERSION}-linux-${ARCH}.tar.gz"
+
+      - name: List outputs
+        run: ls -lh dist-electron/*.{dmg,deb,AppImage,tar.gz} 2>/dev/null || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: noornote-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            dist-electron/*.dmg
+            dist-electron/*.deb
+            dist-electron/*.AppImage
+            dist-electron/*.tar.gz
+
+  release:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release/
+          merge-multiple: true
+
+      - name: List release contents
+        run: ls -lh release/
+
+      - name: Upload to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          for file in release/*; do
+            [ -f "$file" ] || continue
+            echo "Uploading $file..."
+            gh release upload "$TAG" "$file" --repo "$GITHUB_REPOSITORY" --clobber
+          done
