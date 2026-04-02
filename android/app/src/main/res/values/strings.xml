@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Noornote</string>
+    <string name="title_activity_main">Noornote</string>
+    <string name="package_name">com.noornote.app</string>
+    <string name="custom_url_scheme">com.noornote.app</string>
+</resources>

@@ -162,22 +162,25 @@ async function getLogsDir(): Promise<string | null> {
 }
 
 /**
- * Android: Trigger download via Tauri invoke to Kotlin plugin.
- * This remains Tauri-only since Electron doesn't run on Android.
+ * Android: Save to Downloads via Capacitor or Tauri MediaSave plugin.
  */
 async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<boolean> {
-  const { invoke } = await import('@tauri-apps/api/core');
   const CHUNK = 8192;
   let binary = '';
   for (let i = 0; i < zipData.length; i += CHUNK) {
     binary += String.fromCharCode(...zipData.subarray(i, i + CHUNK));
   }
   const base64 = btoa(binary);
-  await invoke('plugin:media-save|save_to_downloads', {
-    filename,
-    data: base64,
-    mimeType: 'application/zip'
-  });
+
+  if (platform.isCapacitor) {
+    const { registerPlugin } = await import('@capacitor/core');
+    const MediaSave = registerPlugin('MediaSave');
+    await (MediaSave as any).saveToDownloads({ filename, data: base64, mimeType: 'application/zip' });
+  } else {
+    const { invoke } = await import('@tauri-apps/api/core');
+    await invoke('plugin:media-save|save_to_downloads', { filename, data: base64, mimeType: 'application/zip' });
+  }
+
   logger.success('DiagLogExport', `Logs exported to Downloads — ${filename}`);
   return true;
 }

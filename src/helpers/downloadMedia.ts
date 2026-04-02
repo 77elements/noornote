@@ -16,8 +16,20 @@ export async function downloadMedia(url: string, defaultFileName: string): Promi
       await window.electronAPI!.writeFile(filePath, data);
       ToastService.show('Saved successfully', 'success');
     }
+  } else if (platform.isCapacitor) {
+    // Capacitor Android: Filesystem plugin
+    const { Filesystem, Directory } = await import('@capacitor/filesystem');
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const reader = new FileReader();
+    const base64 = await new Promise<string>((resolve) => {
+      reader.onload = () => resolve((reader.result as string).split(',')[1] || '');
+      reader.readAsDataURL(blob);
+    });
+    await Filesystem.writeFile({ path: defaultFileName, data: base64, directory: Directory.Documents });
+    ToastService.show('Saved successfully', 'success');
   } else if (platform.isTauri && platform.isAndroid) {
-    // GrapheneOS: save dialog → content:// URI → Kotlin plugin streams from URL
+    // Tauri Android: save dialog → content:// URI → Kotlin plugin streams from URL
     const { save } = await import('@tauri-apps/plugin-dialog');
     const { invoke } = await import('@tauri-apps/api/core');
     const filePath = await save({ defaultPath: defaultFileName });
