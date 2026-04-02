@@ -128,8 +128,7 @@ html.layout--phone {
   }
 }
 
-// Safe-area is handled natively in MainActivity.kt (ViewCompat.setOnApplyWindowInsetsListener).
-// No CSS env(safe-area-inset-*) needed for Tauri Android.
+// Safe-area is handled natively in MainActivity.java (ViewCompat.setOnApplyWindowInsetsListener).
 
 // ========================================
 // Grid Areas

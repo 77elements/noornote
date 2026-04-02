@@ -62,8 +62,7 @@
   }
 }
 
-// Safe-area is handled natively in MainActivity.kt (ViewCompat.setOnApplyWindowInsetsListener).
-// No CSS env(safe-area-inset-*) needed for Tauri Android.
+// Safe-area is handled natively in MainActivity.java (ViewCompat.setOnApplyWindowInsetsListener).
 
 // Sidebar overlay - only visible in mobile mode when sidebar is open
 .sidebar-overlay {
