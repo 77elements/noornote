@@ -519,6 +519,7 @@ export class MainLayout {
    * Initialize wallet balance display
    */
   private async initializeWalletBalance(): Promise<void> {
+    if (this.walletBalanceDisplay) return; // Already initialized
     const { isWalletBalanceEnabled } = await import('../../addons/wallet-balance/index');
     if (!isWalletBalanceEnabled()) return;
 
