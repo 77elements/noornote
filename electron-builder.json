@@ -12,7 +12,7 @@
   "mac": {
     "target": ["dmg"],
     "category": "public.app-category.social-networking",
-    "icon": "src-tauri/icons/icon.icns",
+    "icon": "public/favicon.png",
     "extraResources": [
       {
         "from": "binaries/darwin-arm64/",
@@ -24,7 +24,7 @@
   "linux": {
     "target": ["deb", "AppImage", "tar.gz"],
     "category": "Network",
-    "icon": "src-tauri/icons/",
+    "icon": "public/favicon.png",
     "extraResources": [
       {
         "from": "binaries/linux-${arch}/",

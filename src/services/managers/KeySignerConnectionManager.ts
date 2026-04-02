@@ -211,9 +211,6 @@ export class KeySignerConnectionManager {
     try {
       if (PlatformService.getInstance().isElectron) {
         await window.electronAPI!.launchDaemonSilent();
-      } else {
-        const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('launch_daemon_silent');
       }
     } catch (_error) {
       this.logger.warn('KeySigner', `Silent launch invoke failed: ${_error}`);

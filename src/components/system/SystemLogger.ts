@@ -63,8 +63,8 @@ export class SystemLogger {
   private router: Router | null = null;
   private globalLogs: LogEntry[] = [];
   private pageLogs: LogEntry[] = [];
-  private maxGlobalLogs = 1000; // Tauri: Keep last 1000 global logs (web: 100)
-  private maxPageLogs = 5000; // Tauri: Keep last 5000 page logs (web: 500)
+  private maxGlobalLogs = 1000; // Desktop: Keep last 1000 global logs (web: 100)
+  private maxPageLogs = 5000; // Desktop: Keep last 5000 page logs (web: 500)
   private globalAutoScroll = true;
   private pageAutoScroll = true;
 

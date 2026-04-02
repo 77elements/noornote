@@ -925,7 +925,7 @@ export class MainLayout {
       });
     }
 
-    // Download link - open in system browser (Tauri) or navigate (web)
+    // Download link - open in system browser (desktop) or navigate (web)
     const downloadLink = this.element.querySelector('.sidebar .primary-nav__link--download');
     if (downloadLink) {
       downloadLink.addEventListener('click', async (e) => {
@@ -934,9 +934,6 @@ export class MainLayout {
         const _p = PlatformService.getInstance();
         if (_p.isElectron) {
           await window.electronAPI!.openExternal(url);
-        } else if (_p.isTauri && !_p.isAndroid) {
-          const { open } = await import('@tauri-apps/plugin-shell');
-          await open(url);
         } else {
           window.location.href = '/download/';
         }
@@ -1645,15 +1642,8 @@ export class MainLayout {
 
     // 2. Kill daemon and open terminal
     try {
-      const platform = PlatformService.getInstance();
-      if (platform.isElectron) {
-        await window.electronAPI!.cancelKeySignerLaunch();
-        await window.electronAPI!.launchKeySigner('add-account');
-      } else {
-        const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('cancel_key_signer_launch');
-        await invoke('launch_key_signer', { mode: 'add-account' });
-      }
+      await window.electronAPI!.cancelKeySignerLaunch();
+      await window.electronAPI!.launchKeySigner('add-account');
     } catch (error) {
       console.error('[MainLayout] Failed to launch add-account terminal:', error);
     }

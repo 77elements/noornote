@@ -1,7 +1,8 @@
 /**
  * Keychain Storage Service
- * Secure storage for sensitive data (nsec, NWC connection strings)
- * Uses macOS Keychain in Tauri, falls back to IndexedDB in browser
+ * Secure storage for sensitive data (NWC connection strings)
+ * Uses IndexedDB for browser/web storage.
+ * Desktop (Electron) uses EncryptedFileStorage for NWC, not this service.
  *
  * IndexedDB is used instead of localStorage because:
  * - Not synchronously accessible via JS (harder to exploit via XSS)
@@ -9,8 +10,6 @@
  * - Still not fully secure in browser - use desktop app for best security
  */
 
-import { setPassword, getPassword, deletePassword } from 'tauri-plugin-keyring-api';
-import { PlatformService } from './PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { AuthService } from './AuthService';
 
@@ -20,19 +19,7 @@ const STORE_NAME = 'keychain';
 const DB_VERSION = 1;
 
 export class KeychainStorage {
-  private static readonly SERVICE_NAME = 'noornote';
-
   private static dbPromise: Promise<IDBDatabase> | null = null;
-
-
-  /**
-   * Check if running in Tauri desktop environment.
-   * Electron uses EncryptedFileStorage instead — not this keychain path.
-   */
-  private static isTauri(): boolean {
-    const platform = PlatformService.getInstance();
-    return platform.isTauri && !platform.isAndroid && !platform.isElectron;
-  }
 
   /**
    * Get IndexedDB database (lazy initialization)
@@ -117,7 +104,7 @@ export class KeychainStorage {
   }
 
   /**
-   * Save NWC connection string (per-user, in Keychain)
+   * Save NWC connection string (per-user, in IndexedDB)
    * @param connectionString The NWC connection string
    * @param pubkey The user's pubkey (required for per-user storage)
    */
@@ -129,22 +116,11 @@ export class KeychainStorage {
     }
 
     const key = this.getNwcKeyForUser(userPubkey);
-
-    if (this.isTauri()) {
-      try {
-        await setPassword(this.SERVICE_NAME, key, connectionString);
-      } catch (_error) {
-        console.error('Failed to save NWC to Keychain:', _error);
-        throw new Error('Failed to save NWC connection to Keychain');
-      }
-    } else {
-      // Browser fallback - IndexedDB
-      await this.setInIndexedDB(key, connectionString);
-    }
+    await this.setInIndexedDB(key, connectionString);
   }
 
   /**
-   * Load NWC connection string (per-user, from Keychain)
+   * Load NWC connection string (per-user, from IndexedDB)
    * @param pubkey The user's pubkey (optional, uses current user if not provided)
    */
   static async loadNWC(pubkey?: string): Promise<string | null> {
@@ -155,20 +131,11 @@ export class KeychainStorage {
     }
 
     const key = this.getNwcKeyForUser(userPubkey);
-
-    if (this.isTauri()) {
-      try {
-        return await getPassword(this.SERVICE_NAME, key);
-      } catch (_error) {
-        return null;
-      }
-    } else {
-      return this.getFromIndexedDB(key);
-    }
+    return this.getFromIndexedDB(key);
   }
 
   /**
-   * Delete NWC connection string (per-user, from Keychain)
+   * Delete NWC connection string (per-user, from IndexedDB)
    * @param pubkey The user's pubkey (optional, uses current user if not provided)
    */
   static async deleteNWC(pubkey?: string): Promise<void> {
@@ -179,16 +146,7 @@ export class KeychainStorage {
     }
 
     const key = this.getNwcKeyForUser(userPubkey);
-
-    if (this.isTauri()) {
-      try {
-        await deletePassword(this.SERVICE_NAME, key);
-      } catch (_error) {
-        // Ignore errors
-      }
-    } else {
-      await this.deleteFromIndexedDB(key);
-    }
+    await this.deleteFromIndexedDB(key);
   }
 
   /**

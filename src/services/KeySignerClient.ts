@@ -2,7 +2,7 @@
  * KeySignerClient - Client for NoorSigner daemon socket communication
  * Communicates with local key signer daemon via Unix socket (macOS/Linux)
  *
- * Supports both Electron (window.electronAPI) and Tauri (invoke) backends.
+ * Uses Electron (window.electronAPI) backend.
  */
 
 import { PlatformService } from './PlatformService';
@@ -103,7 +103,7 @@ export class KeySignerClient {
   }
 
   /**
-   * Ensure we're running on a desktop platform (Electron or Tauri desktop)
+   * Ensure we're running on a desktop platform (Electron)
    */
   private ensureDesktop(): void {
     const platform = PlatformService.getInstance();
@@ -122,25 +122,14 @@ export class KeySignerClient {
 
   /**
    * Execute a key signer request with timeout.
-   * Routes to Electron IPC or Tauri invoke based on platform.
+   * Routes to Electron IPC.
    */
   private async invokeWithTimeout(request: SignerRequest): Promise<string> {
-    const platform = PlatformService.getInstance();
-
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('KeySigner request timeout')), this.timeout);
     });
 
-    let invokePromise: Promise<string>;
-
-    if (platform.isElectron) {
-      invokePromise = window.electronAPI!.keySignerRequest(JSON.stringify(request));
-    } else {
-      const { invoke } = await import('@tauri-apps/api/core');
-      invokePromise = invoke('key_signer_request', {
-        request: JSON.stringify(request),
-      });
-    }
+    const invokePromise = window.electronAPI!.keySignerRequest(JSON.stringify(request));
 
     return Promise.race([invokePromise, timeoutPromise]) as Promise<string>;
   }
@@ -324,11 +313,7 @@ export class KeySignerClient {
     if (!platform.isDesktop) return false;
 
     try {
-      if (platform.isElectron) {
-        return await window.electronAPI!.checkTrustSession();
-      }
-      const { invoke } = await import('@tauri-apps/api/core');
-      return await invoke<boolean>('check_trust_session');
+      return await window.electronAPI!.checkTrustSession();
     } catch (error) {
       console.error('Failed to check trust session:', error);
       return false;
@@ -342,15 +327,9 @@ export class KeySignerClient {
 
   private async launchSigner(mode: 'daemon' | 'init'): Promise<void> {
     this.ensureDesktop();
-    const platform = PlatformService.getInstance();
 
     try {
-      if (platform.isElectron) {
-        await window.electronAPI!.launchKeySigner(mode);
-      } else {
-        const { invoke } = await import('@tauri-apps/api/core');
-        await invoke('launch_key_signer', { mode });
-      }
+      await window.electronAPI!.launchKeySigner(mode);
     } catch (error) {
       console.error(`Failed to launch KeySigner ${mode}:`, error);
       throw error;
@@ -433,20 +412,11 @@ export class KeySignerClient {
     password: string
   ): Promise<{ pubkey: string; npub: string }> {
     this.ensureDesktop();
-    const platform = PlatformService.getInstance();
 
     const jsonInput = JSON.stringify({ nsec, password });
 
     try {
-      let responseStr: string;
-
-      if (platform.isElectron) {
-        responseStr = await window.electronAPI!.addAccountViaCli(jsonInput);
-      } else {
-        const { invoke } = await import('@tauri-apps/api/core');
-        responseStr = await invoke<string>('add_account_via_cli', { jsonInput });
-      }
-
+      const responseStr = await window.electronAPI!.addAccountViaCli(jsonInput);
       const response = JSON.parse(responseStr);
 
       if (!response.success) {
@@ -465,47 +435,22 @@ export class KeySignerClient {
 
   public async launchDaemonWithPassword(password: string): Promise<string> {
     this.ensureDesktop();
-    const platform = PlatformService.getInstance();
-
-    if (platform.isElectron) {
-      return window.electronAPI!.launchDaemonWithPassword(password);
-    }
-    const { invoke } = await import('@tauri-apps/api/core');
-    return invoke<string>('launch_daemon_with_password', { password });
+    return window.electronAPI!.launchDaemonWithPassword(password);
   }
 
   public async prepareDaemonForUnlock(): Promise<void> {
     this.ensureDesktop();
-    const platform = PlatformService.getInstance();
-
-    if (platform.isElectron) {
-      await window.electronAPI!.prepareDaemonForUnlock();
-      return;
-    }
-    const { invoke } = await import('@tauri-apps/api/core');
-    await invoke('prepare_daemon_for_unlock');
+    await window.electronAPI!.prepareDaemonForUnlock();
   }
 
   public async submitDaemonPassword(password: string): Promise<string> {
     this.ensureDesktop();
-    const platform = PlatformService.getInstance();
-
-    if (platform.isElectron) {
-      return window.electronAPI!.submitDaemonPassword(password);
-    }
-    const { invoke } = await import('@tauri-apps/api/core');
-    return invoke<string>('submit_daemon_password', { password });
+    return window.electronAPI!.submitDaemonPassword(password);
   }
 
   public async hasAccounts(): Promise<boolean> {
     this.ensureDesktop();
-    const platform = PlatformService.getInstance();
-
-    if (platform.isElectron) {
-      return window.electronAPI!.hasNoorSignerAccounts();
-    }
-    const { invoke } = await import('@tauri-apps/api/core');
-    return invoke<boolean>('has_noorsigner_accounts');
+    return window.electronAPI!.hasNoorSignerAccounts();
   }
 
   public static destroy(): void {

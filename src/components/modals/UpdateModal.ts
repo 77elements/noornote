@@ -1,7 +1,7 @@
 /**
  * UpdateModal
  * Shows available update with release notes and download/skip/later actions
- * Tauri desktop only (guarded by UpdateCheckService.checkOnStartup)
+ * Desktop only (guarded by UpdateCheckService.checkOnStartup)
  */
 
 import { ModalService } from '../../services/ModalService';
@@ -116,9 +116,6 @@ export class UpdateModal {
         const _p = PlatformService.getInstance();
         if (_p.isElectron) {
           await window.electronAPI!.openExternal(update.downloadUrl);
-        } else if (_p.isTauri && !_p.isAndroid) {
-          const { open } = await import('@tauri-apps/plugin-shell');
-          await open(update.downloadUrl);
         } else {
           window.open(update.downloadUrl, '_blank', 'noopener,noreferrer');
         }

@@ -9,7 +9,7 @@
  *
  * LRU CACHE STRATEGY:
  * - Memory-only LRU cache (via LRUCache helper)
- * - Platform-aware size: Tauri Desktop > Web > Mobile
+ * - Platform-aware size: Desktop > Web > Mobile
  * - Evicts oldest entries when cache exceeds limit
  */
 

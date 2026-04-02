@@ -4,7 +4,7 @@
  * Contains:
  * - Data types (FollowItem)
  * - Browser storage (localStorage via PerAccountLocalStorage)
- * - File storage (Tauri) - separate public/private files
+ * - File storage (Desktop) - separate public/private files
  * - Relay operations (NIP-02 kind:3 + NIP-51 kind:30000 for private)
  * - FollowStorageAdapter (for AutoSyncService/ListSyncManager)
  * - FollowOrchestrator (legacy alias for backward compatibility)
@@ -337,7 +337,7 @@ export function setMigratedToFileStorage(): void {
 }
 
 // ============================================================
-// FILE STORAGE (Tauri)
+// FILE STORAGE (Desktop)
 // ============================================================
 
 const PUBLIC_FOLLOWS_FILE = 'follows-public.json';
@@ -1529,7 +1529,7 @@ export class FollowListManager {
   /**
    * Handle Restore from File
    * In Browser/Mobile: shows file upload dialog
-   * In Tauri Desktop: reads from local file
+   * In Desktop: reads from local file
    */
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
@@ -1546,7 +1546,7 @@ export class FollowListManager {
         // Use full state comparison
         result = { requiresConfirmation: hasFollowDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
       } else {
-        // Tauri Desktop: Read from local file
+        // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
         result = await this.syncFromFile();
       }

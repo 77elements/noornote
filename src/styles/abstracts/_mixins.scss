@@ -166,8 +166,8 @@
 
 // Custom scrollbar styling
 @mixin custom-scrollbar {
-  // Webkit MUST come first (Chrome, Safari, Edge, Tauri)
-  // Set base scrollbar properties first (required for Tauri)
+  // Webkit MUST come first (Chrome, Safari, Edge, Electron)
+  // Set base scrollbar properties first (required for Electron)
   &::-webkit-scrollbar {
     width: 8px;
     height: 8px;

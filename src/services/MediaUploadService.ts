@@ -7,7 +7,7 @@
  * - Proper cancellation with AbortController
  * - Clean error handling
  * - Progress tracking
- * - Platform-specific upload adapters (Windows uses Tauri HTTP, Mac/Linux uses XHR)
+ * - Platform-specific upload adapters (Windows uses Electron HTTP, Mac/Linux uses XHR)
  */
 
 import { AuthService } from './AuthService';
@@ -190,7 +190,7 @@ export class MediaUploadService {
         return await this.uploadBlossomBrowser(file, serverUrl, authHeader, onProgress);
       }
 
-      // Tauri mode: Use adapter (CORS bypassed)
+      // Desktop mode: Use adapter (CORS bypassed)
       const response = await this.uploadAdapter.upload({
         url: `${serverUrl}/upload`,
         method: 'PUT',
@@ -349,7 +349,7 @@ export class MediaUploadService {
         return await this.uploadNIP96Browser(file, proxiedApiUrl, authHeader, onProgress);
       }
 
-      // Tauri mode: manual multipart (existing behavior)
+      // Desktop mode: manual multipart (existing behavior)
       const { body, boundary } = await this.buildMultipartBody(file, {
         content_type: file.type,
         size: file.size.toString()

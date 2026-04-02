@@ -1,6 +1,6 @@
 /**
  * Electron Main Process
- * Port of src-tauri/src/lib.rs — app lifecycle, window, shortcuts, deep links, IPC.
+ * Electron Main Process — app lifecycle, window, shortcuts, deep links, IPC.
  */
 
 import { app, BrowserWindow, globalShortcut, ipcMain, screen, session, shell } from 'electron';
@@ -82,7 +82,7 @@ app.whenReady().then(() => {
 
   createWindow();
 
-  // Global Shortcuts (same as Tauri: Super+Enter, Super+K, Super+Left, Super+Right)
+  // Global Shortcuts (Super+Enter, Super+K, Super+Left, Super+Right)
   globalShortcut.register('CommandOrControl+Return', () => {
     mainWindow?.webContents.send('global-shortcut', 'search');
   });

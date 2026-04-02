@@ -1,6 +1,6 @@
 /**
  * KeySignerSection Component
- * Manages NoorSigner key signer settings (Tauri only)
+ * Manages NoorSigner key signer settings (Desktop only)
  *
  * @purpose Configure autostart, silent mode, and manage key signer daemon
  * @used-by SettingsView

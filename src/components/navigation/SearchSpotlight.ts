@@ -368,9 +368,6 @@ export class SearchSpotlight {
       const _p = PlatformService.getInstance();
       if (_p.isElectron) {
         await window.electronAPI!.openExternal(url);
-      } else if (_p.isTauri) {
-        const { open } = await import('@tauri-apps/plugin-shell');
-        await open(url);
       } else {
         window.open(url, '_blank', 'noopener,noreferrer');
       }

@@ -1,6 +1,6 @@
 /**
  * NoorSigner IPC Handlers for Electron
- * Port of src-tauri/src/key_signer.rs (729 LOC Rust → Node.js)
+ * NoorSigner IPC Handlers — Unix socket daemon communication.
  *
  * Handles communication with NoorSigner Unix socket daemon,
  * daemon lifecycle, trust sessions, and account management.

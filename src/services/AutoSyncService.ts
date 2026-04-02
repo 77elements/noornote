@@ -5,7 +5,7 @@
  * @purpose Automatically sync lists when changes occur (Easy Mode)
  * @architecture
  *   - Listens to list update events (follow:updated, bookmark:updated, mute:updated, tribe:updated)
- *   - On change: Publish to relays (debounced). Tauri Desktop: also save to file immediately.
+ *   - On change: Publish to relays (debounced). Desktop: also save to file immediately.
  *   - On startup: Sync from relays 10 seconds after login
  *   - Periodic sync: Every 5 minutes from relays
  *   - Offline-aware: Pauses relay sync when offline, resumes when back online

@@ -131,8 +131,7 @@ export default defineConfig({
     }) as PluginOption] : []),
   ],
 
-  // Expose TAURI_ENV_* variables to frontend (set by `tauri build`)
-  envPrefix: ['VITE_', 'TAURI_ENV_'],
+  envPrefix: ['VITE_'],
 
   // Environment variables
   define: {

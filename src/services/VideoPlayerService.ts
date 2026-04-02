@@ -2,8 +2,8 @@
  * VideoPlayerService
  * Native HTML5 video player with fullscreen support
  * - Browser (Web): No custom fullscreen — native controls work
- * - Tauri Desktop: Overlay with cloned video (document.fullscreenEnabled is false)
- * - Tauri Android: No fullscreen support (WebView limitation, no fix available)
+ * - Electron Desktop: Overlay with cloned video (document.fullscreenEnabled is false)
+ * - Android: No fullscreen support (WebView limitation, no fix available)
  */
 
 import { PlatformService } from './PlatformService';
@@ -40,7 +40,7 @@ export class VideoPlayerService {
     this.enterOverlayFullscreen(video);
   }
 
-  // ===== Overlay Fullscreen (Tauri Desktop) =====
+  // ===== Overlay Fullscreen (Electron Desktop) =====
 
   private enterOverlayFullscreen(video: HTMLVideoElement): void {
     const src = video.currentSrc || video.src;
@@ -146,8 +146,8 @@ export class VideoPlayerService {
   /**
    * Adds fullscreen + download buttons to videos.
    * - Browser (Web): skipped entirely — native controls have fullscreen
-   * - Tauri Android: only download button (fullscreen not possible in WebView)
-   * - Tauri Desktop: fullscreen + download buttons
+   * - Android: only download button (fullscreen not possible in WebView)
+   * - Electron Desktop: fullscreen + download buttons
    */
   public initializeForContainer(container: HTMLElement): void {
     // Web browser: native fullscreen works, no custom buttons needed
@@ -160,7 +160,7 @@ export class VideoPlayerService {
       if (video.dataset.fsInitialized) return;
       video.dataset.fsInitialized = 'true';
 
-      // Fullscreen button — Tauri Desktop only
+      // Fullscreen button — Desktop only
       if (!isAndroid) {
         const fsButton = document.createElement('button');
         fsButton.className = 'video-fullscreen-btn';

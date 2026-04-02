@@ -3,7 +3,7 @@
  * Stores NWC connection string in encrypted file
  * File location: ~/.noornote/{npub}/nwc.enc
  *
- * Supports both Electron (window.electronAPI) and Tauri (@tauri-apps/plugin-fs) backends.
+ * Uses Electron (window.electronAPI) backend.
  */
 
 import { PlatformService } from './PlatformService';
@@ -11,42 +11,36 @@ import { hexToNpub } from '../helpers/nip19';
 
 const platform = PlatformService.getInstance();
 
-// ── Platform-agnostic FS wrappers ──
+// ── Platform FS wrappers (Electron only) ──
 
 async function getHomeDir(): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.getHomeDir();
-  const { homeDir } = await import('@tauri-apps/api/path');
-  return homeDir();
+  throw new Error('Platform API not available for homeDir');
 }
 
 async function readTextFile(filePath: string): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.readTextFile(filePath);
-  const mod = await import('@tauri-apps/plugin-fs');
-  return mod.readTextFile(filePath);
+  throw new Error('Platform API not available for readTextFile');
 }
 
 async function writeTextFile(filePath: string, contents: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeTextFile(filePath, contents);
-  const mod = await import('@tauri-apps/plugin-fs');
-  return mod.writeTextFile(filePath, contents);
+  throw new Error('Platform API not available for writeTextFile');
 }
 
 async function fsExists(filePath: string): Promise<boolean> {
   if (platform.isElectron) return window.electronAPI!.fsExists(filePath);
-  const mod = await import('@tauri-apps/plugin-fs');
-  return mod.exists(filePath);
+  throw new Error('Platform API not available for fsExists');
 }
 
 async function fsMkdir(dirPath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsMkdir(dirPath);
-  const mod = await import('@tauri-apps/plugin-fs');
-  return mod.mkdir(dirPath, { recursive: true });
+  throw new Error('Platform API not available for fsMkdir');
 }
 
 async function fsRemove(filePath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsRemove(filePath);
-  const mod = await import('@tauri-apps/plugin-fs');
-  return mod.remove(filePath);
+  throw new Error('Platform API not available for fsRemove');
 }
 
 export class EncryptedFileStorage {

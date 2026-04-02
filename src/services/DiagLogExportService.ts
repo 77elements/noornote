@@ -3,8 +3,8 @@
  *
  * Collects all log files (root + week/ + archive/), creates a ZIP,
  * then triggers the platform-appropriate save mechanism:
- * - Android: Tauri invoke to Kotlin plugin → Downloads folder
- * - Desktop: native save dialog (Electron or Tauri)
+ * - Android (Capacitor): MediaSave plugin → Downloads folder
+ * - Desktop (Electron): native save dialog
  */
 
 import { zipSync } from 'fflate';
@@ -14,39 +14,34 @@ import { SystemLogger } from '../components/system/SystemLogger';
 const logger = SystemLogger.getInstance();
 const platform = PlatformService.getInstance();
 
-// ── Platform-agnostic FS wrappers ──
+// ── Platform FS wrappers (Electron only) ──
 
 async function platformReadFile(filePath: string): Promise<Uint8Array> {
   if (platform.isElectron) {
     const buf = await window.electronAPI!.readFile(filePath);
     return new Uint8Array(buf);
   }
-  const { readFile } = await import('@tauri-apps/plugin-fs');
-  return new Uint8Array(await readFile(filePath));
+  throw new Error('Platform API not available for readFile');
 }
 
 async function platformReadDir(dirPath: string): Promise<Array<{ name: string; isFile: boolean }>> {
   if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
-  const { readDir } = await import('@tauri-apps/plugin-fs');
-  return readDir(dirPath);
+  throw new Error('Platform API not available for readDir');
 }
 
 async function platformExists(path: string): Promise<boolean> {
   if (platform.isElectron) return window.electronAPI!.fsExists(path);
-  const { exists } = await import('@tauri-apps/plugin-fs');
-  return exists(path);
+  throw new Error('Platform API not available for exists');
 }
 
 async function platformHomeDir(): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.getHomeDir();
-  const { homeDir } = await import('@tauri-apps/api/path');
-  return homeDir();
+  throw new Error('Platform API not available for homeDir');
 }
 
 async function platformAppDataDir(): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.getAppDataDir();
-  const { appDataDir } = await import('@tauri-apps/api/path');
-  return appDataDir();
+  throw new Error('Platform API not available for appDataDir');
 }
 
 async function platformSaveFileDialog(filename: string): Promise<string | null> {
@@ -56,17 +51,12 @@ async function platformSaveFileDialog(filename: string): Promise<string | null> 
       filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
     });
   }
-  const { save } = await import('@tauri-apps/plugin-dialog');
-  return save({
-    defaultPath: filename,
-    filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
-  });
+  throw new Error('Platform API not available for saveFileDialog');
 }
 
 async function platformWriteFile(filePath: string, data: Uint8Array): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeFile(filePath, data);
-  const { writeFile } = await import('@tauri-apps/plugin-fs');
-  return writeFile(filePath, data);
+  throw new Error('Platform API not available for writeFile');
 }
 
 /**
@@ -162,7 +152,7 @@ async function getLogsDir(): Promise<string | null> {
 }
 
 /**
- * Android: Save to Downloads via Capacitor or Tauri MediaSave plugin.
+ * Android (Capacitor): Save to Downloads via MediaSave plugin.
  */
 async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<boolean> {
   const CHUNK = 8192;
@@ -172,21 +162,16 @@ async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<b
   }
   const base64 = btoa(binary);
 
-  if (platform.isCapacitor) {
-    const { registerPlugin } = await import('@capacitor/core');
-    const MediaSave = registerPlugin('MediaSave');
-    await (MediaSave as any).saveToDownloads({ filename, data: base64, mimeType: 'application/zip' });
-  } else {
-    const { invoke } = await import('@tauri-apps/api/core');
-    await invoke('plugin:media-save|save_to_downloads', { filename, data: base64, mimeType: 'application/zip' });
-  }
+  const { registerPlugin } = await import('@capacitor/core');
+  const MediaSave = registerPlugin('MediaSave');
+  await (MediaSave as any).saveToDownloads({ filename, data: base64, mimeType: 'application/zip' });
 
   logger.success('DiagLogExport', `Logs exported to Downloads — ${filename}`);
   return true;
 }
 
 /**
- * Desktop: Save via native dialog (Electron or Tauri).
+ * Desktop (Electron): Save via native dialog.
  */
 async function saveViaDialog(zipData: Uint8Array, filename: string): Promise<boolean> {
   const filePath = await platformSaveFileDialog(filename);

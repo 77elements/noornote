@@ -1,7 +1,7 @@
 /**
  * Keyboard Shortcut Manager
  * Handles global keyboard shortcuts for the application
- * Uses Tauri Global Shortcuts API for reliable cross-platform support
+ * Uses Electron IPC for reliable cross-platform support
  */
 
 import { Router } from './Router';
@@ -47,7 +47,7 @@ export class KeyboardShortcutManager {
   }
 
   /**
-   * Setup global keyboard shortcuts via Tauri events
+   * Setup global keyboard shortcuts via Electron IPC
    */
   private async setupGlobalShortcuts(): Promise<void> {
     // Always setup browser shortcuts (focus-aware)
@@ -76,9 +76,6 @@ export class KeyboardShortcutManager {
 
       if (_p.isElectron) {
         window.electronAPI!.onGlobalShortcut((action: string) => handleShortcut(action));
-      } else {
-        const { listen } = await import('@tauri-apps/api/event');
-        await listen<string>('global-shortcut', (event) => handleShortcut(event.payload));
       }
     } catch {
       // Global shortcut API unavailable
@@ -86,7 +83,7 @@ export class KeyboardShortcutManager {
   }
 
   /**
-   * Fallback: Browser keyboard shortcuts (for non-Tauri environments)
+   * Browser keyboard shortcuts (fallback for non-desktop environments)
    */
   private setupBrowserShortcuts(): void {
     window.addEventListener('keydown', (e: KeyboardEvent) => {

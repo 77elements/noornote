@@ -5,7 +5,7 @@
  * - Manages current layout mode ('default' | 'right-pane' | 'wide' | 'phone')
  * - Sets CSS class on <html> element for CSS-driven styling
  * - Emits 'layout:changed' event for reactive updates
- * - Handles Tauri window resize for phone mode
+ * - Handles Electron window resize for phone mode
  *
  * Platform Priority:
  * - Desktop (≥1024px): User preference applies
@@ -267,21 +267,6 @@ export class LayoutService {
           const [, height] = await window.electronAPI!.getWindowSize();
           const restoreWidth = this.previousWindowWidth || 1200;
           await window.electronAPI!.setWindowSize(restoreWidth, height);
-          this.previousWindowWidth = null;
-        }
-      } else {
-        const { getCurrentWindow } = await import('@tauri-apps/api/window');
-        const { LogicalSize } = await import('@tauri-apps/api/dpi');
-        const currentWindow = getCurrentWindow();
-
-        if (newMode === 'phone' && previousMode !== 'phone') {
-          const size = await currentWindow.innerSize();
-          this.previousWindowWidth = size.width;
-          await currentWindow.setSize(new LogicalSize(390, size.height));
-        } else if (newMode !== 'phone' && previousMode === 'phone') {
-          const size = await currentWindow.innerSize();
-          const restoreWidth = this.previousWindowWidth || 1200;
-          await currentWindow.setSize(new LogicalSize(restoreWidth, size.height));
           this.previousWindowWidth = null;
         }
       }

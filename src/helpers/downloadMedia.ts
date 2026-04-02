@@ -28,27 +28,6 @@ export async function downloadMedia(url: string, defaultFileName: string): Promi
     });
     await Filesystem.writeFile({ path: defaultFileName, data: base64, directory: Directory.Documents });
     ToastService.show('Saved successfully', 'success');
-  } else if (platform.isTauri && platform.isAndroid) {
-    // Tauri Android: save dialog → content:// URI → Kotlin plugin streams from URL
-    const { save } = await import('@tauri-apps/plugin-dialog');
-    const { invoke } = await import('@tauri-apps/api/core');
-    const filePath = await save({ defaultPath: defaultFileName });
-    if (filePath) {
-      await invoke('plugin:media-save|save_media', { uri: filePath, mediaUrl: url });
-      ToastService.show('Saved successfully', 'success');
-    }
-  } else if (platform.isTauri) {
-    // Tauri Desktop: save dialog → writeFile
-    const { save } = await import('@tauri-apps/plugin-dialog');
-    const { writeFile } = await import('@tauri-apps/plugin-fs');
-    const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');
-    const response = await tauriFetch(url, { method: 'GET' });
-    const data = new Uint8Array(await response.arrayBuffer());
-    const filePath = await save({ defaultPath: defaultFileName });
-    if (filePath) {
-      await writeFile(filePath, data);
-      ToastService.show('Saved successfully', 'success');
-    }
   } else {
     // Web: blob download
     const response = await fetch(url);

@@ -1,6 +1,6 @@
 /**
  * File System IPC Handlers for Electron
- * Replaces @tauri-apps/plugin-fs for desktop file operations.
+ * File System IPC Handlers for desktop file operations.
  *
  * Used by: EncryptedFileStorage, BaseFileStorage, DiagnosticLogger,
  *          DiagLogExportService, list file sync, ProfileRecognition

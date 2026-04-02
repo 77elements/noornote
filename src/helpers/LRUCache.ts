@@ -13,13 +13,13 @@ import { PlatformService } from '../services/PlatformService';
 
 /**
  * Returns platform-appropriate cache size.
- * Tauri Desktop (most RAM) > Web (shared browser RAM) > Mobile APK (least RAM)
+ * Desktop (most RAM) > Web (shared browser RAM) > Mobile (least RAM)
  */
-export function getCacheSize(tauriDesktop: number, web: number, mobile: number): number {
+export function getCacheSize(desktop: number, web: number, mobile: number): number {
   const platform = PlatformService.getInstance();
   if (platform.isAndroid) return mobile;
   if (platform.isBrowser) return web;
-  return tauriDesktop;
+  return desktop;
 }
 
 export class LRUCache<V> {

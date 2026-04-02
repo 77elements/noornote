@@ -1,7 +1,7 @@
 /**
  * ExtensionSignerManager
  * Handles NIP-07 browser extension authentication and signing.
- * Web-only — extensions are not available in Tauri.
+ * Web-only — extensions are not available in Electron.
  */
 
 export interface NostrExtension {

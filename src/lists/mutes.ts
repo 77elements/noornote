@@ -4,7 +4,7 @@
  * Contains:
  * - Data types
  * - Browser storage (localStorage via PerAccountLocalStorage)
- * - File storage (Tauri)
+ * - File storage (Desktop)
  * - Relay operations (NIP-51 kind:10000)
  * - MuteStorageAdapter (for AutoSyncService)
  * - MuteListView (standalone view)
@@ -467,7 +467,7 @@ export function clearTemporaryUnmutes(): void {
 }
 
 // ============================================================
-// FILE STORAGE (Tauri)
+// FILE STORAGE (Desktop)
 // ============================================================
 
 const PUBLIC_MUTES_FILE = 'mutes-public.json';
@@ -1339,7 +1339,7 @@ export class MuteListView extends View {
         // Use full state comparison
         result = { requiresConfirmation: hasMuteDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
       } else {
-        // Tauri Desktop: Read from local file
+        // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
         result = await this.adapter.syncFromFile();
       }
@@ -1696,7 +1696,7 @@ export class MuteListManager {
         // Use full state comparison
         result = { requiresConfirmation: hasMuteDifference(browserItems, uploadedItems), diff, fileItems: uploadedItems };
       } else {
-        // Tauri Desktop: Read from local file
+        // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
         result = await this.adapter.syncFromFile();
       }

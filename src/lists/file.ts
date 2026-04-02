@@ -1,5 +1,5 @@
 /**
- * file.ts - Shared Tauri file read/write for all lists
+ * file.ts - Shared file read/write for all lists
  *
  * Provides file-based backup storage in ~/.noornote/{npub}/ directory.
  * Each list type has its own file (tribes.json, bookmarks.json, etc.)
@@ -11,38 +11,14 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { PlatformService } from '../services/PlatformService';
 import { AuthService } from '../services/AuthService';
 
-// Tauri APIs (dynamically imported to support browser builds)
-let tauriHomeDir: typeof import('@tauri-apps/api/path').homeDir | null = null;
-let tauriReadTextFile: typeof import('@tauri-apps/plugin-fs').readTextFile | null = null;
-let tauriWriteTextFile: typeof import('@tauri-apps/plugin-fs').writeTextFile | null = null;
-let tauriExists: typeof import('@tauri-apps/plugin-fs').exists | null = null;
-let tauriMkdir: typeof import('@tauri-apps/plugin-fs').mkdir | null = null;
-
 const platform = PlatformService.getInstance();
 const logger = SystemLogger.getInstance();
 
-// Load Tauri APIs if available (Tauri desktop only — Electron uses electronAPI)
-if (platform.isTauri && !platform.isAndroid) {
-  import('@tauri-apps/api/path').then(mod => { tauriHomeDir = mod.homeDir; });
-  import('@tauri-apps/plugin-fs').then(mod => {
-    tauriReadTextFile = mod.readTextFile;
-    tauriWriteTextFile = mod.writeTextFile;
-    tauriExists = mod.exists;
-    tauriMkdir = mod.mkdir;
-  });
-}
-
 /**
- * Verify filesystem APIs are loaded (Tauri or Electron)
+ * Verify filesystem APIs are loaded (Electron)
  */
 function requireFs(): void {
-  if (platform.isElectron) {
-    if (!window.electronAPI) throw new Error('Electron API not available');
-    return;
-  }
-  if (!tauriExists || !tauriMkdir || !tauriReadTextFile || !tauriWriteTextFile) {
-    throw new Error('Tauri fs API not loaded');
-  }
+  if (!window.electronAPI) throw new Error('Electron API not available');
 }
 
 /**
@@ -67,16 +43,7 @@ export async function getListFilePath(filename: string): Promise<string> {
     throw new Error('File storage requires logged-in user');
   }
 
-  if (platform.isElectron) {
-    const homePath = await window.electronAPI!.getHomeDir();
-    return `${homePath}/.noornote/${userNpub}/${filename}`;
-  }
-
-  if (!tauriHomeDir) {
-    throw new Error('Tauri path API not loaded');
-  }
-
-  const homePath = await tauriHomeDir();
+  const homePath = await window.electronAPI!.getHomeDir();
   return `${homePath}/.noornote/${userNpub}/${filename}`;
 }
 
@@ -87,18 +54,7 @@ export async function ensureDirectoryExists(filePath: string): Promise<void> {
   requireFs();
 
   const dirPath = filePath.split('/').slice(0, -1).join('/');
-
-  if (platform.isElectron) {
-    await window.electronAPI!.fsMkdir(dirPath);
-    return;
-  }
-
-  const dirExists = await tauriExists!(dirPath);
-
-  if (!dirExists) {
-    await tauriMkdir!(dirPath, { recursive: true });
-    logger.info('file.ts', `Created directory: ${dirPath}`);
-  }
+  await window.electronAPI!.fsMkdir(dirPath);
 }
 
 /**
@@ -110,27 +66,13 @@ export async function readJsonFile<T>(filename: string, defaultData: T): Promise
     const filePath = await getListFilePath(filename);
     requireFs();
 
-    if (platform.isElectron) {
-      const exists = await window.electronAPI!.fsExists(filePath);
-      if (!exists) {
-        logger.info('file.ts', `File not found, using defaults: ${filename}`);
-        return defaultData;
-      }
-      const content = await window.electronAPI!.readTextFile(filePath);
-      const data: T = JSON.parse(content);
-      logger.info('file.ts', `Read: ${filename}`);
-      return data;
-    }
-
-    const fileExists = await tauriExists!(filePath);
-    if (!fileExists) {
+    const exists = await window.electronAPI!.fsExists(filePath);
+    if (!exists) {
       logger.info('file.ts', `File not found, using defaults: ${filename}`);
       return defaultData;
     }
-
-    const content = await tauriReadTextFile!(filePath);
+    const content = await window.electronAPI!.readTextFile(filePath);
     const data: T = JSON.parse(content);
-
     logger.info('file.ts', `Read: ${filename}`);
     return data;
   } catch (error) {
@@ -149,11 +91,7 @@ export async function writeJsonFile<T>(filename: string, data: T): Promise<void>
 
     await ensureDirectoryExists(filePath);
 
-    if (platform.isElectron) {
-      await window.electronAPI!.writeTextFile(filePath, JSON.stringify(data, null, 2));
-    } else {
-      await tauriWriteTextFile!(filePath, JSON.stringify(data, null, 2));
-    }
+    await window.electronAPI!.writeTextFile(filePath, JSON.stringify(data, null, 2));
 
     logger.info('file.ts', `Wrote: ${filename}`);
   } catch (error) {
@@ -170,11 +108,7 @@ export async function fileExists(filename: string): Promise<boolean> {
     const filePath = await getListFilePath(filename);
     requireFs();
 
-    if (platform.isElectron) {
-      return await window.electronAPI!.fsExists(filePath);
-    }
-
-    return await tauriExists!(filePath);
+    return await window.electronAPI!.fsExists(filePath);
   } catch {
     return false;
   }
@@ -187,7 +121,7 @@ export async function fileExists(filename: string): Promise<boolean> {
  */
 /**
  * Download data as JSON file via browser download dialog
- * Used in Web/Mobile mode as alternative to Tauri file writing
+ * Used in Web/Mobile mode as alternative to desktop file writing
  */
 export function downloadAsJson<T>(data: T, filename: string): void {
   const json = JSON.stringify(data, null, 2);

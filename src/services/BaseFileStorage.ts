@@ -3,7 +3,7 @@
  * Abstract base class for file-based storage
  *
  * Provides common functionality for storing data in ~/.noornote/{npub}/ directory.
- * Supports both Electron (window.electronAPI) and Tauri (@tauri-apps/plugin-fs) backends.
+ * Uses Electron (window.electronAPI) backend.
  *
  * Usage: Extend this class and implement abstract methods
  */
@@ -12,54 +12,32 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { PlatformService } from './PlatformService';
 import { AuthService } from './AuthService';
 
-// Tauri APIs (dynamically imported to support browser builds)
-let tauriHomeDir: typeof import('@tauri-apps/api/path').homeDir | null = null;
-let tauriReadTextFile: typeof import('@tauri-apps/plugin-fs').readTextFile | null = null;
-let tauriWriteTextFile: typeof import('@tauri-apps/plugin-fs').writeTextFile | null = null;
-let tauriExists: typeof import('@tauri-apps/plugin-fs').exists | null = null;
-let tauriMkdir: typeof import('@tauri-apps/plugin-fs').mkdir | null = null;
-
 const platform = PlatformService.getInstance();
-
-if (platform.isTauri && !platform.isAndroid) {
-  import('@tauri-apps/api/path').then(mod => { tauriHomeDir = mod.homeDir; });
-  import('@tauri-apps/plugin-fs').then(mod => {
-    tauriReadTextFile = mod.readTextFile;
-    tauriWriteTextFile = mod.writeTextFile;
-    tauriExists = mod.exists;
-    tauriMkdir = mod.mkdir;
-  });
-}
 
 // ── Platform-agnostic FS wrappers ──
 
 async function platformHomeDir(): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.getHomeDir();
-  if (tauriHomeDir) return tauriHomeDir();
   throw new Error('Platform API not available for homeDir');
 }
 
 async function platformReadTextFile(filePath: string): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.readTextFile(filePath);
-  if (tauriReadTextFile) return tauriReadTextFile(filePath);
   throw new Error('Platform API not available for readTextFile');
 }
 
 async function platformWriteTextFile(filePath: string, contents: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeTextFile(filePath, contents);
-  if (tauriWriteTextFile) return tauriWriteTextFile(filePath, contents);
   throw new Error('Platform API not available for writeTextFile');
 }
 
 async function platformExists(filePath: string): Promise<boolean> {
   if (platform.isElectron) return window.electronAPI!.fsExists(filePath);
-  if (tauriExists) return tauriExists(filePath);
   throw new Error('Platform API not available for exists');
 }
 
 async function platformMkdir(dirPath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsMkdir(dirPath);
-  if (tauriMkdir) return tauriMkdir(dirPath, { recursive: true });
   throw new Error('Platform API not available for mkdir');
 }
 
@@ -117,11 +95,6 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
 
     if (!platform.isDesktop) {
       throw new Error(`${this.getLoggerName()} requires desktop environment`);
-    }
-
-    // For Tauri, ensure APIs are loaded
-    if (platform.isTauri && (!tauriHomeDir || !tauriMkdir)) {
-      throw new Error('Tauri path API not loaded');
     }
 
     const userNpub = this.getCurrentUserNpub();

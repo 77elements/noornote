@@ -30,7 +30,7 @@ interface SubCloser {
 /**
  * Get NDK cache configuration from localStorage
  * Returns default values if not configured
- * Desktop (Tauri): Large cache sizes for better performance
+ * Desktop (Electron): Large cache sizes for better performance
  * Web/Phone: Smaller cache sizes to reduce memory usage
  */
 /** One-time migration: delete old Dexie DB if schema is incompatible with NDK v3 */
@@ -47,7 +47,7 @@ if (typeof indexedDB !== 'undefined') {
 function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
   const STORAGE_KEY = 'ndk_cache_config';
   const platform = PlatformService.getInstance();
-  const isDesktop = platform.isTauri && !platform.isAndroid;
+  const isDesktop = platform.isDesktop;
 
   // Desktop: Large caches for performance
   // Web/Phone: Smaller caches for memory efficiency

@@ -18,7 +18,7 @@
  *   2. Week files older than 7 days → compress to archive/
  *   3. Archive files older than 60 days → delete
  *
- * - Desktop only: Electron or Tauri (Web: no-op)
+ * - Desktop (Electron) and Capacitor (Android) only (Web: no-op)
  * - Uses atomic append (open + write, no read-modify-write)
  * - Crash entries flush ALL areas immediately
  */
@@ -36,10 +36,6 @@ interface DiagLogEntry {
   msg: string;
   data?: unknown;
 }
-
-// ===== Tauri FS module (loaded once on first init) =====
-
-let fs: typeof import('@tauri-apps/plugin-fs') | null = null;
 
 const platform = PlatformService.getInstance();
 
@@ -71,55 +67,41 @@ function daysBetween(dateStr: string, referenceStr: string): number {
   return Math.floor((r.getTime() - d.getTime()) / (24 * 60 * 60 * 1000));
 }
 
-/** Load Tauri FS module (once) */
-async function ensureFs(): Promise<typeof import('@tauri-apps/plugin-fs')> {
-  if (!fs) {
-    fs = await import('@tauri-apps/plugin-fs');
-  }
-  return fs;
-}
-
 /** Whether this platform supports file-based diagnostic logging */
 function supportsFileLogs(): boolean {
-  return platform.isDesktop || (platform.isTauri && platform.isAndroid);
+  return platform.isDesktop || platform.isCapacitor;
 }
 
-// ===== Platform-agnostic FS wrappers =====
+// ===== Platform-agnostic FS wrappers (Electron only for desktop) =====
 
 async function platformHomeDir(): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.getHomeDir();
-  const { homeDir } = await import('@tauri-apps/api/path');
-  return homeDir();
+  throw new Error('Platform API not available for homeDir');
 }
 
 async function platformAppDataDir(): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.getAppDataDir();
-  const { appDataDir } = await import('@tauri-apps/api/path');
-  return appDataDir();
+  throw new Error('Platform API not available for appDataDir');
 }
 
 async function platformExists(filePath: string): Promise<boolean> {
   if (platform.isElectron) return window.electronAPI!.fsExists(filePath);
-  const fsMod = await ensureFs();
-  return fsMod.exists(filePath);
+  throw new Error('Platform API not available for exists');
 }
 
 async function platformMkdir(dirPath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsMkdir(dirPath);
-  const fsMod = await ensureFs();
-  return fsMod.mkdir(dirPath, { recursive: true });
+  throw new Error('Platform API not available for mkdir');
 }
 
 async function platformReadDir(dirPath: string): Promise<Array<{ name: string; isFile: boolean }>> {
   if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
-  const fsMod = await ensureFs();
-  return fsMod.readDir(dirPath);
+  throw new Error('Platform API not available for readDir');
 }
 
 async function platformReadTextFile(filePath: string): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.readTextFile(filePath);
-  const fsMod = await ensureFs();
-  return fsMod.readTextFile(filePath);
+  throw new Error('Platform API not available for readTextFile');
 }
 
 async function platformReadFile(filePath: string): Promise<Uint8Array> {
@@ -127,41 +109,32 @@ async function platformReadFile(filePath: string): Promise<Uint8Array> {
     const buf = await window.electronAPI!.readFile(filePath);
     return new Uint8Array(buf);
   }
-  const fsMod = await ensureFs();
-  return fsMod.readFile(filePath);
+  throw new Error('Platform API not available for readFile');
 }
 
 async function platformWriteFile(filePath: string, data: Uint8Array): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeFile(filePath, data);
-  const fsMod = await ensureFs();
-  return fsMod.writeFile(filePath, data);
+  throw new Error('Platform API not available for writeFile');
 }
 
 async function platformAppendFile(filePath: string, contents: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsAppendFile(filePath, contents);
-  const fsMod = await ensureFs();
-  const file = await fsMod.open(filePath, { append: true, create: true });
-  await file.write(new TextEncoder().encode(contents));
-  await file.close();
+  throw new Error('Platform API not available for appendFile');
 }
 
 async function platformTruncateFile(filePath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeTextFile(filePath, '');
-  const fsMod = await ensureFs();
-  const file = await fsMod.open(filePath, { write: true, create: true, truncate: true });
-  await file.close();
+  throw new Error('Platform API not available for truncateFile');
 }
 
 async function platformRename(oldPath: string, newPath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsRename(oldPath, newPath);
-  const fsMod = await ensureFs();
-  return fsMod.rename(oldPath, newPath);
+  throw new Error('Platform API not available for rename');
 }
 
 async function platformRemove(filePath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsRemove(filePath);
-  const fsMod = await ensureFs();
-  return fsMod.remove(filePath);
+  throw new Error('Platform API not available for remove');
 }
 
 // ===== Service =====
@@ -205,7 +178,7 @@ export class DiagnosticLogger {
   /** Diagnostic status for export UI */
   getStatus() {
     const bufferSize = Array.from(this.buffers.values()).reduce((sum, b) => sum + b.length, 0);
-    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: fs !== null || platform.isElectron, bufferSize };
+    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: platform.isElectron, bufferSize };
   }
 
   // ===== Initialization =====
@@ -554,7 +527,6 @@ export class DiagnosticLogger {
     this.logsDir = null;
     this.initialized = false;
     this.initializing = false;
-    fs = null;
   }
 }
 

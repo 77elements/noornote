@@ -369,7 +369,7 @@ export class NWCService {
     try {
       const pubkey = this.getCurrentUserPubkey();
       if (pubkey) {
-        // Try encrypted file (Tauri only)
+        // Try encrypted file (Desktop only)
         const { PlatformService } = await import('./PlatformService');
         if (PlatformService.getInstance().isDesktop) {
           const { EncryptedFileStorage } = await import('./EncryptedFileStorage');

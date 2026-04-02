@@ -1,6 +1,6 @@
 /**
  * UpdateCheckService
- * Checks GitHub Releases for new versions (Tauri desktop only)
+ * Checks GitHub Releases for new versions (Electron desktop only)
  * Uses global localStorage (not per-account) for settings and cache
  */
 

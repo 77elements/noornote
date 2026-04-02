@@ -107,7 +107,7 @@ export class ZapService {
 
   /**
    * Try to enable WebLN provider (Keychat browser, Alby extension, etc.)
-   * Only available in browser environment (Web version), never in Tauri desktop app.
+   * Only available in browser environment (Web version), never in Electron desktop app.
    */
   private async tryEnableWebLN(): Promise<boolean> {
     try {

@@ -699,12 +699,7 @@ export class AccountSetupWizard {
             const { hexToNpub } = await import('../../helpers/nip19');
             const npub = hexToNpub(pubkey);
             if (npub) {
-              if (platform.isElectron) {
-                await window.electronAPI!.removeNoorSignerAccount(npub);
-              } else {
-                const { invoke } = await import('@tauri-apps/api/core');
-                await invoke('remove_noorsigner_account', { npub });
-              }
+              await window.electronAPI!.removeNoorSignerAccount(npub);
             }
           } catch (e) {
             console.warn('[AccountSetupWizard] Failed to remove NoorSigner account files:', e);
@@ -1197,20 +1192,6 @@ IMPORTANT:
           await window.electronAPI!.writeTextFile(filePath, content);
           ToastService.show('Backup saved', 'success');
         }
-      } else if (platform.isTauri && !platform.isAndroid) {
-        // Tauri Desktop: Use native save dialog
-        const { save } = await import('@tauri-apps/plugin-dialog');
-        const { writeTextFile } = await import('@tauri-apps/plugin-fs');
-
-        const filePath = await save({
-          defaultPath: defaultFileName,
-          filters: [{ name: 'Text Files', extensions: ['txt'] }]
-        });
-
-        if (filePath) {
-          await writeTextFile(filePath, content);
-          ToastService.show('Backup saved', 'success');
-        }
       } else if ('showSaveFilePicker' in window) {
         // Web: File System Access API
         const handle = await (window as any).showSaveFilePicker({
@@ -1241,7 +1222,7 @@ IMPORTANT:
   }
 
   /**
-   * Step: Import to NoorSigner (Tauri only)
+   * Step: Import to NoorSigner (Desktop only)
    */
   private createNoorSignerImportStep(): WizardStep {
     return {
@@ -2162,9 +2143,6 @@ IMPORTANT:
             const _p = PlatformService.getInstance();
             if (_p.isElectron) {
               await window.electronAPI!.openExternal('https://rizful.com/nostr_onboarding_auth_token/get_token');
-            } else if (_p.isTauri && !_p.isAndroid) {
-              const { open } = await import('@tauri-apps/plugin-shell');
-              await open('https://rizful.com/nostr_onboarding_auth_token/get_token');
             } else {
               window.open('https://rizful.com/nostr_onboarding_auth_token/get_token', '_blank', 'noopener,noreferrer');
             }

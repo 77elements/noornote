@@ -4,7 +4,7 @@
  * Contains:
  * - Data types
  * - Browser storage (localStorage)
- * - File storage (Tauri)
+ * - File storage (Desktop)
  * - Relay operations (NIP-51)
  * - TribeManager (UI component for sidebar)
  * - TribeView (view component for timeline)
@@ -763,7 +763,7 @@ export function setPrivateTribesEnabled(enabled: boolean): void {
 }
 
 // ============================================================
-// FILE STORAGE (Tauri)
+// FILE STORAGE (Desktop)
 // ============================================================
 
 const TRIBES_FILE = 'tribes.json';
@@ -2613,7 +2613,7 @@ export class TribeManager {
   /**
    * Restore from file
    * In Browser/Mobile: shows file upload dialog
-   * In Tauri Desktop: reads from local file
+   * In Desktop: reads from local file
    */
   private async handleRestoreFromFile(container: HTMLElement): Promise<void> {
     try {
@@ -2630,7 +2630,7 @@ export class TribeManager {
         const diff = this.calculateDiff(browserItems, uploadedItems);
         result = { requiresConfirmation: diff.added.length > 0 || diff.removed.length > 0 || diff.moved.length > 0, diff, fileItems: uploadedItems };
       } else {
-        // Tauri Desktop: Read from local file
+        // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
         result = await this.syncFromFile();
       }

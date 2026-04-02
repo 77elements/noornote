@@ -4,7 +4,7 @@
  * Contains ALL bookmark-related code:
  * - Types (BookmarkTag, BookmarkSet, BookmarkSetData, BookmarkItem)
  * - Browser storage (localStorage via PerAccountLocalStorage)
- * - File storage (Tauri ~/.noornote/{npub}/bookmarks.json)
+ * - File storage (~/.noornote/{npub}/bookmarks.json)
  * - Relay operations (NIP-51 kind:30003 Bookmark Sets)
  * - Serialization (NIP-51 format conversion)
  * - UI components (BookmarkManager, BookmarkCard, Modals)
@@ -489,7 +489,7 @@ export function removeFromBrowserBookmarks(id: string): void {
 }
 
 // =============================================================================
-// FILE STORAGE (Tauri)
+// FILE STORAGE (Desktop)
 // =============================================================================
 
 const BOOKMARK_FILE = 'bookmarks.json';
@@ -2204,8 +2204,11 @@ export class BookmarkCard {
         if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
           e.preventDefault();
           e.stopPropagation();
-          const { open } = await import('@tauri-apps/plugin-shell');
-          await open(href);
+          if (PlatformService.getInstance().isElectron) {
+            await window.electronAPI!.openExternal(href);
+          } else {
+            window.open(href, '_blank', 'noopener,noreferrer');
+          }
           return;
         }
       }
@@ -3666,7 +3669,7 @@ export class BookmarkManager {
         // For uploaded file, categories are derived from items (no setOrder available)
         result = { requiresConfirmation: hasAnyBookmarkDifference(uploadedItems), diff, fileItems: uploadedItems };
       } else {
-        // Tauri Desktop: Read from local file
+        // Desktop: Read from local file
         ToastService.show('Reading from file...', 'info');
         result = await this.syncFromFile();
       }

@@ -1,6 +1,6 @@
 /**
  * ProfileEncounterFileStorage
- * File-based storage for profile recognition encounters using Tauri FS API
+ * File-based storage for profile recognition encounters using Electron FS API
  *
  * Stores first encounter snapshots for followed users:
  * - ~/.noornote/{npub}/profile-encounters.json

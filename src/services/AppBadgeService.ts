@@ -3,7 +3,7 @@
  * Manages app badge count for browser tab title and macOS dock icon
  *
  * Browser: Updates document.title with "(X) NoorNote - ..."
- * Tauri macOS: Sets dock icon badge via Tauri API
+ * Electron macOS: Sets dock icon badge via Electron API
  *
  * Heavy deps (NotificationsOrchestrator, DMService) loaded lazily
  * to keep them out of the main bundle entry path.
@@ -20,7 +20,7 @@ export class AppBadgeService {
   private platform: PlatformService;
   private subscriptionIds: string[] = [];
   private originalTitle: string;
-  private tauriWindow: any = null;
+  private badgeApi: any = null;
 
   // Lazy-loaded deps
   private notificationsOrch: any = null;
@@ -33,7 +33,7 @@ export class AppBadgeService {
     this.platform = PlatformService.getInstance();
     this.originalTitle = document.title;
 
-    this.initTauriWindow();
+    this.initBadgeApi();
     this.setupEventListeners();
 
     // Initial update if user is already logged in
@@ -65,23 +65,15 @@ export class AppBadgeService {
   }
 
   /**
-   * Initialize Tauri window reference for badge API
+   * Initialize badge API (Electron only)
    */
-  private async initTauriWindow(): Promise<void> {
+  private async initBadgeApi(): Promise<void> {
     if (!this.platform.isDesktop) return;
 
     if (this.platform.isElectron) {
-      // Electron: use electronAPI directly (no tauriWindow needed)
-      this.tauriWindow = {
+      this.badgeApi = {
         setBadgeCount: (count: number | null) => window.electronAPI!.setBadgeCount(count ?? 0)
       };
-    } else {
-      try {
-        const { getCurrentWindow } = await import('@tauri-apps/api/window');
-        this.tauriWindow = getCurrentWindow();
-      } catch {
-        // Tauri API not available
-      }
     }
   }
 
@@ -112,7 +104,7 @@ export class AppBadgeService {
   }
 
   /**
-   * Update badge count (browser title + Tauri dock)
+   * Update badge count (browser title + Electron dock)
    */
   public async updateBadge(): Promise<void> {
     // Only show badge if logged in
@@ -136,7 +128,7 @@ export class AppBadgeService {
   }
 
   /**
-   * Set badge count on browser title and Tauri dock
+   * Set badge count on browser title and Electron dock
    */
   private setBadgeCount(count: number): void {
     // Browser: Update document title
@@ -147,9 +139,9 @@ export class AppBadgeService {
       document.title = this.originalTitle;
     }
 
-    // Tauri macOS: Update dock badge
-    if (this.tauriWindow) {
-      this.tauriWindow.setBadgeCount(count > 0 ? count : null).catch(() => {});
+    // Electron macOS: Update dock badge
+    if (this.badgeApi) {
+      this.badgeApi.setBadgeCount(count > 0 ? count : null).catch(() => {});
     }
   }
 
@@ -158,8 +150,8 @@ export class AppBadgeService {
    */
   private clearBadge(): void {
     document.title = this.originalTitle;
-    if (this.tauriWindow) {
-      this.tauriWindow.setBadgeCount(null).catch(() => {});
+    if (this.badgeApi) {
+      this.badgeApi.setBadgeCount(null).catch(() => {});
     }
   }
 

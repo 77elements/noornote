@@ -11,7 +11,7 @@
  * if (platform.isBrowser) { ... }   // Web (noornote.app)
  */
 
-export type PlatformType = 'electron' | 'capacitor' | 'tauri' | 'browser';
+export type PlatformType = 'electron' | 'capacitor' | 'browser';
 
 export class PlatformService {
   private static instance: PlatformService;
@@ -25,13 +25,10 @@ export class PlatformService {
   /** True if running in Capacitor (Android) */
   readonly isCapacitor: boolean;
 
-  /** True if running in Tauri (legacy — will be removed after migration) */
-  readonly isTauri: boolean;
-
-  /** True if running in browser (not Electron, not Capacitor, not Tauri) */
+  /** True if running in browser (not Electron, not Capacitor) */
   readonly isBrowser: boolean;
 
-  /** True if running as a desktop app (Electron or Tauri desktop) */
+  /** True if running as a desktop app (Electron) */
   readonly isDesktop: boolean;
 
   /** True if NoorSigner is available (Desktop only) */
@@ -66,15 +63,11 @@ export class PlatformService {
     this.isCapacitor = typeof window !== 'undefined' &&
       (window as any).Capacitor !== undefined;
 
-    this.isTauri = typeof window !== 'undefined' &&
-      (window as any).__TAURI_INTERNALS__ !== undefined;
+    this.isBrowser = !this.isElectron && !this.isCapacitor;
 
-    this.isBrowser = !this.isElectron && !this.isCapacitor && !this.isTauri;
-
-    // Platform type (priority: Electron > Capacitor > Tauri > Browser)
+    // Platform type (priority: Electron > Capacitor > Browser)
     if (this.isElectron) this.platformType = 'electron';
     else if (this.isCapacitor) this.platformType = 'capacitor';
-    else if (this.isTauri) this.platformType = 'tauri';
     else this.platformType = 'browser';
 
     // OS detection
@@ -83,28 +76,23 @@ export class PlatformService {
     this.isMac = navPlatform.includes('mac') || userAgent.includes('mac');
     this.isLinux = navPlatform.includes('linux') || userAgent.includes('linux');
 
-    // Android detection
-    const tauriPlatform = (import.meta as any).env?.TAURI_ENV_PLATFORM || '';
+    // Android detection (Capacitor or userAgent)
     this.isAndroid = this.isCapacitor ||
-      tauriPlatform === 'android' ||
       userAgent.includes('android');
 
-    // Desktop = Electron OR Tauri-non-Android
-    this.isDesktop = this.isElectron || (this.isTauri && !this.isAndroid);
+    // Desktop = Electron
+    this.isDesktop = this.isElectron;
 
     // Feature flags
     this.supportsNoorSigner = this.isDesktop;
     this.supportsKeychain = this.isDesktop;
     this.supportsNativeFileDialog = this.isDesktop;
     this.supportsNip07 = this.isBrowser || this.hasNip07Extension();
-    this.supportsAmber = this.isCapacitor || (this.isTauri && this.isAndroid);
+    this.supportsAmber = this.isCapacitor;
 
     // CSS platform classes
     if (this.isAndroid) {
       document.documentElement.classList.add('platform--mobile');
-    }
-    if (this.isTauri && this.isAndroid) {
-      document.documentElement.classList.add('platform--tauri-android');
     }
     if (this.isCapacitor && this.isAndroid) {
       document.documentElement.classList.add('platform--mobile');

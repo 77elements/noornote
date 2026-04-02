@@ -13,40 +13,7 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { PlatformService } from '../services/PlatformService';
 import { AuthService } from '../services/AuthService';
 
-let tauriHomeDir: typeof import('@tauri-apps/api/path').homeDir | null = null;
-let tauriReadTextFile: typeof import('@tauri-apps/plugin-fs').readTextFile | null = null;
-let tauriWriteTextFile: typeof import('@tauri-apps/plugin-fs').writeTextFile | null = null;
-let tauriExists: typeof import('@tauri-apps/plugin-fs').exists | null = null;
-let tauriMkdir: typeof import('@tauri-apps/plugin-fs').mkdir | null = null;
-
 const platform = PlatformService.getInstance();
-
-if (platform.isTauri && !platform.isAndroid) {
-  import('@tauri-apps/api/path').then(mod => { tauriHomeDir = mod.homeDir; });
-  import('@tauri-apps/plugin-fs').then(mod => {
-    tauriReadTextFile = mod.readTextFile;
-    tauriWriteTextFile = mod.writeTextFile;
-    tauriExists = mod.exists;
-    tauriMkdir = mod.mkdir;
-  });
-}
-
-// Electron filesystem helpers (wrapping electronAPI)
-function electronReadTextFile(path: string): Promise<string> {
-  return window.electronAPI!.readTextFile(path);
-}
-function electronWriteTextFile(path: string, content: string): Promise<void> {
-  return window.electronAPI!.writeTextFile(path, content);
-}
-async function electronExists(path: string): Promise<boolean> {
-  return window.electronAPI!.fsExists(path);
-}
-async function electronMkdir(path: string): Promise<void> {
-  return window.electronAPI!.fsMkdir(path);
-}
-async function electronHomeDir(): Promise<string> {
-  return window.electronAPI!.getHomeDir();
-}
 
 export interface DebugLogEntry {
   timestamp: string;
@@ -90,24 +57,13 @@ export class MutualCheckDebugLog {
       const user = authService.getCurrentUser();
       if (!user?.npub) return;
 
-      let homePath: string;
-      if (platform.isElectron) {
-        homePath = await electronHomeDir();
-      } else {
-        if (!tauriHomeDir || !tauriMkdir || !tauriExists) return;
-        homePath = await tauriHomeDir();
-      }
+      if (!window.electronAPI) return;
 
+      const homePath = await window.electronAPI.getHomeDir();
       const userDir = `${homePath}/.noornote/${user.npub}`;
 
-      if (platform.isElectron) {
-        if (!(await electronExists(userDir))) {
-          await electronMkdir(userDir);
-        }
-      } else {
-        if (!(await tauriExists!(userDir))) {
-          await tauriMkdir!(userDir, { recursive: true });
-        }
+      if (!(await window.electronAPI.fsExists(userDir))) {
+        await window.electronAPI.fsMkdir(userDir);
       }
 
       this.filePath = `${userDir}/${LOG_FILE_NAME}`;
@@ -126,9 +82,7 @@ export class MutualCheckDebugLog {
     await this.initialize();
 
     if (!this.filePath) return;
-
-    // Verify filesystem APIs are available
-    if (!platform.isElectron && (!tauriReadTextFile || !tauriWriteTextFile)) return;
+    if (!window.electronAPI) return;
 
     const entry: DebugLogEntry = {
       timestamp: new Date().toISOString(),
@@ -140,9 +94,7 @@ export class MutualCheckDebugLog {
     try {
       let logs: DebugLogEntry[] = [];
       try {
-        const content = platform.isElectron
-          ? await electronReadTextFile(this.filePath)
-          : await tauriReadTextFile!(this.filePath);
+        const content = await window.electronAPI!.readTextFile(this.filePath);
         logs = JSON.parse(content);
       } catch {
         logs = [];
@@ -154,11 +106,7 @@ export class MutualCheckDebugLog {
         logs = logs.slice(-MAX_LOG_ENTRIES);
       }
 
-      if (platform.isElectron) {
-        await electronWriteTextFile(this.filePath, JSON.stringify(logs, null, 2));
-      } else {
-        await tauriWriteTextFile!(this.filePath, JSON.stringify(logs, null, 2));
-      }
+      await window.electronAPI!.writeTextFile(this.filePath, JSON.stringify(logs, null, 2));
     } catch (error) {
       this.systemLogger.error('MutualCheckDebugLog', `Write failed: ${error}`);
     }
@@ -305,12 +253,10 @@ export class MutualCheckDebugLog {
   public async readLogs(): Promise<DebugLogEntry[]> {
     await this.initialize();
     if (!this.filePath) return [];
-    if (!platform.isElectron && !tauriReadTextFile) return [];
+    if (!window.electronAPI) return [];
 
     try {
-      const content = platform.isElectron
-        ? await electronReadTextFile(this.filePath)
-        : await tauriReadTextFile!(this.filePath);
+      const content = await window.electronAPI.readTextFile(this.filePath);
       return JSON.parse(content);
     } catch {
       return [];
@@ -324,14 +270,10 @@ export class MutualCheckDebugLog {
   public async clearLogs(): Promise<void> {
     await this.initialize();
     if (!this.filePath) return;
-    if (!platform.isElectron && !tauriWriteTextFile) return;
+    if (!window.electronAPI) return;
 
     try {
-      if (platform.isElectron) {
-        await electronWriteTextFile(this.filePath, JSON.stringify([], null, 2));
-      } else {
-        await tauriWriteTextFile!(this.filePath, JSON.stringify([], null, 2));
-      }
+      await window.electronAPI.writeTextFile(this.filePath, JSON.stringify([], null, 2));
       this.systemLogger.info('MutualCheckDebugLog', 'Logs cleared');
     } catch (error) {
       this.systemLogger.error('MutualCheckDebugLog', `Clear failed: ${error}`);

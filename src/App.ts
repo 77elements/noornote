@@ -148,7 +148,7 @@ export class App {
     return '/';
   }
 
-  private async setInitialFocus(): Promise<void> {
+  private setInitialFocus(): void {
     const platform = PlatformService.getInstance();
     if (platform.isElectron) {
       // Electron: focus via DOM (window focus is handled by Electron shell)
@@ -156,16 +156,9 @@ export class App {
       return;
     }
 
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      const window = getCurrentWindow();
-      await window.setFocus();
-    } catch {
-      setTimeout(() => {
-        document.body.focus();
-        document.body.tabIndex = -1;
-      }, 100);
-    }
+    // Web/Capacitor: focus body element
+    document.body.focus();
+    document.body.tabIndex = -1;
   }
 
   private async checkForUpdates(): Promise<void> {
@@ -360,7 +353,7 @@ export class App {
 
   private async setupDeepLinkHandler(): Promise<void> {
     const platform = PlatformService.getInstance();
-    if (!platform.isTauri && !platform.isElectron) return;
+    if (!platform.isElectron) return;
 
     const handleDeepLink = (url: string) => {
       try {
@@ -396,15 +389,7 @@ export class App {
     };
 
     try {
-      if (platform.isElectron) {
-        window.electronAPI!.onDeepLink((url) => handleDeepLink(url));
-      } else {
-        const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
-        await onOpenUrl((urls) => {
-          const url = urls[0];
-          if (url) handleDeepLink(url);
-        });
-      }
+      window.electronAPI!.onDeepLink((url) => handleDeepLink(url));
     } catch {
       // Deep link handler setup failed - expected in non-desktop environments
     }
@@ -446,24 +431,11 @@ export class App {
     };
 
     try {
-      if (platform.isElectron) {
-        window.electronAPI!.onCloseRequested(async () => {
-          await handleCloseRequest(async () => {
-            // Electron: closing proceeds after callback returns
-          });
+      window.electronAPI!.onCloseRequested(async () => {
+        await handleCloseRequest(async () => {
+          // Electron: closing proceeds after callback returns
         });
-      } else {
-        const { getCurrentWindow } = await import('@tauri-apps/api/window');
-        const appWindow = getCurrentWindow();
-
-        await appWindow.onCloseRequested(async (event) => {
-          const authMethod = this.authService.getAuthMethod();
-          if (authMethod !== 'key-signer') return;
-
-          event.preventDefault();
-          await handleCloseRequest(async () => appWindow.close());
-        });
-      }
+      });
     } catch {
       // Close handler setup failed - expected in non-desktop environments
     }
@@ -502,9 +474,6 @@ export class App {
         const _platform = PlatformService.getInstance();
         if (_platform.isElectron) {
           await window.electronAPI!.openExternal(href);
-        } else if (_platform.isTauri && !_platform.isAndroid) {
-          const { open } = await import('@tauri-apps/plugin-shell');
-          await open(href);
         } else {
           window.open(href, '_blank', 'noopener,noreferrer');
         }

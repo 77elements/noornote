@@ -7,8 +7,8 @@
  * - ExtensionSignerManager  (NIP-07 browser extension, web only)
  * - BunkerSignerManager     (NIP-46 bunker:// URI)
  * - NostrConnectSignerManager (NIP-46 nostrconnect:// QR)
- * - KeySignerConnectionManager (NoorSigner daemon, Tauri only)
- * - AmberSignerManager      (NIP-55 Android signer, Tauri Android only)
+ * - KeySignerConnectionManager (NoorSigner daemon, Desktop only)
+ * - AmberSignerManager      (NIP-55 Android signer, Android only)
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -231,7 +231,7 @@ export class AuthService {
     needsPassword?: boolean; needsImport?: boolean;
   }> {
     if (!this.keySignerManager) {
-      return { success: false, error: 'KeySigner is only available in Tauri desktop app' };
+      return { success: false, error: 'KeySigner is only available in desktop app' };
     }
 
     try {

@@ -1,7 +1,7 @@
 /**
  * MoveDropdown Component
  * Reusable "Move to..." button + dropdown for moving items between folders/zones.
- * Browser-only (not shown in Tauri where mouse drag works).
+ * Browser-only (not shown in desktop app where mouse drag works).
  */
 
 import { PlatformService } from '../../services/PlatformService';

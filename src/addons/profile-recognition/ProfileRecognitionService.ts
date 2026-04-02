@@ -11,7 +11,7 @@
  *
  * Architecture:
  * - Working storage: PerAccountLocalStorage (fast, synchronous)
- * - Persistent storage: ProfileEncounterFileStorage (Tauri file)
+ * - Persistent storage: ProfileEncounterFileStorage (Desktop file)
  * - Relay storage: ProfileRecognitionOrchestrator (NIP-78)
  */
 
@@ -345,7 +345,7 @@ export class ProfileRecognitionService {
   }
 
   /**
-   * Save encounters to Tauri file (desktop only)
+   * Save encounters to file (desktop only)
    */
   private async saveToFile(): Promise<void> {
     if (!PlatformService.getInstance().isDesktop) return;

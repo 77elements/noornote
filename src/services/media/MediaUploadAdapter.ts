@@ -2,7 +2,7 @@
  * MediaUploadAdapter - Interface for platform-specific upload implementations
  *
  * Mac/Linux: Uses XMLHttpRequest (works fine)
- * Windows: Uses Tauri HTTP Plugin (bypasses WebView2 CORS issues)
+ * Windows: Uses Electron HTTP (bypasses WebView CORS issues)
  */
 
 export interface UploadOptions {

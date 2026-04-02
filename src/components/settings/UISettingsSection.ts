@@ -220,12 +220,12 @@ export class UISettingsSection extends SettingsSection {
       this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
     }
 
-    // Initialize Auto-Update switch (Tauri only)
+    // Initialize Auto-Update switch (Desktop only)
     this.bindUpdateSettings(contentContainer);
   }
 
   /**
-   * Bind update settings (Tauri desktop only)
+   * Bind update settings (Desktop only)
    */
   private bindUpdateSettings(contentContainer: HTMLElement): void {
     const autoUpdateContainer = contentContainer.querySelector('#auto-update-switch-container');

@@ -19,10 +19,6 @@
     "test:coverage": "vitest --coverage",
     "electron:dev": "ELECTRON_DEV_MODE=wide electron .",
     "electron:build": "electron-builder",
-    "tauri": "tauri",
-    "tauri:dev": "TAURI_DEV_MODE=wide tauri dev --features devtools",
-    "tauri:dev:clean": "TAURI_DEV_MODE=clean tauri dev --features devtools",
-    "tauri:build": "tauri build",
     "build:static-css": "sass src/styles/static-pages.scss public/static.css --style=compressed --no-source-map",
     "render-banners": "node marketing/banners/generate-pngs.js",
     "prepare": "husky"
@@ -46,7 +42,6 @@
     "url": "https://github.com/77elements/noornote/issues"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.10.0",
     "@types/dompurify": "^3.2.0",
     "@types/node": "^20.8.0",
     "@types/qrcode": "^1.5.6",
@@ -78,12 +73,6 @@
     "@capacitor/filesystem": "8.1.2",
     "@nostr-dev-kit/ndk": "^3.0.3",
     "@nostr-dev-kit/ndk-cache-dexie": "file:vendor/ndk-cache-dexie",
-    "@tauri-apps/plugin-deep-link": "^2.4.5",
-    "@tauri-apps/plugin-dialog": "^2.4.0",
-    "@tauri-apps/plugin-fs": "^2.4.2",
-    "@tauri-apps/plugin-http": "^2.5.2",
-    "@tauri-apps/plugin-log": "^2.7.1",
-    "@tauri-apps/plugin-shell": "^2.3.3",
     "bech32": "^2.0.0",
     "dataloader": "^2.2.2",
     "dayjs": "^1.11.19",
@@ -92,8 +81,7 @@
     "fflate": "^0.8.2",
     "marked": "^16.4.0",
     "nostr-signer-capacitor-plugin": "^0.0.5",
-    "qrcode": "^1.5.4",
-    "tauri-plugin-keyring-api": "^0.1.1"
+    "qrcode": "^1.5.4"
   },
   "engines": {
     "node": ">=18.0.0"
