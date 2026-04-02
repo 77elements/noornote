@@ -35,6 +35,15 @@
         </provider>
     </application>
 
+    <!-- Package visibility: required for Android 11+ to discover Amber (NIP-55) -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <category android:name="android.intent.category.BROWSABLE" />
+            <data android:scheme="nostrsigner" />
+        </intent>
+    </queries>
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />

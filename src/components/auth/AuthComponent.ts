@@ -437,8 +437,24 @@ export class AuthComponent {
     amberBtn.disabled = true;
     amberBtn.textContent = 'Opening Amber...';
 
+    // Debug output below button (temporary)
+    let debugEl = amberBtn.parentElement?.querySelector('.amber-debug') as HTMLElement;
+    if (!debugEl) {
+      debugEl = document.createElement('pre');
+      debugEl.className = 'amber-debug';
+      debugEl.style.cssText = 'font-size:11px;color:#0f0;background:#111;padding:8px;margin-top:8px;max-height:200px;overflow:auto;text-align:left;white-space:pre-wrap;';
+      amberBtn.parentElement?.appendChild(debugEl);
+    }
+    const log = (msg: string) => { debugEl.textContent += msg + '\n'; };
+
     try {
+      const { PlatformService } = await import('../../services/PlatformService');
+      const p = PlatformService.getInstance();
+      log(`platform: isCapacitor=${p.isCapacitor} isTauri=${p.isTauri} isAndroid=${p.isAndroid} supportsAmber=${p.supportsAmber}`);
+
+      log('calling authenticateWithAmber...');
       const result = await this.authService.authenticateWithAmber();
+      log(`result: ${JSON.stringify(result)}`);
 
       if (result.success && result.npub && result.pubkey) {
         this.handleLoginSuccess(result.npub, result.pubkey, 'Amber');
@@ -448,6 +464,7 @@ export class AuthComponent {
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
+      log(`ERROR: ${msg}`);
       console.error('Amber login error:', msg);
       this.showError(`Amber error: ${msg}`);
       this.resetButton(amberBtn, originalText);
