@@ -1416,8 +1416,15 @@ export async function saveBookmarksToFile(): Promise<void> {
  * Publish bookmarks to relays (NIP-51)
  */
 export async function publishBookmarksToRelays(): Promise<void> {
+  diagLog('lists', 'publishBookmarksToRelays: START');
   const { pubkey } = requireAuth();
-  if (getWriteRelays().length === 0) throw new Error('No write relays available');
+  diagLog('lists', 'publishBookmarksToRelays: auth ok', { pubkey: pubkey.slice(0, 8) });
+  const writeRelays = getWriteRelays();
+  if (writeRelays.length === 0) {
+    diagLog('lists', 'publishBookmarksToRelays: FAILED — no write relays');
+    throw new Error('No write relays available');
+  }
+  diagLog('lists', 'publishBookmarksToRelays: write relays', { count: writeRelays.length });
 
   const setData = buildSetDataFromLocalStorage();
   diagLog('lists', 'publishBookmarksToRelays: full setData', { setOrder: setData.metadata.setOrder, sets: setData.sets.map(s => ({ d: s.d, publicTags: s.publicTags, privateTags: s.privateTags })) });
@@ -1452,13 +1459,28 @@ export async function publishBookmarksToRelays(): Promise<void> {
       diagLog('lists', 'publishBookmarksToRelays: encrypted content', { length: content.length });
     }
 
-    const signed = await signEvent({ kind: 30003, created_at: now(), tags, content, pubkey });
+    diagLog('lists', 'publishBookmarksToRelays: signing event', { category: set.d, tagCount: tags.length, hasContent: content.length > 0 });
+    let signed;
+    try {
+      signed = await signEvent({ kind: 30003, created_at: now(), tags, content, pubkey });
+    } catch (signError) {
+      diagLog('lists', 'publishBookmarksToRelays: signEvent THREW', { category: set.d, error: String(signError) });
+      logger.error('bookmarks.ts', `Sign event threw for category: ${set.d}: ${signError}`);
+      continue;
+    }
     if (!signed) {
+      diagLog('lists', 'publishBookmarksToRelays: signEvent returned null', { category: set.d });
       logger.error('bookmarks.ts', `Failed to sign event for category: ${set.d}`);
       continue;
     }
 
-    await publishEvent(signed);
+    diagLog('lists', 'publishBookmarksToRelays: publishing signed event', { category: set.d, eventId: signed.id?.slice(0, 8) });
+    try {
+      await publishEvent(signed);
+    } catch (pubError) {
+      diagLog('lists', 'publishBookmarksToRelays: publishEvent THREW', { category: set.d, error: String(pubError) });
+      throw pubError;
+    }
     totalPublished++;
     logger.info('bookmarks.ts', `Published category "${set.d || 'root'}": ${set.publicTags.length} public + ${set.privateTags.length} private`);
   }
@@ -3629,10 +3651,14 @@ export class BookmarkManager {
 
   private async handleSyncToRelays(): Promise<void> {
     try {
+      diagLog('lists', 'handleSyncToRelays: button pressed');
       ToastService.show('Publishing to relays...', 'info');
       await this.syncToRelays();
+      diagLog('lists', 'handleSyncToRelays: success');
       ToastService.show('Bookmarks published successfully', 'success');
     } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      diagLog('lists', 'handleSyncToRelays: FAILED', { error: msg, stack: error instanceof Error ? error.stack : undefined });
       console.error('Failed to publish to relays:', error);
       ToastService.show('Failed to publish to relays', 'error');
     }

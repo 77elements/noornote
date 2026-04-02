@@ -14,34 +14,54 @@ import { SystemLogger } from '../components/system/SystemLogger';
 const logger = SystemLogger.getInstance();
 const platform = PlatformService.getInstance();
 
-// ── Platform FS wrappers (Electron only) ──
+// ── Platform FS wrappers ──
+let _capFsMod: typeof import('@capacitor/filesystem') | null = null;
+async function getCapFs() {
+  if (!_capFsMod) _capFsMod = await import('@capacitor/filesystem');
+  return _capFsMod;
+}
 
 async function platformReadFile(filePath: string): Promise<Uint8Array> {
   if (platform.isElectron) {
     const buf = await window.electronAPI!.readFile(filePath);
     return new Uint8Array(buf);
   }
-  throw new Error('Platform API not available for readFile');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory } = await getCapFs();
+    const result = await Filesystem.readFile({ path: filePath, directory: Directory.Data });
+    const binary = atob(result.data as string);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+  throw new Error('platformReadFile: not available');
 }
 
 async function platformReadDir(dirPath: string): Promise<Array<{ name: string; isFile: boolean }>> {
   if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
-  throw new Error('Platform API not available for readDir');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory } = await getCapFs();
+    const result = await Filesystem.readdir({ path: dirPath, directory: Directory.Data });
+    return result.files.map(f => ({ name: f.name, isFile: f.type === 'file' }));
+  }
+  throw new Error('platformReadDir: not available');
 }
 
 async function platformExists(path: string): Promise<boolean> {
   if (platform.isElectron) return window.electronAPI!.fsExists(path);
-  throw new Error('Platform API not available for exists');
+  if (platform.isCapacitor) {
+    try {
+      const { Filesystem, Directory } = await getCapFs();
+      await Filesystem.stat({ path, directory: Directory.Data });
+      return true;
+    } catch { return false; }
+  }
+  return false;
 }
 
 async function platformHomeDir(): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.getHomeDir();
-  throw new Error('Platform API not available for homeDir');
-}
-
-async function platformAppDataDir(): Promise<string> {
-  if (platform.isElectron) return window.electronAPI!.getAppDataDir();
-  throw new Error('Platform API not available for appDataDir');
+  throw new Error('platformHomeDir: not available');
 }
 
 async function platformSaveFileDialog(filename: string): Promise<string | null> {
@@ -51,12 +71,12 @@ async function platformSaveFileDialog(filename: string): Promise<string | null> 
       filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
     });
   }
-  throw new Error('Platform API not available for saveFileDialog');
+  throw new Error('platformSaveFileDialog: not available');
 }
 
 async function platformWriteFile(filePath: string, data: Uint8Array): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeFile(filePath, data);
-  throw new Error('Platform API not available for writeFile');
+  throw new Error('platformWriteFile: not available');
 }
 
 /**
@@ -138,9 +158,8 @@ async function collectLogFiles(): Promise<{ files: Record<string, Uint8Array>; d
 }
 
 async function getLogsDir(): Promise<string | null> {
-  if (platform.isAndroid) {
-    const base = (await platformAppDataDir()).replace(/\/+$/, '');
-    return `${base}/logs`;
+  if (platform.isCapacitor) {
+    return 'logs'; // Relative to Directory.Data
   }
 
   const { AuthService } = await import('./AuthService');

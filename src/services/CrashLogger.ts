@@ -35,7 +35,7 @@ class CrashLoggerService {
   public async init(): Promise<void> {
     if (this.initialized) return;
     const _p = PlatformService.getInstance();
-    if (!_p.isDesktop) return;
+    if (!_p.isDesktop && !_p.isCapacitor) return;
 
     try {
       this.systemLogger = SystemLogger.getInstance();

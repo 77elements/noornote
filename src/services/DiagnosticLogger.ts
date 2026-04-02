@@ -72,36 +72,46 @@ function supportsFileLogs(): boolean {
   return platform.isDesktop || platform.isCapacitor;
 }
 
-// ===== Platform-agnostic FS wrappers (Electron only for desktop) =====
+// ===== Platform FS wrappers =====
+// Capacitor: single lazy-loaded import, all ops use Directory.Data
+let _capFsMod: typeof import('@capacitor/filesystem') | null = null;
+async function getCapFs() {
+  if (!_capFsMod) _capFsMod = await import('@capacitor/filesystem');
+  return _capFsMod;
+}
 
 async function platformHomeDir(): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.getHomeDir();
-  throw new Error('Platform API not available for homeDir');
-}
-
-async function platformAppDataDir(): Promise<string> {
-  if (platform.isElectron) return window.electronAPI!.getAppDataDir();
-  throw new Error('Platform API not available for appDataDir');
-}
-
-async function platformExists(filePath: string): Promise<boolean> {
-  if (platform.isElectron) return window.electronAPI!.fsExists(filePath);
-  throw new Error('Platform API not available for exists');
+  throw new Error('platformHomeDir: not available');
 }
 
 async function platformMkdir(dirPath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsMkdir(dirPath);
-  throw new Error('Platform API not available for mkdir');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory } = await getCapFs();
+    await Filesystem.mkdir({ path: dirPath, directory: Directory.Data, recursive: true });
+    return;
+  }
 }
 
 async function platformReadDir(dirPath: string): Promise<Array<{ name: string; isFile: boolean }>> {
   if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
-  throw new Error('Platform API not available for readDir');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory } = await getCapFs();
+    const result = await Filesystem.readdir({ path: dirPath, directory: Directory.Data });
+    return result.files.map(f => ({ name: f.name, isFile: f.type === 'file' }));
+  }
+  throw new Error('platformReadDir: not available');
 }
 
 async function platformReadTextFile(filePath: string): Promise<string> {
   if (platform.isElectron) return window.electronAPI!.readTextFile(filePath);
-  throw new Error('Platform API not available for readTextFile');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory, Encoding } = await getCapFs();
+    const result = await Filesystem.readFile({ path: filePath, directory: Directory.Data, encoding: Encoding.UTF8 });
+    return result.data as string;
+  }
+  throw new Error('platformReadTextFile: not available');
 }
 
 async function platformReadFile(filePath: string): Promise<Uint8Array> {
@@ -109,32 +119,68 @@ async function platformReadFile(filePath: string): Promise<Uint8Array> {
     const buf = await window.electronAPI!.readFile(filePath);
     return new Uint8Array(buf);
   }
-  throw new Error('Platform API not available for readFile');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory } = await getCapFs();
+    const result = await Filesystem.readFile({ path: filePath, directory: Directory.Data });
+    const binary = atob(result.data as string);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return bytes;
+  }
+  throw new Error('platformReadFile: not available');
 }
 
 async function platformWriteFile(filePath: string, data: Uint8Array): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeFile(filePath, data);
-  throw new Error('Platform API not available for writeFile');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory } = await getCapFs();
+    let binary = '';
+    for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]!);
+    await Filesystem.writeFile({ path: filePath, data: btoa(binary), directory: Directory.Data, recursive: true });
+    return;
+  }
 }
 
 async function platformAppendFile(filePath: string, contents: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsAppendFile(filePath, contents);
-  throw new Error('Platform API not available for appendFile');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory, Encoding } = await getCapFs();
+    // appendFile doesn't support recursive, so ensure parent dir exists
+    try {
+      await Filesystem.appendFile({ path: filePath, data: contents, directory: Directory.Data, encoding: Encoding.UTF8 });
+    } catch {
+      // File might not exist yet — create with writeFile then append won't fail next time
+      await Filesystem.writeFile({ path: filePath, data: contents, directory: Directory.Data, encoding: Encoding.UTF8, recursive: true });
+    }
+    return;
+  }
 }
 
 async function platformTruncateFile(filePath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.writeTextFile(filePath, '');
-  throw new Error('Platform API not available for truncateFile');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory, Encoding } = await getCapFs();
+    await Filesystem.writeFile({ path: filePath, data: '', directory: Directory.Data, encoding: Encoding.UTF8, recursive: true });
+    return;
+  }
 }
 
 async function platformRename(oldPath: string, newPath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsRename(oldPath, newPath);
-  throw new Error('Platform API not available for rename');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory } = await getCapFs();
+    await Filesystem.rename({ from: oldPath, to: newPath, directory: Directory.Data, toDirectory: Directory.Data });
+    return;
+  }
 }
 
 async function platformRemove(filePath: string): Promise<void> {
   if (platform.isElectron) return window.electronAPI!.fsRemove(filePath);
-  throw new Error('Platform API not available for remove');
+  if (platform.isCapacitor) {
+    const { Filesystem, Directory } = await getCapFs();
+    await Filesystem.deleteFile({ path: filePath, directory: Directory.Data });
+    return;
+  }
 }
 
 // ===== Service =====
@@ -178,7 +224,7 @@ export class DiagnosticLogger {
   /** Diagnostic status for export UI */
   getStatus() {
     const bufferSize = Array.from(this.buffers.values()).reduce((sum, b) => sum + b.length, 0);
-    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: platform.isElectron, bufferSize };
+    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: platform.isElectron || platform.isCapacitor, bufferSize };
   }
 
   // ===== Initialization =====
@@ -193,20 +239,21 @@ export class DiagnosticLogger {
 
     try {
       // Desktop: ~/.noornote/{npub}/logs/
-      // Android: {appDataDir}/logs/ (no npub nesting — single user on mobile)
-      if (platform.isAndroid) {
-        const basePath = (await platformAppDataDir()).replace(/\/+$/, '');
-        this.logsDir = `${basePath}/logs`;
+      // Android (Capacitor): logs/ relative to Directory.Data
+      if (platform.isCapacitor) {
+        this.logsDir = 'logs';
       } else {
         const homePath = await platformHomeDir();
         this.logsDir = `${homePath}/.noornote/${npub}/logs`;
       }
 
-      // Ensure directories exist
+      // Ensure directories exist (mkdir recursive is idempotent)
       for (const sub of ['', '/week', '/archive']) {
         const dir = `${this.logsDir}${sub}`;
-        if (!(await platformExists(dir))) {
+        try {
           await platformMkdir(dir);
+        } catch {
+          // Directory may already exist — that's fine
         }
       }
 

@@ -120,7 +120,7 @@ export class SettingsView extends View {
           false
         ) : ''}
 
-        ${PlatformService.getInstance().isDesktop ? `
+        ${(PlatformService.getInstance().isDesktop || PlatformService.getInstance().isCapacitor) ? `
         <section class="settings-section diagnostic-export-section" style="text-align: center;">
           <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
             Export Logs
@@ -158,7 +158,7 @@ export class SettingsView extends View {
         const status = DiagnosticLogger.getInstance().getStatus();
         const { ToastService } = await import('../../services/ToastService');
 
-        if (!status.initialized) {
+        if (!status.initialized && !PlatformService.getInstance().isCapacitor) {
           const reason = status.error || 'Logger not initialized';
           ToastService.show(`DiagLog: ${reason}`, 'error', 8000);
           return;
