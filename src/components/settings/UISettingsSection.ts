@@ -47,7 +47,7 @@ export class UISettingsSection extends SettingsSection {
    */
   private renderContent(): string {
     const platform = PlatformService.getInstance();
-    const isDesktop = platform.isTauri && !platform.isAndroid;
+    const isDesktop = platform.isDesktop;
 
     return `
         <h3 class="subsection-title">Calendar System</h3>

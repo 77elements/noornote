@@ -49,7 +49,7 @@ export class UpdateCheckService {
    */
   public async checkOnStartup(): Promise<void> {
     const platform = PlatformService.getInstance();
-    if (!platform.isTauri || platform.isAndroid) return;
+    if (!platform.isDesktop) return;
     if (!this.isAutoCheckEnabled()) return;
 
     const lastCheck = Number(localStorage.getItem(STORAGE_KEYS.LAST_CHECK) || '0');

@@ -189,8 +189,13 @@ export class ImportToNoorSignerModal {
 
           // Start daemon silently after adding account
           try {
-            const { invoke } = await import('@tauri-apps/api/core');
-            await invoke('launch_daemon_silent');
+            const _p = (await import('../../services/PlatformService')).PlatformService.getInstance();
+            if (_p.isElectron) {
+              await window.electronAPI!.launchDaemonSilent();
+            } else {
+              const { invoke } = await import('@tauri-apps/api/core');
+              await invoke('launch_daemon_silent');
+            }
           } catch (daemonError) {
             console.error('Failed to start daemon:', daemonError);
           }

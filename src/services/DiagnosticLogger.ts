@@ -18,7 +18,7 @@
  *   2. Week files older than 7 days → compress to archive/
  *   3. Archive files older than 60 days → delete
  *
- * - Tauri only (Web: no-op)
+ * - Desktop only: Electron or Tauri (Web: no-op)
  * - Uses atomic append (open + write, no read-modify-write)
  * - Crash entries flush ALL areas immediately
  */
@@ -79,6 +79,91 @@ async function ensureFs(): Promise<typeof import('@tauri-apps/plugin-fs')> {
   return fs;
 }
 
+/** Whether this platform supports file-based diagnostic logging */
+function supportsFileLogs(): boolean {
+  return platform.isDesktop || (platform.isTauri && platform.isAndroid);
+}
+
+// ===== Platform-agnostic FS wrappers =====
+
+async function platformHomeDir(): Promise<string> {
+  if (platform.isElectron) return window.electronAPI!.getHomeDir();
+  const { homeDir } = await import('@tauri-apps/api/path');
+  return homeDir();
+}
+
+async function platformAppDataDir(): Promise<string> {
+  if (platform.isElectron) return window.electronAPI!.getAppDataDir();
+  const { appDataDir } = await import('@tauri-apps/api/path');
+  return appDataDir();
+}
+
+async function platformExists(filePath: string): Promise<boolean> {
+  if (platform.isElectron) return window.electronAPI!.fsExists(filePath);
+  const fsMod = await ensureFs();
+  return fsMod.exists(filePath);
+}
+
+async function platformMkdir(dirPath: string): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.fsMkdir(dirPath);
+  const fsMod = await ensureFs();
+  return fsMod.mkdir(dirPath, { recursive: true });
+}
+
+async function platformReadDir(dirPath: string): Promise<Array<{ name: string; isFile: boolean }>> {
+  if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
+  const fsMod = await ensureFs();
+  return fsMod.readDir(dirPath);
+}
+
+async function platformReadTextFile(filePath: string): Promise<string> {
+  if (platform.isElectron) return window.electronAPI!.readTextFile(filePath);
+  const fsMod = await ensureFs();
+  return fsMod.readTextFile(filePath);
+}
+
+async function platformReadFile(filePath: string): Promise<Uint8Array> {
+  if (platform.isElectron) {
+    const buf = await window.electronAPI!.readFile(filePath);
+    return new Uint8Array(buf);
+  }
+  const fsMod = await ensureFs();
+  return fsMod.readFile(filePath);
+}
+
+async function platformWriteFile(filePath: string, data: Uint8Array): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.writeFile(filePath, data);
+  const fsMod = await ensureFs();
+  return fsMod.writeFile(filePath, data);
+}
+
+async function platformAppendFile(filePath: string, contents: string): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.fsAppendFile(filePath, contents);
+  const fsMod = await ensureFs();
+  const file = await fsMod.open(filePath, { append: true, create: true });
+  await file.write(new TextEncoder().encode(contents));
+  await file.close();
+}
+
+async function platformTruncateFile(filePath: string): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.writeTextFile(filePath, '');
+  const fsMod = await ensureFs();
+  const file = await fsMod.open(filePath, { write: true, create: true, truncate: true });
+  await file.close();
+}
+
+async function platformRename(oldPath: string, newPath: string): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.fsRename(oldPath, newPath);
+  const fsMod = await ensureFs();
+  return fsMod.rename(oldPath, newPath);
+}
+
+async function platformRemove(filePath: string): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.fsRemove(filePath);
+  const fsMod = await ensureFs();
+  return fsMod.remove(filePath);
+}
+
 // ===== Service =====
 
 export class DiagnosticLogger {
@@ -98,7 +183,7 @@ export class DiagnosticLogger {
   private rotationTimer: ReturnType<typeof setInterval> | null = null;
 
   private constructor() {
-    if (platform.isTauri) {
+    if (supportsFileLogs()) {
       this.flushTimer = setInterval(() => {
         // Auto-init: if not initialized yet, try with current user
         if (!this.initialized && !this.initializing) {
@@ -120,13 +205,13 @@ export class DiagnosticLogger {
   /** Diagnostic status for export UI */
   getStatus() {
     const bufferSize = Array.from(this.buffers.values()).reduce((sum, b) => sum + b.length, 0);
-    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: fs !== null, bufferSize };
+    return { initialized: this.initialized, logsDir: this.logsDir, error: this.initError, flushErrors: this.flushErrors, lastFlushError: this.lastFlushError, hasFs: fs !== null || platform.isElectron, bufferSize };
   }
 
   // ===== Initialization =====
 
   async init(npub?: string): Promise<void> {
-    if (this.initialized || this.initializing || !platform.isTauri) return;
+    if (this.initialized || this.initializing || !supportsFileLogs()) return;
 
     // Desktop requires npub for path; Android doesn't
     if (!platform.isAndroid && !npub) return;
@@ -134,25 +219,21 @@ export class DiagnosticLogger {
     this.initializing = true;
 
     try {
-      const fsMod = await ensureFs();
-
       // Desktop: ~/.noornote/{npub}/logs/
       // Android: {appDataDir}/logs/ (no npub nesting — single user on mobile)
       if (platform.isAndroid) {
-        const { appDataDir } = await import('@tauri-apps/api/path');
-        const basePath = (await appDataDir()).replace(/\/+$/, '');
+        const basePath = (await platformAppDataDir()).replace(/\/+$/, '');
         this.logsDir = `${basePath}/logs`;
       } else {
-        const { homeDir } = await import('@tauri-apps/api/path');
-        const homePath = await homeDir();
+        const homePath = await platformHomeDir();
         this.logsDir = `${homePath}/.noornote/${npub}/logs`;
       }
 
       // Ensure directories exist
       for (const sub of ['', '/week', '/archive']) {
         const dir = `${this.logsDir}${sub}`;
-        if (!(await fsMod.exists(dir))) {
-          await fsMod.mkdir(dir, { recursive: true });
+        if (!(await platformExists(dir))) {
+          await platformMkdir(dir);
         }
       }
 
@@ -182,7 +263,7 @@ export class DiagnosticLogger {
   private logging = false;
 
   log(area: DiagArea, msg: string, data?: unknown): void {
-    if (!platform.isTauri || this.logging) return;
+    if (!supportsFileLogs() || this.logging) return;
     this.logging = true;
     try {
       this._log(area, msg, data);
@@ -229,16 +310,14 @@ export class DiagnosticLogger {
   private async flush(area: DiagArea): Promise<void> {
     const buffer = this.buffers.get(area);
     if (!buffer || buffer.length === 0) return;
-    if (!this.initialized || !this.logsDir || !fs) return;
+    if (!this.initialized || !this.logsDir) return;
 
     const lines = buffer.splice(0, buffer.length);
     const filePath = `${this.logsDir}/${this.currentFilename(area)}`;
     const payload = lines.join('\n') + '\n';
 
     try {
-      const file = await fs.open(filePath, { append: true, create: true });
-      await file.write(new TextEncoder().encode(payload));
-      await file.close();
+      await platformAppendFile(filePath, payload);
     } catch (error) {
       this.flushErrors++;
       this.lastFlushError = String(error);
@@ -272,19 +351,19 @@ export class DiagnosticLogger {
    * 3. Archive files older than 60 days → delete
    */
   private async rotate(): Promise<void> {
-    if (!this.initialized || !this.logsDir || !fs) return;
+    if (!this.initialized || !this.logsDir) return;
 
     const today = todayDate();
 
     try {
       // 1. Root → week/ (files older than today)
-      const rootEntries = await fs.readDir(this.logsDir);
+      const rootEntries = await platformReadDir(this.logsDir);
       for (const entry of rootEntries) {
         if (!entry.isFile || !entry.name.endsWith('.jsonl')) continue;
         const fileDate = parseDateFromFilename(entry.name);
         if (!fileDate || fileDate === today) continue;
 
-        await fs.rename(
+        await platformRename(
           `${this.logsDir}/${entry.name}`,
           `${this.logsDir}/week/${entry.name}`
         );
@@ -292,7 +371,7 @@ export class DiagnosticLogger {
 
       // 2. week/ → archive/ (files older than 7 days, compress)
       const weekDir = `${this.logsDir}/week`;
-      const weekEntries = await fs.readDir(weekDir);
+      const weekEntries = await platformReadDir(weekDir);
       for (const entry of weekEntries) {
         if (!entry.isFile || !entry.name.endsWith('.jsonl')) continue;
         const fileDate = parseDateFromFilename(entry.name);
@@ -304,13 +383,13 @@ export class DiagnosticLogger {
             `${weekDir}/${entry.name}`,
             `${this.logsDir}/archive/${entry.name}.gz`
           );
-          await fs.remove(`${weekDir}/${entry.name}`);
+          await platformRemove(`${weekDir}/${entry.name}`);
         }
       }
 
       // 3. archive/ cleanup (files older than 60 days)
       const archiveDir = `${this.logsDir}/archive`;
-      const archiveEntries = await fs.readDir(archiveDir);
+      const archiveEntries = await platformReadDir(archiveDir);
       for (const entry of archiveEntries) {
         if (!entry.isFile) continue;
         const fileDate = parseDateFromFilename(entry.name);
@@ -318,7 +397,7 @@ export class DiagnosticLogger {
 
         const age = daysBetween(fileDate, today);
         if (age > ARCHIVE_RETENTION_DAYS) {
-          await fs.remove(`${archiveDir}/${entry.name}`);
+          await platformRemove(`${archiveDir}/${entry.name}`);
         }
       }
     } catch {
@@ -330,10 +409,8 @@ export class DiagnosticLogger {
    * Compress a JSONL file to gzip using CompressionStream API
    */
   private async compressToArchive(srcPath: string, destPath: string): Promise<void> {
-    if (!fs) return;
-
-    const rawData = await fs.readFile(srcPath);
-    const inputStream = new Blob([rawData]).stream();
+    const rawData = await platformReadFile(srcPath);
+    const inputStream = new Blob([rawData as BlobPart]).stream();
     const compressedStream = inputStream.pipeThrough(new CompressionStream('gzip'));
 
     const reader = compressedStream.getReader();
@@ -353,17 +430,17 @@ export class DiagnosticLogger {
       offset += chunk.length;
     }
 
-    await fs.writeFile(destPath, compressed);
+    await platformWriteFile(destPath, compressed);
   }
 
   /**
    * Migrate legacy non-dated files (one-time, e.g. lists.jsonl → lists-{date}.jsonl)
    */
   private async migrateLegacyFiles(): Promise<void> {
-    if (!this.logsDir || !fs) return;
+    if (!this.logsDir) return;
 
     try {
-      const entries = await fs.readDir(this.logsDir);
+      const entries = await platformReadDir(this.logsDir);
       const today = todayDate();
 
       for (const entry of entries) {
@@ -375,7 +452,7 @@ export class DiagnosticLogger {
         if (!['lists', 'dms', 'crashes', 'relays'].includes(area)) continue;
 
         const newName = `${area}-${today}.jsonl`;
-        await fs.rename(
+        await platformRename(
           `${this.logsDir}/${entry.name}`,
           `${this.logsDir}/${newName}`
         );
@@ -392,11 +469,11 @@ export class DiagnosticLogger {
    */
   async readLog(area: DiagArea): Promise<DiagLogEntry[]> {
     await this.ensureInitForRead();
-    if (!this.initialized || !this.logsDir || !fs) return [];
+    if (!this.initialized || !this.logsDir) return [];
     await this.flush(area);
 
     try {
-      const content = await fs.readTextFile(`${this.logsDir}/${this.currentFilename(area)}`);
+      const content = await platformReadTextFile(`${this.logsDir}/${this.currentFilename(area)}`);
       return this.parseJsonl(content);
     } catch {
       return [];
@@ -416,15 +493,12 @@ export class DiagnosticLogger {
    */
   async clearLog(area: DiagArea): Promise<void> {
     await this.ensureInitForRead();
-    if (!this.initialized || !this.logsDir || !fs) return;
+    if (!this.initialized || !this.logsDir) return;
 
     this.buffers.delete(area);
 
     try {
-      const file = await fs.open(`${this.logsDir}/${this.currentFilename(area)}`, {
-        write: true, create: true, truncate: true
-      });
-      await file.close();
+      await platformTruncateFile(`${this.logsDir}/${this.currentFilename(area)}`);
     } catch {
       // Silent
     }
@@ -439,17 +513,11 @@ export class DiagnosticLogger {
     }
   }
 
-  /**
-   * Get file path for today's log
-   */
   getLogPath(area: DiagArea): string | null {
     if (!this.logsDir) return null;
     return `${this.logsDir}/${this.currentFilename(area)}`;
   }
 
-  /**
-   * Get all log file paths (today)
-   */
   getAllPaths(): Record<DiagArea, string | null> {
     const areas: DiagArea[] = ['lists', 'dms', 'crashes', 'relays'];
     const paths: Record<string, string | null> = {};
@@ -459,9 +527,6 @@ export class DiagnosticLogger {
     return paths as Record<DiagArea, string | null>;
   }
 
-  /**
-   * Get the logs root directory
-   */
   getLogsDir(): string | null {
     return this.logsDir;
   }
@@ -495,20 +560,14 @@ export class DiagnosticLogger {
 
 // ===== Convenience exports =====
 
-/**
- * Log a diagnostic entry to file.
- * No-op on Web. Fire-and-forget — never throws.
- */
 export function diagLog(area: DiagArea, msg: string, data?: unknown): void {
   DiagnosticLogger.getInstance().log(area, msg, data);
 }
 
-/** Initialize the DiagnosticLogger (call after login with npub) */
 export async function initDiagnosticLogger(npub?: string): Promise<void> {
   await DiagnosticLogger.getInstance().init(npub);
 }
 
-/** Clean up the DiagnosticLogger (call on logout) */
 export function destroyDiagnosticLogger(): void {
   DiagnosticLogger.getInstance().destroy();
 }

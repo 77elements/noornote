@@ -20,20 +20,33 @@ export const FREQUENCY_INTERVALS: Record<ListingFrequency, number> = {
   realtime: 60 * 1000,            // 60 seconds
 };
 
+const STORAGE_KEY = 'noornote_marketplace_enabled';
+const TIMELINE_STORAGE_KEY = 'noornote_marketplace_timeline_enabled';
+
 export function isMarketplaceEnabled(): boolean {
-  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.MARKETPLACE_ENABLED, false);
+  const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
+    StorageKeys.MARKETPLACE_ENABLED, null
+  );
+  if (perAccount !== null) return perAccount;
+  return localStorage.getItem(STORAGE_KEY) === 'true';
 }
 
 export function setMarketplaceEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_ENABLED, enabled);
+  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
 }
 
 export function isTimelineListingsEnabled(): boolean {
-  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.MARKETPLACE_TIMELINE_ENABLED, false);
+  const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
+    StorageKeys.MARKETPLACE_TIMELINE_ENABLED, null
+  );
+  if (perAccount !== null) return perAccount;
+  return localStorage.getItem(TIMELINE_STORAGE_KEY) === 'true';
 }
 
 export function setTimelineListingsEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_TIMELINE_ENABLED, enabled);
+  localStorage.setItem(TIMELINE_STORAGE_KEY, enabled ? 'true' : 'false');
 }
 
 export function getTimelineListingFrequency(): ListingFrequency {

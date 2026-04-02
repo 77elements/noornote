@@ -531,6 +531,31 @@ export class MainLayout {
   }
 
   /**
+   * Re-initialize addon list managers after auth is available.
+   * On startup, loadListManagers() may run before auth completes,
+   * causing PerAccountLocalStorage to return defaults (disabled).
+   */
+  private async initializeAddonsAfterAuth(): Promise<void> {
+    // Bookmarks: load if enabled and not already loaded
+    if (!this.bookmarkManager) {
+      const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
+      if (isBookmarksEnabled()) {
+        const { BookmarkManager } = await import('../../lists/bookmarks');
+        this.bookmarkManager = new BookmarkManager(this.element);
+      }
+    }
+
+    // Tribes: load if enabled and not already loaded
+    if (!this.tribeManager) {
+      const { isTribesEnabled } = await import('../../addons/tribes/index');
+      if (isTribesEnabled()) {
+        const { TribeManager } = await import('../../lists/tribes');
+        this.tribeManager = new TribeManager(this.element);
+      }
+    }
+  }
+
+  /**
    * Initialize global search view
    * Mounts in scc (default/right-pane mode) or intercepts events for pcc rendering (wide mode)
    */
@@ -778,6 +803,10 @@ export class MainLayout {
         if (currentUser) {
           this.setUserStatus(currentUser.npub, currentUser.pubkey);
         }
+        // Re-initialize addons now that auth is available
+        // (initial init in constructor may have run before auth completed)
+        this.initializeWalletBalance();
+        this.initializeAddonsAfterAuth();
         // Update sidebar for logged-in state
         this.element.querySelector('.sidebar')?.classList.remove('sidebar--logged-out');
       } else {
@@ -902,7 +931,9 @@ export class MainLayout {
         e.preventDefault();
         const url = 'https://noornote.app/download/';
         const _p = PlatformService.getInstance();
-        if (_p.isTauri && !_p.isAndroid) {
+        if (_p.isElectron) {
+          await window.electronAPI!.openExternal(url);
+        } else if (_p.isTauri && !_p.isAndroid) {
           const { open } = await import('@tauri-apps/plugin-shell');
           await open(url);
         } else {
@@ -1613,13 +1644,15 @@ export class MainLayout {
 
     // 2. Kill daemon and open terminal
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-
-      // Kill existing daemon
-      await invoke('cancel_key_signer_launch');
-
-      // Open terminal with add-account
-      await invoke('launch_key_signer', { mode: 'add-account' });
+      const platform = PlatformService.getInstance();
+      if (platform.isElectron) {
+        await window.electronAPI!.cancelKeySignerLaunch();
+        await window.electronAPI!.launchKeySigner('add-account');
+      } else {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('cancel_key_signer_launch');
+        await invoke('launch_key_signer', { mode: 'add-account' });
+      }
     } catch (error) {
       console.error('[MainLayout] Failed to launch add-account terminal:', error);
     }

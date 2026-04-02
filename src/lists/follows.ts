@@ -1514,7 +1514,7 @@ export class FollowListManager {
       ToastService.show('Saving...', 'info');
       const browserItems = this.adapter.getBrowserItems();
 
-      if (PlatformService.getInstance().isTauri && !PlatformService.getInstance().isAndroid) {
+      if (PlatformService.getInstance().isDesktop) {
         await this.adapter.setFileItems(browserItems);
       } else {
         downloadAsJson(browserItems, 'follows');

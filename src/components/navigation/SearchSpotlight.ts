@@ -364,8 +364,16 @@ export class SearchSpotlight {
    */
   private async openExternalURL(url: string): Promise<void> {
     try {
-      const { open } = await import('@tauri-apps/plugin-shell');
-      await open(url);
+      const { PlatformService } = await import('../../services/PlatformService');
+      const _p = PlatformService.getInstance();
+      if (_p.isElectron) {
+        await window.electronAPI!.openExternal(url);
+      } else if (_p.isTauri) {
+        const { open } = await import('@tauri-apps/plugin-shell');
+        await open(url);
+      } else {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
     } catch (error) {
       console.error('Failed to open external URL:', error);
     }

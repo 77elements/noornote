@@ -90,7 +90,7 @@ export class AboutView extends View {
         <section class="about-section">
           <h2>Version</h2>
           <p>NoorNote v${__APP_VERSION__}</p>
-          ${this.platform.isTauri && !this.platform.isAndroid ? '<button class="btn btn--mini" id="about-check-update-btn">Check for updates</button>' : ''}
+          ${this.platform.isDesktop ? '<button class="btn btn--mini" id="about-check-update-btn">Check for updates</button>' : ''}
         </section>
 
         <section class="about-section about-section--footer">

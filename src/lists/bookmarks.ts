@@ -3638,7 +3638,7 @@ export class BookmarkManager {
   private async handleSaveToFile(): Promise<void> {
     try {
       ToastService.show('Saving...', 'info');
-      if (PlatformService.getInstance().isTauri && !PlatformService.getInstance().isAndroid) {
+      if (PlatformService.getInstance().isDesktop) {
         await this.saveToFile();
       } else {
         downloadAsJson(this.adapter.getBrowserItems(), 'bookmarks');

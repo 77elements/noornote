@@ -6,17 +6,22 @@
 
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
+const STORAGE_KEY = 'noornote_profile_recognition_enabled';
+
 /** Check if Profile Recognition is enabled (window > 0) */
 export function isProfileRecognitionEnabled(): boolean {
-  try {
-    const stored = PerAccountLocalStorage.getInstance().get<number>(StorageKeys.PROFILE_RECOGNITION_WINDOW, 90);
-    return stored !== 0;
-  } catch {
-    return true;
-  }
+  const perAccount = PerAccountLocalStorage.getInstance().get<number | null>(
+    StorageKeys.PROFILE_RECOGNITION_WINDOW, null
+  );
+  if (perAccount !== null) return perAccount !== 0;
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw !== null) return raw === 'true';
+  // Default: enabled (matches previous default of window=90)
+  return true;
 }
 
 /** Set the recognition window (0 = disabled) */
 export function setProfileRecognitionWindow(value: number): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.PROFILE_RECOGNITION_WINDOW, value);
+  localStorage.setItem(STORAGE_KEY, value !== 0 ? 'true' : 'false');
 }

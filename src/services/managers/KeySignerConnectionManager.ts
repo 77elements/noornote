@@ -48,7 +48,7 @@ export class KeySignerConnectionManager {
    * Setup window focus/blur listeners for adaptive daemon polling
    */
   private setupWindowFocusListeners(): void {
-    if (!PlatformService.getInstance().isTauri || PlatformService.getInstance().isAndroid) return;
+    if (!PlatformService.getInstance().isDesktop) return;
 
     window.addEventListener('focus', () => {
       this.windowFocused = true;
@@ -67,8 +67,8 @@ export class KeySignerConnectionManager {
    * Try auto-login with KeySigner
    */
   public async tryAutoLogin(): Promise<{ success: boolean; npub?: string; pubkey?: string; error?: string }> {
-    if (!PlatformService.getInstance().isTauri || PlatformService.getInstance().isAndroid) {
-      return { success: false, error: 'Not running in Tauri' };
+    if (!PlatformService.getInstance().isDesktop) {
+      return { success: false, error: 'Not running on desktop' };
     }
 
     try {
@@ -118,8 +118,8 @@ export class KeySignerConnectionManager {
    * Authenticate with KeySigner
    */
   public async authenticate(): Promise<KeySignerAuthResult> {
-    if (!PlatformService.getInstance().isTauri || PlatformService.getInstance().isAndroid) {
-      return { success: false, error: 'KeySigner only available in Tauri' };
+    if (!PlatformService.getInstance().isDesktop) {
+      return { success: false, error: 'KeySigner only available on desktop' };
     }
 
     try {
@@ -209,8 +209,12 @@ export class KeySignerConnectionManager {
     // Trust session valid — launch daemon silently
     this.logger.info('KeySigner', 'Trust session valid, launching daemon silently...');
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('launch_daemon_silent');
+      if (PlatformService.getInstance().isElectron) {
+        await window.electronAPI!.launchDaemonSilent();
+      } else {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('launch_daemon_silent');
+      }
     } catch (_error) {
       this.logger.warn('KeySigner', `Silent launch invoke failed: ${_error}`);
     }

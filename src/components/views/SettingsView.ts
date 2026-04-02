@@ -43,7 +43,7 @@ export class SettingsView extends View {
 
     // Initialize KeySigner client (desktop only, not mobile)
     const platform = PlatformService.getInstance();
-    if (platform.isTauri && !platform.isAndroid) {
+    if (platform.isDesktop) {
       this.keySignerClient = KeySignerClient.getInstance();
     }
 
@@ -55,7 +55,7 @@ export class SettingsView extends View {
     this.mediaServerSection = new MediaServerSection();
     this.nwcSettingsSection = new NWCSettingsSection();
     this.privacySettingsSection = new PrivacySettingsSection();
-    if (platform.isTauri && !platform.isAndroid) {
+    if (platform.isDesktop) {
       this.cacheSettingsSection = new CacheSettingsSection();
     }
     this.uiSettingsSection = new UISettingsSection();
@@ -120,7 +120,7 @@ export class SettingsView extends View {
           false
         ) : ''}
 
-        ${PlatformService.getInstance().isTauri ? `
+        ${PlatformService.getInstance().isDesktop ? `
         <section class="settings-section diagnostic-export-section" style="text-align: center;">
           <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
             Export Logs

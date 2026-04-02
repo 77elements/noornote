@@ -54,15 +54,13 @@ export class KeyboardShortcutManager {
     this.setupBrowserShortcuts();
 
     const _p = PlatformService.getInstance();
-    if (!_p.isTauri || _p.isAndroid) return;
+    if (!_p.isDesktop) return;
 
     try {
-      const { listen } = await import('@tauri-apps/api/event');
-
-      await listen<string>('global-shortcut', (event) => {
+      const handleShortcut = (action: string) => {
         if (this.shouldBlockShortcuts()) return;
 
-        switch (event.payload) {
+        switch (action) {
           case 'search':
           case 'search-alt':
             if (this.searchModalCallback) this.searchModalCallback();
@@ -74,9 +72,16 @@ export class KeyboardShortcutManager {
             if (this.router.canGoForward()) this.router.forward();
             break;
         }
-      });
+      };
+
+      if (_p.isElectron) {
+        window.electronAPI!.onGlobalShortcut((action: string) => handleShortcut(action));
+      } else {
+        const { listen } = await import('@tauri-apps/api/event');
+        await listen<string>('global-shortcut', (event) => handleShortcut(event.payload));
+      }
     } catch {
-      // Tauri event API unavailable
+      // Global shortcut API unavailable
     }
   }
 

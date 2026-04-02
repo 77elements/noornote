@@ -68,7 +68,14 @@ export class AppBadgeService {
    * Initialize Tauri window reference for badge API
    */
   private async initTauriWindow(): Promise<void> {
-    if (this.platform.isTauri && !this.platform.isAndroid) {
+    if (!this.platform.isDesktop) return;
+
+    if (this.platform.isElectron) {
+      // Electron: use electronAPI directly (no tauriWindow needed)
+      this.tauriWindow = {
+        setBadgeCount: (count: number | null) => window.electronAPI!.setBadgeCount(count ?? 0)
+      };
+    } else {
       try {
         const { getCurrentWindow } = await import('@tauri-apps/api/window');
         this.tauriWindow = getCurrentWindow();

@@ -241,7 +241,7 @@ export class NWCSettingsSection extends SettingsSection {
   private async setupStorageSwitch(contentContainer: HTMLElement): Promise<void> {
     // Only show on desktop (not browser or mobile)
     const _p = PlatformService.getInstance();
-    if (!_p.isTauri || _p.isAndroid) {
+    if (!_p.isDesktop) {
       return;
     }
 

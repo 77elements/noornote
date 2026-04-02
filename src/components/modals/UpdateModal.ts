@@ -114,7 +114,9 @@ export class UpdateModal {
     downloadBtn?.addEventListener('click', async () => {
       try {
         const _p = PlatformService.getInstance();
-        if (_p.isTauri && !_p.isAndroid) {
+        if (_p.isElectron) {
+          await window.electronAPI!.openExternal(update.downloadUrl);
+        } else if (_p.isTauri && !_p.isAndroid) {
           const { open } = await import('@tauri-apps/plugin-shell');
           await open(update.downloadUrl);
         } else {

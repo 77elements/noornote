@@ -114,7 +114,7 @@ export class AuthService {
 
   private initializeKeySignerManager(): void {
     const platform = PlatformService.getInstance();
-    if (!platform.isTauri || platform.isAndroid) return;
+    if (!platform.isDesktop) return;
 
     this.keySignerManager = new KeySignerConnectionManager();
     this.keySignerManager.onConnectionLost(() => {
@@ -332,7 +332,7 @@ export class AuthService {
     if (!event.tags?.some((tag: string[]) => tag[0] === 'client')) {
       if (!event.tags) event.tags = [];
       const platform = PlatformService.getInstance();
-      const clientName = platform.isAndroid ? 'NoorNote (m)' : platform.isTauri ? (platform.isMac ? 'NoorNote (d|m)' : 'NoorNote (d|l)') : 'NoorNote (w)';
+      const clientName = platform.isAndroid ? 'NoorNote (m)' : platform.isDesktop ? (platform.isMac ? 'NoorNote (d|m)' : 'NoorNote (d|l)') : 'NoorNote (w)';
       event.tags.push(['client', clientName]);
     }
 

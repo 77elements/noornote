@@ -276,7 +276,7 @@ export class AutoSyncService {
 
       // 1. Save to file immediately (Desktop only - Web/Phone has no file system)
       const _p = PlatformService.getInstance();
-      if (_p.isTauri && !_p.isAndroid) {
+      if (_p.isDesktop) {
         await this.saveToFile(listType);
       }
 

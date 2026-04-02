@@ -366,7 +366,7 @@ export class AccountSetupWizard {
     this.storage = PerAccountLocalStorage.getInstance();
 
     // Build steps list based on platform
-    const isDesktop = platform.isTauri && !platform.isAndroid;
+    const isDesktop = platform.isDesktop;
     const isMobile = platform.isAndroid;
 
     if (isDesktop) {
@@ -694,13 +694,17 @@ export class AccountSetupWizard {
 
       if (pubkey) {
         // Remove keypair from NoorSigner filesystem (desktop only)
-        if (platform.isTauri && !platform.isAndroid) {
+        if (platform.isDesktop) {
           try {
             const { hexToNpub } = await import('../../helpers/nip19');
             const npub = hexToNpub(pubkey);
             if (npub) {
-              const { invoke } = await import('@tauri-apps/api/core');
-              await invoke('remove_noorsigner_account', { npub });
+              if (platform.isElectron) {
+                await window.electronAPI!.removeNoorSignerAccount(npub);
+              } else {
+                const { invoke } = await import('@tauri-apps/api/core');
+                await invoke('remove_noorsigner_account', { npub });
+              }
             }
           } catch (e) {
             console.warn('[AccountSetupWizard] Failed to remove NoorSigner account files:', e);
@@ -1182,8 +1186,19 @@ IMPORTANT:
     const defaultFileName = `nostr-backup-${this.currentKeypair.npub.slice(0, 12)}.txt`;
 
     try {
-      if (platform.isTauri && !platform.isAndroid) {
-        // Desktop: Use native save dialog
+      if (platform.isElectron) {
+        // Electron Desktop: Use native save dialog
+        const filePath = await window.electronAPI!.saveFileDialog({
+          defaultPath: defaultFileName,
+          filters: [{ name: 'Text Files', extensions: ['txt'] }]
+        });
+
+        if (filePath) {
+          await window.electronAPI!.writeTextFile(filePath, content);
+          ToastService.show('Backup saved', 'success');
+        }
+      } else if (platform.isTauri && !platform.isAndroid) {
+        // Tauri Desktop: Use native save dialog
         const { save } = await import('@tauri-apps/plugin-dialog');
         const { writeTextFile } = await import('@tauri-apps/plugin-fs');
 
@@ -2145,7 +2160,9 @@ IMPORTANT:
           try {
             const { PlatformService } = await import('../../services/PlatformService');
             const _p = PlatformService.getInstance();
-            if (_p.isTauri && !_p.isAndroid) {
+            if (_p.isElectron) {
+              await window.electronAPI!.openExternal('https://rizful.com/nostr_onboarding_auth_token/get_token');
+            } else if (_p.isTauri && !_p.isAndroid) {
               const { open } = await import('@tauri-apps/plugin-shell');
               await open('https://rizful.com/nostr_onboarding_auth_token/get_token');
             } else {

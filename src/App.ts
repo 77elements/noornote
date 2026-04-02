@@ -82,7 +82,7 @@ export class App {
 
     // Check for app updates (desktop only, non-blocking)
     const platform = PlatformService.getInstance();
-    if (platform.isTauri && !platform.isAndroid) {
+    if (platform.isDesktop) {
       this.checkForUpdates();
     }
 
@@ -149,6 +149,13 @@ export class App {
   }
 
   private async setInitialFocus(): Promise<void> {
+    const platform = PlatformService.getInstance();
+    if (platform.isElectron) {
+      // Electron: focus via DOM (window focus is handled by Electron shell)
+      document.body.focus();
+      return;
+    }
+
     try {
       const { getCurrentWindow } = await import('@tauri-apps/api/window');
       const window = getCurrentWindow();
@@ -346,99 +353,119 @@ export class App {
       this.router.navigate('/login');
     });
 
-    this.setupTauriCloseHandler();
+    this.setupDesktopCloseHandler();
   }
 
   // ─── Platform Handlers (thin glue) ───────────────────────────────────
 
   private async setupDeepLinkHandler(): Promise<void> {
-    if (!PlatformService.getInstance().isTauri) return;
-
-    try {
-      const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
-
-      await onOpenUrl((urls) => {
-        const url = urls[0];
-        if (!url) return;
-
-        try {
-          const nip19String = url.startsWith('nostr:') ? url.slice(6) : url;
-          const decoded = decodeNip19(nip19String);
-          const type = decoded.type;
-
-          if (type === 'npub' || type === 'nprofile') {
-            const npub = type === 'npub'
-              ? nip19String
-              : hexToNpub((decoded.data as { pubkey: string }).pubkey);
-            if (npub) {
-              this.router.navigate(`/profile/${npub}`);
-            }
-            return;
-          }
-
-          if (type === 'note' || type === 'nevent') {
-            const noteId = type === 'note'
-              ? nip19String
-              : `note1${(decoded.data as { id: string }).id}`;
-            this.router.navigate(`/note/${noteId}`);
-            return;
-          }
-
-          if (type === 'naddr') {
-            const addrData = decoded.data as { kind: number };
-            this.router.navigate(App.getRouteForAddressableEvent(addrData.kind, nip19String));
-          }
-        } catch {
-          this.systemLogger.warn('Deep Link', `Failed to handle nostr: URL: ${url}`);
-        }
-      });
-    } catch {
-      // Deep link handler setup failed - expected in non-Tauri environments
-    }
-  }
-
-  private async setupTauriCloseHandler(): Promise<void> {
     const platform = PlatformService.getInstance();
-    if (!platform.isTauri || platform.isAndroid) return;
+    if (!platform.isTauri && !platform.isElectron) return;
 
-    try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      const appWindow = getCurrentWindow();
+    const handleDeepLink = (url: string) => {
+      try {
+        const nip19String = url.startsWith('nostr:') ? url.slice(6) : url;
+        const decoded = decodeNip19(nip19String);
+        const type = decoded.type;
 
-      await appWindow.onCloseRequested(async (event) => {
-        const authMethod = this.authService.getAuthMethod();
-        if (authMethod !== 'key-signer') return;
-
-        event.preventDefault();
-
-        const keySignerClient = KeySignerClient.getInstance();
-        const isDaemonRunning = await keySignerClient.isRunning();
-
-        if (!isDaemonRunning) {
-          await appWindow.close();
+        if (type === 'npub' || type === 'nprofile') {
+          const npub = type === 'npub'
+            ? nip19String
+            : hexToNpub((decoded.data as { pubkey: string }).pubkey);
+          if (npub) {
+            this.router.navigate(`/profile/${npub}`);
+          }
           return;
         }
 
-        const shouldStopDaemon = await ModalService.getInstance().confirm({
-          title: 'Stop NoorSigner Daemon?',
-          message: 'The NoorSigner daemon is currently running. Do you want to stop it when closing the app?',
-          confirmText: 'Stop Daemon',
-          cancelText: 'Keep Running',
-          confirmDestructive: false
-        });
-
-        if (shouldStopDaemon) {
-          try {
-            await keySignerClient.stopDaemon();
-          } catch {
-            // Daemon stop failed - continue closing anyway
-          }
+        if (type === 'note' || type === 'nevent') {
+          const noteId = type === 'note'
+            ? nip19String
+            : `note1${(decoded.data as { id: string }).id}`;
+          this.router.navigate(`/note/${noteId}`);
+          return;
         }
 
-        await appWindow.close();
-      });
+        if (type === 'naddr') {
+          const addrData = decoded.data as { kind: number };
+          this.router.navigate(App.getRouteForAddressableEvent(addrData.kind, nip19String));
+        }
+      } catch {
+        this.systemLogger.warn('Deep Link', `Failed to handle nostr: URL: ${url}`);
+      }
+    };
+
+    try {
+      if (platform.isElectron) {
+        window.electronAPI!.onDeepLink((url) => handleDeepLink(url));
+      } else {
+        const { onOpenUrl } = await import('@tauri-apps/plugin-deep-link');
+        await onOpenUrl((urls) => {
+          const url = urls[0];
+          if (url) handleDeepLink(url);
+        });
+      }
     } catch {
-      // Tauri close handler setup failed - expected in non-Tauri environments
+      // Deep link handler setup failed - expected in non-desktop environments
+    }
+  }
+
+  private async setupDesktopCloseHandler(): Promise<void> {
+    const platform = PlatformService.getInstance();
+    if (!platform.isDesktop) return;
+
+    const handleCloseRequest = async (closeFn: () => Promise<void>) => {
+      const authMethod = this.authService.getAuthMethod();
+      if (authMethod !== 'key-signer') return;
+
+      const keySignerClient = KeySignerClient.getInstance();
+      const isDaemonRunning = await keySignerClient.isRunning();
+
+      if (!isDaemonRunning) {
+        await closeFn();
+        return;
+      }
+
+      const shouldStopDaemon = await ModalService.getInstance().confirm({
+        title: 'Stop NoorSigner Daemon?',
+        message: 'The NoorSigner daemon is currently running. Do you want to stop it when closing the app?',
+        confirmText: 'Stop Daemon',
+        cancelText: 'Keep Running',
+        confirmDestructive: false
+      });
+
+      if (shouldStopDaemon) {
+        try {
+          await keySignerClient.stopDaemon();
+        } catch {
+          // Daemon stop failed - continue closing anyway
+        }
+      }
+
+      await closeFn();
+    };
+
+    try {
+      if (platform.isElectron) {
+        window.electronAPI!.onCloseRequested(async () => {
+          await handleCloseRequest(async () => {
+            // Electron: closing proceeds after callback returns
+          });
+        });
+      } else {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const appWindow = getCurrentWindow();
+
+        await appWindow.onCloseRequested(async (event) => {
+          const authMethod = this.authService.getAuthMethod();
+          if (authMethod !== 'key-signer') return;
+
+          event.preventDefault();
+          await handleCloseRequest(async () => appWindow.close());
+        });
+      }
+    } catch {
+      // Close handler setup failed - expected in non-desktop environments
     }
   }
 
@@ -473,7 +500,9 @@ export class App {
 
       try {
         const _platform = PlatformService.getInstance();
-        if (_platform.isTauri && !_platform.isAndroid) {
+        if (_platform.isElectron) {
+          await window.electronAPI!.openExternal(href);
+        } else if (_platform.isTauri && !_platform.isAndroid) {
           const { open } = await import('@tauri-apps/plugin-shell');
           await open(href);
         } else {

@@ -90,7 +90,7 @@ export class AuthComponent {
     if (!primaryContent) return;
 
     const platform = PlatformService.getInstance();
-    const isDesktop = platform.isTauri && !platform.isAndroid;
+    const isDesktop = platform.isDesktop;
     const isMobile = platform.isAndroid;
     const isWeb = platform.isBrowser;
 

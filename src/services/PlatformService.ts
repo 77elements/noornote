@@ -1,16 +1,17 @@
 /**
  * PlatformService - Central Platform Detection
  *
- * Provides feature flags based on runtime environment (Browser vs Tauri).
- * Use this instead of checking __TAURI_INTERNALS__ directly.
+ * Provides feature flags based on runtime environment.
+ * Use this instead of checking platform internals directly.
  *
  * Usage:
  * const platform = PlatformService.getInstance();
- * if (platform.isTauri) { ... }
- * if (platform.supportsNip07) { ... }
+ * if (platform.isElectron) { ... }  // Desktop (Electron)
+ * if (platform.isCapacitor) { ... } // Android (Capacitor)
+ * if (platform.isBrowser) { ... }   // Web (noornote.app)
  */
 
-export type PlatformType = 'tauri' | 'browser';
+export type PlatformType = 'electron' | 'capacitor' | 'tauri' | 'browser';
 
 export class PlatformService {
   private static instance: PlatformService;
@@ -18,22 +19,31 @@ export class PlatformService {
   /** Current platform type */
   readonly platformType: PlatformType;
 
-  /** True if running in Tauri */
+  /** True if running in Electron (Desktop) */
+  readonly isElectron: boolean;
+
+  /** True if running in Capacitor (Android) */
+  readonly isCapacitor: boolean;
+
+  /** True if running in Tauri (legacy — will be removed after migration) */
   readonly isTauri: boolean;
 
-  /** True if running in browser (including Rust-server mode) */
+  /** True if running in browser (not Electron, not Capacitor, not Tauri) */
   readonly isBrowser: boolean;
 
-  /** True if NoorSigner is available (Tauri only) */
+  /** True if running as a desktop app (Electron or Tauri desktop) */
+  readonly isDesktop: boolean;
+
+  /** True if NoorSigner is available (Desktop only) */
   readonly supportsNoorSigner: boolean;
 
-  /** True if NIP-07 extensions can be used (Browser + Tauri with extension) */
+  /** True if NIP-07 extensions can be used (Browser + Desktop with extension) */
   readonly supportsNip07: boolean;
 
-  /** True if Keychain storage is available (Tauri only) */
+  /** True if Keychain/EncryptedFile storage is available (Desktop only) */
   readonly supportsKeychain: boolean;
 
-  /** True if native file dialogs are available (Tauri only) */
+  /** True if native file dialogs are available (Desktop only) */
   readonly supportsNativeFileDialog: boolean;
 
   /** True if running on macOS */
@@ -42,51 +52,63 @@ export class PlatformService {
   /** True if running on Linux */
   readonly isLinux: boolean;
 
-  /** True if running on Android (Tauri mobile) */
+  /** True if running on Android */
   readonly isAndroid: boolean;
 
-  /** True if Amber (NIP-55) signer can be used (Tauri Android only) */
+  /** True if Amber (NIP-55) signer can be used (Android native only) */
   readonly supportsAmber: boolean;
 
   private constructor() {
-    // Detect Tauri environment
+    // Detect runtime environment
+    this.isElectron = typeof window !== 'undefined' &&
+      (window as any).electronAPI !== undefined;
+
+    this.isCapacitor = typeof window !== 'undefined' &&
+      (window as any).Capacitor !== undefined;
+
     this.isTauri = typeof window !== 'undefined' &&
       (window as any).__TAURI_INTERNALS__ !== undefined;
 
-    this.isBrowser = !this.isTauri;
-    this.platformType = this.isTauri ? 'tauri' : 'browser';
+    this.isBrowser = !this.isElectron && !this.isCapacitor && !this.isTauri;
 
-    // OS detection (must come before feature flags)
+    // Platform type (priority: Electron > Capacitor > Tauri > Browser)
+    if (this.isElectron) this.platformType = 'electron';
+    else if (this.isCapacitor) this.platformType = 'capacitor';
+    else if (this.isTauri) this.platformType = 'tauri';
+    else this.platformType = 'browser';
+
+    // OS detection
     const navPlatform = navigator.platform?.toLowerCase() || '';
     const userAgent = navigator.userAgent?.toLowerCase() || '';
     this.isMac = navPlatform.includes('mac') || userAgent.includes('mac');
     this.isLinux = navPlatform.includes('linux') || userAgent.includes('linux');
 
-    // Android detection: build-time flag from Tauri CLI (most reliable),
-    // fallback to userAgent check for runtime detection
+    // Android detection
     const tauriPlatform = (import.meta as any).env?.TAURI_ENV_PLATFORM || '';
-    this.isAndroid = tauriPlatform === 'android' || userAgent.includes('android');
+    this.isAndroid = this.isCapacitor ||
+      tauriPlatform === 'android' ||
+      userAgent.includes('android');
 
-    // Feature flags (desktop only, not mobile)
-    const isDesktop = this.isTauri && !this.isAndroid;
-    this.supportsNoorSigner = isDesktop;
-    this.supportsKeychain = isDesktop;
-    this.supportsNativeFileDialog = isDesktop;
+    // Desktop = Electron OR Tauri-non-Android
+    this.isDesktop = this.isElectron || (this.isTauri && !this.isAndroid);
 
-    // NIP-07 available in browser, and potentially in Tauri if extension installed
+    // Feature flags
+    this.supportsNoorSigner = this.isDesktop;
+    this.supportsKeychain = this.isDesktop;
+    this.supportsNativeFileDialog = this.isDesktop;
     this.supportsNip07 = this.isBrowser || this.hasNip07Extension();
+    this.supportsAmber = this.isCapacitor || (this.isTauri && this.isAndroid);
 
-    // Amber (NIP-55) only available in Tauri on Android
-    this.supportsAmber = this.isTauri && this.isAndroid;
-
-    // Set platform CSS class on <html> for platform-specific styling
-    // platform--tauri-android: ONLY Tauri native app (edge-to-edge CSS)
-    // platform--mobile: any Android context (Tauri + web browsers)
+    // CSS platform classes
     if (this.isAndroid) {
       document.documentElement.classList.add('platform--mobile');
     }
     if (this.isTauri && this.isAndroid) {
       document.documentElement.classList.add('platform--tauri-android');
+    }
+    if (this.isCapacitor && this.isAndroid) {
+      document.documentElement.classList.add('platform--mobile');
+      document.documentElement.classList.add('platform--capacitor-android');
     }
   }
 
@@ -97,16 +119,10 @@ export class PlatformService {
     return PlatformService.instance;
   }
 
-  /**
-   * Check if NIP-07 extension (window.nostr) is available
-   */
   private hasNip07Extension(): boolean {
     return typeof window !== 'undefined' && (window as any).nostr !== undefined;
   }
 
-  /**
-   * Re-check NIP-07 availability (extensions may load after page load)
-   */
   public checkNip07Available(): boolean {
     return typeof window !== 'undefined' && (window as any).nostr !== undefined;
   }

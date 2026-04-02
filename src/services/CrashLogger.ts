@@ -35,7 +35,7 @@ class CrashLoggerService {
   public async init(): Promise<void> {
     if (this.initialized) return;
     const _p = PlatformService.getInstance();
-    if (!_p.isTauri || _p.isAndroid) return;
+    if (!_p.isDesktop) return;
 
     try {
       this.systemLogger = SystemLogger.getInstance();

@@ -1,14 +1,9 @@
 /**
  * BaseFileStorage
- * Abstract base class for file-based storage using Tauri FS API
+ * Abstract base class for file-based storage
  *
- * Provides common functionality for storing data in ~/.noornote/{npub}/ directory:
- * - Per-user file paths (each user has their own directory)
- * - Tauri environment detection
- * - Dynamic Tauri API imports
- * - Directory creation
- * - File initialization
- * - JSON read/write with error handling
+ * Provides common functionality for storing data in ~/.noornote/{npub}/ directory.
+ * Supports both Electron (window.electronAPI) and Tauri (@tauri-apps/plugin-fs) backends.
  *
  * Usage: Extend this class and implement abstract methods
  */
@@ -34,6 +29,38 @@ if (platform.isTauri && !platform.isAndroid) {
     tauriExists = mod.exists;
     tauriMkdir = mod.mkdir;
   });
+}
+
+// ── Platform-agnostic FS wrappers ──
+
+async function platformHomeDir(): Promise<string> {
+  if (platform.isElectron) return window.electronAPI!.getHomeDir();
+  if (tauriHomeDir) return tauriHomeDir();
+  throw new Error('Platform API not available for homeDir');
+}
+
+async function platformReadTextFile(filePath: string): Promise<string> {
+  if (platform.isElectron) return window.electronAPI!.readTextFile(filePath);
+  if (tauriReadTextFile) return tauriReadTextFile(filePath);
+  throw new Error('Platform API not available for readTextFile');
+}
+
+async function platformWriteTextFile(filePath: string, contents: string): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.writeTextFile(filePath, contents);
+  if (tauriWriteTextFile) return tauriWriteTextFile(filePath, contents);
+  throw new Error('Platform API not available for writeTextFile');
+}
+
+async function platformExists(filePath: string): Promise<boolean> {
+  if (platform.isElectron) return window.electronAPI!.fsExists(filePath);
+  if (tauriExists) return tauriExists(filePath);
+  throw new Error('Platform API not available for exists');
+}
+
+async function platformMkdir(dirPath: string): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.fsMkdir(dirPath);
+  if (tauriMkdir) return tauriMkdir(dirPath, { recursive: true });
+  throw new Error('Platform API not available for mkdir');
 }
 
 /**
@@ -88,11 +115,12 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
 
     if (this.fileInitialized) return;
 
-    if (!platform.isTauri || platform.isAndroid) {
+    if (!platform.isDesktop) {
       throw new Error(`${this.getLoggerName()} requires desktop environment`);
     }
 
-    if (!tauriHomeDir || !tauriMkdir) {
+    // For Tauri, ensure APIs are loaded
+    if (platform.isTauri && (!tauriHomeDir || !tauriMkdir)) {
       throw new Error('Tauri path API not loaded');
     }
 
@@ -102,16 +130,12 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
     }
 
     try {
-      const homePath = await tauriHomeDir();
+      const homePath = await platformHomeDir();
       const userDir = `${homePath}/.noornote/${userNpub}`;
 
-      if (!tauriExists) {
-        throw new Error('Tauri fs API not loaded');
-      }
-
-      const dirExists = await tauriExists(userDir);
+      const dirExists = await platformExists(userDir);
       if (!dirExists) {
-        await tauriMkdir(userDir, { recursive: true });
+        await platformMkdir(userDir);
         this.systemLogger.info(this.getLoggerName(), `Created user directory: ${userDir}`);
       }
 
@@ -129,14 +153,14 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
   }
 
   protected async ensureFileExists(): Promise<void> {
-    if (!this.filePath || !tauriExists || !tauriWriteTextFile) {
+    if (!this.filePath) {
       throw new Error('File system not initialized');
     }
 
-    const fileExists = await tauriExists(this.filePath);
+    const fileExists = await platformExists(this.filePath);
     if (!fileExists) {
       this.systemLogger.info(this.getLoggerName(), `Creating ${this.getFileName()} with defaults`);
-      await tauriWriteTextFile(this.filePath, JSON.stringify(this.getDefaultData(), null, 2));
+      await platformWriteTextFile(this.filePath, JSON.stringify(this.getDefaultData(), null, 2));
     }
   }
 
@@ -145,12 +169,12 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
       await this.initialize();
     }
 
-    if (!this.filePath || !tauriReadTextFile) {
+    if (!this.filePath) {
       throw new Error('File system not initialized');
     }
 
     try {
-      const content = await tauriReadTextFile(this.filePath);
+      const content = await platformReadTextFile(this.filePath);
       const rawData: T = JSON.parse(content);
       const data = this.migrateData(rawData);
       this.systemLogger.info(this.getLoggerName(), `Read data from ${this.getFileName()}`);
@@ -166,13 +190,13 @@ export abstract class BaseFileStorage<T extends BaseFileData> {
       await this.initialize();
     }
 
-    if (!this.filePath || !tauriWriteTextFile) {
+    if (!this.filePath) {
       throw new Error('File system not initialized');
     }
 
     try {
       data.lastModified = Math.floor(Date.now() / 1000);
-      await tauriWriteTextFile(this.filePath, JSON.stringify(data, null, 2));
+      await platformWriteTextFile(this.filePath, JSON.stringify(data, null, 2));
       this.systemLogger.info(this.getLoggerName(), `Wrote data to ${this.getFileName()}`);
     } catch (error) {
       this.systemLogger.error(this.getLoggerName(), `Failed to write data: ${error}`);

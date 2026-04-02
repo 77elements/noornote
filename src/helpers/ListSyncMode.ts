@@ -104,7 +104,7 @@ export function bindListSyncButtons(
 export function renderListSyncButtons(): string {
   const mode = getListSyncMode();
   const platform = PlatformService.getInstance();
-  const isDesktop = platform.isTauri && !platform.isAndroid;
+  const isDesktop = platform.isDesktop;
 
   if (mode === 'easy') {
     const syncText = isDesktop

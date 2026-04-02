@@ -1,0 +1,36 @@
+{
+  "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
+  "appId": "com.noornote.desktop",
+  "productName": "Noornote",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*"
+  ],
+  "mac": {
+    "target": ["dmg"],
+    "category": "public.app-category.social-networking",
+    "icon": "src-tauri/icons/icon.icns",
+    "extraResources": [
+      {
+        "from": "binaries/darwin-arm64/",
+        "to": "binaries/",
+        "filter": ["noorsigner"]
+      }
+    ]
+  },
+  "linux": {
+    "target": ["deb", "AppImage", "tar.gz"],
+    "category": "Network",
+    "icon": "src-tauri/icons/",
+    "extraResources": [
+      {
+        "from": "binaries/linux-${arch}/",
+        "to": "binaries/",
+        "filter": ["noorsigner"]
+      }
+    ]
+  }
+}

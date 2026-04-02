@@ -4,7 +4,19 @@ import { ToastService } from '../services/ToastService';
 const platform = PlatformService.getInstance();
 
 export async function downloadMedia(url: string, defaultFileName: string): Promise<void> {
-  if (platform.isTauri && platform.isAndroid) {
+  if (platform.isElectron) {
+    // Electron Desktop: save dialog → writeFile
+    const filePath = await window.electronAPI!.saveFileDialog({
+      defaultPath: defaultFileName,
+      filters: [{ name: 'All Files', extensions: ['*'] }]
+    });
+    if (filePath) {
+      const response = await fetch(url);
+      const data = new Uint8Array(await response.arrayBuffer());
+      await window.electronAPI!.writeFile(filePath, data);
+      ToastService.show('Saved successfully', 'success');
+    }
+  } else if (platform.isTauri && platform.isAndroid) {
     // GrapheneOS: save dialog → content:// URI → Kotlin plugin streams from URL
     const { save } = await import('@tauri-apps/plugin-dialog');
     const { invoke } = await import('@tauri-apps/api/core');
@@ -14,7 +26,7 @@ export async function downloadMedia(url: string, defaultFileName: string): Promi
       ToastService.show('Saved successfully', 'success');
     }
   } else if (platform.isTauri) {
-    // Desktop: save dialog → writeFile
+    // Tauri Desktop: save dialog → writeFile
     const { save } = await import('@tauri-apps/plugin-dialog');
     const { writeFile } = await import('@tauri-apps/plugin-fs');
     const { fetch: tauriFetch } = await import('@tauri-apps/plugin-http');

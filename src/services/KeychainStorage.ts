@@ -26,11 +26,12 @@ export class KeychainStorage {
 
 
   /**
-   * Check if running in Tauri environment
+   * Check if running in Tauri desktop environment.
+   * Electron uses EncryptedFileStorage instead — not this keychain path.
    */
   private static isTauri(): boolean {
     const platform = PlatformService.getInstance();
-    return platform.isTauri && !platform.isAndroid;
+    return platform.isTauri && !platform.isAndroid && !platform.isElectron;
   }
 
   /**

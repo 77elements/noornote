@@ -84,7 +84,7 @@ export class ProfileRecognitionService {
     }
 
     // localStorage empty - try loading from file (desktop only)
-    if (PlatformService.getInstance().isTauri) {
+    if (PlatformService.getInstance().isDesktop) {
       try {
         await this.fileStorage.initialize();
         const fileData = await this.fileStorage.read();
@@ -348,7 +348,7 @@ export class ProfileRecognitionService {
    * Save encounters to Tauri file (desktop only)
    */
   private async saveToFile(): Promise<void> {
-    if (!PlatformService.getInstance().isTauri) return;
+    if (!PlatformService.getInstance().isDesktop) return;
     try {
       await this.fileStorage.initialize();
       const encounters = this.getEncountersFromStorage();

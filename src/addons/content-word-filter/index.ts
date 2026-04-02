@@ -1,12 +1,19 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
+const STORAGE_KEY = 'noornote_content_word_filter_enabled';
+
 export function isContentWordFilterEnabled(): boolean {
-  return PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.CONTENT_WORD_FILTER_ENABLED, false);
+  const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
+    StorageKeys.CONTENT_WORD_FILTER_ENABLED, null
+  );
+  if (perAccount !== null) return perAccount;
+  return localStorage.getItem(STORAGE_KEY) === 'true';
 }
 
 export function setContentWordFilterEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.CONTENT_WORD_FILTER_ENABLED, enabled);
+  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
 }
 
 export function getFilterWords(): string[] {

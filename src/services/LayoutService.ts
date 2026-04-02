@@ -96,7 +96,7 @@ export class LayoutService {
 
     // Handle window resize for phone mode
     const _p = PlatformService.getInstance();
-    if (_p.isTauri && !_p.isAndroid) {
+    if (_p.isDesktop) {
       await this.handleWindowResize(previousMode, this.effectiveMode);
     }
 
@@ -256,27 +256,37 @@ export class LayoutService {
    */
   private async handleWindowResize(previousMode: LayoutMode, newMode: LayoutMode): Promise<void> {
     try {
-      const { getCurrentWindow } = await import('@tauri-apps/api/window');
-      const { LogicalSize } = await import('@tauri-apps/api/dpi');
-      const currentWindow = getCurrentWindow();
+      const platform = PlatformService.getInstance();
 
-      if (newMode === 'phone' && previousMode !== 'phone') {
-        // Switching TO phone - save current width and resize
-        const size = await currentWindow.innerSize();
-        this.previousWindowWidth = size.width;
+      if (platform.isElectron) {
+        if (newMode === 'phone' && previousMode !== 'phone') {
+          const [width, height] = await window.electronAPI!.getWindowSize();
+          this.previousWindowWidth = width;
+          await window.electronAPI!.setWindowSize(390, height);
+        } else if (newMode !== 'phone' && previousMode === 'phone') {
+          const [, height] = await window.electronAPI!.getWindowSize();
+          const restoreWidth = this.previousWindowWidth || 1200;
+          await window.electronAPI!.setWindowSize(restoreWidth, height);
+          this.previousWindowWidth = null;
+        }
+      } else {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const { LogicalSize } = await import('@tauri-apps/api/dpi');
+        const currentWindow = getCurrentWindow();
 
-        await currentWindow.setSize(new LogicalSize(390, size.height));
-      } else if (newMode !== 'phone' && previousMode === 'phone') {
-        // Switching FROM phone - restore previous width
-        const size = await currentWindow.innerSize();
-        const restoreWidth = this.previousWindowWidth || 1200;
-
-        await currentWindow.setSize(new LogicalSize(restoreWidth, size.height));
-
-        this.previousWindowWidth = null;
+        if (newMode === 'phone' && previousMode !== 'phone') {
+          const size = await currentWindow.innerSize();
+          this.previousWindowWidth = size.width;
+          await currentWindow.setSize(new LogicalSize(390, size.height));
+        } else if (newMode !== 'phone' && previousMode === 'phone') {
+          const size = await currentWindow.innerSize();
+          const restoreWidth = this.previousWindowWidth || 1200;
+          await currentWindow.setSize(new LogicalSize(restoreWidth, size.height));
+          this.previousWindowWidth = null;
+        }
       }
     } catch {
-      // Silently fail if Tauri API not available (browser dev mode)
+      // Silently fail if window API not available (browser dev mode)
     }
   }
 }

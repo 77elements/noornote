@@ -1,6 +1,8 @@
 /**
  * KeySignerClient - Client for NoorSigner daemon socket communication
  * Communicates with local key signer daemon via Unix socket (macOS/Linux)
+ *
+ * Supports both Electron (window.electronAPI) and Tauri (invoke) backends.
  */
 
 import { PlatformService } from './PlatformService';
@@ -74,10 +76,7 @@ export class KeySignerClient {
   private readonly MAX_RETRY_ATTEMPTS = 3;
   private readonly RETRY_DELAY = 1000; // 1s between retries
 
-  private constructor() {
-    // Platform-specific socket path (unused - kept for reference)
-    // Socket communication is handled by Tauri backend
-  }
+  private constructor() {}
 
   public static getInstance(): KeySignerClient {
     if (!KeySignerClient.instance) {
@@ -86,9 +85,6 @@ export class KeySignerClient {
     return KeySignerClient.instance;
   }
 
-  /**
-   * Check if error is a transient connection error (reconnectable)
-   */
   private isTransientError(errorMessage: string): boolean {
     return (
       errorMessage.includes('Broken pipe') ||
@@ -98,33 +94,24 @@ export class KeySignerClient {
     );
   }
 
-  /**
-   * Get current connection state
-   */
   public getConnectionState(): 'connected' | 'reconnecting' | 'disconnected' {
     return this.connectionState;
   }
 
-  /**
-   * Sleep helper for retry delays
-   */
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
-   * Ensure we're running in Tauri
+   * Ensure we're running on a desktop platform (Electron or Tauri desktop)
    */
-  private ensureTauri(): void {
+  private ensureDesktop(): void {
     const platform = PlatformService.getInstance();
-    if (!platform.isTauri || platform.isAndroid) {
+    if (!platform.isDesktop) {
       throw new Error('KeySigner is only available in desktop app');
     }
   }
 
-  /**
-   * Build a request object with auto-incrementing ID
-   */
   private buildRequest(method: string, params?: Record<string, unknown>): SignerRequest {
     return {
       id: `req-${++this.requestId}`,
@@ -134,25 +121,30 @@ export class KeySignerClient {
   }
 
   /**
-   * Execute a Tauri invoke with timeout
+   * Execute a key signer request with timeout.
+   * Routes to Electron IPC or Tauri invoke based on platform.
    */
   private async invokeWithTimeout(request: SignerRequest): Promise<string> {
-    const { invoke } = await import('@tauri-apps/api/core');
+    const platform = PlatformService.getInstance();
 
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('KeySigner request timeout')), this.timeout);
     });
 
-    const invokePromise = invoke('key_signer_request', {
-      request: JSON.stringify(request),
-    });
+    let invokePromise: Promise<string>;
+
+    if (platform.isElectron) {
+      invokePromise = window.electronAPI!.keySignerRequest(JSON.stringify(request));
+    } else {
+      const { invoke } = await import('@tauri-apps/api/core');
+      invokePromise = invoke('key_signer_request', {
+        request: JSON.stringify(request),
+      });
+    }
 
     return Promise.race([invokePromise, timeoutPromise]) as Promise<string>;
   }
 
-  /**
-   * Handle connection errors with proper state management
-   */
   private handleConnectionError(errorMessage: string): never {
     if (this.isTransientError(errorMessage)) {
       this.consecutiveFailures++;
@@ -186,12 +178,8 @@ export class KeySignerClient {
     throw new Error(`KeySigner error: ${errorMessage}`);
   }
 
-  /**
-   * Send request to key signer daemon with timeout
-   * Uses NoorSigner protocol: {id, method, event_json}
-   */
   private async sendRequest(method: string, eventJson?: string): Promise<SignResponse> {
-    this.ensureTauri();
+    this.ensureDesktop();
 
     const request = this.buildRequest(method, eventJson ? { event_json: eventJson } : undefined);
 
@@ -213,11 +201,8 @@ export class KeySignerClient {
     }
   }
 
-  /**
-   * Send a custom request with arbitrary parameters
-   */
   private async sendCustomRequest<T>(method: string, params?: Record<string, unknown>): Promise<T> {
-    this.ensureTauri();
+    this.ensureDesktop();
 
     const request = this.buildRequest(method, params);
 
@@ -230,19 +215,11 @@ export class KeySignerClient {
     }
   }
 
-  /**
-   * Get public key (npub) from key signer
-   */
   public async getNpub(): Promise<string> {
     const response = await this.sendRequest('get_npub');
-    // Daemon returns npub in 'signature' field (reused field)
     return response.signature || '';
   }
 
-  /**
-   * Get public key (hex) from key signer
-   * Note: Daemon doesn't have this method, we convert from npub
-   */
   public async getPubkey(): Promise<string> {
     const npub = await this.getNpub();
     const decoded = decodeNip19(npub);
@@ -252,18 +229,12 @@ export class KeySignerClient {
     throw new Error('Invalid npub from daemon');
   }
 
-  /**
-   * Sign a Nostr event
-   */
   public async signEvent(event: any): Promise<any> {
     const eventJson = JSON.stringify(event);
     const response = await this.sendRequest('sign_event', eventJson);
     return response.signature;
   }
 
-  /**
-   * Encrypt plaintext using NIP-44 (for recipient)
-   */
   public async nip44Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
     const response = await this.sendCustomRequest<SignResponse>('nip44_encrypt', {
       plaintext,
@@ -275,9 +246,6 @@ export class KeySignerClient {
     return response.signature || '';
   }
 
-  /**
-   * Decrypt NIP-44 payload (from sender)
-   */
   public async nip44Decrypt(payload: string, senderPubkey: string): Promise<string> {
     const response = await this.sendCustomRequest<SignResponse>('nip44_decrypt', {
       payload,
@@ -289,10 +257,6 @@ export class KeySignerClient {
     return response.signature || '';
   }
 
-  /**
-   * Encrypt plaintext using NIP-04 (for recipient)
-   * NIP-04 is deprecated but widely compatible
-   */
   public async nip04Encrypt(plaintext: string, recipientPubkey: string): Promise<string> {
     const response = await this.sendCustomRequest<SignResponse>('nip04_encrypt', {
       plaintext,
@@ -304,10 +268,6 @@ export class KeySignerClient {
     return response.signature || '';
   }
 
-  /**
-   * Decrypt NIP-04 payload (from sender)
-   * NIP-04 is deprecated but widely compatible
-   */
   public async nip04Decrypt(payload: string, senderPubkey: string): Promise<string> {
     const response = await this.sendCustomRequest<SignResponse>('nip04_decrypt', {
       payload,
@@ -319,23 +279,16 @@ export class KeySignerClient {
     return response.signature || '';
   }
 
-  /**
-   * Check if key signer daemon is running
-   * Uses retry logic for transient errors (broken pipe, connection reset)
-   * Only returns false if daemon is truly not running or max retries exceeded
-   */
   public async isRunning(): Promise<boolean> {
     let attempts = 0;
 
     while (attempts < this.MAX_RETRY_ATTEMPTS) {
       try {
         await this.sendRequest('get_npub');
-        // Success - daemon is running
         return true;
       } catch (_error) {
         const errorMessage = _error instanceof Error ? _error.message : String(_error);
 
-        // If it's a transient error, retry
         if (this.isTransientError(errorMessage) && attempts < this.MAX_RETRY_ATTEMPTS - 1) {
           attempts++;
           console.log(`[KeySigner] Retrying connection check (${attempts}/${this.MAX_RETRY_ATTEMPTS})...`);
@@ -343,57 +296,37 @@ export class KeySignerClient {
           continue;
         }
 
-        // Permanent error or max retries exceeded
         return false;
       }
     }
 
-    // Max retries exceeded
     return false;
   }
 
-  /**
-   * Enable autostart for daemon
-   */
   public async enableAutostart(): Promise<void> {
     const response = await this.sendRequest('enable_autostart');
-    if (response.error) {
-      throw new Error(response.error);
-    }
+    if (response.error) throw new Error(response.error);
   }
 
-  /**
-   * Disable autostart for daemon
-   */
   public async disableAutostart(): Promise<void> {
     const response = await this.sendRequest('disable_autostart');
-    if (response.error) {
-      throw new Error(response.error);
-    }
+    if (response.error) throw new Error(response.error);
   }
 
-  /**
-   * Get autostart status
-   */
   public async getAutostartStatus(): Promise<boolean> {
     const response = await this.sendRequest('get_autostart_status');
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    // Daemon returns 'enabled' or 'disabled' in signature field
+    if (response.error) throw new Error(response.error);
     return response.signature === 'enabled';
   }
 
-  /**
-   * Check if Trust Mode session is valid
-   */
   public async checkTrustSession(): Promise<boolean> {
-    const _p = PlatformService.getInstance();
-    if (!_p.isTauri || _p.isAndroid) {
-      return false;
-    }
+    const platform = PlatformService.getInstance();
+    if (!platform.isDesktop) return false;
 
     try {
+      if (platform.isElectron) {
+        return await window.electronAPI!.checkTrustSession();
+      }
       const { invoke } = await import('@tauri-apps/api/core');
       return await invoke<boolean>('check_trust_session');
     } catch (error) {
@@ -402,83 +335,58 @@ export class KeySignerClient {
     }
   }
 
-  /**
-   * Stop (shutdown) the daemon gracefully
-   */
   public async stopDaemon(): Promise<void> {
     const response = await this.sendRequest('shutdown_daemon');
-    if (response.error) {
-      throw new Error(response.error);
-    }
+    if (response.error) throw new Error(response.error);
   }
 
-  /**
-   * Launch NoorSigner with specified mode
-   */
   private async launchSigner(mode: 'daemon' | 'init'): Promise<void> {
-    this.ensureTauri();
+    this.ensureDesktop();
+    const platform = PlatformService.getInstance();
 
     try {
-      const { invoke } = await import('@tauri-apps/api/core');
-      await invoke('launch_key_signer', { mode });
+      if (platform.isElectron) {
+        await window.electronAPI!.launchKeySigner(mode);
+      } else {
+        const { invoke } = await import('@tauri-apps/api/core');
+        await invoke('launch_key_signer', { mode });
+      }
     } catch (error) {
       console.error(`Failed to launch KeySigner ${mode}:`, error);
       throw error;
     }
   }
 
-  /**
-   * Launch NoorSigner daemon (via Tauri command)
-   */
   public async launchDaemon(): Promise<void> {
     return this.launchSigner('daemon');
   }
 
-  /**
-   * Launch NoorSigner init (first-time setup)
-   */
   public async launchInit(): Promise<void> {
     return this.launchSigner('init');
   }
 
-  /**
-   * List all accounts stored in NoorSigner
-   */
   public async listAccounts(): Promise<{ accounts: KeySignerAccount[]; activePubkey: string }> {
     const response = await this.sendCustomRequest<ListAccountsResponse>('list_accounts');
-    if (response.error) {
-      throw new Error(response.error);
-    }
+    if (response.error) throw new Error(response.error);
     return {
       accounts: response.accounts || [],
       activePubkey: response.active_pubkey || '',
     };
   }
 
-  /**
-   * Switch to a different account in NoorSigner
-   * Requires password for the target account
-   */
   public async switchAccount(npub: string, password: string): Promise<{ pubkey: string; npub: string }> {
     const response = await this.sendCustomRequest<SwitchAccountResponse>('switch_account', {
       npub,
       password,
     });
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    if (!response.success) {
-      throw new Error('Account switch failed');
-    }
+    if (response.error) throw new Error(response.error);
+    if (!response.success) throw new Error('Account switch failed');
     return {
       pubkey: response.pubkey || '',
       npub: response.npub || '',
     };
   }
 
-  /**
-   * Add a new account to NoorSigner
-   */
   public async addAccount(
     nsec: string,
     password: string,
@@ -489,45 +397,30 @@ export class KeySignerClient {
       password,
       set_active: setActive,
     });
-    if (response.error) {
-      throw new Error(response.error);
-    }
-    if (!response.success) {
-      throw new Error('Failed to add account');
-    }
+    if (response.error) throw new Error(response.error);
+    if (!response.success) throw new Error('Failed to add account');
     return {
       pubkey: response.pubkey || '',
       npub: response.npub || '',
     };
   }
 
-  /**
-   * Remove an account from NoorSigner
-   * Note: Cannot remove the currently active account
-   */
   public async removeAccount(pubkey: string, password: string): Promise<boolean> {
     const response = await this.sendCustomRequest<RemoveAccountResponse>('remove_account', {
       pubkey,
       password,
     });
-    if (response.error) {
-      throw new Error(response.error);
-    }
+    if (response.error) throw new Error(response.error);
     return response.success || false;
   }
 
-  /**
-   * Get the currently active account info
-   */
   public async getActiveAccount(): Promise<{
     pubkey: string;
     npub: string;
     isUnlocked: boolean;
   }> {
     const response = await this.sendCustomRequest<ActiveAccountResponse>('get_active_account');
-    if (response.error) {
-      throw new Error(response.error);
-    }
+    if (response.error) throw new Error(response.error);
     return {
       pubkey: response.pubkey || '',
       npub: response.npub || '',
@@ -535,21 +428,25 @@ export class KeySignerClient {
     };
   }
 
-  /**
-   * Add account via CLI (when daemon is NOT running)
-   * Uses noorsigner add-account --stdin
-   */
   public async addAccountViaCli(
     nsec: string,
     password: string
   ): Promise<{ pubkey: string; npub: string }> {
-    this.ensureTauri();
+    this.ensureDesktop();
+    const platform = PlatformService.getInstance();
 
-    const { invoke } = await import('@tauri-apps/api/core');
     const jsonInput = JSON.stringify({ nsec, password });
 
     try {
-      const responseStr = await invoke<string>('add_account_via_cli', { jsonInput });
+      let responseStr: string;
+
+      if (platform.isElectron) {
+        responseStr = await window.electronAPI!.addAccountViaCli(jsonInput);
+      } else {
+        const { invoke } = await import('@tauri-apps/api/core');
+        responseStr = await invoke<string>('add_account_via_cli', { jsonInput });
+      }
+
       const response = JSON.parse(responseStr);
 
       if (!response.success) {
@@ -566,48 +463,51 @@ export class KeySignerClient {
     }
   }
 
-  /**
-   * Launch NoorSigner daemon with password (silent, no terminal)
-   * Used when trust session is expired and silent mode is enabled
-   */
   public async launchDaemonWithPassword(password: string): Promise<string> {
-    this.ensureTauri();
+    this.ensureDesktop();
+    const platform = PlatformService.getInstance();
+
+    if (platform.isElectron) {
+      return window.electronAPI!.launchDaemonWithPassword(password);
+    }
     const { invoke } = await import('@tauri-apps/api/core');
     return invoke<string>('launch_daemon_with_password', { password });
   }
 
-  /**
-   * Start daemon process waiting for password input (step 1 of 2)
-   * Daemon is running but not yet authenticated — call submitDaemonPassword() next
-   */
   public async prepareDaemonForUnlock(): Promise<void> {
-    this.ensureTauri();
+    this.ensureDesktop();
+    const platform = PlatformService.getInstance();
+
+    if (platform.isElectron) {
+      await window.electronAPI!.prepareDaemonForUnlock();
+      return;
+    }
     const { invoke } = await import('@tauri-apps/api/core');
     await invoke('prepare_daemon_for_unlock');
   }
 
-  /**
-   * Submit password to already-running daemon process (step 2 of 2)
-   * Daemon validates password, creates socket, starts serving
-   */
   public async submitDaemonPassword(password: string): Promise<string> {
-    this.ensureTauri();
+    this.ensureDesktop();
+    const platform = PlatformService.getInstance();
+
+    if (platform.isElectron) {
+      return window.electronAPI!.submitDaemonPassword(password);
+    }
     const { invoke } = await import('@tauri-apps/api/core');
     return invoke<string>('submit_daemon_password', { password });
   }
 
-  /**
-   * Check if any NoorSigner accounts exist on disk
-   */
   public async hasAccounts(): Promise<boolean> {
-    this.ensureTauri();
+    this.ensureDesktop();
+    const platform = PlatformService.getInstance();
+
+    if (platform.isElectron) {
+      return window.electronAPI!.hasNoorSignerAccounts();
+    }
     const { invoke } = await import('@tauri-apps/api/core');
     return invoke<boolean>('has_noorsigner_accounts');
   }
 
-  /**
-   * Destroy instance
-   */
   public static destroy(): void {
     KeySignerClient.instance = null;
   }

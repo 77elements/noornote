@@ -3,8 +3,8 @@
  *
  * Collects all log files (root + week/ + archive/), creates a ZIP,
  * then triggers the platform-appropriate save mechanism:
- * - Android: Blob download via <a> tag → Downloads folder
- * - Desktop: tauri-plugin-dialog save dialog
+ * - Android: Tauri invoke to Kotlin plugin → Downloads folder
+ * - Desktop: native save dialog (Electron or Tauri)
  */
 
 import { zipSync } from 'fflate';
@@ -13,6 +13,61 @@ import { SystemLogger } from '../components/system/SystemLogger';
 
 const logger = SystemLogger.getInstance();
 const platform = PlatformService.getInstance();
+
+// ── Platform-agnostic FS wrappers ──
+
+async function platformReadFile(filePath: string): Promise<Uint8Array> {
+  if (platform.isElectron) {
+    const buf = await window.electronAPI!.readFile(filePath);
+    return new Uint8Array(buf);
+  }
+  const { readFile } = await import('@tauri-apps/plugin-fs');
+  return new Uint8Array(await readFile(filePath));
+}
+
+async function platformReadDir(dirPath: string): Promise<Array<{ name: string; isFile: boolean }>> {
+  if (platform.isElectron) return window.electronAPI!.readDir(dirPath);
+  const { readDir } = await import('@tauri-apps/plugin-fs');
+  return readDir(dirPath);
+}
+
+async function platformExists(path: string): Promise<boolean> {
+  if (platform.isElectron) return window.electronAPI!.fsExists(path);
+  const { exists } = await import('@tauri-apps/plugin-fs');
+  return exists(path);
+}
+
+async function platformHomeDir(): Promise<string> {
+  if (platform.isElectron) return window.electronAPI!.getHomeDir();
+  const { homeDir } = await import('@tauri-apps/api/path');
+  return homeDir();
+}
+
+async function platformAppDataDir(): Promise<string> {
+  if (platform.isElectron) return window.electronAPI!.getAppDataDir();
+  const { appDataDir } = await import('@tauri-apps/api/path');
+  return appDataDir();
+}
+
+async function platformSaveFileDialog(filename: string): Promise<string | null> {
+  if (platform.isElectron) {
+    return window.electronAPI!.saveFileDialog({
+      defaultPath: filename,
+      filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
+    });
+  }
+  const { save } = await import('@tauri-apps/plugin-dialog');
+  return save({
+    defaultPath: filename,
+    filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
+  });
+}
+
+async function platformWriteFile(filePath: string, data: Uint8Array): Promise<void> {
+  if (platform.isElectron) return window.electronAPI!.writeFile(filePath, data);
+  const { writeFile } = await import('@tauri-apps/plugin-fs');
+  return writeFile(filePath, data);
+}
 
 /**
  * Export all diagnostic logs as a ZIP file and share/save it.
@@ -29,7 +84,6 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
     // 2. Collect all log files
     const { files, debugInfo } = await collectLogFiles();
     if (Object.keys(files).length === 0) {
-      // Surface debug info for mobile where SystemLog isn't visible
       (exportDiagnosticLogs as any).lastDebugInfo = debugInfo;
       logger.warn('DiagLogExport', `No logs: ${debugInfo}`);
       return false;
@@ -55,13 +109,7 @@ export async function exportDiagnosticLogs(): Promise<boolean> {
   }
 }
 
-/**
- * Collect all log files from root/, week/, archive/ into a flat structure for ZIP.
- * Returns { "filename": Uint8Array } for fflate's zipSync.
- */
 async function collectLogFiles(): Promise<{ files: Record<string, Uint8Array>; debugInfo: string }> {
-  const { readDir, readFile, exists } = await import('@tauri-apps/plugin-fs');
-
   const logsDir = await getLogsDir();
   if (!logsDir) return { files: {}, debugInfo: 'no logsDir' };
 
@@ -75,12 +123,12 @@ async function collectLogFiles(): Promise<{ files: Record<string, Uint8Array>; d
   ];
 
   for (const { path, prefix } of subdirs) {
-    if (!(await exists(path))) {
+    if (!(await platformExists(path))) {
       debug.push(`${prefix || 'root'}:missing`);
       continue;
     }
 
-    const entries = await readDir(path);
+    const entries = await platformReadDir(path);
     const names = entries.map(e => `${e.name}(file=${e.isFile})`);
     debug.push(`${prefix || 'root'}:[${names.join(',')}]`);
 
@@ -88,8 +136,8 @@ async function collectLogFiles(): Promise<{ files: Record<string, Uint8Array>; d
       if (!entry.name.endsWith('.jsonl') && !entry.name.endsWith('.jsonl.gz')) continue;
 
       try {
-        const data = await readFile(`${path}/${entry.name}`);
-        files[`${prefix}${entry.name}`] = new Uint8Array(data);
+        const data = await platformReadFile(`${path}/${entry.name}`);
+        files[`${prefix}${entry.name}`] = data;
       } catch {
         // Skip unreadable files
       }
@@ -99,15 +147,9 @@ async function collectLogFiles(): Promise<{ files: Record<string, Uint8Array>; d
   return { files, debugInfo: debug.join(' | ') };
 }
 
-/**
- * Get the logs directory path.
- * Android: {appDataDir}/logs/ (no npub nesting)
- * Desktop: ~/.noornote/{npub}/logs/
- */
 async function getLogsDir(): Promise<string | null> {
   if (platform.isAndroid) {
-    const { appDataDir } = await import('@tauri-apps/api/path');
-    const base = (await appDataDir()).replace(/\/+$/, '');
+    const base = (await platformAppDataDir()).replace(/\/+$/, '');
     return `${base}/logs`;
   }
 
@@ -115,20 +157,16 @@ async function getLogsDir(): Promise<string | null> {
   const user = AuthService.getInstance().getCurrentUser();
   if (!user?.npub) return null;
 
-  const { homeDir } = await import('@tauri-apps/api/path');
-  const home = await homeDir();
+  const home = await platformHomeDir();
   return `${home}/.noornote/${user.npub}/logs`;
 }
 
 /**
- * Android: Trigger download via Blob URL + <a> click.
- * This works in any WebView — the Android download manager picks it up
- * and saves it to the Downloads folder.
+ * Android: Trigger download via Tauri invoke to Kotlin plugin.
+ * This remains Tauri-only since Electron doesn't run on Android.
  */
 async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<boolean> {
   const { invoke } = await import('@tauri-apps/api/core');
-  // Convert to base64 for passing through Tauri invoke to Kotlin
-  // Chunk-based to avoid call stack overflow with spread operator on large arrays
   const CHUNK = 8192;
   let binary = '';
   for (let i = 0; i < zipData.length; i += CHUNK) {
@@ -145,23 +183,17 @@ async function saveToDownloads(zipData: Uint8Array, filename: string): Promise<b
 }
 
 /**
- * Desktop: Save via Tauri dialog.
+ * Desktop: Save via native dialog (Electron or Tauri).
  */
 async function saveViaDialog(zipData: Uint8Array, filename: string): Promise<boolean> {
-  const { save } = await import('@tauri-apps/plugin-dialog');
-  const { writeFile } = await import('@tauri-apps/plugin-fs');
-
-  const filePath = await save({
-    defaultPath: filename,
-    filters: [{ name: 'ZIP Archive', extensions: ['zip'] }],
-  });
+  const filePath = await platformSaveFileDialog(filename);
 
   if (!filePath) {
     logger.info('DiagLogExport', 'Save cancelled');
     return false;
   }
 
-  await writeFile(filePath, zipData);
+  await platformWriteFile(filePath, zipData);
   logger.success('DiagLogExport', `Logs saved`);
   return true;
 }
