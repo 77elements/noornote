@@ -6,6 +6,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
 import { ContentProcessor } from '../../../services/ContentProcessor';
+import { PollProcessor } from './PollProcessor';
 
 export class RepostProcessor {
   private static contentProcessor = ContentProcessor.getInstance();
@@ -82,6 +83,10 @@ export class RepostProcessor {
 
     if (originalEvent) {
       result.repostedEvent = originalEvent;
+      // Extract poll data if reposted event is a NIP-88 poll (kind 1068)
+      if (originalEvent.kind === 1068) {
+        result.pollData = PollProcessor.extractPollData(originalEvent.tags);
+      }
     }
 
     return result;

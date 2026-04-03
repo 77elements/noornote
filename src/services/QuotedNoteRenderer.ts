@@ -215,6 +215,16 @@ export class QuotedNoteRenderer {
       this.renderPollOptions(quoteBox, event);
     }
 
+    // Render NIP-88 poll (kind 1068)
+    if (event.kind === 1068) {
+      const { PollProcessor } = await import('../components/ui/note-processing/PollProcessor');
+      const pollData = PollProcessor.extractPollData(event.tags);
+      if (pollData.options.length > 0) {
+        const { NIP88PollRenderer } = await import('../components/ui/note-features/NIP88PollRenderer');
+        NIP88PollRenderer.render(quoteBox, pollData, event).catch(() => {});
+      }
+    }
+
     // Setup collapsible for long quoted content (only if enabled)
     if (enableCollapsible) {
       NoteUI.setupCollapsible(quoteBox);

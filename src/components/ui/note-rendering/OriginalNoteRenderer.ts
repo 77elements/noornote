@@ -54,9 +54,10 @@ export class OriginalNoteRenderer {
     }
 
     // Check if this is a NIP-88 Poll (kind 1068) and render poll options (async)
-    if (note.rawEvent.kind === 1068 && note.pollData) {
-      // Render asynchronously (non-blocking)
-      NIP88PollRenderer.render(element, note.pollData, note.rawEvent).catch(error => {
+    // For reposts, the poll data is on the reposted event
+    const effectiveEvent = note.repostedEvent || note.rawEvent;
+    if (effectiveEvent.kind === 1068 && note.pollData) {
+      NIP88PollRenderer.render(element, note.pollData, effectiveEvent).catch(error => {
         console.error('Failed to render NIP-88 poll:', error);
       });
     }

@@ -55,7 +55,7 @@ export class PollProcessor {
   /**
    * Extract poll data from event tags (NIP-88)
    */
-  private static extractPollData(tags: string[][]): PollData {
+  static extractPollData(tags: string[][]): PollData {
     const options: PollOption[] = [];
     let multipleChoice = false;
     let endDate: number | undefined;
