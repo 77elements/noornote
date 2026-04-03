@@ -17,7 +17,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
-    "electron:dev": "ELECTRON_DEV_MODE=wide electron .",
+    "electron:dev": "ELECTRON_DEV_MODE=wide npx electron .",
     "electron:build": "electron-builder",
     "build:static-css": "sass src/styles/static-pages.scss public/static.css --style=compressed --no-source-map",
     "render-banners": "node marketing/banners/generate-pngs.js",
