@@ -3,8 +3,8 @@ import { resolve } from 'path';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
-  // Base URL for assets (absolute for SPA deep-link support)
-  base: '/',
+  // Base URL: './' for Electron (file:// protocol), '/' for Web (SPA deep links)
+  base: process.env.ELECTRON_BUILD ? './' : '/',
 
   // Development server configuration
   server: {

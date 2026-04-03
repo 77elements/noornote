@@ -74,7 +74,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Build frontend
-        run: bun run build
+        run: ELECTRON_BUILD=1 bun run build
 
       - name: Build Electron
         run: npx electron-builder ${{ matrix.electron_args }} --publish never
