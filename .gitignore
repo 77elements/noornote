@@ -71,4 +71,4 @@ public/download/noornote-release.apk
 
 # Optional relay (local data only)
 relay/strfry-db/
-relay/*.log
+relay/*.log.claude-comm.md

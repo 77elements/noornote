@@ -126,11 +126,7 @@ export class MessagesView extends View {
             New Message
           </button>
           <button class="dropdown-menu-trigger messages-view__menu-trigger" aria-label="Message options">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-              <circle cx="8" cy="2" r="1.5" />
-              <circle cx="8" cy="8" r="1.5" />
-              <circle cx="8" cy="14" r="1.5" />
-            </svg>
+            <svg width="16" height="16"><use href="#icon-menu-dots"/></svg>
           </button>
         </div>
       </div>
@@ -376,10 +372,7 @@ export class MessagesView extends View {
 
       list.innerHTML = `
         <div class="messages-view__empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
-          </svg>
+          <svg width="48" height="48"><use href="#icon-email"/></svg>
           <p>${emptyMessage}</p>
           <p class="text-alpha-medium">Start a conversation by clicking "New Message"</p>
         </div>
@@ -500,15 +493,11 @@ export class MessagesView extends View {
 
     menu.innerHTML = `
       <button class="dropdown-menu-item" data-action="mark-all-read">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M2 8l4 4 8-8"/>
-        </svg>
+        <svg width="16" height="16"><use href="#icon-checkmark"/></svg>
         Mark all read
       </button>
       <button class="dropdown-menu-item" data-action="mark-all-unread">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="8" cy="8" r="6"/>
-        </svg>
+        <svg width="16" height="16"><use href="#icon-circle"/></svg>
         Mark all unread
       </button>
     `;
@@ -545,10 +534,7 @@ export class MessagesView extends View {
         <h1>Messages</h1>
       </div>
       <div class="messages-view__empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-          <polyline points="22,6 12,13 2,6"/>
-        </svg>
+        <svg width="48" height="48"><use href="#icon-email"/></svg>
         <p>Direct messages are not available with Bunker URL login</p>
         <p class="text-alpha-medium">Your remote signer does not support NIP-44 encryption required for private messages. Use a browser extension or NoorSigner for full DM access.</p>
       </div>

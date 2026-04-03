@@ -669,9 +669,7 @@ export class MainLayout {
     backBtn.className = 'btn-icon search-view-primary__back';
     backBtn.title = 'Back to timeline';
     backBtn.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
+      <svg width="24" height="24"><use href="#icon-back"/></svg>
     `;
     backBtn.addEventListener('click', () => {
       Router.getInstance().navigate('/');
@@ -1200,9 +1198,7 @@ export class MainLayout {
     layout.innerHTML = `
       <header class="mobile-header">
         <button class="mobile-header__hamburger" aria-label="Open menu">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 12h18M3 6h18M3 18h18"/>
-          </svg>
+          <svg width="24" height="24"><use href="#icon-hamburger"/></svg>
           <span class="hamburger-badge"></span>
         </button>
         <span class="nn-logo">NoorNote</span>
@@ -1216,10 +1212,7 @@ export class MainLayout {
             </div>
             <div class="sidebar-welcome-link">
               <a href="/welcome" class="primary-nav__link primary-nav__link--welcome">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-home"/></svg>
                 <span class="primary-nav__item-desc">Welcome</span>
               </a>
             </div>
@@ -1229,91 +1222,58 @@ export class MainLayout {
             <ul class="primary-nav">
             <li>
               <a href="/" class="primary-nav__link primary-nav__link--home" title="Scroll to top">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                  <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-home"/></svg>
                 <span class="primary-nav__item-desc">Timeline</span>
-                <svg class="scroll-to-top-btn" viewBox="0 0 176 248" fill="currentColor" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0">
-                  <path d="M173.5,117.5 C155.833,118.167 138.167,118.833 120.5,119.5C120.5,146.167 120.5,172.833 120.5,199.5C98.5,199.5 76.5,199.5 54.5,199.5C54.5,172.833 54.5,146.167 54.5,119.5C36.8333,118.833 19.1667,118.167 1.5,117.5C29.9251,78.3137 58.5918,39.3137 87.5,0.5C116.408,39.3137 145.075,78.3137 173.5,117.5 Z"/>
-                  <path d="M54.5,211.5 C76.5,211.5 98.5,211.5 120.5,211.5C120.5,215.5 120.5,219.5 120.5,223.5C98.5,223.5 76.5,223.5 54.5,223.5C54.5,219.5 54.5,215.5 54.5,211.5 Z"/>
-                  <path d="M120.5,247.5 C98.5,247.5 76.5,247.5 54.5,247.5C54.5,243.5 54.5,239.5 54.5,235.5C76.5,235.5 98.5,235.5 120.5,235.5C120.5,239.5 120.5,243.5 120.5,247.5 Z"/>
-                </svg>
+                <svg class="scroll-to-top-btn" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
               </a>
             </li>
             <li>
               <a href="/profile" class="primary-nav__link primary-nav__link--profile">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                  <circle cx="12" cy="7" r="4"></circle>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-profile"/></svg>
                 <span class="primary-nav__item-desc">Profile</span>
               </a>
             </li>
             <li>
               <a href="/notifications" class="primary-nav__link primary-nav__link--notifications">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-notifications"/></svg>
                 <span class="primary-nav__item-desc">Notifications</span>
                 <span class="notifications-badge"></span>
               </a>
             </li>
             <li>
               <a href="/articles" class="primary-nav__link primary-nav__link--articles">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-articles"/></svg>
                 <span class="primary-nav__item-desc">Articles</span>
               </a>
             </li>
             <li>
               <a href="/messages" class="primary-nav__link primary-nav__link--messages">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                  <polyline points="22,6 12,13 2,6"></polyline>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-email"/></svg>
                 <span class="primary-nav__item-desc">Messages</span>
                 <span class="badge badge--green dm-badge" style="display: none"></span>
               </a>
             </li>
             <li>
               <a href="/settings" class="primary-nav__link primary-nav__link--settings">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-settings"/></svg>
                 <span class="primary-nav__item-desc">Settings</span>
               </a>
             </li>
             <li>
               <a href="#" class="primary-nav__link primary-nav__link--search">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <path d="m21 21-4.35-4.35"></path>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-search"/></svg>
                 <span class="primary-nav__item-desc">Search</span>
               </a>
             </li>
             <li>
               <a href="/download/" class="primary-nav__link primary-nav__link--download">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-download"/></svg>
                 <span class="primary-nav__item-desc">Download</span>
               </a>
             </li>
             <li>
               <a href="#" class="primary-nav__link primary-nav__link--cache">
-                <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
+                <svg class="primary-nav__item-icon"><use href="#icon-cache"/></svg>
                 <span class="primary-nav__item-desc">Cache <span class="cache-size-display">--</span></span>
               </a>
             </li>
@@ -1326,45 +1286,25 @@ export class MainLayout {
           </div>
           <div class="new-post-dropup">
             <button class="btn btn--new-post">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 5v14M5 12h14"></path>
-              </svg>
+              <svg width="24" height="24"><use href="#icon-plus"/></svg>
               New Post
-              <svg class="dropup-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12">
-                <path d="M18 15l-6-6-6 6"/>
-              </svg>
+              <svg class="dropup-arrow" width="12" height="12"><use href="#icon-chevron-up"/></svg>
             </button>
             <div class="new-post-dropup__menu">
               <button class="new-post-dropup__item" data-action="new-note">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                </svg>
+                <svg width="24" height="24"><use href="#icon-edit"/></svg>
                 Note
               </button>
               <button class="new-post-dropup__item" data-action="new-article">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                  <polyline points="14 2 14 8 20 8"/>
-                  <line x1="16" y1="13" x2="8" y2="13"/>
-                  <line x1="16" y1="17" x2="8" y2="17"/>
-                  <polyline points="10 9 9 9 8 9"/>
-                </svg>
+                <svg width="24" height="24"><use href="#icon-articles-full"/></svg>
                 Article
               </button>
               <button class="new-post-dropup__item" data-action="new-video">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polygon points="23 7 16 12 23 17 23 7"/>
-                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-                </svg>
+                <svg width="24" height="24"><use href="#icon-video"/></svg>
                 Video
               </button>
               <button class="new-post-dropup__item new-post-dropup__item--product" data-action="new-product" style="display: none;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                  <line x1="3" y1="6" x2="21" y2="6"/>
-                  <path d="M16 10a4 4 0 0 1-8 0"/>
-                </svg>
+                <svg width="24" height="24"><use href="#icon-shopping-bag"/></svg>
                 Product
               </button>
             </div>
@@ -2039,20 +1979,14 @@ export class MainLayout {
     li.className = 'primary-nav__item primary-nav__item--accordion primary-nav__link--addons';
     li.innerHTML = `
       <button class="primary-nav__accordion-trigger">
-        <svg class="primary-nav__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
+        <svg class="primary-nav__item-icon"><use href="#icon-addons"/></svg>
         Addons
       </button>
       <ul class="primary-nav__submenu">
         ${addonItems.map(a => `
           <li>
             <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}">
-              <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="3"/>
-                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-              </svg>
+              <svg class="primary-nav__sublink-icon"><use href="#icon-addons"/></svg>
               <span class="primary-nav__sublink-desc">${a.name}</span>
             </a>
           </li>
@@ -2384,9 +2318,7 @@ export class MainLayout {
     backBtn.className = 'btn-icon list-view-primary__back';
     backBtn.title = 'Back to timeline';
     backBtn.innerHTML = `
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
+      <svg width="24" height="24"><use href="#icon-back"/></svg>
     `;
     backBtn.addEventListener('click', () => {
       Router.getInstance().navigate('/');

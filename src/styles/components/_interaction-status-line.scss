@@ -18,9 +18,6 @@
 }
 
 .isl-action {
-  display: flex;
-  align-items: center;
-  gap: calc($gap / 2);
   padding: 0;
   background: transparent;
   border: none;
@@ -89,6 +86,15 @@
 
 .isl-repost:hover {
   color: $color-success; // Green
+}
+
+// Middle items centered in their grid cells
+.isl-zap,
+.isl-repost,
+.isl-quote,
+.isl-like {
+  justify-self: center;
+  justify-content: center;
 }
 
 .isl-quote:hover {
@@ -161,7 +167,8 @@
 .isl-zap.zapped {
   color: $color-warning !important;
 
-  .isl-icon svg {
+  .isl-icon svg,
+  .isl-icon svg use {
     fill: $color-warning;
     stroke: none;
   }

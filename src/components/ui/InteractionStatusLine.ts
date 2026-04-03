@@ -185,29 +185,17 @@ export class InteractionStatusLine {
 
     container.innerHTML = `
       <button class="isl-action isl-reply" type="button" data-action="reply" title="Reply">
-        <span class="isl-icon">
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M2 5.5C2 3.57 3.57 2 5.5 2h5C12.43 2 14 3.57 14 5.5v4c0 1.38-1.12 2.5-2.5 2.5H9l-2 2v-2H5.5C3.57 12 2 10.43 2 8.5v-3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
+        <span class="isl-icon"><svg width="18" height="18"><use href="#icon-reply"/></svg></span>
         <span class="isl-count">${formatCount(this.stats.replies)}</span>
       </button>
 
       <button class="isl-action isl-zap" type="button" data-action="zap" title="Zap">
-        <span class="isl-icon">
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8.5 1L3 9h5l-.5 6 5.5-8h-5l.5-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          </svg>
-        </span>
+        <span class="isl-icon"><svg width="18" height="18"><use href="#icon-zap"/></svg></span>
         <span class="isl-count">${formatCount(this.stats.zaps)}</span>
       </button>
 
       <button class="isl-action isl-repost" type="button" data-action="repost" title="Repost">
-        <span class="isl-icon">
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M10 2l3 3-3 3m3-3H3M6 14l-3-3 3-3m-3 3h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </span>
+        <span class="isl-icon"><svg width="18" height="18"><use href="#icon-repost"/></svg></span>
         <span class="isl-count">${formatCount(this.stats.reposts)}</span>
       </button>
 

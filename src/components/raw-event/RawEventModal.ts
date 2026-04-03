@@ -59,10 +59,7 @@ export class RawEventModal {
     container.innerHTML = `
       <div class="raw-event-modal__actions">
         <button class="btn btn--copy-json" type="button">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect x="2" y="2" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
-            <path d="M5 5v-1a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1" stroke="currentColor" stroke-width="1.5"/>
-          </svg>
+          <svg width="16" height="16"><use href="#icon-copy"/></svg>
           Copy JSON
         </button>
       </div>
@@ -85,18 +82,13 @@ export class RawEventModal {
       try {
         await navigator.clipboard.writeText(jsonString);
         copyBtn.innerHTML = `
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 8l3 3 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="16" height="16"><use href="#icon-checkmark"/></svg>
           Copied!
         `;
 
         setTimeout(() => {
           copyBtn.innerHTML = `
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="2" y="2" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M5 5v-1a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1" stroke="currentColor" stroke-width="1.5"/>
-            </svg>
+            <svg width="16" height="16"><use href="#icon-copy"/></svg>
             Copy JSON
           `;
         }, 2000);

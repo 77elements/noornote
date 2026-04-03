@@ -81,11 +81,7 @@ export class RepostRenderer {
     const repostHeader = document.createElement('div');
     repostHeader.className = 'repost-header';
     repostHeader.innerHTML = `
-      <span class="repost-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 2l3 3-3 3m3-3H3M6 14l-3-3 3-3m-3 3h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </span>
+      <span class="repost-icon"><svg width="16" height="16"><use href="#icon-repost"/></svg></span>
       <span class="user-mention" data-pubkey="${reposterPubkey}">
         <a href="/profile/${reposterNpub}" class="mention-link" data-profile-pubkey="${reposterPubkey}">
           <img src="${escapeHtmlAttr(reposterPicture || '')}" alt="" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>

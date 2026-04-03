@@ -218,9 +218,7 @@ export class ArticleEditorView extends View {
       <div class="article-editor">
         <header class="article-editor__header">
           <button class="article-editor__back" data-action="back">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
+            <svg width="24" height="24"><use href="#icon-back"/></svg>
             Back
           </button>
           <h1 class="article-editor__title">${this.isEditMode ? 'Edit Article' : 'Write Article'}</h1>
@@ -260,35 +258,19 @@ export class ArticleEditorView extends View {
     return `
       <div class="md-toolbar">
         <button type="button" class="btn-icon" data-md-action="heading" title="Heading">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <path d="M6 12h12M6 4v16M18 4v16"/>
-          </svg>
+          <svg width="16" height="16"><use href="#icon-heading"/></svg>
         </button>
         <button type="button" class="btn-icon" data-md-action="bold" title="Bold">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
-            <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
-          </svg>
+          <svg width="16" height="16"><use href="#icon-bold"/></svg>
         </button>
         <button type="button" class="btn-icon" data-md-action="italic" title="Italic">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <line x1="19" y1="4" x2="10" y2="4"/>
-            <line x1="14" y1="20" x2="5" y2="20"/>
-            <line x1="15" y1="4" x2="9" y2="20"/>
-          </svg>
+          <svg width="16" height="16"><use href="#icon-italic"/></svg>
         </button>
         <button type="button" class="btn-icon" data-md-action="quote" title="Quote">
-          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
-            <path d="M10 11H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3a4 4 0 0 1-4 4H5"/>
-            <path d="M19 11h-4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v3a4 4 0 0 1-4 4h-1"/>
-          </svg>
+          <svg width="16" height="16"><use href="#icon-quote"/></svg>
         </button>
         <button type="button" class="btn-icon" data-md-action="image" title="Insert Image">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-          </svg>
+          <svg width="16" height="16"><use href="#icon-image"/></svg>
         </button>
         <input type="file" accept="image/*" class="md-toolbar__file-input" data-md-file-input style="display: none;" />
       </div>
@@ -330,9 +312,7 @@ export class ArticleEditorView extends View {
               <h2 class="nn-ui-toggle__title">Details</h2>
             </div>
             <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
@@ -348,11 +328,7 @@ export class ArticleEditorView extends View {
                   data-field="image"
                 />
                 <button type="button" class="article-editor__upload-btn" data-action="upload-cover" title="Upload image">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
+                  <svg width="18" height="18"><use href="#icon-upload"/></svg>
                 </button>
                 <input type="file" accept="image/*" class="article-editor__cover-file" data-cover-file style="display: none;" />
               </div>
@@ -629,9 +605,7 @@ export class ArticleEditorView extends View {
     // Show loading state
     if (uploadBtn) {
       uploadBtn.innerHTML = `
-        <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-          <path d="M21 12a9 9 0 11-6.219-8.56"/>
-        </svg>
+        <svg class="spin" width="18" height="18"><use href="#icon-spin-loader"/></svg>
       `;
       uploadBtn.disabled = true;
     }
@@ -652,11 +626,7 @@ export class ArticleEditorView extends View {
       this.isCoverUploading = false;
       if (uploadBtn) {
         uploadBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
+          <svg width="18" height="18"><use href="#icon-upload"/></svg>
         `;
         uploadBtn.disabled = false;
       }

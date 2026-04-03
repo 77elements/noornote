@@ -171,14 +171,7 @@ export class ProfileListsComponent {
         <h2 class="profile-list-title">${escapeHtml(folderName)}</h2>
         ${this.isOwnProfile ? `
           <button class="profile-list-drag-handle" title="Drag to reorder">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
-              <circle cx="3" cy="2" r="1.5"/>
-              <circle cx="9" cy="2" r="1.5"/>
-              <circle cx="3" cy="6" r="1.5"/>
-              <circle cx="9" cy="6" r="1.5"/>
-              <circle cx="3" cy="10" r="1.5"/>
-              <circle cx="9" cy="10" r="1.5"/>
-            </svg>
+            <svg width="12" height="12"><use href="#icon-grid-dots"/></svg>
           </button>
         ` : ''}
       </div>
@@ -212,10 +205,7 @@ export class ProfileListsComponent {
       return `
         <div class="profile-list-item profile-list-item--url">
           <span class="profile-list-item__icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-            </svg>
+            <svg width="14" height="14"><use href="#icon-share-link"/></svg>
           </span>
           <div class="profile-list-item__content">
             <a href="${url.startsWith('http') ? url : `https://${url}`}" rel="noopener noreferrer" class="profile-list-item__url">
@@ -229,9 +219,7 @@ export class ProfileListsComponent {
       return `
         <div class="profile-list-item profile-list-item--note">
           <span class="profile-list-item__icon">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-            </svg>
+            <svg width="14" height="14"><use href="#icon-message"/></svg>
           </span>
           <div class="profile-list-item__content">
             <span class="profile-list-item__id">${item.id.slice(0, 16)}...</span>

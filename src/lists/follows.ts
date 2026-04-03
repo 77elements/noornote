@@ -992,24 +992,15 @@ export class ProfileFollowManager {
       <div class="follow-dropdown-container">
         <button class="btn follow-btn-dropdown" id="follow-btn-dropdown">
           Follow
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
-            <polyline points="6 9 12 15 18 9"></polyline>
-          </svg>
+          <svg width="12" height="12" style="margin-left: 4px;"><use href="#icon-chevron-down"/></svg>
         </button>
         <div class="follow-dropdown-menu" id="follow-dropdown-menu">
           <button class="follow-dropdown-item" data-action="follow-public">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="2" y1="12" x2="22" y2="12"></line>
-              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-            </svg>
+            <svg width="16" height="16"><use href="#icon-globe"/></svg>
             Follow publicly
           </button>
           <button class="follow-dropdown-item" data-action="follow-private">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-            </svg>
+            <svg width="16" height="16"><use href="#icon-lock"/></svg>
             Follow privately
           </button>
         </div>

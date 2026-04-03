@@ -275,19 +275,10 @@ export class ZapManager {
     if (zapIcon) {
       if (loading) {
         this.zapButton.classList.add('loading');
-        zapIcon.innerHTML = `
-          <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" class="spinner">
-            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.25"/>
-            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
-          </svg>
-        `;
+        zapIcon.innerHTML = `<svg width="18" height="18"><use href="#icon-spinner"/></svg>`;
       } else {
         this.zapButton.classList.remove('loading');
-        zapIcon.innerHTML = `
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M8.5 1L3 9h5l-.5 6 5.5-8h-5l.5-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-          </svg>
-        `;
+        zapIcon.innerHTML = `<svg width="18" height="18"><use href="#icon-zap"/></svg>`;
       }
     }
   }

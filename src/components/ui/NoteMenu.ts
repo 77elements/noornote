@@ -19,7 +19,6 @@ import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { ModalService } from '../../services/ModalService';
-import { ICON_TRASH_16 } from '../../helpers/svgIcons';
 import { isBookmarksEnabled } from '../../addons/bookmarks/index';
 import { isTribesEnabled } from '../../addons/tribes/index';
 
@@ -29,41 +28,20 @@ export interface NoteMenuOptions {
   rawEvent?: NostrEvent;
 }
 
-// Reusable SVG icons
+// SVG sprite icon helper — references symbols from index.html sprite sheet
+const icon = (id: string, size = 16) => `<svg width="${size}" height="${size}"><use href="#icon-${id}"/></svg>`;
+
 const ICONS = {
-  copy: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="2" y="2" width="9" height="9" rx="1" stroke="currentColor" stroke-width="1.5"/>
-    <path d="M5 5v-1a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-1" stroke="currentColor" stroke-width="1.5"/>
-  </svg>`,
-  bookmark: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 2h10a1 1 0 0 1 1 1v11l-6-3-6 3V3a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  tribe: `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  code: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M5 6l-3 2 3 2M11 6l3 2-3 2M10 2l-4 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  trash: ICON_TRASH_16,
-  report: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 2v6M8 11v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-    <circle cx="8" cy="13.5" r="0.5" fill="currentColor"/>
-  </svg>`,
-  mute: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  muteThread: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 2l12 12M3 12l-1 3 3-1 7-7M12 4a2 2 0 0 0-3-3L4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  notification: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 1.5a4.5 4.5 0 0 0-4.5 4.5v3l-1 2h11l-1-2V6A4.5 4.5 0 0 0 8 1.5zM6.5 12a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`,
-  link: `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6.5 9.5l3-3M9 6.5l2.5-2.5a2.121 2.121 0 1 1 3 3L12 9.5m-2.5 0L7 12a2.121 2.121 0 1 1-3-3l2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`
+  copy: icon('copy'),
+  bookmark: icon('bookmark'),
+  tribe: icon('tribe'),
+  code: icon('code'),
+  trash: icon('trash'),
+  report: icon('report'),
+  mute: icon('mute'),
+  muteThread: icon('mute-thread'),
+  notification: icon('bell'),
+  link: icon('link'),
 } as const;
 
 export class NoteMenu {
@@ -88,13 +66,7 @@ export class NoteMenu {
     const trigger = document.createElement('button');
     trigger.className = 'note-menu-trigger';
     trigger.setAttribute('aria-label', 'Note options');
-    trigger.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="8" cy="2" r="1.5" />
-        <circle cx="8" cy="8" r="1.5" />
-        <circle cx="8" cy="14" r="1.5" />
-      </svg>
-    `;
+    trigger.innerHTML = `<svg width="16" height="16"><use href="#icon-menu-dots"/></svg>`;
 
     return trigger;
   }

@@ -111,9 +111,7 @@ export class VideoEditorView extends View {
       <div class="video-editor">
         <header class="video-editor__header">
           <button class="video-editor__back" data-action="back">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
+            <svg width="24" height="24"><use href="#icon-back"/></svg>
             Back
           </button>
           <h1 class="video-editor__title">Post Video</h1>
@@ -175,9 +173,7 @@ export class VideoEditorView extends View {
               <h2 class="nn-ui-toggle__title">Details</h2>
             </div>
             <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
@@ -192,11 +188,7 @@ export class VideoEditorView extends View {
                   data-field="thumbnailUrl"
                 />
                 <button type="button" class="video-editor__upload-btn" data-action="upload-thumbnail" title="Upload thumbnail">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
+                  <svg width="18" height="18"><use href="#icon-upload"/></svg>
                 </button>
                 <input type="file" accept="image/*" class="video-editor__thumb-file" data-thumb-file style="display: none;" />
               </div>
@@ -235,18 +227,10 @@ export class VideoEditorView extends View {
             </span>
             ${this.videoDimensions ? `<span class="video-editor__dimensions">${this.videoDimensions.width}x${this.videoDimensions.height}</span>` : ''}
             <button type="button" class="video-editor__toggle-kind" data-action="toggle-kind" title="Switch orientation">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <polyline points="17 1 21 5 17 9"/>
-                <path d="M3 11V9a4 4 0 0 1 4-4h14"/>
-                <polyline points="7 23 3 19 7 15"/>
-                <path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-              </svg>
+              <svg width="16" height="16"><use href="#icon-switch-arrows"/></svg>
             </button>
             <button type="button" class="video-editor__remove-video" data-action="remove-video" title="Remove video">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
+              <svg width="16" height="16"><use href="#icon-close"/></svg>
             </button>
           </div>
         </div>
@@ -256,9 +240,7 @@ export class VideoEditorView extends View {
     if (this.isVideoUploading) {
       return `
         <div class="video-editor__upload-zone video-editor__upload-zone--uploading">
-          <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-            <path d="M21 12a9 9 0 11-6.219-8.56"/>
-          </svg>
+          <svg class="spin" width="32" height="32"><use href="#icon-spin-loader"/></svg>
           <span>Uploading video...</span>
         </div>
       `;
@@ -266,10 +248,7 @@ export class VideoEditorView extends View {
 
     return `
       <div class="video-editor__upload-zone" data-action="upload-video">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32">
-          <polygon points="23 7 16 12 23 17 23 7"/>
-          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-        </svg>
+        <svg width="32" height="32"><use href="#icon-video"/></svg>
         <span>Click or drag & drop to upload video</span>
         <input type="file" accept="video/*" class="video-editor__video-file" data-video-file style="display: none;" />
       </div>
@@ -473,9 +452,7 @@ export class VideoEditorView extends View {
 
     if (uploadBtn) {
       uploadBtn.innerHTML = `
-        <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-          <path d="M21 12a9 9 0 11-6.219-8.56"/>
-        </svg>
+        <svg class="spin" width="18" height="18"><use href="#icon-spin-loader"/></svg>
       `;
       uploadBtn.disabled = true;
     }
@@ -496,11 +473,7 @@ export class VideoEditorView extends View {
       this.isThumbnailUploading = false;
       if (uploadBtn) {
         uploadBtn.innerHTML = `
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="17 8 12 3 7 8"/>
-            <line x1="12" y1="3" x2="12" y2="15"/>
-          </svg>
+          <svg width="18" height="18"><use href="#icon-upload"/></svg>
         `;
         uploadBtn.disabled = false;
       }

@@ -32,52 +32,31 @@ export class ListsMenuPartial {
 
     li.innerHTML = `
       <button class="primary-nav__accordion-trigger">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M3 12h18M3 6h18M3 18h18"></path>
-        </svg>
+        <svg width="24" height="24"><use href="#icon-hamburger"/></svg>
         Lists
       </button>
       <ul class="primary-nav__submenu">
         <li class="bookmarks-item" style="${isBookmarksEnabled() ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="bookmarks">
-            <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path>
-            </svg>
+            <svg class="primary-nav__sublink-icon"><use href="#icon-bookmark-24"/></svg>
             <span class="primary-nav__sublink-desc">Bookmarks</span>
           </a>
         </li>
         <li>
           <a href="#" class="primary-nav__sublink" data-list-type="follows">
-            <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-              <circle cx="9" cy="7" r="4"></circle>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
-            </svg>
+            <svg class="primary-nav__sublink-icon"><use href="#icon-follows"/></svg>
             <span class="primary-nav__sublink-desc">Follows</span>
           </a>
         </li>
         <li>
           <a href="#" class="primary-nav__sublink" data-list-type="mutes">
-            <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="1" y1="1" x2="23" y2="23"></line>
-              <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"></path>
-              <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"></path>
-              <line x1="12" y1="19" x2="12" y2="23"></line>
-              <line x1="8" y1="23" x2="16" y2="23"></line>
-            </svg>
+            <svg class="primary-nav__sublink-icon"><use href="#icon-mute-mic"/></svg>
             <span class="primary-nav__sublink-desc">Muted</span>
           </a>
         </li>
         <li class="tribes-item" style="${isTribesEnabled() ? '' : 'display: none;'}">
           <a href="#" class="primary-nav__sublink" data-list-type="tribes">
-            <svg class="primary-nav__sublink-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="6" cy="7" r="3"></circle>
-              <circle cx="12" cy="7" r="3"></circle>
-              <circle cx="18" cy="7" r="3"></circle>
-              <path d="M3 19v-1a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v1"></path>
-              <path d="M9 19v-1a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v1"></path>
-              <path d="M15 19v-1a3 3 0 0 1 3-3h0a3 3 0 0 1 3 3v1"></path>
-            </svg>
+            <svg class="primary-nav__sublink-icon"><use href="#icon-tribes-circles"/></svg>
             <span class="primary-nav__sublink-desc">Tribes</span>
           </a>
         </li>

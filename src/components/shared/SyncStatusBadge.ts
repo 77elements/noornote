@@ -71,11 +71,7 @@ export class SyncStatusBadge {
       case 'syncing':
         return `
           <div class="sync-status-badge sync-status-badge--syncing">
-            <svg class="sync-status-badge__icon sync-status-badge__icon--spinning" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <polyline points="1 20 1 14 7 14"></polyline>
-              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-            </svg>
+            <svg class="sync-status-badge__icon sync-status-badge__icon--spinning" width="14" height="14"><use href="#icon-syncing"/></svg>
             <span class="sync-status-badge__text">Syncing follow list...</span>
           </div>
         `;
@@ -85,9 +81,7 @@ export class SyncStatusBadge {
         const countText = data.count !== undefined ? ` (${data.count} follows)` : '';
         return `
           <div class="sync-status-badge sync-status-badge--synced">
-            <svg class="sync-status-badge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
+            <svg class="sync-status-badge__icon" width="14" height="14"><use href="#icon-synced"/></svg>
             <span class="sync-status-badge__text">Synced ${timeAgo}${countText}</span>
           </div>
         `;
@@ -96,11 +90,7 @@ export class SyncStatusBadge {
         const errorText = data.error ? `: ${data.error}` : '';
         return `
           <div class="sync-status-badge sync-status-badge--error">
-            <svg class="sync-status-badge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
+            <svg class="sync-status-badge__icon" width="14" height="14"><use href="#icon-error-circle"/></svg>
             <span class="sync-status-badge__text">Sync failed${errorText}</span>
           </div>
         `;

@@ -185,47 +185,22 @@ export class ImageViewer {
       <div class="image-viewer__content">
         <div class="image-viewer__controls">
           <button class="image-viewer__btn image-viewer__btn--zoom-out" title="Zoom Out" aria-label="Zoom Out">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="M21 21l-4.35-4.35"></path>
-              <line x1="8" y1="11" x2="14" y2="11"></line>
-            </svg>
+            <svg width="20" height="20"><use href="#icon-zoom-out"/></svg>
           </button>
           <button class="image-viewer__btn image-viewer__btn--zoom-in" title="Zoom In" aria-label="Zoom In">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"></circle>
-              <path d="M21 21l-4.35-4.35"></path>
-              <line x1="11" y1="8" x2="11" y2="14"></line>
-              <line x1="8" y1="11" x2="14" y2="11"></line>
-            </svg>
+            <svg width="20" height="20"><use href="#icon-zoom-in"/></svg>
           </button>
           <button class="image-viewer__btn image-viewer__btn--reset" title="Reset Zoom" aria-label="Reset Zoom">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 4v6h6"></path>
-              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-            </svg>
+            <svg width="20" height="20"><use href="#icon-reset-zoom"/></svg>
           </button>
           <button class="image-viewer__btn image-viewer__btn--download" title="Download" aria-label="Download">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="7 10 12 15 17 10"></polyline>
-              <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
+            <svg width="20" height="20"><use href="#icon-download"/></svg>
           </button>
           <button class="image-viewer__btn image-viewer__btn--share" title="Share as Quote" aria-label="Share">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="18" cy="5" r="3"></circle>
-              <circle cx="6" cy="12" r="3"></circle>
-              <circle cx="18" cy="19" r="3"></circle>
-              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-            </svg>
+            <svg width="20" height="20"><use href="#icon-share"/></svg>
           </button>
           <button class="image-viewer__btn image-viewer__btn--close" title="Close (ESC)" aria-label="Close">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
+            <svg width="20" height="20"><use href="#icon-close"/></svg>
           </button>
         </div>
         <div class="image-viewer__image-container">
@@ -250,16 +225,12 @@ export class ImageViewer {
       <button class="image-viewer__nav image-viewer__nav--prev ${this.currentIndex === 0 ? 'disabled' : ''}"
               aria-label="Previous image"
               ${this.currentIndex === 0 ? 'disabled' : ''}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="15 18 9 12 15 6"></polyline>
-        </svg>
+        <svg width="24" height="24"><use href="#icon-chevron-left"/></svg>
       </button>
       <button class="image-viewer__nav image-viewer__nav--next ${this.currentIndex === this.images.length - 1 ? 'disabled' : ''}"
               aria-label="Next image"
               ${this.currentIndex === this.images.length - 1 ? 'disabled' : ''}>
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6"></polyline>
-        </svg>
+        <svg width="24" height="24"><use href="#icon-chevron-right"/></svg>
       </button>
       <div class="image-viewer__counter">${this.currentIndex + 1} / ${this.images.length}</div>
     `;

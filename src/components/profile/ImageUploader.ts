@@ -60,11 +60,7 @@ export class ImageUploader {
 
     // Store original icon HTML for later restoration
     this.originalIconHTML = `
-      <svg class="upload-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="17 8 12 3 7 8"></polyline>
-        <line x1="12" y1="3" x2="12" y2="15"></line>
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-      </svg>
+      <svg class="upload-icon" width="32" height="32"><use href="#icon-upload"/></svg>
     `;
 
     return `
@@ -190,10 +186,7 @@ export class ImageUploader {
 
     // Replace icon with progress circle (same as PostEditorToolbar)
     iconContainer.innerHTML = `
-      <svg width="32" height="32" viewBox="0 0 24 24" class="upload-progress">
-        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"></circle>
-        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"></circle>
-      </svg>
+      <svg width="32" height="32" class="upload-progress"><use href="#icon-upload-progress"/></svg>
     `;
   }
 

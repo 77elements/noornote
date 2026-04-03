@@ -71,16 +71,12 @@ export class SearchSpotlight {
         </div>
         <div class="search-spotlight__controls">
           <button class="search-spotlight__btn search-spotlight__btn--back" title="Go Back (Cmd+ArrowLeft)" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
+            <svg width="24" height="24"><use href="#icon-back"/></svg>
             Back
           </button>
           <button class="search-spotlight__btn search-spotlight__btn--forward" title="Go Forward (Cmd+ArrowRight)" disabled>
             Forward
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M5 12h14M12 5l7 7-7 7"/>
-            </svg>
+            <svg width="24" height="24"><use href="#icon-forward"/></svg>
           </button>
         </div>
         <div class="search-spotlight__user-suggestions"></div>
@@ -418,10 +414,7 @@ export class SearchSpotlight {
     this.suggestionsElement.innerHTML = suggestions
       .map((url, index) => `
         <div class="search-spotlight__suggestion" data-url="${url}" data-index="${index}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="search-spotlight__suggestion-icon">
-            <circle cx="12" cy="12" r="10"/>
-            <polyline points="12 6 12 12 16 14"/>
-          </svg>
+          <svg class="search-spotlight__suggestion-icon"><use href="#icon-search-clock"/></svg>
           <span class="search-spotlight__suggestion-text">${url}</span>
         </div>
       `)

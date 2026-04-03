@@ -81,17 +81,11 @@ export class ConversationView extends View {
     this.container.innerHTML = `
       <div class="conversation-view__header">
         <button class="conversation-view__back-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
+          <svg width="20" height="20"><use href="#icon-chevron-left"/></svg>
         </button>
         <div class="conversation-view__user"></div>
         <button class="note-menu-trigger conversation-view__menu-trigger" aria-label="User options">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <circle cx="8" cy="2" r="1.5" />
-            <circle cx="8" cy="8" r="1.5" />
-            <circle cx="8" cy="14" r="1.5" />
-          </svg>
+          <svg width="16" height="16"><use href="#icon-menu-dots"/></svg>
         </button>
       </div>
       <div class="conversation-view__messages">
@@ -104,10 +98,7 @@ export class ConversationView extends View {
           rows="1"
         ></textarea>
         <button class="btn btn--medium conversation-view__send-btn" disabled>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-            <line x1="22" y1="2" x2="11" y2="13"/>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-          </svg>
+          <svg width="20" height="20"><use href="#icon-send"/></svg>
         </button>
       </div>
     `;
@@ -226,9 +217,7 @@ export class ConversationView extends View {
     document.removeEventListener('click', this.outsideClickHandler);
   }
 
-  private static readonly MUTE_ICON = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M2 2l12 12M6.5 6.5A3 3 0 0 0 10 10m-2-2v4a2 2 0 1 1-4 0V6a2 2 0 0 1 2-2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>`;
+  private static readonly MUTE_ICON = `<svg width="16" height="16"><use href="#icon-mute"/></svg>`;
 
   /**
    * Create the mute menu dropdown

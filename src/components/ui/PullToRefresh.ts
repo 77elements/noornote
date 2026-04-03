@@ -35,10 +35,7 @@ export class PullToRefresh {
     this.indicator.className = 'pull-to-refresh';
     this.indicator.innerHTML = `
       <div class="pull-to-refresh__spinner">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="23 4 23 10 17 10"></polyline>
-          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
-        </svg>
+        <svg width="24" height="24"><use href="#icon-pull-refresh"/></svg>
       </div>`;
 
     this.boundTouchStart = this.onTouchStart.bind(this);

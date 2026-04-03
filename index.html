@@ -74,6 +74,9 @@
   </style>
 </head>
 <body>
+  <!-- SVG Sprite Sheet — loaded once, icons referenced via <svg><use href="#icon-name"/></svg> -->
+  <script>fetch('./icons.svg').then(r=>r.text()).then(t=>{const d=document.createElement('div');d.innerHTML=t;document.body.insertBefore(d.firstElementChild,document.body.firstChild)})</script>
+
   <div id="app">
     <!-- App loading state -->
     <div id="loading" class="loading-screen">

@@ -66,13 +66,13 @@ export class VideoPlayerService {
     // Close button (X)
     const closeBtn = document.createElement('button');
     closeBtn.className = 'video-fs-overlay__close';
-    closeBtn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+    closeBtn.innerHTML = '<svg width="24" height="24" style="color:white"><use href="#icon-close-bold"/></svg>';
     closeBtn.addEventListener('click', () => this.exitFullscreen());
 
     // Download button
     const dlBtn = document.createElement('button');
     dlBtn.className = 'video-fs-overlay__dl';
-    dlBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+    dlBtn.innerHTML = '<svg width="20" height="20" style="color:white"><use href="#icon-download"/></svg>';
     dlBtn.addEventListener('click', async () => {
       const fileName = src.split('/').pop()?.split('?')[0] || 'video.mp4';
       try { await downloadMedia(src, fileName); }
@@ -164,7 +164,7 @@ export class VideoPlayerService {
       if (!isAndroid) {
         const fsButton = document.createElement('button');
         fsButton.className = 'video-fullscreen-btn';
-        fsButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>';
+        fsButton.innerHTML = '<svg width="20" height="20" style="color:white"><use href="#icon-fullscreen"/></svg>';
         fsButton.title = 'Fullscreen';
         fsButton.style.cssText = 'position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.5);border:none;border-radius:4px;padding:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;';
         fsButton.addEventListener('click', (e) => {
@@ -186,7 +186,7 @@ export class VideoPlayerService {
       // Download button — both Desktop and Android
       const dlButton = document.createElement('button');
       dlButton.className = 'video-download-btn';
-      dlButton.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+      dlButton.innerHTML = '<svg width="20" height="20" style="color:white"><use href="#icon-download"/></svg>';
       dlButton.title = 'Download';
       const dlRight = isAndroid ? '10px' : '50px';
       dlButton.style.cssText = `position:absolute;top:10px;right:${dlRight};background:rgba(0,0,0,0.5);border:none;border-radius:4px;padding:8px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center;`;

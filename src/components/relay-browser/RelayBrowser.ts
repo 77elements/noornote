@@ -261,10 +261,7 @@ export class RelayBrowser {
   private showEmpty(): void {
     this.notesContainer.innerHTML = `
       <div class="relay-browser__empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 6v6l4 2"/>
-        </svg>
+        <svg width="48" height="48"><use href="#icon-search-clock"/></svg>
         <p>No notes found on this relay</p>
         <span>This relay may be empty or not responding</span>
       </div>
@@ -274,11 +271,7 @@ export class RelayBrowser {
   private showError(): void {
     this.notesContainer.innerHTML = `
       <div class="relay-browser__error">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="15" y1="9" x2="9" y2="15"/>
-          <line x1="9" y1="9" x2="15" y2="15"/>
-        </svg>
+        <svg width="48" height="48"><use href="#icon-close"/></svg>
         <p>Could not connect to relay</p>
         <span>${escapeHtml(this.relayUrl)}</span>
         <button class="btn btn--passive relay-browser__retry" data-action="retry">Retry</button>

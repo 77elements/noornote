@@ -133,10 +133,7 @@ export class ReportModal {
       </div>
 
       <div class="report-modal__notice">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M8 4v5M8 11v1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
+        <svg width="16" height="16"><use href="#icon-info"/></svg>
         <p>Reports are published as NIP-56 events to your relays. They may be used by clients and relay operators for content moderation.</p>
       </div>
     `;

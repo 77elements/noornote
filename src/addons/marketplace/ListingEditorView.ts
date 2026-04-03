@@ -222,9 +222,7 @@ export class ListingEditorView extends View {
                 <div class="listing-editor__image-item" data-index="${i}">
                   <img src="${escapeHtml(url)}" alt="" />
                   <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="Remove">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
+                    <svg width="14" height="14"><use href="#icon-close"/></svg>
                   </button>
                 </div>
               `).join('')}
@@ -232,15 +230,10 @@ export class ListingEditorView extends View {
             <div class="listing-editor__image-add">
               <input type="text" id="listing-image-url" class="input" placeholder="https://... or upload" data-field="image-url" />
               <button type="button" class="btn-icon" data-action="add-image-url" title="Add URL">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
+                <svg width="18" height="18"><use href="#icon-plus"/></svg>
               </button>
               <button type="button" class="btn-icon" data-action="upload-image" title="Upload image">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
+                <svg width="18" height="18"><use href="#icon-upload"/></svg>
               </button>
               <input type="file" accept="image/*" data-image-file style="display: none;" />
             </div>
@@ -258,9 +251,7 @@ export class ListingEditorView extends View {
               <h2 class="nn-ui-toggle__title">Details</h2>
             </div>
             <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
@@ -479,9 +470,7 @@ export class ListingEditorView extends View {
       <div class="listing-editor__image-item" data-index="${i}">
         <img src="${escapeHtml(url)}" alt="" />
         <button type="button" class="btn-icon listing-editor__image-remove" data-remove-image="${i}" title="Remove">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
+          <svg width="14" height="14"><use href="#icon-close"/></svg>
         </button>
       </div>
     `).join('');

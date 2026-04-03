@@ -27,10 +27,7 @@ export class UpNavigator {
 
     card.innerHTML = `
       <div class="up-navigator__icon">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M9 14L4 9L9 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M20 20V13C20 11.9391 19.5786 10.9217 18.8284 10.1716C18.0783 9.42143 17.0609 9 16 9H4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg width="24" height="24"><use href="#icon-corner-up-left"/></svg>
       </div>
       <div class="up-navigator__label">..</div>
       <div class="up-navigator__hint">Back to root</div>

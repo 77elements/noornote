@@ -1926,8 +1926,8 @@ export class TribeManager {
   private renderHeader(folder: TribeFolder | undefined): string {
     const title = folder ? folder.name : 'Tribes';
     return renderListHeader(title, [
-      { action: 'new-tribe', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 7C3 5.89543 3.89543 5 5 5H9.58579C9.851 5 10.1054 5.10536 10.2929 5.29289L12 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="1.5"/></svg>', label: 'Tribe' },
-      { action: 'new-member', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>', label: 'Member' },
+      { action: 'new-tribe', icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>', label: 'Tribe' },
+      { action: 'new-member', icon: '<svg width="16" height="16"><use href="#icon-tribe"/></svg>', label: 'Member' },
     ]);
   }
 

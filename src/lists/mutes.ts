@@ -1127,9 +1127,7 @@ export class MuteListView extends View {
     if (!hasUsers && !hasThreads) {
       content.innerHTML = `
         <div class="mute-list-empty">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 12l24 24M24 6v12a6 6 0 0 0 12 0M24 18v12a6 6 0 1 1-12 0V18a6 6 0 0 1 12 0" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="48" height="48"><use href="#icon-mute-large"/></svg>
           <h3>No Muted Content</h3>
           <p>You haven't muted anyone or any threads yet.</p>
         </div>
@@ -1172,10 +1170,7 @@ export class MuteListView extends View {
       <div class="mute-list-section">
         <div class="mute-list-section__header">
           <h3 class="mute-list-section__title">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="8" cy="5" r="3" stroke="currentColor" stroke-width="1.5"/>
-              <path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
+            <svg width="16" height="16"><use href="#icon-user-16"/></svg>
             Muted Users
             <span class="mute-list-section__count">${this.mutedUsers.length}</span>
           </h3>
@@ -1196,9 +1191,7 @@ export class MuteListView extends View {
         <div class="mute-list-item mute-list-item--thread" data-event-id="${eventId}">
           <div class="mute-list-item__info">
             <div class="mute-list-item__thread-icon">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M2 3h12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 3v-3H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+              <svg width="16" height="16"><use href="#icon-thread-bubble"/></svg>
             </div>
             <span class="mute-list-item__event-id" title="${eventId}">${shortId}${lockIcon}</span>
           </div>
@@ -1213,9 +1206,7 @@ export class MuteListView extends View {
       <div class="mute-list-section">
         <div class="mute-list-section__header">
           <h3 class="mute-list-section__title">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M2 3h12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 3v-3H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <svg width="16" height="16"><use href="#icon-thread-bubble"/></svg>
             Muted Threads
             <span class="mute-list-section__count">${this.mutedThreads.length}</span>
           </h3>
@@ -1792,9 +1783,7 @@ export class MuteListManager {
       threadDiv.innerHTML = `
         <div class="mute-item__content-wrapper">
           <div class="mute-item__thread-icon">
-            <svg width="20" height="20" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M2 3h12a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H6l-3 3v-3H2a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+            <svg width="20" height="20"><use href="#icon-thread-bubble"/></svg>
           </div>
           <div class="mute-item__info">
             <div class="mute-item__thread-content" title="${escapeHtml(thread.content || '')}">
@@ -1911,24 +1900,15 @@ export class ProfileMuteManager {
         <div class="mute-dropdown-container">
           <button class="btn btn--passive mute-btn-dropdown" id="mute-btn-dropdown">
             Mute
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+            <svg width="12" height="12" style="margin-left: 4px;"><use href="#icon-chevron-down"/></svg>
           </button>
           <div class="mute-dropdown-menu" id="mute-dropdown-menu">
             <button class="mute-dropdown-item" data-action="mute-public">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="2" y1="12" x2="22" y2="12"></line>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-              </svg>
+              <svg width="16" height="16"><use href="#icon-globe"/></svg>
               Mute publicly
             </button>
             <button class="mute-dropdown-item" data-action="mute-private">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
+              <svg width="16" height="16"><use href="#icon-lock"/></svg>
               Mute privately
             </button>
           </div>

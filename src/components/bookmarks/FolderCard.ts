@@ -48,17 +48,13 @@ export class FolderCard {
 
     card.innerHTML = `
       <div class="folder-card__icon">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M3 7V17C3 18.1046 3.89543 19 5 19H19C20.1046 19 21 18.1046 21 17V9C21 7.89543 20.1046 7 19 7H12L10 5H5C3.89543 5 3 5.89543 3 7Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg width="24" height="24"><use href="#icon-folder-24"/></svg>
       </div>
       <div class="folder-card__name">${escapeHtml(name)}</div>
       <div class="folder-card__count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</div>
       <div class="folder-card__actions">
         <button class="folder-card__edit" aria-label="Rename folder" title="Rename folder">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M11.5 2.5l2 2M2 14l1-4 9-9 2 2-9 9-4 1z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <svg width="14" height="14"><use href="#icon-pencil-16"/></svg>
         </button>
         <button class="folder-card__delete" aria-label="Delete folder" title="Delete folder (items move to root)">
           ${ICON_TRASH_14}

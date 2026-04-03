@@ -39,9 +39,7 @@ export abstract class SettingsSection {
             <p class="nn-ui-toggle__description">${description}</p>
           </div>
           <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
+            <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
           </button>
         </div>
         <div class="nn-ui-toggle__content" id="${this.sectionId}-content">

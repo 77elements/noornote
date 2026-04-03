@@ -559,9 +559,7 @@ export class ProfileView extends View {
             <div class="profile-identifiers">
               ${lud16 ? `
                 <div class="profile-lightning">
-                  <svg class="lightning-icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
-                  </svg>
+                  <svg class="lightning-icon"><use href="#icon-lightning-filled"/></svg>
                   <span>${escapeHtml(lud16)}</span>
                 </div>
               ` : ''}
@@ -569,33 +567,17 @@ export class ProfileView extends View {
               <div class="profile-npub">
                 <span class="npub-text" title="${escapeHtml(this.npub)}">${shortNpub}</span>
                 <button class="copy-btn" data-copy="${escapeHtml(this.npub)}" title="Copy npub">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                  </svg>
+                  <svg width="16" height="16"><use href="#icon-copy-24"/></svg>
                 </button>
                 <button class="qr-btn" title="npub QR Code">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                  </svg>
+                  <svg width="16" height="16"><use href="#icon-qr-code"/></svg>
                 </button>
                 ${lud16 && !isOwnProfile ? `
                 <button class="lightning-qr-btn" title="Lightning QR Code">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                    <path d="M12 7l-2 5h4l-2 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                  </svg>
+                  <svg width="16" height="16"><use href="#icon-lightning-qr"/></svg>
                 </button>
                 <button class="profile-zap-btn" title="Zap this user">
-                  <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z"/>
-                  </svg>
+                  <svg width="16" height="16"><use href="#icon-lightning-filled"/></svg>
                 </button>
                 ` : ''}
                 ${this.renderTribeButton()}
@@ -749,10 +731,7 @@ export class ProfileView extends View {
 
     return `
       <button class="edit-profile-btn" data-action="edit-profile" title="Edit your profile">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-        </svg>
+        <svg width="16" height="16"><use href="#icon-edit"/></svg>
         Edit Profile
       </button>
     `;
@@ -818,12 +797,7 @@ export class ProfileView extends View {
 
     return `
       <button class="tribe-btn" title="Add to Tribe" style="display:none">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
+        <svg width="16" height="16"><use href="#icon-tribe-profile"/></svg>
       </button>
       <div class="tribe-dropdown-mount"></div>
     `;

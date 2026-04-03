@@ -33,7 +33,7 @@ export class MoveDropdown {
     this.button.className = 'btn btn--mini btn--secondary move-dropdown__trigger';
     this.button.setAttribute('aria-label', options.ariaLabel || 'Move to...');
     this.button.title = 'Move to...';
-    this.button.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9l-3 3 3 3"/><path d="M9 5l3-3 3 3"/><path d="M15 19l3 3 3-3"/><path d="M19 15l3-3-3-3"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/></svg>`;
+    this.button.innerHTML = `<svg width="14" height="14"><use href="#icon-move"/></svg>`;
 
     this.boundClose = (e: MouseEvent) => {
       if (this.dropdown && !this.dropdown.contains(e.target as Node) && !this.button.contains(e.target as Node)) {

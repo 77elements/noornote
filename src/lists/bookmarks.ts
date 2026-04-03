@@ -2993,8 +2993,8 @@ export class BookmarkManager {
   private renderHeader(folder: { id: string; name: string } | null): string {
     const title = folder ? folder.name : 'Bookmarks';
     return renderListHeader(title, [
-      { action: 'new-folder', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 7C3 5.89543 3.89543 5 5 5H9.58579C9.851 5 10.1054 5.10536 10.2929 5.29289L12 7H19C20.1046 7 21 7.89543 21 9V17C21 18.1046 20.1046 19 19 19H5C3.89543 19 3 18.1046 3 17V7Z" stroke="currentColor" stroke-width="1.5"/></svg>', label: 'Folder' },
-      { action: 'new-bookmark', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>', label: 'Bookmark' },
+      { action: 'new-folder', icon: '<svg width="16" height="16"><use href="#icon-folder"/></svg>', label: 'Folder' },
+      { action: 'new-bookmark', icon: '<svg width="16" height="16"><use href="#icon-bookmark-link"/></svg>', label: 'Bookmark' },
     ]);
   }
 

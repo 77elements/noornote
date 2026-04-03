@@ -21,8 +21,8 @@ import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
 import { getTag } from '../../helpers/tagUtils';
 
-const BOOKMARK_SVG_OUTLINE = `<svg class="listing-view__bookmark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
-const BOOKMARK_SVG_FILLED = `<svg class="listing-view__bookmark-icon listing-view__bookmark-icon--active" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" width="22" height="22"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>`;
+const BOOKMARK_SVG_OUTLINE = `<svg class="listing-view__bookmark-icon" width="22" height="22"><use href="#icon-bookmark-24"/></svg>`;
+const BOOKMARK_SVG_FILLED = `<svg class="listing-view__bookmark-icon listing-view__bookmark-icon--active" width="22" height="22"><use href="#icon-bookmark-24-filled"/></svg>`;
 
 export class ListingView extends View {
   private container: HTMLElement;
@@ -90,10 +90,7 @@ export class ListingView extends View {
 
           ${meta.location ? `
             <div class="listing-view__location">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                <circle cx="12" cy="10" r="3"></circle>
-              </svg>
+              <svg width="16" height="16"><use href="#icon-location"/></svg>
               ${escapeHtml(meta.location)}
             </div>
           ` : ''}

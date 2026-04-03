@@ -245,14 +245,10 @@ export class NotificationItem {
       case 'mention':
       case 'reply':
       case 'thread-reply':
-        return `<svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M2 5.5C2 3.57 3.57 2 5.5 2h5C12.43 2 14 3.57 14 5.5v4c0 1.38-1.12 2.5-2.5 2.5H9l-2 2v-2H5.5C3.57 12 2 10.43 2 8.5v-3z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
+        return `<svg width="18" height="18"><use href="#icon-reply"/></svg>`;
 
       case 'repost':
-        return `<svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 2l3 3-3 3m3-3H3M6 14l-3-3 3-3m-3 3h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
+        return `<svg width="18" height="18"><use href="#icon-repost"/></svg>`;
 
       case 'reaction': {
         // Use the actual reaction emoji from event.content (e.g., "👍", "🔥", "💜")
@@ -274,15 +270,10 @@ export class NotificationItem {
       }
 
       case 'zap':
-        return `<svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M8.5 1L3 9h5l-.5 6 5.5-8h-5l.5-6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
-        </svg>`;
+        return `<svg width="18" height="18"><use href="#icon-zap"/></svg>`;
 
       case 'article':
-        return `<svg width="18" height="18" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 1H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V5l-4-4z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M10 1v4h4M8 9H5M11 12H5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
+        return `<svg width="18" height="18"><use href="#icon-article-16"/></svg>`;
 
       case 'hashtag':
         return '🏷️';

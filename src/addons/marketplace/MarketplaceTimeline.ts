@@ -303,11 +303,7 @@ export class MarketplaceTimeline {
         </div>
       ` : `
         <div class="listing-card__image listing-card__image--empty">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="32" height="32">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-            <circle cx="8.5" cy="8.5" r="1.5"></circle>
-            <polyline points="21 15 16 10 5 21"></polyline>
-          </svg>
+          <svg width="32" height="32"><use href="#icon-image"/></svg>
           ${meta.status === 'sold' ? '<span class="listing-card__sold-badge">Sold</span>' : ''}
         </div>
       `}
@@ -390,11 +386,7 @@ export class MarketplaceTimeline {
   private showEmpty(): void {
     this.listingsContainer.innerHTML = `
       <div class="marketplace-timeline__empty">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <path d="M16 10a4 4 0 0 1-8 0"></path>
-        </svg>
+        <svg width="48" height="48"><use href="#icon-shopping-bag"/></svg>
         <p>No listings found</p>
         <span>Marketplace listings will appear here</span>
       </div>
