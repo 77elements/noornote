@@ -18,6 +18,10 @@
 }
 
 .isl-action {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: calc($gap / 4);
   padding: 0;
   background: transparent;
   border: none;
