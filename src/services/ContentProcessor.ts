@@ -19,6 +19,7 @@ import { hexToNpub } from '../helpers/nip19';
 import { UserProfileService } from './UserProfileService';
 import type { MediaContent } from '../helpers/renderMediaContent';
 import { isProfileRecognitionEnabled } from '../addons/profile-recognition/index';
+import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export interface QuotedReference {
   type: 'event' | 'note' | 'addr';
@@ -43,7 +44,7 @@ type TextBlinkerType = import('../addons/profile-recognition/profileBlinking').T
 export class ContentProcessor {
   private static instance: ContentProcessor;
   private userProfileService: UserProfileService;
-  private profileCache: Map<string, any> = new Map();
+  private profileCache: LRUCache<any> = new LRUCache<any>(getCacheSize(500, 200, 100));
 
   // Profile Recognition (lazy-loaded)
   private recognitionService: ProfileRecognitionServiceType | null = null;

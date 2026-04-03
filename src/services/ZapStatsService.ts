@@ -13,6 +13,7 @@ import { AuthService } from './AuthService';
 import { RelayConfig } from './RelayConfig';
 import { EventBus } from './EventBus';
 import { extractZapperPubkey, getZapAmountSats } from '../helpers/zapUtils';
+import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export interface ZapStats {
   pubkey: string;
@@ -46,7 +47,7 @@ export class ZapStatsService {
   private relayConfig: RelayConfig;
   private eventBus: EventBus;
 
-  private statsCache: Map<string, ZapStats> = new Map();
+  private statsCache: LRUCache<ZapStats> = new LRUCache<ZapStats>(getCacheSize(500, 200, 100));
   private isLoading: boolean = false;
   private loadingPromise: Promise<void> | null = null;
 

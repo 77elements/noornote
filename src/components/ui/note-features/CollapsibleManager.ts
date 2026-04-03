@@ -1,11 +1,40 @@
 /**
  * CollapsibleManager - Manages collapsible notes/quote boxes
- * Uses ResizeObserver to measure actual rendered height (like DevTools Computed)
+ * Uses a single shared IntersectionObserver to measure rendered height
  * Works for ALL note types without analyzing structure
  */
 
 import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
 import { EventBus } from '../../../services/EventBus';
+
+// Shared observer + pending measurements map
+let sharedObserver: IntersectionObserver | null = null;
+const pendingMeasurements: Map<Element, { wrapper: HTMLElement; btn: HTMLElement }> = new Map();
+
+function getSharedObserver(): IntersectionObserver {
+  if (!sharedObserver) {
+    sharedObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const data = pendingMeasurements.get(entry.target);
+          if (data) {
+            sharedObserver!.unobserve(entry.target);
+            pendingMeasurements.delete(entry.target);
+            setTimeout(() => {
+              requestAnimationFrame(() => {
+                CollapsibleManager.checkAndCollapse(data.wrapper, data.btn);
+              });
+            }, 100);
+          }
+        }
+      });
+    }, {
+      threshold: 0.01,
+      rootMargin: '50px'
+    });
+  }
+  return sharedObserver;
+}
 
 export class CollapsibleManager {
   // Collapsible note thresholds (in viewport height units)
@@ -103,26 +132,9 @@ export class CollapsibleManager {
       }
     });
 
-    // INTERSECTION OBSERVER: Measure when note scrolls into viewport
-    // By then ALL async content (quotes, images, videos) is guaranteed loaded
-    // Works for: initial notes, LoadMore notes, notes with quotes, videos, iframes
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          // Note is visible - measure after short delay for final layout
-          setTimeout(() => {
-            requestAnimationFrame(() => {
-              CollapsibleManager.checkAndCollapse(collapsibleWrapper, showMoreBtn);
-              observer.disconnect(); // Measure once only
-            });
-          }, 100);
-        }
-      });
-    }, {
-      threshold: 0.01, // Trigger when even 1% visible
-      rootMargin: '50px' // Start measuring slightly before entering viewport
-    });
-
+    // Use shared observer — measure when note scrolls into viewport
+    const observer = getSharedObserver();
+    pendingMeasurements.set(workingRoot, { wrapper: collapsibleWrapper, btn: showMoreBtn });
     observer.observe(workingRoot);
   }
 
@@ -130,7 +142,7 @@ export class CollapsibleManager {
    * Check note height and collapse if needed
    * Only collapses if note is significantly taller than threshold
    */
-  private static checkAndCollapse(wrapperEl: HTMLElement, btnEl: HTMLElement): void {
+  static checkAndCollapse(wrapperEl: HTMLElement, btnEl: HTMLElement): void {
     // Check if post truncation is disabled
     const storage = PerAccountLocalStorage.getInstance();
     const isTruncationDisabled = storage.get<boolean>(StorageKeys.DISABLE_POST_TRUNCATION, false);

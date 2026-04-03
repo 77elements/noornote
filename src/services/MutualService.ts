@@ -12,6 +12,7 @@
 import { AuthService } from './AuthService';
 import { UserService } from './UserService';
 import { FollowStorageAdapter, type FollowItem } from '../lists/follows';
+import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 export interface MutualStatus {
   pubkey: string;
@@ -35,7 +36,7 @@ export class MutualService {
   private followAdapter: FollowStorageAdapter;
 
   // In-memory cache for mutual status (cleared on logout)
-  private mutualStatusCache: Map<string, boolean> = new Map();
+  private mutualStatusCache: LRUCache<boolean> = new LRUCache<boolean>(getCacheSize(1000, 500, 200));
 
   private constructor() {
     this.authService = AuthService.getInstance();

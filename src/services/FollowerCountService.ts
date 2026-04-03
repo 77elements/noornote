@@ -10,6 +10,7 @@
 import { RelayConfig } from './RelayConfig';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
+import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
 interface BatchResult {
   followers: string[];
@@ -27,7 +28,7 @@ export class FollowerCountService {
   private static instance: FollowerCountService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private cache: Map<string, CachedCount> = new Map();
+  private cache: LRUCache<CachedCount> = new LRUCache<CachedCount>(getCacheSize(500, 200, 100));
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
