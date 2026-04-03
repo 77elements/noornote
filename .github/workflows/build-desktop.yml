@@ -71,13 +71,18 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: bun install
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            npm install --legacy-peer-deps
+          else
+            bun install
+          fi
 
       - name: Build frontend
         run: bun run build
 
       - name: Build Electron
-        run: npx electron-builder ${{ matrix.electron_args }}
+        run: npx electron-builder ${{ matrix.electron_args }} --publish never
 
       - name: Get version
         id: version
