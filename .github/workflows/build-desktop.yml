@@ -75,7 +75,7 @@ jobs:
           if [ "$RUNNER_OS" = "Linux" ]; then
             npm install --legacy-peer-deps
             # npm --legacy-peer-deps skips platform-specific optionalDeps for rollup/esbuild
-            npm install --no-save @rollup/rollup-linux-${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}-gnu @esbuild/linux-${{ matrix.arch == 'x64' && 'x64' || 'arm64' }} 2>/dev/null || true
+            npm install --legacy-peer-deps --no-save @rollup/rollup-linux-${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}-gnu @esbuild/linux-${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}
           else
             bun install
           fi
