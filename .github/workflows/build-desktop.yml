@@ -71,12 +71,7 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
-        run: |
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            # bun.lock is macOS-generated and lacks Linux platform binaries
-            rm -f bun.lock
-          fi
-          bun install --ignore-scripts
+        run: npm ci --legacy-peer-deps
 
       - name: Build frontend
         run: bun run build
