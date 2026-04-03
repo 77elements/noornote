@@ -39,8 +39,12 @@ export class TimelineRenderer {
     const loadTrigger = this.element.querySelector('.timeline-load-trigger');
     if (!loadTrigger) return;
 
-    // Clear existing note-cards (all .note-card elements)
-    this.element.querySelectorAll('.note-card').forEach(card => card.remove());
+    // Clear existing note-cards — cleanup NoteUI internals before removing from DOM
+    this.element.querySelectorAll('.note-card').forEach(card => {
+      const eventId = card.getAttribute('data-event-id');
+      if (eventId) NoteUI.cleanup(eventId);
+      card.remove();
+    });
 
     try {
       // Render all notes SYNCHRONOUSLY
@@ -152,6 +156,9 @@ export class TimelineRenderer {
 
     // Compensate scroll position so viewport doesn't jump
     scrollContainer.scrollTop = Math.max(0, scrollContainer.scrollTop - removedHeight);
+
+    // Trim StateManager events to match DOM ceiling (prevent unbounded growth)
+    this.stateManager.trimEvents(MAX_DOM_CARDS);
   }
 
   /**

@@ -11,6 +11,7 @@ import { DateRangeSelector } from './DateRangeSelector';
 import { RefreshButton } from '../../ui/RefreshButton';
 import { CustomDropdown } from '../../ui/CustomDropdown';
 import { AppState } from '../../../services/AppState';
+import { NoteUI } from '../../ui/NoteUI';
 
 export class TimelineEventHandler {
   private feedOrchestrator: FeedOrchestrator;
@@ -107,7 +108,11 @@ export class TimelineEventHandler {
 
     // Reset state and reload
     this.stateManager.reset();
-    this.element.querySelectorAll('.note-card').forEach(card => card.remove());
+    this.element.querySelectorAll('.note-card').forEach(card => {
+      const eventId = card.getAttribute('data-event-id');
+      if (eventId) NoteUI.cleanup(eventId);
+      card.remove();
+    });
     await this.onInitializeTimeline();
 
     // Hide refresh button
@@ -149,7 +154,11 @@ export class TimelineEventHandler {
 
     // Reset state and reload with date range
     this.stateManager.reset();
-    this.element.querySelectorAll('.note-card').forEach(card => card.remove());
+    this.element.querySelectorAll('.note-card').forEach(card => {
+      const eventId = card.getAttribute('data-event-id');
+      if (eventId) NoteUI.cleanup(eventId);
+      card.remove();
+    });
     await this.onInitializeTimeline();
 
     // Hide refresh button (no polling in time range mode)
@@ -198,7 +207,11 @@ export class TimelineEventHandler {
       // Fallback: Full reload if no cached events
       this.feedOrchestrator.stopPolling();
       this.stateManager.reset();
-      this.element.querySelectorAll('.note-card').forEach(card => card.remove());
+      this.element.querySelectorAll('.note-card').forEach(card => {
+      const eventId = card.getAttribute('data-event-id');
+      if (eventId) NoteUI.cleanup(eventId);
+      card.remove();
+    });
       await this.onInitializeTimeline();
     }
 

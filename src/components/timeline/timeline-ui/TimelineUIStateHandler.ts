@@ -5,6 +5,16 @@
  */
 
 import { createNoteSkeleton } from '../../../helpers/createSkeleton';
+import { NoteUI } from '../../ui/NoteUI';
+
+/** Remove note-cards from container, cleaning up NoteUI internals first */
+function removeNoteCards(container: HTMLElement): void {
+  container.querySelectorAll('.note-card').forEach(card => {
+    const eventId = card.getAttribute('data-event-id');
+    if (eventId) NoteUI.cleanup(eventId);
+    card.remove();
+  });
+}
 
 export class TimelineUIStateHandler {
   private container: HTMLElement;
@@ -20,8 +30,7 @@ export class TimelineUIStateHandler {
     const loadTrigger = this.container.querySelector('.timeline-load-trigger');
     if (!loadTrigger) return;
 
-    // Clear existing note-cards
-    this.container.querySelectorAll('.note-card').forEach(card => card.remove());
+    removeNoteCards(this.container);
 
     // Create skeleton loaders
     const fragment = document.createDocumentFragment();
@@ -79,8 +88,7 @@ export class TimelineUIStateHandler {
   showError(message: string): void {
     const loadTrigger = this.container.querySelector('.timeline-load-trigger');
     if (loadTrigger) {
-      // Clear all notes
-      this.container.querySelectorAll('.note-card').forEach(card => card.remove());
+      removeNoteCards(this.container);
 
       // Create error element
       const errorDiv = document.createElement('div');
@@ -107,6 +115,6 @@ export class TimelineUIStateHandler {
    * Clear all note cards from timeline
    */
   clearNotes(): void {
-    this.container.querySelectorAll('.note-card').forEach(card => card.remove());
+    removeNoteCards(this.container);
   }
 }

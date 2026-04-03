@@ -222,7 +222,8 @@ export class Timeline extends View {
     this.lifecycleManager.pause();
     this.stateManager.clear();
 
-    // Clear existing content
+    // Clear existing content — cleanup NoteUI internals first
+    NoteUI.cleanupAll();
     const eventsContainer = this.element.querySelector('.timeline-events');
     if (eventsContainer) {
       eventsContainer.innerHTML = '';
@@ -709,6 +710,7 @@ export class Timeline extends View {
     this.marketplaceInjector?.destroy();
     this.marketplaceInjector = null;
     this.lifecycleManager.destroy();
+    NoteUI.cleanupAll();
     this.element.remove();
   }
 }

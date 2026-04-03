@@ -87,6 +87,15 @@ export class TimelineStateManager {
   }
 
   /**
+   * Trim events array to maxSize (keeps newest, removes oldest)
+   */
+  trimEvents(maxSize: number): void {
+    if (this.events.length > maxSize) {
+      this.events.length = maxSize;
+    }
+  }
+
+  /**
    * Clear all events
    */
   clearEvents(): void {
