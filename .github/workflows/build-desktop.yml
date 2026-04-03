@@ -73,9 +73,13 @@ jobs:
       - name: Install dependencies
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
+            ARCH=${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}
             npm install --legacy-peer-deps
-            # npm --legacy-peer-deps skips platform-specific optionalDeps for rollup/esbuild
-            npm install --legacy-peer-deps --no-save @rollup/rollup-linux-${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}-gnu @esbuild/linux-${{ matrix.arch == 'x64' && 'x64' || 'arm64' }}
+            # npm --legacy-peer-deps skips platform-specific optionalDeps
+            npm install --legacy-peer-deps --no-save \
+              @rollup/rollup-linux-${ARCH}-gnu \
+              @esbuild/linux-${ARCH} \
+              sass-embedded-linux-${ARCH}
           else
             bun install
           fi
