@@ -12,6 +12,9 @@ import { registerFileSystemHandlers } from './file-system.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = !app.isPackaged;
 
+// Disable GPU process — saves 50-150 MB for a text-heavy app
+app.disableHardwareAcceleration();
+
 let mainWindow = null;
 let forceQuit = false;
 
@@ -81,6 +84,13 @@ app.whenReady().then(() => {
   });
 
   createWindow();
+
+  // Periodic Blink cache clearing — decoded images accumulate unbounded in SPAs
+  setInterval(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.executeJavaScript('window.__electronClearCache && window.__electronClearCache()');
+    }
+  }, 10 * 60 * 1000); // Every 10 minutes
 
   // Global Shortcuts (Super+Enter, Super+K, Super+Left, Super+Right)
   globalShortcut.register('CommandOrControl+Return', () => {

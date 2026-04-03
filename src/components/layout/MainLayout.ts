@@ -518,17 +518,21 @@ export class MainLayout {
   /**
    * Initialize wallet balance display
    */
+  private walletBalanceInitializing = false;
   private async initializeWalletBalance(): Promise<void> {
-    if (this.walletBalanceDisplay) return; // Already initialized
+    if (this.walletBalanceDisplay || this.walletBalanceInitializing) return;
+    this.walletBalanceInitializing = true;
+
     const { isWalletBalanceEnabled } = await import('../../addons/wallet-balance/index');
-    if (!isWalletBalanceEnabled()) return;
+    if (!isWalletBalanceEnabled()) { this.walletBalanceInitializing = false; return; }
 
     const walletBalanceContainer = this.element.querySelector('.wallet-balance-container');
-    if (walletBalanceContainer) {
+    if (walletBalanceContainer && !this.walletBalanceDisplay) {
       const { WalletBalanceDisplay } = await import('../ui/WalletBalanceDisplay');
       this.walletBalanceDisplay = new WalletBalanceDisplay();
       walletBalanceContainer.appendChild(this.walletBalanceDisplay.getElement());
     }
+    this.walletBalanceInitializing = false;
   }
 
   /**

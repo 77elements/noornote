@@ -75,12 +75,6 @@
 </head>
 <body>
   <!-- SVG Sprite Sheet — icons defined once, referenced via <svg><use href="#icon-name"/></svg> -->
-  <script>
-    var x=new XMLHttpRequest();
-    x.open('GET','./icons.svg',false);
-    x.send();
-    if(x.status===200){var d=document.createElement('div');d.innerHTML=x.responseText;document.currentScript.after(d.firstElementChild)}
-  </script>
   <div id="app">
     <!-- App loading state -->
     <div id="loading" class="loading-screen">

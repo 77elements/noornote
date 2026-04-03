@@ -7,7 +7,12 @@
  * are exposed — no raw ipcRenderer access.
  */
 
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
+
+// Expose cache clearing for periodic memory management
+window.__electronClearCache = () => {
+  webFrame.clearCache();
+};
 
 contextBridge.exposeInMainWorld('electronAPI', {
 

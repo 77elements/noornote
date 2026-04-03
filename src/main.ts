@@ -3,6 +3,12 @@
  * Main application entry point
  */
 
+// Load SVG sprite sheet — inject into DOM before any components render
+import spriteContent from '/icons.svg?raw';
+const spriteDiv = document.createElement('div');
+spriteDiv.innerHTML = spriteContent;
+document.body.insertBefore(spriteDiv.firstElementChild!, document.body.firstChild);
+
 // Capture ?r= relay browser parameter immediately (before any module side-effects or HMR)
 const __capturedRelayParam = new URLSearchParams(window.location.search).get('r');
 if (__capturedRelayParam) {
