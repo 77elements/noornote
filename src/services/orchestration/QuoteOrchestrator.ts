@@ -117,25 +117,28 @@ export class QuoteOrchestrator extends Orchestrator {
       const cleanRef = nostrRef.replace(/^nostr:/, '');
 
       // Try bech32 decoding first (note1, nevent1)
-      try {
-        const decoded = decodeNip19(cleanRef);
+      // If checksum fails, retry with last char trimmed (some clients emit off-by-one bech32)
+      for (const ref of [cleanRef, cleanRef.slice(0, -1)]) {
+        try {
+          const decoded = decodeNip19(ref);
 
-        switch (decoded.type) {
-          case 'note':
-            return { eventId: decoded.data as string, relayHints: [], author: null };
-          case 'nevent': {
-            const neventData = decoded.data as { id: string; relays?: string[]; author?: string };
-            return {
-              eventId: neventData.id,
-              relayHints: neventData.relays || [],
-              author: neventData.author || null
-            };
+          switch (decoded.type) {
+            case 'note':
+              return { eventId: decoded.data as string, relayHints: [], author: null };
+            case 'nevent': {
+              const neventData = decoded.data as { id: string; relays?: string[]; author?: string };
+              return {
+                eventId: neventData.id,
+                relayHints: neventData.relays || [],
+                author: neventData.author || null
+              };
+            }
+            default:
+              break;
           }
-          default:
-            break;
+        } catch {
+          // Try next variant or fall through to hex check
         }
-      } catch {
-        // Not bech32, continue to hex check
       }
 
       // Check if it's already a hex event ID (64 chars)
