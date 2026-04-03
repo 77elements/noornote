@@ -119,7 +119,9 @@
 }
 
 .isl-analytics {
-  justify-self: end; // Push to the right in grid
+  display: block;
+  grid-template-columns: none;
+  justify-self: end;
   padding: calc($gap / 4) calc($gap / 2);
 
   &:hover {
