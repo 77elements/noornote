@@ -193,15 +193,10 @@ export class QuotedNoteRenderer {
       event.pubkey
     );
 
-    // Use EXACT same structure as NoteStructureBuilder (lines 142-147)
-    // NO whitespace between tags - prevents invisible text nodes causing spacing issues
-    quoteBox.innerHTML = `<div class="event-header-container"></div><div class="event-content">${htmlWithMedia}</div>`;
+    quoteBox.innerHTML = `<div class="event-content">${htmlWithMedia}</div>`;
 
-    // Mount header
-    const headerContainer = quoteBox.querySelector('.event-header-container');
-    if (headerContainer) {
-      headerContainer.appendChild(header.getElement());
-    }
+    // Mount header as first child
+    quoteBox.insertBefore(header.getElement(), quoteBox.firstChild);
 
     // Render nested quoted references (if any)
     if (processedContent.quotedReferences.length > 0) {

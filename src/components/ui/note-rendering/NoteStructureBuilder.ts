@@ -154,10 +154,12 @@ export class NoteStructureBuilder {
     processedHtml = processedHtml.replace(/((<br\s*\/?>)\s*)+(?=<span class="quote-marker")/gi, '');
 
     noteDiv.innerHTML = `
-      <div class="event-header-container"></div>
       <div class="reply-indicator-container"></div>
       <div class="${contentClass}">${processedHtml}</div>
     `;
+
+    // Mount note header as first child
+    noteDiv.insertBefore(noteHeader.getElement(), noteDiv.firstChild);
 
     // Initialize image click handlers for full-screen viewer
     const imageClickHandler = getImageClickHandler();
@@ -170,12 +172,6 @@ export class NoteStructureBuilder {
     // Initialize user hover card for all mention links
     const userHoverCard = UserHoverCard.getInstance();
     userHoverCard.initializeForMentions(noteDiv);
-
-    // Mount note header
-    const headerContainer = noteDiv.querySelector('.event-header-container');
-    if (headerContainer) {
-      headerContainer.appendChild(noteHeader.getElement());
-    }
 
     // Mount thread context indicator if this is a reply
     if (replyInfo) {
