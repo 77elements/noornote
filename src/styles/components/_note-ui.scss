@@ -24,7 +24,7 @@
   }
 
   .note-header {
-    margin-bottom: calc($gap * 0.75);
+    margin-bottom: calc($gap / 2);
   }
 
   // Reply indicator (shows parent author) - DEPRECATED, use thread-context-indicator
@@ -116,7 +116,7 @@
   .event-content {
     color: var(--color-5);
     line-height: 1.5;
-    margin-bottom: calc($gap * 0.75);
+    margin-bottom: calc($gap / 2);
 
     word-wrap: break-word;
     word-break: break-word;
