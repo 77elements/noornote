@@ -1292,7 +1292,7 @@ export class MainLayout {
             <button class="btn btn--new-post">
               <svg width="24" height="24"><use href="#icon-plus"/></svg>
               New Post
-              <svg class="dropup-arrow" width="12" height="12"><use href="#icon-chevron-up"/></svg>
+              <svg class="dropup-arrow" width="14" height="14"><use href="#icon-triangle-up"/></svg>
             </button>
             <div class="new-post-dropup__menu">
               <button class="new-post-dropup__item" data-action="new-note">

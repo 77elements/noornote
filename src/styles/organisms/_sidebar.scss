@@ -60,21 +60,17 @@
   left: 0;
   right: 0;
   margin: 0 $gap;
+  text-align: center;
 
   .btn--new-post {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     gap: calc($gap / 2);
+    border-radius: 30px;
+    padding: $gap;
 
-    svg {
-      width: 30px;
-    }
 
     .dropup-arrow {
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       transition: transform 0.2s ease;
     }
   }
