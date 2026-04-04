@@ -20,6 +20,8 @@
   --surface-tint: rgba(0, 0, 0, 0.08);
   --color-logo-start: #f02020;
   --color-logo-end: #ffa800;
+  --bg-section-inner: rgba(203, 208, 215, 0.35);
+  --bg-section-outer: rgba(239, 245, 254, 0.35);
 }
 
 [data-theme="code-bunker"] {
@@ -35,6 +37,8 @@
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #e8875a;
   --color-logo-end: #f0f080;
+  --bg-section-inner: rgba(69, 69, 70, 0.35);
+  --bg-section-outer: rgba(37, 37, 38, 0.35);
 }
 
 [data-theme="soft-lilac"] {
@@ -50,6 +54,8 @@
   --surface-tint: rgba(0, 0, 0, 0.06);
   --color-logo-start: #e84090;
   --color-logo-end: #d89030;
+  --bg-section-inner: rgba(197, 187, 205, 0.35);
+  --bg-section-outer: rgba(232, 221, 242, 0.35);
 }
 
 [data-theme="dark-symbiote"] {
@@ -65,6 +71,8 @@
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #d83030;
   --color-logo-end: #a0bcc4;
+  --bg-section-inner: rgba(63, 79, 87, 0.35);
+  --bg-section-outer: rgba(30, 48, 58, 0.35);
 }
 
 [data-theme="neon-harley"] {
@@ -80,6 +88,8 @@
   --surface-tint: rgba(255, 255, 255, 0.06);
   --color-logo-start: #ff2aaa;
   --color-logo-end: #50ff30;
+  --bg-section-inner: rgba(56, 56, 79, 0.35);
+  --bg-section-outer: rgba(21, 21, 48, 0.35);
 }
 
 [data-theme="wake-up-neo"] {
@@ -95,4 +105,6 @@
   --surface-tint: rgba(0, 255, 65, 0.04);
   --color-logo-start: #00ff41;
   --color-logo-end: #e0c020;
+  --bg-section-inner: rgba(49, 60, 49, 0.35);
+  --bg-section-outer: rgba(13, 26, 13, 0.35);
 }

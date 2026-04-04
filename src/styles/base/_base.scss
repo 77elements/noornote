@@ -3,6 +3,7 @@
  * Theme setup and global styles
  */
 
+@use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
@@ -28,6 +29,10 @@
   // Logo gradient (change per theme, derived from color-3/color-6 with more saturation)
   --color-logo-start: #{$color-logo-start};
   --color-logo-end: #{$color-logo-end};
+
+  // Section background gradient (change per theme)
+  --bg-section-inner: #{rgba(color.adjust($color-2, $lightness: 15%), 0.35)};
+  --bg-section-outer: #{rgba($color-2, 0.35)};
 
   // Runtime-only CSS variables (for inline styles in TypeScript)
   --color-white: #{$color-white};

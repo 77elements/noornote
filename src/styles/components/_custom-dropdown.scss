@@ -49,7 +49,7 @@
   // Arrow icon (font chevron)
   &__arrow {
     @extend %chevron-up-down;
-    color: $color-3;
+    color: var(--color-3);
     margin-left: calc($gap / 2);
     flex-shrink: 0;
   }

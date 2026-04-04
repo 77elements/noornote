@@ -70,7 +70,7 @@
 
     .dropup-arrow {
       @extend %chevron-up;
-      color: $color-1;
+      color: var(--color-1);
     }
   }
 

@@ -21,7 +21,7 @@
   display: inline-block;
   color: var(--color-5);
   padding: calc($gap / 2) calc($gap * 3 / 4);
-  background-color: $color-2;
+  background-color: var(--color-2);
   border-radius: $radius-pill;
 }
 

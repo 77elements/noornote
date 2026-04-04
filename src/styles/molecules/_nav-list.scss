@@ -11,7 +11,7 @@
   align-items: center;
   padding: $gap;
   color: var(--color-5);
-  border-bottom: 1px solid color.adjust($color-2, $lightness: 5%);
+  border-bottom: 1px solid var(--surface-tint);
   font-weight: 500;
   transition: $transition-colors;
   text-decoration: none;
@@ -39,5 +39,5 @@
 
 .nav-list__chevron {
   @extend %chevron-right;
-  color: $color-3;
+  color: var(--color-3);
 }

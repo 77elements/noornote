@@ -39,7 +39,7 @@
 
   &__label {
     font-weight: 500;
-    color: $color-5;
+    color: var(--color-5);
   }
 
   &__control {
@@ -48,7 +48,7 @@
 
   &__desc {
     grid-column: 1 / -1;
-    color: $color-3;
+    color: var(--color-3);
     line-height: 1.4;
     margin: 0;
   }

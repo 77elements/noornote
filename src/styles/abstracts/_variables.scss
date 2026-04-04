@@ -137,8 +137,9 @@ $transition-colors: color $transition-fast, background-color $transition-fast, b
 // ========================================
 // Reusable Backgrounds
 // ========================================
+// Exception: uses CSS variables for theme support
 %bg-section {
-  background: radial-gradient(circle 400px, rgba(color.adjust($color-2, $lightness: 15%), 0.35), rgba($color-2, 0.35));
+  background: radial-gradient(circle 400px, var(--bg-section-inner), var(--bg-section-outer));
 }
 
 // ========================================

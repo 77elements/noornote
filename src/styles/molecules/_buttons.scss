@@ -64,7 +64,7 @@
 
 .btn--passive {
   [class*="chevron-"], [class*="__chevron"], [class*="__arrow"], .dropup-arrow {
-    color: $color-3;
+    color: var(--color-3);
   }
 }
 
@@ -99,7 +99,7 @@
   border-color: var(--color-4);
 
   [class*="chevron-"], [class*="__chevron"], [class*="__arrow"], .dropup-arrow {
-    color: $color-4;
+    color: var(--color-4);
   }
 
   &:hover {
@@ -228,7 +228,7 @@
 
 .back-chevron {
   @extend %chevron-left;
-  color: $color-4;
+  color: var(--color-4);
 }
 
 .heading-back-btn-container {
