@@ -22,8 +22,8 @@
     width: 100%; // Fill parent container
     background: var(--color-2);
     color: var(--color-5);
-    border: 1px solid var(--color-3);
-    border-radius: $radius-base;
+    border: none;
+    border-radius: $radius-pill;
     padding: 12px;
     font-weight: 500;
     cursor: pointer;
@@ -32,12 +32,10 @@
     white-space: nowrap;
 
     &:hover {
-      border-color: var(--color-4);
       background: color-mix(in srgb, var(--color-2) 94%, white);
     }
 
     &:focus {
-      border-color: var(--color-4);
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-4) 20%, transparent);
     }
   }

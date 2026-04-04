@@ -1,142 +1,66 @@
 /**
  * Account Switcher Component Styles
- * Dropdown for switching between stored accounts
- * Uses ui-list for dropdown items
+ * Extends custom-dropdown with account-specific elements
  */
 
-@use 'sass:color';
 @use '../abstracts/variables' as *;
 @use '../base/typography' as *;
 
 .account-switcher {
-  position: relative;
-  display: inline-block;
-
-  // Trigger button
-  &__trigger {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-    padding: calc($gap / 2) $gap;
-    background-color: var(--color-2);
-    border: 1px solid var(--color-3);
-    border-radius: $radius-base;
-    cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease;
-
-    &:hover {
-      background-color: color-mix(in srgb, var(--color-2) 90%, white);
-      border-color: var(--color-4);
-    }
-  }
-
-  // Current user display
-  &__current {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-  }
-
+  // Green online indicator dot
   &__indicator {
     width: 8px;
     height: 8px;
     border-radius: $radius-full;
-    background-color: var(--color-6);
-  }
-
-  &__name {
-    color: var(--color-5);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
-  }
-
-  &__arrow {
-    color: var(--color-3);
-    @extend %mini;
-    transition: transform 0.15s ease;
-  }
-
-  // Open state
-  &--open {
-    .account-switcher__arrow {
-      transform: rotate(180deg);
-    }
-  }
-
-  // Dropdown menu
-  &__dropdown {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    width: max-content;
-    background-color: var(--color-2);
-    border-radius: $radius-base;
-    box-shadow: $box-shadow;
-    z-index: 1000;
-    overflow: hidden;
-
-    .ui-list {
-      padding: 0;
-    }
-
-    .ui-list__item {
-      padding: $gap;
-      white-space: nowrap;
-    }
-
-    .ui-list__item--clickable {
-      color: var(--color-4);
-    }
-  }
-
-  // Header
-  &__header {
-    color: var(--color-3);
-    @extend %small;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: $gap $gap calc($gap / 2);
-  }
-
-  // Loading state
-  &__loading {
-    padding: $gap;
-    color: var(--color-3);
-    @extend %small;
-  }
-
-  
-  // Active dot indicator
-  &__active-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: $radius-full;
-    background-color: var(--color-6);
+    background-color: $color-6;
     flex-shrink: 0;
   }
 
-  // Icon for actions (+ and arrow)
+  // Active account dot in menu
+  &__active-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: $radius-full;
+    background-color: $color-6;
+    margin-left: calc($gap / 2);
+    vertical-align: middle;
+  }
+
+  // Icon for actions (+ and logout arrow)
   &__icon {
     width: 16px;
     display: inline-block;
     text-align: center;
     margin-right: calc($gap / 2);
   }
+
+  // Danger item (sign out)
+  &__item--danger {
+    color: $color-red;
+  }
+
+  // Align dropdown menu to right
+  .custom-dropdown__menu {
+    right: 0;
+    left: auto;
+    min-width: 180px;
+  }
+
+  // Truncate long names
+  .custom-dropdown__label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
 }
 
 // Mobile responsive
 @media (max-width: 768px) {
   .account-switcher {
-    &__name {
+    .custom-dropdown__label {
       max-width: 100px;
-    }
-
-    &__dropdown {
-      min-width: 180px;
     }
   }
 }

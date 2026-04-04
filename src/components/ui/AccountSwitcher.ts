@@ -2,6 +2,7 @@
  * Account Switcher Component
  * Shows current user with dropdown for switching between stored accounts.
  * Supports: NoorSigner (local daemon) and Bunker (remote signer)
+ * Uses custom-dropdown CSS classes for consistent styling.
  */
 
 import { UserProfileService, UserProfile } from '../../services/UserProfileService';
@@ -26,7 +27,6 @@ interface DisplayAccount {
 
 export class AccountSwitcher {
   private element: HTMLElement;
-  private dropdown: HTMLElement | null = null;
   private isOpen: boolean = false;
   private userProfileService: UserProfileService;
   private authService: AuthService;
@@ -50,7 +50,7 @@ export class AccountSwitcher {
     // Click outside handler
     this.clickOutsideHandler = (e: MouseEvent) => {
       if (this.isOpen && !this.element.contains(e.target as Node)) {
-        this.closeDropdown();
+        this.close();
       }
     };
     document.addEventListener('click', this.clickOutsideHandler);
@@ -61,23 +61,21 @@ export class AccountSwitcher {
    */
   private createElement(): HTMLElement {
     const container = document.createElement('div');
-    container.className = 'account-switcher';
+    container.className = 'custom-dropdown account-switcher';
     container.innerHTML = `
-      <button class="account-switcher__trigger" type="button">
-        <div class="account-switcher__current">
-          <span class="account-switcher__indicator"></span>
-          <span class="account-switcher__name">Loading...</span>
-        </div>
-        <span class="account-switcher__arrow">&#9662;</span>
+      <button class="custom-dropdown__trigger" type="button">
+        <span class="account-switcher__indicator"></span>
+        <span class="custom-dropdown__label">Loading...</span>
+        <span class="custom-dropdown__arrow" aria-hidden="true"></span>
       </button>
     `;
 
     // Setup trigger click
-    const trigger = container.querySelector('.account-switcher__trigger');
+    const trigger = container.querySelector('.custom-dropdown__trigger');
     if (trigger) {
       trigger.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.toggleDropdown();
+        this.isOpen ? this.close() : this.open();
       });
     }
 
@@ -88,7 +86,6 @@ export class AccountSwitcher {
    * Load user profile and update display
    */
   private async loadProfile(): Promise<void> {
-    // Subscribe to profile updates
     this.unsubscribeProfile = this.userProfileService.subscribeToProfile(
       this.options.pubkey,
       (profile: UserProfile) => {
@@ -96,7 +93,6 @@ export class AccountSwitcher {
         this.profileCache.set(this.options.pubkey, profile);
         this.updateDisplay();
 
-        // Also update account storage with profile info
         const displayName = profile.name || profile.display_name;
         const avatarUrl = profile.picture;
         this.accountStorage.updateAccount(this.options.pubkey, {
@@ -106,7 +102,6 @@ export class AccountSwitcher {
       }
     );
 
-    // Trigger initial load
     try {
       await this.userProfileService.getUserProfile(this.options.pubkey);
     } catch (error) {
@@ -119,7 +114,7 @@ export class AccountSwitcher {
    * Update display with loaded profile
    */
   private updateDisplay(): void {
-    const nameEl = this.element.querySelector('.account-switcher__name');
+    const nameEl = this.element.querySelector('.custom-dropdown__label');
     if (nameEl) {
       const displayName = this.profile?.name || this.profile?.display_name || `${this.options.npub.slice(0, 12)}...`;
       nameEl.textContent = displayName;
@@ -130,68 +125,54 @@ export class AccountSwitcher {
    * Show fallback when profile loading fails
    */
   private showFallback(): void {
-    const nameEl = this.element.querySelector('.account-switcher__name');
+    const nameEl = this.element.querySelector('.custom-dropdown__label');
     if (nameEl) {
       nameEl.textContent = `${this.options.npub.slice(0, 12)}...`;
     }
   }
 
   /**
-   * Toggle dropdown visibility
-   */
-  private toggleDropdown(): void {
-    if (this.isOpen) {
-      this.closeDropdown();
-    } else {
-      this.openDropdown();
-    }
-  }
-
-  /**
    * Open dropdown
    */
-  private async openDropdown(): Promise<void> {
+  private async open(): Promise<void> {
     if (this.isOpen) return;
-
     this.isOpen = true;
-    this.element.classList.add('account-switcher--open');
+    this.element.classList.add('custom-dropdown--open');
 
-    // Show loading state
-    this.dropdown = document.createElement('div');
-    this.dropdown.className = 'account-switcher__dropdown';
-    this.dropdown.innerHTML = '<div class="account-switcher__loading">Loading...</div>';
-    this.element.appendChild(this.dropdown);
+    // Create menu
+    const menu = document.createElement('ul');
+    menu.className = 'custom-dropdown__menu';
+    menu.style.display = 'block';
+    menu.style.opacity = '1';
+    menu.style.transform = 'translateY(0)';
+    this.element.appendChild(menu);
 
-    // Fetch accounts and update dropdown
-    await this.populateDropdown();
+    // Show loading
+    menu.innerHTML = '<li class="custom-dropdown__item" style="opacity: 0.5;">Loading...</li>';
+
+    await this.populateMenu(menu);
   }
 
   /**
    * Close dropdown
    */
-  private closeDropdown(): void {
+  private close(): void {
     if (!this.isOpen) return;
-
     this.isOpen = false;
-    if (this.dropdown) {
-      this.dropdown.remove();
-      this.dropdown = null;
-    }
-    this.element.classList.remove('account-switcher--open');
+    this.element.classList.remove('custom-dropdown--open');
+
+    const menu = this.element.querySelector('.custom-dropdown__menu');
+    if (menu) menu.remove();
   }
 
   /**
-   * Populate dropdown with accounts
+   * Populate menu with accounts
    */
-  private async populateDropdown(): Promise<void> {
-    if (!this.dropdown) return;
-
+  private async populateMenu(menu: HTMLElement): Promise<void> {
     const authMethod = this.authService.getAuthMethod();
     let accounts: DisplayAccount[] = [];
 
-    // Fetch accounts based on auth method
     if (authMethod === 'key-signer') {
-      // NoorSigner: get accounts from daemon
       try {
         const result = await this.keySignerClient.listAccounts();
         accounts = result.accounts.map(acc => ({
@@ -199,14 +180,11 @@ export class AccountSwitcher {
           npub: acc.npub,
           authMethod: 'key-signer'
         }));
-
-        // Load profiles for all accounts
         await this.loadAccountProfiles(accounts);
       } catch (error) {
         console.error('[AccountSwitcher] Failed to list NoorSigner accounts:', error);
       }
     } else if (authMethod === 'nip46') {
-      // Bunker: get accounts from local storage
       const stored = this.accountStorage.getAccounts();
       accounts = stored
         .filter(acc => acc.authMethod === 'nip46')
@@ -218,46 +196,46 @@ export class AccountSwitcher {
         }));
     }
 
-    // Build dropdown as simple ui-list
-    this.dropdown.innerHTML = '';
+    menu.innerHTML = '';
     const currentPubkey = this.options.pubkey;
-
-    // Header (only if multiple accounts)
-    if (accounts.length > 1) {
-      const header = document.createElement('div');
-      header.className = 'account-switcher__header';
-      header.textContent = 'Switch Account';
-      this.dropdown.appendChild(header);
-    }
-
-    // Create list
-    const list = document.createElement('ul');
-    list.className = 'ui-list';
 
     // Account items (only if multiple accounts)
     if (accounts.length > 1) {
       for (const account of accounts) {
         const isActive = account.pubkey === currentPubkey;
-        const item = this.createAccountItem(account, isActive);
-        list.appendChild(item);
+        const displayName = account.displayName || `${account.npub.slice(0, 12)}...`;
+
+        const item = document.createElement('li');
+        item.className = `custom-dropdown__item${isActive ? ' custom-dropdown__item--selected' : ''}`;
+        item.innerHTML = `${displayName}${isActive ? ' <span class="account-switcher__active-dot"></span>' : ''}`;
+
+        if (!isActive) {
+          item.addEventListener('click', () => {
+            if (account.authMethod === 'key-signer') {
+              this.handleKeySignerSwitch(account);
+            } else {
+              this.handleBunkerSwitch(account);
+            }
+          });
+        }
+
+        menu.appendChild(item);
       }
     }
 
     // Add account
     const addItem = document.createElement('li');
-    addItem.className = 'ui-list__item ui-list__item--clickable';
+    addItem.className = 'custom-dropdown__item';
     addItem.innerHTML = '<span class="account-switcher__icon">+</span> Add account';
     addItem.addEventListener('click', () => this.handleAddAccount());
-    list.appendChild(addItem);
+    menu.appendChild(addItem);
 
     // Sign out
     const logoutItem = document.createElement('li');
-    logoutItem.className = 'ui-list__item ui-list__item--clickable ui-list__item--danger';
+    logoutItem.className = 'custom-dropdown__item account-switcher__item--danger';
     logoutItem.innerHTML = '<span class="account-switcher__icon"><svg width="14" height="14"><use href="#icon-logout"/></svg></span> Sign out';
     logoutItem.addEventListener('click', () => this.handleLogout());
-    list.appendChild(logoutItem);
-
-    this.dropdown.appendChild(list);
+    menu.appendChild(logoutItem);
   }
 
   /**
@@ -292,47 +270,17 @@ export class AccountSwitcher {
   }
 
   /**
-   * Create account item element
-   */
-  private createAccountItem(account: DisplayAccount, isActive: boolean): HTMLElement {
-    const item = document.createElement('li');
-    item.className = `ui-list__item${isActive ? ' ui-list__item--active' : ' ui-list__item--clickable'}`;
-
-    const displayName = account.displayName || `${account.npub.slice(0, 12)}...`;
-
-    item.innerHTML = `
-      <span class="account-switcher__account-name">${displayName}</span>
-      ${isActive ? '<span class="account-switcher__active-dot"></span>' : ''}
-    `;
-
-    if (!isActive) {
-      item.addEventListener('click', () => {
-        if (account.authMethod === 'key-signer') {
-          this.handleKeySignerSwitch(account);
-        } else {
-          this.handleBunkerSwitch(account);
-        }
-      });
-    }
-
-    return item;
-  }
-
-  /**
    * Handle NoorSigner account switch (requires password)
    */
   private handleKeySignerSwitch(account: DisplayAccount): void {
-    this.closeDropdown();
-
+    this.close();
     const modal = new KeySignerPasswordModal({
       npub: account.npub,
       ...(account.displayName && { displayName: account.displayName }),
       onSuccess: async () => {
-        // NoorSigner has switched accounts - now re-authenticate to update AuthService
         await this.authService.authenticateWithKeySigner();
       }
     });
-
     modal.show();
   }
 
@@ -340,8 +288,7 @@ export class AccountSwitcher {
    * Handle Bunker account switch
    */
   private async handleBunkerSwitch(account: DisplayAccount): Promise<void> {
-    this.closeDropdown();
-
+    this.close();
     const result = await this.authService.switchAccount(account.pubkey);
     if (!result.success) {
       console.error('[AccountSwitcher] Bunker switch failed:', result.error);
@@ -352,8 +299,7 @@ export class AccountSwitcher {
    * Handle add account
    */
   private handleAddAccount(): void {
-    this.closeDropdown();
-
+    this.close();
     if (this.options.onAddAccount) {
       this.options.onAddAccount();
     }
@@ -363,8 +309,7 @@ export class AccountSwitcher {
    * Handle logout current account
    */
   private handleLogout(): void {
-    this.closeDropdown();
-
+    this.close();
     if (this.options.onLogout) {
       this.options.onLogout();
     }
@@ -377,11 +322,10 @@ export class AccountSwitcher {
     if (this.unsubscribeProfile) {
       this.unsubscribeProfile();
     }
-
     this.options = options;
     this.profile = null;
     this.loadProfile();
-    this.closeDropdown();
+    this.close();
   }
 
   /**
@@ -399,7 +343,7 @@ export class AccountSwitcher {
       this.unsubscribeProfile();
     }
     document.removeEventListener('click', this.clickOutsideHandler);
-    this.closeDropdown();
+    this.close();
     this.element.remove();
   }
 }

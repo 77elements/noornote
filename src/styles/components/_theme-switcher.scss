@@ -10,12 +10,6 @@
     box-sizing: border-box;
     padding: 0 $gap;
     background-color: var(--color-2);
-    border: 1px solid var(--color-3);
-    border-radius: $radius-base;
-
-    &:hover {
-      border-color: var(--color-4);
-    }
   }
 
   .custom-dropdown__menu {
