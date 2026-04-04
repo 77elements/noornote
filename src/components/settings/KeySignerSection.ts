@@ -44,42 +44,44 @@ export class KeySignerSection extends SettingsSection {
    */
   private renderContent(isRunning: boolean): string {
     return `
-        <div class="key-signer-status">
-          <div class="status-indicator ${isRunning ? 'status-running' : 'status-stopped'}">
-            <span class="status-dot"></span>
-            <span class="status-text">${isRunning ? 'Key Signer Running' : 'Key Signer Stopped'}</span>
-          </div>
-        </div>
-
-        ${isRunning ? `
-          <div class="key-signer-autostart">
-            <div class="setting-row">
-              <div class="setting-info">
-                <label class="setting-label">Launch key signer on system startup</label>
-                <p class="setting-description">Automatically start NoorSigner key signer when you log in to your computer.</p>
-              </div>
-              <div id="autostart-switch-container"></div>
+        <section class="section">
+          <div class="key-signer-status">
+            <div class="status-indicator ${isRunning ? 'status-running' : 'status-stopped'}">
+              <span class="status-dot"></span>
+              <span class="status-text">${isRunning ? 'Key Signer Running' : 'Key Signer Stopped'}</span>
             </div>
           </div>
 
-          <div class="key-signer-autostart">
-            <div class="setting-row">
-              <div class="setting-info">
-                <label class="setting-label">Manage NoorSigner via NoorNote</label>
-                <p class="setting-description">Handle key signer prompts through NoorNote instead of opening a terminal window.</p>
+          ${isRunning ? `
+            <div class="key-signer-autostart">
+              <div class="setting-row">
+                <div class="setting-info">
+                  <label class="setting-label">Launch key signer on system startup</label>
+                  <p class="setting-description">Automatically start NoorSigner key signer when you log in to your computer.</p>
+                </div>
+                <div id="autostart-switch-container"></div>
               </div>
-              <div id="silent-mode-switch-container"></div>
             </div>
-          </div>
 
-          <div class="settings-section__actions">
-            <button class="btn btn--medium" id="stop-daemon-btn">Stop Key Signer & Logout</button>
-          </div>
-        ` : `
-          <div class="key-signer-info">
-            <p>NoorSigner key signer is not running. Start it by logging in with NoorSigner.</p>
-          </div>
-        `}
+            <div class="key-signer-autostart">
+              <div class="setting-row">
+                <div class="setting-info">
+                  <label class="setting-label">Manage NoorSigner via NoorNote</label>
+                  <p class="setting-description">Handle key signer prompts through NoorNote instead of opening a terminal window.</p>
+                </div>
+                <div id="silent-mode-switch-container"></div>
+              </div>
+            </div>
+
+            <div class="settings-section__actions">
+              <button class="btn btn--medium" id="stop-daemon-btn">Stop Key Signer & Logout</button>
+            </div>
+          ` : `
+            <div class="key-signer-info">
+              <p>NoorSigner key signer is not running. Start it by logging in with NoorSigner.</p>
+            </div>
+          `}
+        </section>
     `;
   }
 

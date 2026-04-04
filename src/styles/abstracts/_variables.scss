@@ -3,6 +3,8 @@
  * All design system variables in one place
  */
 
+@use 'sass:color';
+
 // ========================================
 // Color Palette - Noornote Brand Colors
 // ========================================
@@ -129,6 +131,13 @@ $text-glow: 0 0 10px rgba($color-white, 0.15), 0 0 20px rgba($color-white, 0.1);
 $transition-fast: 150ms ease-in-out;
 $transition-all: all 250ms ease-in-out;
 $transition-colors: color $transition-fast, background-color $transition-fast, border-color $transition-fast;
+
+// ========================================
+// Reusable Backgrounds
+// ========================================
+%bg-section {
+  background: radial-gradient(circle, rgba(color.adjust($color-2, $lightness: 10%), 0.45), rgba($color-2, 0.45));
+}
 
 // ========================================
 // Breakpoints (Mobile-First)

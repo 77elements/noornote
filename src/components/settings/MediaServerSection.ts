@@ -112,17 +112,15 @@ export class MediaServerSection extends SettingsSection {
    */
   private renderContent(): string {
     return `
-        <!-- Media Server Subsection -->
-        <div class="media-subsection">
+        <section class="section">
           <h3 class="subsection-title">Media Server</h3>
           ${this.renderMediaServer()}
-        </div>
+        </section>
 
-        <!-- Sensitive Media Subsection -->
-        <div class="media-subsection">
+        <section class="section">
           <h3 class="subsection-title">Sensitive Media</h3>
           ${this.renderSensitiveMedia()}
-        </div>
+        </section>
     `;
   }
 

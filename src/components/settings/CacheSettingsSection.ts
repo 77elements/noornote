@@ -78,131 +78,137 @@ export class CacheSettingsSection extends SettingsSection {
    */
   private renderContent(config: NDKCacheConfig, notificationsCacheLimit: number): string {
     return `
-        <h3 class="subsection-title">Notifications Cache</h3>
-        <div class="form__row form__row--oneline">
-          <label for="notifications-cache-size">Cache Size</label>
-          <input
-            type="number"
-            id="notifications-cache-size"
-            value="${notificationsCacheLimit}"
-            min="10"
-            max="1000"
-            step="10"
-          />
-        </div>
-        <p class="form__note">Maximum notifications to keep in localStorage (10-1000).</p>
+        <section class="section">
+          <h3 class="subsection-title">Notifications Cache</h3>
+          <div class="form__row form__row--oneline">
+            <label for="notifications-cache-size">Cache Size</label>
+            <input
+              type="number"
+              id="notifications-cache-size"
+              value="${notificationsCacheLimit}"
+              min="10"
+              max="1000"
+              step="10"
+            />
+          </div>
+          <p class="form__note">Maximum notifications to keep in localStorage (10-1000).</p>
+        </section>
 
-        <h3 class="subsection-title">NDK Cache Configuration</h3>
-        <div class="form__info">
-          <p>Configure NDK cache sizes. Changes require app reload to take effect.</p>
-        </div>
+        <section class="section">
+          <h3 class="subsection-title">NDK Cache Configuration</h3>
+          <div class="form__info">
+            <p>Configure NDK cache sizes. Changes require app reload to take effect.</p>
+          </div>
 
-        <div class="form__row form__row--oneline">
-          <label for="profile-cache-size">Profile Cache Size</label>
-          <input
-            type="number"
-            id="profile-cache-size"
-            value="${config.profileCacheSize}"
-            min="1000"
-            max="500000"
-            step="1000"
-          />
-        </div>
+          <div class="form__row form__row--oneline">
+            <label for="profile-cache-size">Profile Cache Size</label>
+            <input
+              type="number"
+              id="profile-cache-size"
+              value="${config.profileCacheSize}"
+              min="1000"
+              max="500000"
+              step="1000"
+            />
+          </div>
 
-        <div class="form__row form__row--oneline">
-          <label for="event-cache-size">Event Cache Size</label>
-          <input
-            type="number"
-            id="event-cache-size"
-            value="${config.eventCacheSize}"
-            min="1000"
-            max="200000"
-            step="1000"
-          />
-        </div>
+          <div class="form__row form__row--oneline">
+            <label for="event-cache-size">Event Cache Size</label>
+            <input
+              type="number"
+              id="event-cache-size"
+              value="${config.eventCacheSize}"
+              min="1000"
+              max="200000"
+              step="1000"
+            />
+          </div>
 
-        <div class="form__row form__row--oneline">
-          <label for="event-tags-cache-size">Event Tags Cache Size</label>
-          <input
-            type="number"
-            id="event-tags-cache-size"
-            value="${config.eventTagsCacheSize}"
-            min="1000"
-            max="500000"
-            step="1000"
-          />
-        </div>
+          <div class="form__row form__row--oneline">
+            <label for="event-tags-cache-size">Event Tags Cache Size</label>
+            <input
+              type="number"
+              id="event-tags-cache-size"
+              value="${config.eventTagsCacheSize}"
+              min="1000"
+              max="500000"
+              step="1000"
+            />
+          </div>
 
-        <div class="form__row form__row--oneline">
-          <label for="zapper-cache-size">Zapper Cache Size</label>
-          <input
-            type="number"
-            id="zapper-cache-size"
-            value="${config.zapperCacheSize}"
-            min="50"
-            max="5000"
-            step="50"
-          />
-        </div>
+          <div class="form__row form__row--oneline">
+            <label for="zapper-cache-size">Zapper Cache Size</label>
+            <input
+              type="number"
+              id="zapper-cache-size"
+              value="${config.zapperCacheSize}"
+              min="50"
+              max="5000"
+              step="50"
+            />
+          </div>
 
-        <div class="form__row form__row--oneline">
-          <label for="nip05-cache-size">NIP-05 Cache Size</label>
-          <input
-            type="number"
-            id="nip05-cache-size"
-            value="${config.nip05CacheSize}"
-            min="100"
-            max="10000"
-            step="100"
-          />
-        </div>
+          <div class="form__row form__row--oneline">
+            <label for="nip05-cache-size">NIP-05 Cache Size</label>
+            <input
+              type="number"
+              id="nip05-cache-size"
+              value="${config.nip05CacheSize}"
+              min="100"
+              max="10000"
+              step="100"
+            />
+          </div>
 
-        <div class="form__row form__row--oneline">
-          <label for="save-sig">Save Event Signatures</label>
-          <input
-            type="checkbox"
-            id="save-sig"
-            ${config.saveSig ? 'checked' : ''}
-          />
-        </div>
-        <p class="form__note">Store signatures in cache (increases storage usage).</p>
+          <div class="form__row form__row--oneline">
+            <label for="save-sig">Save Event Signatures</label>
+            <input
+              type="checkbox"
+              id="save-sig"
+              ${config.saveSig ? 'checked' : ''}
+            />
+          </div>
+          <p class="form__note">Store signatures in cache (increases storage usage).</p>
+        </section>
 
-        <h3 class="subsection-title">Clear Cache Data</h3>
-        <div class="form__info">
-          <p>Select which cache tables to clear. This action cannot be undone.</p>
-        </div>
+        <section class="section">
+          <h3 class="subsection-title">Clear Cache Data</h3>
+          <div class="form__info">
+            <p>Select which cache tables to clear. This action cannot be undone.</p>
+          </div>
 
-        <div class="cache-tables-group">
-          <label class="cache-table-item">
-            <input type="checkbox" class="cache-table-checkbox" value="events" />
-            <span>Events</span>
-          </label>
-          <label class="cache-table-item">
-            <input type="checkbox" class="cache-table-checkbox" value="profiles" />
-            <span>Profiles</span>
-          </label>
-          <label class="cache-table-item">
-            <input type="checkbox" class="cache-table-checkbox" value="eventTags" />
-            <span>Event Tags</span>
-          </label>
-          <label class="cache-table-item">
-            <input type="checkbox" class="cache-table-checkbox" value="nip05" />
-            <span>NIP-05</span>
-          </label>
-          <label class="cache-table-item">
-            <input type="checkbox" class="cache-table-checkbox" value="lnurl" />
-            <span>Lightning Addresses</span>
-          </label>
-          <label class="cache-table-item">
-            <input type="checkbox" class="cache-table-checkbox" value="relayStatus" />
-            <span>Relay Status</span>
-          </label>
-        </div>
+          <div class="cache-tables-group">
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="events" />
+              <span>Events</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="profiles" />
+              <span>Profiles</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="eventTags" />
+              <span>Event Tags</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="nip05" />
+              <span>NIP-05</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="lnurl" />
+              <span>Lightning Addresses</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="relayStatus" />
+              <span>Relay Status</span>
+            </label>
+          </div>
 
-        <div class="settings-section__actions">
-          <button class="btn btn--medium btn--danger" id="clear-selected-btn">Clear Selected</button>
-          <button class="btn btn--medium btn--danger" id="clear-all-btn">Clear All & Reload</button>
-        </div>
+          <div class="settings-section__actions">
+            <button class="btn btn--medium btn--danger" id="clear-selected-btn">Clear Selected</button>
+            <button class="btn btn--medium btn--danger" id="clear-all-btn">Clear All & Reload</button>
+          </div>
+        </section>
     `;
   }
 

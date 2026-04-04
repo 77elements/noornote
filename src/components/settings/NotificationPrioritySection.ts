@@ -111,22 +111,24 @@ export class NotificationPrioritySection extends SettingsSection {
    */
   private renderContent(): string {
     return `
-        <div class="form__info">
-          <p>Drag notification types between priority levels to customize your badge indicator.</p>
-        </div>
+        <section class="section">
+          <div class="form__info">
+            <p>Drag notification types between priority levels to customize your badge indicator.</p>
+          </div>
 
-        ${this.renderPriorityZone(1)}
-        ${this.renderPriorityZone(2)}
-        ${this.renderPriorityZone(3)}
+          ${this.renderPriorityZone(1)}
+          ${this.renderPriorityZone(2)}
+          ${this.renderPriorityZone(3)}
 
-        <div class="notification-priority-actions">
-          <button class="btn btn--mini btn--passive" data-action="reset-priorities">
-            Reset to Defaults
-          </button>
-          <button class="btn btn--mini btn--primary" data-action="save-priorities" ${this.hasUnsavedChanges ? '' : 'disabled'}>
-            Save
-          </button>
-        </div>
+          <div class="notification-priority-actions">
+            <button class="btn btn--mini btn--passive" data-action="reset-priorities">
+              Reset to Defaults
+            </button>
+            <button class="btn btn--mini btn--primary" data-action="save-priorities" ${this.hasUnsavedChanges ? '' : 'disabled'}>
+              Save
+            </button>
+          </div>
+        </section>
     `;
   }
 

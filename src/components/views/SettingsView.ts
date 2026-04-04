@@ -45,7 +45,7 @@ export class SettingsView extends View {
     });
 
     const menuHtml = menuItems.map(item =>
-      `<a href="${item.route}" class="section__item">${item.label}<span class="section__chevron">›</span></a>`
+      `<a href="${item.route}" class="nav-list__item">${item.label}<span class="nav-list__chevron">›</span></a>`
     ).join('');
 
     const showExportLogs = platform.isDesktop || platform.isCapacitor;
@@ -65,7 +65,7 @@ export class SettingsView extends View {
     `;
 
     // Menu item click handling (use router navigation)
-    this.container.querySelectorAll('.section__item').forEach(link => {
+    this.container.querySelectorAll('.nav-list__item').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const route = (e.currentTarget as HTMLAnchorElement).getAttribute('href');

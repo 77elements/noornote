@@ -204,10 +204,18 @@ export class NWCSettingsSection extends SettingsSection {
     `;
 
     return `
-        ${nwcSection}
-        ${zapDefaultsSection}
-        <div id="nwc-storage-switch-container"></div>
-        <p class="form__info" id="nwc-storage-info"></p>
+        <section class="section">
+          ${nwcSection}
+        </section>
+
+        <section class="section">
+          ${zapDefaultsSection}
+        </section>
+
+        <section class="section">
+          <div id="nwc-storage-switch-container"></div>
+          <p class="form__info" id="nwc-storage-info"></p>
+        </section>
     `;
   }
 

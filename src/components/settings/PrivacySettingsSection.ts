@@ -99,7 +99,7 @@ export class PrivacySettingsSection extends SettingsSection {
 
   private renderPrivacySubsection(config: PrivacySectionConfig): string {
     return `
-      <div class="privacy-subsection">
+      <section class="section">
         <h3 class="subsection-title">${config.title}</h3>
           <div class="form__info">
             <p>${config.description}</p>
@@ -112,7 +112,7 @@ export class PrivacySettingsSection extends SettingsSection {
           <div class="settings-section__actions">
             <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
           </div>
-      </div>
+      </section>
     `;
   }
 

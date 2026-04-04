@@ -176,26 +176,27 @@ export class RelaySettingsSection extends SettingsSection {
    */
   private renderContent(): string {
     return `
-        <!-- Health Summary -->
-        <div class="relay-health-summary" id="relay-health-summary">
-          <div class="health-summary-loading">Loading relay health status...</div>
-        </div>
+        <section class="section">
+          <div class="relay-health-summary" id="relay-health-summary">
+            <div class="health-summary-loading">Loading relay health status...</div>
+          </div>
+        </section>
 
-        <!-- Add new relay -->
-        <div class="relay-add-form">
-          <input
-            type="text"
-            class="relay-input"
-            placeholder="wss://relay.example.com"
-            id="new-relay-url"
-          />
-          <button class="btn btn--medium" id="add-relay-btn">Add Relay</button>
-        </div>
+        <section class="section">
+          <div class="relay-add-form">
+            <input
+              type="text"
+              class="relay-input"
+              placeholder="wss://relay.example.com"
+              id="new-relay-url"
+            />
+            <button class="btn btn--medium" id="add-relay-btn">Add Relay</button>
+          </div>
 
-        <!-- Relay list -->
-        <div class="relay-list">
-          ${this.tempRelays.map(relay => this.renderRelayItem(relay)).join('')}
-        </div>
+          <div class="relay-list">
+            ${this.tempRelays.map(relay => this.renderRelayItem(relay)).join('')}
+          </div>
+        </section>
     `;
   }
 
