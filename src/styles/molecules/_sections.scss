@@ -16,3 +16,40 @@
     margin-bottom: 0;
   }
 }
+
+// ========================================
+// Setting Row — label+control grid with description below
+// ========================================
+// Usage:
+//   <div class="setting">
+//     <span class="setting__label">Label</span>
+//     <div class="setting__control"><!-- switch, dropdown, etc. --></div>
+//     <p class="setting__desc">Description text</p>
+//   </div>
+.setting {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: $gap 0;
+  margin-bottom: $gap;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &__label {
+    font-weight: 500;
+    color: $color-5;
+  }
+
+  &__control {
+    justify-self: end;
+  }
+
+  &__desc {
+    grid-column: 1 / -1;
+    color: $color-3;
+    line-height: 1.4;
+    margin: 0;
+  }
+}

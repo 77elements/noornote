@@ -100,18 +100,15 @@ export class PrivacySettingsSection extends SettingsSection {
   private renderPrivacySubsection(config: PrivacySectionConfig): string {
     return `
       <section class="section">
-        <h3 class="subsection-title">${config.title}</h3>
-          <div class="form__info">
-            <p>${config.description}</p>
-            <p class="${config.id}-warning"><strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private ${config.listName}.</p>
-          </div>
-
-          <div class="private-${config.id}-switch-container" id="private-${config.id}-switch-container">
-          </div>
-
-          <div class="settings-section__actions">
-            <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
-          </div>
+        <div class="setting">
+          <span class="setting__label">${config.switchLabel}</span>
+          <div class="setting__control" id="private-${config.id}-switch-container"></div>
+          <p class="setting__desc">${config.description}</p>
+          <p class="setting__desc ${config.id}-warning"><strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private ${config.listName}.</p>
+        </div>
+        <div>
+          <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
+        </div>
       </section>
     `;
   }
@@ -130,7 +127,7 @@ export class PrivacySettingsSection extends SettingsSection {
     if (!switchContainer) return;
 
     const switchComponent = new Switch({
-      label: config.switchLabel,
+      label: '',
       checked: config.isEnabled(),
       onChange: (checked) => {
         config.setEnabled(checked);

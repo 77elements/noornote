@@ -51,80 +51,46 @@ export class UISettingsSection extends SettingsSection {
 
     return `
         <section class="section">
-          <h3 class="subsection-title">Calendar System</h3>
-          <div class="form__info">
-            <p>Choose how dates are displayed throughout the app.</p>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Date Format</label>
-            <div class="calendar-system-dropdown-container">
-              <!-- Custom dropdown will be mounted here -->
-            </div>
-          </div>
-
-          <div class="form__info">
-            <p class="small">
-              • <strong>Gregorian:</strong> Standard Western calendar (e.g., "30. Oct. 2024")<br>
-              • <strong>Hijri:</strong> Islamic calendar (e.g., "26. Rabi' ath-Thani 1446")<br>
-              • <strong>Gregorian + Hijri:</strong> Both calendars side-by-side
-            </p>
+          <div class="setting">
+            <span class="setting__label">Date Format</span>
+            <div class="setting__control calendar-system-dropdown-container"></div>
+            <ul class="setting__desc">
+              <li><strong>Gregorian:</strong> Standard Western calendar (e.g., "30. Oct. 2024")</li>
+              <li><strong>Hijri:</strong> Islamic calendar (e.g., "26. Rabi' ath-Thani 1446")</li>
+              <li><strong>Gregorian + Hijri:</strong> Both calendars side-by-side</li>
+            </ul>
           </div>
         </section>
 
         <section class="section">
-          <h3 class="subsection-title">Layout Mode</h3>
-          <div class="form__info">
-            <p>Configure how the app layout behaves when opening notes, profiles, and other views.</p>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Layout Mode</label>
-            <div class="layout-mode-dropdown-container">
-              <!-- Layout mode dropdown will be mounted here -->
-            </div>
-          </div>
-
-          <div class="form__info">
-            <p class="small">
-              • <strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger<br>
-              • <strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane<br>
-              • <strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space<br>
-              • <strong>Phone:</strong> Single-column layout (390px width) for phone development and testing
-            </p>
-            <p class="small">
-              <strong>Right Pane mode click behavior:</strong><br>
-              • Single click: Open in new tab or switch to existing tab<br>
-              • Double-click or Cmd+Click: Open additional tabs
-            </p>
+          <div class="setting">
+            <span class="setting__label">Layout Mode</span>
+            <div class="setting__control layout-mode-dropdown-container"></div>
+            <ul class="setting__desc">
+              <li><strong>Default:</strong> Views replace the timeline in the main pane, right pane shows System Logger</li>
+              <li><strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane</li>
+              <li><strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space</li>
+              <li><strong>Phone:</strong> Single-column layout (390px width) for phone development and testing</li>
+            </ul>
           </div>
         </section>
 
         <section class="section">
-          <h3 class="subsection-title">Content Display</h3>
-          <div class="form__info">
-            <p>Configure how long posts are displayed in the timeline.</p>
-          </div>
-
-          <div class="post-truncation-switch-container" id="post-truncation-switch-container">
-            <!-- Switch will be mounted here -->
-          </div>
-
-          <div class="form__info">
-            <p class="small">
-              When enabled, long posts will always be displayed in full without "Show More" buttons. This may affect timeline scrolling performance for very long posts.
+          <div class="setting">
+            <span class="setting__label">Disable post truncation</span>
+            <div class="setting__control" id="post-truncation-switch-container"></div>
+            <p class="setting__desc">
+              When enabled, long posts will always be displayed in full without "Show More" buttons.
             </p>
           </div>
         </section>
 
         ${isDesktop ? `
         <section class="section">
-          <h3 class="subsection-title">Updates</h3>
-
-          <div id="auto-update-switch-container">
-            <!-- Switch will be mounted here -->
+          <div class="setting">
+            <span class="setting__label">Automatically check for updates</span>
+            <div class="setting__control" id="auto-update-switch-container"></div>
           </div>
-
           <div>
             <button class="btn btn--mini" id="check-update-now-btn">Check now</button>
           </div>
@@ -207,7 +173,7 @@ export class UISettingsSection extends SettingsSection {
       const isDisabled = this.storage.get<boolean>(StorageKeys.DISABLE_POST_TRUNCATION, false);
 
       this.postTruncationSwitch = new Switch({
-        label: 'Disable post truncation',
+        label: '',
         checked: isDisabled,
         onChange: (checked) => {
           this.storage.set(StorageKeys.DISABLE_POST_TRUNCATION, checked);
@@ -241,7 +207,7 @@ export class UISettingsSection extends SettingsSection {
       const service = UpdateCheckService.getInstance();
 
       this.autoUpdateSwitch = new Switch({
-        label: 'Automatically check for updates',
+        label: '',
         checked: service.isAutoCheckEnabled(),
         onChange: (checked) => {
           service.setAutoCheckEnabled(checked);
