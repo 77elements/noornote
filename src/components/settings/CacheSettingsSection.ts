@@ -203,14 +203,14 @@ export class CacheSettingsSection extends SettingsSection {
             />
           </div>
 
-          <div class="form__row form__row--oneline">
-            <label for="save-sig">Save Event Signatures</label>
+          <label class="nn-checkbox">
             <input
               type="checkbox"
               id="save-sig"
               ${config.saveSig ? 'checked' : ''}
             />
-          </div>
+            <span>Save Event Signatures</span>
+          </label>
           <p class="form__note">Store signatures in cache (increases storage usage).</p>
         </section>
         ` : ''}
@@ -244,7 +244,7 @@ export class CacheSettingsSection extends SettingsSection {
       const config = this.readConfigFromDOM(contentContainer);
       if (!config) return;
       this.saveConfig(config);
-      ToastService.show('Saved. Reload app for NDK changes to take effect.', 'success');
+      ToastService.show('Saved. Reload app for changes to take effect.', 'success');
     };
 
     ndkInputIds.forEach(id => {

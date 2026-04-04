@@ -273,7 +273,7 @@ label {
   flex-direction: row-reverse;
   justify-content: space-between;
   align-items: center;
-  padding: $gap calc($gap * 1.5);
+  padding: calc($gap * 0.75) calc($gap * 1.25);
   @extend %bg-section;
   border: none;
   border-radius: $radius-pill;
