@@ -36,6 +36,7 @@
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
+  border-radius: $radius-xl $radius-xl 0 0;
   color: var(--color-4);
   cursor: pointer;
   font-weight: 500;
@@ -45,10 +46,10 @@
     color: var(--color-5);
   }
 
-  &--active {
+  &.tab--active {
     color: var(--color-5);
     border-bottom-color: var(--color-5);
-    background-color: var(--color-2);
+    @extend %bg-section;
     cursor: default;
   }
 

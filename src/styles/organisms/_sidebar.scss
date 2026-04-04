@@ -82,8 +82,8 @@
     right: 0;
     margin-bottom: calc($gap / 2);
     background: var(--color-2);
-    border: 1px solid var(--color-2);
-    border-radius: $radius-md;
+    border: none;
+    border-radius: $radius-pill;
     box-shadow: $box-shadow;
     overflow: hidden;
     z-index: 100;

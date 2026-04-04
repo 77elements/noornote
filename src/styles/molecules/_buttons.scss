@@ -33,7 +33,7 @@
   }
 
   // Appearance
-  border-radius: $radius-xl;
+  border-radius: $radius-pill;
   cursor: pointer;
   transition: $transition-colors;
 
@@ -79,7 +79,7 @@
 
 // Mini
 .btn--mini {
-  padding: 0 calc($gap / 4);
+  padding: 0 calc($gap / 2);
 }
 
 // Large

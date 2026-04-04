@@ -13,7 +13,7 @@
 .note-card {
   margin: 0 0 calc($gap / 2) 0;
   padding: calc($gap / 2) calc($gap / 2) 0 calc($gap / 2);
-  border-radius: 0.5rem;
+  border-radius: $radius-pill;
   transition: background 0.2s ease;
 
   // Smooth scrolling optimizations (containment for better rendering performance)

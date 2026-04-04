@@ -114,6 +114,7 @@ html.layout--phone {
 
       .sidebar-content {
         padding-top: $gap;
+        @extend %bg-section;
       }
     }
 

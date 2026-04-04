@@ -138,7 +138,7 @@ $transition-colors: color $transition-fast, background-color $transition-fast, b
 // Reusable Backgrounds
 // ========================================
 %bg-section {
-  background: radial-gradient(circle, rgba(color.adjust($color-2, $lightness: 10%), 0.45), rgba($color-2, 0.45));
+  background: radial-gradient(circle 400px, rgba(color.adjust($color-2, $lightness: 15%), 0.35), rgba($color-2, 0.35));
 }
 
 // ========================================
