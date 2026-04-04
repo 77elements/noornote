@@ -226,6 +226,11 @@
 // Heading + Back Button Container
 // ========================================
 
+.back-chevron {
+  @extend %chevron-left;
+  color: $color-4;
+}
+
 .heading-back-btn-container {
   display: flex;
   align-items: center;
@@ -243,13 +248,13 @@
 }
 
 // ========================================
-// Font Size Switcher Button Modifier
+// Square Button Modifier
 // ========================================
 
-.btn--fontsizeswitcher {
-  display: flex;
-  align-items: center;
+.btn--square {
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
 }

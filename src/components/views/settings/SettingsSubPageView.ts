@@ -20,7 +20,7 @@ export class SettingsSubPageView extends View {
     this.container.innerHTML = `
       <div class="heading-back-btn-container">
         <h1 class="settings-title">${title}</h1>
-        <button class="btn btn--medium btn--passive settings-sub-page__back">← Back</button>
+        <button class="btn btn--medium btn--passive settings-sub-page__back"><span class="back-chevron" aria-hidden="true"></span> Back</button>
       </div>
       <div id="${section.getSectionId()}-content" class="settings-sub-page__content"></div>
     `;
