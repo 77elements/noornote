@@ -15,7 +15,7 @@
   padding: calc($gap * 0.75);
   background: var(--color-2);
   border: 1px solid var(--color-2);
-  border-radius: $radius-md;
+  border-radius: $radius-pill;
   color: var(--color-5);
   font-family: inherit;
   transition: $transition-colors;
@@ -26,7 +26,7 @@
 
   &:focus {
     outline: none;
-    border-color: var(--color-4);
+    border: 1px solid var(--color-4);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-4) 20%, transparent);
   }
 
@@ -234,12 +234,12 @@ label {
     padding: calc($gap / 2) $gap;
     color: var(--color-5);
     background: var(--color-1);
-    border: 1px solid var(--color-3);
-    border-radius: $radius-sm;
+    border: 1px solid var(--color-1);
+    border-radius: $radius-pill;
 
     &:focus {
       outline: none;
-      border-color: var(--color-4);
+      border: 1px solid var(--color-4);
     }
   }
 }
