@@ -33,8 +33,10 @@
   &__global-content {
     flex: 1;
     overflow-y: auto;
-    padding: calc($gap / 4);
+    padding: calc($gap / 2);
     @extend %small;
+    @extend %bg-section;
+    border-radius: $radius-xl;
     line-height: 1.5;
 
     // Scrollbar styling - MUST be last
@@ -63,8 +65,10 @@
   &__page-content {
     flex: 1;
     overflow-y: auto;
-    padding: calc($gap / 4);
+    padding: calc($gap / 2);
     @extend %small;
+    @extend %bg-section;
+    border-radius: $radius-xl;
     line-height: 1.4;
 
     // Scrollbar styling - MUST be last
@@ -156,7 +160,6 @@
 // Log entry backgrounds (theme-aware)
 .system-log-entry {
   &--info {
-    background: var(--color-2);
   }
 
   &--debug {
