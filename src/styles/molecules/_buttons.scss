@@ -59,6 +59,13 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+
+}
+
+.btn--passive {
+  [class*="chevron-"], [class*="__chevron"], [class*="__arrow"], .dropup-arrow {
+    color: $color-3;
+  }
 }
 
 // ========================================
@@ -90,6 +97,10 @@
   color: var(--color-4);
   background-color: var(--color-1);
   border-color: var(--color-4);
+
+  [class*="chevron-"], [class*="__chevron"], [class*="__arrow"], .dropup-arrow {
+    color: $color-4;
+  }
 
   &:hover {
     background-color: color-mix(in srgb, var(--color-4) 10%, transparent);
