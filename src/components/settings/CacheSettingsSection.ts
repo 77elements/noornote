@@ -87,36 +87,36 @@ export class CacheSettingsSection extends SettingsSection {
             <p>Select which cache tables to clear. This action cannot be undone.</p>
           </div>
 
-          <div class="cache-tables-group">
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="events" />
+          <div class="nn-checkbox-group">
+            <label class="nn-checkbox">
+              <input type="checkbox" value="events" />
               <span>Events</span>
             </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="profiles" />
+            <label class="nn-checkbox">
+              <input type="checkbox" value="profiles" />
               <span>Profiles</span>
             </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="eventTags" />
+            <label class="nn-checkbox">
+              <input type="checkbox" value="eventTags" />
               <span>Event Tags</span>
             </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="nip05" />
+            <label class="nn-checkbox">
+              <input type="checkbox" value="nip05" />
               <span>NIP-05</span>
             </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="lnurl" />
+            <label class="nn-checkbox">
+              <input type="checkbox" value="lnurl" />
               <span>Lightning Addresses</span>
             </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="relayStatus" />
+            <label class="nn-checkbox">
+              <input type="checkbox" value="relayStatus" />
               <span>Relay Status</span>
             </label>
           </div>
 
-          <div class="settings-section__actions">
-            <button class="btn btn--medium btn--danger" id="clear-selected-btn">Clear Selected</button>
-            <button class="btn btn--medium btn--danger" id="clear-all-btn">Clear All & Reload</button>
+          <div class="btn-container btn-container--btnright">
+            <button class="btn btn--danger" id="clear-selected-btn">Clear Selected</button>
+            <button class="btn btn--danger" id="clear-all-btn">Clear All & Reload</button>
           </div>
         </section>
 
@@ -342,7 +342,7 @@ export class CacheSettingsSection extends SettingsSection {
    */
   private handleClearSelected(contentContainer: HTMLElement): void {
     const checkboxes = contentContainer.querySelectorAll(
-      '.cache-table-checkbox:checked'
+      '.nn-checkbox input[type="checkbox"]:checked'
     ) as NodeListOf<HTMLInputElement>;
 
     if (checkboxes.length === 0) {
