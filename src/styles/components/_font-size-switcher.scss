@@ -19,7 +19,7 @@
 
 }
 
-// Sidebar mount: hidden by default, shown in wide/phone modes
+// Sidebar mount: Data Saver toggle (Android only)
 .sidebar-font-size-mount {
   display: none;
 
@@ -29,25 +29,6 @@
     margin-top: calc($gap / 2);
     padding-top: calc($gap / 2);
     border-top: 1px solid var(--surface-tint);
-  }
-
-  .sidebar-theme-row {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-    margin-bottom: calc($gap / 2);
-  }
-
-  .sidebar-theme-label,
-  .font-size-switcher__label {
-    width: 55px;
-    flex-shrink: 0;
-  }
-
-  .sidebar-theme-label {
-    @extend %small;
-    color: var(--color-3);
-    white-space: nowrap;
   }
 
   .data-saver-toggle {

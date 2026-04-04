@@ -55,9 +55,7 @@ export class MainLayout {
   private systemLogger: SystemLogger;
   private userStatus: AccountSwitcher | null = null;
   private fontSizeSwitcher: FontSizeSwitcher | null = null;
-  private sidebarFontSizeSwitcher: FontSizeSwitcher | null = null;
   private themeSwitcher: ThemeSwitcher | null = null;
-  private sidebarThemeSwitcher: ThemeSwitcher | null = null;
   private searchSpotlight: SearchSpotlight | null = null;
   private keyboardShortcutManager!: KeyboardShortcutManager;
   private authComponent: any = null; // Store reference to trigger logout
@@ -1389,9 +1387,7 @@ export class MainLayout {
     // Clean up existing
     if (this.userStatus) this.userStatus.destroy();
     if (this.fontSizeSwitcher) this.fontSizeSwitcher.destroy();
-    if (this.sidebarFontSizeSwitcher) this.sidebarFontSizeSwitcher.destroy();
     if (this.themeSwitcher) this.themeSwitcher.destroy();
-    if (this.sidebarThemeSwitcher) this.sidebarThemeSwitcher.destroy();
 
     // Create theme switcher + font size switcher + account switcher
     this.themeSwitcher = new ThemeSwitcher();
@@ -1412,21 +1408,10 @@ export class MainLayout {
       secondaryUser.appendChild(this.userStatus.getElement());
     }
 
-    // Mount sidebar copies (visible in wide/phone modes only via CSS)
-    this.sidebarThemeSwitcher = new ThemeSwitcher();
-    this.sidebarFontSizeSwitcher = new FontSizeSwitcher();
+    // Mount sidebar extras (Data Saver toggle on Android)
     const sidebarMount = this.element.querySelector('.sidebar-font-size-mount');
     if (sidebarMount) {
       sidebarMount.innerHTML = '';
-      const themeRow = document.createElement('div');
-      themeRow.className = 'sidebar-theme-row';
-      const themeLabel = document.createElement('span');
-      themeLabel.className = 'sidebar-theme-label';
-      themeLabel.textContent = 'Themes';
-      themeRow.appendChild(themeLabel);
-      themeRow.appendChild(this.sidebarThemeSwitcher.getElement());
-      sidebarMount.appendChild(themeRow);
-      sidebarMount.appendChild(this.sidebarFontSizeSwitcher.getElement());
 
       // Data Saver toggle (Android only, synchronous to avoid race condition)
       if (PlatformService.getInstance().isAndroid) {
@@ -2405,10 +2390,6 @@ export class MainLayout {
 
     if (this.themeSwitcher) {
       this.themeSwitcher.destroy();
-    }
-
-    if (this.sidebarThemeSwitcher) {
-      this.sidebarThemeSwitcher.destroy();
     }
 
     if (this.walletBalanceDisplay) {

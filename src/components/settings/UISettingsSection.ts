@@ -9,6 +9,8 @@
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { CustomDropdown } from '../ui/CustomDropdown';
+import { ThemeSwitcher } from '../ui/ThemeSwitcher';
+import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
 import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from '../../services/PerAccountLocalStorage';
 import { LayoutService } from '../../services/LayoutService';
 import { ToastService } from '../../services/ToastService';
@@ -23,6 +25,8 @@ export class UISettingsSection extends SettingsSection {
   private postTruncationSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
   private autoUpdateSwitch: Switch | null = null;
+  private themeSwitcher: ThemeSwitcher | null = null;
+  private fontSizeSwitcher: FontSizeSwitcher | null = null;
 
   constructor() {
     super('ui-settings');
@@ -52,13 +56,15 @@ export class UISettingsSection extends SettingsSection {
     return `
         <section class="section">
           <div class="setting">
-            <span class="setting__label">Date Format</span>
-            <div class="setting__control calendar-system-dropdown-container"></div>
-            <ul class="setting__desc">
-              <li><strong>Gregorian:</strong> Standard Western calendar (e.g., "30. Oct. 2024")</li>
-              <li><strong>Hijri:</strong> Islamic calendar (e.g., "26. Rabi' ath-Thani 1446")</li>
-              <li><strong>Gregorian + Hijri:</strong> Both calendars side-by-side</li>
-            </ul>
+            <span class="setting__label">Theme</span>
+            <div class="setting__control" id="theme-switcher-mount"></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Font Size</span>
+            <div class="setting__control" id="font-size-switcher-mount"></div>
           </div>
         </section>
 
@@ -71,6 +77,18 @@ export class UISettingsSection extends SettingsSection {
               <li><strong>Right Pane:</strong> Views open as tabs in the right pane, timeline stays visible in main pane</li>
               <li><strong>Wide Mode:</strong> Views replace the timeline, right pane is hidden for maximum content space</li>
               <li><strong>Phone:</strong> Single-column layout (390px width) for phone development and testing</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Date Format</span>
+            <div class="setting__control calendar-system-dropdown-container"></div>
+            <ul class="setting__desc">
+              <li><strong>Gregorian:</strong> Standard Western calendar (e.g., "30. Oct. 2024")</li>
+              <li><strong>Hijri:</strong> Islamic calendar (e.g., "26. Rabi' ath-Thani 1446")</li>
+              <li><strong>Gregorian + Hijri:</strong> Both calendars side-by-side</li>
             </ul>
           </div>
         </section>
@@ -103,6 +121,20 @@ export class UISettingsSection extends SettingsSection {
    * Bind event listeners
    */
   private bindListeners(contentContainer: HTMLElement): void {
+    // Theme switcher
+    const themeMount = contentContainer.querySelector('#theme-switcher-mount');
+    if (themeMount) {
+      this.themeSwitcher = new ThemeSwitcher();
+      themeMount.appendChild(this.themeSwitcher.getElement());
+    }
+
+    // Font size switcher
+    const fontSizeMount = contentContainer.querySelector('#font-size-switcher-mount');
+    if (fontSizeMount) {
+      this.fontSizeSwitcher = new FontSizeSwitcher();
+      fontSizeMount.appendChild(this.fontSizeSwitcher.getElement());
+    }
+
     // Calendar system dropdown
     const calendarDropdownContainer = contentContainer.querySelector('.calendar-system-dropdown-container');
     if (calendarDropdownContainer) {
@@ -241,6 +273,16 @@ export class UISettingsSection extends SettingsSection {
     if (this.layoutModeDropdown) {
       this.layoutModeDropdown.destroy();
       this.layoutModeDropdown = null;
+    }
+
+    if (this.themeSwitcher) {
+      this.themeSwitcher.destroy();
+      this.themeSwitcher = null;
+    }
+
+    if (this.fontSizeSwitcher) {
+      this.fontSizeSwitcher.destroy();
+      this.fontSizeSwitcher = null;
     }
   }
 }
