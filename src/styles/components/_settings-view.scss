@@ -57,27 +57,14 @@
 // Settings Sub-Page
 // ========================================
 .settings-sub-page {
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-    margin-bottom: $gap;
+  &__content {
+    margin-top: $gap;
   }
+}
 
-  &__back {
-    display: inline-flex;
-    align-items: center;
-    color: var(--color-4);
-    text-decoration: none;
-
-    svg {
-      color: var(--color-4);
-    }
-  }
-
-  &__header .settings-title {
-    margin-bottom: 0;
-  }
+// Remove bottom margin from title inside heading-back-btn-container
+.heading-back-btn-container .settings-title {
+  margin-bottom: 0;
 }
 
 // ========================================

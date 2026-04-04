@@ -4,6 +4,7 @@
  */
 
 import { View } from '../View';
+import { Router } from '../../../services/Router';
 import type { SettingsSection } from '../../settings/SettingsSection';
 
 export class SettingsSubPageView extends View {
@@ -18,15 +19,17 @@ export class SettingsSubPageView extends View {
 
     this.container.innerHTML = `
       <div class="settings-container">
-        <div class="settings-sub-page__header">
-          <a href="/settings" class="settings-sub-page__back">
-            <svg width="18" height="18"><use href="#icon-back"/></svg>
-          </a>
+        <div class="heading-back-btn-container">
           <h1 class="settings-title">${title}</h1>
+          <button class="btn btn--medium btn--passive settings-sub-page__back">← Back</button>
         </div>
         <div id="${section.getSectionId()}-content" class="settings-sub-page__content"></div>
       </div>
     `;
+
+    this.container.querySelector('.settings-sub-page__back')?.addEventListener('click', () => {
+      Router.getInstance().navigate('/settings');
+    });
 
     this.section.mount(this.container);
   }
