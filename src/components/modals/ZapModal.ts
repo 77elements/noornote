@@ -247,8 +247,10 @@ export class ZapModal {
       return;
     }
 
-    // Show loading state
+    // Show loading state — disable button immediately to prevent double-tap
     this.isSending = true;
+    sendBtn.disabled = true;
+    sendBtn.classList.add('btn--sending');
     this.setLoadingState(sendBtn, true);
 
     try {
@@ -263,6 +265,8 @@ export class ZapModal {
 
       // Hide loading state
       this.isSending = false;
+      sendBtn.disabled = false;
+      sendBtn.classList.remove('btn--sending');
       this.setLoadingState(sendBtn, false);
 
       if (result.success) {
@@ -278,6 +282,8 @@ export class ZapModal {
     } catch (error) {
       this.systemLogger.error('ZapModal', 'Failed to send zap:', error);
       this.isSending = false;
+      sendBtn.disabled = false;
+      sendBtn.classList.remove('btn--sending');
       this.setLoadingState(sendBtn, false);
       // Error toast already shown by ZapService via ErrorService
     }

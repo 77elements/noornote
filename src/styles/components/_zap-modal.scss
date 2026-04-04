@@ -105,5 +105,11 @@
     gap: $gap;
     padding-top: calc($gap / 2);
     margin-bottom: $gap;
+
+    // Loading state for send button
+    .btn--sending {
+      .btn__text { display: none; }
+      .btn__loading { display: inline !important; }
+    }
   }
 }

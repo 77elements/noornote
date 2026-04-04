@@ -4,6 +4,9 @@ const config: CapacitorConfig = {
   appId: 'com.noornote.app',
   appName: 'Noornote',
   webDir: 'dist',
+  android: {
+    webContentsDebuggingEnabled: true
+  },
   server: {
     androidScheme: 'https'
   }
