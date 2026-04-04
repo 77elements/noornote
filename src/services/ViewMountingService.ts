@@ -230,7 +230,79 @@ export class ViewMountingService {
           factory: async () => {
             const { SettingsView } = await import('../components/views/SettingsView');
             const view = new SettingsView();
-            return { element: view.getElement() };
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'settings-ui':
+        return {
+          factory: async () => {
+            const { UISettingsView } = await import('../components/views/settings/UISettingsView');
+            const view = new UISettingsView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'settings-notif':
+        return {
+          factory: async () => {
+            const { NotificationPrioritiesView } = await import('../components/views/settings/NotificationPrioritiesView');
+            const view = new NotificationPrioritiesView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'settings-relays':
+        return {
+          factory: async () => {
+            const { RelaySettingsView } = await import('../components/views/settings/RelaySettingsView');
+            const view = new RelaySettingsView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'settings-key-signer':
+        return {
+          factory: async () => {
+            const { KeySignerView } = await import('../components/views/settings/KeySignerView');
+            const view = new KeySignerView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'settings-media':
+        return {
+          factory: async () => {
+            const { MediaSettingsView } = await import('../components/views/settings/MediaSettingsView');
+            const view = new MediaSettingsView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'settings-zaps':
+        return {
+          factory: async () => {
+            const { NWCSettingsView } = await import('../components/views/settings/NWCSettingsView');
+            const view = new NWCSettingsView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'settings-privacy':
+        return {
+          factory: async () => {
+            const { PrivacySettingsView } = await import('../components/views/settings/PrivacySettingsView');
+            const view = new PrivacySettingsView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'settings-cache':
+        return {
+          factory: async () => {
+            const { CacheSettingsView } = await import('../components/views/settings/CacheSettingsView');
+            const view = new CacheSettingsView();
+            return { element: view.getElement(), view };
           }
         };
 

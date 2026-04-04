@@ -251,6 +251,14 @@ export class App {
     this.registerRoute('/', 'timeline', 'timeline', 'tv', true);
     this.registerRoute('/notifications', 'notifications', 'notifications', 'nv', true);
     this.registerRoute('/settings', 'settings', 'settings', 'sv', true);
+    this.registerRoute('/settings/ui', 'settings-ui', 'settings-ui', 'sv', true);
+    this.registerRoute('/settings/notification-priorities', 'settings-notif', 'settings-notif', 'sv', true);
+    this.registerRoute('/settings/relays', 'settings-relays', 'settings-relays', 'sv', true);
+    this.registerRoute('/settings/key-signer', 'settings-key-signer', 'settings-key-signer', 'sv', true);
+    this.registerRoute('/settings/media', 'settings-media', 'settings-media', 'sv', true);
+    this.registerRoute('/settings/zaps', 'settings-zaps', 'settings-zaps', 'sv', true);
+    this.registerRoute('/settings/privacy', 'settings-privacy', 'settings-privacy', 'sv', true);
+    this.registerRoute('/settings/cache', 'settings-cache', 'settings-cache', 'sv', true);
     this.registerRoute('/messages', 'messages', 'messages', 'mv', true);
     this.registerRoute('/write-article', 'write-article', 'write-article', 'aev', true);
     this.registerRoute('/edit-article/:naddr', 'edit-article', 'edit-article', 'aev', true,

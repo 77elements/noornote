@@ -1,6 +1,6 @@
 /**
  * Settings View Component Styles
- * Accordion-based settings page
+ * Menu-based settings page with sub-page navigation
  */
 
 @use 'sass:color';
@@ -27,6 +27,57 @@
 // Sync status container
 .sync-status-container {
   margin-bottom: $gap * 2;
+}
+
+// ========================================
+// Settings Menu (index page)
+// ========================================
+.settings-menu {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: $gap * 2;
+
+  &__item {
+    display: block;
+    padding: $gap;
+    color: var(--color-5);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-2);
+    font-weight: 500;
+    transition: $transition-colors;
+
+    &:hover {
+      background: var(--color-2);
+      color: var(--color-4);
+    }
+  }
+}
+
+// ========================================
+// Settings Sub-Page
+// ========================================
+.settings-sub-page {
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    margin-bottom: $gap;
+  }
+
+  &__back {
+    display: inline-flex;
+    align-items: center;
+    color: var(--color-4);
+    text-decoration: none;
+
+    svg {
+      color: var(--color-4);
+    }
+  }
+
+  &__header .settings-title {
+    margin-bottom: 0;
+  }
 }
 
 // ========================================
