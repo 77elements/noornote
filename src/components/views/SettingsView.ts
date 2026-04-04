@@ -21,7 +21,7 @@ const SETTINGS_MENU: SettingsMenuItem[] = [
   { label: 'Media', route: '/settings/media' },
   { label: 'Zaps', route: '/settings/zaps' },
   { label: 'Privacy', route: '/settings/privacy' },
-  { label: 'Cache', route: '/settings/cache', platform: 'desktop' },
+  { label: 'Cache', route: '/settings/cache' },
 ];
 
 export class SettingsView extends View {

@@ -982,14 +982,6 @@ export class MainLayout {
       });
     }
 
-    const clearCacheLink = this.element.querySelector('.sidebar .primary-nav__link--cache');
-    if (clearCacheLink) {
-      clearCacheLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.handleClearCache();
-      });
-    }
-
     // New Post Dropup
     this.setupNewPostDropup();
   }
@@ -1271,12 +1263,6 @@ export class MainLayout {
               <a href="/download/" class="primary-nav__link primary-nav__link--download">
                 <svg class="primary-nav__item-icon"><use href="#icon-download"/></svg>
                 <span class="primary-nav__item-desc">Download</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" class="primary-nav__link primary-nav__link--cache">
-                <svg class="primary-nav__item-icon"><use href="#icon-cache"/></svg>
-                <span class="primary-nav__item-desc">Cache <span class="cache-size-display">--</span></span>
               </a>
             </li>
           </ul>
@@ -1625,89 +1611,6 @@ export class MainLayout {
     // Add initial log messages
     this.systemLogger.info('System', 'Noornote application started');
     this.systemLogger.debug('Layout', 'MainLayout initialized with SystemLogger');
-  }
-
-  /**
-   * Handle clear cache click - clears NDK cache and reloads
-   */
-  private async handleClearCache(): Promise<void> {
-    const { ModalService } = await import('../../services/ModalService');
-    const modalService = ModalService.getInstance();
-
-    // Show confirmation modal
-    modalService.show({
-      title: 'Clear Cache?',
-      content: `
-        <div style="padding: 1rem 0;">
-          <p style="margin-bottom: 1rem;">The following caches will be cleared:</p>
-          <ul style="margin: 1rem 0; padding-left: 1.5rem; line-height: 1.8; font-size: 14px;">
-            <li>Events (Posts, Reactions, Reposts)</li>
-            <li>Profiles (User Metadata)</li>
-            <li>Event Tags</li>
-            <li>NIP-05 Verifications</li>
-            <li>Lightning Addresses</li>
-            <li>Relay Status</li>
-          </ul>
-          <p style="font-size: 13px; color: var(--text-alpha-medium); margin-top: 1rem;">
-            Unpublished posts and decrypted messages will remain protected.
-          </p>
-          <p style="font-size: 13px; color: var(--text-alpha-medium); margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--surface-tint);">
-            To clear specific caches individually, go to <a href="#" data-action="settings">Cache Settings</a>.
-          </p>
-        </div>
-        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
-          <button class="btn btn--passive" data-action="cancel">Cancel</button>
-          <button class="btn" data-action="confirm">Clear</button>
-        </div>
-      `,
-      width: '500px',
-      closeOnOverlay: true,
-      closeOnEsc: true
-    });
-
-    // Setup modal button handlers
-    setTimeout(() => {
-      const cancelBtn = document.querySelector('[data-action="cancel"]');
-      const confirmBtn = document.querySelector('[data-action="confirm"]');
-      const settingsLink = document.querySelector('[data-action="settings"]');
-
-      cancelBtn?.addEventListener('click', () => {
-        modalService.hide();
-      });
-
-      settingsLink?.addEventListener('click', (e) => {
-        e.preventDefault();
-        modalService.hide();
-        const router = Router.getInstance();
-        router.navigate('/settings');
-      });
-
-      confirmBtn?.addEventListener('click', async () => {
-        modalService.hide();
-
-        try {
-          // Import db from NDK cache adapter
-          const { db } = await import('@nostr-dev-kit/ndk-cache-dexie');
-
-          // Clear all safe tables (exclude unpublishedEvents, decryptedEvents, eventRelays)
-          await Promise.all([
-            db.events.clear(),
-            db.profiles.clear(),
-            db.eventTags.clear(),
-            db.nip05.clear(),
-            db.lnurl.clear(),
-            db.relayStatus.clear()
-          ]);
-
-          // Reload app
-          window.location.reload();
-        } catch (error) {
-          console.error('Failed to clear cache:', error);
-          const { ToastService } = await import('../../services/ToastService');
-          ToastService.show('Failed to clear cache', 'error');
-        }
-      });
-    }, 100);
   }
 
   /**

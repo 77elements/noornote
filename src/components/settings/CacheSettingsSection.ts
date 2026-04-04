@@ -11,6 +11,7 @@ import { ToastService } from '../../services/ToastService';
 import { ErrorService } from '../../services/ErrorService';
 import { ModalService } from '../../services/ModalService';
 import { NotificationsCacheService } from '../../services/NotificationsCacheService';
+import { PlatformService } from '../../services/PlatformService';
 
 interface NDKCacheConfig {
   profileCacheSize: number;
@@ -77,7 +78,49 @@ export class CacheSettingsSection extends SettingsSection {
    * Render cache settings content
    */
   private renderContent(config: NDKCacheConfig, notificationsCacheLimit: number): string {
+    const isDesktop = PlatformService.getInstance().isDesktop;
+
     return `
+        <section class="section">
+          <h3 class="subsection-title">Clear Cache Data</h3>
+          <div class="form__info">
+            <p>Select which cache tables to clear. This action cannot be undone.</p>
+          </div>
+
+          <div class="cache-tables-group">
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="events" />
+              <span>Events</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="profiles" />
+              <span>Profiles</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="eventTags" />
+              <span>Event Tags</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="nip05" />
+              <span>NIP-05</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="lnurl" />
+              <span>Lightning Addresses</span>
+            </label>
+            <label class="cache-table-item">
+              <input type="checkbox" class="cache-table-checkbox" value="relayStatus" />
+              <span>Relay Status</span>
+            </label>
+          </div>
+
+          <div class="settings-section__actions">
+            <button class="btn btn--medium btn--danger" id="clear-selected-btn">Clear Selected</button>
+            <button class="btn btn--medium btn--danger" id="clear-all-btn">Clear All & Reload</button>
+          </div>
+        </section>
+
+        ${isDesktop ? `
         <section class="section">
           <h3 class="subsection-title">Notifications Cache</h3>
           <div class="form__row form__row--oneline">
@@ -170,45 +213,7 @@ export class CacheSettingsSection extends SettingsSection {
           </div>
           <p class="form__note">Store signatures in cache (increases storage usage).</p>
         </section>
-
-        <section class="section">
-          <h3 class="subsection-title">Clear Cache Data</h3>
-          <div class="form__info">
-            <p>Select which cache tables to clear. This action cannot be undone.</p>
-          </div>
-
-          <div class="cache-tables-group">
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="events" />
-              <span>Events</span>
-            </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="profiles" />
-              <span>Profiles</span>
-            </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="eventTags" />
-              <span>Event Tags</span>
-            </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="nip05" />
-              <span>NIP-05</span>
-            </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="lnurl" />
-              <span>Lightning Addresses</span>
-            </label>
-            <label class="cache-table-item">
-              <input type="checkbox" class="cache-table-checkbox" value="relayStatus" />
-              <span>Relay Status</span>
-            </label>
-          </div>
-
-          <div class="settings-section__actions">
-            <button class="btn btn--medium btn--danger" id="clear-selected-btn">Clear Selected</button>
-            <button class="btn btn--medium btn--danger" id="clear-all-btn">Clear All & Reload</button>
-          </div>
-        </section>
+        ` : ''}
     `;
   }
 
