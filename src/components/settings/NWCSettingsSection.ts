@@ -170,7 +170,7 @@ export class NWCSettingsSection extends SettingsSection {
 
     // Zap defaults section (always visible)
     const zapDefaultsSection = `
-        <h3 class="subsection-title">Zap Settings</h3>
+        <h2 class="subsection-title">Zap Settings</h3>
 
         <div id="quick-zap-switch-container"></div>
 

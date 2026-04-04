@@ -82,7 +82,7 @@ export class CacheSettingsSection extends SettingsSection {
 
     return `
         <section class="section">
-          <h3 class="subsection-title">Clear Cache Data</h3>
+          <h2 class="subsection-title">Clear Cache Data</h3>
           <div class="form__info">
             <p>Select which cache tables to clear. This action cannot be undone.</p>
           </div>
@@ -122,7 +122,7 @@ export class CacheSettingsSection extends SettingsSection {
 
         ${isDesktop ? `
         <section class="section">
-          <h3 class="subsection-title">Notifications Cache</h3>
+          <h2 class="subsection-title">Notifications Cache</h3>
           <div class="form__row form__row--oneline">
             <label for="notifications-cache-size">Cache Size</label>
             <input
@@ -138,7 +138,7 @@ export class CacheSettingsSection extends SettingsSection {
         </section>
 
         <section class="section">
-          <h3 class="subsection-title">NDK Cache Configuration</h3>
+          <h2 class="subsection-title">NDK Cache Configuration</h3>
           <div class="form__info">
             <p>Configure NDK cache sizes. Changes require app reload to take effect.</p>
           </div>
