@@ -82,7 +82,7 @@ export class CustomDropdown {
     container.innerHTML = `
       <button class="custom-dropdown__trigger" type="button">
         <span class="custom-dropdown__label">${selectedLabel}</span>
-        <span class="custom-dropdown__arrow"></span>
+        <span class="custom-dropdown__arrow" aria-hidden="true"></span>
       </button>
       <ul class="custom-dropdown__menu" role="listbox">
         ${this.options.map(option => `

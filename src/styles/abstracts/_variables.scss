@@ -116,6 +116,8 @@ $radius-sm: 0.125rem;      // 2px
 $radius-base: 0.25rem;     // 4px
 $radius-md: 0.375rem;      // 6px
 $radius-lg: 0.5rem;        // 8px
+$radius-xl: 15px;          // Panels, sections, sidebar
+$radius-pill: 20px;        // One-line elements, badges
 $radius-full: 9999px;
 
 // ========================================
@@ -137,6 +139,80 @@ $transition-colors: color $transition-fast, background-color $transition-fast, b
 // ========================================
 %bg-section {
   background: radial-gradient(circle, rgba(color.adjust($color-2, $lightness: 10%), 0.45), rgba($color-2, 0.45));
+}
+
+// ========================================
+// Chevrons (font-based, CSS-only)
+// Usage: <span class="chevron--right" aria-hidden="true"></span>
+// For interactive elements: <span class="chevron--down" role="img" aria-label="expand"></span>
+// ========================================
+%chevron-base {
+  display: inline-block;
+  font-style: normal;
+  line-height: 1;
+  font-size: 1.5em;
+  color: $color-3;
+  transition: transform 0.2s ease, color 0.15s ease-in-out;
+}
+
+%chevron-left {
+  @extend %chevron-base;
+  &::before { content: '‹'; }
+}
+
+%chevron-right {
+  @extend %chevron-base;
+  &::before { content: '›'; }
+}
+
+%chevron-down {
+  @extend %chevron-base;
+  &::before {
+    content: '›';
+    display: inline-block;
+    transform: rotate(90deg);
+  }
+}
+
+%chevron-up {
+  @extend %chevron-base;
+  &::before {
+    content: '›';
+    display: inline-block;
+    transform: rotate(-90deg);
+  }
+}
+
+%chevron-up-down {
+  @extend %chevron-base;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.25;
+  font-size: 1.7em;
+  &::before {
+    content: '‹';
+    display: inline-block;
+    transform: rotate(90deg);
+  }
+  &::after {
+    content: '›';
+    display: inline-block;
+    transform: rotate(90deg);
+  }
+}
+
+%chevron-left-right {
+  @extend %chevron-base;
+  &::before {
+    content: '‹';
+    font-size: 0.75em;
+  }
+  &::after {
+    content: '›';
+    font-size: 0.75em;
+    margin-left: -0.1em;
+  }
 }
 
 // ========================================

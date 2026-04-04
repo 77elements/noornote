@@ -38,6 +38,5 @@
 }
 
 .nav-list__chevron {
-  color: $color-3;
-  font-size: 1.5em;
+  @extend %chevron-right;
 }

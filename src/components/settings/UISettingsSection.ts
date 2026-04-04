@@ -164,7 +164,6 @@ export class UISettingsSection extends SettingsSection {
           ToastService.show(`Switched to ${labels[value as keyof typeof labels]}`, 'success');
         },
         className: 'calendar-system-dropdown',
-        width: '100%',
       });
 
       calendarDropdownContainer.appendChild(this.calendarDropdown.getElement());
@@ -197,7 +196,6 @@ export class UISettingsSection extends SettingsSection {
           ToastService.show(`Switched to ${labels[mode]}`, 'success');
         },
         className: 'layout-mode-dropdown',
-        width: '100%',
       });
 
       layoutModeDropdownContainer.appendChild(this.layoutModeDropdown.getElement());

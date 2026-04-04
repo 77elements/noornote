@@ -45,7 +45,7 @@ export class SettingsView extends View {
     });
 
     const menuHtml = menuItems.map(item =>
-      `<a href="${item.route}" class="nav-list__item">${item.label}<span class="nav-list__chevron">›</span></a>`
+      `<a href="${item.route}" class="nav-list__item">${item.label}<span class="nav-list__chevron" aria-hidden="true"></span></a>`
     ).join('');
 
     const showExportLogs = platform.isDesktop || platform.isCapacitor;

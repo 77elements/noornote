@@ -9,9 +9,9 @@
 @use '../base/typography' as *;
 
 .sidebar {
-  @include card-base;
   overflow-y: auto;
-  background-color: var(--color-2);
+  @extend %bg-section;
+  border-radius: $radius-xl;
 
   // Scrollbar styling - MUST be last to override any conflicting styles
   @include custom-scrollbar;

@@ -48,21 +48,11 @@
     text-align: left;
   }
 
-  // Arrow icon (custom CSS-only)
+  // Arrow icon (font chevron)
   &__arrow {
-    width: 0;
-    height: 0;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 5px solid var(--color-5);
-    transition: transform 0.2s ease;
+    @extend %chevron-up-down;
     margin-left: calc($gap / 2);
     flex-shrink: 0;
-  }
-
-  // Rotate arrow when open
-  &--open &__arrow {
-    transform: rotate(180deg);
   }
 
   // Dropdown menu
@@ -138,12 +128,6 @@
   .custom-dropdown {
     &__trigger {
       padding: 12px;
-    }
-
-    &__arrow {
-      border-left: 3px solid transparent;
-      border-right: 3px solid transparent;
-      border-top: 4px solid var(--color-5);
     }
 
     &__item {
