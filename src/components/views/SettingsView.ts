@@ -4,7 +4,6 @@
  */
 
 import { View } from './View';
-import { SyncStatusBadge } from '../shared/SyncStatusBadge';
 import { PlatformService } from '../../services/PlatformService';
 import { Router } from '../../services/Router';
 
@@ -27,7 +26,6 @@ const SETTINGS_MENU: SettingsMenuItem[] = [
 
 export class SettingsView extends View {
   private container: HTMLElement;
-  private syncStatusBadge: SyncStatusBadge | null = null;
 
   constructor() {
     super();
@@ -47,30 +45,27 @@ export class SettingsView extends View {
     });
 
     const menuHtml = menuItems.map(item =>
-      `<a href="${item.route}" class="settings-menu__item">${item.label}</a>`
+      `<a href="${item.route}" class="section__item">${item.label}<span class="section__chevron">›</span></a>`
     ).join('');
 
     const showExportLogs = platform.isDesktop || platform.isCapacitor;
 
     this.container.innerHTML = `
-      <div class="settings-container">
-        <h1 class="settings-title">Settings</h1>
-        <div id="sync-status-badge-container" class="sync-status-container"></div>
-        <nav class="settings-menu">
-          ${menuHtml}
-        </nav>
-        ${showExportLogs ? `
-        <section class="settings-section diagnostic-export-section" style="text-align: center;">
-          <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
-            Export Logs
-          </button>
-        </section>
-        ` : ''}
-      </div>
+      <h1 class="settings-title">Settings</h1>
+      <nav class="section">
+        ${menuHtml}
+      </nav>
+      ${showExportLogs ? `
+      <section class="settings-section diagnostic-export-section" style="text-align: center;">
+        <button class="btn btn--medium btn--passive" id="export-diagnostic-logs-btn">
+          Export Logs
+        </button>
+      </section>
+      ` : ''}
     `;
 
     // Menu item click handling (use router navigation)
-    this.container.querySelectorAll('.settings-menu__item').forEach(link => {
+    this.container.querySelectorAll('.section__item').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const route = (e.currentTarget as HTMLAnchorElement).getAttribute('href');
@@ -117,13 +112,6 @@ export class SettingsView extends View {
         btn.textContent = 'Export Logs';
       }
     });
-
-    // Sync status badge
-    const badgeContainer = this.container.querySelector('#sync-status-badge-container');
-    if (badgeContainer) {
-      this.syncStatusBadge = new SyncStatusBadge(badgeContainer as HTMLElement);
-      this.syncStatusBadge.subscribeToSyncStatus();
-    }
   }
 
   public getElement(): HTMLElement {
@@ -131,9 +119,5 @@ export class SettingsView extends View {
   }
 
   public destroy(): void {
-    if (this.syncStatusBadge) {
-      this.syncStatusBadge.destroy();
-      this.syncStatusBadge = null;
-    }
   }
 }

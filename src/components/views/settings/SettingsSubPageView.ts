@@ -18,13 +18,11 @@ export class SettingsSubPageView extends View {
     this.container.className = 'view-content view-content--settings';
 
     this.container.innerHTML = `
-      <div class="settings-container">
-        <div class="heading-back-btn-container">
-          <h1 class="settings-title">${title}</h1>
-          <button class="btn btn--medium btn--passive settings-sub-page__back">← Back</button>
-        </div>
-        <div id="${section.getSectionId()}-content" class="settings-sub-page__content"></div>
+      <div class="heading-back-btn-container">
+        <h1 class="settings-title">${title}</h1>
+        <button class="btn btn--medium btn--passive settings-sub-page__back">← Back</button>
       </div>
+      <div id="${section.getSectionId()}-content" class="settings-sub-page__content"></div>
     `;
 
     this.container.querySelector('.settings-sub-page__back')?.addEventListener('click', () => {

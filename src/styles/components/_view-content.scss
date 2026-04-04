@@ -12,9 +12,9 @@
   height: 100%;
   padding: 0 $gap 0 0; // Right padding for desktop
 
-  // Phone layout: padding on both sides
+  // Phone layout: padding on sides and top
   html.layout--phone & {
-    padding: 0 $gap;
+    padding: $gap $gap 0 $gap;
   }
 }
 

@@ -1,0 +1,47 @@
+/**
+ * Sections - Reusable section containers
+ */
+
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+
+.section {
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle, rgba(color.adjust($color-2, $lightness: 10%), 0.45), rgba($color-2, 0.45));
+  border-radius: 7%;
+  padding: calc($gap / 2);
+
+  &__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: $gap;
+    color: var(--color-5);
+    border-bottom: 1px solid color.adjust($color-2, $lightness: 5%);
+    font-weight: 500;
+    transition: $transition-colors;
+    text-decoration: none;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover, &:active, &:visited, &:focus {
+      text-decoration: none;
+    }
+
+    &:hover, &:active, &:focus {
+      color: var(--color-4);
+
+      .section__chevron {
+        color: var(--color-4);
+      }
+    }
+  }
+
+  &__chevron {
+    color: $color-3;
+    font-size: 1.5em;
+  }
+}
