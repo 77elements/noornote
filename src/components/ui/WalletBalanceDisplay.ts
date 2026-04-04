@@ -58,11 +58,11 @@ export class WalletBalanceDisplay {
         <img src="${satsIconUrl}" class="sats-icon" alt="sats" />
         <span class="wallet-balance-exchange">⇄</span>
         <span class="wallet-balance-fiat-amount">--</span>
+        <button class="wallet-balance-toggle" title="Toggle visibility" aria-label="Toggle balance visibility">
+          <svg class="eye-icon eye-open"><use href="#icon-eye-open"/></svg>
+          <svg class="eye-icon eye-closed" style="display: none;"><use href="#icon-eye-closed"/></svg>
+        </button>
       </div>
-      <button class="wallet-balance-toggle" title="Toggle visibility" aria-label="Toggle balance visibility">
-        <svg class="eye-icon eye-open"><use href="#icon-eye-open"/></svg>
-        <svg class="eye-icon eye-closed" style="display: none;"><use href="#icon-eye-closed"/></svg>
-      </button>
     `;
     return container;
   }

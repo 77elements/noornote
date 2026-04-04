@@ -8,22 +8,21 @@
 @use '../base/typography' as *;
 
 .wallet-balance-container {
-  padding-left: calc($gap / 2);
-
-  @include tablet-up {
-    padding-left: 0;
-  }
 }
 
 .wallet-balance-display {
   display: none; // Hidden by default, shown when NWC connected
   margin-bottom: $gap;
-  position: relative;
   font-weight: 600;
+  text-align: center;
 }
 
 .wallet-balance-content {
+  display: inline-block;
   color: var(--color-5);
+  padding: calc($gap / 2) calc($gap * 3 / 4);
+  background-color: $color-2;
+  border-radius: 20px;
 }
 
 .wallet-balance-amount {
@@ -50,14 +49,13 @@
 }
 
 .wallet-balance-toggle {
-  position: absolute;
-  top: 0.1rem;
-  right: 0;
   background: transparent;
   border: none;
   cursor: pointer;
   padding: 0;
   opacity: 0.5;
+  vertical-align: bottom;
+  margin-left: 10px;
   transition: opacity 0.2s ease;
 
   &:hover {
