@@ -108,6 +108,22 @@
       background: color-mix(in srgb, var(--color-2) 80%, white);
     }
   }
+
+  // Multi-select variant: menu contains nn-checkbox items
+  &--multi &__menu {
+    display: none;
+    padding: calc($gap / 2);
+    max-height: 300px;
+    overflow-y: auto;
+  }
+
+  &--multi#{&}--open &__menu {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 4);
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 // Responsive adjustments

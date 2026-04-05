@@ -182,7 +182,6 @@ export class PostNoteModal {
             Preview
           </button>
         </div>
-        ${this.relaySelector.render()}
       </div>
     `;
   }
@@ -231,9 +230,11 @@ export class PostNoteModal {
 
     return `
       <div class="l-row l-row--split">
-        ${this.toolbar.render()}
         <div>
+          ${this.toolbar.render()}
           <div class="post-note-options" id="post-note-options-container"></div>
+        </div>
+        <div>
           <button class="btn btn--passive" data-action="cancel">Cancel</button>
           <button class="btn" data-action="post" ${validation.isValid ? '' : 'disabled'}>Post</button>
         </div>
@@ -248,10 +249,14 @@ export class PostNoteModal {
     const modal = document.querySelector('.post-note-modal');
     if (!modal) return;
 
-    // Setup relay selector
-    const relaySelectorContainer = modal.querySelector('.post-note-relay-selector');
-    if (this.relaySelector && relaySelectorContainer) {
-      this.relaySelector.setupEventListeners(relaySelectorContainer as HTMLElement);
+    // Mount relay selector into modal__header (outside overflow container)
+    const modalHeader = modal.closest('.modal__body')?.previousElementSibling as HTMLElement;
+    if (this.relaySelector && modalHeader) {
+      const relaySelectorDiv = document.createElement('div');
+      relaySelectorDiv.innerHTML = this.relaySelector.render();
+      const relaySelectorEl = relaySelectorDiv.firstElementChild as HTMLElement;
+      modalHeader.insertBefore(relaySelectorEl, modalHeader.querySelector('.modal__close'));
+      this.relaySelector.setupEventListeners(relaySelectorEl);
     }
 
     // Setup toolbar

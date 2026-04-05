@@ -33,7 +33,7 @@ export class RelaySelector {
       const cleanUrl = relay.replace(/^wss?:\/\//, '');
 
       return `
-        <label class="relay-option">
+        <label class="nn-checkbox">
           <input
             type="checkbox"
             value="${relay}"
@@ -48,11 +48,12 @@ export class RelaySelector {
     return `
       <div class="post-note-relay-selector">
         <label class="relay-selector-label">Post to:</label>
-        <div class="relay-selector-dropdown">
-          <button class="relay-selector-trigger" type="button" ${this.config.isTestMode ? 'disabled' : ''}>
-            ${this.getSelectionText()}
+        <div class="custom-dropdown custom-dropdown--multi">
+          <button class="custom-dropdown__trigger" type="button" ${this.config.isTestMode ? 'disabled' : ''}>
+            <span class="custom-dropdown__label">${this.getSelectionText()}</span>
+            <span class="custom-dropdown__arrow" aria-hidden="true"></span>
           </button>
-          <div class="relay-selector-options">
+          <div class="custom-dropdown__menu">
             ${relayOptions}
           </div>
         </div>
@@ -66,19 +67,20 @@ export class RelaySelector {
   public setupEventListeners(container: HTMLElement): void {
     this.container = container;
 
-    const trigger = container.querySelector('.relay-selector-trigger');
-    const dropdown = container.querySelector('.relay-selector-options') as HTMLElement;
+    const wrapper = container.querySelector('.custom-dropdown');
+    const trigger = container.querySelector('.custom-dropdown__trigger');
+    const menu = container.querySelector('.custom-dropdown__menu') as HTMLElement;
 
-    if (!trigger || !dropdown || this.config.isTestMode) return;
+    if (!wrapper || !trigger || !menu || this.config.isTestMode) return;
 
     // Toggle dropdown on trigger click
     trigger.addEventListener('click', (e) => {
       e.stopPropagation();
-      dropdown.classList.toggle('is-open');
+      wrapper.classList.toggle('custom-dropdown--open');
     });
 
     // Handle checkbox changes
-    const checkboxes = dropdown.querySelectorAll('input[type="checkbox"]');
+    const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(checkbox => {
       checkbox.addEventListener('change', (e) => {
         const input = e.target as HTMLInputElement;
@@ -94,8 +96,8 @@ export class RelaySelector {
 
     // Close dropdown when clicking outside
     this.documentClickHandler = (e: MouseEvent) => {
-      if (!dropdown.contains(e.target as Node) && e.target !== trigger) {
-        dropdown.classList.remove('is-open');
+      if (!wrapper.contains(e.target as Node)) {
+        wrapper.classList.remove('custom-dropdown--open');
       }
     };
     document.addEventListener('click', this.documentClickHandler);
@@ -107,9 +109,9 @@ export class RelaySelector {
   public updateDisplay(): void {
     if (!this.container) return;
 
-    const trigger = this.container.querySelector('.relay-selector-trigger');
-    if (trigger) {
-      trigger.textContent = this.getSelectionText();
+    const label = this.container.querySelector('.custom-dropdown__label');
+    if (label) {
+      label.textContent = this.getSelectionText();
     }
   }
 
@@ -123,8 +125,8 @@ export class RelaySelector {
 
     const count = this.config.selectedRelays.size;
     if (count === 0) return 'Select relays...';
-    if (count === 1) return '1 relay selected';
-    return `${count} relays selected`;
+    if (count === 1) return '1 relay';
+    return `${count} relays`;
   }
 
   /**

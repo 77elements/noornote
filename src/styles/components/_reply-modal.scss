@@ -61,24 +61,6 @@
   min-height: 120px; // Smaller to fit fixed layout
 }
 
-// Comment/Reply type switch (between tabs and relay selector)
-.reply-modal-type-switch {
-  display: flex;
-  align-items: center;
-}
-
-.reply-modal-type-switch__inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.reply-modal-type-hint {
-  @extend %small;
-  color: var(--color-3);
-  white-space: nowrap;
-}
 
 // Mobile responsive
 @media (max-width: 600px) {

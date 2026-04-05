@@ -56,82 +56,20 @@
   flex-wrap: wrap;
 }
 
-// Relay Selector
+// Relay Selector (lives in modal__header)
 .post-note-relay-selector {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
   white-space: nowrap;
   min-width: 0;
+  margin-left: auto;
+  margin-right: $gap;
 }
 
 .relay-selector-label {
   font-weight: 500;
   white-space: nowrap;
-}
-
-.relay-selector-dropdown {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-.relay-selector-trigger {
-  width: 100%;
-  padding: calc($gap / 2) $gap;
-  cursor: pointer;
-  text-align: left;
-  transition: all 0.2s ease;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-
-  &:hover:not(:disabled) {
-  }
-
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-}
-
-.relay-selector-options {
-  display: none; // Hidden by default
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  width: max-content;
-  min-width: 100%;
-  max-height: 300px;
-  overflow-y: auto;
-  background: var(--color-2);
-  box-shadow: $box-shadow;
-  z-index: 100;
-  padding: calc($gap / 2);
-
-  &.is-open {
-    display: block;
-  }
-}
-
-.relay-option {
-  display: flex;
-  align-items: center;
-  gap: calc($gap / 2);
-  padding: calc($gap / 2);
-  cursor: pointer;
-  transition: background 0.2s ease;
-
-  &:hover {
-    }
-
-  input[type="checkbox"] {
-    cursor: pointer;
-  }
-
-  span {
-    white-space: nowrap;
-  }
 }
 
 
