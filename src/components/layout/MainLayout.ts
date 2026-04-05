@@ -1266,11 +1266,8 @@ export class MainLayout {
               </a>
             </li>
           </ul>
-            <div class="sidebar-font-size-mount"></div>
-            <div class="about">
-              <span class="current-datetime-display">--</span>
-              <a href="/about" class="primary-nav__link--about">About</a>
-            </div>
+            <div class="data-saver-toggle"></div>
+            <div class="current-datetime-display">--</div>
           </div>
           <div class="new-post-dropup">
             <button class="btn btn--new-post">
@@ -1395,59 +1392,51 @@ export class MainLayout {
     }
 
     // Mount sidebar extras (Data Saver toggle on Android)
-    const sidebarMount = this.element.querySelector('.sidebar-font-size-mount');
-    if (sidebarMount) {
-      sidebarMount.innerHTML = '';
-
-      // Data Saver toggle (Android only, synchronous to avoid race condition)
-      if (PlatformService.getInstance().isAndroid) {
-        const sw = new Switch({
-          label: 'Data Saver',
-          checked: isDataSaverEnabled(),
-          onChange: (checked) => {
-            setDataSaverEnabled(checked);
-            this.eventBus.emit('data-saver:toggle', { enabled: checked });
-            // When turning OFF: replace all placeholders with actual media
-            if (!checked) {
-              document.querySelectorAll('.media-placeholder').forEach(ph => {
-                const el = ph as HTMLElement;
-                const src = el.dataset.src;
-                const type = el.dataset.type;
-                if (!src || !type) return;
-                if (type === 'image') {
-                  const img = document.createElement('img');
-                  img.src = src;
-                  img.alt = el.dataset.alt || '';
-                  img.className = 'note-image note-image--clickable';
-                  img.loading = 'lazy';
-                  img.dataset.imageIndex = el.dataset.index || '0';
-                  el.replaceWith(img);
-                } else if (type === 'video') {
-                  const video = document.createElement('video');
-                  video.src = src;
-                  video.controls = true;
-                  video.className = 'note-video';
-                  video.preload = 'metadata';
-                  if (el.dataset.poster) video.poster = el.dataset.poster;
-                  el.replaceWith(video);
-                } else if (type === 'audio') {
-                  const audio = document.createElement('audio');
-                  audio.src = src;
-                  audio.controls = true;
-                  audio.preload = 'metadata';
-                  audio.className = 'note-audio';
-                  el.replaceWith(audio);
-                }
-              });
-            }
+    // Data Saver toggle (Android only)
+    const dataSaverMount = this.element.querySelector('.data-saver-toggle');
+    if (dataSaverMount && PlatformService.getInstance().isAndroid) {
+      const sw = new Switch({
+        label: 'Data Saver',
+        checked: isDataSaverEnabled(),
+        onChange: (checked) => {
+          setDataSaverEnabled(checked);
+          this.eventBus.emit('data-saver:toggle', { enabled: checked });
+          if (!checked) {
+            document.querySelectorAll('.media-placeholder').forEach(ph => {
+              const el = ph as HTMLElement;
+              const src = el.dataset.src;
+              const type = el.dataset.type;
+              if (!src || !type) return;
+              if (type === 'image') {
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = el.dataset.alt || '';
+                img.className = 'note-image note-image--clickable';
+                img.loading = 'lazy';
+                img.dataset.imageIndex = el.dataset.index || '0';
+                el.replaceWith(img);
+              } else if (type === 'video') {
+                const video = document.createElement('video');
+                video.src = src;
+                video.controls = true;
+                video.className = 'note-video';
+                video.preload = 'metadata';
+                if (el.dataset.poster) video.poster = el.dataset.poster;
+                el.replaceWith(video);
+              } else if (type === 'audio') {
+                const audio = document.createElement('audio');
+                audio.src = src;
+                audio.controls = true;
+                audio.preload = 'metadata';
+                audio.className = 'note-audio';
+                el.replaceWith(audio);
+              }
+            });
           }
-        });
-        const wrapper = document.createElement('div');
-        wrapper.className = 'data-saver-toggle';
-        wrapper.innerHTML = sw.render();
-        sidebarMount.appendChild(wrapper);
-        sw.setupEventListeners(wrapper);
-      }
+        }
+      });
+      dataSaverMount.innerHTML = sw.render();
+      sw.setupEventListeners(dataSaverMount as HTMLElement);
     }
 
     // Update profile link href (event listener is set up in setupNavigationLinks)
@@ -1750,23 +1739,23 @@ export class MainLayout {
     const storage = PerAccountLocalStorage.getInstance();
     const calendarSystem = storage.get<string>(StorageKeys.CALENDAR_SYSTEM, 'gregorian');
     const version = `v${__APP_VERSION__}`;
+    const aboutLink = '<a href="/about" class="primary-nav__link--about">About</a>';
 
     // Format date based on calendar system
     let dateString = '';
 
     if (calendarSystem === 'gregorian') {
-      // International format: DD. Mon. YYYY
       const day = now.getDate();
       const month = now.toLocaleString('en-US', { month: 'short' });
       const year = now.getFullYear();
-      dateString = `${day}. ${month}. ${year}<br>${version}`;
+      dateString = `<span>${day}. ${month}. ${year}</span><span>${version}</span>${aboutLink}`;
     } else if (calendarSystem === 'hijri') {
       if (!this._dayjs) return; // dayjs not loaded yet (async init)
       const hijriDate = this._dayjs(now).toCalendarSystem('hijri' as any);
       const day = hijriDate.date();
       const month = HIJRI_MONTHS[hijriDate.month()];
       const year = hijriDate.year();
-      dateString = `${day}. ${month} ${year}<br>${version}`;
+      dateString = `<span>${day}. ${month} ${year}</span><span>${version}</span>${aboutLink}`;
     } else if (calendarSystem === 'both') {
       if (!this._dayjs) return; // dayjs not loaded yet (async init)
       const gregorianDay = now.getDate();
@@ -1777,7 +1766,7 @@ export class MainLayout {
       const hijriDay = hijriDate.date();
       const hijriMonth = HIJRI_MONTHS[hijriDate.month()];
       const hijriYear = hijriDate.year();
-      dateString = `${gregorianDay}. ${gregorianMonth}. ${gregorianYear}<br>${hijriDay}. ${hijriMonth} ${hijriYear}<br>${version}`;
+      dateString = `<span>${gregorianDay}. ${gregorianMonth}. ${gregorianYear}</span><span>${hijriDay}. ${hijriMonth} ${hijriYear}</span><span>${version}</span>${aboutLink}`;
     }
 
     dateTimeDisplay.innerHTML = dateString;
