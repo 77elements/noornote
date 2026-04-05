@@ -279,7 +279,7 @@ export class NWCService {
 
       if (!isValid) {
         this.setStateForCurrentUser('error');
-        ToastService.show('Verbindung zum Wallet fehlgeschlagen', 'error');
+        ToastService.show('Wallet connection failed', 'error');
         return false;
       }
 
@@ -291,7 +291,7 @@ export class NWCService {
       await this.saveConnection(connectionString);
 
       this.systemLogger.info('NWCService', 'Connected to NWC wallet:', connection.walletPubkey.slice(0, 8));
-      ToastService.show('Lightning Wallet verbunden', 'success');
+      ToastService.show('Lightning Wallet connected', 'success');
 
       return true;
     } catch (_error) {
@@ -300,7 +300,7 @@ export class NWCService {
         _error,
         'NWCService.connect',
         true,
-        'NWC-Verbindung fehlgeschlagen. Bitte prüfe den Connection String.'
+        'NWC connection failed. Please check the connection string.'
       );
       return false;
     }
@@ -386,7 +386,7 @@ export class NWCService {
     }
 
     this.systemLogger.info('NWCService', 'Disconnected from NWC wallet');
-    ToastService.show('Lightning Wallet getrennt', 'info');
+    ToastService.show('Lightning Wallet disconnected', 'info');
   }
 
   /**

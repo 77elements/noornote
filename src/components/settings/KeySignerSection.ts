@@ -114,7 +114,7 @@ export class KeySignerSection extends SettingsSection {
               ToastService.show('Failed to toggle autostart', 'error');
 
               // Refresh section to reflect actual state
-              const parentContainer = contentContainer.closest('.settings-container') as HTMLElement;
+              const parentContainer = contentContainer.closest('.view-content--settings') as HTMLElement;
               if (parentContainer) {
                 this.mount(parentContainer);
               }

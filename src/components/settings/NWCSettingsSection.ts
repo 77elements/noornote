@@ -267,7 +267,7 @@ export class NWCSettingsSection extends SettingsSection {
 
         if (success) {
           // Refresh zap settings panel to show connected state
-          const parentContainer = contentContainer.closest('.settings-container') as HTMLElement;
+          const parentContainer = contentContainer.closest('.view-content--settings') as HTMLElement;
           if (parentContainer) {
             this.mount(parentContainer);
           }
@@ -283,7 +283,7 @@ export class NWCSettingsSection extends SettingsSection {
       disconnectBtn?.addEventListener('click', async () => {
         await this.nwcService.disconnect();
         // Refresh zap settings panel to show disconnected state
-        const parentContainer = contentContainer.closest('.settings-container') as HTMLElement;
+        const parentContainer = contentContainer.closest('.view-content--settings') as HTMLElement;
         if (parentContainer) {
           this.mount(parentContainer);
         }
