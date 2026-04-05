@@ -973,7 +973,7 @@ export class ProfileFollowManager {
     // Already following - show unfollow button
     if (this.isFollowingState) {
       return `
-        <button class="btn btn--passive follow-btn" data-action="unfollow">
+        <button class="btn btn--passive" data-action="unfollow">
           Unfollow
         </button>
       `;
@@ -982,7 +982,7 @@ export class ProfileFollowManager {
     // Not following - show follow button (with dropdown if private follows enabled)
     if (!isPrivateFollowsEnabled()) {
       return `
-        <button class="btn follow-btn" data-action="follow">
+        <button class="btn" data-action="follow">
           Follow
         </button>
       `;
@@ -990,7 +990,7 @@ export class ProfileFollowManager {
 
     return `
       <div class="follow-dropdown-container">
-        <button class="btn follow-btn-dropdown" id="follow-btn-dropdown">
+        <button class="btn" id="follow-btn-dropdown">
           Follow
           <svg width="12" height="12" style="margin-left: 4px;"><use href="#icon-chevron-down"/></svg>
         </button>
@@ -1015,7 +1015,7 @@ export class ProfileFollowManager {
     if (!container || !container.isConnected) return;
 
     // Handle unfollow button
-    const unfollowBtn = container.querySelector('.follow-btn[data-action="unfollow"]');
+    const unfollowBtn = container.querySelector('[data-action="unfollow"]');
     if (unfollowBtn) {
       unfollowBtn.addEventListener('click', async () => {
         await this.handleUnfollow(container, onStateChange);
@@ -1024,7 +1024,7 @@ export class ProfileFollowManager {
     }
 
     // Handle simple follow button (NIP-51 disabled)
-    const simpleFollowBtn = container.querySelector('.follow-btn[data-action="follow"]');
+    const simpleFollowBtn = container.querySelector('[data-action="follow"]');
     if (simpleFollowBtn) {
       simpleFollowBtn.addEventListener('click', async () => {
         await this.handleFollow(container, 'public', onStateChange);
@@ -1078,7 +1078,7 @@ export class ProfileFollowManager {
     }
 
     const dropdownBtn = container.querySelector('#follow-btn-dropdown') as HTMLButtonElement;
-    const simpleBtn = container.querySelector('.follow-btn[data-action="follow"]') as HTMLButtonElement;
+    const simpleBtn = container.querySelector('[data-action="follow"]') as HTMLButtonElement;
     const followBtn = dropdownBtn || simpleBtn;
 
     if (!followBtn) return;
@@ -1120,7 +1120,7 @@ export class ProfileFollowManager {
       return;
     }
 
-    const followBtn = container.querySelector('.follow-btn') as HTMLButtonElement;
+    const followBtn = container.querySelector('[data-action="unfollow"]') as HTMLButtonElement;
     if (!followBtn) return;
 
     try {

@@ -5,9 +5,15 @@
 // PV link to professional list
 // ==========================================
 
+.profile-nostrin-list-mount {
+  margin-top: $gap;
+  text-align: right;
+}
+
 .profile-nostrin-list-link {
-  padding: $gap calc($gap * 1.5);
-  text-align: center;
+  .chevron-right {
+    @extend %chevron-right;
+  }
 
   a {
     color: $color-4;

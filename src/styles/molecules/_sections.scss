@@ -5,8 +5,6 @@
 @use '../abstracts/variables' as *;
 
 .section {
-  display: flex;
-  flex-direction: column;
   @extend %bg-section;
   border-radius: $radius-xl;
   padding: $gap;

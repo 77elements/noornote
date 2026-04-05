@@ -179,9 +179,11 @@ export class ProfileListsComponent {
         ${visibleItems.map(item => this.renderItem(item)).join('')}
       </div>
       ${hasMore ? `
-        <button class="profile-list-toggle" data-list-index="${index}">
-          ${isExpanded ? 'Show less' : `Show more (${items.length - MAX_ITEMS_COLLAPSED})`}
-        </button>
+        <div class="l-row l-row--center">
+          <button class="btn btn--passive btn--medium" data-list-index="${index}">
+            ${isExpanded ? 'Show less' : `Show more (${items.length - MAX_ITEMS_COLLAPSED})`}
+          </button>
+        </div>
       ` : ''}
     `;
   }
@@ -243,7 +245,7 @@ export class ProfileListsComponent {
    */
   private bindEvents(): void {
     for (const el of this.elements) {
-      el.querySelectorAll('.profile-list-toggle').forEach(btn => {
+      el.querySelectorAll('[data-list-index]').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const index = parseInt((e.target as HTMLElement).dataset.listIndex || '0');
           this.toggleListExpansion(index);

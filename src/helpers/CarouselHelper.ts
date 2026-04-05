@@ -337,11 +337,11 @@ export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCaro
       <h2 class="nn-scroll-carousel__title">${title}</h2>
       ${showNav ? `
         <div class="nn-scroll-carousel__nav">
-          <button class="nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--prev" aria-label="Previous">
-            <svg width="16" height="16"><use href="#icon-chevron-left"/></svg>
+          <button class="btn btn--square-sm nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--prev" aria-label="Previous">
+            <span class="carousel-chevron-left" aria-hidden="true"></span>
           </button>
-          <button class="nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--next" aria-label="Next">
-            <svg width="16" height="16"><use href="#icon-chevron-right"/></svg>
+          <button class="btn btn--square-sm nn-scroll-carousel__nav-btn nn-scroll-carousel__nav-btn--next" aria-label="Next">
+            <span class="carousel-chevron-right" aria-hidden="true"></span>
           </button>
         </div>
       ` : ''}

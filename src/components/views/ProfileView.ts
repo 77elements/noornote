@@ -277,7 +277,8 @@ export class ProfileView extends View {
           this.profileListsComponent.destroy();
           this.profileListsComponent = null;
         }
-        this.container.querySelector('.profile-nostrin-list-link')?.remove();
+        const nostrinMount = this.container.querySelector('.profile-nostrin-list-mount');
+        if (nostrinMount) nostrinMount.innerHTML = '';
       }
     });
     this.eventBusSubscriptions.push(id);
@@ -587,8 +588,8 @@ export class ProfileView extends View {
 
             <div class="profile-joined-date" id="profile-joined-date"></div>
 
-            ${processedAbout ? `<p class="profile-about">${processedAbout}</p>` : ''}
-            ${website ? `<p class="profile-website"><a href="${escapeHtml(website)}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
+            ${processedAbout ? `<p class="profile-about section">${processedAbout}</p>` : ''}
+            ${website ? `<p class="profile-website section"><a href="${escapeHtml(website)}" rel="noopener noreferrer">${escapeHtml(website)}</a></p>` : ''}
 
             <div class="profile-stats">
               ${this.renderEditButton()}
@@ -607,6 +608,7 @@ export class ProfileView extends View {
         </div>
 
       </div>
+      <div class="profile-nostrin-list-mount"></div>
 
       <div class="profile-articles-mount"></div>
       <div class="profile-videos-mount"></div>
@@ -777,7 +779,7 @@ export class ProfileView extends View {
     const isSubscribed = articleNotifService.isSubscribed(this.pubkey);
 
     const articleNotifCheckbox = `
-      <label class="article-notif-checkbox" title="Get notified when this user posts a new article">
+      <label class="nn-checkbox" title="Get notified when this user posts a new article">
         <input type="checkbox" id="article-notif-toggle" ${isSubscribed ? 'checked' : ''} />
         <span>Article alerts</span>
       </label>
@@ -811,7 +813,7 @@ export class ProfileView extends View {
       // Re-render button section when follow state changes
       const profileStats = this.container.querySelector('.profile-stats');
       if (profileStats) {
-        const existingButton = profileStats.querySelector('.follow-btn, .follow-dropdown-container');
+        const existingButton = profileStats.querySelector('[data-action="follow"], [data-action="unfollow"], .follow-dropdown-container');
         if (existingButton) {
           existingButton.remove();
         }
@@ -1174,15 +1176,15 @@ export class ProfileView extends View {
       if (!isNostrInEnabled()) return;
     }
 
-    const profileNip01 = this.container.querySelector('.profile-nip01');
-    if (!profileNip01) return;
+    const nostrinMount = this.container.querySelector('.profile-nostrin-list-mount');
+    if (!nostrinMount) return;
 
     const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
     if (!isBookmarksEnabled()) return;
 
     const { ProfileListsComponent: PLC } = await import('../profile/ProfileListsComponent');
     this.profileListsComponent = new PLC(this.pubkey);
-    await this.profileListsComponent.render(profileNip01);
+    await this.profileListsComponent.render(nostrinMount);
   }
 
   /**
@@ -1202,22 +1204,16 @@ export class ProfileView extends View {
       // No list and not owner → nothing to show
       if (!hasExistingList && !isOwn) return;
 
-      const linkEl = document.createElement('div');
-      linkEl.className = 'profile-nostrin-list-link';
+      const mount = this.container.querySelector('.profile-nostrin-list-mount');
+      if (!mount) return;
 
       if (hasExistingList) {
-        linkEl.innerHTML = `<a href="/profile/${this.npub}/list" data-action="view-list">See my list &rarr;</a>`;
+        mount.innerHTML = `<a href="/profile/${this.npub}/list" class="profile-nostrin-list-link" data-action="view-list">See my list <span class="chevron-right"></span></a>`;
       } else {
-        linkEl.innerHTML = `<a href="/profile/${this.npub}/list/edit" data-action="edit-list">Edit personal list &rarr;</a>`;
+        mount.innerHTML = `<a href="/profile/${this.npub}/list/edit" class="profile-nostrin-list-link" data-action="edit-list">Edit personal list <span class="chevron-right"></span></a>`;
       }
 
-      // Insert after .profile-nip01 (above mounted bookmark folders)
-      const insertAfter = this.container.querySelector('.profile-nip01');
-      if (insertAfter) {
-        insertAfter.after(linkEl);
-      }
-
-      linkEl.querySelector('a')?.addEventListener('click', async (e) => {
+      mount.querySelector('a')?.addEventListener('click', async (e: MouseEvent) => {
         e.preventDefault();
         const { Router } = await import('../../services/Router');
         const href = (e.currentTarget as HTMLAnchorElement).getAttribute('href')!;
