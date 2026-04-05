@@ -169,7 +169,11 @@ export class NWCSettingsSection extends SettingsSection {
     const zapDefaultsSection = `
         <h2 class="subsection-title">Zap Settings</h3>
 
-        <div id="quick-zap-switch-container"></div>
+        <div class="setting" id="quick-zap-switch-container">
+          <span class="setting__label">Quick Zap</span>
+          <div class="setting__control" id="quick-zap-switch-mount"></div>
+          <p class="setting__desc">Single click sends zap with default amount. When disabled, click opens zap dialog.</p>
+        </div>
 
         <div class="form__row form__row--oneline">
           <label for="zap-default-amount">Default Amount (sats):</label>
@@ -216,14 +220,14 @@ export class NWCSettingsSection extends SettingsSection {
    * Setup Quick Zap toggle switch
    */
   private setupQuickZapSwitch(contentContainer: HTMLElement): void {
-    const container = contentContainer.querySelector('#quick-zap-switch-container');
-    if (!container) return;
+    const mount = contentContainer.querySelector('#quick-zap-switch-mount');
+    if (!mount) return;
 
     const storage = PerAccountLocalStorage.getInstance();
     const quickZapEnabled = storage.get(StorageKeys.QUICK_ZAP_ENABLED, false);
 
     this.quickZapSwitch = new Switch({
-      label: 'Quick Zap',
+      label: '',
       checked: quickZapEnabled,
       onChange: (checked) => {
         storage.set(StorageKeys.QUICK_ZAP_ENABLED, checked);
@@ -231,9 +235,8 @@ export class NWCSettingsSection extends SettingsSection {
       }
     });
 
-    container.innerHTML = this.quickZapSwitch.render()
-      + '<p class="form__info">Single click sends zap with default amount. When disabled, click opens zap dialog.</p>';
-    this.quickZapSwitch.setupEventListeners(container as HTMLElement);
+    mount.innerHTML = this.quickZapSwitch.render();
+    this.quickZapSwitch.setupEventListeners(mount as HTMLElement);
   }
 
   /**
