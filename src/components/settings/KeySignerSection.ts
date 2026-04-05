@@ -53,28 +53,20 @@ export class KeySignerSection extends SettingsSection {
           </div>
 
           ${isRunning ? `
-            <div class="key-signer-autostart">
-              <div class="setting-row">
-                <div class="setting-info">
-                  <label class="setting-label">Launch key signer on system startup</label>
-                  <p class="setting-description">Automatically start NoorSigner key signer when you log in to your computer.</p>
-                </div>
-                <div id="autostart-switch-container"></div>
-              </div>
+            <div class="setting">
+              <span class="setting__label">Launch key signer on system startup</span>
+              <div class="setting__control" id="autostart-switch-container"></div>
+              <p class="setting__desc">Automatically start NoorSigner key signer when you log in to your computer.</p>
             </div>
 
-            <div class="key-signer-autostart">
-              <div class="setting-row">
-                <div class="setting-info">
-                  <label class="setting-label">Manage NoorSigner via NoorNote</label>
-                  <p class="setting-description">Handle key signer prompts through NoorNote instead of opening a terminal window.</p>
-                </div>
-                <div id="silent-mode-switch-container"></div>
-              </div>
+            <div class="setting">
+              <span class="setting__label">Manage NoorSigner via NoorNote</span>
+              <div class="setting__control" id="silent-mode-switch-container"></div>
+              <p class="setting__desc">Handle key signer prompts through NoorNote instead of opening a terminal window.</p>
             </div>
 
-            <div class="settings-section__actions">
-              <button class="btn btn--medium" id="stop-daemon-btn">Stop Key Signer & Logout</button>
+            <div class="l-row l-row--right">
+              <button class="btn" id="stop-daemon-btn">Stop Key Signer & Logout</button>
             </div>
           ` : `
             <div class="key-signer-info">

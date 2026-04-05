@@ -545,9 +545,8 @@
 }
 
 .key-signer-status {
-  padding: $gap;
-  background: var(--color-2);
-  border-radius: $radius-sm;
+  padding: $gap $gap $gap 0;
+  margin-bottom: $gap;
 }
 
 .status-indicator {
@@ -577,38 +576,7 @@
   color: var(--color-5);
 }
 
-.key-signer-autostart {
-  display: flex;
-  flex-direction: column;
-  gap: $gap;
-}
 
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $gap;
-  padding: $gap;
-  background: var(--color-2);
-  border-radius: $radius-sm;
-}
-
-.setting-info {
-  flex: 1;
-}
-
-.setting-label {
-  font-weight: 500;
-  color: var(--color-5);
-  margin-bottom: calc($gap / 4);
-  display: block;
-}
-
-.setting-description {
-  @extend %small;
-  color: $color-3;
-  line-height: 1.4;
-}
 
 
 .key-signer-info {
