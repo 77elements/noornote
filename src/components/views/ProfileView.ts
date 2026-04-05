@@ -730,7 +730,7 @@ export class ProfileView extends View {
     }
 
     return `
-      <button class="edit-profile-btn" data-action="edit-profile" title="Edit your profile">
+      <button class="btn" data-action="edit-profile" title="Edit your profile">
         <svg width="16" height="16"><use href="#icon-edit"/></svg>
         Edit Profile
       </button>
