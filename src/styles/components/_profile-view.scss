@@ -86,6 +86,10 @@
   .badge {
     align-self: center;
   }
+
+  &:has(.badge) .profile-pic--big {
+    border-color: $color-6;
+  }
 }
 
 .profile-meta {
