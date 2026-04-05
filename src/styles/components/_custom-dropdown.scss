@@ -58,9 +58,9 @@
   &__menu {
     position: absolute;
     top: calc(100% + 4px);
-    left: 0;
     right: 0;
     min-width: 100%; // Ensure menu is at least as wide as trigger
+    width: max-content;
     background: var(--color-2);
     border: none;
     border-radius: $radius-xl;

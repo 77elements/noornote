@@ -10,6 +10,7 @@ import { SettingsSection } from './SettingsSection';
 import { NWCService } from '../../services/NWCService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { Switch } from '../ui/Switch';
+import { CustomDropdown } from '../ui/CustomDropdown';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { ToastService } from '../../services/ToastService';
@@ -118,17 +119,6 @@ export class NWCSettingsSection extends SettingsSection {
   }
 
   /**
-   * Render currency options for dropdown
-   */
-  private renderCurrencyOptions(): string {
-    const currencies = this.exchangeRateService.getAvailableCurrencies();
-
-    return currencies
-      .map(currency => `<option value="${currency.code}" ${this.fiatCurrencySettings.currency === currency.code ? 'selected' : ''}>${currency.symbol} ${currency.name} (${currency.code})</option>`)
-      .join('');
-  }
-
-  /**
    * Render zap settings content
    */
   private renderContent(): string {
@@ -196,11 +186,9 @@ export class NWCSettingsSection extends SettingsSection {
           />
         </div>
 
-        <div class="form__row form__row--oneline">
-          <label for="fiat-currency-select">Zap Balance Fiat Currency:</label>
-          <select id="fiat-currency-select">
-            ${this.renderCurrencyOptions()}
-          </select>
+        <div class="setting">
+          <span class="setting__label">Zap Balance Fiat Currency</span>
+          <div class="setting__control" id="fiat-currency-dropdown-mount"></div>
         </div>
     `;
 
@@ -240,6 +228,29 @@ export class NWCSettingsSection extends SettingsSection {
   }
 
   /**
+   * Setup fiat currency dropdown
+   */
+  private setupFiatCurrencyDropdown(contentContainer: HTMLElement): void {
+    const mount = contentContainer.querySelector('#fiat-currency-dropdown-mount');
+    if (!mount) return;
+
+    const currencies = this.exchangeRateService.getAvailableCurrencies();
+    const options = currencies.map(c => ({ value: c.code, label: `${c.symbol} ${c.name} (${c.code})` }));
+
+    const dropdown = new CustomDropdown({
+      options,
+      selectedValue: this.fiatCurrencySettings.currency,
+      onChange: async (value) => {
+        this.fiatCurrencySettings.currency = value;
+        await this.saveFiatCurrencySettings();
+        ToastService.show('Fiat currency saved', 'success');
+      }
+    });
+
+    mount.appendChild(dropdown.getElement());
+  }
+
+  /**
    * Bind event listeners
    */
   private async bindListeners(contentContainer: HTMLElement): Promise<void> {
@@ -247,6 +258,9 @@ export class NWCSettingsSection extends SettingsSection {
 
     // Setup switches
     this.setupQuickZapSwitch(contentContainer);
+
+    // Setup fiat currency dropdown
+    this.setupFiatCurrencyDropdown(contentContainer);
 
     if (!isConnected) {
       // Connect button
@@ -316,14 +330,6 @@ export class NWCSettingsSection extends SettingsSection {
     };
     commentInput?.addEventListener('blur', saveComment);
     commentInput?.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveComment(); });
-
-    // Fiat currency: save on change
-    const currencySelect = contentContainer.querySelector('#fiat-currency-select') as HTMLSelectElement;
-    currencySelect?.addEventListener('change', async () => {
-      this.fiatCurrencySettings.currency = currencySelect.value;
-      await this.saveFiatCurrencySettings();
-      ToastService.show('Fiat currency saved', 'success');
-    });
   }
 
   /**
