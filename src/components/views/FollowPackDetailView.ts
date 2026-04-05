@@ -95,7 +95,7 @@ export class FollowPackDetailView extends View {
         <div class="follow-packs__detail-header">
           ${coverHtml}
           <div class="follow-packs__detail-info">
-            <div class="heading-back-btn-container">
+            <div class="l-spread">
               <h2 class="follow-packs__detail-title">${escapeHtml(pack.title)}</h2>
             </div>
             ${pack.description ? `<p class="follow-packs__detail-desc">${escapeHtml(pack.description)}</p>` : ''}

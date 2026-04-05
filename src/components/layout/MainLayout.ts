@@ -2031,7 +2031,7 @@ export class MainLayout {
 
     // Add header with title and back button
     const header = document.createElement('div');
-    header.className = 'list-view-primary__header heading-back-btn-container';
+    header.className = 'list-view-primary__header l-spread';
 
     const title = document.createElement('h2');
     title.className = 'list-view-primary__title';
@@ -2198,7 +2198,7 @@ export class MainLayout {
 
     // Add header with title and back button
     const header = document.createElement('div');
-    header.className = 'list-view-primary__header heading-back-btn-container';
+    header.className = 'list-view-primary__header l-spread';
 
     const titleEl = document.createElement('h1');
     titleEl.className = 'list-view-primary__title';

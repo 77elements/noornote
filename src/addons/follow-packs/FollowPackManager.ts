@@ -263,7 +263,7 @@ export class FollowPackManager {
     header.innerHTML = `
       ${coverHtml}
       <div class="follow-packs__detail-info">
-        <div class="heading-back-btn-container">
+        <div class="l-spread">
           <h2 class="follow-packs__detail-title">${escapeHtml(pack.title)}</h2>
           <button class="follow-packs__back-btn btn btn--medium btn--passive">&larr; Back</button>
         </div>
@@ -442,7 +442,7 @@ export class FollowPackManager {
     const header = document.createElement('div');
     header.className = 'follow-packs__edit-header';
     header.innerHTML = `
-      <div class="heading-back-btn-container">
+      <div class="l-spread">
         <h2 class="follow-packs__detail-title">${heading}</h2>
         <button class="follow-packs__back-btn btn btn--medium btn--passive">Cancel</button>
       </div>
@@ -806,7 +806,7 @@ export class FollowPackManager {
 
     // Header
     const header = document.createElement('div');
-    header.className = 'heading-back-btn-container follow-packs__section-header';
+    header.className = 'l-spread follow-packs__section-header';
     header.innerHTML = `
       <h2 class="follow-packs__title">${escapeHtml(pack.title)}</h2>
       <button class="follow-packs__back-btn btn btn--medium btn--passive">&larr; Back</button>

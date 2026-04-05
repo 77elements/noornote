@@ -18,7 +18,7 @@ export class SettingsSubPageView extends View {
     this.container.className = 'view-content view-content--settings';
 
     this.container.innerHTML = `
-      <div class="heading-back-btn-container">
+      <div class="l-spread">
         <h1 class="settings-title">${title}</h1>
         <button class="btn btn--medium btn--passive settings-sub-page__back"><span class="back-chevron" aria-hidden="true"></span> Back</button>
       </div>

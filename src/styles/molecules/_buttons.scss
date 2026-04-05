@@ -231,53 +231,6 @@
   color: var(--color-4);
 }
 
-.heading-back-btn-container {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: $gap;
-}
-
-// ========================================
-// Button Container
-// ========================================
-
-.btn-container {}
-
-.btn-container--btnright {
-  text-align: right;
-}
-
-.btn-container--center {
-  text-align: center;
-}
-
-.btn-container--2btns {
-  display: grid;
-  grid-template-columns: auto auto;
-  justify-content: end;
-  gap: 10px;
-}
-
-.btn-container--split {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: calc($gap / 2);
-
-  > :first-child {
-    justify-self: start;
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-  }
-
-  > :last-child {
-    justify-self: end;
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-  }
-}
 
 // ========================================
 // Show More/Less Button Modifier

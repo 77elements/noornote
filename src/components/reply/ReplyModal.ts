@@ -320,7 +320,7 @@ export class ReplyModal {
     const buttonLabel = this.isComment ? 'Comment' : 'Reply';
 
     return `
-      <div class="btn-container btn-container--split">
+      <div class="l-row l-row--split">
         ${this.toolbar.render()}
         <div>
           <div class="post-note-options" id="reply-note-options-container"></div>
@@ -463,7 +463,7 @@ export class ReplyModal {
     if (!modal) return;
 
     const header = modal.querySelector('.post-note-header');
-    const actions = modal.querySelector('.btn-container--split');
+    const actions = modal.querySelector('.l-row--split');
 
     if (header && actions) {
       const oldEditor = modal.querySelector('.textarea') || modal.querySelector('.post-note-preview');

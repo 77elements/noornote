@@ -105,6 +105,7 @@
 @use '../addons/marketplace/marketplace';
 
 // 4. Molecules - Combinations of atoms
+@use 'molecules/layouts';
 @use 'molecules/buttons';
 @use 'molecules/sections';
 @use 'molecules/nav-list';

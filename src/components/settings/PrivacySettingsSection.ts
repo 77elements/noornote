@@ -106,7 +106,7 @@ export class PrivacySettingsSection extends SettingsSection {
           <p class="setting__desc">${config.description}</p>
           <p class="setting__desc ${config.id}-warning"><strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private ${config.listName}.</p>
         </div>
-        <div class="btn-container btn-container--btnright">
+        <div class="l-row l-row--right">
           <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
         </div>
       </section>

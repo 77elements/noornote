@@ -154,7 +154,7 @@ export class ListingEditorView extends View {
 
     this.container.innerHTML = `
       <div class="article-editor">
-        <header class="heading-back-btn-container">
+        <header class="l-spread">
           <h1>${this.isEditMode ? 'Edit Listing' : 'New Listing'}</h1>
           <button class="btn btn--passive btn--medium" data-action="back">Back</button>
         </header>

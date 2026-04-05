@@ -120,7 +120,7 @@ export class NotificationPrioritySection extends SettingsSection {
           ${this.renderPriorityZone(2)}
           ${this.renderPriorityZone(3)}
 
-          <div class="btn-container btn-container--2btns">
+          <div class="l-row l-row--end-pair">
             <button class="btn btn--passive" data-action="reset-priorities">
               Reset to Defaults
             </button>

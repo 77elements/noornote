@@ -59,7 +59,7 @@ export class UnlockNoorSignerModal {
           autocomplete="off"
         />
         <p class="keysigner-password-modal__error" id="unlock-ns-password-error" style="display: none;"></p>
-        <div class="btn-container btn-container--2btns">
+        <div class="l-row l-row--end-pair">
           <button type="button" class="btn btn--passive" id="unlock-ns-cancel-btn">
             Cancel
           </button>

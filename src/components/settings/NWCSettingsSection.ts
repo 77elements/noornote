@@ -150,7 +150,7 @@ export class NWCSettingsSection extends SettingsSection {
           </div>
           <p class="setting__desc">Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps.</p>
         </div>
-        <div class="btn-container btn-container--center">
+        <div class="l-row l-row--center">
           <button class="btn" id="nwc-connect-btn">Connect Wallet</button>
         </div>
       `;

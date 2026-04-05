@@ -1,0 +1,59 @@
+/**
+ * Layout Containers
+ * Agnostic layout patterns that arrange child elements.
+ * No visual styling — purely structural.
+ */
+
+@use '../abstracts/variables' as *;
+
+// ========================================
+// Spread: flex row, space-between
+// ========================================
+
+.l-spread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap;
+}
+
+// ========================================
+// Row: generic container with modifiers
+// ========================================
+
+.l-row {}
+
+.l-row--right {
+  text-align: right;
+}
+
+.l-row--center {
+  text-align: center;
+}
+
+.l-row--end-pair {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  gap: 10px;
+}
+
+.l-row--split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc($gap / 2);
+
+  > :first-child {
+    justify-self: start;
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+  }
+
+  > :last-child {
+    justify-self: end;
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+  }
+}

@@ -69,7 +69,7 @@ export class PollCreator {
             <div class="poll-creator__option" data-option-id="${option.id}">
               <input
                 type="text"
-                class="poll-creator__option-input"
+                class="input"
                 placeholder="Option ${index + 1}"
                 value="${option.label}"
                 data-option-input="${option.id}"
@@ -88,7 +88,7 @@ export class PollCreator {
           `).join('')}
         </div>
 
-        <button class="poll-creator__add-option" data-action="add-option" type="button">
+        <button class="btn btn--passive" data-action="add-option" type="button">
           + Add Option
         </button>
 

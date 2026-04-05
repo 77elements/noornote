@@ -114,7 +114,7 @@ export class CacheSettingsSection extends SettingsSection {
             </label>
           </div>
 
-          <div class="btn-container btn-container--btnright">
+          <div class="l-row l-row--right">
             <button class="btn btn--danger" id="clear-selected-btn">Clear Selected</button>
             <button class="btn btn--danger" id="clear-all-btn">Clear All & Reload</button>
           </div>

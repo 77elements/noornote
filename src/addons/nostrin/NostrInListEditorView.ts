@@ -77,7 +77,7 @@ export class NostrInListEditorView extends View {
   private render(): void {
     this.container.innerHTML = `
       <div class="nostrin-list-editor">
-        <div class="heading-back-btn-container">
+        <div class="l-spread">
           <h1>Create your list</h1>
           <button class="btn btn--medium btn--passive" data-action="back">&larr; Back</button>
         </div>
