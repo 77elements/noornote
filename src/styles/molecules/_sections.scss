@@ -28,9 +28,9 @@
 //   </div>
 .setting {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: $gap 0;
+  gap: $gap;
   margin-bottom: $gap;
 
   &:last-child {
@@ -44,6 +44,10 @@
 
   &__control {
     justify-self: end;
+
+    &--stretch {
+      justify-self: stretch;
+    }
   }
 
   &__desc {

@@ -138,31 +138,30 @@ export class NWCSettingsSection extends SettingsSection {
     // NWC connection section (connect or disconnect)
     const nwcSection = isConnected
       ? `
-        <div class="zap-connected">
-          <div class="zap-wallet-status">
+        <div class="zap-wallet-status">
             <span class="wallet-icon">⚡</span>
             <div class="wallet-connected-info">
               <span class="wallet-connected-text">Lightning Wallet Connected</span>
               ${lightningAddress ? `<span class="wallet-ln-address">${lightningAddress}</span>` : ''}
             </div>
-            <button class="btn btn--mini" id="nwc-disconnect-btn">Disconnect</button>
-          </div>
+            <button class="btn" id="nwc-disconnect-btn">Disconnect</button>
         </div>
       `
       : `
-        <div class="zap-info">
-          <p>Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps. Get your NWC connection string from your Lightning wallet provider (Alby, Mutiny, etc.).</p>
+        <div class="setting">
+          <span class="setting__label">NWC String</span>
+          <div class="setting__control setting__control--stretch">
+            <input
+              type="password"
+              id="nwc-string"
+              class="input"
+              placeholder="nostr+walletconnect://..."
+            />
+          </div>
+          <p class="setting__desc">Connect your Lightning wallet via Nostr Wallet Connect (NWC) to send zaps.</p>
         </div>
-
-        <div class="zap-connect">
-          <label for="nwc-connection-string">NWC Connection String:</label>
-          <input
-            type="password"
-            id="nwc-connection-string"
-            class="nwc-input"
-            placeholder="nostr+walletconnect://..."
-          />
-          <button class="btn btn--medium" id="nwc-connect-btn">Connect Wallet</button>
+        <div class="btn-container btn-container--center">
+          <button class="btn" id="nwc-connect-btn">Connect Wallet</button>
         </div>
       `;
 
@@ -249,7 +248,7 @@ export class NWCSettingsSection extends SettingsSection {
     if (!isConnected) {
       // Connect button
       const connectBtn = contentContainer.querySelector('#nwc-connect-btn');
-      const connectionInput = contentContainer.querySelector('#nwc-connection-string') as HTMLInputElement;
+      const connectionInput = contentContainer.querySelector('#nwc-string') as HTMLInputElement;
 
       connectBtn?.addEventListener('click', async () => {
         const connectionString = connectionInput?.value.trim();
