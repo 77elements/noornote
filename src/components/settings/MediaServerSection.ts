@@ -8,6 +8,7 @@
 
 import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
+import { CustomDropdown } from '../ui/CustomDropdown';
 import { ToastService } from '../../services/ToastService';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
@@ -113,12 +114,10 @@ export class MediaServerSection extends SettingsSection {
   private renderContent(): string {
     return `
         <section class="section">
-          <h2 class="subsection-title">Media Server</h3>
           ${this.renderMediaServer()}
         </section>
 
         <section class="section">
-          <h2 class="subsection-title">Sensitive Media</h3>
           ${this.renderSensitiveMedia()}
         </section>
     `;
@@ -128,56 +127,24 @@ export class MediaServerSection extends SettingsSection {
    * Render media server subsection
    */
   private renderMediaServer(): string {
-    const popularServers = MediaServerSection.POPULAR_SERVERS;
-
     return `
-        <div class="form__info">
-          <p>Choose where to upload images, videos, and other media files. Noornote supports both Blossom and NIP-96 protocols.</p>
+        <div class="setting">
+          <span class="setting__label">Media Server</span>
+          <div class="setting__control" id="media-server-dropdown-mount"></div>
+          <p class="setting__desc">Choose where to upload images, videos, and other media files. Noornote supports both Blossom and NIP-96 protocols.</p>
         </div>
 
-        <div class="form__row form__row--oneline">
-          <label for="media-server-url">Media Server:</label>
-          <select id="media-server-url">
-            ${popularServers.map(server => `
-              <option value="${server.url}" ${this.mediaServerSettings.url === server.url ? 'selected' : ''}>
-                ${server.name}
-              </option>
-            `).join('')}
-            <option value="custom" ${!popularServers.some(s => s.url === this.mediaServerSettings.url) ? 'selected' : ''}>
-              Custom...
-            </option>
-          </select>
-        </div>
-
-        <div class="media-server-custom ${!popularServers.some(s => s.url === this.mediaServerSettings.url) ? '' : 'hidden'}" id="custom-server-section">
+        <div class="media-server-custom ${!MediaServerSection.POPULAR_SERVERS.some(s => s.url === this.mediaServerSettings.url) ? '' : 'hidden'}" id="custom-server-section">
           <label for="custom-media-server-url">Custom Server URL:</label>
           <input
             type="text"
             id="custom-media-server-url"
-            class="media-server-input"
+            class="input"
             placeholder="https://your-server.com"
-            value="${!popularServers.some(s => s.url === this.mediaServerSettings.url) ? this.mediaServerSettings.url : ''}"
+            value="${!MediaServerSection.POPULAR_SERVERS.some(s => s.url === this.mediaServerSettings.url) ? this.mediaServerSettings.url : ''}"
           />
         </div>
 
-        <div class="form__row">
-          <label>Protocol:</label>
-          <div class="protocol-switch">
-            <button
-              class="protocol-btn ${this.mediaServerSettings.protocol === 'blossom' ? 'active' : ''}"
-              data-protocol="blossom"
-            >
-              Blossom
-            </button>
-            <button
-              class="protocol-btn ${this.mediaServerSettings.protocol === 'nip96' ? 'active' : ''}"
-              data-protocol="nip96"
-            >
-              NIP-96
-            </button>
-          </div>
-          <p class="form__note">Most servers auto-detect. Use Blossom for newer servers, NIP-96 for legacy.</p>
-        </div>
     `;
   }
 
@@ -186,20 +153,60 @@ export class MediaServerSection extends SettingsSection {
    */
   private renderSensitiveMedia(): string {
     return `
-        <div class="form__info">
-          <p>Control how sensitive content (NSFW) is displayed. When disabled, NSFW images and videos will be blurred.</p>
-        </div>
-
-        <div class="sensitive-media-switch-container" id="sensitive-media-switch-container">
-          <!-- Switch will be mounted here -->
+        <div class="setting">
+          <span class="setting__label">Sensitive Media</span>
+          <div class="setting__control" id="sensitive-media-switch-container"></div>
+          <p class="setting__desc">Control how sensitive content (NSFW) is displayed. When disabled, NSFW images and videos will be blurred.</p>
         </div>
     `;
+  }
+
+  /**
+   * Setup media server dropdown
+   */
+  private setupMediaServerDropdown(contentContainer: HTMLElement): void {
+    const mount = contentContainer.querySelector('#media-server-dropdown-mount');
+    if (!mount) return;
+
+    const popularServers = MediaServerSection.POPULAR_SERVERS;
+    const options = [
+      ...popularServers.map(s => ({ value: s.url, label: s.name })),
+      { value: 'custom', label: 'Custom...' }
+    ];
+
+    const isCustom = !popularServers.some(s => s.url === this.mediaServerSettings.url);
+    const selectedValue = isCustom ? 'custom' : this.mediaServerSettings.url;
+
+    const dropdown = new CustomDropdown({
+      options,
+      selectedValue,
+      onChange: (value) => {
+        const customSection = contentContainer.querySelector('#custom-server-section');
+        if (value === 'custom') {
+          customSection?.classList.remove('hidden');
+        } else {
+          customSection?.classList.add('hidden');
+          this.mediaServerSettings.url = value;
+
+          const selectedServer = popularServers.find(s => s.url === value);
+          const detectedProtocol = selectedServer?.protocol || this.getProtocolForServer(value);
+          this.mediaServerSettings.protocol = detectedProtocol;
+          this.mediaServerSettings.maxFileSize = selectedServer?.maxFileSize;
+
+          this.saveMediaServerSettings();
+          ToastService.show('Media server saved', 'success');
+        }
+      }
+    });
+
+    mount.appendChild(dropdown.getElement());
   }
 
   /**
    * Bind event listeners
    */
   private bindListeners(contentContainer: HTMLElement): void {
+    this.setupMediaServerDropdown(contentContainer);
     this.bindMediaServerListeners(contentContainer);
     this.bindSensitiveMediaListeners(contentContainer);
   }
@@ -208,36 +215,7 @@ export class MediaServerSection extends SettingsSection {
    * Bind media server event listeners
    */
   private bindMediaServerListeners(contentContainer: HTMLElement): void {
-    const dropdown = contentContainer.querySelector('#media-server-url') as HTMLSelectElement;
-    const customSection = contentContainer.querySelector('#custom-server-section');
     const customInput = contentContainer.querySelector('#custom-media-server-url') as HTMLInputElement;
-
-    dropdown?.addEventListener('change', () => {
-      if (dropdown.value === 'custom') {
-        customSection?.classList.remove('hidden');
-      } else {
-        customSection?.classList.add('hidden');
-        this.mediaServerSettings.url = dropdown.value;
-
-        const selectedServer = MediaServerSection.POPULAR_SERVERS.find(s => s.url === dropdown.value);
-        const detectedProtocol = selectedServer?.protocol || this.getProtocolForServer(dropdown.value);
-        this.mediaServerSettings.protocol = detectedProtocol;
-        this.mediaServerSettings.maxFileSize = selectedServer?.maxFileSize;
-
-        const protocolButtons = contentContainer.querySelectorAll('.protocol-btn');
-        protocolButtons.forEach(btn => {
-          const btnProtocol = (btn as HTMLElement).dataset.protocol;
-          if (btnProtocol === detectedProtocol) {
-            btn.classList.add('active');
-          } else {
-            btn.classList.remove('active');
-          }
-        });
-
-        this.saveMediaServerSettings();
-        ToastService.show('Media server saved', 'success');
-      }
-    });
 
     const saveCustomUrl = () => {
       const url = customInput?.value.trim();
@@ -256,23 +234,6 @@ export class MediaServerSection extends SettingsSection {
       if (e.key === 'Enter') saveCustomUrl();
     });
 
-    const protocolButtons = contentContainer.querySelectorAll('.protocol-btn');
-    protocolButtons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const button = e.currentTarget as HTMLElement;
-        const protocol = button.dataset.protocol as 'blossom' | 'nip96';
-
-        if (!protocol) return;
-
-        this.mediaServerSettings.protocol = protocol;
-
-        protocolButtons.forEach(b => b.classList.remove('active'));
-        button.classList.add('active');
-
-        this.saveMediaServerSettings();
-        ToastService.show(`Protocol set to ${protocol === 'blossom' ? 'Blossom' : 'NIP-96'}`, 'success');
-      });
-    });
   }
 
   /**
