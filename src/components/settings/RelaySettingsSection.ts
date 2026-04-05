@@ -186,7 +186,7 @@ export class RelaySettingsSection extends SettingsSection {
           <div class="relay-add-form">
             <input
               type="text"
-              class="relay-input"
+              class="input"
               placeholder="wss://relay.example.com"
               id="new-relay-url"
             />
@@ -248,21 +248,21 @@ export class RelaySettingsSection extends SettingsSection {
         <div class="relay-controls">
           <div class="relay-types">
             <button
-              class="relay-type-btn ${relay.types.includes('read') ? 'active' : ''}"
+              class="btn ${relay.types.includes('read') ? '' : 'btn--passive'}"
               data-type="read"
               data-url="${relay.url}"
             >
               Read
             </button>
             <button
-              class="relay-type-btn ${relay.types.includes('write') ? 'active' : ''}"
+              class="btn ${relay.types.includes('write') ? '' : 'btn--passive'}"
               data-type="write"
               data-url="${relay.url}"
             >
               Write
             </button>
             <button
-              class="relay-type-btn ${relay.types.includes('inbox') ? 'active' : ''}"
+              class="btn ${relay.types.includes('inbox') ? '' : 'btn--passive'}"
               data-type="inbox"
               data-url="${relay.url}"
             >
@@ -293,7 +293,7 @@ export class RelaySettingsSection extends SettingsSection {
     });
 
     // Relay type toggle buttons
-    const typeButtons = contentContainer.querySelectorAll('.relay-type-btn');
+    const typeButtons = contentContainer.querySelectorAll('.relay-types .btn');
     typeButtons.forEach(btn => {
       btn.addEventListener('click', (e) => this.handleToggleRelayType(e));
     });
@@ -355,10 +355,10 @@ export class RelaySettingsSection extends SettingsSection {
 
     if (relay.types.includes(type)) {
       relay.types = relay.types.filter(t => t !== type);
-      btn.classList.remove('active');
+      btn.classList.add('btn--passive');
     } else {
       relay.types.push(type);
-      btn.classList.add('active');
+      btn.classList.remove('btn--passive');
     }
 
     await this.saveAndPublish();

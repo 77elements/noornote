@@ -126,10 +126,9 @@
 // Relay Health Summary
 .relay-health-summary {
   padding: $gap;
-  margin-bottom: $gap * 2;
   background: $alpha-medium;
-  border: 1px solid var(--color-3);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
+  text-align: center;
 }
 
 .health-summary-empty {
@@ -138,7 +137,7 @@
 }
 
 .health-summary-status {
-  margin-bottom: calc($gap / 2);
+  .badge { padding: $gap; }
 }
 
 
@@ -157,29 +156,7 @@
 .relay-add-form {
   display: flex;
   gap: $gap;
-  margin-bottom: $gap * 2;
-  border-top: 1px solid var(--color-2);
-
-  .relay-input {
-    flex: 1;
-    padding: calc($gap / 2) $gap;
-    background: var(--color-2);
-    border: 1px solid var(--color-3);
-    border-radius: $radius-sm;
-    color: var(--color-5);
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-4);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-  }
-
-  // Button styles moved to molecules/_buttons.scss
+  margin-bottom: $gap;
 }
 
 // Relay list
@@ -191,10 +168,9 @@
 }
 
 .relay-item {
-  padding: calc($gap / 2);
+  padding: $gap;
   background: var(--color-1);
-  border: 1px solid var(--color-2);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   transition: background 0.2s ease;
 
   &:hover {
@@ -206,7 +182,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  margin-bottom: calc($gap / 2);
+  margin-bottom: $gap;
 
   .relay-url {
     color: var(--color-5);
@@ -247,6 +223,7 @@
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
+  padding-left: $gap;
 }
 
 .relay-types {
@@ -255,28 +232,6 @@
   flex: 1;
 }
 
-.relay-type-btn {
-  padding: calc($gap / 4) calc($gap / 2);
-  background: transparent;
-  border: 1px solid var(--color-4);
-  border-radius: $radius-sm;
-  color: var(--color-4);
-  @extend %small;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-
-  &:hover {
-    background: color-mix(in srgb, var(--color-4) 10%, transparent);
-  }
-
-  &.active {
-    background: var(--color-4);
-    border-color: var(--color-4);
-    color: var(--color-1);
-  }
-}
 
 .relay-remove-btn {
   background: none;
@@ -544,15 +499,13 @@
   .relay-types {
     justify-content: stretch;
 
-    .relay-type-btn {
+    .btn {
       flex: 1;
     }
   }
 
   .relay-add-form {
     flex-direction: column;
-
-    // Button styles moved to molecules/_buttons.scss
   }
 
   .settings-grid {
