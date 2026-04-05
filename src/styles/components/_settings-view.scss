@@ -503,9 +503,7 @@
   align-items: center;
   gap: $gap;
   padding: $gap;
-  background: color-mix(in srgb, var(--color-4) 10%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-4) 30%, transparent);
-  border-radius: $radius-sm;
+  flex-wrap: wrap;
 
   .wallet-icon {
     @extend %icon-md;
@@ -525,7 +523,8 @@
 
   .wallet-ln-address {
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
+    word-break: break-all;
   }
 }
 

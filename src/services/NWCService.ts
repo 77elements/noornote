@@ -483,11 +483,8 @@ export class NWCService {
    * Check if encrypted file storage should be used
    */
   private async shouldUseEncryptedFile(): Promise<boolean> {
-    const { PerAccountLocalStorage, StorageKeys } = await import('./PerAccountLocalStorage');
     const { PlatformService } = await import('./PlatformService');
-    const storage = PerAccountLocalStorage.getInstance();
-    const useEncryptedFile = storage.get(StorageKeys.NWC_USE_ENCRYPTED_FILE, false);
-    return useEncryptedFile && PlatformService.getInstance().isDesktop;
+    return PlatformService.getInstance().isDesktop;
   }
 
   /**
