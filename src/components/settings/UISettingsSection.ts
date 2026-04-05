@@ -109,7 +109,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">Automatically check for updates</span>
             <div class="setting__control" id="auto-update-switch-container"></div>
           </div>
-          <div>
+          <div class="l-row l-row--center">
             <button class="btn btn--mini" id="check-update-now-btn">Check now</button>
           </div>
         </section>
