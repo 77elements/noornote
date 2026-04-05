@@ -63,7 +63,7 @@ export class KeySignerPasswordModal {
           autocomplete="off"
         />
         <p class="keysigner-password-modal__error" id="keysigner-password-error" style="display: none;"></p>
-        <div class="keysigner-password-modal__actions">
+        <div class="btn-container btn-container--2btns">
           <button type="button" class="btn btn--passive" id="keysigner-password-cancel-btn">
             Cancel
           </button>

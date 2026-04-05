@@ -242,7 +242,9 @@
 // Button Container
 // ========================================
 
-.btn-container {}
+.btn-container {
+  margin-bottom: $gap;
+}
 
 .btn-container--btnright {
   text-align: right;
@@ -250,6 +252,13 @@
 
 .btn-container--center {
   text-align: center;
+}
+
+.btn-container--2btns {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: end;
+  gap: 10px;
 }
 
 // ========================================
