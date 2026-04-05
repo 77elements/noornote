@@ -320,16 +320,12 @@ export class ReplyModal {
     const buttonLabel = this.isComment ? 'Comment' : 'Reply';
 
     return `
-      <div class="post-note-actions">
+      <div class="btn-container btn-container--split">
         ${this.toolbar.render()}
-        <div class="post-note-buttons">
-          <div class="post-note-options" id="reply-note-options-container">
-            <!-- NSFW switch will be inserted here after media upload -->
-          </div>
-          <div class="post-note-actions-right">
-            <button class="btn btn--passive" data-action="cancel">Cancel</button>
-            <button class="btn" data-action="post" ${isPostDisabled ? 'disabled' : ''}>${buttonLabel}</button>
-          </div>
+        <div>
+          <div class="post-note-options" id="reply-note-options-container"></div>
+          <button class="btn btn--passive" data-action="cancel">Cancel</button>
+          <button class="btn" data-action="post" ${isPostDisabled ? 'disabled' : ''}>${buttonLabel}</button>
         </div>
       </div>
     `;
@@ -467,7 +463,7 @@ export class ReplyModal {
     if (!modal) return;
 
     const header = modal.querySelector('.post-note-header');
-    const actions = modal.querySelector('.post-note-actions');
+    const actions = modal.querySelector('.btn-container--split');
 
     if (header && actions) {
       const oldEditor = modal.querySelector('.textarea') || modal.querySelector('.post-note-preview');

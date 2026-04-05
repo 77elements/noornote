@@ -757,10 +757,6 @@
   align-items: center;
   gap: $gap;
   flex-shrink: 0;
-
-  .switch-container {
-    margin-bottom: 0;
-  }
 }
 
 // ========================================
@@ -769,13 +765,25 @@
 .notification-priority-settings {
   display: flex;
   flex-direction: column;
-  gap: $gap;
 }
 
 .priority-zone {
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-sm;
+  border-radius: 0;
+
+  &[data-priority="1"] {
+    border-radius: $radius-xl $radius-xl 0 0;
+  }
+
+  &[data-priority="3"] {
+    border-radius: 0 0 $radius-xl $radius-xl;
+    margin-bottom: $gap;
+  }
+
+  & + & {
+    border-top: none;
+  }
   overflow: hidden;
 
   &__header {
@@ -849,7 +857,7 @@
   padding: calc($gap / 2) $gap;
   background: var(--color-1);
   border: 1px solid var(--color-3);
-  border-radius: $radius-sm;
+  border-radius: $radius-pill;
   cursor: grab;
   user-select: none;
   transition: all 0.2s ease;
@@ -888,10 +896,6 @@
   }
 }
 
-.notification-priority-actions {
-  padding-top: $gap;
-  border-top: 1px solid var(--color-3);
-}
 
 @keyframes badge-pulse-preview {
   0%, 100% {

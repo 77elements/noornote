@@ -21,7 +21,6 @@
     grid-template-columns: 1fr 1fr;
     grid-gap: calc($gap / 2);
     padding: calc($gap / 2) 0; // Mobile-first base
-    border-bottom: 1px solid var(--color-2);
     background: var(--color-1);
 
     .timeline-view-selector {

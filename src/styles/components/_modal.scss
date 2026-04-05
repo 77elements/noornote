@@ -82,10 +82,14 @@
 
   // Body (content area)
   &__body {
-    padding: $gap $gap 0 $gap;
+    padding: $gap;
     overflow-y: auto;
     flex: 1;
     @include custom-scrollbar;
+
+    > :last-child {
+      margin-bottom: 0;
+    }
   }
 
   // Loading state

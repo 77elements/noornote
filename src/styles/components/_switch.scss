@@ -8,9 +8,7 @@
 @use '../base/typography' as *;
 
 // Container
-.switch-container {
-  margin-bottom: $gap;
-}
+.switch-container {}
 
 // Label wrapper — grid ensures switch stays right-aligned
 .switch-label {

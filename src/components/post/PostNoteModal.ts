@@ -230,16 +230,12 @@ export class PostNoteModal {
     });
 
     return `
-      <div class="post-note-actions">
+      <div class="btn-container btn-container--split">
         ${this.toolbar.render()}
-        <div class="post-note-buttons">
-          <div class="post-note-options" id="post-note-options-container">
-            <!-- NSFW switch will be inserted here after media upload -->
-          </div>
-          <div class="post-note-actions-right">
-            <button class="btn btn--passive" data-action="cancel">Cancel</button>
-            <button class="btn" data-action="post" ${validation.isValid ? '' : 'disabled'}>Post</button>
-          </div>
+        <div>
+          <div class="post-note-options" id="post-note-options-container"></div>
+          <button class="btn btn--passive" data-action="cancel">Cancel</button>
+          <button class="btn" data-action="post" ${validation.isValid ? '' : 'disabled'}>Post</button>
         </div>
       </div>
     `;
@@ -299,7 +295,7 @@ export class PostNoteModal {
     if (!modal) return;
 
     const header = modal.querySelector('.post-note-header');
-    const actions = modal.querySelector('.post-note-actions');
+    const actions = modal.querySelector('.btn-container--split');
 
     if (header && actions) {
       const oldEditor = modal.querySelector('.textarea') || modal.querySelector('.post-note-preview');
