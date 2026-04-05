@@ -45,9 +45,7 @@ export class ThreadContextIndicator {
   private createElement(): HTMLElement {
     const container = document.createElement('div');
     container.className = 'thread-context-indicator';
-    container.innerHTML = `
-      <div class="thread-context-loading">Loading thread context...</div>
-    `;
+    container.innerHTML = '';
     return container;
   }
 
