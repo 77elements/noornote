@@ -13,6 +13,7 @@ export class ProfileSearchComponent {
   private eventBus: EventBus;
   private isExpanded: boolean = false;
   private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
+  private clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
 
   constructor(pubkeyHex: string) {
     this.pubkeyHex = pubkeyHex;
@@ -34,11 +35,10 @@ export class ProfileSearchComponent {
         <a href="#" class="profile-search__link">Search in this npub</a>
       </div>
       <div class="profile-search__overlay is-hidden">
-        <button class="profile-search__close" type="button" title="Close (ESC)">×</button>
         <div class="profile-search__form">
           <input
             type="text"
-            class="profile-search__input"
+            class="input"
             placeholder="Search terms..."
           />
           <button class="profile-search__btn btn-medium btn-passive" type="button">
@@ -57,10 +57,8 @@ export class ProfileSearchComponent {
    */
   private setupEventListeners(): void {
     const link = this.container.querySelector('.profile-search__link');
-    const input = this.container.querySelector('.profile-search__input') as HTMLInputElement;
+    const input = this.container.querySelector('.input') as HTMLInputElement;
     const button = this.container.querySelector('.profile-search__btn');
-    const closeBtn = this.container.querySelector('.profile-search__close');
-
     // Toggle search field
     link?.addEventListener('click', (e) => {
       e.preventDefault();
@@ -79,11 +77,6 @@ export class ProfileSearchComponent {
     button?.addEventListener('click', () => {
       this.performSearch();
     });
-
-    // Handle close button click
-    closeBtn?.addEventListener('click', () => {
-      this.collapseSearch();
-    });
   }
 
   /**
@@ -100,7 +93,7 @@ export class ProfileSearchComponent {
     this.isExpanded = true;
 
     // Focus input
-    const input = this.container.querySelector('.profile-search__input') as HTMLInputElement;
+    const input = this.container.querySelector('.input') as HTMLInputElement;
     setTimeout(() => input?.focus(), 100);
 
     // Add ESC key listener
@@ -110,6 +103,17 @@ export class ProfileSearchComponent {
       }
     };
     document.addEventListener('keydown', this.escapeHandler);
+
+    // Close on click outside (delay to avoid catching the trigger click)
+    setTimeout(() => {
+      this.clickOutsideHandler = (e: MouseEvent) => {
+        const overlayEl = this.container.querySelector('.profile-search__overlay');
+        if (this.isExpanded && overlayEl && !overlayEl.contains(e.target as Node)) {
+          this.collapseSearch();
+        }
+      };
+      document.addEventListener('click', this.clickOutsideHandler);
+    }, 0);
   }
 
   /**
@@ -120,7 +124,7 @@ export class ProfileSearchComponent {
 
     const trigger = this.container.querySelector('.profile-search__trigger') as HTMLElement;
     const overlay = this.container.querySelector('.profile-search__overlay') as HTMLElement;
-    const input = this.container.querySelector('.profile-search__input') as HTMLInputElement;
+    const input = this.container.querySelector('.input') as HTMLInputElement;
 
     overlay.classList.add('is-hidden');
     trigger.classList.remove('is-hidden');
@@ -129,10 +133,14 @@ export class ProfileSearchComponent {
     // Clear input
     if (input) input.value = '';
 
-    // Remove ESC key listener
+    // Remove listeners
     if (this.escapeHandler) {
       document.removeEventListener('keydown', this.escapeHandler);
       this.escapeHandler = null;
+    }
+    if (this.clickOutsideHandler) {
+      document.removeEventListener('click', this.clickOutsideHandler);
+      this.clickOutsideHandler = null;
     }
   }
 
@@ -140,7 +148,7 @@ export class ProfileSearchComponent {
    * Perform search
    */
   private async performSearch(): Promise<void> {
-    const input = this.container.querySelector('.profile-search__input') as HTMLInputElement;
+    const input = this.container.querySelector('.input') as HTMLInputElement;
     const button = this.container.querySelector('.profile-search__btn') as HTMLButtonElement;
     const searchTerms = input.value.trim();
 
@@ -219,6 +227,9 @@ export class ProfileSearchComponent {
   public destroy(): void {
     if (this.escapeHandler) {
       document.removeEventListener('keydown', this.escapeHandler);
+    }
+    if (this.clickOutsideHandler) {
+      document.removeEventListener('click', this.clickOutsideHandler);
     }
     this.container.remove();
   }

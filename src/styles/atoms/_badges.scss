@@ -5,7 +5,6 @@
  *
  * NOT badges (don't use .badge for these):
  * - Positioned lock icons (🔒) → just a span with component-specific positioning
- * - Subtle inline text ("Follows you", "Private") → component-specific text styling
  */
 
 @use '../abstracts/variables' as *;

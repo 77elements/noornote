@@ -24,7 +24,7 @@
     text-align: right;
     background: $alpha-heavy;
     padding: 4px 8px;
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     margin-right: 10px;
   }
 
@@ -52,7 +52,7 @@
     background: $alpha-heavy;
     backdrop-filter: blur(8px);
     border: 1px solid var(--color-3);
-    border-radius: $radius-lg;
+    border-radius: 40px;
     padding: $gap;
     min-width: 310px;
     box-shadow: $box-shadow;
@@ -64,55 +64,20 @@
     }
   }
 
-  &__close {
-    position: absolute;
-    top: 0;
-    right: calc($gap / 4);
-    background: transparent;
-    border: none;
-    color: var(--color-5);
-    @extend %icon-md;
-    line-height: 1;
-    cursor: pointer;
-    padding: calc($gap / 4);
-    transition: color 0.2s ease;
-    opacity: 0.6;
-
-    &:hover {
-      opacity: 1;
-      color: var(--color-4);
-    }
-  }
 
   &__form {
     display: flex;
     gap: calc($gap / 2);
   }
 
-  &__input {
+  .input {
     flex: 1;
-    background: var(--color-1);
-    color: var(--color-5);
-    border: 1px solid var(--color-3);
-    border-radius: $radius-base;
-    padding: calc($gap / 2);
-    outline: none;
-    transition: border-color 0.2s ease;
-
-    &:focus {
-      border-color: var(--color-4);
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-4) 20%, transparent);
-    }
-
-    &::placeholder {
-      color: var(--text-alpha-light);
-    }
   }
 
   &__status {
     @extend %small;
     padding: calc($gap / 4) calc($gap / 2);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
 
     &--info {
       background: color-mix(in srgb, var(--color-4) 20%, transparent);

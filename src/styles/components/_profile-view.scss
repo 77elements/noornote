@@ -12,6 +12,7 @@
 .profile-nip01 {
   position: relative;
   margin: 0;
+  padding-bottom: $gap;
 }
 
 .profile-banner {
@@ -82,11 +83,8 @@
   gap: $gap;
   position: relative;
 
-  // "Follows you" badge positioned next to avatar
-  .follows-you-badge {
-    position: absolute;
-    top: 55px;
-    left: 120px;
+  .badge {
+    align-self: center;
   }
 }
 
@@ -147,6 +145,10 @@
   color: var(--color-5);
   font-family: monospace;
   position: relative;
+
+  > button {
+    border-radius: 50%;
+  }
 
   &:has(.copy-btn.copied) {
     .copy-feedback {
@@ -319,9 +321,6 @@
   flex-wrap: wrap;
   gap: $gap;
   margin: 0;
-  padding: calc($gap / 2) 0;
-  border-top: 1px solid var(--color-2);
-  border-bottom: 1px solid var(--color-2);
 }
 
 // Stat item (standalone)
@@ -356,16 +355,6 @@
   }
 }
 
-// Follows You Badge
-.follows-you-badge {
-  display: inline-block;
-  align-items: center;
-  padding: calc($gap / 4) calc($gap / 2);
-  @extend %small;
-  color: $color-3;
-  font-weight: 500;
-  white-space: nowrap;
-}
 
 // Follow Dropdown styles moved to molecules/_follow-dropdown.scss
 
@@ -466,10 +455,7 @@
 }
 
 // Profile Timeline Container
-.profile-timeline {
-  border-top: 1px solid var(--color-2);
-  padding-top: calc($gap / 2);
-}
+.profile-timeline {}
 
 .profile-timeline-heading {
   margin-bottom: 0;

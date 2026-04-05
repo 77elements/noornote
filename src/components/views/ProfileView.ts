@@ -550,7 +550,7 @@ export class ProfileView extends View {
         <div class="profile-info">
           <div class="profile-avatar-wrapper">
             <img src="${escapeHtml(picture)}" alt="${escapeHtml(displayName)}" class="profile-pic profile-pic--big" />
-            ${this.followsYou ? '<div class="follows-you-badge">Follows you</div>' : ''}
+            ${this.followsYou ? '<span class="badge badge--green">Follows you</span>' : ''}
           </div>
 
           <div class="profile-meta">
