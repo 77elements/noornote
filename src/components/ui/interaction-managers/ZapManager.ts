@@ -38,6 +38,7 @@ export class ZapManager {
   private zapButton: HTMLElement | null = null;
   private zappedAmount: number = 0;
   private canReceiveZaps: boolean = true; // Assume true until checked
+  private disabledReason: string | null = null;
 
   constructor(config: ZapManagerConfig) {
     this.config = config;
@@ -60,6 +61,10 @@ export class ZapManager {
    */
   public setButtonElement(button: HTMLElement): void {
     this.zapButton = button;
+    // Re-apply disabled state if it was determined before the button existed
+    if (this.disabledReason) {
+      this.disableZapButton(this.disabledReason);
+    }
   }
 
   /**
@@ -84,15 +89,23 @@ export class ZapManager {
 
   /**
    * Check if recipient has Lightning wallet configured (lud16/lud06)
-   * Disables zap button if no wallet found
+   * Also disables the button when the recipient is the current user (self-zap)
    */
   public async checkRecipientCanReceiveZaps(): Promise<void> {
+    // Self-zap: disable immediately, no need to fetch profile
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser && this.config.authorPubkey === currentUser.pubkey) {
+      this.canReceiveZaps = false;
+      this.disableZapButton('You cannot zap your own notes');
+      return;
+    }
+
     try {
       const profile = await this.userProfileService.getUserProfile(this.config.authorPubkey);
 
       if (!profile || (!profile.lud16 && !profile.lud06)) {
         this.canReceiveZaps = false;
-        this.disableZapButton();
+        this.disableZapButton('This user has no Lightning wallet configured');
       }
     } catch (error) {
       // On error, leave button enabled (fail open)
@@ -101,14 +114,15 @@ export class ZapManager {
   }
 
   /**
-   * Disable zap button (no Lightning wallet)
+   * Disable zap button visually
    */
-  private disableZapButton(): void {
+  private disableZapButton(reason: string): void {
+    this.disabledReason = reason;
     if (!this.zapButton) return;
 
     this.zapButton.classList.add('disabled');
     this.zapButton.setAttribute('disabled', 'true');
-    this.zapButton.title = 'This user has no Lightning wallet configured';
+    this.zapButton.title = reason;
   }
 
   /**
