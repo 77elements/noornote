@@ -337,5 +337,8 @@ export function replaceMediaPlaceholders(
     }
   });
 
+  // Collapse consecutive <br> tags immediately before a media block to a single <br>
+  result = result.replace(/(?:<br\s*\/?>\s*){2,}(<div class="note-media)/gi, '<br>$1');
+
   return result;
 }

@@ -330,8 +330,9 @@
 .note-card--zap-receipt {
   background: color-mix(in srgb, var(--color-3) 30%, transparent);
   border: 1px solid color-mix(in srgb, var(--color-4) 30%, transparent);
-  border-radius: $radius-md;
+  border-radius: $radius-pill;
   padding: $gap;
+  margin-top: $gap;
 
   &:hover {
     background: color-mix(in srgb, var(--color-3) 50%, transparent);
