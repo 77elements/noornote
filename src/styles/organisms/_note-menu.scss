@@ -48,7 +48,7 @@
   padding: calc($gap / 2);
   background: var(--color-2);
   border: 1px solid color-mix(in srgb, var(--color-2) 80%, white);
-  border-radius: $radius-md;
+  border-radius: $radius-pill;
   box-shadow: $box-shadow;
   z-index: 1000;
 }

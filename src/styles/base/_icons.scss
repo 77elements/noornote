@@ -3,6 +3,8 @@
  * icon-sm: 20px, icon-md: 24px, icon-lg: 48px
  */
 
+@use '../abstracts/variables' as *;
+
 %icon-sm {
   font-size: 20px;
 }
@@ -38,3 +40,9 @@
 .icon-lg {
   @extend %icon-lg;
 }
+
+// Chevron atoms — see %chevron-* placeholders in abstracts/_variables.scss
+.chevron-left  { @extend %chevron-left; }
+.chevron-right { @extend %chevron-right; }
+.chevron-up    { @extend %chevron-up; }
+.chevron-down  { @extend %chevron-down; }

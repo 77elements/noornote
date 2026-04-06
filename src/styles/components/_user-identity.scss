@@ -13,13 +13,6 @@
   gap: calc($gap / 2);
 }
 
-.user-identity__avatar {
-  border-radius: $radius-full;
-  object-fit: cover;
-  flex-shrink: 0;
-  transition: opacity 0.3s ease; // For profile recognition blinking
-}
-
 // Info container (username + handle stacked)
 .user-identity__info {
   display: flex;
@@ -47,27 +40,8 @@
 
 // Size variants
 .user-identity--small {
-  .user-identity__avatar {
-    width: 24px;
-    height: 24px;
-  }
-
   .user-identity__username {
     @include h5;
-  }
-}
-
-.user-identity--medium {
-  .user-identity__avatar {
-    width: 32px;
-    height: 32px;
-  }
-}
-
-.user-identity--large {
-  .user-identity__avatar {
-    width: 48px;
-    height: 48px;
   }
 }
 

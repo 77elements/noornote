@@ -15,8 +15,6 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 0 $gap 0;
-  border-bottom: 1px solid var(--color-2);
 }
 
 .messages-view__actions {
@@ -26,7 +24,6 @@
 }
 
 .messages-view__tabs {
-  padding: 0 0 $gap 0;
   border-bottom: 1px solid var(--color-2);
 }
 
@@ -207,24 +204,6 @@
   flex-shrink: 0;
 }
 
-.conversation-view__back-btn {
-  background: none;
-  border: none;
-  padding: calc($gap / 2);
-  margin: calc($gap / -2);
-  cursor: pointer;
-  color: var(--color-4);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: $radius-full;
-  transition: background-color 0.15s ease;
-
-  &:hover {
-    background: color-mix(in srgb, var(--color-4) 10%, transparent);
-  }
-}
-
 .conversation-view__user {
   display: flex;
   align-items: center;
@@ -347,14 +326,14 @@
 .conversation-view__messages .message {
   max-width: 75%;
   padding: calc($gap * 0.75) $gap;
-  border-radius: $radius-lg;
+  border-radius: $radius-pill;
   position: relative;
 
   &--own {
     align-self: flex-end;
     background: var(--color-3);
     color: var(--color-1);
-    border-bottom-right-radius: $radius-base;
+    border-bottom-right-radius: 0;
 
     .message__time {
       color: $alpha-heavy;
@@ -365,7 +344,7 @@
     align-self: flex-start;
     background: var(--color-2);
     color: var(--color-5);
-    border-bottom-left-radius: $radius-base;
+    border-bottom-left-radius: 0;
 
     .message__time {
       color: var(--color-3);

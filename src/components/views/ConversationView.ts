@@ -80,8 +80,8 @@ export class ConversationView extends View {
   private render(): void {
     this.container.innerHTML = `
       <div class="conversation-view__header">
-        <button class="conversation-view__back-btn">
-          <svg width="20" height="20"><use href="#icon-chevron-left"/></svg>
+        <button class="btn btn--square" data-action="back">
+          <span class="chevron-left"></span>
         </button>
         <div class="conversation-view__user"></div>
         <button class="note-menu-trigger conversation-view__menu-trigger" aria-label="User options">
@@ -125,7 +125,7 @@ export class ConversationView extends View {
    */
   private setupEventListeners(): void {
     // Back button
-    const backBtn = this.container.querySelector('.conversation-view__back-btn');
+    const backBtn = this.container.querySelector('[data-action="back"]');
     backBtn?.addEventListener('click', () => {
       this.router.navigate('/messages');
     });

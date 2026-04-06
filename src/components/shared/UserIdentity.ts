@@ -113,7 +113,7 @@ export class UserIdentity {
 
     if (this.config.showAvatar) {
       const avatar = document.createElement('img');
-      avatar.className = 'user-identity__avatar';
+      avatar.className = 'profile-pic profile-pic--medium';
       avatar.alt = 'Avatar';
       avatar.loading = 'lazy';
       container.appendChild(avatar);
@@ -204,7 +204,7 @@ export class UserIdentity {
 
     // Update avatar with blinking
     if (this.config.showAvatar) {
-      const avatarEl = this.element.querySelector('.user-identity__avatar') as HTMLImageElement;
+      const avatarEl = this.element.querySelector('img.profile-pic') as HTMLImageElement;
       if (avatarEl) {
         if (shouldBlink) {
           // Initialize blinker if needed
