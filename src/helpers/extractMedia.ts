@@ -90,7 +90,8 @@ export function extractMedia(text: string): MediaContent[] {
   });
 
   // YouTube detection (keep query params — v= is essential)
-  const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/gi;
+  // Accepts any subdomain (www, m, music, …) so leftover URL fragments don't survive into the rendered text
+  const youtubeRegex = /(?:https?:\/\/)?(?:[a-z0-9-]+\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/gi;
   let match;
   while ((match = youtubeRegex.exec(text)) !== null) {
     media.push({
