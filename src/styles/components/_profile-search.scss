@@ -52,7 +52,7 @@
     background: $alpha-heavy;
     backdrop-filter: blur(8px);
     border: 1px solid var(--color-3);
-    border-radius: 40px;
+    border-radius: $radius-3xl;
     padding: $gap;
     min-width: 310px;
     box-shadow: $box-shadow;

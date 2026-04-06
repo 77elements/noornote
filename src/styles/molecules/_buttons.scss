@@ -86,6 +86,7 @@
 .btn--large {
   padding: $gap calc($gap * 1.5);
   font-size: 19px;
+  border-radius: $radius-2xl;
 }
 
 // ========================================
@@ -258,5 +259,19 @@
   width: 30px;
   height: 30px;
   border: none;
+  border-radius: 50%;
+}
+
+.btn--square-lg {
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+}
+
+.btn--square-elg {
+  justify-content: center;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
 }

@@ -80,6 +80,10 @@
   text-align: center;
   margin: $gap;
 
+  .btn {
+    border-radius: $radius-2xl;
+  }
+
   .auth-hint {
     margin-top: $gap;
     color: var(--color-3);
@@ -114,9 +118,10 @@
   span {
     position: relative;
     display: inline-block;
-    padding: 0 $gap;
+    padding: calc($gap / 2) $gap;
     background: var(--color-2);
     color: var(--color-3);
+    border-radius: $radius-xl;
   }
 }
 
@@ -176,9 +181,10 @@
   span {
     position: relative;
     display: inline-block;
-    padding: 0 $gap;
+    padding: calc($gap / 2) $gap;
     background: var(--color-2);
     color: var(--color-3);
+    border-radius: $radius-xl;
   }
 }
 

@@ -47,7 +47,7 @@
 
 .welcome-hero__tagline {
   @include h4;
-  color: rgba($color-5, 0.4);
+  color: var(--color-3);
   margin-bottom: $gap * 3;
 }
 
@@ -64,22 +64,28 @@
 }
 
 .welcome-hero__benefit {
+  @extend %bg-section;
   @include card-base;
   padding: $gap * 1.5 $gap;
   text-align: center;
-  background: rgba($color-5, 0.03);
-  border: 1px solid rgba($color-5, 0.06);
+  border-radius: $radius-pill;
+
+  > * {
+    margin-bottom: $gap;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
 }
 
 .welcome-hero__benefit-icon {
   @include h1;
-  margin-bottom: calc($gap / 2);
 }
 
 .welcome-hero__benefit-title {
   @include h4;
   font-weight: 700;
-  margin-bottom: calc($gap / 4);
   color: var(--color-5);
 }
 
@@ -96,7 +102,7 @@
 
 .welcome-hero__benefit-desc {
   @include compact;
-  color: rgba($color-5, 0.4);
+  color: var(--color-5);
   line-height: 1.5;
 }
 
@@ -110,7 +116,7 @@
 
 .welcome-hero__note {
   @include compact;
-  color: rgba($color-5, 0.25);
+  color: var(--color-3);
 }
 
 
@@ -134,7 +140,7 @@
 
   h2 {
     @include h3;
-    color: rgba($color-5, 0.5);
+    color: var(--color-3);
     margin-bottom: 0;
   }
 }
@@ -461,7 +467,7 @@
 
   &__note {
     @include compact;
-    color: rgba($color-5, 0.25);
+    color: var(--color-3);
     margin-top: $gap;
   }
 }
@@ -507,7 +513,7 @@
     width: 100%;
     text-align: center;
     @include small;
-    color: rgba($color-5, 0.25);
+    color: var(--color-3);
     margin-top: calc($gap / 4);
   }
 }

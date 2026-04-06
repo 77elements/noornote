@@ -526,7 +526,7 @@ export class AccountSetupWizard {
 
   private renderNavigation(step: WizardStep): HTMLElement {
     const nav = document.createElement('div');
-    nav.className = 'wizard-nav';
+    nav.className = 'wizard-nav l-row--split';
 
     const isFirst = this.currentStepIndex === 0;
     const isRequired = step.required;
@@ -565,14 +565,14 @@ export class AccountSetupWizard {
 
     if (!isFirst) {
       const prevBtn = document.createElement('button');
-      prevBtn.className = 'btn btn--large btn--passive';
+      prevBtn.className = 'btn btn--square-elg btn--passive';
       prevBtn.textContent = '<';
       prevBtn.addEventListener('click', () => this.goToPreviousStep());
       navRight.appendChild(prevBtn);
     }
 
     const nextBtn = document.createElement('button');
-    nextBtn.className = 'btn btn--large';
+    nextBtn.className = 'btn btn--square-elg';
     nextBtn.textContent = '>';
     // Set initial state based on validation (after a microtask to let render complete)
     if (isRequired) {
@@ -987,7 +987,7 @@ export class AccountSetupWizard {
               <label>Private Key (nsec) - KEEP THIS SECRET!</label>
               <div class="wizard-input-row">
                 <input type="text" class="input input--monospace" value="${this.currentKeypair.nsec}" readonly data-key="nsec" />
-                <button class="btn btn--mini" data-action="copy-nsec">Copy</button>
+                <button class="btn btn--large" data-action="copy-nsec">Copy</button>
               </div>
             </div>
 
@@ -995,7 +995,7 @@ export class AccountSetupWizard {
               <label>Public Key (npub) - Your username</label>
               <div class="wizard-input-row">
                 <input type="text" class="input input--monospace" value="${this.currentKeypair.npub}" readonly data-key="npub" />
-                <button class="btn btn--mini" data-action="copy-npub">Copy</button>
+                <button class="btn btn--large" data-action="copy-npub">Copy</button>
               </div>
             </div>
           </div>
@@ -1698,7 +1698,7 @@ IMPORTANT:
         addRow.className = 'wizard-relay-add';
         addRow.innerHTML = `
           <input type="text" class="input" id="wizard-relay-custom" placeholder="wss://relay.example.com" />
-          <button class="btn btn--passive" data-action="add-relay">Add</button>
+          <button class="btn btn--passive btn--square-elg" data-action="add-relay">Add</button>
         `;
         el.appendChild(addRow);
 
@@ -1900,7 +1900,7 @@ IMPORTANT:
     }
 
     const grid = document.createElement('div');
-    grid.className = 'wizard-pack-grid';
+    grid.className = 'follow-packs__grid';
 
     if (!this.followPacksLoaded) {
       grid.innerHTML = '<p class="wizard-intro">Loading follow packs...</p>';
@@ -1929,7 +1929,7 @@ IMPORTANT:
 
     this.followPacks.forEach((pack, index) => {
       const card = document.createElement('div');
-      card.className = 'wizard-pack-card';
+      card.className = 'follow-packs__card';
       card.addEventListener('click', () => {
         this.followPackView = 'detail';
         this.selectedPackIndex = index;
@@ -1938,20 +1938,27 @@ IMPORTANT:
         this.loadPackProfiles(index);
       });
 
-      const coverDiv = document.createElement('div');
-      coverDiv.className = 'wizard-pack-cover';
       if (pack.coverImage) {
-        coverDiv.style.backgroundImage = `url('${pack.coverImage}')`;
+        const cover = document.createElement('img');
+        cover.className = 'follow-packs__card-cover';
+        cover.src = pack.coverImage;
+        cover.alt = pack.title;
+        card.appendChild(cover);
+      } else {
+        const cover = document.createElement('div');
+        cover.className = 'follow-packs__card-cover follow-packs__card-cover--placeholder';
+        card.appendChild(cover);
       }
-      card.appendChild(coverDiv);
 
-      const info = document.createElement('div');
-      info.className = 'wizard-pack-info';
-      info.innerHTML = `
-        <div class="wizard-pack-title">${escapeHtml(pack.title)}</div>
-        <div class="wizard-pack-meta">${pack.userPubkeys.length} users</div>
+      const body = document.createElement('div');
+      body.className = 'follow-packs__card-body';
+      body.innerHTML = `
+        <div class="follow-packs__card-title">${escapeHtml(pack.title)}</div>
+        <div class="follow-packs__card-meta">
+          <span class="follow-packs__card-count">${pack.userPubkeys.length} users</span>
+        </div>
       `;
-      card.appendChild(info);
+      card.appendChild(body);
 
       grid.appendChild(card);
     });
@@ -1974,18 +1981,19 @@ IMPORTANT:
 
     // Cover
     if (pack.coverImage) {
-      const cover = document.createElement('div');
-      cover.className = 'wizard-pack-detail-cover';
-      cover.style.backgroundImage = `url('${pack.coverImage}')`;
+      const cover = document.createElement('img');
+      cover.className = 'follow-packs__detail-cover';
+      cover.src = pack.coverImage;
+      cover.alt = pack.title;
       el.appendChild(cover);
     }
 
     // Title + description
     const header = document.createElement('div');
-    header.className = 'wizard-pack-detail-header';
+    header.className = 'follow-packs__detail-header';
     header.innerHTML = `
-      <h2>${escapeHtml(pack.title)}</h2>
-      ${pack.description ? `<p class="wizard-intro">${escapeHtml(pack.description)}</p>` : ''}
+      <h2 class="follow-packs__detail-title">${escapeHtml(pack.title)}</h2>
+      ${pack.description ? `<p class="follow-packs__detail-desc">${escapeHtml(pack.description)}</p>` : ''}
     `;
     el.appendChild(header);
 
@@ -2005,32 +2013,27 @@ IMPORTANT:
 
     // User list
     const userList = document.createElement('div');
-    userList.className = 'wizard-pack-user-list';
+    userList.className = 'ui-list follow-packs__members';
 
     pack.userPubkeys.forEach(pubkey => {
       const profile = pack.userProfiles?.get(pubkey);
       const isFollowed = this.followedPubkeys.has(pubkey);
+      const username = profile?.name || pubkey.slice(0, 12) + '...';
 
       const row = document.createElement('div');
-      row.className = 'wizard-pack-user-row';
+      row.className = 'ui-list__item follow-packs__member-item';
 
-      const avatar = document.createElement('div');
-      avatar.className = 'wizard-pack-user-avatar';
-      if (profile?.picture) {
-        avatar.style.backgroundImage = `url('${profile.picture}')`;
-      }
-      row.appendChild(avatar);
-
-      const info = document.createElement('div');
-      info.className = 'wizard-pack-user-info';
-      info.innerHTML = `
-        <div class="wizard-pack-user-name">${escapeHtml(profile?.name || pubkey.slice(0, 12) + '...')}</div>
-        ${profile?.about ? `<div class="wizard-pack-user-bio">${escapeHtml(profile.about.slice(0, 120))}${profile.about.length > 120 ? '...' : ''}</div>` : ''}
+      row.innerHTML = `
+        <div class="follow-packs__member-avatar profile-pic-container">
+          <img class="profile-pic profile-pic--medium" src="${escapeHtml(profile?.picture || '')}" alt="${escapeHtml(username)}" />
+        </div>
+        <div class="follow-packs__member-info">
+          <div class="follow-packs__member-name">${escapeHtml(username)}</div>
+        </div>
       `;
-      row.appendChild(info);
 
       const followBtn = document.createElement('button');
-      followBtn.className = `btn btn--small ${isFollowed ? 'btn--passive' : ''}`;
+      followBtn.className = `btn btn--medium follow-packs__member-action-btn ${isFollowed ? 'btn--passive' : ''}`;
       followBtn.textContent = isFollowed ? 'Following' : 'Follow';
       followBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -2158,7 +2161,7 @@ IMPORTANT:
           <p><strong>Step 2:</strong> Paste your one-time code from Rizful below.</p>
           <div class="wizard-relay-add">
             <input type="text" class="input" id="wizard-rizful-code" placeholder="Paste one-time code" />
-            <button class="btn" data-action="redeem-code">Connect</button>
+            <button class="btn btn--large" data-action="redeem-code">Connect</button>
           </div>
           <div class="wizard-lightning-status" data-lightning-status></div>
         `;
@@ -2255,7 +2258,7 @@ IMPORTANT:
             ${this.followedPubkeys.size > 0 ? `<p class="wizard-done-bio">Following ${this.followedPubkeys.size} account${this.followedPubkeys.size !== 1 ? 's' : ''}</p>` : ''}
             ${this.profileData.lud16 ? `<p class="wizard-done-bio">⚡ ${escapeHtml(this.profileData.lud16)}</p>` : ''}
           </div>
-          <div class="wizard-nav" style="border-top: none;">
+          <div class="wizard-nav l-row--split" style="border-top: none;">
             <button class="btn btn--large btn--passive" data-wizard-action="prev"><</button>
             <button class="btn btn--large" data-wizard-action="finish"${this.publishing ? ' disabled' : ''}>
               <span data-finish-text>Save & Go to Timeline</span>
