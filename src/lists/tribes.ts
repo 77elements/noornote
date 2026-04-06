@@ -1468,11 +1468,14 @@ export async function publishToRelays(): Promise<void> {
     const dTagForRelay = set.d === '' ? 'tribes/' : `tribes/${set.d}`;
 
     // Build tags
+    const { isClientTagEnabled } = await import('../helpers/clientTagSetting');
     const tags: string[][] = [
       ['d', dTagForRelay],
       ['title', set.title || set.d],
-      ['client', 'NoorNote']
     ];
+    if (isClientTagEnabled()) {
+      tags.push(['client', 'NoorNote']);
+    }
 
     for (const member of set.publicMembers) {
       tags.push(['p', member.pubkey, member.relay || '']);

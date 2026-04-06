@@ -23,6 +23,7 @@ export class UISettingsSection extends SettingsSection {
   private eventBus: EventBus;
   private layoutModeDropdown: CustomDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
+  private clientTagSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
   private autoUpdateSwitch: Switch | null = null;
   private themeSwitcher: ThemeSwitcher | null = null;
@@ -99,6 +100,16 @@ export class UISettingsSection extends SettingsSection {
             <div class="setting__control" id="post-truncation-switch-container"></div>
             <p class="setting__desc">
               When enabled, long posts will always be displayed in full without "Show More" buttons.
+            </p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Sign posts with "via NoorNote"</span>
+            <div class="setting__control" id="client-tag-switch-container"></div>
+            <p class="setting__desc">
+              When enabled, every event you publish carries a <code>client</code> tag identifying NoorNote (and the platform you posted from). Other Nostr clients display this as "via NoorNote" next to your posts.
             </p>
           </div>
         </section>
@@ -222,6 +233,26 @@ export class UISettingsSection extends SettingsSection {
 
       postTruncationContainer.innerHTML = this.postTruncationSwitch.render();
       this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
+    }
+
+    // Initialize Client Tag switch
+    const clientTagContainer = contentContainer.querySelector('#client-tag-switch-container');
+    if (clientTagContainer) {
+      import('../../helpers/clientTagSetting').then(({ isClientTagEnabled, setClientTagEnabled }) => {
+        this.clientTagSwitch = new Switch({
+          label: '',
+          checked: isClientTagEnabled(),
+          onChange: (checked) => {
+            setClientTagEnabled(checked);
+            ToastService.show(
+              checked ? 'Posts will be signed with "via NoorNote"' : 'Posts will be signed without client tag',
+              'success'
+            );
+          }
+        });
+        clientTagContainer.innerHTML = this.clientTagSwitch.render();
+        this.clientTagSwitch.setupEventListeners(clientTagContainer as HTMLElement);
+      });
     }
 
     // Initialize Auto-Update switch (Desktop only)
