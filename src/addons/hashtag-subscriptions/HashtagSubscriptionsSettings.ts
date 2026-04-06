@@ -30,10 +30,12 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
+    const contentZone = parentContainer.querySelector('[data-addon-content="hashtag-subscriptions"]') as HTMLElement | null;
+
     const enabled = isHashtagSubscriptionsEnabled();
 
     this.enableSwitch = new Switch({
-      label: 'Enable Hashtag Subscriptions',
+      label: '',
       checked: enabled,
       onChange: async (checked) => {
         setHashtagSubscriptionsEnabled(checked);
@@ -45,23 +47,27 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
           this.hashtagService?.stopPolling();
           ToastService.show('Hashtag Subscriptions disabled', 'success');
         }
-        this.renderContent(contentContainer, checked);
+        if (contentZone) this.renderContent(contentZone, checked);
       }
     });
 
-    const switchWrapper = document.createElement('div');
-    switchWrapper.innerHTML = this.enableSwitch.render();
-    contentContainer.appendChild(switchWrapper);
-    this.enableSwitch.setupEventListeners(switchWrapper);
+    contentContainer.innerHTML = `
+      <div class="setting">
+        <span class="setting__label">Enable Hashtag Subscriptions</span>
+        <div class="setting__control">${this.enableSwitch.render()}</div>
+        <p class="setting__desc">Subscribe to any hashtag or word and get notified when someone posts a note containing it.</p>
+      </div>
+    `;
+    this.enableSwitch.setupEventListeners(contentContainer);
 
-    if (enabled) {
-      this.loadService().then(() => this.renderContent(contentContainer, true));
+    if (enabled && contentZone) {
+      this.loadService().then(() => this.renderContent(contentZone, true));
     }
 
     // Listen for subscription updates
     this.subscriptionEventId = this.eventBus.on('hashtag-subscription:updated', () => {
-      if (isHashtagSubscriptionsEnabled()) {
-        this.renderSubscriptionsList(contentContainer);
+      if (isHashtagSubscriptionsEnabled() && contentZone) {
+        this.renderSubscriptionsList(contentZone);
       }
     });
   }
@@ -85,7 +91,8 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
       <div class="subscription-search">
         <input
           type="text"
-          class="subscription-input"
+          class="input"
+          data-subscription-input
           placeholder="Enter hashtag (without #)"
         />
         <button class="btn btn--medium hashtag-search-btn">Search</button>
@@ -100,7 +107,7 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
 
   private bindSearchHandler(wrapper: HTMLElement): void {
     const searchBtn = wrapper.querySelector('.hashtag-search-btn');
-    const searchInput = wrapper.querySelector('.subscription-input') as HTMLInputElement;
+    const searchInput = wrapper.querySelector('[data-subscription-input]') as HTMLInputElement;
     if (!searchBtn || !searchInput) return;
 
     const handleSearch = () => {

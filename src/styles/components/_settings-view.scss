@@ -599,29 +599,9 @@
   gap: $gap;
   margin-bottom: $gap * 2;
   padding-top: $gap;
-  border-top: 1px solid var(--color-2);
 
-  .subscription-input {
+  .input {
     flex: 1;
-    padding: calc($gap / 2) $gap;
-    background: var(--color-2);
-    border: 1px solid var(--color-3);
-    border-radius: $radius-sm;
-    color: var(--color-5);
-
-    &::placeholder {
-      color: var(--text-alpha-light);
-    }
-
-    &:focus {
-      outline: none;
-      border-color: var(--color-4);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
   }
 }
 
@@ -811,7 +791,7 @@
     padding: $gap;
     background: $bg-error;
     border: 1px solid rgba($color-red, 0.5);
-    border-radius: $radius-sm;
+    border-radius: $radius-pill;
     margin-bottom: $gap * 2;
 
     svg {
@@ -840,8 +820,7 @@
     gap: $gap;
     padding: $gap;
     background: var(--color-2);
-    border: 1px solid var(--color-3);
-    border-radius: $radius-sm;
+    border-radius: $radius-pill;
 
     &-info {
       flex: 1;

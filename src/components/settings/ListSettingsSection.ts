@@ -39,11 +39,13 @@ export class ListSettingsSection extends SettingsSection {
     const contentContainer = this.getContentContainer(parentContainer);
     if (!contentContainer) return;
 
+    const contentZone = parentContainer.querySelector('[data-addon-content="list-settings"]') as HTMLElement | null;
+
     const enabled = isListSettingsEnabled();
 
     // Switch toggle
     this.enableSwitch = new Switch({
-      label: 'Enable Advanced List Management',
+      label: '',
       checked: enabled,
       onChange: (checked) => {
         setListSettingsEnabled(checked);
@@ -52,17 +54,21 @@ export class ListSettingsSection extends SettingsSection {
           this.currentMode = 'easy';
           setListSyncMode('easy');
         }
-        this.renderAdvancedContent(contentContainer, checked);
+        if (contentZone) this.renderAdvancedContent(contentZone, checked);
         const label = checked ? 'Advanced List Management enabled' : 'Advanced List Management disabled (Easy Mode)';
         ToastService.show(label, 'success');
       }
     });
 
-    const switchWrapper = document.createElement('div');
-    switchWrapper.innerHTML = this.enableSwitch.render();
-    contentContainer.appendChild(switchWrapper);
-    this.enableSwitch.setupEventListeners(switchWrapper);
-    this.renderAdvancedContent(contentContainer, enabled);
+    contentContainer.innerHTML = `
+      <div class="setting">
+        <span class="setting__label">Enable Advanced List Management</span>
+        <div class="setting__control">${this.enableSwitch.render()}</div>
+        <p class="setting__desc">Switch between Easy Mode (automatic sync) and Manual Mode (action buttons in every list to control sync from/to relays and local backups). Also unlocks the Danger Zone for resetting corrupted list data.</p>
+      </div>
+    `;
+    this.enableSwitch.setupEventListeners(contentContainer);
+    if (contentZone) this.renderAdvancedContent(contentZone, enabled);
 
     // Sync when mode changes externally (e.g. "Switch to manual mode" link in list views)
     this.modeChangedSubscriptionId = EventBus.getInstance().on(
@@ -80,7 +86,7 @@ export class ListSettingsSection extends SettingsSection {
           this.enableSwitch?.setChecked(false);
         }
 
-        this.renderAdvancedContent(contentContainer, isListSettingsEnabled());
+        if (contentZone) this.renderAdvancedContent(contentZone, isListSettingsEnabled());
       }
     );
   }
@@ -111,39 +117,16 @@ export class ListSettingsSection extends SettingsSection {
           <h4 class="subsection-title">Synchronisation Mode</h4>
 
           <div class="mode-options">
-            <label class="mode-option ${this.currentMode === 'manual' ? 'mode-option--active' : ''}">
-              <input
-                type="radio"
-                name="list-sync-mode"
-                value="manual"
-                ${this.currentMode === 'manual' ? 'checked' : ''}
-              />
-              <div class="mode-option__content">
-                <div class="mode-option__title">Manual Mode</div>
-                <div class="mode-option__description">
-                  Manage sync manually with action buttons in each list. You decide when to sync from relays, publish to relays, or save backups.
-                </div>
-              </div>
+            <label class="nn-checkbox nn-checkbox--label-left nn-checkbox--with-desc">
+              <span class="setting__label">Manual Mode</span>
+              <input type="radio" name="list-sync-mode" value="manual" ${this.currentMode === 'manual' ? 'checked' : ''} />
+              <p class="nn-checkbox__desc">Manage sync manually with action buttons in each list. You decide when to sync from relays, publish to relays, or save backups.</p>
             </label>
 
-            <label class="mode-option ${this.currentMode === 'easy' ? 'mode-option--active' : ''}">
-              <input
-                type="radio"
-                name="list-sync-mode"
-                value="easy"
-                ${this.currentMode === 'easy' ? 'checked' : ''}
-              />
-              <div class="mode-option__content">
-                <div class="mode-option__title">Easy Mode</div>
-                <div class="mode-option__description">
-                  NoorNote syncs automatically:
-                  <ul class="mode-option__features">
-                    <li>Changes saved to local backup immediately</li>
-                    <li>Then published to relays automatically</li>
-                    <li>On startup: restore from backup or relays if needed</li>
-                  </ul>
-                </div>
-              </div>
+            <label class="nn-checkbox nn-checkbox--label-left nn-checkbox--with-desc">
+              <span class="setting__label">Easy Mode</span>
+              <input type="radio" name="list-sync-mode" value="easy" ${this.currentMode === 'easy' ? 'checked' : ''} />
+              <p class="nn-checkbox__desc">NoorNote syncs automatically: changes are saved to a local backup immediately, then published to relays. On startup it restores from backup or relays if needed.</p>
             </label>
           </div>
         </div>
@@ -204,17 +187,6 @@ export class ListSettingsSection extends SettingsSection {
       radio.addEventListener('change', (e) => {
         const target = e.target as HTMLInputElement;
         this.currentMode = target.value as ListSyncMode;
-
-        // Update active state on labels
-        const labels = contentContainer.querySelectorAll('.mode-option');
-        labels.forEach(label => {
-          const input = label.querySelector('input') as HTMLInputElement;
-          if (input.checked) {
-            label.classList.add('mode-option--active');
-          } else {
-            label.classList.remove('mode-option--active');
-          }
-        });
 
         setListSyncMode(this.currentMode);
         const modeLabel = this.currentMode === 'easy' ? 'Easy Mode' : 'Manual Mode';

@@ -288,7 +288,8 @@ label {
     pointer-events: none;
   }
 
-  input[type="checkbox"] {
+  input[type="checkbox"],
+  input[type="radio"] {
     cursor: pointer;
     width: 18px;
     height: 18px;
@@ -309,6 +310,27 @@ label {
       font-size: 14px;
       line-height: 1;
     }
+  }
+
+  // Variant: label on the left, control on the right
+  &--label-left {
+    flex-direction: row;
+  }
+
+  // Variant: label + control on row 1, description spanning row 2
+  &--with-desc {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    row-gap: calc($gap / 2);
+  }
+
+  &__desc {
+    grid-column: 1 / -1;
+    margin: 0;
+    @extend %small;
+    color: var(--color-3);
+    line-height: 1.4;
   }
 
   // Small variant — compact 13px row for inline filter controls

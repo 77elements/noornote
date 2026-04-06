@@ -16,7 +16,7 @@ export class NostrInSettings extends SettingsSection {
     if (!contentContainer) return;
 
     this.enableSwitch = new Switch({
-      label: 'Enable NostrIn',
+      label: '',
       checked: isNostrInEnabled(),
       onChange: (checked) => {
         setNostrInEnabled(checked);
@@ -25,7 +25,13 @@ export class NostrInSettings extends SettingsSection {
       }
     });
 
-    contentContainer.innerHTML = this.enableSwitch.render();
+    contentContainer.innerHTML = `
+      <div class="setting">
+        <span class="setting__label">Enable NostrIn</span>
+        <div class="setting__control">${this.enableSwitch.render()}</div>
+        <p class="setting__desc">Mount a bookmark folder or a custom list of users to your own profile so other NoorNote users can see them. Client-side only — nothing is published to relays.</p>
+      </div>
+    `;
     this.enableSwitch.setupEventListeners(contentContainer);
   }
 

@@ -145,19 +145,12 @@ export class FollowPackManager {
     const wrapper = document.createElement('div');
     wrapper.className = 'follow-packs';
 
-    // Header with title
-    const header = document.createElement('div');
-    header.className = 'follow-packs__header';
-    header.innerHTML = `<h2 class="follow-packs__title">Follow Packs</h2>`;
-    wrapper.appendChild(header);
-
     // Teaser + Create button (only if logged in)
     const currentUser = this.authService.getCurrentUser();
     if (currentUser) {
       const teaser = document.createElement('div');
       teaser.className = 'follow-packs__teaser';
       teaser.innerHTML = `
-        <p class="follow-packs__teaser-text">Discover and share curated lists of Nostr users to follow. Find the users that are most interesting to you or create your own lists.</p>
         <button class="btn follow-packs__btn-create">Create New Follow Pack</button>
       `;
       wrapper.appendChild(teaser);
@@ -176,7 +169,7 @@ export class FollowPackManager {
     }
 
     const grid = document.createElement('div');
-    grid.className = 'follow-packs__grid';
+    grid.className = 'follow-packs__grid nn-card-grid';
 
     this.packs.forEach((pack, index) => {
       const card = this.createPackCard(pack, index);
@@ -192,17 +185,17 @@ export class FollowPackManager {
 
   private createPackCard(pack: FollowPack, _index: number): HTMLElement {
     const card = document.createElement('div');
-    card.className = 'follow-packs__card';
+    card.className = 'nn-card follow-packs__card';
 
     const coverHtml = pack.coverImage
-      ? `<img src="${escapeHtmlAttr(pack.coverImage)}" alt="" class="follow-packs__card-cover" loading="lazy" />`
-      : '<div class="follow-packs__card-cover follow-packs__card-cover--placeholder"></div>';
+      ? `<div class="nn-card__image"><img src="${escapeHtmlAttr(pack.coverImage)}" alt="" loading="lazy" /></div>`
+      : '<div class="nn-card__image follow-packs__card-cover--placeholder"></div>';
 
     card.innerHTML = `
       ${coverHtml}
-      <div class="follow-packs__card-body">
-        <div class="follow-packs__card-title">${escapeHtml(pack.title)}</div>
-        <div class="follow-packs__card-meta">
+      <div class="nn-card__body">
+        <div class="nn-card__title">${escapeHtml(pack.title)}</div>
+        <div class="nn-card__meta">
           <span class="follow-packs__card-author" data-pubkey="${pack.authorPubkey}"></span>
           <span class="follow-packs__card-count">${pack.userPubkeys.length} people</span>
         </div>
@@ -808,7 +801,7 @@ export class FollowPackManager {
     const header = document.createElement('div');
     header.className = 'l-spread follow-packs__section-header';
     header.innerHTML = `
-      <h2 class="follow-packs__title">${escapeHtml(pack.title)}</h2>
+      <h2>${escapeHtml(pack.title)}</h2>
       <button class="follow-packs__back-btn btn btn--medium btn--passive">&larr; Back</button>
     `;
     wrapper.appendChild(header);

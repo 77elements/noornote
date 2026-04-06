@@ -22,7 +22,7 @@ export class FollowPacksSettings extends SettingsSection {
     if (!contentContainer) return;
 
     this.enableSwitch = new Switch({
-      label: 'Enable Follow Packs',
+      label: '',
       checked: isFollowPacksEnabled(),
       onChange: (checked) => {
         setFollowPacksEnabled(checked);
@@ -31,7 +31,13 @@ export class FollowPacksSettings extends SettingsSection {
       }
     });
 
-    contentContainer.innerHTML = this.enableSwitch.render();
+    contentContainer.innerHTML = `
+      <div class="setting">
+        <span class="setting__label">Enable Follow Packs</span>
+        <div class="setting__control">${this.enableSwitch.render()}</div>
+        <p class="setting__desc">Discover and share curated lists of Nostr users to follow. Find the users that are most interesting to you or create your own lists.</p>
+      </div>
+    `;
     this.enableSwitch.setupEventListeners(contentContainer);
   }
 

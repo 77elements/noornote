@@ -5,6 +5,7 @@
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
 
 // Timeline post items
 .timeline-placeholder {
@@ -28,4 +29,95 @@
 .post-item__text {
   margin: 0;
   line-height: 1.5;
+}
+
+// ========================================
+// nn-card — image-on-top media card
+// Used by article timeline, marketplace listings, follow packs.
+// Default grid is responsive via container queries.
+// ========================================
+
+.nn-card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: $gap;
+
+  @container (min-width: 420px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @container (min-width: 720px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @container (min-width: 1000px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  // Force single column regardless of width (e.g. articles)
+  &--nonresponsive {
+    grid-template-columns: 1fr;
+
+    @container (min-width: 420px) { grid-template-columns: 1fr; }
+    @container (min-width: 720px) { grid-template-columns: 1fr; }
+    @container (min-width: 1000px) { grid-template-columns: 1fr; }
+  }
+}
+
+.nn-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-2);
+  border-radius: $radius-pill;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform $transition-fast, box-shadow $transition-fast;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $box-hover;
+  }
+
+  &__image {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+    background: var(--color-1);
+    position: relative;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  &__body {
+    padding: $gap;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  &__title {
+    font-weight: 600;
+    color: var(--color-5);
+    margin: 0;
+    line-height: 1.25;
+
+    // Truncate after 2 lines
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    @extend %small;
+    color: var(--color-3);
+  }
 }

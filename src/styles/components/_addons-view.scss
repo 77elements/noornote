@@ -15,7 +15,7 @@
 .addons-panel {
   height: 100%;
   overflow-y: auto;
-  padding: $gap;
+  container-type: inline-size;
   @include custom-scrollbar;
 
   &__item {
@@ -24,10 +24,6 @@
     &--active {
       display: block;
     }
-  }
-
-  &__content {
-    text-align: center;
   }
 
   &__title {
@@ -43,9 +39,3 @@
   }
 }
 
-// Reusable wrapper for addon settings content inside a panel
-.addon-settings {
-  padding-bottom: $gap;
-  margin-bottom: $gap;
-  border-bottom: 1px solid var(--color-3);
-}

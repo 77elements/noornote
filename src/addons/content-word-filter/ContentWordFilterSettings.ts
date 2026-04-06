@@ -31,7 +31,7 @@ export class ContentWordFilterSettings extends SettingsSection {
     const enabled = isContentWordFilterEnabled();
 
     this.enableSwitch = new Switch({
-      label: 'Enable Content Word Filter',
+      label: '',
       checked: enabled,
       onChange: (checked) => {
         setContentWordFilterEnabled(checked);
@@ -44,7 +44,13 @@ export class ContentWordFilterSettings extends SettingsSection {
     });
 
     const switchWrapper = document.createElement('div');
-    switchWrapper.innerHTML = this.enableSwitch.render();
+    switchWrapper.innerHTML = `
+      <div class="setting">
+        <span class="setting__label">Enable Word Filter</span>
+        <div class="setting__control">${this.enableSwitch.render()}</div>
+        <p class="setting__desc">Hide notes containing specific words from all timelines. Manage your blocked words below.</p>
+      </div>
+    `;
     contentContainer.appendChild(switchWrapper);
     this.enableSwitch.setupEventListeners(switchWrapper);
   }

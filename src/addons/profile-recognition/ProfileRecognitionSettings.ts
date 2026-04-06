@@ -43,7 +43,7 @@ export class ProfileRecognitionSettings extends SettingsSection {
     const enabled = currentWindow !== 0;
 
     this.enableSwitch = new Switch({
-      label: 'Enable Profile Recognition',
+      label: '',
       checked: enabled,
       onChange: (checked) => {
         if (checked) {
@@ -53,8 +53,8 @@ export class ProfileRecognitionSettings extends SettingsSection {
           this.saveWindow(0);
           ToastService.show('Profile Recognition disabled', 'success');
         }
-        // Show/hide options
-        const options = contentContainer.querySelector('.profile-recognition-options') as HTMLElement;
+        // Show/hide options in content zone
+        const options = parentContainer.querySelector('.profile-recognition-options') as HTMLElement | null;
         if (options) options.style.display = checked ? '' : 'none';
       }
     });
@@ -62,56 +62,50 @@ export class ProfileRecognitionSettings extends SettingsSection {
     const optionsHtml = WINDOW_OPTIONS.map(option => {
       const isChecked = option.value === currentWindow;
       return `
-        <label class="mode-option${isChecked ? ' mode-option--active' : ''}">
+        <label class="nn-checkbox nn-checkbox--label-left">
+          <span class="setting__label">${option.label}</span>
           <input
             type="radio"
             name="profile-recognition-window"
             value="${option.value}"
             ${isChecked ? 'checked' : ''}
           />
-          <div class="mode-option__content">
-            <div class="mode-option__title">${option.label}</div>
-            <div class="mode-option__description">${option.description}</div>
-          </div>
         </label>
       `;
     }).join('');
 
     contentContainer.innerHTML = `
-      <div class="form__info">
-        <p>
-          Profile Recognition helps you recognize people you follow even after they change their name or profile picture.
-          When someone you follow changes their profile, the app will show visual cues (blinking profile pictures) to help you remember who they are.
-        </p>
-      </div>
-
-      ${this.enableSwitch.render()}
-
-      <div class="profile-recognition-options" style="${enabled ? '' : 'display: none'}">
-        <div class="form__info">
-          <p style="margin-top: 0.75rem;">
-            Choose how long to show these recognition cues after a profile change:
-          </p>
-        </div>
-
-        <div class="mode-options">
-          ${optionsHtml}
-        </div>
-
-        <div class="form__info">
-          <p class="small">
-            <strong>How it works:</strong><br>
-            • When you follow someone, the app saves their current name and profile picture<br>
-            • If they change their profile within your selected window, their picture will blink between old and new<br>
-            • After the window expires, the blinking stops (you've adapted to their new profile)<br>
-            • Only applies to people you follow (not everyone you see)
-          </p>
-        </div>
+      <div class="setting">
+        <span class="setting__label">Enable Profile Recognition</span>
+        <div class="setting__control">${this.enableSwitch.render()}</div>
+        <p class="setting__desc">Helps you recognize people you follow even after they change their name or profile picture. When someone you follow changes their profile, the app shows visual cues (blinking profile pictures) so you remember who they are.</p>
       </div>
     `;
 
     this.enableSwitch.setupEventListeners(contentContainer);
-    this.bindListeners(contentContainer);
+
+    // Mount the rest into the addon's content zone (below the settings section)
+    const contentZone = parentContainer.querySelector('[data-addon-content="profile-recognition"]') as HTMLElement | null;
+    if (contentZone) {
+      contentZone.innerHTML = `
+        <div class="profile-recognition-options" style="${enabled ? '' : 'display: none'}">
+          <p>Choose how long to show these recognition cues after a profile change:</p>
+
+          <div class="mode-options">
+            ${optionsHtml}
+          </div>
+
+          <h2>How it works</h2>
+          <ul>
+            <li>When you follow someone, the app saves their current name and profile picture</li>
+            <li>If they change their profile within your selected window, their picture will blink between old and new</li>
+            <li>After the window expires, the blinking stops (you've adapted to their new profile)</li>
+            <li>Only applies to people you follow (not everyone you see)</li>
+          </ul>
+        </div>
+      `;
+      this.bindListeners(contentZone);
+    }
   }
 
   private bindListeners(contentContainer: HTMLElement): void {

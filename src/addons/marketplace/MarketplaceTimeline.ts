@@ -61,18 +61,14 @@ export class MarketplaceTimeline {
     container.innerHTML = `
       <div class="marketplace-timeline__sticky-header">
         <header class="marketplace-view__header">
-          <div class="marketplace-view__header-row">
-            <h1 class="marketplace-view__title">Marketplace</h1>
-            <div class="marketplace-view__header-actions">
-              <a href="/my-listings" class="btn btn--passive btn--medium marketplace-view__dashboard-btn" style="display: none;">Dashboard</a>
-              <a href="/write-listing" class="btn btn--medium marketplace-view__add-btn" style="display: none;">Add Product</a>
-            </div>
+          <div class="l-row l-row--right">
+            <a href="/my-listings" class="btn btn--passive btn--medium marketplace-view__dashboard-btn" style="display: none;">Dashboard</a>
+            <a href="/write-listing" class="btn btn--medium marketplace-view__add-btn" style="display: none;">Add Product</a>
           </div>
-          <p class="marketplace-view__subtitle">Classified listings from the Nostr network</p>
         </header>
         <div class="marketplace-timeline__filters"></div>
       </div>
-      <div class="marketplace-timeline__grid"></div>
+      <div class="marketplace-timeline__grid nn-card-grid"></div>
     `;
 
     this.setupHeaderButtons(container);
@@ -276,7 +272,7 @@ export class MarketplaceTimeline {
   private createListingCard(event: NostrEvent): HTMLElement {
     const meta = parseListingMetadata(event);
     const card = document.createElement('article');
-    card.className = 'listing-card';
+    card.className = 'nn-card listing-card';
 
     if (meta.status === 'sold') {
       card.classList.add('listing-card--sold');
@@ -297,21 +293,21 @@ export class MarketplaceTimeline {
 
     card.innerHTML = `
       ${firstImage ? `
-        <div class="listing-card__image">
+        <div class="nn-card__image">
           <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
           ${meta.status === 'sold' ? '<span class="listing-card__sold-badge">Sold</span>' : ''}
         </div>
       ` : `
-        <div class="listing-card__image listing-card__image--empty">
+        <div class="nn-card__image listing-card__image--empty">
           <svg width="32" height="32"><use href="#icon-image"/></svg>
           ${meta.status === 'sold' ? '<span class="listing-card__sold-badge">Sold</span>' : ''}
         </div>
       `}
-      <div class="listing-card__content">
-        <h3 class="listing-card__title">${escapeHtml(meta.title)}</h3>
+      <div class="nn-card__body">
+        <h3 class="nn-card__title">${escapeHtml(meta.title)}</h3>
         <div class="listing-card__price">${escapeHtml(priceDisplay)}</div>
         ${meta.location ? `<div class="listing-card__location">${escapeHtml(meta.location)}</div>` : ''}
-        <div class="listing-card__meta">
+        <div class="nn-card__meta">
           <span class="listing-card__author user-mention" data-pubkey="${event.pubkey}">
             <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">Loading...</a>
           </span>
@@ -326,7 +322,7 @@ export class MarketplaceTimeline {
     `;
 
     // Hide card if image fails to load
-    const img = card.querySelector('.listing-card__image img') as HTMLImageElement | null;
+    const img = card.querySelector('.nn-card__image img') as HTMLImageElement | null;
     if (img) {
       img.addEventListener('error', () => card.remove());
     }

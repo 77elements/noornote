@@ -31,7 +31,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
     const marketplaceEnabled = isMarketplaceEnabled();
 
     this.marketplaceSwitch = new Switch({
-      label: 'Enable Marketplace',
+      label: '',
       checked: marketplaceEnabled,
       onChange: (checked) => {
         setMarketplaceEnabled(checked);
@@ -42,7 +42,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
     });
 
     this.timelineSwitch = new Switch({
-      label: 'Show listings from people I follow in my timeline',
+      label: '',
       checked: isTimelineListingsEnabled(),
       onChange: (checked) => {
         setTimelineListingsEnabled(checked);
@@ -53,32 +53,33 @@ export class MarketplaceSettingsSection extends SettingsSection {
     });
 
     const currentFreq = getTimelineListingFrequency();
+    const freqOptions: Array<[ListingFrequency, string]> = [
+      ['rare', 'Rare (every 60 min)'],
+      ['moderate', 'Moderate (every 30 min)'],
+      ['frequent', 'Frequent (every 15 min)'],
+      ['more-frequent', 'More Frequent (every 5 min)'],
+      ['realtime', 'Every 60 seconds'],
+    ];
 
     contentContainer.innerHTML = `
-      ${this.marketplaceSwitch.render()}
+      <div class="setting">
+        <span class="setting__label">Enable Marketplace</span>
+        <div class="setting__control">${this.marketplaceSwitch.render()}</div>
+      </div>
+
       <div class="marketplace-timeline-settings${marketplaceEnabled ? '' : ' is-hidden'}">
-        ${this.timelineSwitch.render()}
+        <div class="setting">
+          <span class="setting__label">Show listings from people I follow in my timeline</span>
+          <div class="setting__control">${this.timelineSwitch.render()}</div>
+        </div>
+
         <div class="frequency-selector${isTimelineListingsEnabled() ? '' : ' is-hidden'}">
-          <label class="frequency-option">
-            <input type="radio" name="listing-freq" value="rare" ${currentFreq === 'rare' ? 'checked' : ''} />
-            <span>Rare (every 60 min)</span>
-          </label>
-          <label class="frequency-option">
-            <input type="radio" name="listing-freq" value="moderate" ${currentFreq === 'moderate' ? 'checked' : ''} />
-            <span>Moderate (every 30 min)</span>
-          </label>
-          <label class="frequency-option">
-            <input type="radio" name="listing-freq" value="frequent" ${currentFreq === 'frequent' ? 'checked' : ''} />
-            <span>Frequent (every 15 min)</span>
-          </label>
-          <label class="frequency-option">
-            <input type="radio" name="listing-freq" value="more-frequent" ${currentFreq === 'more-frequent' ? 'checked' : ''} />
-            <span>More Frequent (every 5 min)</span>
-          </label>
-          <label class="frequency-option">
-            <input type="radio" name="listing-freq" value="realtime" ${currentFreq === 'realtime' ? 'checked' : ''} />
-            <span>Every 60 seconds</span>
-          </label>
+          ${freqOptions.map(([value, label]) => `
+            <label class="nn-checkbox nn-checkbox--label-left">
+              <span class="setting__label">${label}</span>
+              <input type="radio" name="listing-freq" value="${value}" ${currentFreq === value ? 'checked' : ''} />
+            </label>
+          `).join('')}
         </div>
       </div>
     `;

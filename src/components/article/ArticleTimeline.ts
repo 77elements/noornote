@@ -49,7 +49,7 @@ export class ArticleTimeline {
     const container = document.createElement('div');
     container.className = 'article-timeline';
     container.innerHTML = `
-      <div class="article-timeline__list"></div>
+      <div class="article-timeline__list nn-card-grid nn-card-grid--nonresponsive"></div>
     `;
     return container;
   }
@@ -139,7 +139,7 @@ export class ArticleTimeline {
   private createArticleCard(event: NostrEvent): HTMLElement {
     const metadata = ArticleFeedOrchestrator.extractMetadata(event);
     const card = document.createElement('article');
-    card.className = 'article-card';
+    card.className = 'nn-card article-card';
 
     // Create naddr for navigation
     const naddr = encodeNaddr({
@@ -151,14 +151,14 @@ export class ArticleTimeline {
 
     card.innerHTML = `
       ${metadata.image ? `
-        <div class="article-card__image">
+        <div class="nn-card__image">
           <img src="${escapeHtml(metadata.image)}" alt="" loading="lazy" />
         </div>
       ` : ''}
-      <div class="article-card__content">
-        <h2 class="article-card__title">${escapeHtml(metadata.title || 'Untitled')}</h2>
+      <div class="nn-card__body">
+        <h2 class="nn-card__title">${escapeHtml(metadata.title || 'Untitled')}</h2>
         ${metadata.summary ? `<p class="article-card__summary">${escapeHtml(metadata.summary)}</p>` : ''}
-        <div class="article-card__meta">
+        <div class="nn-card__meta">
           <span class="article-card__author user-mention" data-pubkey="${event.pubkey}">
             <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">
               <img class="profile-pic profile-pic--mini" src="" alt="" />Loading...</a>

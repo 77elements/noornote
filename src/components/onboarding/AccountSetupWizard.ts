@@ -1900,7 +1900,7 @@ IMPORTANT:
     }
 
     const grid = document.createElement('div');
-    grid.className = 'follow-packs__grid';
+    grid.className = 'follow-packs__grid nn-card-grid';
 
     if (!this.followPacksLoaded) {
       grid.innerHTML = '<p class="wizard-intro">Loading follow packs...</p>';
@@ -1929,7 +1929,7 @@ IMPORTANT:
 
     this.followPacks.forEach((pack, index) => {
       const card = document.createElement('div');
-      card.className = 'follow-packs__card';
+      card.className = 'nn-card follow-packs__card';
       card.addEventListener('click', () => {
         this.followPackView = 'detail';
         this.selectedPackIndex = index;
@@ -1938,23 +1938,23 @@ IMPORTANT:
         this.loadPackProfiles(index);
       });
 
+      const coverWrap = document.createElement('div');
+      coverWrap.className = pack.coverImage
+        ? 'nn-card__image'
+        : 'nn-card__image follow-packs__card-cover--placeholder';
       if (pack.coverImage) {
-        const cover = document.createElement('img');
-        cover.className = 'follow-packs__card-cover';
-        cover.src = pack.coverImage;
-        cover.alt = pack.title;
-        card.appendChild(cover);
-      } else {
-        const cover = document.createElement('div');
-        cover.className = 'follow-packs__card-cover follow-packs__card-cover--placeholder';
-        card.appendChild(cover);
+        const img = document.createElement('img');
+        img.src = pack.coverImage;
+        img.alt = pack.title;
+        coverWrap.appendChild(img);
       }
+      card.appendChild(coverWrap);
 
       const body = document.createElement('div');
-      body.className = 'follow-packs__card-body';
+      body.className = 'nn-card__body';
       body.innerHTML = `
-        <div class="follow-packs__card-title">${escapeHtml(pack.title)}</div>
-        <div class="follow-packs__card-meta">
+        <div class="nn-card__title">${escapeHtml(pack.title)}</div>
+        <div class="nn-card__meta">
           <span class="follow-packs__card-count">${pack.userPubkeys.length} users</span>
         </div>
       `;

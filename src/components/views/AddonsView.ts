@@ -3,7 +3,7 @@
  *
  * Central hub for all add-ons. Vertical sub-navigation on the left,
  * content panel on the right. Each panel has two zones:
- *   1. Settings (top, separated by border-bottom via .addon-settings)
+ *   1. Settings (top, rendered as section.section with the addon's id)
  *   2. Content (below, optional per addon)
  */
 
@@ -111,7 +111,7 @@ const ADDONS: AddonDef[] = [
   {
     id: 'marketplace',
     name: 'Marketplace',
-    description: 'Browse classified listings (NIP-99) from the Nostr network.',
+    description: '',
     settingsContainerId: 'marketplace-settings-content',
     isEnabled: async () => {
       const { isMarketplaceEnabled } = await import('../../addons/marketplace/index');
@@ -137,7 +137,7 @@ const ADDONS: AddonDef[] = [
   {
     id: 'follow-packs',
     name: 'Follow Packs',
-    description: 'Browse curated people lists and follow entire communities at once.',
+    description: '',
     settingsContainerId: 'follow-packs-settings-content',
     isEnabled: async () => {
       const { isFollowPacksEnabled } = await import('../../addons/follow-packs/index');
@@ -163,7 +163,7 @@ const ADDONS: AddonDef[] = [
   {
     id: 'nostrin',
     name: 'NostrIn',
-    description: 'Professional identity on Nostr — portfolio, skills, reputation.',
+    description: '',
     settingsContainerId: 'nostrin-settings-content',
     isEnabled: async () => {
       const { isNostrInEnabled } = await import('../../addons/nostrin/index');
@@ -184,7 +184,7 @@ const ADDONS: AddonDef[] = [
   {
     id: 'hashtag-subscriptions',
     name: 'Hashtag Subscriptions',
-    description: 'Subscribe to hashtags and get notified when new posts are published.',
+    description: '',
     settingsContainerId: 'hashtag-subscriptions-settings-content',
     isEnabled: async () => {
       const { isHashtagSubscriptionsEnabled } = await import('../../addons/hashtag-subscriptions/index');
@@ -204,7 +204,7 @@ const ADDONS: AddonDef[] = [
   {
     id: 'list-settings',
     name: 'List Sync Mode',
-    description: 'Enable manual sync control and advanced list options.',
+    description: '',
     settingsContainerId: 'list-settings-content',
     isEnabled: async () => {
       const { isListSettingsEnabled } = await import('../../addons/list-settings/index');
@@ -224,7 +224,7 @@ const ADDONS: AddonDef[] = [
   {
     id: 'wordfilter',
     name: 'Word Filter',
-    description: 'Hide notes containing specific words from all timelines.',
+    description: '',
     settingsContainerId: 'content-word-filter-settings-content',
     isEnabled: async () => {
       const { isContentWordFilterEnabled } = await import('../../addons/content-word-filter/index');
@@ -275,7 +275,7 @@ export class AddonsView extends View {
           <div class="addons-panel__item${a.id === this.activeAddonId ? ' addons-panel__item--active' : ''}"
                data-addon-panel="${a.id}">
             <h1 class="addons-panel__title">${a.name}</h1>
-            <div id="${a.settingsContainerId}" class="addon-settings"></div>
+            <section class="section" id="${a.settingsContainerId}"></section>
             <div class="addons-panel__content" data-addon-content="${a.id}"></div>
           </div>
         `).join('')}
@@ -311,7 +311,7 @@ export class AddonsView extends View {
 
   private mountFallbackSwitch(addon: AddonDef, enabled: boolean): void {
     const sw = new Switch({
-      label: `Enable ${addon.name}`,
+      label: '',
       checked: enabled,
       onChange: (checked) => this.handleToggle(addon, checked),
     });
@@ -319,8 +319,11 @@ export class AddonsView extends View {
     const mountPoint = this.container.querySelector(`#${addon.settingsContainerId}`) as HTMLElement;
     if (mountPoint) {
       mountPoint.innerHTML = `
-        <p class="addons-panel__description">${addon.description}</p>
-        ${sw.render()}
+        <div class="setting">
+          <span class="setting__label">Enable ${addon.name}</span>
+          <div class="setting__control">${sw.render()}</div>
+          <p class="setting__desc">${addon.description}</p>
+        </div>
       `;
       sw.setupEventListeners(mountPoint);
     }
