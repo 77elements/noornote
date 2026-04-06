@@ -184,22 +184,22 @@ export class ImageViewer {
       <div class="image-viewer__background"></div>
       <div class="image-viewer__content">
         <div class="image-viewer__controls">
-          <button class="image-viewer__btn image-viewer__btn--zoom-out" title="Zoom Out" aria-label="Zoom Out">
+          <button class="btn btn--square-lg image-viewer__btn--zoom-out" title="Zoom Out" aria-label="Zoom Out">
             <svg width="20" height="20"><use href="#icon-zoom-out"/></svg>
           </button>
-          <button class="image-viewer__btn image-viewer__btn--zoom-in" title="Zoom In" aria-label="Zoom In">
+          <button class="btn btn--square-lg image-viewer__btn--zoom-in" title="Zoom In" aria-label="Zoom In">
             <svg width="20" height="20"><use href="#icon-zoom-in"/></svg>
           </button>
-          <button class="image-viewer__btn image-viewer__btn--reset" title="Reset Zoom" aria-label="Reset Zoom">
+          <button class="btn btn--square-lg image-viewer__btn--reset" title="Reset Zoom" aria-label="Reset Zoom">
             <svg width="20" height="20"><use href="#icon-reset-zoom"/></svg>
           </button>
-          <button class="image-viewer__btn image-viewer__btn--download" title="Download" aria-label="Download">
+          <button class="btn btn--square-lg image-viewer__btn--download" title="Download" aria-label="Download">
             <svg width="20" height="20"><use href="#icon-download"/></svg>
           </button>
-          <button class="image-viewer__btn image-viewer__btn--share" title="Share as Quote" aria-label="Share">
+          <button class="btn btn--square-lg image-viewer__btn--share" title="Share as Quote" aria-label="Share">
             <svg width="20" height="20"><use href="#icon-share"/></svg>
           </button>
-          <button class="image-viewer__btn image-viewer__btn--close" title="Close (ESC)" aria-label="Close">
+          <button class="btn btn--square-lg image-viewer__btn--close" title="Close (ESC)" aria-label="Close">
             <svg width="20" height="20"><use href="#icon-close"/></svg>
           </button>
         </div>

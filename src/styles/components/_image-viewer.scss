@@ -68,40 +68,6 @@
     z-index: 2;
   }
 
-  &__btn {
-    width: 48px;
-    height: 48px;
-    border: none;
-    border-radius: $radius-lg;
-    background-color: color-mix(in srgb, var(--color-1) 80%, transparent); // 80% opacity
-    color: var(--color-6);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s ease;
-
-    &:hover:not(:disabled) {
-      background-color: var(--color-4);
-      color: var(--color-1);
-      transform: scale(1.05);
-    }
-
-    &:active:not(:disabled) {
-      transform: scale(0.95);
-    }
-
-    &:disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
-  }
-
   // Navigation (left/right arrows)
   &__nav {
     position: absolute;
@@ -186,15 +152,6 @@
       gap: calc($gap / 4);
     }
 
-    &__btn {
-      width: 40px;
-      height: 40px;
-
-      svg {
-        width: 18px;
-        height: 18px;
-      }
-    }
 
     &__nav {
       width: 48px;
