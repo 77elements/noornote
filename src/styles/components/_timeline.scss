@@ -17,6 +17,10 @@
     position: sticky;
     top: 0;
     z-index: 10;
+
+    .layout--phone & {
+      top: 12px;
+    }
     display: grid;
     grid-template-columns: 1fr 1fr;
     grid-gap: calc($gap / 2);
