@@ -91,7 +91,6 @@ export class NotificationItem {
         ${contextHtml}
         ${preview ? `<div class="notification-item__preview">${escapeHtml(preview)}</div>` : ''}
         <div class="notification-item__zaps"></div>
-        <div class="notification-item__isl"></div>
         ${hashtagFooterHtml}
       </div>
     `;
@@ -202,8 +201,10 @@ export class NotificationItem {
     if (!this.isTextNotification()) return;
 
     const currentUser = this.authService.getCurrentUser();
-    const islContainer = this.element.querySelector('.notification-item__isl');
-    if (!islContainer || !currentUser) return;
+    if (!currentUser) return;
+
+    const content = this.element.querySelector('.notification-item__content');
+    if (!content) return;
 
     const noteId = this.options.event.id;
     if (!noteId) return;
@@ -217,7 +218,12 @@ export class NotificationItem {
       originalEvent: this.options.event
     });
 
-    islContainer.appendChild(this.isl.getElement());
+    const footer = content.querySelector('.notification-item__footer');
+    if (footer) {
+      content.insertBefore(this.isl.getElement(), footer);
+    } else {
+      content.appendChild(this.isl.getElement());
+    }
   }
 
   /**

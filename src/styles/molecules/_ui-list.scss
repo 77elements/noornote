@@ -18,8 +18,8 @@
 // List Item
 // ========================================
 .ui-list__item {
-  padding: $gap 0;
-  border-bottom: 1px solid var(--color-2);
+  padding: $gap;
+  border-radius: $radius-pill;
   transition: background 0.2s ease;
 
   &:hover {

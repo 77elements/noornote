@@ -36,7 +36,7 @@
 // NotificationItem Component (extends .ui-list__item)
 .notification-item {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: 18px 1fr;
   gap: $gap;
 
   &:active {
@@ -48,8 +48,8 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
   @extend %h3;
   padding-top: 2px;
@@ -79,6 +79,10 @@
   align-items: center;
   gap: calc($gap / 2);
   flex-shrink: 0;
+}
+
+.notification-item__zaps:empty {
+  display: none;
 }
 
 .notification-item__info {
