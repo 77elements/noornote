@@ -59,16 +59,20 @@
   }
 
   .article-author-container {
+    @extend %bg-section;
     padding: $gap 0;
-    border-top: 1px solid var(--color-2);
-    border-bottom: 1px solid var(--color-2);
+    border-radius: $radius-2xl;
   }
 }
 
 // Article body (markdown content)
 .article-body {
   color: var(--color-5);
-  margin-bottom: calc($gap * 2);
+  margin-bottom: $gap;
+
+  img:not(.profile-pic) {
+    border-radius: $radius-pill;
+  }
 
   // Paragraphs
   p {
