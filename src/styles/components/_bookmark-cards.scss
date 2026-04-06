@@ -8,96 +8,14 @@
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 
-// Header with New Folder button
-.bookmark-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: calc($gap / 2) 0;
-  border-bottom: 1px solid var(--color-2);
-
-  &__title {
-    font-weight: 600;
-    color: var(--color-5);
-    margin: 0;
-  }
-
-  &__new-dropdown {
-    position: relative;
-    align-self: stretch;
-
-    &--open {
-      .bookmark-header__dropdown-menu {
-        display: block;
-      }
-      .bookmark-header__new-chevron {
-        transform: rotate(180deg);
-      }
-    }
-  }
-
-  &__new-btn {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 4);
-    height: 100%;
-    padding: calc($gap / 4) calc($gap / 2);
-    background: none;
-    border: 1px solid var(--color-2);
-    border-radius: $radius-md;
-    color: var(--color-4);
-    cursor: pointer;
-    transition: $transition-colors;
-
-    svg {
-      width: 14px;
-      height: 14px;
-    }
-
-    &:hover {
-      background: color-mix(in srgb, var(--color-4) 10%, transparent);
-      border-color: var(--color-4);
-    }
-  }
-
-  &__new-chevron {
-    transition: transform 0.2s ease;
-  }
-
-  &__dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 4px;
-    background: var(--color-1);
-    border: 1px solid var(--color-2);
-    border-radius: $radius-md;
-    box-shadow: $box-shadow;
-    min-width: 140px;
-    z-index: 100;
-    overflow: hidden;
-  }
-
-  &__dropdown-item {
+[data-list-header-dropdown] {
+  .custom-dropdown__item {
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    width: 100%;
-    padding: $gap;
-    background: none;
-    border: none;
-    color: var(--color-5);
-    text-align: left;
-    cursor: pointer;
-    transition: background-color 0.15s ease;
 
     svg {
-      color: var(--color-4);
-    }
-
-    &:hover {
-      background: color-mix(in srgb, var(--color-4) 15%, transparent);
+      flex-shrink: 0;
     }
   }
 }
@@ -107,7 +25,7 @@
 .folder-card,
 .up-navigator {
   position: relative;
-  border-radius: $radius-lg;
+  border-radius: $radius-pill;
   background: var(--color-2);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   cursor: pointer;
@@ -197,7 +115,7 @@
     align-items: center;
     margin-top: calc($gap / 2);
     padding-top: calc($gap / 2);
-    border-top: 1px solid color-mix(in srgb, var(--color-2) 80%, white);
+    border-top: 1px solid var(--color-3);
   }
 
   &__timestamp {
@@ -300,7 +218,7 @@
   min-height: 120px;
   padding: $gap;
   background: color-mix(in srgb, var(--color-2) 90%, white);
-  border: 2px dashed color-mix(in srgb, var(--color-2) 70%, white);
+  border: 2px dashed var(--color-3);
 
   &__icon {
     width: 40px;
@@ -432,7 +350,7 @@
   min-height: 120px;
   padding: $gap;
   background: color-mix(in srgb, var(--color-1) 90%, white);
-  border: 1px solid var(--color-2);
+  border: 1px solid var(--color-3);
 
   &__icon {
     width: 32px;
@@ -515,7 +433,7 @@
   width: 100%;
   padding: calc($gap / 2);
   background: var(--color-1);
-  border: 1px solid var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-md;
   color: var(--color-5);
 

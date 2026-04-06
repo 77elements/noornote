@@ -71,12 +71,12 @@ export class SearchSpotlight {
         </div>
         <div class="search-spotlight__controls">
           <button class="search-spotlight__btn search-spotlight__btn--back" title="Go Back (Cmd+ArrowLeft)" disabled>
-            <svg width="24" height="24"><use href="#icon-back"/></svg>
+            <span class="chevron-left"></span>
             Back
           </button>
           <button class="search-spotlight__btn search-spotlight__btn--forward" title="Go Forward (Cmd+ArrowRight)" disabled>
             Forward
-            <svg width="24" height="24"><use href="#icon-forward"/></svg>
+            <span class="chevron-right"></span>
           </button>
         </div>
         <div class="search-spotlight__user-suggestions"></div>

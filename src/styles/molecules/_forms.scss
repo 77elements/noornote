@@ -283,6 +283,11 @@ label {
     background: color-mix(in srgb, var(--color-4) 10%, transparent);
   }
 
+  &:has(input:disabled) {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
   input[type="checkbox"] {
     cursor: pointer;
     width: 18px;
@@ -303,6 +308,29 @@ label {
       color: $color-5;
       font-size: 14px;
       line-height: 1;
+    }
+  }
+
+  // Small variant — compact 13px row for inline filter controls
+  &--small {
+    padding: 0 calc($gap / 2);
+    gap: calc($gap / 4);
+    @extend %small;
+    background: none;
+    color: var(--color-4);
+
+    &:hover {
+      background: none;
+      color: var(--color-5);
+    }
+
+    input[type="checkbox"] {
+      width: 13px;
+      height: 13px;
+
+      &:checked::after {
+        font-size: 11px;
+      }
     }
   }
 }

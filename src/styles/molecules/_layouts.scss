@@ -6,6 +6,18 @@
 
 @use '../abstracts/variables' as *;
 
+// Headings inside any layout container drop their default margin-bottom
+.l-spread,
+.l-row,
+.l-row--right,
+.l-row--center,
+.l-row--end-pair,
+.l-row--split {
+  h1, h2, h3, h4, h5, h6 {
+    margin-bottom: 0;
+  }
+}
+
 // ========================================
 // Spread: flex row, space-between
 // ========================================

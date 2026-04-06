@@ -2465,7 +2465,7 @@ export class TribeManager {
     bindHeaderDropdown(container, closeRef);
     this.closeDropdownHandler = closeRef.current;
 
-    const dropdown = container.querySelector('.bookmark-header__new-dropdown');
+    const dropdown = container.querySelector('[data-list-header-dropdown]');
     const newTribeBtn = container.querySelector('[data-action="new-tribe"]');
     const newMemberBtn = container.querySelector('[data-action="new-member"]');
 
@@ -2473,12 +2473,12 @@ export class TribeManager {
     rootNav?.addEventListener('click', () => this.navigateToRoot());
 
     newTribeBtn?.addEventListener('click', () => {
-      dropdown?.classList.remove('bookmark-header__new-dropdown--open');
+      dropdown?.classList.remove('custom-dropdown--open');
       this.createNewTribe();
     });
 
     newMemberBtn?.addEventListener('click', () => {
-      dropdown?.classList.remove('bookmark-header__new-dropdown--open');
+      dropdown?.classList.remove('custom-dropdown--open');
       this.addNewMember();
     });
   }

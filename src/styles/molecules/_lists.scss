@@ -57,7 +57,6 @@
   @extend %small;
   color: var(--color-3);
   text-align: left;
-  border-bottom: 1px solid var(--color-2);
 
   &--easy {
     padding: $gap 0;
@@ -72,7 +71,7 @@
   align-items: center;
   gap: $gap;
   padding: $gap;
-  border-bottom: 1px solid var(--color-2);
+  border-bottom: 1px solid var(--color-3);
   transition: background 0.2s ease;
 
   &:hover {
@@ -147,14 +146,8 @@
 }
 
 .follows-stats {
-  @extend %small;
-  font-weight: 600;
   color: var(--color-5);
   white-space: nowrap;
-
-  @include mobile-down {
-    margin-bottom: calc($gap / 2);
-  }
 }
 
 .follows-filter {
@@ -304,21 +297,10 @@
   }
 
   &__header {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-    padding: calc($gap / 2) $gap;
-    border-bottom: 1px solid color-mix(in srgb, var(--color-2) 80%, white);
-    margin-bottom: calc($gap / 2);
+    padding: calc($gap / 2) $gap calc($gap / 2) 0;
+    border-bottom: 1px solid var(--color-3);
   }
 
-  &__title {
-    @extend %small;
-    font-weight: 600;
-    color: var(--color-3);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
 }
 
 // ========================================
@@ -331,7 +313,7 @@
   justify-content: space-between;
   gap: calc($gap / 2) $gap;
   padding: $gap 0;
-  border-bottom: 1px solid var(--color-2);
+  border-bottom: 1px solid var(--color-3);
 }
 
 .external-follows-stats {
@@ -344,7 +326,7 @@
   min-width: 150px;
   max-width: 250px;
   padding: calc($gap / 2);
-  border: 1px solid var(--color-2);
+  border: 1px solid var(--color-3);
   border-radius: $radius-sm;
   background: transparent;
   color: var(--color-5);

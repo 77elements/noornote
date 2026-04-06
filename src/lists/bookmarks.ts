@@ -3552,17 +3552,17 @@ export class BookmarkManager {
     bindHeaderDropdown(container, closeRef);
     this.closeDropdownHandler = closeRef.current;
 
-    const dropdown = container.querySelector('.bookmark-header__new-dropdown');
+    const dropdown = container.querySelector('[data-list-header-dropdown]');
     const folderItem = container.querySelector('[data-action="new-folder"]');
     const bookmarkItem = container.querySelector('[data-action="new-bookmark"]');
 
     folderItem?.addEventListener('click', () => {
-      dropdown?.classList.remove('bookmark-header__new-dropdown--open');
+      dropdown?.classList.remove('custom-dropdown--open');
       this.createNewFolder();
     });
 
     bookmarkItem?.addEventListener('click', () => {
-      dropdown?.classList.remove('bookmark-header__new-dropdown--open');
+      dropdown?.classList.remove('custom-dropdown--open');
       this.createNewBookmark();
     });
 

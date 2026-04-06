@@ -165,7 +165,7 @@ export class NoteStructureBuilder {
     const imageClickHandler = getImageClickHandler();
     imageClickHandler.initializeForContainer(noteDiv);
 
-    // Initialize video players (native HTML5 with custom fullscreen)
+    // Initialize video players (native HTML5 + download button)
     const videoPlayerService = getVideoPlayerService();
     videoPlayerService.initializeForContainer(noteDiv);
 

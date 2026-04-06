@@ -1735,10 +1735,10 @@ export class FollowListManager {
       // Render container with sticky header, controls and list
       container.innerHTML = `
         ${this.renderControlButtons()}
-        <div class="follows-header">
-          <div class="follows-stats">
+        <div class="follows-header l-spread">
+          <h2 class="small follows-stats">
             Following: ${this.totalFollowing}${this.extended ? ' | Mutuals: <span class="mutual-count">...</span> (<span class="mutual-percentage">...</span>%)' : ''}
-          </div>
+          </h2>
           ${this.extended?.renderCheckForChangesHtml() ?? ''}
         </div>
         <div class="follows-sort-controls">
@@ -1756,8 +1756,8 @@ export class FollowListManager {
                  placeholder="Filter by name..."
                  ${this.isFullyLoaded ? '' : 'disabled'} />
           ${this.extended ? `
-          <label class="follows-sort-controls__non-mutuals ${this.isFullyLoaded ? '' : 'follows-sort-controls__non-mutuals--disabled'}">
-            <input type="checkbox" class="follows-filter__toggle" ${this.showOnlyNonMutuals ? 'checked' : ''} ${this.isFullyLoaded ? '' : 'disabled'}>
+          <label class="nn-checkbox nn-checkbox--small" data-non-mutuals>
+            <input type="checkbox" data-non-mutuals-toggle ${this.showOnlyNonMutuals ? 'checked' : ''} ${this.isFullyLoaded ? '' : 'disabled'}>
             Non-mutuals only
           </label>
           ` : ''}
@@ -1770,7 +1770,7 @@ export class FollowListManager {
       this.bindSyncButtons(container);
 
       // Bind filter toggle
-      const filterToggle = container.querySelector('.follows-filter__toggle') as HTMLInputElement;
+      const filterToggle = container.querySelector('[data-non-mutuals-toggle]') as HTMLInputElement;
       filterToggle?.addEventListener('change', () => {
         this.showOnlyNonMutuals = filterToggle.checked;
         this.reRenderList(container);
@@ -2148,8 +2148,7 @@ export class FollowListManager {
     const sortDateLink = container.querySelector('.follows-sort-controls__sort-date') as HTMLElement;
     const sortZapsLink = container.querySelector('.follows-sort-controls__sort-zaps') as HTMLElement;
     const searchInput = container.querySelector('.follows-sort-controls__search') as HTMLInputElement;
-    const nonMutualsLabel = container.querySelector('.follows-sort-controls__non-mutuals');
-    const nonMutualsCheckbox = nonMutualsLabel?.querySelector('input') as HTMLInputElement;
+    const nonMutualsCheckbox = container.querySelector('[data-non-mutuals-toggle]') as HTMLInputElement | null;
 
     // Enable Date sort when fully loaded
     if (this.isFullyLoaded) {
@@ -2159,8 +2158,7 @@ export class FollowListManager {
         searchInput.disabled = false;
         searchInput.classList.remove('follows-sort-controls__search--disabled');
       }
-      if (nonMutualsLabel && nonMutualsCheckbox) {
-        nonMutualsLabel.classList.remove('follows-sort-controls__non-mutuals--disabled');
+      if (nonMutualsCheckbox) {
         nonMutualsCheckbox.disabled = false;
       }
     }

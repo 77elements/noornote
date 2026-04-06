@@ -13,7 +13,7 @@
   display: inline-block;
   @extend %small;
   padding: 2px 6px;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   font-weight: 600;
   white-space: nowrap;
 
@@ -33,7 +33,7 @@
   display: inline-block;
   @extend %small;
   padding: 2px 6px;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   font-weight: 600;
   white-space: nowrap;
   background: $bg-warning;
@@ -118,8 +118,8 @@
   &__search {
     padding: 2px 6px;
     @extend %small;
-    border: 1px solid var(--color-2);
-    border-radius: $radius-sm;
+    border: 1px solid var(--color-3);
+    border-radius: $radius-xl;
     background: transparent;
     color: var(--color-5);
     width: 120px;
@@ -139,28 +139,6 @@
     }
   }
 
-  &__non-mutuals {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 4);
-    color: var(--color-3);
-    cursor: pointer;
-    white-space: nowrap;
-
-    input {
-      cursor: pointer;
-      accent-color: var(--color-4);
-    }
-
-    &:hover {
-      color: var(--color-4);
-    }
-
-    &--disabled {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-  }
 }
 
 // Check for changes section
@@ -231,7 +209,7 @@
   &__content {
     position: relative;
     background: var(--color-1);
-    border: 1px solid var(--color-2);
+    border: 1px solid var(--color-3);
     border-radius: $radius-lg;
     padding: $gap * 1.5;
     max-width: 400px;
@@ -275,7 +253,7 @@
 
   &__item {
     padding: calc($gap / 2) 0;
-    border-bottom: 1px solid var(--color-2);
+    border-bottom: 1px solid var(--color-3);
     @extend %small;
 
     &:last-child {

@@ -1548,8 +1548,8 @@ export class MuteListManager {
       if (hasUsers) {
         html += `
           <div class="mute-section">
-            <div class="mute-section__header">
-              <span class="mute-section__title">Muted Users</span>
+            <div class="mute-section__header l-spread">
+              <h2 class="small">Muted Users</h2>
               <span class="badge">${this.allItemsWithProfiles.length}</span>
             </div>
             <div class="mutes-list mutes-list--users"></div>
@@ -1560,8 +1560,8 @@ export class MuteListManager {
       if (hasThreads) {
         html += `
           <div class="mute-section">
-            <div class="mute-section__header">
-              <span class="mute-section__title">Muted Threads</span>
+            <div class="mute-section__header l-spread">
+              <h2 class="small">Muted Threads</h2>
               <span class="badge">${this.mutedThreads.length}</span>
             </div>
             <div class="mutes-list mutes-list--threads"></div>

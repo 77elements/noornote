@@ -50,7 +50,7 @@
 .quote-skeleton {
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-md;
+  border-radius: $radius-pill;
   padding: $gap;
   margin: calc($gap / 2) 0;
   animation: skeleton-pulse 1.5s ease-in-out infinite;

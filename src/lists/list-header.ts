@@ -5,7 +5,6 @@
  */
 
 import { escapeHtml } from '../helpers/escapeHtml';
-import { ICON_PLUS, ICON_CHEVRON_DOWN } from '../helpers/svgIcons';
 
 export interface DropdownItem {
   action: string;   // data-action value, e.g. 'new-folder'
@@ -18,25 +17,23 @@ export interface DropdownItem {
  */
 export function renderListHeader(title: string, dropdownItems: DropdownItem[]): string {
   const itemsHtml = dropdownItems.map(item => `
-    <button class="bookmark-header__dropdown-item" data-action="${item.action}">
+    <li class="custom-dropdown__item" data-action="${item.action}">
       ${item.icon}
       ${escapeHtml(item.label)}
-    </button>
+    </li>
   `).join('');
 
   return `
-    <div class="bookmark-header">
-      <h2 class="bookmark-header__title">${escapeHtml(title)}</h2>
-      <div class="bookmark-header__new-dropdown">
-          <button class="bookmark-header__new-btn" title="Create new">
-            ${ICON_PLUS}
-            New
-            ${ICON_CHEVRON_DOWN}
-          </button>
-          <div class="bookmark-header__dropdown-menu">
-            ${itemsHtml}
-          </div>
-        </div>
+    <div class="l-spread">
+      <h2>${escapeHtml(title)}</h2>
+      <div class="custom-dropdown" data-list-header-dropdown>
+        <button class="custom-dropdown__trigger" type="button" title="Create new">
+          <span class="custom-dropdown__label">+ New</span>
+          <span class="custom-dropdown__arrow" aria-hidden="true"></span>
+        </button>
+        <ul class="custom-dropdown__menu" role="listbox">
+          ${itemsHtml}
+        </ul>
       </div>
     </div>
   `;
@@ -63,12 +60,12 @@ export function bindHeaderDropdown(
   container: HTMLElement,
   closeHandler: { current: ((e: Event) => void) | null }
 ): void {
-  const newBtn = container.querySelector('.bookmark-header__new-btn');
-  const dropdown = container.querySelector('.bookmark-header__new-dropdown');
+  const dropdown = container.querySelector('[data-list-header-dropdown]');
+  const trigger = dropdown?.querySelector('.custom-dropdown__trigger');
 
-  newBtn?.addEventListener('click', (e) => {
+  trigger?.addEventListener('click', (e) => {
     e.stopPropagation();
-    dropdown?.classList.toggle('bookmark-header__new-dropdown--open');
+    dropdown?.classList.toggle('custom-dropdown--open');
   });
 
   if (closeHandler.current) {
@@ -77,7 +74,7 @@ export function bindHeaderDropdown(
 
   closeHandler.current = (e: Event) => {
     if (!dropdown?.contains(e.target as Node)) {
-      dropdown?.classList.remove('bookmark-header__new-dropdown--open');
+      dropdown?.classList.remove('custom-dropdown--open');
     }
   };
   document.addEventListener('click', closeHandler.current);
