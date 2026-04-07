@@ -407,20 +407,33 @@ export class EmojiPicker {
     const gridContainer = this.container.querySelector('.emoji-picker-grid-container');
     if (!gridContainer) return;
 
-    if (!query.trim()) {
+    const trimmed = query.trim();
+    if (!trimmed) {
       // Reset to current category
       this.switchCategory(this.currentCategory);
       return;
     }
 
-    const searchResults = searchEmojis(query, 100);
+    // Custom NIP-30 emojis: substring match against the shortcode
+    const customMatches: CustomEmojiEntry[] = (this.options.customEmojis ?? [])
+      .filter(e => e.shortcode.toLowerCase().includes(trimmed.toLowerCase()));
 
-    // Render search results
+    // Native emojilib search
+    const nativeResults = searchEmojis(trimmed, 100);
+
     gridContainer.innerHTML = '';
-    const title = searchResults.length > 0
-      ? `Search results for "${query}"`
-      : `No results for "${query}"`;
-    gridContainer.appendChild(this.createEmojiSection(title, searchResults));
+
+    if (customMatches.length > 0) {
+      gridContainer.appendChild(this.createCustomEmojiSection(customMatches));
+    }
+
+    const title = nativeResults.length > 0
+      ? `Search results for "${trimmed}"`
+      : (customMatches.length > 0 ? '' : `No results for "${trimmed}"`);
+
+    if (nativeResults.length > 0 || customMatches.length === 0) {
+      gridContainer.appendChild(this.createEmojiSection(title, nativeResults));
+    }
   }
 
   /**
