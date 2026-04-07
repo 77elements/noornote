@@ -57,7 +57,62 @@ export class ArticlePreviewRenderer {
     if (event.kind === 32267) {
       return this.createZapstorePreviewCard(event, naddrRef);
     }
+    if (event.kind === 30311) {
+      return this.createLiveStreamCard(event, naddrRef);
+    }
     return this.createArticlePreviewCard(event, naddrRef);
+  }
+
+  /**
+   * Live Activity / Live Stream card (NIP-53 kind 30311)
+   * Tags: title, summary, image, streaming, status, starts, ends, p (host)
+   */
+  private createLiveStreamCard(event: NostrEvent, naddrRef: string): HTMLElement {
+    const tags = event.tags;
+    const getTag = (name: string) => tags.find(t => t[0] === name)?.[1] || '';
+    const title = getTag('title') || 'Untitled Stream';
+    const summary = getTag('summary');
+    const image = getTag('image');
+    const status = (getTag('status') || 'planned').toLowerCase(); // 'live' | 'planned' | 'ended'
+    const recording = getTag('recording');
+
+    // Fallback watch URL: prefer zap.stream (the most common provider) — deep-links
+    // via naddr so zap.stream resolves it from relays. When status=ended and a
+    // recording tag is present, link directly to the recording.
+    const cleanNaddr = naddrRef.replace(/^nostr:/, '');
+    const watchUrl = status === 'ended' && recording
+      ? recording
+      : `https://zap.stream/${cleanNaddr}`;
+
+    const statusLabel = status === 'live' ? 'LIVE'
+      : status === 'ended' ? 'ENDED'
+      : 'PLANNED';
+    const watchLabel = status === 'live' ? 'Watch live'
+      : status === 'ended' ? (recording ? 'Watch recording' : 'View on zap.stream')
+      : 'View details';
+
+    const card = document.createElement('div');
+    card.className = `live-stream-card live-stream-card--${status}`;
+
+    card.innerHTML = `
+      ${image ? `
+        <div class="live-stream-card__image">
+          <img src="${image}" alt="${escapeHtml(title)}" loading="lazy" />
+          <span class="live-stream-card__badge">${statusLabel}</span>
+        </div>
+      ` : `
+        <div class="live-stream-card__image live-stream-card__image--placeholder">
+          <span class="live-stream-card__badge">${statusLabel}</span>
+        </div>
+      `}
+      <div class="live-stream-card__content">
+        <h3 class="live-stream-card__title">${escapeHtml(title)}</h3>
+        ${summary ? `<p class="live-stream-card__summary">${escapeHtml(summary)}</p>` : ''}
+        <a class="btn live-stream-card__watch" href="${escapeHtml(watchUrl)}" target="_blank" rel="noopener noreferrer">${watchLabel}</a>
+      </div>
+    `;
+
+    return card;
   }
 
   /**

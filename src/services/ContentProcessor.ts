@@ -6,6 +6,7 @@
 
 import { extractMedia } from '../helpers/extractMedia';
 import { extractBolt11, type Bolt11Match } from '../helpers/extractBolt11';
+import { unwrapStreamLinks } from '../helpers/unwrapStreamLinks';
 import { extractLinks } from '../helpers/extractLinks';
 import { extractHashtags } from '../helpers/extractHashtags';
 import { extractQuotedReferences } from '../helpers/extractQuotedReferences';
@@ -94,6 +95,10 @@ export class ContentProcessor {
    * SYNCHRONOUS - no blocking calls
    */
   processContentWithTags(text: string, tags: string[][]): ProcessedContent {
+    // Unwrap stream-provider URLs (zap.stream/..., noomad.stream/..., etc.)
+    // to raw nostr:naddr... so they're picked up by extractQuotedReferences below.
+    text = unwrapStreamLinks(text);
+
     const media = extractMedia(text);
     const links = extractLinks(text);
     const hashtags = extractHashtags(text);

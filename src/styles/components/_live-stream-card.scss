@@ -1,0 +1,100 @@
+/**
+ * Live Stream Card (NIP-53 kind 30311)
+ * Rendered when a note references a live activity via naddr or stream-provider URL.
+ */
+
+@use '../abstracts/variables' as *;
+
+.live-stream-card {
+  display: flex;
+  flex-direction: column;
+  margin: $gap 0;
+  background: var(--color-2);
+  border: 1px solid var(--color-2);
+  border-radius: $radius-xl;
+  overflow: hidden;
+
+  &--live {
+    border-color: $color-red;
+  }
+}
+
+.live-stream-card__image {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--color-1);
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &--placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.live-stream-card__badge {
+  position: absolute;
+  top: calc($gap / 2);
+  left: calc($gap / 2);
+  padding: calc($gap / 4) calc($gap / 2);
+  border-radius: $radius-pill;
+  background: var(--color-1);
+  color: var(--color-5);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+
+  .live-stream-card--live & {
+    background: $color-red;
+    color: $color-white;
+    animation: live-stream-pulse 2s ease-in-out infinite;
+  }
+
+  .live-stream-card--ended & {
+    background: var(--color-2);
+    color: var(--text-alpha-medium);
+  }
+}
+
+@keyframes live-stream-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.live-stream-card__content {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+  padding: $gap;
+}
+
+.live-stream-card__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-5);
+}
+
+.live-stream-card__summary {
+  margin: 0;
+  color: var(--text-alpha-medium);
+  font-size: 0.9rem;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.live-stream-card__watch {
+  align-self: center;
+  text-decoration: none;
+}
