@@ -17,7 +17,7 @@ tags:
 license: MIT
 website: https://noornote.app
 
-icon: ./src-tauri/icons/icon.png
+icon: ./android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 release_notes: ./RELEASE_NOTES.md
 
 images:

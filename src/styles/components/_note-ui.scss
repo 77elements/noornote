@@ -9,6 +9,14 @@
 @use '../base/typography' as *;
 @use '../base/icons' as *;
 
+// Memory optimization: skip rendering of off-screen notes
+// Toggled via UI Settings → applied as class on <html>
+html.content-visibility-auto .note-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+  contain: layout style paint;
+}
+
 // Base note card (used in all views)
 .note-card {
   margin: 0 0 calc($gap / 2) 0;

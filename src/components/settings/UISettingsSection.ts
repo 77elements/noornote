@@ -23,6 +23,7 @@ export class UISettingsSection extends SettingsSection {
   private eventBus: EventBus;
   private layoutModeDropdown: CustomDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
+  private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
   private autoUpdateSwitch: Switch | null = null;
@@ -100,6 +101,18 @@ export class UISettingsSection extends SettingsSection {
             <div class="setting__control" id="post-truncation-switch-container"></div>
             <p class="setting__desc">
               When enabled, long posts will always be displayed in full without "Show More" buttons.
+            </p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Memory optimization (experimental)</span>
+            <div class="setting__control" id="content-visibility-switch-container"></div>
+            <p class="setting__desc">
+              Skips rendering of off-screen notes (CSS <code>content-visibility: auto</code>).
+              Significantly reduces memory usage on long timelines, especially on Linux.
+              May cause minor scrollbar jumps when scrolling fast — disable if it bothers you.
             </p>
           </div>
         </section>
@@ -233,6 +246,28 @@ export class UISettingsSection extends SettingsSection {
 
       postTruncationContainer.innerHTML = this.postTruncationSwitch.render();
       this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
+    }
+
+    // Initialize Content Visibility switch
+    const contentVisibilityContainer = contentContainer.querySelector('#content-visibility-switch-container');
+    if (contentVisibilityContainer) {
+      const enabled = this.storage.get<boolean>(StorageKeys.CONTENT_VISIBILITY_AUTO, false);
+
+      this.contentVisibilitySwitch = new Switch({
+        label: '',
+        checked: enabled,
+        onChange: (checked) => {
+          this.storage.set(StorageKeys.CONTENT_VISIBILITY_AUTO, checked);
+          document.documentElement.classList.toggle('content-visibility-auto', checked);
+          ToastService.show(
+            checked ? 'Memory optimization enabled' : 'Memory optimization disabled',
+            'success'
+          );
+        }
+      });
+
+      contentVisibilityContainer.innerHTML = this.contentVisibilitySwitch.render();
+      this.contentVisibilitySwitch.setupEventListeners(contentVisibilityContainer as HTMLElement);
     }
 
     // Initialize Client Tag switch

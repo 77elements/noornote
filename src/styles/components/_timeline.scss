@@ -15,10 +15,10 @@
 
   .timeline-header {
     position: sticky;
-    top: 0;
+    top: -2px;
     z-index: 10;
 
-    .layout--phone & {
+    body.pv & {
       top: 12px;
     }
     display: grid;

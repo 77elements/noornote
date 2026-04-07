@@ -28,6 +28,11 @@ export class PostLoginService {
   }
 
   public async handleLogin(data: { npub: string; pubkey: string }): Promise<void> {
+    // Apply per-account UI prefs that need to be on <html> before any rendering
+    const { PerAccountLocalStorage: PALS, StorageKeys: SK } = await import('./PerAccountLocalStorage');
+    const cvEnabled = PALS.getInstance().getForPubkey<boolean>(SK.CONTENT_VISIBILITY_AUTO, data.pubkey, false);
+    document.documentElement.classList.toggle('content-visibility-auto', cvEnabled);
+
     const currentPath = this.router.getCurrentPath();
     const lastURL = this.router.getLastURL();
 
