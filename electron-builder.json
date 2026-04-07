@@ -22,7 +22,7 @@
     ]
   },
   "linux": {
-    "target": ["deb", "AppImage", "tar.gz"],
+    "target": ["deb", "rpm", "AppImage", "tar.gz"],
     "category": "Network",
     "icon": "icons/icon.png",
     "extraResources": [

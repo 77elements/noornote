@@ -107,6 +107,9 @@ jobs:
           DEB=$(find dist-electron -name "*.deb" | head -1)
           [ -n "$DEB" ] && mv "$DEB" "dist-electron/noornote-${VERSION}-linux-${ARCH}.deb"
 
+          RPM=$(find dist-electron -name "*.rpm" | head -1)
+          [ -n "$RPM" ] && mv "$RPM" "dist-electron/noornote-${VERSION}-linux-${ARCH}.rpm"
+
           APPIMAGE=$(find dist-electron -name "*.AppImage" | head -1)
           [ -n "$APPIMAGE" ] && mv "$APPIMAGE" "dist-electron/noornote-${VERSION}-linux-${ARCH}.AppImage"
 
@@ -114,7 +117,7 @@ jobs:
           [ -n "$TARBALL" ] && mv "$TARBALL" "dist-electron/noornote-${VERSION}-linux-${ARCH}.tar.gz"
 
       - name: List outputs
-        run: ls -lh dist-electron/*.{dmg,deb,AppImage,tar.gz} 2>/dev/null || true
+        run: ls -lh dist-electron/*.{dmg,deb,rpm,AppImage,tar.gz} 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -123,6 +126,7 @@ jobs:
           path: |
             dist-electron/*.dmg
             dist-electron/*.deb
+            dist-electron/*.rpm
             dist-electron/*.AppImage
             dist-electron/*.tar.gz
 
