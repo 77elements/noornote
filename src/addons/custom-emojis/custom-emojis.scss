@@ -24,6 +24,7 @@
 
   &__list-mount {
     margin-top: $gap;
+    margin-bottom: $gap;
   }
 
   &__empty {
@@ -93,5 +94,63 @@
     font-family: monospace;
     color: var(--color-5);
     @include text-truncate;
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Phase 4: Browse / Import from another user
+  // ────────────────────────────────────────────────────────────
+  &__browse-input-mount {
+    margin: $gap 0;
+  }
+
+  &__browse-results-mount {
+    margin-top: $gap;
+  }
+
+  &__remote-pack {
+    margin-bottom: $gap * 1.5;
+  }
+
+  &__remote-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: calc($gap / 2);
+    margin-top: calc($gap / 2);
+  }
+
+  &__remote-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc($gap / 4);
+    padding: calc($gap / 2);
+    background: none;
+    border: 1px solid var(--color-3);
+    border-radius: $radius-xl;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+
+    .custom-emoji {
+      height: 2.5em;
+      width: auto;
+      max-width: 60px;
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--color-4) 15%, transparent);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__remote-code {
+    @extend %small;
+    font-family: monospace;
+    color: var(--color-3);
+    @include text-truncate;
+    max-width: 100%;
   }
 }

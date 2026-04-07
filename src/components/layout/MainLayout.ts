@@ -20,6 +20,7 @@ import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
 import { AuthService } from '../../services/AuthService';
 import { EventBus } from '../../services/EventBus';
+import { ADDON_REGISTRY } from '../../addons/registry';
 // WalletBalanceDisplay loaded lazily (Step 5 bundle optimization)
 type WalletBalanceDisplay = import('../ui/WalletBalanceDisplay').WalletBalanceDisplay;
 // SearchSpotlight loaded lazily on Cmd+K (Step 6 bundle optimization)
@@ -1842,20 +1843,8 @@ export class MainLayout {
     if (!navContainer) return;
     if (navContainer.querySelector('.primary-nav__link--addons')) return;
 
-    const addonItems = [
-      { id: 'bookmarks', name: 'Bookmarks' },
-      { id: 'tribes', name: 'Tribes' },
-      { id: 'extended-follows', name: 'Extended Follows' },
-      { id: 'wallet-balance', name: 'Wallet Balance' },
-      { id: 'profile-recognition', name: 'Profile Recognition' },
-      { id: 'marketplace', name: 'Marketplace' },
-      { id: 'follow-packs', name: 'Follow Packs' },
-      { id: 'nostrin', name: 'NostrIn' },
-      { id: 'hashtag-subscriptions', name: 'Hashtag Subscriptions' },
-      { id: 'list-settings', name: 'List Sync Mode' },
-      { id: 'wordfilter', name: 'Word Filter' },
-      { id: 'custom-emojis', name: 'Custom Emojis' },
-    ];
+    // Source of truth: src/addons/registry.ts
+    const addonItems = ADDON_REGISTRY.map(a => ({ id: a.id, name: a.name }));
 
     const li = document.createElement('li');
     li.className = 'primary-nav__item primary-nav__item--accordion primary-nav__link--addons';

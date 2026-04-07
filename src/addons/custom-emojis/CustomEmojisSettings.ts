@@ -11,7 +11,8 @@ import { Switch } from '../../components/ui/Switch';
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
 import { isCustomEmojisEnabled, setCustomEmojisEnabled } from './index';
-import { EmojiService, type PersonalEmoji } from './EmojiService';
+import { EmojiService, type PersonalEmoji, type RemoteEmojiPack } from './EmojiService';
+import { UserSearchInput } from '../../components/user-search/UserSearchInput';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 export class CustomEmojisSettings extends SettingsSection {
@@ -19,6 +20,7 @@ export class CustomEmojisSettings extends SettingsSection {
   private eventBus: EventBus;
   private updatedSubId: string | null = null;
   private currentContentZone: HTMLElement | null = null;
+  private userSearchInput: UserSearchInput | null = null;
 
   constructor() {
     super('custom-emojis-settings');
@@ -73,6 +75,10 @@ export class CustomEmojisSettings extends SettingsSection {
       this.enableSwitch.destroy();
       this.enableSwitch = null;
     }
+    if (this.userSearchInput) {
+      this.userSearchInput.destroy();
+      this.userSearchInput = null;
+    }
     if (this.updatedSubId) {
       this.eventBus.off(this.updatedSubId);
       this.updatedSubId = null;
@@ -107,6 +113,13 @@ export class CustomEmojisSettings extends SettingsSection {
       </form>
 
       <div class="custom-emojis__list-mount"></div>
+
+      <section class="section">
+        <h2>Import from another user</h2>
+        <p class="custom-emojis__hint">Show the custom emojis of another user and import any of them into your personal pack.</p>
+        <div class="custom-emojis__browse-input-mount"></div>
+        <div class="custom-emojis__browse-results-mount"></div>
+      </section>
     `;
 
     const form = zone.querySelector('[data-add-form]') as HTMLFormElement;
@@ -123,6 +136,23 @@ export class CustomEmojisSettings extends SettingsSection {
       if (file) await this.handleUpload(file, zone);
       fileInput.value = '';
     });
+
+    // Mount UserSearchInput for the import-from-another-user flow
+    const browseInputMount = zone.querySelector('.custom-emojis__browse-input-mount') as HTMLElement | null;
+    if (browseInputMount) {
+      this.userSearchInput?.destroy();
+      this.userSearchInput = new UserSearchInput({
+        placeholder: 'Show me the Custom Emojis of this user…',
+        onUserSelected: (pubkey) => {
+          void this.handleBrowseUser(pubkey, zone);
+        },
+        onSelectionCleared: () => {
+          const resultsMount = zone.querySelector('.custom-emojis__browse-results-mount') as HTMLElement | null;
+          if (resultsMount) resultsMount.innerHTML = '';
+        },
+      });
+      browseInputMount.appendChild(this.userSearchInput.getElement());
+    }
 
     // Initial fetch + render
     const service = EmojiService.getInstance();
@@ -231,5 +261,92 @@ export class CustomEmojisSettings extends SettingsSection {
     } catch (err) {
       ToastService.show((err as Error).message, 'error');
     }
+  }
+
+  // ── Browse + import from another user ───────────────────────────
+
+  private async handleBrowseUser(pubkey: string, zone: HTMLElement): Promise<void> {
+    const mount = zone.querySelector('.custom-emojis__browse-results-mount') as HTMLElement | null;
+    if (!mount) return;
+
+    mount.innerHTML = `<p class="custom-emojis__hint pulsate">Fetching emoji packs…</p>`;
+
+    try {
+      const packs = await EmojiService.getInstance().fetchUserPacks(pubkey);
+      this.renderBrowseResults(mount, packs);
+    } catch (err) {
+      mount.innerHTML = `<p class="custom-emojis__empty">Failed to fetch emoji packs: ${escapeHtml((err as Error).message)}</p>`;
+    }
+  }
+
+  private renderBrowseResults(mount: HTMLElement, packs: RemoteEmojiPack[]): void {
+    if (packs.length === 0) {
+      mount.innerHTML = `<p class="custom-emojis__empty">This user has no custom emoji packs.</p>`;
+      return;
+    }
+
+    mount.innerHTML = packs.map((pack, packIdx) => `
+      <div class="custom-emojis__remote-pack" data-pack-index="${packIdx}">
+        <div class="l-spread">
+          <h3>${escapeHtml(pack.name)} <small>(${pack.emojis.length})</small></h3>
+          <button class="btn btn--passive btn--medium" data-import-all="${packIdx}">Import all</button>
+        </div>
+        <div class="custom-emojis__remote-grid">
+          ${pack.emojis.map((emoji, emojiIdx) => `
+            <button
+              type="button"
+              class="custom-emojis__remote-item"
+              data-import-emoji="${packIdx}:${emojiIdx}"
+              title=":${escapeHtml(emoji.shortcode)}:"
+            >
+              <img class="custom-emoji" src="${emoji.url.replace(/"/g, '&quot;')}" alt=":${escapeHtml(emoji.shortcode)}:" loading="lazy" />
+              <span class="custom-emojis__remote-code">:${escapeHtml(emoji.shortcode)}:</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+    `).join('');
+
+    // Per-emoji import buttons
+    mount.querySelectorAll<HTMLButtonElement>('[data-import-emoji]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const [pIdx, eIdx] = (btn.dataset.importEmoji ?? '').split(':').map(Number);
+        const pack = packs[pIdx!];
+        const emoji = pack?.emojis[eIdx!];
+        if (!emoji) return;
+        btn.disabled = true;
+        try {
+          const finalCode = await EmojiService.getInstance().importEmoji(emoji);
+          const msg = finalCode === emoji.shortcode
+            ? `Imported :${finalCode}:`
+            : `Imported as :${finalCode}: (shortcode collision)`;
+          ToastService.show(msg, 'success');
+        } catch (err) {
+          ToastService.show((err as Error).message, 'error');
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+
+    // Per-pack "Import all" buttons
+    mount.querySelectorAll<HTMLButtonElement>('[data-import-all]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const pIdx = Number(btn.dataset.importAll);
+        const pack = packs[pIdx];
+        if (!pack) return;
+        btn.disabled = true;
+        btn.textContent = 'Importing…';
+        try {
+          const count = await EmojiService.getInstance().importPack(pack.emojis);
+          ToastService.show(`Imported ${count} emoji${count === 1 ? '' : 's'} from "${pack.name}"`, 'success');
+        } catch (err) {
+          ToastService.show((err as Error).message, 'error');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = 'Import all';
+        }
+      });
+    });
   }
 }

@@ -399,11 +399,110 @@ export class ViewMountingService {
           }
         };
 
-      case 'addons':
+      case 'addon-bookmarks':
         return {
-          factory: async (param) => {
-            const { AddonsView } = await import('../components/views/AddonsView');
-            const view = new AddonsView(param);
+          factory: async () => {
+            const { BookmarksAddonView } = await import('../addons/bookmarks/BookmarksAddonView');
+            const view = new BookmarksAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-tribes':
+        return {
+          factory: async () => {
+            const { TribesAddonView } = await import('../addons/tribes/TribesAddonView');
+            const view = new TribesAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-extended-follows':
+        return {
+          factory: async () => {
+            const { ExtendedFollowsAddonView } = await import('../addons/extended-follows/ExtendedFollowsAddonView');
+            const view = new ExtendedFollowsAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-wallet-balance':
+        return {
+          factory: async () => {
+            const { WalletBalanceAddonView } = await import('../addons/wallet-balance/WalletBalanceAddonView');
+            const view = new WalletBalanceAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-profile-recognition':
+        return {
+          factory: async () => {
+            const { ProfileRecognitionView } = await import('../addons/profile-recognition/ProfileRecognitionView');
+            const view = new ProfileRecognitionView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-marketplace':
+        return {
+          factory: async () => {
+            const { MarketplaceAddonView } = await import('../addons/marketplace/MarketplaceAddonView');
+            const view = new MarketplaceAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-follow-packs':
+        return {
+          factory: async () => {
+            const { FollowPacksView } = await import('../addons/follow-packs/FollowPacksView');
+            const view = new FollowPacksView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-nostrin':
+        return {
+          factory: async () => {
+            const { NostrInAddonView } = await import('../addons/nostrin/NostrInAddonView');
+            const view = new NostrInAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-hashtag-subscriptions':
+        return {
+          factory: async () => {
+            const { HashtagSubscriptionsAddonView } = await import('../addons/hashtag-subscriptions/HashtagSubscriptionsAddonView');
+            const view = new HashtagSubscriptionsAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-list-settings':
+        return {
+          factory: async () => {
+            const { ListSettingsAddonView } = await import('../addons/list-settings/ListSettingsAddonView');
+            const view = new ListSettingsAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-custom-emojis':
+        return {
+          factory: async () => {
+            const { CustomEmojisView } = await import('../addons/custom-emojis/CustomEmojisView');
+            const view = new CustomEmojisView();
+            return { element: view.getElement(), view };
+          }
+        };
+
+      case 'addon-wordfilter':
+        return {
+          factory: async () => {
+            const { WordFilterAddonView } = await import('../addons/content-word-filter/WordFilterAddonView');
+            const view = new WordFilterAddonView();
             return { element: view.getElement(), view };
           }
         };

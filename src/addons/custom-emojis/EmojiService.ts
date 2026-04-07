@@ -25,6 +25,13 @@ export interface PersonalEmoji {
   url: string;
 }
 
+export interface RemoteEmojiPack {
+  authorPubkey: string;
+  dTag: string;
+  name: string;
+  emojis: PersonalEmoji[];
+}
+
 interface CachedPack {
   emojis: PersonalEmoji[];
   updatedAt: number;
@@ -121,6 +128,76 @@ export class EmojiService {
     const next = this.emojis.filter(e => e.shortcode !== shortcode);
     if (next.length === this.emojis.length) return;
     await this.publishPack(next);
+  }
+
+  /**
+   * Fetch all NIP-30 emoji packs (kind:30030) from another user.
+   * Deduplicates by d-tag and keeps the newest event per pack.
+   */
+  public async fetchUserPacks(pubkey: string): Promise<RemoteEmojiPack[]> {
+    try {
+      const events = await fetchEvents([{
+        kinds: [30030],
+        authors: [pubkey],
+        limit: 20,
+      } as any], 5000);
+
+      const latestPerDTag = new Map<string, typeof events[number]>();
+      for (const event of events) {
+        const dTag = (event.tags || []).find((t: string[]) => t[0] === 'd')?.[1] ?? '';
+        const existing = latestPerDTag.get(dTag);
+        if (!existing || (event.created_at || 0) > (existing.created_at || 0)) {
+          latestPerDTag.set(dTag, event);
+        }
+      }
+
+      return Array.from(latestPerDTag.values()).map(event => {
+        const tags = event.tags || [];
+        const dTag = tags.find((t: string[]) => t[0] === 'd')?.[1] ?? '';
+        const name = tags.find((t: string[]) => t[0] === 'name')?.[1]
+          ?? tags.find((t: string[]) => t[0] === 'title')?.[1]
+          ?? 'Untitled pack';
+        return {
+          authorPubkey: event.pubkey,
+          dTag,
+          name,
+          emojis: parseEmojiTags(tags),
+        };
+      }).filter(pack => pack.emojis.length > 0);
+    } catch (err) {
+      console.warn('[EmojiService] fetchUserPacks failed:', err);
+      return [];
+    }
+  }
+
+  /**
+   * Import a single emoji. Shortcode collisions get `_2`, `_3`, … suffixes.
+   * Returns the final shortcode used.
+   */
+  public async importEmoji(emoji: PersonalEmoji): Promise<string> {
+    const shortcode = this.resolveShortcode(emoji.shortcode, this.emojis);
+    const next = [...this.emojis, { shortcode, url: emoji.url }];
+    await this.publishPack(next);
+    return shortcode;
+  }
+
+  /** Bulk-import all emojis of a pack. Returns count of newly added emojis. */
+  public async importPack(emojis: PersonalEmoji[]): Promise<number> {
+    if (emojis.length === 0) return 0;
+    const next = [...this.emojis];
+    for (const emoji of emojis) {
+      const shortcode = this.resolveShortcode(emoji.shortcode, next);
+      next.push({ shortcode, url: emoji.url });
+    }
+    await this.publishPack(next);
+    return emojis.length;
+  }
+
+  private resolveShortcode(base: string, against: PersonalEmoji[]): string {
+    if (!against.some(e => e.shortcode === base)) return base;
+    let suffix = 2;
+    while (against.some(e => e.shortcode === `${base}_${suffix}`)) suffix++;
+    return `${base}_${suffix}`;
   }
 
   // ── Internals ────────────────────────────────────────────────────

@@ -270,10 +270,21 @@ export class App {
     this.registerRoute('/messages/:pubkey', 'conversation', 'conversation', 'cv', true,
       (params) => params.pubkey);
 
-    // Add-Ons hub + Marketplace routes (always register before catch-all)
-    this.registerRoute('/addons', 'addons', 'addons', 'adv', true);
-    this.registerRoute('/addons/:addonId', 'addons', 'addons', 'adv', true,
-      (params) => params.addonId);
+    // Add-Ons routes — one dedicated view per addon
+    this.registerRoute('/addons/bookmarks',             'addon-bookmarks',             'addon-bookmarks',             'adv', true);
+    this.registerRoute('/addons/tribes',                'addon-tribes',                'addon-tribes',                'adv', true);
+    this.registerRoute('/addons/extended-follows',      'addon-extended-follows',      'addon-extended-follows',      'adv', true);
+    this.registerRoute('/addons/wallet-balance',        'addon-wallet-balance',        'addon-wallet-balance',        'adv', true);
+    this.registerRoute('/addons/profile-recognition',   'addon-profile-recognition',   'addon-profile-recognition',   'adv', true);
+    this.registerRoute('/addons/marketplace',           'addon-marketplace',           'addon-marketplace',           'adv', true);
+    this.registerRoute('/addons/follow-packs',          'addon-follow-packs',          'addon-follow-packs',          'adv', true);
+    this.registerRoute('/addons/nostrin',               'addon-nostrin',               'addon-nostrin',               'adv', true);
+    this.registerRoute('/addons/hashtag-subscriptions', 'addon-hashtag-subscriptions', 'addon-hashtag-subscriptions', 'adv', true);
+    this.registerRoute('/addons/list-settings',         'addon-list-settings',         'addon-list-settings',         'adv', true);
+    this.registerRoute('/addons/custom-emojis',         'addon-custom-emojis',         'addon-custom-emojis',         'adv', true);
+    this.registerRoute('/addons/wordfilter',            'addon-wordfilter',            'addon-wordfilter',            'adv', true);
+    // /addons (no slug) → redirect to first addon
+    this.router.register('/addons', () => this.router.navigate('/addons/bookmarks'));
     this.registerMarketplaceRoutes();
 
     // Catch-all: bare nip19 entities in URL path (njump.me links like noornote.app/nprofile1...)
