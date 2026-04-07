@@ -8,6 +8,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { LongFormOrchestrator } from './orchestration/LongFormOrchestrator';
 import { Router } from './Router';
 import { escapeHtml } from '../helpers/escapeHtml';
+import { isLiveStreamsPlayerEnabled } from '../addons/live-streams-player/index';
 
 export class ArticlePreviewRenderer {
   private static instance: ArticlePreviewRenderer;
@@ -75,6 +76,7 @@ export class ArticlePreviewRenderer {
     const image = getTag('image');
     const status = (getTag('status') || 'planned').toLowerCase(); // 'live' | 'planned' | 'ended'
     const recording = getTag('recording');
+    const streaming = getTag('streaming'); // HLS URL for the inline player
 
     // Fallback watch URL: prefer zap.stream (the most common provider) — deep-links
     // via naddr so zap.stream resolves it from relays. When status=ended and a
@@ -112,7 +114,44 @@ export class ArticlePreviewRenderer {
       </div>
     `;
 
+    // Addon: Live Streams Player — inline HLS playback.
+    // Only for currently-live streams with a streaming URL.
+    if (status === 'live' && streaming && isLiveStreamsPlayerEnabled()) {
+      this.upgradeToInlinePlayer(card, streaming, image);
+    }
+
     return card;
+  }
+
+  /**
+   * Upgrade a live-stream card to an inline HLS player.
+   * Replaces the cover image with a <video> element using hls.js.
+   * Gated by the Live Streams Player addon.
+   */
+  private async upgradeToInlinePlayer(
+    card: HTMLElement,
+    streamUrl: string,
+    poster: string
+  ): Promise<void> {
+    try {
+      const imageEl = card.querySelector('.live-stream-card__image') as HTMLElement | null;
+      if (!imageEl) return;
+
+      const badgeHtml = imageEl.querySelector('.live-stream-card__badge')?.outerHTML || '';
+      const playerEl = document.createElement('div');
+      playerEl.className = 'live-stream-card__image live-stream-card__image--player';
+      playerEl.innerHTML = badgeHtml;
+      imageEl.replaceWith(playerEl);
+
+      // Hide the Watch button when the inline player is active.
+      const watchBtn = card.querySelector('.live-stream-card__watch') as HTMLElement | null;
+      if (watchBtn) watchBtn.style.display = 'none';
+
+      const { mountPlayer } = await import('../addons/live-streams-player/player');
+      await mountPlayer(playerEl, { streamUrl, poster });
+    } catch (err) {
+      console.warn('[LiveStreamsPlayer] Failed to mount inline player:', err);
+    }
   }
 
   /**

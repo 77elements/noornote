@@ -507,6 +507,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-live-streams-player':
+        return {
+          factory: async () => {
+            const { LiveStreamsPlayerAddonView } = await import('../addons/live-streams-player/LiveStreamsPlayerAddonView');
+            const view = new LiveStreamsPlayerAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'marketplace':
         return {
           factory: async () => {

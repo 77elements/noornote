@@ -38,6 +38,17 @@
     align-items: center;
     justify-content: center;
   }
+
+  &--player {
+    display: block;
+  }
+}
+
+.live-stream-player__video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: $color-black;
 }
 
 .live-stream-card__badge {

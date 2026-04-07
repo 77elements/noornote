@@ -34,4 +34,5 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
   { id: 'list-settings',         name: 'List Sync Mode',         route: '/addons/list-settings',         viewId: 'addon-list-settings' },
   { id: 'custom-emojis',         name: 'Custom Emojis',          route: '/addons/custom-emojis',         viewId: 'addon-custom-emojis' },
   { id: 'wordfilter',            name: 'Word Filter',            route: '/addons/wordfilter',            viewId: 'addon-wordfilter' },
+  { id: 'live-streams-player',   name: 'Live Streams Player',    route: '/addons/live-streams-player',   viewId: 'addon-live-streams-player' },
 ];

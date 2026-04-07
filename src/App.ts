@@ -286,6 +286,7 @@ export class App {
     this.registerRoute('/addons/list-settings',         'addon-list-settings',         'addon-list-settings',         'adv', true);
     this.registerRoute('/addons/custom-emojis',         'addon-custom-emojis',         'addon-custom-emojis',         'adv', true);
     this.registerRoute('/addons/wordfilter',            'addon-wordfilter',            'addon-wordfilter',            'adv', true);
+    this.registerRoute('/addons/live-streams-player',   'addon-live-streams-player',   'addon-live-streams-player',   'adv', true);
     // /addons (no slug) → redirect to first addon
     this.router.register('/addons', () => this.router.navigate('/addons/bookmarks'));
     this.registerMarketplaceRoutes();
