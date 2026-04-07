@@ -124,7 +124,7 @@ export class RepliesRenderer {
       // Render header with total comment count
       this.container.innerHTML = `
         <div class="snv-replies__header">
-          <h3>Replies & Quotes (${totalComments})</h3>
+          <h2 class="h3">Replies & Quotes (${totalComments})</h2>
         </div>
         <div class="snv-replies__list"></div>
       `;

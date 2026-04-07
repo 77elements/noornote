@@ -122,7 +122,7 @@ export class ThreadManager {
 
       repliesContainer.innerHTML = `
         <div class="snv-replies__header">
-          <h3>Replies & Quotes (${totalComments})</h3>
+          <h2 class="h3">Replies & Quotes (${totalComments})</h2>
         </div>
         <div class="snv-replies__list"></div>
       `;
@@ -266,13 +266,13 @@ export class ThreadManager {
     if (!repliesList) {
       repliesContainer.innerHTML = `
         <div class="snv-replies__header">
-          <h3>Replies & Quotes (1)</h3>
+          <h2 class="h3">Replies & Quotes (1)</h2>
         </div>
         <div class="snv-replies__list"></div>
       `;
       repliesList = repliesContainer.querySelector('.snv-replies__list');
     } else {
-      const header = repliesContainer.querySelector('.snv-replies__header h3');
+      const header = repliesContainer.querySelector('.snv-replies__header h2');
       if (header) {
         const match = header.textContent?.match(/\((\d+)\)/);
         const matchedCount = match?.[1];

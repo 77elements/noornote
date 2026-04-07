@@ -30,6 +30,7 @@ import { AppState } from '../../services/AppState';
 import { ContentValidationManager } from './ContentValidationManager';
 import { EditorStateManager } from './EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
+import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
@@ -48,6 +49,8 @@ export class PostNoteModal {
   private nsfwSwitch: Switch | null = null;
   private pollCreator: PollCreator | null = null;
   private mentionAutocomplete: MentionAutocomplete | null = null;
+  private customEmojiAutocomplete: import('../../addons/custom-emojis/CustomEmojiAutocomplete').CustomEmojiAutocomplete | null = null;
+  private customEmojiService: import('../../addons/custom-emojis/EmojiService').EmojiService | null = null;
   private eventHandlerManager: ModalEventHandlerManager | null = null;
 
   // State
@@ -200,10 +203,12 @@ export class PostNoteModal {
       `;
     } else {
       const currentUser = this.authService.getCurrentUser();
+      const extraTags = this.buildPreviewEmojiTags(this.content);
       const previewHTML = renderPostPreview({
         content: this.content,
         pubkey: currentUser?.pubkey || '',
-        isNSFW: this.isNSFW
+        isNSFW: this.isNSFW,
+        ...(extraTags.length > 0 ? { extraTags } : {})
       });
 
       return `<div class="post-note-preview">${previewHTML}</div>`;
@@ -272,6 +277,11 @@ export class PostNoteModal {
       }
     });
     this.mentionAutocomplete.init();
+
+    // Custom emoji shortcode autocomplete (addon-gated, lazy-loaded)
+    if (isCustomEmojisEnabled()) {
+      void this.initCustomEmojiAutocomplete();
+    }
 
     this.eventHandlerManager = new ModalEventHandlerManager({
       modalSelector: '.post-note-modal',
@@ -650,6 +660,53 @@ export class PostNoteModal {
     this.mentionAutocomplete?.destroy();
     this.mentionAutocomplete = null;
 
+    this.customEmojiAutocomplete?.destroy();
+    this.customEmojiAutocomplete = null;
+    this.customEmojiService = null;
+
     this.pollData = null;
+  }
+
+  /**
+   * Lazy-load the custom emoji autocomplete and attach it to the textarea.
+   * Only invoked when the Custom Emojis addon is enabled.
+   */
+  private async initCustomEmojiAutocomplete(): Promise<void> {
+    try {
+      const [{ CustomEmojiAutocomplete }, { EmojiService }] = await Promise.all([
+        import('../../addons/custom-emojis/CustomEmojiAutocomplete'),
+        import('../../addons/custom-emojis/EmojiService'),
+      ]);
+      this.customEmojiService = EmojiService.getInstance();
+      this.customEmojiAutocomplete = new CustomEmojiAutocomplete({
+        textareaSelector: '[data-textarea]',
+        onEmojiInserted: (shortcode) => {
+          this.systemLogger.info('PostNoteModal', `Custom emoji inserted: :${shortcode}:`);
+        }
+      });
+      this.customEmojiAutocomplete.init();
+    } catch (err) {
+      this.systemLogger.warn('PostNoteModal', `Custom emoji autocomplete load failed: ${err}`);
+    }
+  }
+
+  /**
+   * Sync helper: scan the current content for `:shortcode:` and return matching
+   * NIP-30 emoji tags. Used by the Preview tab so animated GIFs render inline.
+   */
+  private buildPreviewEmojiTags(content: string): string[][] {
+    if (!this.customEmojiService) return [];
+    const tags: string[][] = [];
+    const seen = new Set<string>();
+    const re = /:([a-zA-Z0-9_-]+):/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(content)) !== null) {
+      const code = m[1]!;
+      if (seen.has(code)) continue;
+      seen.add(code);
+      const emoji = this.customEmojiService.findEmoji(code);
+      if (emoji) tags.push(['emoji', code, emoji.url]);
+    }
+    return tags;
   }
 }

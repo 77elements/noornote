@@ -52,4 +52,46 @@
     color: var(--color-5);
     @include text-truncate;
   }
+
+  // ────────────────────────────────────────────────────────────
+  // Inline shortcode autocomplete (Phase 3.5a)
+  // ────────────────────────────────────────────────────────────
+  &__autocomplete {
+    background: var(--color-2);
+    border: 1px solid var(--color-3);
+    border-radius: $radius-pill;
+    box-shadow: $box-shadow;
+    min-width: 220px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: calc($gap / 4);
+  }
+
+  &__autocomplete-item {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    padding: calc($gap / 4) calc($gap / 2);
+    line-height: 1.6;
+    border-radius: $radius-xl;
+    cursor: pointer;
+
+    .custom-emoji {
+      height: 1.5em;
+      width: auto;
+      max-width: 32px;
+      flex-shrink: 0;
+    }
+
+    &.selected .custom-emojis__autocomplete-code,
+    &:hover .custom-emojis__autocomplete-code {
+      color: var(--color-4);
+    }
+  }
+
+  &__autocomplete-code {
+    font-family: monospace;
+    color: var(--color-5);
+    @include text-truncate;
+  }
 }

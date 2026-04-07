@@ -18,6 +18,8 @@ export interface PreviewOptions {
   content: string;
   pubkey: string;
   isNSFW?: boolean;
+  /** Optional extra tags merged into the mock event (e.g. NIP-30 emoji tags) */
+  extraTags?: string[][];
 }
 
 /**
@@ -44,7 +46,7 @@ export function renderPostPreview(options: PreviewOptions): string {
     pubkey: options.pubkey,
     created_at: Math.floor(Date.now() / 1000),
     kind: 1,
-    tags: [],
+    tags: options.extraTags ?? [],
     content: options.content,
     sig: ''
   };

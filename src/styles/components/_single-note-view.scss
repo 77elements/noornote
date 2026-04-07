@@ -124,6 +124,10 @@
   margin-bottom: $gap;
   padding-bottom: $gap;
   border-bottom: 1px solid var(--color-2);
+
+  h2 {
+    margin-bottom: 0;
+  }
 }
 
 .snv-replies__list {
