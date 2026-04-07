@@ -25,7 +25,7 @@
   background: transparent;
   border: none;
   border-radius: $radius-base;
-  color: $color-3;
+  color: var(--color-3);
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -46,7 +46,7 @@
 
     &:hover {
       background: transparent;
-      color: $color-3;
+      color: var(--color-3);
     }
   }
 }
