@@ -21,6 +21,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { ContentProcessor } from '../../services/ContentProcessor';
 import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
 import { replaceMediaPlaceholders } from '../../helpers/renderMediaContent';
+import { replaceBolt11Placeholders } from '../../helpers/renderBolt11';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { UserIdentity } from '../shared/UserIdentity';
 import { npubToHex } from '../../helpers/nip19';
@@ -369,13 +370,14 @@ export class ConversationView extends View {
     const processed = this.contentProcessor.processContent(message.content);
 
     // Replace media placeholders with actual media elements
-    const htmlWithMedia = replaceMediaPlaceholders(
+    let htmlWithMedia = replaceMediaPlaceholders(
       processed.html,
       processed.media,
       false, // isNSFW - DMs don't have content warnings
       message.id,
       message.isMine ? 'self' : this.partnerPubkey
     );
+    htmlWithMedia = replaceBolt11Placeholders(htmlWithMedia, processed.bolt11Invoices);
 
     messageEl.innerHTML = `
       <div class="message__content">${htmlWithMedia}</div>

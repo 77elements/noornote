@@ -12,6 +12,7 @@ import { InteractionStatusLine } from '../InteractionStatusLine';
 import { AnalyticsModal } from '../../analytics/AnalyticsModal';
 import { AppState } from '../../../services/AppState';
 import { replaceMediaPlaceholders } from '../../../helpers/renderMediaContent';
+import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
 import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
 import { getImageClickHandler } from '../../../services/ImageClickHandler';
 import { getVideoPlayerService } from '../../../services/VideoPlayerService';
@@ -149,6 +150,7 @@ export class NoteStructureBuilder {
       note.rawEvent.id,
       note.rawEvent.pubkey
     );
+    processedHtml = replaceBolt11Placeholders(processedHtml, note.content.bolt11Invoices);
 
     // Remove line breaks before quote markers (user pressed Enter before pasting quote)
     processedHtml = processedHtml.replace(/((<br\s*\/?>)\s*)+(?=<span class="quote-marker")/gi, '');

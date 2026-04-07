@@ -12,6 +12,7 @@ import { QuoteNoteFetcher } from './QuoteNoteFetcher';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { ContentProcessor, type QuotedReference } from './ContentProcessor';
 import { replaceMediaPlaceholders } from '../helpers/renderMediaContent';
+import { replaceBolt11Placeholders } from '../helpers/renderBolt11';
 import { Router } from './Router';
 import { RENDERABLE_KINDS } from '../types/nostr';
 import { PollOrchestrator } from './orchestration/PollOrchestrator';
@@ -185,13 +186,14 @@ export class QuotedNoteRenderer {
 
     // Replace media placeholders in HTML with actual media elements
     const isNSFW = event.tags.some(tag => tag[0] === 'content-warning');
-    const htmlWithMedia = replaceMediaPlaceholders(
+    let htmlWithMedia = replaceMediaPlaceholders(
       processedContent.html,
       processedContent.media,
       isNSFW,
       eventId,
       event.pubkey
     );
+    htmlWithMedia = replaceBolt11Placeholders(htmlWithMedia, processedContent.bolt11Invoices);
 
     quoteBox.innerHTML = `<div class="event-content">${htmlWithMedia}</div>`;
 

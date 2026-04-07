@@ -33,6 +33,7 @@ export interface ProcessedNote {
     links: LinkPreview[];
     hashtags: string[];
     quotedReferences: QuotedReference[];
+    bolt11Invoices: import('../../../helpers/extractBolt11').Bolt11Match[];
   };
   rawEvent: NostrEvent;
   quotedEvent?: ProcessedNote;

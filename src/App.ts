@@ -68,6 +68,9 @@ export class App {
     FontSizeService.getInstance();
     ThemeService.getInstance();
 
+    // Inline BOLT11 invoice pay handler (event delegation)
+    import('./services/Bolt11PayHandler').then(m => m.initBolt11PayHandler());
+
     // Auto-seek video thumbnails + tap-to-load handler for Data Saver placeholders
     import('./helpers/renderMediaContent').then(m => {
       m.startVideoThumbnailObserver();

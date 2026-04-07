@@ -1,0 +1,59 @@
+/**
+ * Inline BOLT11 Lightning Invoice Card
+ * Rendered when a note content contains a raw bolt11 invoice.
+ * Amethyst-parity: icon + label + amount + Pay button.
+ */
+
+@use '../abstracts/variables' as *;
+
+.bolt11-invoice {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+  margin: $gap 0;
+  padding: $gap;
+  background: $bg-warning;
+  border: 1px solid $color-warning;
+  border-radius: $radius-xl;
+  color: var(--color-5);
+}
+
+.bolt11-invoice__header {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  padding-bottom: calc($gap / 2);
+  border-bottom: 1px solid rgba($color-warning, 0.3);
+}
+
+.bolt11-invoice__icon {
+  color: $color-warning;
+  flex-shrink: 0;
+}
+
+.bolt11-invoice__label {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.bolt11-invoice__amount {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: $color-warning;
+  padding: calc($gap / 2) 0;
+}
+
+.bolt11-invoice__pay {
+  align-self: flex-start;
+
+  &.loading {
+    opacity: 0.7;
+    cursor: wait;
+  }
+
+  &--paid {
+    background: $color-success;
+    color: var(--color-1);
+    cursor: default;
+  }
+}

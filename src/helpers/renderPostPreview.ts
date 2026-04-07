@@ -13,6 +13,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { NoteProcessor } from '../components/ui/note-processing/NoteProcessor';
 import { replaceMediaPlaceholders } from './renderMediaContent';
+import { replaceBolt11Placeholders } from './renderBolt11';
 
 export interface PreviewOptions {
   content: string;
@@ -56,11 +57,12 @@ export function renderPostPreview(options: PreviewOptions): string {
 
   // Replace media placeholders in HTML with actual media elements
   // This ensures correct order (media appears where placeholder is) and no leftover __MEDIA_X__
-  const htmlWithMedia = replaceMediaPlaceholders(
+  let htmlWithMedia = replaceMediaPlaceholders(
     processedNote.content.html,
     processedNote.content.media,
     options.isNSFW || false
   );
+  htmlWithMedia = replaceBolt11Placeholders(htmlWithMedia, processedNote.content.bolt11Invoices);
 
   return htmlWithMedia;
 }

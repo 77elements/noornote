@@ -41,7 +41,8 @@ export class ZapReceiptProcessor {
         media: [],
         links: [],
         hashtags: [],
-        quotedReferences: []
+        quotedReferences: [],
+        bolt11Invoices: []
       },
       rawEvent: event,
       zapReceiptData

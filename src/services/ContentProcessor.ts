@@ -5,6 +5,7 @@
  */
 
 import { extractMedia } from '../helpers/extractMedia';
+import { extractBolt11, type Bolt11Match } from '../helpers/extractBolt11';
 import { extractLinks } from '../helpers/extractLinks';
 import { extractHashtags } from '../helpers/extractHashtags';
 import { extractQuotedReferences } from '../helpers/extractQuotedReferences';
@@ -34,6 +35,7 @@ export interface ProcessedContent {
   links: any[];
   hashtags: string[];
   quotedReferences: QuotedReference[];
+  bolt11Invoices: Bolt11Match[];
 }
 
 // Lazy-loaded types for profile recognition
@@ -96,6 +98,7 @@ export class ContentProcessor {
     const links = extractLinks(text);
     const hashtags = extractHashtags(text);
     const quotedRefs = extractQuotedReferences(text);
+    const bolt11Invoices = extractBolt11(text);
 
     const quotedReferences: QuotedReference[] = quotedRefs.map(ref => ({
       type: ref.type as 'event' | 'note' | 'addr',
@@ -133,6 +136,10 @@ export class ContentProcessor {
       const urlToReplace = item.originalUrl || item.url;
       cleanedText = cleanedText.replace(urlToReplace, `__MEDIA_${index}__`);
     });
+    // Replace bolt11 invoices with placeholders
+    bolt11Invoices.forEach((item, index) => {
+      cleanedText = cleanedText.replace(item.fullMatch, `__BOLT11_${index}__`);
+    });
     // Don't remove quoted references - they stay at their original position
     cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n').trim();
 
@@ -154,7 +161,8 @@ export class ContentProcessor {
       media,
       links,
       hashtags,
-      quotedReferences
+      quotedReferences,
+      bolt11Invoices
     };
   }
 
