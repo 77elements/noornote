@@ -1854,6 +1854,7 @@ export class MainLayout {
       { id: 'hashtag-subscriptions', name: 'Hashtag Subscriptions' },
       { id: 'list-settings', name: 'List Sync Mode' },
       { id: 'wordfilter', name: 'Word Filter' },
+      { id: 'custom-emojis', name: 'Custom Emojis' },
     ];
 
     const li = document.createElement('li');

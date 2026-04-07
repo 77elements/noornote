@@ -125,6 +125,14 @@
   align-items: center;
   justify-content: center;
 
+  // Constrain custom (NIP-30) emoji images to the regular emoji button size
+  .custom-emoji {
+    height: 1em;
+    width: auto;
+    max-width: 100%;
+    display: block;
+  }
+
   &:hover {
     transform: scale(1.2);
   }
@@ -132,6 +140,14 @@
   &:active {
     transform: scale(1.1);
   }
+}
+
+// Custom-emoji image inside a tab button
+.emoji-picker-custom .tabs .tab .custom-emoji {
+  height: 1.2em;
+  width: auto;
+  max-width: 100%;
+  display: block;
 }
 
 // Note: .btn-emoji styles are in _post-note-modal.scss

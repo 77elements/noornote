@@ -222,6 +222,27 @@ const ADDONS: AddonDef[] = [
     },
   },
   {
+    id: 'custom-emojis',
+    name: 'Custom Emojis',
+    description: '',
+    settingsContainerId: 'custom-emojis-settings-content',
+    isEnabled: async () => {
+      const { isCustomEmojisEnabled } = await import('../../addons/custom-emojis/index');
+      return isCustomEmojisEnabled();
+    },
+    setEnabled: async (v) => {
+      const { setCustomEmojisEnabled } = await import('../../addons/custom-emojis/index');
+      setCustomEmojisEnabled(v);
+    },
+    toggleEvent: 'custom-emojis:toggle',
+    mountSettings: async (panel) => {
+      const { CustomEmojisSettings } = await import('../../addons/custom-emojis/CustomEmojisSettings');
+      const settings = new CustomEmojisSettings();
+      settings.mount(panel);
+      return settings;
+    },
+  },
+  {
     id: 'wordfilter',
     name: 'Word Filter',
     description: '',

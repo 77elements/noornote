@@ -11,7 +11,8 @@
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { SystemLogger } from '../system/SystemLogger';
 import { ModalService } from '../../services/ModalService';
-import { EmojiPicker } from '../emoji/EmojiPicker';
+import { EmojiPicker, type CustomEmojiEntry } from '../emoji/EmojiPicker';
+import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 
 export interface PostEditorToolbarConfig {
   onMediaUploaded: (url: string) => void;
@@ -201,7 +202,7 @@ export class PostEditorToolbar {
   /**
    * Handle emoji picker
    */
-  private handleEmojiPicker(): void {
+  private async handleEmojiPicker(): Promise<void> {
     const textarea = document.querySelector(this.config.textareaSelector) as HTMLTextAreaElement;
     const emojiBtn = this.container?.querySelector('[data-action="emoji"]') as HTMLElement;
     if (!textarea || !emojiBtn) return;
@@ -212,9 +213,24 @@ export class PostEditorToolbar {
       this.emojiPicker = null;
     }
 
+    // Custom emojis (NIP-30) — only loaded when the addon is enabled
+    let customEmojis: CustomEmojiEntry[] | undefined;
+    if (isCustomEmojisEnabled()) {
+      try {
+        const { EmojiService } = await import('../../addons/custom-emojis/EmojiService');
+        const service = EmojiService.getInstance();
+        // Fire-and-forget refresh in background — initial render uses cached pack
+        void service.refreshFromRelays();
+        customEmojis = service.getEmojis();
+      } catch (err) {
+        this.systemLogger.warn('PostEditorToolbar', `Custom emoji load failed: ${err}`);
+      }
+    }
+
     // Create new picker with current DOM element
     this.emojiPicker = new EmojiPicker({
       triggerElement: emojiBtn,
+      ...(customEmojis ? { customEmojis } : {}),
       onSelect: (emoji: string) => {
         this.config.onEmojiSelected(emoji);
         this.emojiPicker?.hide();

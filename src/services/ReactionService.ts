@@ -18,8 +18,10 @@ export interface ReactionOptions {
   noteId: string;
   /** Note author pubkey */
   authorPubkey: string;
-  /** Emoji reaction (default: ❤️) */
+  /** Emoji reaction (default: ❤️). For NIP-30 custom emojis pass `:shortcode:` here and the matching `emojiTag`. */
   emoji?: string;
+  /** Optional NIP-30 emoji tag for custom-emoji reactions: ['emoji', code, url] */
+  emojiTag?: [string, string, string];
   /** Target relays to publish to */
   relays: string[];
 }
@@ -100,7 +102,7 @@ export class ReactionService {
    * @returns Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> - Result status
    */
   public async publishReaction(options: ReactionOptions): Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> {
-    const { noteId, authorPubkey, emoji = '❤️', relays } = options;
+    const { noteId, authorPubkey, emoji = '❤️', emojiTag, relays } = options;
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
@@ -129,6 +131,11 @@ export class ReactionService {
         ['e', noteId],      // Event being reacted to
         ['p', authorPubkey] // Author of the event being reacted to
       ];
+
+      // NIP-30: custom emoji reaction — content is `:shortcode:`, tags carry the URL
+      if (emojiTag) {
+        tags.push([emojiTag[0], emojiTag[1], emojiTag[2]]);
+      }
 
       // Build unsigned event
       const unsignedEvent = {

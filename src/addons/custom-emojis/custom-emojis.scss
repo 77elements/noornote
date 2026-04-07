@@ -1,0 +1,55 @@
+/**
+ * Custom Emojis Addon — content-zone management UI
+ *
+ * Settings/setting markup is unstyled (uses the global .section / .setting molecules).
+ * This file styles only the addon content zone (list management).
+ */
+
+@use '../../styles/abstracts/variables' as *;
+@use '../../styles/abstracts/mixins' as *;
+@use '../../styles/base/typography' as *;
+
+.custom-emojis {
+  &__hint {
+    color: var(--color-3);
+    margin: 0 0 $gap 0;
+  }
+
+  &__add-form {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+    margin-bottom: $gap * 1.5;
+  }
+
+  &__list-mount {
+    margin-top: $gap;
+  }
+
+  &__empty {
+    @extend %small;
+    color: var(--color-3);
+    text-align: center;
+    padding: $gap * 2 $gap;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: $gap;
+
+    .custom-emoji {
+      // Larger preview in the management list (overrides the inline 1.5em default)
+      height: 2.5em;
+      width: auto;
+      max-width: 80px;
+    }
+  }
+
+  &__code {
+    font-family: monospace;
+    color: var(--color-5);
+    @include text-truncate;
+  }
+}

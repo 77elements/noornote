@@ -103,6 +103,7 @@
 
 // Add-Ons
 @use '../addons/marketplace/marketplace';
+@use '../addons/custom-emojis/custom-emojis';
 
 // 4. Molecules - Combinations of atoms
 @use 'molecules/layouts';

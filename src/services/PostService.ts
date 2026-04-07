@@ -181,11 +181,14 @@ export class PostService {
         }
       }
 
+      // Custom emoji tags (NIP-30) — only when the addon is enabled
+      const finalTags = await this.maybeAttachEmojiTags(content, tags);
+
       // Build unsigned event
       const unsignedEvent = {
         kind,
         created_at: Math.floor(Date.now() / 1000),
-        tags,
+        tags: finalTags,
         content: content.trim(),
         pubkey: currentUser.pubkey
       };
@@ -280,11 +283,14 @@ export class PostService {
         tags.push(...pTags);
       }
 
+      // Custom emoji tags (NIP-30) — only when the addon is enabled
+      const finalTags = await this.maybeAttachEmojiTags(content, tags);
+
       // Build unsigned event
       const unsignedEvent = {
         kind,
         created_at: Math.floor(Date.now() / 1000),
-        tags,
+        tags: finalTags,
         content: content.trim(),
         pubkey: currentUser.pubkey
       };
@@ -467,6 +473,28 @@ export class PostService {
     });
 
     return { eTags, pTags };
+  }
+
+  /**
+   * Append NIP-30 ["emoji", code, url] tags for every known shortcode in
+   * `content`. Only runs when the Custom Emojis addon is enabled — otherwise
+   * the original tags array is returned untouched and no addon code loads.
+   */
+  private async maybeAttachEmojiTags(content: string, tags: string[][]): Promise<string[][]> {
+    try {
+      const { isCustomEmojisEnabled } = await import('../addons/custom-emojis/index');
+      if (!isCustomEmojisEnabled()) return tags;
+
+      const [{ EmojiService }, { attachEmojiTags }] = await Promise.all([
+        import('../addons/custom-emojis/EmojiService'),
+        import('../addons/custom-emojis/attachEmojiTags'),
+      ]);
+
+      return attachEmojiTags(content, tags, EmojiService.getInstance().getEmojis());
+    } catch (err) {
+      this.systemLogger.warn('PostService', `Custom emoji tag enrichment skipped: ${err}`);
+      return tags;
+    }
   }
 
 }

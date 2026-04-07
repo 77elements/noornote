@@ -9,7 +9,8 @@
 import { ReactionService } from '../../../services/ReactionService';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { ToastService } from '../../../services/ToastService';
-import { EmojiPicker } from '../../emoji/EmojiPicker';
+import { EmojiPicker, type CustomEmojiEntry } from '../../emoji/EmojiPicker';
+import { isCustomEmojisEnabled } from '../../../addons/custom-emojis/index';
 import { BaseInteractionManager, BaseInteractionConfig } from './BaseInteractionManager';
 
 export interface LikeManagerConfig extends BaseInteractionConfig {
@@ -56,7 +57,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
   /**
    * Handle like action - Show emoji picker
    */
-  public handleLike(): void {
+  public async handleLike(): Promise<void> {
     if (!this.requireAuth('like this note')) {
       return;
     }
@@ -84,11 +85,31 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
       return;
     }
 
+    // Custom emojis (NIP-30) — only loaded when the addon is enabled
+    let customEmojis: CustomEmojiEntry[] | undefined;
+    if (isCustomEmojisEnabled()) {
+      try {
+        const { EmojiService } = await import('../../../addons/custom-emojis/EmojiService');
+        const service = EmojiService.getInstance();
+        void service.refreshFromRelays();
+        customEmojis = service.getEmojis();
+      } catch (err) {
+        console.warn('[LikeManager] Custom emoji load failed:', err);
+      }
+    }
+
     // Create and show emoji picker
     this.emojiPicker = new EmojiPicker({
       triggerElement: this.button,
+      ...(customEmojis ? { customEmojis } : {}),
       onSelect: (emoji) => {
         this.publishReaction(emoji);
+        this.emojiPicker?.hide();
+        this.emojiPicker?.destroy();
+        this.emojiPicker = null;
+      },
+      onCustomSelect: (entry) => {
+        this.publishReaction(`:${entry.shortcode}:`, ['emoji', entry.shortcode, entry.url]);
         this.emojiPicker?.hide();
         this.emojiPicker?.destroy();
         this.emojiPicker = null;
@@ -100,8 +121,10 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
 
   /**
    * Publish reaction to note with selected emoji
+   * @param emoji   Reaction content (regular emoji char or `:shortcode:` for NIP-30)
+   * @param emojiTag Optional NIP-30 emoji tag for custom emoji reactions
    */
-  private async publishReaction(emoji: string): Promise<void> {
+  private async publishReaction(emoji: string, emojiTag?: [string, string, string]): Promise<void> {
     // Optimistic UI: update immediately before async publish
     this.hasInteracted = true;
     this.updateButtonState(true);
@@ -122,6 +145,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         noteId: this.config.noteId,
         authorPubkey: this.config.authorPubkey,
         emoji,
+        ...(emojiTag ? { emojiTag } : {}),
         relays: writeRelays
       });
 
