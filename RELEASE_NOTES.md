@@ -1,22 +1,20 @@
-# NoorNote v0.8.0 — Major Release
+# NoorNote v0.8.1
 
-**Desktop migrated to Electron, Android app via Capacitor, Custom Emojis addon, complete UI redesign.**
+Bugfixes and small features on top of 0.8.0.
 
 ## Highlights
 
-- **Electron Desktop** — replaces Tauri. Faster, leaner, better Linux/macOS support
-- **Custom Emojis (NIP-30)** — animated GIFs and image emojis as reactions and in posts. Upload your own pack, browse and import emojis from other users
-- **Complete UI Redesign** — pill borders, new section/setting molecules, theme-aware colors, redesigned Settings, Profile, Articles, Lists, DMs, Notifications, Welcome, Onboarding Wizard, and more
-- **Addon System Refactor** — each addon now has its own dedicated view, lazy-loaded only when visited
-- **Opt-in client tag** — choose whether your posts identify NoorNote as the publishing client
-- **Memory usage drastically reduced** — 62% less RAM after long timeline scrolling sessions (3.9 GB → 1.5 GB on Linux). SVG sprite sheet replaces 162 inline icons, LRU caches on stats services, shared IntersectionObserver, leak fixes
+- **Article Editor — Focus Mode** — fullscreen distraction-free writing with title, content and Markdown toolbar. Esc to exit
+- **Backdate articles** — new "Published at" picker lets you set an older date when re-publishing older articles to Nostr. The article view shows the original publish date prominently and the last-edit date in small print below
+- **Inline Lightning invoices (BOLT11)** — Pay button directly inside notes, quotes and DMs via WebLN or NWC
+- **Live Streams (NIP-53)** — new experimental Live Streams Player addon with inline hls.js playback, plus rendering of live stream cards from `naddr` references
+
+## Privacy
+
+- YouTube tracking parameters (`pp`, `si`, `ab_channel`, `utm_*`, `gclid`, `fbclid`, …) are stripped from your notes and replies at publish time. The Post and Reply preview tabs reflect exactly what gets published
 
 ## Bug Fixes
 
-- Self-zap button now properly disabled
-- Animated GIF emojis render correctly in reactions, notifications, and analytics
-- Quoted notes with off-by-one bech32 checksum recoverable
-- NIP-88 polls now render in reposts and quoted reposts
-- YouTube `m.` and `music.` subdomain URLs no longer leak fragments next to embeds
-- Various race conditions in wallet balance, zap button loading, SVG sprite loading
-- Capacitor Android: status bar overlap, diagnostic logging, crash logger
+- Marketplace, Follow Packs and Word Filter addons no longer show their content when the addon is disabled
+- Article editor header uses the standard layout (heading left, Back button right)
+- YouTube embed URLs no longer leak `&t=…&pp=…` fragments next to the video
