@@ -512,8 +512,9 @@ export class ArticleEditorView extends View {
   /**
    * Handle Markdown formatting action
    */
-  private handleMarkdownAction(action: string): void {
-    const textarea = this.container.querySelector('.article-editor-content') as HTMLTextAreaElement;
+  private handleMarkdownAction(action: string, textareaOverride?: HTMLTextAreaElement, fileInputOverride?: HTMLInputElement): void {
+    const textarea = textareaOverride
+      ?? (this.container.querySelector('.article-editor-content') as HTMLTextAreaElement);
     if (!textarea) return;
 
     const start = textarea.selectionStart;
@@ -544,7 +545,8 @@ export class ArticleEditorView extends View {
         break;
       case 'image':
         // Trigger file input
-        const fileInput = this.container.querySelector('[data-md-file-input]') as HTMLInputElement;
+        const fileInput = fileInputOverride
+          ?? (this.container.querySelector('[data-md-file-input]') as HTMLInputElement);
         fileInput?.click();
         return;
     }
@@ -926,6 +928,7 @@ export class ArticleEditorView extends View {
           </div>
           <div class="form__row">
             <label for="focus-content">Content (Markdown)</label>
+            ${this.renderMarkdownToolbar()}
             <textarea id="focus-content" class="textarea textarea--code textarea--large" placeholder="Write your article in Markdown..." data-focus-field="content"></textarea>
           </div>
         </section>
@@ -939,6 +942,25 @@ export class ArticleEditorView extends View {
 
     titleInput.addEventListener('input', () => { this.title = titleInput.value; });
     contentInput.addEventListener('input', () => { this.content = contentInput.value; });
+
+    // Wire the duplicated markdown toolbar to operate on the focus textarea
+    const focusFileInput = overlay.querySelector('[data-md-file-input]') as HTMLInputElement;
+    overlay.querySelectorAll('[data-md-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const action = (e.currentTarget as HTMLElement).dataset.mdAction || '';
+        this.handleMarkdownAction(action, contentInput, focusFileInput);
+      });
+    });
+    focusFileInput?.addEventListener('change', async (e) => {
+      const target = e.target as HTMLInputElement;
+      const file = target.files?.[0];
+      if (file) {
+        await this.handleContentImageUpload(file);
+        // After upload, content lives in `this.content` — push to the focus textarea too
+        contentInput.value = this.content;
+        target.value = '';
+      }
+    });
 
     overlay.querySelector('[data-action="exit-focus"]')?.addEventListener('click', () => this.exitFocusMode());
 
