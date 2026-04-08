@@ -69,6 +69,13 @@ export class ArticleEditorView extends View {
   private isDraftMode: boolean = false;
   private editPubkey: string = '';
   private originalPublishedAt: number | null = null;
+  private focusOverlay: HTMLElement | null = null;
+  private focusKeydownHandler = (e: KeyboardEvent): void => {
+    if (this.focusOverlay && e.key === 'Escape') {
+      e.preventDefault();
+      this.exitFocusMode();
+    }
+  };
 
   // Dirty-state tracking
   private snapshot: EditorSnapshot = { title: '', content: '', summary: '', image: '', tags: '' };
@@ -226,6 +233,7 @@ export class ArticleEditorView extends View {
             <button class="tab tab--active" data-tab="edit">Edit</button>
             <button class="tab" data-tab="preview">Preview</button>
           </div>
+          <button class="btn btn--passive btn--medium" data-action="enter-focus" title="Distraction-free writing (Esc to exit)">Focus mode</button>
           ${this.relaySelector.render()}
         </div>
 
@@ -450,6 +458,10 @@ export class ArticleEditorView extends View {
 
     const deleteDraftBtn = this.container.querySelector('[data-action="delete-draft"]');
     deleteDraftBtn?.addEventListener('click', () => this.handleDeleteDraft());
+
+    const focusBtn = this.container.querySelector('[data-action="enter-focus"]');
+    focusBtn?.addEventListener('click', () => this.enterFocusMode());
+    document.addEventListener('keydown', this.focusKeydownHandler);
 
     // Auto-generate slug from title (only for new articles, not when editing)
     if (!this.isEditMode) {
@@ -891,10 +903,76 @@ export class ArticleEditorView extends View {
   }
 
   /**
+   * Distraction-free focus mode: a plain fullscreen overlay appended to
+   * <body> with a duplicated title input + content textarea. On exit we
+   * write the edited values back to the real editor inputs so snapshot /
+   * dirty tracking picks them up.
+   */
+  private enterFocusMode(): void {
+    if (this.focusOverlay) return;
+
+    const overlay = document.createElement('div');
+    overlay.className = 'article-editor-focus';
+    overlay.innerHTML = `
+      <div class="article-editor-focus__inner">
+        <header class="l-spread">
+          <h1>${this.isEditMode ? 'Edit Article' : 'Write Article'}</h1>
+          <button class="btn btn--passive btn--medium" data-action="exit-focus">Exit Focus Mode</button>
+        </header>
+        <section class="section">
+          <div class="form__row">
+            <label for="focus-title">Title</label>
+            <input type="text" id="focus-title" class="input input--title" placeholder="Article title..." data-focus-field="title" />
+          </div>
+          <div class="form__row">
+            <label for="focus-content">Content (Markdown)</label>
+            <textarea id="focus-content" class="textarea textarea--code textarea--large" placeholder="Write your article in Markdown..." data-focus-field="content"></textarea>
+          </div>
+        </section>
+      </div>
+    `;
+
+    const titleInput = overlay.querySelector('[data-focus-field="title"]') as HTMLInputElement;
+    const contentInput = overlay.querySelector('[data-focus-field="content"]') as HTMLTextAreaElement;
+    titleInput.value = this.title;
+    contentInput.value = this.content;
+
+    titleInput.addEventListener('input', () => { this.title = titleInput.value; });
+    contentInput.addEventListener('input', () => { this.content = contentInput.value; });
+
+    overlay.querySelector('[data-action="exit-focus"]')?.addEventListener('click', () => this.exitFocusMode());
+
+    document.body.appendChild(overlay);
+    this.focusOverlay = overlay;
+    contentInput.focus();
+  }
+
+  private exitFocusMode(): void {
+    if (!this.focusOverlay) return;
+    this.focusOverlay.remove();
+    this.focusOverlay = null;
+
+    // Write the edited values back to the real editor inputs and fire an
+    // input event so setupFieldListeners + dirty tracking pick them up.
+    const titleInput = this.container.querySelector('[data-field="title"]') as HTMLInputElement | null;
+    const contentInput = this.container.querySelector('[data-field="content"]') as HTMLTextAreaElement | null;
+    if (titleInput) {
+      titleInput.value = this.title;
+      titleInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (contentInput) {
+      contentInput.value = this.content;
+      contentInput.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
+  /**
    * Destroy view
    */
   public destroy(): void {
     window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+    document.removeEventListener('keydown', this.focusKeydownHandler);
+    if (this.focusOverlay) this.exitFocusMode();
     if (this.relaySelector) {
       this.relaySelector.destroy();
       this.relaySelector = null;
