@@ -23,13 +23,16 @@ export class ClipboardActionsService {
   }
 
   /**
-   * Copy event ID to clipboard (nevent format)
+   * Copy event ID to clipboard (nevent format).
+   * Embeds the author pubkey when known so other clients (and our own
+   * PostService when this nevent is later quoted) get a complete tag set.
    * @param eventId - Hex event ID
+   * @param authorPubkey - Hex author pubkey (optional but strongly recommended)
    * @param showToast - Show success toast (default: true)
    */
-  public async copyEventId(eventId: string, showToast: boolean = true): Promise<boolean> {
+  public async copyEventId(eventId: string, authorPubkey?: string, showToast: boolean = true): Promise<boolean> {
     try {
-      const nevent = encodeNevent(eventId);
+      const nevent = encodeNevent(eventId, undefined, authorPubkey || undefined);
       await navigator.clipboard.writeText(nevent);
 
       if (showToast) {
@@ -71,13 +74,16 @@ export class ClipboardActionsService {
   }
 
   /**
-   * Copy share link to clipboard (full URL with nevent)
+   * Copy share link to clipboard (full URL with nevent).
+   * Embeds the author pubkey when known so receiving clients can resolve
+   * the note from the author's outbox relays.
    * @param eventId - Hex event ID
+   * @param authorPubkey - Hex author pubkey (optional but strongly recommended)
    * @param showToast - Show success toast (default: true)
    */
-  public async copyShareLink(eventId: string, showToast: boolean = true): Promise<boolean> {
+  public async copyShareLink(eventId: string, authorPubkey?: string, showToast: boolean = true): Promise<boolean> {
     try {
-      const nevent = encodeNevent(eventId);
+      const nevent = encodeNevent(eventId, undefined, authorPubkey || undefined);
       const shareUrl = `${window.location.origin}/note/${nevent}`;
       await navigator.clipboard.writeText(shareUrl);
 

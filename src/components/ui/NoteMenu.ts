@@ -419,7 +419,7 @@ export class NoteMenu {
    */
   private async copyEventId(): Promise<void> {
     const clipboardService = ClipboardActionsService.getInstance();
-    await clipboardService.copyEventId(this.options.eventId);
+    await clipboardService.copyEventId(this.options.eventId, this.options.authorPubkey);
   }
 
   /**
@@ -435,7 +435,7 @@ export class NoteMenu {
    */
   private async copyShareLink(): Promise<void> {
     const clipboardService = ClipboardActionsService.getInstance();
-    await clipboardService.copyShareLink(this.options.eventId);
+    await clipboardService.copyShareLink(this.options.eventId, this.options.authorPubkey);
   }
 
   /**
