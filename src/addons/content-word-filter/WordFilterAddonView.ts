@@ -1,9 +1,13 @@
 import { View } from '../../components/views/View';
 import { ContentWordFilterSettings, mountWordFilterContent } from './ContentWordFilterSettings';
+import { EventBus } from '../../services/EventBus';
+import { isContentWordFilterEnabled } from './index';
 
 export class WordFilterAddonView extends View {
   private container: HTMLElement;
+  private contentEl: HTMLElement | null = null;
   private settings: ContentWordFilterSettings | null = null;
+  private toggleSubId: string | null = null;
 
   constructor() {
     super();
@@ -17,10 +21,25 @@ export class WordFilterAddonView extends View {
     this.settings = new ContentWordFilterSettings();
     this.settings.mount(this.container);
 
-    const contentEl = this.container.querySelector('[data-addon-content="wordfilter"]') as HTMLElement;
-    if (contentEl) {
-      mountWordFilterContent(contentEl);
+    this.contentEl = this.container.querySelector('[data-addon-content="wordfilter"]') as HTMLElement;
+
+    if (isContentWordFilterEnabled()) {
+      this.mountContent();
     }
+
+    this.toggleSubId = EventBus.getInstance().on('content-word-filter:toggle', (payload: { enabled: boolean }) => {
+      if (payload.enabled) this.mountContent();
+      else this.unmountContent();
+    });
+  }
+
+  private mountContent(): void {
+    if (!this.contentEl || this.contentEl.childElementCount > 0) return;
+    mountWordFilterContent(this.contentEl);
+  }
+
+  private unmountContent(): void {
+    if (this.contentEl) this.contentEl.innerHTML = '';
   }
 
   public getElement(): HTMLElement {
@@ -28,8 +47,13 @@ export class WordFilterAddonView extends View {
   }
 
   public destroy(): void {
+    if (this.toggleSubId) {
+      EventBus.getInstance().off(this.toggleSubId);
+      this.toggleSubId = null;
+    }
     this.settings?.unmount();
     this.settings = null;
     this.container.innerHTML = '';
+    this.contentEl = null;
   }
 }

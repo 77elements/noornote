@@ -1,10 +1,14 @@
 import { View } from '../../components/views/View';
 import { FollowPacksSettings } from './FollowPacksSettings';
 import { FollowPackManager } from './FollowPackManager';
+import { EventBus } from '../../services/EventBus';
+import { isFollowPacksEnabled } from './index';
 
 export class FollowPacksView extends View {
   private container: HTMLElement;
+  private contentEl: HTMLElement | null = null;
   private settings: FollowPacksSettings | null = null;
+  private toggleSubId: string | null = null;
 
   constructor() {
     super();
@@ -18,11 +22,26 @@ export class FollowPacksView extends View {
     this.settings = new FollowPacksSettings();
     this.settings.mount(this.container);
 
-    const contentEl = this.container.querySelector('[data-addon-content="follow-packs"]') as HTMLElement;
-    if (contentEl) {
-      const manager = new FollowPackManager(contentEl);
-      void manager.renderListTab(contentEl);
+    this.contentEl = this.container.querySelector('[data-addon-content="follow-packs"]') as HTMLElement;
+
+    if (isFollowPacksEnabled()) {
+      this.mountContent();
     }
+
+    this.toggleSubId = EventBus.getInstance().on('follow-packs:toggle', (payload: { enabled: boolean }) => {
+      if (payload.enabled) this.mountContent();
+      else this.unmountContent();
+    });
+  }
+
+  private mountContent(): void {
+    if (!this.contentEl || this.contentEl.childElementCount > 0) return;
+    const manager = new FollowPackManager(this.contentEl);
+    void manager.renderListTab(this.contentEl);
+  }
+
+  private unmountContent(): void {
+    if (this.contentEl) this.contentEl.innerHTML = '';
   }
 
   public getElement(): HTMLElement {
@@ -30,8 +49,13 @@ export class FollowPacksView extends View {
   }
 
   public destroy(): void {
+    if (this.toggleSubId) {
+      EventBus.getInstance().off(this.toggleSubId);
+      this.toggleSubId = null;
+    }
     this.settings?.unmount();
     this.settings = null;
     this.container.innerHTML = '';
+    this.contentEl = null;
   }
 }
