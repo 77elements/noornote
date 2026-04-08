@@ -12,12 +12,16 @@
   flex-direction: column;
   min-height: calc(100vh - $gap * 6);
 
+  header {
+    margin-bottom: $gap;
+  }
+
   // Header with back button and title
   &__header {
     display: flex;
     align-items: center;
     gap: $gap;
-    margin-bottom: $gap * 1.5;
+    margin-bottom: $gap;
   }
 
   &__back {

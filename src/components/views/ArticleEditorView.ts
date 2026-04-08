@@ -216,12 +216,9 @@ export class ArticleEditorView extends View {
 
     this.container.innerHTML = `
       <div class="article-editor">
-        <header class="article-editor__header">
-          <button class="article-editor__back" data-action="back">
-            <svg width="24" height="24"><use href="#icon-back"/></svg>
-            Back
-          </button>
-          <h1 class="article-editor__title">${this.isEditMode ? 'Edit Article' : 'Write Article'}</h1>
+        <header class="l-spread">
+          <h1>${this.isEditMode ? 'Edit Article' : 'Write Article'}</h1>
+          <button class="btn btn--passive btn--medium" data-action="back">Back</button>
         </header>
 
         <div class="article-editor__toolbar">
@@ -232,7 +229,7 @@ export class ArticleEditorView extends View {
           ${this.relaySelector.render()}
         </div>
 
-        <div class="article-editor__body">
+        <div class="article-editor__body section">
           ${this.renderEditMode()}
         </div>
 
