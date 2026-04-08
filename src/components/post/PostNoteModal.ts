@@ -20,6 +20,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from './RelaySelector';
 import { PostEditorToolbar } from './PostEditorToolbar';
 import { renderPostPreview } from '../../helpers/renderPostPreview';
+import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { Switch } from '../ui/Switch';
 import { PollCreator, type PollData } from '../poll/PollCreator';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
@@ -203,9 +204,10 @@ export class PostNoteModal {
       `;
     } else {
       const currentUser = this.authService.getCurrentUser();
-      const extraTags = this.buildPreviewEmojiTags(this.content);
+      const cleanedContent = stripTrackingParams(this.content);
+      const extraTags = this.buildPreviewEmojiTags(cleanedContent);
       const previewHTML = renderPostPreview({
-        content: this.content,
+        content: cleanedContent,
         pubkey: currentUser?.pubkey || '',
         isNSFW: this.isNSFW,
         ...(extraTags.length > 0 ? { extraTags } : {})
@@ -332,7 +334,7 @@ export class PostNoteModal {
 
         const currentUser = this.authService.getCurrentUser();
         previewContainer.innerHTML = renderPostPreview({
-          content: this.content,
+          content: stripTrackingParams(this.content),
           pubkey: currentUser?.pubkey || '',
           isNSFW: this.isNSFW
         });
@@ -375,7 +377,7 @@ export class PostNoteModal {
   private updatePreview(): void {
     const currentUser = this.authService.getCurrentUser();
     EditorStateManager.updatePreview('.post-note-preview', {
-      content: this.content,
+      content: stripTrackingParams(this.content),
       pubkey: currentUser?.pubkey || '',
       isNSFW: this.isNSFW
     });

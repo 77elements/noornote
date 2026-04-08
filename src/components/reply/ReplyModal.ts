@@ -29,6 +29,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { renderPostPreview } from '../../helpers/renderPostPreview';
+import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { Switch } from '../ui/Switch';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { renderQuotePreview } from '../../helpers/renderQuotePreview';
@@ -284,9 +285,10 @@ export class ReplyModal {
       `;
     } else {
       const currentUser = this.authService.getCurrentUser();
-      const extraTags = this.buildPreviewEmojiTags(this.content);
+      const cleanedContent = stripTrackingParams(this.content);
+      const extraTags = this.buildPreviewEmojiTags(cleanedContent);
       const previewHTML = renderPostPreview({
-        content: this.content,
+        content: cleanedContent,
         pubkey: currentUser?.pubkey || '',
         isNSFW: this.isNSFW,
         ...(extraTags.length > 0 ? { extraTags } : {})
@@ -447,9 +449,10 @@ export class ReplyModal {
         previewContainer.className = 'post-note-preview';
 
         const currentUser = this.authService.getCurrentUser();
-        const extraTags = this.buildPreviewEmojiTags(this.content);
+        const cleanedContent = stripTrackingParams(this.content);
+        const extraTags = this.buildPreviewEmojiTags(cleanedContent);
         previewContainer.innerHTML = renderPostPreview({
-          content: this.content,
+          content: cleanedContent,
           pubkey: currentUser?.pubkey || '',
           isNSFW: this.isNSFW,
           ...(extraTags.length > 0 ? { extraTags } : {})
@@ -488,7 +491,7 @@ export class ReplyModal {
   private updatePreview(): void {
     const currentUser = this.authService.getCurrentUser();
     EditorStateManager.updatePreview('.post-note-preview', {
-      content: this.content,
+      content: stripTrackingParams(this.content),
       pubkey: currentUser?.pubkey || '',
       isNSFW: this.isNSFW
     });

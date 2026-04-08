@@ -86,7 +86,9 @@ export class PostService {
    * @returns Promise<boolean> - Success status
    */
   public async createPost(options: PostOptions): Promise<boolean> {
-    const { content, relays, contentWarning, pollData, quotedEvent, quotedArticle } = options;
+    const { relays, contentWarning, pollData, quotedEvent, quotedArticle } = options;
+    const { stripTrackingParams } = await import('../helpers/stripTrackingParams');
+    const content = stripTrackingParams(options.content);
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
@@ -238,7 +240,9 @@ export class PostService {
    * @returns Promise<NostrEvent | null> - Signed event on success, null on failure
    */
   public async createReply(options: ReplyOptions): Promise<NostrEvent | null> {
-    const { content, parentEvent, relays, contentWarning, asComment } = options;
+    const { parentEvent, relays, contentWarning, asComment } = options;
+    const { stripTrackingParams } = await import('../helpers/stripTrackingParams');
+    const content = stripTrackingParams(options.content);
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
