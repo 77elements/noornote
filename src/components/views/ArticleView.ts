@@ -141,6 +141,20 @@ export class ArticleView {
         showMenu: true
       });
       authorContainer.appendChild(noteHeader.getElement());
+
+      // If the author set a `published_at` tag that differs from the event's
+      // `created_at` (typical for backdated imports or post-publish edits),
+      // show published_at prominently (via NoteHeader above) and put the
+      // raw created_at in parentheses directly below.
+      if (metadata.publishedAt !== event.created_at) {
+        const editedMeta = document.createElement('div');
+        editedMeta.className = 'article-header__edited-meta';
+        const createdDate = new Date(event.created_at * 1000).toLocaleDateString(undefined, {
+          year: 'numeric', month: 'long', day: 'numeric'
+        });
+        editedMeta.textContent = `(last edited ${createdDate})`;
+        authorContainer.appendChild(editedMeta);
+      }
     }
 
     // Edit & delete button click handlers

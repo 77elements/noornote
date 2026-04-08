@@ -37,6 +37,7 @@ interface EditorSnapshot {
   summary: string;
   image: string;
   tags: string;
+  publishedAt: number | null;
 }
 
 export class ArticleEditorView extends View {
@@ -68,7 +69,7 @@ export class ArticleEditorView extends View {
   private isEditMode: boolean = false;
   private isDraftMode: boolean = false;
   private editPubkey: string = '';
-  private originalPublishedAt: number | null = null;
+  private publishedAt: number | null = null;
   private focusOverlay: HTMLElement | null = null;
   private focusKeydownHandler = (e: KeyboardEvent): void => {
     if (this.focusOverlay && e.key === 'Escape') {
@@ -78,7 +79,7 @@ export class ArticleEditorView extends View {
   };
 
   // Dirty-state tracking
-  private snapshot: EditorSnapshot = { title: '', content: '', summary: '', image: '', tags: '' };
+  private snapshot: EditorSnapshot = { title: '', content: '', summary: '', image: '', tags: '', publishedAt: null };
   private beforeUnloadHandler = (e: BeforeUnloadEvent): void => {
     if (this.isDirty()) {
       e.preventDefault();
@@ -139,7 +140,7 @@ export class ArticleEditorView extends View {
       this.image = metadata.image;
       this.identifier = metadata.identifier;
       this.tags = metadata.topics.join(', ');
-      this.originalPublishedAt = metadata.publishedAt;
+      this.publishedAt = metadata.publishedAt;
       this.isDraftMode = event.kind === 30024;
       this.editPubkey = event.pubkey;
 
@@ -182,6 +183,7 @@ export class ArticleEditorView extends View {
       summary: this.summary,
       image: this.image,
       tags: this.tags,
+      publishedAt: this.publishedAt,
     };
   }
 
@@ -194,7 +196,8 @@ export class ArticleEditorView extends View {
       this.content !== this.snapshot.content ||
       this.summary !== this.snapshot.summary ||
       this.image !== this.snapshot.image ||
-      this.tags !== this.snapshot.tags
+      this.tags !== this.snapshot.tags ||
+      this.publishedAt !== this.snapshot.publishedAt
     );
   }
 
@@ -362,6 +365,20 @@ export class ArticleEditorView extends View {
             </div>
 
             <div class="form__row">
+              <label>
+                Published at
+                <span class="form__note">(set a past date for older articles you're re-publishing)</span>
+              </label>
+              <div class="l-spread">
+                <span data-published-at-label>${this.renderPublishedAtLabel()}</span>
+                <div>
+                  <button type="button" class="btn btn--passive btn--medium" data-action="pick-published-at">Pick date</button>
+                  ${this.publishedAt ? '<button type="button" class="btn btn--passive btn--medium" data-action="clear-published-at">Reset</button>' : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="form__row">
               <label for="article-identifier">
                 Slug / Identifier
                 <span class="form__note">(auto-generated, change only if you know what you're doing)</span>
@@ -380,6 +397,53 @@ export class ArticleEditorView extends View {
         </section>
       </div>
     `;
+  }
+
+  private renderPublishedAtLabel(): string {
+    if (!this.publishedAt) return '<em>Now (on publish)</em>';
+    const date = new Date(this.publishedAt * 1000);
+    return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  }
+
+  private refreshPublishedAtUI(): void {
+    const label = this.container.querySelector('[data-published-at-label]');
+    if (label) label.innerHTML = this.renderPublishedAtLabel();
+    // Re-render the whole row's actions so the Reset button toggles correctly
+    const row = this.container.querySelector('[data-action="pick-published-at"]')?.parentElement;
+    if (row) {
+      const hasReset = !!row.querySelector('[data-action="clear-published-at"]');
+      if (this.publishedAt && !hasReset) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn--passive btn--medium';
+        btn.dataset.action = 'clear-published-at';
+        btn.textContent = 'Reset';
+        btn.addEventListener('click', () => this.handleClearPublishedAt());
+        row.appendChild(btn);
+      } else if (!this.publishedAt && hasReset) {
+        row.querySelector('[data-action="clear-published-at"]')?.remove();
+      }
+    }
+  }
+
+  private async handlePickPublishedAt(): Promise<void> {
+    const { pickDate } = await import('../../helpers/datePickerModal');
+    const picked = await pickDate({
+      title: 'Published at',
+      initial: this.publishedAt ? new Date(this.publishedAt * 1000) : new Date(),
+      max: new Date(),
+      confirmLabel: 'Set date',
+    });
+    if (!picked) return;
+    this.publishedAt = Math.floor(picked.getTime() / 1000);
+    this.refreshPublishedAtUI();
+    this.updateButtonStates();
+  }
+
+  private handleClearPublishedAt(): void {
+    this.publishedAt = null;
+    this.refreshPublishedAtUI();
+    this.updateButtonStates();
   }
 
   /**
@@ -462,6 +526,11 @@ export class ArticleEditorView extends View {
     const focusBtn = this.container.querySelector('[data-action="enter-focus"]');
     focusBtn?.addEventListener('click', () => this.enterFocusMode());
     document.addEventListener('keydown', this.focusKeydownHandler);
+
+    const pickPublishedAtBtn = this.container.querySelector('[data-action="pick-published-at"]');
+    pickPublishedAtBtn?.addEventListener('click', () => this.handlePickPublishedAt());
+    const clearPublishedAtBtn = this.container.querySelector('[data-action="clear-published-at"]');
+    clearPublishedAtBtn?.addEventListener('click', () => this.handleClearPublishedAt());
 
     // Auto-generate slug from title (only for new articles, not when editing)
     if (!this.isEditMode) {
@@ -855,7 +924,7 @@ export class ArticleEditorView extends View {
       if (this.summary) articleData.summary = this.summary;
       if (this.image) articleData.image = this.image;
       if (topics.length > 0) articleData.topics = topics;
-      if (this.isEditMode && this.originalPublishedAt) articleData.publishedAt = this.originalPublishedAt;
+      if (this.publishedAt) articleData.publishedAt = this.publishedAt;
 
       const naddr = isDraft
         ? await this.articleService.saveDraft(articleData)

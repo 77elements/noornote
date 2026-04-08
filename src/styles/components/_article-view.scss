@@ -63,6 +63,14 @@
     padding: $gap 0;
     border-radius: $radius-2xl;
   }
+
+  &__edited-meta {
+    text-align: center;
+    padding: calc($gap / 2) $gap 0;
+    color: var(--text-alpha-light);
+    font-size: 0.875rem;
+    font-style: italic;
+  }
 }
 
 // Article body (markdown content)

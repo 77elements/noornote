@@ -7,7 +7,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { FeedOrchestrator } from '../../../services/orchestration/FeedOrchestrator';
 import { TimelineStateManager } from '../timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './TimelineUIStateHandler';
-import { DateRangeSelector } from './DateRangeSelector';
+import { pickDateRange, formatDateRangeLabel } from '../../../helpers/datePickerModal';
 import { RefreshButton } from '../../ui/RefreshButton';
 import { CustomDropdown } from '../../ui/CustomDropdown';
 import { AppState } from '../../../services/AppState';
@@ -125,8 +125,7 @@ export class TimelineEventHandler {
    * Handle time range selection via modal
    */
   private async handleTimeRangeSelection(): Promise<void> {
-    const selector = new DateRangeSelector();
-    const result = await selector.show();
+    const result = await pickDateRange();
 
     if (!result) {
       // User cancelled — revert dropdown to previous value
@@ -143,7 +142,7 @@ export class TimelineEventHandler {
     this.appState.setState('timeline', { selectedRelay: null });
 
     if (this.viewDropdown) {
-      this.viewDropdown.setCustomLabel(DateRangeSelector.formatRangeLabel(result.since, result.until));
+      this.viewDropdown.setCustomLabel(formatDateRangeLabel(result.since, result.until));
     }
 
     this.previousView = 'time-range';
