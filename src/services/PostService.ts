@@ -131,17 +131,22 @@ export class PostService {
       });
 
       // Add quoted event tags if this is a quoted repost (NIP-18)
-      // NORMAL NOTES: Use q-tag with event ID
+      // NORMAL NOTES: Use q-tag with event ID. Author pubkey is OPTIONAL —
+      // a bare nevent (event id only, no author TLV) means we don't know the
+      // author and must NOT push an empty pubkey, otherwise relays reject
+      // the event with "unexpected size for fixed-size tag: p".
       if (quotedEvent) {
         const qTag = ['q', quotedEvent.eventId];
         if (quotedEvent.relayHint) {
           qTag.push(quotedEvent.relayHint);
         }
-        qTag.push(quotedEvent.authorPubkey);
+        if (quotedEvent.authorPubkey) {
+          qTag.push(quotedEvent.authorPubkey);
+        }
         tags.push(qTag);
 
-        // Add p-tag for quoted author if not already mentioned
-        if (!mentionedPubkeys.has(quotedEvent.authorPubkey)) {
+        // Add p-tag for quoted author if known and not already mentioned
+        if (quotedEvent.authorPubkey && !mentionedPubkeys.has(quotedEvent.authorPubkey)) {
           tags.push(['p', quotedEvent.authorPubkey]);
         }
       }
@@ -154,8 +159,8 @@ export class PostService {
         }
         tags.push(aTag);
 
-        // Add p-tag for quoted author if not already mentioned
-        if (!mentionedPubkeys.has(quotedArticle.authorPubkey)) {
+        // Add p-tag for quoted author if known and not already mentioned
+        if (quotedArticle.authorPubkey && !mentionedPubkeys.has(quotedArticle.authorPubkey)) {
           tags.push(['p', quotedArticle.authorPubkey]);
         }
       }
