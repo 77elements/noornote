@@ -10,12 +10,12 @@
   flex-direction: column;
   margin: $gap 0;
   background: var(--color-2);
-  border: 1px solid var(--color-2);
+  border: none;
   border-radius: $radius-xl;
   overflow: hidden;
 
   &--live {
-    border-color: $color-red;
+    border: 1px solid var(--color-6);
   }
 }
 

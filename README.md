@@ -125,7 +125,7 @@ If the app crashes, check the log files:
 | [NIP-18](https://github.com/nostr-protocol/nips/blob/master/18.md) | Reposts | 6 |
 | [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md) | bech32 encoding (npub, nsec, note, nevent, naddr) | - |
 | [NIP-22](https://github.com/nostr-protocol/nips/blob/master/22.md) | Comments | 1111 |
-| [NIP-23](https://github.com/nostr-protocol/nips/blob/master/23.md) | Long-form content (articles) | 30023 |
+| [NIP-23](https://github.com/nostr-protocol/nips/blob/master/23.md) | Long-form content (articles + drafts) | 30023, 30024 |
 | [NIP-25](https://github.com/nostr-protocol/nips/blob/master/25.md) | Reactions | 7 |
 | [NIP-27](https://github.com/nostr-protocol/nips/blob/master/27.md) | Text note references | - |
 | [NIP-30](https://github.com/nostr-protocol/nips/blob/master/30.md) | Custom emojis (incl. animated GIFs) | 30030 |
@@ -134,7 +134,8 @@ If the app crashes, check the log files:
 | [NIP-46](https://github.com/nostr-protocol/nips/blob/master/46.md) | Remote signing (bunker://) | 24133 |
 | [NIP-47](https://github.com/nostr-protocol/nips/blob/master/47.md) | Nostr Wallet Connect | 23194, 23195 |
 | [NIP-50](https://github.com/nostr-protocol/nips/blob/master/50.md) | Search | - |
-| [NIP-51](https://github.com/nostr-protocol/nips/blob/master/51.md) | Lists (bookmarks, mutes, private follows) | 10000, 10003, 30000 |
+| [NIP-51](https://github.com/nostr-protocol/nips/blob/master/51.md) | Lists (bookmarks, mutes, private follows, tribes) | 10000, 30000, 30003 |
+| [NIP-53](https://github.com/nostr-protocol/nips/blob/master/53.md) | Live Activities (inline HLS player for live streams) | 30311 |
 | [NIP-56](https://github.com/nostr-protocol/nips/blob/master/56.md) | Reporting | 1984 |
 | [NIP-57](https://github.com/nostr-protocol/nips/blob/master/57.md) | Zaps | 9734, 9735 |
 | [NIP-65](https://github.com/nostr-protocol/nips/blob/master/65.md) | Relay list metadata | 10002 |
@@ -142,9 +143,12 @@ If the app crashes, check the log files:
 | [NIP-71](https://github.com/nostr-protocol/nips/blob/master/71.md) | Video events | 21, 22 |
 | [NIP-78](https://github.com/nostr-protocol/nips/blob/master/78.md) | Application-specific data | 30078 |
 | [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) | Polls | 1068, 1018 |
+| [NIP-94](https://github.com/nostr-protocol/nips/blob/master/94.md) | File metadata events in the timeline | 1063 |
 | [NIP-96](https://github.com/nostr-protocol/nips/blob/master/96.md) | HTTP file storage | 24242 |
 | [NIP-98](https://github.com/nostr-protocol/nips/blob/master/98.md) | HTTP auth | 27235 |
 | [NIP-99](https://github.com/nostr-protocol/nips/blob/master/99.md) | Classified listings (marketplace) | 30402 |
+
+**Additional community kinds:** Follow Packs (kind `39089`, used by the Follow Packs add-on and [calle's Follow Packs](https://github.com/callebtc/following.space)).
 
 ## Build from Source
 
