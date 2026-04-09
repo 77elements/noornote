@@ -28,7 +28,7 @@ import { AuthService } from './AuthService';
 
 // ===== Types =====
 
-export type DiagArea = 'lists' | 'dms' | 'crashes' | 'relays' | 'system';
+export type DiagArea = 'lists' | 'dms' | 'crashes' | 'relays' | 'system' | 'addons';
 
 interface DiagLogEntry {
   ts: string;
@@ -469,7 +469,7 @@ export class DiagnosticLogger {
         if (parseDateFromFilename(entry.name)) continue;
 
         const area = entry.name.replace('.jsonl', '') as DiagArea;
-        if (!['lists', 'dms', 'crashes', 'relays'].includes(area)) continue;
+        if (!['lists', 'dms', 'crashes', 'relays', 'addons'].includes(area)) continue;
 
         const newName = `${area}-${today}.jsonl`;
         await platformRename(
@@ -539,7 +539,7 @@ export class DiagnosticLogger {
   }
 
   getAllPaths(): Record<DiagArea, string | null> {
-    const areas: DiagArea[] = ['lists', 'dms', 'crashes', 'relays'];
+    const areas: DiagArea[] = ['lists', 'dms', 'crashes', 'relays', 'addons'];
     const paths: Record<string, string | null> = {};
     for (const area of areas) {
       paths[area] = this.getLogPath(area);
@@ -613,6 +613,6 @@ if (typeof window !== 'undefined') {
     },
     paths: () => DiagnosticLogger.getInstance().getAllPaths(),
     dir: () => DiagnosticLogger.getInstance().getLogsDir(),
-    areas: ['lists', 'dms', 'crashes', 'relays']
+    areas: ['lists', 'dms', 'crashes', 'relays', 'addons']
   };
 }

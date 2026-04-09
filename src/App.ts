@@ -21,6 +21,7 @@ import { ThemeService } from './services/ThemeService';
 import { initDiagnosticLogger, destroyDiagnosticLogger } from './services/DiagnosticLogger';
 import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
+import { AddonLoader } from './addons/AddonLoader';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
 
@@ -122,6 +123,17 @@ export class App {
     const isLoggedIn = this.authService.hasValidSession();
     const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
     this.router.navigate(targetPath);
+
+    // Bootstrap the AddonLoader. Registers its user:login/logout and toggle
+    // listeners. Passes the current session (if any) so session-restore
+    // triggers an initial load of enabled addons without waiting for a new
+    // user:login event. See docs/todos/addons-true-lazy-loading.md.
+    const currentUserForAddons = isLoggedIn ? this.authService.getCurrentUser() : null;
+    AddonLoader.getInstance().bootstrap(
+      currentUserForAddons
+        ? { pubkey: currentUserForAddons.pubkey, npub: currentUserForAddons.npub }
+        : undefined
+    );
 
     // If user is already logged in from session restore, start services explicitly.
     // user:login may have been emitted before setupEventListeners() registered the handler.
