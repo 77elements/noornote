@@ -26,7 +26,11 @@ export class FollowPacksSettings extends SettingsSection {
       checked: isFollowPacksEnabled(),
       onChange: (checked) => {
         setFollowPacksEnabled(checked);
-        EventBus.getInstance().emit('follow-packs:toggle', { enabled: checked });
+        // Emit the uniform AddonLoader event + the legacy event so
+        // FollowPacksView's existing listener keeps working.
+        const bus = EventBus.getInstance();
+        bus.emit('follow-packs:addon-toggle', { enabled: checked });
+        bus.emit('follow-packs:toggle', { enabled: checked });
         ToastService.show(checked ? 'Follow Packs enabled' : 'Follow Packs disabled', 'success');
       }
     });

@@ -38,6 +38,9 @@ export class CustomEmojisSettings extends SettingsSection {
       checked: enabled,
       onChange: async (checked) => {
         setCustomEmojisEnabled(checked);
+        // Emit the uniform AddonLoader event + legacy event so existing
+        // listeners (CustomEmojisView etc.) keep working.
+        this.eventBus.emit('custom-emojis:addon-toggle', { enabled: checked });
         this.eventBus.emit('custom-emojis:toggle', { enabled: checked });
         ToastService.show(checked ? 'Custom Emojis enabled' : 'Custom Emojis disabled', 'success');
         if (checked && this.currentContentZone) {

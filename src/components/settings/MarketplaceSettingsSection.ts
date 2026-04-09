@@ -35,7 +35,12 @@ export class MarketplaceSettingsSection extends SettingsSection {
       checked: marketplaceEnabled,
       onChange: (checked) => {
         setMarketplaceEnabled(checked);
-        EventBus.getInstance().emit('marketplace:toggle', { enabled: checked });
+        // Emit the uniform AddonLoader event + the legacy event so existing
+        // listeners (Timeline, MainLayout sidebar, MarketplaceAddonView) keep
+        // working unchanged.
+        const bus = EventBus.getInstance();
+        bus.emit('marketplace:addon-toggle', { enabled: checked });
+        bus.emit('marketplace:toggle', { enabled: checked });
         this.updateTimelineVisibility(contentContainer);
         ToastService.show(checked ? 'Marketplace enabled' : 'Marketplace disabled', 'success');
       }

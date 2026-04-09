@@ -16,6 +16,10 @@ import { isWalletBalanceEnabled } from './wallet-balance/index';
 import { isProfileRecognitionEnabled } from './profile-recognition/index';
 import { isLiveStreamsPlayerEnabled } from './live-streams-player/index';
 import { isHashtagSubscriptionsEnabled } from './hashtag-subscriptions/index';
+import { isContentWordFilterEnabled } from './content-word-filter/index';
+import { isCustomEmojisEnabled } from './custom-emojis/index';
+import { isMarketplaceEnabled } from './marketplace/index';
+import { isFollowPacksEnabled } from './follow-packs/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -44,7 +48,31 @@ export function registerCoreAddons(): void {
     load: () => import('./hashtag-subscriptions/runtime').then(m => m.default),
   });
 
-  // Phase 5+ will add:
-  //   word-filter, list-settings, extended-follows, nostrin,
-  //   custom-emojis, marketplace, follow-packs
+  // Note: registry id is 'wordfilter' (matches ADDON_REGISTRY and App.ts route)
+  loader.register({
+    id: 'wordfilter',
+    isEnabled: isContentWordFilterEnabled,
+    load: () => import('./content-word-filter/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'custom-emojis',
+    isEnabled: isCustomEmojisEnabled,
+    load: () => import('./custom-emojis/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'marketplace',
+    isEnabled: isMarketplaceEnabled,
+    load: () => import('./marketplace/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'follow-packs',
+    isEnabled: isFollowPacksEnabled,
+    load: () => import('./follow-packs/runtime').then(m => m.default),
+  });
+
+  // Out of scope (list-adjacent, deferred — separate decision):
+  //   list-settings, extended-follows, nostrin, bookmarks, tribes
 }

@@ -61,6 +61,18 @@ export class EmojiService {
     return EmojiService.instance;
   }
 
+  /**
+   * Tear down the service. Called by the AddonLoader runtime on toggle-OFF,
+   * logout, or account switch. The service has no timers and no EventBus
+   * subscriptions (only emits), so the only cleanup needed is releasing the
+   * static singleton so the next getInstance() returns a fresh instance with
+   * the new account's emoji pack loaded from PerAccountLocalStorage cache.
+   */
+  public destroy(): void {
+    this.emojis = [];
+    EmojiService.instance = null;
+  }
+
   /** Synchronous read of the in-memory list. */
   public getEmojis(): PersonalEmoji[] {
     return [...this.emojis];

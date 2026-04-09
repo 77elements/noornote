@@ -35,7 +35,12 @@ export class ContentWordFilterSettings extends SettingsSection {
       checked: enabled,
       onChange: (checked) => {
         setContentWordFilterEnabled(checked);
-        EventBus.getInstance().emit('content-word-filter:toggle', { enabled: checked });
+        // Emit the uniform AddonLoader toggle event (id matches ADDON_REGISTRY).
+        // Also emit the legacy event so existing listeners (WordFilterAddonView)
+        // keep working.
+        const bus = EventBus.getInstance();
+        bus.emit('wordfilter:addon-toggle', { enabled: checked });
+        bus.emit('content-word-filter:toggle', { enabled: checked });
         ToastService.show(
           checked ? 'Content Word Filter enabled' : 'Content Word Filter disabled',
           'success'
