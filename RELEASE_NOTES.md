@@ -1,20 +1,26 @@
-# NoorNote v0.8.1
+# NoorNote v0.8.2
 
-Bugfixes and small features on top of 0.8.0.
+Reliability, architecture and security release on top of 0.8.1.
 
 ## Highlights
 
-- **Article Editor — Focus Mode** — fullscreen distraction-free writing with title, content and Markdown toolbar. Esc to exit
-- **Backdate articles** — new "Published at" picker lets you set an older date when re-publishing older articles to Nostr. The article view shows the original publish date prominently and the last-edit date in small print below
-- **Inline Lightning invoices (BOLT11)** — Pay button directly inside notes, quotes and DMs via WebLN or NWC
-- **Live Streams (NIP-53)** — new experimental Live Streams Player addon with inline hls.js playback, plus rendering of live stream cards from `naddr` references
+- **Wallet Balance no longer disappears** after long runtime or account switches. A listener-leak that caused the display under the logo to flicker and vanish over time is fixed, and the wallet now re-initializes cleanly when you switch accounts.
+- **NWC connection strings are now encrypted at rest** on every platform (Desktop, Android, Web). AES-256-GCM with a device-bound key. Existing users are migrated silently on first launch — no password, no prompt, no setting, no action required.
+- **Rewritten addon system.** Disabled addons now truly stay out of memory (not just hidden from the UI). Eight addons migrated to the new lifecycle, with proper cleanup on toggle-off and account switch.
+- **Live Streams (NIP-53)** are now properly documented as supported in the README, along with NIP-94 file metadata events.
 
-## Privacy
+## Addon Reliability
 
-- YouTube tracking parameters (`pp`, `si`, `ab_channel`, `utm_*`, `gclid`, `fbclid`, …) are stripped from your notes and replies at publish time. The Post and Reply preview tabs reflect exactly what gets published
+- Profile Recognition, Hashtag Subscriptions and Custom Emojis no longer leak state (timers, listeners, cached services) between accounts
+- Hashtag Subscriptions polling now stops reliably when you disable the addon
+- Live Stream cards now only show a border in the "live" state, and in a subtler color
 
-## Bug Fixes
+## Notes
 
-- Marketplace, Follow Packs and Word Filter addons no longer show their content when the addon is disabled
-- Article editor header uses the standard layout (heading left, Back button right)
-- YouTube embed URLs no longer leak `&t=…&pp=…` fragments next to the video
+- Copying a note link (nevent) now includes the author's pubkey so recipient clients can resolve it faster
+- Fixed a relay rejection when quoting a note by bare `nevent` — empty author pubkeys are no longer emitted into the event
+
+## Under the hood
+
+- New `AddonLoader` architecture with real dynamic-import lazy-loading, serialized init/destroy, and a destroy contract that requires full cleanup. Bookmarks and Tribes are intentionally kept in the existing lists architecture to avoid touching the fragile sync flow.
+- New diagnostic logging coverage for NWC migration and addon lifecycle, plus a `diagnose/addons_lifecycle.py` analysis script.
