@@ -4,6 +4,11 @@
  * Uses IndexedDB for browser/web storage.
  * Desktop (Electron) uses EncryptedFileStorage for NWC, not this service.
  *
+ * Encryption: NWC connection strings are encrypted via NWCCryptoService
+ * (AES-256-GCM with a device-bound random key) before being written to
+ * IndexedDB. Legacy plaintext blobs from older versions are silently
+ * migrated to the new v2 format on load. See docs/todos/nwc-encryption.md.
+ *
  * IndexedDB is used instead of localStorage because:
  * - Not synchronously accessible via JS (harder to exploit via XSS)
  * - Isolated per origin
@@ -12,6 +17,8 @@
 
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 import { AuthService } from './AuthService';
+import { NWCCryptoService } from './NWCCryptoService';
+import { diagLog } from './DiagnosticLogger';
 
 // IndexedDB database name and store
 const DB_NAME = 'noornote_secure';
@@ -116,7 +123,9 @@ export class KeychainStorage {
     }
 
     const key = this.getNwcKeyForUser(userPubkey);
-    await this.setInIndexedDB(key, connectionString);
+    const encrypted = await NWCCryptoService.getInstance().encrypt(connectionString);
+    await this.setInIndexedDB(key, encrypted);
+    diagLog('system', 'nwc_save_v2_ok', { storage: 'indexeddb', length: encrypted.length });
   }
 
   /**
@@ -131,7 +140,52 @@ export class KeychainStorage {
     }
 
     const key = this.getNwcKeyForUser(userPubkey);
-    return this.getFromIndexedDB(key);
+    const raw = await this.getFromIndexedDB(key);
+    if (!raw) {
+      diagLog('system', 'nwc_load_empty', { storage: 'indexeddb' });
+      return null;
+    }
+
+    // New v2 format: decrypt via NWCCryptoService
+    if (NWCCryptoService.isEncryptedFormat(raw)) {
+      try {
+        const plaintext = await NWCCryptoService.getInstance().decrypt(raw);
+        diagLog('system', 'nwc_load_v2_ok', { storage: 'indexeddb', length: raw.length });
+        return plaintext;
+      } catch (err) {
+        console.error('[KeychainStorage] Failed to decrypt NWC blob:', err);
+        diagLog('system', 'nwc_load_v2_fail', {
+          storage: 'indexeddb',
+          error: String(err && (err as Error).message ? (err as Error).message : err),
+        });
+        return null;
+      }
+    }
+
+    // Legacy plaintext format (pre-v2): silently migrate to encrypted v2.
+    // Any string that doesn't start with "v2:" is treated as legacy plaintext.
+    diagLog('system', 'nwc_load_legacy_plaintext', { storage: 'indexeddb', length: raw.length });
+    try {
+      const reencrypted = await NWCCryptoService.getInstance().encrypt(raw);
+      await this.setInIndexedDB(key, reencrypted);
+      console.info('[KeychainStorage] Migrated legacy plaintext NWC blob to v2 (AES-GCM)');
+      diagLog('system', 'nwc_migrate_ok', {
+        storage: 'indexeddb',
+        from: 'plaintext',
+        to: 'v2',
+        newLength: reencrypted.length,
+      });
+    } catch (migrationErr) {
+      // Migration failure is non-fatal — we still return the plaintext so the
+      // user stays connected. Next load will retry migration.
+      console.warn('[KeychainStorage] Legacy migration re-encrypt failed:', migrationErr);
+      diagLog('system', 'nwc_migrate_fail', {
+        storage: 'indexeddb',
+        from: 'plaintext',
+        error: String(migrationErr && (migrationErr as Error).message ? (migrationErr as Error).message : migrationErr),
+      });
+    }
+    return raw;
   }
 
   /**

@@ -1,13 +1,19 @@
 /**
- * Encrypted File Storage for NWC
+ * Encrypted File Storage for NWC (Desktop / Electron)
  * Stores NWC connection string in encrypted file
  * File location: ~/.noornote/{npub}/nwc.enc
+ *
+ * Encryption: AES-256-GCM with a device-bound random key, via NWCCryptoService.
+ * Legacy format (XOR with pubkey) is detected on load and silently migrated to
+ * the new v2 format. See docs/todos/nwc-encryption.md.
  *
  * Uses Electron (window.electronAPI) backend.
  */
 
 import { PlatformService } from './PlatformService';
 import { hexToNpub } from '../helpers/nip19';
+import { NWCCryptoService } from './NWCCryptoService';
+import { diagLog } from './DiagnosticLogger';
 
 const platform = PlatformService.getInstance();
 
@@ -76,10 +82,11 @@ export class EncryptedFileStorage {
     try {
       await this.ensureUserDir(pubkey);
 
-      const encrypted = this.encrypt(connectionString, pubkey);
+      const encrypted = await NWCCryptoService.getInstance().encrypt(connectionString);
       const filePath = await this.getNwcFilePath(pubkey);
 
       await writeTextFile(filePath, encrypted);
+      diagLog('system', 'nwc_save_v2_ok', { storage: 'file', length: encrypted.length });
     } catch (error) {
       console.error('[EncryptedFileStorage] Failed to save NWC:', error);
       throw new Error('Failed to save NWC to encrypted file');
@@ -91,10 +98,54 @@ export class EncryptedFileStorage {
       const filePath = await this.getNwcFilePath(pubkey);
       const fileExists = await fsExists(filePath);
 
-      if (!fileExists) return null;
+      if (!fileExists) {
+        diagLog('system', 'nwc_load_empty', { storage: 'file' });
+        return null;
+      }
 
-      const encrypted = await readTextFile(filePath);
-      return this.decrypt(encrypted, pubkey);
+      const raw = await readTextFile(filePath);
+
+      // New v2 format: decrypt via NWCCryptoService
+      if (NWCCryptoService.isEncryptedFormat(raw)) {
+        try {
+          const plaintext = await NWCCryptoService.getInstance().decrypt(raw);
+          diagLog('system', 'nwc_load_v2_ok', { storage: 'file', length: raw.length });
+          return plaintext;
+        } catch (decryptErr) {
+          console.error('[EncryptedFileStorage] Failed to decrypt v2 NWC blob:', decryptErr);
+          diagLog('system', 'nwc_load_v2_fail', {
+            storage: 'file',
+            error: String(decryptErr && (decryptErr as Error).message ? (decryptErr as Error).message : decryptErr),
+          });
+          return null;
+        }
+      }
+
+      // Legacy XOR format: decrypt with pubkey, then transparently migrate
+      // to the new v2 format so the next load doesn't hit this path again.
+      diagLog('system', 'nwc_load_legacy_xor', { storage: 'file', length: raw.length });
+      const legacyPlaintext = this.decryptLegacyXor(raw, pubkey);
+      try {
+        const reencrypted = await NWCCryptoService.getInstance().encrypt(legacyPlaintext);
+        await writeTextFile(filePath, reencrypted);
+        console.info('[EncryptedFileStorage] Migrated legacy XOR NWC blob to v2 (AES-GCM)');
+        diagLog('system', 'nwc_migrate_ok', {
+          storage: 'file',
+          from: 'xor',
+          to: 'v2',
+          newLength: reencrypted.length,
+        });
+      } catch (migrationErr) {
+        // Migration failure is non-fatal — we still return the plaintext so the
+        // user stays connected. Next load will retry migration.
+        console.warn('[EncryptedFileStorage] Legacy migration re-encrypt failed:', migrationErr);
+        diagLog('system', 'nwc_migrate_fail', {
+          storage: 'file',
+          from: 'xor',
+          error: String(migrationErr && (migrationErr as Error).message ? (migrationErr as Error).message : migrationErr),
+        });
+      }
+      return legacyPlaintext;
     } catch (error) {
       console.error('[EncryptedFileStorage] Failed to load NWC:', error);
       return null;
@@ -114,19 +165,13 @@ export class EncryptedFileStorage {
     }
   }
 
-  private static encrypt(text: string, key: string): string {
-    const textBytes = new TextEncoder().encode(text);
-    const keyBytes = new TextEncoder().encode(key);
-
-    const encrypted = new Uint8Array(textBytes.length);
-    for (let i = 0; i < textBytes.length; i++) {
-      encrypted[i] = textBytes[i]! ^ keyBytes[i % keyBytes.length]!;
-    }
-
-    return this.arrayBufferToBase64(encrypted);
-  }
-
-  private static decrypt(encryptedBase64: string, key: string): string {
+  /**
+   * Legacy XOR decryption — used ONLY during migration of pre-v2 blobs.
+   * The XOR key was the user's pubkey, which is public information (it's even
+   * in the file path), so this was never real encryption. Kept for one-shot
+   * migration on load, then the file is immediately rewritten in v2 format.
+   */
+  private static decryptLegacyXor(encryptedBase64: string, key: string): string {
     const encrypted = this.base64ToArrayBuffer(encryptedBase64);
     const keyBytes = new TextEncoder().encode(key);
 
@@ -136,15 +181,6 @@ export class EncryptedFileStorage {
     }
 
     return new TextDecoder().decode(decrypted);
-  }
-
-  private static arrayBufferToBase64(buffer: Uint8Array): string {
-    let binary = '';
-    const len = buffer.byteLength;
-    for (let i = 0; i < len; i++) {
-      binary += String.fromCharCode(buffer[i]!);
-    }
-    return btoa(binary);
   }
 
   private static base64ToArrayBuffer(base64: string): Uint8Array {
