@@ -16,12 +16,12 @@
 
 import { UserProfileService, UserProfile } from '../../services/UserProfileService';
 import { UserHoverCard } from '../ui/UserHoverCard';
-import { isProfileRecognitionEnabled } from '../../addons/profile-recognition/index';
+import { AddonLoader } from '../../addons/AddonLoader';
+import type { ProfileRecognitionRuntime } from '../../addons/profile-recognition/runtime';
 import { Router } from '../../services/Router';
 import { hexToNpub } from '../../helpers/nip19';
 
-// Lazy-loaded types for profile recognition
-type ProfileRecognitionServiceType = import('../../addons/profile-recognition/ProfileRecognitionService').ProfileRecognitionService;
+// Types only (erased at build time) — live runtime accessed via AddonLoader
 type ProfileBlinkerType = import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
 type TextBlinkerType = import('../../addons/profile-recognition/profileBlinking').TextBlinker;
 
@@ -44,12 +44,11 @@ export class UserIdentity {
   private profile: UserProfile | null = null;
   private unsubscribe?: () => void;
 
-  // Profile Recognition (lazy-loaded)
-  private recognitionService: ProfileRecognitionServiceType | null = null;
+  // Profile Recognition blinker instances — bound to this component's DOM.
+  // The service + blinker classes live in the addon runtime, looked up
+  // fresh via AddonLoader at use time.
   private blinker: ProfileBlinkerType | null = null;
   private nameBlinker: TextBlinkerType | null = null;
-  private ProfileBlinkerClass: (new (el: HTMLImageElement) => ProfileBlinkerType) | null = null;
-  private TextBlinkerClass: (new (el: HTMLElement) => TextBlinkerType) | null = null;
 
   constructor(config: UserIdentityConfig) {
     this.config = {
@@ -66,7 +65,11 @@ export class UserIdentity {
     this.router = Router.getInstance();
 
     this.element = this.createElement();
-    this.initAsync();
+    // Element is hidden until first profile arrives (below). No async
+    // addon-load race anymore — AddonLoader owns the profile-recognition
+    // runtime; we look it up on demand.
+    this.element.style.display = 'none';
+    this.subscribeToUpdates();
 
     // Setup hover card if enabled
     if (this.config.enableHoverCard) {
@@ -79,25 +82,9 @@ export class UserIdentity {
     }
   }
 
-  /** Load recognition addon first, then subscribe to profile updates */
-  private async initAsync(): Promise<void> {
-    // Hide element until profile loads
-    this.element.style.display = 'none';
-
-    // Load recognition BEFORE subscribing to avoid race condition
-    if (isProfileRecognitionEnabled()) {
-      const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
-        import('../../addons/profile-recognition/ProfileRecognitionService'),
-        import('../../addons/profile-recognition/profileBlinking')
-      ]);
-
-      this.recognitionService = ProfileRecognitionService.getInstance();
-      this.ProfileBlinkerClass = ProfileBlinker;
-      this.TextBlinkerClass = TextBlinker;
-    }
-
-    // Now subscribe — recognition service is ready
-    this.subscribeToUpdates();
+  /** Fetch the current profile-recognition runtime, or null if addon is OFF. */
+  private getRecognitionRuntime(): ProfileRecognitionRuntime | null {
+    return AddonLoader.getInstance().getRuntime<ProfileRecognitionRuntime>('profile-recognition');
   }
 
   /**
@@ -175,7 +162,8 @@ export class UserIdentity {
    */
   private updateUI(username: string, picture: string, handle: string): void {
     // Profile Recognition: check if name/picture changed and should blink
-    const shouldBlink = this.recognitionService?.checkRecognition(this.config.pubkey, username, picture);
+    const rt = this.getRecognitionRuntime();
+    const shouldBlink = rt?.service?.checkRecognition(this.config.pubkey, username, picture);
 
     // Update username with blinking
     if (this.config.showUsername) {
@@ -183,8 +171,8 @@ export class UserIdentity {
       if (usernameEl) {
         if (shouldBlink) {
           // Initialize name blinker if needed
-          if (!this.nameBlinker && this.TextBlinkerClass) {
-            this.nameBlinker = new this.TextBlinkerClass(usernameEl);
+          if (!this.nameBlinker && rt?.TextBlinker) {
+            this.nameBlinker = new rt.TextBlinker(usernameEl);
           }
 
           // Start blinking between current and first encounter
@@ -208,8 +196,8 @@ export class UserIdentity {
       if (avatarEl) {
         if (shouldBlink) {
           // Initialize blinker if needed
-          if (!this.blinker && this.ProfileBlinkerClass) {
-            this.blinker = new this.ProfileBlinkerClass(avatarEl);
+          if (!this.blinker && rt?.ProfileBlinker) {
+            this.blinker = new rt.ProfileBlinker(avatarEl);
           }
 
           // Start blinking between current and first encounter

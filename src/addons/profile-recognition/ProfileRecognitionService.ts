@@ -43,6 +43,9 @@ export class ProfileRecognitionService {
   private fileSaveTimeout: ReturnType<typeof setTimeout> | null = null;
   private relaySaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  // EventBus subscription id for 'follow:updated' — stored so destroy() can off()
+  private followUpdatedSubId: string | null = null;
+
   // Initialization state
   private initialized = false;
 
@@ -136,10 +139,46 @@ export class ProfileRecognitionService {
    * Setup event listeners
    */
   private setupEventListeners(): void {
+    // Guard against duplicate subscriptions — setupEventListeners is called from
+    // four branches in init(), and can now also be called again after destroy().
+    if (this.followUpdatedSubId !== null) return;
     // Listen for follow/unfollow events
-    this.eventBus.on('follow:updated', () => {
+    this.followUpdatedSubId = this.eventBus.on('follow:updated', () => {
       this.handleFollowListChange();
     });
+  }
+
+  /**
+   * Tear down the service. Called by the AddonLoader runtime when the addon
+   * is toggled OFF or when the user logs out / switches account.
+   *
+   * Destroy contract:
+   *   - clear the two debounce timeouts (fileSaveTimeout, relaySaveTimeout)
+   *   - unsubscribe the 'follow:updated' listener
+   *   - reset initialized so a subsequent getInstance().init() re-runs cleanly
+   *   - null the static singleton reference so the next getInstance() returns
+   *     a fresh instance (important on account switch — encounter state must
+   *     not leak across accounts)
+   */
+  public destroy(): void {
+    if (this.fileSaveTimeout) {
+      clearTimeout(this.fileSaveTimeout);
+      this.fileSaveTimeout = null;
+    }
+    if (this.relaySaveTimeout) {
+      clearTimeout(this.relaySaveTimeout);
+      this.relaySaveTimeout = null;
+    }
+    if (this.followUpdatedSubId !== null) {
+      this.eventBus.off(this.followUpdatedSubId);
+      this.followUpdatedSubId = null;
+    }
+    this.initialized = false;
+    // Release the singleton so account switches get a fresh instance.
+    if (ProfileRecognitionService.instance === this) {
+      // @ts-expect-error intentional reset of private static
+      ProfileRecognitionService.instance = undefined;
+    }
   }
 
   /**

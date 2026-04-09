@@ -10,6 +10,7 @@ import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { EventBus } from '../../services/EventBus';
 
 // Window values: 0 = disabled, -1 = always, or number of days
 const WINDOW_OPTIONS = [
@@ -31,8 +32,19 @@ export class ProfileRecognitionSettings extends SettingsSection {
     return PerAccountLocalStorage.getInstance().get<number>(StorageKeys.PROFILE_RECOGNITION_WINDOW, 90);
   }
 
+  /**
+   * Save the recognition window AND notify the AddonLoader if the enabled-state
+   * transitions (0 ↔ non-zero). The AddonLoader listens on
+   * 'profile-recognition:addon-toggle' to dynamically load/destroy the runtime.
+   */
   private saveWindow(value: number): void {
+    const prev = this.getCurrentWindow();
+    const wasEnabled = prev !== 0;
+    const nowEnabled = value !== 0;
     PerAccountLocalStorage.getInstance().set(StorageKeys.PROFILE_RECOGNITION_WINDOW, value);
+    if (wasEnabled !== nowEnabled) {
+      EventBus.getInstance().emit('profile-recognition:addon-toggle', { enabled: nowEnabled });
+    }
   }
 
   public mount(parentContainer: HTMLElement): void {

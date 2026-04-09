@@ -19,11 +19,11 @@ import { npubToUsername } from '../../../helpers/npubToUsername';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
 import { Router } from '../../../services/Router';
-import { isProfileRecognitionEnabled } from '../../../addons/profile-recognition/index';
+import { AddonLoader } from '../../../addons/AddonLoader';
+import type { ProfileRecognitionRuntime } from '../../../addons/profile-recognition/runtime';
 import { getTag } from '../../../helpers/tagUtils';
 
-// Lazy-loaded types for profile recognition
-type ProfileRecognitionServiceType = import('../../../addons/profile-recognition/ProfileRecognitionService').ProfileRecognitionService;
+// Types only (erased at build time) — live runtime accessed via AddonLoader
 type ProfileBlinkerType = import('../../../addons/profile-recognition/profileBlinking').ProfileBlinker;
 type TextBlinkerType = import('../../../addons/profile-recognition/profileBlinking').TextBlinker;
 
@@ -31,24 +31,8 @@ export class RepostRenderer {
   private static userProfileService = UserProfileService.getInstance();
   private static articlePreviewRenderer = ArticlePreviewRenderer.getInstance();
 
-  // Profile Recognition (lazy-loaded)
-  private static recognitionService: ProfileRecognitionServiceType | null = null;
-  private static ProfileBlinkerClass: (new (el: HTMLImageElement) => ProfileBlinkerType) | null = null;
-  private static TextBlinkerClass: (new (el: HTMLElement) => TextBlinkerType) | null = null;
-  private static recognitionLoaded = false;
-
-  private static async loadRecognitionIfEnabled(): Promise<void> {
-    if (RepostRenderer.recognitionLoaded || !isProfileRecognitionEnabled()) return;
-    RepostRenderer.recognitionLoaded = true;
-
-    const [{ ProfileRecognitionService }, { ProfileBlinker, TextBlinker }] = await Promise.all([
-      import('../../../addons/profile-recognition/ProfileRecognitionService'),
-      import('../../../addons/profile-recognition/profileBlinking')
-    ]);
-
-    RepostRenderer.recognitionService = ProfileRecognitionService.getInstance();
-    RepostRenderer.ProfileBlinkerClass = ProfileBlinker;
-    RepostRenderer.TextBlinkerClass = TextBlinker;
+  private static getRecognitionRuntime(): ProfileRecognitionRuntime | null {
+    return AddonLoader.getInstance().getRuntime<ProfileRecognitionRuntime>('profile-recognition');
   }
 
   /**
@@ -97,10 +81,10 @@ export class RepostRenderer {
     let avatarBlinker: ProfileBlinkerType | null = null;
     let nameBlinker: TextBlinkerType | null = null;
 
-    // Load recognition addon first, then subscribe to profile updates
-    // Avoids race condition where cached profile arrives before recognition is ready
+    // Subscribe to profile updates. Profile-recognition runtime is looked up
+    // fresh via AddonLoader each callback — no caching, so toggle OFF / account
+    // switches are transparent (new runtime picked up automatically).
     if (reposterPubkey) {
-      RepostRenderer.loadRecognitionIfEnabled().then(() => {
       RepostRenderer.userProfileService.subscribeToProfile(reposterPubkey, (profile) => {
         const newUsername = profile.display_name || profile.name || reposterNpub;
         const newPicture = profile.picture || '';
@@ -108,13 +92,14 @@ export class RepostRenderer {
         const avatarElement = repostHeader.querySelector('.profile-pic--mini') as HTMLImageElement;
 
         // Profile Recognition: check if name/picture changed and should blink
-        const shouldBlink = RepostRenderer.recognitionService?.checkRecognition(reposterPubkey, newUsername, newPicture);
+        const rt = RepostRenderer.getRecognitionRuntime();
+        const shouldBlink = rt?.service?.checkRecognition(reposterPubkey, newUsername, newPicture);
 
         // Update username with blinking
         if (usernameEl) {
           if (shouldBlink) {
-            if (!nameBlinker && RepostRenderer.TextBlinkerClass) {
-              nameBlinker = new RepostRenderer.TextBlinkerClass(usernameEl);
+            if (!nameBlinker && rt?.TextBlinker) {
+              nameBlinker = new rt.TextBlinker(usernameEl);
             }
             if (nameBlinker && !nameBlinker.isBlinking()) {
               nameBlinker.start(newUsername, shouldBlink.firstName);
@@ -131,8 +116,8 @@ export class RepostRenderer {
         // Update avatar with blinking
         if (avatarElement) {
           if (shouldBlink) {
-            if (!avatarBlinker && RepostRenderer.ProfileBlinkerClass) {
-              avatarBlinker = new RepostRenderer.ProfileBlinkerClass(avatarElement);
+            if (!avatarBlinker && rt?.ProfileBlinker) {
+              avatarBlinker = new rt.ProfileBlinker(avatarElement);
             }
             if (avatarBlinker && !avatarBlinker.isBlinking()) {
               avatarBlinker.start(newPicture, shouldBlink.firstPictureUrl);
@@ -146,7 +131,6 @@ export class RepostRenderer {
           }
         }
       });
-      }); // end loadRecognitionIfEnabled().then()
 
       // Setup UserHoverCard for the user-mention container
       const userHoverCard = UserHoverCard.getInstance();

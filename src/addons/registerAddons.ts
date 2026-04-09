@@ -13,6 +13,7 @@
 
 import { AddonLoader } from './AddonLoader';
 import { isWalletBalanceEnabled } from './wallet-balance/index';
+import { isProfileRecognitionEnabled } from './profile-recognition/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -23,8 +24,13 @@ export function registerCoreAddons(): void {
     load: () => import('./wallet-balance/runtime').then(m => m.default),
   });
 
+  loader.register({
+    id: 'profile-recognition',
+    isEnabled: isProfileRecognitionEnabled,
+    load: () => import('./profile-recognition/runtime').then(m => m.default),
+  });
+
   // Phase 3+ will add:
-  //   profile-recognition, live-streams-player, hashtag-subscriptions,
-  //   word-filter, list-settings, extended-follows, nostrin, custom-emojis,
-  //   marketplace, follow-packs
+  //   live-streams-player, hashtag-subscriptions, word-filter, list-settings,
+  //   extended-follows, nostrin, custom-emojis, marketplace, follow-packs
 }
