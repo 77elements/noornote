@@ -19,6 +19,28 @@ export class WalletBalanceDisplay {
   private balanceVisible: boolean = false; // Default: hidden
   private selectedCurrency: string = 'EUR';
   private updateInterval: number | null = null;
+  private destroyed = false;
+
+  // Named handler refs so destroy() can remove them. Anonymous arrow functions
+  // in addEventListener cannot be removed afterwards — this was the root cause
+  // of the listener leak that made the balance display flicker after long
+  // runtime and after account switches.
+  private toggleBtnHandler: (() => void) | null = null;
+  private toggleBtnEl: Element | null = null;
+  private onNwcRestored: () => void = () => this.loadBalance();
+  private onZapSent: () => void = () => {
+    window.setTimeout(() => {
+      if (!this.destroyed) this.loadBalance();
+    }, 2000);
+  };
+  private onFiatCurrencyChanged: (e: Event) => void = (event: Event) => {
+    const customEvent = event as CustomEvent;
+    const currency = customEvent.detail?.currency;
+    if (currency) {
+      this.selectedCurrency = currency;
+      void this.updateDisplay(this.balanceInMsats);
+    }
+  };
 
   constructor() {
     this.nwcService = NWCService.getInstance();
@@ -68,30 +90,20 @@ export class WalletBalanceDisplay {
   }
 
   private setupEventListeners(): void {
-    const toggleBtn = this.element.querySelector('.wallet-balance-toggle');
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => this.toggleVisibility());
+    this.toggleBtnEl = this.element.querySelector('.wallet-balance-toggle');
+    if (this.toggleBtnEl) {
+      this.toggleBtnHandler = () => this.toggleVisibility();
+      this.toggleBtnEl.addEventListener('click', this.toggleBtnHandler);
     }
 
     // Listen for NWC connection events
-    window.addEventListener('nwc-connection-restored', () => {
-      this.loadBalance();
-    });
+    window.addEventListener('nwc-connection-restored', this.onNwcRestored);
 
     // Listen for payment events (refresh balance after zap)
-    window.addEventListener('zap-sent', () => {
-      setTimeout(() => this.loadBalance(), 2000); // Wait 2s for payment to settle
-    });
+    window.addEventListener('zap-sent', this.onZapSent);
 
     // Listen for currency change events
-    window.addEventListener('fiat-currency-changed', async (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const currency = customEvent.detail?.currency;
-      if (currency) {
-        this.selectedCurrency = currency;
-        this.updateDisplay(this.balanceInMsats);
-      }
-    });
+    window.addEventListener('fiat-currency-changed', this.onFiatCurrencyChanged);
   }
 
   private async loadBalance(): Promise<void> {
@@ -202,10 +214,26 @@ export class WalletBalanceDisplay {
   }
 
   public destroy(): void {
+    // Cancel flag prevents in-flight async (loadBalance, onZapSent setTimeout)
+    // from writing state or DOM after teardown.
+    this.destroyed = true;
+
     if (this.updateInterval !== null) {
       clearInterval(this.updateInterval);
       this.updateInterval = null;
     }
+
+    // Remove window listeners (root cause of post-long-runtime flicker).
+    window.removeEventListener('nwc-connection-restored', this.onNwcRestored);
+    window.removeEventListener('zap-sent', this.onZapSent);
+    window.removeEventListener('fiat-currency-changed', this.onFiatCurrencyChanged);
+
+    if (this.toggleBtnEl && this.toggleBtnHandler) {
+      this.toggleBtnEl.removeEventListener('click', this.toggleBtnHandler);
+    }
+    this.toggleBtnEl = null;
+    this.toggleBtnHandler = null;
+
     this.element.remove();
   }
 

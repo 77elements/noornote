@@ -22,6 +22,7 @@ import { initDiagnosticLogger, destroyDiagnosticLogger } from './services/Diagno
 import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
 import { AddonLoader } from './addons/AddonLoader';
+import { registerCoreAddons } from './addons/registerAddons';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import { hexToNpub } from './helpers/nip19';
 
@@ -124,10 +125,13 @@ export class App {
     const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
     this.router.navigate(targetPath);
 
-    // Bootstrap the AddonLoader. Registers its user:login/logout and toggle
-    // listeners. Passes the current session (if any) so session-restore
-    // triggers an initial load of enabled addons without waiting for a new
-    // user:login event. See docs/todos/addons-true-lazy-loading.md.
+    // Bootstrap the AddonLoader. First register all core addons (cheap —
+    // only stores dynamic-import factories and subscribes to toggle events),
+    // then wire user:login/logout listeners. Passes the current session (if
+    // any) so session-restore triggers an initial load of enabled addons
+    // without waiting for a new user:login event.
+    // See docs/todos/addons-true-lazy-loading.md.
+    registerCoreAddons();
     const currentUserForAddons = isLoggedIn ? this.authService.getCurrentUser() : null;
     AddonLoader.getInstance().bootstrap(
       currentUserForAddons

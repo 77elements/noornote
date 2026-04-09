@@ -21,8 +21,9 @@ import { AuthStateManager } from '../../services/AuthStateManager';
 import { AuthService } from '../../services/AuthService';
 import { EventBus } from '../../services/EventBus';
 import { ADDON_REGISTRY } from '../../addons/registry';
-// WalletBalanceDisplay loaded lazily (Step 5 bundle optimization)
-type WalletBalanceDisplay = import('../ui/WalletBalanceDisplay').WalletBalanceDisplay;
+// WalletBalanceDisplay is owned by src/addons/wallet-balance/runtime.ts and
+// managed by the AddonLoader. MainLayout only provides the mount point
+// (.wallet-balance-container, see this.element template).
 // SearchSpotlight loaded lazily on Cmd+K (Step 6 bundle optimization)
 type SearchSpotlight = import('../navigation/SearchSpotlight').SearchSpotlight;
 import { KeyboardShortcutManager } from '../../services/KeyboardShortcutManager';
@@ -69,7 +70,6 @@ export class MainLayout {
   private cacheSizeUpdateInterval: number | null = null;
   private dateTimeUpdateInterval: number | null = null;
   private authStateUnsubscribe: (() => void) | null = null;
-  private walletBalanceDisplay: WalletBalanceDisplay | null = null;
   private globalSearchView: GlobalSearchView | null = null;
   private bookmarkManager: BookmarkManager | null = null;
   private followManager: FollowListManager | null = null;
@@ -104,7 +104,7 @@ export class MainLayout {
     this.startCacheSizeUpdates();
     this.setupAuthStateListener();
     this.initializeManagers();
-    this.initializeWalletBalance();
+    // wallet-balance is managed by AddonLoader + src/addons/wallet-balance/runtime.ts
     this.setupKeyboardShortcuts();
     this.setupSpacebarScroll();
     this.initializeGlobalSearchView();
@@ -254,19 +254,6 @@ export class MainLayout {
     });
 
 
-
-    // Wallet Balance toggle: show/hide + start/stop polling
-    this.eventBus.on('wallet-balance:addon-toggle', async (data: { enabled: boolean }) => {
-      const walletBalanceContainer = this.element.querySelector('.wallet-balance-container');
-      if (data.enabled && !this.walletBalanceDisplay && walletBalanceContainer) {
-        const { WalletBalanceDisplay } = await import('../ui/WalletBalanceDisplay');
-        this.walletBalanceDisplay = new WalletBalanceDisplay();
-        walletBalanceContainer.appendChild(this.walletBalanceDisplay.getElement());
-      } else if (!data.enabled && this.walletBalanceDisplay) {
-        this.walletBalanceDisplay.destroy();
-        this.walletBalanceDisplay = null;
-      }
-    });
 
     // Listen for list:open events from Settings → Privacy links, ProfileView, FollowPackDetailView
     this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string; packId?: string; packMode?: 'timeline' | 'edit' }) => {
@@ -512,26 +499,6 @@ export class MainLayout {
         }
       }
     }
-  }
-
-  /**
-   * Initialize wallet balance display
-   */
-  private walletBalanceInitializing = false;
-  private async initializeWalletBalance(): Promise<void> {
-    if (this.walletBalanceDisplay || this.walletBalanceInitializing) return;
-    this.walletBalanceInitializing = true;
-
-    const { isWalletBalanceEnabled } = await import('../../addons/wallet-balance/index');
-    if (!isWalletBalanceEnabled()) { this.walletBalanceInitializing = false; return; }
-
-    const walletBalanceContainer = this.element.querySelector('.wallet-balance-container');
-    if (walletBalanceContainer && !this.walletBalanceDisplay) {
-      const { WalletBalanceDisplay } = await import('../ui/WalletBalanceDisplay');
-      this.walletBalanceDisplay = new WalletBalanceDisplay();
-      walletBalanceContainer.appendChild(this.walletBalanceDisplay.getElement());
-    }
-    this.walletBalanceInitializing = false;
   }
 
   /**
@@ -807,7 +774,7 @@ export class MainLayout {
         }
         // Re-initialize addons now that auth is available
         // (initial init in constructor may have run before auth completed)
-        this.initializeWalletBalance();
+        // wallet-balance is handled by AddonLoader via the user:login EventBus event.
         this.initializeAddonsAfterAuth();
         // Update sidebar for logged-in state
         this.element.querySelector('.sidebar')?.classList.remove('sidebar--logged-out');
@@ -2274,9 +2241,7 @@ export class MainLayout {
       this.themeSwitcher.destroy();
     }
 
-    if (this.walletBalanceDisplay) {
-      this.walletBalanceDisplay.destroy();
-    }
+    // wallet-balance teardown handled by AddonLoader via user:logout.
 
     if (this.searchSpotlight) {
       this.searchSpotlight.destroy();
