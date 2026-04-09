@@ -9,10 +9,9 @@ import { formatTimestamp } from '../../helpers/formatTimestamp';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { isHashtagSubscriptionsEnabled } from '../../addons/hashtag-subscriptions/index';
+import { AddonLoader } from '../../addons/AddonLoader';
+import type { HashtagSubscriptionsRuntime } from '../../addons/hashtag-subscriptions/runtime';
 import { EventBus } from '../../services/EventBus';
-
-// Lazy-loaded type
-type HashtagNotificationServiceType = import('../../addons/hashtag-subscriptions/HashtagNotificationService').HashtagNotificationService;
 
 export interface SearchResultsConfig {
   title: string;
@@ -34,10 +33,13 @@ export class SearchResultsView {
   private callbacks: SearchResultsCallbacks;
   private infiniteScroll?: InfiniteScroll;
   private listElement?: HTMLElement;
-  private hashtagService: HashtagNotificationServiceType | null = null;
   private eventBus: EventBus;
   private subscribeButton?: HTMLButtonElement;
   private subscriptionUpdatedId?: string;
+
+  private getHashtagService() {
+    return AddonLoader.getInstance().getRuntime<HashtagSubscriptionsRuntime>('hashtag-subscriptions')?.service ?? null;
+  }
 
   constructor(config: SearchResultsConfig, callbacks: SearchResultsCallbacks) {
     this.config = config;
@@ -134,19 +136,18 @@ export class SearchResultsView {
   }
 
   /**
-   * Load hashtag service and insert subscribe button into headerRow
+   * Build subscribe button and insert into headerRow. The hashtag service is
+   * fetched fresh via AddonLoader on every interaction — no local caching.
    */
   private async loadSubscribeButton(headerRow: HTMLElement): Promise<void> {
-    const { HashtagNotificationService } = await import('../../addons/hashtag-subscriptions/HashtagNotificationService');
-    this.hashtagService = HashtagNotificationService.getInstance();
-
     this.subscribeButton = document.createElement('button');
     this.subscribeButton.className = 'btn btn--medium';
     this.updateSubscribeButton();
 
     this.subscribeButton.addEventListener('click', () => {
-      if (this.config.hashtag && this.hashtagService) {
-        this.hashtagService.toggle(this.config.hashtag);
+      const service = this.getHashtagService();
+      if (this.config.hashtag && service) {
+        service.toggle(this.config.hashtag);
         this.updateSubscribeButton();
       }
     });
@@ -165,9 +166,11 @@ export class SearchResultsView {
    * Update subscribe button text and state
    */
   private updateSubscribeButton(): void {
-    if (!this.subscribeButton || !this.config.hashtag || !this.hashtagService) return;
+    if (!this.subscribeButton || !this.config.hashtag) return;
+    const service = this.getHashtagService();
+    if (!service) return;
 
-    const isSubscribed = this.hashtagService.isSubscribed(this.config.hashtag);
+    const isSubscribed = service.isSubscribed(this.config.hashtag);
     this.subscribeButton.textContent = isSubscribed
       ? `Unsubscribe from #${this.config.hashtag}`
       : `Subscribe to #${this.config.hashtag}`;

@@ -39,12 +39,15 @@ export class HashtagSubscriptionsSettings extends SettingsSection {
       checked: enabled,
       onChange: async (checked) => {
         setHashtagSubscriptionsEnabled(checked);
+        // Notify the AddonLoader — it owns the polling lifecycle via the
+        // addon runtime. On toggle ON it will load the runtime and start
+        // polling; on toggle OFF it will call service.destroy() which
+        // stopsPolling and releases the singleton.
+        this.eventBus.emit('hashtag-subscriptions:addon-toggle', { enabled: checked });
         if (checked) {
           await this.loadService();
-          this.hashtagService?.startPolling();
           ToastService.show('Hashtag Subscriptions enabled', 'success');
         } else {
-          this.hashtagService?.stopPolling();
           ToastService.show('Hashtag Subscriptions disabled', 'success');
         }
         if (contentZone) this.renderContent(contentZone, checked);

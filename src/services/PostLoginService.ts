@@ -67,12 +67,8 @@ export class PostLoginService {
         const { ArticleNotificationService } = await import('./ArticleNotificationService');
         ArticleNotificationService.getInstance().startPolling();
       }),
-      this.startService('hashtag notifications', async () => {
-        const { isHashtagSubscriptionsEnabled } = await import('../addons/hashtag-subscriptions/index');
-        if (!isHashtagSubscriptionsEnabled()) return;
-        const { HashtagNotificationService } = await import('../addons/hashtag-subscriptions/HashtagNotificationService');
-        HashtagNotificationService.getInstance().startPolling();
-      }),
+      // hashtag-subscriptions is managed by AddonLoader via the user:login event.
+      // Its runtime calls service.startPolling() — no explicit bootstrap here.
       // profile-recognition is managed by AddonLoader via the user:login event.
       // Its runtime calls service.init() as part of the addon lifecycle —
       // no explicit bootstrap needed here anymore.

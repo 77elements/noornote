@@ -14,6 +14,8 @@
 import { AddonLoader } from './AddonLoader';
 import { isWalletBalanceEnabled } from './wallet-balance/index';
 import { isProfileRecognitionEnabled } from './profile-recognition/index';
+import { isLiveStreamsPlayerEnabled } from './live-streams-player/index';
+import { isHashtagSubscriptionsEnabled } from './hashtag-subscriptions/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -30,7 +32,19 @@ export function registerCoreAddons(): void {
     load: () => import('./profile-recognition/runtime').then(m => m.default),
   });
 
-  // Phase 3+ will add:
-  //   live-streams-player, hashtag-subscriptions, word-filter, list-settings,
-  //   extended-follows, nostrin, custom-emojis, marketplace, follow-packs
+  loader.register({
+    id: 'live-streams-player',
+    isEnabled: isLiveStreamsPlayerEnabled,
+    load: () => import('./live-streams-player/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'hashtag-subscriptions',
+    isEnabled: isHashtagSubscriptionsEnabled,
+    load: () => import('./hashtag-subscriptions/runtime').then(m => m.default),
+  });
+
+  // Phase 5+ will add:
+  //   word-filter, list-settings, extended-follows, nostrin,
+  //   custom-emojis, marketplace, follow-packs
 }

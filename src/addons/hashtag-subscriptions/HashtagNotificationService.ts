@@ -37,6 +37,7 @@ export class HashtagNotificationService {
   private storage: PerAccountLocalStorage;
   private noteService: NoteService;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
+  private initialPollTimeout: ReturnType<typeof setTimeout> | null = null;
   private isPollingStarted = false;
 
   private constructor() {
@@ -158,8 +159,9 @@ export class HashtagNotificationService {
     if (this.isPollingStarted) return;
     this.isPollingStarted = true;
 
-    // Initial check after 1 minute
-    setTimeout(() => {
+    // Initial check after 1 minute — tracked so destroy() can cancel it
+    this.initialPollTimeout = setTimeout(() => {
+      this.initialPollTimeout = null;
       this.checkForNewPosts();
     }, 60 * 1000);
 
@@ -174,9 +176,32 @@ export class HashtagNotificationService {
    */
   public stopPolling(): void {
     this.isPollingStarted = false;
+    if (this.initialPollTimeout) {
+      clearTimeout(this.initialPollTimeout);
+      this.initialPollTimeout = null;
+    }
     if (this.pollInterval) {
       clearInterval(this.pollInterval);
       this.pollInterval = null;
+    }
+  }
+
+  /**
+   * Tear down the service. Called by the AddonLoader runtime on toggle-OFF,
+   * logout, or account switch.
+   *
+   * Destroy contract:
+   *   - stopPolling() clears both timers
+   *   - releases the static singleton so the next getInstance() returns a
+   *     fresh instance (important on account switch — subscriptions are
+   *     per-account, so a stale instance would reference the old account's
+   *     data even if the interval is stopped)
+   */
+  public destroy(): void {
+    this.stopPolling();
+    if (HashtagNotificationService.instance === this) {
+      // @ts-expect-error intentional reset of private static
+      HashtagNotificationService.instance = undefined;
     }
   }
 
