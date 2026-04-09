@@ -13,7 +13,7 @@ import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { QuoteOrchestrator } from '../../../services/orchestration/QuoteOrchestrator';
 import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
-import { escapeHtmlAttr } from '../../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { hexToNpub } from '../../../helpers/nip19';
 import { npubToUsername } from '../../../helpers/npubToUsername';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
@@ -257,9 +257,9 @@ export class RepostRenderer {
 
       packContainer.innerHTML = `
         <a href="/follow-pack/${naddr}" class="repost-pack-preview" data-route="/follow-pack/${naddr}">
-          ${image ? `<img src="${image}" alt="" class="repost-pack-preview__image" loading="lazy" />` : ''}
+          ${image ? `<img src="${escapeHtmlAttr(image)}" alt="" class="repost-pack-preview__image" loading="lazy" />` : ''}
           <div class="repost-pack-preview__info">
-            <strong>${title}</strong>
+            <strong>${escapeHtml(title)}</strong>
             <span>${memberCount} people</span>
           </div>
         </a>
@@ -292,10 +292,10 @@ export class RepostRenderer {
 
       appContainer.innerHTML = `
         <a href="/zapstore/${naddr}" class="repost-pack-preview" data-route="/zapstore/${naddr}">
-          ${icon ? `<img src="${icon}" alt="" class="repost-pack-preview__image" loading="lazy" style="border-radius: 8px;" />` : ''}
+          ${icon ? `<img src="${escapeHtmlAttr(icon)}" alt="" class="repost-pack-preview__image" loading="lazy" style="border-radius: 8px;" />` : ''}
           <div class="repost-pack-preview__info">
-            <strong>${name}</strong>
-            ${summary ? `<span>${summary}</span>` : ''}
+            <strong>${escapeHtml(name)}</strong>
+            ${summary ? `<span>${escapeHtml(summary)}</span>` : ''}
           </div>
         </a>
       `;

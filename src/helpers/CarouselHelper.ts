@@ -20,7 +20,8 @@
  */
 
 export interface CarouselSlide {
-  content: string;
+  /** Plain text only — rendered via textContent. Never pass HTML from untrusted sources. */
+  text: string;
   image?: string;
   imageAlt?: string;
 }
@@ -111,7 +112,7 @@ export function createCarousel(
     }
 
     const contentDiv = document.createElement('div');
-    contentDiv.innerHTML = slide.content;
+    contentDiv.textContent = slide.text;
     slideEl.appendChild(contentDiv);
 
     slidesContainer.appendChild(slideEl);

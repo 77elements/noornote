@@ -7,7 +7,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { LongFormOrchestrator } from './orchestration/LongFormOrchestrator';
 import { Router } from './Router';
-import { escapeHtml } from '../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { isLiveStreamsPlayerEnabled } from '../addons/live-streams-player/index';
 
 export class ArticlePreviewRenderer {
@@ -99,7 +99,7 @@ export class ArticlePreviewRenderer {
     card.innerHTML = `
       ${image ? `
         <div class="live-stream-card__image">
-          <img src="${image}" alt="${escapeHtml(title)}" loading="lazy" />
+          <img src="${escapeHtmlAttr(image)}" alt="${escapeHtmlAttr(title)}" loading="lazy" />
           <span class="live-stream-card__badge">${statusLabel}</span>
         </div>
       ` : `
@@ -206,7 +206,7 @@ export class ArticlePreviewRenderer {
     card.innerHTML = `
       ${icon ? `
         <div class="article-preview-image" style="display: flex; align-items: center; justify-content: center; padding: calc(var(--gap, 1rem) / 2); background: transparent;">
-          <img src="${icon}" alt="${escapeHtml(name)}" loading="lazy" style="width: 64px; height: 64px; border-radius: 8px; object-fit: contain;" />
+          <img src="${escapeHtmlAttr(icon)}" alt="${escapeHtmlAttr(name)}" loading="lazy" style="width: 64px; height: 64px; border-radius: 8px; object-fit: contain;" />
         </div>
       ` : ''}
       <div class="article-preview-content">

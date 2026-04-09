@@ -150,7 +150,7 @@ export class ListingView extends View {
 
     // Multiple images — use carousel
     const slides = images.map(img => ({
-      content: '',
+      text: '',
       image: img,
       imageAlt: ''
     }));
