@@ -9,6 +9,7 @@
 import { NWCService } from '../../services/NWCService';
 import type { NWCTransaction } from '../../services/NWCService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
+import { UserProfileService } from '../../services/UserProfileService';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
@@ -175,6 +176,7 @@ export class WalletTransactionList {
       }
     }
     void this.fillFiatAmountsForNew(transactions);
+    void this.resolveZapProfiles();
   }
 
   private renderTransaction(tx: NWCTransaction): string {
@@ -182,13 +184,35 @@ export class WalletTransactionList {
     const sats = Math.floor(tx.amount / 1000);
     const sign = isIncoming ? '+' : '-';
     const cls = isIncoming ? 'wallet-tx--incoming' : 'wallet-tx--outgoing';
-    const arrow = isIncoming ? '↙' : '↗';
     const timeStr = this.formatRelativeTime(tx.settled_at || tx.created_at);
-    const desc = tx.description ? escapeHtml(tx.description) : (isIncoming ? 'Received' : 'Sent');
+
+    // Extract zap sender info from metadata.nostr (kind 9734 zap request)
+    const zapRequest = (tx as any).metadata?.nostr;
+    const isAnon = zapRequest?.tags?.some((t: string[]) => t[0] === 'anon') ?? false;
+    const senderPubkey = (!isAnon && isIncoming && zapRequest?.pubkey) ? zapRequest.pubkey as string : null;
+    const zapMessage = zapRequest?.content ? escapeHtml(zapRequest.content as string) : null;
+
+    // Icon: profile pic placeholder for zaps, arrow for regular
+    let iconHtml: string;
+    if (senderPubkey) {
+      iconHtml = `<img class="wallet-tx__avatar profile-pic profile-pic--mini" data-zap-pubkey="${senderPubkey}" src="" alt="" />`;
+    } else {
+      const arrow = isIncoming ? '↙' : '↗';
+      iconHtml = `<div class="wallet-tx__icon">${arrow}</div>`;
+    }
+
+    // Description: sender name (placeholder) + zap message, or generic
+    let desc: string;
+    if (senderPubkey) {
+      const name = `<span class="wallet-tx__sender" data-zap-pubkey-name="${senderPubkey}">…</span>`;
+      desc = zapMessage ? `${name}<br><span class="wallet-tx__zap-msg">"${zapMessage}"</span>` : name;
+    } else {
+      desc = tx.description ? escapeHtml(tx.description) : (isIncoming ? 'Received' : 'Sent');
+    }
 
     return `
       <div class="ui-list__item ${cls}">
-        <div class="wallet-tx__icon">${arrow}</div>
+        ${iconHtml}
         <div class="wallet-tx__info">
           <span class="wallet-tx__desc">${desc}</span>
           <span class="wallet-tx__time">${escapeHtml(timeStr)}</span>
@@ -198,6 +222,49 @@ export class WalletTransactionList {
           <span class="wallet-tx__fiat" data-tx-msats="${tx.amount}" data-tx-type="${tx.type}">…</span>
         </div>
       </div>`;
+  }
+
+  /** Fetch profiles for zap senders and fill in avatars + names */
+  private async resolveZapProfiles(): Promise<void> {
+    if (this.destroyed) return;
+    const profileService = UserProfileService.getInstance();
+
+    // Collect unique pubkeys from data attributes
+    const avatarEls = this.element.querySelectorAll<HTMLImageElement>('img[data-zap-pubkey]');
+    const pubkeys = new Set<string>();
+    for (const el of avatarEls) {
+      pubkeys.add(el.getAttribute('data-zap-pubkey')!);
+    }
+    if (pubkeys.size === 0) return;
+
+    for (const pubkey of pubkeys) {
+      if (this.destroyed) return;
+      try {
+        const profile = await profileService.getUserProfile(pubkey);
+        if (this.destroyed) return;
+
+        // Fill avatars
+        const imgs = this.element.querySelectorAll<HTMLImageElement>(`[data-zap-pubkey="${pubkey}"]`);
+        for (const img of imgs) {
+          if (profile.picture) {
+            img.src = profile.picture;
+          } else {
+            // Replace img with arrow icon if no picture
+            const div = document.createElement('div');
+            div.className = 'wallet-tx__icon';
+            div.textContent = '↙';
+            img.replaceWith(div);
+          }
+        }
+
+        // Fill names
+        const nameEls = this.element.querySelectorAll(`[data-zap-pubkey-name="${pubkey}"]`);
+        const displayName = profile.display_name || profile.name || pubkey.substring(0, 8) + '…';
+        for (const el of nameEls) {
+          el.textContent = displayName;
+        }
+      } catch { /* profile fetch failed, keep placeholder */ }
+    }
   }
 
   private async fillFiatBalance(sats: number): Promise<void> {

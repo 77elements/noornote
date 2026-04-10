@@ -148,6 +148,22 @@
   }
 }
 
+.wallet-tx__avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.wallet-tx__sender {
+  font-weight: 600;
+}
+
+.wallet-tx__zap-msg {
+  font-style: italic;
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+
 .wallet-tx__info {
   flex: 1;
   min-width: 0;
