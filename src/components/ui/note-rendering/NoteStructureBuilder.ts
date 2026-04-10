@@ -241,6 +241,7 @@ export class NoteStructureBuilder {
         target.closest('.hashtag') ||
         target.closest('.quote-box') ||
         target.closest('.article-preview-card') ||
+        target.closest('.timeline-listing-card') ||
         target.closest('.note-media') ||
         target.closest('.note-media-inline') ||
         target.closest('.reply-indicator') ||

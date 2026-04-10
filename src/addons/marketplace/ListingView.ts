@@ -5,6 +5,7 @@
  * Fetches a single kind:30402 event by naddr and renders it.
  */
 
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { View } from '../../components/views/View';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
@@ -20,6 +21,7 @@ import { AuthService } from '../../services/AuthService';
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
 import { getTag } from '../../helpers/tagUtils';
+import { RelayConfig } from '../../services/RelayConfig';
 
 const BOOKMARK_SVG_OUTLINE = `<svg class="listing-view__bookmark-icon" width="22" height="22"><use href="#icon-bookmark-24"/></svg>`;
 const BOOKMARK_SVG_FILLED = `<svg class="listing-view__bookmark-icon listing-view__bookmark-icon--active" width="22" height="22"><use href="#icon-bookmark-24-filled"/></svg>`;
@@ -121,11 +123,20 @@ export class ListingView extends View {
               ${meta.tags.map(tag => `<span class="listing-view__tag">#${escapeHtml(tag)}</span>`).join('')}
             </div>
           ` : ''}
+
+          <div class="listing-view__share">
+            <button class="btn-icon" data-listing-action="repost" title="Repost">
+              <svg width="18" height="18"><use href="#icon-repost"/></svg> Repost
+            </button>
+            <button class="btn-icon" data-listing-action="quote" title="Quote">
+              <span style="font-size:1.3rem;line-height:1">❝</span> Quote
+            </button>
+          </div>
         </div>
       `;
 
       this.mountImageCarousel(meta.images);
-      this.setupEventHandlers(event.pubkey);
+      this.setupEventHandlers(event);
       this.loadSellerProfile(event.pubkey);
 
     } catch {
@@ -165,7 +176,7 @@ export class ListingView extends View {
     this.carousel.init();
   }
 
-  private setupEventHandlers(sellerPubkey: string): void {
+  private setupEventHandlers(event: NostrEvent): void {
     const router = Router.getInstance();
 
     const backBtn = this.container.querySelector('[data-action="back"]');
@@ -173,7 +184,7 @@ export class ListingView extends View {
 
     const contactBtn = this.container.querySelector('.listing-view__contact-btn');
     contactBtn?.addEventListener('click', () => {
-      const npub = hexToNpub(sellerPubkey);
+      const npub = hexToNpub(event.pubkey);
       if (npub) {
         router.navigate(`/messages/${npub}`);
       }
@@ -182,6 +193,31 @@ export class ListingView extends View {
     const bookmarkBtn = this.container.querySelector('.listing-view__bookmark-btn');
     bookmarkBtn?.addEventListener('click', async () => {
       await this.toggleBookmark(bookmarkBtn as HTMLElement);
+    });
+
+    // Repost / Quote share buttons
+    this.container.querySelectorAll('[data-listing-action]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const action = (btn as HTMLElement).dataset.listingAction;
+        const { AuthGuard } = await import('../../services/AuthGuard');
+        if (!AuthGuard.requireAuth('share this listing')) return;
+
+        const dTag = getTag(event.tags, 'd');
+        const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
+        const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+
+        if (action === 'repost') {
+          const { RepostService } = await import('../../services/RepostService');
+          await RepostService.getInstance().publishGenericRepost({
+            originalEvent: event,
+            relays: writeRelays,
+          });
+        } else if (action === 'quote') {
+          const naddr = encodeNaddr({ kind: 30402, pubkey: event.pubkey, identifier: dTag, relays: writeRelays.slice(0, 2) });
+          const { PostNoteModal } = await import('../../components/post/PostNoteModal');
+          PostNoteModal.getInstance().show('nostr:' + naddr);
+        }
+      });
     });
   }
 

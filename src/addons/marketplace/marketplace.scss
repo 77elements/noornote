@@ -428,6 +428,26 @@
     border-radius: $radius-full;
   }
 
+  &__share {
+    display: flex;
+    gap: $gap;
+    margin-top: calc($gap * 1.5);
+    padding-top: calc($gap * 1.5);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+
+    .btn-icon {
+      display: flex;
+      align-items: center;
+      gap: calc($gap / 4);
+      color: var(--color-3);
+      font-size: 0.875rem;
+
+      &:hover {
+        color: var(--color-4);
+      }
+    }
+  }
+
   &__loading {
     @include flex-center;
     flex-direction: column;
@@ -459,6 +479,11 @@
 
   &:hover {
     border-color: var(--color-4);
+  }
+
+  // When embedded in a note as a quoted reference
+  &--quoted {
+    margin-top: $gap;
   }
 
   &__image {

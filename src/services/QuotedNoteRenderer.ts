@@ -454,7 +454,7 @@ export class QuotedNoteRenderer {
     const firstImage = meta.images[0] || '';
 
     const card = document.createElement('div');
-    card.className = 'timeline-listing-card';
+    card.className = 'timeline-listing-card timeline-listing-card--quoted';
     card.style.cursor = 'pointer';
     card.innerHTML = `
       ${firstImage ? `
@@ -474,6 +474,7 @@ export class QuotedNoteRenderer {
     `;
 
     card.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent parent note-card from navigating to SNV
       if ((e.target as HTMLElement).closest('.mention-link')) {
         e.preventDefault();
         const pubkey = (e.target as HTMLElement).closest('[data-profile-pubkey]')?.getAttribute('data-profile-pubkey');
