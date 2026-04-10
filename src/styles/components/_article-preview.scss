@@ -104,7 +104,7 @@
   gap: $gap;
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   overflow: hidden;
   margin: calc($gap * 0.75) 0;
   padding: 0;
@@ -140,7 +140,7 @@
     );
     background-size: 200% 100%;
     animation: skeleton-loading 1.5s infinite;
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
 
     &.skeleton-title {
       height: 20px;
@@ -172,7 +172,7 @@
 .article-preview-error {
   background: $bg-error;
   border: 1px solid rgba($color-red, 0.5);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: $gap;
   margin: calc($gap * 0.75) 0;
 

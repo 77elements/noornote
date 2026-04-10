@@ -118,7 +118,7 @@
 .nostrin-list-editor__section {
   margin-bottom: $gap;
   border: 1px solid $color-2;
-  border-radius: $radius-md;
+  border-radius: $radius-xl;
   padding: $gap;
 }
 
@@ -185,7 +185,7 @@
   flex: 1;
   padding: calc($gap / 4) calc($gap / 2);
   border: 1px solid $color-2;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   background: $color-1;
   color: $color-5;
   font-size: 0.9rem;
@@ -203,7 +203,7 @@
 .nostrin-list-editor__new-item-add {
   background: none;
   border: 1px solid $color-2;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   color: $color-4;
   font-size: 1.2rem;
   cursor: pointer;
@@ -224,7 +224,7 @@
   width: 100%;
   padding: calc($gap / 2);
   border: 1px dashed $color-2;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   background: $color-1;
   color: $color-5;
   font-size: 1.1rem;

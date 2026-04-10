@@ -26,7 +26,7 @@
     gap: calc($gap / 2);
     padding: calc($gap / 2) $gap;
     background: none;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     color: var(--color-5);
     font-family: inherit;
     cursor: pointer;
@@ -95,7 +95,7 @@
     gap: $gap;
     padding: $gap * 3;
     border: 2px dashed var(--border-color);
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     color: var(--text-alpha-light);
     cursor: pointer;
     transition: $transition-colors;
@@ -129,7 +129,7 @@
 
   // Video preview after upload
   &__preview {
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     overflow: hidden;
     border: 1px solid var(--border-color);
   }
@@ -152,7 +152,7 @@
   &__kind-badge {
     @extend %small;
     padding: calc($gap / 4) calc($gap / 2);
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     font-weight: 500;
     background: color-mix(in srgb, var(--color-4) 15%, transparent);
     color: var(--color-4);
@@ -173,7 +173,7 @@
     padding: 0;
     background: none;
     border: none;
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     color: var(--text-alpha-light);
     cursor: pointer;
     transition: $transition-colors;
@@ -209,7 +209,7 @@
     justify-content: center;
     width: 40px;
     padding: 0;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     color: var(--color-5);
     cursor: pointer;
     transition: $transition-colors;

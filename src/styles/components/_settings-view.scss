@@ -96,7 +96,7 @@
 .addon-section {
   padding: $gap;
   border: 1px solid var(--color-3);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   margin: calc($gap / 2);
 
   &__title {
@@ -299,7 +299,7 @@
   padding: calc($gap / 2) $gap;
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   color: var(--color-5);
 
   &:focus {
@@ -371,7 +371,7 @@
     code {
       background: color-mix(in srgb, var(--color-3) 20%, transparent);
       padding: 2px 6px;
-      border-radius: $radius-sm;
+      border-radius: $radius-xl;
       font-family: monospace;
       @extend %small;
       word-break: break-all;
@@ -418,7 +418,7 @@
   flex-direction: column;
   gap: $gap;
   background: $alpha-light;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
 }
 
 
@@ -439,7 +439,7 @@
     padding: calc($gap / 2);
     background: var(--color-2);
     border: 1px solid var(--color-2);
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     color: var(--color-5);
 
     &::placeholder {
@@ -553,7 +553,7 @@
 .key-signer-info {
   padding: $gap;
   background: var(--color-2);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
 
   p {
     color: $color-3;
@@ -870,7 +870,7 @@
     padding: calc($gap / 2) $gap;
     background: $bg-error;
     border: 1px solid rgba($color-red, 0.5);
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     color: $color-red;
     margin-top: $gap;
 
@@ -884,7 +884,7 @@
     margin-top: $gap;
     padding: $gap;
     background: color-mix(in srgb, var(--color-3) 30%, transparent);
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
 
     strong {
       display: block;

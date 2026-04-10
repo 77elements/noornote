@@ -18,7 +18,7 @@
   margin-top: calc($gap / 4);
   background: var(--color-1);
   border: 1px solid var(--color-3);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   box-shadow: $box-shadow;
   min-width: 200px;
   z-index: 1000;
@@ -48,15 +48,15 @@
   transition: background 0.2s ease;
 
   &:first-child {
-    border-radius: $radius-sm $radius-sm 0 0;
+    border-radius: $radius-xl $radius-xl 0 0;
   }
 
   &:last-child {
-    border-radius: 0 0 $radius-sm $radius-sm;
+    border-radius: 0 0 $radius-xl $radius-xl;
   }
 
   &:only-child {
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
   }
 
   &:hover {

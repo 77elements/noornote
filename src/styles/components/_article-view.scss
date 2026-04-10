@@ -12,7 +12,7 @@
 // Article content wrapper
 .article-view-content {
   background: var(--color-1);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
 }
 
 // Article header section
@@ -24,7 +24,7 @@
     height: auto;
     max-height: 400px;
     object-fit: cover;
-    border-radius: $radius-lg $radius-lg 0 0;
+    border-radius: $radius-xl $radius-xl 0 0;
     margin-bottom: $gap;
   }
 
@@ -105,14 +105,14 @@
   code {
     background: var(--color-2);
     padding: calc($gap / 4) calc($gap / 2);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     font-family: $font-family-mono;
   }
 
   pre {
     background: var(--color-2);
     padding: $gap;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     overflow-x: auto;
     margin: $gap 0;
 
@@ -145,7 +145,7 @@
   img:not(.profile-pic) {
     max-width: 100%;
     height: auto;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     margin: $gap 0;
   }
 

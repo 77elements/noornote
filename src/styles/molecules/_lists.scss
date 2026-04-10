@@ -261,7 +261,7 @@
     width: 36px;
     height: 36px;
     background: color-mix(in srgb, var(--color-2) 90%, white);
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     color: $color-warning;
     flex-shrink: 0;
   }
@@ -327,7 +327,7 @@
   max-width: 250px;
   padding: calc($gap / 2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   background: transparent;
   color: var(--color-5);
   @extend %small;

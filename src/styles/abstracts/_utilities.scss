@@ -20,8 +20,8 @@
 }
 
 // Border radius utilities (placeholders + classes)
-%rounded-sm, .rounded-sm { border-radius: $radius-sm; }
-%rounded, .rounded { border-radius: $radius-base; }
-%rounded-md, .rounded-md { border-radius: $radius-md; }
-%rounded-lg, .rounded-lg { border-radius: $radius-lg; }
+%rounded-sm, .rounded-sm { border-radius: $radius-xl; }
+%rounded, .rounded { border-radius: $radius-xl; }
+%rounded-md, .rounded-md { border-radius: $radius-xl; }
+%rounded-lg, .rounded-lg { border-radius: $radius-xl; }
 %rounded-full, .rounded-full { border-radius: $radius-full; }

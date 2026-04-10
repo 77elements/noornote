@@ -22,7 +22,7 @@
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
 
   @include tablet-down {
     height: 150px;
@@ -30,7 +30,7 @@
 
   @include mobile-down {
     height: 120px;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
   }
 
   &.clickable {
@@ -172,7 +172,7 @@
 .copy-btn {
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -215,7 +215,7 @@
 .qr-btn {
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -241,7 +241,7 @@
 .profile-zap-btn {
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -270,7 +270,7 @@
 .tribe-btn {
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   padding: 4px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -381,7 +381,7 @@
   margin-top: calc($gap / 4);
   background: var(--color-1);
   border: 1px solid var(--color-3);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   box-shadow: $box-shadow;
   min-width: 200px;
   z-index: 1000;
@@ -411,15 +411,15 @@
   transition: background 0.2s ease;
 
   &:first-child {
-    border-radius: $radius-sm $radius-sm 0 0;
+    border-radius: $radius-xl $radius-xl 0 0;
   }
 
   &:last-child {
-    border-radius: 0 0 $radius-sm $radius-sm;
+    border-radius: 0 0 $radius-xl $radius-xl;
   }
 
   &:only-child {
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
   }
 
   &:hover {
@@ -509,7 +509,7 @@
   height: 24px;
   background: none;
   border: none;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   color: var(--color-3);
   cursor: grab;
   opacity: 0;

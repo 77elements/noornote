@@ -1,17 +1,20 @@
 /**
  * WalletBalanceDisplay Component Styles
- * Lightning wallet balance display in sidebar
+ * Lightning wallet balance display in sidebar + transaction list
  */
 
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 
+// ============================================
+// Sidebar Balance Display
+// ============================================
+
 .wallet-balance-container {
 }
 
 .wallet-balance-display {
-  display: none; // Hidden by default, shown when NWC connected
   margin-bottom: $gap;
   font-weight: 600;
   text-align: center;
@@ -67,4 +70,127 @@
     height: 18px;
     color: var(--color-5);
   }
+}
+
+// ============================================
+// Transaction List (Addon View)
+// ============================================
+
+.wallet-tx-list {
+  margin-top: $gap;
+}
+
+.wallet-tx-list__placeholder {
+  color: var(--color-5);
+  opacity: 0.5;
+  text-align: center;
+  padding: $gap * 2;
+}
+
+// Balance summary card
+.wallet-tx-balance {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc($gap / 2);
+  padding: $gap;
+  margin-bottom: $gap;
+  background-color: var(--color-2);
+  border-radius: $radius-xl;
+  font-weight: 600;
+}
+
+.wallet-tx-balance__sats {
+  font-size: 1.4rem;
+  color: var(--color-5);
+}
+
+.wallet-tx-balance__sats-icon {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) saturate(100%) invert(93%) sepia(9%) saturate(414%) hue-rotate(329deg) brightness(103%) contrast(91%);
+  vertical-align: text-bottom;
+}
+
+.wallet-tx-balance__fiat {
+  color: var(--color-5);
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+// Transaction row content (inside .ui-list__item)
+.wallet-tx--incoming,
+.wallet-tx--outgoing {
+  display: flex;
+  align-items: center;
+  gap: calc($gap * 3 / 4);
+}
+
+.wallet-tx__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: $radius-full;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+
+  .wallet-tx--incoming & {
+    background-color: rgba($color-success, 0.15);
+    color: $color-success;
+  }
+
+  .wallet-tx--outgoing & {
+    background-color: rgba($color-5, 0.08);
+    color: var(--color-5);
+    opacity: 0.7;
+  }
+}
+
+.wallet-tx__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wallet-tx__desc {
+  color: var(--color-5);
+  font-size: 0.875rem;
+  @include text-truncate;
+}
+
+.wallet-tx__time {
+  color: var(--color-5);
+  opacity: 0.4;
+  font-size: 0.75rem;
+}
+
+.wallet-tx__amounts {
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wallet-tx__sats {
+  font-size: 0.875rem;
+  font-weight: 600;
+
+  .wallet-tx--incoming & {
+    color: $color-success;
+  }
+
+  .wallet-tx--outgoing & {
+    color: var(--color-5);
+  }
+}
+
+.wallet-tx__fiat {
+  font-size: 0.75rem;
+  color: var(--color-5);
+  opacity: 0.5;
 }

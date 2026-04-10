@@ -38,7 +38,7 @@
 
 .skeleton-line {
   background: var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
@@ -137,7 +137,7 @@
   position: relative;
   width: 100%;
   background: var(--color-3);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 
   &--image {

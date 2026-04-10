@@ -97,7 +97,7 @@
   width: 32px;
   height: 32px;
   background: color-mix(in srgb, var(--color-2) 90%, white);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   color: $color-warning;
 
   svg {
@@ -191,7 +191,7 @@
     .mutes-warning {
       padding: calc($gap / 2) $gap;
       background: color-mix(in srgb, var(--color-4) 10%, transparent);
-      border-radius: $radius-base;
+      border-radius: $radius-xl;
       border-left: 3px solid var(--color-4);
     }
   }

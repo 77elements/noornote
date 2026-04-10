@@ -11,7 +11,7 @@
   padding: $gap;
   background: $alpha-light;
   border: 1px solid var(--color-2);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
 
   &__meta {
     display: flex;
@@ -44,7 +44,7 @@
     padding: calc($gap * 0.75);
     background: var(--color-1);
     border: 1px solid var(--color-2);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     color: var(--color-6);
     text-align: left;
     cursor: pointer;
@@ -85,7 +85,7 @@
     display: block;
     max-width: 80%;
     height: auto;
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     pointer-events: none; // Allow clicks to pass through to button
   }
 
@@ -114,7 +114,7 @@
     top: 0;
     height: 100%;
     background: linear-gradient(90deg, color-mix(in srgb, var(--color-3) 20%, transparent), color-mix(in srgb, var(--color-3) 5%, transparent));
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     transition: width 0.3s ease;
     z-index: 1;
   }

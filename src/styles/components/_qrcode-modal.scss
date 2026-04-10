@@ -28,7 +28,7 @@
   width: 300px;
   height: 300px;
   border: 2px solid var(--color-3);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   display: block;
 
   @include mobile-down {

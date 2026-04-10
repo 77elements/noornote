@@ -37,6 +37,30 @@ export interface PayInvoiceResult {
   error?: string;
 }
 
+export interface NWCTransaction {
+  type: 'incoming' | 'outgoing';
+  invoice?: string;
+  payment_hash: string;
+  preimage?: string;
+  /** Amount in millisatoshis */
+  amount: number;
+  /** Fees paid in millisatoshis */
+  fees_paid?: number;
+  /** Unix timestamp */
+  created_at: number;
+  /** Unix timestamp (null if pending) */
+  settled_at?: number;
+  description?: string;
+}
+
+export interface ListTransactionsParams {
+  from?: number;
+  until?: number;
+  limit?: number;
+  offset?: number;
+  type?: 'incoming' | 'outgoing';
+}
+
 export class NWCService {
   private static instance: NWCService;
   private systemLogger: SystemLogger;
@@ -250,11 +274,13 @@ export class NWCService {
 
       ws.addEventListener('message', handleMessage);
 
-      // Subscribe to response events
+      // Subscribe to response events, filtered by request event ID (#e tag)
+      // to avoid mixing up responses when multiple requests run in parallel.
       const filter = {
         kinds: [23195],
         authors: [expectedAuthor],
         '#p': [expectedPTag],
+        '#e': [event.id],
         since: Math.floor(Date.now() / 1000) - 5 // 5 seconds buffer
       };
       ws.send(JSON.stringify(['REQ', subId, filter]));
@@ -416,6 +442,43 @@ export class NWCService {
    */
   public getLightningAddress(): string | null {
     return this.getConnectionForCurrentUser()?.lud16 || null;
+  }
+
+  /**
+   * Get wallet info including supported methods (NIP-47 get_info)
+   */
+  public async getInfo(): Promise<Record<string, unknown> | null> {
+    const connection = this.getConnectionForCurrentUser();
+    if (!connection) return null;
+    try {
+      const response = await this.executeNwcRequest<Record<string, unknown>>(connection, 'get_info');
+      return response.result ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * List wallet transactions (NIP-47 list_transactions)
+   */
+  public async listTransactions(params: ListTransactionsParams = {}): Promise<NWCTransaction[]> {
+    const connection = this.getConnectionForCurrentUser();
+    if (!connection) return [];
+
+    try {
+      const response = await this.executeNwcRequest<{ transactions: NWCTransaction[] }>(
+        connection, 'list_transactions', params as Record<string, unknown>, 15000
+      );
+      if (response.error) {
+        this.systemLogger.error('NWCService', 'List transactions failed:', response.error.message);
+        return [];
+      }
+
+      return response.result?.transactions ?? [];
+    } catch (error) {
+      this.systemLogger.error('NWCService', 'List transactions failed:', error);
+      return [];
+    }
   }
 
   /**

@@ -95,7 +95,7 @@
     color: var(--color-5);
     text-decoration: none;
     transition: $transition-colors;
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     font-weight: 500;
     position: relative;
 
@@ -174,7 +174,7 @@
       text-align: left;
       cursor: pointer;
       transition: $transition-colors;
-      border-radius: $radius-sm;
+      border-radius: $radius-xl;
       font-weight: 500;
       font-size: inherit;
       font-family: inherit;
@@ -231,7 +231,7 @@
     color: var(--color-5);
     text-decoration: none;
     transition: $transition-colors;
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     font-weight: 400;
 
     &:hover,

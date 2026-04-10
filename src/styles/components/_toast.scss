@@ -116,7 +116,7 @@
   @extend %icon-sm;
   line-height: 1;
   cursor: pointer;
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   transition: all 0.2s ease;
   @include flex-center;
 

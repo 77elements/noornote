@@ -11,7 +11,7 @@
 .about-section {
   background: var(--color-1);
   border: 1px solid var(--color-2);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   padding: $gap * 1.5;
   margin-bottom: $gap;
 
@@ -61,7 +61,7 @@
   code {
     background: var(--color-2);
     padding: 2px 6px;
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     @extend %small;
   }
 

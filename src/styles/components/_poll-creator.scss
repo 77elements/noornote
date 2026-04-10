@@ -6,7 +6,7 @@
 .poll-creator {
   background: var(--color-1);
   border: 1px solid var(--color-2);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: $gap;
   margin-top: $gap;
 
@@ -40,7 +40,7 @@
     color: var(--color-4);
     cursor: pointer;
     padding: calc($gap / 4) calc($gap / 2);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     transition: all 0.2s ease;
 
     &:hover {
@@ -66,7 +66,7 @@
     flex: 1;
     background: var(--color-1);
     border: 1px solid var(--color-2);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     padding: calc($gap / 2);
     color: var(--color-6);
 
@@ -82,7 +82,7 @@
     height: calc($gap * 1.5);
     background: none;
     border: 1px solid var(--color-2);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     color: var(--color-4);
     @extend %icon-sm;
     line-height: 1;
@@ -104,7 +104,7 @@
     border: 1px dashed var(--color-3);
     color: var(--color-5);
     padding: calc($gap / 2);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     cursor: pointer;
     transition: all 0.2s ease;
     margin-bottom: $gap;
@@ -138,7 +138,7 @@
   &__relay-input {
     background: var(--color-1);
     border: 1px solid var(--color-2);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     padding: calc($gap / 2);
     color-scheme: dark;
 
@@ -161,7 +161,7 @@
     padding: $gap;
     background: $bg-warning;
     border: 1px solid $bg-warning;
-    border-radius: $radius-lg;
+    border-radius: $radius-xl;
     margin-top: $gap;
     display: flex;
     gap: calc($gap / 2);

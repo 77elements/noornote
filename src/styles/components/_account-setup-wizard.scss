@@ -402,7 +402,7 @@
 
 .wizard-lightning-done {
   background: var(--color-2);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: $gap * 1.5;
 }
 
@@ -517,7 +517,7 @@
 .wizard-success-box {
   background: $bg-success;
   border: 1px solid $color-success;
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: $gap * 1.5;
   margin: $gap * 1.5 0;
   color: $color-success;
@@ -533,7 +533,7 @@
   code {
     background: $bg-success;
     padding: 2px 6px;
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
   }
 }
 
@@ -547,7 +547,7 @@
 .wizard-keypair-item {
   background: var(--color-1);
   border: 1px solid var(--color-3);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: $gap;
 
   label {
@@ -610,7 +610,7 @@
   padding: $gap * 1.5;
   background: var(--color-1);
   border: 1px solid var(--color-3);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
 
   > p {
     margin: 0 0 $gap 0;

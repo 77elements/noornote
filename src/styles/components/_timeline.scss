@@ -54,7 +54,7 @@
     color: var(--color-4);
     text-decoration: none;
     padding: calc($gap / 2) $gap;
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     transition: background-color 0.2s ease;
 
     &:hover {
@@ -163,7 +163,7 @@
 .quote-max-depth {
   background: var(--color-2);
   border: 1px dashed var(--color-3);
-  border-radius: $radius-md;
+  border-radius: $radius-xl;
   padding: calc($gap * 0.75);
   margin: calc($gap / 2) 0;
   cursor: pointer;
@@ -202,7 +202,7 @@
 .quote-skeleton {
   background: var(--color-2);
   border: 1px solid var(--color-3);
-  border-radius: $radius-md;
+  border-radius: $radius-xl;
   padding: $gap;
   margin: calc($gap / 2) 0;
   animation: skeleton-pulse 1.5s ease-in-out infinite;
@@ -238,7 +238,7 @@
   width: 120px;
   height: 14px;
   background: var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
@@ -247,7 +247,7 @@
   width: 80px;
   height: 12px;
   background: var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
@@ -263,7 +263,7 @@
   width: 100%;
   height: 12px;
   background: var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 
   &.short {
@@ -274,7 +274,7 @@
 // Skeleton line (standalone)
 .skeleton-line {
   background: var(--color-3);
-  border-radius: $radius-base;
+  border-radius: $radius-xl;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
 
@@ -304,7 +304,7 @@
     padding: calc($gap / 2) calc($gap * 0.75);
     background: $bg-error;
     color: $color-red;
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
     font-size: 0.875rem;
   }
 

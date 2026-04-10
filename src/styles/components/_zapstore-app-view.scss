@@ -18,7 +18,7 @@
   &__icon {
     width: 80px;
     height: 80px;
-    border-radius: $radius-lg;
+    border-radius: $radius-xl;
     flex-shrink: 0;
     object-fit: cover;
   }
@@ -72,7 +72,7 @@
 
   &__screenshot {
     height: 200px;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     flex-shrink: 0;
 
     @media (max-width: 600px) {

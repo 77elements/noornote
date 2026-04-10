@@ -146,7 +146,7 @@
 @mixin card-base {
   background-color: var(--color-2);
   border: 1px solid var(--color-2);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
 }
 
 @mixin card-interactive {
@@ -180,7 +180,7 @@
 
   &::-webkit-scrollbar-thumb {
     background: color-mix(in srgb, var(--color-2) 70%, white);
-    border-radius: $radius-base;
+    border-radius: $radius-xl;
   }
 
   &::-webkit-scrollbar-thumb:hover {

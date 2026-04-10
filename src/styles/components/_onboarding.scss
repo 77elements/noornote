@@ -63,7 +63,7 @@
 // Auth Section (grouped options)
 .auth-section {
   border: 1px solid var(--color-3);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: calc($gap * 2);
   margin: calc($gap * 2) 0;
 
@@ -232,7 +232,7 @@
 .keypair-item {
   background: var(--color-1);
   border: 1px solid var(--color-3);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: $gap;
 
   label {
@@ -267,7 +267,7 @@
   padding: $gap * 1.5;
   background: color-mix(in srgb, var(--color-4) 10%, transparent);
   border: 1px solid var(--color-4);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   color: var(--color-5);
   line-height: 1.6;
   margin-bottom: $gap * 2;
@@ -347,7 +347,7 @@
     color: var(--color-4);
     background: color-mix(in srgb, var(--color-4) 10%, transparent);
     padding: calc($gap / 2) $gap;
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     margin: 0;
   }
 
@@ -374,7 +374,7 @@
 
 .web-onboarding-step {
   padding: calc($gap / 2) $gap;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   font-weight: 500;
 
   &--completed {
@@ -427,7 +427,7 @@
 .web-onboarding-info {
   background: var(--color-1);
   border: 1px solid var(--color-3);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: $gap * 1.5;
   margin: $gap * 1.5 0;
 }
@@ -454,7 +454,7 @@
 .web-onboarding-success {
   background: $bg-success;
   border: 1px solid $color-success;
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   padding: $gap * 1.5;
   margin: $gap * 1.5 0;
   color: $color-success;
@@ -470,7 +470,7 @@
   code {
     background: $bg-success;
     padding: 2px 6px;
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
   }
 }
 

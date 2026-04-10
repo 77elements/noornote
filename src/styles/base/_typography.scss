@@ -230,7 +230,7 @@ i {
 mark {
   background-color: $bg-warning;
   padding: 0 calc($gap / 4);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
 }
 
 // Code elements
@@ -239,7 +239,7 @@ code {
   @extend %compact;
   background-color: var(--color-2);
   padding: calc($gap / 4) calc($gap / 2);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   border: 1px solid var(--color-2);
 }
 
@@ -249,7 +249,7 @@ pre {
   line-height: 1.5;
   background-color: var(--color-2);
   padding: $gap;
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   border: 1px solid var(--color-2);
   overflow-x: auto;
   margin-bottom: $gap;

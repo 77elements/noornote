@@ -16,7 +16,7 @@
   align-items: center;
   padding: $gap;
   min-height: 80px;
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   background: var(--color-2);
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
   cursor: pointer;
@@ -110,7 +110,7 @@
     height: 32px;
     background: none;
     border: none;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     color: $color-red;
     cursor: pointer;
     transition: $transition-colors;
@@ -140,7 +140,7 @@
 
 // Drag placeholder
 .tribe-member-card-placeholder {
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   background: color-mix(in srgb, var(--color-2) 90%, black);
   border: 2px dashed var(--color-3);
   opacity: 0.5;

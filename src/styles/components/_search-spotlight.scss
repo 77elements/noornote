@@ -61,7 +61,7 @@
   padding: calc($gap / 4) calc($gap / 2);
   background: transparent;
   border: 1px solid transparent;
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   color: var(--color-5);
   @extend %small;
   cursor: pointer;
@@ -100,7 +100,7 @@
   align-items: center;
   gap: calc($gap / 2);
   padding: calc($gap / 2);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   cursor: pointer;
   transition: background 0.2s ease;
 
@@ -161,7 +161,7 @@
   align-items: center;
   gap: calc($gap / 2);
   padding: calc($gap / 2);
-  border-radius: $radius-sm;
+  border-radius: $radius-xl;
   cursor: pointer;
   transition: background 0.2s ease;
 

@@ -145,7 +145,7 @@ label {
   padding: $gap;
   background: var(--color-2);
   border: 2px solid var(--color-3);
-  border-radius: $radius-md;
+  border-radius: $radius-xl;
   cursor: pointer;
   transition: all 0.2s ease;
 
@@ -297,7 +297,7 @@ label {
     appearance: none;
     background: transparent;
     border: none;
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     position: relative;
 
     &:checked::after {

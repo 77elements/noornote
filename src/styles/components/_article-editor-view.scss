@@ -30,7 +30,7 @@
     gap: calc($gap / 2);
     padding: calc($gap / 2) $gap;
     background: none;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     color: var(--color-5);
     font-family: inherit;
     cursor: pointer;
@@ -120,7 +120,7 @@
   // Preview mode
   &__preview {
     padding: $gap * 1.5;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     min-height: 400px;
   }
 
@@ -128,7 +128,7 @@
     width: 100%;
     max-height: 300px;
     object-fit: cover;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     margin-bottom: $gap * 1.5;
   }
 
@@ -163,7 +163,7 @@
     code {
       background: var(--surface-tint);
       padding: 2px 6px;
-      border-radius: $radius-base;
+      border-radius: $radius-xl;
       font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
       @extend %small;
     }
@@ -171,7 +171,7 @@
     pre {
       background: $alpha-medium;
       padding: $gap;
-      border-radius: $radius-md;
+      border-radius: $radius-xl;
       overflow-x: auto;
       margin: 0 0 $gap;
 
@@ -201,7 +201,7 @@
     img {
       max-width: 100%;
       height: auto;
-      border-radius: $radius-md;
+      border-radius: $radius-xl;
       margin: $gap 0;
     }
   }
@@ -225,7 +225,7 @@
     padding: calc($gap / 4) calc($gap / 2);
     background: color-mix(in srgb, var(--color-4) 10%, transparent);
     color: var(--color-4);
-    border-radius: $radius-sm;
+    border-radius: $radius-xl;
     @extend %small;
   }
 
@@ -245,7 +245,7 @@
     justify-content: center;
     width: 40px;
     padding: 0;
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     color: var(--color-5);
     cursor: pointer;
     transition: $transition-colors;

@@ -35,7 +35,7 @@
   margin-bottom: $gap;
   background: color-mix(in srgb, var(--color-4) 10%, transparent);
   border: 1px solid var(--color-4);
-  border-radius: $radius-lg;
+  border-radius: $radius-xl;
   color: var(--color-6);
   line-height: 1.4;
 
@@ -404,7 +404,7 @@
   &__textarea {
     resize: none;
     border: 1px solid var(--color-2);
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     padding: calc($gap * 0.75) $gap;
     line-height: 1.5;
     background: var(--color-1);
@@ -449,7 +449,7 @@
     right: 0;
     background: var(--color-1);
     border: 1px solid var(--color-2);
-    border-radius: $radius-md;
+    border-radius: $radius-xl;
     box-shadow: $box-shadow;
     z-index: 100;
     max-height: 300px;
