@@ -7,6 +7,7 @@ import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
 import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
+import { decodeNip19 } from '../../../services/NostrToolsAdapter';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
 
 export class QuoteRenderer {
@@ -29,8 +30,17 @@ export class QuoteRenderer {
       note.content.quotedReferences.forEach(ref => {
         const marker = element.querySelector(`.quote-marker[data-quote-ref="${ref.fullMatch}"]`);
         if (marker) {
-          // Route naddr references to ArticlePreviewRenderer
+          // Route naddr references
           if (ref.type === 'addr') {
+            try {
+              const decoded = decodeNip19(ref.fullMatch.replace(/^nostr:/, ''));
+              if (decoded.type === 'naddr' && decoded.data?.kind === 30402) {
+                const container = document.createElement('div');
+                marker.replaceWith(container);
+                QuoteRenderer.quotedNoteRenderer.renderListingPreview(ref.fullMatch, container);
+                return;
+              }
+            } catch { /* fall through */ }
             QuoteRenderer.articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
             marker.remove();
           } else {

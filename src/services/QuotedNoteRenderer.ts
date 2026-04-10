@@ -5,7 +5,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { encodeNevent } from './NostrToolsAdapter';
+import { encodeNevent, decodeNip19 } from './NostrToolsAdapter';
 import { NoteHeader } from '../components/ui/NoteHeader';
 import { NoteUI } from '../components/ui/NoteUI';
 import { QuoteNoteFetcher } from './QuoteNoteFetcher';
@@ -52,8 +52,18 @@ export class QuotedNoteRenderer {
    */
   renderQuotedNotes(quotedReferences: QuotedReference[], container: Element, enableCollapsible: boolean = true): void {
     quotedReferences.forEach((ref) => {
-      // Route naddr references to ArticlePreviewRenderer
+      // Route naddr references
       if (ref.type === 'addr') {
+        // Decode naddr to check kind — listings (30402) get their own renderer
+        try {
+          const decoded = decodeNip19(ref.fullMatch.replace(/^nostr:/, ''));
+          if (decoded.type === 'naddr' && decoded.data?.kind === 30402) {
+            const listingContainer = document.createElement('div');
+            container.appendChild(listingContainer);
+            void this.renderListingPreview(ref.fullMatch, listingContainer);
+            return;
+          }
+        } catch { /* fall through to article renderer */ }
         this.articleRenderer.renderArticlePreview(ref.fullMatch, container);
         return;
       }
@@ -89,8 +99,16 @@ export class QuotedNoteRenderer {
           }
         }
 
-        // Route addressable events (kind 30000-39999) to ArticlePreviewRenderer
+        // Route addressable events (kind 30000-39999)
         if (result.event.kind !== undefined && result.event.kind >= 30000 && result.event.kind < 40000) {
+          // Listings (kind 30402) → listing preview
+          if (result.event.kind === 30402) {
+            const container = document.createElement('div');
+            skeleton.replaceWith(container);
+            void this.renderListingPreviewFromEvent(result.event, container);
+            return;
+          }
+          // Everything else → article preview
           const { encodeNaddr } = await import('./NostrToolsAdapter');
           const dTag = getTag(result.event.tags, 'd');
           const naddrRef = 'nostr:' + encodeNaddr({
@@ -399,5 +417,84 @@ export class QuotedNoteRenderer {
     skeleton.innerHTML = `<div class="skeleton-header"><div class="skeleton-avatar"></div><div class="skeleton-text-group"><div class="skeleton-line skeleton-name"></div><div class="skeleton-line skeleton-timestamp"></div></div></div><div class="skeleton-content"><div class="skeleton-line skeleton-text-line"></div><div class="skeleton-line skeleton-text-line"></div><div class="skeleton-line skeleton-text-line short"></div></div>`;
 
     return skeleton;
+  }
+
+  /**
+   * Render a marketplace listing preview from an naddr reference.
+   * Fetches the event first, then delegates to renderListingPreviewFromEvent.
+   */
+  public async renderListingPreview(naddrRef: string, container: Element): Promise<void> {
+    try {
+      const result = await this.quoteFetcher.fetchQuotedEventWithError(naddrRef);
+      if (result.success && result.event.kind === 30402) {
+        this.renderListingPreviewFromEvent(result.event, container);
+      }
+    } catch { /* silent — container stays empty */ }
+  }
+
+  /**
+   * Render a compact listing card from a Kind 30402 event.
+   * Reuses marketplace-helpers for metadata parsing.
+   */
+  private async renderListingPreviewFromEvent(event: NostrEvent, container: Element): Promise<void> {
+    const { parseListingMetadata, formatPrice } = await import('../addons/marketplace/marketplace-helpers');
+    const { encodeNaddr } = await import('./NostrToolsAdapter');
+    const { UserProfileService } = await import('./UserProfileService');
+    const { hexToNpub } = await import('../helpers/nip19');
+    const { escapeHtmlAttr } = await import('../helpers/escapeHtml');
+
+    const meta = parseListingMetadata(event);
+    const naddr = encodeNaddr({
+      kind: 30402,
+      pubkey: event.pubkey,
+      identifier: meta.identifier,
+      relays: []
+    });
+    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const firstImage = meta.images[0] || '';
+
+    const card = document.createElement('div');
+    card.className = 'timeline-listing-card';
+    card.style.cursor = 'pointer';
+    card.innerHTML = `
+      ${firstImage ? `
+        <div class="timeline-listing-card__image">
+          <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
+        </div>
+      ` : ''}
+      <div class="timeline-listing-card__body">
+        <div class="timeline-listing-card__seller" data-pubkey="${event.pubkey}">
+          <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">…</a>
+          <span class="timeline-listing-card__badge">Marketplace</span>
+        </div>
+        <h3 class="timeline-listing-card__title">${escapeHtml(meta.title)}</h3>
+        <div class="timeline-listing-card__price">${escapeHtml(priceDisplay)}</div>
+        ${meta.summary ? `<p class="timeline-listing-card__summary">${escapeHtml(meta.summary.slice(0, 120))}${meta.summary.length > 120 ? '...' : ''}</p>` : ''}
+      </div>
+    `;
+
+    card.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.mention-link')) {
+        e.preventDefault();
+        const pubkey = (e.target as HTMLElement).closest('[data-profile-pubkey]')?.getAttribute('data-profile-pubkey');
+        if (pubkey) {
+          const npub = hexToNpub(pubkey);
+          if (npub) Router.getInstance().navigate(`/profile/${npub}`);
+        }
+        return;
+      }
+      Router.getInstance().navigate(`/listing/${naddr}`);
+    });
+
+    container.appendChild(card);
+
+    // Async: load seller name
+    try {
+      const profile = await UserProfileService.getInstance().getUserProfile(event.pubkey);
+      const linkEl = card.querySelector('.mention-link');
+      if (linkEl) {
+        linkEl.textContent = profile?.name || profile?.display_name || hexToNpub(event.pubkey)?.slice(0, 12) + '...' || '…';
+      }
+    } catch { /* keep placeholder */ }
   }
 }

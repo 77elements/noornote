@@ -195,6 +195,14 @@ export class MarketplaceTimelineInjector {
         <h3 class="timeline-listing-card__title">${escapeHtml(meta.title)}</h3>
         <div class="timeline-listing-card__price">${escapeHtml(priceDisplay)}</div>
         ${meta.summary ? `<p class="timeline-listing-card__summary">${escapeHtml(meta.summary.slice(0, 120))}${meta.summary.length > 120 ? '...' : ''}</p>` : ''}
+        <div class="timeline-listing-card__actions">
+          <button class="btn-icon" data-listing-action="repost" title="Repost">
+            <svg width="16" height="16"><use href="#icon-repost"/></svg>
+          </button>
+          <button class="btn-icon" data-listing-action="quote" title="Quote">
+            <svg width="16" height="16"><use href="#icon-edit"/></svg>
+          </button>
+        </div>
       </div>
     `;
 
@@ -206,10 +214,20 @@ export class MarketplaceTimelineInjector {
 
     card.style.cursor = 'pointer';
     card.addEventListener('click', (e) => {
-      // Don't navigate if clicking the seller profile link
-      if ((e.target as HTMLElement).closest('.mention-link')) {
+      const target = e.target as HTMLElement;
+
+      // Repost/Quote buttons — stop propagation, handle async
+      const actionBtn = target.closest('[data-listing-action]') as HTMLElement | null;
+      if (actionBtn) {
+        e.stopPropagation();
+        void this.handleListingAction(actionBtn.dataset.listingAction!, event);
+        return;
+      }
+
+      // Seller profile link
+      if (target.closest('.mention-link')) {
         e.preventDefault();
-        const pubkey = (e.target as HTMLElement).closest('[data-profile-pubkey]')?.getAttribute('data-profile-pubkey');
+        const pubkey = target.closest('[data-profile-pubkey]')?.getAttribute('data-profile-pubkey');
         if (pubkey) {
           const npub = hexToNpub(pubkey);
           if (npub) Router.getInstance().navigate(`/profile/${npub}`);
@@ -222,6 +240,31 @@ export class MarketplaceTimelineInjector {
     this.loadSellerName(card, event.pubkey);
 
     return card;
+  }
+
+  private async handleListingAction(action: string, event: NostrEvent): Promise<void> {
+    const { AuthGuard } = await import('../../services/AuthGuard');
+    if (!AuthGuard.requireAuth('share this listing')) return;
+
+    if (action === 'repost') {
+      const { RepostService } = await import('../../services/RepostService');
+      const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+      await RepostService.getInstance().publishGenericRepost({
+        originalEvent: event,
+        relays: writeRelays,
+      });
+    } else if (action === 'quote') {
+      const dTag = getTag(event.tags, 'd');
+      const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+      const reference = 'nostr:' + encodeNaddr({
+        kind: 30402,
+        pubkey: event.pubkey,
+        identifier: dTag,
+        relays: writeRelays.slice(0, 2),
+      });
+      const { PostNoteModal } = await import('../../components/post/PostNoteModal');
+      PostNoteModal.getInstance().show(reference);
+    }
   }
 
   private async loadSellerName(card: HTMLElement, pubkey: string): Promise<void> {

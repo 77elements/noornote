@@ -120,10 +120,11 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
         return;
       }
 
-      const result = await this.repostService.publishRepost({
-        originalEvent: unwrappedEvent,
-        relays: writeRelays
-      });
+      // Kind 1 → standard repost (Kind 6), everything else → generic repost (Kind 16)
+      const isStandardNote = unwrappedEvent.kind === 1;
+      const result = isStandardNote
+        ? await this.repostService.publishRepost({ originalEvent: unwrappedEvent, relays: writeRelays })
+        : await this.repostService.publishGenericRepost({ originalEvent: unwrappedEvent, relays: writeRelays });
 
       if (result.success) {
         // Update stats (cache invalidation + optimistic UI update)
@@ -156,15 +157,15 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       const writeRelays = await RelayConfig.getInstance().getWriteRelays();
       let reference: string;
 
-      // For long-form articles (kind 30023), use naddr encoding
-      if (unwrappedEvent.kind === 30023) {
+      // For addressable events (kind 30000-39999: articles, listings, etc.), use naddr encoding
+      if (unwrappedEvent.kind && unwrappedEvent.kind >= 30000 && unwrappedEvent.kind < 40000) {
         const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
         const dTag = getTag(unwrappedEvent.tags, 'd');
         reference = 'nostr:' + encodeNaddr({
           kind: unwrappedEvent.kind,
           pubkey: unwrappedEvent.pubkey,
           identifier: dTag,
-          relays: writeRelays.slice(0, 2) // Include up to 2 relay hints
+          relays: writeRelays.slice(0, 2)
         });
       } else {
         // For regular notes, use nevent encoding

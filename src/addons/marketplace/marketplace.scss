@@ -523,6 +523,21 @@
     line-height: 1.4;
     @include text-truncate-lines(2);
   }
+
+  &__actions {
+    display: flex;
+    gap: calc($gap / 2);
+    margin-top: calc($gap / 2);
+
+    .btn-icon {
+      opacity: 0.4;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
 }
 
 // ─── Marketplace Settings (frequency selector) ──────────────────

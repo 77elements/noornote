@@ -10,6 +10,7 @@ import { PollRenderer } from '../note-features/PollRenderer';
 import { NIP88PollRenderer } from '../note-features/NIP88PollRenderer';
 import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
+import { decodeNip19 } from '../../../services/NostrToolsAdapter';
 
 export class OriginalNoteRenderer {
 
@@ -34,8 +35,18 @@ export class OriginalNoteRenderer {
       note.content.quotedReferences.forEach(ref => {
           const marker = element.querySelector(`.quote-marker[data-quote-ref="${ref.fullMatch}"]`);
           if (marker) {
-            // Route naddr references to ArticlePreviewRenderer
+            // Route naddr references
             if (ref.type === 'addr') {
+              // Kind 30402 listings → listing preview via QuotedNoteRenderer
+              try {
+                const decoded = decodeNip19(ref.fullMatch.replace(/^nostr:/, ''));
+                if (decoded.type === 'naddr' && decoded.data?.kind === 30402) {
+                  const container = document.createElement('div');
+                  marker.replaceWith(container);
+                  quotedNoteRenderer.renderListingPreview(ref.fullMatch, container);
+                  return;
+                }
+              } catch { /* fall through */ }
               articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
               marker.remove();
             } else {

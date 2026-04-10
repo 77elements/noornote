@@ -9,6 +9,7 @@ import { UserProfileService } from '../../../services/UserProfileService';
 import { NoteProcessor } from '../note-processing/NoteProcessor';
 import { OriginalNoteRenderer } from './OriginalNoteRenderer';
 import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
+import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { QuoteOrchestrator } from '../../../services/orchestration/QuoteOrchestrator';
 import { MuteOrchestrator } from '../../../lists/mutes';
@@ -218,6 +219,20 @@ export class RepostRenderer {
         `;
         repostDiv.appendChild(errorDiv);
       }
+    } else if (note.repostedEvent.kind === 30402) {
+      // Reposted event is a marketplace listing (kind:30402)
+      const listingContainer = document.createElement('div');
+      listingContainer.className = 'repost-article-container';
+      const quotedNoteRenderer = QuotedNoteRenderer.getInstance();
+      const dTag = getTag(note.repostedEvent.tags, 'd');
+      const naddr = encodeNaddr({
+        kind: 30402,
+        pubkey: note.repostedEvent.pubkey,
+        identifier: dTag,
+        relays: []
+      });
+      quotedNoteRenderer.renderListingPreview(`nostr:${naddr}`, listingContainer);
+      repostDiv.appendChild(listingContainer);
     } else if (note.repostedEvent.kind === 30023) {
       // Reposted event is a long-form article (kind:30023)
       const articleContainer = document.createElement('div');

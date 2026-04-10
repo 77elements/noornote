@@ -13,6 +13,7 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
+import { getTag } from '../helpers/tagUtils';
 
 export interface RepostOptions {
   /** Note to repost (full event) */
@@ -154,6 +155,62 @@ export class RepostService {
         true,
         'Repost konnte nicht veröffentlicht werden. Bitte versuche es erneut.'
       );
+      return { success: false, error: 'Publish failed' };
+    }
+  }
+
+  /**
+   * Create and publish a Kind 16 generic repost (NIP-18)
+   * Used for non-Kind-1 events (e.g. Kind 30402 marketplace listings).
+   */
+  public async publishGenericRepost(options: RepostOptions): Promise<{ success: boolean; error?: string }> {
+    const { originalEvent, relays } = options;
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      ToastService.show('Not authenticated', 'error');
+      return { success: false, error: 'Not authenticated' };
+    }
+    if (!originalEvent?.id || !relays?.length) {
+      return { success: false, error: 'Invalid input' };
+    }
+
+    try {
+      const tags: string[][] = [
+        ['e', originalEvent.id],
+        ['p', originalEvent.pubkey],
+        ['k', String(originalEvent.kind)],
+      ];
+
+      // For addressable events (kind 30000-39999), include a-tag
+      const eventKind = originalEvent.kind ?? 0;
+      if (eventKind >= 30000 && eventKind < 40000) {
+        const dTag = getTag(originalEvent.tags, 'd');
+        if (dTag) {
+          tags.push(['a', `${originalEvent.kind}:${originalEvent.pubkey}:${dTag}`]);
+        }
+      }
+
+      const unsignedEvent = {
+        kind: 16,
+        created_at: Math.floor(Date.now() / 1000),
+        tags,
+        content: JSON.stringify(originalEvent),
+        pubkey: currentUser.pubkey
+      };
+
+      const signedEvent = await this.authService.signEvent(unsignedEvent);
+      if (!signedEvent) {
+        ToastService.show('Signing failed', 'error');
+        return { success: false, error: 'Signing failed' };
+      }
+
+      await this.transport.publish(relays, signedEvent);
+      this.systemLogger.info('RepostService', `Generic repost (kind ${originalEvent.kind}) published`);
+      ToastService.show('Repost published', 'success');
+      return { success: true };
+    } catch (error) {
+      ErrorService.handle(error, 'RepostService.publishGenericRepost', true, 'Repost failed');
       return { success: false, error: 'Publish failed' };
     }
   }
