@@ -96,6 +96,33 @@ async function renderNaddrPreview(container: HTMLElement, data: NaddrData): Prom
     return container;
   }
 
+  // Marketplace listings (Kind 30402) → compact listing card preview
+  if (data.kind === 30402) {
+    const { parseListingMetadata, formatPrice } = await import('../addons/marketplace/marketplace-helpers');
+    const meta = parseListingMetadata(event);
+    const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
+    const authorName = await getAuthorName(event.pubkey);
+    const firstImage = meta.images[0] || '';
+
+    container.className = 'timeline-listing-card timeline-listing-card--quoted';
+    container.innerHTML = `
+      ${firstImage ? `
+        <div class="timeline-listing-card__image">
+          <img src="${escapeHtml(firstImage)}" alt="" loading="lazy" />
+        </div>
+      ` : ''}
+      <div class="timeline-listing-card__body">
+        <div class="timeline-listing-card__seller">
+          <span>${escapeHtml(authorName)}</span>
+          <span class="timeline-listing-card__badge">Marketplace</span>
+        </div>
+        <h3 class="timeline-listing-card__title">${escapeHtml(meta.title)}</h3>
+        <div class="timeline-listing-card__price">${escapeHtml(priceDisplay)}</div>
+      </div>
+    `;
+    return container;
+  }
+
   const authorName = await getAuthorName(event.pubkey);
   const title = event.tags.find(t => t[0] === 'title')?.[1]
     || event.tags.find(t => t[0] === 'name')?.[1]
