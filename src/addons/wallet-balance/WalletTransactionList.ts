@@ -3,6 +3,7 @@
  *
  * Mounted into `data-addon-content="wallet-balance"` by WalletBalanceAddonView
  * when the addon toggle is ON. Uses `.ui-list` / `.ui-list__item` for rows.
+ * Loads 20 transactions initially, more via InfiniteScroll (offset pagination).
  */
 
 import { NWCService } from '../../services/NWCService';
@@ -10,16 +11,24 @@ import type { NWCTransaction } from '../../services/NWCService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import satsIconUrl from '../../assets/sats.svg';
 
+const PAGE_SIZE = 20;
+
 export class WalletTransactionList {
   private element: HTMLElement;
+  private listEl: HTMLElement | null = null;
   private nwcService: NWCService;
   private exchangeRateService: ExchangeRateService;
   private systemLogger: SystemLogger;
+  private infiniteScroll: InfiniteScroll | null = null;
   private selectedCurrency = 'EUR';
   private destroyed = false;
+  private loading = false;
+  private offset = 0;
+  private allLoaded = false;
   private onNwcRestored: () => void;
 
   constructor() {
@@ -31,7 +40,11 @@ export class WalletTransactionList {
     this.element.className = 'wallet-tx-list';
     this.element.innerHTML = '<p class="wallet-tx-list__placeholder pulsate">Loading transactions…</p>';
 
-    this.onNwcRestored = () => { void this.load(); };
+    this.onNwcRestored = () => {
+      this.offset = 0;
+      this.allLoaded = false;
+      void this.loadInitial();
+    };
     window.addEventListener('nwc-connection-restored', this.onNwcRestored);
 
     void this.init();
@@ -39,7 +52,7 @@ export class WalletTransactionList {
 
   private async init(): Promise<void> {
     await this.loadCurrency();
-    await this.load();
+    await this.loadInitial();
   }
 
   private async loadCurrency(): Promise<void> {
@@ -49,7 +62,7 @@ export class WalletTransactionList {
     } catch { /* keep default */ }
   }
 
-  private async load(): Promise<void> {
+  private async loadInitial(): Promise<void> {
     if (this.destroyed) return;
 
     if (!this.nwcService.isConnected()) {
@@ -60,10 +73,14 @@ export class WalletTransactionList {
     try {
       const [balanceMsats, transactions] = await Promise.all([
         this.nwcService.getBalance(),
-        this.nwcService.listTransactions({ limit: 50 }),
+        this.nwcService.listTransactions({ limit: PAGE_SIZE, offset: 0 }),
       ]);
       if (this.destroyed) return;
-      this.render(balanceMsats, transactions);
+
+      this.offset = transactions.length;
+      this.allLoaded = transactions.length < PAGE_SIZE;
+
+      this.renderInitial(balanceMsats, transactions);
     } catch (err) {
       this.systemLogger.error('WalletTransactionList', 'Failed to load:', err);
       if (!this.destroyed) {
@@ -72,13 +89,11 @@ export class WalletTransactionList {
     }
   }
 
-  private render(balanceMsats: number | null, transactions: NWCTransaction[]): void {
+  private renderInitial(balanceMsats: number | null, transactions: NWCTransaction[]): void {
     const balanceSats = balanceMsats !== null ? Math.floor(balanceMsats / 1000) : null;
 
-    let html = '';
-
     // Balance summary
-    html += `<div class="wallet-tx-balance">`;
+    let html = `<div class="wallet-tx-balance">`;
     if (balanceSats !== null) {
       html += `<span class="wallet-tx-balance__sats">${balanceSats.toLocaleString()}</span>`;
       html += ` <img src="${satsIconUrl}" class="wallet-tx-balance__sats-icon" alt="sats" />`;
@@ -87,24 +102,79 @@ export class WalletTransactionList {
     }
     html += `</div>`;
 
-    // Transactions
     if (transactions.length === 0) {
       html += '<p class="wallet-tx-list__placeholder">No transactions yet</p>';
-    } else {
-      html += '<div class="ui-list">';
-      for (const tx of transactions) {
-        html += this.renderTransaction(tx);
-      }
-      html += '</div>';
+      this.element.innerHTML = html;
+      return;
     }
 
+    html += '<div class="ui-list" data-wallet-tx-list></div>';
     this.element.innerHTML = html;
 
-    // Async: fill in fiat amounts
+    this.listEl = this.element.querySelector('[data-wallet-tx-list]');
+    this.appendTransactions(transactions);
+
+    // Fiat balance
     if (balanceSats !== null) {
       void this.fillFiatBalance(balanceSats);
     }
-    void this.fillFiatAmounts(transactions);
+
+    // InfiniteScroll
+    if (!this.allLoaded && this.listEl) {
+      this.infiniteScroll = new InfiniteScroll(
+        () => { void this.loadMore(); },
+        { loadingMessage: 'Loading more transactions…' }
+      );
+      this.infiniteScroll.observe(this.listEl);
+    }
+  }
+
+  private async loadMore(): Promise<void> {
+    if (this.loading || this.allLoaded || this.destroyed) return;
+    this.loading = true;
+    this.infiniteScroll?.showLoading();
+
+    try {
+      const transactions = await this.nwcService.listTransactions({
+        limit: PAGE_SIZE,
+        offset: this.offset,
+      });
+      if (this.destroyed) return;
+
+      if (transactions.length < PAGE_SIZE) {
+        this.allLoaded = true;
+      }
+      this.offset += transactions.length;
+
+      this.appendTransactions(transactions);
+      this.infiniteScroll?.hideLoading();
+      this.infiniteScroll?.refresh();
+
+      if (this.allLoaded) {
+        this.infiniteScroll?.pause();
+      }
+    } catch (err) {
+      this.systemLogger.error('WalletTransactionList', 'Failed to load more:', err);
+      this.infiniteScroll?.hideLoading();
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  private appendTransactions(transactions: NWCTransaction[]): void {
+    if (!this.listEl) return;
+    const sentinel = this.listEl.querySelector('.infinite-scroll-sentinel');
+    for (const tx of transactions) {
+      const div = document.createElement('div');
+      div.innerHTML = this.renderTransaction(tx);
+      const item = div.firstElementChild as HTMLElement;
+      if (sentinel) {
+        this.listEl.insertBefore(item, sentinel);
+      } else {
+        this.listEl.appendChild(item);
+      }
+    }
+    void this.fillFiatAmountsForNew(transactions);
   }
 
   private renderTransaction(tx: NWCTransaction): string {
@@ -145,15 +215,17 @@ export class WalletTransactionList {
     }
   }
 
-  private async fillFiatAmounts(transactions: NWCTransaction[]): Promise<void> {
+  private async fillFiatAmountsForNew(transactions: NWCTransaction[]): Promise<void> {
     if (this.destroyed || transactions.length === 0) return;
 
     const ratePerSat = await this.exchangeRateService.convertSatsToFiat(1, this.selectedCurrency);
     if (this.destroyed) return;
     const symbol = this.exchangeRateService.getCurrencySymbol(this.selectedCurrency);
 
+    // Only fill elements that still show "…"
     const fiatEls = this.element.querySelectorAll('[data-tx-msats]');
     for (const el of fiatEls) {
+      if (el.textContent !== '…') continue;
       const msats = parseInt(el.getAttribute('data-tx-msats') || '0', 10);
       const type = el.getAttribute('data-tx-type');
       const sats = Math.floor(msats / 1000);
@@ -182,7 +254,10 @@ export class WalletTransactionList {
 
   public destroy(): void {
     this.destroyed = true;
+    this.infiniteScroll?.destroy();
+    this.infiniteScroll = null;
     window.removeEventListener('nwc-connection-restored', this.onNwcRestored);
     this.element.innerHTML = '';
+    this.listEl = null;
   }
 }
