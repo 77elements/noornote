@@ -448,6 +448,16 @@
     }
   }
 
+  &__reviews {
+    margin-top: calc($gap * 2);
+  }
+
+  &__reviews-header {
+    margin-bottom: $gap;
+    padding-bottom: calc($gap / 2);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
   &__loading {
     @include flex-center;
     flex-direction: column;

@@ -132,12 +132,17 @@ export class ListingView extends View {
               <span style="font-size:1.3rem;line-height:1">❝</span> Quote
             </button>
           </div>
+
+          <div class="listing-view__reviews" data-listing-reviews>
+            <p class="pulsate">Loading reviews…</p>
+          </div>
         </div>
       `;
 
       this.mountImageCarousel(meta.images);
       this.setupEventHandlers(event);
       this.loadSellerProfile(event.pubkey);
+      void this.loadReviews(event);
 
     } catch {
       this.showError();
@@ -312,6 +317,96 @@ export class ListingView extends View {
 
   public getElement(): HTMLElement {
     return this.container;
+  }
+
+  /**
+   * Fetch and render quoted reposts (reviews) for this listing.
+   * Queries for Kind 1 events with an `a` tag matching this listing's addressable ID.
+   */
+  private async loadReviews(event: NostrEvent): Promise<void> {
+    const reviewsContainer = this.container.querySelector('[data-listing-reviews]');
+    if (!reviewsContainer) return;
+
+    const dTag = getTag(event.tags, 'd');
+    const aTagValue = `30402:${event.pubkey}:${dTag}`;
+
+    try {
+      const { NostrTransport } = await import('../../services/transport/NostrTransport');
+      const transport = NostrTransport.getInstance();
+      const relays = transport.getReadRelays();
+
+      const events = await transport.fetch(
+        relays,
+        [{ kinds: [1], '#a': [aTagValue], limit: 50 }],
+        8000,
+        false,
+        'ListingView.loadReviews'
+      );
+
+      // Only keep quotes that have actual content (not just the naddr reference)
+      const reviews = events.filter(e => {
+        const cleaned = e.content.replace(/nostr:(nevent|note|naddr|nprofile|npub)[a-z0-9]+/gi, '').trim();
+        return cleaned.length > 0;
+      }).sort((a, b) => a.created_at - b.created_at);
+
+      if (reviews.length === 0) {
+        reviewsContainer.innerHTML = '';
+        return;
+      }
+
+      reviewsContainer.innerHTML = `
+        <h2 class="h3 listing-view__reviews-header">Reviews & Quotes (${reviews.length})</h2>
+        <div class="listing-view__reviews-list"></div>
+      `;
+
+      const list = reviewsContainer.querySelector('.listing-view__reviews-list');
+      if (!list) return;
+
+      const { NoteUI } = await import('../../components/ui/NoteUI');
+      const { UserProfileService } = await import('../../services/UserProfileService');
+      const { encodeNevent } = await import('../../services/NostrToolsAdapter');
+      const profileService = UserProfileService.getInstance();
+
+      for (const review of reviews) {
+        if (!review.id) continue;
+
+        const profile = await profileService.getUserProfile(review.pubkey);
+        const username = profile?.display_name || profile?.name || 'Anonymous';
+        const nevent = encodeNevent(review.id, [], review.pubkey);
+
+        // Strip nostr references from content for cleaner display
+        const cleanedReview = {
+          ...review,
+          content: review.content.replace(/nostr:(nevent|note|naddr|nprofile|npub)[a-z0-9]+/gi, '').trim()
+        };
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'snv-quoted-repost';
+
+        const header = document.createElement('div');
+        header.className = 'snv-quoted-repost__header';
+        header.innerHTML = `<a href="/note/nostr:${escapeHtml(nevent)}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> quoted this listing:</a>`;
+        header.querySelector('a')?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          Router.getInstance().navigate(`/note/nostr:${nevent}`);
+        });
+
+        const noteElement = NoteUI.createNoteElement(cleanedReview, {
+          collapsible: false,
+          islFetchStats: false,
+          isLoggedIn: false,
+          headerSize: 'small',
+          depth: 0
+        });
+
+        wrapper.appendChild(header);
+        wrapper.appendChild(noteElement);
+        list.appendChild(wrapper);
+      }
+    } catch (err) {
+      reviewsContainer.innerHTML = '';
+    }
   }
 
   public destroy(): void {
