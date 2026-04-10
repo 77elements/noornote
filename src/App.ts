@@ -65,6 +65,13 @@ export class App {
     this.setupUI();
     this.setupEventListeners();
 
+    // Bootstrap AddonLoader BEFORE any await, so its user:login listener
+    // is registered before loadSession() (started in AuthService constructor)
+    // can emit the event. Any await (e.g. checkConnectivity) yields to the
+    // event loop, giving loadSession() a chance to finish first.
+    registerCoreAddons();
+    AddonLoader.getInstance().bootstrap();
+
     OfflineOverlay.getInstance();
     CollapsibleManager.init();
     FontSizeService.getInstance();
@@ -125,20 +132,6 @@ export class App {
     const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
     this.router.navigate(targetPath);
 
-    // Bootstrap the AddonLoader. First register all core addons (cheap —
-    // only stores dynamic-import factories and subscribes to toggle events),
-    // then wire user:login/logout listeners. Passes the current session (if
-    // any) so session-restore triggers an initial load of enabled addons
-    // without waiting for a new user:login event.
-    // See docs/todos/addons-true-lazy-loading.md.
-    registerCoreAddons();
-    const currentUserForAddons = isLoggedIn ? this.authService.getCurrentUser() : null;
-    AddonLoader.getInstance().bootstrap(
-      currentUserForAddons
-        ? { pubkey: currentUserForAddons.pubkey, npub: currentUserForAddons.npub }
-        : undefined
-    );
-
     // If user is already logged in from session restore, start services explicitly.
     // user:login may have been emitted before setupEventListeners() registered the handler.
     if (isLoggedIn) {
@@ -146,6 +139,9 @@ export class App {
       if (currentUser) {
         initDiagnosticLogger(currentUser.npub);
         this.postLoginService.handleLogin({ npub: currentUser.npub, pubkey: currentUser.pubkey });
+        // Fallback: ensure addons load even if user:login was emitted before
+        // AddonLoader subscribed. Already-loaded addons are skipped (idempotent).
+        AddonLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
       }
     }
 

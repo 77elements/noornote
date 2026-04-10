@@ -146,6 +146,7 @@ export class AddonLoader {
     this.eventBus.on('user:login', (data?: { pubkey?: string; npub?: string }) => {
       const pubkey = data?.pubkey ?? null;
       const npub = data?.npub ?? null;
+
       void this.handleLogin(pubkey, npub);
     });
     this.eventBus.on('user:logout', () => {
@@ -165,6 +166,16 @@ export class AddonLoader {
     if (current && current.pubkey) {
       void this.handleLogin(current.pubkey, current.npub);
     }
+  }
+
+  /**
+   * Explicit refresh — ensures every enabled addon is loaded for the given
+   * pubkey. Safe to call multiple times; addons that are already loaded for
+   * this pubkey are skipped. Use as a fallback when the user:login event
+   * may have fired before the listener was registered.
+   */
+  public refresh(pubkey: string, npub: string | null): void {
+    void this.handleLogin(pubkey, npub);
   }
 
   /** True iff the addon is currently loaded and initialized. */
@@ -201,6 +212,7 @@ export class AddonLoader {
     // destroy and re-init.
     for (const entry of this.entries.values()) {
       const enabled = this.safeIsEnabled(entry);
+
       if (!enabled) {
         if (entry.instance) {
           this.enqueue(entry, () => this.runDestroy(entry));
@@ -259,7 +271,10 @@ export class AddonLoader {
   }
 
   private async runInit(entry: AddonLoaderEntry): Promise<void> {
-    if (entry.instance) return; // idempotent
+    if (entry.instance) {
+
+      return; // idempotent
+    }
     const loadStart = performance.now();
     diagLog('addons', 'addons_load_start', { id: entry.id, pubkey: this.currentPubkey });
     let runtime: AddonRuntime;

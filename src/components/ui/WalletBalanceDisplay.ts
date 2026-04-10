@@ -130,14 +130,15 @@ export class WalletBalanceDisplay {
     const amountEl = this.element.querySelector('.wallet-balance-amount');
     const fiatAmountEl = this.element.querySelector('.wallet-balance-fiat-amount');
 
+    // Always visible when addon is ON — show placeholder until NWC connects.
+    this.element.style.display = 'block';
+
     if (balanceMsats === null || !this.nwcService.isConnected()) {
-      // Not connected - hide display
-      this.element.style.display = 'none';
+      // Not connected yet — show placeholder, will refresh on nwc-connection-restored
+      if (amountEl) amountEl.textContent = '--';
+      if (fiatAmountEl) fiatAmountEl.textContent = '--';
       return;
     }
-
-    // Show display
-    this.element.style.display = 'block';
 
     if (!this.balanceVisible) {
       // Hidden state

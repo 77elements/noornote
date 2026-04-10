@@ -26,10 +26,10 @@ const runtime: AddonRuntime = {
     if (display) return; // idempotent
     const container = document.querySelector('.wallet-balance-container');
     if (!container) {
-      // Mount point not in DOM (e.g. sidebar not rendered yet). AddonLoader
-      // will retry on the next user:login / toggle. We diagLog at the loader
-      // level; here we just silently no-op.
-      return;
+      // Throw so AddonLoader does NOT mark us as loaded — allows retry on
+      // next user:login or toggle. A silent return would leave entry.instance
+      // set, permanently preventing initialization.
+      throw new Error('wallet-balance: .wallet-balance-container not in DOM');
     }
     display = new WalletBalanceDisplay();
     container.appendChild(display.getElement());

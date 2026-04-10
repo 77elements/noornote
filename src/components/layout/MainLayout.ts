@@ -902,6 +902,8 @@ export class MainLayout {
         const _p = PlatformService.getInstance();
         if (_p.isElectron) {
           await window.electronAPI!.openExternal(url);
+        } else if (_p.isCapacitor) {
+          window.open(url, '_blank', 'noopener,noreferrer');
         } else {
           window.location.href = '/download/';
         }
