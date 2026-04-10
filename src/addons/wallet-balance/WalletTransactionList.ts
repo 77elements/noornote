@@ -14,6 +14,7 @@ import { KeychainStorage } from '../../services/KeychainStorage';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { formatTimeAgo } from '../../helpers/formatTimeAgo';
 import satsIconUrl from '../../assets/sats.svg';
 
 const PAGE_SIZE = 20;
@@ -184,7 +185,7 @@ export class WalletTransactionList {
     const sats = Math.floor(tx.amount / 1000);
     const sign = isIncoming ? '+' : '-';
     const cls = isIncoming ? 'wallet-tx--incoming' : 'wallet-tx--outgoing';
-    const timeStr = this.formatRelativeTime(tx.settled_at || tx.created_at);
+    const timeStr = formatTimeAgo((tx.settled_at || tx.created_at) * 1000);
 
     // Extract zap sender info from metadata.nostr (kind 9734 zap request)
     const zapRequest = (tx as any).metadata?.nostr;
@@ -301,18 +302,6 @@ export class WalletTransactionList {
       const formatted = this.exchangeRateService.formatAmount(fiat, this.selectedCurrency);
       el.textContent = `${sign}${formatted} ${symbol}`;
     }
-  }
-
-  private formatRelativeTime(timestamp: number): string {
-    const now = Math.floor(Date.now() / 1000);
-    const diff = now - timestamp;
-
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-    if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString();
   }
 
   public getElement(): HTMLElement {
