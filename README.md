@@ -122,7 +122,7 @@ If the app crashes, check the log files:
 | [NIP-09](https://github.com/nostr-protocol/nips/blob/master/09.md) | Event deletion | 5 |
 | [NIP-10](https://github.com/nostr-protocol/nips/blob/master/10.md) | Reply threading | - |
 | [NIP-17](https://github.com/nostr-protocol/nips/blob/master/17.md) | Private Direct Messages | 13, 14, 1059, 10050 |
-| [NIP-18](https://github.com/nostr-protocol/nips/blob/master/18.md) | Reposts | 6 |
+| [NIP-18](https://github.com/nostr-protocol/nips/blob/master/18.md) | Reposts & generic reposts | 6, 16 |
 | [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md) | bech32 encoding (npub, nsec, note, nevent, naddr) | - |
 | [NIP-22](https://github.com/nostr-protocol/nips/blob/master/22.md) | Comments | 1111 |
 | [NIP-23](https://github.com/nostr-protocol/nips/blob/master/23.md) | Long-form content (articles + drafts) | 30023, 30024 |
