@@ -1,0 +1,56 @@
+# Single source of truth for NoorNote description copy.
+# Edit this file, then run: bun run desc:sync
+# /build-validate fails if any target file drifts from this source.
+#
+# Variants:
+#   short              — short one-liner (package.json, manifest.json)
+#   meta_main          — SEO meta description for main landing (index.html)
+#   meta_download      — SEO meta for /download/ (desktop-focused)
+#   og_download        — og:description for /download/ social card
+#   zapstore_summary   — zapstore.yaml `summary` field
+#   paragraph_1        — opening paragraph ("A slim yet feature rich…")
+#   paragraph_2        — second paragraph ("It focuses not just on…")
+#   urls_block         — URL block for long-form targets (Web / Download links)
+#   platform_matrix_md — README "Available as…" line (markdown)
+#
+# Syntax: `>` folds line breaks to spaces, `|` preserves them literally.
+# Indentation is 2 spaces. No nested keys. Comments start with `#`.
+
+short: >
+  A slim yet feature rich Nostr client for Web, Desktop and Android — no Google
+  services, open source
+
+meta_main: >
+  NoorNote — a slim yet feature rich Nostr client for Web, Desktop and Android.
+  No Google services, open source. Social, marketplace, Zap Streams and more.
+
+meta_download: >
+  Download NoorNote for Linux & macOS. A slim yet feature rich Nostr client with
+  marketplace, Zap Streams, tribes and more. Open source, no Google services.
+
+og_download: >
+  A slim yet feature rich Nostr client for Linux & macOS. Marketplace, Zap Streams,
+  tribes, drag & drop bookmarks — no Google services, open source.
+
+zapstore_summary: >
+  A feature-rich Nostr client for GrapheneOS/Android, Web and Desktop (Linux & macOS)
+
+paragraph_1: >
+  A slim yet feature rich Nostr client that doesn't rely on any Google services,
+  under an open source license.
+
+paragraph_2: >
+  It focuses not just on the social media side but also heavily on the other stuff
+  aspect of Nostr. Things like marketplace products, Zap Streams, tribes, drag and
+  drop bookmark lists with folders, follow packs, custom emojis, an onboarding
+  wizard, plus tons of other Nostr services and innovative features you won't find
+  in other clients are all built in as addons. Great for Nostr newbies as well as
+  advanced users.
+
+urls_block: |
+  Web Version: https://noornote.app/
+  Download Desktop Versions (Linux & Mac) at: https://noornote.app/download/
+
+platform_matrix_md: >
+  **Available as [Web App](https://noornote.app), [Desktop App (Linux & macOS)](https://noornote.app/download/)
+  and Android App (on [Zapstore](https://zapstore.dev)).** Windows is not officially supported.

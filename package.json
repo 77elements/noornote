@@ -6,6 +6,8 @@
   "main": "electron/main/index.js",
   "scripts": {
     "dev": "vite",
+    "desc:sync": "bun scripts/sync-descriptions.ts",
+    "desc:check": "bun scripts/sync-descriptions.ts --check",
     "build": "tsc --noEmit && vite build && bun run build:static-css",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",

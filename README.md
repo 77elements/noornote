@@ -1,10 +1,14 @@
 # NoorNote
 
-**NoorNote** (Arabic: نور, meaning "light") is a slim yet feature rich [Nostr](https://nostr.com) client that doesn't rely on any Google services, under an open source license.
+**NoorNote** (Arabic: نور, meaning "light") — a client for [Nostr](https://nostr.com), the decentralized social protocol.
 
-It focuses not just on the social media side but also heavily on the *other stuff* aspect of Nostr. Things like marketplace products, Zap Streams, tribes, drag and drop bookmark lists with folders, follow packs, custom emojis, an onboarding wizard, plus tons of other Nostr services and innovative features you won't find in other clients are all built in as addons. Great for Nostr newbies as well as advanced users.
+<!-- desc-sync:intro -->
+A slim yet feature rich Nostr client that doesn't rely on any Google services, under an open source license.
+
+It focuses not just on the social media side but also heavily on the other stuff aspect of Nostr. Things like marketplace products, Zap Streams, tribes, drag and drop bookmark lists with folders, follow packs, custom emojis, an onboarding wizard, plus tons of other Nostr services and innovative features you won't find in other clients are all built in as addons. Great for Nostr newbies as well as advanced users.
 
 **Available as [Web App](https://noornote.app), [Desktop App (Linux & macOS)](https://noornote.app/download/) and Android App (on [Zapstore](https://zapstore.dev)).** Windows is not officially supported.
+<!-- /desc-sync:intro -->
 
 ## Features
 
