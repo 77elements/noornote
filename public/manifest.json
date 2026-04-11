@@ -1,7 +1,7 @@
 {
   "name": "Noornote",
   "short_name": "Noornote",
-  "description": "Feature-rich, fast, secure Nostr client.",
+  "description": "A slim yet feature rich Nostr client for Web, Desktop and Android — no Google services, open source.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#1a1a1a",
