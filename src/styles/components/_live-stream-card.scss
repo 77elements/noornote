@@ -109,3 +109,51 @@
   align-self: center;
   text-decoration: none;
 }
+
+.live-stream-card__zap-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc($gap / 4);
+}
+
+.live-stream-card__zap-hint {
+  font-size: 0.75rem;
+  color: var(--text-alpha-light);
+}
+
+.live-stream-card__zap {
+  display: inline-flex;
+  align-items: center;
+  gap: calc($gap / 3);
+  padding: calc($gap / 3) calc($gap / 2);
+  border: 1px solid $color-bitcoin-orange;
+  border-radius: $radius-pill;
+  background: transparent;
+  color: $color-bitcoin-orange;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: $transition-fast;
+
+  .isl-icon svg {
+    display: block;
+  }
+
+  &:hover {
+    background: rgba($color-bitcoin-orange, 0.15);
+  }
+
+  &.active {
+    background: rgba($color-bitcoin-orange, 0.15);
+  }
+
+  &.loading .isl-icon svg {
+    animation: spin 1s linear infinite;
+  }
+
+  &.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}

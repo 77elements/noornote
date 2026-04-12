@@ -9,6 +9,8 @@ import { LongFormOrchestrator } from './orchestration/LongFormOrchestrator';
 import { Router } from './Router';
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { isLiveStreamsPlayerEnabled } from '../addons/live-streams-player/index';
+import { getAddressableIdentifier } from '../helpers/getAddressableIdentifier';
+import { ZapManager } from '../components/ui/interaction-managers/ZapManager';
 
 export class ArticlePreviewRenderer {
   private static instance: ArticlePreviewRenderer;
@@ -120,6 +122,15 @@ export class ArticlePreviewRenderer {
       this.upgradeToInlinePlayer(card, streaming, image);
     }
 
+    // Zap button — only for live streams. Zaps the kind 30311 event
+    // directly (via #a tag) so it appears in the stream provider's overlay.
+    if (status === 'live') {
+      const addressableId = getAddressableIdentifier(event);
+      if (addressableId && event.id) {
+        this.attachStreamZapButton(card, addressableId, event.pubkey, event.id);
+      }
+    }
+
     return card;
   }
 
@@ -152,6 +163,58 @@ export class ArticlePreviewRenderer {
     } catch (err) {
       console.warn('[LiveStreamsPlayer] Failed to mount inline player:', err);
     }
+  }
+
+  /**
+   * Attach a zap button to the live stream card.
+   * Zaps the kind 30311 event directly (via #a tag) so the zap
+   * appears in the stream provider's overlay (e.g. zap.stream).
+   */
+  private attachStreamZapButton(
+    card: HTMLElement,
+    addressableId: string,
+    authorPubkey: string,
+    eventId: string
+  ): void {
+    const contentEl = card.querySelector('.live-stream-card__content');
+    if (!contentEl) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'live-stream-card__zap-wrapper';
+
+    const zapBtn = document.createElement('button');
+    zapBtn.className = 'live-stream-card__zap';
+    zapBtn.setAttribute('data-action', 'stream-zap');
+    zapBtn.innerHTML = `
+      <span class="isl-icon"><svg width="18" height="18"><use href="#icon-zap"/></svg></span>
+      <span>Zap Stream</span>
+    `;
+
+    wrapper.appendChild(zapBtn);
+    contentEl.appendChild(wrapper);
+
+    const zapManager = new ZapManager({
+      noteId: addressableId,
+      authorPubkey,
+      articleEventId: eventId,
+    });
+
+    zapManager.attachEventListeners(zapBtn);
+
+    // Show disabled reason as text below the button instead of title tooltip
+    const observer = new MutationObserver(() => {
+      if (zapBtn.title && zapBtn.hasAttribute('disabled')) {
+        const hint = document.createElement('span');
+        hint.className = 'live-stream-card__zap-hint';
+        hint.textContent = zapBtn.title;
+        zapBtn.removeAttribute('title');
+        wrapper.appendChild(hint);
+        observer.disconnect();
+      }
+    });
+    observer.observe(zapBtn, { attributes: true, attributeFilter: ['disabled'] });
+
+    zapManager.checkRecipientCanReceiveZaps();
   }
 
   /**
