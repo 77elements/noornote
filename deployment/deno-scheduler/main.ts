@@ -9,14 +9,17 @@
 import { isValidEventShape, type SignedNostrEvent, verifyEvent } from "./verify.ts";
 
 // Allowed browser origins. Reflect the request's Origin header when it matches
-// so dev (localhost), web (noornote.app), and any local Capacitor/Electron
-// wrapper can all call the API.
+// so dev (localhost), web (noornote.app), Capacitor Android (https://localhost
+// due to androidScheme:'https'), and Electron (which sends null Origin from
+// file://) can all call the API.
 const ALLOWED_ORIGINS = [
   "https://noornote.app",
   "http://localhost:3000",
   "http://localhost:5173",
-  "capacitor://localhost",
   "http://localhost",
+  "https://localhost",
+  "capacitor://localhost",
+  "null",
 ];
 const ALLOWED_KINDS = new Set([1, 30023]);
 const MAX_RELAYS = 20;
@@ -42,7 +45,8 @@ const kv = await Deno.openKv();
 // ---------- Helpers ----------
 
 function resolveOrigin(request: Request): string {
-  const origin = request.headers.get("origin") ?? "";
+  // Electron with file:// sends Origin header literal "null" (not missing).
+  const origin = request.headers.get("origin") ?? "null";
   return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
 }
 
