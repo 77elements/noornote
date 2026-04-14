@@ -69,6 +69,8 @@ NoorNote ships with optional features that you enable on demand under **Settings
 | **List Sync Mode** | Switch between Easy Mode (automatic sync) and Manual Mode (action buttons + Danger Zone for resetting corrupted list data) |
 | **Word Filter** | Hide notes containing specific words from all timelines |
 | **Custom Emojis** | Upload your own NIP-30 emoji pack (incl. animated GIFs) and use them as reactions and in posts |
+| **Live Streams Player** | Watch NIP-53 live streams (e.g. zap.stream) inline in the timeline via HLS, and zap the stream directly so your sats appear in the stream's overlay |
+| **Scheduled Posts** | Schedule notes and long-form articles to be published at a later date and time — via a NoorNote-operated hold-and-forward service, no private keys leave your device |
 
 ...and many more to come.
 
