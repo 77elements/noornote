@@ -32,6 +32,14 @@
       .custom-dropdown {
         width: 100%;
       }
+
+      // Capacitor Android: viewport is narrower than web mobile, so the
+      // right-aligned menu (default) overflows past the left screen edge.
+      // Anchor the menu to the left edge of the trigger instead.
+      .platform--capacitor-android & .custom-dropdown__menu {
+        left: 0;
+        right: auto;
+      }
     }
 
     .timeline-controls {
