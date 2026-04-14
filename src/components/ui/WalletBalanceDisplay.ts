@@ -16,6 +16,7 @@ export class WalletBalanceDisplay {
   private systemLogger: SystemLogger;
   private exchangeRateService: ExchangeRateService;
   private balanceInMsats: number = 0;
+  private hasBalance: boolean = false; // True once we've ever received a successful balance
   private balanceVisible: boolean = false; // Default: hidden
   private selectedCurrency: string = 'EUR';
   private updateInterval: number | null = null;
@@ -50,12 +51,22 @@ export class WalletBalanceDisplay {
     // Load visibility preference
     this.balanceVisible = PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.WALLET_BALANCE_VISIBLE, false);
 
+    // Load last known balance (shown while waiting for fresh fetch; kept on fetch failures)
+    const cachedMsats = PerAccountLocalStorage.getInstance().get<number>(StorageKeys.WALLET_BALANCE_LAST_MSATS, 0);
+    if (cachedMsats > 0) {
+      this.balanceInMsats = cachedMsats;
+      this.hasBalance = true;
+    }
+
     // Load currency preference
     this.loadCurrencyPreference();
 
     this.element = this.createElement();
     this.setupEventListeners();
     this.updateEyeIcon(); // Set initial icon state
+    if (this.hasBalance) {
+      void this.updateDisplay(this.balanceInMsats);
+    }
     this.loadBalance();
     this.startAutoUpdate();
   }
@@ -108,7 +119,8 @@ export class WalletBalanceDisplay {
 
   private async loadBalance(): Promise<void> {
     if (!this.nwcService.isConnected()) {
-      this.updateDisplay(null);
+      // NWC not connected: only show placeholder if we have no cached value to fall back on
+      if (!this.hasBalance) this.updateDisplay(null);
       return;
     }
 
@@ -116,13 +128,18 @@ export class WalletBalanceDisplay {
       const balanceMsats = await this.nwcService.getBalance();
       if (balanceMsats !== null) {
         this.balanceInMsats = balanceMsats;
+        this.hasBalance = true;
+        PerAccountLocalStorage.getInstance().set(StorageKeys.WALLET_BALANCE_LAST_MSATS, balanceMsats);
         this.updateDisplay(balanceMsats);
-      } else {
+      } else if (!this.hasBalance) {
+        // No cached value yet — show placeholder
         this.updateDisplay(null);
       }
+      // On null with cached value: keep showing last known balance (don't reset)
     } catch (error) {
       this.systemLogger.error('WalletBalanceDisplay', 'Failed to load balance:', error);
-      this.updateDisplay(null);
+      if (!this.hasBalance) this.updateDisplay(null);
+      // Keep showing last known balance on errors (rate limiting, network, etc.)
     }
   }
 
@@ -133,8 +150,8 @@ export class WalletBalanceDisplay {
     // Always visible when addon is ON — show placeholder until NWC connects.
     this.element.style.display = 'block';
 
-    if (balanceMsats === null || !this.nwcService.isConnected()) {
-      // Not connected yet — show placeholder, will refresh on nwc-connection-restored
+    if (balanceMsats === null) {
+      // No value available — show placeholder, will refresh on nwc-connection-restored
       if (amountEl) amountEl.textContent = '--';
       if (fiatAmountEl) fiatAmountEl.textContent = '--';
       return;

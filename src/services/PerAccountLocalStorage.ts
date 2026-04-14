@@ -107,6 +107,7 @@ export const StorageKeys = {
   MEDIA_SERVER: 'noornote_media_server_map',
   SENSITIVE_MEDIA: 'noornote_sensitive_media_map',
   WALLET_BALANCE_VISIBLE: 'noornote_wallet_balance_visible_map',
+  WALLET_BALANCE_LAST_MSATS: 'noornote_wallet_balance_last_msats_map',
 
   // Service data (per-account)
   PROFILE_MOUNTS: 'noornote_profile_mounts_map',
