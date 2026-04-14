@@ -10,6 +10,7 @@ import { Router } from './Router';
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { isLiveStreamsPlayerEnabled } from '../addons/live-streams-player/index';
 import { getAddressableIdentifier } from '../helpers/getAddressableIdentifier';
+import { getLiveStreamHost } from '../helpers/getLiveStreamHost';
 import { ZapManager } from '../components/ui/interaction-managers/ZapManager';
 
 export class ArticlePreviewRenderer {
@@ -126,8 +127,11 @@ export class ArticlePreviewRenderer {
     // directly (via #a tag) so it appears in the stream provider's overlay.
     if (status === 'live') {
       const addressableId = getAddressableIdentifier(event);
+      // For provider-signed events, the real streamer is in a p tag with role
+      // "host"; event.pubkey is the provider service.
+      const hostPubkey = getLiveStreamHost(event);
       if (addressableId && event.id) {
-        this.attachStreamZapButton(card, addressableId, event.pubkey, event.id);
+        this.attachStreamZapButton(card, addressableId, hostPubkey, event.id);
       }
     }
 
