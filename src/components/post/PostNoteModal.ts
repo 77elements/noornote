@@ -272,17 +272,25 @@ export class PostNoteModal {
 
   /**
    * Update the schedule hint block (no full re-render).
+   * Click-handler is attached via event delegation on the hint root,
+   * so it survives any subsequent innerHTML replacements.
    */
   private updateScheduleHint(): void {
     const hintEl = document.querySelector('#post-note-schedule-hint') as HTMLElement | null;
     if (!hintEl) return;
     hintEl.innerHTML = this.renderScheduleHintHtml();
-    const clearBtn = hintEl.querySelector('[data-action="clear-schedule"]');
-    clearBtn?.addEventListener('click', () => {
-      this.scheduledAt = null;
-      this.updateScheduleHint();
-      this.updatePostButtonLabel();
-    });
+    if (!hintEl.dataset.delegated) {
+      hintEl.dataset.delegated = 'true';
+      hintEl.addEventListener('click', (e) => {
+        const target = (e.target as HTMLElement).closest('[data-action="clear-schedule"]');
+        if (!target) return;
+        e.preventDefault();
+        e.stopPropagation();
+        this.scheduledAt = null;
+        this.updateScheduleHint();
+        this.updatePostButtonLabel();
+      });
+    }
   }
 
   /**

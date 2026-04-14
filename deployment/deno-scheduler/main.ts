@@ -8,7 +8,16 @@
 
 import { isValidEventShape, type SignedNostrEvent, verifyEvent } from "./verify.ts";
 
-const ALLOWED_ORIGIN = "https://noornote.app";
+// Allowed browser origins. Reflect the request's Origin header when it matches
+// so dev (localhost), web (noornote.app), and any local Capacitor/Electron
+// wrapper can all call the API.
+const ALLOWED_ORIGINS = [
+  "https://noornote.app",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "capacitor://localhost",
+  "http://localhost",
+];
 const ALLOWED_KINDS = new Set([1, 30023]);
 const MAX_RELAYS = 20;
 const MAX_PENDING_PER_PUBKEY = 10;
@@ -32,24 +41,30 @@ const kv = await Deno.openKv();
 
 // ---------- Helpers ----------
 
-function corsHeaders(extra: Record<string, string> = {}): HeadersInit {
+function resolveOrigin(request: Request): string {
+  const origin = request.headers.get("origin") ?? "";
+  return ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+}
+
+function corsHeaders(request: Request, extra: Record<string, string> = {}): HeadersInit {
   return {
-    "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+    "Access-Control-Allow-Origin": resolveOrigin(request),
+    "Vary": "Origin",
     "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     ...extra,
   };
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(request: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: corsHeaders({ "Content-Type": "application/json" }),
+    headers: corsHeaders(request, { "Content-Type": "application/json" }),
   });
 }
 
-function errorResponse(message: string, status = 400): Response {
-  return jsonResponse({ error: message }, status);
+function errorResponse(request: Request, message: string, status = 400): Response {
+  return jsonResponse(request, { error: message }, status);
 }
 
 function makeUlid(): string {
@@ -80,50 +95,50 @@ async function handleSchedule(request: Request): Promise<Response> {
   try {
     body = await request.json();
   } catch {
-    return errorResponse("invalid JSON body");
+    return errorResponse(request, "invalid JSON body");
   }
 
-  if (!body || typeof body !== "object") return errorResponse("body must be an object");
+  if (!body || typeof body !== "object") return errorResponse(request, "body must be an object");
   const { event, relays, publishAt } = body as {
     event?: unknown;
     relays?: unknown;
     publishAt?: unknown;
   };
 
-  if (!isValidEventShape(event)) return errorResponse("invalid event shape");
+  if (!isValidEventShape(event)) return errorResponse(request, "invalid event shape");
   if (!ALLOWED_KINDS.has(event.kind)) {
-    return errorResponse(`kind ${event.kind} not allowed (only 1 and 30023)`);
+    return errorResponse(request, `kind ${event.kind} not allowed (only 1 and 30023)`);
   }
 
   if (!Array.isArray(relays) || relays.length === 0) {
-    return errorResponse("relays must be a non-empty array");
+    return errorResponse(request, "relays must be a non-empty array");
   }
   if (relays.length > MAX_RELAYS) {
-    return errorResponse(`max ${MAX_RELAYS} relays`);
+    return errorResponse(request, `max ${MAX_RELAYS} relays`);
   }
   for (const r of relays) {
-    if (!isValidRelayUrl(r)) return errorResponse(`invalid relay URL: ${r}`);
+    if (!isValidRelayUrl(r)) return errorResponse(request, `invalid relay URL: ${r}`);
   }
 
   if (typeof publishAt !== "number" || !Number.isFinite(publishAt)) {
-    return errorResponse("publishAt must be a unix timestamp (number)");
+    return errorResponse(request, "publishAt must be a unix timestamp (number)");
   }
   const now = Math.floor(Date.now() / 1000);
   if (publishAt <= now + SCHEDULE_MIN_DELAY_S) {
-    return errorResponse(`publishAt must be at least ${SCHEDULE_MIN_DELAY_S}s in the future`);
+    return errorResponse(request, `publishAt must be at least ${SCHEDULE_MIN_DELAY_S}s in the future`);
   }
   if (publishAt > now + SCHEDULE_MAX_DELAY_S) {
-    return errorResponse(`publishAt cannot be more than 30 days in the future`);
+    return errorResponse(request, `publishAt cannot be more than 30 days in the future`);
   }
   if (publishAt !== event.created_at) {
-    return errorResponse("publishAt must equal event.created_at");
+    return errorResponse(request, "publishAt must equal event.created_at");
   }
 
-  if (!verifyEvent(event)) return errorResponse("invalid event signature");
+  if (!verifyEvent(event)) return errorResponse(request, "invalid event signature");
 
   const pending = await countPending(event.pubkey);
   if (pending >= MAX_PENDING_PER_PUBKEY) {
-    return errorResponse(`max ${MAX_PENDING_PER_PUBKEY} pending scheduled posts per pubkey`, 429);
+    return errorResponse(request, `max ${MAX_PENDING_PER_PUBKEY} pending scheduled posts per pubkey`, 429);
   }
 
   const id = makeUlid();
@@ -138,11 +153,11 @@ async function handleSchedule(request: Request): Promise<Response> {
 
   await kv.set(["scheduled", event.pubkey, id], record, { expireIn: KV_TTL_MS });
 
-  return jsonResponse({ id, publishAt }, 201);
+  return jsonResponse(request, { id, publishAt }, 201);
 }
 
-async function handleListScheduled(pubkey: string): Promise<Response> {
-  if (!/^[0-9a-f]{64}$/.test(pubkey)) return errorResponse("invalid pubkey");
+async function handleListScheduled(pubkey: string, request: Request): Promise<Response> {
+  if (!/^[0-9a-f]{64}$/.test(pubkey)) return errorResponse(request, "invalid pubkey");
   const out: Array<{
     id: string;
     publishAt: number;
@@ -165,11 +180,11 @@ async function handleListScheduled(pubkey: string): Promise<Response> {
       status: v.status,
     });
   }
-  return jsonResponse(out);
+  return jsonResponse(request, out);
 }
 
 async function handleDelete(pubkey: string, id: string, request: Request): Promise<Response> {
-  if (!/^[0-9a-f]{64}$/.test(pubkey)) return errorResponse("invalid pubkey");
+  if (!/^[0-9a-f]{64}$/.test(pubkey)) return errorResponse(request, "invalid pubkey");
 
   // Require a signed challenge event in the body to prove ownership.
   // The challenge event must:
@@ -181,32 +196,32 @@ async function handleDelete(pubkey: string, id: string, request: Request): Promi
   try {
     body = await request.json();
   } catch {
-    return errorResponse("missing signed challenge in body");
+    return errorResponse(request, "missing signed challenge in body");
   }
   if (!body || typeof body !== "object" || !("challenge" in body)) {
-    return errorResponse("missing signed challenge in body");
+    return errorResponse(request, "missing signed challenge in body");
   }
   const challenge = (body as { challenge: unknown }).challenge;
-  if (!isValidEventShape(challenge)) return errorResponse("invalid challenge event shape");
-  if (challenge.pubkey !== pubkey) return errorResponse("challenge pubkey mismatch");
+  if (!isValidEventShape(challenge)) return errorResponse(request, "invalid challenge event shape");
+  if (challenge.pubkey !== pubkey) return errorResponse(request, "challenge pubkey mismatch");
 
   const now = Math.floor(Date.now() / 1000);
   if (Math.abs(challenge.created_at - now) > 300) {
-    return errorResponse("challenge expired or clock skew too large");
+    return errorResponse(request, "challenge expired or clock skew too large");
   }
 
   const challengeTag = challenge.tags.find((t) => t[0] === "challenge");
   if (!challengeTag || challengeTag[1] !== id) {
-    return errorResponse("challenge id does not match the post being cancelled");
+    return errorResponse(request, "challenge id does not match the post being cancelled");
   }
 
-  if (!verifyEvent(challenge)) return errorResponse("invalid challenge signature");
+  if (!verifyEvent(challenge)) return errorResponse(request, "invalid challenge signature");
 
   const key = ["scheduled", pubkey, id];
   const existing = await kv.get<ScheduledRecord>(key);
-  if (!existing.value) return errorResponse("not found", 404);
+  if (!existing.value) return errorResponse(request, "not found", 404);
   await kv.delete(key);
-  return jsonResponse({ deleted: true });
+  return jsonResponse(request, { deleted: true });
 }
 
 // ---------- Cron: publish loop ----------
@@ -304,11 +319,11 @@ Deno.serve(async (request: Request) => {
   const url = new URL(request.url);
 
   if (request.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders() });
+    return new Response(null, { status: 204, headers: corsHeaders(request) });
   }
 
   if (url.pathname === "/health") {
-    return new Response("OK", { status: 200, headers: corsHeaders() });
+    return new Response("OK", { status: 200, headers: corsHeaders(request) });
   }
 
   if (request.method === "POST" && url.pathname === "/schedule") {
@@ -317,7 +332,7 @@ Deno.serve(async (request: Request) => {
 
   const listMatch = url.pathname.match(/^\/scheduled\/([0-9a-f]{64})$/);
   if (request.method === "GET" && listMatch) {
-    return handleListScheduled(listMatch[1]);
+    return handleListScheduled(listMatch[1], request);
   }
 
   const delMatch = url.pathname.match(/^\/schedule\/([0-9a-f]{64})\/([^/]+)$/);
@@ -325,5 +340,5 @@ Deno.serve(async (request: Request) => {
     return handleDelete(delMatch[1], delMatch[2], request);
   }
 
-  return errorResponse("not found", 404);
+  return errorResponse(request, "not found", 404);
 });
