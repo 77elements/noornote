@@ -884,7 +884,7 @@ export class ArticleEditorView extends View {
     const picked = await pickDateTime({
       title: 'Schedule Article',
       initial: new Date(Date.now() + 60 * 60 * 1000),
-      min: new Date(Date.now() + 2 * 60 * 1000),
+      min: new Date(Date.now() + 60 * 1000),
       max: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       confirmLabel: 'Schedule',
     });

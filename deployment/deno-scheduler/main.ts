@@ -168,10 +168,40 @@ async function handleListScheduled(pubkey: string): Promise<Response> {
   return jsonResponse(out);
 }
 
-async function handleDelete(pubkey: string, id: string): Promise<Response> {
+async function handleDelete(pubkey: string, id: string, request: Request): Promise<Response> {
   if (!/^[0-9a-f]{64}$/.test(pubkey)) return errorResponse("invalid pubkey");
-  // V1: no auth on DELETE — there is no UI for it yet. V2 will require a
-  // signed challenge before this endpoint is exposed in the UI.
+
+  // Require a signed challenge event in the body to prove ownership.
+  // The challenge event must:
+  //   - have pubkey matching the URL pubkey
+  //   - have a valid signature
+  //   - have created_at within 5 minutes of now (replay protection)
+  //   - have a "challenge" tag containing the scheduled-post id being cancelled
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse("missing signed challenge in body");
+  }
+  if (!body || typeof body !== "object" || !("challenge" in body)) {
+    return errorResponse("missing signed challenge in body");
+  }
+  const challenge = (body as { challenge: unknown }).challenge;
+  if (!isValidEventShape(challenge)) return errorResponse("invalid challenge event shape");
+  if (challenge.pubkey !== pubkey) return errorResponse("challenge pubkey mismatch");
+
+  const now = Math.floor(Date.now() / 1000);
+  if (Math.abs(challenge.created_at - now) > 300) {
+    return errorResponse("challenge expired or clock skew too large");
+  }
+
+  const challengeTag = challenge.tags.find((t) => t[0] === "challenge");
+  if (!challengeTag || challengeTag[1] !== id) {
+    return errorResponse("challenge id does not match the post being cancelled");
+  }
+
+  if (!verifyEvent(challenge)) return errorResponse("invalid challenge signature");
+
   const key = ["scheduled", pubkey, id];
   const existing = await kv.get<ScheduledRecord>(key);
   if (!existing.value) return errorResponse("not found", 404);
@@ -225,15 +255,22 @@ async function publishToRelay(relay: string, event: SignedNostrEvent): Promise<b
 
 async function publishDueEvents(): Promise<void> {
   const now = Math.floor(Date.now() / 1000);
+  let scanned = 0;
+  let due = 0;
   for await (const entry of kv.list<ScheduledRecord>({ prefix: ["scheduled"] })) {
+    scanned++;
     const v = entry.value;
     if (v.status !== "pending") continue;
     if (v.publishAt > now) continue;
+    due++;
+
+    console.log(`[publish-attempt] id=${v.event.id.slice(0, 8)} kind=${v.event.kind} publishAt=${v.publishAt} now=${now} relays=${v.relays.length}`);
 
     let anySuccess = false;
     const errors: string[] = [];
     for (const relay of v.relays) {
       const ok = await publishToRelay(relay, v.event);
+      console.log(`[publish-relay] id=${v.event.id.slice(0, 8)} relay=${relay} ok=${ok}`);
       if (ok) anySuccess = true;
       else errors.push(relay);
     }
@@ -251,8 +288,11 @@ async function publishDueEvents(): Promise<void> {
         lastError: `failed relays: ${errors.join(",")}`,
       };
       await kv.set(entry.key, updated, { expireIn: KV_TTL_MS });
-      console.warn(`[publish-fail] ${v.event.id.slice(0, 8)} attempt=${attempts} status=${status}`);
+      console.warn(`[publish-fail] ${v.event.id.slice(0, 8)} attempt=${attempts} status=${status} errors=${errors.join(",")}`);
     }
+  }
+  if (scanned > 0 || due > 0) {
+    console.log(`[cron-tick] scanned=${scanned} due=${due}`);
   }
 }
 
@@ -282,7 +322,7 @@ Deno.serve(async (request: Request) => {
 
   const delMatch = url.pathname.match(/^\/schedule\/([0-9a-f]{64})\/([^/]+)$/);
   if (request.method === "DELETE" && delMatch) {
-    return handleDelete(delMatch[1], delMatch[2]);
+    return handleDelete(delMatch[1], delMatch[2], request);
   }
 
   return errorResponse("not found", 404);

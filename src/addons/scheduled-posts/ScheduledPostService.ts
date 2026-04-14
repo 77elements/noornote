@@ -62,10 +62,16 @@ export class ScheduledPostService {
     return await res.json();
   }
 
-  /** Cancel a scheduled post. */
-  public async cancel(pubkey: string, id: string): Promise<void> {
+  /**
+   * Cancel a scheduled post. Requires a signed challenge event (kind 22242) with
+   * a `challenge` tag matching the scheduled-post id. The challenge must be
+   * signed by the same pubkey that originally scheduled the post.
+   */
+  public async cancel(pubkey: string, id: string, challenge: NostrEvent): Promise<void> {
     const res = await fetch(`${this.BASE_URL}/schedule/${pubkey}/${encodeURIComponent(id)}`, {
       method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ challenge }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));

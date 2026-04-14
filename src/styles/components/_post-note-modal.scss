@@ -162,6 +162,53 @@ svg.upload-progress {
   align-items: center;
 }
 
+.scheduled-posts-list {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+
+  &__empty {
+    padding: $gap;
+    color: var(--color-3);
+    text-align: center;
+  }
+
+  &__item {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+    padding: $gap;
+    background: var(--color-2);
+    border-radius: $radius-xl;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    @extend %small;
+  }
+
+  &__when {
+    color: $color-warning;
+    font-weight: 500;
+  }
+
+  &__kind {
+    color: var(--color-3);
+  }
+
+  &__preview {
+    color: var(--color-5);
+    @include text-truncate-lines(2);
+  }
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
 .post-note-schedule-hint {
   display: flex;
   align-items: center;
