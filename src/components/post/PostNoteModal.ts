@@ -32,6 +32,7 @@ import { ContentValidationManager } from './ContentValidationManager';
 import { EditorStateManager } from './EditorStateManager';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
+import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
@@ -63,6 +64,7 @@ export class PostNoteModal {
   private draftContent: string = '';
   private isNSFW: boolean = false;
   private pollData: PollData | null = null;
+  private scheduledAt: number | null = null;
 
   private constructor() {
     this.modalService = ModalService.getInstance();
@@ -226,7 +228,9 @@ export class PostNoteModal {
       onMediaUploaded: (url) => this.handleMediaUploaded(url),
       onEmojiSelected: (emoji) => this.handleEmojiSelected(emoji),
       onPollToggle: () => this.handlePollToggle(),
-      textareaSelector: '[data-textarea]'
+      onScheduleClick: () => this.handleScheduleClick(),
+      textareaSelector: '[data-textarea]',
+      showSchedule: isScheduledPostsEnabled(),
     });
 
     const validation = ContentValidationManager.validate({
@@ -235,18 +239,80 @@ export class PostNoteModal {
       pollData: this.pollData
     });
 
+    const postButtonLabel = this.scheduledAt !== null ? 'Schedule' : 'Post';
     return `
       <div class="l-row l-row--split">
         <div>
           ${this.toolbar.render()}
           <div class="post-note-options" id="post-note-options-container"></div>
+          <div class="post-note-schedule-hint" id="post-note-schedule-hint">${this.renderScheduleHintHtml()}</div>
         </div>
         <div>
           <button class="btn btn--passive" data-action="cancel">Cancel</button>
-          <button class="btn" data-action="post" ${validation.isValid ? '' : 'disabled'}>Post</button>
+          <button class="btn" data-action="post" ${validation.isValid ? '' : 'disabled'}>${postButtonLabel}</button>
         </div>
       </div>
     `;
+  }
+
+  /**
+   * Render the "will be published on..." hint when a schedule is set.
+   */
+  private renderScheduleHintHtml(): string {
+    if (this.scheduledAt === null) return '';
+    const when = new Date(this.scheduledAt * 1000).toLocaleString();
+    return `
+      <span class="post-note-schedule-hint__icon">
+        <svg width="14" height="14"><use href="#icon-calendar"/></svg>
+      </span>
+      <span class="post-note-schedule-hint__text">Will be published on ${escapeHtml(when)}</span>
+      <button type="button" class="post-note-schedule-hint__clear" data-action="clear-schedule">Clear</button>
+    `;
+  }
+
+  /**
+   * Update the schedule hint block (no full re-render).
+   */
+  private updateScheduleHint(): void {
+    const hintEl = document.querySelector('#post-note-schedule-hint') as HTMLElement | null;
+    if (!hintEl) return;
+    hintEl.innerHTML = this.renderScheduleHintHtml();
+    const clearBtn = hintEl.querySelector('[data-action="clear-schedule"]');
+    clearBtn?.addEventListener('click', () => {
+      this.scheduledAt = null;
+      this.updateScheduleHint();
+      this.updatePostButtonLabel();
+    });
+  }
+
+  /**
+   * Update the Post/Schedule button label based on scheduledAt state.
+   */
+  private updatePostButtonLabel(): void {
+    const btn = document.querySelector('[data-action="post"]') as HTMLButtonElement | null;
+    if (!btn) return;
+    btn.textContent = this.scheduledAt !== null ? 'Schedule' : 'Post';
+  }
+
+  /**
+   * Open the date/time picker to schedule this post.
+   */
+  private async handleScheduleClick(): Promise<void> {
+    const { pickDateTime } = await import('../../helpers/datePickerModal');
+    const initial = this.scheduledAt
+      ? new Date(this.scheduledAt * 1000)
+      : new Date(Date.now() + 60 * 60 * 1000); // Default: +1h
+    const picked = await pickDateTime({
+      title: 'Schedule Post',
+      initial,
+      min: new Date(Date.now() + 2 * 60 * 1000),
+      max: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      confirmLabel: 'Schedule',
+    });
+    if (!picked) return;
+    this.scheduledAt = Math.floor(picked.getTime() / 1000);
+    this.updateScheduleHint();
+    this.updatePostButtonLabel();
   }
 
   /**
@@ -546,14 +612,28 @@ export class PostNoteModal {
         }
       }
 
-      const success = await this.postService.createPost({
-        content: this.content,
-        relays: Array.from(this.selectedRelays),
-        contentWarning: this.isNSFW,
-        ...(this.pollData ? { pollData: this.pollData } : {}),
-        ...(quotedEvent ? { quotedEvent } : {}),
-        ...(quotedArticle ? { quotedArticle } : {})
-      });
+      let success: boolean;
+      if (this.scheduledAt !== null && isScheduledPostsEnabled()) {
+        const { scheduleNote } = await import('../../addons/scheduled-posts/scheduleNote');
+        success = await scheduleNote({
+          content: this.content,
+          relays: Array.from(this.selectedRelays),
+          contentWarning: this.isNSFW,
+          ...(this.pollData ? { pollData: this.pollData } : {}),
+          ...(quotedEvent ? { quotedEvent } : {}),
+          ...(quotedArticle ? { quotedArticle } : {}),
+          scheduledAt: this.scheduledAt,
+        });
+      } else {
+        success = await this.postService.createPost({
+          content: this.content,
+          relays: Array.from(this.selectedRelays),
+          contentWarning: this.isNSFW,
+          ...(this.pollData ? { pollData: this.pollData } : {}),
+          ...(quotedEvent ? { quotedEvent } : {}),
+          ...(quotedArticle ? { quotedArticle } : {})
+        });
+      }
 
       if (success) {
         if (quotedEvent?.eventId) {
@@ -667,6 +747,7 @@ export class PostNoteModal {
     this.customEmojiService = null;
 
     this.pollData = null;
+    this.scheduledAt = null;
   }
 
   /**

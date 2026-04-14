@@ -28,6 +28,7 @@ import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 
 type TabMode = 'edit' | 'preview';
 
@@ -249,6 +250,7 @@ export class ArticleEditorView extends View {
           <div class="article-editor__actions">
             ${this.isDraftMode ? '<button class="btn btn--danger btn--medium" data-action="delete-draft">Delete Draft</button>' : ''}
             <button class="btn btn--passive" data-action="save-draft">Save Draft <span class="form__note">(beta)</span></button>
+            ${isScheduledPostsEnabled() ? '<button class="btn btn--passive" data-action="schedule-publish">Schedule Publish</button>' : ''}
             <button class="btn" data-action="publish">${this.isEditMode ? 'Update' : 'Publish'}</button>
           </div>
         </footer>
@@ -519,6 +521,9 @@ export class ArticleEditorView extends View {
 
     const publishBtn = this.container.querySelector('[data-action="publish"]');
     publishBtn?.addEventListener('click', () => this.handlePublish());
+
+    const schedulePublishBtn = this.container.querySelector('[data-action="schedule-publish"]');
+    schedulePublishBtn?.addEventListener('click', () => this.handleSchedulePublish());
 
     const deleteDraftBtn = this.container.querySelector('[data-action="delete-draft"]');
     deleteDraftBtn?.addEventListener('click', () => this.handleDeleteDraft());
@@ -865,6 +870,59 @@ export class ArticleEditorView extends View {
     if (!AuthGuard.requireAuth('publish an article')) return;
 
     await this.submitArticle(false);
+  }
+
+  /**
+   * Handle schedule publish — pick date/time, then hand the article off to
+   * the scheduler addon. Only available when the Scheduled Posts addon is on.
+   */
+  private async handleSchedulePublish(): Promise<void> {
+    if (!AuthGuard.requireAuth('schedule an article')) return;
+    if (this.isPublishing) return;
+
+    const { pickDateTime } = await import('../../helpers/datePickerModal');
+    const picked = await pickDateTime({
+      title: 'Schedule Article',
+      initial: new Date(Date.now() + 60 * 60 * 1000),
+      min: new Date(Date.now() + 2 * 60 * 1000),
+      max: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      confirmLabel: 'Schedule',
+    });
+    if (!picked) return;
+
+    const scheduledAt = Math.floor(picked.getTime() / 1000);
+
+    this.isPublishing = true;
+    this.updateButtonStates();
+    const btn = this.container.querySelector('[data-action="schedule-publish"]') as HTMLButtonElement;
+    const originalText = btn?.textContent || '';
+    if (btn) btn.textContent = 'Scheduling...';
+
+    try {
+      const topics = this.tags.split(',').map(t => t.trim()).filter(Boolean);
+      const { scheduleArticle } = await import('../../addons/scheduled-posts/scheduleArticle');
+
+      const naddr = await scheduleArticle({
+        title: this.title,
+        content: this.content,
+        identifier: this.identifier || ArticleService.generateIdentifier(this.title),
+        relays: Array.from(this.selectedRelays),
+        scheduledAt,
+        ...(this.summary ? { summary: this.summary } : {}),
+        ...(this.image ? { image: this.image } : {}),
+        ...(topics.length > 0 ? { topics } : {}),
+        ...(this.publishedAt ? { publishedAt: this.publishedAt } : {}),
+      });
+
+      if (naddr) {
+        this.saveSnapshot();
+        this.router.back();
+      }
+    } finally {
+      this.isPublishing = false;
+      if (btn) btn.textContent = originalText;
+      this.updateButtonStates();
+    }
   }
 
   /**

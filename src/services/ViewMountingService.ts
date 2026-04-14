@@ -516,6 +516,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-scheduled-posts':
+        return {
+          factory: async () => {
+            const { ScheduledPostsAddonView } = await import('../addons/scheduled-posts/ScheduledPostsAddonView');
+            const view = new ScheduledPostsAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'marketplace':
         return {
           factory: async () => {

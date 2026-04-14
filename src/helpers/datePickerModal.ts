@@ -1,11 +1,12 @@
 /**
  * Modal-based date pickers.
  *
- * Two flavors:
+ * Three flavors:
  *   - `pickDate()`     — single date (e.g. NIP-23 `published_at` backdating)
  *   - `pickDateRange()` — from/to range (e.g. timeline "Select Time Range")
+ *   - `pickDateTime()` — date + time with minute precision (e.g. scheduled posts)
  *
- * Both return `null` on cancel. Promises resolve after the modal closes.
+ * All return `null` on cancel. Promises resolve after the modal closes.
  */
 
 import { ModalService } from '../services/ModalService';
@@ -35,6 +36,12 @@ function formatDateForInput(date: Date): string {
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const d = String(date.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+function formatTimeForInput(date: Date): string {
+  const h = String(date.getHours()).padStart(2, '0');
+  const m = String(date.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
 /**
@@ -236,6 +243,122 @@ export function pickDateRange(options: PickDateRangeOptions = {}): Promise<DateR
       };
       fromInput?.addEventListener('keydown', onEnter);
       toInput?.addEventListener('keydown', onEnter);
+    }, 0);
+  });
+}
+
+export interface PickDateTimeOptions {
+  title?: string;
+  /** Default: now + 1h. */
+  initial?: Date;
+  /** Hard lower bound (inclusive). Default: unset. */
+  min?: Date;
+  /** Hard upper bound (inclusive). Default: unset. */
+  max?: Date;
+  /** Label for the confirm button. Default: 'Schedule'. */
+  confirmLabel?: string;
+}
+
+/**
+ * Show a modal to pick a date + time (minute precision). Resolves with the
+ * chosen Date (seconds zeroed) or `null` if cancelled.
+ */
+export function pickDateTime(options: PickDateTimeOptions = {}): Promise<Date | null> {
+  const modalService = ModalService.getInstance();
+  const title = options.title ?? 'Pick date and time';
+  const confirmLabel = options.confirmLabel ?? 'Schedule';
+  const initial = options.initial ?? new Date(Date.now() + 60 * 60 * 1000);
+  const minAttrDate = options.min ? ` min="${formatDateForInput(options.min)}"` : '';
+  const maxAttrDate = options.max ? ` max="${formatDateForInput(options.max)}"` : '';
+
+  return new Promise((resolve) => {
+    let resolved = false;
+    const container = document.createElement('div');
+    container.className = 'date-range-selector';
+    container.innerHTML = `
+      <div class="date-range-selector__fields">
+        <label class="date-range-selector__field">
+          <span class="date-range-selector__label">Date</span>
+          <input type="date" class="datepicker" data-pick-date value="${formatDateForInput(initial)}"${minAttrDate}${maxAttrDate} />
+        </label>
+        <label class="date-range-selector__field">
+          <span class="date-range-selector__label">Time</span>
+          <input type="time" class="datepicker" data-pick-time value="${formatTimeForInput(initial)}" />
+        </label>
+      </div>
+      <div class="date-range-selector__error" data-pick-error style="display: none;"></div>
+      <div class="date-range-selector__actions">
+        <button class="btn btn--secondary" data-pick-cancel>Cancel</button>
+        <button class="btn" data-pick-confirm>${confirmLabel}</button>
+      </div>
+    `;
+
+    modalService.show({
+      title,
+      content: container,
+      width: '380px',
+      height: 'auto',
+      showCloseButton: true,
+      closeOnOverlay: true,
+      closeOnEsc: true,
+      onClose: () => {
+        if (!resolved) {
+          resolved = true;
+          resolve(null);
+        }
+      }
+    });
+
+    setTimeout(() => {
+      const dateInput = container.querySelector('[data-pick-date]') as HTMLInputElement;
+      const timeInput = container.querySelector('[data-pick-time]') as HTMLInputElement;
+      const errorEl = container.querySelector('[data-pick-error]') as HTMLElement;
+
+      const showError = (msg: string): void => {
+        errorEl.textContent = msg;
+        errorEl.style.display = 'block';
+      };
+
+      const confirm = (): void => {
+        const dVal = dateInput?.value;
+        const tVal = timeInput?.value;
+        if (!dVal || !tVal) {
+          showError('Please select date and time.');
+          return;
+        }
+        const picked = new Date(`${dVal}T${tVal}:00`);
+        if (Number.isNaN(picked.getTime())) {
+          showError('Invalid date or time.');
+          return;
+        }
+        if (options.min && picked < options.min) {
+          showError('Selected time is too early.');
+          return;
+        }
+        if (options.max && picked > options.max) {
+          showError('Selected time is too far in the future.');
+          return;
+        }
+        picked.setSeconds(0, 0);
+        resolved = true;
+        modalService.hide();
+        resolve(picked);
+      };
+
+      container.querySelector('[data-pick-cancel]')?.addEventListener('click', () => {
+        resolved = true;
+        modalService.hide();
+        resolve(null);
+      });
+      container.querySelector('[data-pick-confirm]')?.addEventListener('click', confirm);
+      const onEnter = (e: KeyboardEvent): void => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          confirm();
+        }
+      };
+      dateInput?.addEventListener('keydown', onEnter);
+      timeInput?.addEventListener('keydown', onEnter);
     }, 0);
   });
 }

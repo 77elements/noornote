@@ -162,6 +162,44 @@ svg.upload-progress {
   align-items: center;
 }
 
+.post-note-schedule-hint {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  margin-top: calc($gap / 2);
+  padding: calc($gap / 2) $gap;
+  border-radius: $radius-xl;
+  background: $bg-warning;
+  color: $color-warning;
+  @extend %small;
+
+  &:empty {
+    display: none;
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+  }
+
+  &__text {
+    flex: 1;
+  }
+
+  &__clear {
+    background: none;
+    border: none;
+    color: $color-warning;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+
+    &:hover {
+      opacity: 0.8;
+    }
+  }
+}
+
 // Rosa button styling for "New Post" in Sidebar
 .sidebar .new-post-btn {
   width: 100%;

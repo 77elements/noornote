@@ -1,0 +1,9 @@
+{
+  "deploy": {
+    "org": "77elements",
+    "app": "noornote-scheduler"
+  },
+  "tasks": {
+    "dev": "deno run --allow-net --allow-read --unstable-kv --unstable-cron --watch main.ts"
+  }
+}

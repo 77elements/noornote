@@ -18,8 +18,10 @@ export interface PostEditorToolbarConfig {
   onMediaUploaded: (url: string) => void;
   onEmojiSelected: (emoji: string) => void;
   onPollToggle?: () => void;
+  onScheduleClick?: () => void;
   textareaSelector: string;
   showPoll?: boolean; // Default: true
+  showSchedule?: boolean; // Default: false — caller sets via isScheduledPostsEnabled()
 }
 
 export class PostEditorToolbar {
@@ -45,6 +47,11 @@ export class PostEditorToolbar {
     const pollButtonHtml = showPoll
       ? `<button class="btn-icon" data-action="poll" title="Create poll">POLL</button>`
       : '';
+    const scheduleButtonHtml = this.config.showSchedule
+      ? `<button class="btn-icon" data-action="schedule" title="Schedule post">
+          <svg width="20" height="20"><use href="#icon-calendar"/></svg>
+        </button>`
+      : '';
 
     return `
       <div class="post-note-toolbar">
@@ -56,6 +63,7 @@ export class PostEditorToolbar {
           <svg width="20" height="20"><use href="#icon-emoji"/></svg>
         </button>
         ${pollButtonHtml}
+        ${scheduleButtonHtml}
       </div>
     `;
   }
@@ -96,6 +104,14 @@ export class PostEditorToolbar {
     if (pollBtn && this.config.onPollToggle) {
       pollBtn.addEventListener('click', () => {
         this.config.onPollToggle?.();
+      });
+    }
+
+    // Schedule button (only rendered when showSchedule is true)
+    const scheduleBtn = container.querySelector('[data-action="schedule"]');
+    if (scheduleBtn && this.config.onScheduleClick) {
+      scheduleBtn.addEventListener('click', () => {
+        this.config.onScheduleClick?.();
       });
     }
   }

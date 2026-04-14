@@ -20,6 +20,7 @@ import { isContentWordFilterEnabled } from './content-word-filter/index';
 import { isCustomEmojisEnabled } from './custom-emojis/index';
 import { isMarketplaceEnabled } from './marketplace/index';
 import { isFollowPacksEnabled } from './follow-packs/index';
+import { isScheduledPostsEnabled } from './scheduled-posts/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -71,6 +72,12 @@ export function registerCoreAddons(): void {
     id: 'follow-packs',
     isEnabled: isFollowPacksEnabled,
     load: () => import('./follow-packs/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'scheduled-posts',
+    isEnabled: isScheduledPostsEnabled,
+    load: () => import('./scheduled-posts/runtime').then(m => m.default),
   });
 
   // Out of scope (list-adjacent, deferred — separate decision):
