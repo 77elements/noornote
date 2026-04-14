@@ -107,7 +107,7 @@ export class ScheduledPostsAddonView extends View {
     if (!this.contentEl) return;
     this.contentEl.innerHTML = `
       <h2>Your scheduled posts</h2>
-      <div class="scheduled-posts-list" data-list></div>
+      <div class="ui-list" data-list></div>
     `;
     void this.loadAndRenderList();
   }
@@ -145,12 +145,12 @@ export class ScheduledPostsAddonView extends View {
     if (!list) return;
 
     if (this.loading) {
-      list.innerHTML = `<div class="scheduled-posts-list__empty pulsate">Loading scheduled posts...</div>`;
+      list.innerHTML = `<div class="scheduled-post__empty pulsate">Loading scheduled posts...</div>`;
       return;
     }
 
     if (this.posts.length === 0) {
-      list.innerHTML = `<div class="scheduled-posts-list__empty">No scheduled posts yet.</div>`;
+      list.innerHTML = `<div class="scheduled-post__empty">No scheduled posts yet.</div>`;
       return;
     }
 
@@ -163,13 +163,13 @@ export class ScheduledPostsAddonView extends View {
     const kindLabel = p.kind === 30023 ? 'Article' : p.kind === 1068 ? 'Poll' : 'Note';
     const preview = p.content.length >= 100 ? `${p.content}…` : p.content;
     return `
-      <div class="scheduled-posts-list__item" data-id="${escapeHtml(p.id)}">
-        <div class="scheduled-posts-list__meta">
-          <span class="scheduled-posts-list__when">${escapeHtml(when)}</span>
-          <span class="scheduled-posts-list__kind">${kindLabel}</span>
+      <div class="ui-list__item scheduled-post" data-id="${escapeHtml(p.id)}">
+        <div class="scheduled-post__meta">
+          <span class="scheduled-post__when">${escapeHtml(when)}</span>
+          <span class="scheduled-post__kind">${kindLabel}</span>
         </div>
-        <div class="scheduled-posts-list__preview">${escapeHtml(preview || '(empty)')}</div>
-        <div class="scheduled-posts-list__actions">
+        <div class="scheduled-post__preview">${escapeHtml(preview || '(empty)')}</div>
+        <div class="scheduled-post__actions">
           <button class="btn btn--passive btn--medium" data-action="cancel">Cancel</button>
         </div>
       </div>
@@ -219,6 +219,8 @@ export class ScheduledPostsAddonView extends View {
         return;
       }
       await ScheduledPostService.getInstance().cancel(user.pubkey, id, challenge);
+      const { diagLog } = await import('../../services/DiagnosticLogger');
+      diagLog('system', 'scheduled_post_cancelled', { id });
       this.posts = this.posts.filter((p) => p.id !== id);
       this.renderList();
       EventBus.getInstance().emit('scheduled-posts:changed', {});

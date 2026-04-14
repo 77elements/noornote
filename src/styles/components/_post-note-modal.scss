@@ -173,7 +173,7 @@ svg.upload-progress {
   box-shadow: $box-shadow;
 }
 
-.scheduled-posts-list {
+.scheduled-post {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
@@ -182,15 +182,6 @@ svg.upload-progress {
     padding: $gap;
     color: var(--color-3);
     text-align: center;
-  }
-
-  &__item {
-    display: flex;
-    flex-direction: column;
-    gap: calc($gap / 2);
-    padding: $gap;
-    background: var(--color-2);
-    border-radius: $radius-xl;
   }
 
   &__meta {

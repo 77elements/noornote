@@ -48,9 +48,10 @@ export class ScheduledPostService {
       throw new Error(err.error || `Scheduler error ${res.status}`);
     }
     const data = await res.json();
+    const kindLabel = event.kind === 30023 ? 'Article' : event.kind === 1068 ? 'Poll' : 'Note';
     this.systemLogger.info(
       'ScheduledPostService',
-      `Scheduled event ${event.id?.slice(0, 8)} kind=${event.kind} for ${new Date(publishAt * 1000).toISOString()}`
+      `${kindLabel} scheduled for ${new Date(publishAt * 1000).toLocaleString()}`
     );
     return data.id as string;
   }

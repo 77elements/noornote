@@ -15,6 +15,7 @@ import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { EventBus } from '../../services/EventBus';
+import { diagLog } from '../../services/DiagnosticLogger';
 import { ScheduledPostService } from './ScheduledPostService';
 
 export interface ScheduleArticleOptions {
@@ -107,6 +108,11 @@ export async function scheduleArticle(options: ScheduleArticleOptions): Promise<
     }
 
     await ScheduledPostService.getInstance().schedule(signedEvent, relays, scheduledAt);
+    diagLog('system', 'scheduled_article_submitted', {
+      scheduledAt,
+      relayCount: relays.length,
+      titleLength: title.trim().length,
+    });
 
     EventBus.getInstance().emit('scheduled-posts:changed', {});
     const when = new Date(scheduledAt * 1000).toLocaleString();
