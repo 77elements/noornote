@@ -22,6 +22,7 @@ export class ScheduledPostsAddonView extends View {
   private contentEl: HTMLElement | null = null;
   private enableSwitch: Switch | null = null;
   private toggleSubId: string | null = null;
+  private changedSubId: string | null = null;
   private posts: ScheduledPost[] = [];
   private loading: boolean = false;
 
@@ -73,6 +74,13 @@ export class ScheduledPostsAddonView extends View {
       if (payload.enabled) this.mountList();
       else this.unmountList();
     });
+
+    // Refresh the list whenever a post is scheduled or cancelled elsewhere.
+    this.changedSubId = EventBus.getInstance().on('scheduled-posts:changed', () => {
+      if (isScheduledPostsEnabled()) {
+        void this.loadAndRenderList();
+      }
+    });
   }
 
   public getElement(): HTMLElement {
@@ -83,6 +91,10 @@ export class ScheduledPostsAddonView extends View {
     if (this.toggleSubId) {
       EventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
+    }
+    if (this.changedSubId) {
+      EventBus.getInstance().off(this.changedSubId);
+      this.changedSubId = null;
     }
     this.enableSwitch?.destroy();
     this.enableSwitch = null;
@@ -209,6 +221,7 @@ export class ScheduledPostsAddonView extends View {
       await ScheduledPostService.getInstance().cancel(user.pubkey, id, challenge);
       this.posts = this.posts.filter((p) => p.id !== id);
       this.renderList();
+      EventBus.getInstance().emit('scheduled-posts:changed', {});
       ToastService.show('Scheduled post cancelled', 'success');
     } catch (err) {
       SystemLogger.getInstance().warn('ScheduledPostsAddonView', `Cancel failed: ${err}`);

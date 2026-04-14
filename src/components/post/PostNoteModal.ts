@@ -310,12 +310,16 @@ export class PostNoteModal {
     const initial = this.scheduledAt
       ? new Date(this.scheduledAt * 1000)
       : new Date(Date.now() + 60 * 60 * 1000); // Default: +1h
+    const anchorEl = document.querySelector(
+      '.post-note-toolbar [data-action="schedule"]'
+    ) as HTMLElement | null;
     const picked = await pickDateTime({
       title: 'Schedule Post',
       initial,
       min: new Date(Date.now() + 60 * 1000),
       max: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
       confirmLabel: 'Schedule',
+      ...(anchorEl ? { anchorEl } : {}),
     });
     if (!picked) return;
     this.scheduledAt = Math.floor(picked.getTime() / 1000);

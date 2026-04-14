@@ -162,6 +162,17 @@ svg.upload-progress {
   align-items: center;
 }
 
+.datetime-picker-popover {
+  position: fixed;
+  z-index: 10000;
+  background: var(--color-1);
+  border: 1px solid var(--color-2);
+  border-radius: $radius-xl;
+  padding: $gap;
+  min-width: 280px;
+  box-shadow: $box-shadow;
+}
+
 .scheduled-posts-list {
   display: flex;
   flex-direction: column;

@@ -257,15 +257,21 @@ export interface PickDateTimeOptions {
   max?: Date;
   /** Label for the confirm button. Default: 'Schedule'. */
   confirmLabel?: string;
+  /**
+   * Element to anchor the popover to. The popover is positioned above/below
+   * the anchor depending on available viewport space. If omitted, the popover
+   * is centered in the viewport.
+   */
+  anchorEl?: HTMLElement;
 }
 
 /**
- * Show a modal to pick a date + time (minute precision). Resolves with the
- * chosen Date (seconds zeroed) or `null` if cancelled.
+ * Show a date+time picker (minute precision) as a positioned popover. Uses a
+ * standalone DOM element (no ModalService) so it can be opened from inside a
+ * modal without destroying the parent. Closes on outside click or Escape.
+ * Resolves with the chosen Date (seconds zeroed) or `null` if cancelled.
  */
 export function pickDateTime(options: PickDateTimeOptions = {}): Promise<Date | null> {
-  const modalService = ModalService.getInstance();
-  const title = options.title ?? 'Pick date and time';
   const confirmLabel = options.confirmLabel ?? 'Schedule';
   const initial = options.initial ?? new Date(Date.now() + 60 * 60 * 1000);
   const minAttrDate = options.min ? ` min="${formatDateForInput(options.min)}"` : '';
@@ -273,92 +279,122 @@ export function pickDateTime(options: PickDateTimeOptions = {}): Promise<Date | 
 
   return new Promise((resolve) => {
     let resolved = false;
-    const container = document.createElement('div');
-    container.className = 'date-range-selector';
-    container.innerHTML = `
-      <div class="date-range-selector__fields">
-        <label class="date-range-selector__field">
-          <span class="date-range-selector__label">Date</span>
-          <input type="date" class="datepicker" data-pick-date value="${formatDateForInput(initial)}"${minAttrDate}${maxAttrDate} />
-        </label>
-        <label class="date-range-selector__field">
-          <span class="date-range-selector__label">Time</span>
-          <input type="time" class="datepicker" data-pick-time value="${formatTimeForInput(initial)}" />
-        </label>
-      </div>
-      <div class="date-range-selector__error" data-pick-error style="display: none;"></div>
-      <div class="date-range-selector__actions">
-        <button class="btn btn--secondary" data-pick-cancel>Cancel</button>
-        <button class="btn" data-pick-confirm>${confirmLabel}</button>
+    const popover = document.createElement('div');
+    popover.className = 'datetime-picker-popover';
+    popover.innerHTML = `
+      <div class="date-range-selector">
+        <div class="date-range-selector__fields">
+          <label class="date-range-selector__field">
+            <span class="date-range-selector__label">Date</span>
+            <input type="date" class="datepicker" data-pick-date value="${formatDateForInput(initial)}"${minAttrDate}${maxAttrDate} />
+          </label>
+          <label class="date-range-selector__field">
+            <span class="date-range-selector__label">Time</span>
+            <input type="time" class="datepicker" data-pick-time value="${formatTimeForInput(initial)}" />
+          </label>
+        </div>
+        <div class="date-range-selector__error" data-pick-error style="display: none;"></div>
+        <div class="date-range-selector__actions">
+          <button class="btn btn--secondary" data-pick-cancel>Cancel</button>
+          <button class="btn" data-pick-confirm>${confirmLabel}</button>
+        </div>
       </div>
     `;
+    document.body.appendChild(popover);
 
-    modalService.show({
-      title,
-      content: container,
-      width: '380px',
-      height: 'auto',
-      showCloseButton: true,
-      closeOnOverlay: true,
-      closeOnEsc: true,
-      onClose: () => {
-        if (!resolved) {
-          resolved = true;
-          resolve(null);
-        }
+    // Position: anchored to trigger, or centered in viewport as fallback.
+    if (options.anchorEl) {
+      const rect = options.anchorEl.getBoundingClientRect();
+      const popRect = popover.getBoundingClientRect();
+      const margin = 8;
+      // Prefer above the anchor; fall back to below if not enough space.
+      const spaceAbove = rect.top;
+      const placeAbove = spaceAbove >= popRect.height + margin;
+      const top = placeAbove
+        ? rect.top - popRect.height - margin
+        : rect.bottom + margin;
+      let left = rect.left;
+      if (left + popRect.width > window.innerWidth - margin) {
+        left = window.innerWidth - popRect.width - margin;
       }
-    });
+      if (left < margin) left = margin;
+      popover.style.top = `${Math.max(margin, top)}px`;
+      popover.style.left = `${left}px`;
+    } else {
+      popover.style.top = '50%';
+      popover.style.left = '50%';
+      popover.style.transform = 'translate(-50%, -50%)';
+    }
 
-    setTimeout(() => {
-      const dateInput = container.querySelector('[data-pick-date]') as HTMLInputElement;
-      const timeInput = container.querySelector('[data-pick-time]') as HTMLInputElement;
-      const errorEl = container.querySelector('[data-pick-error]') as HTMLElement;
+    const finish = (value: Date | null): void => {
+      if (resolved) return;
+      resolved = true;
+      document.removeEventListener('keydown', onEsc);
+      document.removeEventListener('mousedown', onOutside, true);
+      popover.remove();
+      resolve(value);
+    };
 
-      const showError = (msg: string): void => {
-        errorEl.textContent = msg;
-        errorEl.style.display = 'block';
-      };
+    const onEsc = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        finish(null);
+      }
+    };
+    const onOutside = (e: MouseEvent): void => {
+      const target = e.target as Node;
+      if (popover.contains(target)) return;
+      if (options.anchorEl && options.anchorEl.contains(target)) return;
+      finish(null);
+    };
+    document.addEventListener('keydown', onEsc);
+    // Delay outside-click handler to the next tick so the click that
+    // opened the popover doesn't immediately close it.
+    setTimeout(() => document.addEventListener('mousedown', onOutside, true), 0);
 
-      const confirm = (): void => {
-        const dVal = dateInput?.value;
-        const tVal = timeInput?.value;
-        if (!dVal || !tVal) {
-          showError('Please select date and time.');
-          return;
-        }
-        const picked = new Date(`${dVal}T${tVal}:00`);
-        if (Number.isNaN(picked.getTime())) {
-          showError('Invalid date or time.');
-          return;
-        }
-        if (options.min && picked < options.min) {
-          showError('Selected time is too early.');
-          return;
-        }
-        if (options.max && picked > options.max) {
-          showError('Selected time is too far in the future.');
-          return;
-        }
-        picked.setSeconds(0, 0);
-        resolved = true;
-        modalService.hide();
-        resolve(picked);
-      };
+    const dateInput = popover.querySelector('[data-pick-date]') as HTMLInputElement;
+    const timeInput = popover.querySelector('[data-pick-time]') as HTMLInputElement;
+    const errorEl = popover.querySelector('[data-pick-error]') as HTMLElement;
 
-      container.querySelector('[data-pick-cancel]')?.addEventListener('click', () => {
-        resolved = true;
-        modalService.hide();
-        resolve(null);
-      });
-      container.querySelector('[data-pick-confirm]')?.addEventListener('click', confirm);
-      const onEnter = (e: KeyboardEvent): void => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          confirm();
-        }
-      };
-      dateInput?.addEventListener('keydown', onEnter);
-      timeInput?.addEventListener('keydown', onEnter);
-    }, 0);
+    const showError = (msg: string): void => {
+      errorEl.textContent = msg;
+      errorEl.style.display = 'block';
+    };
+
+    const confirm = (): void => {
+      const dVal = dateInput?.value;
+      const tVal = timeInput?.value;
+      if (!dVal || !tVal) {
+        showError('Please select date and time.');
+        return;
+      }
+      const picked = new Date(`${dVal}T${tVal}:00`);
+      if (Number.isNaN(picked.getTime())) {
+        showError('Invalid date or time.');
+        return;
+      }
+      if (options.min && picked < options.min) {
+        showError('Selected time is too early.');
+        return;
+      }
+      if (options.max && picked > options.max) {
+        showError('Selected time is too far in the future.');
+        return;
+      }
+      picked.setSeconds(0, 0);
+      finish(picked);
+    };
+
+    popover.querySelector('[data-pick-cancel]')?.addEventListener('click', () => finish(null));
+    popover.querySelector('[data-pick-confirm]')?.addEventListener('click', confirm);
+
+    const onEnter = (e: KeyboardEvent): void => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirm();
+      }
+    };
+    dateInput?.addEventListener('keydown', onEnter);
+    timeInput?.addEventListener('keydown', onEnter);
   });
 }

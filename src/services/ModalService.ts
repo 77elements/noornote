@@ -150,8 +150,8 @@ export class ModalService {
       content.className = 'modal-confirm';
       content.innerHTML = `
         <p class="modal-confirm__message">${escapeHtml(config.message)}</p>
-        <div class="modal-confirm__actions">
-          <button class="btn btn-secondary modal-confirm__cancel">${escapeHtml(cancelText)}</button>
+        <div class="l-row l-row--center">
+          <button class="btn btn--passive modal-confirm__cancel">${escapeHtml(cancelText)}</button>
           <button class="btn ${confirmClass} modal-confirm__confirm">${escapeHtml(confirmText)}</button>
         </div>
       `;
@@ -159,14 +159,21 @@ export class ModalService {
       const cancelBtn = content.querySelector('.modal-confirm__cancel');
       const confirmBtn = content.querySelector('.modal-confirm__confirm');
 
+      let settled = false;
+      const settle = (value: boolean): void => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+
       cancelBtn?.addEventListener('click', () => {
+        settle(false);
         this.hide();
-        resolve(false);
       });
 
       confirmBtn?.addEventListener('click', () => {
+        settle(true);
         this.hide();
-        resolve(true);
       });
 
       this.show({
@@ -177,7 +184,7 @@ export class ModalService {
         showCloseButton: true,
         closeOnOverlay: true,
         closeOnEsc: true,
-        onClose: () => resolve(false)
+        onClose: () => settle(false),
       });
     });
   }

@@ -14,6 +14,7 @@ import { SystemLogger } from '../../components/system/SystemLogger';
 import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
+import { EventBus } from '../../services/EventBus';
 import { ScheduledPostService } from './ScheduledPostService';
 
 export interface ScheduleArticleOptions {
@@ -107,6 +108,7 @@ export async function scheduleArticle(options: ScheduleArticleOptions): Promise<
 
     await ScheduledPostService.getInstance().schedule(signedEvent, relays, scheduledAt);
 
+    EventBus.getInstance().emit('scheduled-posts:changed', {});
     const when = new Date(scheduledAt * 1000).toLocaleString();
     ToastService.show(`Article scheduled for ${when}`, 'success');
 
