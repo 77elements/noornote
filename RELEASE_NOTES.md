@@ -1,23 +1,17 @@
-# NoorNote v0.8.3
+# v0.8.4
 
-Marketplace, wallet and security release on top of 0.8.2.
+## New
 
-## Highlights
+- **Scheduled Posts** addon — schedule notes and long-form articles for future publication. Enable under Settings → Add-ons. Your fully signed event is held by a NoorNote-operated service and published to your relays at the scheduled moment. No private keys leave your device.
 
-- **Marketplace listings everywhere.** Kind 30402 product listings now render as proper product cards when quoted, reposted, or inline-referenced — not just inside the marketplace.
-- **Repost, quote and reviews on listings.** Repost or quote a listing directly from the product detail page. Quoted reposts of a listing appear as a live review stream under the product.
-- **Wallet transaction history.** Paginated transaction list with infinite scroll (20 per page) in the wallet addon. Incoming zaps show the sender's profile picture, name and zap message.
-- **XSS hardening.** Untrusted Nostr data is HTML-escaped in the media carousel, article previews and reposts.
+## Live Streams
+
+- Zap live streams directly from the stream card — your sats appear in the stream's chat overlay.
+
+## Wallet
+
+- Your wallet balance stays visible even when the fiat rate API is briefly unreachable.
 
 ## Fixes
 
-- Clicking a listing card opens the Single Note View again
-- Download link on Capacitor Android works again
-- Wallet balance under the logo no longer stays empty on Web after restart
-- Parallel NWC requests no longer step on each other
-
-## Under the hood
-
-- Kind 16 (Generic Repost) added to the NIP-18 entry in the README
-- Small border-radius SCSS tokens removed
-
+- Timeline filter dropdown no longer cut off on Android.
