@@ -315,7 +315,7 @@ async function publishDueEvents(): Promise<void> {
   }
 }
 
-Deno.cron("publish-scheduled", "* * * * *", publishDueEvents);
+Deno.cron("publish-scheduled", "*/3 * * * *", publishDueEvents);
 
 // ---------- Server ----------
 
