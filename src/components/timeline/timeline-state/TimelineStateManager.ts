@@ -91,7 +91,7 @@ export class TimelineStateManager {
    */
   trimEvents(maxSize: number): void {
     if (this.events.length > maxSize) {
-      this.events.length = maxSize;
+      this.events.splice(0, this.events.length - maxSize);
     }
   }
 
