@@ -337,7 +337,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       this.systemLogger.info('NotificationsOrchestrator', `📋 Total notifications loaded: ${this.notifications.length}`);
 
-      // Emit badge update after initial notifications are loaded
+      console.log(`[NotifBadge] emit:badge-update source=initial-fetch total=${this.notifications.length} unread=${this.getUnreadCount()}`);
       this.eventBus.emit('notifications:badge-update');
     } catch (error) {
       this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch initial notifications:', error);
@@ -403,7 +403,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       this.systemLogger.info('NotificationsOrchestrator', `✅ Loaded ${allNotifications.length} new notifications`);
 
-      // Emit badge update after new notifications are loaded
+      console.log(`[NotifBadge] emit:badge-update source=new-fetch fetched=${allNotifications.length} total=${this.notifications.length} unread=${this.getUnreadCount()}`);
       this.eventBus.emit('notifications:badge-update');
     } catch (error) {
       this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch new notifications:', error);
@@ -466,12 +466,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       const newNotifications: NotificationEvent[] = [];
 
       allNotifications.forEach(event => {
-        const beforeCount = this.notifications.length;
-        this.processNotificationEvent(event);
-        const afterCount = this.notifications.length;
-
-        // If notification was added, track it
-        if (afterCount > beforeCount) {
+        if (this.processNotificationEvent(event)) {
           const notification = this.notifications.find(n => n.event.id === event.id);
           if (notification) {
             newNotifications.push(notification);
@@ -490,26 +485,32 @@ export class NotificationsOrchestrator extends Orchestrator {
   /**
    * Process a notification event (add to cache + notifications list)
    */
-  private processNotificationEvent(event: NostrEvent): void {
+  private processNotificationEvent(event: NostrEvent): boolean {
+    const evShort = event.id?.slice(0, 8) ?? '??';
+
     // Skip events from the user themselves (don't show self-mentions, self-zaps, etc.)
     if (this.userPubkey && event.pubkey === this.userPubkey) {
-      return;
+      console.log(`[NotifBadge] drop:self eventId=${evShort} kind=${event.kind}`);
+      return false;
     }
 
     // Skip events from muted users
     if (this.mutedPubkeys.has(event.pubkey)) {
-      return;
+      console.log(`[NotifBadge] drop:muted-user eventId=${evShort} kind=${event.kind} author=${event.pubkey.slice(0, 8)}`);
+      return false;
     }
 
     // Skip events from muted threads (Hell Thread protection)
     if (this.isEventInMutedThread(event)) {
-      return;
+      console.log(`[NotifBadge] drop:muted-thread eventId=${evShort} kind=${event.kind}`);
+      return false;
     }
 
     // Skip notifications about user's events within muted threads
     // (e.g., likes/replies to user's posts inside a muted hell thread)
     if (this.isNotificationTargetInMutedThread(event)) {
-      return;
+      console.log(`[NotifBadge] drop:target-in-muted-thread eventId=${evShort} kind=${event.kind}`);
+      return false;
     }
 
     // Skip reactions whose direct target is NOT the user's own event
@@ -519,10 +520,20 @@ export class NotificationsOrchestrator extends Orchestrator {
     // so the #p subscription filter is authoritative.
     if (event.kind === 7 && this.userPubkey) {
       const pTags = event.tags.filter(t => t[0] === 'p');
-      const directTargetPubkey = pTags[pTags.length - 1]?.[1];
-      if (directTargetPubkey && directTargetPubkey !== this.userPubkey) {
-        return;
+      const eTags = event.tags.filter(t => t[0] === 'e');
+      const eTagId = eTags[eTags.length - 1]?.[1];
+      const userEventIds = this.getUserEventIds();
+      const targetsUserEvent = !!(eTagId && userEventIds.includes(eTagId));
+      const directTarget = pTags[pTags.length - 1]?.[1];
+      const lastPtagIsUser = directTarget === this.userPubkey;
+      const reactorShort = event.pubkey.slice(0, 8);
+
+      if (!targetsUserEvent && !lastPtagIsUser) {
+        console.log(`[NotifBadge] drop:reaction reactor=${reactorShort} eventId=${evShort} lastPtag=${directTarget?.slice(0, 8) ?? 'none'} eTagTarget=${eTagId?.slice(0, 8) ?? 'none'} targetsUserEvent=${targetsUserEvent} pTags=${pTags.length} eTags=${eTags.length}`);
+        return false;
       }
+
+      console.log(`[NotifBadge] keep:reaction reactor=${reactorShort} eventId=${evShort} via=${targetsUserEvent ? (lastPtagIsUser ? 'both' : 'etag') : 'ptag'} eTagTarget=${eTagId?.slice(0, 8) ?? 'none'} lastPtag=${directTarget?.slice(0, 8) ?? 'none'}`);
     }
 
     // Detect notification type
@@ -536,12 +547,13 @@ export class NotificationsOrchestrator extends Orchestrator {
     };
 
     // Add to notifications (dedup + sort + trim handled by addNotification)
-    if (this.addNotification(notification)) {
-      // Register kind 1 events in NoteService for cache reuse
-      if (event.kind === 1) {
-        this.noteService.registerNote(event);
-      }
+    // Return value is authoritative — at MAX_NOTIFICATIONS the array length
+    // stays constant after trim, so length-based detection would miss this add.
+    const added = this.addNotification(notification);
+    if (added && event.kind === 1) {
+      this.noteService.registerNote(event);
     }
+    return added;
   }
 
   /**
@@ -915,14 +927,11 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   public onmessage(_relay: string, event: NostrEvent): void {
-    // Process new notification
-    const beforeCount = this.notifications.length;
-    this.processNotificationEvent(event);
-    const afterCount = this.notifications.length;
+    // Use return value (not length delta) — at MAX_NOTIFICATIONS the array is trimmed
+    // back to limit, so length-based detection would miss live adds when cache is full.
+    const wasAdded = this.processNotificationEvent(event);
 
-    // Only trigger updates if notification was actually added (not a duplicate)
-    if (afterCount > beforeCount) {
-      // Get the notification (it was just added)
+    if (wasAdded) {
       const notification = this.notifications.find(n => n.event.id === event.id);
       if (notification) {
         this.systemLogger.info('NotificationsOrchestrator', `🔔 New ${notification.type}: ${event.id?.slice(0, 8) ?? 'unknown'}...`);
@@ -932,7 +941,7 @@ export class NotificationsOrchestrator extends Orchestrator {
           this.onNewNotificationCallback(notification);
         }
 
-        // Emit badge update event via EventBus
+        console.log(`[NotifBadge] emit:badge-update source=live eventId=${event.id?.slice(0, 8)} type=${notification.type} kind=${event.kind} ts=${event.created_at} unread=${this.getUnreadCount()}`);
         this.eventBus.emit('notifications:badge-update');
       }
     }
@@ -1043,7 +1052,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     this.systemLogger.info('NotificationsOrchestrator', `📰 New article notification: ${data.title.slice(0, 30)}...`);
 
-    // Emit badge update
+    console.log('[NotifBadge] emit:badge-update source=article');
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
   }
@@ -1068,7 +1077,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     const typeLabel = data.type === 'mutual_unfollow' ? 'unfollowed' : 'new mutual';
     this.systemLogger.info('NotificationsOrchestrator', `🔔 Mutual notification: ${typeLabel}`);
 
-    // Emit badge update
+    console.log('[NotifBadge] emit:badge-update source=mutual', { type: data.type });
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
   }
@@ -1096,7 +1105,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       this.onNewNotificationCallback(notification);
     }
 
-    // Emit badge update
+    console.log('[NotifBadge] emit:badge-update source=hashtag', { hashtag: data.hashtag, count: data.count });
     this.eventBus.emit('notifications:badge-update');
   }
 

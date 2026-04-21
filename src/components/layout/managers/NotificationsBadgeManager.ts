@@ -44,11 +44,13 @@ export class NotificationsBadgeManager {
    */
   private setupEventListeners(): void {
     this.badgeUpdateSubscriptionId = this.eventBus.on('notifications:badge-update', () => {
+      console.log('[NotifBadge] received:badge-update');
       this.updateBadgeCount();
     });
 
     // Also update badge when user changes priority settings
     this.prioritiesChangedSubscriptionId = this.eventBus.on('notifications:priorities-changed', () => {
+      console.log('[NotifBadge] received:priorities-changed');
       this.updateBadgeCount();
     });
   }
@@ -74,6 +76,7 @@ export class NotificationsBadgeManager {
 
     // Use NotificationsOrchestrator for badge count (uses fetched notifications + lastSeen)
     const unreadCount = this.notificationsOrch.getUnreadCount();
+    console.log(`[NotifBadge] updateBadgeCount unread=${unreadCount} total=${this.notificationsOrch.getNotificationCount()}`);
 
     // Remove all priority classes first
     this.badgeElement.classList.remove(
@@ -87,6 +90,7 @@ export class NotificationsBadgeManager {
 
       // Get highest priority among unread notifications
       const highestPriority = this.notificationsOrch.getHighestUnreadPriority();
+      console.log(`[NotifBadge] rendered SHOWN unread=${unreadCount} priority=${highestPriority}`);
 
       if (highestPriority === 1) {
         // Pulsing badge for high priority
@@ -98,6 +102,7 @@ export class NotificationsBadgeManager {
       // Priority 2 uses default solid badge (no extra class needed)
     } else {
       this.badgeElement.style.display = 'none';
+      console.log('[NotifBadge] rendered HIDDEN (no unread)');
     }
   }
 
