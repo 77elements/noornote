@@ -26,6 +26,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { processFootnotes } from '../../helpers/processFootnotes';
 
 export class ArticleView {
   private container: HTMLElement;
@@ -193,6 +194,26 @@ export class ArticleView {
       });
     }
 
+    // Footnote jumps: inner <main class="primary-content"> is the scroll container,
+    // so browser-default anchor scrolling (which targets the window) does nothing visible.
+    // Delegate click on sup.footnote-ref / .footnote-backref and scroll the element into view.
+    const articleBodyEl = this.container.querySelector('.article-body');
+    if (articleBodyEl) {
+      articleBodyEl.addEventListener('click', (e) => {
+        const t = e.target as HTMLElement;
+        const fnLink = t.closest('sup.footnote-ref a, a.footnote-backref') as HTMLAnchorElement | null;
+        if (!fnLink) return;
+        const href = fnLink.getAttribute('href');
+        if (!href?.startsWith('#')) return;
+        const targetId = href.slice(1);
+        const target = this.container.querySelector(`#${CSS.escape(targetId)}`);
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
+    }
+
     // For addressable events (kind 30023), use addressable identifier instead of event ID
     const addressableId = getAddressableIdentifier(event);
     const noteId = addressableId || event.id; // Fallback to event.id if extraction fails
@@ -338,11 +359,15 @@ export class ArticleView {
       // Extract quoted references from raw content before markdown parsing
       const quotedReferences = extractQuotedReferences(content) as QuotedReference[];
 
+      // Pre-process Pandoc-style footnotes — marked/GFM doesn't support them natively.
+      // Refs are replaced inline; the footnotes <section> is appended after marked parses.
+      const { bodyMd, footnotesHtml } = processFootnotes(content);
+
       // Parse markdown to HTML, then sanitize to prevent XSS
-      let html = DOMPurify.sanitize(marked.parse(content) as string, {
+      let html = DOMPurify.sanitize((marked.parse(bodyMd) as string) + footnotesHtml, {
         ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'ul', 'ol', 'li',
           'strong', 'em', 'b', 'i', 'u', 's', 'del', 'code', 'pre', 'blockquote',
-          'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'span', 'div'],
+          'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'span', 'div', 'section'],
         ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel', 'loading'],
         ALLOW_DATA_ATTR: false
       });

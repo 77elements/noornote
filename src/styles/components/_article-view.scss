@@ -152,6 +152,55 @@
   @media (max-width: 600px) {
     @include h4;
   }
+
+  // Footnotes (Pandoc-style, processed by src/helpers/processFootnotes.ts)
+  sup.footnote-ref {
+    a {
+      color: var(--color-4);
+      text-decoration: none;
+      padding: 0 0.2em;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  .footnotes {
+    @extend %small;
+    margin-top: calc($gap * 2);
+    padding-top: $gap;
+    border-top: 1px solid var(--color-2);
+    color: var(--text-alpha-heavy);
+
+    ol {
+      padding-left: calc($gap * 1.5);
+      margin: 0;
+    }
+
+    li {
+      margin-bottom: calc($gap / 2);
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      p {
+        display: inline;
+        margin: 0;
+      }
+    }
+
+    .footnote-backref {
+      color: var(--color-4);
+      text-decoration: none;
+      margin-left: 0.3em;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
 }
 
 // Loading state
