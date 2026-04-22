@@ -2116,7 +2116,7 @@ export class BookmarkCard {
       const profile = await this.userProfileService.getUserProfile(event.pubkey);
       const username = profile?.name || 'Anonymous';
       const profilePic = profile?.picture || '';
-      const snippet = this.getTextSnippet(event.content, 100);
+      const snippet = this.getEventSnippet(event);
       const timeAgo = formatTimestamp(event.created_at);
 
       card.innerHTML = `
@@ -2285,6 +2285,29 @@ export class BookmarkCard {
       .trim();
     if (!text) return '(No text content)';
     return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  }
+
+  /**
+   * Kind-aware snippet. Addressable events (Follow Pack, Article, Zapstore App)
+   * have empty content and carry their title/name in tags — plain text snippet
+   * would show "(No text content)" for them.
+   */
+  private getEventSnippet(event: NostrEvent): string {
+    if (event.kind === 39089) {
+      const title = event.tags.find(t => t[0] === 'title')?.[1]
+                 || event.tags.find(t => t[0] === 'n')?.[1]
+                 || 'Untitled';
+      return `Follow Pack: ${title}`;
+    }
+    if (event.kind === 30023) {
+      const title = event.tags.find(t => t[0] === 'title')?.[1] || 'Untitled';
+      return `Article: ${title}`;
+    }
+    if (event.kind === 32267) {
+      const name = event.tags.find(t => t[0] === 'name')?.[1] || 'App';
+      return `App: ${name}`;
+    }
+    return this.getTextSnippet(event.content, 100);
   }
 
   public getElement(): HTMLElement | null {
