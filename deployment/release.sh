@@ -82,9 +82,16 @@ fi
 # Update package.json
 "${SED_INPLACE[@]}" "s/\"version\": \"${CURRENT_VERSION}\"/\"version\": \"${NEW_VERSION}\"/" package.json
 
+# Update android/app/build.gradle
+# versionCode scheme: major*1000 + minor*100 + patch (e.g. 0.8.5 -> 805, 1.0.0 -> 1000)
+IFS='.' read -r ANDROID_MAJOR ANDROID_MINOR ANDROID_PATCH <<< "$NEW_VERSION"
+VERSION_CODE=$((ANDROID_MAJOR * 1000 + ANDROID_MINOR * 100 + ANDROID_PATCH))
+"${SED_INPLACE[@]}" "s/versionCode [0-9][0-9]*/versionCode ${VERSION_CODE}/" android/app/build.gradle
+"${SED_INPLACE[@]}" "s/versionName \"[^\"]*\"/versionName \"${NEW_VERSION}\"/" android/app/build.gradle
+
 echo -e "${GREEN}[2/7] Updating RELEASE_NOTES.md and committing...${NC}"
 cp "$NOTES_COMPACT" RELEASE_NOTES.md
-git add package.json RELEASE_NOTES.md
+git add package.json RELEASE_NOTES.md android/app/build.gradle
 git commit -m "Bump version to ${NEW_VERSION}"
 
 echo -e "${GREEN}[3/7] Merging development → main...${NC}"
