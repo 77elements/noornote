@@ -513,6 +513,23 @@ export class NotificationsOrchestrator extends Orchestrator {
       return false;
     }
 
+    // Owner-only filter for FollowPack (kind 39089) interactions.
+    // Reactions/replies/zaps/reposts on a FollowPack we don't own are
+    // uninteresting — a user can be p-tagged just because their pubkey
+    // appears in the pack's member list.
+    if (this.userPubkey) {
+      const aTag = event.tags.find(t => t[0] === 'a');
+      if (aTag?.[1]) {
+        const parts = aTag[1].split(':');
+        const targetKind = parseInt(parts[0] || '');
+        const targetAuthor = parts[1];
+        if (targetKind === 39089 && targetAuthor && targetAuthor !== this.userPubkey) {
+          console.log(`[NotifBadge] drop:not-pack-owner eventId=${evShort} kind=${event.kind} packAuthor=${targetAuthor.slice(0, 8)}`);
+          return false;
+        }
+      }
+    }
+
     // Skip reactions whose direct target is NOT the user's own event
     // NIP-25: last p-tag is the direct target (Jumble pattern). Some clients copy
     // root/parent thread p-tags, causing false "reacted to your note" notifications.

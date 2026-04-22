@@ -14,6 +14,7 @@ import { ZapReceiptProcessor } from './ZapReceiptProcessor';
 import { VideoNoteProcessor } from './VideoNoteProcessor';
 import { PictureNoteProcessor } from './PictureNoteProcessor';
 import { FileMetadataProcessor } from './FileMetadataProcessor';
+import { FollowPackProcessor } from './FollowPackProcessor';
 
 export class NoteProcessor {
   /**
@@ -42,6 +43,8 @@ export class NoteProcessor {
           return ZapReceiptProcessor.process(event);
         case 30023:
           return ArticleProcessor.process(event);
+        case 39089:
+          return FollowPackProcessor.process(event);
         default:
           return NoteProcessor.createUnsupportedNote(event, eventId);
       }

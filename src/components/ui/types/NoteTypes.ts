@@ -8,7 +8,7 @@ import type { PollData } from '../../poll/PollCreator';
 
 export interface ProcessedNote {
   id: string;
-  type: 'original' | 'repost' | 'quote' | 'poll' | 'zap-receipt' | 'unsupported';
+  type: 'original' | 'repost' | 'quote' | 'poll' | 'zap-receipt' | 'unsupported' | 'follow-pack';
   timestamp: number;
   author: {
     pubkey: string;

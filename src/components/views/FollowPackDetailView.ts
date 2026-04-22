@@ -17,6 +17,7 @@ import { NoteHeader } from '../ui/NoteHeader';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import { parseFollowPackEvent, type FollowPack } from '../../helpers/parseFollowPack';
+import { renderFollowPackMembers } from '../follow-packs/renderFollowPackMembers';
 import { getAddressableIdentifier } from '../../helpers/getAddressableIdentifier';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
@@ -246,42 +247,9 @@ export class FollowPackDetailView extends View {
   }
 
   private async loadMembers(pack: FollowPack): Promise<void> {
-    const memberList = this.container.querySelector('.follow-packs__members');
+    const memberList = this.container.querySelector('.follow-packs__members') as HTMLElement | null;
     if (!memberList) return;
-
-    const profileService = UserProfileService.getInstance();
-    const profiles = await profileService.getUserProfiles(pack.userPubkeys);
-
-    memberList.innerHTML = '';
-
-    const list = document.createElement('div');
-    list.className = 'ui-list';
-
-    pack.userPubkeys.forEach(pubkey => {
-      const profile = profiles.get(pubkey);
-      const npub = hexToNpub(pubkey) || '';
-      const username = profile?.display_name || profile?.name || npub.slice(0, 12) + '...';
-      const avatarUrl = profile?.picture || '';
-
-      const item = document.createElement('div');
-      item.className = 'ui-list__item ui-list__item--clickable';
-      item.innerHTML = `
-        <div class="profile-pic-container">
-          <img class="profile-pic profile-pic--medium" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(username)}" />
-        </div>
-        <div class="follow-packs__member-info">
-          <span class="follow-packs__member-name">${escapeHtml(username)}</span>
-        </div>
-      `;
-
-      item.addEventListener('click', () => {
-        this.router.navigate(`/profile/${npub}`);
-      });
-
-      list.appendChild(item);
-    });
-
-    memberList.appendChild(list);
+    await renderFollowPackMembers(pack, memberList);
   }
 
   public getElement(): HTMLElement {

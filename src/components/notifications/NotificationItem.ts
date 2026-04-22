@@ -296,7 +296,9 @@ export class NotificationItem {
   }
 
   /**
-   * Get kind-aware label for the target content ("note", "article", "follow pack")
+   * Get kind-aware label for the target content ("note", "article", "follow pack", …).
+   * Falls back to "event" when target kind is known but not specially handled,
+   * so we never lie about the target type.
    */
   private getTargetLabel(): string {
     const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
@@ -305,6 +307,7 @@ export class NotificationItem {
       if (kind === 30023) return 'article';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
+      if (!isNaN(kind)) return 'event';
     }
     const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
     if (kTag?.[1]) {
@@ -313,6 +316,10 @@ export class NotificationItem {
       if (kind === 20) return 'picture';
       if (kind === 21 || kind === 22) return 'video';
       if (kind === 1068) return 'poll';
+      if (kind === 30023) return 'article';
+      if (kind === 32267) return 'app on Zapstore';
+      if (kind === 39089) return 'follow pack';
+      if (!isNaN(kind)) return 'event';
     }
     return 'note';
   }
@@ -377,6 +384,44 @@ export class NotificationItem {
     };
 
     return Math.floor(amount * (multipliers[multiplier] ?? 1));
+  }
+
+  /**
+   * Short hex identifier for target preview when full content can't be resolved.
+   */
+  private shortEventId(hex: string | null | undefined): string {
+    return hex ? hex.slice(0, 8) : '';
+  }
+
+  /**
+   * Fallback preview text when we couldn't fetch the referenced event content.
+   * Priority: addressable (a-tag) kind label → e-tag short id → empty.
+   */
+  private buildUnresolvedPreview(): string {
+    const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
+    if (aTag?.[1]) {
+      const parts = aTag[1].split(':');
+      const aKind = parseInt(parts[0] || '');
+      const dTag = parts[2] || '';
+      if (aKind === 30023) return 'Article';
+      if (aKind === 32267) return 'App';
+      if (aKind === 39089) return 'Follow Pack';
+      if (!isNaN(aKind)) return `Event (kind ${aKind})`;
+      if (dTag) return `Event ${dTag}`;
+    }
+    const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
+    if (kTag?.[1]) {
+      const kKind = parseInt(kTag[1]);
+      if (kKind === 30023) return 'Article';
+      if (kKind === 32267) return 'App';
+      if (kKind === 39089) return 'Follow Pack';
+      if (!isNaN(kKind)) return `Event (kind ${kKind})`;
+    }
+    const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
+    const eTag = eTags[eTags.length - 1];
+    const eTagId = eTag?.[1];
+    if (eTagId) return `Event ${this.shortEventId(eTagId)}`;
+    return '';
   }
 
   /**
@@ -529,11 +574,19 @@ export class NotificationItem {
   }
 
   /**
-   * Load referenced note preview for reactions and zaps
+   * Load referenced note preview for reactions and zaps.
+   * Always replaces the "Loading..." placeholder — falls back to a short
+   * "Follow Pack" / "Event abc12345" label when fetch fails, so the UI never
+   * stays stuck on "Loading...".
    */
   private async loadReferencedNotePreview(): Promise<void> {
     const previewElement = this.element.querySelector('.notification-item__preview');
     if (!previewElement) return;
+
+    const setPreview = (text: string) => {
+      previewElement.textContent = text;
+    };
+    const fallbackPreview = this.buildUnresolvedPreview();
 
     try {
       // Check for addressable event reference (a-tag) first — articles, follow packs, etc.
@@ -544,37 +597,73 @@ export class NotificationItem {
         if (refEvent) {
           if (aKind === 32267) {
             const name = refEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] || 'App';
-            previewElement.textContent = `App: ${name}`;
+            setPreview(`App: ${name}`);
           } else if (aKind === 39089) {
             const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
             const pack = parseFollowPackEvent(refEvent);
-            previewElement.textContent = `Follow Pack: ${pack.title}`;
-          } else {
+            setPreview(`Follow Pack: ${pack.title}`);
+          } else if (aKind === 30023) {
             const { LongFormOrchestrator } = await import('../../services/orchestration/LongFormOrchestrator');
             const metadata = LongFormOrchestrator.extractArticleMetadata(refEvent);
-            previewElement.textContent = metadata.title;
+            setPreview(`Article: ${metadata.title}`);
+          } else {
+            const dTag = refEvent.tags.find((t: string[]) => t[0] === 'd')?.[1];
+            setPreview(dTag ? `Event (kind ${aKind}): ${dTag}` : `Event (kind ${aKind})`);
           }
           return;
         }
+        // addressable fetch failed → short, kind-aware fallback (never "Loading...")
+        setPreview(fallbackPreview);
+        return;
       }
 
       // For reactions/zaps, use the LAST e-tag (NIP-25: direct reference to reacted note)
       // Some clients copy all e-tags from the thread, but the last one is always the direct target
       const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
       const eTag = eTags[eTags.length - 1];
-      if (!eTag || !eTag[1]) return;
-
-      const originalEvent = await this.fetchOriginalNote(eTag[1]);
-      if (originalEvent && originalEvent.content) {
-        const maxLength = 100;
-        const content = originalEvent.content;
-        previewElement.textContent = content.length > maxLength
-          ? content.slice(0, maxLength) + '...'
-          : content;
+      if (!eTag || !eTag[1]) {
+        setPreview(fallbackPreview);
+        return;
       }
+
+      // Read k-tag hint: some clients reference addressable events (e.g. Follow Packs)
+      // via e-tag + k-tag instead of a full a-tag coordinate. Using the hint lets us
+      // include the non-default kind in the fetch filter so we can resolve the event.
+      const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
+      const kHint = kTag?.[1] ? parseInt(kTag[1]) : NaN;
+      const originalEvent = await this.fetchOriginalNote(eTag[1], isNaN(kHint) ? undefined : kHint);
+      if (originalEvent) {
+        if (originalEvent.kind === 39089) {
+          const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
+          const pack = parseFollowPackEvent(originalEvent);
+          setPreview(`Follow Pack: ${pack.title}`);
+          return;
+        }
+        if (originalEvent.kind === 30023) {
+          const title = originalEvent.tags.find((t: string[]) => t[0] === 'title')?.[1] || 'Untitled';
+          setPreview(`Article: ${title}`);
+          return;
+        }
+        if (originalEvent.kind === 32267) {
+          const name = originalEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] || 'App';
+          setPreview(`App: ${name}`);
+          return;
+        }
+        if (originalEvent.content) {
+          const maxLength = 100;
+          const content = originalEvent.content;
+          setPreview(content.length > maxLength
+            ? content.slice(0, maxLength) + '...'
+            : content);
+          return;
+        }
+      }
+
+      // e-tag fetch failed or unknown kind — show short-id fallback
+      setPreview(fallbackPreview);
     } catch (error) {
       console.warn('Failed to fetch referenced note:', error);
-      previewElement.textContent = '';
+      setPreview(fallbackPreview);
     }
   }
 
@@ -665,7 +754,7 @@ export class NotificationItem {
    * Fetch original note by ID
    * Uses configured read relays from NostrTransport
    */
-  private async fetchOriginalNote(noteId: string): Promise<NostrEvent | null> {
+  private async fetchOriginalNote(noteId: string, kindHint?: number): Promise<NostrEvent | null> {
     const { NostrTransport } = await import('../../services/transport/NostrTransport');
     const transport = NostrTransport.getInstance();
 
@@ -673,11 +762,17 @@ export class NotificationItem {
       // Get read relays from config
       const readRelays = transport.getReadRelays();
 
+      // Include the hinted kind (from k-tag) so we can resolve addressable
+      // events — e.g. Follow Packs — that are referenced only via e-tag.
+      const kinds = (typeof kindHint === 'number' && !isNaN(kindHint))
+        ? Array.from(new Set([...USER_CONTENT_KINDS, kindHint]))
+        : USER_CONTENT_KINDS;
+
       const events = await transport.fetch(
         readRelays,
         [{
           ids: [noteId],
-          kinds: USER_CONTENT_KINDS,
+          kinds,
           limit: 1
         }],
         5000,

@@ -11,6 +11,7 @@ import { RepostRenderer } from './RepostRenderer';
 import { QuoteRenderer } from './QuoteRenderer';
 import { ZapReceiptRenderer } from './ZapReceiptRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
+import { FollowPackRenderer } from './FollowPackRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -27,6 +28,8 @@ export class NoteRendererFactory {
         return ZapReceiptRenderer.render(note, options);
       case 'unsupported':
         return UnsupportedKindRenderer.render(note, options);
+      case 'follow-pack':
+        return FollowPackRenderer.render(note, options);
       default:
         return OriginalNoteRenderer.render(note, options);
     }

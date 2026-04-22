@@ -161,13 +161,13 @@ export class FeedOrchestrator extends Orchestrator {
       if (isProfileView) {
         filters = [{
           authors: followingPubkeys,
-          kinds: [1, 6, 20, 21, 22, 1063, 1068],
+          kinds: [1, 6, 20, 21, 22, 1063, 1068, 39089],
           limit: this.fetchLimit
         }];
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
           authors: followingPubkeys,
-          kinds: [1, 6, 20, 21, 22, 1063, 1068],
+          kinds: [1, 6, 20, 21, 22, 1063, 1068, 39089],
           limit: this.fetchLimit,
           since: explicitSince
         };
@@ -178,7 +178,7 @@ export class FeedOrchestrator extends Orchestrator {
       } else {
         filters = [{
           authors: followingPubkeys,
-          kinds: [1, 6, 20, 21, 22, 1063, 1068],
+          kinds: [1, 6, 20, 21, 22, 1063, 1068, 39089],
           limit: this.fetchLimit,
           since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
         }];
@@ -310,7 +310,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       const filters: NDKFilter<number>[] = [{
         authors: followingPubkeys,
-        kinds: [1, 6, 20, 21, 22, 1063, 1068],
+        kinds: [1, 6, 20, 21, 22, 1063, 1068, 39089],
         until: until - 1,
         since,
         limit: 50
@@ -648,7 +648,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       // Query for new notes since last check
       const filters = [{
-        kinds: [1, 6, 20, 21, 22, 1063, 1068], // Text notes + reposts + polls (NIP-88)
+        kinds: [1, 6, 20, 21, 22, 1063, 1068, 39089], // Text notes + reposts + polls (NIP-88)
         authors: this.pollingFollowingPubkeys,
         since: this.lastCheckedTimestamp + 1,
         until: now,
@@ -807,7 +807,7 @@ export class FeedOrchestrator extends Orchestrator {
 
       const now = Math.floor(Date.now() / 1000);
       const filters = [{
-        kinds: [1, 6, 20, 21, 22, 1063, 1068],
+        kinds: [1, 6, 20, 21, 22, 1063, 1068, 39089],
         authors: followingPubkeys,
         since: newestTimestamp + 1,
         until: now,

@@ -190,4 +190,32 @@
     flex-direction: column;
     gap: $gap;
   }
+
+  // ===== Timeline Card (inline kind 39089 in feed) =====
+
+  &__timeline-card {
+    margin: calc($gap / 2) 0;
+  }
+
+  &__timeline-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $gap;
+  }
+
+  &__timeline-title-col {
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__timeline-open {
+    flex-shrink: 0;
+  }
+}
+
+// Placeholder cover needs dimensions when used inside .nn-card__image
+.nn-card__image.follow-packs__card-cover--placeholder {
+  height: 180px;
+  position: relative;
 }
