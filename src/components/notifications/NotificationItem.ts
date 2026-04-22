@@ -301,6 +301,16 @@ export class NotificationItem {
    * so we never lie about the target type.
    */
   private getTargetLabel(): string {
+    // Mentions: target IS the mentioning event itself — use its own kind.
+    // (Interactions like reactions/zaps target a referenced event via a-/k-tag, handled below.)
+    if (this.options.type === 'mention') {
+      const k = this.options.event.kind;
+      if (k === 20) return 'picture';
+      if (k === 21 || k === 22) return 'video';
+      if (k === 1063) return 'file';
+      if (k === 1068) return 'poll';
+      if (k === 1111) return 'comment';
+    }
     const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
     if (aTag?.[1]) {
       const kind = parseInt(aTag[1].split(':')[0] || '');

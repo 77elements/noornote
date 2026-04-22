@@ -196,7 +196,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Filter 1: Direct mentions/tags (#p filter)
     const ptagFilter: NDKFilter = {
       '#p': [this.userPubkey],
-      kinds: [1, 6, 7, 21, 22, 9735],
+      kinds: [1, 6, 7, 20, 21, 22, 9735],
       since: now
     };
 
@@ -217,7 +217,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     if (userEventIds.length > 0) {
       const etagFilter: NDKFilter = {
         '#e': userEventIds,
-        kinds: [1, 7, 21, 22, 9735],
+        kinds: [1, 7, 20, 21, 22, 9735],
         since: now
       };
 
@@ -304,7 +304,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for last 100 notifications
       const ptagFilter: NDKFilter = {
         '#p': [userPubkey],
-        kinds: [1, 6, 7, 21, 22, 9735],
+        kinds: [1, 6, 7, 20, 21, 22, 9735],
         limit: 100
       };
 
@@ -319,7 +319,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 21, 22, 9735],
+          kinds: [1, 7, 20, 21, 22, 9735],
           limit: 100
         };
 
@@ -374,7 +374,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for new notifications
       const ptagFilter: NDKFilter = {
         '#p': [currentUser.pubkey],
-        kinds: [1, 6, 7, 21, 22, 9735],
+        kinds: [1, 6, 7, 20, 21, 22, 9735],
         since: since
       };
 
@@ -387,7 +387,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 21, 22, 9735],
+          kinds: [1, 7, 20, 21, 22, 9735],
           since: since
         };
 
@@ -439,7 +439,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for older notifications
       const ptagFilter: NDKFilter = {
         '#p': [currentUser.pubkey],
-        kinds: [1, 6, 7, 21, 22, 9735],
+        kinds: [1, 6, 7, 20, 21, 22, 9735],
         until: until,
         limit: limit
       };
@@ -453,7 +453,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 21, 22, 9735],
+          kinds: [1, 7, 20, 21, 22, 9735],
           until: until,
           limit: limit
         };
@@ -887,7 +887,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     const userEventIds = this.getUserEventIds();
 
-    if (event.kind === 1) {
+    if (event.kind === 1 || event.kind === 20) {
       const hasUserPtag = event.tags.some(t => t[0] === 'p' && t[1] === currentUser.pubkey);
       const hasAnyEtag = event.tags.some(t => t[0] === 'e');
       const userMentionedInContent = this.isUserMentionedInContent(event.content, currentUser.pubkey);
