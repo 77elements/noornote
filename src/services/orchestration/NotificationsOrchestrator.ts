@@ -30,7 +30,7 @@ import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { getCacheSize } from '../../helpers/LRUCache';
 import { isDataSaverEnabled } from '../DataSaverService';
 
-export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag';
+export type NotificationType = 'mention' | 'reply' | 'thread-reply' | 'quote' | 'repost' | 'reaction' | 'zap' | 'article' | 'mutual_unfollow' | 'mutual_new' | 'hashtag' | 'poll_vote';
 
 export interface NotificationEvent {
   event: NostrEvent;
@@ -217,7 +217,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     if (userEventIds.length > 0) {
       const etagFilter: NDKFilter = {
         '#e': userEventIds,
-        kinds: [1, 7, 20, 21, 22, 9735],
+        kinds: [1, 7, 20, 21, 22, 1018, 9735] as any,
         since: now
       };
 
@@ -319,7 +319,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 9735],
+          kinds: [1, 7, 20, 21, 22, 1018, 9735] as any,
           limit: 100
         };
 
@@ -387,7 +387,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 9735],
+          kinds: [1, 7, 20, 21, 22, 1018, 9735] as any,
           since: since
         };
 
@@ -453,7 +453,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 9735],
+          kinds: [1, 7, 20, 21, 22, 1018, 9735] as any,
           until: until,
           limit: limit
         };
@@ -739,6 +739,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       'mention': 2,
       'repost': 2,
       'reaction': 2,
+      'poll_vote': 2,
       'article': 2,
       'mutual_new': 2,
       'mutual_unfollow': 2,
@@ -928,6 +929,7 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     if (event.kind === 6) return 'repost';
     if (event.kind === 7) return 'reaction';
+    if (event.kind === 1018) return 'poll_vote';
     if (event.kind === 9735) return 'zap';
 
     return 'mention'; // fallback

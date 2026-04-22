@@ -81,6 +81,12 @@
   flex-shrink: 0;
 }
 
+// Anonymous actor label (e.g. NIP-88 poll votes — voter not exposed)
+.notification-item__anonymous {
+  font-weight: 600;
+  color: var(--color-5);
+}
+
 .notification-item__zaps:empty {
   display: none;
 }

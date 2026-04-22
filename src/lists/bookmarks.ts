@@ -2311,6 +2311,11 @@ export class BookmarkCard {
       const s = this.getTextSnippet(event.content, 100);
       return s === '(No text content)' ? 'Picture' : s;
     }
+    if (event.kind === 1068) {
+      const question = (event.content || '').trim();
+      const snippet = question.length > 80 ? question.slice(0, 80) + '...' : question;
+      return snippet ? `Poll: ${snippet}` : 'Poll';
+    }
     return this.getTextSnippet(event.content, 100);
   }
 

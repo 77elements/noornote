@@ -95,18 +95,23 @@ export class NotificationItem {
       </div>
     `;
 
-    // Insert UserIdentity component
+    // Insert UserIdentity component (anonymized for poll votes)
     const identityContainer = item.querySelector('.notification-item__user-identity');
     if (identityContainer) {
-      const authorPubkey = this.getAuthorPubkey();
-      this.userIdentity = new UserIdentity({
-        pubkey: authorPubkey,
-        size: 'small',
-        showAvatar: true,
-        showUsername: true,
-        enableHoverCard: true // UserIdentity now handles hover card automatically
-      });
-      identityContainer.appendChild(this.userIdentity.getElement());
+      if (this.options.type === 'poll_vote') {
+        // NIP-88 votes: don't expose the voter — show neutral "Someone" instead.
+        identityContainer.innerHTML = '<span class="notification-item__anonymous">Someone</span>';
+      } else {
+        const authorPubkey = this.getAuthorPubkey();
+        this.userIdentity = new UserIdentity({
+          pubkey: authorPubkey,
+          size: 'small',
+          showAvatar: true,
+          showUsername: true,
+          enableHoverCard: true // UserIdentity now handles hover card automatically
+        });
+        identityContainer.appendChild(this.userIdentity.getElement());
+      }
     }
 
     // Setup hashtag footer link handlers
@@ -278,6 +283,9 @@ export class NotificationItem {
       case 'zap':
         return `<svg width="18" height="18"><use href="#icon-zap"/></svg>`;
 
+      case 'poll_vote':
+        return '🗳️';
+
       case 'article':
         return `<svg width="18" height="18"><use href="#icon-article-16"/></svg>`;
 
@@ -349,6 +357,7 @@ export class NotificationItem {
         const amount = this.getZapAmount();
         return amount ? `zapped your ${target} ${amount.toLocaleString()} sats` : `zapped your ${target}`;
       }
+      case 'poll_vote': return 'voted on your poll';
       case 'article': return 'posted a new article';
       case 'hashtag': {
         const hashtag = this.options.meta?.hashtag || 'unknown';
@@ -453,6 +462,11 @@ export class NotificationItem {
       return 'Loading...';
     }
 
+    // For poll votes, show placeholder (will fetch the poll question async)
+    if (this.options.type === 'poll_vote') {
+      return 'Loading...';
+    }
+
     // For reposts, show placeholder (will be resolved async via getOriginalEvent)
     if (this.options.type === 'repost') {
       // Try quick parse from content (legacy format) for instant display
@@ -532,8 +546,8 @@ export class NotificationItem {
       return;
     }
 
-    // For reactions and zaps, fetch the referenced note content
-    if (this.options.type === 'reaction' || this.options.type === 'zap') {
+    // For reactions, zaps, and poll votes, fetch the referenced note content
+    if (this.options.type === 'reaction' || this.options.type === 'zap' || this.options.type === 'poll_vote') {
       await this.loadReferencedNotePreview();
       return;
     }
@@ -659,6 +673,12 @@ export class NotificationItem {
           setPreview(`App: ${name}`);
           return;
         }
+        if (originalEvent.kind === 1068) {
+          const question = (originalEvent.content || '').trim();
+          const snippet = question.length > 80 ? question.slice(0, 80) + '...' : question;
+          setPreview(snippet ? `Poll: ${snippet}` : 'Poll');
+          return;
+        }
         if (originalEvent.content) {
           const maxLength = 100;
           const content = originalEvent.content;
@@ -700,8 +720,8 @@ export class NotificationItem {
     const router = Router.getInstance();
     const type = this.options.type;
 
-    // For zaps and reactions, navigate to referenced event
-    if (type === 'zap' || type === 'reaction') {
+    // For zaps, reactions, and poll votes, navigate to referenced event
+    if (type === 'zap' || type === 'reaction' || type === 'poll_vote') {
       // Check for addressable event reference (a-tag) — articles, follow packs, etc.
       const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a');
       if (aTag?.[1]) {
