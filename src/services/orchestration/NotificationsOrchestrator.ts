@@ -196,7 +196,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Filter 1: Direct mentions/tags (#p filter)
     const ptagFilter: NDKFilter = {
       '#p': [this.userPubkey],
-      kinds: [1, 6, 7, 20, 21, 22, 9735],
+      kinds: [1, 6, 7, 20, 21, 22, 1111, 9735] as any,
       since: now
     };
 
@@ -217,7 +217,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     if (userEventIds.length > 0) {
       const etagFilter: NDKFilter = {
         '#e': userEventIds,
-        kinds: [1, 7, 20, 21, 22, 1018, 9735] as any,
+        kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735] as any,
         since: now
       };
 
@@ -304,7 +304,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for last 100 notifications
       const ptagFilter: NDKFilter = {
         '#p': [userPubkey],
-        kinds: [1, 6, 7, 20, 21, 22, 9735],
+        kinds: [1, 6, 7, 20, 21, 22, 1111, 9735] as any,
         limit: 100
       };
 
@@ -319,7 +319,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 1018, 9735] as any,
+          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735] as any,
           limit: 100
         };
 
@@ -374,7 +374,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for new notifications
       const ptagFilter: NDKFilter = {
         '#p': [currentUser.pubkey],
-        kinds: [1, 6, 7, 20, 21, 22, 9735],
+        kinds: [1, 6, 7, 20, 21, 22, 1111, 9735] as any,
         since: since
       };
 
@@ -387,7 +387,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 1018, 9735] as any,
+          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735] as any,
           since: since
         };
 
@@ -439,7 +439,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for older notifications
       const ptagFilter: NDKFilter = {
         '#p': [currentUser.pubkey],
-        kinds: [1, 6, 7, 20, 21, 22, 9735],
+        kinds: [1, 6, 7, 20, 21, 22, 1111, 9735] as any,
         until: until,
         limit: limit
       };
@@ -453,7 +453,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (userEventIds.length > 0) {
         const etagFilter: NDKFilter = {
           '#e': userEventIds,
-          kinds: [1, 7, 20, 21, 22, 1018, 9735] as any,
+          kinds: [1, 7, 20, 21, 22, 1018, 1111, 9735] as any,
           until: until,
           limit: limit
         };
@@ -924,6 +924,34 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (hasUserPtag && hasAnyEtag && !userMentionedInContent) return 'thread-reply';
 
       // Edge case: User has p-tag but no e-tag and not in content
+      if (hasUserPtag) return 'mention';
+    }
+
+    // NIP-22 Comments (kind 1111) — parallel to kind 1/20 but with NIP-22 tag conventions:
+    //   lowercase 'e' = parent event (direct reply target)
+    //   uppercase 'E' = root event (thread root)
+    //   lowercase/uppercase 'p'/'P' = mentioned pubkeys
+    // No marker strings (unlike NIP-10).
+    if (event.kind === 1111) {
+      const hasUserPtag = event.tags.some(t => (t[0] === 'p' || t[0] === 'P') && t[1] === currentUser.pubkey);
+      const hasAnyEtag = event.tags.some(t => t[0] === 'e' || t[0] === 'E');
+      const userMentionedInContent = this.isUserMentionedInContent(event.content, currentUser.pubkey);
+
+      const qTag = event.tags.find(t => t[0] === 'q');
+      const quotedEventId = qTag?.[1];
+      if (quotedEventId && userEventIds.includes(quotedEventId)) {
+        return 'quote';
+      }
+
+      const parentTargetId = event.tags.find(t => t[0] === 'e')?.[1];
+      const rootTargetId = event.tags.find(t => t[0] === 'E')?.[1];
+
+      const isDirectReplyToUser = (parentTargetId && userEventIds.includes(parentTargetId)) ||
+                                  (rootTargetId && userEventIds.includes(rootTargetId) && !parentTargetId);
+
+      if (isDirectReplyToUser) return 'reply';
+      if (hasUserPtag && userMentionedInContent) return 'mention';
+      if (hasUserPtag && hasAnyEtag && !userMentionedInContent) return 'thread-reply';
       if (hasUserPtag) return 'mention';
     }
 

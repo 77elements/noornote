@@ -502,8 +502,11 @@ export class NotificationItem {
     // The preview already shows the reply/mention text from getPreviewSync()
     if (this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply') {
       try {
-        // Find the e-tag that references the replied-to note
+        // Find the e-tag referring to the replied-to note.
+        // Priority: NIP-10 root marker → NIP-22 root (uppercase E) → NIP-10 reply marker →
+        //           NIP-22 parent (lowercase e) / NIP-10 positional fallback.
         const eTag = this.options.event.tags.find((t: string[]) => t[0] === 'e' && t[3] === 'root') ||
+                     this.options.event.tags.find((t: string[]) => t[0] === 'E') ||
                      this.options.event.tags.find((t: string[]) => t[0] === 'e' && t[3] === 'reply') ||
                      this.options.event.tags.find((t: string[]) => t[0] === 'e');
 
