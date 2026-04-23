@@ -8,6 +8,7 @@ import { UserHoverCard } from '../components/ui/UserHoverCard';
 import { Router } from '../services/Router';
 import { encodeNpub } from '../services/NostrToolsAdapter';
 import { escapeHtml } from './escapeHtml';
+import { npubToHex } from './nip19';
 
 export interface UserMentionProfile {
   username: string;
@@ -44,6 +45,34 @@ export function renderUserMention(
   const bgClass = withBackground ? ' mention-link--bg' : '';
 
   return `<span class="user-mention" data-pubkey="${pubkey}"><a href="#" class="mention-link${bgClass}" data-profile-pubkey="${pubkey}"><img class="profile-pic profile-pic--mini" src="${profile.avatarUrl}" alt="" /><span class="mention-name">${escapeHtml(profile.username)}</span></a></span>`;
+}
+
+/**
+ * Upgrade inline mention links (as produced by npubToUsername html-multi) to the
+ * UserMentionHelper wrapper format so hover cards + click nav can bind.
+ *
+ * Wraps `a[data-mention][href^="/profile/npub1..."]` with
+ * `<span class="user-mention" data-pubkey="{hex}">` and adds `data-profile-pubkey`
+ * to the anchor. Call setupUserMentionHandlers afterwards.
+ */
+export function upgradeInlineMentions(container: HTMLElement): void {
+  const anchors = container.querySelectorAll<HTMLAnchorElement>('a[data-mention]');
+  anchors.forEach(anchor => {
+    if (anchor.parentElement?.classList.contains('user-mention')) return;
+
+    const href = anchor.getAttribute('href') || '';
+    const npub = href.startsWith('/profile/') ? href.slice('/profile/'.length) : '';
+    const hex = npub ? npubToHex(npub) : null;
+    if (!hex) return;
+
+    anchor.setAttribute('data-profile-pubkey', hex);
+
+    const wrapper = document.createElement('span');
+    wrapper.className = 'user-mention';
+    wrapper.setAttribute('data-pubkey', hex);
+    anchor.parentNode?.insertBefore(wrapper, anchor);
+    wrapper.appendChild(anchor);
+  });
 }
 
 /**

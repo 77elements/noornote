@@ -155,7 +155,7 @@
       margin: 0 0 $gap;
     }
 
-    a {
+    a:not(.mention-link) {
       color: var(--color-4);
       text-decoration: underline;
     }
@@ -198,7 +198,7 @@
       margin-bottom: calc($gap / 2);
     }
 
-    img {
+    img:not(.profile-pic) {
       max-width: 100%;
       height: auto;
       border-radius: $radius-xl;

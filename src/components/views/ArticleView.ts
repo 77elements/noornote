@@ -17,6 +17,7 @@ import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { AnalyticsModal } from '../analytics/AnalyticsModal';
 import { getAddressableIdentifier } from '../../helpers/getAddressableIdentifier';
 import { npubToUsername } from '../../helpers/npubToUsername';
+import { upgradeInlineMentions, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
 import { ContentProcessor } from '../../services/ContentProcessor';
@@ -108,6 +109,12 @@ export class ArticleView {
         <div class="article-replies-container"></div>
       </div>
     `;
+
+    const articleBodyForMentions = this.container.querySelector<HTMLElement>('.article-body');
+    if (articleBodyForMentions) {
+      upgradeInlineMentions(articleBodyForMentions);
+      setupUserMentionHandlers(articleBodyForMentions);
+    }
 
     // Replace quote markers with actual quote boxes (same logic as OriginalNoteRenderer)
     if (quotedReferences.length > 0) {

@@ -28,6 +28,9 @@ import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { npubToUsername } from '../../helpers/npubToUsername';
+import { upgradeInlineMentions, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { ContentProcessor } from '../../services/ContentProcessor';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 
 type TabMode = 'edit' | 'preview';
@@ -771,6 +774,11 @@ export class ArticleEditorView extends View {
         this.mentionAutocomplete.init();
       } else {
         body.innerHTML = this.renderPreviewMode();
+        const previewContent = body.querySelector<HTMLElement>('.article-editor__preview-content');
+        if (previewContent) {
+          upgradeInlineMentions(previewContent);
+          setupUserMentionHandlers(previewContent);
+        }
       }
     }
   }
@@ -1015,9 +1023,21 @@ export class ArticleEditorView extends View {
         gfm: true
       });
 
-      const html = marked.parse(content) as string;
+      let html = marked.parse(content) as string;
       // Add rel for security - global handler in App.ts opens external links
-      return html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
+      html = html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
+
+      // Convert nostr:npub / nostr:nprofile mentions to profile links (same as ArticleView)
+      const contentProcessor = ContentProcessor.getInstance();
+      const profileResolver = (hexPubkey: string) => {
+        const profile = contentProcessor.getNonBlockingProfile(hexPubkey);
+        return profile ? {
+          name: profile.name,
+          display_name: profile.display_name,
+          picture: profile.picture
+        } : null;
+      };
+      return npubToUsername(html, 'html-multi', profileResolver, { forceFullMode: true });
     } catch (_err) {
       return `<p>${escapeHtml(content)}</p>`;
     }
