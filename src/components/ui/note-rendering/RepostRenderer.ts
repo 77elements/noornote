@@ -197,7 +197,7 @@ export class RepostRenderer {
 
               // Setup collapsible if needed
               if (opts.depth === 0 && opts.collapsible) {
-                CollapsibleManager.setup(repostDiv);
+                CollapsibleManager.setup(repostDiv, { maxHeight: '40vh' });
               }
             } else {
               // Failed to fetch - show error
@@ -349,7 +349,7 @@ export class RepostRenderer {
 
             // Setup collapsible for long reposts (only for top-level reposts)
             if (opts.depth === 0 && opts.collapsible) {
-              CollapsibleManager.setup(repostDiv);
+              CollapsibleManager.setup(repostDiv, { maxHeight: '40vh' });
             }
           }
         });
@@ -363,7 +363,7 @@ export class RepostRenderer {
 
         // Setup collapsible for long reposts (only for top-level reposts)
         if (opts.depth === 0 && opts.collapsible) {
-          CollapsibleManager.setup(repostDiv);
+          CollapsibleManager.setup(repostDiv, { maxHeight: '40vh' });
         }
       }
     }

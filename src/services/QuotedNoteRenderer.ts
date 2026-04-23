@@ -7,7 +7,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { encodeNevent, decodeNip19 } from './NostrToolsAdapter';
 import { NoteHeader } from '../components/ui/NoteHeader';
-import { NoteUI } from '../components/ui/NoteUI';
+import { CollapsibleManager } from '../components/ui/note-features/CollapsibleManager';
 import { QuoteNoteFetcher } from './QuoteNoteFetcher';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { ContentProcessor, type QuotedReference } from './ContentProcessor';
@@ -245,9 +245,10 @@ export class QuotedNoteRenderer {
       }
     }
 
-    // Setup collapsible for long quoted content (only if enabled)
+    // Setup collapsible for long quoted content (only if enabled).
+    // contentSelector keeps the header outside the clamped area.
     if (enableCollapsible) {
-      NoteUI.setupCollapsible(quoteBox);
+      CollapsibleManager.setup(quoteBox, { maxHeight: '40vh', contentSelector: '.event-content' });
     }
 
     // Add click handler to navigate to SNV (exclude interactive elements)
@@ -264,8 +265,7 @@ export class QuotedNoteRenderer {
         target.closest('button') ||
         target.closest('.note-header') ||
         target.closest('.hashtag') ||
-        target.closest('.note-media') ||
-        target.closest('.note-media-inline')
+        target.closest('.note-media')
       ) {
         return;
       }

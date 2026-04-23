@@ -55,7 +55,7 @@ export class QuoteRenderer {
 
     // Setup collapsible for long notes (only for top-level notes with collapsible enabled)
     if (opts.depth === 0 && opts.collapsible) {
-      CollapsibleManager.setup(element);
+      CollapsibleManager.setup(element, { maxHeight: '40vh' });
     }
 
     return element;

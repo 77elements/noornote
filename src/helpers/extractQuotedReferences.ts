@@ -44,5 +44,18 @@ export function extractQuotedReferences(text: string): QuotedReference[] {
     });
   });
 
+  // Bare hex event IDs with explicit nostr: prefix
+  // (from NoteMenu → "Copy event ID", which yields raw hex).
+  // Requires the nostr: prefix to avoid matching unrelated 64-hex strings.
+  const hexRegex = /nostr:([a-f0-9]{64})(?=[^a-f0-9]|$)/gi;
+  Array.from(text.matchAll(hexRegex)).forEach(match => {
+    const fullMatch = match[0];
+    quotes.push({
+      type: 'event',
+      id: fullMatch,
+      fullMatch
+    });
+  });
+
   return quotes;
 }

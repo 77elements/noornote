@@ -356,6 +356,6 @@ export class RepliesRenderer {
 
     // Setup CollapsibleManager AFTER element is in DOM
     const { CollapsibleManager } = await import('../ui/note-features/CollapsibleManager');
-    CollapsibleManager.setup(noteElement);
+    CollapsibleManager.setup(noteElement, { maxHeight: '40vh' });
   }
 }

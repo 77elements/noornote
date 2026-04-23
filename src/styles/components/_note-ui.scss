@@ -150,32 +150,9 @@ html.content-visibility-auto .note-card {
     }
   }
 
-  // Collapsible long notes wrapper
-  .collapsible-wrapper {
-    &.is-collapsed {
-      max-height: 40vh;
-      overflow: hidden;
-      position: relative;
-      margin-bottom: calc($gap / 2);
-
-      // Fade out gradient at bottom
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 80px;
-        background: linear-gradient(to bottom, transparent, var(--color-1));
-        pointer-events: none;
-      }
-    }
-
-    &.is-expanded {
-      max-height: none;
-      margin-bottom: calc($gap / 2);
-    }
-  }
+  // Collapsible rule is standalone (see bottom of file) so it works in
+  // every context — timeline note-cards, quote-boxes, article bodies —
+  // without leaking note-card scope.
 
   // Button styles moved to molecules/_buttons.scss
 
@@ -185,6 +162,33 @@ html.content-visibility-auto .note-card {
     flex-direction: column;
     gap: calc($gap / 2);
     margin: calc($gap * 0.75) 0;
+  }
+}
+
+// Collapsible wrapper (standalone — max height driven by CSS var so the
+// same rule drives timeline note-cards AND article quote-boxes).
+.collapsible-wrapper {
+  &.is-collapsed {
+    max-height: var(--collapsible-max-height, 40vh);
+    overflow: hidden;
+    position: relative;
+    margin-bottom: calc($gap / 2);
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 80px;
+      background: linear-gradient(to bottom, transparent, var(--color-1));
+      pointer-events: none;
+    }
+  }
+
+  &.is-expanded {
+    max-height: none;
+    margin-bottom: calc($gap / 2);
   }
 }
 

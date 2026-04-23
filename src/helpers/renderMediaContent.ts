@@ -301,7 +301,7 @@ export function replaceMediaPlaceholders(
       if (!mediaItem) return;
       const placeholder = `__MEDIA_${index}__`;
       const mediaHtml = renderSingleMedia(mediaItem, index, isNSFW);
-      const wrappedMedia = `<div class="note-media-inline"${dataAttr}>${mediaHtml}</div>`;
+      const wrappedMedia = `<div class="note-media"${dataAttr}>${mediaHtml}</div>`;
       result = result.replace(placeholder, wrappedMedia);
     } else {
       // Multiple consecutive media - render as grid

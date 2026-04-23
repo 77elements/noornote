@@ -28,6 +28,7 @@ import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { processFootnotes } from '../../helpers/processFootnotes';
+import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 
 export class ArticleView {
   private container: HTMLElement;
@@ -124,13 +125,16 @@ export class ArticleView {
       quotedReferences.forEach(ref => {
         const marker = this.container.querySelector(`.quote-marker[data-quote-ref="${ref.fullMatch}"]`);
         if (marker) {
+          // Unwrap: if the marker is the sole meaningful child of a <p>,
+          // lift it out so block-level quote-boxes aren't nested inside <p>.
+          unwrapSolitaryParagraph(marker);
           if (ref.type === 'addr') {
             articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
             marker.remove();
           } else {
             const skeleton = quotedNoteRenderer.createQuoteSkeleton();
             marker.replaceWith(skeleton);
-            quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, false);
+            quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, true);
           }
         }
       });

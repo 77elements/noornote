@@ -243,7 +243,7 @@ export class NoteStructureBuilder {
         target.closest('.article-preview-card') ||
         target.closest('.timeline-listing-card') ||
         target.closest('.note-media') ||
-        target.closest('.note-media-inline') ||
+        target.closest('.note-media') ||
         target.closest('.reply-indicator') ||
         target.closest('.thread-context-indicator')
       ) {

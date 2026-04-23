@@ -30,7 +30,12 @@ import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { upgradeInlineMentions, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
+import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
+import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 import { ContentProcessor } from '../../services/ContentProcessor';
+import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
+import { ArticlePreviewRenderer } from '../../services/ArticlePreviewRenderer';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 
 type TabMode = 'edit' | 'preview';
@@ -75,6 +80,7 @@ export class ArticleEditorView extends View {
   private editPubkey: string = '';
   private publishedAt: number | null = null;
   private focusOverlay: HTMLElement | null = null;
+  private previewQuotedRefs: QuotedReference[] = [];
   private focusKeydownHandler = (e: KeyboardEvent): void => {
     if (this.focusOverlay && e.key === 'Escape') {
       e.preventDefault();
@@ -778,6 +784,7 @@ export class ArticleEditorView extends View {
         if (previewContent) {
           upgradeInlineMentions(previewContent);
           setupUserMentionHandlers(previewContent);
+          this.hydratePreviewQuotes(previewContent);
         }
       }
     }
@@ -1015,7 +1022,10 @@ export class ArticleEditorView extends View {
    * Render markdown content
    */
   private renderMarkdownContent(content: string): string {
-    if (!content) return '<p class="article-editor__preview-empty">No content yet...</p>';
+    if (!content) {
+      this.previewQuotedRefs = [];
+      return '<p class="article-editor__preview-empty">No content yet...</p>';
+    }
 
     try {
       marked.setOptions({
@@ -1023,9 +1033,17 @@ export class ArticleEditorView extends View {
         gfm: true
       });
 
+      // Extract quoted nostr references before markdown parsing (NIP-27)
+      const quotedReferences = extractQuotedReferences(content) as QuotedReference[];
+      this.previewQuotedRefs = quotedReferences;
+
       let html = marked.parse(content) as string;
       // Add rel for security - global handler in App.ts opens external links
       html = html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
+
+      if (quotedReferences.length > 0) {
+        html = formatQuotedReferences(html, quotedReferences);
+      }
 
       // Convert nostr:npub / nostr:nprofile mentions to profile links (same as ArticleView)
       const contentProcessor = ContentProcessor.getInstance();
@@ -1039,8 +1057,40 @@ export class ArticleEditorView extends View {
       };
       return npubToUsername(html, 'html-multi', profileResolver, { forceFullMode: true });
     } catch (_err) {
+      this.previewQuotedRefs = [];
       return `<p>${escapeHtml(content)}</p>`;
     }
+  }
+
+  /**
+   * Replace quote-marker spans in the preview with actual quoted-note boxes.
+   * Mirrors the hydration ArticleView does post-mount so Preview matches the
+   * final render (including the collapsible Show More behavior).
+   */
+  private hydratePreviewQuotes(previewContent: HTMLElement): void {
+    if (this.previewQuotedRefs.length === 0) return;
+
+    const quotedNoteRenderer = QuotedNoteRenderer.getInstance();
+    const articleRenderer = ArticlePreviewRenderer.getInstance();
+
+    this.previewQuotedRefs.forEach(ref => {
+      const marker = previewContent.querySelector(
+        `.quote-marker[data-quote-ref="${CSS.escape(ref.fullMatch)}"]`
+      );
+      if (!marker) return;
+
+      // Lift the marker out of a solitary <p> so the quote-box isn't block-in-<p>.
+      unwrapSolitaryParagraph(marker);
+
+      if (ref.type === 'addr') {
+        articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
+        marker.remove();
+      } else {
+        const skeleton = quotedNoteRenderer.createQuoteSkeleton();
+        marker.replaceWith(skeleton);
+        quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, true);
+      }
+    });
   }
 
 

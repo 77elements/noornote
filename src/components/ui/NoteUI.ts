@@ -10,7 +10,6 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { NoteProcessor } from './note-processing/NoteProcessor';
 import { NoteRendererFactory } from './note-rendering/NoteRendererFactory';
 import { NoteStructureBuilder } from './note-rendering/NoteStructureBuilder';
-import { CollapsibleManager } from './note-features/CollapsibleManager';
 import { FallbackElementFactory } from './note-factories/FallbackElementFactory';
 import { InteractionStatusLine } from './InteractionStatusLine';
 
@@ -104,12 +103,4 @@ export class NoteUI {
     return NoteStructureBuilder.getISLInstance(noteId);
   }
 
-  /**
-   * Setup collapsible for a note
-   * PUBLIC - used by QuotedNoteRenderer for quote boxes
-   * DELEGATES to CollapsibleManager
-   */
-  static setupCollapsible(noteElement: HTMLElement): void {
-    CollapsibleManager.setup(noteElement);
-  }
 }

@@ -146,8 +146,8 @@
 
 /* Quote Box - styled exactly like normal notes */
 .quote-box {
-  margin: calc($gap * 0.75) 0;
-  padding: $gap 0 0 calc($gap * 1.5);
+  padding: 1.5rem 0 0 1.5rem;
+  margin-bottom: 1.5rem;
   border-left: 1px solid var(--color-3);
 
   // No special styling - quoted notes look exactly like normal notes

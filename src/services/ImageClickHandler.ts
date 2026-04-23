@@ -51,7 +51,7 @@ export class ImageClickHandler {
    */
   private handleImageClick(event: Event): void {
     const img = event.currentTarget as HTMLElement;
-    const mediaContainer = img.closest('.note-media, .note-media-inline');
+    const mediaContainer = img.closest('.note-media');
 
     if (!mediaContainer) return;
 
