@@ -4,7 +4,7 @@
  * Used by QuoteRenderer and OriginalNoteRenderer when encountering naddr references
  */
 
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import type { NostrEvent, NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
 import { LongFormOrchestrator } from './orchestration/LongFormOrchestrator';
 import { Router } from './Router';
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
@@ -12,6 +12,9 @@ import { isLiveStreamsPlayerEnabled } from '../addons/live-streams-player/index'
 import { getAddressableIdentifier } from '../helpers/getAddressableIdentifier';
 import { getLiveStreamHost } from '../helpers/getLiveStreamHost';
 import { ZapManager } from '../components/ui/interaction-managers/ZapManager';
+import { LiveChatService } from './LiveChatService';
+import { RelayConfig } from './RelayConfig';
+import { NostrTransport } from './transport/NostrTransport';
 
 export class ArticlePreviewRenderer {
   private static instance: ArticlePreviewRenderer;
@@ -131,11 +134,135 @@ export class ArticlePreviewRenderer {
       // "host"; event.pubkey is the provider service.
       const hostPubkey = getLiveStreamHost(event);
       if (addressableId && event.id) {
+        const streamRelays = (event.tags.find(t => t[0] === 'relays')?.slice(1) || [])
+          .filter((url): url is string => typeof url === 'string' && url.startsWith('ws'));
+        if (isLiveStreamsPlayerEnabled()) {
+          this.attachStreamChatInput(card, addressableId, streamRelays);
+        }
         this.attachStreamZapButton(card, addressableId, hostPubkey, event.id);
+        this.watchStreamStatus(card, event, streamRelays);
       }
     }
 
     return card;
+  }
+
+  /**
+   * Subscribe to replaceable updates of the kind 30311 event. When status
+   * transitions away from "live", remove chat input + zap wrapper immediately
+   * so users can't send late messages/zaps after the stream ends.
+   */
+  private watchStreamStatus(card: HTMLElement, event: NostrEvent, streamRelays: string[]): void {
+    const dTag = event.tags.find(t => t[0] === 'd')?.[1];
+    if (!dTag) return;
+
+    const transport = NostrTransport.getInstance();
+    const relays = streamRelays.length > 0 ? streamRelays : transport.getReadRelays();
+    const subId = `live-stream-status-${event.id}`;
+    const baseCreatedAt = event.created_at;
+
+    const cleanup = () => {
+      transport.unsubscribeLive(subId);
+      observer.disconnect();
+    };
+
+    const removeInteractiveElements = () => {
+      card.querySelector('.live-stream-card__chat')?.remove();
+      card.querySelector('.live-stream-card__zap-wrapper')?.remove();
+    };
+
+    const observer = new MutationObserver(() => {
+      if (!document.contains(card)) {
+        cleanup();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const filters: NDKFilter[] = [{
+      kinds: [30311 as NDKKind],
+      authors: [event.pubkey],
+      '#d': [dTag],
+    }];
+
+    void transport.subscribeLive(
+      relays,
+      filters,
+      subId,
+      (incoming) => {
+        if (incoming.created_at < baseCreatedAt) return;
+        const newStatus = (incoming.tags.find(t => t[0] === 'status')?.[1] || '').toLowerCase();
+        if (newStatus && newStatus !== 'live') {
+          removeInteractiveElements();
+          cleanup();
+        }
+      }
+    );
+  }
+
+  /**
+   * Attach a NIP-53 kind 1311 chat input to the live stream card.
+   * Messages are tagged with the stream's addressable `a` tag so they appear
+   * in the provider's overlay (e.g. zap.stream).
+   */
+  private attachStreamChatInput(card: HTMLElement, addressableId: string, streamRelays: string[]): void {
+    const contentEl = card.querySelector('.live-stream-card__content');
+    if (!contentEl) return;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'live-stream-card__chat';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'input live-stream-card__chat-input';
+    input.placeholder = 'Send a message…';
+    input.maxLength = 500;
+
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'btn btn--mini live-stream-card__chat-send';
+    sendBtn.type = 'button';
+    sendBtn.textContent = 'Send';
+
+    wrapper.appendChild(input);
+    wrapper.appendChild(sendBtn);
+    contentEl.appendChild(wrapper);
+
+    const send = async () => {
+      const content = input.value.trim();
+      if (!content || sendBtn.disabled) return;
+
+      sendBtn.disabled = true;
+      input.disabled = true;
+
+      try {
+        const writeRelays = await RelayConfig.getInstance().getWriteRelays();
+        const mergedRelays = Array.from(new Set([...writeRelays, ...streamRelays]));
+        const result = await LiveChatService.getInstance().publishMessage({
+          addressableId,
+          content,
+          relays: mergedRelays,
+        });
+        if (result.success) {
+          input.value = '';
+        }
+      } finally {
+        sendBtn.disabled = false;
+        input.disabled = false;
+        input.focus();
+      }
+    };
+
+    sendBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      void send();
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+        void send();
+      }
+    });
   }
 
   /**
