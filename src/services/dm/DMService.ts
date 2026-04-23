@@ -24,7 +24,11 @@ import { SystemLogger } from '../../components/system/SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { FollowCheckService } from '../FollowCheckService';
 import { MuteOrchestrator } from '../../lists/mutes';
+import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { generateSecretKey, getPublicKey, calculateEventHash } from '../../services/NostrToolsAdapter';
+
+type InboxRelayCacheEntry = { relays: string[]; fetchedAt: number };
+type InboxRelayCache = Record<string, InboxRelayCacheEntry>;
 
 // NIP-17 Kind constants
 const KIND_PRIVATE_MESSAGE = 14;
@@ -66,6 +70,13 @@ export class DMService {
 
   // Track active inbox relays to detect changes from relay sync
   private activeInboxRelays: string[] = [];
+
+  // Coalesce incoming gift-wrapped events over a short window so bursts don't
+  // cause one UI re-render per message. Dedup via DMStore wrapId unique index
+  // keeps semantics correct even if a duplicate sneaks into the buffer.
+  private incomingBatch: NostrEvent[] = [];
+  private incomingBatchTimer: number | null = null;
+  private static readonly INCOMING_BATCH_WINDOW_MS = 50;
 
   private constructor() {
     this.transport = NostrTransport.getInstance();
@@ -169,6 +180,7 @@ export class DMService {
    */
   public stop(): void {
     this.clearRefreshTimer();
+    this.clearIncomingBatchTimer();
 
     if (this.subscriptionId) {
       this.transport.unsubscribeLive(this.subscriptionId);
@@ -177,8 +189,41 @@ export class DMService {
 
     this.userPubkey = null;
     this.activeInboxRelays = [];
+    this.incomingBatch = [];
     diagLog('dms', 'DM service stopped');
     this.systemLogger.info('DMService', 'DM service stopped');
+  }
+
+  private clearIncomingBatchTimer(): void {
+    if (this.incomingBatchTimer !== null) {
+      clearTimeout(this.incomingBatchTimer);
+      this.incomingBatchTimer = null;
+    }
+  }
+
+  /**
+   * Flush the accumulated gift-wrap / legacy-DM events.
+   * Processes events in parallel (decryption is independent per event);
+   * errors on individual events are logged but don't stop the batch.
+   */
+  private async flushIncomingBatch(): Promise<void> {
+    this.incomingBatchTimer = null;
+    if (this.incomingBatch.length === 0) return;
+
+    const batch = this.incomingBatch;
+    this.incomingBatch = [];
+
+    if (batch.length > 1) {
+      diagLog('dms', 'Processing DM batch', { count: batch.length });
+    }
+
+    await Promise.all(
+      batch.map((event) => {
+        if (event.kind === KIND_GIFT_WRAP) return this.processGiftWrap(event);
+        if (event.kind === KIND_LEGACY_DM) return this.processLegacyDM(event);
+        return Promise.resolve();
+      })
+    );
   }
 
   /**
@@ -432,11 +477,13 @@ export class DMService {
       relays,
       filters,
       this.subscriptionId,
-      async (event: NostrEvent) => {
-        if (event.kind === KIND_GIFT_WRAP) {
-          await this.processGiftWrap(event);
-        } else if (event.kind === KIND_LEGACY_DM) {
-          await this.processLegacyDM(event);
+      (event: NostrEvent) => {
+        this.incomingBatch.push(event);
+        if (this.incomingBatchTimer === null) {
+          this.incomingBatchTimer = window.setTimeout(
+            () => this.flushIncomingBatch(),
+            DMService.INCOMING_BATCH_WINDOW_MS
+          );
         }
       }
     );
@@ -666,29 +713,43 @@ export class DMService {
         sig: '' // No signature for rumor
       };
 
-      // Step 2: Create gift wrap for recipient
-      const recipientWrap = await this.createGiftWrap(rumor, recipientPubkey);
+      // Step 2-4: Build both gift wraps + fetch recipient's inbox relays in parallel.
+      // Self-copy creation is allowed to fail silently (recipient delivery is what matters).
+      const myRelays = this.getMyInboxRelays();
+      const [recipientWrap, selfWrap, recipientRelays] = await Promise.all([
+        this.createGiftWrap(rumor, recipientPubkey),
+        this.createGiftWrap(rumor, currentUser.pubkey).catch(() => null),
+        this.getUserInboxRelays(recipientPubkey),
+      ]);
 
       if (!recipientWrap) {
         throw new Error('Failed to create gift wrap for recipient');
       }
 
-      // Step 3: Get recipient's DM relays
-      const recipientRelays = await this.getUserInboxRelays(recipientPubkey);
+      // Step 5: Publish both wraps in parallel. Self-copy failure must not abort
+      // the send — recipient delivery is authoritative.
+      // requiredRelayCount=1: resolve as soon as one relay ACKs (delivery is
+      // guaranteed once any inbox relay has the event). Writes to the remaining
+      // relays continue in the background — full redundancy preserved.
+      const publishResults = await Promise.allSettled([
+        this.transport.publish(recipientRelays, recipientWrap, 1),
+        selfWrap ? this.transport.publish(myRelays, selfWrap, 1) : Promise.resolve(),
+      ]);
 
-      // Step 4: Publish to recipient's relays
-      await this.transport.publish(recipientRelays, recipientWrap);
+      if (publishResults[0].status === 'rejected') {
+        // Purge cached relays — recipient may have changed their kind:10050.
+        // Next send attempt re-fetches and may succeed.
+        this.invalidateInboxRelayCache(recipientPubkey);
+        throw new Error(`Recipient publish failed: ${publishResults[0].reason}`);
+      }
 
       diagLog('dms', 'DM published to recipient', { relayCount: recipientRelays.length });
       this.systemLogger.info('DMService', `Sent to recipient on ${recipientRelays.length} relays`);
 
-      // Step 5: Create and publish self-copy
-      const selfWrap = await this.createGiftWrap(rumor, currentUser.pubkey);
-
-      if (selfWrap) {
-        const myRelays = await this.getMyInboxRelays();
-        await this.transport.publish(myRelays, selfWrap);
+      if (selfWrap && publishResults[1].status === 'fulfilled') {
         this.systemLogger.info('DMService', 'Self-copy published');
+      } else if (selfWrap && publishResults[1].status === 'rejected') {
+        this.systemLogger.warn('DMService', `Self-copy publish failed: ${publishResults[1].reason} (recipient delivery OK)`);
       }
 
       // Step 6: Store message locally with selfWrap.id as wrapId
@@ -824,7 +885,15 @@ export class DMService {
         return this.getMyInboxRelays();
       }
 
-      // For other users: fetch their kind:10050 from relays
+      // Persistent cache (0xchat model: fetch once, trust until publish fails).
+      // Entry is cleared via invalidateInboxRelayCache() on recipient-publish failure.
+      const cache = this.getInboxRelayCache();
+      const cached = cache[pubkey];
+      if (cached && cached.relays.length > 0) {
+        return cached.relays;
+      }
+
+      // Cache miss: fetch kind:10050 from read relays
       const relays = this.relayConfig.getReadRelays();
       const filter: NDKFilter = {
         kinds: [KIND_DM_RELAY_LIST],
@@ -842,17 +911,46 @@ export class DMService {
 
         if (dmRelays.length > 0) {
           this.systemLogger.info('DMService', `Found kind:10050 for ${pubkey.slice(0, 8)} with ${dmRelays.length} DM relays`);
-          // Also add aggregator relays to ensure delivery
           const aggregators = this.relayConfig.getAggregatorRelays();
-          return [...new Set([...dmRelays, ...aggregators])];
+          const merged = [...new Set([...dmRelays, ...aggregators])];
+
+          // Persist to cache — lookups for this recipient skip the relay round-trip.
+          cache[pubkey] = { relays: merged, fetchedAt: Date.now() };
+          this.setInboxRelayCache(cache);
+
+          return merged;
         }
       }
 
-      // Fallback for other users: use aggregator relays
+      // No kind:10050 published by user — aggregator fallback, NOT cached
+      // (so a later publish by the user is picked up on next send).
       return this.relayConfig.getAggregatorRelays();
     } catch {
       this.systemLogger.warn('DMService', `Failed to fetch inbox relays for ${pubkey.slice(0, 8)}`);
       return this.relayConfig.getAggregatorRelays();
+    }
+  }
+
+  private getInboxRelayCache(): InboxRelayCache {
+    return PerAccountLocalStorage.getInstance().get<InboxRelayCache>(
+      StorageKeys.DM_INBOX_RELAYS_CACHE, {}
+    );
+  }
+
+  private setInboxRelayCache(cache: InboxRelayCache): void {
+    PerAccountLocalStorage.getInstance().set(StorageKeys.DM_INBOX_RELAYS_CACHE, cache);
+  }
+
+  /**
+   * Purge a recipient's cached inbox relays. Called after a recipient-publish
+   * failure so the next send re-fetches kind:10050 (catches relay-list changes).
+   */
+  private invalidateInboxRelayCache(pubkey: string): void {
+    const cache = this.getInboxRelayCache();
+    if (cache[pubkey]) {
+      delete cache[pubkey];
+      this.setInboxRelayCache(cache);
+      diagLog('dms', 'Inbox relay cache invalidated', { pubkey: pubkey.slice(0, 8) });
     }
   }
 

@@ -440,9 +440,15 @@ export class NostrTransport {
   }
 
   /**
-   * Publish an event to relays
+   * Publish an event to relays.
+   *
+   * @param requiredRelayCount — if set, the returned promise resolves as soon as
+   *   this many relays have ACKed. NDK keeps writing to the remaining relays in
+   *   the background (no abort). Useful for latency-sensitive paths like NIP-17
+   *   DMs where a single relay-ACK already guarantees deliverability while we
+   *   still want maximum redundancy.
    */
-  public async publish(relays: string[], event: NostrEvent): Promise<Set<string>> {
+  public async publish(relays: string[], event: NostrEvent, requiredRelayCount?: number): Promise<Set<string>> {
     await this.ensureConnected();
 
     this.systemLogger.info('NostrTransport', `Sending to ${relays.length} relays`);
@@ -455,7 +461,7 @@ export class NostrTransport {
         new Set(relays.map(url => this.ndk.pool.getRelay(url)).filter(Boolean)),
         this.ndk
       );
-      const publishPromise = ndkEvent.publish(relaySet, 10000);
+      const publishPromise = ndkEvent.publish(relaySet, 10000, requiredRelayCount);
 
       const publishedRelays = await publishPromise;
 

@@ -56,6 +56,11 @@ export const StorageKeys = {
   RELAY_LIST_TIMESTAMP: 'noornote_relay_list_timestamp_map',
   INBOX_RELAY_LIST_TIMESTAMP: 'noornote_inbox_relay_list_timestamp_map',
 
+  // DM recipient inbox relays cache (NIP-17 kind:10050 per recipient)
+  // Map<recipientPubkey, { relays: string[]; fetchedAt: number }>
+  // 0xchat model: fetch once, trust until publish fails → invalidate entry.
+  DM_INBOX_RELAYS_CACHE: 'noornote_dm_inbox_relays_cache_map',
+
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',
 
