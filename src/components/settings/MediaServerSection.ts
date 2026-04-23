@@ -46,7 +46,7 @@ export class MediaServerSection extends SettingsSection {
   private loadMediaServerSettings(): MediaServerSettings {
     return PerAccountLocalStorage.getInstance().get<MediaServerSettings>(
       StorageKeys.MEDIA_SERVER,
-      { url: 'https://blossom.nostr.build', protocol: 'blossom' }
+      { url: 'https://nostr.build', protocol: 'nip96' }
     );
   }
 
