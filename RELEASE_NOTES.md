@@ -1,20 +1,23 @@
-# NoorNote v0.8.6
+# NoorNote v0.8.7
 
-## Notifications
+## Quoted Notes & Embeds
 
-- Green badge now updates reliably even when the cache is full.
-- Picture posts, NIP-22 comments, and Poll votes now generate notifications like regular replies. Poll votes stay anonymous — "Someone voted on your poll".
-- Follow Pack reactions only notify the pack's creator, not members listed inside.
-
-## Follow Packs
-
-- Follow Packs now appear as proper cards in your timeline with cover, title, member count, and an "Open Follow Pack" button.
-- The pack detail view always shows members with per-user Follow/Unfollow buttons, whether or not the Follow Packs add-on is enabled.
+- Image and video clicks now always work in quoted reposts and nested embeds. Click any image to open the lightbox, click any video to play, no matter how deeply nested.
+- Articles that quote the same `nostr:nevent…` more than once now render every occurrence correctly.
 
 ## Articles
 
-- Pandoc-style footnotes render correctly in long-form articles, with smooth in-article scroll to and from footnote references.
+- Long-form articles now also accept `nostr:<hex-event-id>` as a quote source, in addition to `nevent` / `note` / `naddr`.
+- Quotes that sit on their own line render correctly inside the article body, and the Edit Preview tab now matches the final published view (npub mentions, hover cards, Show More).
 
-## Bookmarks
+## Direct Messages
 
-- Bookmark cards for Pictures, Polls, Articles, Zapstore Apps, and Follow Packs now show a meaningful label instead of "(No text content)".
+- NIP-17 DMs now send roughly twice as fast and re-open busy conversations without the burst-load stutter.
+
+## Live Streams
+
+- You can now post chat messages directly into a live stream from NoorNote (NIP-53 kind 1311).
+
+## Media
+
+- New accounts now default to `nostr.build` as their media server (25 MiB free tier). Existing accounts keep their current setting.
