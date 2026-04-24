@@ -323,7 +323,7 @@ export class BroadcastDeleteService {
       ws.onmessage = (msg) => {
         try {
           const data = JSON.parse(msg.data);
-          // NIP-20: ["OK", <event_id>, <true|false>, <message>]
+          // NIP-01 OK message: ["OK", <event_id>, <true|false>, <message>]
           if (data[0] === 'OK' && data[1] === event.id) {
             finish(data[2] === true);
           }

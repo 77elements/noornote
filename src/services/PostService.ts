@@ -409,7 +409,7 @@ export class PostService {
   }
 
   /**
-   * Check if a kind is addressable (NIP-33: 30000-39999)
+   * Check if a kind is addressable (NIP-01 parameterized replaceable: 30000-39999)
    */
   private isAddressableKind(kind: number): boolean {
     return kind >= 30000 && kind <= 39999;

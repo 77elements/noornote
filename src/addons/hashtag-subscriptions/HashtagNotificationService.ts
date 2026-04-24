@@ -256,7 +256,7 @@ export class HashtagNotificationService {
         // so verify the hashtag actually appears in #t tags or content text
         const hashtagLower = hashtag.toLowerCase();
         allResults = allResults.filter(event => {
-          // Check #t tags (canonical hashtag location per NIP-12)
+          // Check #t tags (canonical hashtag location per NIP-01)
           const hasTag = event.tags?.some(
             t => t[0] === 't' && t[1]?.toLowerCase() === hashtagLower
           );

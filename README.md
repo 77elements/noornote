@@ -134,16 +134,19 @@ If the app crashes, check the log files:
 | [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md) | bech32 encoding (npub, nsec, note, nevent, naddr) | - |
 | [NIP-22](https://github.com/nostr-protocol/nips/blob/master/22.md) | Comments | 1111 |
 | [NIP-23](https://github.com/nostr-protocol/nips/blob/master/23.md) | Long-form content (articles + drafts) | 30023, 30024 |
+| [NIP-24](https://github.com/nostr-protocol/nips/blob/master/24.md) | Extra metadata fields and tags (banner, website, lud16, etc.) | - |
 | [NIP-25](https://github.com/nostr-protocol/nips/blob/master/25.md) | Reactions | 7 |
 | [NIP-27](https://github.com/nostr-protocol/nips/blob/master/27.md) | Text note references | - |
 | [NIP-30](https://github.com/nostr-protocol/nips/blob/master/30.md) | Custom emojis (incl. animated GIFs) | 30030 |
 | [NIP-36](https://github.com/nostr-protocol/nips/blob/master/36.md) | Content warnings (NSFW) | - |
+| [NIP-42](https://github.com/nostr-protocol/nips/blob/master/42.md) | Authentication of clients to relays | 22242 |
 | [NIP-44](https://github.com/nostr-protocol/nips/blob/master/44.md) | Encrypted payloads (modern encryption) | - |
 | [NIP-46](https://github.com/nostr-protocol/nips/blob/master/46.md) | Remote signing (bunker://) | 24133 |
 | [NIP-47](https://github.com/nostr-protocol/nips/blob/master/47.md) | Nostr Wallet Connect | 23194, 23195 |
 | [NIP-50](https://github.com/nostr-protocol/nips/blob/master/50.md) | Search | - |
 | [NIP-51](https://github.com/nostr-protocol/nips/blob/master/51.md) | Lists (bookmarks, mutes, private follows, tribes) | 10000, 30000, 30003 |
-| [NIP-53](https://github.com/nostr-protocol/nips/blob/master/53.md) | Live Activities (inline HLS player for live streams) | 30311 |
+| [NIP-53](https://github.com/nostr-protocol/nips/blob/master/53.md) | Live Activities (inline HLS player for live streams + chat input) | 1311, 30311 |
+| [NIP-55](https://github.com/nostr-protocol/nips/blob/master/55.md) | Android signer application (Amber) | - |
 | [NIP-56](https://github.com/nostr-protocol/nips/blob/master/56.md) | Reporting | 1984 |
 | [NIP-57](https://github.com/nostr-protocol/nips/blob/master/57.md) | Zaps | 9734, 9735 |
 | [NIP-65](https://github.com/nostr-protocol/nips/blob/master/65.md) | Relay list metadata | 10002 |
@@ -151,12 +154,22 @@ If the app crashes, check the log files:
 | [NIP-71](https://github.com/nostr-protocol/nips/blob/master/71.md) | Video events | 21, 22 |
 | [NIP-78](https://github.com/nostr-protocol/nips/blob/master/78.md) | Application-specific data | 30078 |
 | [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) | Polls | 1068, 1018 |
+| [NIP-92](https://github.com/nostr-protocol/nips/blob/master/92.md) | Media attachments (`imeta` tags) | - |
 | [NIP-94](https://github.com/nostr-protocol/nips/blob/master/94.md) | File metadata events in the timeline | 1063 |
-| [NIP-96](https://github.com/nostr-protocol/nips/blob/master/96.md) | HTTP file storage | 24242 |
+| [NIP-96](https://github.com/nostr-protocol/nips/blob/master/96.md) | HTTP file storage | - |
 | [NIP-98](https://github.com/nostr-protocol/nips/blob/master/98.md) | HTTP auth | 27235 |
 | [NIP-99](https://github.com/nostr-protocol/nips/blob/master/99.md) | Classified listings (marketplace) | 30402 |
 
-**Additional community kinds:** Follow Packs (kind `39089`, used by the Follow Packs add-on and [calle's Follow Packs](https://github.com/callebtc/following.space)).
+**Other event kinds** (not tied to a numbered NIP — community specs, third-party APIs, NoorNote-internal):
+
+- **Blossom upload auth** — kind `24242`, signed-event upload authorization for [Blossom](https://github.com/hzrd149/blossom)-style media servers
+- **Follow Packs** — kind `39089`, used by the Follow Packs add-on and [calle's Follow Packs](https://github.com/callebtc/following.space)
+- **Zapstore Apps** — kind `32267`, app metadata for [Zapstore](https://zapstore.dev/) listings
+- **Zapstore Release Artifacts** — kind `30063`, release artifact metadata for Zapstore apps
+- **Polls (legacy / Pollerama)** — kind `6969`, alternative poll format predating NIP-88
+- **Primal Cache `USER_PROFILE_INFO`** — kind `10000105`, consumed from Primal's caching relay for `time_joined` lookup on profile pages
+- **Mutual changes (NoorNote-internal)** — kind `99001`, synthesized for notifications when someone follows or unfollows you. Not published to relays.
+- **Bookmark list (legacy)** — kind `10003`, NIP-51 legacy bookmark list (read for migration; new bookmarks go in kind `30003`)
 
 ## Build from Source
 

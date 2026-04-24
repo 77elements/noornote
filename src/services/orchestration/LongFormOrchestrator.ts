@@ -1,6 +1,6 @@
 /**
  * LongFormOrchestrator - Long-form Content Management
- * Handles addressable/replaceable events (NIP-33, kind 30000-39999)
+ * Handles addressable/replaceable events (NIP-01 parameterized replaceable, kind 30000-39999)
  * Primary use: NIP-23 articles (kind 30023)
  *
  * @orchestrator LongFormOrchestrator
