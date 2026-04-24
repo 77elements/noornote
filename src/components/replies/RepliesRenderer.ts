@@ -14,6 +14,7 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { SystemLogger } from '../system/SystemLogger';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { Router } from '../../services/Router';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 /** Thread node for building reply tree */
@@ -81,11 +82,31 @@ export class RepliesRenderer {
       ]);
 
       // Filter out quoted reposts from the same author (own replies with quotes)
-      const quotedReposts = allQuotedReposts.filter(q => q.pubkey !== this.noteAuthor);
+      const fetchedQuotedReposts = allQuotedReposts.filter(q => q.pubkey !== this.noteAuthor);
 
-      // Filter out any replies that are also quoted reposts (to avoid duplicates)
-      const quotedRepostIds = new Set(quotedReposts.map(q => q.id));
-      const replies = allReplies.filter(r => !quotedRepostIds.has(r.id));
+      // Filter out any "replies" that are also quoted reposts (to avoid duplicates)
+      const fetchedQuoteIds = new Set(fetchedQuotedReposts.map(q => q.id));
+      const repliesAndUnmarkedQuotes = allReplies.filter(r => !fetchedQuoteIds.has(r.id));
+
+      // Reclassify kind:1 events whose addressable parent reference is bare
+      // (no reply/root marker) as quoted reposts. Bare 'a' tags on kind:1
+      // typically come from NIP-18 quote-posts where the article is referenced
+      // for indexing/tagging purposes only, not as a reply target. Real replies
+      // carry an explicit "reply" or "root" marker.
+      const isUnmarkedQuotePost = (e: NostrEvent): boolean => {
+        if (e.kind !== 1) return false;
+        const aTags = e.tags.filter(t => t[0] === 'a');
+        if (aTags.length === 0) return false;
+        if (aTags.some(t => t[3] === 'reply' || t[3] === 'root')) return false;
+        return true;
+      };
+      const replies: NostrEvent[] = [];
+      const reclassifiedQuotes: NostrEvent[] = [];
+      for (const r of repliesAndUnmarkedQuotes) {
+        if (isUnmarkedQuotePost(r)) reclassifiedQuotes.push(r);
+        else replies.push(r);
+      }
+      const quotedReposts = [...fetchedQuotedReposts, ...reclassifiedQuotes];
       // Note: Muted users already filtered in ThreadOrchestrator.fetchReplies()
 
       if (replies.length === 0 && quotedReposts.length === 0) {
@@ -316,10 +337,14 @@ export class RepliesRenderer {
 
     this.systemLogger.info('RepliesRenderer', `🎨 Rendering quoted repost: ${quoteEventId.slice(0, 8)}`);
 
-    // Remove nostr:nevent/note links from content
+    // Strip the embedded event/note/naddr references from content (the
+    // quoted target is already indicated by the "X quoted this note:" header
+    // and would render redundantly as an inline preview card otherwise).
+    // Keep nostr:npub / nostr:nprofile mentions — those are user mentions,
+    // distinct from the quoted target, and useful UX.
     const cleanedEvent = {
       ...quoteEvent,
-      content: quoteEvent.content.replace(/nostr:(nevent|note|nprofile|npub)[a-z0-9]+/gi, '').trim()
+      content: quoteEvent.content.replace(/nostr:(nevent|note|naddr)[a-z0-9]+/gi, '').trim()
     };
 
     // Create wrapper for quote
@@ -335,10 +360,16 @@ export class RepliesRenderer {
     // Convert hex ID to nevent for navigation link
     const nevent = encodeNevent(quoteEventId, [], quoteEvent.pubkey);
 
-    // Create "quoted this note:" header with clickable username
+    // Create "X quoted this note:" header — entire line is one clickable link
+    // (matches ThreadManager pattern; uses Router.navigate so SPA routing kicks in)
     const quoteHeader = document.createElement('div');
     quoteHeader.className = 'snv-quoted-repost__header';
-    quoteHeader.innerHTML = `<a href="/note/${nevent}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong></a> quoted this note:`;
+    quoteHeader.innerHTML = `<a href="/note/${nevent}" class="snv-quoted-repost__link"><strong>${escapeHtml(username)}</strong> quoted this note:</a>`;
+    const link = quoteHeader.querySelector('.snv-quoted-repost__link') as HTMLAnchorElement | null;
+    link?.addEventListener('click', (e) => {
+      e.preventDefault();
+      Router.getInstance().navigate(`/note/${nevent}`);
+    });
 
     // Use NoteUI to render the quote (disable auto-setup)
     const noteElement = NoteUI.createNoteElement(cleanedEvent, {
