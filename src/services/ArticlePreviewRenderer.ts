@@ -358,6 +358,7 @@ export class ArticlePreviewRenderer {
     card.className = 'article-preview-card';
     card.style.cursor = 'pointer';
     card.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
       e.stopPropagation();
       const cleanNaddr = naddrRef.replace(/^nostr:/, '');
       Router.getInstance().navigate(`/article/${cleanNaddr}`);
@@ -392,6 +393,7 @@ export class ArticlePreviewRenderer {
     card.className = 'article-preview-card';
     card.style.cursor = 'pointer';
     card.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
       e.stopPropagation();
       const cleanNaddr = naddrRef.replace(/^nostr:/, '');
       Router.getInstance().navigate(`/zapstore/${cleanNaddr}`);

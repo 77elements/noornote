@@ -474,6 +474,7 @@ export class QuotedNoteRenderer {
     `;
 
     card.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
       e.stopPropagation(); // Prevent parent note-card from navigating to SNV
       if ((e.target as HTMLElement).closest('.mention-link')) {
         e.preventDefault();

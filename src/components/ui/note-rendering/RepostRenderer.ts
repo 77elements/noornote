@@ -281,6 +281,7 @@ export class RepostRenderer {
       `;
 
       packContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
         e.preventDefault();
         Router.getInstance().navigate(`/follow-pack/${naddr}`);
       });
@@ -316,6 +317,7 @@ export class RepostRenderer {
       `;
 
       appContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
         e.preventDefault();
         Router.getInstance().navigate(`/zapstore/${naddr}`);
       });

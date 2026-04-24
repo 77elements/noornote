@@ -66,6 +66,7 @@ export class FollowPackRenderer {
 
     card.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
+      if (target.closest('.note-image--clickable, .note-media, video')) return;
       if (target.closest('button') || target.closest('a')) return;
       Router.getInstance().navigate(route);
     });
