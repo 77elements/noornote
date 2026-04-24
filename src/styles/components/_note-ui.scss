@@ -17,6 +17,19 @@ html.content-visibility-auto .note-card {
   contain: layout style paint;
 }
 
+// Note header spacing — applied wherever .note-header appears (note cards,
+// quote boxes, single-note view, etc.) so the gap below the header is consistent
+// regardless of the surrounding container.
+.note-header {
+  margin-bottom: calc($gap / 2);
+}
+
+// Event content baseline — readable line-height wherever .event-content
+// appears (note cards, quote boxes, etc.).
+.event-content {
+  line-height: 1.5;
+}
+
 // Base note card (used in all views)
 .note-card {
   margin: 0 0 calc($gap / 2) 0;
@@ -29,10 +42,6 @@ html.content-visibility-auto .note-card {
 
   &:hover {
     background: var(--color-2);
-  }
-
-  .note-header {
-    margin-bottom: calc($gap / 2);
   }
 
   // Reply indicator (shows parent author) - DEPRECATED, use thread-context-indicator
