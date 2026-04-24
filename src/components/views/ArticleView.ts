@@ -18,6 +18,7 @@ import { AnalyticsModal } from '../analytics/AnalyticsModal';
 import { getAddressableIdentifier } from '../../helpers/getAddressableIdentifier';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { upgradeInlineMentions, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { upgradeArticleImages } from '../../helpers/upgradeArticleImages';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
 import { ContentProcessor } from '../../services/ContentProcessor';
@@ -115,6 +116,7 @@ export class ArticleView {
     if (articleBodyForMentions) {
       upgradeInlineMentions(articleBodyForMentions);
       setupUserMentionHandlers(articleBodyForMentions);
+      upgradeArticleImages(articleBodyForMentions);
     }
 
     // Replace quote markers with actual quote boxes (same logic as OriginalNoteRenderer)

@@ -30,6 +30,7 @@ import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { upgradeInlineMentions, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { upgradeArticleImages } from '../../helpers/upgradeArticleImages';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
 import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
@@ -784,6 +785,7 @@ export class ArticleEditorView extends View {
         if (previewContent) {
           upgradeInlineMentions(previewContent);
           setupUserMentionHandlers(previewContent);
+          upgradeArticleImages(previewContent);
           this.hydratePreviewQuotes(previewContent);
         }
       }
