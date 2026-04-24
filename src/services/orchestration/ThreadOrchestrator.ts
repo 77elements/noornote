@@ -31,6 +31,7 @@ export interface ThreadContextItem {
   pubkey: string;
   createdAt: number;
   tags: string[][];
+  kind: number;
 }
 
 export interface ThreadContext {
@@ -229,12 +230,18 @@ export class ThreadOrchestrator extends Orchestrator {
         if (!parentRef || parentRef.id === noteToProcess.id) break;
         if (chain.some(item => item.eventId === parentRef.id)) break;
 
-        // Try NoteService cache first (uses aggregator relays)
-        let parentNote = await this.noteService.getNote(parentRef.id);
+        const isAddressable = parentRef.id.includes(':');
+        let parentNote: NostrEvent | null = null;
 
-        // Outbound fallback: relay hints + child author's outbound relays
-        if (!parentNote) {
-          parentNote = await this.fetchNoteWithOutbound(parentRef.id, parentRef.relayHint, noteToProcess.pubkey);
+        if (isAddressable) {
+          // Addressable coordinate "kind:pubkey:dtag" — fetch via filter
+          parentNote = await this.fetchAddressableParent(parentRef.id, parentRef.relayHint, noteToProcess.pubkey);
+        } else {
+          // Hex event id — try NoteService cache first, then outbound fallback
+          parentNote = await this.noteService.getNote(parentRef.id);
+          if (!parentNote) {
+            parentNote = await this.fetchNoteWithOutbound(parentRef.id, parentRef.relayHint, noteToProcess.pubkey);
+          }
         }
 
         if (!parentNote) break;
@@ -244,7 +251,8 @@ export class ThreadOrchestrator extends Orchestrator {
           content: parentNote.content,
           pubkey: parentNote.pubkey,
           createdAt: parentNote.created_at,
-          tags: parentNote.tags
+          tags: parentNote.tags,
+          kind: parentNote.kind ?? 1
         });
 
         noteToProcess = parentNote;
@@ -317,19 +325,92 @@ export class ThreadOrchestrator extends Orchestrator {
   }
 
   /**
+   * Fetch an addressable event by its coordinate "kind:pubkey:dtag".
+   * Used by NIP-22 (kind:1111) comments whose parent is an article (kind:30023)
+   * or any other addressable event referenced via 'a'/'A' tag.
+   */
+  private async fetchAddressableParent(
+    coordinate: string,
+    relayHint: string | null,
+    knownAuthorPubkey: string
+  ): Promise<NostrEvent | null> {
+    const parts = coordinate.split(':');
+    const kindStr = parts[0];
+    const pubkey = parts[1];
+    const dtag = parts.slice(2).join(':'); // dtag may itself contain colons
+    if (!kindStr || !pubkey) return null;
+
+    const kind = parseInt(kindStr, 10);
+    if (Number.isNaN(kind)) return null;
+
+    const filter: NDKFilter = { kinds: [kind], authors: [pubkey], limit: 1 };
+    if (dtag) (filter as any)['#d'] = [dtag];
+
+    if (relayHint) {
+      try {
+        const events = await this.transport.fetch([relayHint], [filter], 5000, true, 'ThreadOrch');
+        if (events[0]) {
+          diagLog('relays', 'ThreadOrchestrator: relay hint found addressable parent', {
+            coord: coordinate.slice(0, 30),
+            relay: relayHint
+          });
+          this.noteService.registerNotes([events[0]]);
+          return events[0];
+        }
+      } catch {
+        // Hint relay failed, continue
+      }
+    }
+
+    try {
+      const outboundRelays = await this.relayDiscovery.getCombinedRelays([pubkey, knownAuthorPubkey], true);
+      const events = await this.transport.fetch(outboundRelays, [filter], 8000, true, 'ThreadOrch');
+      if (events[0]) {
+        diagLog('relays', 'ThreadOrchestrator: outbound fallback found addressable parent', {
+          coord: coordinate.slice(0, 30),
+          authorPubkey: pubkey.slice(0, 8)
+        });
+        this.noteService.registerNotes([events[0]]);
+        return events[0];
+      }
+    } catch {
+      // Outbound failed
+    }
+
+    return null;
+  }
+
+  /**
    * Extract parent event ID and optional relay hint from e-tags
    */
   private extractParentRef(event: NostrEvent): { id: string; relayHint: string | null } | null {
-    // NIP-22: kind:1111 uses lowercase 'e' tag for parent reference
+    // NIP-22: kind:1111 uses lowercase 'e' for parent on regular notes,
+    // or lowercase 'a' (fallback uppercase 'A' for top-level) on addressable parents.
     if (event.kind === 1111) {
       const parentETag = event.tags.find(t => t[0] === 'e');
-      if (!parentETag?.[1]) return null;
-      return { id: parentETag[1], relayHint: parentETag[2] || null };
+      if (parentETag?.[1]) return { id: parentETag[1], relayHint: parentETag[2] || null };
+
+      const parentATag = event.tags.find(t => t[0] === 'a')
+                       ?? event.tags.find(t => t[0] === 'A');
+      if (parentATag?.[1]) return { id: parentATag[1], relayHint: parentATag[2] || null };
+
+      return null;
     }
 
     // NIP-10: kind:1 uses e-tags with markers
     const eTags = event.tags.filter(tag => tag[0] === 'e');
-    if (eTags.length === 0) return null;
+    if (eTags.length === 0) {
+      // Legacy NIP-10 style on addressable parents (Yakihonne, Highlighter):
+      // kind:1 reply with only an 'a' tag (often with "root" marker).
+      if (event.kind === 1) {
+        const parentATag = event.tags.find(t => t[0] === 'a' && t[3] === 'reply')
+                        ?? event.tags.find(t => t[0] === 'a' && t[3] === 'root')
+                        ?? event.tags.find(t => t[0] === 'a')
+                        ?? event.tags.find(t => t[0] === 'A');
+        if (parentATag?.[1]) return { id: parentATag[1], relayHint: parentATag[2] || null };
+      }
+      return null;
+    }
 
     // Prefer 'reply' marker
     const replyTag = eTags.find(tag => tag[3] === 'reply');

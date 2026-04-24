@@ -40,30 +40,48 @@ export class NoteStructureBuilder {
    */
   private static extractReplyInfo(event: NostrEvent): { parentEventId: string; relayHint: string | null } | null {
     const eTags = event.tags.filter(tag => tag[0] === 'e');
-    if (eTags.length === 0) return null;
 
-    // NIP-10: Look for explicit "reply" marker
-    const replyTag = eTags.find(tag => tag[3] === 'reply');
-    let selectedTag: string[] | undefined;
-    if (replyTag) {
-      selectedTag = replyTag;
-    } else if (eTags.length === 1) {
-      // NIP-10 deprecated positional: if only one e-tag, it's the parent
-      selectedTag = eTags[0];
-    } else {
-      // NIP-10 deprecated positional: if multiple, last is replied-to, first is root
-      selectedTag = eTags[eTags.length - 1];
+    if (eTags.length > 0) {
+      // NIP-10: Look for explicit "reply" marker
+      const replyTag = eTags.find(tag => tag[3] === 'reply');
+      let selectedTag: string[] | undefined;
+      if (replyTag) {
+        selectedTag = replyTag;
+      } else if (eTags.length === 1) {
+        // NIP-10 deprecated positional: if only one e-tag, it's the parent
+        selectedTag = eTags[0];
+      } else {
+        // NIP-10 deprecated positional: if multiple, last is replied-to, first is root
+        selectedTag = eTags[eTags.length - 1];
+      }
+
+      const parentEventId = selectedTag?.[1];
+      if (selectedTag && parentEventId) {
+        return {
+          parentEventId,
+          relayHint: selectedTag[2] || null
+        };
+      }
     }
 
-    if (!selectedTag) return null;
+    // Replies on addressable events (articles etc.) reference the parent via
+    // 'a' tag, with no 'e' tag at all. Two conventions:
+    //   - kind:1111 (NIP-22 comments) — formal spec
+    //   - kind:1   (legacy NIP-10 style used by Yakihonne, Highlighter, etc.)
+    if (event.kind === 1 || event.kind === 1111) {
+      const parentATag = event.tags.find(tag => tag[0] === 'a' && tag[3] === 'reply')
+                      ?? event.tags.find(tag => tag[0] === 'a' && tag[3] === 'root')
+                      ?? event.tags.find(tag => tag[0] === 'a')
+                      ?? event.tags.find(tag => tag[0] === 'A');
+      if (parentATag?.[1]) {
+        return {
+          parentEventId: parentATag[1], // addressable coordinate "kind:pubkey:dtag"
+          relayHint: parentATag[2] || null
+        };
+      }
+    }
 
-    const parentEventId = selectedTag[1];
-    if (!parentEventId) return null;
-
-    return {
-      parentEventId,
-      relayHint: selectedTag[2] || null
-    };
+    return null;
   }
 
   /**

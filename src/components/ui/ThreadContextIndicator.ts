@@ -84,7 +84,9 @@ export class ThreadContextIndicator {
       const rootItem = await this.createThreadItem(
         context.root.eventId,
         context.root.content,
-        context.root.pubkey
+        context.root.pubkey,
+        context.root.kind,
+        context.root.tags
       );
       this.element.appendChild(rootItem);
     }
@@ -102,19 +104,26 @@ export class ThreadContextIndicator {
       const parentItem = await this.createThreadItem(
         context.directParent.eventId,
         context.directParent.content,
-        context.directParent.pubkey
+        context.directParent.pubkey,
+        context.directParent.kind,
+        context.directParent.tags
       );
       this.element.appendChild(parentItem);
     }
   }
 
   /**
-   * Create a single thread context item (truncated note with avatar + username)
+   * Create a single thread context item (truncated note with avatar + username).
+   * For addressable parents (kind 30023 articles, kind 30402 listings, etc.)
+   * the preview shows the title from tags instead of the raw body, and the
+   * click navigates to the kind-specific view (article / listing / …).
    */
   private async createThreadItem(
     eventId: string,
     content: string,
-    pubkey: string
+    pubkey: string,
+    kind: number = 1,
+    tags: string[][] = []
   ): Promise<HTMLElement> {
     const item = document.createElement('div');
     item.className = 'thread-context-item';
@@ -125,44 +134,71 @@ export class ThreadContextIndicator {
     const displayName = profile.display_name || profile.name || 'Anonymous';
     const avatarUrl = profile.picture || '';
 
-    // Extract mentioned pubkeys from content and load their profiles
-    const mentionedProfiles = new Map<string, any>();
-    const npubMatches = content.match(/nostr:npub1[023456789acdefghjklmnpqrstuvwxyz]{58}/gi);
-    if (npubMatches) {
-      await Promise.all(npubMatches.map(async (match) => {
-        try {
-          const npub = match.replace('nostr:', '');
-          const { decodeNip19 } = await import('../../services/NostrToolsAdapter');
-          const decoded = decodeNip19(npub);
-          if (decoded.type === 'npub') {
-            const mentionProfile = await this.userProfileService.getUserProfile(decoded.data);
-            mentionedProfiles.set(decoded.data, mentionProfile);
-          }
-        } catch (_err) {}
-      }));
+    // Addressable parents (kind 30000+) get a kind-aware label from tags
+    // instead of a markdown-body snippet, plus a kind-specific navigation route.
+    const isAddressable = kind >= 30000 && kind < 40000;
+    let previewHtml: string;
+    let onClick: () => void;
+
+    if (isAddressable) {
+      const titleTag = tags.find(t => t[0] === 'title')?.[1]
+                    || tags.find(t => t[0] === 'name')?.[1]
+                    || '(untitled)';
+      const label = kind === 30023 ? 'Article'
+                  : kind === 30402 ? 'Listing'
+                  : kind === 32267 ? 'App'
+                  : kind === 39089 ? 'Follow Pack'
+                  : `Kind ${kind}`;
+      previewHtml = `<strong>${escapeHtmlAttr(label)}:</strong> ${escapeHtmlAttr(titleTag)}`;
+
+      const dtag = tags.find(t => t[0] === 'd')?.[1] || '';
+      onClick = async () => {
+        const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
+        const naddr = encodeNaddr({ kind, pubkey, identifier: dtag, relays: [] });
+        const route = kind === 30023 ? `/article/${naddr}`
+                    : kind === 30402 ? `/listing/${naddr}`
+                    : kind === 32267 ? `/zapstore/${naddr}`
+                    : kind === 39089 ? `/follow-pack/${naddr}`
+                    : `/note/${encodeNevent(eventId)}`;
+        this.router.navigate(route);
+      };
+    } else {
+      // Regular note: resolve mentions, truncate body
+      const mentionedProfiles = new Map<string, any>();
+      const npubMatches = content.match(/nostr:npub1[023456789acdefghjklmnpqrstuvwxyz]{58}/gi);
+      if (npubMatches) {
+        await Promise.all(npubMatches.map(async (match) => {
+          try {
+            const npub = match.replace('nostr:', '');
+            const { decodeNip19 } = await import('../../services/NostrToolsAdapter');
+            const decoded = decodeNip19(npub);
+            if (decoded.type === 'npub') {
+              const mentionProfile = await this.userProfileService.getUserProfile(decoded.data);
+              mentionedProfiles.set(decoded.data, mentionProfile);
+            }
+          } catch (_err) {}
+        }));
+      }
+
+      const profileResolver = (hexPubkey: string) => mentionedProfiles.get(hexPubkey) || null;
+      const contentWithMentions = npubToUsername(content, 'html-multi', profileResolver);
+      previewHtml = truncateNoteContent(contentWithMentions, 100);
+
+      onClick = () => {
+        const nevent = encodeNevent(eventId);
+        this.router.navigate(`/note/${nevent}`);
+      };
     }
 
-    // Resolve mentions BEFORE truncating (so regex matches full npubs)
-    const profileResolver = (hexPubkey: string) => {
-      return mentionedProfiles.get(hexPubkey) || null;
-    };
-    const contentWithMentions = npubToUsername(content, 'html-multi', profileResolver);
-
-    // Truncate AFTER mention resolution
-    const truncated = truncateNoteContent(contentWithMentions, 100);
-
-    // Build HTML
     item.innerHTML = `
       <img class="profile-pic profile-pic--mini" src="${escapeHtmlAttr(avatarUrl)}" alt="${escapeHtmlAttr(displayName)}" />
-      <span class="thread-context-content">${truncated}</span>
+      <span class="thread-context-content">${previewHtml}</span>
     `;
 
-    // Make clickable - navigate to note
     item.style.cursor = 'pointer';
     item.addEventListener('click', (e) => {
       e.stopPropagation();
-      const nevent = encodeNevent(eventId);
-      this.router.navigate(`/note/${nevent}`);
+      onClick();
     });
 
     return item;
