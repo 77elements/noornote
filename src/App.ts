@@ -86,6 +86,13 @@ export class App {
       m.initMediaPlaceholderHandler();
     });
 
+    // Global delegated click for .note-image--clickable (lightbox) +
+    // global MutationObserver for video.note-video (download button + auto-pause).
+    // Single source of truth — works for ANY render path / nesting depth.
+    // See ImageClickHandler.ts / VideoPlayerService.ts headers + /build-validate guard.
+    import('./services/ImageClickHandler').then(m => m.getImageClickHandler().init());
+    import('./services/VideoPlayerService').then(m => m.getVideoPlayerService().init());
+
     const isOnline = await ConnectivityService.getInstance().checkConnectivity();
     if (!isOnline) {
       OfflineOverlay.getInstance().show();

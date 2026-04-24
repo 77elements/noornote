@@ -1,12 +1,15 @@
 /**
- * ImageClickHandler Service
- * Manages click events on note images and opens ImageViewer
+ * ImageClickHandler — Document-delegated image click handler
  *
- * Responsibilities:
- * - Attach click handlers to all .note-image elements
- * - Respect NSFW settings (no fullscreen for blocked NSFW images)
- * - Extract image URLs from parent container
- * - Open ImageViewer with correct image index
+ * INVIOLABLE RULE (enforced by /build-validate):
+ *   A click on `.note-image--clickable` ALWAYS opens the lightbox, regardless
+ *   of nesting depth or render path (top-level note, quote box, repost,
+ *   article preview, etc.). One delegated listener on document.body is the
+ *   single source of truth — there are NO per-container init calls.
+ *
+ *   Any other click handler in note/quote/preview renderers MUST early-return
+ *   when `target.closest('.note-image--clickable, .note-media, video')` is
+ *   truthy, otherwise it would pre-empt this handler.
  */
 
 import { getImageViewer } from '../components/ui/ImageViewer';
@@ -14,9 +17,10 @@ import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 export class ImageClickHandler {
   private static instance: ImageClickHandler | null = null;
+  private initialized = false;
 
   private constructor() {
-    this.handleImageClick = this.handleImageClick.bind(this);
+    this.handleDelegatedClick = this.handleDelegatedClick.bind(this);
   }
 
   public static getInstance(): ImageClickHandler {
@@ -27,46 +31,34 @@ export class ImageClickHandler {
   }
 
   /**
-   * Initialize click handlers for all images in a container
+   * Register the single delegated click listener on document.body.
+   * Idempotent — call once at app startup (App.ts).
    */
-  public initializeForContainer(container: HTMLElement): void {
-    const images = container.querySelectorAll('.note-image--clickable');
-    images.forEach(img => {
-      img.addEventListener('click', this.handleImageClick);
-    });
+  public init(): void {
+    if (this.initialized) return;
+    this.initialized = true;
+    document.body.addEventListener('click', this.handleDelegatedClick);
   }
 
-  /**
-   * Remove click handlers from container (cleanup)
-   */
-  public cleanupForContainer(container: HTMLElement): void {
-    const images = container.querySelectorAll('.note-image--clickable');
-    images.forEach(img => {
-      img.removeEventListener('click', this.handleImageClick);
-    });
-  }
+  private handleDelegatedClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
 
-  /**
-   * Handle image click event
-   */
-  private handleImageClick(event: Event): void {
-    const img = event.currentTarget as HTMLElement;
+    const img = target.closest('.note-image--clickable') as HTMLElement | null;
+    if (!img) return;
+
     const mediaContainer = img.closest('.note-media');
-
     if (!mediaContainer) return;
 
-    // Check if this is NSFW content
-    const isNSFW = mediaContainer.classList.contains('nsfw-media');
-
-    if (isNSFW) {
-      // Check if sensitive media display is enabled
-      const sensitiveSettings = PerAccountLocalStorage.getInstance().get<{ displayNSFW: boolean }>(StorageKeys.SENSITIVE_MEDIA, { displayNSFW: false });
-      if (!sensitiveSettings.displayNSFW) {
-        return;
-      }
+    // NSFW gate
+    if (mediaContainer.classList.contains('nsfw-media')) {
+      const sensitiveSettings = PerAccountLocalStorage.getInstance().get<{ displayNSFW: boolean }>(
+        StorageKeys.SENSITIVE_MEDIA,
+        { displayNSFW: false }
+      );
+      if (!sensitiveSettings.displayNSFW) return;
     }
 
-    // Extract image URLs from data attribute
     const imageUrlsJson = mediaContainer.getAttribute('data-image-urls');
     if (!imageUrlsJson) return;
 
@@ -74,19 +66,19 @@ export class ImageClickHandler {
     try {
       imageUrls = JSON.parse(decodeURIComponent(imageUrlsJson));
     } catch (error) {
-      console.error('Failed to parse image URLs:', error);
+      console.debug('ImageClickHandler: failed to parse data-image-urls', error);
       return;
     }
 
-    // Get clicked image index
     const imageIndex = parseInt(img.getAttribute('data-image-index') || '0', 10);
-
-    // Extract source event data (for Share feature)
     const eventId = mediaContainer.getAttribute('data-event-id');
     const authorPubkey = mediaContainer.getAttribute('data-author-pubkey');
     const isNSFWAttr = mediaContainer.getAttribute('data-is-nsfw');
 
-    // Open image viewer
+    // Stop bubbling so parent click handlers (e.g. quote-box SNV navigation)
+    // never fire for image clicks. The image-click rule has absolute priority.
+    event.stopPropagation();
+
     const viewer = getImageViewer();
     const options: Parameters<typeof viewer.open>[0] = {
       images: imageUrls,
@@ -103,7 +95,6 @@ export class ImageClickHandler {
   }
 }
 
-// Export singleton getter
 export function getImageClickHandler(): ImageClickHandler {
   return ImageClickHandler.getInstance();
 }

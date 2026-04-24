@@ -14,8 +14,6 @@ import { AppState } from '../../../services/AppState';
 import { replaceMediaPlaceholders } from '../../../helpers/renderMediaContent';
 import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
 import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
-import { getImageClickHandler } from '../../../services/ImageClickHandler';
-import { getVideoPlayerService } from '../../../services/VideoPlayerService';
 import { UserHoverCard } from '../UserHoverCard';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
@@ -163,13 +161,10 @@ export class NoteStructureBuilder {
     // Mount note header as first child
     noteDiv.insertBefore(noteHeader.getElement(), noteDiv.firstChild);
 
-    // Initialize image click handlers for full-screen viewer
-    const imageClickHandler = getImageClickHandler();
-    imageClickHandler.initializeForContainer(noteDiv);
-
-    // Initialize video players (native HTML5 + download button)
-    const videoPlayerService = getVideoPlayerService();
-    videoPlayerService.initializeForContainer(noteDiv);
+    // Image click + video player are wired globally at app startup
+    // (ImageClickHandler.init() / VideoPlayerService.init() in App.ts) so they
+    // work for ANY .note-image--clickable / video.note-video regardless of
+    // render path or nesting depth — no per-container init needed.
 
     // Initialize user hover card for all mention links
     const userHoverCard = UserHoverCard.getInstance();
