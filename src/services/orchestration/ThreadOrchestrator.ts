@@ -401,12 +401,13 @@ export class ThreadOrchestrator extends Orchestrator {
     const eTags = event.tags.filter(tag => tag[0] === 'e');
     if (eTags.length === 0) {
       // Legacy NIP-10 style on addressable parents (Yakihonne, Highlighter):
-      // kind:1 reply with only an 'a' tag (often with "root" marker).
+      // kind:1 reply with only an 'a' tag. Require an explicit "reply" or
+      // "root" marker to distinguish real replies from NIP-18 quote-posts
+      // (which use bare 'a' tags for tagging purposes only and render the
+      // parent inline in the body — indicator would duplicate).
       if (event.kind === 1) {
         const parentATag = event.tags.find(t => t[0] === 'a' && t[3] === 'reply')
-                        ?? event.tags.find(t => t[0] === 'a' && t[3] === 'root')
-                        ?? event.tags.find(t => t[0] === 'a')
-                        ?? event.tags.find(t => t[0] === 'A');
+                        ?? event.tags.find(t => t[0] === 'a' && t[3] === 'root');
         if (parentATag?.[1]) return { id: parentATag[1], relayHint: parentATag[2] || null };
       }
       return null;

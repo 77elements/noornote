@@ -66,16 +66,28 @@ export class NoteStructureBuilder {
 
     // Replies on addressable events (articles etc.) reference the parent via
     // 'a' tag, with no 'e' tag at all. Two conventions:
-    //   - kind:1111 (NIP-22 comments) — formal spec
+    //   - kind:1111 (NIP-22 comments) — formal spec, never uses markers; 'A'
+    //     is root, 'a' is direct parent. Both are valid parent references.
     //   - kind:1   (legacy NIP-10 style used by Yakihonne, Highlighter, etc.)
-    if (event.kind === 1 || event.kind === 1111) {
-      const parentATag = event.tags.find(tag => tag[0] === 'a' && tag[3] === 'reply')
-                      ?? event.tags.find(tag => tag[0] === 'a' && tag[3] === 'root')
-                      ?? event.tags.find(tag => tag[0] === 'a')
+    //     Only treat as a reply if the 'a' tag has an explicit "reply" or
+    //     "root" marker. A bare 'a' tag on kind:1 most commonly comes from
+    //     quote-posts (NIP-18 quote-with-tagging) which already render the
+    //     parent inline in the body — adding the indicator would duplicate.
+    if (event.kind === 1111) {
+      const parentATag = event.tags.find(tag => tag[0] === 'a')
                       ?? event.tags.find(tag => tag[0] === 'A');
       if (parentATag?.[1]) {
         return {
-          parentEventId: parentATag[1], // addressable coordinate "kind:pubkey:dtag"
+          parentEventId: parentATag[1],
+          relayHint: parentATag[2] || null
+        };
+      }
+    } else if (event.kind === 1) {
+      const parentATag = event.tags.find(tag => tag[0] === 'a' && tag[3] === 'reply')
+                      ?? event.tags.find(tag => tag[0] === 'a' && tag[3] === 'root');
+      if (parentATag?.[1]) {
+        return {
+          parentEventId: parentATag[1],
           relayHint: parentATag[2] || null
         };
       }
