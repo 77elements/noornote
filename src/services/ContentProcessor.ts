@@ -7,6 +7,7 @@
 import { extractMedia } from '../helpers/extractMedia';
 import { extractBolt11, type Bolt11Match } from '../helpers/extractBolt11';
 import { unwrapStreamLinks } from '../helpers/unwrapStreamLinks';
+import { unwrapGitLinks } from '../helpers/unwrapGitLinks';
 import { extractLinks } from '../helpers/extractLinks';
 import { extractHashtags } from '../helpers/extractHashtags';
 import { extractQuotedReferences } from '../helpers/extractQuotedReferences';
@@ -81,9 +82,12 @@ export class ContentProcessor {
    * SYNCHRONOUS - no blocking calls
    */
   processContentWithTags(text: string, tags: string[][]): ProcessedContent {
-    // Unwrap stream-provider URLs (zap.stream/..., noomad.stream/..., etc.)
-    // to raw nostr:naddr... so they're picked up by extractQuotedReferences below.
+    // Unwrap known-host URLs to raw nostr:... so they're picked up by
+    // extractQuotedReferences below. Streams (zap.stream/...) are
+    // provider-agnostic; git (gitworkshop.dev) is host-whitelisted to avoid
+    // false positives on arbitrary URLs that happen to end in NIP-19.
     text = unwrapStreamLinks(text);
+    text = unwrapGitLinks(text);
 
     const media = extractMedia(text);
     const links = extractLinks(text);
@@ -143,6 +147,11 @@ export class ContentProcessor {
     html = npubToUsername(html, 'html-multi', profileResolver);
     html = formatHashtags(html, hashtags);
     html = formatQuotedReferences(html, quotedReferences);
+    // Quote markers are replaced by block-level cards (quote box / article
+    // preview / git event card). They don't need <br>s wrapped around them —
+    // strip adjacent newlines so convertLineBreaks below doesn't add extra
+    // vertical space (matches Jumble/Amethyst spacing around inline quotes).
+    html = html.replace(/\n*(<span class="quote-marker"[^>]*><\/span>)\n*/g, '$1');
     html = formatCustomEmojis(html, customEmojis);
     html = convertLineBreaks(html);
 

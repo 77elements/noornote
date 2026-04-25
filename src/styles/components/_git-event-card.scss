@@ -4,6 +4,10 @@
 // molecules/_buttons.scss. Only the open button needs explicit
 // flex-start alignment so it doesn't stretch in the column body.
 
-.note-card--git .git-event-card__open {
-  align-self: flex-start;
+.note-card--git {
+  margin: 1rem 0;
+
+  .git-event-card__open {
+    align-self: flex-start;
+  }
 }

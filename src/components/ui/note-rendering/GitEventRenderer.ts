@@ -1,7 +1,7 @@
 /**
  * GitEventRenderer - Renders NIP-34 Git events as nn-cards in TV/PV/SNV.
  * Kinds: 1617 (Patch), 1618 (PR), 1621 (Issue), 1630-1633 (Status), 30617 (Repo Announcement)
- * Click opens gitworkshop.dev/<nevent|naddr> externally.
+ * Card click → SNV (consistent with all other note kinds). Explicit button → gitworkshop.dev.
  */
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
@@ -9,6 +9,7 @@ import { NoteHeader } from '../NoteHeader';
 import { InteractionStatusLine } from '../InteractionStatusLine';
 import { encodeNevent, encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../../helpers/escapeHtml';
+import { Router } from '../../../services/Router';
 
 interface GitEventMeta {
   label: string;
@@ -22,21 +23,31 @@ export class GitEventRenderer {
     const event = note.rawEvent;
     const meta = GitEventRenderer.extractMeta(event);
     const externalUrl = GitEventRenderer.buildGitworkshopUrl(event);
+    const snvRoute = GitEventRenderer.buildSnvRoute(event, note.id);
+    const isEmbedded = (opts.depth ?? 0) > 0;
 
     const element = document.createElement('div');
-    element.className = 'note-card note-card--git';
+    // Top-level cards inherit .note-card styling (margin-bottom, padding, hover).
+    // Embedded cards drop .note-card so they don't add extra vertical space when
+    // they replace an inline quote-marker between two text segments.
+    element.className = isEmbedded ? 'note-card--git' : 'note-card note-card--git';
     element.dataset.eventId = note.id;
 
-    const noteHeader = new NoteHeader({
-      pubkey: event.pubkey,
-      eventId: note.id,
-      timestamp: note.timestamp,
-      rawEvent: event,
-      showVerification: true,
-      showTimestamp: true,
-      showMenu: true
-    });
-    element.appendChild(noteHeader.getElement());
+    // Top-level renders carry a NoteHeader so the user sees author + timestamp.
+    // Embedded renders (quoted/reposted) skip it — the outer note already shows
+    // who's posting, and a stacked second header reads as a confusing nested quote.
+    if (!isEmbedded) {
+      const noteHeader = new NoteHeader({
+        pubkey: event.pubkey,
+        eventId: note.id,
+        timestamp: note.timestamp,
+        rawEvent: event,
+        showVerification: true,
+        showTimestamp: true,
+        showMenu: true
+      });
+      element.appendChild(noteHeader.getElement());
+    }
 
     const card = document.createElement('div');
     card.className = 'nn-card';
@@ -52,20 +63,16 @@ export class GitEventRenderer {
       </div>
     `;
 
-    const openExternal = () => {
-      if (externalUrl) window.open(externalUrl, '_blank', 'noopener,noreferrer');
-    };
-
     card.querySelector('.git-event-card__open')?.addEventListener('click', (e) => {
       e.stopPropagation();
-      openExternal();
+      if (externalUrl) window.open(externalUrl, '_blank', 'noopener,noreferrer');
     });
 
     card.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       if (target.closest('.note-image--clickable, .note-media, video')) return;
       if (target.closest('button') || target.closest('a')) return;
-      openExternal();
+      if (snvRoute) Router.getInstance().navigate(snvRoute);
     });
 
     element.appendChild(card);
@@ -73,7 +80,6 @@ export class GitEventRenderer {
     // Skip ISL when embedded (quoted/reposted). Matches convention used by
     // createQuoteBox, ArticlePreviewRenderer, and the listing/follow-pack
     // repost branches — embedded previews don't carry their own interaction line.
-    const isEmbedded = (opts.depth ?? 0) > 0;
     const noteId = GitEventRenderer.resolveIslId(event, note.id);
     if (!isEmbedded && noteId) {
       const isl = new InteractionStatusLine({
@@ -87,6 +93,20 @@ export class GitEventRenderer {
     }
 
     return element;
+  }
+
+  private static buildSnvRoute(event: { id?: string; kind?: number; pubkey: string; tags: string[][] }, fallbackId: string): string {
+    if (event.kind === 30617) {
+      const dTag = event.tags.find(t => t[0] === 'd');
+      if (dTag?.[1] && event.pubkey) {
+        const naddr = encodeNaddr({ kind: 30617, pubkey: event.pubkey, identifier: dTag[1], relays: [] });
+        return `/note/${naddr}`;
+      }
+    }
+    const id = event.id || fallbackId;
+    if (!id) return '';
+    const nevent = encodeNevent(id, [], event.pubkey);
+    return `/note/${nevent}`;
   }
 
   private static extractMeta(event: { kind?: number; content?: string; tags: string[][] }): GitEventMeta {
