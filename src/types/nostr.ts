@@ -188,6 +188,13 @@ export const RENDERABLE_KINDS: number[] = [
 ];
 
 /**
+ * NIP-34 (Git on Nostr) event kinds — rendered as lightweight cards
+ * linking to gitworkshop.dev. Patch, PR, PR-Update, Issue, Status (Open/
+ * Applied/Closed/Draft), Repository Announcement.
+ */
+export const GIT_EVENT_KINDS: number[] = [1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 30617];
+
+/**
  * Error types for better error handling
  */
 export class NostrError extends Error {

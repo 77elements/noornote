@@ -325,6 +325,7 @@ export class NotificationItem {
       if (kind === 30023) return 'article';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
+      if (kind === 30617) return 'git repository';
       if (!isNaN(kind)) return 'event';
     }
     const kTag = this.options.event.tags.find((t: string[]) => t[0] === 'k');
@@ -337,6 +338,11 @@ export class NotificationItem {
       if (kind === 30023) return 'article';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
+      if (kind === 1617) return 'git patch';
+      if (kind === 1618 || kind === 1619) return 'pull request';
+      if (kind === 1621) return 'git issue';
+      if (kind === 1630 || kind === 1631 || kind === 1632 || kind === 1633) return 'git status update';
+      if (kind === 30617) return 'git repository';
       if (!isNaN(kind)) return 'event';
     }
     return 'note';
@@ -680,6 +686,27 @@ export class NotificationItem {
           const question = (originalEvent.content || '').trim();
           const snippet = question.length > 80 ? question.slice(0, 80) + '...' : question;
           setPreview(snippet ? `Poll: ${snippet}` : 'Poll');
+          return;
+        }
+        if (originalEvent.kind === 30617) {
+          const name = originalEvent.tags.find((t: string[]) => t[0] === 'name')?.[1] || 'Repo';
+          setPreview(`Git Repository: ${name}`);
+          return;
+        }
+        if (originalEvent.kind === 1617 || originalEvent.kind === 1618 || originalEvent.kind === 1619 || originalEvent.kind === 1621) {
+          const subject = originalEvent.tags.find((t: string[]) => t[0] === 'subject')?.[1];
+          const label = originalEvent.kind === 1617 ? 'Git Patch'
+                      : originalEvent.kind === 1621 ? 'Git Issue'
+                      : 'Pull Request';
+          setPreview(subject ? `${label}: ${subject}` : label);
+          return;
+        }
+        if (originalEvent.kind === 1630 || originalEvent.kind === 1631 || originalEvent.kind === 1632 || originalEvent.kind === 1633) {
+          const status = originalEvent.kind === 1630 ? 'Open'
+                       : originalEvent.kind === 1631 ? 'Applied/Merged'
+                       : originalEvent.kind === 1632 ? 'Closed'
+                       : 'Draft';
+          setPreview(`Git Status: ${status}`);
           return;
         }
         if (originalEvent.content) {

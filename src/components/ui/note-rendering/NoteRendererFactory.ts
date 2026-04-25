@@ -12,6 +12,7 @@ import { QuoteRenderer } from './QuoteRenderer';
 import { ZapReceiptRenderer } from './ZapReceiptRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { FollowPackRenderer } from './FollowPackRenderer';
+import { GitEventRenderer } from './GitEventRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -30,6 +31,8 @@ export class NoteRendererFactory {
         return UnsupportedKindRenderer.render(note, options);
       case 'follow-pack':
         return FollowPackRenderer.render(note, options);
+      case 'git-event':
+        return GitEventRenderer.render(note, options);
       default:
         return OriginalNoteRenderer.render(note, options);
     }

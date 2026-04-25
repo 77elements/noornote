@@ -138,6 +138,7 @@ If the app crashes, check the log files:
 | [NIP-25](https://github.com/nostr-protocol/nips/blob/master/25.md) | Reactions | 7 |
 | [NIP-27](https://github.com/nostr-protocol/nips/blob/master/27.md) | Text note references | - |
 | [NIP-30](https://github.com/nostr-protocol/nips/blob/master/30.md) | Custom emojis (incl. animated GIFs) | 30030 |
+| [NIP-34](https://github.com/nostr-protocol/nips/blob/master/34.md) | Git on Nostr (lightweight cards linking to gitworkshop.dev) | 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 30617 |
 | [NIP-36](https://github.com/nostr-protocol/nips/blob/master/36.md) | Content warnings (NSFW) | - |
 | [NIP-42](https://github.com/nostr-protocol/nips/blob/master/42.md) | Authentication of clients to relays | 22242 |
 | [NIP-44](https://github.com/nostr-protocol/nips/blob/master/44.md) | Encrypted payloads (modern encryption) | - |

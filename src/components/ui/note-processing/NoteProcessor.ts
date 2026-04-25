@@ -15,6 +15,7 @@ import { VideoNoteProcessor } from './VideoNoteProcessor';
 import { PictureNoteProcessor } from './PictureNoteProcessor';
 import { FileMetadataProcessor } from './FileMetadataProcessor';
 import { FollowPackProcessor } from './FollowPackProcessor';
+import { GitEventProcessor } from './GitEventProcessor';
 
 export class NoteProcessor {
   /**
@@ -45,6 +46,16 @@ export class NoteProcessor {
           return ArticleProcessor.process(event);
         case 39089:
           return FollowPackProcessor.process(event);
+        case 1617:
+        case 1618:
+        case 1619:
+        case 1621:
+        case 1630:
+        case 1631:
+        case 1632:
+        case 1633:
+        case 30617:
+          return GitEventProcessor.process(event);
         default:
           return NoteProcessor.createUnsupportedNote(event, eventId);
       }

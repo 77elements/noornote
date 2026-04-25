@@ -14,7 +14,7 @@ import { ContentProcessor, type QuotedReference } from './ContentProcessor';
 import { replaceMediaPlaceholders } from '../helpers/renderMediaContent';
 import { replaceBolt11Placeholders } from '../helpers/renderBolt11';
 import { Router } from './Router';
-import { RENDERABLE_KINDS } from '../types/nostr';
+import { RENDERABLE_KINDS, GIT_EVENT_KINDS } from '../types/nostr';
 import { PollOrchestrator } from './orchestration/PollOrchestrator';
 import { MuteOrchestrator } from '../lists/mutes';
 import { AuthService } from './AuthService';
@@ -97,6 +97,16 @@ export class QuotedNoteRenderer {
             skeleton.replaceWith(mutedPlaceholder);
             return;
           }
+        }
+
+        // Route NIP-34 git events (must precede addressable check so 30617 doesn't fall into article preview)
+        if (result.event.kind !== undefined && GIT_EVENT_KINDS.includes(result.event.kind)) {
+          const { GitEventRenderer } = await import('../components/ui/note-rendering/GitEventRenderer');
+          const { GitEventProcessor } = await import('../components/ui/note-processing/GitEventProcessor');
+          const processedNote = GitEventProcessor.process(result.event);
+          const gitElement = GitEventRenderer.render(processedNote, { collapsible: false, depth: 1 });
+          skeleton.replaceWith(gitElement);
+          return;
         }
 
         // Route addressable events (kind 30000-39999)

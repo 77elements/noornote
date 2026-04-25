@@ -2316,6 +2316,24 @@ export class BookmarkCard {
       const snippet = question.length > 80 ? question.slice(0, 80) + '...' : question;
       return snippet ? `Poll: ${snippet}` : 'Poll';
     }
+    if (event.kind === 30617) {
+      const name = event.tags.find(t => t[0] === 'name')?.[1] || 'Repo';
+      return `Git Repository: ${name}`;
+    }
+    if (event.kind === 1617 || event.kind === 1618 || event.kind === 1619 || event.kind === 1621) {
+      const subject = event.tags.find(t => t[0] === 'subject')?.[1];
+      const label = event.kind === 1617 ? 'Git Patch'
+                  : event.kind === 1621 ? 'Git Issue'
+                  : 'Pull Request';
+      return subject ? `${label}: ${subject}` : label;
+    }
+    if (event.kind === 1630 || event.kind === 1631 || event.kind === 1632 || event.kind === 1633) {
+      const status = event.kind === 1630 ? 'Open'
+                   : event.kind === 1631 ? 'Applied/Merged'
+                   : event.kind === 1632 ? 'Closed'
+                   : 'Draft';
+      return `Git Status: ${status}`;
+    }
     return this.getTextSnippet(event.content, 100);
   }
 

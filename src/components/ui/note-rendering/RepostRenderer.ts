@@ -8,6 +8,8 @@ import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { NoteProcessor } from '../note-processing/NoteProcessor';
 import { OriginalNoteRenderer } from './OriginalNoteRenderer';
+import { GitEventRenderer } from './GitEventRenderer';
+import { GIT_EVENT_KINDS } from '../../../types/nostr';
 import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
 import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
@@ -323,6 +325,14 @@ export class RepostRenderer {
       });
 
       repostDiv.appendChild(appContainer);
+    } else if (note.repostedEvent.kind !== undefined && GIT_EVENT_KINDS.includes(note.repostedEvent.kind)) {
+      // Reposted event is a NIP-34 git event (Patch / PR / Issue / Status / Repo)
+      const gitContainer = document.createElement('div');
+      gitContainer.className = 'repost-article-container';
+      const processedGit = NoteProcessor.process(note.repostedEvent);
+      const gitElement = GitEventRenderer.render(processedGit, { collapsible: false, depth: (opts.depth ?? 0) + 1 });
+      gitContainer.appendChild(gitElement);
+      repostDiv.appendChild(gitContainer);
     } else {
       // Standard repost: Original note content with original author (depth > 0 to prevent double collapsible)
       // Check if original author is muted (async check)
