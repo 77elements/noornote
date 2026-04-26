@@ -1701,6 +1701,25 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       if (event.created_at > maxEventTimestamp) maxEventTimestamp = event.created_at;
     }
 
+    // RESURRECTION DETECTION (logging only, no behavior change) — see docs/features/lists.md "Folder-Resurrection"
+    const browserFolderNames = new Set(getBookmarkFolderService().getFolders().map(f => f.name));
+    const relayFolderNames = categories.filter(c => c !== '');
+    const resurrectionCandidates = relayFolderNames.filter(name => !browserFolderNames.has(name));
+    if (resurrectionCandidates.length > 0 && browserFolderNames.size > 0) {
+      console.warn('[Lists] Possible folder resurrection in bookmarks — relay returned folders not present in local browser state', {
+        resurrectionCandidates,
+        browserFolders: [...browserFolderNames],
+        relayFolders: relayFolderNames,
+        eventCreatedAt: maxEventTimestamp
+      });
+      diagLog('lists', 'bookmarks RESURRECTION CANDIDATE in fetchBookmarksFromRelays', {
+        resurrectionCandidates,
+        browserFolders: [...browserFolderNames],
+        relayFolders: relayFolderNames,
+        eventCreatedAt: maxEventTimestamp
+      });
+    }
+
     return {
       items: deduped,
       relayContentWasEmpty: false,

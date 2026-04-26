@@ -505,6 +505,18 @@ export class AutoSyncService {
         // Relay is newer → apply relay version
         diagLog('lists', `syncFromRelays(${listType}): relay is newer — applying`);
         this.systemLogger.info('ListAutoSync', `${listType}: relay is newer, applying`);
+
+        // RESURRECTION DETECTION (logging only, no behavior change) — see docs/features/lists.md "Folder-Resurrection"
+        // Capture browser folder names BEFORE the destructive apply, then warn if relay introduces new ones
+        let browserFoldersBefore: string[] = [];
+        if (listType === 'tribes') {
+          const { getFolders } = await import('../lists/tribes');
+          browserFoldersBefore = getFolders().map(f => f.name);
+        } else if (listType === 'bookmarks') {
+          const { getBookmarkFolderService } = await import('../lists/bookmarks');
+          browserFoldersBefore = getBookmarkFolderService().getFolders().map(f => f.name);
+        }
+
         this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
@@ -514,6 +526,36 @@ export class AutoSyncService {
           applyRelayFolderOrder(result.categories);
         }
         setListLastModified(listType as StorageListType, relayTs);
+
+        // Compare browser folder state AFTER apply — anything new = potential resurrection
+        if (browserFoldersBefore.length > 0 && (listType === 'tribes' || listType === 'bookmarks')) {
+          let browserFoldersAfter: string[] = [];
+          if (listType === 'tribes') {
+            const { getFolders } = await import('../lists/tribes');
+            browserFoldersAfter = getFolders().map(f => f.name);
+          } else {
+            const { getBookmarkFolderService } = await import('../lists/bookmarks');
+            browserFoldersAfter = getBookmarkFolderService().getFolders().map(f => f.name);
+          }
+          const beforeSet = new Set(browserFoldersBefore);
+          const newlyAppearedFolders = browserFoldersAfter.filter(f => !beforeSet.has(f));
+          if (newlyAppearedFolders.length > 0) {
+            console.warn(`[Lists] Possible folder resurrection in ${listType} — folders appeared after applyOverwrite that did not exist before`, {
+              newlyAppearedFolders,
+              browserFoldersBefore,
+              browserFoldersAfter,
+              relayTs,
+              localTs
+            });
+            diagLog('lists', `${listType} RESURRECTION CANDIDATE in applyOverwrite/applyFolderAssignments`, {
+              newlyAppearedFolders,
+              browserFoldersBefore,
+              browserFoldersAfter,
+              relayTs,
+              localTs
+            });
+          }
+        }
       } else {
         // Local is newer or equal → push local to relay
         diagLog('lists', `syncFromRelays(${listType}): local is newer — pushing`);

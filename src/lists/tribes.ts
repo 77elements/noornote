@@ -1402,6 +1402,27 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       if (event.created_at > maxEventTimestamp) maxEventTimestamp = event.created_at;
     }
 
+    // RESURRECTION DETECTION (logging only, no behavior change) — see docs/features/lists.md "Folder-Resurrection"
+    const browserFolderNames = new Set(getFolders().map(f => f.name));
+    const relayFolderNames = categories
+      .filter(c => c !== 'tribes/' && c !== '')
+      .map(c => c.startsWith('tribes/') ? c.substring(7) : c);
+    const resurrectionCandidates = relayFolderNames.filter(name => !browserFolderNames.has(name));
+    if (resurrectionCandidates.length > 0 && browserFolderNames.size > 0) {
+      console.warn('[Lists] Possible folder resurrection in tribes — relay returned folders not present in local browser state', {
+        resurrectionCandidates,
+        browserFolders: [...browserFolderNames],
+        relayFolders: relayFolderNames,
+        eventCreatedAt: maxEventTimestamp
+      });
+      diagLog('lists', 'tribes RESURRECTION CANDIDATE in fetchFromRelays', {
+        resurrectionCandidates,
+        browserFolders: [...browserFolderNames],
+        relayFolders: relayFolderNames,
+        eventCreatedAt: maxEventTimestamp
+      });
+    }
+
     return {
       items: finalItems,
       relayContentWasEmpty: false,
