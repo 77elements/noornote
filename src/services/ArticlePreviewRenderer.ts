@@ -365,16 +365,17 @@ export class ArticlePreviewRenderer {
     });
 
     card.innerHTML = `
-      ${metadata.image ? `
-        <div class="article-preview-image">
-          <img src="${metadata.image}" alt="${escapeHtml(metadata.title)}" loading="lazy" />
-        </div>
-      ` : ''}
+      ${metadata.image ? `<div class="article-preview-image"></div>` : ''}
       <div class="article-preview-content">
         <h3 class="article-preview-title">${escapeHtml(metadata.title)}</h3>
         ${metadata.summary ? `<p class="article-preview-summary">${escapeHtml(metadata.summary)}</p>` : ''}
       </div>
     `;
+
+    if (metadata.image) {
+      const imgDiv = card.querySelector('.article-preview-image') as HTMLElement | null;
+      if (imgDiv) imgDiv.style.backgroundImage = `url(${JSON.stringify(metadata.image)})`;
+    }
 
     return card;
   }
