@@ -3,9 +3,9 @@
  * Handles nostrconnect:// QR-based login via NIP-46.
  * Isolated from Bunker URL flow — each has its own signer lifecycle.
  *
- * Uses 3 parallel relays for redundancy (matches Jumble's strategy).
- * NDK's RPC pool publishes to all and subscribes on all — if one relay
- * goes down, communication continues via the others.
+ * Uses 2 parallel relays for redundancy.
+ * NDK's RPC pool publishes to both and subscribes on both — if one relay
+ * goes down, communication continues via the other.
  */
 
 import { NDKNip46Signer } from '@nostr-dev-kit/ndk';
@@ -14,7 +14,6 @@ import { Nip46BaseManager, NIP46_STORAGE_KEY, nip46Log, type Nip46AuthResult, ty
 
 /** NIP-46 relays for the nostrconnect flow (parallel multi-relay) */
 const NIP46_RELAYS = [
-  'wss://relay.nsec.app',
   'wss://relay.primal.net',
   'wss://relay.damus.io',
 ];
