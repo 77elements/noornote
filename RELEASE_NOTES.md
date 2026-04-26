@@ -1,23 +1,15 @@
-# NoorNote v0.8.7
-
-## Quoted Notes & Embeds
-
-- Image and video clicks now always work in quoted reposts and nested embeds. Click any image to open the lightbox, click any video to play, no matter how deeply nested.
-- Articles that quote the same `nostr:nevent…` more than once now render every occurrence correctly.
+# NoorNote v0.8.8
 
 ## Articles
 
-- Long-form articles now also accept `nostr:<hex-event-id>` as a quote source, in addition to `nevent` / `note` / `naddr`.
-- Quotes that sit on their own line render correctly inside the article body, and the Edit Preview tab now matches the final published view (npub mentions, hover cards, Show More).
+- Images inside long-form articles now open the lightbox and swipe through the article gallery, just like images in regular notes.
+- Article preview cards in the timeline now display the banner image correctly for both wide landscape and tall portrait images — no more broken or mis-aligned thumbnails.
+- Replies to articles render with proper context: the linked-to article shows up correctly, and quote-posts of an article are no longer mistaken for true replies.
 
-## Direct Messages
+## Git on Nostr
 
-- NIP-17 DMs now send roughly twice as fast and re-open busy conversations without the burst-load stutter.
+- NoorNote now displays NIP-34 Git events (Patches, Pull Requests, Issues, Status updates, Repository announcements) as compact cards inline anywhere a note appears. Each card has a one-tap link to `gitworkshop.dev` for the full thread.
 
-## Live Streams
+## Login
 
-- You can now post chat messages directly into a live stream from NoorNote (NIP-53 kind 1311).
-
-## Media
-
-- New accounts now default to `nostr.build` as their media server (25 MiB free tier). Existing accounts keep their current setting.
+- The QR-code login (NostrConnect) now uses two reliable relays after dropping a third one that went offline. Logging in with Amber and other remote signers should be more dependable.
