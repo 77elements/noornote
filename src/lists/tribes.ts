@@ -1409,7 +1409,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       .map(c => c.startsWith('tribes/') ? c.substring(7) : c);
     const resurrectionCandidates = relayFolderNames.filter(name => !browserFolderNames.has(name));
     if (resurrectionCandidates.length > 0 && browserFolderNames.size > 0) {
-      console.warn('[Lists] Possible folder resurrection in tribes — relay returned folders not present in local browser state', {
+      console.debug('[Lists] Possible folder resurrection in tribes — relay returned folders not present in local browser state', {
         resurrectionCandidates,
         browserFolders: [...browserFolderNames],
         relayFolders: relayFolderNames,

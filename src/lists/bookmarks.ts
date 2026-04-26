@@ -1706,7 +1706,7 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     const relayFolderNames = categories.filter(c => c !== '');
     const resurrectionCandidates = relayFolderNames.filter(name => !browserFolderNames.has(name));
     if (resurrectionCandidates.length > 0 && browserFolderNames.size > 0) {
-      console.warn('[Lists] Possible folder resurrection in bookmarks — relay returned folders not present in local browser state', {
+      console.debug('[Lists] Possible folder resurrection in bookmarks — relay returned folders not present in local browser state', {
         resurrectionCandidates,
         browserFolders: [...browserFolderNames],
         relayFolders: relayFolderNames,

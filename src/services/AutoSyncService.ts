@@ -540,7 +540,7 @@ export class AutoSyncService {
           const beforeSet = new Set(browserFoldersBefore);
           const newlyAppearedFolders = browserFoldersAfter.filter(f => !beforeSet.has(f));
           if (newlyAppearedFolders.length > 0) {
-            console.warn(`[Lists] Possible folder resurrection in ${listType} — folders appeared after applyOverwrite that did not exist before`, {
+            console.debug(`[Lists] Possible folder resurrection in ${listType} — folders appeared after applyOverwrite that did not exist before`, {
               newlyAppearedFolders,
               browserFoldersBefore,
               browserFoldersAfter,
