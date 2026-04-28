@@ -16,12 +16,16 @@ import { ProfileMountsService } from '../../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../../services/orchestration/ProfileMountsOrchestrator';
 import { MyPageMountsService } from '../../services/MyPageMountsService';
 import { MyPageMountsOrchestrator } from '../../services/orchestration/MyPageMountsOrchestrator';
+import { NoteService } from '../../services/NoteService';
+import { NostrTransport } from '../../services/transport/NostrTransport';
+import { encodeNaddr, encodeNevent } from '../../services/NostrToolsAdapter';
 import {
   BookmarkOrchestrator,
   getBookmarkFolderService,
   type BookmarkItem
 } from '../../lists/bookmarks';
 import { AuthService } from '../../services/AuthService';
+import { Router } from '../../services/Router';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 const MAX_ITEMS_COLLAPSED = 3;
@@ -57,6 +61,8 @@ export class ProfileListsComponent {
   private lists: ProfileListData[] = [];
   private elements: HTMLElement[] = [];
   private insertAfterEl: Element | null = null;
+  private resolvedDisplay: Map<string, string> = new Map();  // item.id (events) or item.value (a-tags) → display text
+  private destroyed: boolean = false;
 
   constructor(pubkey: string, source: MountsSource = 'profile') {
     this.pubkey = pubkey;
@@ -96,6 +102,9 @@ export class ProfileListsComponent {
       if (mountedFolders.length === 0) return;
 
       await this.loadListItems(mountedFolders);
+      if (this.destroyed) return;
+      await this.resolveDisplayNames();
+      if (this.destroyed) return;
       this.renderLists();
     } catch (error) {
       console.error('Failed to load profile lists:', error);
@@ -230,13 +239,41 @@ export class ProfileListsComponent {
         </div>
       `;
     } else if (item.type === 'e') {
+      const display = this.resolvedDisplay.get(item.id) || `Note ${item.id.slice(0, 8)}…`;
+      const navigateTo = `/note/${encodeNevent(item.id)}`;
       return `
-        <div class="profile-list-item profile-list-item--note">
+        <div class="profile-list-item profile-list-item--note" data-navigate="${navigateTo}" role="link" tabindex="0">
           <span class="profile-list-item__icon">
             <svg width="14" height="14"><use href="#icon-message"/></svg>
           </span>
           <div class="profile-list-item__content">
-            <span class="profile-list-item__id">${item.id.slice(0, 16)}...</span>
+            <span class="profile-list-item__text">${escapeHtml(display)}</span>
+          </div>
+        </div>
+      `;
+    } else if (item.type === 'a' && item.value?.startsWith('30402:')) {
+      const display = this.resolvedDisplay.get(item.value) || 'Untitled listing';
+      const parts = item.value.split(':');
+      let navigateTo = '';
+      if (parts.length >= 3) {
+        try {
+          const naddr = encodeNaddr({
+            kind: 30402,
+            pubkey: parts[1]!,
+            identifier: parts.slice(2).join(':'),
+          });
+          navigateTo = `/listing/${naddr}`;
+        } catch {
+          // Encoding failed — render without navigation
+        }
+      }
+      return `
+        <div class="profile-list-item profile-list-item--product"${navigateTo ? ` data-navigate="${navigateTo}" role="link" tabindex="0"` : ''}>
+          <span class="profile-list-item__icon">
+            <svg width="14" height="14"><use href="#icon-shopping-bag"/></svg>
+          </span>
+          <div class="profile-list-item__content">
+            <span class="profile-list-item__text">${escapeHtml(display)}</span>
           </div>
         </div>
       `;
@@ -245,11 +282,77 @@ export class ProfileListsComponent {
         <div class="profile-list-item">
           <span class="profile-list-item__icon">•</span>
           <div class="profile-list-item__content">
-            <span>${escapeHtml(item.value || item.id)}</span>
+            <span class="profile-list-item__text">${escapeHtml(item.value || item.id)}</span>
           </div>
         </div>
       `;
     }
+  }
+
+  /**
+   * Batch-resolve display labels for note bookmarks ('e') and NIP-99 listings ('a' with kind 30402).
+   * URL bookmarks need no resolution.
+   */
+  private async resolveDisplayNames(): Promise<void> {
+    const noteIds = new Set<string>();
+    const listingAddrs = new Set<string>();
+
+    for (const list of this.lists) {
+      for (const item of list.items) {
+        if (item.type === 'e') {
+          noteIds.add(item.id);
+        } else if (item.type === 'a' && item.value?.startsWith('30402:')) {
+          listingAddrs.add(item.value);
+        }
+      }
+    }
+
+    const work: Promise<void>[] = [];
+
+    if (noteIds.size > 0) {
+      work.push((async () => {
+        try {
+          const notes = await NoteService.getInstance().getNotes(Array.from(noteIds));
+          for (const [id, event] of notes.entries()) {
+            const firstLine = (event.content || '').split('\n').map(l => l.trim()).find(l => l.length > 0) || '';
+            this.resolvedDisplay.set(id, firstLine || `Note ${id.slice(0, 8)}…`);
+          }
+        } catch {
+          // Leave fallback display
+        }
+      })());
+    }
+
+    if (listingAddrs.size > 0) {
+      work.push((async () => {
+        try {
+          const transport = NostrTransport.getInstance();
+          const readRelays = transport.getReadRelays();
+          if (readRelays.length === 0) return;
+
+          const filters = Array.from(listingAddrs).map(addr => {
+            const parts = addr.split(':');
+            return {
+              kinds: [parseInt(parts[0]!)],
+              authors: [parts[1]!],
+              '#d': [parts.slice(2).join(':')],
+            };
+          });
+
+          const events = await transport.fetch(readRelays, filters, 5000, false, 'PLC-Listings');
+          for (const event of events) {
+            const dTag = event.tags.find(t => t[0] === 'd')?.[1] || '';
+            const titleTag = event.tags.find(t => t[0] === 'title')?.[1];
+            const addr = `${event.kind}:${event.pubkey}:${dTag}`;
+            this.resolvedDisplay.set(addr, titleTag || 'Untitled listing');
+          }
+        } catch {
+          // Leave fallback display
+        }
+      })());
+    }
+
+    await Promise.all(work);
   }
 
   /**
@@ -261,6 +364,21 @@ export class ProfileListsComponent {
         btn.addEventListener('click', (e) => {
           const index = parseInt((e.target as HTMLElement).dataset.listIndex || '0');
           this.toggleListExpansion(index);
+        });
+      });
+
+      // Note + product items navigate to detail view on click
+      el.querySelectorAll<HTMLElement>('.profile-list-item[data-navigate]').forEach(itemEl => {
+        const handler = () => {
+          const target = itemEl.dataset.navigate;
+          if (target) Router.getInstance().navigate(target);
+        };
+        itemEl.addEventListener('click', handler);
+        itemEl.addEventListener('keydown', (e) => {
+          if ((e as KeyboardEvent).key === 'Enter' || (e as KeyboardEvent).key === ' ') {
+            e.preventDefault();
+            handler();
+          }
         });
       });
     }
@@ -376,6 +494,7 @@ export class ProfileListsComponent {
    * Cleanup
    */
   public destroy(): void {
+    this.destroyed = true;
     this.elements.forEach(el => el.remove());
     this.elements = [];
   }

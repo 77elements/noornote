@@ -591,6 +591,19 @@
     font-family: monospace;
     color: var(--color-3);
   }
+
+  &__text {
+    @extend %small;
+    color: var(--color-5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  &[data-navigate] {
+    cursor: pointer;
+  }
 }
 
 
