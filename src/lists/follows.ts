@@ -1134,6 +1134,16 @@ export class ProfileFollowManager {
       onStateChange();
 
       ToastService.show('Unfollowed successfully (local)', 'success');
+
+      // Reliable propagation: republish follow list IMMEDIATELY, bypassing debounce.
+      diagLog('lists', 'immediate publish after unfollow — start', { pubkey: this.targetPubkey.slice(0, 8) });
+      try {
+        await publishToRelays();
+        diagLog('lists', 'immediate publish after unfollow — done', { pubkey: this.targetPubkey.slice(0, 8) });
+      } catch (pubErr) {
+        diagLog('lists', 'immediate publish after unfollow — FAILED', { pubkey: this.targetPubkey.slice(0, 8), error: String(pubErr) });
+        logger.warn('follows.ts', `Immediate publish after unfollow failed: ${pubErr}`);
+      }
     } catch (error) {
       console.error('Failed to unfollow:', error);
       ToastService.show('Failed to unfollow user', 'error');

@@ -3340,6 +3340,18 @@ export class BookmarkManager {
       this.bookmarksCache.delete(eventId);
 
       ToastService.show('Bookmark removed', 'success');
+
+      // Reliable propagation: republish parent set IMMEDIATELY, bypassing the 2.5s debounce.
+      // Per docs/features/lists.md "Reliable deletion publish" — every user-triggered delete
+      // must reach relays without depending on debounce timing.
+      diagLog('lists', 'immediate publish after deleteBookmark — start', { eventId });
+      try {
+        await publishBookmarksToRelays();
+        diagLog('lists', 'immediate publish after deleteBookmark — done', { eventId });
+      } catch (pubErr) {
+        diagLog('lists', 'immediate publish after deleteBookmark — FAILED', { eventId, error: String(pubErr) });
+        logger.warn('bookmarks.ts', `Immediate publish after item delete failed: ${pubErr}`);
+      }
     } catch (error) {
       console.error('Failed to delete bookmark:', error);
       ToastService.show('Failed to remove bookmark', 'error');

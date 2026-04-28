@@ -2170,6 +2170,16 @@ export class TribeManager {
 
       ToastService.show('Member removed', 'success');
       this.rerenderCurrentView();
+
+      // Reliable propagation: republish parent tribe set IMMEDIATELY, bypassing debounce.
+      diagLog('lists', 'immediate publish after deleteMember — start', { pubkey: pubkey.slice(0, 8) });
+      try {
+        await publishToRelays();
+        diagLog('lists', 'immediate publish after deleteMember — done', { pubkey: pubkey.slice(0, 8) });
+      } catch (pubErr) {
+        diagLog('lists', 'immediate publish after deleteMember — FAILED', { pubkey: pubkey.slice(0, 8), error: String(pubErr) });
+        logger.warn('Tribes', `Immediate publish after member delete failed: ${pubErr}`);
+      }
     } catch (error) {
       console.error('Failed to delete member:', error);
       ToastService.show('Failed to remove member', 'error');
@@ -2183,9 +2193,30 @@ export class TribeManager {
     const folder = getFolder(folderId);
     if (!folder) return;
 
+    const oldName = folder.name;
+
     const modal = new EditFolderModal({
       currentName: folder.name,
-      onSave: (newName: string) => {
+      onSave: async (newName: string) => {
+        // Eager NIP-09 kind:5 deletion for the OLD tribe coordinate
+        if (oldName && oldName !== newName) {
+          const currentUser = this.authService.getCurrentUser();
+          if (currentUser) {
+            const oldCoordinate = `30000:${currentUser.pubkey}:tribes/${oldName}`;
+            diagLog('lists', 'eager kind:5 publish for tribe rename — start', { oldName, newName, oldCoordinate });
+            try {
+              const ok = await DeletionService.getInstance().deleteByCoordinates(
+                [oldCoordinate],
+                `Tribe renamed from "${oldName}" to "${newName}"`
+              );
+              diagLog('lists', 'eager kind:5 publish for tribe rename — done', { oldName, newName, ok });
+            } catch (kind5Err) {
+              diagLog('lists', 'eager kind:5 publish for tribe rename — FAILED', { oldName, newName, error: String(kind5Err) });
+              logger.warn('Tribes', `Eager kind:5 publish failed for tribe rename "${oldName}" → "${newName}": ${kind5Err}`);
+            }
+          }
+        }
+
         renameFolder(folderId, newName);
         ToastService.show('Tribe renamed', 'success');
         this.rerenderCurrentView();
@@ -2234,6 +2265,26 @@ export class TribeManager {
 
       confirmBtn?.addEventListener('click', async () => {
         try {
+          // Eager NIP-09 kind:5 deletion BEFORE local mutation
+          const tribeName = folder.name;
+          if (tribeName) {
+            const currentUser = this.authService.getCurrentUser();
+            if (currentUser) {
+              const coordinate = `30000:${currentUser.pubkey}:tribes/${tribeName}`;
+              diagLog('lists', 'eager kind:5 publish for tribe delete — start', { tribeName, coordinate });
+              try {
+                const ok = await DeletionService.getInstance().deleteByCoordinates(
+                  [coordinate],
+                  `Tribe "${tribeName}" deleted`
+                );
+                diagLog('lists', 'eager kind:5 publish for tribe delete — done', { tribeName, ok });
+              } catch (kind5Err) {
+                diagLog('lists', 'eager kind:5 publish for tribe delete — FAILED', { tribeName, error: String(kind5Err) });
+                logger.warn('Tribes', `Eager kind:5 publish failed for tribe "${tribeName}": ${kind5Err}`);
+              }
+            }
+          }
+
           // Get member pubkeys and delete them
           const pubkeys = getMemberPubkeysInFolder(folderId);
           for (const pubkey of pubkeys) {
@@ -2252,6 +2303,16 @@ export class TribeManager {
 
           this.modalService.hide();
           this.rerenderCurrentView();
+
+          // Reliable propagation: republish remaining tribes IMMEDIATELY (kind:30000 for other tribes + kind:30078 order)
+          diagLog('lists', 'immediate publish after deleteFolderUI(tribe) — start');
+          try {
+            await publishToRelays();
+            diagLog('lists', 'immediate publish after deleteFolderUI(tribe) — done');
+          } catch (pubErr) {
+            diagLog('lists', 'immediate publish after deleteFolderUI(tribe) — FAILED', { error: String(pubErr) });
+            logger.warn('Tribes', `Immediate publish after tribe delete failed: ${pubErr}`);
+          }
         } catch (error) {
           console.error('Failed to delete tribe:', error);
           ToastService.show('Failed to delete tribe', 'error');
