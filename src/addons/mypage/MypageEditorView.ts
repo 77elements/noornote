@@ -1,36 +1,35 @@
 /**
- * NostrInListEditorView
- * Editor for professional list (NostrIn addon)
+ * MypageEditorView
+ * Editor for the My Page custom list (freetext sections + items)
  *
- * Route: /profile/:npub/list/edit
- * Freetext sections with items. "New Section" button, inline item adding,
- * "Save List" button publishes to relays.
+ * Route: /profile/:npub/page/edit
+ * "New Section" button, inline item adding, "Save" publishes to relays.
  *
- * @purpose Edit professional list
- * @used-by ViewMountingService (route: nostrin-list-edit)
+ * @purpose Edit the custom list portion of My Page
+ * @used-by ViewMountingService (route: mypage-edit)
  */
 
 import { View } from '../../components/views/View';
 import { AuthService } from '../../services/AuthService';
-import { NostrInListOrchestrator } from '../../services/orchestration/NostrInListOrchestrator';
-import { NostrInListService, type NostrInListData, type NostrInListSection } from '../../services/NostrInListService';
+import { MypageOrchestrator } from '../../services/orchestration/MypageOrchestrator';
+import { MypageService, type MypageListData, type MypageListSection } from '../../services/MypageService';
 import { Router } from '../../services/Router';
 import { ToastService } from '../../services/ToastService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import DOMPurify from 'dompurify';
 
-export class NostrInListEditorView extends View {
+export class MypageEditorView extends View {
   private container: HTMLElement;
   private npub: string;
   private pubkey: string;
-  private sections: NostrInListSection[] = [];
+  private sections: MypageListSection[] = [];
 
   constructor(npub: string) {
     super();
     this.npub = npub;
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--nostrin-list-edit';
+    this.container.className = 'view-content view-content--mypage-edit';
 
     try {
       const decoded = decodeNip19(npub);
@@ -53,17 +52,33 @@ export class NostrInListEditorView extends View {
   }
 
   private async init(): Promise<void> {
-    if (!AuthGuard.requireAuth('edit professional list')) return;
+    if (!AuthGuard.requireAuth('edit My Page')) return;
 
     const currentUser = AuthService.getInstance().getCurrentUser();
     if (!currentUser || currentUser.pubkey !== this.pubkey) {
-      this.container.innerHTML = '<p class="nostrin-list-error">You can only edit your own list.</p>';
+      this.container.innerHTML = '<p class="mypage-error">You can only edit your own page.</p>';
       return;
     }
 
-    // Load existing data
-    const listService = NostrInListService.getInstance();
-    const existing = listService.getList();
+    this.container.innerHTML = `
+      <div class="mypage-loading">
+        <div class="loading-spinner"></div>
+        <p>Loading page...</p>
+      </div>
+    `;
+
+    const listService = MypageService.getInstance();
+    let existing = listService.getList();
+
+    // Fall back to relays if local cache is empty (fresh device, post-rename, etc.)
+    if (existing.sections.length === 0) {
+      const fetched = await MypageOrchestrator.getInstance().fetchFromRelays(this.pubkey, false);
+      if (fetched && fetched.sections.length > 0) {
+        listService.setListFromRelay(fetched);
+        existing = fetched;
+      }
+    }
+
     if (existing.sections.length > 0) {
       this.sections = existing.sections.map(s => ({
         title: s.title,
@@ -76,17 +91,17 @@ export class NostrInListEditorView extends View {
 
   private render(): void {
     this.container.innerHTML = `
-      <div class="nostrin-list-editor">
+      <div class="mypage-editor">
         <div class="l-spread">
-          <h1>Create your list</h1>
+          <h1>Edit your page</h1>
           <button class="btn btn--medium btn--passive" data-action="back">&larr; Back</button>
         </div>
-        <div class="nostrin-list-editor__header">
+        <div class="mypage-editor__header">
           <button class="btn btn--medium btn--primary" data-action="new-section">+ New Section</button>
         </div>
-        <div class="nostrin-list-editor__sections" data-sections></div>
-        <div class="nostrin-list-editor__footer">
-          <button class="btn btn--medium btn--primary" data-action="save-list">Save List</button>
+        <div class="mypage-editor__sections" data-sections></div>
+        <div class="mypage-editor__footer">
+          <button class="btn btn--medium btn--primary" data-action="save-list">Save Page</button>
         </div>
       </div>
     `;
@@ -101,7 +116,7 @@ export class NostrInListEditorView extends View {
 
     if (this.sections.length === 0) {
       sectionsContainer.innerHTML = `
-        <div class="nostrin-list-editor__empty">
+        <div class="mypage-editor__empty">
           <p>No sections yet. Click "New Section" to get started.</p>
         </div>
       `;
@@ -110,26 +125,26 @@ export class NostrInListEditorView extends View {
 
     this.sections.forEach((section, sectionIndex) => {
       const sectionEl = document.createElement('div');
-      sectionEl.className = 'nostrin-list-editor__section';
+      sectionEl.className = 'mypage-editor__section';
       sectionEl.dataset.sectionIndex = String(sectionIndex);
 
       const itemsHtml = section.items.map((item, itemIndex) => `
-        <div class="nostrin-list-editor__item" data-item-index="${itemIndex}">
-          <span class="nostrin-list-editor__item-text">${DOMPurify.sanitize(item)}</span>
-          <button class="nostrin-list-editor__item-delete" data-action="delete-item" data-section="${sectionIndex}" data-item="${itemIndex}" title="Remove">&times;</button>
+        <div class="mypage-editor__item" data-item-index="${itemIndex}">
+          <span class="mypage-editor__item-text">${DOMPurify.sanitize(item)}</span>
+          <button class="mypage-editor__item-delete" data-action="delete-item" data-section="${sectionIndex}" data-item="${itemIndex}" title="Remove">&times;</button>
         </div>
       `).join('');
 
       sectionEl.innerHTML = `
-        <div class="nostrin-list-editor__section-header">
-          <h2 class="nostrin-list-editor__section-title">${DOMPurify.sanitize(section.title)}</h2>
-          <button class="nostrin-list-editor__section-delete" data-action="delete-section" data-section="${sectionIndex}" title="Remove section">&times;</button>
+        <div class="mypage-editor__section-header">
+          <h2 class="mypage-editor__section-title">${DOMPurify.sanitize(section.title)}</h2>
+          <button class="mypage-editor__section-delete" data-action="delete-section" data-section="${sectionIndex}" title="Remove section">&times;</button>
         </div>
-        <div class="nostrin-list-editor__items">
+        <div class="mypage-editor__items">
           ${itemsHtml}
-          <div class="nostrin-list-editor__new-item-row">
-            <input type="text" class="nostrin-list-editor__new-item-input" placeholder="Add an entry..." data-section="${sectionIndex}" />
-            <button class="nostrin-list-editor__new-item-add" data-action="add-item" data-section="${sectionIndex}" title="Add">+</button>
+          <div class="mypage-editor__new-item-row">
+            <input type="text" class="mypage-editor__new-item-input" placeholder="Add an entry..." data-section="${sectionIndex}" />
+            <button class="mypage-editor__new-item-add" data-action="add-item" data-section="${sectionIndex}" title="Add">+</button>
           </div>
         </div>
       `;
@@ -151,12 +166,11 @@ export class NostrInListEditorView extends View {
 
     this.container.querySelector('[data-action="back"]')?.addEventListener('click', (e) => {
       e.preventDefault();
-      Router.getInstance().navigate(`/profile/${this.npub}/list`);
+      Router.getInstance().navigate(`/profile/${this.npub}/page`);
     });
   }
 
   private bindSectionEvents(): void {
-    // Delete section buttons
     this.container.querySelectorAll('[data-action="delete-section"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const index = parseInt((e.currentTarget as HTMLElement).dataset.section!);
@@ -165,7 +179,6 @@ export class NostrInListEditorView extends View {
       });
     });
 
-    // Delete item buttons
     this.container.querySelectorAll('[data-action="delete-item"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const el = e.currentTarget as HTMLElement;
@@ -176,7 +189,6 @@ export class NostrInListEditorView extends View {
       });
     });
 
-    // Add item buttons
     this.container.querySelectorAll('[data-action="add-item"]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const sectionIndex = parseInt((e.currentTarget as HTMLElement).dataset.section!);
@@ -184,8 +196,7 @@ export class NostrInListEditorView extends View {
       });
     });
 
-    // Enter key on inputs
-    this.container.querySelectorAll('.nostrin-list-editor__new-item-input').forEach(input => {
+    this.container.querySelectorAll('.mypage-editor__new-item-input').forEach(input => {
       input.addEventListener('keydown', (e) => {
         if ((e as KeyboardEvent).key === 'Enter') {
           e.preventDefault();
@@ -199,15 +210,13 @@ export class NostrInListEditorView extends View {
   private addNewSection(): void {
     const sectionsContainer = this.container.querySelector('[data-sections]')!;
 
-    // Remove empty state if present
-    const emptyEl = sectionsContainer.querySelector('.nostrin-list-editor__empty');
+    const emptyEl = sectionsContainer.querySelector('.mypage-editor__empty');
     if (emptyEl) emptyEl.remove();
 
-    // Create inline title input
     const titleRow = document.createElement('div');
-    titleRow.className = 'nostrin-list-editor__new-section-row';
+    titleRow.className = 'mypage-editor__new-section-row';
     titleRow.innerHTML = `
-      <input type="text" class="nostrin-list-editor__section-title-input" placeholder="Section title..." autofocus />
+      <input type="text" class="mypage-editor__section-title-input" placeholder="Section title..." autofocus />
     `;
     sectionsContainer.appendChild(titleRow);
 
@@ -228,9 +237,8 @@ export class NostrInListEditorView extends View {
       this.sections.push({ title, items: [] });
       this.renderSections();
 
-      // Focus the new item input of the just-created section
       const lastInput = this.container.querySelector(
-        `[data-section="${this.sections.length - 1}"].nostrin-list-editor__new-item-input`
+        `[data-section="${this.sections.length - 1}"].mypage-editor__new-item-input`
       ) as HTMLInputElement | null;
       lastInput?.focus();
     };
@@ -253,7 +261,7 @@ export class NostrInListEditorView extends View {
 
   private addItemFromInput(sectionIndex: number): void {
     const input = this.container.querySelector(
-      `.nostrin-list-editor__new-item-input[data-section="${sectionIndex}"]`
+      `.mypage-editor__new-item-input[data-section="${sectionIndex}"]`
     ) as HTMLInputElement | null;
     if (!input) return;
 
@@ -263,15 +271,13 @@ export class NostrInListEditorView extends View {
     this.sections[sectionIndex]!.items.push(value);
     this.renderSections();
 
-    // Focus the new input of the same section
     const newInput = this.container.querySelector(
-      `.nostrin-list-editor__new-item-input[data-section="${sectionIndex}"]`
+      `.mypage-editor__new-item-input[data-section="${sectionIndex}"]`
     ) as HTMLInputElement | null;
     newInput?.focus();
   }
 
   private async saveList(): Promise<void> {
-    // Filter out empty sections
     const cleanSections = this.sections.filter(s => s.items.length > 0);
 
     if (cleanSections.length === 0) {
@@ -279,7 +285,7 @@ export class NostrInListEditorView extends View {
       return;
     }
 
-    const listData: NostrInListData = {
+    const listData: MypageListData = {
       version: 1,
       sections: cleanSections
     };
@@ -291,19 +297,19 @@ export class NostrInListEditorView extends View {
         saveBtn.textContent = 'Saving...';
       }
 
-      NostrInListService.getInstance().saveList(listData);
-      await NostrInListOrchestrator.getInstance().publishToRelays();
+      MypageService.getInstance().saveList(listData);
+      await MypageOrchestrator.getInstance().publishToRelays();
 
-      ToastService.show('List saved', 'success');
-      Router.getInstance().navigate(`/profile/${this.npub}/list`);
+      ToastService.show('Page saved', 'success');
+      Router.getInstance().navigate(`/profile/${this.npub}/page`);
     } catch (error) {
-      console.error('Failed to save list:', error);
-      ToastService.show('Failed to save list', 'error');
+      console.error('Failed to save page:', error);
+      ToastService.show('Failed to save page', 'error');
 
       const saveBtn = this.container.querySelector('[data-action="save-list"]') as HTMLButtonElement;
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = 'Save List';
+        saveBtn.textContent = 'Save Page';
       }
     }
   }

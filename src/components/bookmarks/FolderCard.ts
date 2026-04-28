@@ -10,10 +10,11 @@ import { ICON_TRASH_14 } from '../../helpers/svgIcons';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 export interface FolderData {
-  id: string;           // d-tag identifier
-  name: string;         // title tag or d-tag
-  itemCount: number;    // Number of bookmarks in folder
-  isMounted?: boolean;  // Is this folder mounted to profile?
+  id: string;                  // d-tag identifier
+  name: string;                // title tag or d-tag
+  itemCount: number;           // Number of bookmarks in folder
+  isMounted?: boolean;         // Mounted on PV inline (Profile-checkbox)
+  isMypageMounted?: boolean;   // Mounted on /page subpage (My Page-checkbox)
 }
 
 export interface FolderCardOptions {
@@ -24,7 +25,9 @@ export interface FolderCardOptions {
   onDragStart?: (folderId: string, element: HTMLElement) => void;
   onDragEnd?: () => void;
   onMountToggle?: (folderId: string, folderName: string) => void;
-  showMountCheckbox?: boolean;  // Only show for logged-in user's own bookmarks
+  onMypageMountToggle?: (folderId: string, folderName: string) => void;
+  showMountCheckbox?: boolean;        // Profile-checkbox (PV inline mount)
+  showMypageMountCheckbox?: boolean;  // My Page-checkbox (/page subpage mount)
 }
 
 export class FolderCard {
@@ -38,8 +41,9 @@ export class FolderCard {
   }
 
   public render(): HTMLElement {
-    const { id, name, itemCount, isMounted } = this.data;
+    const { id, name, itemCount, isMounted, isMypageMounted } = this.data;
     const showMount = this.options.showMountCheckbox && this.options.onMountToggle;
+    const showMypage = this.options.showMypageMountCheckbox && this.options.onMypageMountToggle;
 
     const card = document.createElement('div');
     card.className = 'folder-card';
@@ -60,11 +64,21 @@ export class FolderCard {
           ${ICON_TRASH_14}
         </button>
       </div>
-      ${showMount ? `
-        <label class="folder-card__mount" title="Mount to Profile">
-          <span>Profile</span>
-          <input type="checkbox" ${isMounted ? 'checked' : ''} />
-        </label>
+      ${showMount || showMypage ? `
+        <div class="folder-card__mounts">
+          ${showMount ? `
+            <label class="folder-card__mount" data-mount="profile" title="Show this folder inline on your Profile View">
+              <span>Profile</span>
+              <input type="checkbox" ${isMounted ? 'checked' : ''} />
+            </label>
+          ` : ''}
+          ${showMypage ? `
+            <label class="folder-card__mount" data-mount="mypage" title="Show this folder on your My Page subpage">
+              <span>My Page</span>
+              <input type="checkbox" ${isMypageMounted ? 'checked' : ''} />
+            </label>
+          ` : ''}
+        </div>
       ` : ''}
     `;
 
@@ -76,11 +90,12 @@ export class FolderCard {
   private bindEvents(card: HTMLElement): void {
     const { id, name } = this.data;
 
-    // Click on folder (except actions and mount checkbox) opens it
+    // Click on folder (except actions and mount checkboxes) opens it
     card.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       if (target.closest('.folder-card__actions')) return;
       if (target.closest('.folder-card__mount')) return;
+      if (target.closest('.folder-card__mounts')) return;
       this.options.onClick(id);
     });
 
@@ -99,16 +114,28 @@ export class FolderCard {
       card.remove();
     });
 
-    // Mount checkbox
-    const mountCheckbox = card.querySelector('.folder-card__mount input') as HTMLInputElement;
-    if (mountCheckbox && this.options.onMountToggle) {
-      mountCheckbox.addEventListener('change', (e) => {
+    // Profile mount checkbox
+    const profileLabel = card.querySelector('.folder-card__mount[data-mount="profile"]') as HTMLElement | null;
+    const profileCheckbox = profileLabel?.querySelector('input') as HTMLInputElement | null;
+    if (profileCheckbox && this.options.onMountToggle) {
+      profileCheckbox.addEventListener('change', (e) => {
         e.stopPropagation();
         this.options.onMountToggle!(id, name);
       });
-      // Prevent label click from triggering card click
-      const mountLabel = card.querySelector('.folder-card__mount');
-      mountLabel?.addEventListener('click', (e) => {
+      profileLabel?.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    }
+
+    // My Page mount checkbox
+    const mypageLabel = card.querySelector('.folder-card__mount[data-mount="mypage"]') as HTMLElement | null;
+    const mypageCheckbox = mypageLabel?.querySelector('input') as HTMLInputElement | null;
+    if (mypageCheckbox && this.options.onMypageMountToggle) {
+      mypageCheckbox.addEventListener('change', (e) => {
+        e.stopPropagation();
+        this.options.onMypageMountToggle!(id, name);
+      });
+      mypageLabel?.addEventListener('click', (e) => {
         e.stopPropagation();
       });
     }
@@ -169,7 +196,15 @@ export class FolderCard {
 
   public updateMountStatus(isMounted: boolean): void {
     this.data.isMounted = isMounted;
-    const checkbox = this.element?.querySelector('.folder-card__mount input') as HTMLInputElement;
+    const checkbox = this.element?.querySelector('.folder-card__mount[data-mount="profile"] input') as HTMLInputElement;
+    if (checkbox) {
+      checkbox.checked = isMounted;
+    }
+  }
+
+  public updateMypageMountStatus(isMounted: boolean): void {
+    this.data.isMypageMounted = isMounted;
+    const checkbox = this.element?.querySelector('.folder-card__mount[data-mount="mypage"] input') as HTMLInputElement;
     if (checkbox) {
       checkbox.checked = isMounted;
     }

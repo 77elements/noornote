@@ -160,8 +160,12 @@ export class ProfileView extends View {
     // Listen for follow changes (from FollowList or other sources)
     this.setupFollowChangeListener();
 
-    // Listen for NostrIn addon toggle (mount/unmount profile lists)
-    this.setupNostrInToggleListener();
+    // Listen for My Page addon toggle (mount/unmount profile lists)
+    this.setupMypageToggleListener();
+
+    // Live updates when bookmark folder mount state changes (checkbox toggle)
+    this.setupProfileMountsChangeListener();
+    this.setupMypageMountsChangeListener();
 
     // No more async recognition-load dance — the addon runtime is owned by
     // AddonLoader and looked up fresh via getRecognitionRuntime() at use time.
@@ -249,25 +253,62 @@ export class ProfileView extends View {
   }
 
   /**
-   * Setup listener for NostrIn addon toggle (mount/unmount profile lists without app restart)
+   * Re-render PV inline mounts whenever the user toggles a folder's "Profile" checkbox
    */
-  private setupNostrInToggleListener(): void {
-    const id = this.eventBus.on('nostrin:toggle', async (data: { enabled: boolean }) => {
+  private setupProfileMountsChangeListener(): void {
+    const id = this.eventBus.on('profileMounts:changed', () => {
+      const currentUser = this.authService.getCurrentUser();
+      if (!currentUser || currentUser.pubkey !== this.pubkey) return;
+      this.loadProfileLists();
+    });
+    this.eventBusSubscriptions.push(id);
+  }
+
+  /**
+   * Re-evaluate "My Page →" link visibility whenever the user toggles a folder's "My Page" checkbox
+   * (the link appears when either the custom list OR at least one mypage-mount exists)
+   */
+  private setupMypageMountsChangeListener(): void {
+    const id = this.eventBus.on('mypageMounts:changed', () => {
+      const currentUser = this.authService.getCurrentUser();
+      if (!currentUser || currentUser.pubkey !== this.pubkey) return;
+      this.loadMypageLink();
+    });
+    this.eventBusSubscriptions.push(id);
+  }
+
+  /**
+   * Setup listener for My Page addon toggle (mount/unmount profile lists without app restart)
+   */
+  private setupMypageToggleListener(): void {
+    const id = this.eventBus.on('mypage:toggle', async (data: { enabled: boolean }) => {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser || currentUser.pubkey !== this.pubkey) return;
 
       if (data.enabled) {
-        const { ProfileMountsOrchestrator } = await import('../../services/orchestration/ProfileMountsOrchestrator');
-        await ProfileMountsOrchestrator.getInstance().syncFromRelays();
+        const [
+          { ProfileMountsOrchestrator },
+          { MyPageMountsOrchestrator },
+          { MypageOrchestrator },
+        ] = await Promise.all([
+          import('../../services/orchestration/ProfileMountsOrchestrator'),
+          import('../../services/orchestration/MyPageMountsOrchestrator'),
+          import('../../services/orchestration/MypageOrchestrator'),
+        ]);
+        await Promise.all([
+          ProfileMountsOrchestrator.getInstance().syncFromRelays(),
+          MyPageMountsOrchestrator.getInstance().syncFromRelays(),
+          MypageOrchestrator.getInstance().syncFromRelays(),
+        ]);
         this.loadProfileLists();
-        this.loadNostrInListLink();
+        this.loadMypageLink();
       } else {
         if (this.profileListsComponent) {
           this.profileListsComponent.destroy();
           this.profileListsComponent = null;
         }
-        const nostrinMount = this.container.querySelector('.profile-nostrin-list-mount');
-        if (nostrinMount) nostrinMount.innerHTML = '';
+        const mypageMount = this.container.querySelector('.profile-mypage-mount');
+        if (mypageMount) mypageMount.innerHTML = '';
       }
     });
     this.eventBusSubscriptions.push(id);
@@ -597,7 +638,7 @@ export class ProfileView extends View {
         </div>
 
       </div>
-      <div class="profile-nostrin-list-mount"></div>
+      <div class="profile-mypage-mount"></div>
 
       <div class="profile-articles-mount"></div>
       <div class="profile-videos-mount"></div>
@@ -618,8 +659,8 @@ export class ProfileView extends View {
       // Load profile lists (mounted bookmark folders)
       this.loadProfileLists();
 
-      // Load NostrIn list link
-      this.loadNostrInListLink();
+      // Load My Page link
+      this.loadMypageLink();
 
       // Load articles carousel
       this.loadArticlesCarousel();
@@ -1157,49 +1198,70 @@ export class ProfileView extends View {
   }
 
   /**
-   * Load profile lists (mounted bookmark folders)
+   * Load profile lists (mounted bookmark folders) — inline on PV
+   * Re-runnable: destroys the previous component before re-rendering.
    */
   private async loadProfileLists(): Promise<void> {
     if (this.authService.isCurrentUser(this.pubkey)) {
-      const { isNostrInEnabled } = await import('../../addons/nostrin/index');
-      if (!isNostrInEnabled()) return;
+      const { isMypageEnabled } = await import('../../addons/mypage/index');
+      if (!isMypageEnabled()) {
+        if (this.profileListsComponent) {
+          this.profileListsComponent.destroy();
+          this.profileListsComponent = null;
+        }
+        return;
+      }
     }
 
-    const nostrinMount = this.container.querySelector('.profile-nostrin-list-mount');
-    if (!nostrinMount) return;
+    const mypageMount = this.container.querySelector('.profile-mypage-mount');
+    if (!mypageMount) return;
 
     const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
     if (!isBookmarksEnabled()) return;
 
+    if (this.profileListsComponent) {
+      this.profileListsComponent.destroy();
+      this.profileListsComponent = null;
+    }
+
     const { ProfileListsComponent: PLC } = await import('../profile/ProfileListsComponent');
     this.profileListsComponent = new PLC(this.pubkey);
-    await this.profileListsComponent.render(nostrinMount);
+    await this.profileListsComponent.render(mypageMount);
   }
 
   /**
-   * Load "See my list" link for NostrIn professional list
+   * Load "My Page" link for the user's My Page (custom list + mounts)
+   * Visible if either the custom list OR at least one mounted folder exists.
    */
-  private async loadNostrInListLink(): Promise<void> {
-    const { isNostrInEnabled } = await import('../../addons/nostrin/index');
-    if (!isNostrInEnabled()) return;
+  private async loadMypageLink(): Promise<void> {
+    const { isMypageEnabled } = await import('../../addons/mypage/index');
+    if (!isMypageEnabled()) return;
 
     try {
       const isOwn = this.authService.isCurrentUser(this.pubkey);
 
-      const { NostrInListOrchestrator } = await import('../../services/orchestration/NostrInListOrchestrator');
-      const listData = await NostrInListOrchestrator.getInstance().fetchFromRelays(this.pubkey, false);
-      const hasExistingList = listData && listData.sections.length > 0;
+      const { MypageOrchestrator } = await import('../../services/orchestration/MypageOrchestrator');
+      const { MyPageMountsOrchestrator } = await import('../../services/orchestration/MyPageMountsOrchestrator');
 
-      // No list and not owner → nothing to show
-      if (!hasExistingList && !isOwn) return;
+      const [listData, mypageMounts] = await Promise.all([
+        MypageOrchestrator.getInstance().fetchFromRelays(this.pubkey, false),
+        MyPageMountsOrchestrator.getInstance().fetchFromRelays(this.pubkey, false),
+      ]);
 
-      const mount = this.container.querySelector('.profile-nostrin-list-mount');
+      const hasExistingList = !!listData && listData.sections.length > 0;
+      const hasMounts = mypageMounts.length > 0;
+      const hasContent = hasExistingList || hasMounts;
+
+      // Foreign profile with no content → nothing to show
+      if (!hasContent && !isOwn) return;
+
+      const mount = this.container.querySelector('.profile-mypage-mount');
       if (!mount) return;
 
-      if (hasExistingList) {
-        mount.innerHTML = `<a href="/profile/${this.npub}/list" class="profile-nostrin-list-link" data-action="view-list">See my list <span class="chevron-right"></span></a>`;
+      if (hasContent) {
+        mount.innerHTML = `<a href="/profile/${this.npub}/page" class="profile-mypage-link" data-action="view-page">My Page <span class="chevron-right"></span></a>`;
       } else {
-        mount.innerHTML = `<a href="/profile/${this.npub}/list/edit" class="profile-nostrin-list-link" data-action="edit-list">Edit personal list <span class="chevron-right"></span></a>`;
+        mount.innerHTML = `<a href="/profile/${this.npub}/page/edit" class="profile-mypage-link" data-action="edit-page">Set up My Page <span class="chevron-right"></span></a>`;
       }
 
       mount.querySelector('a')?.addEventListener('click', async (e: MouseEvent) => {

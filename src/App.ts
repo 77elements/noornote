@@ -257,9 +257,9 @@ export class App {
     // Parameterized routes (public)
     this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false,
       (params) => params.noteId ?? '');
-    this.registerRoute('/profile/:npub/list/edit', 'nostrin-list-edit', 'nostrin-list-edit', 'nlev', true,
+    this.registerRoute('/profile/:npub/page/edit', 'mypage-edit', 'mypage-edit', 'mpev', true,
       (params) => params.npub ?? '');
-    this.registerRoute('/profile/:npub/list', 'nostrin-list', 'nostrin-list', 'nlv', false,
+    this.registerRoute('/profile/:npub/page', 'mypage', 'mypage', 'mpv', false,
       (params) => params.npub ?? '');
     this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false,
       (params) => params.npub ?? '');
@@ -303,7 +303,7 @@ export class App {
     this.registerRoute('/addons/profile-recognition',   'addon-profile-recognition',   'addon-profile-recognition',   'adv', true);
     this.registerRoute('/addons/marketplace',           'addon-marketplace',           'addon-marketplace',           'adv', true);
     this.registerRoute('/addons/follow-packs',          'addon-follow-packs',          'addon-follow-packs',          'adv', true);
-    this.registerRoute('/addons/nostrin',               'addon-nostrin',               'addon-nostrin',               'adv', true);
+    this.registerRoute('/addons/mypage',                'addon-mypage',                'addon-mypage',                'adv', true);
     this.registerRoute('/addons/hashtag-subscriptions', 'addon-hashtag-subscriptions', 'addon-hashtag-subscriptions', 'adv', true);
     this.registerRoute('/addons/list-settings',         'addon-list-settings',         'addon-list-settings',         'adv', true);
     this.registerRoute('/addons/custom-emojis',         'addon-custom-emojis',         'addon-custom-emojis',         'adv', true);

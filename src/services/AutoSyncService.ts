@@ -207,18 +207,23 @@ export class AutoSyncService {
       await this.syncFromRelaysAll();
       this.startPeriodicSync();
 
-      // Sync NostrIn data from relays (startup only, not periodic)
+      // Sync My Page data from relays (startup only, not periodic)
       try {
-        const { isNostrInEnabled } = await import('../addons/nostrin/index');
-        if (isNostrInEnabled()) {
-          const { ProfileMountsOrchestrator } = await import('./orchestration/ProfileMountsOrchestrator');
-          await ProfileMountsOrchestrator.getInstance().syncFromRelays();
-
-          const { NostrInListOrchestrator } = await import('./orchestration/NostrInListOrchestrator');
-          await NostrInListOrchestrator.getInstance().syncFromRelays();
+        const { isMypageEnabled } = await import('../addons/mypage/index');
+        if (isMypageEnabled()) {
+          const [{ ProfileMountsOrchestrator }, { MyPageMountsOrchestrator }, { MypageOrchestrator }] = await Promise.all([
+            import('./orchestration/ProfileMountsOrchestrator'),
+            import('./orchestration/MyPageMountsOrchestrator'),
+            import('./orchestration/MypageOrchestrator'),
+          ]);
+          await Promise.all([
+            ProfileMountsOrchestrator.getInstance().syncFromRelays(),
+            MyPageMountsOrchestrator.getInstance().syncFromRelays(),
+            MypageOrchestrator.getInstance().syncFromRelays(),
+          ]);
         }
       } catch {
-        // NostrIn sync failed silently
+        // My Page sync failed silently
       }
     }, this.STARTUP_SYNC_DELAY);
   }

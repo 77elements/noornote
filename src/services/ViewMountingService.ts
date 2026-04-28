@@ -176,22 +176,22 @@ export class ViewMountingService {
           }
         };
 
-      case 'nostrin-list':
+      case 'mypage':
         return {
           requiresParam: true,
           factory: async (param) => {
-            const { NostrInListView } = await import('../addons/nostrin/NostrInListView');
-            const view = new NostrInListView(param!);
+            const { MypageView } = await import('../addons/mypage/MypageView');
+            const view = new MypageView(param!);
             return { element: view.getElement(), view };
           }
         };
 
-      case 'nostrin-list-edit':
+      case 'mypage-edit':
         return {
           requiresParam: true,
           factory: async (param) => {
-            const { NostrInListEditorView } = await import('../addons/nostrin/NostrInListEditorView');
-            const view = new NostrInListEditorView(param!);
+            const { MypageEditorView } = await import('../addons/mypage/MypageEditorView');
+            const view = new MypageEditorView(param!);
             return { element: view.getElement(), view };
           }
         };
@@ -462,11 +462,11 @@ export class ViewMountingService {
           }
         };
 
-      case 'addon-nostrin':
+      case 'addon-mypage':
         return {
           factory: async () => {
-            const { NostrInAddonView } = await import('../addons/nostrin/NostrInAddonView');
-            const view = new NostrInAddonView();
+            const { MypageAddonView } = await import('../addons/mypage/MypageAddonView');
+            const view = new MypageAddonView();
             return { element: view.getElement(), view };
           }
         };

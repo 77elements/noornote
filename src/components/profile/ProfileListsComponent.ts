@@ -14,6 +14,8 @@
 
 import { ProfileMountsService } from '../../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../../services/orchestration/ProfileMountsOrchestrator';
+import { MyPageMountsService } from '../../services/MyPageMountsService';
+import { MyPageMountsOrchestrator } from '../../services/orchestration/MyPageMountsOrchestrator';
 import {
   BookmarkOrchestrator,
   getBookmarkFolderService,
@@ -24,6 +26,19 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 
 const MAX_ITEMS_COLLAPSED = 3;
 
+export type MountsSource = 'profile' | 'mypage';
+
+interface MountsServiceLike {
+  getMounts(): string[];
+  setMountsFromRelay(folderNames: string[]): void;
+  reorderMounts(newOrder: string[]): void;
+}
+
+interface MountsOrchestratorLike {
+  fetchFromRelays(pubkey: string, forceRefresh?: boolean): Promise<string[]>;
+  publishToRelays(): Promise<void>;
+}
+
 interface ProfileListData {
   folderName: string;
   items: BookmarkItem[];
@@ -33,8 +48,8 @@ interface ProfileListData {
 export class ProfileListsComponent {
   private pubkey: string;
   private isOwnProfile: boolean;
-  private profileMountsService: ProfileMountsService;
-  private profileMountsOrch: ProfileMountsOrchestrator;
+  private mountsService: MountsServiceLike;
+  private mountsOrch: MountsOrchestratorLike;
   private bookmarkOrch: ReturnType<typeof BookmarkOrchestrator.getInstance>;
   private folderService: ReturnType<typeof getBookmarkFolderService>;
   private authService: AuthService;
@@ -43,11 +58,16 @@ export class ProfileListsComponent {
   private elements: HTMLElement[] = [];
   private insertAfterEl: Element | null = null;
 
-  constructor(pubkey: string) {
+  constructor(pubkey: string, source: MountsSource = 'profile') {
     this.pubkey = pubkey;
 
-    this.profileMountsService = ProfileMountsService.getInstance();
-    this.profileMountsOrch = ProfileMountsOrchestrator.getInstance();
+    if (source === 'mypage') {
+      this.mountsService = MyPageMountsService.getInstance();
+      this.mountsOrch = MyPageMountsOrchestrator.getInstance();
+    } else {
+      this.mountsService = ProfileMountsService.getInstance();
+      this.mountsOrch = ProfileMountsOrchestrator.getInstance();
+    }
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
     this.folderService = getBookmarkFolderService();
     this.authService = AuthService.getInstance();
@@ -65,20 +85,12 @@ export class ProfileListsComponent {
       let mountedFolders: string[];
 
       if (this.isOwnProfile) {
-        mountedFolders = this.profileMountsService.getMounts();
-
-        // Sync from relays to catch mounts set on other instances
-        try {
-          const relayMounts = await this.profileMountsOrch.fetchFromRelays(this.pubkey, true);
-          if (relayMounts.length > 0 && JSON.stringify(relayMounts) !== JSON.stringify(mountedFolders)) {
-            this.profileMountsService.setMountsFromRelay(relayMounts);
-            mountedFolders = relayMounts;
-          }
-        } catch {
-          // Relay fetch failed, use local mounts
-        }
+        // Trust local state. AutoSyncService handles cross-device sync at app
+        // boot and on addon toggle. Re-fetching here would race with in-flight
+        // publishToRelays from a just-toggled checkbox and revert the change.
+        mountedFolders = this.mountsService.getMounts();
       } else {
-        mountedFolders = await this.profileMountsOrch.fetchFromRelays(this.pubkey, true);
+        mountedFolders = await this.mountsOrch.fetchFromRelays(this.pubkey, true);
       }
 
       if (mountedFolders.length === 0) return;
@@ -350,9 +362,9 @@ export class ProfileListsComponent {
     this.lists.splice(toIndex > fromIndex ? toIndex - 1 : toIndex, 0, moved);
 
     const newOrder = this.lists.map(l => l.folderName);
-    this.profileMountsService.reorderMounts(newOrder);
+    this.mountsService.reorderMounts(newOrder);
 
-    this.profileMountsOrch.publishToRelays().catch(err => {
+    this.mountsOrch.publishToRelays().catch(err => {
       console.error('Failed to publish reordered mounts:', err);
     });
 

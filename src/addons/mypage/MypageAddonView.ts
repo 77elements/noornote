@@ -1,20 +1,20 @@
 import { View } from '../../components/views/View';
-import { NostrInSettings } from './NostrInSettings';
+import { MypageSettings } from './MypageSettings';
 
-export class NostrInAddonView extends View {
+export class MypageAddonView extends View {
   private container: HTMLElement;
-  private settings: NostrInSettings | null = null;
+  private settings: MypageSettings | null = null;
 
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-nostrin';
+    this.container.className = 'view-content view-content--addon view-content--addon-mypage';
     this.container.innerHTML = `
-      <h1>NostrIn</h1>
-      <section class="section" id="nostrin-settings-content"></section>
-      <div data-addon-content="nostrin"></div>
+      <h1>My Page</h1>
+      <section class="section" id="mypage-settings-content"></section>
+      <div data-addon-content="mypage"></div>
     `;
-    this.settings = new NostrInSettings();
+    this.settings = new MypageSettings();
     this.settings.mount(this.container);
   }
 

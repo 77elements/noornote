@@ -1,14 +1,14 @@
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
-import { isNostrInEnabled, setNostrInEnabled } from './index';
+import { isMypageEnabled, setMypageEnabled } from './index';
 import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
 
-export class NostrInSettings extends SettingsSection {
+export class MypageSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
 
   constructor() {
-    super('nostrin-settings');
+    super('mypage-settings');
   }
 
   public mount(parentContainer: HTMLElement): void {
@@ -17,19 +17,19 @@ export class NostrInSettings extends SettingsSection {
 
     this.enableSwitch = new Switch({
       label: '',
-      checked: isNostrInEnabled(),
+      checked: isMypageEnabled(),
       onChange: (checked) => {
-        setNostrInEnabled(checked);
-        EventBus.getInstance().emit('nostrin:toggle', { enabled: checked });
-        ToastService.show(checked ? 'NostrIn enabled' : 'NostrIn disabled', 'success');
+        setMypageEnabled(checked);
+        EventBus.getInstance().emit('mypage:toggle', { enabled: checked });
+        ToastService.show(checked ? 'My Page enabled' : 'My Page disabled', 'success');
       }
     });
 
     contentContainer.innerHTML = `
       <div class="setting">
-        <span class="setting__label">Enable NostrIn</span>
+        <span class="setting__label">Enable My Page</span>
         <div class="setting__control">${this.enableSwitch.render()}</div>
-        <p class="setting__desc">Mount a bookmark folder or a custom list of users to your own profile so other NoorNote users can see them. Client-side only — nothing is published to relays.</p>
+        <p class="setting__desc">Mount bookmark folders or a custom list to your profile so other NoorNote users can see them. Stored as NIP-78 events on your relays — anyone can read them, only you can publish them.</p>
       </div>
     `;
     this.enableSwitch.setupEventListeners(contentContainer);

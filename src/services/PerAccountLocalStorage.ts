@@ -89,7 +89,7 @@ export const StorageKeys = {
   HASHTAG_SUBSCRIPTIONS_ENABLED: 'noornote_hashtag_subscriptions_enabled_map',
   PROFILE_RECOGNITION_WINDOW: 'noornote_profile_recognition_window_map',
   LIST_SETTINGS_ENABLED: 'noornote_list_settings_enabled_map',
-  NOSTRIN_ENABLED: 'noornote_nostrin_enabled_map',
+  MYPAGE_ENABLED: 'noornote_mypage_enabled_map',
   CONTENT_WORD_FILTER_ENABLED: 'noornote_content_word_filter_enabled_map',
   CONTENT_WORD_FILTER_WORDS: 'noornote_content_word_filter_words_map',
   CUSTOM_EMOJIS_ENABLED: 'noornote_custom_emojis_enabled_map',
@@ -117,7 +117,8 @@ export const StorageKeys = {
 
   // Service data (per-account)
   PROFILE_MOUNTS: 'noornote_profile_mounts_map',
-  NOSTRIN_LIST: 'noornote_nostrin_list_map',
+  MYPAGE_MOUNTS: 'noornote_mypage_mounts_map',
+  MYPAGE_LIST: 'noornote_mypage_list_map',
   LIST_SYNC_MODE: 'noornote_list_sync_mode_map',
   EMOJI_FREQUENTLY_USED: 'noornote_emoji_frequently_used_map',
   PERSONAL_EMOJI_PACK: 'noornote_personal_emoji_pack_map',
