@@ -114,7 +114,10 @@ export class App {
     // Capture intended URL: ?r= override > sessionStorage (reload) > browser path (external link)
     const relayPath = relayParam ? `/relay/${encodeURIComponent(relayParam)}` : null;
     const lastURL = this.router.getLastURL();
-    const browserPath = window.location.pathname;
+    // In Electron prod, window.location.pathname is the on-disk file path of dist/index.html
+    // (never matches an SPA route). Honor pathname only in true web builds; native deep links
+    // arrive via electronAPI.onDeepLink / Capacitor app URL events.
+    const browserPath = PlatformService.getInstance().isBrowser ? window.location.pathname : '/';
     const intendedURL = relayPath || lastURL || (browserPath !== '/' ? browserPath : null);
 
     // Wait for auth initialization with safety timeout
