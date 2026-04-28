@@ -257,7 +257,7 @@ export class ZapService {
     }
 
     // Step 2: Create zap request event (kind 9734)
-    const zapRequestEvent = await this.createZapRequestEvent(request);
+    const zapRequestEvent = await this.createZapRequestEvent(request, lnurl);
     if (!zapRequestEvent) {
       ToastService.show('Failed to create zap request', 'error');
       return { success: false, error: 'Failed to create zap request event' };
@@ -509,7 +509,7 @@ export class ZapService {
    * NORMAL NOTES: Uses #e tag with event ID
    * LONG-FORM ARTICLES: Uses #a tag with addressable identifier AND #e tag with event ID
    */
-  private async createZapRequestEvent(request: ZapRequest): Promise<NostrEvent | null> {
+  private async createZapRequestEvent(request: ZapRequest, lnurl: string): Promise<NostrEvent | null> {
     try {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) {
@@ -517,14 +517,16 @@ export class ZapService {
         return null;
       }
 
-      // Get relays for zap receipt publication
-      const relays = this.relayConfig.getWriteRelays();
+      // NIP-57: single `relays` tag with multiple values (not multiple separate tags),
+      // capped at 4 to match NDK / nostr-tools and stay within typical LNURL-server limits.
+      // The `lnurl` tag is mandatory per NIP-57.
+      const relays = this.relayConfig.getWriteRelays().slice(0, 4);
 
-      // Build tags based on note type
       const tags: string[][] = [
-        ['p', request.authorPubkey], // Recipient pubkey
-        ['amount', (request.amount * 1000).toString()], // Amount in millisats
-        ...relays.map(relay => ['relays', relay]) // Relays for zap receipt
+        ['p', request.authorPubkey],
+        ['amount', (request.amount * 1000).toString()],
+        ['relays', ...relays],
+        ['lnurl', lnurl],
       ];
 
       if (request.noteId) {
