@@ -3418,10 +3418,33 @@ export class BookmarkManager {
     const folder = this.folderService.getFolder(folderId);
     if (!folder) return;
 
+    const oldName = folder.name;
+
     const modal = new EditFolderModal({
       currentName: folder.name,
-      onSave: (newName) => {
+      onSave: async (newName) => {
         try {
+          // Eager NIP-09 kind:5 deletion for the OLD folder coordinate, otherwise the
+          // old kind:30003 set event keeps living on relays and resurrects on next fetch.
+          // See docs/features/lists.md "Eager kind:5 deletion publish".
+          if (oldName && oldName !== newName) {
+            const currentUser = this.authService.getCurrentUser();
+            if (currentUser) {
+              const oldCoordinate = `30003:${currentUser.pubkey}:${oldName}`;
+              diagLog('lists', 'eager kind:5 publish for folder rename — start', { oldName, newName, oldCoordinate });
+              try {
+                const ok = await DeletionService.getInstance().deleteByCoordinates(
+                  [oldCoordinate],
+                  `Bookmark folder renamed from "${oldName}" to "${newName}"`
+                );
+                diagLog('lists', 'eager kind:5 publish for folder rename — done', { oldName, newName, ok });
+              } catch (kind5Err) {
+                diagLog('lists', 'eager kind:5 publish for folder rename — FAILED', { oldName, newName, error: String(kind5Err) });
+                logger.warn('bookmarks.ts', `Eager kind:5 publish failed for folder rename "${oldName}" → "${newName}": ${kind5Err}`);
+              }
+            }
+          }
+
           this.folderService.renameFolder(folderId, newName);
 
           this.profileMountsService.handleFolderRename(folder.name, newName);
@@ -3458,6 +3481,28 @@ export class BookmarkManager {
     try {
       const folder = this.folderService.getFolder(folderId);
       const folderName = folder?.name || '';
+
+      // Eagerly publish NIP-09 kind:5 deletion BEFORE local mutation. This guarantees
+      // that the relay network learns about the deletion regardless of whether a later
+      // publishBookmarksToRelays would catch it via its conditional fetch-comparison.
+      // See docs/features/lists.md "Eager kind:5 deletion publish".
+      if (folderName) {
+        const currentUser = this.authService.getCurrentUser();
+        if (currentUser) {
+          const coordinate = `30003:${currentUser.pubkey}:${folderName}`;
+          diagLog('lists', 'eager kind:5 publish for folder delete — start', { folderName, coordinate });
+          try {
+            const ok = await DeletionService.getInstance().deleteByCoordinates(
+              [coordinate],
+              `Bookmark folder "${folderName}" deleted`
+            );
+            diagLog('lists', 'eager kind:5 publish for folder delete — done', { folderName, ok });
+          } catch (kind5Err) {
+            diagLog('lists', 'eager kind:5 publish for folder delete — FAILED', { folderName, error: String(kind5Err) });
+            logger.warn('bookmarks.ts', `Eager kind:5 publish failed for folder "${folderName}": ${kind5Err}`);
+          }
+        }
+      }
 
       this.profileMountsService.handleFolderDelete(folderName);
       this.mypageMountsService.handleFolderDelete(folderName);
