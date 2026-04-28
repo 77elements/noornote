@@ -406,6 +406,28 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Build NDK filters specifically for reply counting (kind:1 NIP-10 + kind:1111 NIP-22).
+   * Adds uppercase root-tag variants (#E / #A) on top of the regular parent-tag filters
+   * so that nested NIP-22 replies (which reference the root via uppercase tags) count
+   * toward the original note's total — not just direct replies.
+   */
+  private buildReplyFilters(kinds: number[], noteId: string, articleEventId?: string): NDKFilter[] {
+    const filters: NDKFilter[] = this.buildFilters(kinds, noteId, articleEventId);
+    const isArticle = this.isLongFormArticle(noteId);
+
+    if (isArticle) {
+      filters.push({ kinds, '#A': [noteId] });
+      if (articleEventId) {
+        filters.push({ kinds, '#E': [articleEventId] });
+      }
+    } else {
+      filters.push({ kinds, '#E': [noteId] });
+    }
+
+    return filters;
+  }
+
+  /**
    * Fetch reaction events (kind 7) - returns full events for Analytics Modal
    * Per NIP-25: ALL content values are valid (emojis, +, -, custom emoji)
    *
@@ -507,7 +529,15 @@ export class ReactionsOrchestrator extends Orchestrator {
     const seenReplyIds = new Set<string>();
     const relays = this.transport.getReadRelays();
     const isArticle = this.isLongFormArticle(noteId);
-    const filters = this.buildFilters([1], noteId, articleEventId);
+    // Include kind:1 (NIP-10 replies) AND kind:1111 (NIP-22 comments).
+    // NIP-22 is mandatory for replies to addressable events (articles, NIP-34 Git
+    // events) and increasingly used for kind:1 replies as well.
+    //
+    // Filter on BOTH lowercase and uppercase root tags so the count includes
+    // direct + nested replies. NIP-22 nested replies reference the parent via
+    // lowercase (e/a) and the root via uppercase (E/A) — without #E/#A the count
+    // would only show direct replies.
+    const filters = this.buildReplyFilters([1, 1111], noteId, articleEventId);
 
     return new Promise((resolve) => {
       let timeout: ReturnType<typeof setTimeout>;
@@ -515,13 +545,14 @@ export class ReactionsOrchestrator extends Orchestrator {
         onEvent: (event: NostrEvent) => {
           if (!event.id || seenReplyIds.has(event.id)) return;
 
-          // Verify the event actually references our note
+          // Verify the event actually references our note. Accept both lowercase
+          // (parent — direct reply) and uppercase (root — nested NIP-22 reply) tags.
           const referencesNote = isArticle
             ? event.tags.some(tag =>
-                (tag[0] === 'a' && tag[1] === noteId) ||
-                (articleEventId && tag[0] === 'e' && tag[1] === articleEventId)
+                ((tag[0] === 'a' || tag[0] === 'A') && tag[1] === noteId) ||
+                (articleEventId && (tag[0] === 'e' || tag[0] === 'E') && tag[1] === articleEventId)
               )
-            : event.tags.some(tag => tag[0] === 'e' && tag[1] === noteId);
+            : event.tags.some(tag => (tag[0] === 'e' || tag[0] === 'E') && tag[1] === noteId);
 
           if (referencesNote) {
             replies.push(event);
