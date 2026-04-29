@@ -15,6 +15,7 @@
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { MypageService, type MypageListData } from '../MypageService';
+import type { MypagePageV2 } from '../../addons/mypage/blocks/types';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 
@@ -75,6 +76,45 @@ export class MypageOrchestrator {
 
     this.systemLogger.info('MypageOrchestrator',
       `Published My Page list: ${listData.sections.length} sections`
+    );
+  }
+
+  /**
+   * Publish a v2 (block-based) page to relays. Same NIP-78 slot as v1
+   * (kind:30078, d-tag noornote/list) — v2 events overwrite v1 because the
+   * d-tag matches. Older NoorNote installations reading v1-only will see
+   * an empty page until they're updated; the only current user is the
+   * developer so this is acceptable transitional state.
+   */
+  public async publishV2ToRelays(page: MypagePageV2): Promise<void> {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) throw new Error('User not authenticated');
+
+    const writeRelays = this.transport.getWriteRelays();
+    if (writeRelays.length === 0) throw new Error('No write relays available');
+
+    const event = {
+      kind: NIP78_KIND,
+      created_at: Math.floor(Date.now() / 1000),
+      tags: [['d', D_TAG]],
+      content: JSON.stringify(page),
+      pubkey: currentUser.pubkey
+    };
+
+    const signed = await this.authService.signEvent(event);
+    if (!signed) throw new Error('Failed to sign v2 page event');
+
+    await this.transport.publish(writeRelays, signed);
+
+    diagLog('lists', 'MypageOrchestrator publishV2ToRelays', {
+      blockCount: page.blocks.length,
+      hasTitle: !!page.title,
+      hasSubtitle: !!page.subtitle,
+      hasDescription: !!page.description,
+    });
+
+    this.systemLogger.info('MypageOrchestrator',
+      `Published My Page v2: ${page.blocks.length} blocks`
     );
   }
 

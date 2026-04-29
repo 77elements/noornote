@@ -264,3 +264,317 @@
     border-color: $color-4;
   }
 }
+
+// ==========================================
+// Block Library (SCC tab)
+// ==========================================
+
+.block-library {
+  padding: $gap;
+}
+
+.block-library__intro {
+  margin-bottom: $gap;
+  color: $text-alpha-medium;
+  font-size: 0.9rem;
+
+  p { margin: 0; }
+}
+
+.block-library__rows {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.block-library__row {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  padding: calc($gap / 2) $gap;
+  background: $color-2;
+  border-radius: $radius-xl;
+  transition: $transition-colors;
+
+  &--disabled {
+    opacity: 0.5;
+  }
+
+  &:not(.block-library__row--disabled):hover {
+    background: $surface-tint;
+  }
+}
+
+.block-library__icon {
+  font-size: 1.4rem;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.block-library__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.block-library__label {
+  font-weight: 600;
+  color: $color-5;
+}
+
+.block-library__description {
+  font-size: 0.85rem;
+  color: $text-alpha-medium;
+  @include text-truncate;
+}
+
+.block-library__apply {
+  flex-shrink: 0;
+}
+
+.block-library__footer {
+  margin-top: $gap * 2;
+  padding-top: $gap;
+  border-top: 1px solid $color-2;
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.block-library__footer-status {
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.block-library__saved-indicator {
+  color: $color-6;
+  font-weight: 500;
+}
+
+.block-library__no-draft {
+  color: $text-alpha-medium;
+}
+
+.block-library__footer-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: calc($gap / 2);
+}
+
+// ==========================================
+// Danger Zone (page-level destructive actions)
+// ==========================================
+
+.mypage-danger-zone {
+  margin-top: $gap * 4;
+  padding: $gap;
+  border: 1px dashed $color-red;
+  border-radius: $radius-xl;
+  text-align: center;
+  background: $bg-error;
+}
+
+.mypage-danger-zone__hint {
+  margin: calc($gap / 2) 0 0;
+  font-size: 0.8rem;
+  color: $text-alpha-medium;
+}
+
+// ==========================================
+// Block placeholders (renderers pending)
+// ==========================================
+
+.mypage-block-placeholder {
+  padding: $gap;
+  border: 1px dashed $color-2;
+  border-radius: $radius-xl;
+  color: $text-alpha-medium;
+  font-style: italic;
+  margin-bottom: $gap;
+}
+
+.mypage-block-text {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  margin: 0 0 $gap;
+  color: $text-alpha-heavy;
+}
+
+.mypage-block-divider {
+  border: none;
+  border-top: 1px solid $color-2;
+  margin: $gap * 2 0;
+}
+
+.mypage-block-links {
+  margin-bottom: $gap * 2;
+}
+
+.mypage-block-links__title {
+  font-weight: 600;
+  margin-bottom: calc($gap / 2);
+  color: $color-5;
+}
+
+.mypage-block-links__items {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 4);
+}
+
+.mypage-block-links__item {
+  display: block;
+  padding: calc($gap / 4) 0;
+  color: $color-4;
+  text-decoration: none;
+  border-bottom: 1px solid $color-2;
+
+  &:hover { text-decoration: underline; }
+  &:last-child { border-bottom: none; }
+}
+
+// ==========================================
+// Block edit-mode wrappers (mobile-first, always-visible toolbars)
+// ==========================================
+
+.mypage-view__pagefields {
+  margin-bottom: $gap * 2;
+  padding: $gap;
+  border: 1px dashed $color-2;
+  border-radius: $radius-xl;
+}
+
+.mypage-block-edit {
+  position: relative;
+  margin-bottom: $gap;
+  padding: $gap;
+  border: 1px solid $color-2;
+  border-radius: $radius-xl;
+  background: rgba($color-white, 0.02);
+}
+
+.mypage-block-edit__toolbar {
+  @include flex-between;
+  align-items: center;
+  margin-bottom: calc($gap / 2);
+  padding-bottom: calc($gap / 2);
+  border-bottom: 1px dashed $color-2;
+}
+
+.mypage-block-edit__type-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $text-alpha-medium;
+}
+
+.mypage-block-edit__actions {
+  display: flex;
+  gap: calc($gap / 4);
+}
+
+.mypage-block-edit__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  min-height: 32px;
+  padding: calc($gap / 4);
+  background: transparent;
+  border: 1px solid $color-2;
+  border-radius: $radius-pill;
+  color: $color-5;
+  cursor: pointer;
+  transition: $transition-colors;
+
+  &:hover {
+    background: $surface-tint;
+    border-color: $color-4;
+    color: $color-4;
+  }
+
+  &--danger:hover {
+    border-color: $color-red;
+    color: $color-red;
+  }
+}
+
+.mypage-block-edit__content {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+// Heading edit
+.mypage-block-heading__level-select {
+  width: 80px;
+  padding: calc($gap / 2);
+  background: $color-2;
+  border: 1px solid $color-2;
+  border-radius: $radius-pill;
+  color: $color-5;
+}
+
+.mypage-block-heading__input {
+  font-weight: 600;
+}
+
+// Text edit
+.mypage-block-text__input {
+  min-height: 80px;
+}
+
+// List edit
+.mypage-block-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 4);
+}
+
+.mypage-block-list__item-row,
+.mypage-block-list__add-row,
+.mypage-block-links__item-row {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+
+  .input { flex: 1; }
+}
+
+// Links edit
+.mypage-block-links__items-edit {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+// Bookmark-folder edit
+.mypage-block-bookmark-folder {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.mypage-block-bookmark-folder__label {
+  font-size: 0.85rem;
+  color: $color-4;
+  font-weight: 500;
+}
+
+.mypage-block-bookmark-folder__hint {
+  font-size: 0.8rem;
+  color: $text-alpha-medium;
+  font-style: italic;
+  margin: 0;
+}
+
+// Bookmark folder picker (shared component)
+.bookmark-folder-picker {
+  width: 100%;
+}
+
+.bookmark-folder-picker__select {
+  width: 100%;
+}
+

@@ -15,6 +15,9 @@ import { View } from '../../components/views/View';
 import { AuthService } from '../../services/AuthService';
 import { MypageOrchestrator } from '../../services/orchestration/MypageOrchestrator';
 import { MypageService, mypageHasContent, type MypageListData } from '../../services/MypageService';
+import { BlockRenderer } from './blocks/BlockRenderer';
+import { migrateV1ToV2 } from './blocks/migrate';
+import type { MypagePageV2 } from './blocks/types';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
@@ -22,7 +25,14 @@ import { ToastService } from '../../services/ToastService';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { EventBus } from '../../services/EventBus';
+import { BlockLibraryView } from './blocks/BlockLibraryView';
+import { createBlock, type BlockType } from './blocks/types';
+import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
+import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
+import { MyPageMountsService } from '../../services/MyPageMountsService';
 import DOMPurify from 'dompurify';
+
+const BLOCK_LIBRARY_TAB_ID = 'mypage-block-library';
 
 export class MypageView extends View {
   private container: HTMLElement;
@@ -32,6 +42,9 @@ export class MypageView extends View {
   private orchestrator: MypageOrchestrator;
   private listService: MypageService;
   private mountsComponent: ProfileListsComponent | null = null;
+  private blockLibrary: BlockLibraryView | null = null;
+  private editMode: boolean = false;
+  private folderPickers: BookmarkFolderPicker[] = [];
   private eventBusSubscriptions: string[] = [];
 
   constructor(npub: string) {
@@ -54,6 +67,7 @@ export class MypageView extends View {
     this.isOwnProfile = AuthService.getInstance().isCurrentUser(this.pubkey);
 
     this.setupChangeListeners();
+    this.setupEditDelegation();
     this.loadAndRender();
   }
 
@@ -67,7 +81,14 @@ export class MypageView extends View {
     this.eventBusSubscriptions = [];
     this.mountsComponent?.destroy();
     this.mountsComponent = null;
+    this.destroyFolderPickers();
+    this.closeBlockLibrary();
     this.container.innerHTML = '';
+  }
+
+  private destroyFolderPickers(): void {
+    this.folderPickers.forEach(p => p.destroy());
+    this.folderPickers = [];
   }
 
   /**
@@ -83,6 +104,9 @@ export class MypageView extends View {
     );
     this.eventBusSubscriptions.push(
       eventBus.on('mypageList:changed', () => this.loadAndRender())
+    );
+    this.eventBusSubscriptions.push(
+      eventBus.on('mypageDraftV2:changed', () => this.loadAndRender())
     );
   }
 
@@ -195,27 +219,66 @@ export class MypageView extends View {
   private async renderList(data: MypageListData): Promise<void> {
     const username = await this.loadUsername();
 
-    const title = data.title?.trim();
-    const subtitle = data.subtitle?.trim();
-    const description = data.description?.trim();
+    // Render priority for own profile:
+    //   1. v2 draft (work-in-progress, set by Block Library Apply)
+    //   2. v2 published (mirror of last successful publish — survives reloads)
+    //   3. v1 migrated to v2 (legacy fallback — pre-v2 published state)
+    // For foreign profiles: only v1 from relays migrated. Their mounts come
+    // from ProfileListsComponent (separately fetches from their relays).
+    let page: MypagePageV2;
+    if (this.isOwnProfile) {
+      page = this.listService.getDraftV2()
+        ?? this.listService.getPublishedV2()
+        ?? this.listService.getPageV2();
+    } else {
+      page = migrateV1ToV2(data, []);
+    }
 
-    const pageHeaderHtml = `
-      ${title ? `<h1 class="mypage-view__title">${DOMPurify.sanitize(title)}</h1>` : ''}
-      ${subtitle ? `<p class="mypage-view__subtitle">${DOMPurify.sanitize(subtitle)}</p>` : ''}
-      ${description ? `<p class="mypage-view__description">${DOMPurify.sanitize(description)}</p>` : ''}
-    `;
+    const editable = this.editMode && this.isOwnProfile;
+    const title = page.title || '';
+    const subtitle = page.subtitle || '';
+    const description = page.description || '';
 
-    const sectionsHtml = data.sections.map(section => `
-      <div class="mypage-section">
-        <h2 class="mypage-section__title">${DOMPurify.sanitize(section.title)}</h2>
-        <ul class="mypage-section__items">
-          ${section.items.map(item => `
-            <li class="mypage-section__item">${DOMPurify.sanitize(item)}</li>
-          `).join('')}
-        </ul>
-      </div>
-    `).join('');
+    const pageHeaderHtml = editable
+      ? `
+        <div class="mypage-view__pagefields">
+          <div class="form__row">
+            <label for="mypage-page-title">Page title</label>
+            <input id="mypage-page-title" type="text" class="input input--title" data-page-field="title" value="${this.escapeAttr(title)}" placeholder="Optional page title..." />
+          </div>
+          <div class="form__row">
+            <label for="mypage-page-subtitle">Subtitle</label>
+            <input id="mypage-page-subtitle" type="text" class="input" data-page-field="subtitle" value="${this.escapeAttr(subtitle)}" placeholder="Optional subtitle..." />
+          </div>
+          <div class="form__row">
+            <label for="mypage-page-description">Description</label>
+            <textarea id="mypage-page-description" class="textarea textarea--small" data-page-field="description" placeholder="Optional description...">${this.escapeText(description)}</textarea>
+          </div>
+        </div>`
+      : `
+        ${title.trim() ? `<h1 class="mypage-view__title">${DOMPurify.sanitize(title)}</h1>` : ''}
+        ${subtitle.trim() ? `<p class="mypage-view__subtitle">${DOMPurify.sanitize(subtitle)}</p>` : ''}
+        ${description.trim() ? `<p class="mypage-view__description">${DOMPurify.sanitize(description)}</p>` : ''}
+      `;
 
+    const blocksHtml = BlockRenderer.renderAll(page.blocks, { editable });
+    const hasDraft = this.isOwnProfile && this.listService.hasDraftV2();
+
+    const dangerZoneHtml = this.isOwnProfile
+      ? `
+        <div class="mypage-danger-zone">
+          <button class="btn btn--mini btn--danger" data-action="delete-list">Delete page from relays</button>
+          <p class="mypage-danger-zone__hint">Removes the published page everywhere. Mounted bookmark folders are not affected.</p>
+        </div>
+      `
+      : '';
+
+    // Tear down old picker instances before innerHTML replaces their DOM
+    this.destroyFolderPickers();
+
+    // Danger zone lives OUTSIDE .mypage-view so it stays the last element on
+    // the page even after renderMounts() appends bookmark-folder content
+    // inside .mypage-view.
     this.container.innerHTML = `
       <div class="mypage-view">
         <div class="mypage-header">
@@ -224,18 +287,21 @@ export class MypageView extends View {
           </div>
           ${this.isOwnProfile ? `
             <div class="mypage-header__actions">
-              <button class="btn btn--medium btn--passive" data-action="edit-list">
+              <button class="btn btn--medium btn--passive" data-action="open-block-editor" title="Open Block Library in the right sidebar">
                 <svg width="14" height="14"><use href="#icon-edit"/></svg>
-                Edit
+                Block Editor${hasDraft ? ' •' : ''}
               </button>
-              <button class="btn btn--medium btn--danger" data-action="delete-list">Delete</button>
+              <button class="btn btn--medium btn--passive" data-action="edit-list" title="Old text editor">Edit list</button>
             </div>
           ` : ''}
         </div>
         ${pageHeaderHtml}
-        ${sectionsHtml}
+        ${blocksHtml}
       </div>
+      ${dangerZoneHtml}
     `;
+
+    if (editable) this.mountFolderPickers();
 
     this.bindHeaderEvents();
   }
@@ -249,10 +315,30 @@ export class MypageView extends View {
     if (!lastChild) return;
 
     this.mountsComponent = new ProfileListsComponent(this.pubkey, 'mypage');
-    await this.mountsComponent.render(lastChild);
+
+    // For own profile: extract folder names from the current v2 page
+    // (draft → published → migrated v1) so the readonly view reflects
+    // the user's in-progress block-editor changes immediately, without
+    // waiting for publish + MyPageMountsService sync.
+    if (this.isOwnProfile) {
+      const page = this.listService.getDraftV2()
+        ?? this.listService.getPublishedV2()
+        ?? this.listService.getPageV2();
+      const folderNames = page.blocks
+        .filter((b): b is Extract<typeof page.blocks[number], { type: 'bookmark-folder' }> => b.type === 'bookmark-folder')
+        .map(b => b.folderName)
+        .filter(name => !!name);
+      await this.mountsComponent.render(lastChild, folderNames);
+    } else {
+      await this.mountsComponent.render(lastChild);
+    }
   }
 
   private bindHeaderEvents(): void {
+    this.container.querySelector('[data-action="open-block-editor"]')?.addEventListener('click', () => {
+      this.openBlockLibrary();
+    });
+
     this.container.querySelector('[data-action="edit-list"]')?.addEventListener('click', () => {
       Router.getInstance().navigate(`/profile/${this.npub}/page/edit`);
     });
@@ -280,5 +366,311 @@ export class MypageView extends View {
       e.preventDefault();
       Router.getInstance().navigate(`/profile/${this.npub}`);
     });
+  }
+
+  /**
+   * Inject the Block Library tab into the SCC and switch to it.
+   * Tab is removed when MypageView destroys (= user navigates away).
+   */
+  private openBlockLibrary(): void {
+    const sidebarTabs = document.querySelector('#sidebar-tabs');
+    const contentBody = document.querySelector('.secondary-content-body');
+    const secondaryContent = document.querySelector('.secondary-content') as HTMLElement | null;
+    if (!sidebarTabs || !contentBody || !secondaryContent) return;
+
+    // Reuse existing tab if already open
+    let tabContent = contentBody.querySelector(`[data-tab-content="${BLOCK_LIBRARY_TAB_ID}"]`) as HTMLElement | null;
+    if (!tabContent) {
+      const tabButton = createClosableTab(
+        BLOCK_LIBRARY_TAB_ID,
+        'Block Library',
+        () => this.closeBlockLibrary()
+      );
+      tabButton.addEventListener('click', () => switchTabWithContent(secondaryContent, BLOCK_LIBRARY_TAB_ID));
+      sidebarTabs.appendChild(tabButton);
+
+      this.blockLibrary = new BlockLibraryView({
+        onApply: (type) => this.applyBlock(type),
+        onDiscard: () => this.discardDraft(),
+        onPublish: () => this.publishDraft(),
+        getHasDraft: () => this.listService.hasDraftV2()
+      });
+      tabContent = document.createElement('div');
+      tabContent.className = 'tab-content';
+      tabContent.dataset.tabContent = BLOCK_LIBRARY_TAB_ID;
+      tabContent.appendChild(this.blockLibrary.getElement());
+      contentBody.appendChild(tabContent);
+    }
+
+    switchTabWithContent(secondaryContent, BLOCK_LIBRARY_TAB_ID);
+    if (!this.editMode) {
+      this.editMode = true;
+      this.loadAndRender();
+    }
+  }
+
+  private closeBlockLibrary(): void {
+    document.querySelector(`#sidebar-tabs > [data-tab="${BLOCK_LIBRARY_TAB_ID}"]`)?.remove();
+    document.querySelector(`.secondary-content-body > [data-tab-content="${BLOCK_LIBRARY_TAB_ID}"]`)?.remove();
+    this.blockLibrary?.destroy();
+    this.blockLibrary = null;
+
+    // After removing the tab, fall back to System Logs (the always-present tab).
+    const secondaryContent = document.querySelector('.secondary-content') as HTMLElement | null;
+    if (secondaryContent) {
+      const stillActive = secondaryContent.querySelector('.tab--active');
+      if (!stillActive) switchTabWithContent(secondaryContent, 'system-log');
+    }
+
+    if (this.editMode) {
+      this.editMode = false;
+      this.loadAndRender();
+    }
+  }
+
+  /**
+   * Apply a block from the Library: append to the current draft (or seed
+   * a new draft from the migrated v1 page) and persist locally as v2.
+   * The 'mypageDraftV2:changed' event triggers MypageView re-render.
+   */
+  private applyBlock(type: BlockType): void {
+    const current = this.listService.getDraftV2() ?? this.listService.getPageV2();
+    const block = createBlock(type);
+
+    // Sensible defaults so the new block is visible immediately
+    if (block.type === 'heading')         block.text = 'New heading';
+    if (block.type === 'text')            block.content = 'New text block.';
+    if (block.type === 'list')            block.title = 'New list';
+    if (block.type === 'links')           block.title = 'Links';
+    if (block.type === 'bookmark-folder') block.folderName = ''; // user picks via picker
+
+    const next: MypagePageV2 = {
+      ...current,
+      blocks: [...current.blocks, block]
+    };
+    this.listService.saveDraftV2(next);
+    ToastService.show(`${type} block added`, 'success');
+  }
+
+  private async discardDraft(): Promise<void> {
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Discard draft',
+      message: 'This removes all unpublished changes from this device. The page on relays is not affected. Cannot be undone.',
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+    this.listService.clearDraftV2();
+    ToastService.show('Draft discarded', 'success');
+  }
+
+  private async publishDraft(): Promise<void> {
+    const draft = this.listService.getDraftV2();
+    if (!draft) {
+      ToastService.show('No draft to publish', 'error');
+      return;
+    }
+
+    try {
+      await this.orchestrator.publishV2ToRelays(draft);
+      this.listService.savePublishedV2(draft);
+
+      // Sync MyPageMountsService from bookmark-folder blocks so
+      // ProfileListsComponent (legacy renderer at the page bottom) reflects
+      // the new mount selection. Slice 7 will move bookmark-folder rendering
+      // inline and this sync becomes obsolete.
+      const folderNames = draft.blocks
+        .filter((b): b is Extract<typeof draft.blocks[number], { type: 'bookmark-folder' }> => b.type === 'bookmark-folder')
+        .map(b => b.folderName)
+        .filter(name => !!name);
+      MyPageMountsService.getInstance().setMountsFromRelay(folderNames);
+
+      this.listService.clearDraftV2();
+      ToastService.show('Page published', 'success');
+      this.closeBlockLibrary();
+    } catch (error) {
+      console.error('Failed to publish page:', error);
+      ToastService.show('Publish failed — try again', 'error');
+    }
+  }
+
+  private mountFolderPickers(): void {
+    const slots = this.container.querySelectorAll<HTMLElement>('[data-bookmark-folder-picker]');
+    slots.forEach(slot => {
+      const blockId = slot.dataset.blockId;
+      if (!blockId) return;
+      const currentFolder = slot.dataset.folderName || '';
+
+      const picker = new BookmarkFolderPicker({
+        ...(currentFolder ? { selectedFolderName: currentFolder } : {}),
+        onChange: (folderName) => this.handleBookmarkFolderChange(blockId, folderName ?? '')
+      });
+      slot.appendChild(picker.getElement());
+      this.folderPickers.push(picker);
+    });
+  }
+
+  private handleBookmarkFolderChange(blockId: string, folderName: string): void {
+    this.mutateDraft((page) => {
+      const block = page.blocks.find(b => b.id === blockId);
+      if (block?.type === 'bookmark-folder') block.folderName = folderName;
+    }, { silent: true });
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Edit-mode event delegation
+  // ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Single delegated listener attached to this.container at construction.
+   * Survives re-renders. Dispatches by data-action / data-field /
+   * data-page-field attribute. No-ops in readonly mode (no matching
+   * elements in the DOM).
+   */
+  private setupEditDelegation(): void {
+    this.container.addEventListener('input', (e) => {
+      const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+      const pageField = target.dataset?.pageField;
+      if (pageField) { this.handlePageFieldInput(pageField, target.value); return; }
+
+      const blockId = target.dataset?.blockId;
+      const field = target.dataset?.field;
+      if (blockId && field) this.handleBlockFieldInput(blockId, field, target);
+    });
+
+    this.container.addEventListener('click', (e) => {
+      const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+      if (!btn) return;
+      const action = btn.dataset.action!;
+      const blockId = btn.dataset.blockId;
+      if (!blockId) return;
+      const itemIndex = btn.dataset.itemIndex !== undefined ? parseInt(btn.dataset.itemIndex, 10) : -1;
+
+      switch (action) {
+        case 'delete':       this.deleteBlock(blockId); break;
+        case 'move-up':      this.moveBlock(blockId, -1); break;
+        case 'move-down':    this.moveBlock(blockId, +1); break;
+        case 'add-item':     this.addListItem(blockId); break;
+        case 'delete-item':  if (itemIndex >= 0) this.deleteListItem(blockId, itemIndex); break;
+        case 'add-link':     this.addLink(blockId); break;
+        case 'delete-link':  if (itemIndex >= 0) this.deleteLink(blockId, itemIndex); break;
+      }
+    });
+
+    this.container.addEventListener('keydown', (e) => {
+      if ((e as KeyboardEvent).key !== 'Enter') return;
+      const target = e.target as HTMLInputElement;
+      if (target.dataset?.field === 'new-item') {
+        e.preventDefault();
+        const blockId = target.dataset.blockId;
+        if (blockId) this.addListItem(blockId);
+      }
+    });
+  }
+
+  /**
+   * Mutate the draft via a callback, save, optionally trigger re-render.
+   * Field-level edits use silent=true (skip re-render to keep input focus).
+   * Structural changes (delete/move/add) re-render.
+   */
+  private mutateDraft(updater: (page: MypagePageV2) => void, opts: { silent?: boolean } = {}): void {
+    const draft = this.listService.getDraftV2() ?? this.listService.getPageV2();
+    const next: MypagePageV2 = JSON.parse(JSON.stringify(draft));
+    updater(next);
+    this.listService.saveDraftV2(next, { silent: opts.silent === true });
+  }
+
+  private handlePageFieldInput(field: string, value: string): void {
+    this.mutateDraft((page) => {
+      if (field === 'title')       page.title = value;
+      if (field === 'subtitle')    page.subtitle = value;
+      if (field === 'description') page.description = value;
+    }, { silent: true });
+  }
+
+  private handleBlockFieldInput(blockId: string, field: string, el: HTMLInputElement | HTMLTextAreaElement): void {
+    // Skip "new-item" — that input is consumed on Enter / + click, not on input
+    if (field === 'new-item') return;
+
+    const itemIndex = el.dataset?.itemIndex !== undefined ? parseInt(el.dataset.itemIndex, 10) : -1;
+    this.mutateDraft((page) => {
+      const block = page.blocks.find(b => b.id === blockId);
+      if (!block) return;
+
+      if (block.type === 'heading') {
+        if (field === 'text')  block.text = el.value;
+        if (field === 'level') block.level = parseInt(el.value, 10) as 1 | 2 | 3;
+      } else if (block.type === 'text') {
+        if (field === 'content') block.content = el.value;
+      } else if (block.type === 'list') {
+        if (field === 'title') block.title = el.value;
+        if (field === 'item' && itemIndex >= 0) block.items[itemIndex] = el.value;
+      } else if (block.type === 'links') {
+        if (field === 'title') block.title = el.value;
+        if (field === 'link-label' && itemIndex >= 0 && block.items[itemIndex]) block.items[itemIndex]!.label = el.value;
+        if (field === 'link-url' && itemIndex >= 0 && block.items[itemIndex]) block.items[itemIndex]!.url = el.value;
+      }
+    }, { silent: true });
+  }
+
+  private deleteBlock(blockId: string): void {
+    this.mutateDraft((page) => {
+      page.blocks = page.blocks.filter(b => b.id !== blockId);
+    });
+  }
+
+  private moveBlock(blockId: string, delta: -1 | 1): void {
+    this.mutateDraft((page) => {
+      const i = page.blocks.findIndex(b => b.id === blockId);
+      if (i < 0) return;
+      const j = i + delta;
+      if (j < 0 || j >= page.blocks.length) return;
+      const tmp = page.blocks[i]!;
+      page.blocks[i] = page.blocks[j]!;
+      page.blocks[j] = tmp;
+    });
+  }
+
+  private addListItem(blockId: string): void {
+    const input = this.container.querySelector(`[data-block-id="${blockId}"][data-field="new-item"]`) as HTMLInputElement | null;
+    if (!input) return;
+    const value = input.value.trim();
+    if (!value) return;
+    this.mutateDraft((page) => {
+      const block = page.blocks.find(b => b.id === blockId);
+      if (block?.type === 'list') block.items.push(value);
+    });
+  }
+
+  private deleteListItem(blockId: string, itemIndex: number): void {
+    this.mutateDraft((page) => {
+      const block = page.blocks.find(b => b.id === blockId);
+      if (block?.type === 'list') block.items.splice(itemIndex, 1);
+    });
+  }
+
+  private addLink(blockId: string): void {
+    this.mutateDraft((page) => {
+      const block = page.blocks.find(b => b.id === blockId);
+      if (block?.type === 'links') block.items.push({ label: '', url: '' });
+    });
+  }
+
+  private deleteLink(blockId: string, itemIndex: number): void {
+    this.mutateDraft((page) => {
+      const block = page.blocks.find(b => b.id === blockId);
+      if (block?.type === 'links') block.items.splice(itemIndex, 1);
+    });
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // tiny html helpers (avoid pulling DOMPurify into attribute paths)
+  // ──────────────────────────────────────────────────────────────────
+
+  private escapeAttr(value: string): string {
+    return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  private escapeText(value: string): string {
+    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 }

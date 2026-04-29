@@ -82,15 +82,23 @@ export class ProfileListsComponent {
   }
 
   /**
-   * Render mounted lists into the DOM after the given element
+   * Render mounted lists into the DOM after the given element.
+   *
+   * @param insertAfter - DOM element to insert mounts after
+   * @param folderNamesOverride - if provided, use these folder names directly
+   *   instead of querying mountsService/mountsOrch. Used by MypageView to
+   *   render from v2 bookmark-folder blocks (draft/published) so the readonly
+   *   view reflects in-progress edits without waiting for publish.
    */
-  public async render(insertAfter: Element): Promise<void> {
+  public async render(insertAfter: Element, folderNamesOverride?: string[]): Promise<void> {
     this.insertAfterEl = insertAfter;
 
     try {
       let mountedFolders: string[];
 
-      if (this.isOwnProfile) {
+      if (folderNamesOverride !== undefined) {
+        mountedFolders = folderNamesOverride;
+      } else if (this.isOwnProfile) {
         // Trust local state. AutoSyncService handles cross-device sync at app
         // boot and on addon toggle. Re-fetching here would race with in-flight
         // publishToRelays from a just-toggled checkbox and revert the change.

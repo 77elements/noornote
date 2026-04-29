@@ -119,6 +119,8 @@ export const StorageKeys = {
   PROFILE_MOUNTS: 'noornote_profile_mounts_map',
   MYPAGE_MOUNTS: 'noornote_mypage_mounts_map',
   MYPAGE_LIST: 'noornote_mypage_list_map',
+  MYPAGE_DRAFT_V2: 'noornote_mypage_draft_v2_map',
+  MYPAGE_PUBLISHED_V2: 'noornote_mypage_published_v2_map',
   LIST_SYNC_MODE: 'noornote_list_sync_mode_map',
   EMOJI_FREQUENTLY_USED: 'noornote_emoji_frequently_used_map',
   PERSONAL_EMOJI_PACK: 'noornote_personal_emoji_pack_map',
