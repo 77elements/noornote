@@ -14,6 +14,7 @@ import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
 import { RelayConfig } from '../../services/RelayConfig';
 import { ThreadOrchestrator } from '../../services/orchestration/ThreadOrchestrator';
 import { ReactionsOrchestrator } from '../../services/orchestration/ReactionsOrchestrator';
+import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
@@ -73,8 +74,9 @@ export class SingleNoteView extends View {
     `;
 
     try {
-      const actualNoteId = this.decodeNoteId(this.noteId);
-      const event = await this.fetchNote(actualNoteId);
+      const event = this.noteId.startsWith('naddr1')
+        ? await this.fetchAddressable(this.noteId)
+        : await this.fetchNote(this.decodeNoteId(this.noteId));
 
       if (!event) {
         this.showError('Note not found');
@@ -101,6 +103,20 @@ export class SingleNoteView extends View {
       }
     }
     return noteId;
+  }
+
+  private async fetchAddressable(naddrRef: string): Promise<NostrEvent | null> {
+    const event = await LongFormOrchestrator.getInstance().fetchAddressableEvent(naddrRef);
+    if (!event) {
+      this.systemLogger.warn('SNV', `Note not found (${naddrRef.slice(0, 16)}…)`);
+      return null;
+    }
+    const username = UserProfileService.getInstance().getUsername(event.pubkey);
+    const displayName = username
+      ? (username.length > 10 ? username.substring(0, 10) + '..' : username)
+      : 'User';
+    this.systemLogger.info('SNV', `Fetching ${displayName}'s note (${naddrRef.slice(0, 16)}…)...`);
+    return event;
   }
 
   private async fetchNote(noteId: string): Promise<NostrEvent | null> {
