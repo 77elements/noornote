@@ -1,9 +1,10 @@
 /**
  * MypageEditorView
- * Editor for the My Page custom list (freetext sections + items)
+ * Editor for the My Page custom list (page header fields + freetext sections)
  *
  * Route: /profile/:npub/page/edit
- * "New Section" button, inline item adding, "Save" publishes to relays.
+ * Optional page title/subtitle/description, then "New Section" + inline items.
+ * "Save" publishes everything to relays as one NIP-78 event.
  *
  * @purpose Edit the custom list portion of My Page
  * @used-by ViewMountingService (route: mypage-edit)
@@ -17,12 +18,16 @@ import { Router } from '../../services/Router';
 import { ToastService } from '../../services/ToastService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import DOMPurify from 'dompurify';
 
 export class MypageEditorView extends View {
   private container: HTMLElement;
   private npub: string;
   private pubkey: string;
+  private pageTitle: string = '';
+  private pageSubtitle: string = '';
+  private pageDescription: string = '';
   private sections: MypageListSection[] = [];
 
   constructor(npub: string) {
@@ -71,22 +76,27 @@ export class MypageEditorView extends View {
     let existing = listService.getList();
 
     // Fall back to relays if local cache is empty (fresh device, post-rename, etc.)
-    if (existing.sections.length === 0) {
+    if (!this.hasAnyContent(existing)) {
       const fetched = await MypageOrchestrator.getInstance().fetchFromRelays(this.pubkey, false);
-      if (fetched && fetched.sections.length > 0) {
+      if (fetched && this.hasAnyContent(fetched)) {
         listService.setListFromRelay(fetched);
         existing = fetched;
       }
     }
 
-    if (existing.sections.length > 0) {
-      this.sections = existing.sections.map(s => ({
-        title: s.title,
-        items: [...s.items]
-      }));
-    }
+    this.pageTitle = existing.title ?? '';
+    this.pageSubtitle = existing.subtitle ?? '';
+    this.pageDescription = existing.description ?? '';
+    this.sections = existing.sections.map(s => ({
+      title: s.title,
+      items: [...s.items]
+    }));
 
     this.render();
+  }
+
+  private hasAnyContent(data: MypageListData): boolean {
+    return !!(data.title?.trim() || data.subtitle?.trim() || data.description?.trim() || data.sections.length > 0);
   }
 
   private render(): void {
@@ -96,7 +106,21 @@ export class MypageEditorView extends View {
           <h1>Edit your page</h1>
           <button class="btn btn--medium btn--passive" data-action="back">&larr; Back</button>
         </div>
-        <div class="mypage-editor__header">
+        <div class="mypage-editor__pagefields">
+          <div class="form__row">
+            <label for="mypage-title">Page title</label>
+            <input type="text" id="mypage-title" class="input input--title" placeholder="Optional page title..." value="${escapeHtmlAttr(this.pageTitle)}" data-field="title" />
+          </div>
+          <div class="form__row">
+            <label for="mypage-subtitle">Subtitle</label>
+            <input type="text" id="mypage-subtitle" class="input" placeholder="Optional subtitle..." value="${escapeHtmlAttr(this.pageSubtitle)}" data-field="subtitle" />
+          </div>
+          <div class="form__row">
+            <label for="mypage-description">Description</label>
+            <textarea id="mypage-description" class="textarea textarea--small" placeholder="Optional description..." data-field="description">${escapeHtml(this.pageDescription)}</textarea>
+          </div>
+        </div>
+        <div class="mypage-editor__listsection">
           <button class="btn btn--medium btn--primary" data-action="new-section">+ New Section</button>
         </div>
         <div class="mypage-editor__sections" data-sections></div>
@@ -108,6 +132,7 @@ export class MypageEditorView extends View {
 
     this.renderSections();
     this.bindHeaderEvents();
+    this.bindPageFieldEvents();
   }
 
   private renderSections(): void {
@@ -153,6 +178,16 @@ export class MypageEditorView extends View {
     });
 
     this.bindSectionEvents();
+  }
+
+  private bindPageFieldEvents(): void {
+    const titleInput = this.container.querySelector('[data-field="title"]') as HTMLInputElement | null;
+    const subtitleInput = this.container.querySelector('[data-field="subtitle"]') as HTMLInputElement | null;
+    const descTextarea = this.container.querySelector('[data-field="description"]') as HTMLTextAreaElement | null;
+
+    titleInput?.addEventListener('input', () => { this.pageTitle = titleInput.value; });
+    subtitleInput?.addEventListener('input', () => { this.pageSubtitle = subtitleInput.value; });
+    descTextarea?.addEventListener('input', () => { this.pageDescription = descTextarea.value; });
   }
 
   private bindHeaderEvents(): void {
@@ -279,14 +314,20 @@ export class MypageEditorView extends View {
 
   private async saveList(): Promise<void> {
     const cleanSections = this.sections.filter(s => s.items.length > 0);
+    const title = this.pageTitle.trim();
+    const subtitle = this.pageSubtitle.trim();
+    const description = this.pageDescription.trim();
 
-    if (cleanSections.length === 0) {
-      ToastService.show('Add at least one item before saving', 'error');
+    if (!title && !subtitle && !description && cleanSections.length === 0) {
+      ToastService.show('Add a title, subtitle, description, or at least one section item before saving', 'error');
       return;
     }
 
     const listData: MypageListData = {
       version: 1,
+      ...(title ? { title } : {}),
+      ...(subtitle ? { subtitle } : {}),
+      ...(description ? { description } : {}),
       sections: cleanSections
     };
 

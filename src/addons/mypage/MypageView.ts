@@ -14,7 +14,7 @@
 import { View } from '../../components/views/View';
 import { AuthService } from '../../services/AuthService';
 import { MypageOrchestrator } from '../../services/orchestration/MypageOrchestrator';
-import { MypageService, type MypageListData } from '../../services/MypageService';
+import { MypageService, mypageHasContent, type MypageListData } from '../../services/MypageService';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
@@ -106,17 +106,17 @@ export class MypageView extends View {
 
       if (this.isOwnProfile) {
         listData = this.listService.getList();
-        if (!listData || listData.sections.length === 0) {
+        if (!mypageHasContent(listData)) {
           listData = await this.orchestrator.fetchFromRelays(this.pubkey, true);
-          if (listData && listData.sections.length > 0) {
-            this.listService.setListFromRelay(listData);
+          if (mypageHasContent(listData)) {
+            this.listService.setListFromRelay(listData!);
           }
         }
       } else {
         listData = await this.orchestrator.fetchFromRelays(this.pubkey, true);
       }
 
-      const hasList = !!listData && listData.sections.length > 0;
+      const hasList = mypageHasContent(listData);
 
       if (hasList) {
         await this.renderList(listData!);
@@ -195,6 +195,16 @@ export class MypageView extends View {
   private async renderList(data: MypageListData): Promise<void> {
     const username = await this.loadUsername();
 
+    const title = data.title?.trim();
+    const subtitle = data.subtitle?.trim();
+    const description = data.description?.trim();
+
+    const pageHeaderHtml = `
+      ${title ? `<h1 class="mypage-view__title">${DOMPurify.sanitize(title)}</h1>` : ''}
+      ${subtitle ? `<p class="mypage-view__subtitle">${DOMPurify.sanitize(subtitle)}</p>` : ''}
+      ${description ? `<p class="mypage-view__description">${DOMPurify.sanitize(description)}</p>` : ''}
+    `;
+
     const sectionsHtml = data.sections.map(section => `
       <div class="mypage-section">
         <h2 class="mypage-section__title">${DOMPurify.sanitize(section.title)}</h2>
@@ -222,6 +232,7 @@ export class MypageView extends View {
             </div>
           ` : ''}
         </div>
+        ${pageHeaderHtml}
         ${sectionsHtml}
       </div>
     `;

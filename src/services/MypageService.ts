@@ -19,10 +19,21 @@ export interface MypageListSection {
 
 export interface MypageListData {
   version: 1;
+  title?: string;
+  subtitle?: string;
+  description?: string;
   sections: MypageListSection[];
 }
 
 const EMPTY_LIST: MypageListData = { version: 1, sections: [] };
+
+export function mypageHasContent(data: MypageListData | null): boolean {
+  if (!data) return false;
+  if (data.title?.trim()) return true;
+  if (data.subtitle?.trim()) return true;
+  if (data.description?.trim()) return true;
+  return data.sections.length > 0;
+}
 
 export class MypageService {
   private static instance: MypageService;

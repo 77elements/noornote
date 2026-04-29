@@ -170,10 +170,12 @@ export class MypageOrchestrator {
     if (!content) return null;
     try {
       const parsed = JSON.parse(content) as MypageListData;
-      if (parsed.version === 1 && Array.isArray(parsed.sections)) {
-        return parsed;
-      }
-      return null;
+      if (parsed.version !== 1 || !Array.isArray(parsed.sections)) return null;
+      const data: MypageListData = { version: 1, sections: parsed.sections };
+      if (typeof parsed.title === 'string') data.title = parsed.title;
+      if (typeof parsed.subtitle === 'string') data.subtitle = parsed.subtitle;
+      if (typeof parsed.description === 'string') data.description = parsed.description;
+      return data;
     } catch {
       return null;
     }

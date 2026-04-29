@@ -59,12 +59,31 @@
   gap: calc($gap / 2);
 }
 
+.mypage-view__title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0 0 calc($gap / 2);
+  color: $color-5;
+}
+
+.mypage-view__subtitle {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 $gap;
+}
+
+.mypage-view__description {
+  color: $text-alpha-heavy;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  margin: 0 0 $gap * 2;
+}
+
 .mypage-section {
   margin-bottom: $gap * 2;
 }
 
 .mypage-section__title {
-  font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: calc($gap / 2);
   color: $color-5;
@@ -96,7 +115,12 @@
   margin: 0 auto;
 }
 
-.mypage-editor__header {
+.mypage-editor__pagefields {
+  margin-top: $gap;
+  margin-bottom: $gap * 2;
+}
+
+.mypage-editor__listsection {
   display: flex;
   justify-content: flex-end;
   margin-bottom: $gap * 2;
