@@ -236,32 +236,11 @@ export class MypageView extends View {
     }
 
     const editable = this.editMode && this.isOwnProfile;
-    const title = page.title || '';
-    const subtitle = page.subtitle || '';
-    const description = page.description || '';
 
-    const pageHeaderHtml = editable
-      ? `
-        <div class="mypage-view__pagefields">
-          <div class="form__row">
-            <label for="mypage-page-title">Page title</label>
-            <input id="mypage-page-title" type="text" class="input input--title" data-page-field="title" value="${this.escapeAttr(title)}" placeholder="Optional page title..." />
-          </div>
-          <div class="form__row">
-            <label for="mypage-page-subtitle">Subtitle</label>
-            <input id="mypage-page-subtitle" type="text" class="input" data-page-field="subtitle" value="${this.escapeAttr(subtitle)}" placeholder="Optional subtitle..." />
-          </div>
-          <div class="form__row">
-            <label for="mypage-page-description">Description</label>
-            <textarea id="mypage-page-description" class="textarea textarea--small" data-page-field="description" placeholder="Optional description...">${this.escapeText(description)}</textarea>
-          </div>
-        </div>`
-      : `
-        ${title.trim() ? `<h1 class="mypage-view__title">${DOMPurify.sanitize(title)}</h1>` : ''}
-        ${subtitle.trim() ? `<p class="mypage-view__subtitle">${DOMPurify.sanitize(subtitle)}</p>` : ''}
-        ${description.trim() ? `<p class="mypage-view__description">${DOMPurify.sanitize(description)}</p>` : ''}
-      `;
-
+    // Page-meta (title/subtitle/description) are no longer rendered as a fixed
+    // top section — the user composes them via Heading + Text blocks like any
+    // other page content. The fields remain in MypagePageV2 for backwards
+    // compatibility when reading old v2 events; they are no-ops in the UI.
     const blocksHtml = BlockRenderer.renderAll(page.blocks, { editable });
 
     const dangerZoneHtml = this.isOwnProfile
@@ -298,7 +277,6 @@ export class MypageView extends View {
             </div>
           ` : ''}
         </div>
-        ${pageHeaderHtml}
         ${blocksHtml}
       </div>
       ${dangerZoneHtml}
@@ -532,9 +510,6 @@ export class MypageView extends View {
   private setupEditDelegation(): void {
     this.container.addEventListener('input', (e) => {
       const target = e.target as HTMLInputElement | HTMLTextAreaElement;
-      const pageField = target.dataset?.pageField;
-      if (pageField) { this.handlePageFieldInput(pageField, target.value); return; }
-
       const blockId = target.dataset?.blockId;
       const field = target.dataset?.field;
       if (blockId && field) this.handleBlockFieldInput(blockId, field, target);
@@ -604,14 +579,6 @@ export class MypageView extends View {
     const next: MypagePageV2 = JSON.parse(JSON.stringify(draft));
     updater(next);
     this.listService.saveDraftV2(next, { silent: opts.silent === true });
-  }
-
-  private handlePageFieldInput(field: string, value: string): void {
-    this.mutateDraft((page) => {
-      if (field === 'title')       page.title = value;
-      if (field === 'subtitle')    page.subtitle = value;
-      if (field === 'description') page.description = value;
-    }, { silent: true });
   }
 
   private handleBlockFieldInput(blockId: string, field: string, el: HTMLInputElement | HTMLTextAreaElement): void {
@@ -801,17 +768,5 @@ export class MypageView extends View {
         uploadBtn.innerHTML = originalHTML;
       }
     }
-  }
-
-  // ──────────────────────────────────────────────────────────────────
-  // tiny html helpers (avoid pulling DOMPurify into attribute paths)
-  // ──────────────────────────────────────────────────────────────────
-
-  private escapeAttr(value: string): string {
-    return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  private escapeText(value: string): string {
-    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 }
