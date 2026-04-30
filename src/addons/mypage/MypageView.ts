@@ -196,9 +196,9 @@ export class MypageView extends View {
           </div>
           ${this.isOwnProfile ? `
             <div class="mypage-header__actions">
-              <button class="btn btn--medium btn--passive" data-action="edit-list">
+              <button class="btn btn--medium btn--passive" data-action="open-block-editor">
                 <svg width="14" height="14"><use href="#icon-edit"/></svg>
-                Add list
+                Block Editor
               </button>
             </div>
           ` : ''}
@@ -263,7 +263,6 @@ export class MypageView extends View {
       `;
 
     const blocksHtml = BlockRenderer.renderAll(page.blocks, { editable });
-    const hasDraft = this.isOwnProfile && this.listService.hasDraftV2();
 
     const dangerZoneHtml = this.isOwnProfile
       ? `
@@ -280,19 +279,22 @@ export class MypageView extends View {
     // Danger zone lives OUTSIDE .mypage-view so it stays the last element on
     // the page even after renderMounts() appends bookmark-folder content
     // inside .mypage-view.
+    const leftButtonHtml = editable
+      ? `<button class="btn btn--medium btn--passive" data-action="preview-page" title="Close the editor and see the page as visitors see it">Preview Page</button>`
+      : `<button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>`;
+
     this.container.innerHTML = `
       <div class="mypage-view">
         <div class="mypage-header">
           <div class="mypage-header__left">
-            <button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>
+            ${leftButtonHtml}
           </div>
           ${this.isOwnProfile ? `
             <div class="mypage-header__actions">
               <button class="btn btn--medium btn--passive" data-action="open-block-editor" title="Open Block Library in the right sidebar">
                 <svg width="14" height="14"><use href="#icon-edit"/></svg>
-                Block Editor${hasDraft ? ' •' : ''}
+                Block Editor
               </button>
-              <button class="btn btn--medium btn--passive" data-action="edit-list" title="Old text editor">Edit list</button>
             </div>
           ` : ''}
         </div>
@@ -340,8 +342,8 @@ export class MypageView extends View {
       this.openBlockLibrary();
     });
 
-    this.container.querySelector('[data-action="edit-list"]')?.addEventListener('click', () => {
-      Router.getInstance().navigate(`/profile/${this.npub}/page/edit`);
+    this.container.querySelector('[data-action="preview-page"]')?.addEventListener('click', () => {
+      this.closeBlockLibrary();
     });
 
     this.container.querySelector('[data-action="delete-list"]')?.addEventListener('click', async () => {
