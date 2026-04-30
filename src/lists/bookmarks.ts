@@ -193,6 +193,15 @@ export interface FetchFromRelaysResult {
   categoryAssignments?: Map<string, string>;
   categories?: string[];
   relayTimestamp: number;
+  /**
+   * kind:5 deletion coordinates seen at fetch time. Map key = full
+   * NIP-09 coordinate `30003:<pubkey>:<folderName>`, value = the latest
+   * deletion's `created_at`. Surfaced for the AutoSyncService sanity-check
+   * — applyOverwrite refuses to remove a folder silently unless we see
+   * a corresponding deletion entry here. See docs/features/lists.md
+   * "Mass-Deletion Incident + Schritt 1.5".
+   */
+  deletedCoordinates?: Map<string, number>;
 }
 
 // =============================================================================
@@ -1740,7 +1749,8 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       relayContentWasEmpty: false,
       categoryAssignments,
       categories,
-      relayTimestamp: maxEventTimestamp
+      relayTimestamp: maxEventTimestamp,
+      deletedCoordinates
     };
   } catch (error) {
     logger.error('bookmarks.ts', `Failed to fetch from relays: ${error}`);
@@ -1780,6 +1790,7 @@ export interface BookmarkAdapterSyncFromRelaysResult {
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
   relayTimestamp: number;
+  deletedCoordinates: Map<string, number> | undefined;
 }
 
 function calculateBookmarkSyncDiff(browserItems: BookmarkItem[], sourceItems: BookmarkItem[]): BookmarkAdapterSyncDiff {
@@ -2085,7 +2096,8 @@ export class BookmarkStorageAdapter {
       relayContentWasEmpty: fetchResult.relayContentWasEmpty,
       categoryAssignments: fetchResult.categoryAssignments,
       categories: fetchResult.categories,
-      relayTimestamp: fetchResult.relayTimestamp
+      relayTimestamp: fetchResult.relayTimestamp,
+      deletedCoordinates: fetchResult.deletedCoordinates
     };
   }
 

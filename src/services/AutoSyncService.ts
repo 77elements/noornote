@@ -522,6 +522,38 @@ export class AutoSyncService {
           browserFoldersBefore = getBookmarkFolderService().getFolders().map(f => f.name);
         }
 
+        // SANITY-CHECK (Schritt 1.5, 2026-04-30 — see docs/features/lists.md "Mass-Deletion Incident"):
+        // Refuse a silent applyOverwrite that would remove a folder for which we have NO kind:5
+        // deletion proof in this fetch. Cause: NDK fetch-instability returned an incomplete folder
+        // list, and applyOverwrite would have wiped them locally. With Schritt 1 in place, every
+        // legitimate folder delete is accompanied by an eager kind:5 — its absence here means
+        // the fetch is incomplete, not that the user deleted. Skip and let the next sync retry
+        // with a (hopefully) complete fetch.
+        if (listType === 'bookmarks' && result.diff.removed.length > 0 && result.categories && result.deletedCoordinates) {
+          const relayFolderSet = new Set(result.categories);
+          const removedFolders = browserFoldersBefore.filter(f => !relayFolderSet.has(f));
+          if (removedFolders.length > 0) {
+            // Extract folder names from coordinate keys "30003:<pubkey>:<folderName>"
+            const deletedFolderNames = new Set(
+              Array.from(result.deletedCoordinates.keys())
+                .map(c => c.split(':').slice(2).join(':'))
+            );
+            const unmarkedRemovals = removedFolders.filter(f => !deletedFolderNames.has(f));
+            if (unmarkedRemovals.length > 0) {
+              diagLog('lists', `applyOverwrite(${listType}): refused — silent removal without deletion proof`, {
+                removedFolders,
+                unmarkedRemovals,
+                relayCategories: result.categories,
+                deletedCoordinates: Array.from(result.deletedCoordinates.keys()),
+                relayTs,
+                localTs
+              });
+              this.systemLogger.warn('ListAutoSync', `${listType}: refusing applyOverwrite — ${unmarkedRemovals.length} folder(s) would be silently removed without kind:5 evidence (likely incomplete fetch). Will retry on next sync.`);
+              return;
+            }
+          }
+        }
+
         this.applyOverwrite(listType, result.relayItems, result.relayContentWasEmpty);
         if ((listType === 'bookmarks' || listType === 'tribes') && result.categoryAssignments) {
           await this.applyFolderAssignments(listType, result);
@@ -605,7 +637,8 @@ export class AutoSyncService {
             relayTimestamp: result.relayTimestamp,
             snapshotDiffInfo: result.snapshotDiffInfo,
             categoryAssignments: result.categoryAssignments,
-            categories: result.categories
+            categories: result.categories,
+            ...(result.deletedCoordinates ? { deletedCoordinates: result.deletedCoordinates } : {})
           };
         }
 
@@ -717,4 +750,7 @@ interface SyncResult {
   snapshotDiffInfo?: { isOrderOnly: boolean; hasFolderSetDiff: boolean; details: string[] };
   categoryAssignments: Map<string, string> | undefined;
   categories: string[] | undefined;
+  /** Bookmarks-only: kind:5 deletion coordinates from this fetch, used by the
+   *  applyOverwrite sanity-check to detect incomplete fetches. */
+  deletedCoordinates?: Map<string, number>;
 }
