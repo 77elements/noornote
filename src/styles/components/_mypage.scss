@@ -682,3 +682,39 @@
   margin-top: calc($gap / 2);
 }
 
+// ==========================================
+// Embed block — async-mounted Nostr event
+// ==========================================
+
+.mypage-block-embed {
+  margin: $gap 0;
+}
+
+.mypage-block-embed__loading,
+.mypage-block-embed__error {
+  padding: $gap;
+  text-align: center;
+  color: $text-alpha-medium;
+  font-size: 0.9rem;
+  border: 1px dashed $color-2;
+  border-radius: $radius-xl;
+}
+
+.mypage-block-embed__error {
+  border-color: $color-red;
+  color: $color-red;
+}
+
+.mypage-block-embed__edit {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.mypage-block-embed__hint {
+  font-size: 0.8rem;
+  color: $text-alpha-medium;
+  font-style: italic;
+  margin: 0;
+}
+

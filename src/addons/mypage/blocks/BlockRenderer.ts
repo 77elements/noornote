@@ -19,6 +19,7 @@ import { renderLinks } from './renderers/LinksRenderer';
 import { renderBookmarkFolder } from './renderers/BookmarkFolderRenderer';
 import { renderImage } from './renderers/ImageRenderer';
 import { renderGallery } from './renderers/GalleryRenderer';
+import { renderEmbed } from './renderers/EmbedRenderer';
 import { wrapEditable } from './renderers/blockEditWrapper';
 
 export interface BlockRenderOptions {
@@ -41,7 +42,7 @@ export class BlockRenderer {
       case 'bookmark-folder': return renderBookmarkFolder(block, editable);
       case 'image':           return renderImage(block, editable);
       case 'gallery':         return renderGallery(block, editable);
-      case 'embed':
+      case 'embed':           return renderEmbed(block, editable);
       case 'columns': {
         const placeholder = `<div class="mypage-block-placeholder">[${block.type} block — renderer pending]</div>`;
         return editable ? wrapEditable(block.id, block.type, placeholder) : placeholder;
