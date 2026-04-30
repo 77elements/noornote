@@ -1430,17 +1430,30 @@ export async function publishBookmarksToRelays(): Promise<void> {
 
   const setData = buildSetDataFromLocalStorage();
   diagLog('lists', 'publishBookmarksToRelays: full setData', { setOrder: setData.metadata.setOrder, sets: setData.sets.map(s => ({ d: s.d, publicTags: s.publicTags, privateTags: s.privateTags })) });
-  const localCategories = new Set(setData.sets.map(s => s.d));
-  const relayResult = await fetchBookmarksFromRelays(pubkey);
-  const deletedCategories = (relayResult.categories || []).filter(cat => !localCategories.has(cat));
 
-  logger.info('bookmarks.ts', `Publishing: ${setData.sets.length} sets, ${deletedCategories.length} deleted categories`);
+  // REMOVED 2026-04-30: conditional kind:5 publish based on local-vs-relay folder diff.
+  //
+  // The previous code did:
+  //   const relayResult = await fetchBookmarksFromRelays(pubkey);
+  //   const deletedCategories = relayResult.categories.filter(c => !localCategories.has(c));
+  //   if (deletedCategories.length) DeletionService.deleteByCoordinates(...)
+  //
+  // Treating "relay-has-but-local-doesn't" as a delete is destructive whenever the
+  // local state is stale relative to the relay — e.g. cross-device: device A creates
+  // a folder, device B's localStorage hasn't applied the new state yet, B publishes
+  // for any unrelated reason → kind:5 nukes A's folder for everyone.
+  //
+  // Confirmed root cause of the mass-delete incident on 2026-04-30: Mobile's
+  // publishBookmarksToRelays wiped Portfolio/Personal/Nostr Apps from relays at
+  // 13:17:42 UTC because Mobile's localStorage didn't have them at that moment.
+  //
+  // Explicit user deletes are covered by the eager kind:5 in
+  // BookmarkManager.deleteFolder / editFolder (added 2026-04-29 — Step 1).
+  //
+  // See docs/features/lists.md "Folder-Resurrection" + "Eager kind:5 deletion publish".
+  diagLog('lists', 'publishBookmarksToRelays: skipping conditional kind:5 — destructive cross-device path removed');
 
-  // Publish deletion requests for deleted categories (NIP-09)
-  if (deletedCategories.length > 0) {
-    const coordinates = deletedCategories.map(categoryName => `30003:${pubkey}:${categoryName}`);
-    await DeletionService.getInstance().deleteByCoordinates(coordinates, 'Bookmark folder deleted');
-  }
+  logger.info('bookmarks.ts', `Publishing: ${setData.sets.length} sets`);
 
   let totalPublished = 0;
   for (const set of setData.sets) {
@@ -1487,7 +1500,7 @@ export async function publishBookmarksToRelays(): Promise<void> {
     logger.info('bookmarks.ts', `Published category "${set.d || 'root'}": ${set.publicTags.length} public + ${set.privateTags.length} private`);
   }
 
-  logger.info('bookmarks.ts', `Published ${totalPublished} bookmark set events + ${deletedCategories.length} deletions to relays`);
+  logger.info('bookmarks.ts', `Published ${totalPublished} bookmark set events to relays`);
 
   // Publish folder order metadata (NIP-78 kind:30078)
   const folderOrder = setData.metadata.setOrder.filter(d => d !== '');
