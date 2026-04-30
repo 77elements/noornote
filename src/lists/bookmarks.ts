@@ -1426,8 +1426,8 @@ export async function saveBookmarksToFile(): Promise<void> {
 /**
  * Publish bookmarks to relays (NIP-51)
  */
-export async function publishBookmarksToRelays(): Promise<void> {
-  diagLog('lists', 'publishBookmarksToRelays: START');
+export async function publishBookmarksToRelays(callerTag: string = 'unknown'): Promise<void> {
+  diagLog('lists', 'publishBookmarksToRelays: START', { callerTag });
   const { pubkey } = requireAuth();
   diagLog('lists', 'publishBookmarksToRelays: auth ok', { pubkey: pubkey.slice(0, 8) });
   const writeRelays = getWriteRelays();
@@ -2072,7 +2072,7 @@ export class BookmarkStorageAdapter {
     return fetchBookmarksFromRelays(pubkey);
   }
 
-  async publishToRelays(_items: BookmarkItem[]): Promise<void> { await publishBookmarksToRelays(); }
+  async publishToRelays(_items: BookmarkItem[]): Promise<void> { await publishBookmarksToRelays('adapter'); }
 
   // Sync helper methods (for AutoSyncService)
   async syncFromRelays(): Promise<BookmarkAdapterSyncFromRelaysResult> {
@@ -3371,7 +3371,7 @@ export class BookmarkManager {
       // must reach relays without depending on debounce timing.
       diagLog('lists', 'immediate publish after deleteBookmark — start', { eventId });
       try {
-        await publishBookmarksToRelays();
+        await publishBookmarksToRelays('bookmark-delete-immediate');
         diagLog('lists', 'immediate publish after deleteBookmark — done', { eventId });
       } catch (pubErr) {
         diagLog('lists', 'immediate publish after deleteBookmark — FAILED', { eventId, error: String(pubErr) });

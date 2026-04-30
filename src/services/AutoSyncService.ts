@@ -362,7 +362,7 @@ export class AutoSyncService {
           await publishFollowsToRelays();
           break;
         case 'bookmarks':
-          await publishBookmarksToRelays();
+          await publishBookmarksToRelays('autosync-push');
           break;
         case 'mutes':
           await publishMutesToRelays();
