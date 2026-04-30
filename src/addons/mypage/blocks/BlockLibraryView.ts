@@ -40,7 +40,7 @@ const CATALOG: BlockTypeMeta[] = [
   { type: 'list',            label: 'Custom List',     description: 'Title + bullet items',                     icon: '☰', enabled: true },
   { type: 'links',           label: 'Links',           description: 'List of clickable links with labels',      icon: '🔗', enabled: true },
   { type: 'divider',         label: 'Divider',         description: 'Horizontal separator line',                icon: '─', enabled: true },
-  { type: 'image',           label: 'Image',           description: 'Single image with optional caption',       icon: '🖼', enabled: false },
+  { type: 'image',           label: 'Image',           description: 'Single image with optional caption',       icon: '🖼', enabled: true },
   { type: 'gallery',         label: 'Gallery',         description: 'Multi-image grid',                         icon: '⚏', enabled: false },
   { type: 'embed',           label: 'Nostr Embed',     description: 'Embed a Nostr note or article',            icon: '🔮', enabled: false },
   { type: 'bookmark-folder', label: 'Bookmark Folder', description: 'Mount an existing bookmark folder',        icon: '📁', enabled: true },

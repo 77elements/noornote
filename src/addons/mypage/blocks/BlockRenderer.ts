@@ -17,6 +17,7 @@ import { renderList } from './renderers/ListRenderer';
 import { renderDivider } from './renderers/DividerRenderer';
 import { renderLinks } from './renderers/LinksRenderer';
 import { renderBookmarkFolder } from './renderers/BookmarkFolderRenderer';
+import { renderImage } from './renderers/ImageRenderer';
 import { wrapEditable } from './renderers/blockEditWrapper';
 
 export interface BlockRenderOptions {
@@ -37,7 +38,7 @@ export class BlockRenderer {
       case 'divider':         return renderDivider(block, editable);
       case 'links':           return renderLinks(block, editable);
       case 'bookmark-folder': return renderBookmarkFolder(block, editable);
-      case 'image':
+      case 'image':           return renderImage(block, editable);
       case 'gallery':
       case 'embed':
       case 'columns': {

@@ -30,6 +30,7 @@ import { createBlock, type BlockType } from './blocks/types';
 import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { MyPageMountsService } from '../../services/MyPageMountsService';
+import { MediaUploadService } from '../../services/MediaUploadService';
 import DOMPurify from 'dompurify';
 
 const BLOCK_LIBRARY_TAB_ID = 'mypage-block-library';
@@ -553,7 +554,18 @@ export class MypageView extends View {
         case 'delete-item':  if (itemIndex >= 0) this.deleteListItem(blockId, itemIndex); break;
         case 'add-link':     this.addLink(blockId); break;
         case 'delete-link':  if (itemIndex >= 0) this.deleteLink(blockId, itemIndex); break;
+        case 'upload-image': this.triggerImageUpload(blockId); break;
       }
+    });
+
+    this.container.addEventListener('change', async (e) => {
+      const target = e.target as HTMLInputElement;
+      if (target?.dataset?.imageFile === undefined) return;
+      const blockId = target.dataset.blockId;
+      const file = target.files?.[0];
+      if (!blockId || !file) return;
+      target.value = ''; // allow re-selecting same file later
+      await this.handleImageUpload(blockId, file);
     });
 
     this.container.addEventListener('keydown', (e) => {
@@ -608,6 +620,10 @@ export class MypageView extends View {
         if (field === 'title') block.title = el.value;
         if (field === 'link-label' && itemIndex >= 0 && block.items[itemIndex]) block.items[itemIndex]!.label = el.value;
         if (field === 'link-url' && itemIndex >= 0 && block.items[itemIndex]) block.items[itemIndex]!.url = el.value;
+      } else if (block.type === 'image') {
+        if (field === 'url')     block.url = el.value;
+        if (field === 'alt')     block.alt = el.value;
+        if (field === 'caption') block.caption = el.value;
       }
     }, { silent: true });
   }
@@ -660,6 +676,62 @@ export class MypageView extends View {
       const block = page.blocks.find(b => b.id === blockId);
       if (block?.type === 'links') block.items.splice(itemIndex, 1);
     });
+  }
+
+  private triggerImageUpload(blockId: string): void {
+    const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-image-file]`) as HTMLInputElement | null;
+    fileInput?.click();
+  }
+
+  private async handleImageUpload(blockId: string, file: File): Promise<void> {
+    if (!file.type.startsWith('image/')) {
+      ToastService.show('Please select an image file', 'error');
+      return;
+    }
+    const uploadBtn = this.container.querySelector(`[data-block-id="${blockId}"][data-action="upload-image"]`) as HTMLButtonElement | null;
+    if (!uploadBtn) return;
+
+    const originalHTML = uploadBtn.innerHTML;
+    uploadBtn.disabled = true;
+    // Inline the SVG (instead of <use href="#icon-upload-progress">) because
+    // <use> clones its referenced symbol into shadow DOM — querySelector
+    // can't reach into shadow DOM, so JS-driven strokeDashoffset updates
+    // don't work. The same pattern in PostEditorToolbar / ImageUploader
+    // appears to silently no-op for the same reason.
+    uploadBtn.innerHTML = `
+      <svg width="20" height="20" class="upload-progress" viewBox="0 0 24 24">
+        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
+      </svg>
+    `;
+
+    const updateProgress = (progress: number) => {
+      const bar = uploadBtn.querySelector('.upload-progress-bar') as SVGCircleElement | null;
+      if (!bar) return;
+      const circumference = 62.83; // 2 * PI * r=10
+      const offset = circumference - (progress / 100) * circumference;
+      bar.style.strokeDashoffset = String(offset);
+    };
+
+    try {
+      const result = await MediaUploadService.getInstance().uploadFile(file, updateProgress);
+      if (result.success && result.url) {
+        const url = result.url;
+        this.mutateDraft((page) => {
+          const block = page.blocks.find(b => b.id === blockId);
+          if (block?.type === 'image') block.url = url;
+        });
+      }
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      ToastService.show('Image upload failed', 'error');
+    } finally {
+      // Re-render via mutateDraft may have already rebuilt the button — guard
+      if (uploadBtn.isConnected) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = originalHTML;
+      }
+    }
   }
 
   // ──────────────────────────────────────────────────────────────────
