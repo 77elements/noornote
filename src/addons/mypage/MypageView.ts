@@ -16,6 +16,7 @@ import { AuthService } from '../../services/AuthService';
 import { MypageOrchestrator } from '../../services/orchestration/MypageOrchestrator';
 import { MypageService, mypageHasContent, type MypageListData } from '../../services/MypageService';
 import { BlockRenderer } from './blocks/BlockRenderer';
+import { renderColumns } from './blocks/renderers/ColumnsRenderer';
 import { migrateV1ToV2 } from './blocks/migrate';
 import type { MypagePageV2 } from './blocks/types';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -42,6 +43,12 @@ import DOMPurify from 'dompurify';
 
 const BLOCK_LIBRARY_TAB_ID = 'mypage-block-library';
 
+/** Active editor cursor — either at page level or inside a specific column
+ *  of a `columns` block. `index` is the position WITHIN the parent array. */
+type Cursor =
+  | { scope: 'page'; index: number }
+  | { scope: 'column'; columnsBlockId: string; colIndex: number; index: number };
+
 export class MypageView extends View {
   private container: HTMLElement;
   private npub: string;
@@ -55,10 +62,10 @@ export class MypageView extends View {
   private folderPickers: BookmarkFolderPicker[] = [];
   private blockDropdowns: CustomDropdown[] = [];
   private cursorRow: CursorRow | null = null;
-  /** Insert position in page.blocks where the next block lands. -1 means
-   *  "not set yet, default to end on next render". After insert, advances
-   *  past the new block. */
-  private cursorIndex: number = -1;
+  /** Where the next block insert lands. Either at page level between
+   *  top-level blocks, or inside a specific column of a `columns` block.
+   *  index = -1 means "not set yet, default to end on next render". */
+  private cursor: Cursor = { scope: 'page', index: -1 };
   /** Most-recently-used block types in MRU order. In-memory only. */
   private recentBlockTypes: BlockType[] = [];
   /** Currently focused/selected block in the editor. Null = none. UI-only. */
@@ -266,11 +273,8 @@ export class MypageView extends View {
 
     const editable = this.editMode && this.isOwnProfile;
 
-    // Clamp cursor to valid range; default = end of page when uninitialised.
     if (editable) {
-      if (this.cursorIndex < 0 || this.cursorIndex > page.blocks.length) {
-        this.cursorIndex = page.blocks.length;
-      }
+      this.normalizeCursor(page);
     }
 
     // Page-meta (title/subtitle/description) are no longer rendered as a fixed
@@ -474,17 +478,34 @@ export class MypageView extends View {
     const current = this.listService.getDraftV2()
       ?? this.listService.getPublishedV2()
       ?? this.listService.getPageV2();
-    const insertIndex = Math.max(0, Math.min(this.cursorIndex < 0 ? current.blocks.length : this.cursorIndex, current.blocks.length));
 
     // For text blocks created from cursor-row typing, seed the content
     if (opts.initialContent !== undefined && block.type === 'text') {
       block.content = opts.initialContent;
     }
 
-    const nextBlocks = [...current.blocks];
-    nextBlocks.splice(insertIndex, 0, block);
-    const next: MypagePageV2 = { ...current, blocks: nextBlocks };
-    this.cursorIndex = insertIndex + 1; // advance past new block
+    const next: MypagePageV2 = JSON.parse(JSON.stringify(current));
+    const cur = this.cursor;
+
+    if (cur.scope === 'page') {
+      const insertIndex = Math.max(0, Math.min(cur.index < 0 ? next.blocks.length : cur.index, next.blocks.length));
+      next.blocks.splice(insertIndex, 0, block);
+      this.cursor = { scope: 'page', index: insertIndex + 1 };
+    } else {
+      // Disallow nested columns — design contract (see findBlockInPage docstring)
+      if (block.type === 'columns') {
+        ToastService.show('Columns inside columns are not supported', 'error');
+        return;
+      }
+      const target = next.blocks.find(b => b.id === cur.columnsBlockId);
+      if (!target || target.type !== 'columns') return;
+      const col = target.content[cur.colIndex];
+      if (!col) return;
+      const insertIndex = Math.max(0, Math.min(cur.index < 0 ? col.length : cur.index, col.length));
+      col.splice(insertIndex, 0, block);
+      this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: insertIndex + 1 };
+    }
+
     this.listService.saveDraftV2(next);
   }
 
@@ -497,26 +518,96 @@ export class MypageView extends View {
   // ──────────────────────────────────────────────────────────────────
 
   /**
+   * Normalize the active cursor against the current page state. If the
+   * referenced columns block / column index is gone (deleted, count-shrunk),
+   * fall back to page end. If the index is out of range, clamp.
+   */
+  private normalizeCursor(page: MypagePageV2): void {
+    const cur = this.cursor;
+    if (cur.scope === 'page') {
+      if (cur.index < 0 || cur.index > page.blocks.length) {
+        this.cursor = { scope: 'page', index: page.blocks.length };
+      }
+      return;
+    }
+    const target = page.blocks.find(b => b.id === cur.columnsBlockId);
+    if (!target || target.type !== 'columns' || cur.colIndex >= target.count) {
+      this.cursor = { scope: 'page', index: page.blocks.length };
+      return;
+    }
+    const col = target.content[cur.colIndex] ?? [];
+    if (cur.index < 0 || cur.index > col.length) {
+      this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: col.length };
+    }
+  }
+
+  /**
    * Render the editable block list with a cursor-row slot at the active
    * cursor position. The slot is an empty `<div data-cursor-mount>` that
-   * `mountCursorRow()` later populates with a `CursorRow` instance.
+   * `mountCursorRow()` later populates with a `CursorRow` instance. For
+   * `columns` blocks, recursively renders each column with its own block
+   * list so the cursor can land inside any column.
    */
   private renderBlocksWithCursor(blocks: Block[]): string {
-    const cursor = this.cursorIndex;
     const slot = `<div data-cursor-mount></div>`;
-    if (blocks.length === 0) return slot;
+    const pageCursorIndex = this.cursor.scope === 'page' ? this.cursor.index : -1;
+
+    if (blocks.length === 0 && this.cursor.scope === 'page') return slot;
 
     const parts: string[] = [];
     for (let i = 0; i < blocks.length; i++) {
-      if (i === cursor) parts.push(slot);
+      if (i === pageCursorIndex) parts.push(slot);
       const block = blocks[i]!;
-      parts.push(BlockRenderer.renderOne(block, { editable: true }));
+      if (block.type === 'columns') {
+        parts.push(this.renderColumnsBlockEditable(block));
+      } else {
+        parts.push(BlockRenderer.renderOne(block, { editable: true }));
+      }
       if (block.id === this.selectedBlockId) {
         parts.push(this.renderInlineProperties(block));
       }
     }
-    if (cursor >= blocks.length) parts.push(slot);
+    if (pageCursorIndex >= blocks.length) parts.push(slot);
     return parts.join('');
+  }
+
+  /**
+   * Render a `columns` block with editable columns. Each column either
+   * renders its own blocks (with the cursor row injected at the active
+   * column-cursor index) or shows a click-to-place placeholder if the
+   * column is empty and the cursor is elsewhere.
+   */
+  private renderColumnsBlockEditable(block: Extract<Block, { type: 'columns' }>): string {
+    const slot = `<div data-cursor-mount></div>`;
+    const cur = this.cursor;
+
+    return renderColumns(block, {
+      editable: true,
+      columnInner: (colIndex: number) => {
+        const colBlocks = block.content[colIndex] ?? [];
+        const cursorHere = cur.scope === 'column'
+          && cur.columnsBlockId === block.id
+          && cur.colIndex === colIndex;
+
+        if (colBlocks.length === 0) {
+          return cursorHere
+            ? slot
+            : `<div class="mypage-block-columns__placeholder" data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here</div>`;
+        }
+
+        const inner: string[] = [];
+        for (let i = 0; i < colBlocks.length; i++) {
+          if (cursorHere && cur.index === i) inner.push(slot);
+          const cb = colBlocks[i]!;
+          inner.push(BlockRenderer.renderOne(cb, { editable: true }));
+          if (cb.id === this.selectedBlockId) {
+            inner.push(this.renderInlineProperties(cb));
+          }
+        }
+        if (cursorHere && cur.index >= colBlocks.length) inner.push(slot);
+        return inner.join('');
+      }
+    });
   }
 
   /**
@@ -562,16 +653,42 @@ export class MypageView extends View {
     this.bumpRecentBlockType(type);
   }
 
-  /** Move cursor to immediately after a given block id (page-level only). */
+  /** Move cursor to immediately after a given block id. Works for top-level
+   *  blocks AND blocks nested inside a `columns` block's column. */
   private async setCursorAfterBlock(blockId: string): Promise<void> {
     const current = this.listService.getDraftV2()
       ?? this.listService.getPublishedV2()
       ?? this.listService.getPageV2();
-    const idx = current.blocks.findIndex(b => b.id === blockId);
-    if (idx < 0) return;
-    this.cursorIndex = idx + 1;
+    const loc = findBlockInPage(current, blockId);
+    if (!loc) return;
+
+    if (loc.parent === current.blocks) {
+      this.cursor = { scope: 'page', index: loc.index + 1 };
+    } else {
+      // Find the columns block that owns this column array
+      const owner = current.blocks.find(
+        b => b.type === 'columns' && b.content.includes(loc.parent)
+      ) as Extract<Block, { type: 'columns' }> | undefined;
+      if (!owner) return;
+      const colIndex = owner.content.indexOf(loc.parent);
+      this.cursor = { scope: 'column', columnsBlockId: owner.id, colIndex, index: loc.index + 1 };
+    }
+
     await this.loadAndRender();
-    // Make the jump visible: focus + scroll + brief highlight
+    const el = this.cursorRow?.getElement();
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add('mypage-cursor-row--flash');
+      setTimeout(() => el.classList.remove('mypage-cursor-row--flash'), 600);
+      this.cursorRow?.focus();
+    }
+  }
+
+  /** Move cursor INTO an empty column. Triggered by clicking the column's
+   *  "Click to add blocks here" placeholder. */
+  private async setCursorInColumn(columnsBlockId: string, colIndex: number): Promise<void> {
+    this.cursor = { scope: 'column', columnsBlockId, colIndex, index: 0 };
+    await this.loadAndRender();
     const el = this.cursorRow?.getElement();
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -690,7 +807,41 @@ export class MypageView extends View {
         });
         slot.appendChild(dropdown.getElement());
         this.blockDropdowns.push(dropdown);
+      } else if (kind === 'columns-count') {
+        const current = slot.dataset.currentValue || '2';
+        const dropdown = new CustomDropdown({
+          options: [
+            { value: '2', label: '2 columns' },
+            { value: '3', label: '3 columns' }
+          ],
+          selectedValue: current,
+          onChange: (value) => this.changeColumnsCount(blockId, parseInt(value, 10) as 2 | 3)
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
       }
+    });
+  }
+
+  /** Resize a `columns` block. On grow, append empty column arrays. On shrink,
+   *  merge dropped columns' blocks into the last surviving column so no data
+   *  is lost. */
+  private changeColumnsCount(blockId: string, newCount: 2 | 3): void {
+    this.mutateDraft((page) => {
+      const block = findBlockInPage(page, blockId)?.block;
+      if (!block || block.type !== 'columns' || block.count === newCount) return;
+
+      if (newCount > block.count) {
+        while (block.content.length < newCount) block.content.push([]);
+      } else {
+        const survivor = block.content[newCount - 1] ?? [];
+        for (let i = newCount; i < block.content.length; i++) {
+          survivor.push(...(block.content[i] ?? []));
+        }
+        block.content[newCount - 1] = survivor;
+        block.content.length = newCount;
+      }
+      block.count = newCount;
     });
   }
 
@@ -821,6 +972,18 @@ export class MypageView extends View {
     this.container.addEventListener('click', (e) => {
       if (!this.editMode) return;
       const target = e.target as HTMLElement;
+
+      // Click on an empty-column placeholder → put cursor in that column
+      const ph = target.closest('.mypage-block-columns__placeholder') as HTMLElement | null;
+      if (ph) {
+        const cbId = ph.dataset.columnsBlockId;
+        const colIdx = ph.dataset.colIndex !== undefined ? parseInt(ph.dataset.colIndex, 10) : -1;
+        if (cbId && colIdx >= 0) {
+          this.setCursorInColumn(cbId, colIdx);
+          return;
+        }
+      }
+
       // Skip clicks on interactive controls — those have their own handlers
       if (target.closest('button, input, textarea, select, a, [data-action]')) return;
       // Click inside the inline properties panel of the selected block:

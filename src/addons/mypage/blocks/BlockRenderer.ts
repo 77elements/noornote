@@ -20,7 +20,7 @@ import { renderBookmarkFolder } from './renderers/BookmarkFolderRenderer';
 import { renderImage } from './renderers/ImageRenderer';
 import { renderGallery } from './renderers/GalleryRenderer';
 import { renderEmbed } from './renderers/EmbedRenderer';
-import { wrapEditable } from './renderers/blockEditWrapper';
+import { renderColumns } from './renderers/ColumnsRenderer';
 
 export interface BlockRenderOptions {
   editable?: boolean;
@@ -43,10 +43,7 @@ export class BlockRenderer {
       case 'image':           return renderImage(block, editable);
       case 'gallery':         return renderGallery(block, editable);
       case 'embed':           return renderEmbed(block, editable);
-      case 'columns': {
-        const placeholder = `<div class="mypage-block-placeholder">[${block.type} block — renderer pending]</div>`;
-        return editable ? wrapEditable(block.id, block.type, placeholder) : placeholder;
-      }
+      case 'columns':         return renderColumns(block, { editable });
     }
   }
 }

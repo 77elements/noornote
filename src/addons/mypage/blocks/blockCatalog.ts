@@ -30,5 +30,5 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
   { type: 'gallery',         label: 'Gallery',         description: 'Multi-image grid',                         icon: '⚏', enabled: true },
   { type: 'embed',           label: 'Nostr Embed',     description: 'Embed a Nostr note or article',            icon: '🔮', enabled: true },
   { type: 'bookmark-folder', label: 'Bookmark Folder', description: 'Mount an existing bookmark folder',        icon: '📁', enabled: true },
-  { type: 'columns',         label: 'Columns',         description: '2- or 3-column layout',                    icon: '⊞', enabled: false },
+  { type: 'columns',         label: 'Columns',         description: '2- or 3-column layout',                    icon: '⊞', enabled: true },
 ];

@@ -447,6 +447,50 @@
   margin: $gap * 2 0;
 }
 
+// Columns block — desktop/tablet shows N columns side-by-side, mobile stacks
+.mypage-block-columns {
+  display: grid;
+  gap: $gap;
+  margin-bottom: $gap;
+  grid-template-columns: 1fr;
+
+  @include tablet-up {
+    &--2 { grid-template-columns: 1fr 1fr; }
+    &--3 { grid-template-columns: 1fr 1fr 1fr; }
+  }
+}
+
+.mypage-block-columns__col {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.mypage-block-columns__placeholder {
+  padding: $gap;
+  text-align: center;
+  color: $text-alpha-medium;
+  font-style: italic;
+  border-radius: $radius-xl;
+  cursor: pointer;
+  transition: $transition-colors;
+
+  &:hover {
+    background: $surface-tint;
+    color: $color-5;
+  }
+}
+
+.mypage-block-columns__count-slot {
+  margin-bottom: calc($gap / 2);
+  align-self: flex-start;
+
+  .custom-dropdown {
+    width: 140px;
+  }
+}
+
 .mypage-block-links {
   margin-bottom: $gap * 2;
 }
