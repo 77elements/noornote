@@ -16,6 +16,7 @@
  */
 
 import type { BlockType } from './types';
+import { BLOCK_CATALOG } from './blockCatalog';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { EventBus } from '../../../services/EventBus';
 
@@ -25,27 +26,6 @@ interface BlockLibraryViewOptions {
   onPublish: () => Promise<void>;
   getHasDraft: () => boolean;
 }
-
-interface BlockTypeMeta {
-  type: BlockType;
-  label: string;
-  description: string;
-  icon: string;
-  enabled: boolean;
-}
-
-const CATALOG: BlockTypeMeta[] = [
-  { type: 'heading',         label: 'Heading',         description: 'Section title (h1/h2/h3)',                icon: '◆', enabled: true },
-  { type: 'text',            label: 'Text',            description: 'Plain paragraph with line breaks',         icon: '¶', enabled: true },
-  { type: 'list',            label: 'Custom List',     description: 'Title + bullet items',                     icon: '☰', enabled: true },
-  { type: 'links',           label: 'Links',           description: 'List of clickable links with labels',      icon: '🔗', enabled: true },
-  { type: 'divider',         label: 'Divider',         description: 'Horizontal separator line',                icon: '─', enabled: true },
-  { type: 'image',           label: 'Image',           description: 'Single image with optional caption',       icon: '🖼', enabled: true },
-  { type: 'gallery',         label: 'Gallery',         description: 'Multi-image grid',                         icon: '⚏', enabled: true },
-  { type: 'embed',           label: 'Nostr Embed',     description: 'Embed a Nostr note or article',            icon: '🔮', enabled: true },
-  { type: 'bookmark-folder', label: 'Bookmark Folder', description: 'Mount an existing bookmark folder',        icon: '📁', enabled: true },
-  { type: 'columns',         label: 'Columns',         description: '2- or 3-column layout',                    icon: '⊞', enabled: false },
-];
 
 export class BlockLibraryView {
   private container: HTMLElement;
@@ -81,7 +61,7 @@ export class BlockLibraryView {
   }
 
   private render(): void {
-    const rowsHtml = CATALOG.map(meta => `
+    const rowsHtml = BLOCK_CATALOG.map(meta => `
       <div class="block-library__row${meta.enabled ? '' : ' block-library__row--disabled'}" data-block-type="${meta.type}">
         <div class="block-library__icon" aria-hidden="true">${escapeHtml(meta.icon)}</div>
         <div class="block-library__info">

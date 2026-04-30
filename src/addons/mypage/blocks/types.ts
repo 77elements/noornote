@@ -58,3 +58,33 @@ export function createBlock(type: BlockType): Block {
     case 'divider':         return { id, type };
   }
 }
+
+/**
+ * Locate a block by id anywhere in the page — top-level OR inside a
+ * `columns` block's per-column content arrays. Returns the block plus
+ * the parent array + index (for splice/move operations).
+ *
+ * Per design contract (see docs/todos/mypage.md), `columns` blocks may
+ * NOT contain other `columns` blocks, so we recurse exactly one level
+ * into each column's content. If you ever lift that restriction, this
+ * helper needs to recurse further.
+ */
+export function findBlockInPage(
+  page: MypagePageV2,
+  blockId: string
+): { block: Block; parent: Block[]; index: number } | null {
+  const topIndex = page.blocks.findIndex(b => b.id === blockId);
+  if (topIndex >= 0) {
+    return { block: page.blocks[topIndex]!, parent: page.blocks, index: topIndex };
+  }
+  for (const tb of page.blocks) {
+    if (tb.type !== 'columns') continue;
+    for (const col of tb.content) {
+      const idx = col.findIndex(b => b.id === blockId);
+      if (idx >= 0) {
+        return { block: col[idx]!, parent: col, index: idx };
+      }
+    }
+  }
+  return null;
+}

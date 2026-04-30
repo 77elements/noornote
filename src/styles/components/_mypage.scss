@@ -305,6 +305,46 @@
   }
 }
 
+// ==========================================
+// Inline block properties panel (under selected block)
+// ==========================================
+
+.mypage-block-properties {
+  margin: 0 0 $gap;
+  padding: $gap;
+  border: 1px solid $color-6;
+  border-radius: $radius-xl;
+  background: color-mix(in srgb, $color-6 8%, transparent);
+}
+
+.mypage-block-properties__header {
+  display: flex;
+  align-items: baseline;
+  gap: calc($gap / 2);
+  margin-bottom: calc($gap / 2);
+  padding-bottom: calc($gap / 2);
+  border-bottom: 1px solid color-mix(in srgb, $color-6 30%, transparent);
+}
+
+.mypage-block-properties__type {
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.85rem;
+  color: $color-6;
+}
+
+.mypage-block-properties__label {
+  font-size: 0.85rem;
+  color: $text-alpha-medium;
+}
+
+.mypage-block-properties__body {
+  color: $text-alpha-medium;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
 .block-library__icon {
   font-size: 1.4rem;
   width: 32px;
@@ -315,6 +355,7 @@
 .block-library__info {
   flex: 1;
   min-width: 0;
+  line-height: 1.25;
 }
 
 .block-library__label {
@@ -451,6 +492,13 @@
   border: 1px solid $color-2;
   border-radius: $radius-xl;
   background: rgba($color-white, 0.02);
+  cursor: pointer;
+  transition: $transition-colors;
+
+  &--selected {
+    border-color: $color-6;
+    box-shadow: 0 0 0 1px $color-6;
+  }
 }
 
 .mypage-block-edit__toolbar {
@@ -507,13 +555,12 @@
 }
 
 // Heading edit
-.mypage-block-heading__level-select {
-  width: 80px;
-  padding: calc($gap / 2);
-  background: $color-2;
-  border: 1px solid $color-2;
-  border-radius: $radius-pill;
-  color: $color-5;
+.mypage-block-heading__level-slot {
+  align-self: flex-start;
+
+  .custom-dropdown {
+    width: 80px;
+  }
 }
 
 .mypage-block-heading__input {
@@ -716,5 +763,112 @@
   color: $text-alpha-medium;
   font-style: italic;
   margin: 0;
+}
+
+// ==========================================
+// Cursor row (Gutenberg-style empty insertion line + slash menu)
+// ==========================================
+
+.mypage-cursor-row {
+  position: relative;
+  margin: $gap 0;
+}
+
+.mypage-cursor-row__input {
+  width: 100%;
+  padding: calc($gap / 2) $gap;
+  background: transparent;
+  border: 1px dashed color-mix(in srgb, $color-4 40%, transparent);
+  border-radius: $radius-pill;
+  color: $color-5;
+  font-family: inherit;
+  font-size: 1rem;
+  transition: $transition-colors;
+
+  &::placeholder {
+    color: $text-alpha-medium;
+    font-style: italic;
+  }
+
+  &:focus {
+    outline: none;
+    border-style: solid;
+    border-color: $color-4;
+    box-shadow: 0 0 0 2px color-mix(in srgb, $color-4 20%, transparent);
+  }
+}
+
+.mypage-cursor-row__menu {
+  position: absolute;
+  z-index: 100;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: $color-2;
+  border: 1px solid $color-4;
+  border-radius: $radius-xl;
+  box-shadow: $box-shadow;
+  @include custom-scrollbar;
+}
+
+.mypage-cursor-row__menu-section {
+  padding: calc($gap / 2) $gap calc($gap / 4);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $text-alpha-medium;
+}
+
+.mypage-cursor-row__menu-empty {
+  padding: $gap;
+  text-align: center;
+  color: $text-alpha-medium;
+}
+
+.mypage-cursor-row__menu-item {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  width: 100%;
+  padding: calc($gap / 2) $gap;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid $color-1;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: $color-5;
+  transition: $transition-colors;
+
+  &:last-child { border-bottom: none; }
+
+  &:hover, &:focus-visible {
+    background: $surface-tint;
+    outline: none;
+  }
+}
+
+.mypage-cursor-row__menu-icon {
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+.mypage-cursor-row__menu-label {
+  font-weight: 600;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+
+.mypage-cursor-row__menu-desc {
+  font-size: 0.85rem;
+  color: $text-alpha-medium;
+  @include text-truncate;
+  flex: 1;
+  min-width: 0;
 }
 

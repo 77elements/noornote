@@ -9,6 +9,9 @@ export function wrapEditable(blockId: string, type: string, contentHtml: string)
       <div class="mypage-block-edit__toolbar">
         <span class="mypage-block-edit__type-badge">${type}</span>
         <div class="mypage-block-edit__actions">
+          <button type="button" class="mypage-block-edit__btn" data-block-id="${blockId}" data-action="cursor-after" title="Move cursor below this block" aria-label="Move cursor below">
+            <svg width="14" height="14"><use href="#icon-plus"/></svg>
+          </button>
           <button type="button" class="mypage-block-edit__btn" data-block-id="${blockId}" data-action="move-up" title="Move up" aria-label="Move up">
             <svg width="14" height="14"><use href="#icon-chevron-up"/></svg>
           </button>

@@ -26,9 +26,11 @@ import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { EventBus } from '../../services/EventBus';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
-import { createBlock, type BlockType } from './blocks/types';
+import { CursorRow } from './blocks/CursorRow';
+import { createBlock, findBlockInPage, type Block, type BlockType } from './blocks/types';
 import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
+import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { MyPageMountsService } from '../../services/MyPageMountsService';
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
@@ -51,6 +53,16 @@ export class MypageView extends View {
   private blockLibrary: BlockLibraryView | null = null;
   private editMode: boolean = false;
   private folderPickers: BookmarkFolderPicker[] = [];
+  private blockDropdowns: CustomDropdown[] = [];
+  private cursorRow: CursorRow | null = null;
+  /** Insert position in page.blocks where the next block lands. -1 means
+   *  "not set yet, default to end on next render". After insert, advances
+   *  past the new block. */
+  private cursorIndex: number = -1;
+  /** Most-recently-used block types in MRU order. In-memory only. */
+  private recentBlockTypes: BlockType[] = [];
+  /** Currently focused/selected block in the editor. Null = none. UI-only. */
+  private selectedBlockId: string | null = null;
   private eventBusSubscriptions: string[] = [];
 
   constructor(npub: string) {
@@ -88,6 +100,8 @@ export class MypageView extends View {
     this.mountsComponent?.destroy();
     this.mountsComponent = null;
     this.destroyFolderPickers();
+    this.destroyBlockDropdowns();
+    this.destroyCursorRow();
     this.closeBlockLibrary();
     this.container.innerHTML = '';
   }
@@ -95,6 +109,16 @@ export class MypageView extends View {
   private destroyFolderPickers(): void {
     this.folderPickers.forEach(p => p.destroy());
     this.folderPickers = [];
+  }
+
+  private destroyBlockDropdowns(): void {
+    this.blockDropdowns.forEach(d => d.destroy());
+    this.blockDropdowns = [];
+  }
+
+  private destroyCursorRow(): void {
+    this.cursorRow?.destroy();
+    this.cursorRow = null;
   }
 
   /**
@@ -242,11 +266,20 @@ export class MypageView extends View {
 
     const editable = this.editMode && this.isOwnProfile;
 
+    // Clamp cursor to valid range; default = end of page when uninitialised.
+    if (editable) {
+      if (this.cursorIndex < 0 || this.cursorIndex > page.blocks.length) {
+        this.cursorIndex = page.blocks.length;
+      }
+    }
+
     // Page-meta (title/subtitle/description) are no longer rendered as a fixed
     // top section — the user composes them via Heading + Text blocks like any
     // other page content. The fields remain in MypagePageV2 for backwards
     // compatibility when reading old v2 events; they are no-ops in the UI.
-    const blocksHtml = BlockRenderer.renderAll(page.blocks, { editable });
+    const blocksHtml = editable
+      ? this.renderBlocksWithCursor(page.blocks)
+      : BlockRenderer.renderAll(page.blocks, { editable: false });
 
     const dangerZoneHtml = this.isOwnProfile
       ? `
@@ -259,6 +292,7 @@ export class MypageView extends View {
 
     // Tear down old picker instances before innerHTML replaces their DOM
     this.destroyFolderPickers();
+    this.destroyBlockDropdowns();
 
     // Danger zone lives OUTSIDE .mypage-view so it stays the last element on
     // the page even after renderMounts() appends bookmark-folder content
@@ -287,7 +321,12 @@ export class MypageView extends View {
       ${dangerZoneHtml}
     `;
 
-    if (editable) this.mountFolderPickers();
+    if (editable) {
+      this.mountFolderPickers();
+      this.mountBlockDropdowns();
+      this.mountCursorRow();
+      this.applySelectedBlockClass();
+    }
     if (!editable) this.mountEmbeds();
 
     this.bindHeaderEvents();
@@ -421,22 +460,140 @@ export class MypageView extends View {
    * The 'mypageDraftV2:changed' event triggers MypageView re-render.
    */
   private applyBlock(type: BlockType): void {
-    const current = this.listService.getDraftV2() ?? this.listService.getPageV2();
-    const block = createBlock(type);
-
-    // Sensible defaults so the new block is visible immediately
-    if (block.type === 'heading')         block.text = 'New heading';
-    if (block.type === 'text')            block.content = 'New text block.';
-    if (block.type === 'list')            block.title = 'New list';
-    if (block.type === 'links')           block.title = 'Links';
-    if (block.type === 'bookmark-folder') block.folderName = ''; // user picks via picker
-
-    const next: MypagePageV2 = {
-      ...current,
-      blocks: [...current.blocks, block]
-    };
-    this.listService.saveDraftV2(next);
+    this.insertBlockAtCursor(createBlock(type), {});
+    this.bumpRecentBlockType(type);
     ToastService.show(`${type} block added`, 'success');
+  }
+
+  /**
+   * Insert a block at the current cursor position (page-level for now —
+   * column-internal cursor follows in Slice 10b). Cursor advances past
+   * the inserted block so consecutive applies stack naturally.
+   */
+  private insertBlockAtCursor(block: Block, opts: { initialContent?: string }): void {
+    const current = this.listService.getDraftV2() ?? this.listService.getPageV2();
+    const insertIndex = Math.max(0, Math.min(this.cursorIndex < 0 ? current.blocks.length : this.cursorIndex, current.blocks.length));
+
+    // For text blocks created from cursor-row typing, seed the content
+    if (opts.initialContent !== undefined && block.type === 'text') {
+      block.content = opts.initialContent;
+    }
+
+    const nextBlocks = [...current.blocks];
+    nextBlocks.splice(insertIndex, 0, block);
+    const next: MypagePageV2 = { ...current, blocks: nextBlocks };
+    this.cursorIndex = insertIndex + 1; // advance past new block
+    this.listService.saveDraftV2(next);
+  }
+
+  private bumpRecentBlockType(type: BlockType): void {
+    this.recentBlockTypes = [type, ...this.recentBlockTypes.filter(t => t !== type)].slice(0, 10);
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Cursor-row rendering + mounting
+  // ──────────────────────────────────────────────────────────────────
+
+  /**
+   * Render the editable block list with a cursor-row slot at the active
+   * cursor position. The slot is an empty `<div data-cursor-mount>` that
+   * `mountCursorRow()` later populates with a `CursorRow` instance.
+   */
+  private renderBlocksWithCursor(blocks: Block[]): string {
+    const cursor = this.cursorIndex;
+    const slot = `<div data-cursor-mount></div>`;
+    if (blocks.length === 0) return slot;
+
+    const parts: string[] = [];
+    for (let i = 0; i < blocks.length; i++) {
+      if (i === cursor) parts.push(slot);
+      const block = blocks[i]!;
+      parts.push(BlockRenderer.renderOne(block, { editable: true }));
+      if (block.id === this.selectedBlockId) {
+        parts.push(this.renderInlineProperties(block));
+      }
+    }
+    if (cursor >= blocks.length) parts.push(slot);
+    return parts.join('');
+  }
+
+  /**
+   * Inline properties panel — rendered directly under the selected block,
+   * pushing later blocks down. Empty placeholder for now; real controls
+   * (margin, padding, color, alignment, …) follow per block-type later.
+   * Works on Mobile too because it's just another row in the same column.
+   */
+  private renderInlineProperties(block: Block): string {
+    return `
+      <div class="mypage-block-properties" data-properties-for="${block.id}">
+        <div class="mypage-block-properties__header">
+          <span class="mypage-block-properties__type">${block.type}</span>
+          <span class="mypage-block-properties__label">properties</span>
+        </div>
+        <div class="mypage-block-properties__body">
+          Block properties (margin, padding, color, alignment, …) will live here.
+        </div>
+      </div>
+    `;
+  }
+
+  private mountCursorRow(): void {
+    this.destroyCursorRow();
+    const slot = this.container.querySelector<HTMLElement>('[data-cursor-mount]');
+    if (!slot) return;
+
+    this.cursorRow = new CursorRow({
+      onTextEntered: (text) => this.handleCursorText(text),
+      onBlockTypeChosen: (type) => this.handleCursorBlockType(type),
+      getRecentBlockTypes: () => this.recentBlockTypes
+    });
+    slot.appendChild(this.cursorRow.getElement());
+  }
+
+  private handleCursorText(text: string): void {
+    const block = createBlock('text');
+    this.insertBlockAtCursor(block, { initialContent: text });
+    this.bumpRecentBlockType('text');
+  }
+
+  private handleCursorBlockType(type: BlockType): void {
+    this.insertBlockAtCursor(createBlock(type), {});
+    this.bumpRecentBlockType(type);
+  }
+
+  /** Move cursor to immediately after a given block id (page-level only). */
+  private setCursorAfterBlock(blockId: string): void {
+    const current = this.listService.getDraftV2() ?? this.listService.getPageV2();
+    const idx = current.blocks.findIndex(b => b.id === blockId);
+    if (idx < 0) return;
+    this.cursorIndex = idx + 1;
+    // No data mutation — just trigger re-render
+    this.loadAndRender();
+  }
+
+  /**
+   * Select / deselect a block. Pure UI state — no data mutation.
+   * Triggers a full re-render so the inline properties panel (rendered
+   * directly under the selected block by `renderBlocksWithCursor`) shows
+   * up or hides. Re-render keeps cursor row + folder pickers in sync.
+   */
+  private selectBlock(blockId: string | null): void {
+    if (this.selectedBlockId === blockId) return;
+    this.selectedBlockId = blockId;
+    this.loadAndRender();
+  }
+
+  /** Toggle the `--selected` class on the matching wrapper. Called after
+   *  every editable re-render so the focus survives state changes. */
+  private applySelectedBlockClass(): void {
+    this.container.querySelectorAll('.mypage-block-edit--selected').forEach(el => {
+      el.classList.remove('mypage-block-edit--selected');
+    });
+    if (!this.selectedBlockId) return;
+    const wrapper = this.container.querySelector(
+      `.mypage-block-edit[data-block-id="${this.selectedBlockId}"]`
+    );
+    wrapper?.classList.add('mypage-block-edit--selected');
   }
 
   private async discardDraft(): Promise<void> {
@@ -493,6 +650,37 @@ export class MypageView extends View {
       });
       slot.appendChild(picker.getElement());
       this.folderPickers.push(picker);
+    });
+  }
+
+  private mountBlockDropdowns(): void {
+    const slots = this.container.querySelectorAll<HTMLElement>('[data-block-dropdown]');
+    slots.forEach(slot => {
+      const kind = slot.dataset.blockDropdown;
+      const blockId = slot.dataset.blockId;
+      if (!kind || !blockId) return;
+
+      if (kind === 'heading-level') {
+        const current = slot.dataset.currentValue || '1';
+        const dropdown = new CustomDropdown({
+          options: [
+            { value: '1', label: 'H1' },
+            { value: '2', label: 'H2' },
+            { value: '3', label: 'H3' }
+          ],
+          selectedValue: current,
+          onChange: (value) => {
+            this.mutateDraft((page) => {
+              const block = findBlockInPage(page, blockId)?.block;
+              if (block && block.type === 'heading') {
+                block.level = parseInt(value, 10) as 1 | 2 | 3;
+              }
+            }, { silent: false });
+          }
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
+      }
     });
   }
 
@@ -570,7 +758,7 @@ export class MypageView extends View {
 
   private handleBookmarkFolderChange(blockId: string, folderName: string): void {
     this.mutateDraft((page) => {
-      const block = page.blocks.find(b => b.id === blockId);
+      const block = findBlockInPage(page, blockId)?.block;
       if (block?.type === 'bookmark-folder') block.folderName = folderName;
     }, { silent: true });
   }
@@ -605,6 +793,7 @@ export class MypageView extends View {
         case 'delete':                 this.deleteBlock(blockId); break;
         case 'move-up':                this.moveBlock(blockId, -1); break;
         case 'move-down':              this.moveBlock(blockId, +1); break;
+        case 'cursor-after':           this.setCursorAfterBlock(blockId); break;
         case 'add-item':               this.addListItem(blockId); break;
         case 'delete-item':            if (itemIndex >= 0) this.deleteListItem(blockId, itemIndex); break;
         case 'add-link':               this.addLink(blockId); break;
@@ -614,6 +803,23 @@ export class MypageView extends View {
         case 'delete-gallery-url':     if (itemIndex >= 0) this.deleteGalleryUrl(blockId, itemIndex); break;
         case 'upload-gallery-images':  this.triggerGalleryUpload(blockId); break;
       }
+    });
+
+    // Block selection — click on a block's wrapper (but NOT on its
+    // interactive descendants, which have their own handlers) selects it.
+    // Click outside any block clears the selection.
+    this.container.addEventListener('click', (e) => {
+      if (!this.editMode) return;
+      const target = e.target as HTMLElement;
+      // Skip clicks on interactive controls — those have their own handlers
+      if (target.closest('button, input, textarea, select, a, [data-action]')) return;
+      // Click inside the inline properties panel of the selected block:
+      // keep selection (don't toggle off, the user is interacting with the panel)
+      if (target.closest('.mypage-block-properties')) return;
+      const wrapper = target.closest('.mypage-block-edit') as HTMLElement | null;
+      const blockId = wrapper?.dataset.blockId ?? null;
+      // Toggle: clicking the already-selected block deselects
+      this.selectBlock(blockId === this.selectedBlockId ? null : blockId);
     });
 
     this.container.addEventListener('change', async (e) => {
@@ -665,7 +871,7 @@ export class MypageView extends View {
 
     const itemIndex = el.dataset?.itemIndex !== undefined ? parseInt(el.dataset.itemIndex, 10) : -1;
     this.mutateDraft((page) => {
-      const block = page.blocks.find(b => b.id === blockId);
+      const block = findBlockInPage(page, blockId)?.block;
       if (!block) return;
 
       if (block.type === 'heading') {
@@ -694,19 +900,21 @@ export class MypageView extends View {
 
   private deleteBlock(blockId: string): void {
     this.mutateDraft((page) => {
-      page.blocks = page.blocks.filter(b => b.id !== blockId);
+      const loc = findBlockInPage(page, blockId);
+      if (!loc) return;
+      loc.parent.splice(loc.index, 1);
     });
   }
 
   private moveBlock(blockId: string, delta: -1 | 1): void {
     this.mutateDraft((page) => {
-      const i = page.blocks.findIndex(b => b.id === blockId);
-      if (i < 0) return;
-      const j = i + delta;
-      if (j < 0 || j >= page.blocks.length) return;
-      const tmp = page.blocks[i]!;
-      page.blocks[i] = page.blocks[j]!;
-      page.blocks[j] = tmp;
+      const loc = findBlockInPage(page, blockId);
+      if (!loc) return;
+      const j = loc.index + delta;
+      if (j < 0 || j >= loc.parent.length) return;
+      const tmp = loc.parent[loc.index]!;
+      loc.parent[loc.index] = loc.parent[j]!;
+      loc.parent[j] = tmp;
     });
   }
 
@@ -716,28 +924,28 @@ export class MypageView extends View {
     const value = input.value.trim();
     if (!value) return;
     this.mutateDraft((page) => {
-      const block = page.blocks.find(b => b.id === blockId);
+      const block = findBlockInPage(page, blockId)?.block;
       if (block?.type === 'list') block.items.push(value);
     });
   }
 
   private deleteListItem(blockId: string, itemIndex: number): void {
     this.mutateDraft((page) => {
-      const block = page.blocks.find(b => b.id === blockId);
+      const block = findBlockInPage(page, blockId)?.block;
       if (block?.type === 'list') block.items.splice(itemIndex, 1);
     });
   }
 
   private addLink(blockId: string): void {
     this.mutateDraft((page) => {
-      const block = page.blocks.find(b => b.id === blockId);
+      const block = findBlockInPage(page, blockId)?.block;
       if (block?.type === 'links') block.items.push({ label: '', url: '' });
     });
   }
 
   private deleteLink(blockId: string, itemIndex: number): void {
     this.mutateDraft((page) => {
-      const block = page.blocks.find(b => b.id === blockId);
+      const block = findBlockInPage(page, blockId)?.block;
       if (block?.type === 'links') block.items.splice(itemIndex, 1);
     });
   }
@@ -749,14 +957,14 @@ export class MypageView extends View {
 
   private addGalleryUrl(blockId: string): void {
     this.mutateDraft((page) => {
-      const block = page.blocks.find(b => b.id === blockId);
+      const block = findBlockInPage(page, blockId)?.block;
       if (block?.type === 'gallery') block.urls.push('');
     });
   }
 
   private deleteGalleryUrl(blockId: string, itemIndex: number): void {
     this.mutateDraft((page) => {
-      const block = page.blocks.find(b => b.id === blockId);
+      const block = findBlockInPage(page, blockId)?.block;
       if (block?.type === 'gallery') block.urls.splice(itemIndex, 1);
     });
   }
@@ -785,7 +993,7 @@ export class MypageView extends View {
       const newUrls = results.filter(r => r.success && r.url).map(r => r.url as string);
       if (newUrls.length === 0) return;
       this.mutateDraft((page) => {
-        const block = page.blocks.find(b => b.id === blockId);
+        const block = findBlockInPage(page, blockId)?.block;
         if (block?.type === 'gallery') block.urls.push(...newUrls);
       });
     } catch (error) {
@@ -834,7 +1042,7 @@ export class MypageView extends View {
       if (result.success && result.url) {
         const url = result.url;
         this.mutateDraft((page) => {
-          const block = page.blocks.find(b => b.id === blockId);
+          const block = findBlockInPage(page, blockId)?.block;
           if (block?.type === 'image') block.url = url;
         });
       }
