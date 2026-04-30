@@ -201,8 +201,6 @@ export class Timeline extends View {
     this.userLoginSubscriptionId = this.eventBus.on('user:login', (data: { pubkey: string }) => {
       // Only reinitialize if pubkey actually changed
       if (data.pubkey !== this.userPubkey) {
-        console.log(`[Timeline] User switched from ${this.userPubkey.slice(0, 8)}... to ${data.pubkey.slice(0, 8)}...`);
-
         // Clear user-specific caches
         CacheManager.getInstance().clearUserSpecificCaches();
 
@@ -478,11 +476,9 @@ export class Timeline extends View {
       if (this.tribePubkeys && this.tribePubkeys.length > 0) {
         // TribeView: show notes from tribe members
         this.stateManager.setFollowingPubkeys(this.tribePubkeys);
-        console.log(`📱 TIMELINE UI: Loading notes from ${this.tribePubkeys.length} tribe members`);
       } else if (this.filterAuthorPubkey) {
         // ProfileView: show only this author's notes
         this.stateManager.setFollowingPubkeys([this.filterAuthorPubkey]);
-        console.log(`📱 TIMELINE UI: Loading notes for author: ${this.filterAuthorPubkey.slice(0, 8)}...`);
       } else {
         // TimelineView: show following list + current user's own posts
         let followingPubkeys = await this.userService.getUserFollowing(this.userPubkey);
@@ -493,7 +489,6 @@ export class Timeline extends View {
         }
 
         this.stateManager.setFollowingPubkeys(followingPubkeys);
-        console.log(`📱 Building Timeline from ${followingPubkeys.length} followed users`);
 
         if (followingPubkeys.length <= 1) {
           this.uiStateHandler.hideSkeletonLoaders();

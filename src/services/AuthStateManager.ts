@@ -114,7 +114,6 @@ export class AuthStateManager {
     try {
       // Fetch profile from relays (always fetches fresh, no cache)
       await this.userProfileService.getUserProfile(pubkey);
-      console.log('[AuthStateManager] Own profile refreshed from relays');
     } catch (error) {
       console.error('[AuthStateManager] Failed to refresh own profile:', error);
     }

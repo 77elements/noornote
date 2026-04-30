@@ -337,7 +337,6 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       this.systemLogger.info('NotificationsOrchestrator', `📋 Total notifications loaded: ${this.notifications.length}`);
 
-      console.log(`[NotifBadge] emit:badge-update source=initial-fetch total=${this.notifications.length} unread=${this.getUnreadCount()}`);
       this.eventBus.emit('notifications:badge-update');
     } catch (error) {
       this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch initial notifications:', error);
@@ -403,7 +402,6 @@ export class NotificationsOrchestrator extends Orchestrator {
 
       this.systemLogger.info('NotificationsOrchestrator', `✅ Loaded ${allNotifications.length} new notifications`);
 
-      console.log(`[NotifBadge] emit:badge-update source=new-fetch fetched=${allNotifications.length} total=${this.notifications.length} unread=${this.getUnreadCount()}`);
       this.eventBus.emit('notifications:badge-update');
     } catch (error) {
       this.systemLogger.error('NotificationsOrchestrator', 'Failed to fetch new notifications:', error);
@@ -486,30 +484,24 @@ export class NotificationsOrchestrator extends Orchestrator {
    * Process a notification event (add to cache + notifications list)
    */
   private processNotificationEvent(event: NostrEvent): boolean {
-    const evShort = event.id?.slice(0, 8) ?? '??';
-
     // Skip events from the user themselves (don't show self-mentions, self-zaps, etc.)
     if (this.userPubkey && event.pubkey === this.userPubkey) {
-      console.log(`[NotifBadge] drop:self eventId=${evShort} kind=${event.kind}`);
       return false;
     }
 
     // Skip events from muted users
     if (this.mutedPubkeys.has(event.pubkey)) {
-      console.log(`[NotifBadge] drop:muted-user eventId=${evShort} kind=${event.kind} author=${event.pubkey.slice(0, 8)}`);
       return false;
     }
 
     // Skip events from muted threads (Hell Thread protection)
     if (this.isEventInMutedThread(event)) {
-      console.log(`[NotifBadge] drop:muted-thread eventId=${evShort} kind=${event.kind}`);
       return false;
     }
 
     // Skip notifications about user's events within muted threads
     // (e.g., likes/replies to user's posts inside a muted hell thread)
     if (this.isNotificationTargetInMutedThread(event)) {
-      console.log(`[NotifBadge] drop:target-in-muted-thread eventId=${evShort} kind=${event.kind}`);
       return false;
     }
 
@@ -524,7 +516,6 @@ export class NotificationsOrchestrator extends Orchestrator {
         const targetKind = parseInt(parts[0] || '');
         const targetAuthor = parts[1];
         if (targetKind === 39089 && targetAuthor && targetAuthor !== this.userPubkey) {
-          console.log(`[NotifBadge] drop:not-pack-owner eventId=${evShort} kind=${event.kind} packAuthor=${targetAuthor.slice(0, 8)}`);
           return false;
         }
       }
@@ -543,14 +534,10 @@ export class NotificationsOrchestrator extends Orchestrator {
       const targetsUserEvent = !!(eTagId && userEventIds.includes(eTagId));
       const directTarget = pTags[pTags.length - 1]?.[1];
       const lastPtagIsUser = directTarget === this.userPubkey;
-      const reactorShort = event.pubkey.slice(0, 8);
 
       if (!targetsUserEvent && !lastPtagIsUser) {
-        console.log(`[NotifBadge] drop:reaction reactor=${reactorShort} eventId=${evShort} lastPtag=${directTarget?.slice(0, 8) ?? 'none'} eTagTarget=${eTagId?.slice(0, 8) ?? 'none'} targetsUserEvent=${targetsUserEvent} pTags=${pTags.length} eTags=${eTags.length}`);
         return false;
       }
-
-      console.log(`[NotifBadge] keep:reaction reactor=${reactorShort} eventId=${evShort} via=${targetsUserEvent ? (lastPtagIsUser ? 'both' : 'etag') : 'ptag'} eTagTarget=${eTagId?.slice(0, 8) ?? 'none'} lastPtag=${directTarget?.slice(0, 8) ?? 'none'}`);
     }
 
     // Detect notification type
@@ -988,7 +975,6 @@ export class NotificationsOrchestrator extends Orchestrator {
           this.onNewNotificationCallback(notification);
         }
 
-        console.log(`[NotifBadge] emit:badge-update source=live eventId=${event.id?.slice(0, 8)} type=${notification.type} kind=${event.kind} ts=${event.created_at} unread=${this.getUnreadCount()}`);
         this.eventBus.emit('notifications:badge-update');
       }
     }
@@ -1099,7 +1085,6 @@ export class NotificationsOrchestrator extends Orchestrator {
 
     this.systemLogger.info('NotificationsOrchestrator', `📰 New article notification: ${data.title.slice(0, 30)}...`);
 
-    console.log('[NotifBadge] emit:badge-update source=article');
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
   }
@@ -1124,7 +1109,6 @@ export class NotificationsOrchestrator extends Orchestrator {
     const typeLabel = data.type === 'mutual_unfollow' ? 'unfollowed' : 'new mutual';
     this.systemLogger.info('NotificationsOrchestrator', `🔔 Mutual notification: ${typeLabel}`);
 
-    console.log('[NotifBadge] emit:badge-update source=mutual', { type: data.type });
     this.eventBus.emit('notifications:badge-update');
     this.eventBus.emit('notifications:new', { notification });
   }
@@ -1152,7 +1136,6 @@ export class NotificationsOrchestrator extends Orchestrator {
       this.onNewNotificationCallback(notification);
     }
 
-    console.log('[NotifBadge] emit:badge-update source=hashtag', { hashtag: data.hashtag, count: data.count });
     this.eventBus.emit('notifications:badge-update');
   }
 

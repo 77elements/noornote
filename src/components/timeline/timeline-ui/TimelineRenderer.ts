@@ -59,8 +59,6 @@ export class TimelineRenderer {
       // Insert before load trigger
       this.element.insertBefore(fragment, loadTrigger);
 
-      console.log(`${events.length} notes and other stuff: ready ✅`);
-
       // Hide empty state if we have events
       if (events.length > 0) {
         this.uiStateHandler.hideEmptyState();
