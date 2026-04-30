@@ -549,25 +549,38 @@ export class MypageView extends View {
       const itemIndex = btn.dataset.itemIndex !== undefined ? parseInt(btn.dataset.itemIndex, 10) : -1;
 
       switch (action) {
-        case 'delete':       this.deleteBlock(blockId); break;
-        case 'move-up':      this.moveBlock(blockId, -1); break;
-        case 'move-down':    this.moveBlock(blockId, +1); break;
-        case 'add-item':     this.addListItem(blockId); break;
-        case 'delete-item':  if (itemIndex >= 0) this.deleteListItem(blockId, itemIndex); break;
-        case 'add-link':     this.addLink(blockId); break;
-        case 'delete-link':  if (itemIndex >= 0) this.deleteLink(blockId, itemIndex); break;
-        case 'upload-image': this.triggerImageUpload(blockId); break;
+        case 'delete':                 this.deleteBlock(blockId); break;
+        case 'move-up':                this.moveBlock(blockId, -1); break;
+        case 'move-down':              this.moveBlock(blockId, +1); break;
+        case 'add-item':               this.addListItem(blockId); break;
+        case 'delete-item':            if (itemIndex >= 0) this.deleteListItem(blockId, itemIndex); break;
+        case 'add-link':               this.addLink(blockId); break;
+        case 'delete-link':            if (itemIndex >= 0) this.deleteLink(blockId, itemIndex); break;
+        case 'upload-image':           this.triggerImageUpload(blockId); break;
+        case 'add-gallery-url':        this.addGalleryUrl(blockId); break;
+        case 'delete-gallery-url':     if (itemIndex >= 0) this.deleteGalleryUrl(blockId, itemIndex); break;
+        case 'upload-gallery-images':  this.triggerGalleryUpload(blockId); break;
       }
     });
 
     this.container.addEventListener('change', async (e) => {
       const target = e.target as HTMLInputElement;
-      if (target?.dataset?.imageFile === undefined) return;
-      const blockId = target.dataset.blockId;
-      const file = target.files?.[0];
-      if (!blockId || !file) return;
-      target.value = ''; // allow re-selecting same file later
-      await this.handleImageUpload(blockId, file);
+      if (target?.dataset?.imageFile !== undefined) {
+        const blockId = target.dataset.blockId;
+        const file = target.files?.[0];
+        if (!blockId || !file) return;
+        target.value = '';
+        await this.handleImageUpload(blockId, file);
+        return;
+      }
+      if (target?.dataset?.galleryFiles !== undefined) {
+        const blockId = target.dataset.blockId;
+        const files = Array.from(target.files ?? []);
+        if (!blockId || files.length === 0) return;
+        target.value = '';
+        await this.handleGalleryUpload(blockId, files);
+        return;
+      }
     });
 
     this.container.addEventListener('keydown', (e) => {
@@ -626,6 +639,8 @@ export class MypageView extends View {
         if (field === 'url')     block.url = el.value;
         if (field === 'alt')     block.alt = el.value;
         if (field === 'caption') block.caption = el.value;
+      } else if (block.type === 'gallery') {
+        if (field === 'gallery-url' && itemIndex >= 0) block.urls[itemIndex] = el.value;
       }
     }, { silent: true });
   }
@@ -683,6 +698,58 @@ export class MypageView extends View {
   private triggerImageUpload(blockId: string): void {
     const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-image-file]`) as HTMLInputElement | null;
     fileInput?.click();
+  }
+
+  private addGalleryUrl(blockId: string): void {
+    this.mutateDraft((page) => {
+      const block = page.blocks.find(b => b.id === blockId);
+      if (block?.type === 'gallery') block.urls.push('');
+    });
+  }
+
+  private deleteGalleryUrl(blockId: string, itemIndex: number): void {
+    this.mutateDraft((page) => {
+      const block = page.blocks.find(b => b.id === blockId);
+      if (block?.type === 'gallery') block.urls.splice(itemIndex, 1);
+    });
+  }
+
+  private triggerGalleryUpload(blockId: string): void {
+    const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-gallery-files]`) as HTMLInputElement | null;
+    fileInput?.click();
+  }
+
+  private async handleGalleryUpload(blockId: string, files: File[]): Promise<void> {
+    const images = files.filter(f => f.type.startsWith('image/'));
+    if (images.length === 0) {
+      ToastService.show('Please select image files', 'error');
+      return;
+    }
+    const uploadBtn = this.container.querySelector(`[data-block-id="${blockId}"][data-action="upload-gallery-images"]`) as HTMLButtonElement | null;
+    if (!uploadBtn) return;
+
+    const originalText = uploadBtn.textContent ?? '';
+    uploadBtn.disabled = true;
+
+    try {
+      const results = await MediaUploadService.getInstance().uploadFiles(images, (fileIndex, _progress, totalFiles) => {
+        uploadBtn.textContent = `Uploading ${fileIndex + 1}/${totalFiles}…`;
+      });
+      const newUrls = results.filter(r => r.success && r.url).map(r => r.url as string);
+      if (newUrls.length === 0) return;
+      this.mutateDraft((page) => {
+        const block = page.blocks.find(b => b.id === blockId);
+        if (block?.type === 'gallery') block.urls.push(...newUrls);
+      });
+    } catch (error) {
+      console.error('Gallery upload failed:', error);
+      ToastService.show('Gallery upload failed', 'error');
+    } finally {
+      if (uploadBtn.isConnected) {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = originalText;
+      }
+    }
   }
 
   private async handleImageUpload(blockId: string, file: File): Promise<void> {

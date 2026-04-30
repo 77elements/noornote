@@ -646,3 +646,39 @@
   }
 }
 
+// ==========================================
+// Gallery block (readonly reuses .note-media--grid-* via shared classes)
+// ==========================================
+
+.mypage-block-gallery {
+  margin: $gap 0;
+}
+
+.mypage-block-gallery__items-edit {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.mypage-block-gallery__item-row {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+
+  .input { flex: 1; }
+}
+
+.mypage-block-gallery__thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: calc($radius-xl / 2);
+  flex-shrink: 0;
+}
+
+.mypage-block-gallery__add-row {
+  display: flex;
+  gap: calc($gap / 2);
+  margin-top: calc($gap / 2);
+}
+

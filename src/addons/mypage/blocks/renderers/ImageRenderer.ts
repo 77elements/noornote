@@ -1,5 +1,6 @@
 import DOMPurify from 'dompurify';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
+import { buildLightboxImagesHtml } from '../../../../helpers/lightboxImages';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
 
@@ -37,14 +38,13 @@ export function renderImage(block: Extract<Block, { type: 'image' }>, editable =
 
   if (!block.url?.trim()) return '';
 
-  const url = escapeHtmlAttr(block.url);
-  const alt = escapeHtmlAttr(block.alt || '');
   const captionHtml = block.caption?.trim()
     ? `<figcaption class="mypage-block-image__caption">${DOMPurify.sanitize(block.caption)}</figcaption>`
     : '';
+  const { imagesHtml, containerDataAttr } = buildLightboxImagesHtml([block.url], { alts: [block.alt ?? ''] });
   return `
-    <figure class="mypage-block-image">
-      <img src="${url}" alt="${alt}" loading="lazy" />
+    <figure class="mypage-block-image note-media" ${containerDataAttr}>
+      ${imagesHtml}
       ${captionHtml}
     </figure>
   `;

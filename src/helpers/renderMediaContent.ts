@@ -11,6 +11,7 @@
  */
 
 import { escapeHtmlAttr } from './escapeHtml';
+import { lightboxImageHtml, lightboxContainerDataUrlsAttr } from './lightboxImages';
 import { isDataSaverEnabled } from '../services/DataSaverService';
 
 /**
@@ -58,8 +59,10 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
 
   switch (item.type) {
     case 'image':
-      const imageClass = isNSFW ? 'note-image note-image--clickable note-image--nsfw-blur' : 'note-image note-image--clickable';
-      return `<img src="${escapeHtmlAttr(item.url)}" alt="${escapeHtmlAttr(item.alt || '')}" class="${imageClass}" loading="lazy" data-image-index="${index}">`;
+      return lightboxImageHtml(item.url, index, {
+        ...(item.alt ? { alt: item.alt } : {}),
+        ...(isNSFW ? { extraClasses: ['note-image--nsfw-blur'] } : {})
+      });
     case 'video':
       // Check if YouTube
       const videoId = getYouTubeVideoId(item.url);
@@ -99,7 +102,7 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
 
     switch (item.type) {
       case 'image':
-        return `<img src="${escapeHtmlAttr(item.url)}" alt="${escapeHtmlAttr(item.alt || '')}" class="note-image note-image--clickable" loading="lazy" data-image-index="${index}">`;
+        return lightboxImageHtml(item.url, index, item.alt ? { alt: item.alt } : undefined);
       case 'video':
         const ytId = getYouTubeVideoId(item.url);
         if (ytId) {
@@ -132,7 +135,7 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
   const imageUrls = mediaArray.filter(m => m.type === 'image').map(m => m.url);
 
   // Build data attributes for ImageViewer context
-  let dataAttr = imageUrls.length > 0 ? ` data-image-urls="${encodeURIComponent(JSON.stringify(imageUrls))}"` : '';
+  let dataAttr = imageUrls.length > 0 ? ` ${lightboxContainerDataUrlsAttr(imageUrls)}` : '';
   if (eventId) dataAttr += ` data-event-id="${escapeHtmlAttr(eventId)}"`;
   if (authorPubkey) dataAttr += ` data-author-pubkey="${escapeHtmlAttr(authorPubkey)}"`;
   if (isNSFW) dataAttr += ` data-is-nsfw="true"`;
@@ -247,7 +250,7 @@ export function replaceMediaPlaceholders(
 
   // Collect all image URLs for data attribute (for ImageViewer gallery)
   const imageUrls = media.filter(m => m.type === 'image').map(m => m.url);
-  let dataAttr = imageUrls.length > 0 ? ` data-image-urls="${encodeURIComponent(JSON.stringify(imageUrls))}"` : '';
+  let dataAttr = imageUrls.length > 0 ? ` ${lightboxContainerDataUrlsAttr(imageUrls)}` : '';
   if (eventId) dataAttr += ` data-event-id="${escapeHtmlAttr(eventId)}"`;
   if (authorPubkey) dataAttr += ` data-author-pubkey="${escapeHtmlAttr(authorPubkey)}"`;
   if (isNSFW) dataAttr += ` data-is-nsfw="true"`;
