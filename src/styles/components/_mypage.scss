@@ -497,7 +497,6 @@
 
   &--selected {
     border-color: $color-6;
-    box-shadow: 0 0 0 1px $color-6;
   }
 }
 
@@ -772,6 +771,15 @@
 .mypage-cursor-row {
   position: relative;
   margin: $gap 0;
+
+  &--flash .mypage-cursor-row__input {
+    animation: mypage-cursor-flash 0.6s ease-out;
+  }
+}
+
+@keyframes mypage-cursor-flash {
+  0%   { background: color-mix(in srgb, $color-6 30%, transparent); }
+  100% { background: transparent; }
 }
 
 .mypage-cursor-row__input {

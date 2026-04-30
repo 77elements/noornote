@@ -471,7 +471,9 @@ export class MypageView extends View {
    * the inserted block so consecutive applies stack naturally.
    */
   private insertBlockAtCursor(block: Block, opts: { initialContent?: string }): void {
-    const current = this.listService.getDraftV2() ?? this.listService.getPageV2();
+    const current = this.listService.getDraftV2()
+      ?? this.listService.getPublishedV2()
+      ?? this.listService.getPageV2();
     const insertIndex = Math.max(0, Math.min(this.cursorIndex < 0 ? current.blocks.length : this.cursorIndex, current.blocks.length));
 
     // For text blocks created from cursor-row typing, seed the content
@@ -527,8 +529,7 @@ export class MypageView extends View {
     return `
       <div class="mypage-block-properties" data-properties-for="${block.id}">
         <div class="mypage-block-properties__header">
-          <span class="mypage-block-properties__type">${block.type}</span>
-          <span class="mypage-block-properties__label">properties</span>
+          <span class="mypage-block-properties__label">Properties</span>
         </div>
         <div class="mypage-block-properties__body">
           Block properties (margin, padding, color, alignment, …) will live here.
@@ -562,13 +563,22 @@ export class MypageView extends View {
   }
 
   /** Move cursor to immediately after a given block id (page-level only). */
-  private setCursorAfterBlock(blockId: string): void {
-    const current = this.listService.getDraftV2() ?? this.listService.getPageV2();
+  private async setCursorAfterBlock(blockId: string): Promise<void> {
+    const current = this.listService.getDraftV2()
+      ?? this.listService.getPublishedV2()
+      ?? this.listService.getPageV2();
     const idx = current.blocks.findIndex(b => b.id === blockId);
     if (idx < 0) return;
     this.cursorIndex = idx + 1;
-    // No data mutation — just trigger re-render
-    this.loadAndRender();
+    await this.loadAndRender();
+    // Make the jump visible: focus + scroll + brief highlight
+    const el = this.cursorRow?.getElement();
+    if (el) {
+      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      el.classList.add('mypage-cursor-row--flash');
+      setTimeout(() => el.classList.remove('mypage-cursor-row--flash'), 600);
+      this.cursorRow?.focus();
+    }
   }
 
   /**
@@ -859,7 +869,9 @@ export class MypageView extends View {
    * Structural changes (delete/move/add) re-render.
    */
   private mutateDraft(updater: (page: MypagePageV2) => void, opts: { silent?: boolean } = {}): void {
-    const draft = this.listService.getDraftV2() ?? this.listService.getPageV2();
+    const draft = this.listService.getDraftV2()
+      ?? this.listService.getPublishedV2()
+      ?? this.listService.getPageV2();
     const next: MypagePageV2 = JSON.parse(JSON.stringify(draft));
     updater(next);
     this.listService.saveDraftV2(next, { silent: opts.silent === true });
