@@ -1588,10 +1588,14 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     for (const event of events) {
       const dTag = getTag(event.tags, 'd');
 
-      // Check if this event is deleted
+      // Strict deletion suppression: if a kind:5 deletion exists for this
+      // coordinate, skip ALL events for it regardless of created_at. The
+      // user explicitly deleted this folder; resurrected events with
+      // newer timestamps (from stale tabs / other devices that re-published
+      // their old state) must NOT bring the folder back. Re-creation is
+      // a deliberate UI action that publishes a fresh kind:30003.
       const coordinate = `30003:${pubkey}:${dTag}`;
-      const deletionTimestamp = deletedCoordinates.get(coordinate);
-      if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
+      if (deletedCoordinates.has(coordinate)) {
         filteredDeletedCount++;
         continue;
       }
