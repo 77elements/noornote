@@ -42,6 +42,11 @@ import DOMPurify from 'dompurify';
 
 const BLOCK_LIBRARY_TAB_ID = 'nospress-block-library';
 
+/** Reserved value for `selectedBlockId` that selects the virtual Page wrapper
+ *  (the always-present outer frame in the editor). Not a real Block.id —
+ *  prefixed with `__` so it can never collide with a UUID. */
+const PAGE_SELECTION_ID = '__page__';
+
 /** Active editor cursor — either at page level or inside a specific column
  *  of a `columns` block. `index` is the position WITHIN the parent array. */
 type Cursor =
@@ -67,7 +72,9 @@ export class NospressView extends View {
   private cursor: Cursor = { scope: 'page', index: -1 };
   /** Most-recently-used block types in MRU order. In-memory only. */
   private recentBlockTypes: BlockType[] = [];
-  /** Currently focused/selected block in the editor. Null = none. UI-only. */
+  /** Currently focused/selected block in the editor. Null = none. UI-only.
+   *  May also be PAGE_SELECTION_ID — selects the virtual Page wrapper, whose
+   *  properties panel surfaces site-level options (color, background, etc.). */
   private selectedBlockId: string | null = null;
   private eventBusSubscriptions: string[] = [];
   /** Live in-memory edit state. All mutations go here; persisted to draft
@@ -300,13 +307,24 @@ export class NospressView extends View {
       ? `<button class="btn btn--medium btn--passive" data-action="open-block-editor" title="Open Block Library in the right sidebar"><svg width="14" height="14"><use href="#icon-edit"/></svg> Block Editor</button>`
       : '';
 
+    const pageSelected = editable && this.selectedBlockId === PAGE_SELECTION_ID;
+    const composedBlocksHtml = editable
+      ? `
+        <div class="nospress-page-edit${pageSelected ? ' nospress-page-edit--selected' : ''}" data-block-id="${PAGE_SELECTION_ID}">
+          <div class="nospress-page-edit__title-bar">PAGE</div>
+          <div class="nospress-page-edit__content">${blocksHtml}</div>
+        </div>
+        ${pageSelected ? this.renderInlinePageProperties() : ''}
+      `
+      : blocksHtml;
+
     this.container.innerHTML = `
       <div class="nospress-view">
         <div class="nospress-header l-spread">
           <div>${leftButtonHtml}</div>
           <div>${rightButtonHtml}</div>
         </div>
-        ${blocksHtml}
+        ${composedBlocksHtml}
         ${this.renderActionBar(editable)}
       </div>
     `;
@@ -440,6 +458,7 @@ export class NospressView extends View {
 
       this.blockLibrary = new BlockLibraryView({
         onApply: (type) => this.applyBlock(type),
+        onSelectPage: () => this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID),
       });
       tabContent = document.createElement('div');
       tabContent.className = 'tab-content';
@@ -643,6 +662,19 @@ export class NospressView extends View {
     `;
   }
 
+  private renderInlinePageProperties(): string {
+    return `
+      <div class="nospress-block-properties" data-properties-for="${PAGE_SELECTION_ID}">
+        <div class="nospress-block-properties__header">
+          <span class="nospress-block-properties__label">Page properties</span>
+        </div>
+        <div class="nospress-block-properties__body">
+          Page properties (color, background, layout, …) will live here.
+        </div>
+      </div>
+    `;
+  }
+
   private mountCursorRow(): void {
     this.destroyCursorRow();
     const slot = this.container.querySelector<HTMLElement>('[data-cursor-mount]');
@@ -726,12 +758,17 @@ export class NospressView extends View {
   }
 
   /** Toggle the `--selected` class on the matching wrapper. Called after
-   *  every editable re-render so the focus survives state changes. */
+   *  every editable re-render so the focus survives state changes. Also
+   *  handles the virtual Page frame when PAGE_SELECTION_ID is selected. */
   private applySelectedBlockClass(): void {
-    this.container.querySelectorAll('.nospress-block-edit--selected').forEach(el => {
-      el.classList.remove('nospress-block-edit--selected');
+    this.container.querySelectorAll('.nospress-block-edit--selected, .nospress-page-edit--selected').forEach(el => {
+      el.classList.remove('nospress-block-edit--selected', 'nospress-page-edit--selected');
     });
     if (!this.selectedBlockId) return;
+    if (this.selectedBlockId === PAGE_SELECTION_ID) {
+      this.container.querySelector('.nospress-page-edit')?.classList.add('nospress-page-edit--selected');
+      return;
+    }
     const wrapper = this.container.querySelector(
       `.nospress-block-edit[data-block-id="${this.selectedBlockId}"]`
     );
@@ -1035,10 +1072,24 @@ export class NospressView extends View {
       // Click inside the inline properties panel of the selected block:
       // keep selection (don't toggle off, the user is interacting with the panel)
       if (target.closest('.nospress-block-properties')) return;
-      const wrapper = target.closest('.nospress-block-edit') as HTMLElement | null;
-      const blockId = wrapper?.dataset.blockId ?? null;
-      // Toggle: clicking the already-selected block deselects
-      this.selectBlock(blockId === this.selectedBlockId ? null : blockId);
+
+      // Inner block wrapper takes precedence over the outer page frame
+      const blockWrapper = target.closest('.nospress-block-edit') as HTMLElement | null;
+      if (blockWrapper) {
+        const blockId = blockWrapper.dataset.blockId ?? null;
+        this.selectBlock(blockId === this.selectedBlockId ? null : blockId);
+        return;
+      }
+
+      // Click landed inside the page frame but not on any inner block — select page
+      const pageWrapper = target.closest('.nospress-page-edit') as HTMLElement | null;
+      if (pageWrapper) {
+        this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID);
+        return;
+      }
+
+      // Click outside everything → deselect
+      this.selectBlock(null);
     });
 
     this.container.addEventListener('change', async (e) => {

@@ -299,9 +299,20 @@
     opacity: 0.5;
   }
 
+  &--page {
+    cursor: pointer;
+  }
+
   &:not(.block-library__row--disabled):hover {
     background: $surface-tint;
   }
+}
+
+.block-library__page-hint {
+  font-size: 0.75rem;
+  font-style: italic;
+  color: $text-alpha-medium;
+  white-space: nowrap;
 }
 
 // ==========================================
@@ -554,6 +565,33 @@
   &--selected {
     border-color: $color-6;
   }
+}
+
+// Page frame — virtual outer wrapper around all blocks in edit mode.
+// Always present, never movable / removable, always selectable.
+.nospress-page-edit {
+  position: relative;
+  margin-bottom: $gap;
+  padding: $gap;
+  border: 1px solid $color-2;
+  border-radius: $radius-xl;
+  cursor: pointer;
+  transition: $transition-colors;
+
+  &--selected {
+    border-color: $color-6;
+  }
+}
+
+.nospress-page-edit__title-bar {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $text-alpha-medium;
+  margin-bottom: calc($gap / 2);
+  padding-bottom: calc($gap / 2);
+  border-bottom: 1px dashed $color-2;
 }
 
 .nospress-block-edit__toolbar {
