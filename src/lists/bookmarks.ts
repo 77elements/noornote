@@ -1462,10 +1462,61 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
   // See docs/features/lists.md "Folder-Resurrection" + "Eager kind:5 deletion publish".
   diagLog('lists', 'publishBookmarksToRelays: skipping conditional kind:5 — destructive cross-device path removed');
 
-  logger.info('bookmarks.ts', `Publishing: ${setData.sets.length} sets`);
+  // Publish-side self-correction (2026-05-01): fetch the latest kind:5
+  // deletions from relays and drop any set whose coordinate has a deletion
+  // newer than this device's local folder.createdAt. This catches stale
+  // tabs that still have a deleted folder in their localStorage and would
+  // otherwise re-publish it (= resurrection).
+  //
+  // Legit re-creation still works: createFolder sets createdAt = now, so
+  // a freshly created folder's createdAt > any past deletion → publish proceeds.
+  let activeDeletions = new Map<string, number>();
+  try {
+    const deletionEvents = await fetchEvents([{ authors: [pubkey], kinds: [5] }], 5000, true);
+    for (const ev of deletionEvents) {
+      for (const tag of ev.tags) {
+        if (tag[0] !== 'a' || !tag[1]?.startsWith('30003:')) continue;
+        const coord = tag[1];
+        const existing = activeDeletions.get(coord);
+        if (!existing || ev.created_at > existing) activeDeletions.set(coord, ev.created_at);
+      }
+    }
+  } catch (err) {
+    diagLog('lists', 'publishBookmarksToRelays: deletion pre-fetch FAILED — proceeding without self-correction', { error: String(err) });
+  }
+
+  const folderService = getBookmarkFolderService();
+  const localFolders = folderService.getFolders();
+  const skippedSets: string[] = [];
+
+  const filteredSets = setData.sets.filter(set => {
+    if (set.d === '') return true; // root set always publishes
+    const coordinate = `30003:${pubkey}:${set.d}`;
+    const deletionTs = activeDeletions.get(coordinate);
+    if (deletionTs === undefined) return true; // no deletion → publish
+
+    const folder = localFolders.find(f => f.name === set.d);
+    // folder.createdAt is in ms, deletion timestamp is in seconds
+    const folderCreatedAtSec = folder?.createdAt ? Math.floor(folder.createdAt / 1000) : 0;
+    if (folderCreatedAtSec > deletionTs) return true; // legit re-creation → publish
+
+    skippedSets.push(set.d);
+    return false; // stale — skip to prevent resurrection
+  });
+
+  if (skippedSets.length > 0) {
+    diagLog('lists', 'publishBookmarksToRelays: skipped sets due to active relay deletion (anti-resurrection)', {
+      skipped: skippedSets,
+      activeDeletionCount: activeDeletions.size,
+      callerTag,
+    });
+    logger.warn('bookmarks.ts', `Skipped ${skippedSets.length} bookmark set(s) due to relay deletion: ${skippedSets.join(', ')}`);
+  }
+
+  logger.info('bookmarks.ts', `Publishing: ${filteredSets.length} sets`);
 
   let totalPublished = 0;
-  for (const set of setData.sets) {
+  for (const set of filteredSets) {
     if (set.publicTags.length === 0 && set.privateTags.length === 0 && set.d !== '') continue;
 
     diagLog('lists', 'publishBookmarksToRelays: publishing set', { dTag: set.d, publicTagCount: set.publicTags.length, privateTagCount: set.privateTags.length, publicTags: set.publicTags.map(t => [t.type, t.value, t.description]) });
@@ -1588,14 +1639,14 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     for (const event of events) {
       const dTag = getTag(event.tags, 'd');
 
-      // Strict deletion suppression: if a kind:5 deletion exists for this
-      // coordinate, skip ALL events for it regardless of created_at. The
-      // user explicitly deleted this folder; resurrected events with
-      // newer timestamps (from stale tabs / other devices that re-published
-      // their old state) must NOT bring the folder back. Re-creation is
-      // a deliberate UI action that publishes a fresh kind:30003.
+      // Reverted to created_at-based suppression after strict mode broke
+      // legitimately re-created folders (regression 2026-05-01): live folders
+      // had old kind:5 events from earlier deletions still on relays, strict
+      // filter skipped their fresh kind:30003 too. True resurrection fix
+      // requires Schritt 2 (lokale Tombstones) — see lists.md.
       const coordinate = `30003:${pubkey}:${dTag}`;
-      if (deletedCoordinates.has(coordinate)) {
+      const deletionTimestamp = deletedCoordinates.get(coordinate);
+      if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
         filteredDeletedCount++;
         continue;
       }

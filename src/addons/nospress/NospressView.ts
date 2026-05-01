@@ -168,14 +168,13 @@ export class NospressView extends View {
 
     try {
       if (this.isOwnProfile) {
-        // Own profile: hydrate the publishedV2 mirror from relays in the
-        // background so a returning user sees their last published state
-        // before they touch anything.
-        if (!this.listService.hasV2Content()) {
-          const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true);
-          if (remote && remote.blocks.length > 0) {
-            this.listService.savePublishedV2(remote);
-          }
+        // Own profile: always pull the latest published state from relays so
+        // edits made on a different instance show up immediately on this one.
+        // Updates the publishedV2 mirror; renderList still prefers draftV2 /
+        // editingPage when present so unsaved local work isn't clobbered.
+        const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true);
+        if (remote && remote.blocks.length > 0) {
+          this.listService.savePublishedV2(remote);
         }
       } else {
         this.remotePage = await this.orchestrator.fetchFromRelays(this.pubkey, true);
