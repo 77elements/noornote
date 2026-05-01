@@ -26,7 +26,14 @@ import { ProfileListsComponent } from '../../components/profile/ProfileListsComp
 import { EventBus } from '../../services/EventBus';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
-import { createBlock, findBlockInPage, type Block, type BlockType, type PageStyle, type NospressPageV2 } from './blocks/types';
+import { createBlock, findBlockInPage, type Block, type BlockType, type NospressPageV2 } from './blocks/types';
+import {
+  buildInlineStyle,
+  renderPropertyPanel,
+  schemaFor,
+  writeStyleField,
+  type CommonStyle,
+} from './blocks/styles';
 import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
@@ -308,7 +315,7 @@ export class NospressView extends View {
       : '';
 
     const pageSelected = editable && this.selectedBlockId === PAGE_SELECTION_ID;
-    const inlineStyle = this.buildPageInlineStyle(page.style);
+    const inlineStyle = buildInlineStyle(schemaFor('page'), page.style);
     const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
     const pageContentHtml = `<div class="nospress-page-content"${styleAttr}>${blocksHtml}</div>`;
 
@@ -667,47 +674,15 @@ export class NospressView extends View {
   }
 
   private renderInlinePageProperties(): string {
-    const style = this.currentEditingStyle();
-    const v = (path: string): string => escapeHtmlAttr(this.readStyleField(style, path) ?? '');
-
-    const single = (label: string, field: string, placeholder: string) => `
-      <div class="nospress-prop-row">
-        <label class="nospress-prop-row__label">${label}</label>
-        <input type="text" class="input nospress-prop-row__input" data-page-style="${field}" value="${v(field)}" placeholder="${placeholder}" />
-      </div>
-    `;
-
-    const quad = (label: string, group: 'margin' | 'padding') => `
-      <div class="nospress-prop-grouplabel">${label}</div>
-      <div class="nospress-prop-quad">
-        ${(['top','bottom','left','right'] as const).map(side => `
-          <div class="nospress-prop-quad__cell">
-            <input type="text" class="input nospress-prop-quad__input" data-page-style="${group}.${side}" value="${v(`${group}.${side}`)}" placeholder="0px" />
-            <span class="nospress-prop-quad__caption">${side.charAt(0).toUpperCase()}${side.slice(1)}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
-
-    return `
-      <div class="nospress-block-properties" data-properties-for="${PAGE_SELECTION_ID}">
-        <div class="nospress-block-properties__header">
-          <span class="nospress-block-properties__label">Page properties</span>
-        </div>
-        <div class="nospress-block-properties__body">
-          ${single('Color', 'color', 'e.g. #ede2da')}
-          ${single('Background', 'background', 'e.g. #0f0d23')}
-          ${single('Font size', 'fontSize', 'e.g. 1rem')}
-          ${single('Line height', 'lineHeight', 'e.g. 1.5')}
-          ${quad('Margin', 'margin')}
-          ${quad('Padding', 'padding')}
-        </div>
-      </div>
-    `;
+    return renderPropertyPanel({
+      scope: 'page',
+      style: this.currentPageStyle(),
+      header: 'Page properties',
+    });
   }
 
-  /** Read the active editing style (in-memory draft → saved draft → published → migrated v1). */
-  private currentEditingStyle(): PageStyle | undefined {
+  /** Read the active page style (in-memory draft → saved draft → published → migrated v1). */
+  private currentPageStyle(): CommonStyle | undefined {
     return (this.editingPage
       ?? this.listService.getDraftV2()
       ?? this.listService.getPublishedV2()
@@ -715,57 +690,12 @@ export class NospressView extends View {
     ).style;
   }
 
-  /** Look up a dotted path in a PageStyle. Supports `color`, `margin.top`, etc. */
-  private readStyleField(style: PageStyle | undefined, path: string): string | undefined {
-    if (!style) return undefined;
-    const [head, side] = path.split('.') as [keyof PageStyle, 'top' | 'bottom' | 'left' | 'right' | undefined];
-    if (!side) return style[head] as string | undefined;
-    const group = style[head] as { top?: string; bottom?: string; left?: string; right?: string } | undefined;
-    return group?.[side];
-  }
-
-  /**
-   * Strip characters that could break out of a `style="…"` attribute or the
-   * CSS declaration itself. Plus length cap. Whitespace + common CSS
-   * characters survive: digits, letters, `.,#%()-_/` and parentheses.
-   */
-  private sanitizeStyleValue(raw: string): string {
-    return raw.replace(/[;<>"'\\]/g, '').trim().slice(0, 100);
-  }
-
-  /**
-   * Build the inline `style="…"` value for the page-content wrapper from a
-   * PageStyle. Empty input → empty string (so attribute is omitted).
-   */
-  private buildPageInlineStyle(style: PageStyle | undefined): string {
-    if (!style) return '';
-    const parts: string[] = [];
-    const push = (prop: string, value: string | undefined) => {
-      if (!value) return;
-      const v = this.sanitizeStyleValue(value);
-      if (v) parts.push(`${prop}: ${v}`);
-    };
-    push('color', style.color);
-    push('background', style.background);
-    push('font-size', style.fontSize);
-    push('line-height', style.lineHeight);
-    push('margin-top', style.margin?.top);
-    push('margin-bottom', style.margin?.bottom);
-    push('margin-left', style.margin?.left);
-    push('margin-right', style.margin?.right);
-    push('padding-top', style.padding?.top);
-    push('padding-bottom', style.padding?.bottom);
-    push('padding-left', style.padding?.left);
-    push('padding-right', style.padding?.right);
-    return parts.join('; ');
-  }
-
-  /** Apply the current page style to the live DOM without re-rendering — keeps
-   *  input focus during typing. Called after each handlePageStyleInput. */
+  /** Apply the current page style to the live DOM without re-rendering —
+   *  keeps input focus during typing. */
   private applyPageStyleToDOM(): void {
     const content = this.container.querySelector('.nospress-page-content') as HTMLElement | null;
     if (!content) return;
-    content.style.cssText = this.buildPageInlineStyle(this.currentEditingStyle());
+    content.style.cssText = buildInlineStyle(schemaFor('page'), this.currentPageStyle());
   }
 
   private mountCursorRow(): void {
@@ -1084,30 +1014,22 @@ export class NospressView extends View {
   }
 
   /**
-   * Update a single page-style field (e.g. 'color', 'margin.top') from an
-   * inline input. Mutation is silent (no re-render → focus stays on the
-   * input); the new style is applied directly to the live DOM.
+   * Update a single style field from an inline input. Generic over scope:
+   * 'page' targets the page-level style; 'block:<uuid>' (future) targets a
+   * specific block's style. Mutation is silent (no re-render → focus stays
+   * on the input); the new style is applied directly to the live DOM.
    */
-  private handlePageStyleInput(field: string, rawValue: string): void {
-    const trimmed = rawValue.trim();
-    this.mutateDraft((page) => {
-      if (!page.style) page.style = {};
-      const dot = field.indexOf('.');
-      if (dot < 0) {
-        if (field === 'color' || field === 'background' || field === 'fontSize' || field === 'lineHeight') {
-          if (trimmed) page.style[field] = trimmed;
-          else delete page.style[field];
-        }
-      } else {
-        const group = field.slice(0, dot) as 'margin' | 'padding';
-        const side = field.slice(dot + 1) as 'top' | 'bottom' | 'left' | 'right';
-        if (group !== 'margin' && group !== 'padding') return;
-        if (!page.style[group]) page.style[group] = {};
-        if (trimmed) page.style[group]![side] = trimmed;
-        else delete page.style[group]![side];
-      }
-    }, { silent: true });
-    this.applyPageStyleToDOM();
+  private handleStyleInput(scope: string, field: string, rawValue: string): void {
+    if (scope === 'page') {
+      this.mutateDraft((page) => {
+        if (!page.style) page.style = {};
+        writeStyleField(page.style, field, rawValue);
+      }, { silent: true });
+      this.applyPageStyleToDOM();
+      return;
+    }
+    // Future: dispatch on `${blockType}:${blockId}` and update block.style.
+    // The matrix already supports per-block schemas — see styles.ts.
   }
 
   private handleBookmarkFolderChange(blockId: string, folderName: string): void {
@@ -1134,8 +1056,9 @@ export class NospressView extends View {
       const field = target.dataset?.field;
       if (blockId && field) this.handleBlockFieldInput(blockId, field, target);
 
-      const pageStyleField = target.dataset?.pageStyle;
-      if (pageStyleField) this.handlePageStyleInput(pageStyleField, target.value);
+      const styleScope = target.dataset?.styleScope;
+      const styleField = target.dataset?.styleField;
+      if (styleScope && styleField) this.handleStyleInput(styleScope, styleField, target.value);
     });
 
     this.container.addEventListener('click', (e) => {

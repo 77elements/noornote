@@ -26,19 +26,8 @@ export type Block =
 
 export type BlockType = Block['type'];
 
-/**
- * Page-level style overrides. Values are raw CSS strings (e.g. "16px",
- * "#ff0000", "1.5"). Empty / unset fields fall back to the theme defaults.
- * Sanitized at render time before being placed into a `style="…"` attribute.
- */
-export interface PageStyle {
-  color?: string;
-  background?: string;
-  fontSize?: string;
-  lineHeight?: string;
-  margin?: { top?: string; bottom?: string; left?: string; right?: string };
-  padding?: { top?: string; bottom?: string; left?: string; right?: string };
-}
+// CommonStyle / per-scope schema defined in `./styles.ts`.
+import type { CommonStyle } from './styles';
 
 export interface NospressPageV2 {
   version: 2;
@@ -46,7 +35,7 @@ export interface NospressPageV2 {
   subtitle?: string;
   description?: string;
   blocks: Block[];
-  style?: PageStyle;
+  style?: CommonStyle;
 }
 
 export function isPageV2(data: unknown): data is NospressPageV2 {
