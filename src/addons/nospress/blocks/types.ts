@@ -12,17 +12,17 @@
  */
 
 export type Block =
-  | { id: string; type: 'heading'; level: 1 | 2 | 3; text: string }
-  | { id: string; type: 'text'; content: string }
-  | { id: string; type: 'image'; url: string; alt?: string; caption?: string }
-  | { id: string; type: 'gallery'; urls: string[] }
-  | { id: string; type: 'links'; title?: string; items: { label: string; url: string }[] }
-  | { id: string; type: 'list'; title?: string; items: string[] }
-  | { id: string; type: 'embed'; nostrRef: string }
-  | { id: string; type: 'bookmark-folder'; folderName: string }
-  | { id: string; type: 'columns'; count: 2 | 3; content: Block[][] }
-  | { id: string; type: 'divider' }
-  | { id: string; type: 'dm-button'; label: string };
+  | { id: string; type: 'heading'; level: 1 | 2 | 3; text: string; style?: CommonStyle }
+  | { id: string; type: 'text'; content: string; style?: CommonStyle }
+  | { id: string; type: 'image'; url: string; alt?: string; caption?: string; style?: CommonStyle }
+  | { id: string; type: 'gallery'; urls: string[]; style?: CommonStyle }
+  | { id: string; type: 'links'; title?: string; items: { label: string; url: string }[]; style?: CommonStyle }
+  | { id: string; type: 'list'; title?: string; items: string[]; style?: CommonStyle }
+  | { id: string; type: 'embed'; nostrRef: string; style?: CommonStyle }
+  | { id: string; type: 'bookmark-folder'; folderName: string; style?: CommonStyle }
+  | { id: string; type: 'columns'; count: 2 | 3; content: Block[][]; style?: CommonStyle }
+  | { id: string; type: 'divider'; style?: CommonStyle }
+  | { id: string; type: 'dm-button'; label: string; style?: CommonStyle };
 
 export type BlockType = Block['type'];
 

@@ -45,6 +45,10 @@ export interface CommonStyle {
   background?: string;
   fontSize?: string;
   lineHeight?: string;
+  fontWeight?: string;
+  fontStyle?: string;
+  border?: string;
+  borderRadius?: string;
   margin?: BoxValues;
   padding?: BoxValues;
 }
@@ -54,7 +58,7 @@ export type PropertyKey = keyof CommonStyle;
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
   kind: 'single';
-  key: 'color' | 'background' | 'fontSize' | 'lineHeight';
+  key: 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight' | 'fontStyle' | 'border' | 'borderRadius';
   label: string;
   cssProp: string;
   placeholder: string;
@@ -78,12 +82,16 @@ type QuadSide = typeof QUAD_SIDES[number];
 // ──────────────────────────────────────────────────────────────────────────
 
 export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
-  color:      { kind: 'single', key: 'color',      label: 'Color',       cssProp: 'color',       placeholder: 'e.g. #ede2da' },
-  background: { kind: 'single', key: 'background', label: 'Background',  cssProp: 'background',  placeholder: 'e.g. #0f0d23' },
-  fontSize:   { kind: 'single', key: 'fontSize',   label: 'Font size',   cssProp: 'font-size',   placeholder: 'e.g. 1rem' },
-  lineHeight: { kind: 'single', key: 'lineHeight', label: 'Line height', cssProp: 'line-height', placeholder: 'e.g. 1.5' },
-  margin:     { kind: 'quad',   key: 'margin',     label: 'Margin',      cssPrefix: 'margin' },
-  padding:    { kind: 'quad',   key: 'padding',    label: 'Padding',     cssPrefix: 'padding' },
+  color:        { kind: 'single', key: 'color',        label: 'Color',         cssProp: 'color',         placeholder: 'e.g. #ede2da' },
+  background:   { kind: 'single', key: 'background',   label: 'Background',    cssProp: 'background',    placeholder: 'e.g. #0f0d23' },
+  fontSize:     { kind: 'single', key: 'fontSize',     label: 'Font size',     cssProp: 'font-size',     placeholder: 'e.g. 1rem' },
+  lineHeight:   { kind: 'single', key: 'lineHeight',   label: 'Line height',   cssProp: 'line-height',   placeholder: 'e.g. 1.5' },
+  fontWeight:   { kind: 'single', key: 'fontWeight',   label: 'Font weight',   cssProp: 'font-weight',   placeholder: '400 | 600 | bold' },
+  fontStyle:    { kind: 'single', key: 'fontStyle',    label: 'Font style',    cssProp: 'font-style',    placeholder: 'normal | italic' },
+  border:       { kind: 'single', key: 'border',       label: 'Border',        cssProp: 'border',        placeholder: '1px solid #252343' },
+  borderRadius: { kind: 'single', key: 'borderRadius', label: 'Border radius', cssProp: 'border-radius', placeholder: 'e.g. 8px' },
+  margin:       { kind: 'quad',   key: 'margin',       label: 'Margin',        cssPrefix: 'margin' },
+  padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
 };
 
 /**
@@ -92,12 +100,40 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
  * 'heading:<uuid>' both resolve via this map. Add new rows here when a
  * block type starts supporting style.
  */
+/**
+ * Common text-block properties: applies to anything where the user types
+ * prose (heading, text, list, links, dm-button). Shared for consistency
+ * so a future Property addition propagates everywhere automatically.
+ */
+const TEXTUAL_PROPS: PropertyKey[] = [
+  'color', 'background', 'lineHeight', 'fontWeight', 'fontStyle',
+  'margin', 'padding', 'border', 'borderRadius',
+];
+
+/**
+ * Container-only properties: blocks whose content is a media element or a
+ * mounted sub-component, where text styling does not apply.
+ */
+const CONTAINER_PROPS: PropertyKey[] = [
+  'background', 'margin', 'padding', 'border', 'borderRadius',
+];
+
 export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
-  page: ['color', 'background', 'fontSize', 'lineHeight', 'margin', 'padding'],
-  // Future:
-  // heading: ['color', 'fontSize', 'lineHeight', 'margin', 'padding'],
-  // image:   ['margin', 'padding'],
-  // ...
+  // Page keeps its full set (incl. fontSize) — the global page surface
+  // controls site-wide typography defaults.
+  page: ['color', 'background', 'fontSize', 'lineHeight', 'fontWeight', 'fontStyle',
+         'margin', 'padding', 'border', 'borderRadius'],
+  heading:           TEXTUAL_PROPS,
+  text:              TEXTUAL_PROPS,
+  list:              TEXTUAL_PROPS,
+  links:             TEXTUAL_PROPS,
+  'dm-button':       TEXTUAL_PROPS,
+  divider:           ['color', 'margin', 'padding', 'border', 'borderRadius'],
+  image:             CONTAINER_PROPS,
+  gallery:           CONTAINER_PROPS,
+  embed:             CONTAINER_PROPS,
+  'bookmark-folder': CONTAINER_PROPS,
+  columns:           CONTAINER_PROPS,
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */
@@ -204,6 +240,25 @@ export interface RenderPropertyPanelOptions {
 /** Render a property panel for a given scope. The schema is looked up via
  *  `schemaFor(scope)`. If the matrix has no row for the scope, an empty
  *  body is rendered (defensive — caller should have verified). */
+// ──────────────────────────────────────────────────────────────────────────
+// Block style wrapper
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Wrap rendered block HTML with a styled outer div. The wrapper is always
+ * emitted (even when the block has no style yet) so the
+ * `data-styled-block-id` hook is available for `applyBlockStyleToDOM()`
+ * to live-update the very first edit without forcing a re-render.
+ */
+export function styleWrap(
+  block: { id: string; type: string; style?: CommonStyle },
+  inner: string,
+): string {
+  const inlineStyle = buildInlineStyle(schemaFor(block.type), block.style);
+  const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
+  return `<div class="nospress-block-style" data-styled-block-id="${block.id}"${styleAttr}>${inner}</div>`;
+}
+
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   const schema = schemaFor(opts.scope);
   const scopeAttr = escapeHtmlAttr(opts.scope);

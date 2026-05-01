@@ -11,6 +11,7 @@
  */
 
 import type { Block } from './types';
+import { styleWrap } from './styles';
 import { renderHeading } from './renderers/HeadingRenderer';
 import { renderText } from './renderers/TextRenderer';
 import { renderList } from './renderers/ListRenderer';
@@ -34,18 +35,21 @@ export class BlockRenderer {
 
   static renderOne(block: Block, opts: BlockRenderOptions = {}): string {
     const editable = opts.editable === true;
-    switch (block.type) {
-      case 'heading':         return renderHeading(block, editable);
-      case 'text':            return renderText(block, editable);
-      case 'list':            return renderList(block, editable);
-      case 'divider':         return renderDivider(block, editable);
-      case 'links':           return renderLinks(block, editable);
-      case 'bookmark-folder': return renderBookmarkFolder(block, editable);
-      case 'image':           return renderImage(block, editable);
-      case 'gallery':         return renderGallery(block, editable);
-      case 'embed':           return renderEmbed(block, editable);
-      case 'columns':         return renderColumns(block, { editable });
-      case 'dm-button':       return renderDmButton(block, editable);
-    }
+    const inner = (() => {
+      switch (block.type) {
+        case 'heading':         return renderHeading(block, editable);
+        case 'text':            return renderText(block, editable);
+        case 'list':            return renderList(block, editable);
+        case 'divider':         return renderDivider(block, editable);
+        case 'links':           return renderLinks(block, editable);
+        case 'bookmark-folder': return renderBookmarkFolder(block, editable);
+        case 'image':           return renderImage(block, editable);
+        case 'gallery':         return renderGallery(block, editable);
+        case 'embed':           return renderEmbed(block, editable);
+        case 'columns':         return renderColumns(block, { editable });
+        case 'dm-button':       return renderDmButton(block, editable);
+      }
+    })();
+    return styleWrap(block, inner);
   }
 }

@@ -31,6 +31,7 @@ import {
   buildInlineStyle,
   renderPropertyPanel,
   schemaFor,
+  styleWrap,
   writeStyleField,
   type CommonStyle,
 } from './blocks/styles';
@@ -625,7 +626,7 @@ export class NospressView extends View {
     const slot = `<div data-cursor-mount></div>`;
     const cur = this.cursor;
 
-    return renderColumns(block, {
+    const html = renderColumns(block, {
       editable: true,
       columnInner: (colIndex: number) => {
         const colBlocks = block.content[colIndex] ?? [];
@@ -652,6 +653,7 @@ export class NospressView extends View {
         return inner.join('');
       }
     });
+    return styleWrap(block, html);
   }
 
   /**
@@ -661,16 +663,11 @@ export class NospressView extends View {
    * Works on Mobile too because it's just another row in the same column.
    */
   private renderInlineProperties(block: Block): string {
-    return `
-      <div class="nospress-block-properties" data-properties-for="${block.id}">
-        <div class="nospress-block-properties__header">
-          <span class="nospress-block-properties__label">Properties</span>
-        </div>
-        <div class="nospress-block-properties__body">
-          Block properties (margin, padding, color, alignment, …) will live here.
-        </div>
-      </div>
-    `;
+    return renderPropertyPanel({
+      scope: `${block.type}:${block.id}`,
+      style: block.style,
+      header: 'Block properties',
+    });
   }
 
   private renderInlinePageProperties(): string {
@@ -1028,8 +1025,27 @@ export class NospressView extends View {
       this.applyPageStyleToDOM();
       return;
     }
-    // Future: dispatch on `${blockType}:${blockId}` and update block.style.
-    // The matrix already supports per-block schemas — see styles.ts.
+    // Block scope: '<blockType>:<uuid>' — only the id portion is needed for
+    // lookup; the matrix is keyed by type and resolved inside the renderer.
+    const colon = scope.indexOf(':');
+    if (colon < 0) return;
+    const blockId = scope.slice(colon + 1);
+    this.mutateDraft((page) => {
+      const loc = findBlockInPage(page, blockId);
+      if (!loc) return;
+      if (!loc.block.style) loc.block.style = {};
+      writeStyleField(loc.block.style, field, rawValue);
+    }, { silent: true });
+    this.applyBlockStyleToDOM(blockId);
+  }
+
+  /** Live-update one block's `data-styled-block-id` wrapper without re-rendering. */
+  private applyBlockStyleToDOM(blockId: string): void {
+    const el = this.container.querySelector(`[data-styled-block-id="${blockId}"]`) as HTMLElement | null;
+    if (!el || !this.editingPage) return;
+    const loc = findBlockInPage(this.editingPage, blockId);
+    if (!loc) return;
+    el.style.cssText = buildInlineStyle(schemaFor(loc.block.type), loc.block.style);
   }
 
   private handleBookmarkFolderChange(blockId: string, folderName: string): void {
