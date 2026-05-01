@@ -39,7 +39,6 @@ import { escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
-import { NospressMountsService } from '../../services/NospressMountsService';
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
 import { RelayConfig } from '../../services/RelayConfig';
@@ -68,7 +67,9 @@ export class NospressView extends View {
   private isOwnProfile: boolean;
   private orchestrator: NospressOrchestrator;
   private listService: NospressService;
-  private mountsComponent: ProfileListsComponent | null = null;
+  /** One ProfileListsComponent per inline bookmark-folder block in the page,
+   *  mounted into the slot the BookmarkFolderRenderer's readonly path emits. */
+  private inlineMountsComponents: ProfileListsComponent[] = [];
   private blockLibrary: BlockLibraryView | null = null;
   private editMode: boolean = false;
   private folderPickers: BookmarkFolderPicker[] = [];
@@ -126,8 +127,7 @@ export class NospressView extends View {
     const eventBus = EventBus.getInstance();
     this.eventBusSubscriptions.forEach(id => eventBus.off(id));
     this.eventBusSubscriptions = [];
-    this.mountsComponent?.destroy();
-    this.mountsComponent = null;
+    this.destroyInlineMounts();
     this.destroyFolderPickers();
     this.destroyBlockDropdowns();
     this.destroyCursorRow();
@@ -159,20 +159,13 @@ export class NospressView extends View {
     if (!this.isOwnProfile) return;
     const eventBus = EventBus.getInstance();
     this.eventBusSubscriptions.push(
-      eventBus.on('nospressMounts:changed', () => this.rerenderEditable())
-    );
-    this.eventBusSubscriptions.push(
       eventBus.on('nospressList:changed', () => this.rerenderEditable())
     );
   }
 
   private async loadAndRender(): Promise<void> {
-    // Clean up previous mounts component before re-rendering (innerHTML wipes
-    // DOM but the JS instance lingers)
-    if (this.mountsComponent) {
-      this.mountsComponent.destroy();
-      this.mountsComponent = null;
-    }
+    // Tear down inline-mount components before innerHTML wipes their DOM.
+    this.destroyInlineMounts();
 
     this.container.innerHTML = `
       <div class="nospress-loading">
@@ -207,12 +200,12 @@ export class NospressView extends View {
         this.renderShellWithoutList();
       }
 
-      // Append mounted bookmark folders (if any)
-      await this.renderMounts();
+      // Mount inline bookmark-folder content into the slots emitted by
+      // BookmarkFolderRenderer's readonly path.
+      await this.mountInlineBookmarkFolders();
 
-      // After both list and mounts are rendered, decide whether to show empty
-      // state: only when neither list nor mounts produced content. In edit
-      // mode the cursor row is already the empty-state affordance.
+      // Empty state: only when there is no content AND no inline mounts. In
+      // edit mode the cursor row is already the empty-state affordance.
       const hasMounts = this.container.querySelectorAll('.profile-lists-mount').length > 0;
       if (!hasContent && !hasMounts && !this.editMode) {
         this.renderEmpty();
@@ -384,32 +377,30 @@ export class NospressView extends View {
     if (next) bar.replaceWith(next);
   }
 
-  private async renderMounts(): Promise<void> {
-    const view = this.container.querySelector('.nospress-view');
-    if (!view) return;
-
-    // Anchor mounts to the last child of the view so they appear after the list
-    const lastChild = view.lastElementChild;
-    if (!lastChild) return;
-
-    this.mountsComponent = new ProfileListsComponent(this.pubkey, 'nospress');
-
-    // For own profile: extract folder names from the current v2 page
-    // (draft → published → migrated v1) so the readonly view reflects
-    // the user's in-progress block-editor changes immediately, without
-    // waiting for publish + NospressMountsService sync.
-    if (this.isOwnProfile) {
-      const page = this.listService.getDraftV2()
-        ?? this.listService.getPublishedV2()
-        ?? this.listService.getPageV2();
-      const folderNames = page.blocks
-        .filter((b): b is Extract<typeof page.blocks[number], { type: 'bookmark-folder' }> => b.type === 'bookmark-folder')
-        .map(b => b.folderName)
-        .filter(name => !!name);
-      await this.mountsComponent.render(lastChild, folderNames);
-    } else {
-      await this.mountsComponent.render(lastChild);
+  /**
+   * For each `<div class="nospress-bookmark-folder-mount" data-folder-name="…">`
+   * slot emitted by `BookmarkFolderRenderer`'s readonly path, mount a
+   * `ProfileListsComponent` rendering that single folder. The component's
+   * `.profile-lists-mount` element is inserted directly after the slot, so
+   * the folder content appears at the block's position in the page stream.
+   */
+  private async mountInlineBookmarkFolders(): Promise<void> {
+    this.destroyInlineMounts();
+    const slots = this.container.querySelectorAll<HTMLElement>('.nospress-bookmark-folder-mount');
+    for (const slot of Array.from(slots)) {
+      const folderName = slot.dataset.folderName;
+      if (!folderName) continue;
+      const component = new ProfileListsComponent(this.pubkey, 'nospress');
+      this.inlineMountsComponents.push(component);
+      // ProfileListsComponent.render inserts a `.profile-lists-mount` element
+      // AFTER the given anchor — perfect for our slot-as-anchor use case.
+      await component.render(slot, [folderName]);
     }
+  }
+
+  private destroyInlineMounts(): void {
+    this.inlineMountsComponents.forEach(c => c.destroy());
+    this.inlineMountsComponents = [];
   }
 
   private bindHeaderEvents(): void {
@@ -836,16 +827,6 @@ export class NospressView extends View {
       await this.orchestrator.publishV2ToRelays(draft);
       this.listService.savePublishedV2(draft);
 
-      // Sync NospressMountsService from bookmark-folder blocks so
-      // ProfileListsComponent (legacy renderer at the page bottom) reflects
-      // the new mount selection. Slice 7 will move bookmark-folder rendering
-      // inline and this sync becomes obsolete.
-      const folderNames = draft.blocks
-        .filter((b): b is Extract<typeof draft.blocks[number], { type: 'bookmark-folder' }> => b.type === 'bookmark-folder')
-        .map(b => b.folderName)
-        .filter(name => !!name);
-      NospressMountsService.getInstance().setMountsFromRelay(folderNames);
-
       this.listService.clearDraftV2();
       this.editingPage = null;
       this.isDirty = false;
@@ -1212,12 +1193,9 @@ export class NospressView extends View {
    * truth source in edit mode, so we render straight from it.
    */
   private async rerenderEditable(): Promise<void> {
-    if (this.mountsComponent) {
-      this.mountsComponent.destroy();
-      this.mountsComponent = null;
-    }
+    this.destroyInlineMounts();
     await this.renderList();
-    await this.renderMounts();
+    await this.mountInlineBookmarkFolders();
   }
 
   private handleBlockFieldInput(blockId: string, field: string, el: HTMLInputElement | HTMLTextAreaElement): void {

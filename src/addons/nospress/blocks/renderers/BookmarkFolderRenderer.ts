@@ -6,12 +6,10 @@
  * the current folderName as a data attribute so NospressView knows what to
  * pre-select.
  *
- * Readonly: Slice 6 returns an empty string — bookmark-folder content is
- * still rendered separately by ProfileListsComponent at the end of NospressView
- * (legacy path). Slice 7 will move readonly rendering inline so blocks
- * appear in their actual order. The slice 6 trade-off: bookmark-folder
- * blocks can be EDITED via the picker, but readonly preview shows them at
- * the end as before.
+ * Readonly: emits an inline mount slot (`<div class="nospress-bookmark-folder-mount">`)
+ * which `mountInlineBookmarkFolders()` in NospressView fills with a
+ * `ProfileListsComponent` rendering the folder's items. The slot carries the
+ * folder name + block id so the mounter knows what to fetch.
  */
 
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
@@ -32,14 +30,14 @@ export function renderBookmarkFolder(
           data-block-id="${block.id}"
           data-folder-name="${escapeHtmlAttr(block.folderName || '')}"
         ></div>
-        <p class="nospress-block-bookmark-folder__hint">
-          The folder content (items) renders below the page in the readonly view. Inline rendering arrives in a later slice.
-        </p>
       </div>
     `;
     return wrapEditable(block.id, 'bookmark-folder', inner);
   }
-  // Readonly: empty — ProfileListsComponent at the end handles the actual
-  // rendering for now. Slice 7 will move this inline.
-  return '';
+  if (!block.folderName) return '';
+  return `
+    <div class="nospress-bookmark-folder-mount"
+         data-folder-name="${escapeHtmlAttr(block.folderName)}"
+         data-block-id="${block.id}"></div>
+  `;
 }

@@ -163,9 +163,8 @@ export class ProfileView extends View {
     // Listen for NosPress addon toggle (mount/unmount profile lists)
     this.setupNospressToggleListener();
 
-    // Live updates when bookmark folder mount state changes (checkbox toggle)
+    // Live updates when bookmark folder mount state changes (Profile checkbox)
     this.setupProfileMountsChangeListener();
-    this.setupNospressMountsChangeListener();
 
     // No more async recognition-load dance — the addon runtime is owned by
     // AddonLoader and looked up fresh via getRecognitionRuntime() at use time.
@@ -265,19 +264,6 @@ export class ProfileView extends View {
   }
 
   /**
-   * Re-evaluate "NosPress →" link visibility whenever the user toggles a folder's "NosPress" checkbox
-   * (the link appears when either the custom list OR at least one nospress-mount exists)
-   */
-  private setupNospressMountsChangeListener(): void {
-    const id = this.eventBus.on('nospressMounts:changed', () => {
-      const currentUser = this.authService.getCurrentUser();
-      if (!currentUser || currentUser.pubkey !== this.pubkey) return;
-      this.loadNospressLink();
-    });
-    this.eventBusSubscriptions.push(id);
-  }
-
-  /**
    * Setup listener for NosPress addon toggle (mount/unmount profile lists without app restart)
    */
   private setupNospressToggleListener(): void {
@@ -288,16 +274,13 @@ export class ProfileView extends View {
       if (data.enabled) {
         const [
           { ProfileMountsOrchestrator },
-          { NospressMountsOrchestrator },
           { NospressOrchestrator },
         ] = await Promise.all([
           import('../../services/orchestration/ProfileMountsOrchestrator'),
-          import('../../services/orchestration/NospressMountsOrchestrator'),
           import('../../services/orchestration/NospressOrchestrator'),
         ]);
         await Promise.all([
           ProfileMountsOrchestrator.getInstance().syncFromRelays(),
-          NospressMountsOrchestrator.getInstance().syncFromRelays(),
           NospressOrchestrator.getInstance().syncFromRelays(),
         ]);
         this.loadProfileLists();
@@ -1241,16 +1224,8 @@ export class ProfileView extends View {
       const isOwn = this.authService.isCurrentUser(this.pubkey);
 
       const { NospressOrchestrator } = await import('../../services/orchestration/NospressOrchestrator');
-      const { NospressMountsOrchestrator } = await import('../../services/orchestration/NospressMountsOrchestrator');
-
-      const [page, nospressMounts] = await Promise.all([
-        NospressOrchestrator.getInstance().fetchFromRelays(this.pubkey, false),
-        NospressMountsOrchestrator.getInstance().fetchFromRelays(this.pubkey, false),
-      ]);
-
-      const hasExistingList = !!page && page.blocks.length > 0;
-      const hasMounts = nospressMounts.length > 0;
-      const hasContent = hasExistingList || hasMounts;
+      const page = await NospressOrchestrator.getInstance().fetchFromRelays(this.pubkey, false);
+      const hasContent = !!page && page.blocks.length > 0;
 
       // Foreign profile with no content → nothing to show
       if (!hasContent && !isOwn) return;

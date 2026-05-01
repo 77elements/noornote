@@ -27,8 +27,6 @@ import { UserProfileService } from '../services/UserProfileService';
 import { Router } from '../services/Router';
 import { ProfileMountsService } from '../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../services/orchestration/ProfileMountsOrchestrator';
-import { NospressMountsService } from '../services/NospressMountsService';
-import { NospressMountsOrchestrator } from '../services/orchestration/NospressMountsOrchestrator';
 import { PerAccountLocalStorage, StorageKeys as PerAccountStorageKeys } from '../services/PerAccountLocalStorage';
 import { PlatformService } from '../services/PlatformService';
 import { diagLog } from '../services/DiagnosticLogger';
@@ -2802,8 +2800,6 @@ export class BookmarkManager {
   private adapter: BookmarkStorageAdapter;
   private profileMountsService: ProfileMountsService;
   private profileMountsOrch: ProfileMountsOrchestrator;
-  private nospressMountsService: NospressMountsService;
-  private nospressMountsOrch: NospressMountsOrchestrator;
 
   // View state
   private currentFolderId: string = '';
@@ -2822,8 +2818,6 @@ export class BookmarkManager {
     this.adapter = new BookmarkStorageAdapter();
     this.profileMountsService = ProfileMountsService.getInstance();
     this.profileMountsOrch = ProfileMountsOrchestrator.getInstance();
-    this.nospressMountsService = NospressMountsService.getInstance();
-    this.nospressMountsOrch = NospressMountsOrchestrator.getInstance();
 
     this.setupEventListeners();
   }
@@ -3282,13 +3276,12 @@ export class BookmarkManager {
     const currentUser = this.authService.getCurrentUser();
     const isLoggedIn = !!currentUser;
 
-    const showNospressBoxes = isLoggedIn && isNospressEnabled();
+    const showProfileMountCheckbox = isLoggedIn && isNospressEnabled();
     const folderData: FolderData = {
       id: folder.id,
       name: folder.name,
       itemCount: this.getActualFolderItemCount(folder.id),
       isMounted: isLoggedIn ? this.profileMountsService.isMounted(folder.name) : false,
-      isNospressMounted: isLoggedIn ? this.nospressMountsService.isMounted(folder.name) : false
     };
 
     const card = new FolderCard(folderData, {
@@ -3302,10 +3295,8 @@ export class BookmarkManager {
       },
       onDragStart: (_folderId) => {},
       onDragEnd: () => {},
-      showMountCheckbox: showNospressBoxes,
+      showMountCheckbox: showProfileMountCheckbox,
       onMountToggle: (_folderId, folderName) => this.handleMountToggle(folderName),
-      showNospressMountCheckbox: showNospressBoxes,
-      onNospressMountToggle: (_folderId, folderName) => this.handleNospressMountToggle(folderName)
     });
 
     return card.render();
@@ -3331,29 +3322,6 @@ export class BookmarkManager {
 
     this.profileMountsOrch.publishToRelays().catch(err => {
       console.error('Failed to publish profile mounts:', err);
-    });
-  }
-
-  private async handleNospressMountToggle(folderName: string): Promise<void> {
-    const result = this.nospressMountsService.toggleMount(folderName);
-
-    if (result.error) {
-      ToastService.show(result.error, 'error');
-      const container = this.getBookmarksTabContainer();
-      if (container) {
-        this.renderCurrentView(container);
-      }
-      return;
-    }
-
-    if (result.mounted) {
-      ToastService.show(`"${folderName}" added to NosPress`, 'success');
-    } else {
-      ToastService.show(`"${folderName}" removed from NosPress`, 'success');
-    }
-
-    this.nospressMountsOrch.publishToRelays().catch(err => {
-      console.error('Failed to publish NosPress mounts:', err);
     });
   }
 
@@ -3540,7 +3508,6 @@ export class BookmarkManager {
           this.folderService.renameFolder(folderId, newName);
 
           this.profileMountsService.handleFolderRename(folder.name, newName);
-          this.nospressMountsService.handleFolderRename(folder.name, newName);
 
           const currentItems = this.adapter.getBrowserItems();
           const updatedItems = currentItems.map(item => {
@@ -3597,7 +3564,6 @@ export class BookmarkManager {
       }
 
       this.profileMountsService.handleFolderDelete(folderName);
-      this.nospressMountsService.handleFolderDelete(folderName);
 
       const affectedIds = this.folderService.deleteFolder(folderId);
 
