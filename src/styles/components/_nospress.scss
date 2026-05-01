@@ -446,6 +446,19 @@
   margin: $gap * 2 0;
 }
 
+.nospress-block-dm-button {
+  display: flex;
+  justify-content: center;
+  margin: $gap * 2 0;
+}
+
+.nospress-block-dm-button__hint {
+  display: block;
+  margin-top: calc($gap / 2);
+  color: $text-alpha-medium;
+  font-style: italic;
+}
+
 // Columns block — desktop/tablet shows N columns side-by-side, mobile stacks
 .nospress-block-columns {
   display: grid;

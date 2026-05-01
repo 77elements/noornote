@@ -21,7 +21,8 @@ export type Block =
   | { id: string; type: 'embed'; nostrRef: string }
   | { id: string; type: 'bookmark-folder'; folderName: string }
   | { id: string; type: 'columns'; count: 2 | 3; content: Block[][] }
-  | { id: string; type: 'divider' };
+  | { id: string; type: 'divider' }
+  | { id: string; type: 'dm-button'; label: string };
 
 export type BlockType = Block['type'];
 
@@ -56,6 +57,7 @@ export function createBlock(type: BlockType): Block {
     case 'bookmark-folder': return { id, type, folderName: '' };
     case 'columns':         return { id, type, count: 2, content: [[], []] };
     case 'divider':         return { id, type };
+    case 'dm-button':       return { id, type, label: 'Send me a message' };
   }
 }
 

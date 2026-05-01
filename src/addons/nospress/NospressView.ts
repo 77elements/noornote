@@ -988,6 +988,7 @@ export class NospressView extends View {
         case 'discard':                this.discardDraft(); return;
         case 'publish':                this.publishDraft(); return;
         case 'delete-list':            this.confirmAndUnpublish(); return;
+        case 'dm-page-owner':          Router.getInstance().navigate(`/messages/${this.npub}`); return;
       }
 
       const blockId = btn.dataset.blockId;
@@ -1134,6 +1135,8 @@ export class NospressView extends View {
         if (field === 'gallery-url' && itemIndex >= 0) block.urls[itemIndex] = el.value;
       } else if (block.type === 'embed') {
         if (field === 'nostrRef') block.nostrRef = el.value;
+      } else if (block.type === 'dm-button') {
+        if (field === 'dm-label') block.label = el.value;
       }
     }, { silent: true });
   }

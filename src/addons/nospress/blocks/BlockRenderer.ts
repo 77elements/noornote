@@ -21,6 +21,7 @@ import { renderImage } from './renderers/ImageRenderer';
 import { renderGallery } from './renderers/GalleryRenderer';
 import { renderEmbed } from './renderers/EmbedRenderer';
 import { renderColumns } from './renderers/ColumnsRenderer';
+import { renderDmButton } from './renderers/DmButtonRenderer';
 
 export interface BlockRenderOptions {
   editable?: boolean;
@@ -44,6 +45,7 @@ export class BlockRenderer {
       case 'gallery':         return renderGallery(block, editable);
       case 'embed':           return renderEmbed(block, editable);
       case 'columns':         return renderColumns(block, { editable });
+      case 'dm-button':       return renderDmButton(block, editable);
     }
   }
 }
