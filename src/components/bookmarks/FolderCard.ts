@@ -14,7 +14,7 @@ export interface FolderData {
   name: string;                // title tag or d-tag
   itemCount: number;           // Number of bookmarks in folder
   isMounted?: boolean;         // Mounted on PV inline (Profile-checkbox)
-  isMypageMounted?: boolean;   // Mounted on /page subpage (My Page-checkbox)
+  isNospressMounted?: boolean;   // Mounted on /page subpage (NosPress-checkbox)
 }
 
 export interface FolderCardOptions {
@@ -25,9 +25,9 @@ export interface FolderCardOptions {
   onDragStart?: (folderId: string, element: HTMLElement) => void;
   onDragEnd?: () => void;
   onMountToggle?: (folderId: string, folderName: string) => void;
-  onMypageMountToggle?: (folderId: string, folderName: string) => void;
+  onNospressMountToggle?: (folderId: string, folderName: string) => void;
   showMountCheckbox?: boolean;        // Profile-checkbox (PV inline mount)
-  showMypageMountCheckbox?: boolean;  // My Page-checkbox (/page subpage mount)
+  showNospressMountCheckbox?: boolean;  // NosPress-checkbox (/page subpage mount)
 }
 
 export class FolderCard {
@@ -41,9 +41,9 @@ export class FolderCard {
   }
 
   public render(): HTMLElement {
-    const { id, name, itemCount, isMounted, isMypageMounted } = this.data;
+    const { id, name, itemCount, isMounted, isNospressMounted } = this.data;
     const showMount = this.options.showMountCheckbox && this.options.onMountToggle;
-    const showMypage = this.options.showMypageMountCheckbox && this.options.onMypageMountToggle;
+    const showNospress = this.options.showNospressMountCheckbox && this.options.onNospressMountToggle;
 
     const card = document.createElement('div');
     card.className = 'folder-card';
@@ -64,7 +64,7 @@ export class FolderCard {
           ${ICON_TRASH_14}
         </button>
       </div>
-      ${showMount || showMypage ? `
+      ${showMount || showNospress ? `
         <div class="folder-card__mounts">
           ${showMount ? `
             <label class="folder-card__mount" data-mount="profile" title="Show this folder inline on your Profile View">
@@ -72,10 +72,10 @@ export class FolderCard {
               <input type="checkbox" ${isMounted ? 'checked' : ''} />
             </label>
           ` : ''}
-          ${showMypage ? `
-            <label class="folder-card__mount" data-mount="mypage" title="Show this folder on your My Page subpage">
-              <span>My Page</span>
-              <input type="checkbox" ${isMypageMounted ? 'checked' : ''} />
+          ${showNospress ? `
+            <label class="folder-card__mount" data-mount="nospress" title="Show this folder on your NosPress subpage">
+              <span>NosPress</span>
+              <input type="checkbox" ${isNospressMounted ? 'checked' : ''} />
             </label>
           ` : ''}
         </div>
@@ -127,15 +127,15 @@ export class FolderCard {
       });
     }
 
-    // My Page mount checkbox
-    const mypageLabel = card.querySelector('.folder-card__mount[data-mount="mypage"]') as HTMLElement | null;
-    const mypageCheckbox = mypageLabel?.querySelector('input') as HTMLInputElement | null;
-    if (mypageCheckbox && this.options.onMypageMountToggle) {
-      mypageCheckbox.addEventListener('change', (e) => {
+    // NosPress mount checkbox
+    const nospressLabel = card.querySelector('.folder-card__mount[data-mount="nospress"]') as HTMLElement | null;
+    const nospressCheckbox = nospressLabel?.querySelector('input') as HTMLInputElement | null;
+    if (nospressCheckbox && this.options.onNospressMountToggle) {
+      nospressCheckbox.addEventListener('change', (e) => {
         e.stopPropagation();
-        this.options.onMypageMountToggle!(id, name);
+        this.options.onNospressMountToggle!(id, name);
       });
-      mypageLabel?.addEventListener('click', (e) => {
+      nospressLabel?.addEventListener('click', (e) => {
         e.stopPropagation();
       });
     }
@@ -202,9 +202,9 @@ export class FolderCard {
     }
   }
 
-  public updateMypageMountStatus(isMounted: boolean): void {
-    this.data.isMypageMounted = isMounted;
-    const checkbox = this.element?.querySelector('.folder-card__mount[data-mount="mypage"] input') as HTMLInputElement;
+  public updateNospressMountStatus(isMounted: boolean): void {
+    this.data.isNospressMounted = isMounted;
+    const checkbox = this.element?.querySelector('.folder-card__mount[data-mount="nospress"] input') as HTMLInputElement;
     if (checkbox) {
       checkbox.checked = isMounted;
     }

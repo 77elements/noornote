@@ -1,7 +1,7 @@
 /**
  * BookmarkFolderPicker — shared dropdown for selecting an existing bookmark
  * folder by name. Used by:
- *   - MyPage's bookmark-folder block editor (mount existing folder)
+ *   - NosPress's bookmark-folder block editor (mount existing folder)
  *   - (future) NewBookmarkModal "Save to" dropdown — refactor pending
  *
  * Stays read-only over BookmarkFolderService — we only LIST folders, never

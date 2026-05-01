@@ -1,49 +1,46 @@
 /**
- * MypageOrchestrator
- * Manages NIP-78 events for My Page custom lists
+ * NospressOrchestrator
+ * Manages NIP-78 events for NosPress custom lists
  *
  * kind:30078 with d-tag "noornote/list" stores a user's custom list
  * (freetext sections with items — skills, hobbies, books, projects, anything).
  *
- * The d-tag stays "noornote/list" for backward compatibility with previously
- * published events. Internal naming is "mypage" since 2026-04-28 reframe.
- *
- * @purpose Publish/fetch My Page lists to/from relays
- * @used-by MypageView, MypageEditorView, AutoSyncService
+ * @purpose Publish/fetch NosPress lists to/from relays
+ * @used-by NospressView, AutoSyncService
  */
 
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
-import { MypageService, type MypageListData } from '../MypageService';
-import type { MypagePageV2 } from '../../addons/mypage/blocks/types';
+import { NospressService, type NospressListData } from '../NospressService';
+import type { NospressPageV2 } from '../../addons/nospress/blocks/types';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 
 const NIP78_KIND = 30078;
 const D_TAG = 'noornote/list';
 
-export class MypageOrchestrator {
-  private static instance: MypageOrchestrator;
+export class NospressOrchestrator {
+  private static instance: NospressOrchestrator;
   private transport: NostrTransport;
   private authService: AuthService;
-  private listService: MypageService;
+  private listService: NospressService;
   private systemLogger: SystemLogger;
 
-  private cache: Map<string, { data: MypageListData | null; fetchedAt: number }> = new Map();
+  private cache: Map<string, { data: NospressListData | null; fetchedAt: number }> = new Map();
   private readonly CACHE_TTL = 60000;
 
   private constructor() {
     this.transport = NostrTransport.getInstance();
     this.authService = AuthService.getInstance();
-    this.listService = MypageService.getInstance();
+    this.listService = NospressService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }
 
-  public static getInstance(): MypageOrchestrator {
-    if (!MypageOrchestrator.instance) {
-      MypageOrchestrator.instance = new MypageOrchestrator();
+  public static getInstance(): NospressOrchestrator {
+    if (!NospressOrchestrator.instance) {
+      NospressOrchestrator.instance = new NospressOrchestrator();
     }
-    return MypageOrchestrator.instance;
+    return NospressOrchestrator.instance;
   }
 
   public async publishToRelays(): Promise<void> {
@@ -70,12 +67,12 @@ export class MypageOrchestrator {
 
     this.cache.set(currentUser.pubkey, { data: listData, fetchedAt: Date.now() });
 
-    diagLog('lists', 'MypageOrchestrator publishToRelays', {
+    diagLog('lists', 'NospressOrchestrator publishToRelays', {
       sectionCount: listData.sections.length
     });
 
-    this.systemLogger.info('MypageOrchestrator',
-      `Published My Page list: ${listData.sections.length} sections`
+    this.systemLogger.info('NospressOrchestrator',
+      `Published NosPress list: ${listData.sections.length} sections`
     );
   }
 
@@ -86,7 +83,7 @@ export class MypageOrchestrator {
    * an empty page until they're updated; the only current user is the
    * developer so this is acceptable transitional state.
    */
-  public async publishV2ToRelays(page: MypagePageV2): Promise<void> {
+  public async publishV2ToRelays(page: NospressPageV2): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
 
@@ -106,15 +103,15 @@ export class MypageOrchestrator {
 
     await this.transport.publish(writeRelays, signed);
 
-    diagLog('lists', 'MypageOrchestrator publishV2ToRelays', {
+    diagLog('lists', 'NospressOrchestrator publishV2ToRelays', {
       blockCount: page.blocks.length,
       hasTitle: !!page.title,
       hasSubtitle: !!page.subtitle,
       hasDescription: !!page.description,
     });
 
-    this.systemLogger.info('MypageOrchestrator',
-      `Published My Page v2: ${page.blocks.length} blocks`
+    this.systemLogger.info('NospressOrchestrator',
+      `Published NosPress v2: ${page.blocks.length} blocks`
     );
   }
 
@@ -125,7 +122,7 @@ export class MypageOrchestrator {
     const writeRelays = this.transport.getWriteRelays();
     if (writeRelays.length === 0) throw new Error('No write relays available');
 
-    const emptyData: MypageListData = { version: 1, sections: [] };
+    const emptyData: NospressListData = { version: 1, sections: [] };
 
     const event = {
       kind: NIP78_KIND,
@@ -142,10 +139,10 @@ export class MypageOrchestrator {
 
     this.cache.set(currentUser.pubkey, { data: null, fetchedAt: Date.now() });
 
-    diagLog('lists', 'MypageOrchestrator deleteFromRelays', {});
+    diagLog('lists', 'NospressOrchestrator deleteFromRelays', {});
   }
 
-  public async fetchFromRelays(pubkey: string, forceRefresh: boolean = false): Promise<MypageListData | null> {
+  public async fetchFromRelays(pubkey: string, forceRefresh: boolean = false): Promise<NospressListData | null> {
     if (!forceRefresh) {
       const cached = this.cache.get(pubkey);
       if (cached && (Date.now() - cached.fetchedAt) < this.CACHE_TTL) {
@@ -162,7 +159,7 @@ export class MypageOrchestrator {
         authors: [pubkey],
         '#d': [D_TAG],
         limit: 1
-      }], 5000, false, 'MypageOrch');
+      }], 5000, false, 'NospressOrch');
 
       if (events.length === 0) {
         this.cache.set(pubkey, { data: null, fetchedAt: Date.now() });
@@ -177,7 +174,7 @@ export class MypageOrchestrator {
       this.cache.set(pubkey, { data, fetchedAt: Date.now() });
       return data;
     } catch (error) {
-      this.systemLogger.error('MypageOrchestrator',
+      this.systemLogger.error('NospressOrchestrator',
         `Failed to fetch list for ${pubkey}: ${error}`
       );
       return null;
@@ -193,7 +190,7 @@ export class MypageOrchestrator {
       this.listService.setListFromRelay(data);
     }
 
-    diagLog('lists', 'MypageOrchestrator syncFromRelays', {
+    diagLog('lists', 'NospressOrchestrator syncFromRelays', {
       sectionCount: data?.sections.length ?? 0
     });
   }
@@ -206,12 +203,12 @@ export class MypageOrchestrator {
     }
   }
 
-  private parseContent(content: string): MypageListData | null {
+  private parseContent(content: string): NospressListData | null {
     if (!content) return null;
     try {
-      const parsed = JSON.parse(content) as MypageListData;
+      const parsed = JSON.parse(content) as NospressListData;
       if (parsed.version !== 1 || !Array.isArray(parsed.sections)) return null;
-      const data: MypageListData = { version: 1, sections: parsed.sections };
+      const data: NospressListData = { version: 1, sections: parsed.sections };
       if (typeof parsed.title === 'string') data.title = parsed.title;
       if (typeof parsed.subtitle === 'string') data.subtitle = parsed.subtitle;
       if (typeof parsed.description === 'string') data.description = parsed.description;

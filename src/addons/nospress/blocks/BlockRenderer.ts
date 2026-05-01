@@ -4,7 +4,7 @@
  * Slice 4 status:
  * - Renderable: heading, text, list, divider, links (readonly + editable)
  * - Skipped (rendered as empty string): bookmark-folder
- *     → still mounted via ProfileListsComponent at the end of MypageView
+ *     → still mounted via ProfileListsComponent at the end of NospressView
  *     until a later slice moves bookmark-folder rendering inline.
  * - Placeholder: image, gallery, embed, columns
  *     → renderers come in later slices.

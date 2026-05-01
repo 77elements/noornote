@@ -106,7 +106,7 @@ Addons whose heavy code is already correctly on-demand lazy (no singleton, no ti
 
 **Bookmarks and Tribes stay in `src/lists/*.ts`** — their managers are tightly coupled to `AutoSyncService`, which handles the 10s-initial / 5-min-periodic sync for Mutes/Follows/Bookmarks/Tribes. That sync semantics is fragile (see `docs/features/lists.md` history of Sync Bug Fixes). They remain UI-gated via flag imports like before. The ~7000 LOC they contribute to the bundle is the deliberately chosen price for zero risk to the lists architecture.
 
-**List-settings, extended-follows, mypage** are list-adjacent addons whose migration was deferred. Any decision to include them is a separate project.
+**List-settings, extended-follows, nospress** are list-adjacent addons whose migration was deferred. Any decision to include them is a separate project.
 
 ## Diagnose
 

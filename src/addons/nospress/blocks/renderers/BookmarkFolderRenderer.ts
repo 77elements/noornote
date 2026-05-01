@@ -1,13 +1,13 @@
 /**
  * BookmarkFolderRenderer
  *
- * Editable: emits a slot (`<div data-bookmark-folder-picker>`) where MypageView
+ * Editable: emits a slot (`<div data-bookmark-folder-picker>`) where NospressView
  * mounts a BookmarkFolderPicker JS instance after innerHTML. The slot carries
- * the current folderName as a data attribute so MypageView knows what to
+ * the current folderName as a data attribute so NospressView knows what to
  * pre-select.
  *
  * Readonly: Slice 6 returns an empty string — bookmark-folder content is
- * still rendered separately by ProfileListsComponent at the end of MypageView
+ * still rendered separately by ProfileListsComponent at the end of NospressView
  * (legacy path). Slice 7 will move readonly rendering inline so blocks
  * appear in their actual order. The slice 6 trade-off: bookmark-folder
  * blocks can be EDITED via the picker, but readonly preview shows them at
@@ -24,15 +24,15 @@ export function renderBookmarkFolder(
 ): string {
   if (editable) {
     const inner = `
-      <div class="mypage-block-bookmark-folder">
-        <label class="mypage-block-bookmark-folder__label">Mounted bookmark folder:</label>
+      <div class="nospress-block-bookmark-folder">
+        <label class="nospress-block-bookmark-folder__label">Mounted bookmark folder:</label>
         <div
-          class="mypage-block-bookmark-folder__picker-slot"
+          class="nospress-block-bookmark-folder__picker-slot"
           data-bookmark-folder-picker
           data-block-id="${block.id}"
           data-folder-name="${escapeHtmlAttr(block.folderName || '')}"
         ></div>
-        <p class="mypage-block-bookmark-folder__hint">
+        <p class="nospress-block-bookmark-folder__hint">
           The folder content (items) renders below the page in the readonly view. Inline rendering arrives in a later slice.
         </p>
       </div>

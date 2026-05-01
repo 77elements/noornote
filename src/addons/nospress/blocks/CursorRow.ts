@@ -11,7 +11,7 @@
  *
  * The CursorRow does NOT mutate the page itself. It only emits intent
  * via callbacks — `onTextEntered(text)` or `onBlockTypeChosen(type)`.
- * MypageView owns the page state, the cursor index, and the recent-used
+ * NospressView owns the page state, the cursor index, and the recent-used
  * tracking.
  */
 
@@ -42,13 +42,13 @@ export class CursorRow {
   constructor(opts: CursorRowOptions) {
     this.opts = opts;
     this.container = document.createElement('div');
-    this.container.className = 'mypage-cursor-row';
+    this.container.className = 'nospress-cursor-row';
     this.container.innerHTML = `
-      <input type="text" class="mypage-cursor-row__input" placeholder="Type / for block menu, or text to start writing…" autocomplete="off" spellcheck="false" />
-      <div class="mypage-cursor-row__menu" hidden></div>
+      <input type="text" class="nospress-cursor-row__input" placeholder="Type / for block menu, or text to start writing…" autocomplete="off" spellcheck="false" />
+      <div class="nospress-cursor-row__menu" hidden></div>
     `;
-    this.input = this.container.querySelector('.mypage-cursor-row__input') as HTMLInputElement;
-    this.menu = this.container.querySelector('.mypage-cursor-row__menu') as HTMLDivElement;
+    this.input = this.container.querySelector('.nospress-cursor-row__input') as HTMLInputElement;
+    this.menu = this.container.querySelector('.nospress-cursor-row__menu') as HTMLDivElement;
     this.clickAwayHandler = this.handleClickAway.bind(this);
     this.bindEvents();
   }
@@ -156,25 +156,25 @@ export class CursorRow {
     const othersHtml = filtered(others);
 
     if (recentHtml.length === 0 && othersHtml.length === 0) {
-      this.menu.innerHTML = `<div class="mypage-cursor-row__menu-empty">No matches for "${escapeHtml(this.menuFilter)}"</div>`;
+      this.menu.innerHTML = `<div class="nospress-cursor-row__menu-empty">No matches for "${escapeHtml(this.menuFilter)}"</div>`;
       return;
     }
 
     const renderRow = (m: BlockTypeMeta) => `
-      <button type="button" class="mypage-cursor-row__menu-item" data-block-type="${escapeHtmlAttr(m.type)}">
-        <span class="mypage-cursor-row__menu-icon">${escapeHtml(m.icon)}</span>
-        <span class="mypage-cursor-row__menu-label">${escapeHtml(m.label)}</span>
-        <span class="mypage-cursor-row__menu-desc">${escapeHtml(m.description)}</span>
+      <button type="button" class="nospress-cursor-row__menu-item" data-block-type="${escapeHtmlAttr(m.type)}">
+        <span class="nospress-cursor-row__menu-icon">${escapeHtml(m.icon)}</span>
+        <span class="nospress-cursor-row__menu-label">${escapeHtml(m.label)}</span>
+        <span class="nospress-cursor-row__menu-desc">${escapeHtml(m.description)}</span>
       </button>
     `;
 
     let html = '';
     if (recentHtml.length > 0) {
-      html += `<div class="mypage-cursor-row__menu-section">Recent</div>`;
+      html += `<div class="nospress-cursor-row__menu-section">Recent</div>`;
       html += recentHtml.map(renderRow).join('');
     }
     if (othersHtml.length > 0) {
-      html += `<div class="mypage-cursor-row__menu-section">All blocks</div>`;
+      html += `<div class="nospress-cursor-row__menu-section">All blocks</div>`;
       html += othersHtml.map(renderRow).join('');
     }
     this.menu.innerHTML = html;

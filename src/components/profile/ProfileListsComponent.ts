@@ -14,8 +14,8 @@
 
 import { ProfileMountsService } from '../../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../../services/orchestration/ProfileMountsOrchestrator';
-import { MyPageMountsService } from '../../services/MyPageMountsService';
-import { MyPageMountsOrchestrator } from '../../services/orchestration/MyPageMountsOrchestrator';
+import { NospressMountsService } from '../../services/NospressMountsService';
+import { NospressMountsOrchestrator } from '../../services/orchestration/NospressMountsOrchestrator';
 import { NoteService } from '../../services/NoteService';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { encodeNaddr, encodeNevent } from '../../services/NostrToolsAdapter';
@@ -30,7 +30,7 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 
 const MAX_ITEMS_COLLAPSED = 3;
 
-export type MountsSource = 'profile' | 'mypage';
+export type MountsSource = 'profile' | 'nospress';
 
 interface MountsServiceLike {
   getMounts(): string[];
@@ -67,9 +67,9 @@ export class ProfileListsComponent {
   constructor(pubkey: string, source: MountsSource = 'profile') {
     this.pubkey = pubkey;
 
-    if (source === 'mypage') {
-      this.mountsService = MyPageMountsService.getInstance();
-      this.mountsOrch = MyPageMountsOrchestrator.getInstance();
+    if (source === 'nospress') {
+      this.mountsService = NospressMountsService.getInstance();
+      this.mountsOrch = NospressMountsOrchestrator.getInstance();
     } else {
       this.mountsService = ProfileMountsService.getInstance();
       this.mountsOrch = ProfileMountsOrchestrator.getInstance();
@@ -86,7 +86,7 @@ export class ProfileListsComponent {
    *
    * @param insertAfter - DOM element to insert mounts after
    * @param folderNamesOverride - if provided, use these folder names directly
-   *   instead of querying mountsService/mountsOrch. Used by MypageView to
+   *   instead of querying mountsService/mountsOrch. Used by NospressView to
    *   render from v2 bookmark-folder blocks (draft/published) so the readonly
    *   view reflects in-progress edits without waiting for publish.
    */

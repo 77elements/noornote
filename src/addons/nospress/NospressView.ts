@@ -1,24 +1,24 @@
 /**
- * MypageView
- * Readonly display of a user's My Page (custom list + mounted bookmark folders)
+ * NospressView
+ * Readonly display of a user's NosPress (custom list + mounted bookmark folders)
  *
  * Route: /profile/:npub/page
  * Aggregates the custom list (freetext sections) and any mounted bookmark
  * folders into one personal page. Owner sees Edit + Delete buttons (apply
  * only to the custom list — folder mounts are managed via bookmarks).
  *
- * @purpose Display My Page for any user
- * @used-by ViewMountingService (route: mypage)
+ * @purpose Display NosPress for any user
+ * @used-by ViewMountingService (route: nospress)
  */
 
 import { View } from '../../components/views/View';
 import { AuthService } from '../../services/AuthService';
-import { MypageOrchestrator } from '../../services/orchestration/MypageOrchestrator';
-import { MypageService, mypageHasContent, type MypageListData } from '../../services/MypageService';
+import { NospressOrchestrator } from '../../services/orchestration/NospressOrchestrator';
+import { NospressService, nospressHasContent, type NospressListData } from '../../services/NospressService';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns } from './blocks/renderers/ColumnsRenderer';
 import { migrateV1ToV2 } from './blocks/migrate';
-import type { MypagePageV2 } from './blocks/types';
+import type { NospressPageV2 } from './blocks/types';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
@@ -32,7 +32,7 @@ import { createBlock, findBlockInPage, type Block, type BlockType } from './bloc
 import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
-import { MyPageMountsService } from '../../services/MyPageMountsService';
+import { NospressMountsService } from '../../services/NospressMountsService';
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
 import { RelayConfig } from '../../services/RelayConfig';
@@ -41,7 +41,7 @@ import { NoteUI } from '../../components/ui/NoteUI';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import DOMPurify from 'dompurify';
 
-const BLOCK_LIBRARY_TAB_ID = 'mypage-block-library';
+const BLOCK_LIBRARY_TAB_ID = 'nospress-block-library';
 
 /** Active editor cursor — either at page level or inside a specific column
  *  of a `columns` block. `index` is the position WITHIN the parent array. */
@@ -49,13 +49,13 @@ type Cursor =
   | { scope: 'page'; index: number }
   | { scope: 'column'; columnsBlockId: string; colIndex: number; index: number };
 
-export class MypageView extends View {
+export class NospressView extends View {
   private container: HTMLElement;
   private npub: string;
   private pubkey: string;
   private isOwnProfile: boolean;
-  private orchestrator: MypageOrchestrator;
-  private listService: MypageService;
+  private orchestrator: NospressOrchestrator;
+  private listService: NospressService;
   private mountsComponent: ProfileListsComponent | null = null;
   private blockLibrary: BlockLibraryView | null = null;
   private editMode: boolean = false;
@@ -71,14 +71,18 @@ export class MypageView extends View {
   /** Currently focused/selected block in the editor. Null = none. UI-only. */
   private selectedBlockId: string | null = null;
   private eventBusSubscriptions: string[] = [];
+  /** Live in-memory edit state. All mutations go here; persisted to draft
+   *  storage only when the user clicks Save. Null until first edit. */
+  private editingPage: NospressPageV2 | null = null;
+  private isDirty: boolean = false;
 
-  constructor(npub: string) {
+  constructor(npub: string, opts: { editMode?: boolean } = {}) {
     super();
     this.npub = npub;
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--mypage';
-    this.orchestrator = MypageOrchestrator.getInstance();
-    this.listService = MypageService.getInstance();
+    this.container.className = 'view-content view-content--nospress';
+    this.orchestrator = NospressOrchestrator.getInstance();
+    this.listService = NospressService.getInstance();
 
     try {
       const decoded = decodeNip19(npub);
@@ -90,6 +94,7 @@ export class MypageView extends View {
     }
 
     this.isOwnProfile = AuthService.getInstance().isCurrentUser(this.pubkey);
+    if (opts.editMode && this.isOwnProfile) this.editMode = true;
 
     this.setupChangeListeners();
     this.setupEditDelegation();
@@ -137,13 +142,10 @@ export class MypageView extends View {
     if (!this.isOwnProfile) return;
     const eventBus = EventBus.getInstance();
     this.eventBusSubscriptions.push(
-      eventBus.on('mypageMounts:changed', () => this.loadAndRender())
+      eventBus.on('nospressMounts:changed', () => this.loadAndRender())
     );
     this.eventBusSubscriptions.push(
-      eventBus.on('mypageList:changed', () => this.loadAndRender())
-    );
-    this.eventBusSubscriptions.push(
-      eventBus.on('mypageDraftV2:changed', () => this.loadAndRender())
+      eventBus.on('nospressList:changed', () => this.loadAndRender())
     );
   }
 
@@ -156,20 +158,20 @@ export class MypageView extends View {
     }
 
     this.container.innerHTML = `
-      <div class="mypage-loading">
+      <div class="nospress-loading">
         <div class="loading-spinner"></div>
         <p>Loading page...</p>
       </div>
     `;
 
     try {
-      let listData: MypageListData | null;
+      let listData: NospressListData | null;
 
       if (this.isOwnProfile) {
         listData = this.listService.getList();
-        if (!mypageHasContent(listData)) {
+        if (!nospressHasContent(listData)) {
           listData = await this.orchestrator.fetchFromRelays(this.pubkey, true);
-          if (mypageHasContent(listData)) {
+          if (nospressHasContent(listData)) {
             this.listService.setListFromRelay(listData!);
           }
         }
@@ -177,10 +179,14 @@ export class MypageView extends View {
         listData = await this.orchestrator.fetchFromRelays(this.pubkey, true);
       }
 
-      const hasList = mypageHasContent(listData);
+      const hasList = nospressHasContent(listData);
+      const hasV2 = this.isOwnProfile && this.listService.hasV2Content();
+      const hasContent = hasList || hasV2;
 
-      if (hasList) {
-        await this.renderList(listData!);
+      // Edit-mode renders the editable shell even when content is empty
+      // (so the cursor row is visible on a fresh page).
+      if (hasContent || (this.editMode && this.isOwnProfile)) {
+        await this.renderList(listData ?? { version: 1, sections: [] });
       } else {
         this.renderShellWithoutList();
       }
@@ -189,33 +195,30 @@ export class MypageView extends View {
       await this.renderMounts();
 
       // After both list and mounts are rendered, decide whether to show empty
-      // state: only when neither list nor mounts produced content.
+      // state: only when neither list nor mounts produced content. In edit
+      // mode the cursor row is already the empty-state affordance.
       const hasMounts = this.container.querySelectorAll('.profile-lists-mount').length > 0;
-      if (!hasList && !hasMounts) {
+      if (!hasContent && !hasMounts && !this.editMode) {
         this.renderEmpty();
       }
+
+      // When the route opens us directly in edit mode, also open the SCC
+      // Block Library tab so the user has the full editor surface.
+      if (this.editMode && this.isOwnProfile && !this.blockLibrary) {
+        this.openBlockLibrary();
+      }
     } catch (error) {
-      console.error('Failed to load My Page:', error);
-      this.container.innerHTML = '<p class="mypage-error">Failed to load page.</p>';
+      console.error('Failed to load NosPress:', error);
+      this.container.innerHTML = '<p class="nospress-error">Failed to load page.</p>';
     }
   }
 
   private renderEmpty(): void {
-    const profileName = this.isOwnProfile ? 'You' : 'This user';
     this.container.innerHTML = `
-      <div class="mypage-empty">
-        <p>${profileName} ${this.isOwnProfile ? "haven't" : "hasn't"} set up a page yet.</p>
-        ${this.isOwnProfile ? `
-          <button class="btn btn--medium btn--primary" data-action="create-page">Set up My Page</button>
-        ` : ''}
+      <div class="nospress-empty">
+        <p>This user hasn't set up a page yet.</p>
       </div>
     `;
-
-    if (this.isOwnProfile) {
-      this.container.querySelector('[data-action="create-page"]')?.addEventListener('click', () => {
-        Router.getInstance().navigate(`/profile/${this.npub}/page/edit`);
-      });
-    }
   }
 
   /**
@@ -225,19 +228,19 @@ export class MypageView extends View {
   private async renderShellWithoutList(): Promise<void> {
     const username = await this.loadUsername();
     this.container.innerHTML = `
-      <div class="mypage-view">
-        <div class="mypage-header">
-          <div class="mypage-header__left">
+      <div class="nospress-view">
+        <div class="nospress-header l-spread">
+          <div>
             <button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>
           </div>
-          ${this.isOwnProfile ? `
-            <div class="mypage-header__actions">
+          <div>
+            ${this.isOwnProfile ? `
               <button class="btn btn--medium btn--passive" data-action="open-block-editor">
                 <svg width="14" height="14"><use href="#icon-edit"/></svg>
                 Block Editor
               </button>
-            </div>
-          ` : ''}
+            ` : ''}
+          </div>
         </div>
       </div>
     `;
@@ -253,20 +256,20 @@ export class MypageView extends View {
     }
   }
 
-  private async renderList(data: MypageListData): Promise<void> {
+  private async renderList(data: NospressListData): Promise<void> {
     const username = await this.loadUsername();
 
     // Render priority for own profile:
-    //   1. v2 draft (work-in-progress, set by Block Library Apply)
-    //   2. v2 published (mirror of last successful publish — survives reloads)
-    //   3. v1 migrated to v2 (legacy fallback — pre-v2 published state)
+    //   - Edit mode: in-memory editingPage (live unsaved edits) ?? saved draft ?? published ?? v1
+    //   - Preview:   saved draft ?? published ?? v1 (NEVER the in-memory edits)
     // For foreign profiles: only v1 from relays migrated. Their mounts come
     // from ProfileListsComponent (separately fetches from their relays).
-    let page: MypagePageV2;
+    let page: NospressPageV2;
     if (this.isOwnProfile) {
-      page = this.listService.getDraftV2()
+      const stored = this.listService.getDraftV2()
         ?? this.listService.getPublishedV2()
         ?? this.listService.getPageV2();
+      page = (this.editMode && this.editingPage) ? this.editingPage : stored;
     } else {
       page = migrateV1ToV2(data, []);
     }
@@ -279,50 +282,33 @@ export class MypageView extends View {
 
     // Page-meta (title/subtitle/description) are no longer rendered as a fixed
     // top section — the user composes them via Heading + Text blocks like any
-    // other page content. The fields remain in MypagePageV2 for backwards
+    // other page content. The fields remain in NospressPageV2 for backwards
     // compatibility when reading old v2 events; they are no-ops in the UI.
     const blocksHtml = editable
       ? this.renderBlocksWithCursor(page.blocks)
       : BlockRenderer.renderAll(page.blocks, { editable: false });
 
-    const dangerZoneHtml = this.isOwnProfile
-      ? `
-        <div class="mypage-danger-zone">
-          <button class="btn btn--mini btn--danger" data-action="delete-list">Delete page from relays</button>
-          <p class="mypage-danger-zone__hint">Removes the published page everywhere. Mounted bookmark folders are not affected.</p>
-        </div>
-      `
-      : '';
-
     // Tear down old picker instances before innerHTML replaces their DOM
     this.destroyFolderPickers();
     this.destroyBlockDropdowns();
 
-    // Danger zone lives OUTSIDE .mypage-view so it stays the last element on
-    // the page even after renderMounts() appends bookmark-folder content
-    // inside .mypage-view.
     const leftButtonHtml = editable
       ? `<button class="btn btn--medium btn--passive" data-action="preview-page" title="Close the editor and see the page as visitors see it">Preview Page</button>`
       : `<button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>`;
 
+    const rightButtonHtml = this.isOwnProfile
+      ? `<button class="btn btn--medium btn--passive" data-action="open-block-editor" title="Open Block Library in the right sidebar"><svg width="14" height="14"><use href="#icon-edit"/></svg> Block Editor</button>`
+      : '';
+
     this.container.innerHTML = `
-      <div class="mypage-view">
-        <div class="mypage-header">
-          <div class="mypage-header__left">
-            ${leftButtonHtml}
-          </div>
-          ${this.isOwnProfile ? `
-            <div class="mypage-header__actions">
-              <button class="btn btn--medium btn--passive" data-action="open-block-editor" title="Open Block Library in the right sidebar">
-                <svg width="14" height="14"><use href="#icon-edit"/></svg>
-                Block Editor
-              </button>
-            </div>
-          ` : ''}
+      <div class="nospress-view">
+        <div class="nospress-header l-spread">
+          <div>${leftButtonHtml}</div>
+          <div>${rightButtonHtml}</div>
         </div>
         ${blocksHtml}
+        ${this.renderActionBar(editable)}
       </div>
-      ${dangerZoneHtml}
     `;
 
     if (editable) {
@@ -336,20 +322,51 @@ export class MypageView extends View {
     this.bindHeaderEvents();
   }
 
+  private renderActionBar(editable: boolean): string {
+    if (!this.isOwnProfile) return '';
+    const isDirty = this.isDirty;
+    const hasDraft = this.listService.hasDraftV2();
+    const localButtons = editable
+      ? `
+        <button type="button" class="btn btn--mini" data-action="save" ${isDirty ? '' : 'disabled'}>Save</button>
+        <button type="button" class="btn btn--passive btn--mini" data-action="discard" ${hasDraft ? '' : 'disabled'}>Discard</button>
+      `
+      : '';
+    return `
+      <div class="nospress-action-bar l-row--split">
+        <div>
+          <button type="button" class="btn btn--mini" data-action="publish" ${(isDirty || hasDraft) ? '' : 'disabled'}>Publish</button>
+          <button type="button" class="btn btn--passive btn--mini btn--danger" data-action="delete-list">Unpublish</button>
+        </div>
+        <div>${localButtons}</div>
+      </div>
+    `;
+  }
+
+  /** Re-render only the action bar (used after save/dirty state changes). */
+  private refreshActionBar(): void {
+    const bar = this.container.querySelector('.nospress-action-bar');
+    if (!bar) return;
+    const tmp = document.createElement('div');
+    tmp.innerHTML = this.renderActionBar(this.editMode && this.isOwnProfile);
+    const next = tmp.firstElementChild;
+    if (next) bar.replaceWith(next);
+  }
+
   private async renderMounts(): Promise<void> {
-    const view = this.container.querySelector('.mypage-view');
+    const view = this.container.querySelector('.nospress-view');
     if (!view) return;
 
     // Anchor mounts to the last child of the view so they appear after the list
     const lastChild = view.lastElementChild;
     if (!lastChild) return;
 
-    this.mountsComponent = new ProfileListsComponent(this.pubkey, 'mypage');
+    this.mountsComponent = new ProfileListsComponent(this.pubkey, 'nospress');
 
     // For own profile: extract folder names from the current v2 page
     // (draft → published → migrated v1) so the readonly view reflects
     // the user's in-progress block-editor changes immediately, without
-    // waiting for publish + MyPageMountsService sync.
+    // waiting for publish + NospressMountsService sync.
     if (this.isOwnProfile) {
       const page = this.listService.getDraftV2()
         ?? this.listService.getPublishedV2()
@@ -373,34 +390,33 @@ export class MypageView extends View {
       this.closeBlockLibrary();
     });
 
-    this.container.querySelector('[data-action="delete-list"]')?.addEventListener('click', async () => {
-      const confirmed = await ModalService.getInstance().confirm({
-        title: 'Delete List',
-        message: 'This will delete the custom list portion of your page from all relays. Mounted bookmark folders are not affected. This cannot be undone.',
-        confirmDestructive: true,
-      });
-      if (!confirmed) return;
-
-      try {
-        this.listService.deleteList();
-        await this.orchestrator.deleteFromRelays();
-        ToastService.show('List deleted', 'success');
-        Router.getInstance().navigate(`/profile/${this.npub}`);
-      } catch (error) {
-        console.error('Failed to delete list:', error);
-        ToastService.show('Failed to delete list', 'error');
-      }
-    });
-
     this.container.querySelector('[data-action="back"]')?.addEventListener('click', (e) => {
       e.preventDefault();
       Router.getInstance().navigate(`/profile/${this.npub}`);
     });
   }
 
+  private async confirmAndUnpublish(): Promise<void> {
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Unpublish page',
+      message: 'This removes the published page from your relays. Your local draft is kept so you can re-publish later.',
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      await this.orchestrator.deleteFromRelays();
+      this.listService.clearPublishedV2();
+      ToastService.show('Unpublished', 'success');
+    } catch (error) {
+      console.error('Failed to unpublish:', error);
+      ToastService.show('Unpublish failed', 'error');
+    }
+  }
+
   /**
    * Inject the Block Library tab into the SCC and switch to it.
-   * Tab is removed when MypageView destroys (= user navigates away).
+   * Tab is removed when NospressView destroys (= user navigates away).
    */
   private openBlockLibrary(): void {
     const sidebarTabs = document.querySelector('#sidebar-tabs');
@@ -421,9 +437,6 @@ export class MypageView extends View {
 
       this.blockLibrary = new BlockLibraryView({
         onApply: (type) => this.applyBlock(type),
-        onDiscard: () => this.discardDraft(),
-        onPublish: () => this.publishDraft(),
-        getHasDraft: () => this.listService.hasDraftV2()
       });
       tabContent = document.createElement('div');
       tabContent.className = 'tab-content';
@@ -433,6 +446,7 @@ export class MypageView extends View {
     }
 
     switchTabWithContent(secondaryContent, BLOCK_LIBRARY_TAB_ID);
+    window.history.pushState({}, '', `/profile/${this.npub}/nospress/edit`);
     if (!this.editMode) {
       this.editMode = true;
       this.loadAndRender();
@@ -452,6 +466,7 @@ export class MypageView extends View {
       if (!stillActive) switchTabWithContent(secondaryContent, 'system-log');
     }
 
+    window.history.pushState({}, '', `/profile/${this.npub}/nospress`);
     if (this.editMode) {
       this.editMode = false;
       this.loadAndRender();
@@ -461,7 +476,7 @@ export class MypageView extends View {
   /**
    * Apply a block from the Library: append to the current draft (or seed
    * a new draft from the migrated v1 page) and persist locally as v2.
-   * The 'mypageDraftV2:changed' event triggers MypageView re-render.
+   * The 'nospressDraftV2:changed' event triggers NospressView re-render.
    */
   private applyBlock(type: BlockType): void {
     this.insertBlockAtCursor(createBlock(type), {});
@@ -475,38 +490,34 @@ export class MypageView extends View {
    * the inserted block so consecutive applies stack naturally.
    */
   private insertBlockAtCursor(block: Block, opts: { initialContent?: string }): void {
-    const current = this.listService.getDraftV2()
-      ?? this.listService.getPublishedV2()
-      ?? this.listService.getPageV2();
-
     // For text blocks created from cursor-row typing, seed the content
     if (opts.initialContent !== undefined && block.type === 'text') {
       block.content = opts.initialContent;
     }
 
-    const next: MypagePageV2 = JSON.parse(JSON.stringify(current));
     const cur = this.cursor;
 
-    if (cur.scope === 'page') {
-      const insertIndex = Math.max(0, Math.min(cur.index < 0 ? next.blocks.length : cur.index, next.blocks.length));
-      next.blocks.splice(insertIndex, 0, block);
-      this.cursor = { scope: 'page', index: insertIndex + 1 };
-    } else {
-      // Disallow nested columns — design contract (see findBlockInPage docstring)
-      if (block.type === 'columns') {
-        ToastService.show('Columns inside columns are not supported', 'error');
-        return;
-      }
-      const target = next.blocks.find(b => b.id === cur.columnsBlockId);
-      if (!target || target.type !== 'columns') return;
-      const col = target.content[cur.colIndex];
-      if (!col) return;
-      const insertIndex = Math.max(0, Math.min(cur.index < 0 ? col.length : cur.index, col.length));
-      col.splice(insertIndex, 0, block);
-      this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: insertIndex + 1 };
+    // Validate nested-columns up-front so we don't toggle dirty for a no-op
+    if (cur.scope === 'column' && block.type === 'columns') {
+      ToastService.show('Columns inside columns are not supported', 'error');
+      return;
     }
 
-    this.listService.saveDraftV2(next);
+    this.mutateDraft((page) => {
+      if (cur.scope === 'page') {
+        const insertIndex = Math.max(0, Math.min(cur.index < 0 ? page.blocks.length : cur.index, page.blocks.length));
+        page.blocks.splice(insertIndex, 0, block);
+        this.cursor = { scope: 'page', index: insertIndex + 1 };
+      } else {
+        const target = page.blocks.find(b => b.id === cur.columnsBlockId);
+        if (!target || target.type !== 'columns') return;
+        const col = target.content[cur.colIndex];
+        if (!col) return;
+        const insertIndex = Math.max(0, Math.min(cur.index < 0 ? col.length : cur.index, col.length));
+        col.splice(insertIndex, 0, block);
+        this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: insertIndex + 1 };
+      }
+    });
   }
 
   private bumpRecentBlockType(type: BlockType): void {
@@ -522,7 +533,7 @@ export class MypageView extends View {
    * referenced columns block / column index is gone (deleted, count-shrunk),
    * fall back to page end. If the index is out of range, clamp.
    */
-  private normalizeCursor(page: MypagePageV2): void {
+  private normalizeCursor(page: NospressPageV2): void {
     const cur = this.cursor;
     if (cur.scope === 'page') {
       if (cur.index < 0 || cur.index > page.blocks.length) {
@@ -592,7 +603,7 @@ export class MypageView extends View {
         if (colBlocks.length === 0) {
           return cursorHere
             ? slot
-            : `<div class="mypage-block-columns__placeholder" data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here</div>`;
+            : `<div class="nospress-block-columns__placeholder" data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here</div>`;
         }
 
         const inner: string[] = [];
@@ -618,11 +629,11 @@ export class MypageView extends View {
    */
   private renderInlineProperties(block: Block): string {
     return `
-      <div class="mypage-block-properties" data-properties-for="${block.id}">
-        <div class="mypage-block-properties__header">
-          <span class="mypage-block-properties__label">Properties</span>
+      <div class="nospress-block-properties" data-properties-for="${block.id}">
+        <div class="nospress-block-properties__header">
+          <span class="nospress-block-properties__label">Properties</span>
         </div>
-        <div class="mypage-block-properties__body">
+        <div class="nospress-block-properties__body">
           Block properties (margin, padding, color, alignment, …) will live here.
         </div>
       </div>
@@ -678,8 +689,8 @@ export class MypageView extends View {
     const el = this.cursorRow?.getElement();
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      el.classList.add('mypage-cursor-row--flash');
-      setTimeout(() => el.classList.remove('mypage-cursor-row--flash'), 600);
+      el.classList.add('nospress-cursor-row--flash');
+      setTimeout(() => el.classList.remove('nospress-cursor-row--flash'), 600);
       this.cursorRow?.focus();
     }
   }
@@ -692,8 +703,8 @@ export class MypageView extends View {
     const el = this.cursorRow?.getElement();
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      el.classList.add('mypage-cursor-row--flash');
-      setTimeout(() => el.classList.remove('mypage-cursor-row--flash'), 600);
+      el.classList.add('nospress-cursor-row--flash');
+      setTimeout(() => el.classList.remove('nospress-cursor-row--flash'), 600);
       this.cursorRow?.focus();
     }
   }
@@ -713,14 +724,25 @@ export class MypageView extends View {
   /** Toggle the `--selected` class on the matching wrapper. Called after
    *  every editable re-render so the focus survives state changes. */
   private applySelectedBlockClass(): void {
-    this.container.querySelectorAll('.mypage-block-edit--selected').forEach(el => {
-      el.classList.remove('mypage-block-edit--selected');
+    this.container.querySelectorAll('.nospress-block-edit--selected').forEach(el => {
+      el.classList.remove('nospress-block-edit--selected');
     });
     if (!this.selectedBlockId) return;
     const wrapper = this.container.querySelector(
-      `.mypage-block-edit[data-block-id="${this.selectedBlockId}"]`
+      `.nospress-block-edit[data-block-id="${this.selectedBlockId}"]`
     );
-    wrapper?.classList.add('mypage-block-edit--selected');
+    wrapper?.classList.add('nospress-block-edit--selected');
+  }
+
+  private saveDraft(): void {
+    if (!this.editingPage) {
+      ToastService.show('Nothing to save', 'error');
+      return;
+    }
+    this.listService.saveDraftV2(this.editingPage, { silent: true });
+    this.isDirty = false;
+    this.refreshActionBar();
+    ToastService.show('Saved', 'success');
   }
 
   private async discardDraft(): Promise<void> {
@@ -731,10 +753,18 @@ export class MypageView extends View {
     });
     if (!confirmed) return;
     this.listService.clearDraftV2();
+    this.editingPage = null;
+    this.isDirty = false;
     ToastService.show('Draft discarded', 'success');
+    this.loadAndRender();
   }
 
   private async publishDraft(): Promise<void> {
+    if (this.isDirty && this.editingPage) {
+      // Persist pending edits before publishing
+      this.listService.saveDraftV2(this.editingPage, { silent: true });
+      this.isDirty = false;
+    }
     const draft = this.listService.getDraftV2();
     if (!draft) {
       ToastService.show('No draft to publish', 'error');
@@ -745,7 +775,7 @@ export class MypageView extends View {
       await this.orchestrator.publishV2ToRelays(draft);
       this.listService.savePublishedV2(draft);
 
-      // Sync MyPageMountsService from bookmark-folder blocks so
+      // Sync NospressMountsService from bookmark-folder blocks so
       // ProfileListsComponent (legacy renderer at the page bottom) reflects
       // the new mount selection. Slice 7 will move bookmark-folder rendering
       // inline and this sync becomes obsolete.
@@ -753,9 +783,11 @@ export class MypageView extends View {
         .filter((b): b is Extract<typeof draft.blocks[number], { type: 'bookmark-folder' }> => b.type === 'bookmark-folder')
         .map(b => b.folderName)
         .filter(name => !!name);
-      MyPageMountsService.getInstance().setMountsFromRelay(folderNames);
+      NospressMountsService.getInstance().setMountsFromRelay(folderNames);
 
       this.listService.clearDraftV2();
+      this.editingPage = null;
+      this.isDirty = false;
       ToastService.show('Page published', 'success');
       this.closeBlockLibrary();
     } catch (error) {
@@ -892,7 +924,7 @@ export class MypageView extends View {
       if (!slot.isConnected) return; // user navigated away mid-fetch
 
       if (!event) {
-        slot.innerHTML = `<p class="mypage-block-embed__error">Embed not found: ${this.escapeText(nostrRef)}</p>`;
+        slot.innerHTML = `<p class="nospress-block-embed__error">Embed not found: ${this.escapeText(nostrRef)}</p>`;
         return;
       }
 
@@ -908,7 +940,7 @@ export class MypageView extends View {
     } catch (error) {
       console.error('Embed resolution failed:', error);
       if (slot.isConnected) {
-        slot.innerHTML = `<p class="mypage-block-embed__error">Failed to load embed</p>`;
+        slot.innerHTML = `<p class="nospress-block-embed__error">Failed to load embed</p>`;
       }
     }
   }
@@ -944,8 +976,17 @@ export class MypageView extends View {
 
     this.container.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
-      if (!btn) return;
+      if (!btn || (btn as HTMLButtonElement).disabled) return;
       const action = btn.dataset.action!;
+
+      // Action-bar buttons (no blockId required)
+      switch (action) {
+        case 'save':                   this.saveDraft(); return;
+        case 'discard':                this.discardDraft(); return;
+        case 'publish':                this.publishDraft(); return;
+        case 'delete-list':            this.confirmAndUnpublish(); return;
+      }
+
       const blockId = btn.dataset.blockId;
       if (!blockId) return;
       const itemIndex = btn.dataset.itemIndex !== undefined ? parseInt(btn.dataset.itemIndex, 10) : -1;
@@ -974,7 +1015,7 @@ export class MypageView extends View {
       const target = e.target as HTMLElement;
 
       // Click on an empty-column placeholder → put cursor in that column
-      const ph = target.closest('.mypage-block-columns__placeholder') as HTMLElement | null;
+      const ph = target.closest('.nospress-block-columns__placeholder') as HTMLElement | null;
       if (ph) {
         const cbId = ph.dataset.columnsBlockId;
         const colIdx = ph.dataset.colIndex !== undefined ? parseInt(ph.dataset.colIndex, 10) : -1;
@@ -988,8 +1029,8 @@ export class MypageView extends View {
       if (target.closest('button, input, textarea, select, a, [data-action]')) return;
       // Click inside the inline properties panel of the selected block:
       // keep selection (don't toggle off, the user is interacting with the panel)
-      if (target.closest('.mypage-block-properties')) return;
-      const wrapper = target.closest('.mypage-block-edit') as HTMLElement | null;
+      if (target.closest('.nospress-block-properties')) return;
+      const wrapper = target.closest('.nospress-block-edit') as HTMLElement | null;
       const blockId = wrapper?.dataset.blockId ?? null;
       // Toggle: clicking the already-selected block deselects
       this.selectBlock(blockId === this.selectedBlockId ? null : blockId);
@@ -1027,17 +1068,38 @@ export class MypageView extends View {
   }
 
   /**
-   * Mutate the draft via a callback, save, optionally trigger re-render.
-   * Field-level edits use silent=true (skip re-render to keep input focus).
-   * Structural changes (delete/move/add) re-render.
+   * Mutate the in-memory editing page. Persisted to draft storage only on
+   * explicit Save click. Structural changes (delete/move/add) re-render;
+   * field-level edits pass silent=true to keep input focus.
    */
-  private mutateDraft(updater: (page: MypagePageV2) => void, opts: { silent?: boolean } = {}): void {
-    const draft = this.listService.getDraftV2()
-      ?? this.listService.getPublishedV2()
-      ?? this.listService.getPageV2();
-    const next: MypagePageV2 = JSON.parse(JSON.stringify(draft));
-    updater(next);
-    this.listService.saveDraftV2(next, { silent: opts.silent === true });
+  private mutateDraft(updater: (page: NospressPageV2) => void, opts: { silent?: boolean } = {}): void {
+    if (!this.editingPage) {
+      this.editingPage = JSON.parse(JSON.stringify(
+        this.listService.getDraftV2()
+          ?? this.listService.getPublishedV2()
+          ?? this.listService.getPageV2()
+      ));
+    }
+    updater(this.editingPage!);
+    this.isDirty = true;
+    this.refreshActionBar();
+    if (opts.silent !== true) {
+      this.rerenderEditable();
+    }
+  }
+
+  /**
+   * Fast in-place re-render for edit-mode mutations. Skips the loading
+   * spinner + relay fetch that loadAndRender does — the editingPage is the
+   * truth source in edit mode, so we render straight from it.
+   */
+  private async rerenderEditable(): Promise<void> {
+    if (this.mountsComponent) {
+      this.mountsComponent.destroy();
+      this.mountsComponent = null;
+    }
+    await this.renderList({ version: 1, sections: [] });
+    await this.renderMounts();
   }
 
   private handleBlockFieldInput(blockId: string, field: string, el: HTMLInputElement | HTMLTextAreaElement): void {

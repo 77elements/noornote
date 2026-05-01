@@ -1,5 +1,5 @@
 /**
- * MyPage Block Engine — v2 type definitions
+ * NosPress Block Engine — v2 type definitions
  *
  * v2 introduces a block-based layout where the page is an ordered list
  * of typed blocks. v1 (sections + separate mounts event) migrates to v2
@@ -25,7 +25,7 @@ export type Block =
 
 export type BlockType = Block['type'];
 
-export interface MypagePageV2 {
+export interface NospressPageV2 {
   version: 2;
   title?: string;
   subtitle?: string;
@@ -33,7 +33,7 @@ export interface MypagePageV2 {
   blocks: Block[];
 }
 
-export function isPageV2(data: unknown): data is MypagePageV2 {
+export function isPageV2(data: unknown): data is NospressPageV2 {
   if (typeof data !== 'object' || data === null) return false;
   const obj = data as { version?: unknown; blocks?: unknown };
   return obj.version === 2 && Array.isArray(obj.blocks);
@@ -64,13 +64,13 @@ export function createBlock(type: BlockType): Block {
  * `columns` block's per-column content arrays. Returns the block plus
  * the parent array + index (for splice/move operations).
  *
- * Per design contract (see docs/todos/mypage.md), `columns` blocks may
+ * Per design contract (see docs/todos/nospress.md), `columns` blocks may
  * NOT contain other `columns` blocks, so we recurse exactly one level
  * into each column's content. If you ever lift that restriction, this
  * helper needs to recurse further.
  */
 export function findBlockInPage(
-  page: MypagePageV2,
+  page: NospressPageV2,
   blockId: string
 ): { block: Block; parent: Block[]; index: number } | null {
   const topIndex = page.blocks.findIndex(b => b.id === blockId);

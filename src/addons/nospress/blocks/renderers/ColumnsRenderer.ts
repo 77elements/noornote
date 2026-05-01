@@ -3,14 +3,14 @@
  *
  * Readonly: pure CSS grid with each column rendering its own blocks list.
  * Editable: wraps via wrapEditable for the outer toolbar (move/delete/cursor),
- *   then renders each column as a slot. The slot HTML is a stub — MypageView
+ *   then renders each column as a slot. The slot HTML is a stub — NospressView
  *   recursively fills it via its own renderBlocksWithCursor pass so the
  *   active cursor row + nested editable blocks land in the right column.
  *
  * Each column slot exposes:
  *   data-columns-block-id  (the parent columns block id)
  *   data-col-index         (0-based column index)
- * MypageView reads those to attach per-column cursor + add/insert handlers.
+ * NospressView reads those to attach per-column cursor + add/insert handlers.
  */
 
 import type { Block } from '../types';
@@ -19,7 +19,7 @@ import { wrapEditable } from './blockEditWrapper';
 
 export interface ColumnsRenderOptions {
   editable?: boolean;
-  /** Optional per-column inner HTML override (used by MypageView in editable
+  /** Optional per-column inner HTML override (used by NospressView in editable
    *  mode to inject the recursive cursor + block list output). */
   columnInner?: (colIndex: number) => string;
 }
@@ -35,7 +35,7 @@ export function renderColumns(
       ? opts.columnInner(c)
       : BlockRenderer.renderAll(block.content[c] ?? [], { editable });
     cols.push(`
-      <div class="mypage-block-columns__col"
+      <div class="nospress-block-columns__col"
            data-columns-block-id="${block.id}"
            data-col-index="${c}">
         ${inner}
@@ -44,12 +44,12 @@ export function renderColumns(
   }
 
   const countSwitcher = editable
-    ? `<div class="mypage-block-columns__count-slot" data-block-dropdown="columns-count" data-block-id="${block.id}" data-current-value="${block.count}"></div>`
+    ? `<div class="nospress-block-columns__count-slot" data-block-dropdown="columns-count" data-block-id="${block.id}" data-current-value="${block.count}"></div>`
     : '';
 
   const inner = `
     ${countSwitcher}
-    <div class="mypage-block-columns mypage-block-columns--${block.count}" data-columns-block-id="${block.id}">
+    <div class="nospress-block-columns nospress-block-columns--${block.count}" data-columns-block-id="${block.id}">
       ${cols.join('')}
     </div>
   `;

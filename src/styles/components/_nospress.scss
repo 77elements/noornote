@@ -2,15 +2,15 @@
 @use '../abstracts/mixins' as *;
 
 // ==========================================
-// PV link to My Page
+// PV link to NosPress
 // ==========================================
 
-.profile-mypage-mount {
+.profile-nospress-mount {
   margin-top: $gap;
   text-align: right;
 }
 
-.profile-mypage-link {
+.profile-nospress-link {
   .chevron-right {
     @extend %chevron-right;
   }
@@ -27,75 +27,74 @@
 }
 
 // ==========================================
-// My Page View (readonly)
+// NosPress View (readonly)
 // ==========================================
 
-.mypage-loading,
-.mypage-empty,
-.mypage-error {
+.nospress-loading,
+.nospress-empty,
+.nospress-error {
   padding: $gap * 2;
   text-align: center;
   color: $text-alpha-medium;
 }
 
-.mypage-empty .btn {
+.nospress-empty .btn {
   margin-top: $gap;
 }
 
-.mypage-view {
+.nospress-view {
   padding: $gap;
   max-width: 700px;
   margin: 0 auto;
 }
 
-.mypage-header {
-  @include flex-between;
-  align-items: center;
+.nospress-header {
   margin-bottom: $gap * 2;
 }
 
-.mypage-header__actions {
-  display: flex;
-  gap: calc($gap / 2);
+.nospress-action-bar {
+  margin-top: $gap * 2;
+  padding-top: $gap;
+  border-top: 1px solid $color-2;
 }
 
-.mypage-view__title {
+.nospress-view__title {
   font-size: 1.8rem;
   font-weight: 700;
   margin: 0 0 calc($gap / 2);
   color: $color-5;
 }
 
-.mypage-view__subtitle {
+.nospress-view__subtitle {
   font-size: 1.1rem;
   font-weight: 700;
   margin: 0 0 $gap;
 }
 
-.mypage-view__description {
+.nospress-view__description {
   color: $text-alpha-heavy;
   white-space: pre-wrap;
   line-height: 1.6;
   margin: 0 0 $gap * 2;
 }
 
-.mypage-section {
+.nospress-section {
   margin-bottom: $gap * 2;
 }
 
-.mypage-section__title {
+.nospress-section__title {
   font-weight: 600;
   margin-bottom: calc($gap / 2);
   color: $color-5;
 }
 
-.mypage-section__items {
+.nospress-section__items {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.mypage-section__item {
+.nospress-section__item {
   padding: calc($gap / 4) 0;
   color: $text-alpha-medium;
   border-bottom: 1px solid $color-2;
@@ -106,59 +105,59 @@
 }
 
 // ==========================================
-// My Page Editor
+// NosPress Editor
 // ==========================================
 
-.mypage-editor {
+.nospress-editor {
   padding: $gap;
   max-width: 700px;
   margin: 0 auto;
 }
 
-.mypage-editor__pagefields {
+.nospress-editor__pagefields {
   margin-top: $gap;
   margin-bottom: $gap * 2;
 }
 
-.mypage-editor__listsection {
+.nospress-editor__listsection {
   display: flex;
   justify-content: flex-end;
   margin-bottom: $gap * 2;
 }
 
-.mypage-editor__empty {
+.nospress-editor__empty {
   padding: $gap * 2;
   text-align: center;
   color: $text-alpha-medium;
 }
 
-.mypage-editor__footer {
+.nospress-editor__footer {
   display: flex;
   justify-content: flex-end;
   margin-top: $gap * 2;
 }
 
 // Section
-.mypage-editor__section {
+.nospress-editor__section {
   margin-bottom: $gap;
   border: 1px solid $color-2;
   border-radius: $radius-xl;
   padding: $gap;
 }
 
-.mypage-editor__section-header {
+.nospress-editor__section-header {
   @include flex-between;
   align-items: center;
   margin-bottom: calc($gap / 2);
 }
 
-.mypage-editor__section-title {
+.nospress-editor__section-title {
   font-size: 1.1rem;
   font-weight: 600;
   margin: 0;
 }
 
-.mypage-editor__section-delete {
+.nospress-editor__section-delete {
   background: none;
   border: none;
   color: $text-alpha-medium;
@@ -172,19 +171,19 @@
 }
 
 // Items
-.mypage-editor__item {
+.nospress-editor__item {
   @include flex-between;
   align-items: center;
   padding: calc($gap / 4) 0;
   border-bottom: 1px solid $color-2;
 }
 
-.mypage-editor__item-text {
+.nospress-editor__item-text {
   flex: 1;
   color: $color-5;
 }
 
-.mypage-editor__item-delete {
+.nospress-editor__item-delete {
   background: none;
   border: none;
   color: $text-alpha-medium;
@@ -198,14 +197,14 @@
 }
 
 // New item row
-.mypage-editor__new-item-row {
+.nospress-editor__new-item-row {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
   margin-top: calc($gap / 2);
 }
 
-.mypage-editor__new-item-input {
+.nospress-editor__new-item-input {
   flex: 1;
   padding: calc($gap / 4) calc($gap / 2);
   border: 1px solid $color-2;
@@ -224,7 +223,7 @@
   }
 }
 
-.mypage-editor__new-item-add {
+.nospress-editor__new-item-add {
   background: none;
   border: 1px solid $color-2;
   border-radius: $radius-xl;
@@ -240,11 +239,11 @@
 }
 
 // New section title input
-.mypage-editor__new-section-row {
+.nospress-editor__new-section-row {
   margin-bottom: $gap;
 }
 
-.mypage-editor__section-title-input {
+.nospress-editor__section-title-input {
   width: 100%;
   padding: calc($gap / 2);
   border: 1px dashed $color-2;
@@ -309,7 +308,7 @@
 // Inline block properties panel (under selected block)
 // ==========================================
 
-.mypage-block-properties {
+.nospress-block-properties {
   margin: 0 0 $gap;
   padding: $gap;
   border: 1px solid $color-6;
@@ -317,7 +316,7 @@
   background: color-mix(in srgb, $color-6 8%, transparent);
 }
 
-.mypage-block-properties__header {
+.nospress-block-properties__header {
   display: flex;
   align-items: baseline;
   gap: calc($gap / 2);
@@ -326,7 +325,7 @@
   border-bottom: 1px solid color-mix(in srgb, $color-6 30%, transparent);
 }
 
-.mypage-block-properties__type {
+.nospress-block-properties__type {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -334,12 +333,12 @@
   color: $color-6;
 }
 
-.mypage-block-properties__label {
+.nospress-block-properties__label {
   font-size: 0.85rem;
   color: $text-alpha-medium;
 }
 
-.mypage-block-properties__body {
+.nospress-block-properties__body {
   color: $text-alpha-medium;
   font-style: italic;
   font-size: 0.9rem;
@@ -406,7 +405,7 @@
 // Danger Zone (page-level destructive actions)
 // ==========================================
 
-.mypage-danger-zone {
+.nospress-danger-zone {
   margin-top: $gap * 4;
   padding: $gap;
   border: 1px dashed $color-red;
@@ -415,7 +414,7 @@
   background: $bg-error;
 }
 
-.mypage-danger-zone__hint {
+.nospress-danger-zone__hint {
   margin: calc($gap / 2) 0 0;
   font-size: 0.8rem;
   color: $text-alpha-medium;
@@ -425,7 +424,7 @@
 // Block placeholders (renderers pending)
 // ==========================================
 
-.mypage-block-placeholder {
+.nospress-block-placeholder {
   padding: $gap;
   border: 1px dashed $color-2;
   border-radius: $radius-xl;
@@ -434,21 +433,21 @@
   margin-bottom: $gap;
 }
 
-.mypage-block-text {
+.nospress-block-text {
   white-space: pre-wrap;
   line-height: 1.6;
   margin: 0 0 $gap;
   color: $text-alpha-heavy;
 }
 
-.mypage-block-divider {
+.nospress-block-divider {
   border: none;
   border-top: 1px solid $color-2;
   margin: $gap * 2 0;
 }
 
 // Columns block — desktop/tablet shows N columns side-by-side, mobile stacks
-.mypage-block-columns {
+.nospress-block-columns {
   display: grid;
   gap: $gap;
   margin-bottom: $gap;
@@ -460,14 +459,14 @@
   }
 }
 
-.mypage-block-columns__col {
+.nospress-block-columns__col {
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 }
 
-.mypage-block-columns__placeholder {
+.nospress-block-columns__placeholder {
   padding: $gap;
   text-align: center;
   color: $text-alpha-medium;
@@ -482,7 +481,7 @@
   }
 }
 
-.mypage-block-columns__count-slot {
+.nospress-block-columns__count-slot {
   margin-bottom: calc($gap / 2);
   align-self: flex-start;
 
@@ -491,23 +490,23 @@
   }
 }
 
-.mypage-block-links {
+.nospress-block-links {
   margin-bottom: $gap * 2;
 }
 
-.mypage-block-links__title {
+.nospress-block-links__title {
   font-weight: 600;
   margin-bottom: calc($gap / 2);
   color: $color-5;
 }
 
-.mypage-block-links__items {
+.nospress-block-links__items {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 4);
 }
 
-.mypage-block-links__item {
+.nospress-block-links__item {
   display: block;
   padding: calc($gap / 4) 0;
   color: $color-4;
@@ -522,14 +521,14 @@
 // Block edit-mode wrappers (mobile-first, always-visible toolbars)
 // ==========================================
 
-.mypage-view__pagefields {
+.nospress-view__pagefields {
   margin-bottom: $gap * 2;
   padding: $gap;
   border: 1px dashed $color-2;
   border-radius: $radius-xl;
 }
 
-.mypage-block-edit {
+.nospress-block-edit {
   position: relative;
   margin-bottom: $gap;
   padding: $gap;
@@ -544,7 +543,7 @@
   }
 }
 
-.mypage-block-edit__toolbar {
+.nospress-block-edit__toolbar {
   @include flex-between;
   align-items: center;
   margin-bottom: calc($gap / 2);
@@ -552,7 +551,7 @@
   border-bottom: 1px dashed $color-2;
 }
 
-.mypage-block-edit__type-badge {
+.nospress-block-edit__type-badge {
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -560,12 +559,12 @@
   color: $text-alpha-medium;
 }
 
-.mypage-block-edit__actions {
+.nospress-block-edit__actions {
   display: flex;
   gap: calc($gap / 4);
 }
 
-.mypage-block-edit__btn {
+.nospress-block-edit__btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -591,14 +590,14 @@
   }
 }
 
-.mypage-block-edit__content {
+.nospress-block-edit__content {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 }
 
 // Heading edit
-.mypage-block-heading__level-slot {
+.nospress-block-heading__level-slot {
   align-self: flex-start;
 
   .custom-dropdown {
@@ -606,25 +605,25 @@
   }
 }
 
-.mypage-block-heading__input {
+.nospress-block-heading__input {
   font-weight: 600;
 }
 
 // Text edit
-.mypage-block-text__input {
+.nospress-block-text__input {
   min-height: 80px;
 }
 
 // List edit
-.mypage-block-list__items {
+.nospress-block-list__items {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 4);
 }
 
-.mypage-block-list__item-row,
-.mypage-block-list__add-row,
-.mypage-block-links__item-row {
+.nospress-block-list__item-row,
+.nospress-block-list__add-row,
+.nospress-block-links__item-row {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
@@ -633,26 +632,26 @@
 }
 
 // Links edit
-.mypage-block-links__items-edit {
+.nospress-block-links__items-edit {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 }
 
 // Bookmark-folder edit
-.mypage-block-bookmark-folder {
+.nospress-block-bookmark-folder {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 }
 
-.mypage-block-bookmark-folder__label {
+.nospress-block-bookmark-folder__label {
   font-size: 0.85rem;
   color: $color-4;
   font-weight: 500;
 }
 
-.mypage-block-bookmark-folder__hint {
+.nospress-block-bookmark-folder__hint {
   font-size: 0.8rem;
   color: $text-alpha-medium;
   font-style: italic;
@@ -672,7 +671,7 @@
 // Image block
 // ==========================================
 
-.mypage-block-image {
+.nospress-block-image {
   margin: $gap 0;
 
   img {
@@ -683,7 +682,7 @@
   }
 }
 
-.mypage-block-image__caption {
+.nospress-block-image__caption {
   margin-top: calc($gap / 2);
   text-align: center;
   font-size: 0.85rem;
@@ -691,13 +690,13 @@
   font-style: italic;
 }
 
-.mypage-block-image__edit {
+.nospress-block-image__edit {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 }
 
-.mypage-block-image__url-row {
+.nospress-block-image__url-row {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
@@ -722,7 +721,7 @@
   }
 }
 
-.mypage-block-image__preview {
+.nospress-block-image__preview {
   margin-top: calc($gap / 2);
   border: 1px dashed $color-2;
   border-radius: $radius-xl;
@@ -740,17 +739,17 @@
 // Gallery block (readonly reuses .note-media--grid-* via shared classes)
 // ==========================================
 
-.mypage-block-gallery {
+.nospress-block-gallery {
   margin: $gap 0;
 }
 
-.mypage-block-gallery__items-edit {
+.nospress-block-gallery__items-edit {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 }
 
-.mypage-block-gallery__item-row {
+.nospress-block-gallery__item-row {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
@@ -758,7 +757,7 @@
   .input { flex: 1; }
 }
 
-.mypage-block-gallery__thumb {
+.nospress-block-gallery__thumb {
   width: 48px;
   height: 48px;
   object-fit: cover;
@@ -766,7 +765,7 @@
   flex-shrink: 0;
 }
 
-.mypage-block-gallery__add-row {
+.nospress-block-gallery__add-row {
   display: flex;
   gap: calc($gap / 2);
   margin-top: calc($gap / 2);
@@ -776,12 +775,12 @@
 // Embed block — async-mounted Nostr event
 // ==========================================
 
-.mypage-block-embed {
+.nospress-block-embed {
   margin: $gap 0;
 }
 
-.mypage-block-embed__loading,
-.mypage-block-embed__error {
+.nospress-block-embed__loading,
+.nospress-block-embed__error {
   padding: $gap;
   text-align: center;
   color: $text-alpha-medium;
@@ -790,18 +789,18 @@
   border-radius: $radius-xl;
 }
 
-.mypage-block-embed__error {
+.nospress-block-embed__error {
   border-color: $color-red;
   color: $color-red;
 }
 
-.mypage-block-embed__edit {
+.nospress-block-embed__edit {
   display: flex;
   flex-direction: column;
   gap: calc($gap / 2);
 }
 
-.mypage-block-embed__hint {
+.nospress-block-embed__hint {
   font-size: 0.8rem;
   color: $text-alpha-medium;
   font-style: italic;
@@ -812,21 +811,21 @@
 // Cursor row (Gutenberg-style empty insertion line + slash menu)
 // ==========================================
 
-.mypage-cursor-row {
+.nospress-cursor-row {
   position: relative;
   margin: $gap 0;
 
-  &--flash .mypage-cursor-row__input {
-    animation: mypage-cursor-flash 0.6s ease-out;
+  &--flash .nospress-cursor-row__input {
+    animation: nospress-cursor-flash 0.6s ease-out;
   }
 }
 
-@keyframes mypage-cursor-flash {
+@keyframes nospress-cursor-flash {
   0%   { background: color-mix(in srgb, $color-6 30%, transparent); }
   100% { background: transparent; }
 }
 
-.mypage-cursor-row__input {
+.nospress-cursor-row__input {
   width: 100%;
   padding: calc($gap / 2) $gap;
   background: transparent;
@@ -850,7 +849,7 @@
   }
 }
 
-.mypage-cursor-row__menu {
+.nospress-cursor-row__menu {
   position: absolute;
   z-index: 100;
   top: calc(100% + 4px);
@@ -865,7 +864,7 @@
   @include custom-scrollbar;
 }
 
-.mypage-cursor-row__menu-section {
+.nospress-cursor-row__menu-section {
   padding: calc($gap / 2) $gap calc($gap / 4);
   font-size: 0.75rem;
   font-weight: 600;
@@ -874,13 +873,13 @@
   color: $text-alpha-medium;
 }
 
-.mypage-cursor-row__menu-empty {
+.nospress-cursor-row__menu-empty {
   padding: $gap;
   text-align: center;
   color: $text-alpha-medium;
 }
 
-.mypage-cursor-row__menu-item {
+.nospress-cursor-row__menu-item {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
@@ -903,20 +902,20 @@
   }
 }
 
-.mypage-cursor-row__menu-icon {
+.nospress-cursor-row__menu-icon {
   width: 24px;
   text-align: center;
   flex-shrink: 0;
   font-size: 1.1rem;
 }
 
-.mypage-cursor-row__menu-label {
+.nospress-cursor-row__menu-label {
   font-weight: 600;
   flex-shrink: 0;
   min-width: 110px;
 }
 
-.mypage-cursor-row__menu-desc {
+.nospress-cursor-row__menu-desc {
   font-size: 0.85rem;
   color: $text-alpha-medium;
   @include text-truncate;

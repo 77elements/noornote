@@ -176,22 +176,22 @@ export class ViewMountingService {
           }
         };
 
-      case 'mypage':
+      case 'nospress':
         return {
           requiresParam: true,
           factory: async (param) => {
-            const { MypageView } = await import('../addons/mypage/MypageView');
-            const view = new MypageView(param!);
+            const { NospressView } = await import('../addons/nospress/NospressView');
+            const view = new NospressView(param!);
             return { element: view.getElement(), view };
           }
         };
 
-      case 'mypage-edit':
+      case 'nospress-edit':
         return {
           requiresParam: true,
           factory: async (param) => {
-            const { MypageEditorView } = await import('../addons/mypage/MypageEditorView');
-            const view = new MypageEditorView(param!);
+            const { NospressView } = await import('../addons/nospress/NospressView');
+            const view = new NospressView(param!, { editMode: true });
             return { element: view.getElement(), view };
           }
         };
@@ -462,11 +462,11 @@ export class ViewMountingService {
           }
         };
 
-      case 'addon-mypage':
+      case 'addon-nospress':
         return {
           factory: async () => {
-            const { MypageAddonView } = await import('../addons/mypage/MypageAddonView');
-            const view = new MypageAddonView();
+            const { NospressAddonView } = await import('../addons/nospress/NospressAddonView');
+            const view = new NospressAddonView();
             return { element: view.getElement(), view };
           }
         };

@@ -20,22 +20,22 @@ function gridModifierFor(count: number): string {
 export function renderGallery(block: Extract<Block, { type: 'gallery' }>, editable = false): string {
   if (editable) {
     const itemsHtml = block.urls.map((url, i) => `
-      <div class="mypage-block-gallery__item-row" data-item-index="${i}">
-        <input type="url" class="input mypage-block-gallery__url-input" data-block-id="${block.id}" data-field="gallery-url" data-item-index="${i}" value="${escapeHtmlAttr(url)}" placeholder="https://..." />
-        ${url ? `<img class="mypage-block-gallery__thumb" src="${escapeHtmlAttr(url)}" alt="" />` : ''}
-        <button type="button" class="mypage-block-edit__btn mypage-block-edit__btn--danger" data-block-id="${block.id}" data-action="delete-gallery-url" data-item-index="${i}" title="Remove" aria-label="Remove">
+      <div class="nospress-block-gallery__item-row" data-item-index="${i}">
+        <input type="url" class="input nospress-block-gallery__url-input" data-block-id="${block.id}" data-field="gallery-url" data-item-index="${i}" value="${escapeHtmlAttr(url)}" placeholder="https://..." />
+        ${url ? `<img class="nospress-block-gallery__thumb" src="${escapeHtmlAttr(url)}" alt="" />` : ''}
+        <button type="button" class="nospress-block-edit__btn nospress-block-edit__btn--danger" data-block-id="${block.id}" data-action="delete-gallery-url" data-item-index="${i}" title="Remove" aria-label="Remove">
           <svg width="14" height="14"><use href="#icon-close"/></svg>
         </button>
       </div>
     `).join('');
     const addRow = `
-      <div class="mypage-block-gallery__add-row">
+      <div class="nospress-block-gallery__add-row">
         <button type="button" class="btn btn--passive btn--mini" data-block-id="${block.id}" data-action="add-gallery-url">+ Add URL</button>
         <button type="button" class="btn btn--passive btn--mini" data-block-id="${block.id}" data-action="upload-gallery-images">↑ Upload images</button>
         <input type="file" accept="image/*" multiple data-block-id="${block.id}" data-gallery-files style="display: none;" />
       </div>
     `;
-    return wrapEditable(block.id, 'gallery', `<div class="mypage-block-gallery__items-edit">${itemsHtml}</div>${addRow}`);
+    return wrapEditable(block.id, 'gallery', `<div class="nospress-block-gallery__items-edit">${itemsHtml}</div>${addRow}`);
   }
 
   const validUrls = block.urls.filter(u => u?.trim());
@@ -43,5 +43,5 @@ export function renderGallery(block: Extract<Block, { type: 'gallery' }>, editab
 
   const grid = gridModifierFor(validUrls.length);
   const { imagesHtml, containerDataAttr } = buildLightboxImagesHtml(validUrls);
-  return `<div class="note-media${grid} mypage-block-gallery" ${containerDataAttr}>${imagesHtml}</div>`;
+  return `<div class="note-media${grid} nospress-block-gallery" ${containerDataAttr}>${imagesHtml}</div>`;
 }

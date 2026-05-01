@@ -1,37 +1,37 @@
 /**
- * MyPageMountsOrchestrator
+ * NospressMountsOrchestrator
  * Manages NIP-78 events for My-Page-mounted bookmark folders
  *
- * kind:30078 with d-tag "noornote/mypage-mounts" stores which bookmark
- * folders a user has mounted to their My Page subpage.
+ * kind:30078 with d-tag "noornote/nospress-mounts" stores which bookmark
+ * folders a user has mounted to their NosPress subpage.
  *
  * Sister orchestrator to ProfileMountsOrchestrator (which uses d-tag
  * "noornote/profile-mounts" for PV-inline mounts). Independent storage,
  * independent surface — strict separation per Phase 2 design.
  *
- * @purpose Publish/fetch My Page mounts to/from relays
- * @used-by MypageView, BookmarkSecondaryManager
+ * @purpose Publish/fetch NosPress mounts to/from relays
+ * @used-by NospressView, BookmarkSecondaryManager
  */
 
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
-import { MyPageMountsService } from '../MyPageMountsService';
+import { NospressMountsService } from '../NospressMountsService';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 
 const NIP78_KIND = 30078;
-const D_TAG = 'noornote/mypage-mounts';
+const D_TAG = 'noornote/nospress-mounts';
 
-interface MyPageMountsContent {
+interface NospressMountsContent {
   version: 1;
   mounts: string[];
 }
 
-export class MyPageMountsOrchestrator {
-  private static instance: MyPageMountsOrchestrator;
+export class NospressMountsOrchestrator {
+  private static instance: NospressMountsOrchestrator;
   private transport: NostrTransport;
   private authService: AuthService;
-  private mypageMountsService: MyPageMountsService;
+  private nospressMountsService: NospressMountsService;
   private systemLogger: SystemLogger;
 
   private cache = new LRUCache<string[]>(getCacheSize(100, 50, 30), 60000);
@@ -39,15 +39,15 @@ export class MyPageMountsOrchestrator {
   private constructor() {
     this.transport = NostrTransport.getInstance();
     this.authService = AuthService.getInstance();
-    this.mypageMountsService = MyPageMountsService.getInstance();
+    this.nospressMountsService = NospressMountsService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }
 
-  public static getInstance(): MyPageMountsOrchestrator {
-    if (!MyPageMountsOrchestrator.instance) {
-      MyPageMountsOrchestrator.instance = new MyPageMountsOrchestrator();
+  public static getInstance(): NospressMountsOrchestrator {
+    if (!NospressMountsOrchestrator.instance) {
+      NospressMountsOrchestrator.instance = new NospressMountsOrchestrator();
     }
-    return MyPageMountsOrchestrator.instance;
+    return NospressMountsOrchestrator.instance;
   }
 
   public async publishToRelays(): Promise<void> {
@@ -61,9 +61,9 @@ export class MyPageMountsOrchestrator {
       throw new Error('No write relays available');
     }
 
-    const mounts = this.mypageMountsService.getMounts();
+    const mounts = this.nospressMountsService.getMounts();
 
-    const content: MyPageMountsContent = {
+    const content: NospressMountsContent = {
       version: 1,
       mounts
     };
@@ -78,15 +78,15 @@ export class MyPageMountsOrchestrator {
 
     const signed = await this.authService.signEvent(event);
     if (!signed) {
-      throw new Error('Failed to sign My Page mounts event');
+      throw new Error('Failed to sign NosPress mounts event');
     }
 
     await this.transport.publish(writeRelays, signed);
 
     this.cache.set(currentUser.pubkey, mounts);
 
-    this.systemLogger.info('MyPageMountsOrchestrator',
-      `Published My Page mounts: ${mounts.length} folders`
+    this.systemLogger.info('NospressMountsOrchestrator',
+      `Published NosPress mounts: ${mounts.length} folders`
     );
   }
 
@@ -109,7 +109,7 @@ export class MyPageMountsOrchestrator {
         authors: [pubkey],
         '#d': [D_TAG],
         limit: 1
-      }], 5000, false, 'MyPageMountsOrch');
+      }], 5000, false, 'NospressMountsOrch');
 
       if (events.length === 0) {
         this.cache.set(pubkey, []);
@@ -125,8 +125,8 @@ export class MyPageMountsOrchestrator {
 
       return mounts;
     } catch (error) {
-      this.systemLogger.error('MyPageMountsOrchestrator',
-        `Failed to fetch My Page mounts for ${pubkey}: ${error}`
+      this.systemLogger.error('NospressMountsOrchestrator',
+        `Failed to fetch NosPress mounts for ${pubkey}: ${error}`
       );
       return [];
     }
@@ -139,9 +139,9 @@ export class MyPageMountsOrchestrator {
     }
 
     const mounts = await this.fetchFromRelays(currentUser.pubkey, true);
-    this.mypageMountsService.setMountsFromRelay(mounts);
+    this.nospressMountsService.setMountsFromRelay(mounts);
 
-    this.systemLogger.info('MyPageMountsOrchestrator',
+    this.systemLogger.info('NospressMountsOrchestrator',
       `Synced from relays: ${mounts.length} folders`
     );
   }
@@ -158,7 +158,7 @@ export class MyPageMountsOrchestrator {
     if (!content) return [];
 
     try {
-      const parsed = JSON.parse(content) as MyPageMountsContent;
+      const parsed = JSON.parse(content) as NospressMountsContent;
       if (parsed.version === 1 && Array.isArray(parsed.mounts)) {
         return parsed.mounts;
       }

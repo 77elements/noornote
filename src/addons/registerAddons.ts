@@ -81,5 +81,5 @@ export function registerCoreAddons(): void {
   });
 
   // Out of scope (list-adjacent, deferred — separate decision):
-  //   list-settings, extended-follows, mypage, bookmarks, tribes
+  //   list-settings, extended-follows, nospress, bookmarks, tribes
 }

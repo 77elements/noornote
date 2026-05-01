@@ -203,7 +203,7 @@ export class App {
   // ─── Route Registration ──────────────────────────────────────────────
 
   private registerMarketplaceRoutes(): void {
-    this.registerRoute('/marketplace', 'marketplace', 'marketplace', 'mpv', true);
+    this.registerRoute('/marketplace', 'marketplace', 'marketplace', 'npv', true);
     this.registerRoute('/listing/:naddr', 'listing', 'listing', 'lv', true,
       (params) => params.naddr);
     this.registerRoute('/write-listing', 'write-listing', 'write-listing', 'lev', true);
@@ -257,9 +257,9 @@ export class App {
     // Parameterized routes (public)
     this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false,
       (params) => params.noteId ?? '');
-    this.registerRoute('/profile/:npub/page/edit', 'mypage-edit', 'mypage-edit', 'mpev', true,
+    this.registerRoute('/profile/:npub/nospress/edit', 'nospress-edit', 'nospress-edit', 'npev', true,
       (params) => params.npub ?? '');
-    this.registerRoute('/profile/:npub/page', 'mypage', 'mypage', 'mpv', false,
+    this.registerRoute('/profile/:npub/nospress', 'nospress', 'nospress', 'npv', false,
       (params) => params.npub ?? '');
     this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false,
       (params) => params.npub ?? '');
@@ -303,7 +303,7 @@ export class App {
     this.registerRoute('/addons/profile-recognition',   'addon-profile-recognition',   'addon-profile-recognition',   'adv', true);
     this.registerRoute('/addons/marketplace',           'addon-marketplace',           'addon-marketplace',           'adv', true);
     this.registerRoute('/addons/follow-packs',          'addon-follow-packs',          'addon-follow-packs',          'adv', true);
-    this.registerRoute('/addons/mypage',                'addon-mypage',                'addon-mypage',                'adv', true);
+    this.registerRoute('/addons/nospress',                'addon-nospress',                'addon-nospress',                'adv', true);
     this.registerRoute('/addons/hashtag-subscriptions', 'addon-hashtag-subscriptions', 'addon-hashtag-subscriptions', 'adv', true);
     this.registerRoute('/addons/list-settings',         'addon-list-settings',         'addon-list-settings',         'adv', true);
     this.registerRoute('/addons/custom-emojis',         'addon-custom-emojis',         'addon-custom-emojis',         'adv', true);

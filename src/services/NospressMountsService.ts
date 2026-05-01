@@ -1,44 +1,44 @@
 /**
- * MyPageMountsService
- * Manages bookmark folders mounted to the My Page subpage (/profile/:npub/page)
+ * NospressMountsService
+ * Manages bookmark folders mounted to the NosPress subpage (/profile/:npub/page)
  *
  * Sister service to ProfileMountsService — independent state, independent
  * publish target on relays. The "Profile"-checkbox on a Bookmark folder
- * mounts via ProfileMountsService → PV inline. The "My Page"-checkbox mounts
+ * mounts via ProfileMountsService → PV inline. The "NosPress"-checkbox mounts
  * via this service → /page subpage.
  *
- * @purpose Manage which bookmark folders are listed on the My Page subpage
- * @used-by BookmarkSecondaryManager (checkbox), MypageView (display)
+ * @purpose Manage which bookmark folders are listed on the NosPress subpage
+ * @used-by BookmarkSecondaryManager (checkbox), NospressView (display)
  */
 
 import { EventBus } from './EventBus';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
-interface MyPageMountData {
+interface NospressMountData {
   folderName: string;
   mountedAt: number;
 }
 
-interface MyPageMountsStorage {
+interface NospressMountsStorage {
   version: 1;
-  mounts: MyPageMountData[];
+  mounts: NospressMountData[];
 }
 
 const MAX_MOUNTS = 15;
 
-export class MyPageMountsService {
-  private static instance: MyPageMountsService;
+export class NospressMountsService {
+  private static instance: NospressMountsService;
   private eventBus: EventBus;
 
   private constructor() {
     this.eventBus = EventBus.getInstance();
   }
 
-  public static getInstance(): MyPageMountsService {
-    if (!MyPageMountsService.instance) {
-      MyPageMountsService.instance = new MyPageMountsService();
+  public static getInstance(): NospressMountsService {
+    if (!NospressMountsService.instance) {
+      NospressMountsService.instance = new NospressMountsService();
     }
-    return MyPageMountsService.instance;
+    return NospressMountsService.instance;
   }
 
   public getMounts(): string[] {
@@ -46,7 +46,7 @@ export class MyPageMountsService {
     return data.mounts.map(m => m.folderName);
   }
 
-  public getMountsWithData(): MyPageMountData[] {
+  public getMountsWithData(): NospressMountData[] {
     const data = this.loadFromStorage();
     return data.mounts;
   }
@@ -73,7 +73,7 @@ export class MyPageMountsService {
     });
 
     this.saveToStorage(data);
-    this.eventBus.emit('mypageMounts:changed', { mounts: this.getMounts() });
+    this.eventBus.emit('nospressMounts:changed', { mounts: this.getMounts() });
     return true;
   }
 
@@ -81,7 +81,7 @@ export class MyPageMountsService {
     const data = this.loadFromStorage();
     data.mounts = data.mounts.filter(m => m.folderName !== folderName);
     this.saveToStorage(data);
-    this.eventBus.emit('mypageMounts:changed', { mounts: this.getMounts() });
+    this.eventBus.emit('nospressMounts:changed', { mounts: this.getMounts() });
   }
 
   public toggleMount(folderName: string): { mounted: boolean; error?: string } {
@@ -92,7 +92,7 @@ export class MyPageMountsService {
       if (this.getMounts().length >= MAX_MOUNTS) {
         return {
           mounted: false,
-          error: `Maximum ${MAX_MOUNTS} folders on My Page reached. Unmount one before adding another.`
+          error: `Maximum ${MAX_MOUNTS} folders on NosPress reached. Unmount one before adding another.`
         };
       }
       this.addMount(folderName);
@@ -104,7 +104,7 @@ export class MyPageMountsService {
     const data = this.loadFromStorage();
     const mountMap = new Map(data.mounts.map(m => [m.folderName, m]));
 
-    const reordered: MyPageMountData[] = [];
+    const reordered: NospressMountData[] = [];
     for (const folderName of newOrder) {
       const existing = mountMap.get(folderName);
       if (existing) {
@@ -114,7 +114,7 @@ export class MyPageMountsService {
 
     data.mounts = reordered;
     this.saveToStorage(data);
-    this.eventBus.emit('mypageMounts:changed', { mounts: this.getMounts() });
+    this.eventBus.emit('nospressMounts:changed', { mounts: this.getMounts() });
   }
 
   public getMountCount(): number {
@@ -126,7 +126,7 @@ export class MyPageMountsService {
   }
 
   public setMountsFromRelay(folderNames: string[]): void {
-    const data: MyPageMountsStorage = {
+    const data: NospressMountsStorage = {
       version: 1,
       mounts: folderNames.map((name, index) => ({
         folderName: name,
@@ -134,7 +134,7 @@ export class MyPageMountsService {
       }))
     };
     this.saveToStorage(data);
-    this.eventBus.emit('mypageMounts:changed', { mounts: this.getMounts() });
+    this.eventBus.emit('nospressMounts:changed', { mounts: this.getMounts() });
   }
 
   public handleFolderRename(oldName: string, newName: string): void {
@@ -143,7 +143,7 @@ export class MyPageMountsService {
     if (mount) {
       mount.folderName = newName;
       this.saveToStorage(data);
-      this.eventBus.emit('mypageMounts:changed', { mounts: this.getMounts() });
+      this.eventBus.emit('nospressMounts:changed', { mounts: this.getMounts() });
     }
   }
 
@@ -152,17 +152,17 @@ export class MyPageMountsService {
   }
 
   public clear(): void {
-    PerAccountLocalStorage.getInstance().remove(StorageKeys.MYPAGE_MOUNTS);
+    PerAccountLocalStorage.getInstance().remove(StorageKeys.NOSPRESS_MOUNTS);
   }
 
-  private loadFromStorage(): MyPageMountsStorage {
-    return PerAccountLocalStorage.getInstance().get<MyPageMountsStorage>(
-      StorageKeys.MYPAGE_MOUNTS,
+  private loadFromStorage(): NospressMountsStorage {
+    return PerAccountLocalStorage.getInstance().get<NospressMountsStorage>(
+      StorageKeys.NOSPRESS_MOUNTS,
       { version: 1, mounts: [] }
     );
   }
 
-  private saveToStorage(data: MyPageMountsStorage): void {
-    PerAccountLocalStorage.getInstance().set(StorageKeys.MYPAGE_MOUNTS, data);
+  private saveToStorage(data: NospressMountsStorage): void {
+    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSPRESS_MOUNTS, data);
   }
 }
