@@ -308,13 +308,6 @@
   }
 }
 
-.block-library__page-hint {
-  font-size: 0.75rem;
-  font-style: italic;
-  color: $text-alpha-medium;
-  white-space: nowrap;
-}
-
 // ==========================================
 // Inline block properties panel (under selected block)
 // ==========================================
@@ -353,6 +346,60 @@
   color: $text-alpha-medium;
   font-style: italic;
   font-size: 0.9rem;
+}
+
+// Property rows / quad layout — the body's italic + dim is for placeholder
+// text only; once real inputs render, normal styling kicks in.
+.nospress-prop-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  align-items: center;
+  gap: $gap;
+  margin-bottom: calc($gap / 2);
+  font-style: normal;
+  color: $color-5;
+}
+
+.nospress-prop-row__label {
+  font-size: 0.85rem;
+  color: $color-5;
+}
+
+.nospress-prop-row__input {
+  width: 100%;
+}
+
+.nospress-prop-grouplabel {
+  margin-top: $gap;
+  margin-bottom: calc($gap / 2);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: $color-5;
+  font-style: normal;
+}
+
+.nospress-prop-quad {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: calc($gap / 2);
+  font-style: normal;
+}
+
+.nospress-prop-quad__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc($gap / 4);
+}
+
+.nospress-prop-quad__input {
+  width: 100%;
+  text-align: center;
+}
+
+.nospress-prop-quad__caption {
+  font-size: 0.75rem;
+  color: $text-alpha-medium;
 }
 
 .block-library__icon {

@@ -51,7 +51,6 @@ export class BlockLibraryView {
           <div class="block-library__label">Page</div>
           <div class="block-library__description">The page itself — color, background, layout</div>
         </div>
-        <span class="block-library__page-hint">always present</span>
       </div>
     `;
 
