@@ -144,10 +144,10 @@ export class NospressView extends View {
     if (!this.isOwnProfile) return;
     const eventBus = EventBus.getInstance();
     this.eventBusSubscriptions.push(
-      eventBus.on('nospressMounts:changed', () => this.loadAndRender())
+      eventBus.on('nospressMounts:changed', () => this.rerenderEditable())
     );
     this.eventBusSubscriptions.push(
-      eventBus.on('nospressList:changed', () => this.loadAndRender())
+      eventBus.on('nospressList:changed', () => this.rerenderEditable())
     );
   }
 
@@ -452,7 +452,7 @@ export class NospressView extends View {
     window.history.pushState({}, '', `/profile/${this.npub}/nospress/edit`);
     if (!this.editMode) {
       this.editMode = true;
-      this.loadAndRender();
+      this.rerenderEditable();
     }
   }
 
@@ -472,7 +472,7 @@ export class NospressView extends View {
     window.history.pushState({}, '', `/profile/${this.npub}/nospress`);
     if (this.editMode) {
       this.editMode = false;
-      this.loadAndRender();
+      this.rerenderEditable();
     }
   }
 
@@ -688,7 +688,7 @@ export class NospressView extends View {
       this.cursor = { scope: 'column', columnsBlockId: owner.id, colIndex, index: loc.index + 1 };
     }
 
-    await this.loadAndRender();
+    await this.rerenderEditable();
     const el = this.cursorRow?.getElement();
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -702,7 +702,7 @@ export class NospressView extends View {
    *  "Click to add blocks here" placeholder. */
   private async setCursorInColumn(columnsBlockId: string, colIndex: number): Promise<void> {
     this.cursor = { scope: 'column', columnsBlockId, colIndex, index: 0 };
-    await this.loadAndRender();
+    await this.rerenderEditable();
     const el = this.cursorRow?.getElement();
     if (el) {
       el.scrollIntoView({ block: 'center', behavior: 'smooth' });
@@ -714,14 +714,15 @@ export class NospressView extends View {
 
   /**
    * Select / deselect a block. Pure UI state — no data mutation.
-   * Triggers a full re-render so the inline properties panel (rendered
-   * directly under the selected block by `renderBlocksWithCursor`) shows
-   * up or hides. Re-render keeps cursor row + folder pickers in sync.
+   * In-place re-render so the inline properties panel (rendered directly
+   * under the selected block by `renderBlocksWithCursor`) shows up or
+   * hides. Uses rerenderEditable to skip the loading spinner and relay
+   * fetch — selection is local UI state, no remote data is needed.
    */
   private selectBlock(blockId: string | null): void {
     if (this.selectedBlockId === blockId) return;
     this.selectedBlockId = blockId;
-    this.loadAndRender();
+    this.rerenderEditable();
   }
 
   /** Toggle the `--selected` class on the matching wrapper. Called after
@@ -759,7 +760,7 @@ export class NospressView extends View {
     this.editingPage = null;
     this.isDirty = false;
     ToastService.show('Draft discarded', 'success');
-    this.loadAndRender();
+    this.rerenderEditable();
   }
 
   private async publishDraft(): Promise<void> {
