@@ -12,8 +12,11 @@
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { NospressService, type NospressListData } from '../NospressService';
-import type { NospressPageV2 } from '../../addons/nospress/blocks/types';
+import { isPageV2, type NospressPageV2 } from '../../addons/nospress/blocks/types';
+import { migrateV1ToV2 } from '../../addons/nospress/blocks/migrate';
 import { SystemLogger } from '../../components/system/SystemLogger';
+import { DeletionService } from '../DeletionService';
+import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { diagLog } from '../DiagnosticLogger';
 
 const NIP78_KIND = 30078;
@@ -26,7 +29,7 @@ export class NospressOrchestrator {
   private listService: NospressService;
   private systemLogger: SystemLogger;
 
-  private cache: Map<string, { data: NospressListData | null; fetchedAt: number }> = new Map();
+  private cache: Map<string, { page: NospressPageV2 | null; fetchedAt: number }> = new Map();
   private readonly CACHE_TTL = 60000;
 
   private constructor() {
@@ -65,7 +68,7 @@ export class NospressOrchestrator {
 
     await this.transport.publish(writeRelays, signed);
 
-    this.cache.set(currentUser.pubkey, { data: listData, fetchedAt: Date.now() });
+    this.cache.delete(currentUser.pubkey);
 
     diagLog('lists', 'NospressOrchestrator publishToRelays', {
       sectionCount: listData.sections.length
@@ -102,6 +105,7 @@ export class NospressOrchestrator {
     if (!signed) throw new Error('Failed to sign v2 page event');
 
     await this.transport.publish(writeRelays, signed);
+    this.cache.delete(currentUser.pubkey);
 
     diagLog('lists', 'NospressOrchestrator publishV2ToRelays', {
       blockCount: page.blocks.length,
@@ -119,42 +123,33 @@ export class NospressOrchestrator {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
 
-    const writeRelays = this.transport.getWriteRelays();
-    if (writeRelays.length === 0) throw new Error('No write relays available');
+    const coordinate = `${NIP78_KIND}:${currentUser.pubkey}:${D_TAG}`;
+    const ok = await DeletionService.getInstance().deleteEvents({ coordinates: [coordinate] });
+    if (!ok) throw new Error('Failed to publish NIP-09 deletion event');
 
-    const emptyData: NospressListData = { version: 1, sections: [] };
-
-    const event = {
-      kind: NIP78_KIND,
-      created_at: Math.floor(Date.now() / 1000),
-      tags: [['d', D_TAG]],
-      content: JSON.stringify(emptyData),
-      pubkey: currentUser.pubkey
-    };
-
-    const signed = await this.authService.signEvent(event);
-    if (!signed) throw new Error('Failed to sign deletion event');
-
-    await this.transport.publish(writeRelays, signed);
-
-    this.cache.set(currentUser.pubkey, { data: null, fetchedAt: Date.now() });
-
-    diagLog('lists', 'NospressOrchestrator deleteFromRelays', {});
+    this.cache.set(currentUser.pubkey, { page: null, fetchedAt: Date.now() });
+    diagLog('lists', 'NospressOrchestrator deleteFromRelays', { coordinate });
   }
 
-  public async fetchFromRelays(pubkey: string, forceRefresh: boolean = false): Promise<NospressListData | null> {
+  /**
+   * Fetch the latest published NosPress page for a pubkey, normalized to v2.
+   * Uses NIP-65 outbox discovery: combines own read-relays + the author's
+   * write-relays + aggregator relays so any NoorNote user can see any other
+   * NoorNote user's NosPress page even when their relay sets don't overlap.
+   */
+  public async fetchFromRelays(pubkey: string, forceRefresh: boolean = false): Promise<NospressPageV2 | null> {
     if (!forceRefresh) {
       const cached = this.cache.get(pubkey);
       if (cached && (Date.now() - cached.fetchedAt) < this.CACHE_TTL) {
-        return cached.data;
+        return cached.page;
       }
     }
 
-    const readRelays = this.transport.getReadRelays();
-    if (readRelays.length === 0) return null;
+    const relays = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([pubkey], true);
+    if (relays.length === 0) return null;
 
     try {
-      const events = await this.transport.fetch(readRelays, [{
+      const events = await this.transport.fetch(relays, [{
         kinds: [NIP78_KIND],
         authors: [pubkey],
         '#d': [D_TAG],
@@ -162,20 +157,20 @@ export class NospressOrchestrator {
       }], 5000, false, 'NospressOrch');
 
       if (events.length === 0) {
-        this.cache.set(pubkey, { data: null, fetchedAt: Date.now() });
+        this.cache.set(pubkey, { page: null, fetchedAt: Date.now() });
         return null;
       }
 
       const event = events.sort((a, b) => b.created_at - a.created_at)[0];
       if (!event) return null;
 
-      const data = this.parseContent(event.content);
+      const page = this.parseContent(event.content);
 
-      this.cache.set(pubkey, { data, fetchedAt: Date.now() });
-      return data;
+      this.cache.set(pubkey, { page, fetchedAt: Date.now() });
+      return page;
     } catch (error) {
       this.systemLogger.error('NospressOrchestrator',
-        `Failed to fetch list for ${pubkey}: ${error}`
+        `Failed to fetch page for ${pubkey}: ${error}`
       );
       return null;
     }
@@ -185,13 +180,13 @@ export class NospressOrchestrator {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
 
-    const data = await this.fetchFromRelays(currentUser.pubkey, true);
-    if (data && data.sections.length > 0) {
-      this.listService.setListFromRelay(data);
+    const page = await this.fetchFromRelays(currentUser.pubkey, true);
+    if (page && page.blocks.length > 0) {
+      this.listService.savePublishedV2(page);
     }
 
     diagLog('lists', 'NospressOrchestrator syncFromRelays', {
-      sectionCount: data?.sections.length ?? 0
+      blockCount: page?.blocks.length ?? 0
     });
   }
 
@@ -203,16 +198,31 @@ export class NospressOrchestrator {
     }
   }
 
-  private parseContent(content: string): NospressListData | null {
+  /**
+   * Parse the NIP-78 event content as a v2 page. v1 events are migrated to
+   * v2 inline (sections → list blocks), so the rest of the app only deals
+   * with v2.
+   */
+  private parseContent(content: string): NospressPageV2 | null {
     if (!content) return null;
     try {
-      const parsed = JSON.parse(content) as NospressListData;
-      if (parsed.version !== 1 || !Array.isArray(parsed.sections)) return null;
-      const data: NospressListData = { version: 1, sections: parsed.sections };
-      if (typeof parsed.title === 'string') data.title = parsed.title;
-      if (typeof parsed.subtitle === 'string') data.subtitle = parsed.subtitle;
-      if (typeof parsed.description === 'string') data.description = parsed.description;
-      return data;
+      const parsed = JSON.parse(content);
+      if (isPageV2(parsed)) {
+        const page: NospressPageV2 = { version: 2, blocks: parsed.blocks };
+        if (typeof parsed.title === 'string') page.title = parsed.title;
+        if (typeof parsed.subtitle === 'string') page.subtitle = parsed.subtitle;
+        if (typeof parsed.description === 'string') page.description = parsed.description;
+        return page;
+      }
+      // Legacy v1 → migrate to v2 inline
+      if (parsed && parsed.version === 1 && Array.isArray(parsed.sections)) {
+        const v1: NospressListData = { version: 1, sections: parsed.sections };
+        if (typeof parsed.title === 'string') v1.title = parsed.title;
+        if (typeof parsed.subtitle === 'string') v1.subtitle = parsed.subtitle;
+        if (typeof parsed.description === 'string') v1.description = parsed.description;
+        return migrateV1ToV2(v1, []);
+      }
+      return null;
     } catch {
       return null;
     }

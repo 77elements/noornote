@@ -14,10 +14,9 @@
 import { View } from '../../components/views/View';
 import { AuthService } from '../../services/AuthService';
 import { NospressOrchestrator } from '../../services/orchestration/NospressOrchestrator';
-import { NospressService, nospressHasContent, type NospressListData } from '../../services/NospressService';
+import { NospressService } from '../../services/NospressService';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns } from './blocks/renderers/ColumnsRenderer';
-import { migrateV1ToV2 } from './blocks/migrate';
 import type { NospressPageV2 } from './blocks/types';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
@@ -75,6 +74,9 @@ export class NospressView extends View {
    *  storage only when the user clicks Save. Null until first edit. */
   private editingPage: NospressPageV2 | null = null;
   private isDirty: boolean = false;
+  /** v2 page fetched from a foreign user's relays (NIP-65 outbox).
+   *  Null for own profile (which renders from local draft/published). */
+  private remotePage: NospressPageV2 | null = null;
 
   constructor(npub: string, opts: { editMode?: boolean } = {}) {
     super();
@@ -165,28 +167,28 @@ export class NospressView extends View {
     `;
 
     try {
-      let listData: NospressListData | null;
-
       if (this.isOwnProfile) {
-        listData = this.listService.getList();
-        if (!nospressHasContent(listData)) {
-          listData = await this.orchestrator.fetchFromRelays(this.pubkey, true);
-          if (nospressHasContent(listData)) {
-            this.listService.setListFromRelay(listData!);
+        // Own profile: hydrate the publishedV2 mirror from relays in the
+        // background so a returning user sees their last published state
+        // before they touch anything.
+        if (!this.listService.hasV2Content()) {
+          const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true);
+          if (remote && remote.blocks.length > 0) {
+            this.listService.savePublishedV2(remote);
           }
         }
       } else {
-        listData = await this.orchestrator.fetchFromRelays(this.pubkey, true);
+        this.remotePage = await this.orchestrator.fetchFromRelays(this.pubkey, true);
       }
 
-      const hasList = nospressHasContent(listData);
-      const hasV2 = this.isOwnProfile && this.listService.hasV2Content();
-      const hasContent = hasList || hasV2;
+      const hasContent = this.isOwnProfile
+        ? this.listService.hasV2Content()
+        : !!(this.remotePage && this.remotePage.blocks.length > 0);
 
       // Edit-mode renders the editable shell even when content is empty
       // (so the cursor row is visible on a fresh page).
       if (hasContent || (this.editMode && this.isOwnProfile)) {
-        await this.renderList(listData ?? { version: 1, sections: [] });
+        await this.renderList();
       } else {
         this.renderShellWithoutList();
       }
@@ -256,14 +258,13 @@ export class NospressView extends View {
     }
   }
 
-  private async renderList(data: NospressListData): Promise<void> {
+  private async renderList(): Promise<void> {
     const username = await this.loadUsername();
 
     // Render priority for own profile:
-    //   - Edit mode: in-memory editingPage (live unsaved edits) ?? saved draft ?? published ?? v1
-    //   - Preview:   saved draft ?? published ?? v1 (NEVER the in-memory edits)
-    // For foreign profiles: only v1 from relays migrated. Their mounts come
-    // from ProfileListsComponent (separately fetches from their relays).
+    //   - Edit mode: in-memory editingPage (live unsaved edits) ?? saved draft ?? published ?? migrated v1
+    //   - Preview:   saved draft ?? published ?? migrated v1 (NEVER in-memory edits)
+    // Foreign profile: the v2 page fetched from the author's outbox relays.
     let page: NospressPageV2;
     if (this.isOwnProfile) {
       const stored = this.listService.getDraftV2()
@@ -271,7 +272,7 @@ export class NospressView extends View {
         ?? this.listService.getPageV2();
       page = (this.editMode && this.editingPage) ? this.editingPage : stored;
     } else {
-      page = migrateV1ToV2(data, []);
+      page = this.remotePage ?? { version: 2, blocks: [] };
     }
 
     const editable = this.editMode && this.isOwnProfile;
@@ -326,6 +327,7 @@ export class NospressView extends View {
     if (!this.isOwnProfile) return '';
     const isDirty = this.isDirty;
     const hasDraft = this.listService.hasDraftV2();
+    const hasPublished = this.listService.getPublishedV2() !== null;
     const localButtons = editable
       ? `
         <button type="button" class="btn btn--mini" data-action="save" ${isDirty ? '' : 'disabled'}>Save</button>
@@ -336,7 +338,7 @@ export class NospressView extends View {
       <div class="nospress-action-bar l-row--split">
         <div>
           <button type="button" class="btn btn--mini" data-action="publish" ${(isDirty || hasDraft) ? '' : 'disabled'}>Publish</button>
-          <button type="button" class="btn btn--passive btn--mini btn--danger" data-action="delete-list">Unpublish</button>
+          <button type="button" class="btn btn--passive btn--mini btn--danger" data-action="delete-list" ${hasPublished ? '' : 'disabled'}>Unpublish</button>
         </div>
         <div>${localButtons}</div>
       </div>
@@ -407,6 +409,8 @@ export class NospressView extends View {
     try {
       await this.orchestrator.deleteFromRelays();
       this.listService.clearPublishedV2();
+      this.listService.deleteList();
+      this.refreshActionBar();
       ToastService.show('Unpublished', 'success');
     } catch (error) {
       console.error('Failed to unpublish:', error);
@@ -1098,7 +1102,7 @@ export class NospressView extends View {
       this.mountsComponent.destroy();
       this.mountsComponent = null;
     }
-    await this.renderList({ version: 1, sections: [] });
+    await this.renderList();
     await this.renderMounts();
   }
 

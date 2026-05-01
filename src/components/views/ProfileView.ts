@@ -1243,12 +1243,12 @@ export class ProfileView extends View {
       const { NospressOrchestrator } = await import('../../services/orchestration/NospressOrchestrator');
       const { NospressMountsOrchestrator } = await import('../../services/orchestration/NospressMountsOrchestrator');
 
-      const [listData, nospressMounts] = await Promise.all([
+      const [page, nospressMounts] = await Promise.all([
         NospressOrchestrator.getInstance().fetchFromRelays(this.pubkey, false),
         NospressMountsOrchestrator.getInstance().fetchFromRelays(this.pubkey, false),
       ]);
 
-      const hasExistingList = !!listData && listData.sections.length > 0;
+      const hasExistingList = !!page && page.blocks.length > 0;
       const hasMounts = nospressMounts.length > 0;
       const hasContent = hasExistingList || hasMounts;
 
