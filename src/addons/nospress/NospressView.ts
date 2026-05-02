@@ -24,6 +24,7 @@ import { ToastService } from '../../services/ToastService';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { EventBus } from '../../services/EventBus';
+import { FullscreenOverlay } from '../../components/ui/FullscreenOverlay';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
 import { createBlock, findBlockInPage, type Block, type BlockType, type NospressPageV2 } from './blocks/types';
@@ -93,6 +94,11 @@ export class NospressView extends View {
   /** v2 page fetched from a foreign user's relays (NIP-65 outbox).
    *  Null for own profile (which renders from local draft/published). */
   private remotePage: NospressPageV2 | null = null;
+  /** Fullscreen overlay handle. Active means this.container is currently
+   *  re-parented into the overlay's editor slot. */
+  private fullscreenOverlay: FullscreenOverlay | null = null;
+  private fullscreenOriginParent: HTMLElement | null = null;
+  private fullscreenOriginAnchor: Node | null = null;
 
   constructor(npub: string, opts: { editMode?: boolean } = {}) {
     super();
@@ -131,6 +137,10 @@ export class NospressView extends View {
     this.destroyFolderPickers();
     this.destroyBlockDropdowns();
     this.destroyCursorRow();
+    if (this.fullscreenOverlay) {
+      this.fullscreenOverlay.unmount();
+      this.fullscreenOverlay = null;
+    }
     this.closeBlockLibrary();
     this.container.innerHTML = '';
   }
@@ -304,6 +314,10 @@ export class NospressView extends View {
       ? `<button class="btn btn--medium btn--passive" data-action="preview-page" title="Close the editor and see the page as visitors see it">Preview Page</button>`
       : `<button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>`;
 
+    const fullscreenButtonHtml = this.isOwnProfile
+      ? `<button class="btn btn--medium btn--passive" data-action="open-fullscreen" title="Open the editor in fullscreen with a side-by-side block library">Fullscreen</button>`
+      : '';
+
     const rightButtonHtml = this.isOwnProfile
       ? `<button class="btn btn--medium btn--passive" data-action="open-block-editor" title="Open Block Library in the right sidebar"><svg width="14" height="14"><use href="#icon-edit"/></svg> Block Editor</button>`
       : '';
@@ -327,7 +341,7 @@ export class NospressView extends View {
       <div class="nospress-view">
         <div class="nospress-header l-spread">
           <div>${leftButtonHtml}</div>
-          <div>${rightButtonHtml}</div>
+          <div class="nospress-header__actions">${fullscreenButtonHtml}${rightButtonHtml}</div>
         </div>
         ${composedBlocksHtml}
         ${this.renderActionBar(editable)}
@@ -406,6 +420,10 @@ export class NospressView extends View {
   private bindHeaderEvents(): void {
     this.container.querySelector('[data-action="open-block-editor"]')?.addEventListener('click', () => {
       this.openBlockLibrary();
+    });
+
+    this.container.querySelector('[data-action="open-fullscreen"]')?.addEventListener('click', () => {
+      this.enterFullscreenEditor();
     });
 
     this.container.querySelector('[data-action="preview-page"]')?.addEventListener('click', () => {
@@ -496,6 +514,87 @@ export class NospressView extends View {
       this.editMode = false;
       this.rerenderEditable();
     }
+  }
+
+  /**
+   * Open the editor in a fullscreen overlay with a side-by-side block library
+   * (70/30 split on desktop, library hidden on mobile — slash menu remains).
+   * Re-parents `this.container` into the overlay's editor slot so the existing
+   * render pipeline keeps writing to the same element. Cursor, selection, and
+   * draft state are preserved across the transition because the single source
+   * of truth is `NospressService.draftV2`.
+   */
+  private enterFullscreenEditor(): void {
+    if (this.fullscreenOverlay?.isMounted()) return;
+
+    // Tear down the SCC tab if it was open — but keep editMode + cursor state.
+    document.querySelector(`#sidebar-tabs > [data-tab="${BLOCK_LIBRARY_TAB_ID}"]`)?.remove();
+    document.querySelector(`.secondary-content-body > [data-tab-content="${BLOCK_LIBRARY_TAB_ID}"]`)?.remove();
+    this.blockLibrary?.destroy();
+    this.blockLibrary = null;
+    const secondaryContent = document.querySelector('.secondary-content') as HTMLElement | null;
+    if (secondaryContent && !secondaryContent.querySelector('.tab--active')) {
+      switchTabWithContent(secondaryContent, 'system-log');
+    }
+
+    // Build the split body. Editor slot will host this.container; library slot
+    // gets a fresh BlockLibraryView.
+    const split = document.createElement('div');
+    split.className = 'nospress-fullscreen-split';
+    const editorSlot = document.createElement('div');
+    editorSlot.className = 'nospress-fullscreen-split__editor';
+    const librarySlot = document.createElement('div');
+    librarySlot.className = 'nospress-fullscreen-split__library';
+    split.appendChild(editorSlot);
+    split.appendChild(librarySlot);
+
+    // Remember where to put this.container back when we exit.
+    this.fullscreenOriginParent = this.container.parentElement as HTMLElement | null;
+    this.fullscreenOriginAnchor = this.container.nextSibling;
+    editorSlot.appendChild(this.container);
+    this.container.classList.add('nospress-view--fullscreen');
+
+    this.blockLibrary = new BlockLibraryView({
+      onApply: (type) => this.applyBlock(type),
+      onSelectPage: () => this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID),
+    });
+    librarySlot.appendChild(this.blockLibrary.getElement());
+
+    if (!this.editMode) this.editMode = true;
+    this.rerenderEditable();
+
+    this.fullscreenOverlay = new FullscreenOverlay({
+      title: 'Edit Page',
+      exitLabel: 'Exit Fullscreen',
+      body: split,
+      maxWidth: '100%',
+      onExit: () => this.cleanupFullscreenEditor(),
+    });
+    this.fullscreenOverlay.mount();
+  }
+
+  private cleanupFullscreenEditor(): void {
+    this.container.classList.remove('nospress-view--fullscreen');
+
+    if (this.fullscreenOriginParent) {
+      if (this.fullscreenOriginAnchor && this.fullscreenOriginAnchor.parentNode === this.fullscreenOriginParent) {
+        this.fullscreenOriginParent.insertBefore(this.container, this.fullscreenOriginAnchor);
+      } else {
+        this.fullscreenOriginParent.appendChild(this.container);
+      }
+    }
+    this.fullscreenOriginParent = null;
+    this.fullscreenOriginAnchor = null;
+
+    this.blockLibrary?.destroy();
+    this.blockLibrary = null;
+
+    if (this.editMode) {
+      this.editMode = false;
+      this.rerenderEditable();
+    }
+
+    this.fullscreenOverlay = null;
   }
 
   /**

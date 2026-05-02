@@ -268,22 +268,7 @@
 
 // Distraction-free focus mode overlay — a plain fullscreen layer
 // appended to <body>, independent of any containing-block ancestor.
-.article-editor-focus {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: var(--color-1);
-  overflow-y: auto;
-  padding: calc($gap * 3) $gap;
-
-  &__inner {
-    max-width: 960px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: $gap;
-  }
-
+.article-editor-focus-body {
   .textarea {
     min-height: calc(100vh - $gap * 14);
   }

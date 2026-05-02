@@ -28,6 +28,7 @@ import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { FullscreenOverlay } from '../ui/FullscreenOverlay';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { upgradeInlineMentions, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { upgradeArticleImages } from '../../helpers/upgradeArticleImages';
@@ -80,14 +81,8 @@ export class ArticleEditorView extends View {
   private isDraftMode: boolean = false;
   private editPubkey: string = '';
   private publishedAt: number | null = null;
-  private focusOverlay: HTMLElement | null = null;
+  private fullscreenOverlay: FullscreenOverlay | null = null;
   private previewQuotedRefs: QuotedReference[] = [];
-  private focusKeydownHandler = (e: KeyboardEvent): void => {
-    if (this.focusOverlay && e.key === 'Escape') {
-      e.preventDefault();
-      this.exitFocusMode();
-    }
-  };
 
   // Dirty-state tracking
   private snapshot: EditorSnapshot = { title: '', content: '', summary: '', image: '', tags: '', publishedAt: null };
@@ -540,7 +535,6 @@ export class ArticleEditorView extends View {
 
     const focusBtn = this.container.querySelector('[data-action="enter-focus"]');
     focusBtn?.addEventListener('click', () => this.enterFocusMode());
-    document.addEventListener('keydown', this.focusKeydownHandler);
 
     const pickPublishedAtBtn = this.container.querySelector('[data-action="pick-published-at"]');
     pickPublishedAtBtn?.addEventListener('click', () => this.handlePickPublishedAt());
@@ -1103,48 +1097,35 @@ export class ArticleEditorView extends View {
     return this.container;
   }
 
-  /**
-   * Distraction-free focus mode: a plain fullscreen overlay appended to
-   * <body> with a duplicated title input + content textarea. On exit we
-   * write the edited values back to the real editor inputs so snapshot /
-   * dirty tracking picks them up.
-   */
   private enterFocusMode(): void {
-    if (this.focusOverlay) return;
+    if (this.fullscreenOverlay?.isMounted()) return;
 
-    const overlay = document.createElement('div');
-    overlay.className = 'article-editor-focus';
-    overlay.innerHTML = `
-      <div class="article-editor-focus__inner">
-        <header class="l-spread">
-          <h1>${this.isEditMode ? 'Edit Article' : 'Write Article'}</h1>
-          <button class="btn btn--passive btn--medium" data-action="exit-focus">Exit Focus Mode</button>
-        </header>
-        <section class="section">
-          <div class="form__row">
-            <label for="focus-title">Title</label>
-            <input type="text" id="focus-title" class="input input--title" placeholder="Article title..." data-focus-field="title" />
-          </div>
-          <div class="form__row">
-            <label for="focus-content">Content (Markdown)</label>
-            ${this.renderMarkdownToolbar()}
-            <textarea id="focus-content" class="textarea textarea--code textarea--large" placeholder="Write your article in Markdown..." data-focus-field="content"></textarea>
-          </div>
-        </section>
-      </div>
+    const body = document.createElement('div');
+    body.className = 'article-editor-focus-body';
+    body.innerHTML = `
+      <section class="section">
+        <div class="form__row">
+          <label for="focus-title">Title</label>
+          <input type="text" id="focus-title" class="input input--title" placeholder="Article title..." data-focus-field="title" />
+        </div>
+        <div class="form__row">
+          <label for="focus-content">Content (Markdown)</label>
+          ${this.renderMarkdownToolbar()}
+          <textarea id="focus-content" class="textarea textarea--code textarea--large" placeholder="Write your article in Markdown..." data-focus-field="content"></textarea>
+        </div>
+      </section>
     `;
 
-    const titleInput = overlay.querySelector('[data-focus-field="title"]') as HTMLInputElement;
-    const contentInput = overlay.querySelector('[data-focus-field="content"]') as HTMLTextAreaElement;
+    const titleInput = body.querySelector('[data-focus-field="title"]') as HTMLInputElement;
+    const contentInput = body.querySelector('[data-focus-field="content"]') as HTMLTextAreaElement;
     titleInput.value = this.title;
     contentInput.value = this.content;
 
     titleInput.addEventListener('input', () => { this.title = titleInput.value; });
     contentInput.addEventListener('input', () => { this.content = contentInput.value; });
 
-    // Wire the duplicated markdown toolbar to operate on the focus textarea
-    const focusFileInput = overlay.querySelector('[data-md-file-input]') as HTMLInputElement;
-    overlay.querySelectorAll('[data-md-action]').forEach(btn => {
+    const focusFileInput = body.querySelector('[data-md-file-input]') as HTMLInputElement;
+    body.querySelectorAll('[data-md-action]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const action = (e.currentTarget as HTMLElement).dataset.mdAction || '';
         this.handleMarkdownAction(action, contentInput, focusFileInput);
@@ -1155,36 +1136,31 @@ export class ArticleEditorView extends View {
       const file = target.files?.[0];
       if (file) {
         await this.handleContentImageUpload(file);
-        // After upload, content lives in `this.content` — push to the focus textarea too
         contentInput.value = this.content;
         target.value = '';
       }
     });
 
-    overlay.querySelector('[data-action="exit-focus"]')?.addEventListener('click', () => this.exitFocusMode());
-
-    document.body.appendChild(overlay);
-    this.focusOverlay = overlay;
+    this.fullscreenOverlay = new FullscreenOverlay({
+      title: this.isEditMode ? 'Edit Article' : 'Write Article',
+      exitLabel: 'Exit Focus Mode',
+      body,
+      onExit: () => {
+        const realTitle = this.container.querySelector('[data-field="title"]') as HTMLInputElement | null;
+        const realContent = this.container.querySelector('[data-field="content"]') as HTMLTextAreaElement | null;
+        if (realTitle) {
+          realTitle.value = this.title;
+          realTitle.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (realContent) {
+          realContent.value = this.content;
+          realContent.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        this.fullscreenOverlay = null;
+      },
+    });
+    this.fullscreenOverlay.mount();
     contentInput.focus();
-  }
-
-  private exitFocusMode(): void {
-    if (!this.focusOverlay) return;
-    this.focusOverlay.remove();
-    this.focusOverlay = null;
-
-    // Write the edited values back to the real editor inputs and fire an
-    // input event so setupFieldListeners + dirty tracking pick them up.
-    const titleInput = this.container.querySelector('[data-field="title"]') as HTMLInputElement | null;
-    const contentInput = this.container.querySelector('[data-field="content"]') as HTMLTextAreaElement | null;
-    if (titleInput) {
-      titleInput.value = this.title;
-      titleInput.dispatchEvent(new Event('input', { bubbles: true }));
-    }
-    if (contentInput) {
-      contentInput.value = this.content;
-      contentInput.dispatchEvent(new Event('input', { bubbles: true }));
-    }
   }
 
   /**
@@ -1192,8 +1168,10 @@ export class ArticleEditorView extends View {
    */
   public destroy(): void {
     window.removeEventListener('beforeunload', this.beforeUnloadHandler);
-    document.removeEventListener('keydown', this.focusKeydownHandler);
-    if (this.focusOverlay) this.exitFocusMode();
+    if (this.fullscreenOverlay) {
+      this.fullscreenOverlay.unmount();
+      this.fullscreenOverlay = null;
+    }
     if (this.relaySelector) {
       this.relaySelector.destroy();
       this.relaySelector = null;

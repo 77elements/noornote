@@ -1,0 +1,32 @@
+@use '../abstracts/variables' as *;
+
+.fullscreen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: var(--color-1);
+  overflow-y: auto;
+  padding: calc($gap * 3) $gap;
+
+  &__inner {
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+
+  &__header {
+    margin-bottom: $gap;
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+}
