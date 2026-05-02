@@ -579,11 +579,27 @@ export class NospressView extends View {
       window.history.pushState({}, '', fullscreenPath);
     }
 
+    // "See Website" → opens the public NosPress page in a new tab.
+    // Initial href uses the canonical npub form (works always); upgraded
+    // to the prettier nip05 form in-place if the profile has one. The
+    // public URL itself is rendered by Phase 5's boot path on noornote.app.
+    const seeWebsiteAnchor = document.createElement('a');
+    seeWebsiteAnchor.className = 'btn btn--passive btn--medium';
+    seeWebsiteAnchor.target = '_blank';
+    seeWebsiteAnchor.rel = 'noopener noreferrer';
+    seeWebsiteAnchor.textContent = 'See Website';
+    seeWebsiteAnchor.href = `https://noornote.app/${this.npub}/`;
+    UserProfileService.getInstance().getUserProfile(this.pubkey).then(profile => {
+      const nip05 = profile?.nip05?.trim();
+      if (nip05) seeWebsiteAnchor.href = `https://noornote.app/${nip05}/`;
+    }).catch(() => { /* keep npub fallback */ });
+
     this.fullscreenOverlay = new FullscreenOverlay({
       title: 'Edit Page',
       exitLabel: 'Exit Fullscreen',
       body: split,
       maxWidth: '100%',
+      extraActions: [seeWebsiteAnchor],
       onExit: () => this.cleanupFullscreenEditor(),
     });
     this.fullscreenOverlay.mount();

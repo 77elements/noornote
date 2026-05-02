@@ -1,0 +1,40 @@
+import { detectPublicPageRoute, type PublicPageRoute } from './detectPublicPageRoute';
+import { resolveNip05 } from './Nip05Resolver';
+import { encodeNpub } from '../../services/NostrToolsAdapter';
+import { PlatformService } from '../../services/PlatformService';
+
+/**
+ * Public-page boot orchestrator. Owns the decision tree for the
+ * `noornote.app/{npub}` and `noornote.app/{nip05}` URLs. Used exclusively
+ * by App.ts during initialize() — App.ts stays glue.
+ *
+ *   1. detect()        — top-level URL matches a public-page pattern?
+ *   2. mountPublicView — logged-out branch: render PublicNospressPage,
+ *                        no MainLayout, no app chrome.
+ *   3. resolveToNpub   — logged-in branch: hand back an npub for the
+ *                        Router to navigate to /profile/{npub}/nospress.
+ *
+ * Browser-only by design (Electron / Capacitor never hit public URLs).
+ */
+export class PublicPageBootstrap {
+  static detect(): PublicPageRoute | null {
+    if (!PlatformService.getInstance().isBrowser) return null;
+    return detectPublicPageRoute(window.location.pathname);
+  }
+
+  static async mountPublicView(route: PublicPageRoute, appElement: HTMLElement): Promise<void> {
+    document.documentElement.classList.add('layout--public');
+    appElement.innerHTML = '';
+
+    const { PublicNospressPage } = await import('./PublicNospressPage');
+    const view = new PublicNospressPage(route);
+    appElement.appendChild(view.getElement());
+    void view.load();
+  }
+
+  static async resolveToNpub(route: PublicPageRoute): Promise<string | null> {
+    if (route.type === 'npub') return route.npub;
+    const result = await resolveNip05(route.handle);
+    return result ? encodeNpub(result.pubkey) : null;
+  }
+}

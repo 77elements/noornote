@@ -23,6 +23,11 @@
     margin: 0;
   }
 
+  &__actions {
+    display: flex;
+    gap: calc($gap / 2);
+  }
+
   &__body {
     flex: 1;
     display: flex;

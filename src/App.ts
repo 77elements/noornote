@@ -24,6 +24,7 @@ import { PostLoginService } from './services/PostLoginService';
 import { AddonLoader } from './addons/AddonLoader';
 import { registerCoreAddons } from './addons/registerAddons';
 import { decodeNip19 } from './services/NostrToolsAdapter';
+import { PublicPageBootstrap } from './addons/nospress/PublicPageBootstrap';
 import { hexToNpub } from './helpers/nip19';
 
 /** Maps viewName to the AppState key that stores the route parameter */
@@ -62,7 +63,13 @@ export class App {
 
   async initialize(): Promise<void> {
     this.setupRoutes();
-    this.setupUI();
+
+    // Public-page boot path: when the URL is a top-level npub or nip05, we
+    // skip MainLayout entirely. The actual decision (logged-in redirect vs.
+    // public-view mount) finalizes after auth-init below.
+    const publicMatch = PublicPageBootstrap.detect();
+    if (!publicMatch) this.setupUI();
+
     this.setupEventListeners();
 
     // Bootstrap AddonLoader BEFORE any await, so its user:login listener
@@ -139,8 +146,22 @@ export class App {
     }
 
     const isLoggedIn = this.authService.hasValidSession();
-    const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
-    this.router.navigate(targetPath);
+
+    // Public-page boot branch finalized: with a session, redirect to the
+    // in-app NosPress view; without one, render the clean public view.
+    if (publicMatch) {
+      if (isLoggedIn) {
+        const npub = await PublicPageBootstrap.resolveToNpub(publicMatch);
+        this.setupUI();
+        this.router.navigate(npub ? `/profile/${npub}/nospress` : '/');
+      } else if (this.appElement) {
+        await PublicPageBootstrap.mountPublicView(publicMatch, this.appElement);
+        return;
+      }
+    } else {
+      const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
+      this.router.navigate(targetPath);
+    }
 
     // If user is already logged in from session restore, start services explicitly.
     // user:login may have been emitted before setupEventListeners() registered the handler.

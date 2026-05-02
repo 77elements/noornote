@@ -1,5 +1,3 @@
-import { escapeHtml } from '../../helpers/escapeHtml';
-
 export interface FullscreenOverlayOptions {
   title: string;
   body: HTMLElement;
@@ -7,6 +5,11 @@ export interface FullscreenOverlayOptions {
   onExit?: () => void;
   closeOnEsc?: boolean;
   maxWidth?: string;
+  /** Additional header buttons/links rendered to the LEFT of the Exit
+   *  button. Caller owns instantiation, listeners, and lifetime — the
+   *  overlay only appends them. Use `<a target="_blank">` for "open in
+   *  new tab" actions. */
+  extraActions?: HTMLElement[];
 }
 
 export class FullscreenOverlay {
@@ -18,6 +21,7 @@ export class FullscreenOverlay {
   private readonly onExit: () => void;
   private readonly closeOnEsc: boolean;
   private readonly maxWidth: string;
+  private readonly extraActions: HTMLElement[];
 
   constructor(opts: FullscreenOverlayOptions) {
     this.title = opts.title;
@@ -26,6 +30,7 @@ export class FullscreenOverlay {
     this.onExit = opts.onExit ?? (() => {});
     this.closeOnEsc = opts.closeOnEsc ?? true;
     this.maxWidth = opts.maxWidth ?? '960px';
+    this.extraActions = opts.extraActions ?? [];
   }
 
   public mount(): void {
@@ -40,11 +45,25 @@ export class FullscreenOverlay {
 
     const header = document.createElement('header');
     header.className = 'fullscreen-overlay__header l-spread';
-    header.innerHTML = `
-      <h1 class="fullscreen-overlay__title">${escapeHtml(this.title)}</h1>
-      <button class="btn btn--passive btn--medium" data-fullscreen-exit>${escapeHtml(this.exitLabel)}</button>
-    `;
-    header.querySelector('[data-fullscreen-exit]')?.addEventListener('click', () => this.unmount());
+
+    const titleEl = document.createElement('h1');
+    titleEl.className = 'fullscreen-overlay__title';
+    titleEl.textContent = this.title;
+
+    const actions = document.createElement('div');
+    actions.className = 'fullscreen-overlay__actions';
+    for (const action of this.extraActions) {
+      actions.appendChild(action);
+    }
+    const exitBtn = document.createElement('button');
+    exitBtn.className = 'btn btn--passive btn--medium';
+    exitBtn.dataset.fullscreenExit = '';
+    exitBtn.textContent = this.exitLabel;
+    exitBtn.addEventListener('click', () => this.unmount());
+    actions.appendChild(exitBtn);
+
+    header.appendChild(titleEl);
+    header.appendChild(actions);
 
     const bodyWrap = document.createElement('div');
     bodyWrap.className = 'fullscreen-overlay__body';

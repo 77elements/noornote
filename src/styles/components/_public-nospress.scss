@@ -1,0 +1,89 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// `html.layout--public` is set by App.ts's boot path BEFORE setupUI() — there
+// is no MainLayout in the DOM, so we don't need to hide anything; we just
+// style the body and the single PublicNospressPage child directly.
+html.layout--public {
+  body {
+    background: var(--color-1);
+    color: var(--color-5);
+  }
+}
+
+.public-page {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: calc($gap * 2) $gap;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap * 2);
+
+  @include tablet {
+    padding: calc($gap * 3) $gap;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+  }
+
+  &__avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: $radius-full;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  &__identity {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    margin: 0;
+    font-size: 1.5rem;
+    color: var(--color-5);
+    @include text-truncate;
+  }
+
+  &__nip05 {
+    margin: calc($gap / 4) 0 0;
+    font-size: 0.9rem;
+    color: var(--color-3);
+    @include text-truncate;
+  }
+
+  &__content {
+    flex: 1;
+  }
+
+  &__loading,
+  &__empty,
+  &__error {
+    text-align: center;
+    padding: calc($gap * 4) $gap;
+    color: var(--color-3);
+  }
+
+  &__error h1 {
+    color: var(--color-5);
+    margin-bottom: $gap;
+  }
+
+  &__footer {
+    margin-top: calc($gap * 2);
+    padding-top: calc($gap * 2);
+    border-top: 1px solid var(--color-2);
+    text-align: center;
+    font-size: 0.85rem;
+    color: $text-alpha-medium;
+
+    a {
+      color: var(--color-4);
+    }
+  }
+}
