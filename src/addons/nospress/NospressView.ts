@@ -1121,8 +1121,8 @@ export class NospressView extends View {
    * elements in the DOM).
    */
   private setupEditDelegation(): void {
-    this.container.addEventListener('input', (e) => {
-      const target = e.target as HTMLInputElement | HTMLTextAreaElement;
+    const handleFieldEvent = (e: Event) => {
+      const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
       const blockId = target.dataset?.blockId;
       const field = target.dataset?.field;
       if (blockId && field) this.handleBlockFieldInput(blockId, field, target);
@@ -1130,7 +1130,9 @@ export class NospressView extends View {
       const styleScope = target.dataset?.styleScope;
       const styleField = target.dataset?.styleField;
       if (styleScope && styleField) this.handleStyleInput(styleScope, styleField, target.value);
-    });
+    };
+    this.container.addEventListener('input', handleFieldEvent);
+    this.container.addEventListener('change', handleFieldEvent);
 
     this.container.addEventListener('click', (e) => {
       const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
@@ -1272,7 +1274,7 @@ export class NospressView extends View {
     await this.mountInlineBookmarkFolders();
   }
 
-  private handleBlockFieldInput(blockId: string, field: string, el: HTMLInputElement | HTMLTextAreaElement): void {
+  private handleBlockFieldInput(blockId: string, field: string, el: HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement): void {
     // Skip "new-item" — that input is consumed on Enter / + click, not on input
     if (field === 'new-item') return;
 
@@ -1307,6 +1309,10 @@ export class NospressView extends View {
         if (field === 'quote-text')   block.text = el.value;
         if (field === 'quote-author') block.author = el.value;
         if (field === 'quote-source') block.source = el.value;
+      } else if (block.type === 'button-cta') {
+        if (field === 'cta-label')   block.label = el.value;
+        if (field === 'cta-url')     block.url = el.value;
+        if (field === 'cta-variant') block.variant = el.value === 'secondary' ? 'secondary' : 'primary';
       }
     }, { silent: true });
   }

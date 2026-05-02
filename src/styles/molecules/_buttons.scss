@@ -108,6 +108,14 @@
   }
 }
 
+// Anchor variants of .btn.btn--passive — browsers apply :link/:visited
+// styling to <a> elements, which would otherwise override the .btn--passive
+// color rule above with the user-agent default visited-link color.
+.btn.btn--passive:link,
+.btn.btn--passive:visited {
+  color: var(--color-4);
+}
+
 // Secondary (subtle, neutral tone)
 .btn--secondary {
   color: var(--color-5);

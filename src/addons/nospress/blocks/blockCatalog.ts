@@ -34,4 +34,5 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
   { type: 'dm-button',       label: 'DM Button',       description: 'Button that opens a DM to the page owner', icon: '✉', enabled: true },
   { type: 'profile-card',    label: 'Profile Card',    description: 'Avatar + display name + NIP-05 of the page owner', icon: '👤', enabled: true },
   { type: 'quote',           label: 'Quote',           description: 'Pull quote with optional author and source',       icon: '❝', enabled: true },
+  { type: 'button-cta',      label: 'Button',          description: 'Call-to-action button linking to any URL',         icon: '🔘', enabled: true },
 ];

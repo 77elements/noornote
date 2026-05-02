@@ -136,6 +136,7 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   columns:           CONTAINER_PROPS,
   'profile-card':    CONTAINER_PROPS,
   quote:             TEXTUAL_PROPS,
+  'button-cta':      TEXTUAL_PROPS,
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */

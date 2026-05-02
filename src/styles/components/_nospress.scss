@@ -545,6 +545,27 @@
   }
 }
 
+.nospress-block-button-cta {
+  display: flex;
+  justify-content: center;
+  margin: $gap * 2 0;
+
+  .btn {
+    text-decoration: none;
+  }
+}
+
+.nospress-block-button-cta__label-input,
+.nospress-block-button-cta__url-input,
+.nospress-block-button-cta__variant-select {
+  display: block;
+  margin-bottom: calc($gap / 2);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
 // Columns block — desktop/tablet shows N columns side-by-side, mobile stacks
 .nospress-block-columns {
   display: grid;
