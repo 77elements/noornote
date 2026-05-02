@@ -33,6 +33,17 @@ export class PostLoginService {
     const cvEnabled = PALS.getInstance().getForPubkey<boolean>(SK.CONTENT_VISIBILITY_AUTO, data.pubkey, false);
     document.documentElement.classList.toggle('content-visibility-auto', cvEnabled);
 
+    // Public-page CTA stash: when the user came in through a "logged out"
+    // modal on a public page (NosPress) and just authenticated, jump to the
+    // action-specific destination (DM thread, etc.) via a full reload so
+    // App.ts's boot path sees the fresh logged-in state.
+    const redirect = sessionStorage.getItem('noornote_post_login_redirect');
+    if (redirect) {
+      sessionStorage.removeItem('noornote_post_login_redirect');
+      window.location.href = redirect;
+      return;
+    }
+
     const currentPath = this.router.getCurrentPath();
     const lastURL = this.router.getLastURL();
 
