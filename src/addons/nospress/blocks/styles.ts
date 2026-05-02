@@ -134,6 +134,7 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   embed:             CONTAINER_PROPS,
   'bookmark-folder': CONTAINER_PROPS,
   columns:           CONTAINER_PROPS,
+  'profile-card':    CONTAINER_PROPS,
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */

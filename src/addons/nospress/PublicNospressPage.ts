@@ -10,6 +10,8 @@ import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { showLoggedOutReactionModal } from '../../helpers/LoggedOutModals';
 import { AuthService } from '../../services/AuthService';
 import { mountNospressEmbeds } from './embedMount';
+import { mountNospressProfileCards } from './profileCardMount';
+import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { PublicPageRoute } from './detectPublicPageRoute';
 import type { NospressPageV2 } from './blocks/types';
 
@@ -27,6 +29,7 @@ export class PublicNospressPage {
   private container: HTMLElement;
   private route: PublicPageRoute;
   private inlineMounts: ProfileListsComponent[] = [];
+  private profileCardInstances: UserIdentity[] = [];
   private clickAbort: AbortController | null = null;
   /** Owner of the page (= page author). Resolved from the route during load,
    *  reused by the signing-action CTAs to build action-specific post-login
@@ -89,6 +92,7 @@ export class PublicNospressPage {
     this.renderPage(profile, page, viewerProfile);
     await this.mountInlineBookmarkFolders(pubkey);
     mountNospressEmbeds(this.container);
+    this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: pubkey });
     this.bindSigningActionCtas();
   }
 
@@ -97,6 +101,8 @@ export class PublicNospressPage {
     this.clickAbort = null;
     this.inlineMounts.forEach(c => c.destroy());
     this.inlineMounts = [];
+    this.profileCardInstances.forEach(ui => ui.destroy());
+    this.profileCardInstances = [];
     this.container.innerHTML = '';
   }
 
@@ -179,7 +185,6 @@ export class PublicNospressPage {
     const name = profile ? extractDisplayName(profile) : '';
     this.container.innerHTML = `
       ${this.adminBarHtml(viewerProfile)}
-      ${this.headerHtml(profile)}
       <div class="public-page__empty">
         <p>${escapeHtml(name) || 'This user'} has no NosPress page yet.</p>
       </div>
@@ -187,14 +192,13 @@ export class PublicNospressPage {
     `;
   }
 
-  private renderPage(profile: UserProfile | null, page: NospressPageV2, viewerProfile: UserProfile | null): void {
+  private renderPage(_profile: UserProfile | null, page: NospressPageV2, viewerProfile: UserProfile | null): void {
     const blocksHtml = BlockRenderer.renderAll(page.blocks, { editable: false });
     const inlineStyle = buildInlineStyle(schemaFor('page'), page.style);
     const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
 
     this.container.innerHTML = `
       ${this.adminBarHtml(viewerProfile)}
-      ${this.headerHtml(profile)}
       <div class="public-page__content"${styleAttr}>${blocksHtml}</div>
       ${this.footerHtml()}
     `;
@@ -236,20 +240,6 @@ export class PublicNospressPage {
     `;
   }
 
-  private headerHtml(profile: UserProfile | null): string {
-    const name = profile ? extractDisplayName(profile) : '';
-    const picture = profile?.picture ?? '';
-    const nip05 = profile?.nip05 ?? '';
-    return `
-      <header class="public-page__header">
-        ${picture ? `<img class="public-page__avatar" src="${escapeHtmlAttr(picture)}" alt="" />` : ''}
-        <div class="public-page__identity">
-          <h1 class="public-page__name">${escapeHtml(name)}</h1>
-          ${nip05 ? `<p class="public-page__nip05">${escapeHtml(nip05)}</p>` : ''}
-        </div>
-      </header>
-    `;
-  }
 
   private footerHtml(): string {
     return `

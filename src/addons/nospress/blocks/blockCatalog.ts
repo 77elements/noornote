@@ -32,4 +32,5 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
   { type: 'bookmark-folder', label: 'Bookmark Folder', description: 'Mount an existing bookmark folder',        icon: '📁', enabled: true },
   { type: 'columns',         label: 'Columns',         description: '2- or 3-column layout',                    icon: '⊞', enabled: true },
   { type: 'dm-button',       label: 'DM Button',       description: 'Button that opens a DM to the page owner', icon: '✉', enabled: true },
+  { type: 'profile-card',    label: 'Profile Card',    description: 'Avatar + display name + NIP-05 of the page owner', icon: '👤', enabled: true },
 ];

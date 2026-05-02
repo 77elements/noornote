@@ -83,10 +83,8 @@ export function showLoggedOutReactionModal(
   content.querySelector('.logged-out-modal__create')?.addEventListener('click', async () => {
     modalService.hide();
     stashRedirect();
-    if (isPublicView) {
-      window.location.href = '/welcome';
-      return;
-    }
+    // The wizard is modal-based (mounted in document.body via ModalService) —
+    // it works fine in public-view too, no MainLayout required.
     const { AccountSetupWizard } = await import('../components/onboarding/AccountSetupWizard');
     const wizard = new AccountSetupWizard();
     wizard.show();

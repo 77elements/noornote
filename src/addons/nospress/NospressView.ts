@@ -42,6 +42,8 @@ import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { mountNospressEmbeds } from './embedMount';
+import { mountNospressProfileCards } from './profileCardMount';
+import type { UserIdentity } from '../../components/shared/UserIdentity';
 import DOMPurify from 'dompurify';
 
 const BLOCK_LIBRARY_TAB_ID = 'nospress-block-library';
@@ -67,6 +69,7 @@ export class NospressView extends View {
   /** One ProfileListsComponent per inline bookmark-folder block in the page,
    *  mounted into the slot the BookmarkFolderRenderer's readonly path emits. */
   private inlineMountsComponents: ProfileListsComponent[] = [];
+  private profileCardInstances: UserIdentity[] = [];
   private blockLibrary: BlockLibraryView | null = null;
   private editMode: boolean = false;
   private folderPickers: BookmarkFolderPicker[] = [];
@@ -138,6 +141,7 @@ export class NospressView extends View {
     this.destroyFolderPickers();
     this.destroyBlockDropdowns();
     this.destroyCursorRow();
+    this.destroyProfileCards();
     if (this.fullscreenOverlay) {
       this.fullscreenOverlay.unmount();
       this.fullscreenOverlay = null;
@@ -313,9 +317,10 @@ export class NospressView extends View {
       ? this.renderBlocksWithCursor(page.blocks)
       : BlockRenderer.renderAll(page.blocks, { editable: false });
 
-    // Tear down old picker instances before innerHTML replaces their DOM
+    // Tear down old picker / mount instances before innerHTML replaces their DOM
     this.destroyFolderPickers();
     this.destroyBlockDropdowns();
+    this.destroyProfileCards();
 
     const leftButtonHtml = editable
       ? `<button class="btn btn--medium btn--passive" data-action="preview-page" title="Close the editor and see the page as visitors see it">Preview Page</button>`
@@ -362,8 +367,14 @@ export class NospressView extends View {
       this.applySelectedBlockClass();
     }
     if (!editable) mountNospressEmbeds(this.container);
+    this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: this.pubkey });
 
     this.bindHeaderEvents();
+  }
+
+  private destroyProfileCards(): void {
+    this.profileCardInstances.forEach(ui => ui.destroy());
+    this.profileCardInstances = [];
   }
 
   private renderActionBar(editable: boolean): string {
@@ -576,18 +587,20 @@ export class NospressView extends View {
     }
 
     // "See Website" → opens the public NosPress page in a new tab.
-    // Initial href uses the canonical npub form (works always); upgraded
+    // Initial url uses the canonical npub form (works always); upgraded
     // to the prettier nip05 form in-place if the profile has one. The
     // public URL itself is rendered by Phase 5's boot path on noornote.app.
-    const seeWebsiteAnchor = document.createElement('a');
-    seeWebsiteAnchor.className = 'btn btn--passive btn--medium';
-    seeWebsiteAnchor.target = '_blank';
-    seeWebsiteAnchor.rel = 'noopener noreferrer';
-    seeWebsiteAnchor.textContent = 'See Website';
-    seeWebsiteAnchor.href = `https://noornote.app/${this.npub}/`;
+    const seeWebsiteButton = document.createElement('button');
+    seeWebsiteButton.type = 'button';
+    seeWebsiteButton.className = 'btn btn--passive btn--medium';
+    seeWebsiteButton.textContent = 'See Website';
+    let seeWebsiteUrl = `https://noornote.app/${this.npub}/`;
+    seeWebsiteButton.addEventListener('click', () => {
+      window.open(seeWebsiteUrl, '_blank', 'noopener,noreferrer');
+    });
     UserProfileService.getInstance().getUserProfile(this.pubkey).then(profile => {
       const nip05 = profile?.nip05?.trim();
-      if (nip05) seeWebsiteAnchor.href = `https://noornote.app/${nip05}/`;
+      if (nip05) seeWebsiteUrl = `https://noornote.app/${nip05}/`;
     }).catch(() => { /* keep npub fallback */ });
 
     this.fullscreenOverlay = new FullscreenOverlay({
@@ -595,7 +608,7 @@ export class NospressView extends View {
       exitLabel: 'Exit Fullscreen',
       body: split,
       maxWidth: '100%',
-      extraActions: [seeWebsiteAnchor],
+      extraActions: [seeWebsiteButton],
       onExit: () => this.cleanupFullscreenEditor(),
     });
     this.fullscreenOverlay.mount();

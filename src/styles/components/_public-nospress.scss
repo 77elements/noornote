@@ -117,39 +117,6 @@ html.layout--public {
     }
   }
 
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: $gap;
-  }
-
-  &__avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: $radius-full;
-    object-fit: cover;
-    flex-shrink: 0;
-  }
-
-  &__identity {
-    flex: 1;
-    min-width: 0;
-  }
-
-  &__name {
-    margin: 0;
-    font-size: 1.5rem;
-    color: var(--color-5);
-    @include text-truncate;
-  }
-
-  &__nip05 {
-    margin: calc($gap / 4) 0 0;
-    font-size: 0.9rem;
-    color: var(--color-3);
-    @include text-truncate;
-  }
-
   &__content {
     flex: 1;
   }
