@@ -24,6 +24,7 @@ import { renderEmbed } from './renderers/EmbedRenderer';
 import { renderColumns } from './renderers/ColumnsRenderer';
 import { renderDmButton } from './renderers/DmButtonRenderer';
 import { renderProfileCard } from './renderers/ProfileCardRenderer';
+import { renderQuote } from './renderers/QuoteRenderer';
 
 export interface BlockRenderOptions {
   editable?: boolean;
@@ -50,6 +51,7 @@ export class BlockRenderer {
         case 'columns':         return renderColumns(block, { editable });
         case 'dm-button':       return renderDmButton(block, editable);
         case 'profile-card':    return renderProfileCard(block, editable);
+        case 'quote':           return renderQuote(block, editable);
       }
     })();
     return styleWrap(block, inner);

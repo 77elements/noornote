@@ -135,6 +135,7 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   'bookmark-folder': CONTAINER_PROPS,
   columns:           CONTAINER_PROPS,
   'profile-card':    CONTAINER_PROPS,
+  quote:             TEXTUAL_PROPS,
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */

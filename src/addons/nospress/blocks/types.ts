@@ -23,7 +23,8 @@ export type Block =
   | { id: string; type: 'columns'; count: 2 | 3; content: Block[][]; style?: CommonStyle }
   | { id: string; type: 'divider'; style?: CommonStyle }
   | { id: string; type: 'dm-button'; label: string; style?: CommonStyle }
-  | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle };
+  | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle }
+  | { id: string; type: 'quote'; text: string; author?: string; source?: string; style?: CommonStyle };
 
 export type BlockType = Block['type'];
 
@@ -64,6 +65,7 @@ export function createBlock(type: BlockType): Block {
     case 'divider':         return { id, type };
     case 'dm-button':       return { id, type, label: 'Send me a message' };
     case 'profile-card':    return { id, type };
+    case 'quote':           return { id, type, text: '' };
   }
 }
 

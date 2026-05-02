@@ -1303,6 +1303,10 @@ export class NospressView extends View {
         if (field === 'nostrRef') block.nostrRef = el.value;
       } else if (block.type === 'dm-button') {
         if (field === 'dm-label') block.label = el.value;
+      } else if (block.type === 'quote') {
+        if (field === 'quote-text')   block.text = el.value;
+        if (field === 'quote-author') block.author = el.value;
+        if (field === 'quote-source') block.source = el.value;
       }
     }, { silent: true });
   }

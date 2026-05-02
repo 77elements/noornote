@@ -511,6 +511,40 @@
   font-style: italic;
 }
 
+.nospress-block-quote {
+  margin: $gap * 2 0;
+  padding: $gap calc($gap * 1.5);
+  border-left: 3px solid var(--color-6);
+  background: rgba($color-2, 0.4);
+  border-radius: $radius-xl;
+  font-style: italic;
+  color: $text-alpha-heavy;
+
+  &__text-content {
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+
+  &__footer {
+    margin-top: calc($gap / 2);
+    font-style: normal;
+    font-size: 0.9rem;
+    color: $text-alpha-medium;
+  }
+}
+
+.nospress-block-quote__text,
+.nospress-block-quote__author-input,
+.nospress-block-quote__source-input {
+  display: block;
+  margin-bottom: calc($gap / 2);
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
 // Columns block — desktop/tablet shows N columns side-by-side, mobile stacks
 .nospress-block-columns {
   display: grid;
