@@ -8,6 +8,8 @@ import { buildInlineStyle, schemaFor } from './blocks/styles';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { showLoggedOutReactionModal } from '../../helpers/LoggedOutModals';
+import { AuthService } from '../../services/AuthService';
+import { mountNospressEmbeds } from './embedMount';
 import type { PublicPageRoute } from './detectPublicPageRoute';
 import type { NospressPageV2 } from './blocks/types';
 
@@ -30,6 +32,11 @@ export class PublicNospressPage {
    *  reused by the signing-action CTAs to build action-specific post-login
    *  redirects (e.g. dm-button → /messages/{ownerNpub}). */
   private ownerNpub: string | null = null;
+  /** Viewer (= currently logged-in NoorNote user, if any). Drives the
+   *  WordPress-style admin bar at the top of the page and turns signing-
+   *  action CTAs into direct navigations instead of logged-out modals. */
+  private readonly viewerNpub: string | null;
+  private readonly viewerPubkey: string | null;
 
   /**
    * Map of `data-action` → reaction-type for the logged-out CTA modal.
@@ -45,6 +52,9 @@ export class PublicNospressPage {
     this.route = route;
     this.container = document.createElement('div');
     this.container.className = 'public-page';
+    const viewer = AuthService.getInstance().getCurrentUser();
+    this.viewerNpub = viewer?.npub ?? null;
+    this.viewerPubkey = viewer?.pubkey ?? null;
   }
 
   public getElement(): HTMLElement {
@@ -61,18 +71,24 @@ export class PublicNospressPage {
     }
     this.ownerNpub = encodeNpub(pubkey);
 
-    const [profile, page] = await Promise.all([
+    const viewerProfilePromise = this.viewerPubkey
+      ? UserProfileService.getInstance().getUserProfile(this.viewerPubkey).catch(() => null)
+      : Promise.resolve(null);
+
+    const [profile, page, viewerProfile] = await Promise.all([
       UserProfileService.getInstance().getUserProfile(pubkey).catch(() => null),
       NospressOrchestrator.getInstance().fetchFromRelays(pubkey, true).catch(() => null),
+      viewerProfilePromise,
     ]);
 
     if (!page || page.blocks.length === 0) {
-      this.renderEmpty(profile);
+      this.renderEmpty(profile, viewerProfile);
       return;
     }
 
-    this.renderPage(profile, page);
+    this.renderPage(profile, page, viewerProfile);
     await this.mountInlineBookmarkFolders(pubkey);
+    mountNospressEmbeds(this.container);
     this.bindSigningActionCtas();
   }
 
@@ -103,6 +119,18 @@ export class PublicNospressPage {
       e.preventDefault();
       e.stopPropagation();
       const postLoginAction = this.postLoginActionFor(action);
+
+      // Logged-in viewer: skip the CTA modal and route directly to the
+      // action target (e.g. /messages/{owner}). Full reload because there
+      // is no MainLayout in the public-view DOM to mount the in-app view
+      // into — App.ts's boot path handles the next page cleanly.
+      if (this.viewerPubkey) {
+        if (postLoginAction) {
+          window.location.href = postLoginAction;
+        }
+        return;
+      }
+
       showLoggedOutReactionModal(reactionType, postLoginAction ? { postLoginAction } : {});
     }, { signal: this.clickAbort.signal });
   }
@@ -147,9 +175,10 @@ export class PublicNospressPage {
     `;
   }
 
-  private renderEmpty(profile: UserProfile | null): void {
+  private renderEmpty(profile: UserProfile | null, viewerProfile: UserProfile | null): void {
     const name = profile ? extractDisplayName(profile) : '';
     this.container.innerHTML = `
+      ${this.adminBarHtml(viewerProfile)}
       ${this.headerHtml(profile)}
       <div class="public-page__empty">
         <p>${escapeHtml(name) || 'This user'} has no NosPress page yet.</p>
@@ -158,15 +187,52 @@ export class PublicNospressPage {
     `;
   }
 
-  private renderPage(profile: UserProfile | null, page: NospressPageV2): void {
+  private renderPage(profile: UserProfile | null, page: NospressPageV2, viewerProfile: UserProfile | null): void {
     const blocksHtml = BlockRenderer.renderAll(page.blocks, { editable: false });
     const inlineStyle = buildInlineStyle(schemaFor('page'), page.style);
     const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
 
     this.container.innerHTML = `
+      ${this.adminBarHtml(viewerProfile)}
       ${this.headerHtml(profile)}
       <div class="public-page__content"${styleAttr}>${blocksHtml}</div>
       ${this.footerHtml()}
+    `;
+  }
+
+  /**
+   * WordPress-style admin bar shown only when a NoorNote user is logged in.
+   * Quick-nav back into the app + viewer identity. When the viewer is the
+   * page owner, an extra "Edit page" link appears that jumps to the
+   * fullscreen editor.
+   */
+  private adminBarHtml(viewerProfile: UserProfile | null): string {
+    if (!this.viewerNpub) return '';
+
+    const isOwner = this.ownerNpub !== null && this.ownerNpub === this.viewerNpub;
+    const editLink = isOwner
+      ? `<a class="public-page-bar__link public-page-bar__link--accent" href="/profile/${this.viewerNpub}/nospress/edit/fullscreen">Edit page →</a>`
+      : '';
+
+    const name = viewerProfile ? extractDisplayName(viewerProfile) : '';
+    const picture = viewerProfile?.picture ?? '';
+    const avatar = picture
+      ? `<img class="public-page-bar__avatar" src="${escapeHtmlAttr(picture)}" alt="" />`
+      : '';
+
+    return `
+      <div class="public-page-bar">
+        <nav class="public-page-bar__nav">
+          <a class="public-page-bar__brand" href="/">NoorNote</a>
+          <a class="public-page-bar__link" href="/notifications">Notifications</a>
+          <a class="public-page-bar__link" href="/messages">Messages</a>
+          ${editLink}
+        </nav>
+        <a class="public-page-bar__user" href="/profile/${this.viewerNpub}">
+          ${avatar}
+          <span class="public-page-bar__name">${escapeHtml(name)}</span>
+        </a>
+      </div>
     `;
   }
 

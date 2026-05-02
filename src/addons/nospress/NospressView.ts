@@ -41,11 +41,7 @@ import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelpe
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { MediaUploadService } from '../../services/MediaUploadService';
-import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
-import { RelayConfig } from '../../services/RelayConfig';
-import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
-import { NoteUI } from '../../components/ui/NoteUI';
-import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { mountNospressEmbeds } from './embedMount';
 import DOMPurify from 'dompurify';
 
 const BLOCK_LIBRARY_TAB_ID = 'nospress-block-library';
@@ -365,7 +361,7 @@ export class NospressView extends View {
       this.mountCursorRow();
       this.applySelectedBlockClass();
     }
-    if (!editable) this.mountEmbeds();
+    if (!editable) mountNospressEmbeds(this.container);
 
     this.bindHeaderEvents();
   }
@@ -1055,77 +1051,6 @@ export class NospressView extends View {
     });
   }
 
-  private mountEmbeds(): void {
-    const slots = this.container.querySelectorAll<HTMLElement>('[data-embed-mount]');
-    slots.forEach(slot => {
-      const ref = slot.dataset.nostrRef ?? '';
-      if (!ref.trim()) return;
-      // Fire-and-forget — slot stays as loading skeleton if fetch fails or
-      // the user navigates away. We don't await here so all embeds load
-      // in parallel rather than serializing.
-      void this.resolveAndMountEmbed(slot, ref);
-    });
-  }
-
-  private async resolveAndMountEmbed(slot: HTMLElement, nostrRef: string): Promise<void> {
-    try {
-      const cleaned = nostrRef.replace(/^nostr:/, '').trim();
-      let event: NostrEvent | null = null;
-
-      if (cleaned.startsWith('naddr1')) {
-        event = await LongFormOrchestrator.getInstance().fetchAddressableEvent(cleaned);
-      } else if (cleaned.startsWith('nevent1') || cleaned.startsWith('note1')) {
-        const decoded = decodeNip19(cleaned);
-        const id = decoded.type === 'nevent'
-          ? (decoded.data as { id: string }).id
-          : decoded.type === 'note'
-          ? (decoded.data as string)
-          : '';
-        if (id) {
-          const result = await fetchNostrEvents({
-            relays: RelayConfig.getInstance().getReadRelays(),
-            ids: [id],
-            limit: 1
-          });
-          event = result.events[0] ?? null;
-        }
-      } else if (/^[0-9a-fA-F]{64}$/.test(cleaned)) {
-        // Bare hex event id — accept it as a convenience
-        const result = await fetchNostrEvents({
-          relays: RelayConfig.getInstance().getReadRelays(),
-          ids: [cleaned.toLowerCase()],
-          limit: 1
-        });
-        event = result.events[0] ?? null;
-      }
-
-      if (!slot.isConnected) return; // user navigated away mid-fetch
-
-      if (!event) {
-        slot.innerHTML = `<p class="nospress-block-embed__error">Embed not found: ${this.escapeText(nostrRef)}</p>`;
-        return;
-      }
-
-      const isUserLoggedIn = AuthService.getInstance().getCurrentUser() !== null;
-      const noteElement = NoteUI.createNoteElement(event, {
-        collapsible: true,
-        islFetchStats: true,
-        isLoggedIn: isUserLoggedIn,
-        depth: 1
-      });
-      slot.innerHTML = '';
-      slot.appendChild(noteElement);
-    } catch (error) {
-      console.error('Embed resolution failed:', error);
-      if (slot.isConnected) {
-        slot.innerHTML = `<p class="nospress-block-embed__error">Failed to load embed</p>`;
-      }
-    }
-  }
-
-  private escapeText(value: string): string {
-    return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
 
   /**
    * Update a single style field from an inline input. Generic over scope:

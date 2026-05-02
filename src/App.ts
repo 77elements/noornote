@@ -147,21 +147,17 @@ export class App {
 
     const isLoggedIn = this.authService.hasValidSession();
 
-    // Public-page boot branch finalized: with a session, redirect to the
-    // in-app NosPress view; without one, render the clean public view.
-    if (publicMatch) {
-      if (isLoggedIn) {
-        const npub = await PublicPageBootstrap.resolveToNpub(publicMatch);
-        this.setupUI();
-        this.router.navigate(npub ? `/profile/${npub}/nospress` : '/');
-      } else if (this.appElement) {
-        await PublicPageBootstrap.mountPublicView(publicMatch, this.appElement);
-        return;
-      }
-    } else {
-      const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
-      this.router.navigate(targetPath);
+    // Public-page boot branch: a public NosPress URL renders the clean
+    // single-column page regardless of auth state. Logged-in NoorNote users
+    // additionally get a sticky admin-style top-bar with quick-nav back into
+    // the app — owners of the page see an extra "Edit" button.
+    if (publicMatch && this.appElement) {
+      await PublicPageBootstrap.mountPublicView(publicMatch, this.appElement);
+      return;
     }
+
+    const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
+    this.router.navigate(targetPath);
 
     // If user is already logged in from session restore, start services explicitly.
     // user:login may have been emitted before setupEventListeners() registered the handler.

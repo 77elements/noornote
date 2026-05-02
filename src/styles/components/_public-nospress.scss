@@ -11,6 +11,89 @@ html.layout--public {
   }
 }
 
+// Admin bar — visible only when a NoorNote user is logged in. Sticky top,
+// full-width, sits above the centered .public-page content. Padding-top on
+// .public-page makes room so the page header isn't hidden behind it.
+.public-page-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap;
+  padding: 0 $gap;
+  background: rgba($color-1, 0.85);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-2);
+  font-size: 0.85rem;
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: $gap;
+    overflow-x: auto;
+    @include custom-scrollbar;
+  }
+
+  &__brand {
+    font-weight: 700;
+    color: var(--color-4);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  &__link {
+    color: var(--color-5);
+    text-decoration: none;
+    white-space: nowrap;
+    opacity: 0.8;
+    transition: opacity $transition-fast;
+
+    &:hover {
+      opacity: 1;
+    }
+
+    &--accent {
+      color: var(--color-4);
+      font-weight: 500;
+      opacity: 1;
+    }
+  }
+
+  &__user {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    flex-shrink: 0;
+    color: var(--color-5);
+    text-decoration: none;
+    opacity: 0.85;
+    transition: opacity $transition-fast;
+
+    &:hover {
+      opacity: 1;
+      text-decoration: none;
+    }
+  }
+
+  &__avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: $radius-full;
+    object-fit: cover;
+  }
+
+  &__name {
+    color: var(--color-5);
+    @include text-truncate;
+    max-width: 160px;
+  }
+}
+
 .public-page {
   max-width: 700px;
   margin: 0 auto;
@@ -20,8 +103,18 @@ html.layout--public {
   flex-direction: column;
   gap: calc($gap * 2);
 
+  // Push content below the fixed admin bar when one is rendered. The bar
+  // is a sibling earlier in the DOM, so we use :has() to detect it.
+  &:has(> .public-page-bar) {
+    padding-top: calc(40px + $gap * 2);
+  }
+
   @include tablet {
     padding: calc($gap * 3) $gap;
+
+    &:has(> .public-page-bar) {
+      padding-top: calc(40px + $gap * 3);
+    }
   }
 
   &__header {
