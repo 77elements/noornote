@@ -1165,6 +1165,8 @@ export class NospressView extends View {
         case 'add-gallery-url':        this.addGalleryUrl(blockId); break;
         case 'delete-gallery-url':     if (itemIndex >= 0) this.deleteGalleryUrl(blockId, itemIndex); break;
         case 'upload-gallery-images':  this.triggerGalleryUpload(blockId); break;
+        case 'upload-video':           this.triggerVideoUpload(blockId); break;
+        case 'upload-audio':           this.triggerAudioUpload(blockId); break;
       }
     });
 
@@ -1227,6 +1229,22 @@ export class NospressView extends View {
         if (!blockId || files.length === 0) return;
         target.value = '';
         await this.handleGalleryUpload(blockId, files);
+        return;
+      }
+      if (target?.dataset?.videoFile !== undefined) {
+        const blockId = target.dataset.blockId;
+        const file = target.files?.[0];
+        if (!blockId || !file) return;
+        target.value = '';
+        await this.handleVideoUpload(blockId, file);
+        return;
+      }
+      if (target?.dataset?.audioFile !== undefined) {
+        const blockId = target.dataset.blockId;
+        const file = target.files?.[0];
+        if (!blockId || !file) return;
+        target.value = '';
+        await this.handleAudioUpload(blockId, file);
         return;
       }
     });
@@ -1313,6 +1331,13 @@ export class NospressView extends View {
         if (field === 'cta-label')   block.label = el.value;
         if (field === 'cta-url')     block.url = el.value;
         if (field === 'cta-variant') block.variant = el.value === 'secondary' ? 'secondary' : 'primary';
+      } else if (block.type === 'video') {
+        if (field === 'video-url')     block.url = el.value;
+        if (field === 'video-caption') block.caption = el.value;
+        if (field === 'video-poster')  block.poster = el.value;
+      } else if (block.type === 'audio') {
+        if (field === 'audio-url')     block.url = el.value;
+        if (field === 'audio-caption') block.caption = el.value;
       }
     }, { silent: true });
   }
@@ -1372,6 +1397,106 @@ export class NospressView extends View {
   private triggerImageUpload(blockId: string): void {
     const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-image-file]`) as HTMLInputElement | null;
     fileInput?.click();
+  }
+
+  private triggerVideoUpload(blockId: string): void {
+    const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-video-file]`) as HTMLInputElement | null;
+    fileInput?.click();
+  }
+
+  private triggerAudioUpload(blockId: string): void {
+    const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-audio-file]`) as HTMLInputElement | null;
+    fileInput?.click();
+  }
+
+  private async handleVideoUpload(blockId: string, file: File): Promise<void> {
+    if (!file.type.startsWith('video/')) {
+      ToastService.show('Please select a video file', 'error');
+      return;
+    }
+    const uploadBtn = this.container.querySelector(`[data-block-id="${blockId}"][data-action="upload-video"]`) as HTMLButtonElement | null;
+    if (!uploadBtn) return;
+
+    const originalHTML = uploadBtn.innerHTML;
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = `
+      <svg width="20" height="20" class="upload-progress" viewBox="0 0 24 24">
+        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
+      </svg>
+    `;
+
+    const updateProgress = (progress: number) => {
+      const bar = uploadBtn.querySelector('.upload-progress-bar') as SVGCircleElement | null;
+      if (!bar) return;
+      const circumference = 62.83;
+      const offset = circumference - (progress / 100) * circumference;
+      bar.style.strokeDashoffset = String(offset);
+    };
+
+    try {
+      const result = await MediaUploadService.getInstance().uploadFile(file, updateProgress);
+      if (result.success && result.url) {
+        const url = result.url;
+        this.mutateDraft((page) => {
+          const block = findBlockInPage(page, blockId)?.block;
+          if (block?.type === 'video') block.url = url;
+        });
+      }
+    } catch (error) {
+      console.error('Video upload failed:', error);
+      ToastService.show('Video upload failed', 'error');
+    } finally {
+      if (uploadBtn.isConnected) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = originalHTML;
+      }
+    }
+  }
+
+  private async handleAudioUpload(blockId: string, file: File): Promise<void> {
+    if (!file.type.startsWith('audio/')) {
+      ToastService.show('Please select an audio file', 'error');
+      return;
+    }
+    const uploadBtn = this.container.querySelector(`[data-block-id="${blockId}"][data-action="upload-audio"]`) as HTMLButtonElement | null;
+    if (!uploadBtn) return;
+
+    const originalHTML = uploadBtn.innerHTML;
+    uploadBtn.disabled = true;
+    uploadBtn.innerHTML = `
+      <svg width="20" height="20" class="upload-progress" viewBox="0 0 24 24">
+        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
+      </svg>
+    `;
+
+    const updateProgress = (progress: number) => {
+      const bar = uploadBtn.querySelector('.upload-progress-bar') as SVGCircleElement | null;
+      if (!bar) return;
+      const circumference = 62.83;
+      const offset = circumference - (progress / 100) * circumference;
+      bar.style.strokeDashoffset = String(offset);
+    };
+
+    try {
+      const result = await MediaUploadService.getInstance().uploadFile(file, updateProgress);
+      if (result.success && result.url) {
+        const url = result.url;
+        this.mutateDraft((page) => {
+          const block = findBlockInPage(page, blockId)?.block;
+          if (block?.type === 'audio') block.url = url;
+        });
+      }
+    } catch (error) {
+      console.error('Audio upload failed:', error);
+      ToastService.show('Audio upload failed', 'error');
+    } finally {
+      if (uploadBtn.isConnected) {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = originalHTML;
+      }
+    }
   }
 
   private addGalleryUrl(blockId: string): void {

@@ -26,6 +26,8 @@ import { renderDmButton } from './renderers/DmButtonRenderer';
 import { renderProfileCard } from './renderers/ProfileCardRenderer';
 import { renderQuote } from './renderers/QuoteRenderer';
 import { renderButtonCta } from './renderers/ButtonCtaRenderer';
+import { renderVideo } from './renderers/VideoRenderer';
+import { renderAudio } from './renderers/AudioRenderer';
 
 export interface BlockRenderOptions {
   editable?: boolean;
@@ -54,6 +56,8 @@ export class BlockRenderer {
         case 'profile-card':    return renderProfileCard(block, editable);
         case 'quote':           return renderQuote(block, editable);
         case 'button-cta':      return renderButtonCta(block, editable);
+        case 'video':           return renderVideo(block, editable);
+        case 'audio':           return renderAudio(block, editable);
       }
     })();
     return styleWrap(block, inner);

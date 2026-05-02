@@ -25,7 +25,9 @@ export type Block =
   | { id: string; type: 'dm-button'; label: string; style?: CommonStyle }
   | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle }
   | { id: string; type: 'quote'; text: string; author?: string; source?: string; style?: CommonStyle }
-  | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; style?: CommonStyle };
+  | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; style?: CommonStyle }
+  | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle }
+  | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle };
 
 export type BlockType = Block['type'];
 
@@ -68,6 +70,8 @@ export function createBlock(type: BlockType): Block {
     case 'profile-card':    return { id, type };
     case 'quote':           return { id, type, text: '' };
     case 'button-cta':      return { id, type, label: '', url: '' };
+    case 'video':           return { id, type, url: '' };
+    case 'audio':           return { id, type, url: '' };
   }
 }
 

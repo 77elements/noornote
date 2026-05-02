@@ -566,6 +566,78 @@
   }
 }
 
+.nospress-block-video {
+  margin: $gap * 2 0;
+
+  video {
+    width: 100%;
+    max-height: 70vh;
+    border-radius: $radius-xl;
+    background: $color-1;
+    display: block;
+  }
+
+  &__caption {
+    margin-top: calc($gap / 2);
+    font-size: 0.9rem;
+    color: $text-alpha-medium;
+    text-align: center;
+    font-style: italic;
+  }
+}
+
+.nospress-block-video__url-row {
+  display: flex;
+  gap: calc($gap / 2);
+
+  .input { flex: 1; }
+}
+
+.nospress-block-video__preview {
+  margin-top: $gap;
+
+  video {
+    width: 100%;
+    max-height: 50vh;
+    border-radius: $radius-xl;
+    display: block;
+  }
+}
+
+.nospress-block-audio {
+  margin: $gap * 2 0;
+
+  audio {
+    width: 100%;
+    display: block;
+  }
+
+  &__caption {
+    margin-top: calc($gap / 2);
+    font-size: 0.9rem;
+    color: $text-alpha-medium;
+    text-align: center;
+    font-style: italic;
+  }
+}
+
+.nospress-block-audio__url-row {
+  display: flex;
+  gap: calc($gap / 2);
+
+  .input { flex: 1; }
+}
+
+.nospress-block-audio__preview {
+  margin-top: $gap;
+
+  audio {
+    width: 100%;
+    display: block;
+  }
+}
+
+
 // Columns block — desktop/tablet shows N columns side-by-side, mobile stacks
 .nospress-block-columns {
   display: grid;

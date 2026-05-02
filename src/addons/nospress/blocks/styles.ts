@@ -137,6 +137,8 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   'profile-card':    CONTAINER_PROPS,
   quote:             TEXTUAL_PROPS,
   'button-cta':      TEXTUAL_PROPS,
+  video:             CONTAINER_PROPS,
+  audio:             CONTAINER_PROPS,
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */

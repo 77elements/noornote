@@ -35,4 +35,6 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
   { type: 'profile-card',    label: 'Profile Card',    description: 'Avatar + display name + NIP-05 of the page owner', icon: '👤', enabled: true },
   { type: 'quote',           label: 'Quote',           description: 'Pull quote with optional author and source',       icon: '❝', enabled: true },
   { type: 'button-cta',      label: 'Button',          description: 'Call-to-action button linking to any URL',         icon: '🔘', enabled: true },
+  { type: 'video',           label: 'Video',           description: 'Single video with optional caption (mp4 / webm)',  icon: '🎬', enabled: true },
+  { type: 'audio',           label: 'Audio',           description: 'Audio player for podcasts, music, voice notes',    icon: '🎵', enabled: true },
 ];
