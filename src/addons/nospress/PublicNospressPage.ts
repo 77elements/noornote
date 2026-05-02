@@ -11,7 +11,10 @@ import { showLoggedOutReactionModal } from '../../helpers/LoggedOutModals';
 import { AuthService } from '../../services/AuthService';
 import { mountNospressEmbeds } from './embedMount';
 import { mountNospressProfileCards } from './profileCardMount';
+import { mountNospressArticlesLists } from './articlesListMount';
+import { mountNospressWeblogs } from './weblogMount';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
+import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
 import type { PublicPageRoute } from './detectPublicPageRoute';
 import type { NospressPageV2 } from './blocks/types';
 
@@ -30,6 +33,7 @@ export class PublicNospressPage {
   private route: PublicPageRoute;
   private inlineMounts: ProfileListsComponent[] = [];
   private profileCardInstances: UserIdentity[] = [];
+  private articlesCarousels: ProfileArticlesCarousel[] = [];
   private clickAbort: AbortController | null = null;
   /** Owner of the page (= page author). Resolved from the route during load,
    *  reused by the signing-action CTAs to build action-specific post-login
@@ -93,6 +97,8 @@ export class PublicNospressPage {
     await this.mountInlineBookmarkFolders(pubkey);
     mountNospressEmbeds(this.container);
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: pubkey });
+    this.articlesCarousels = mountNospressArticlesLists(this.container, { ownerPubkey: pubkey });
+    mountNospressWeblogs(this.container, { ownerPubkey: pubkey });
     this.bindSigningActionCtas();
   }
 
@@ -103,6 +109,8 @@ export class PublicNospressPage {
     this.inlineMounts = [];
     this.profileCardInstances.forEach(ui => ui.destroy());
     this.profileCardInstances = [];
+    this.articlesCarousels.forEach(c => c.destroy());
+    this.articlesCarousels = [];
     this.container.innerHTML = '';
   }
 

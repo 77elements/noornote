@@ -1,0 +1,230 @@
+import { NostrTransport } from '../../services/transport/NostrTransport';
+import { RelayConfig } from '../../services/RelayConfig';
+import { decodeNip19 } from '../../services/NostrToolsAdapter';
+import { AuthService } from '../../services/AuthService';
+import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
+import { NoteUI } from '../../components/ui/NoteUI';
+import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
+
+const DEFAULT_POSTS_PER_PAGE = 5;
+
+interface WeblogState {
+  pubkey: string;
+  hashtags: string[];
+  postsPerPage: number;
+  excludeReplies: boolean;
+  excludeReposts: boolean;
+  oldestSeen: number; // unix seconds — `until` cursor for the next fetch
+}
+
+const slotState = new WeakMap<HTMLElement, WeblogState>();
+
+/**
+ * Mount each `<div data-weblog-mount>` slot with a paged list of the
+ * author's kind-1 (and optionally kind-6 repost) notes, filtered by
+ * hashtags. Renders via NoteUI so logged-in visitors get the full ISL.
+ *
+ * Pagination: load-more (single button at the bottom). State is kept
+ * per slot in a WeakMap so re-renders of the page don't lose the cursor
+ * — but a fresh DOM (e.g. after a NospressView re-render) starts over.
+ */
+export function mountNospressWeblogs(
+  container: HTMLElement,
+  opts: { ownerPubkey: string }
+): void {
+  const slots = container.querySelectorAll<HTMLElement>('[data-weblog-mount]');
+  slots.forEach(slot => {
+    void mountSlot(slot, opts.ownerPubkey);
+  });
+}
+
+async function mountSlot(slot: HTMLElement, ownerPubkey: string): Promise<void> {
+  const pubkey = resolvePubkey(slot.dataset.pubkey, ownerPubkey);
+  if (!pubkey) {
+    slot.innerHTML = `<p class="nospress-block-weblog__empty">No author resolved.</p>`;
+    return;
+  }
+
+  const hashtags = parseHashtags(slot.dataset.hashtags);
+  const postsPerPage = clampInt(slot.dataset.postsPerPage, 1, 20, DEFAULT_POSTS_PER_PAGE);
+  const excludeReplies = slot.dataset.excludeReplies !== '0';
+  const excludeReposts = slot.dataset.excludeReposts === '1';
+
+  const state: WeblogState = {
+    pubkey,
+    hashtags,
+    postsPerPage,
+    excludeReplies,
+    excludeReposts,
+    oldestSeen: Math.floor(Date.now() / 1000),
+  };
+  slotState.set(slot, state);
+
+  // Initial container scaffold: posts area + load-more bar.
+  slot.innerHTML = `
+    <div class="nospress-block-weblog__items"></div>
+    <div class="nospress-block-weblog__bar">
+      <button type="button" class="btn btn--passive btn--medium nospress-block-weblog__load-more">Load more</button>
+    </div>
+  `;
+
+  const loadMoreBtn = slot.querySelector<HTMLButtonElement>('.nospress-block-weblog__load-more');
+  loadMoreBtn?.addEventListener('click', () => {
+    void fetchAndAppend(slot, state, loadMoreBtn);
+  });
+
+  await fetchAndAppend(slot, state, loadMoreBtn);
+}
+
+async function fetchAndAppend(
+  slot: HTMLElement,
+  state: WeblogState,
+  loadMoreBtn: HTMLButtonElement | null,
+): Promise<void> {
+  if (loadMoreBtn) loadMoreBtn.disabled = true;
+  const itemsHost = slot.querySelector<HTMLElement>('.nospress-block-weblog__items');
+  if (!itemsHost) return;
+
+  try {
+    const events = state.hashtags.length > 0
+      ? await fetchByHashtagSearch(state)
+      : await fetchByAuthor(state);
+
+    if (!slot.isConnected) return;
+
+    const filtered = filterEvents(events, state);
+    filtered.sort((a, b) => b.created_at - a.created_at);
+    const next = filtered.slice(0, state.postsPerPage);
+
+    if (next.length === 0) {
+      if (itemsHost.children.length === 0) {
+        itemsHost.innerHTML = `<p class="nospress-block-weblog__empty">No posts yet.</p>`;
+      }
+      if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+      return;
+    }
+
+    const isLoggedIn = AuthService.getInstance().getCurrentUser() !== null;
+    for (const event of next) {
+      const note = NoteUI.createNoteElement(event, {
+        collapsible: true,
+        islFetchStats: true,
+        isLoggedIn,
+        depth: 1,
+      });
+      itemsHost.appendChild(note);
+    }
+
+    state.oldestSeen = next[next.length - 1]!.created_at;
+
+    if (filtered.length <= state.postsPerPage && loadMoreBtn) {
+      loadMoreBtn.style.display = 'none';
+    } else if (loadMoreBtn) {
+      loadMoreBtn.disabled = false;
+    }
+  } catch (error) {
+    console.error('Weblog mount failed:', error);
+    if (slot.isConnected && loadMoreBtn) loadMoreBtn.disabled = false;
+  }
+}
+
+/**
+ * No-hashtag path: classic author-scoped fetch from the user's read relays.
+ * Reposts (kind 6) included unless excluded.
+ */
+async function fetchByAuthor(state: WeblogState): Promise<NostrEvent[]> {
+  const relays = RelayConfig.getInstance().getReadRelays();
+  const kinds = state.excludeReposts ? [1] : [1, 6];
+  const filter: NDKFilter = {
+    kinds,
+    authors: [state.pubkey],
+    until: state.oldestSeen,
+    limit: state.postsPerPage * 2,
+  };
+  return NostrTransport.getInstance().fetch(relays, [filter], 8000, false, 'NospressWeblog');
+}
+
+/**
+ * Hashtag path: NIP-50 search via SearchOrchestrator (kind 1 only — search
+ * relays don't reliably index reposts). Per-hashtag search calls run in
+ * parallel and are merged + deduplicated.
+ *
+ * Mirrors the HashtagSubscriptions addon strategy: use search relays
+ * because plain `#t`-tag filters on user relays miss notes whose tags are
+ * cased differently than the query, and miss content-only mentions.
+ * Client-side verification (case-insensitive) follows in `filterEvents`.
+ */
+async function fetchByHashtagSearch(state: WeblogState): Promise<NostrEvent[]> {
+  const search = SearchOrchestrator.getInstance();
+  const limit = state.postsPerPage * 4; // generous, post-filter narrows it
+  const results = await Promise.all(
+    state.hashtags.map(tag =>
+      search.searchPaginated(
+        { query: `#${tag}`, authors: [state.pubkey], limit },
+        state.oldestSeen,
+      ).catch(() => [] as NostrEvent[]),
+    ),
+  );
+
+  const seen = new Set<string>();
+  const merged: NostrEvent[] = [];
+  for (const events of results) {
+    for (const ev of events) {
+      if (!ev.id || seen.has(ev.id)) continue;
+      seen.add(ev.id);
+      merged.push(ev);
+    }
+  }
+  return merged;
+}
+
+function filterEvents(events: NostrEvent[], state: WeblogState): NostrEvent[] {
+  const lowerTags = state.hashtags.map(t => t.toLowerCase());
+  return events.filter(event => {
+    if (event.created_at >= state.oldestSeen) return false; // already shown
+
+    // Hashtag verification: search relays return fuzzy matches, so check
+    // each hit actually carries the hashtag (case-insensitive) either
+    // as a `#t` tag or as `#hashtag` text in the content.
+    if (lowerTags.length > 0) {
+      const tags = event.tags ?? [];
+      const content = (event.content ?? '').toLowerCase();
+      const matches = lowerTags.some(tag => {
+        const inTag = tags.some(t => t[0] === 't' && t[1]?.toLowerCase() === tag);
+        const inContent = content.includes(`#${tag}`);
+        return inTag || inContent;
+      });
+      if (!matches) return false;
+    }
+
+    if (state.excludeReplies) {
+      const isReply = event.tags.some(t => t[0] === 'e' || t[0] === 'a');
+      if (event.kind === 1 && isReply) return false;
+    }
+    return true;
+  });
+}
+
+function resolvePubkey(raw: string | undefined, fallback: string): string {
+  const trimmed = (raw || '').trim();
+  if (!trimmed) return fallback;
+  if (/^[0-9a-f]{64}$/i.test(trimmed)) return trimmed.toLowerCase();
+  try {
+    const decoded = decodeNip19(trimmed);
+    if (decoded.type === 'npub') return decoded.data as string;
+  } catch { /* fall through */ }
+  return fallback;
+}
+
+function parseHashtags(raw: string | undefined): string[] {
+  return (raw || '')
+    .split(',')
+    .map(s => s.trim().replace(/^#/, '').toLowerCase())
+    .filter(Boolean);
+}
+
+function clampInt(raw: string | undefined, min: number, max: number, fallback: number): number {
+  const n = parseInt((raw || '').trim(), 10);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(min, Math.min(max, n));
+}

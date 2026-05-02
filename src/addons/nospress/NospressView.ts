@@ -43,7 +43,10 @@ import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { mountNospressEmbeds } from './embedMount';
 import { mountNospressProfileCards } from './profileCardMount';
+import { mountNospressArticlesLists } from './articlesListMount';
+import { mountNospressWeblogs } from './weblogMount';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
+import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
 import DOMPurify from 'dompurify';
 
 const BLOCK_LIBRARY_TAB_ID = 'nospress-block-library';
@@ -70,6 +73,7 @@ export class NospressView extends View {
    *  mounted into the slot the BookmarkFolderRenderer's readonly path emits. */
   private inlineMountsComponents: ProfileListsComponent[] = [];
   private profileCardInstances: UserIdentity[] = [];
+  private articlesCarousels: ProfileArticlesCarousel[] = [];
   private blockLibrary: BlockLibraryView | null = null;
   private editMode: boolean = false;
   private folderPickers: BookmarkFolderPicker[] = [];
@@ -142,6 +146,7 @@ export class NospressView extends View {
     this.destroyBlockDropdowns();
     this.destroyCursorRow();
     this.destroyProfileCards();
+    this.destroyArticlesCarousels();
     if (this.fullscreenOverlay) {
       this.fullscreenOverlay.unmount();
       this.fullscreenOverlay = null;
@@ -321,6 +326,7 @@ export class NospressView extends View {
     this.destroyFolderPickers();
     this.destroyBlockDropdowns();
     this.destroyProfileCards();
+    this.destroyArticlesCarousels();
 
     const leftButtonHtml = editable
       ? `<button class="btn btn--medium btn--passive" data-action="preview-page" title="Close the editor and see the page as visitors see it">Preview Page</button>`
@@ -368,6 +374,8 @@ export class NospressView extends View {
     }
     if (!editable) mountNospressEmbeds(this.container);
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: this.pubkey });
+    this.articlesCarousels = mountNospressArticlesLists(this.container, { ownerPubkey: this.pubkey });
+    mountNospressWeblogs(this.container, { ownerPubkey: this.pubkey });
 
     this.bindHeaderEvents();
   }
@@ -375,6 +383,11 @@ export class NospressView extends View {
   private destroyProfileCards(): void {
     this.profileCardInstances.forEach(ui => ui.destroy());
     this.profileCardInstances = [];
+  }
+
+  private destroyArticlesCarousels(): void {
+    this.articlesCarousels.forEach(c => c.destroy());
+    this.articlesCarousels = [];
   }
 
   private renderActionBar(editable: boolean): string {
@@ -1338,6 +1351,29 @@ export class NospressView extends View {
       } else if (block.type === 'audio') {
         if (field === 'audio-url')     block.url = el.value;
         if (field === 'audio-caption') block.caption = el.value;
+      } else if (block.type === 'articles-list') {
+        if (field === 'articles-pubkey') {
+          const v = el.value.trim();
+          if (v) block.pubkey = v; else delete block.pubkey;
+        }
+      } else if (block.type === 'weblog') {
+        if (field === 'weblog-pubkey') {
+          const v = el.value.trim();
+          if (v) block.pubkey = v; else delete block.pubkey;
+        }
+        if (field === 'weblog-hashtags') {
+          block.hashtags = el.value.split(',').map(s => s.trim().replace(/^#/, '').toLowerCase()).filter(Boolean);
+        }
+        if (field === 'weblog-posts-per-page') {
+          const n = parseInt(el.value, 10);
+          if (Number.isFinite(n) && n > 0) block.postsPerPage = n; else delete block.postsPerPage;
+        }
+        if (field === 'weblog-exclude-replies' && el instanceof HTMLInputElement) {
+          block.excludeReplies = el.checked;
+        }
+        if (field === 'weblog-exclude-reposts' && el instanceof HTMLInputElement) {
+          block.excludeReposts = el.checked;
+        }
       }
     }, { silent: true });
   }

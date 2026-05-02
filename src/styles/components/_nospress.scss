@@ -637,6 +637,44 @@
   }
 }
 
+// Articles list — defers all card styling to .profile-articles-carousel
+// from `_profile-articles-carousel.scss`. Only loading + empty states stay
+// scoped here so they share the rest of the NosPress block visuals.
+.nospress-block-articles-list {
+  margin: $gap * 2 0;
+
+  &__loading,
+  &__empty {
+    text-align: center;
+    padding: $gap;
+    color: $text-alpha-medium;
+  }
+}
+
+// Weblog — owner timeline rendered via NoteUI with a single load-more bar
+.nospress-block-weblog {
+  margin: $gap * 2 0;
+
+  &__items {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+  }
+
+  &__bar {
+    display: flex;
+    justify-content: center;
+    margin-top: $gap;
+  }
+
+  &__loading,
+  &__empty {
+    text-align: center;
+    padding: $gap;
+    color: $text-alpha-medium;
+  }
+}
+
 
 // Columns block — desktop/tablet shows N columns side-by-side, mobile stacks
 .nospress-block-columns {

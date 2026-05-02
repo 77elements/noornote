@@ -27,7 +27,9 @@ export type Block =
   | { id: string; type: 'quote'; text: string; author?: string; source?: string; style?: CommonStyle }
   | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; style?: CommonStyle }
   | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle }
-  | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle };
+  | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle }
+  | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle }
+  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle };
 
 export type BlockType = Block['type'];
 
@@ -72,6 +74,8 @@ export function createBlock(type: BlockType): Block {
     case 'button-cta':      return { id, type, label: '', url: '' };
     case 'video':           return { id, type, url: '' };
     case 'audio':           return { id, type, url: '' };
+    case 'articles-list':   return { id, type };
+    case 'weblog':          return { id, type, hashtags: [] };
   }
 }
 

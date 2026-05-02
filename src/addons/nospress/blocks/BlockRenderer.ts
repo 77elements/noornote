@@ -28,6 +28,8 @@ import { renderQuote } from './renderers/QuoteRenderer';
 import { renderButtonCta } from './renderers/ButtonCtaRenderer';
 import { renderVideo } from './renderers/VideoRenderer';
 import { renderAudio } from './renderers/AudioRenderer';
+import { renderArticlesList } from './renderers/ArticlesListRenderer';
+import { renderWeblog } from './renderers/WeblogRenderer';
 
 export interface BlockRenderOptions {
   editable?: boolean;
@@ -58,6 +60,8 @@ export class BlockRenderer {
         case 'button-cta':      return renderButtonCta(block, editable);
         case 'video':           return renderVideo(block, editable);
         case 'audio':           return renderAudio(block, editable);
+        case 'articles-list':   return renderArticlesList(block, editable);
+        case 'weblog':          return renderWeblog(block, editable);
       }
     })();
     return styleWrap(block, inner);
