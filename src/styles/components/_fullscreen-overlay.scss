@@ -6,7 +6,7 @@
   z-index: 10000;
   background: var(--color-1);
   overflow-y: auto;
-  padding: calc($gap * 3) $gap;
+  padding: $gap;
 
   &__inner {
     margin: 0 auto;

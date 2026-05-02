@@ -43,12 +43,7 @@
 }
 
 .nospress-view {
-  padding: $gap;
   margin: 0 auto;
-
-  .layout--phone & {
-    padding: 0;
-  }
 }
 
 .nospress-header {
@@ -270,10 +265,6 @@
 // ==========================================
 // Block Library (SCC tab)
 // ==========================================
-
-.block-library {
-  padding: $gap;
-}
 
 .block-library__intro {
   margin-bottom: $gap;

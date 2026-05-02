@@ -99,8 +99,12 @@ export class NospressView extends View {
   private fullscreenOverlay: FullscreenOverlay | null = null;
   private fullscreenOriginParent: HTMLElement | null = null;
   private fullscreenOriginAnchor: Node | null = null;
+  /** True when the view was mounted via the /edit/fullscreen route. The
+   *  initial render triggers enterFullscreenEditor() automatically once the
+   *  page is ready. Cleared after the first successful trigger. */
+  private bootFullscreen: boolean = false;
 
-  constructor(npub: string, opts: { editMode?: boolean } = {}) {
+  constructor(npub: string, opts: { editMode?: boolean; fullscreen?: boolean } = {}) {
     super();
     this.npub = npub;
     this.container = document.createElement('div');
@@ -119,6 +123,7 @@ export class NospressView extends View {
 
     this.isOwnProfile = AuthService.getInstance().isCurrentUser(this.pubkey);
     if (opts.editMode && this.isOwnProfile) this.editMode = true;
+    if (opts.fullscreen && this.isOwnProfile) this.bootFullscreen = true;
 
     this.setupChangeListeners();
     this.setupEditDelegation();
@@ -221,10 +226,16 @@ export class NospressView extends View {
         this.renderEmpty();
       }
 
-      // When the route opens us directly in edit mode, also open the SCC
-      // Block Library tab so the user has the full editor surface.
-      if (this.editMode && this.isOwnProfile && !this.blockLibrary) {
-        this.openBlockLibrary();
+      // When the route opens us directly in edit mode, also open the full
+      // editor surface — fullscreen overlay if /edit/fullscreen, otherwise
+      // the SCC Block Library tab for /edit.
+      if (this.editMode && this.isOwnProfile) {
+        if (this.bootFullscreen) {
+          this.bootFullscreen = false;
+          this.enterFullscreenEditor();
+        } else if (!this.blockLibrary) {
+          this.openBlockLibrary();
+        }
       }
     } catch (error) {
       console.error('Failed to load NosPress:', error);
@@ -314,7 +325,7 @@ export class NospressView extends View {
       ? `<button class="btn btn--medium btn--passive" data-action="preview-page" title="Close the editor and see the page as visitors see it">Preview Page</button>`
       : `<button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>`;
 
-    const fullscreenButtonHtml = this.isOwnProfile
+    const fullscreenButtonHtml = editable
       ? `<button class="btn btn--medium btn--passive" data-action="open-fullscreen" title="Open the editor in fullscreen with a side-by-side block library">Fullscreen</button>`
       : '';
 
@@ -563,6 +574,11 @@ export class NospressView extends View {
     if (!this.editMode) this.editMode = true;
     this.rerenderEditable();
 
+    const fullscreenPath = `/profile/${this.npub}/nospress/edit/fullscreen`;
+    if (window.location.pathname !== fullscreenPath) {
+      window.history.pushState({}, '', fullscreenPath);
+    }
+
     this.fullscreenOverlay = new FullscreenOverlay({
       title: 'Edit Page',
       exitLabel: 'Exit Fullscreen',
@@ -592,6 +608,11 @@ export class NospressView extends View {
     if (this.editMode) {
       this.editMode = false;
       this.rerenderEditable();
+    }
+
+    const previewPath = `/profile/${this.npub}/nospress`;
+    if (window.location.pathname !== previewPath) {
+      window.history.pushState({}, '', previewPath);
     }
 
     this.fullscreenOverlay = null;
