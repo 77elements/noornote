@@ -6,7 +6,7 @@
 @use '../abstracts/variables' as *;
 
 .profile-videos-carousel {
-  .nn-scroll-carousel__card {
+  .nn-card {
     width: 200px;
 
     @media (max-width: 600px) {
@@ -14,15 +14,17 @@
     }
   }
 
-  &__card-thumb {
-    width: 100%;
+  // Video thumb runs shorter than the article carousel's media; the
+  // `<video>` element fills the slot natively.
+  .nn-card__media {
     height: 112px;
-    background-color: var(--color-1);
-    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    overflow: hidden;
+
+    @media (max-width: 600px) {
+      height: 90px;
+    }
 
     video {
       width: 100%;
@@ -30,14 +32,14 @@
       object-fit: cover;
       pointer-events: none;
     }
-
-    @media (max-width: 600px) {
-      height: 90px;
-    }
   }
 
-  &__play-icon {
+  // Centered play-icon overlay on the video thumb.
+  .play-icon {
     position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     width: 40px;
     height: 40px;
     border-radius: 50%;
@@ -50,16 +52,5 @@
     svg {
       margin-left: 3px;
     }
-  }
-
-  &__card-title {
-    padding: calc($gap / 2) calc($gap * 0.75);
-    font-weight: 500;
-    color: var(--color-5);
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
   }
 }

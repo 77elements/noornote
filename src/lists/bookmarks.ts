@@ -2207,7 +2207,8 @@ export class BookmarkCard {
     const { id, event, isPrivate } = this.data;
 
     const card = document.createElement('div');
-    card.className = 'bookmark-card';
+    card.className = 'nn-card';
+    card.dataset.bookmark = '';
     card.dataset.eventId = id;
     card.dataset.bookmarkId = id;
 
@@ -2219,22 +2220,24 @@ export class BookmarkCard {
       const timeAgo = formatTimestamp(event.created_at);
 
       card.innerHTML = `
-        ${isPrivate ? '<span class="bookmark-card__private-badge">🔒</span>' : ''}
-        <div class="bookmark-card__author">
-          ${profilePic
-            ? `<img class="bookmark-card__author-pic" src="${escapeHtml(profilePic)}" alt="" loading="lazy" />`
-            : '<div class="bookmark-card__author-pic"></div>'
-          }
-          <span class="bookmark-card__author-name">${escapeHtml(username)}</span>
-        </div>
-        <div class="bookmark-card__content">${escapeHtml(snippet)}</div>
-        <div class="bookmark-card__footer">
-          <span class="bookmark-card__timestamp">${timeAgo}</span>
-          <div class="bookmark-card__actions">
-            <span class="bookmark-card__move"></span>
-            <button class="bookmark-card__delete" aria-label="Remove bookmark" title="Remove bookmark">
-              ${ICON_TRASH_16}
-            </button>
+        ${isPrivate ? '<span class="private-badge">🔒</span>' : ''}
+        <div class="nn-card__content">
+          <div class="author">
+            ${profilePic
+              ? `<img class="author-pic" src="${escapeHtml(profilePic)}" alt="" loading="lazy" />`
+              : '<div class="author-pic"></div>'
+            }
+            <span class="author-name">${escapeHtml(username)}</span>
+          </div>
+          <div class="snippet">${escapeHtml(snippet)}</div>
+          <div class="footer">
+            <span class="timestamp">${timeAgo}</span>
+            <div class="actions">
+              <span class="move"></span>
+              <button class="delete" aria-label="Remove bookmark" title="Remove bookmark">
+                ${ICON_TRASH_16}
+              </button>
+            </div>
           </div>
         </div>
       `;
@@ -2254,10 +2257,10 @@ export class BookmarkCard {
         } catch {
           displayUrl = value.slice(0, 40);
         }
-        displayContent = `<a href="${escapeHtml(value)}" class="bookmark-card__external-link">${escapeHtml(displayUrl)}</a>`;
+        displayContent = `<a href="${escapeHtml(value)}" class="external-link">${escapeHtml(displayUrl)}</a>`;
         if (description) {
           const descText = description.length > 60 ? description.slice(0, 60) + '...' : description;
-          displayContent += `<span class="bookmark-card__description">${escapeHtml(descText)}</span>`;
+          displayContent += `<span class="description">${escapeHtml(descText)}</span>`;
         }
         isContentHtml = true;
       } else if (type === 't' && value) {
@@ -2276,27 +2279,31 @@ export class BookmarkCard {
         displayContent = id.slice(0, 8) + '...';
       }
 
+      card.dataset.bookmarkType = type || 'e';
+      const snippetMode = type === 'e' || !type ? 'not-found' : 'external';
       card.innerHTML = `
-        ${isPrivate ? '<span class="bookmark-card__private-badge">🔒</span>' : ''}
-        <div class="bookmark-card__author">
-          <div class="bookmark-card__author-pic bookmark-card__author-pic--type-${type || 'e'}"></div>
-          <span class="bookmark-card__author-name">${escapeHtml(displayLabel)}</span>
-        </div>
-        <div class="bookmark-card__content bookmark-card__content--${type === 'e' || !type ? 'not-found' : 'external'}">
-          ${isContentHtml ? displayContent : escapeHtml(displayContent)}
-        </div>
-        <div class="bookmark-card__footer">
-          <span class="bookmark-card__timestamp">${escapeHtml(footerText)}</span>
-          <div class="bookmark-card__actions">
-            <span class="bookmark-card__move"></span>
-            ${type === 'r' ? `
-              <button class="btn btn--mini bookmark-card__edit" aria-label="Edit bookmark" title="Edit bookmark">
-                Edit
+        ${isPrivate ? '<span class="private-badge">🔒</span>' : ''}
+        <div class="nn-card__content">
+          <div class="author">
+            <div class="author-pic" data-pic-type="${type || 'e'}"></div>
+            <span class="author-name">${escapeHtml(displayLabel)}</span>
+          </div>
+          <div class="snippet" data-snippet-mode="${snippetMode}">
+            ${isContentHtml ? displayContent : escapeHtml(displayContent)}
+          </div>
+          <div class="footer">
+            <span class="timestamp">${escapeHtml(footerText)}</span>
+            <div class="actions">
+              <span class="move"></span>
+              ${type === 'r' ? `
+                <button class="btn btn--mini edit" aria-label="Edit bookmark" title="Edit bookmark">
+                  Edit
+                </button>
+              ` : ''}
+              <button class="delete" aria-label="Remove bookmark" title="Remove bookmark">
+                ${ICON_TRASH_16}
               </button>
-            ` : ''}
-            <button class="bookmark-card__delete" aria-label="Remove bookmark" title="Remove bookmark">
-              ${ICON_TRASH_16}
-            </button>
+            </div>
           </div>
         </div>
       `;
@@ -2312,7 +2319,7 @@ export class BookmarkCard {
 
     card.addEventListener('click', async (e) => {
       const target = e.target as HTMLElement;
-      if (target.closest('.bookmark-card__delete') || target.closest('.bookmark-card__edit') || target.closest('.bookmark-card__move')) return;
+      if (target.closest('.delete') || target.closest('.edit') || target.closest('.move')) return;
 
       if (card.dataset.wasDragging === 'true') {
         card.dataset.wasDragging = 'false';
@@ -2351,13 +2358,13 @@ export class BookmarkCard {
       }
     });
 
-    const editBtn = card.querySelector('.bookmark-card__edit');
+    const editBtn = card.querySelector('button.edit');
     editBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.options.onEdit?.(id);
     });
 
-    const deleteBtn = card.querySelector('.bookmark-card__delete');
+    const deleteBtn = card.querySelector('button.delete');
     deleteBtn?.addEventListener('click', async (e) => {
       e.stopPropagation();
       await this.options.onDelete(id);
@@ -2365,7 +2372,7 @@ export class BookmarkCard {
     });
 
     // Mount move dropdown (browser only)
-    const moveMount = card.querySelector('.bookmark-card__move');
+    const moveMount = card.querySelector('.move');
     if (moveMount && this.options.onMove && this.options.moveTargets && MoveDropdown.shouldShow()) {
       const dropdown = new MoveDropdown({
         targets: this.options.moveTargets,
@@ -3327,16 +3334,16 @@ export class BookmarkManager {
 
   private initGridDragDrop(grid: HTMLElement): void {
     setupGridDragDrop(grid, {
-      itemSelector: '.bookmark-card, .folder-card',
-      excludeSelector: '.bookmark-card__delete, .folder-card__delete',
+      itemSelector: '[data-bookmark], [data-folder]',
+      excludeSelector: 'button.delete',
       placeholderClass: 'bookmark-card-placeholder',
       getItemId: (el) => el.dataset.bookmarkId || el.dataset.folderId || null,
       onDrop: (draggedId, draggedEl, dropTarget) => {
         const targetId = dropTarget.dataset.bookmarkId || dropTarget.dataset.folderId;
-        const isDraggingBookmark = draggedEl.classList.contains('bookmark-card');
-        const isDraggingFolder = draggedEl.classList.contains('folder-card');
-        const isTargetFolder = dropTarget.classList.contains('folder-card');
-        const isTargetUpNav = dropTarget.classList.contains('up-navigator');
+        const isDraggingBookmark = draggedEl.dataset.bookmark !== undefined;
+        const isDraggingFolder = draggedEl.dataset.folder !== undefined;
+        const isTargetFolder = dropTarget.dataset.folder !== undefined;
+        const isTargetUpNav = dropTarget.dataset.upNav !== undefined;
 
         if (isTargetUpNav && isDraggingBookmark) {
           this.moveBookmarkToFolder(draggedId, '');

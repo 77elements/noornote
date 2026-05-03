@@ -45,29 +45,29 @@ export class BlockLibraryView {
     // type, no Apply button. Click toggles selection of the page frame in the
     // editor so the user can edit page-level properties.
     const pageRowHtml = `
-      <div class="block-library__row block-library__row--page" data-action="select-page" role="button" tabindex="0">
-        <div class="block-library__icon" aria-hidden="true">▣</div>
-        <div class="block-library__info">
-          <div class="block-library__label">Page</div>
-          <div class="block-library__description">The page itself — color, background, layout</div>
+      <div class="nn-card" data-action="select-page" role="button" tabindex="0">
+        <div class="nn-card__content">
+          <div class="icon" aria-hidden="true">▣</div>
+          <h3>Page</h3>
         </div>
       </div>
     `;
 
     const rowsHtml = BLOCK_CATALOG.map(meta => `
-      <div class="block-library__row${meta.enabled ? '' : ' block-library__row--disabled'}" data-block-type="${meta.type}">
-        <div class="block-library__icon" aria-hidden="true">${escapeHtml(meta.icon)}</div>
-        <div class="block-library__info">
-          <div class="block-library__label">${escapeHtml(meta.label)}</div>
-          <div class="block-library__description">${escapeHtml(meta.description)}</div>
+      <div class="nn-card"${meta.enabled ? '' : ' data-disabled'} data-block-type="${meta.type}">
+        <div class="nn-card__content">
+          <div class="icon" aria-hidden="true">${escapeHtml(meta.icon)}</div>
+          <h3>${escapeHtml(meta.label)}</h3>
+          <div>
+            <button
+              type="button"
+              class="btn btn--passive btn--mini"
+              data-action="apply"
+              data-block-type="${meta.type}"
+              ${meta.enabled ? '' : 'disabled'}
+            >${meta.enabled ? 'Apply' : 'Soon'}</button>
+          </div>
         </div>
-        <button
-          type="button"
-          class="btn btn--passive btn--mini block-library__apply"
-          data-action="apply"
-          data-block-type="${meta.type}"
-          ${meta.enabled ? '' : 'disabled'}
-        >${meta.enabled ? 'Apply' : 'Soon'}</button>
       </div>
     `).join('');
 

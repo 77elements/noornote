@@ -274,31 +274,28 @@
   p { margin: 0; }
 }
 
+// Block Library — 2-3 nn-cards per row, icon top, label centered, Apply
+// button at the bottom. Visual base comes from `.nn-card`; only the grid
+// layout and per-card sizing live here.
 .block-library__rows {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: calc($gap / 2);
 }
 
-.block-library__row {
-  display: flex;
-  align-items: center;
-  gap: $gap;
-  padding: calc($gap / 2) $gap;
-  background: $color-2;
-  border-radius: $radius-xl;
-  transition: $transition-colors;
+.block-library .nn-card {
+  min-height: 130px;
+  text-align: center;
 
-  &--disabled {
+  // Disabled state — block types that aren't ready yet.
+  &[data-disabled] {
     opacity: 0.5;
-  }
+    cursor: default;
 
-  &--page {
-    cursor: pointer;
-  }
-
-  &:not(.block-library__row--disabled):hover {
-    background: $surface-tint;
+    &:hover {
+      transform: none;
+      box-shadow: none;
+    }
   }
 }
 
@@ -396,32 +393,9 @@
   color: $text-alpha-medium;
 }
 
-.block-library__icon {
-  font-size: 1.4rem;
-  width: 32px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-.block-library__info {
-  flex: 1;
-  min-width: 0;
-  line-height: 1.25;
-}
-
-.block-library__label {
-  font-weight: 600;
-  color: $color-5;
-}
-
-.block-library__description {
-  font-size: 0.85rem;
-  color: $text-alpha-medium;
-  @include text-truncate;
-}
-
-.block-library__apply {
-  flex-shrink: 0;
+// Block-library icon (oversized emoji at the top of each card).
+.block-library .nn-card .icon {
+  font-size: 2rem;
 }
 
 .block-library__footer {

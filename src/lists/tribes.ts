@@ -2104,16 +2104,16 @@ export class TribeManager {
    */
   private initGridDragDrop(grid: HTMLElement): void {
     setupGridDragDrop(grid, {
-      itemSelector: '.tribe-member-card, .folder-card',
-      excludeSelector: '.tribe-member-card__delete, .folder-card__delete, .tribe-member-card__move',
+      itemSelector: '[data-tribe-member], [data-folder]',
+      excludeSelector: 'button.delete, .move',
       placeholderClass: 'tribe-member-card-placeholder',
       getItemId: (el) => el.dataset.pubkey || el.dataset.folderId || null,
       onDrop: (draggedId, draggedEl, dropTarget) => {
         const targetId = dropTarget.dataset.pubkey || dropTarget.dataset.folderId;
-        const isDraggingMember = draggedEl.classList.contains('tribe-member-card');
-        const isDraggingFolder = draggedEl.classList.contains('folder-card');
-        const isTargetFolder = dropTarget.classList.contains('folder-card');
-        const isTargetUpNav = dropTarget.classList.contains('up-navigator');
+        const isDraggingMember = draggedEl.dataset.tribeMember !== undefined;
+        const isDraggingFolder = draggedEl.dataset.folder !== undefined;
+        const isTargetFolder = dropTarget.dataset.folder !== undefined;
+        const isTargetUpNav = dropTarget.dataset.upNav !== undefined;
 
         if (isTargetUpNav && isDraggingMember) {
           this.moveMemberToFolderUI(draggedId, '');
@@ -3014,7 +3014,8 @@ export class TribeMemberCard {
 
     // Create card element
     const card = document.createElement('div');
-    card.className = 'tribe-member-card';
+    card.className = 'nn-card';
+    card.dataset.tribeMember = '';
     card.dataset.pubkey = pubkey;
 
     // Fetch user profile
@@ -3027,24 +3028,24 @@ export class TribeMemberCard {
     const nip05Display = nip05s.join(', ');
 
     card.innerHTML = `
-      ${isPrivate ? '<span class="tribe-member-card__private-badge">🔒</span>' : ''}
-      <div class="tribe-member-card__content">
-        <div class="tribe-member-card__avatar">
+      ${isPrivate ? '<span class="private-badge">🔒</span>' : ''}
+      <div class="nn-card__content">
+        <div class="avatar">
           ${profilePic
-            ? `<img class="tribe-member-card__avatar-img" src="${escapeHtml(profilePic)}" alt="" loading="lazy" />`
-            : '<div class="tribe-member-card__avatar-img tribe-member-card__avatar-img--empty"></div>'
+            ? `<img class="avatar-img" src="${escapeHtml(profilePic)}" alt="" loading="lazy" />`
+            : '<div class="avatar-img" data-empty></div>'
           }
         </div>
-        <div class="tribe-member-card__info">
-          <span class="tribe-member-card__username">${escapeHtml(username)}</span>
-          ${nip05Display ? `<span class="tribe-member-card__nip05">${escapeHtml(nip05Display)}</span>` : `<span class="tribe-member-card__pubkey">${escapeHtml(pubkey.slice(0, 8))}...</span>`}
+        <div class="info">
+          <span class="username">${escapeHtml(username)}</span>
+          ${nip05Display ? `<span class="nip05">${escapeHtml(nip05Display)}</span>` : `<span class="pubkey">${escapeHtml(pubkey.slice(0, 8))}...</span>`}
         </div>
-      </div>
-      <div class="tribe-member-card__actions">
-        <span class="tribe-member-card__move"></span>
-        <button class="tribe-member-card__delete" aria-label="Remove member" title="Remove member">
-          ${ICON_TRASH_16}
-        </button>
+        <div class="actions">
+          <span class="move"></span>
+          <button class="delete" aria-label="Remove member" title="Remove member">
+            ${ICON_TRASH_16}
+          </button>
+        </div>
       </div>
     `;
 
@@ -3072,7 +3073,7 @@ export class TribeMemberCard {
     });
 
     // Delete button
-    const deleteBtn = card.querySelector('.tribe-member-card__delete');
+    const deleteBtn = card.querySelector('button.delete');
     deleteBtn?.addEventListener('click', async (e) => {
       e.stopPropagation();
       await this.options.onDelete(pubkey);
@@ -3080,7 +3081,7 @@ export class TribeMemberCard {
     });
 
     // Mount move dropdown (browser only)
-    const moveMount = card.querySelector('.tribe-member-card__move');
+    const moveMount = card.querySelector('.move');
     if (moveMount && this.options.onMove && this.options.moveTargets && MoveDropdown.shouldShow()) {
       const dropdown = new MoveDropdown({
         targets: this.options.moveTargets,

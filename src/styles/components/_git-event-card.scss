@@ -1,13 +1,7 @@
 // Git Event Card — NIP-34 (Patch / PR / Issue / Status / Repo).
-// All visual styling reuses .nn-card / .nn-card__title / .nn-card__meta
-// from molecules/_cards.scss and .btn--passive.btn--mini from
-// molecules/_buttons.scss. Only the open button needs explicit
-// flex-start alignment so it doesn't stretch in the column body.
+// All visual styling reuses .nn-card from molecules/_cards.scss; the
+// note-card wrapper just adds vertical breathing room.
 
 .note-card--git {
   margin: 1rem 0;
-
-  .git-event-card__open {
-    align-self: flex-start;
-  }
 }

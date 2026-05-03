@@ -353,7 +353,7 @@ export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCaro
           const dataAttrs = card.data
             ? Object.entries(card.data).map(([k, v]) => `data-${k}="${v}"`).join(' ')
             : '';
-          return `<div class="nn-scroll-carousel__card" data-index="${i}" ${dataAttrs}>${card.html}</div>`;
+          return `<div class="nn-card" data-index="${i}" ${dataAttrs}>${card.html}</div>`;
         }).join('')}
       </div>
     </div>
@@ -374,7 +374,7 @@ export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCaro
   // Scroll by one card width
   const scroll = (direction: number) => {
     const viewport = wrapper.querySelector('.nn-scroll-carousel__viewport') as HTMLElement;
-    const card = wrapper.querySelector('.nn-scroll-carousel__card') as HTMLElement;
+    const card = wrapper.querySelector('[data-index]') as HTMLElement;
     if (!viewport || !card) return;
     viewport.scrollBy({ left: (card.offsetWidth + 16) * direction, behavior: 'smooth' });
   };
@@ -390,7 +390,7 @@ export function createScrollCarousel(options: ScrollCarouselOptions): ScrollCaro
 
   // Card click
   if (onCardClick) {
-    wrapper.querySelectorAll('.nn-scroll-carousel__card').forEach(card => {
+    wrapper.querySelectorAll('[data-index]').forEach(card => {
       card.addEventListener('click', () => {
         const el = card as HTMLElement;
         const index = parseInt(el.dataset.index || '0');

@@ -155,71 +155,28 @@
   }
 }
 
-// ─── Listing Card ─────────────────────────────────────────────────
+// ─── Listing Card — listing-specific add-ons on top of .nn-card ───
+//
+// All generic sub-slots (price, location, author, date, tags, tag,
+// __media--empty) live in `_cards.scss`. Listing-only extras stay here.
 
-.listing-card {
-  &--sold {
-    opacity: 0.7;
-  }
+// `data-status="sold"` is set by JS instead of a CSS class — JS hooks
+// belong on data-* attributes per app convention. Keeps `.nn-card`
+// usable as a pure styling class.
+.nn-card[data-status="sold"] {
+  opacity: 0.7;
+}
 
-  &__image--empty {
-    @include flex-center;
-    color: var(--color-3);
-  }
-
-  &__sold-badge {
-    position: absolute;
-    top: calc($gap / 2);
-    right: calc($gap / 2);
-    background: $color-red;
-    color: var(--color-5);
-    padding: calc($gap / 8) calc($gap / 2);
-    border-radius: $radius-full;
-    @extend %small;
-    font-weight: 600;
-  }
-
-  &__price {
-    color: var(--color-4);
-    font-weight: 600;
-    margin: 0;
-  }
-
-  &__location {
-    @extend %small;
-    color: var(--color-3);
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 4);
-  }
-
-  &__author {
-    .mention-link {
-      @extend %small;
-    }
-  }
-
-  &__date {
-    &::before {
-      content: '·';
-      margin-right: calc($gap / 4);
-    }
-  }
-
-  &__tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: calc($gap / 4);
-    margin-top: calc($gap / 4);
-  }
-
-  &__tag {
-    @extend %small;
-    color: var(--color-3);
-    background: var(--color-1);
-    padding: calc($gap / 8) calc($gap / 2);
-    border-radius: $radius-full;
-  }
+.nn-card .sold-badge {
+  position: absolute;
+  top: calc($gap / 2);
+  right: calc($gap / 2);
+  background: $color-red;
+  color: var(--color-5);
+  padding: calc($gap / 8) calc($gap / 2);
+  border-radius: $radius-full;
+  @extend %small;
+  font-weight: 600;
 }
 
 // ─── Listing Card Skeleton ────────────────────────────────────────

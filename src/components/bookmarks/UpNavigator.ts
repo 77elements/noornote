@@ -22,15 +22,18 @@ export class UpNavigator {
 
   public render(): HTMLElement {
     const card = document.createElement('div');
-    card.className = 'up-navigator';
+    card.className = 'nn-card';
+    card.dataset.upNav = '';
     card.title = 'Up to root level';
 
     card.innerHTML = `
-      <div class="up-navigator__icon">
-        <svg width="24" height="24"><use href="#icon-corner-up-left"/></svg>
+      <div class="nn-card__content">
+        <div class="icon">
+          <svg width="24" height="24"><use href="#icon-corner-up-left"/></svg>
+        </div>
+        <div class="label">..</div>
+        <div class="hint">Back to root</div>
       </div>
-      <div class="up-navigator__label">..</div>
-      <div class="up-navigator__hint">Back to root</div>
     `;
 
     this.bindEvents(card);

@@ -129,16 +129,16 @@ export class ProfileArticlesCarousel {
         ? '<span class="badge badge--warning badge--overlay">Draft</span>'
         : '';
 
-      const imageHtml = metadata.image
-        ? `<div class="profile-articles-carousel__card-image">${draftBadge}<img src="${escapeHtml(metadata.image)}" alt="" loading="lazy" /></div>`
-        : `<div class="profile-articles-carousel__card-image profile-articles-carousel__card-image--placeholder">${draftBadge}</div>`;
+      const mediaHtml = metadata.image
+        ? `<div class="nn-card__media">${draftBadge}<img src="${escapeHtml(metadata.image)}" alt="" loading="lazy" /></div>`
+        : `<div class="nn-card__media nn-card__media--empty">${draftBadge}</div>`;
 
       return {
         html: `
-          ${imageHtml}
-          <div class="profile-articles-carousel__card-content">
-            <h3 class="profile-articles-carousel__card-title">${escapeHtml(metadata.title)}</h3>
-            <div class="profile-articles-carousel__card-meta">
+          ${mediaHtml}
+          <div class="nn-card__content">
+            <h3>${escapeHtml(metadata.title)}</h3>
+            <div class="meta">
               <span>${escapeHtml(authorName)}</span>
               <span>·</span>
               <span>${formattedDate}</span>

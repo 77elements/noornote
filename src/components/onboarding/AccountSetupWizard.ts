@@ -1929,7 +1929,7 @@ IMPORTANT:
 
     this.followPacks.forEach((pack, index) => {
       const card = document.createElement('div');
-      card.className = 'nn-card follow-packs__card';
+      card.className = 'nn-card';
       card.addEventListener('click', () => {
         this.followPackView = 'detail';
         this.selectedPackIndex = index;
@@ -1940,8 +1940,8 @@ IMPORTANT:
 
       const coverWrap = document.createElement('div');
       coverWrap.className = pack.coverImage
-        ? 'nn-card__image'
-        : 'nn-card__image follow-packs__card-cover--placeholder';
+        ? 'nn-card__media'
+        : 'nn-card__media nn-card__media--empty';
       if (pack.coverImage) {
         const img = document.createElement('img');
         img.src = pack.coverImage;
@@ -1950,15 +1950,15 @@ IMPORTANT:
       }
       card.appendChild(coverWrap);
 
-      const body = document.createElement('div');
-      body.className = 'nn-card__body';
-      body.innerHTML = `
-        <div class="nn-card__title">${escapeHtml(pack.title)}</div>
-        <div class="nn-card__meta">
-          <span class="follow-packs__card-count">${pack.userPubkeys.length} users</span>
+      const content = document.createElement('div');
+      content.className = 'nn-card__content';
+      content.innerHTML = `
+        <h3>${escapeHtml(pack.title)}</h3>
+        <div class="meta">
+          <span>${pack.userPubkeys.length} users</span>
         </div>
       `;
-      card.appendChild(body);
+      card.appendChild(content);
 
       grid.appendChild(card);
     });

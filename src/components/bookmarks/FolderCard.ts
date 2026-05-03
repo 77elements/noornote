@@ -42,27 +42,30 @@ export class FolderCard {
     const showMount = this.options.showMountCheckbox && this.options.onMountToggle;
 
     const card = document.createElement('div');
-    card.className = 'folder-card';
+    card.className = 'nn-card';
+    card.dataset.folder = '';
     card.dataset.folderId = id;
     card.draggable = true;
 
     card.innerHTML = `
-      <div class="folder-card__icon">
-        <svg width="24" height="24"><use href="#icon-folder-24"/></svg>
-      </div>
-      <div class="folder-card__name">${escapeHtml(name)}</div>
-      <div class="folder-card__count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</div>
-      <div class="folder-card__actions">
-        <button class="folder-card__edit" aria-label="Rename folder" title="Rename folder">
+      <div class="actions">
+        <button class="edit" aria-label="Rename folder" title="Rename folder">
           <svg width="14" height="14"><use href="#icon-pencil-16"/></svg>
         </button>
-        <button class="folder-card__delete" aria-label="Delete folder" title="Delete folder (items move to root)">
+        <button class="delete" aria-label="Delete folder" title="Delete folder (items move to root)">
           ${ICON_TRASH_14}
         </button>
       </div>
+      <div class="nn-card__content">
+        <div class="icon">
+          <svg width="24" height="24"><use href="#icon-folder-24"/></svg>
+        </div>
+        <h3>${escapeHtml(name)}</h3>
+        <div class="count">${itemCount} ${itemCount === 1 ? 'item' : 'items'}</div>
+      </div>
       ${showMount ? `
-        <div class="folder-card__mounts">
-          <label class="folder-card__mount" data-mount="profile" title="Show this folder inline on your Profile View">
+        <div class="mounts">
+          <label class="mount" data-mount="profile" title="Show this folder inline on your Profile View">
             <span>Profile</span>
             <input type="checkbox" ${isMounted ? 'checked' : ''} />
           </label>
@@ -81,21 +84,21 @@ export class FolderCard {
     // Click on folder (except actions and mount checkboxes) opens it
     card.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-      if (target.closest('.folder-card__actions')) return;
-      if (target.closest('.folder-card__mount')) return;
-      if (target.closest('.folder-card__mounts')) return;
+      if (target.closest('.actions')) return;
+      if (target.closest('.mount')) return;
+      if (target.closest('.mounts')) return;
       this.options.onClick(id);
     });
 
     // Edit button
-    const editBtn = card.querySelector('.folder-card__edit');
+    const editBtn = card.querySelector('button.edit');
     editBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       this.options.onEdit?.(id);
     });
 
     // Delete button
-    const deleteBtn = card.querySelector('.folder-card__delete');
+    const deleteBtn = card.querySelector('button.delete');
     deleteBtn?.addEventListener('click', async (e) => {
       e.stopPropagation();
       await this.options.onDelete(id);
@@ -103,7 +106,7 @@ export class FolderCard {
     });
 
     // Profile mount checkbox
-    const profileLabel = card.querySelector('.folder-card__mount[data-mount="profile"]') as HTMLElement | null;
+    const profileLabel = card.querySelector('.mount[data-mount="profile"]') as HTMLElement | null;
     const profileCheckbox = profileLabel?.querySelector('input') as HTMLInputElement | null;
     if (profileCheckbox && this.options.onMountToggle) {
       profileCheckbox.addEventListener('change', (e) => {
@@ -163,7 +166,7 @@ export class FolderCard {
 
   public updateCount(count: number): void {
     this.data.itemCount = count;
-    const countEl = this.element?.querySelector('.folder-card__count');
+    const countEl = this.element?.querySelector('.count');
     if (countEl) {
       countEl.textContent = `${count} ${count === 1 ? 'item' : 'items'}`;
     }
@@ -171,7 +174,7 @@ export class FolderCard {
 
   public updateMountStatus(isMounted: boolean): void {
     this.data.isMounted = isMounted;
-    const checkbox = this.element?.querySelector('.folder-card__mount[data-mount="profile"] input') as HTMLInputElement;
+    const checkbox = this.element?.querySelector('.mount[data-mount="profile"] input') as HTMLInputElement;
     if (checkbox) {
       checkbox.checked = isMounted;
     }

@@ -30,14 +30,14 @@ export function setupGridDragDrop(grid: HTMLElement, config: GridDragDropConfig)
 
   // Build the :not(.dragging) selector for finding cards below cursor
   const itemParts = config.itemSelector.split(',').map(s => s.trim() + ':not(.dragging)');
-  const belowSelector = [...itemParts, '.up-navigator'].join(', ');
+  const belowSelector = [...itemParts, '[data-up-nav]'].join(', ');
 
   const onMouseDown = (e: MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest(config.excludeSelector)) return;
 
     const card = target.closest(config.itemSelector) as HTMLElement;
-    if (!card || card.classList.contains('up-navigator')) return;
+    if (!card || card.dataset.upNav !== undefined) return;
 
     e.preventDefault();
     draggedCard = card;
@@ -105,7 +105,7 @@ export function setupGridDragDrop(grid: HTMLElement, config: GridDragDropConfig)
     draggedCard.style.display = 'none';
     const elemBelow = document.elementFromPoint(e.clientX, e.clientY);
     draggedCard.style.display = savedDisplay;
-    const dropTarget = elemBelow?.closest(config.itemSelector + ', .up-navigator') as HTMLElement;
+    const dropTarget = elemBelow?.closest(config.itemSelector + ', [data-up-nav]') as HTMLElement;
 
     draggedCard.classList.remove('dragging');
     draggedCard.style.position = '';

@@ -232,7 +232,7 @@ export class MarketplaceTimeline {
     this.renderFilterBar();
 
     // Show/hide cards via CSS instead of re-rendering
-    const cards = this.listingsContainer.querySelectorAll('.listing-card');
+    const cards = this.listingsContainer.querySelectorAll('[data-listing]');
     cards.forEach(card => {
       const cardEl = card as HTMLElement;
       if (!tag) {
@@ -272,10 +272,11 @@ export class MarketplaceTimeline {
   private createListingCard(event: NostrEvent): HTMLElement {
     const meta = parseListingMetadata(event);
     const card = document.createElement('article');
-    card.className = 'nn-card listing-card';
+    card.className = 'nn-card';
+    card.dataset.listing = '';
 
     if (meta.status === 'sold') {
-      card.classList.add('listing-card--sold');
+      card.dataset.status = 'sold';
     }
 
     // Store tags for client-side filtering (no re-render needed)
@@ -291,38 +292,39 @@ export class MarketplaceTimeline {
     const priceDisplay = formatPrice(meta.price, meta.priceCurrency, meta.priceFrequency);
     const firstImage = meta.images[0] || '';
 
+    const soldBadge = meta.status === 'sold' ? '<span class="sold-badge">Sold</span>' : '';
     card.innerHTML = `
       ${firstImage ? `
-        <div class="nn-card__image">
+        <div class="nn-card__media">
           <img src="${escapeHtmlAttr(firstImage)}" alt="" loading="lazy" />
-          ${meta.status === 'sold' ? '<span class="listing-card__sold-badge">Sold</span>' : ''}
+          ${soldBadge}
         </div>
       ` : `
-        <div class="nn-card__image listing-card__image--empty">
+        <div class="nn-card__media nn-card__media--empty">
           <svg width="32" height="32"><use href="#icon-image"/></svg>
-          ${meta.status === 'sold' ? '<span class="listing-card__sold-badge">Sold</span>' : ''}
+          ${soldBadge}
         </div>
       `}
-      <div class="nn-card__body">
-        <h3 class="nn-card__title">${escapeHtml(meta.title)}</h3>
-        <div class="listing-card__price">${escapeHtml(priceDisplay)}</div>
-        ${meta.location ? `<div class="listing-card__location">${escapeHtml(meta.location)}</div>` : ''}
-        <div class="nn-card__meta">
-          <span class="listing-card__author user-mention" data-pubkey="${event.pubkey}">
+      <div class="nn-card__content">
+        <h3>${escapeHtml(meta.title)}</h3>
+        <div class="price">${escapeHtml(priceDisplay)}</div>
+        ${meta.location ? `<div class="location">${escapeHtml(meta.location)}</div>` : ''}
+        <div class="meta">
+          <span class="author user-mention" data-pubkey="${event.pubkey}">
             <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">Loading...</a>
           </span>
-          <span class="listing-card__date">${formatTimestamp(meta.publishedAt)}</span>
+          <span class="date">${formatTimestamp(meta.publishedAt)}</span>
         </div>
         ${meta.tags.length > 0 ? `
-          <div class="listing-card__tags">
-            ${meta.tags.slice(0, 3).map(tag => `<span class="listing-card__tag">#${escapeHtml(tag)}</span>`).join('')}
+          <div class="tags">
+            ${meta.tags.slice(0, 3).map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
           </div>
         ` : ''}
       </div>
     `;
 
     // Hide card if image fails to load
-    const img = card.querySelector('.nn-card__image img') as HTMLImageElement | null;
+    const img = card.querySelector('.nn-card__media img') as HTMLImageElement | null;
     if (img) {
       img.addEventListener('error', () => card.remove());
     }
@@ -338,7 +340,7 @@ export class MarketplaceTimeline {
   }
 
   private async loadAuthorName(card: HTMLElement, pubkey: string): Promise<void> {
-    const authorEl = card.querySelector('.listing-card__author');
+    const authorEl = card.querySelector('.author');
     if (!authorEl) return;
 
     const npub = hexToNpub(pubkey) || pubkey;

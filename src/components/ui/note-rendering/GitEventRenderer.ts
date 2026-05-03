@@ -52,18 +52,18 @@ export class GitEventRenderer {
     const card = document.createElement('div');
     card.className = 'nn-card';
     card.innerHTML = `
-      <div class="nn-card__body">
-        <div class="nn-card__meta">
+      <div class="nn-card__content">
+        <div class="meta">
           <span>${meta.icon}</span>
           <span>${escapeHtml(meta.label)}</span>
         </div>
-        <h3 class="nn-card__title">${escapeHtml(meta.title)}</h3>
-        ${meta.subtitle ? `<div class="nn-card__meta">${escapeHtml(meta.subtitle)}</div>` : ''}
-        ${externalUrl ? `<button type="button" class="btn btn--passive btn--mini git-event-card__open">↗ Open on gitworkshop.dev</button>` : ''}
+        <h3>${escapeHtml(meta.title)}</h3>
+        ${meta.subtitle ? `<div class="meta">${escapeHtml(meta.subtitle)}</div>` : ''}
+        ${externalUrl ? `<button type="button" class="btn btn--passive btn--mini" data-action="open-external">↗ Open on gitworkshop.dev</button>` : ''}
       </div>
     `;
 
-    card.querySelector('.git-event-card__open')?.addEventListener('click', (e) => {
+    card.querySelector('[data-action="open-external"]')?.addEventListener('click', (e) => {
       e.stopPropagation();
       if (externalUrl) window.open(externalUrl, '_blank', 'noopener,noreferrer');
     });

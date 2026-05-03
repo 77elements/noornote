@@ -155,19 +155,11 @@
   &__track {
     display: flex;
     gap: $gap;
-  }
 
-  &__card {
-    flex: 0 0 auto;
-    background: var(--color-2);
-    border-radius: $radius-xl;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: $box-shadow;
+    // Track items keep their natural width (set by the consumer) and
+    // never shrink. Visual styling comes from .nn-card.
+    > * {
+      flex: 0 0 auto;
     }
   }
 }

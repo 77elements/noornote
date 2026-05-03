@@ -20,68 +20,36 @@
   }
 }
 
-// Shared card base styles
-.bookmark-card,
-.folder-card,
-.up-navigator {
-  position: relative;
-  border-radius: $radius-pill;
-  background: var(--color-2);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  cursor: pointer;
-  overflow: hidden;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: $box-shadow;
-  }
-
-  // Drag states
-  &.dragging {
-    opacity: 0.5;
-    transform: scale(0.95);
-  }
-
-  &.drag-over {
-    background: color-mix(in srgb, var(--color-2) 80%, white);
-    box-shadow: 0 0 0 2px var(--color-4);
-  }
-}
-
-// Bookmark card
-.bookmark-card {
-  display: flex;
-  flex-direction: column;
+// Bookmark card — nn-card base + bookmark-specific extras.
+.nn-card[data-bookmark] {
   min-height: 120px;
-  padding: $gap;
 
-  &__author {
+  .author {
     display: flex;
     align-items: center;
     gap: calc($gap / 2);
-    margin-bottom: calc($gap / 2);
-
-    &-pic {
-      width: 24px;
-      height: 24px;
-      border-radius: $radius-full;
-      object-fit: cover;
-      background: var(--color-1);
-    }
-
-    &-name {
-      @extend %small;
-      font-weight: 600;
-      color: var(--color-5);
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
   }
 
-  &__content {
+  .author-pic {
+    width: 24px;
+    height: 24px;
+    border-radius: $radius-full;
+    object-fit: cover;
+    background: var(--color-1);
+  }
+
+  .author-name {
+    @extend %small;
+    font-weight: 600;
+    color: var(--color-5);
     flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .snippet {
     @extend %small;
     line-height: 1.4;
     color: var(--color-5);
@@ -89,41 +57,50 @@
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
+
+    &[data-snippet-mode="external"] {
+      color: var(--color-4);
+      word-break: break-all;
+    }
+
+    &[data-snippet-mode="not-found"] {
+      color: var(--color-3);
+      font-style: italic;
+    }
   }
 
-  &__description {
+  .description {
     display: block;
     margin-top: calc($gap / 4);
     @extend %small;
     color: var(--color-3);
   }
 
-  &__actions {
+  .footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: calc($gap / 2);
+    border-top: 1px solid var(--color-3);
+  }
+
+  .actions {
     display: flex;
     align-items: center;
     gap: calc($gap / 4);
   }
 
-  &__edit {
+  .edit {
     @extend %small;
     padding: 2px 8px;
   }
 
-  &__footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: calc($gap / 2);
-    padding-top: calc($gap / 2);
-    border-top: 1px solid var(--color-3);
-  }
-
-  &__timestamp {
+  .timestamp {
     @extend %small;
     color: color-mix(in srgb, var(--color-5) 40%, black);
   }
 
-  &__delete {
+  .delete {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -148,38 +125,17 @@
     }
   }
 
-  // Private badge
-  &__private-badge {
+  .private-badge {
     position: absolute;
     top: calc($gap / 2);
     right: calc($gap / 2);
     @extend %mini;
     color: $color-3;
+    z-index: 1;
   }
 
-  // External/URL content style
-  &__content--external {
-    color: var(--color-4);
-    @extend %small;
-    word-break: break-all;
-  }
-
-  // Not found content style (event refs that couldn't load)
-  &__content--not-found {
-    color: var(--color-3);
-    font-style: italic;
-  }
-
-  &__event-id {
-    display: block;
-    @extend %mini;
-    color: color-mix(in srgb, var(--color-3) 80%, black);
-    font-family: monospace;
-    margin-top: calc($gap / 4);
-  }
-
-  // Type indicator icons for author pic
-  &__author-pic--type-r {
+  // Type indicator icons for the author-pic placeholder when no profile-pic
+  .author-pic[data-pic-type="r"] {
     background: var(--color-4);
     position: relative;
 
@@ -193,7 +149,7 @@
     }
   }
 
-  &__author-pic--type-t {
+  .author-pic[data-pic-type="t"] {
     background: var(--color-4);
     position: relative;
 
@@ -210,20 +166,25 @@
 }
 
 // Folder card
-.folder-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+// Folder card — nn-card base + folder-specific extras (dashed border,
+// centered icon-name-count layout, hover-revealed actions + mounts).
+.nn-card[data-folder] {
   min-height: 120px;
-  padding: $gap;
   background: color-mix(in srgb, var(--color-2) 90%, white);
   border: 2px dashed var(--color-3);
 
-  &__icon {
+  .nn-card__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+  }
+
+  .icon {
     width: 40px;
     height: 40px;
-    margin-bottom: calc($gap / 2);
     color: var(--color-4);
 
     svg {
@@ -232,20 +193,18 @@
     }
   }
 
-  &__name {
+  .count {
+    @extend %small;
+    color: var(--color-3);
+  }
+
+  h3 {
     font-weight: 600;
     color: var(--color-5);
-    text-align: center;
     word-break: break-word;
   }
 
-  &__count {
-    @extend %small;
-    color: var(--color-3);
-    margin-top: calc($gap / 4);
-  }
-
-  &__actions {
+  .actions {
     position: absolute;
     top: calc($gap / 2);
     right: calc($gap / 2);
@@ -253,10 +212,11 @@
     gap: 2px;
     opacity: 0;
     transition: opacity 0.15s ease;
+    z-index: 1;
   }
 
-  &__edit,
-  &__delete {
+  button.edit,
+  button.delete {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -279,7 +239,7 @@
     }
   }
 
-  &__edit {
+  button.edit {
     color: var(--color-4);
 
     &:hover {
@@ -287,7 +247,7 @@
     }
   }
 
-  &__delete {
+  button.delete {
     color: $color-red;
 
     &:hover {
@@ -295,16 +255,13 @@
     }
   }
 
-  &:hover .folder-card__actions {
-    opacity: 1;
-  }
-
-  &:hover .folder-card__mounts {
+  &:hover .actions,
+  &:hover .mounts {
     opacity: 1;
   }
 
   // Mount checkboxes container (bottom right, shown on hover)
-  &__mounts {
+  .mounts {
     position: absolute;
     bottom: calc($gap / 2);
     right: calc($gap / 2);
@@ -314,10 +271,10 @@
     gap: 2px;
     opacity: 0;
     transition: opacity 0.15s ease;
+    z-index: 1;
   }
 
-  // Single mount checkbox (label)
-  &__mount {
+  .mount {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -341,7 +298,7 @@
     }
   }
 
-  // Drop target highlight
+  // Drop target highlight (folder-specific override of the base drag-over)
   &.drag-over {
     border-style: solid;
     border-color: var(--color-4);
@@ -349,21 +306,26 @@
   }
 }
 
-// Up navigator (..)
-.up-navigator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+// Up navigator (".." item that returns to root) — nn-card base + subdued
+// look (lighter bg, single hairline border, no hover-lift) so it feels
+// like navigation chrome rather than a peer to the regular folder cards.
+.nn-card[data-up-nav] {
   min-height: 120px;
-  padding: $gap;
   background: color-mix(in srgb, var(--color-1) 90%, white);
   border: 1px solid var(--color-3);
 
-  &__icon {
+  .nn-card__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 100%;
+  }
+
+  .icon {
     width: 32px;
     height: 32px;
-    margin-bottom: calc($gap / 2);
     color: var(--color-3);
 
     svg {
@@ -372,35 +334,34 @@
     }
   }
 
-  &__label {
+  .label {
     @extend %h1;
     font-weight: 700;
     color: var(--color-3);
   }
 
-  &__hint {
+  .hint {
     @extend %small;
     color: color-mix(in srgb, var(--color-3) 80%, black);
-    margin-top: calc($gap / 4);
   }
 
   &:hover {
     background: color-mix(in srgb, var(--color-1) 84%, white);
     border-color: var(--color-4);
 
-    .up-navigator__label,
-    .up-navigator__icon {
+    .label,
+    .icon {
       color: var(--color-4);
     }
   }
 
-  // Drop target highlight
+  // Drop target highlight (override the base drag-over)
   &.drag-over {
     border-color: var(--color-4);
     background: color-mix(in srgb, var(--color-4) 10%, transparent);
 
-    .up-navigator__label,
-    .up-navigator__icon {
+    .label,
+    .icon {
       color: var(--color-4);
     }
   }

@@ -97,13 +97,13 @@ export class ProfileVideosCarousel {
 
       return {
         html: `
-          <div class="profile-videos-carousel__card-thumb">
+          <div class="nn-card__media">
             <video src="${escapeHtml(video.videoUrl)}"${posterAttr} preload="none" muted></video>
-            <div class="profile-videos-carousel__play-icon">
+            <div class="play-icon">
               <svg width="24" height="24"><use href="#icon-play"/></svg>
             </div>
           </div>
-          ${video.title ? `<div class="profile-videos-carousel__card-title">${escapeHtml(video.title)}</div>` : ''}
+          ${video.title ? `<div class="nn-card__content"><h3>${escapeHtml(video.title)}</h3></div>` : ''}
         `,
         data: { noteid: eventId }
       };

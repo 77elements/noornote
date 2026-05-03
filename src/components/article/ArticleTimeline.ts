@@ -139,7 +139,7 @@ export class ArticleTimeline {
   private createArticleCard(event: NostrEvent): HTMLElement {
     const metadata = ArticleFeedOrchestrator.extractMetadata(event);
     const card = document.createElement('article');
-    card.className = 'nn-card article-card';
+    card.className = 'nn-card';
 
     // Create naddr for navigation
     const naddr = encodeNaddr({
@@ -151,23 +151,23 @@ export class ArticleTimeline {
 
     card.innerHTML = `
       ${metadata.image ? `
-        <div class="nn-card__image">
+        <div class="nn-card__media">
           <img src="${escapeHtml(metadata.image)}" alt="" loading="lazy" />
         </div>
       ` : ''}
-      <div class="nn-card__body">
-        <h2 class="nn-card__title">${escapeHtml(metadata.title || 'Untitled')}</h2>
-        ${metadata.summary ? `<p class="article-card__summary">${escapeHtml(metadata.summary)}</p>` : ''}
-        <div class="nn-card__meta">
-          <span class="article-card__author user-mention" data-pubkey="${event.pubkey}">
+      <div class="nn-card__content">
+        <h2>${escapeHtml(metadata.title || 'Untitled')}</h2>
+        ${metadata.summary ? `<p class="summary">${escapeHtml(metadata.summary)}</p>` : ''}
+        <div class="meta">
+          <span class="author user-mention" data-pubkey="${event.pubkey}">
             <a href="#" class="mention-link" data-profile-pubkey="${event.pubkey}">
               <img class="profile-pic profile-pic--mini" src="" alt="" />Loading...</a>
           </span>
           ${formatTimestamp(event.created_at || 0)}
         </div>
         ${metadata.topics.length > 0 ? `
-          <div class="article-card__tags">
-            ${metadata.topics.slice(0, 3).map(tag => `<span class="article-card__tag">#${escapeHtml(tag)}</span>`).join('')}
+          <div class="tags">
+            ${metadata.topics.slice(0, 3).map(tag => `<span class="tag">#${escapeHtml(tag)}</span>`).join('')}
           </div>
         ` : ''}
       </div>
@@ -189,7 +189,7 @@ export class ArticleTimeline {
    * Load author name and picture
    */
   private async loadAuthorName(card: HTMLElement, pubkey: string): Promise<void> {
-    const authorEl = card.querySelector('.article-card__author');
+    const authorEl = card.querySelector('.author');
     if (!authorEl) return;
 
     const npub = hexToNpub(pubkey) || pubkey;

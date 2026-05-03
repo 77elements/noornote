@@ -41,24 +41,20 @@ export class FollowPackRenderer {
     element.appendChild(noteHeader.getElement());
 
     const card = document.createElement('div');
-    card.className = 'nn-card follow-packs__timeline-card';
-    const coverClass = pack.coverImage ? 'nn-card__image' : 'nn-card__image follow-packs__card-cover--placeholder';
+    card.className = 'nn-card';
+    const coverClass = pack.coverImage ? 'nn-card__media' : 'nn-card__media nn-card__media--empty';
     card.innerHTML = `
       <div class="${coverClass}">
         ${pack.coverImage ? `<img src="${escapeHtmlAttr(pack.coverImage)}" alt="" loading="lazy" />` : ''}
       </div>
-      <div class="nn-card__body follow-packs__timeline-body">
-        <div class="follow-packs__timeline-title-row">
-          <div class="follow-packs__timeline-title-col">
-            <h3 class="nn-card__title">${escapeHtml(pack.title)}</h3>
-            <div class="nn-card__meta">${pack.userPubkeys.length} people</div>
-          </div>
-          <button class="btn btn--passive btn--mini follow-packs__timeline-open" type="button">Open Follow Pack</button>
-        </div>
+      <div class="nn-card__content">
+        <h3>${escapeHtml(pack.title)}</h3>
+        <div class="meta">${pack.userPubkeys.length} people</div>
+        <button class="btn btn--passive btn--mini" type="button" data-action="open-pack">Open Follow Pack</button>
       </div>
     `;
 
-    const openBtn = card.querySelector('.follow-packs__timeline-open');
+    const openBtn = card.querySelector('[data-action="open-pack"]');
     openBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
       Router.getInstance().navigate(route);

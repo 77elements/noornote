@@ -186,25 +186,25 @@ export class FollowPackManager {
 
   private createPackCard(pack: FollowPack, _index: number): HTMLElement {
     const card = document.createElement('div');
-    card.className = 'nn-card follow-packs__card';
+    card.className = 'nn-card';
 
     const coverHtml = pack.coverImage
-      ? `<div class="nn-card__image"><img src="${escapeHtmlAttr(pack.coverImage)}" alt="" loading="lazy" /></div>`
-      : '<div class="nn-card__image follow-packs__card-cover--placeholder"></div>';
+      ? `<div class="nn-card__media"><img src="${escapeHtmlAttr(pack.coverImage)}" alt="" loading="lazy" /></div>`
+      : '<div class="nn-card__media nn-card__media--empty"></div>';
 
     card.innerHTML = `
       ${coverHtml}
-      <div class="nn-card__body">
-        <div class="nn-card__title">${escapeHtml(pack.title)}</div>
-        <div class="nn-card__meta">
-          <span class="follow-packs__card-author" data-pubkey="${pack.authorPubkey}"></span>
-          <span class="follow-packs__card-count">${pack.userPubkeys.length} people</span>
+      <div class="nn-card__content">
+        <h3>${escapeHtml(pack.title)}</h3>
+        <div class="meta">
+          <span class="author" data-pubkey="${pack.authorPubkey}"></span>
+          <span>${pack.userPubkeys.length} people</span>
         </div>
       </div>
     `;
 
     // Set author name
-    const authorEl = card.querySelector('.follow-packs__card-author') as HTMLElement;
+    const authorEl = card.querySelector('.author') as HTMLElement;
     if (authorEl) {
       const npub = hexToNpub(pack.authorPubkey);
       authorEl.textContent = npub ? npubToUsername(npub) : 'Unknown';
@@ -224,7 +224,7 @@ export class FollowPackManager {
     const profiles = await this.profileService.getUserProfiles(pubkeys);
 
     // Update author names in DOM
-    const authorEls = this.currentContainer?.querySelectorAll('.follow-packs__card-author[data-pubkey]');
+    const authorEls = this.currentContainer?.querySelectorAll('.author[data-pubkey]');
     authorEls?.forEach(el => {
       const pubkey = (el as HTMLElement).dataset.pubkey;
       if (!pubkey) return;

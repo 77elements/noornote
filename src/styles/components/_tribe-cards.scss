@@ -9,55 +9,23 @@
 @use '../base/typography' as *;
 @use '../base/icons' as *;
 
-// Tribe member card
-.tribe-member-card {
-  position: relative;
-  display: flex;
-  align-items: center;
-  padding: $gap;
+// Tribe member card — nn-card base + horizontal avatar/info/actions row.
+.nn-card[data-tribe-member] {
   min-height: 80px;
-  border-radius: $radius-xl;
-  background: var(--color-2);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-  cursor: pointer;
-  overflow: hidden;
 
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: $box-shadow;
-  }
-
-  // Drag states
-  &.dragging {
-    opacity: 0.5;
-    transform: scale(0.95);
-  }
-
-  &.drag-over {
-    background: color-mix(in srgb, var(--color-2) 80%, white);
-    box-shadow: 0 0 0 2px var(--color-4);
-  }
-
-  &__content {
-    display: flex;
-    align-items: center;
-    gap: calc($gap / 2);
-    flex: 1;
-    min-width: 0; // Allow text truncation
-  }
-
-  &__avatar {
+  .avatar {
     flex-shrink: 0;
   }
 
-  &__avatar-img {
+  .avatar-img {
     width: 40px;
     height: 40px;
     border-radius: $radius-full;
     object-fit: cover;
     background: var(--color-1);
 
-    &--empty {
+    // Placeholder shown when the user has no profile picture.
+    &[data-empty] {
       background: var(--color-4);
       position: relative;
 
@@ -72,15 +40,15 @@
     }
   }
 
-  &__info {
+  .info {
     display: flex;
     flex-direction: column;
     gap: 2px;
-    min-width: 0; // Allow text truncation
+    min-width: 0;
     flex: 1;
   }
 
-  &__username {
+  .username {
     font-weight: 600;
     color: var(--color-5);
     white-space: nowrap;
@@ -88,13 +56,13 @@
     text-overflow: ellipsis;
   }
 
-  &__pubkey {
+  .pubkey {
     @extend %small;
     color: var(--color-3);
     font-family: monospace;
   }
 
-  &__nip05 {
+  .nip05 {
     @extend %small;
     color: var(--color-3);
     white-space: nowrap;
@@ -102,7 +70,14 @@
     text-overflow: ellipsis;
   }
 
-  &__delete {
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    flex-shrink: 0;
+  }
+
+  button.delete {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -115,7 +90,6 @@
     cursor: pointer;
     transition: $transition-colors;
     opacity: 0.6;
-    flex-shrink: 0;
 
     svg {
       width: 16px;
@@ -128,13 +102,13 @@
     }
   }
 
-  // Private badge
-  &__private-badge {
+  .private-badge {
     position: absolute;
     top: calc($gap / 2);
     right: calc($gap / 2);
     @extend %mini;
     color: $color-3;
+    z-index: 1;
   }
 }
 
