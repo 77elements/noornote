@@ -18,6 +18,16 @@ import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { UserProfileService } from '../UserProfileService';
+import { isUserMuted } from '../../lists/mutes';
+
+/**
+ * Count replies excluding events authored by users the current user has
+ * muted. Mirrors the rendering side: muted authors' replies don't show
+ * in the thread, so they shouldn't show in the ISL counter either.
+ */
+function countVisibleReplies(events: NostrEvent[]): number {
+  return events.filter(e => !isUserMuted(e.pubkey).any).length;
+}
 
 export interface InteractionStats {
   replies: number;
@@ -180,7 +190,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
     // Extract counts from detailed stats
     return {
-      replies: detailedStats.replyEvents.length,
+      replies: countVisibleReplies(detailedStats.replyEvents),
       reposts: detailedStats.repostEvents.length,
       quotedReposts: detailedStats.quotedEvents.length,
       likes: detailedStats.reactionEvents.length,
@@ -199,7 +209,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     if (cached && Date.now() - cached.lastUpdated < this.cacheDuration) {
       this.systemLogger.info('ReactionsOrch', '💾 ISL stats loaded from Single Note View');
       return {
-        replies: cached.replyEvents.length,
+        replies: countVisibleReplies(cached.replyEvents),
         reposts: cached.repostEvents.length,
         quotedReposts: cached.quotedEvents.length,
         likes: cached.reactionEvents.length,
@@ -743,7 +753,7 @@ export class ReactionsOrchestrator extends Orchestrator {
 
           // Calculate updated stats and notify callback
           const stats: InteractionStats = {
-            replies: cached.replyEvents.length,
+            replies: countVisibleReplies(cached.replyEvents),
             reposts: cached.repostEvents.length,
             quotedReposts: cached.quotedEvents.length,
             likes: cached.reactionEvents.length,
