@@ -22,6 +22,16 @@ import { parseListingMetadata } from './marketplace-helpers';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { CustomDropdown } from '../../components/ui/CustomDropdown';
+
+const CURRENCY_OPTIONS = ['USD', 'EUR', 'GBP', 'BTC', 'SAT'].map(c => ({ value: c, label: c }));
+const FREQUENCY_OPTIONS = [
+  { value: '', label: 'One-time' },
+  { value: 'hour', label: 'per hour' },
+  { value: 'day', label: 'per day' },
+  { value: 'month', label: 'per month' },
+  { value: 'year', label: 'per year' },
+];
 
 type TabMode = 'edit' | 'preview';
 
@@ -37,6 +47,8 @@ export class ListingEditorView extends View {
   private relaySelector: RelaySelector | null = null;
   private toolbar: PostEditorToolbar | null = null;
   private mentionAutocomplete: MentionAutocomplete | null = null;
+  private currencyDropdown: CustomDropdown | null = null;
+  private frequencyDropdown: CustomDropdown | null = null;
 
   // State
   private currentTab: TabMode = 'edit';
@@ -185,14 +197,6 @@ export class ListingEditorView extends View {
 
   private renderEditMode(): string {
     const statusOptions = ['active', 'sold', 'inactive'];
-    const currencyOptions = ['USD', 'EUR', 'GBP', 'BTC', 'SAT'];
-    const frequencyOptions = [
-      { value: '', label: 'One-time' },
-      { value: 'hour', label: 'per hour' },
-      { value: 'day', label: 'per day' },
-      { value: 'month', label: 'per month' },
-      { value: 'year', label: 'per year' }
-    ];
 
     return `
       <div class="article-editor__form">
@@ -205,12 +209,8 @@ export class ListingEditorView extends View {
           <label for="listing-price">Price *</label>
           <div class="listing-editor__price-row">
             <input type="text" id="listing-price" class="input" placeholder="50" value="${escapeHtml(this.price)}" data-field="price" style="flex: 1;" />
-            <select id="listing-currency" class="input listing-editor__currency-select" data-field="priceCurrency">
-              ${currencyOptions.map(c => `<option value="${c}" ${this.priceCurrency === c ? 'selected' : ''}>${c}</option>`).join('')}
-            </select>
-            <select id="listing-frequency" class="input listing-editor__frequency-select" data-field="priceFrequency">
-              ${frequencyOptions.map(f => `<option value="${f.value}" ${this.priceFrequency === f.value ? 'selected' : ''}>${f.label}</option>`).join('')}
-            </select>
+            <div data-currency-mount class="listing-editor__currency-select"></div>
+            <div data-frequency-mount class="listing-editor__frequency-select"></div>
           </div>
         </div>
 
@@ -389,8 +389,6 @@ export class ListingEditorView extends View {
           case 'content': this.content = target.value; break;
           case 'summary': this.summary = target.value; break;
           case 'price': this.price = target.value; break;
-          case 'priceCurrency': this.priceCurrency = target.value; break;
-          case 'priceFrequency': this.priceFrequency = target.value; break;
           case 'location': this.location = target.value; break;
           case 'tags': this.tags = target.value; break;
           case 'identifier': this.identifier = target.value; break;
@@ -400,6 +398,44 @@ export class ListingEditorView extends View {
         this.updateButtonStates();
       });
     });
+
+    this.mountPriceDropdowns();
+  }
+
+  /**
+   * Mount the currency + frequency CustomDropdowns into their slots.
+   * Re-runs after every renderEditMode() (initial + tab-switch back to
+   * edit), so destroy any previous instances first to avoid leaks.
+   */
+  private mountPriceDropdowns(): void {
+    this.currencyDropdown?.destroy();
+    this.frequencyDropdown?.destroy();
+
+    const currencyMount = this.container.querySelector<HTMLElement>('[data-currency-mount]');
+    if (currencyMount) {
+      this.currencyDropdown = new CustomDropdown({
+        options: CURRENCY_OPTIONS,
+        selectedValue: this.priceCurrency,
+        onChange: (value) => {
+          this.priceCurrency = value;
+          this.updateButtonStates();
+        },
+      });
+      currencyMount.appendChild(this.currencyDropdown.getElement());
+    }
+
+    const frequencyMount = this.container.querySelector<HTMLElement>('[data-frequency-mount]');
+    if (frequencyMount) {
+      this.frequencyDropdown = new CustomDropdown({
+        options: FREQUENCY_OPTIONS,
+        selectedValue: this.priceFrequency,
+        onChange: (value) => {
+          this.priceFrequency = value;
+          this.updateButtonStates();
+        },
+      });
+      frequencyMount.appendChild(this.frequencyDropdown.getElement());
+    }
   }
 
   private setupImageHandlers(): void {
@@ -592,6 +628,8 @@ export class ListingEditorView extends View {
     if (this.relaySelector) { this.relaySelector.destroy(); this.relaySelector = null; }
     if (this.toolbar) { this.toolbar.destroy(); this.toolbar = null; }
     if (this.mentionAutocomplete) { this.mentionAutocomplete.destroy(); this.mentionAutocomplete = null; }
+    if (this.currencyDropdown) { this.currencyDropdown.destroy(); this.currencyDropdown = null; }
+    if (this.frequencyDropdown) { this.frequencyDropdown.destroy(); this.frequencyDropdown = null; }
     this.container.innerHTML = '';
   }
 }
