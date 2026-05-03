@@ -296,7 +296,7 @@ html.content-visibility-auto .note-card {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
-  color: $color-3;
+  color: var(--color-3);
   margin: calc($gap * 0.75) 0;
 }
 
@@ -307,7 +307,7 @@ html.content-visibility-auto .note-card {
   width: 16px;
   height: 20px;
   line-height: 20px;
-  color: $color-3;
+  color: var(--color-3);
 
   svg {
     width: 100%;
