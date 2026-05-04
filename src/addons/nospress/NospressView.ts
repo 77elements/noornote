@@ -16,6 +16,7 @@ import { NospressOrchestrator } from '../../services/orchestration/NospressOrche
 import { NospressService } from '../../services/NospressService';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns } from './blocks/renderers/ColumnsRenderer';
+import { renderDiv } from './blocks/renderers/DivRenderer';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
@@ -50,11 +51,13 @@ import type { ProfileArticlesCarousel } from '../../components/profile/ProfileAr
  *  prefixed with `__` so it can never collide with a UUID. */
 const PAGE_SELECTION_ID = '__page__';
 
-/** Active editor cursor — either at page level or inside a specific column
- *  of a `columns` block. `index` is the position WITHIN the parent array. */
+/** Active editor cursor — page level, inside a `columns` block's column, or
+ *  inside a `div` block's children. `index` is the position WITHIN the
+ *  parent array. */
 type Cursor =
   | { scope: 'page'; index: number }
-  | { scope: 'column'; columnsBlockId: string; colIndex: number; index: number };
+  | { scope: 'column'; columnsBlockId: string; colIndex: number; index: number }
+  | { scope: 'div'; divBlockId: string; index: number };
 
 export class NospressView extends View {
   private container: HTMLElement;
@@ -517,25 +520,29 @@ export class NospressView extends View {
 
     const cur = this.cursor;
 
-    // Validate nested-columns up-front so we don't toggle dirty for a no-op
-    if (cur.scope === 'column' && block.type === 'columns') {
-      ToastService.show('Columns inside columns are not supported', 'error');
-      return;
-    }
+    // No nesting restrictions — div and columns can live in any container,
+    // at any depth. findBlockInPage walks recursively so cursor / mutation
+    // resolves the right array regardless of where the container sits.
 
     this.mutateDraft((page) => {
       if (cur.scope === 'page') {
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? page.blocks.length : cur.index, page.blocks.length));
         page.blocks.splice(insertIndex, 0, block);
         this.cursor = { scope: 'page', index: insertIndex + 1 };
-      } else {
-        const target = page.blocks.find(b => b.id === cur.columnsBlockId);
-        if (!target || target.type !== 'columns') return;
-        const col = target.content[cur.colIndex];
+      } else if (cur.scope === 'column') {
+        const targetLoc = findBlockInPage(page, cur.columnsBlockId);
+        if (!targetLoc || targetLoc.block.type !== 'columns') return;
+        const col = targetLoc.block.content[cur.colIndex];
         if (!col) return;
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? col.length : cur.index, col.length));
         col.splice(insertIndex, 0, block);
         this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: insertIndex + 1 };
+      } else {
+        const targetLoc = findBlockInPage(page, cur.divBlockId);
+        if (!targetLoc || targetLoc.block.type !== 'div') return;
+        const insertIndex = Math.max(0, Math.min(cur.index < 0 ? targetLoc.block.children.length : cur.index, targetLoc.block.children.length));
+        targetLoc.block.children.splice(insertIndex, 0, block);
+        this.cursor = { scope: 'div', divBlockId: cur.divBlockId, index: insertIndex + 1 };
       }
     });
   }
@@ -561,14 +568,26 @@ export class NospressView extends View {
       }
       return;
     }
-    const target = page.blocks.find(b => b.id === cur.columnsBlockId);
-    if (!target || target.type !== 'columns' || cur.colIndex >= target.count) {
+    if (cur.scope === 'column') {
+      const loc = findBlockInPage(page, cur.columnsBlockId);
+      if (!loc || loc.block.type !== 'columns' || cur.colIndex >= loc.block.count) {
+        this.cursor = { scope: 'page', index: page.blocks.length };
+        return;
+      }
+      const col = loc.block.content[cur.colIndex] ?? [];
+      if (cur.index < 0 || cur.index > col.length) {
+        this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: col.length };
+      }
+      return;
+    }
+    // scope === 'div'
+    const loc = findBlockInPage(page, cur.divBlockId);
+    if (!loc || loc.block.type !== 'div') {
       this.cursor = { scope: 'page', index: page.blocks.length };
       return;
     }
-    const col = target.content[cur.colIndex] ?? [];
-    if (cur.index < 0 || cur.index > col.length) {
-      this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: col.length };
+    if (cur.index < 0 || cur.index > loc.block.children.length) {
+      this.cursor = { scope: 'div', divBlockId: cur.divBlockId, index: loc.block.children.length };
     }
   }
 
@@ -589,17 +608,25 @@ export class NospressView extends View {
     for (let i = 0; i < blocks.length; i++) {
       if (i === pageCursorIndex) parts.push(slot);
       const block = blocks[i]!;
-      if (block.type === 'columns') {
-        parts.push(this.renderColumnsBlockEditable(block));
-      } else {
-        parts.push(BlockRenderer.renderOne(block, { editable: true }));
-      }
+      parts.push(this.renderEditableBlock(block));
       if (block.id === this.selectedBlockId) {
         parts.push(this.renderInlineProperties(block));
       }
     }
     if (pageCursorIndex >= blocks.length) parts.push(slot);
     return parts.join('');
+  }
+
+  /**
+   * Single editable-render dispatch. Container blocks (columns, div) need
+   * the cursor-aware variant so the cursor can descend into them; everything
+   * else goes through the standard BlockRenderer. Used at every nesting
+   * level (page-level + inside columns + inside divs) so deep layouts work.
+   */
+  private renderEditableBlock(block: Block): string {
+    if (block.type === 'columns') return this.renderColumnsBlockEditable(block);
+    if (block.type === 'div') return this.renderDivBlockEditable(block);
+    return BlockRenderer.renderOne(block, { editable: true });
   }
 
   /**
@@ -630,7 +657,7 @@ export class NospressView extends View {
         for (let i = 0; i < colBlocks.length; i++) {
           if (cursorHere && cur.index === i) inner.push(slot);
           const cb = colBlocks[i]!;
-          inner.push(BlockRenderer.renderOne(cb, { editable: true }));
+          inner.push(this.renderEditableBlock(cb));
           if (cb.id === this.selectedBlockId) {
             inner.push(this.renderInlineProperties(cb));
           }
@@ -641,6 +668,42 @@ export class NospressView extends View {
     });
     // Editor-mode bare wrapper — no inline styles, custom class, or id
     // (those only apply on the published Public page).
+    return `<div class="nospress-block-style" data-styled-block-id="${block.id}">${html}</div>`;
+  }
+
+  /**
+   * Render a `div` block with editable children. Mirrors the columns
+   * pattern: when the cursor is inside this div, the cursor-row slot lands
+   * at the active index; otherwise an empty-children placeholder lets the
+   * user click to drop the cursor in.
+   */
+  private renderDivBlockEditable(block: Extract<Block, { type: 'div' }>): string {
+    const slot = `<div data-cursor-mount></div>`;
+    const cur = this.cursor;
+    const cursorHere = cur.scope === 'div' && cur.divBlockId === block.id;
+
+    const html = renderDiv(block, {
+      editable: true,
+      childrenInner: () => {
+        if (block.children.length === 0) {
+          return cursorHere
+            ? slot
+            : `<div class="nospress-block-div__placeholder" data-div-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here</div>`;
+        }
+
+        const inner: string[] = [];
+        for (let i = 0; i < block.children.length; i++) {
+          if (cursorHere && cur.index === i) inner.push(slot);
+          const cb = block.children[i]!;
+          inner.push(this.renderEditableBlock(cb));
+          if (cb.id === this.selectedBlockId) {
+            inner.push(this.renderInlineProperties(cb));
+          }
+        }
+        if (cursorHere && cur.index >= block.children.length) inner.push(slot);
+        return inner.join('');
+      }
+    });
     return `<div class="nospress-block-style" data-styled-block-id="${block.id}">${html}</div>`;
   }
 
@@ -786,7 +849,8 @@ export class NospressView extends View {
   }
 
   /** Move cursor to immediately after a given block id. Works for top-level
-   *  blocks AND blocks nested inside a `columns` block's column. */
+   *  blocks AND blocks nested inside a `columns` column or a `div`
+   *  (regardless of where that container itself sits in the page tree). */
   private async setCursorAfterBlock(blockId: string): Promise<void> {
     const current = this.listService.getDraftV2()
       ?? this.listService.getPublishedV2()
@@ -794,26 +858,16 @@ export class NospressView extends View {
     const loc = findBlockInPage(current, blockId);
     if (!loc) return;
 
-    if (loc.parent === current.blocks) {
+    if (!loc.container) {
       this.cursor = { scope: 'page', index: loc.index + 1 };
+    } else if (loc.container.type === 'column') {
+      this.cursor = { scope: 'column', columnsBlockId: loc.container.block.id, colIndex: loc.container.colIndex, index: loc.index + 1 };
     } else {
-      // Find the columns block that owns this column array
-      const owner = current.blocks.find(
-        b => b.type === 'columns' && b.content.includes(loc.parent)
-      ) as Extract<Block, { type: 'columns' }> | undefined;
-      if (!owner) return;
-      const colIndex = owner.content.indexOf(loc.parent);
-      this.cursor = { scope: 'column', columnsBlockId: owner.id, colIndex, index: loc.index + 1 };
+      this.cursor = { scope: 'div', divBlockId: loc.container.block.id, index: loc.index + 1 };
     }
 
     await this.rerenderEditable();
-    const el = this.cursorRow?.getElement();
-    if (el) {
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      el.classList.add('nospress-cursor-row--flash');
-      setTimeout(() => el.classList.remove('nospress-cursor-row--flash'), 600);
-      this.cursorRow?.focus();
-    }
+    this.flashCursorRow();
   }
 
   /** Move cursor INTO an empty column. Triggered by clicking the column's
@@ -821,13 +875,25 @@ export class NospressView extends View {
   private async setCursorInColumn(columnsBlockId: string, colIndex: number): Promise<void> {
     this.cursor = { scope: 'column', columnsBlockId, colIndex, index: 0 };
     await this.rerenderEditable();
+    this.flashCursorRow();
+  }
+
+  /** Move cursor INTO an empty div. Triggered by clicking the div's
+   *  "Click to add blocks here" placeholder. */
+  private async setCursorInDiv(divBlockId: string): Promise<void> {
+    this.cursor = { scope: 'div', divBlockId, index: 0 };
+    await this.rerenderEditable();
+    this.flashCursorRow();
+  }
+
+  /** Scroll the cursor-row into view + brief flash + focus its input. */
+  private flashCursorRow(): void {
     const el = this.cursorRow?.getElement();
-    if (el) {
-      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-      el.classList.add('nospress-cursor-row--flash');
-      setTimeout(() => el.classList.remove('nospress-cursor-row--flash'), 600);
-      this.cursorRow?.focus();
-    }
+    if (!el) return;
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    el.classList.add('nospress-cursor-row--flash');
+    setTimeout(() => el.classList.remove('nospress-cursor-row--flash'), 600);
+    this.cursorRow?.focus();
   }
 
   /**
@@ -970,7 +1036,7 @@ export class NospressView extends View {
       } else if (kind === 'div-tag') {
         const current = slot.dataset.currentValue || 'div';
         const dropdown = new CustomDropdown({
-          options: DIV_TAGS.map(t => ({ value: t, label: `<${t}>` })),
+          options: DIV_TAGS.map(t => ({ value: t, label: t })),
           selectedValue: current,
           onChange: (value) => {
             this.mutateDraft((page) => {
@@ -1159,6 +1225,16 @@ export class NospressView extends View {
         }
       }
 
+      // Click on an empty-div placeholder → put cursor in that div
+      const divPh = target.closest('.nospress-block-div__placeholder') as HTMLElement | null;
+      if (divPh) {
+        const dbId = divPh.dataset.divBlockId;
+        if (dbId) {
+          this.setCursorInDiv(dbId);
+          return;
+        }
+      }
+
       // Skip clicks on interactive controls — those have their own handlers
       if (target.closest('button, input, textarea, select, a, [data-action]')) return;
       // Click inside the inline properties panel of the selected block:
@@ -1314,8 +1390,6 @@ export class NospressView extends View {
           const v = el.value.trim();
           if (v) block.pubkey = v; else delete block.pubkey;
         }
-      } else if (block.type === 'div') {
-        if (field === 'content') block.content = el.value;
       } else if (block.type === 'weblog') {
         if (field === 'weblog-pubkey') {
           const v = el.value.trim();

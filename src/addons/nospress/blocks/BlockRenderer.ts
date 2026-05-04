@@ -63,7 +63,7 @@ export class BlockRenderer {
         case 'audio':           return renderAudio(block, editable);
         case 'articles-list':   return renderArticlesList(block, editable);
         case 'weblog':          return renderWeblog(block, editable);
-        case 'div':             return renderDiv(block, editable);
+        case 'div':             return renderDiv(block, { editable });
       }
     })();
     // The editor is a schematic composer — no live preview of user styles.

@@ -932,7 +932,8 @@
 }
 
 // DIV block edit — generic block-level wrapper. Tag-slot houses the
-// CustomDropdown for switching the underlying element.
+// CustomDropdown for switching the underlying element. Children-container
+// hosts nested editable blocks with their own cursor-row when active.
 .nospress-block-div__tag-slot {
   align-self: flex-start;
 
@@ -941,8 +942,24 @@
   }
 }
 
-.nospress-block-div__content {
-  min-height: 60px;
+.nospress-block-div__children {
+  margin-top: calc($gap / 2);
+  padding: $gap;
+  border: 1px dashed $color-2;
+  border-radius: $radius-xl;
+}
+
+.nospress-block-div__placeholder {
+  padding: $gap;
+  text-align: center;
+  color: $color-3;
+  font-style: italic;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: $color-4;
+  }
 }
 
 // Text edit

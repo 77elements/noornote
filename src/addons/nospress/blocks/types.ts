@@ -41,7 +41,7 @@ export type Block =
   | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle; attrs?: BlockAttrs }
   | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; attrs?: BlockAttrs }
   | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'div'; tag: DivTag; content?: string; style?: CommonStyle; attrs?: BlockAttrs };
+  | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; attrs?: BlockAttrs };
 
 /** Allowed semantic block-level HTML elements for the generic `div` block. */
 export const DIV_TAGS = ['div', 'header', 'footer', 'main', 'section', 'article', 'aside', 'nav', 'fieldset'] as const;
@@ -95,35 +95,58 @@ export function createBlock(type: BlockType): Block {
     case 'audio':           return { id, type, url: '' };
     case 'articles-list':   return { id, type };
     case 'weblog':          return { id, type, hashtags: [] };
-    case 'div':             return { id, type, tag: 'div' };
+    case 'div':             return { id, type, tag: 'div', children: [] };
   }
 }
 
+/** Where a block sits in the page tree. `container` is undefined when the
+ *  block lives directly on the page; otherwise it points back at the owning
+ *  container so callers can derive the cursor scope without re-walking. */
+export interface BlockLocation {
+  block: Block;
+  parent: Block[];
+  index: number;
+  container?:
+    | { type: 'column'; block: Extract<Block, { type: 'columns' }>; colIndex: number }
+    | { type: 'div'; block: Extract<Block, { type: 'div' }> };
+}
+
 /**
- * Locate a block by id anywhere in the page — top-level OR inside a
- * `columns` block's per-column content arrays. Returns the block plus
- * the parent array + index (for splice/move operations).
+ * Locate a block by id anywhere in the page tree. Recurses fully, so a
+ * block inside a `columns` block that itself sits inside a `div` is
+ * findable. Returns the block + its parent array + index for splice/move,
+ * plus a `container` hint that callers use to map back to a cursor scope.
  *
- * Per design contract (see docs/todos/nospress.md), `columns` blocks may
- * NOT contain other `columns` blocks, so we recurse exactly one level
- * into each column's content. If you ever lift that restriction, this
- * helper needs to recurse further.
+ * Allowed nesting (enforced at insert time, not here):
+ *   - div lives only at page level
+ *   - columns lives at page level OR inside a div
+ *   - columns cannot live inside another columns
  */
-export function findBlockInPage(
-  page: NospressPageV2,
-  blockId: string
-): { block: Block; parent: Block[]; index: number } | null {
-  const topIndex = page.blocks.findIndex(b => b.id === blockId);
-  if (topIndex >= 0) {
-    return { block: page.blocks[topIndex]!, parent: page.blocks, index: topIndex };
+export function findBlockInPage(page: NospressPageV2, blockId: string): BlockLocation | null {
+  return findInArray(page.blocks, blockId, undefined);
+}
+
+function findInArray(
+  arr: Block[],
+  blockId: string,
+  container: BlockLocation['container']
+): BlockLocation | null {
+  const idx = arr.findIndex(b => b.id === blockId);
+  if (idx >= 0) {
+    const loc: BlockLocation = { block: arr[idx]!, parent: arr, index: idx };
+    if (container) loc.container = container;
+    return loc;
   }
-  for (const tb of page.blocks) {
-    if (tb.type !== 'columns') continue;
-    for (const col of tb.content) {
-      const idx = col.findIndex(b => b.id === blockId);
-      if (idx >= 0) {
-        return { block: col[idx]!, parent: col, index: idx };
+  for (const b of arr) {
+    if (b.type === 'columns') {
+      for (let c = 0; c < b.content.length; c++) {
+        const col = b.content[c]!;
+        const found = findInArray(col, blockId, { type: 'column', block: b, colIndex: c });
+        if (found) return found;
       }
+    } else if (b.type === 'div') {
+      const found = findInArray(b.children, blockId, { type: 'div', block: b });
+      if (found) return found;
     }
   }
   return null;

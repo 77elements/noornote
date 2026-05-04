@@ -1,15 +1,19 @@
 /**
- * Generic block-level wrapper. Renders as `<div>` by default; the tag can
- * be switched via a CustomDropdown (header / footer / main / section /
- * article / aside / nav / fieldset). Optional text content sits inside.
+ * Generic block-level wrapper that can host other blocks. Tag defaults to
+ * `div`; CustomDropdown switches it to header / footer / main / section /
+ * article / aside / nav / fieldset.
  *
- * Use case: the user wants a semantic landmark (e.g. <header>) or a
- * targetable wrapper (`#hero`, `.stripe`) without inventing a new block
- * type for every variant. Standard block style + attrs apply.
+ * Readonly: renders children via BlockRenderer.renderAll (recursive).
+ * Editable: emits a slot — NospressView fills it via its own
+ *   renderBlocksWithCursor pass so the active cursor row + nested editable
+ *   blocks land at the right position.
+ *
+ * The slot exposes `data-div-block-id` so NospressView can attach the
+ * empty-children click handler that drops the cursor inside the div.
  */
 
-import DOMPurify from 'dompurify';
-import { escapeHtml, escapeHtmlAttr } from '../../../../helpers/escapeHtml';
+import { BlockRenderer } from '../BlockRenderer';
+import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import { DIV_TAGS, type Block, type DivTag } from '../types';
 
@@ -17,18 +21,29 @@ function safeTag(raw: string | undefined): DivTag {
   return (DIV_TAGS as readonly string[]).includes(raw ?? '') ? (raw as DivTag) : 'div';
 }
 
-export function renderDiv(block: Extract<Block, { type: 'div' }>, editable = false): string {
+export interface RenderDivOptions {
+  editable?: boolean;
+  /** Editable mode: NospressView injects the recursive cursor-aware
+   *  child render output here. */
+  childrenInner?: () => string;
+}
+
+export function renderDiv(
+  block: Extract<Block, { type: 'div' }>,
+  opts: RenderDivOptions = {}
+): string {
   const tag = safeTag(block.tag);
+  const editable = opts.editable === true;
 
   if (editable) {
-    const content = escapeHtml(block.content ?? '');
+    const childrenHtml = opts.childrenInner ? opts.childrenInner() : '';
     const inner = `
       <div class="nospress-block-div__tag-slot" data-block-dropdown="div-tag" data-block-id="${block.id}" data-current-value="${escapeHtmlAttr(tag)}"></div>
-      <textarea class="textarea nospress-block-div__content" data-block-id="${block.id}" data-field="content" placeholder="Optional content...">${content}</textarea>
+      <div class="nospress-block-div__children" data-div-block-id="${block.id}">${childrenHtml}</div>
     `;
     return wrapEditable(block.id, 'div', inner);
   }
 
-  const content = DOMPurify.sanitize(block.content ?? '');
-  return `<${tag} class="nospress-block-div">${content}</${tag}>`;
+  const childrenHtml = BlockRenderer.renderAll(block.children, { editable: false });
+  return `<${tag} class="nospress-block-div">${childrenHtml}</${tag}>`;
 }
