@@ -98,6 +98,11 @@ export class NospressView extends View {
   private fullscreenOverlay: FullscreenOverlay | null = null;
   private fullscreenOriginParent: HTMLElement | null = null;
   private fullscreenOriginAnchor: Node | null = null;
+  /** Reference to the 70/30 split element so the library-toggle button can
+   *  flip a modifier class without re-creating the overlay. */
+  private fullscreenSplit: HTMLElement | null = null;
+  private libraryToggleBtn: HTMLButtonElement | null = null;
+  private libraryHidden: boolean = false;
   /** True when the Custom-CSS editor panel is visible between header and
    *  the page-edit area. Toggled by the overlay "CSS Editor" button or the
    *  Library "Custom CSS" entry. UI-only; no relay impact. */
@@ -307,15 +312,15 @@ export class NospressView extends View {
     const hasPublished = this.listService.getPublishedV2() !== null;
     const localButtons = editable
       ? `
-        <button type="button" class="btn btn--mini" data-action="save" ${isDirty ? '' : 'disabled'}>Save</button>
-        <button type="button" class="btn btn--passive btn--mini" data-action="discard" ${hasDraft ? '' : 'disabled'}>Discard</button>
+        <button type="button" class="btn" data-action="save" ${isDirty ? '' : 'disabled'}>Save</button>
+        <button type="button" class="btn btn--passive" data-action="discard" ${hasDraft ? '' : 'disabled'}>Discard</button>
       `
       : '';
     return `
       <div class="nospress-action-bar l-row--split">
         <div>
-          <button type="button" class="btn btn--mini" data-action="publish" ${(isDirty || hasDraft) ? '' : 'disabled'}>Publish</button>
-          <button type="button" class="btn btn--passive btn--mini btn--danger" data-action="delete-list" ${hasPublished ? '' : 'disabled'}>Unpublish</button>
+          <button type="button" class="btn" data-action="publish" ${(isDirty || hasDraft) ? '' : 'disabled'}>Publish</button>
+          <button type="button" class="btn btn--passive btn--danger" data-action="delete-list" ${hasPublished ? '' : 'disabled'}>Unpublish</button>
         </div>
         <div>${localButtons}</div>
       </div>
@@ -399,6 +404,8 @@ export class NospressView extends View {
     librarySlot.className = 'nospress-fullscreen-split__library';
     split.appendChild(editorSlot);
     split.appendChild(librarySlot);
+    this.fullscreenSplit = split;
+    this.libraryHidden = false;
 
     // Remember where to put this.container back when we exit.
     this.fullscreenOriginParent = this.container.parentElement as HTMLElement | null;
@@ -439,15 +446,35 @@ export class NospressView extends View {
     cssEditorButton.textContent = 'CSS Editor';
     cssEditorButton.addEventListener('click', () => this.toggleCssEditor());
 
+    // Library-toggle — collapses the right pane so the editor takes the
+    // full width when the user wants more room to compose.
+    const libraryToggleBtn = document.createElement('button');
+    libraryToggleBtn.type = 'button';
+    libraryToggleBtn.className = 'btn btn--passive btn--medium';
+    libraryToggleBtn.textContent = 'Hide Library';
+    libraryToggleBtn.addEventListener('click', () => this.toggleLibraryHidden());
+    this.libraryToggleBtn = libraryToggleBtn;
+
     this.fullscreenOverlay = new FullscreenOverlay({
       title: 'Edit NosPress Site',
       exitLabel: 'Exit NosPress',
       body: split,
       maxWidth: '100%',
-      extraActions: [seeWebsiteButton, cssEditorButton],
+      extraActions: [seeWebsiteButton, cssEditorButton, libraryToggleBtn],
       onExit: () => this.cleanupFullscreenEditor(),
     });
     this.fullscreenOverlay.mount();
+  }
+
+  /** Collapse / restore the right-hand Block Library pane. Pure CSS toggle —
+   *  the library element stays in the DOM so re-showing is instant. */
+  private toggleLibraryHidden(): void {
+    if (!this.fullscreenSplit) return;
+    this.libraryHidden = !this.libraryHidden;
+    this.fullscreenSplit.classList.toggle('nospress-fullscreen-split--no-library', this.libraryHidden);
+    if (this.libraryToggleBtn) {
+      this.libraryToggleBtn.textContent = this.libraryHidden ? 'Show Library' : 'Hide Library';
+    }
   }
 
   /**
@@ -471,6 +498,9 @@ export class NospressView extends View {
     this.blockLibrary?.destroy();
     this.blockLibrary = null;
     this.fullscreenOverlay = null;
+    this.fullscreenSplit = null;
+    this.libraryToggleBtn = null;
+    this.libraryHidden = false;
 
     Router.getInstance().navigate('/addons/nospress');
   }
