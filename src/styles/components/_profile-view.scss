@@ -154,18 +154,16 @@
     border-radius: 50%;
   }
 
+  &__separator {
+    user-select: none;
+  }
+
   &:has(.copy-btn.copied) {
     .copy-feedback {
       opacity: 1;
       transform: translateY(0);
     }
   }
-}
-
-// Npub text (standalone)
-.npub-text {
-  opacity: 0.7;
-  transition: color 0.2s ease;
 }
 
 // Copy button (standalone)
@@ -197,10 +195,6 @@
     border-color: var(--color-4);
 
     svg {
-      color: var(--color-4);
-    }
-
-    & ~ .npub-text {
       color: var(--color-4);
     }
 
@@ -236,9 +230,10 @@
   }
 }
 
-// Lightning QR + Profile Zap buttons (analog zu .qr-btn)
+// Lightning QR + Profile Zap + DM buttons (analog zu .qr-btn)
 .lightning-qr-btn,
-.profile-zap-btn {
+.profile-zap-btn,
+.profile-dm-btn {
   background: var(--color-2);
   border: 1px solid var(--color-3);
   border-radius: $radius-xl;
@@ -259,6 +254,16 @@
   &:hover {
     background: var(--color-3);
     border-color: var(--color-4);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      background: var(--color-2);
+      border-color: var(--color-3);
+    }
   }
 }
 

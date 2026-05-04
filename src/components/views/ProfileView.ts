@@ -20,6 +20,7 @@ import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { linkifyUrls } from '../../helpers/linkifyUrls';
 import { convertLineBreaks } from '../../helpers/convertLineBreaks';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
+import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ArticleNotificationService } from '../../services/ArticleNotificationService';
@@ -543,13 +544,11 @@ export class ProfileView extends View {
     const lud16 = profile.lud16 || '';
     this.lud16 = lud16;
     const isOwnProfile = this.authService.isCurrentUser(this.pubkey);
+    const isBunker = this.authService.isBunkerAuth();
 
 
     // Process about text: escape HTML, convert line breaks, linkify URLs
     const processedAbout = about ? linkifyUrls(convertLineBreaks(escapeHtml(about))) : '';
-
-    // Shorten npub for display (first 8 + last 6 chars)
-    const shortNpub = `${this.npub.slice(0, 12)}...${this.npub.slice(-6)}`;
 
     const headerHTML = `
       <div class="profile-nip01">
@@ -579,14 +578,20 @@ export class ProfileView extends View {
               ` : ''}
 
               <div class="profile-npub">
-                <span class="npub-text" title="${escapeHtml(this.npub)}">${shortNpub}</span>
                 <button class="copy-btn" data-copy="${escapeHtml(this.npub)}" title="Copy npub">
                   <svg width="16" height="16"><use href="#icon-copy-24"/></svg>
                 </button>
                 <button class="qr-btn" title="npub QR Code">
                   <svg width="16" height="16"><use href="#icon-qr-code"/></svg>
                 </button>
+                ${this.renderTribeButton()}
+                ${!isOwnProfile ? `
+                <button class="profile-dm-btn"${isBunker ? ' disabled' : ''} title="${isBunker ? 'Switch to NoorSigner or browser extension to send messages' : 'Send message'}">
+                  <svg width="16" height="16"><use href="#icon-message"/></svg>
+                </button>
+                ` : ''}
                 ${lud16 && !isOwnProfile ? `
+                <span class="profile-npub__separator" aria-hidden="true">|</span>
                 <button class="lightning-qr-btn" title="Lightning QR Code">
                   <svg width="16" height="16"><use href="#icon-lightning-qr"/></svg>
                 </button>
@@ -594,7 +599,6 @@ export class ProfileView extends View {
                   <svg width="16" height="16"><use href="#icon-lightning-filled"/></svg>
                 </button>
                 ` : ''}
-                ${this.renderTribeButton()}
                 <span class="copy-feedback">Copied!</span>
               </div>
             </div>
@@ -659,6 +663,9 @@ export class ProfileView extends View {
 
       // Setup Lightning QR + Profile Zap buttons
       this.setupLightningButtons();
+
+      // Setup DM button (foreign profiles only, navigates to messages)
+      this.setupDmButton();
 
       // Setup tribe button handler
       this.setupTribeButton();
@@ -922,6 +929,19 @@ export class ProfileView extends View {
         zapModal.show();
       });
     }
+  }
+
+  /**
+   * Setup DM button — foreign profiles only, navigates to /messages/{npub}.
+   * Disabled when the viewer is on Bunker auth (NIP-04/44 unsupported).
+   */
+  private setupDmButton(): void {
+    const dmBtn = this.container.querySelector('.profile-dm-btn') as HTMLButtonElement | null;
+    if (!dmBtn || dmBtn.disabled) return;
+    dmBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      Router.getInstance().navigate(`/messages/${this.npub}`);
+    });
   }
 
   /**
