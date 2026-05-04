@@ -26,19 +26,16 @@ import { EventBus } from '../../services/EventBus';
 import { FullscreenOverlay } from '../../components/ui/FullscreenOverlay';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
-import { createBlock, findBlockInPage, type Block, type BlockType, type NospressPageV2 } from './blocks/types';
+import { createBlock, findBlockInPage, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
 import {
-  buildInlineStyle,
   renderPropertyPanel,
   sanitizeCssIdent,
-  schemaFor,
-  styleWrap,
   writeStyleField,
   type CommonStyle,
 } from './blocks/styles';
-import { applyUserCss, removeUserCss } from './cssScope';
+import { removeUserCss } from './cssScope';
 import { bindCssTextareaUx } from './cssTextareaUx';
-import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { escapeHtml } from '../../helpers/escapeHtml';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { MediaUploadService } from '../../services/MediaUploadService';
@@ -246,16 +243,14 @@ export class NospressView extends View {
     this.destroyArticlesCarousels();
 
     const pageSelected = this.selectedBlockId === PAGE_SELECTION_ID;
-    const inlineStyle = buildInlineStyle(schemaFor('page'), page.style);
-    const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
-    // Two-tier structure mirrors the Public page so user CSS targeting
-    // `.layout-wrapper` works identically in both contexts:
-    //   .user-site (scope root, takes user CSS like `body { … }`)
-    //     └── .layout-wrapper (gets the page-level inline style)
-    //           └── blocks
+    // The editor is a schematic composer — we keep the same DOM structure
+    // as PublicNospressPage (.user-site > .layout-wrapper > blocks) so the
+    // user can mentally map their selectors to the published view, but we
+    // do NOT emit the page-level inline style here. Live preview of styles
+    // happens on the public page only.
     const pageContentHtml = `
       <div class="user-site">
-        <div class="layout-wrapper nospress-page-content"${styleAttr}>${blocksHtml}</div>
+        <div class="layout-wrapper nospress-page-content">${blocksHtml}</div>
       </div>
     `;
 
@@ -279,13 +274,6 @@ export class NospressView extends View {
         ${this.renderActionBar(editable)}
       </div>
     `;
-
-    // Apply ONLY the SAVED Custom CSS — never the in-memory editingPage,
-    // because the user explicitly opted in to "Save click applies" instead
-    // of live keystroke updates. This means selectBlock / cursor moves don't
-    // re-apply unsaved CSS edits.
-    const savedPage = this.listService.getDraftV2() ?? this.listService.getPublishedV2();
-    applyUserCss(savedPage?.customCss ?? '');
 
     this.mountFolderPickers();
     this.mountBlockDropdowns();
@@ -651,7 +639,9 @@ export class NospressView extends View {
         return inner.join('');
       }
     });
-    return styleWrap(block, html);
+    // Editor-mode bare wrapper — no inline styles, custom class, or id
+    // (those only apply on the published Public page).
+    return `<div class="nospress-block-style" data-styled-block-id="${block.id}">${html}</div>`;
   }
 
   /**
@@ -771,14 +761,6 @@ export class NospressView extends View {
     ).style;
   }
 
-  /** Apply the current page style to the live DOM without re-rendering —
-   *  keeps input focus during typing. */
-  private applyPageStyleToDOM(): void {
-    const content = this.container.querySelector('.nospress-page-content') as HTMLElement | null;
-    if (!content) return;
-    content.style.cssText = buildInlineStyle(schemaFor('page'), this.currentPageStyle());
-  }
-
   private mountCursorRow(): void {
     this.destroyCursorRow();
     const slot = this.container.querySelector<HTMLElement>('[data-cursor-mount]');
@@ -887,9 +869,6 @@ export class NospressView extends View {
     this.listService.saveDraftV2(this.editingPage, { silent: true });
     this.isDirty = false;
     this.refreshActionBar();
-    // Apply Custom CSS to the live DOM. Save is the explicit trigger for
-    // CSS application — typing in the textarea is silent until here.
-    applyUserCss(this.editingPage.customCss ?? '');
     ToastService.show('Saved', 'success');
   }
 
@@ -988,6 +967,22 @@ export class NospressView extends View {
         });
         slot.appendChild(dropdown.getElement());
         this.blockDropdowns.push(dropdown);
+      } else if (kind === 'div-tag') {
+        const current = slot.dataset.currentValue || 'div';
+        const dropdown = new CustomDropdown({
+          options: DIV_TAGS.map(t => ({ value: t, label: `<${t}>` })),
+          selectedValue: current,
+          onChange: (value) => {
+            this.mutateDraft((page) => {
+              const block = findBlockInPage(page, blockId)?.block;
+              if (block && block.type === 'div' && (DIV_TAGS as readonly string[]).includes(value)) {
+                block.tag = value as DivTag;
+              }
+            }, { silent: false });
+          }
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
       }
     });
   }
@@ -1016,10 +1011,10 @@ export class NospressView extends View {
 
 
   /**
-   * Update a single style field from an inline input. Generic over scope:
-   * 'page' targets the page-level style; 'block:<uuid>' (future) targets a
-   * specific block's style. Mutation is silent (no re-render → focus stays
-   * on the input); the new style is applied directly to the live DOM.
+   * Update a single style field from an inline input. The editor is a
+   * schematic composer — we silently persist the value to the draft but
+   * do NOT apply it to the editor DOM. The styled result shows up only on
+   * the published Public page.
    */
   private handleStyleInput(scope: string, field: string, rawValue: string): void {
     if (scope === 'page') {
@@ -1027,11 +1022,9 @@ export class NospressView extends View {
         if (!page.style) page.style = {};
         writeStyleField(page.style, field, rawValue);
       }, { silent: true });
-      this.applyPageStyleToDOM();
       return;
     }
-    // Block scope: '<blockType>:<uuid>' — only the id portion is needed for
-    // lookup; the matrix is keyed by type and resolved inside the renderer.
+    // Block scope: '<blockType>:<uuid>' — only the id portion is needed.
     const colon = scope.indexOf(':');
     if (colon < 0) return;
     const blockId = scope.slice(colon + 1);
@@ -1041,22 +1034,12 @@ export class NospressView extends View {
       if (!loc.block.style) loc.block.style = {};
       writeStyleField(loc.block.style, field, rawValue);
     }, { silent: true });
-    this.applyBlockStyleToDOM(blockId);
-  }
-
-  /** Live-update one block's `data-styled-block-id` wrapper without re-rendering. */
-  private applyBlockStyleToDOM(blockId: string): void {
-    const el = this.container.querySelector(`[data-styled-block-id="${blockId}"]`) as HTMLElement | null;
-    if (!el || !this.editingPage) return;
-    const loc = findBlockInPage(this.editingPage, blockId);
-    if (!loc) return;
-    el.style.cssText = buildInlineStyle(schemaFor(loc.block.type), loc.block.style);
   }
 
   /**
-   * Live-edit handler for the per-block class/id "Identifiers" inputs.
-   * Mutates `block.attrs` silently (no re-render → focus stays in input)
-   * and propagates the change to the DOM wrapper directly.
+   * Per-block class/id "Identifiers" handler. Same schematic-composer rule
+   * as handleStyleInput — persist silently, don't touch the editor DOM.
+   * The class/id show up on the published wrapper only.
    */
   private handleAttrInput(scope: string, field: string, rawValue: string): void {
     if (field !== 'class' && field !== 'id') return;
@@ -1071,22 +1054,6 @@ export class NospressView extends View {
       if (sanitized) loc.block.attrs[field] = sanitized;
       else delete loc.block.attrs[field];
     }, { silent: true });
-    this.applyBlockAttrsToDOM(blockId);
-  }
-
-  /** Live-update wrapper className + id without re-rendering the block. */
-  private applyBlockAttrsToDOM(blockId: string): void {
-    const el = this.container.querySelector(`[data-styled-block-id="${blockId}"]`) as HTMLElement | null;
-    if (!el || !this.editingPage) return;
-    const loc = findBlockInPage(this.editingPage, blockId);
-    if (!loc) return;
-    const customClass = sanitizeCssIdent(loc.block.attrs?.class ?? '', 'multi');
-    el.className = customClass
-      ? `nospress-block-style nospress-block-style--custom ${customClass}`
-      : 'nospress-block-style';
-    const customId = sanitizeCssIdent(loc.block.attrs?.id ?? '', 'single');
-    if (customId) el.id = customId;
-    else el.removeAttribute('id');
   }
 
   /**
@@ -1347,6 +1314,8 @@ export class NospressView extends View {
           const v = el.value.trim();
           if (v) block.pubkey = v; else delete block.pubkey;
         }
+      } else if (block.type === 'div') {
+        if (field === 'content') block.content = el.value;
       } else if (block.type === 'weblog') {
         if (field === 'weblog-pubkey') {
           const v = el.value.trim();

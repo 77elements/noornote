@@ -96,25 +96,10 @@ html.layout--public {
 
 .user-site {
   margin: 0 auto;
-  padding: calc($gap * 2) $gap;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: calc($gap * 2);
-
-  // Push content below the fixed admin bar when one is rendered. The bar
-  // is a sibling earlier in the DOM, so we use :has() to detect it.
-  &:has(> .user-site-bar) {
-    padding-top: calc(40px + $gap * 2);
-  }
-
-  @include tablet {
-    padding: calc($gap * 3) $gap;
-
-    &:has(> .user-site-bar) {
-      padding-top: calc(40px + $gap * 3);
-    }
-  }
 
   &__content {
     flex: 1;

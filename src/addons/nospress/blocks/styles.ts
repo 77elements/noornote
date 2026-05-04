@@ -141,6 +141,7 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   audio:             CONTAINER_PROPS,
   'articles-list':   CONTAINER_PROPS,
   weblog:            CONTAINER_PROPS,
+  div:               TEXTUAL_PROPS,
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */

@@ -30,6 +30,7 @@ import { renderVideo } from './renderers/VideoRenderer';
 import { renderAudio } from './renderers/AudioRenderer';
 import { renderArticlesList } from './renderers/ArticlesListRenderer';
 import { renderWeblog } from './renderers/WeblogRenderer';
+import { renderDiv } from './renderers/DivRenderer';
 
 export interface BlockRenderOptions {
   editable?: boolean;
@@ -62,8 +63,16 @@ export class BlockRenderer {
         case 'audio':           return renderAudio(block, editable);
         case 'articles-list':   return renderArticlesList(block, editable);
         case 'weblog':          return renderWeblog(block, editable);
+        case 'div':             return renderDiv(block, editable);
       }
     })();
+    // The editor is a schematic composer — no live preview of user styles.
+    // We still emit a wrapper so the click-to-select hook (data-styled-block-id)
+    // works, but skip the inline `style`, custom class, and id attributes that
+    // styleWrap injects for the public render path.
+    if (editable) {
+      return `<div class="nospress-block-style" data-styled-block-id="${block.id}">${inner}</div>`;
+    }
     return styleWrap(block, inner);
   }
 }

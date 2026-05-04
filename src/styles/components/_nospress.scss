@@ -931,6 +931,20 @@
   font-weight: 600;
 }
 
+// DIV block edit — generic block-level wrapper. Tag-slot houses the
+// CustomDropdown for switching the underlying element.
+.nospress-block-div__tag-slot {
+  align-self: flex-start;
+
+  .custom-dropdown {
+    width: 140px;
+  }
+}
+
+.nospress-block-div__content {
+  min-height: 60px;
+}
+
 // Text edit
 .nospress-block-text__input {
   min-height: 80px;

@@ -40,7 +40,12 @@ export type Block =
   | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle; attrs?: BlockAttrs }
   | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle; attrs?: BlockAttrs }
   | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; attrs?: BlockAttrs };
+  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'div'; tag: DivTag; content?: string; style?: CommonStyle; attrs?: BlockAttrs };
+
+/** Allowed semantic block-level HTML elements for the generic `div` block. */
+export const DIV_TAGS = ['div', 'header', 'footer', 'main', 'section', 'article', 'aside', 'nav', 'fieldset'] as const;
+export type DivTag = typeof DIV_TAGS[number];
 
 export type BlockType = Block['type'];
 
@@ -90,6 +95,7 @@ export function createBlock(type: BlockType): Block {
     case 'audio':           return { id, type, url: '' };
     case 'articles-list':   return { id, type };
     case 'weblog':          return { id, type, hashtags: [] };
+    case 'div':             return { id, type, tag: 'div' };
   }
 }
 
