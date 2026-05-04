@@ -18,6 +18,9 @@ interface BlockLibraryViewOptions {
   /** Click on the virtual "Page" entry at the top of the library — toggles
    *  the page-frame selection in the editor. No Apply button on that row. */
   onSelectPage: () => void;
+  /** Click on the virtual "Custom CSS" entry — toggles the Custom-CSS panel
+   *  between the page header and the page-edit area. No Apply button. */
+  onSelectCss: () => void;
 }
 
 export class BlockLibraryView {
@@ -53,6 +56,18 @@ export class BlockLibraryView {
       </div>
     `;
 
+    // Virtual "Custom CSS" entry — opens the textarea panel between header
+    // and page-edit. Same panel as the header "CSS Editor" button, so the
+    // user has two equivalent entry points.
+    const cssRowHtml = `
+      <div class="nn-card" data-action="select-css" role="button" tabindex="0">
+        <div class="nn-card__content">
+          <div class="icon" aria-hidden="true">{ }</div>
+          <h3>Custom CSS</h3>
+        </div>
+      </div>
+    `;
+
     const rowsHtml = BLOCK_CATALOG.map(meta => `
       <div class="nn-card"${meta.enabled ? '' : ' data-disabled'} data-block-type="${meta.type}">
         <div class="nn-card__content">
@@ -75,7 +90,7 @@ export class BlockLibraryView {
       <div class="block-library__intro">
         <p>Click <strong>Apply</strong> to add a block to the end of your page.</p>
       </div>
-      <div class="block-library__rows">${pageRowHtml}${rowsHtml}</div>
+      <div class="block-library__rows">${pageRowHtml}${cssRowHtml}${rowsHtml}</div>
     `;
   }
 
@@ -86,6 +101,12 @@ export class BlockLibraryView {
       const pageRow = target.closest('[data-action="select-page"]');
       if (pageRow) {
         this.opts.onSelectPage();
+        return;
+      }
+
+      const cssRow = target.closest('[data-action="select-css"]');
+      if (cssRow) {
+        this.opts.onSelectCss();
         return;
       }
 

@@ -31,12 +31,14 @@ import { createBlock, findBlockInPage, type Block, type BlockType, type Nospress
 import {
   buildInlineStyle,
   renderPropertyPanel,
+  sanitizeCssIdent,
   schemaFor,
   styleWrap,
   writeStyleField,
   type CommonStyle,
 } from './blocks/styles';
-import { escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { applyUserCss, removeUserCss } from './cssScope';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
@@ -106,6 +108,10 @@ export class NospressView extends View {
    *  initial render triggers enterFullscreenEditor() automatically once the
    *  page is ready. Cleared after the first successful trigger. */
   private bootFullscreen: boolean = false;
+  /** True when the Custom-CSS editor panel is visible between header and
+   *  the page-edit area. Toggled by the header "CSS Editor" button or the
+   *  Library "Custom CSS" entry. UI-only; no relay impact. */
+  private cssEditorOpen: boolean = false;
 
   constructor(npub: string, opts: { editMode?: boolean; fullscreen?: boolean } = {}) {
     super();
@@ -152,6 +158,7 @@ export class NospressView extends View {
       this.fullscreenOverlay = null;
     }
     this.closeBlockLibrary();
+    removeUserCss();
     this.container.innerHTML = '';
   }
 
@@ -343,7 +350,16 @@ export class NospressView extends View {
     const pageSelected = editable && this.selectedBlockId === PAGE_SELECTION_ID;
     const inlineStyle = buildInlineStyle(schemaFor('page'), page.style);
     const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
-    const pageContentHtml = `<div class="nospress-page-content"${styleAttr}>${blocksHtml}</div>`;
+    // Two-tier structure mirrors the Public page so user CSS targeting
+    // `.layout-wrapper` works identically in both contexts:
+    //   .user-site (scope root, takes user CSS like `body { … }`)
+    //     └── .layout-wrapper (gets the page-level inline style)
+    //           └── blocks
+    const pageContentHtml = `
+      <div class="user-site">
+        <div class="layout-wrapper nospress-page-content"${styleAttr}>${blocksHtml}</div>
+      </div>
+    `;
 
     const composedBlocksHtml = editable
       ? `
@@ -355,16 +371,31 @@ export class NospressView extends View {
       `
       : pageContentHtml;
 
+    const cssEditorHtml = (editable && this.cssEditorOpen) ? this.renderCssEditorPanel(page) : '';
+    const cssEditorBtnHtml = editable
+      ? `<button class="btn btn--medium btn--passive" data-action="toggle-css-editor" title="Custom CSS for this page">CSS Editor</button>`
+      : '';
+
     this.container.innerHTML = `
       <div class="nospress-view">
         <div class="nospress-header l-spread">
           <div>${leftButtonHtml}</div>
-          <div class="nospress-header__actions">${fullscreenButtonHtml}${rightButtonHtml}</div>
+          <div class="nospress-header__actions">${fullscreenButtonHtml}${rightButtonHtml}${cssEditorBtnHtml}</div>
         </div>
+        ${cssEditorHtml}
         ${composedBlocksHtml}
         ${this.renderActionBar(editable)}
       </div>
     `;
+
+    // Apply ONLY the SAVED Custom CSS — never the in-memory editingPage,
+    // because the user explicitly opted in to "Save click applies" instead
+    // of live keystroke updates. This means selectBlock / cursor moves don't
+    // re-apply unsaved CSS edits.
+    const savedPage = this.isOwnProfile
+      ? (this.listService.getDraftV2() ?? this.listService.getPublishedV2())
+      : this.remotePage;
+    applyUserCss(savedPage?.customCss ?? '');
 
     if (editable) {
       this.mountFolderPickers();
@@ -511,6 +542,7 @@ export class NospressView extends View {
       this.blockLibrary = new BlockLibraryView({
         onApply: (type) => this.applyBlock(type),
         onSelectPage: () => this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID),
+        onSelectCss: () => this.toggleCssEditor(),
       });
       tabContent = document.createElement('div');
       tabContent.className = 'tab-content';
@@ -588,6 +620,7 @@ export class NospressView extends View {
     this.blockLibrary = new BlockLibraryView({
       onApply: (type) => this.applyBlock(type),
       onSelectPage: () => this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID),
+      onSelectCss: () => this.toggleCssEditor(),
     });
     librarySlot.appendChild(this.blockLibrary.getElement());
 
@@ -815,6 +848,7 @@ export class NospressView extends View {
     return renderPropertyPanel({
       scope: `${block.type}:${block.id}`,
       style: block.style,
+      attrs: block.attrs,
       header: 'Block properties',
     });
   }
@@ -825,6 +859,49 @@ export class NospressView extends View {
       style: this.currentPageStyle(),
       header: 'Page properties',
     });
+  }
+
+  /**
+   * Custom-CSS editor panel — sits between the header and the page-edit
+   * area. Same UI is opened from the header "CSS Editor" button and from
+   * the "Custom CSS" card in the Block Library.
+   *
+   * Live behavior: typing in the textarea silently mutates the draft (no
+   * re-render so focus stays put). The CSS is NOT applied to the DOM until
+   * the user clicks Save — same trade-off the user picked, since constant
+   * re-parses on every keystroke would flicker.
+   */
+  private renderCssEditorPanel(page: NospressPageV2): string {
+    const value = page.customCss ?? '';
+    return `
+      <div class="nospress-css-editor">
+        <div class="nospress-css-editor__head">
+          <label class="nospress-css-editor__label">Custom CSS</label>
+          <button type="button" class="btn btn--mini btn--passive" data-action="close-css-editor" aria-label="Close">×</button>
+        </div>
+        <textarea
+          class="textarea textarea--code nospress-css-editor__textarea"
+          data-css-editor
+          spellcheck="false"
+          placeholder="/* Selectors are scoped to .user-site\n   Use 'body' to target the page itself.\n   Click Save below to apply. */"
+        >${escapeHtml(value)}</textarea>
+        <div class="nospress-css-editor__hint">
+          <p>Selectors apply to <code>.user-site</code> and its descendants. <code>body</code> targets the page wrapper itself.</p>
+          <pre class="nospress-css-editor__tree">body
+  .layout-wrapper
+    [your blocks]   <span class="nospress-css-editor__tree-note">— target via the Identifiers panel (CSS Class / CSS ID)</span></pre>
+        </div>
+      </div>
+    `;
+  }
+
+  /** Toggle the Custom-CSS panel. Forces edit mode if it was off. */
+  private toggleCssEditor(): void {
+    this.cssEditorOpen = !this.cssEditorOpen;
+    if (this.cssEditorOpen && !this.editMode) {
+      this.editMode = true;
+    }
+    this.rerenderEditable();
   }
 
   /** Read the active page style (in-memory draft → saved draft → published → migrated v1). */
@@ -952,6 +1029,9 @@ export class NospressView extends View {
     this.listService.saveDraftV2(this.editingPage, { silent: true });
     this.isDirty = false;
     this.refreshActionBar();
+    // Apply Custom CSS to the live DOM. Save is the explicit trigger for
+    // CSS application — typing in the textarea is silent until here.
+    applyUserCss(this.editingPage.customCss ?? '');
     ToastService.show('Saved', 'success');
   }
 
@@ -1116,6 +1196,52 @@ export class NospressView extends View {
     el.style.cssText = buildInlineStyle(schemaFor(loc.block.type), loc.block.style);
   }
 
+  /**
+   * Live-edit handler for the per-block class/id "Identifiers" inputs.
+   * Mutates `block.attrs` silently (no re-render → focus stays in input)
+   * and propagates the change to the DOM wrapper directly.
+   */
+  private handleAttrInput(scope: string, field: string, rawValue: string): void {
+    if (field !== 'class' && field !== 'id') return;
+    const colon = scope.indexOf(':');
+    if (colon < 0) return;
+    const blockId = scope.slice(colon + 1);
+    const sanitized = sanitizeCssIdent(rawValue, field === 'class' ? 'multi' : 'single');
+    this.mutateDraft((page) => {
+      const loc = findBlockInPage(page, blockId);
+      if (!loc) return;
+      if (!loc.block.attrs) loc.block.attrs = {};
+      if (sanitized) loc.block.attrs[field] = sanitized;
+      else delete loc.block.attrs[field];
+    }, { silent: true });
+    this.applyBlockAttrsToDOM(blockId);
+  }
+
+  /** Live-update wrapper className + id without re-rendering the block. */
+  private applyBlockAttrsToDOM(blockId: string): void {
+    const el = this.container.querySelector(`[data-styled-block-id="${blockId}"]`) as HTMLElement | null;
+    if (!el || !this.editingPage) return;
+    const loc = findBlockInPage(this.editingPage, blockId);
+    if (!loc) return;
+    const customClass = sanitizeCssIdent(loc.block.attrs?.class ?? '', 'multi');
+    el.className = customClass
+      ? `nospress-block-style nospress-block-style--custom ${customClass}`
+      : 'nospress-block-style';
+    const customId = sanitizeCssIdent(loc.block.attrs?.id ?? '', 'single');
+    if (customId) el.id = customId;
+    else el.removeAttribute('id');
+  }
+
+  /**
+   * Custom-CSS textarea input. Silent draft mutation only — no DOM apply
+   * here; the user explicitly clicks Save to push the new CSS to the page.
+   */
+  private handleCssEditorInput(value: string): void {
+    this.mutateDraft((page) => {
+      page.customCss = value;
+    }, { silent: true });
+  }
+
   private handleBookmarkFolderChange(blockId: string, folderName: string): void {
     this.mutateDraft((page) => {
       const block = findBlockInPage(page, blockId)?.block;
@@ -1143,6 +1269,12 @@ export class NospressView extends View {
       const styleScope = target.dataset?.styleScope;
       const styleField = target.dataset?.styleField;
       if (styleScope && styleField) this.handleStyleInput(styleScope, styleField, target.value);
+
+      const attrScope = target.dataset?.attrScope;
+      const attrField = target.dataset?.attrField;
+      if (attrScope && attrField) this.handleAttrInput(attrScope, attrField, target.value);
+
+      if (target.dataset?.cssEditor !== undefined) this.handleCssEditorInput(target.value);
     };
     this.container.addEventListener('input', handleFieldEvent);
     this.container.addEventListener('change', handleFieldEvent);
@@ -1159,6 +1291,8 @@ export class NospressView extends View {
         case 'publish':                this.publishDraft(); return;
         case 'delete-list':            this.confirmAndUnpublish(); return;
         case 'dm-page-owner':          Router.getInstance().navigate(`/messages/${this.npub}`); return;
+        case 'toggle-css-editor':      this.toggleCssEditor(); return;
+        case 'close-css-editor':       this.toggleCssEditor(); return;
       }
 
       const blockId = btn.dataset.blockId;

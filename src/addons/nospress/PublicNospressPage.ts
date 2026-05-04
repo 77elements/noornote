@@ -13,6 +13,7 @@ import { mountNospressEmbeds } from './embedMount';
 import { mountNospressProfileCards } from './profileCardMount';
 import { mountNospressArticlesLists } from './articlesListMount';
 import { mountNospressWeblogs } from './weblogMount';
+import { applyUserCss, removeUserCss } from './cssScope';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
 import type { PublicPageRoute } from './detectPublicPageRoute';
@@ -58,7 +59,7 @@ export class PublicNospressPage {
   constructor(route: PublicPageRoute) {
     this.route = route;
     this.container = document.createElement('div');
-    this.container.className = 'public-page';
+    this.container.className = 'user-site';
     const viewer = AuthService.getInstance().getCurrentUser();
     this.viewerNpub = viewer?.npub ?? null;
     this.viewerPubkey = viewer?.pubkey ?? null;
@@ -94,6 +95,7 @@ export class PublicNospressPage {
     }
 
     this.renderPage(profile, page, viewerProfile);
+    applyUserCss(page.customCss ?? '');
     await this.mountInlineBookmarkFolders(pubkey);
     mountNospressEmbeds(this.container);
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: pubkey });
@@ -111,6 +113,7 @@ export class PublicNospressPage {
     this.profileCardInstances = [];
     this.articlesCarousels.forEach(c => c.destroy());
     this.articlesCarousels = [];
+    removeUserCss();
     this.container.innerHTML = '';
   }
 
@@ -176,12 +179,12 @@ export class PublicNospressPage {
   }
 
   private renderLoading(): void {
-    this.container.innerHTML = `<div class="public-page__loading pulsate">Loading…</div>`;
+    this.container.innerHTML = `<div class="user-site__loading pulsate">Loading…</div>`;
   }
 
   private renderError(): void {
     this.container.innerHTML = `
-      <div class="public-page__error">
+      <div class="user-site__error">
         <h1>Page not found</h1>
         <p>This handle could not be resolved.</p>
         <p><a href="/">noornote.app</a></p>
@@ -193,7 +196,7 @@ export class PublicNospressPage {
     const name = profile ? extractDisplayName(profile) : '';
     this.container.innerHTML = `
       ${this.adminBarHtml(viewerProfile)}
-      <div class="public-page__empty">
+      <div class="user-site__empty">
         <p>${escapeHtml(name) || 'This user'} has no NosPress page yet.</p>
       </div>
       ${this.footerHtml()}
@@ -207,7 +210,7 @@ export class PublicNospressPage {
 
     this.container.innerHTML = `
       ${this.adminBarHtml(viewerProfile)}
-      <div class="public-page__content"${styleAttr}>${blocksHtml}</div>
+      <div class="layout-wrapper"${styleAttr}>${blocksHtml}</div>
       ${this.footerHtml()}
     `;
   }
@@ -223,26 +226,26 @@ export class PublicNospressPage {
 
     const isOwner = this.ownerNpub !== null && this.ownerNpub === this.viewerNpub;
     const editLink = isOwner
-      ? `<a class="public-page-bar__link public-page-bar__link--accent" href="/profile/${this.viewerNpub}/nospress/edit/fullscreen">Edit page →</a>`
+      ? `<a class="user-site-bar__link user-site-bar__link--accent" href="/profile/${this.viewerNpub}/nospress/edit/fullscreen">Edit page →</a>`
       : '';
 
     const name = viewerProfile ? extractDisplayName(viewerProfile) : '';
     const picture = viewerProfile?.picture ?? '';
     const avatar = picture
-      ? `<img class="public-page-bar__avatar" src="${escapeHtmlAttr(picture)}" alt="" />`
+      ? `<img class="user-site-bar__avatar" src="${escapeHtmlAttr(picture)}" alt="" />`
       : '';
 
     return `
-      <div class="public-page-bar">
-        <nav class="public-page-bar__nav">
-          <a class="public-page-bar__brand" href="/">NoorNote</a>
-          <a class="public-page-bar__link" href="/notifications">Notifications</a>
-          <a class="public-page-bar__link" href="/messages">Messages</a>
+      <div class="user-site-bar">
+        <nav class="user-site-bar__nav">
+          <a class="user-site-bar__brand" href="/">NoorNote</a>
+          <a class="user-site-bar__link" href="/notifications">Notifications</a>
+          <a class="user-site-bar__link" href="/messages">Messages</a>
           ${editLink}
         </nav>
-        <a class="public-page-bar__user" href="/profile/${this.viewerNpub}">
+        <a class="user-site-bar__user" href="/profile/${this.viewerNpub}">
           ${avatar}
-          <span class="public-page-bar__name">${escapeHtml(name)}</span>
+          <span class="user-site-bar__name">${escapeHtml(name)}</span>
         </a>
       </div>
     `;
@@ -251,7 +254,7 @@ export class PublicNospressPage {
 
   private footerHtml(): string {
     return `
-      <footer class="public-page__footer">
+      <footer class="user-site__footer">
         <p>Made with <a href="/">NoorNote</a> — sovereign personal pages on Nostr.</p>
       </footer>
     `;

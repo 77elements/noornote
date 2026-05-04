@@ -11,25 +11,36 @@
  * deleted.
  */
 
+/**
+ * HTML-attribute overrides on a block's outer wrapper (NOT a CSS-property
+ * payload — semantically different from `style`). Lets the user target a
+ * specific block from `customCss` via a class or id selector. Sanitized at
+ * render time in `styleWrap()`.
+ */
+export interface BlockAttrs {
+  class?: string;
+  id?: string;
+}
+
 export type Block =
-  | { id: string; type: 'heading'; level: 1 | 2 | 3; text: string; style?: CommonStyle }
-  | { id: string; type: 'text'; content: string; style?: CommonStyle }
-  | { id: string; type: 'image'; url: string; alt?: string; caption?: string; style?: CommonStyle }
-  | { id: string; type: 'gallery'; urls: string[]; style?: CommonStyle }
-  | { id: string; type: 'links'; title?: string; items: { label: string; url: string }[]; style?: CommonStyle }
-  | { id: string; type: 'list'; title?: string; items: string[]; style?: CommonStyle }
-  | { id: string; type: 'embed'; nostrRef: string; style?: CommonStyle }
-  | { id: string; type: 'bookmark-folder'; folderName: string; style?: CommonStyle }
-  | { id: string; type: 'columns'; count: 2 | 3; content: Block[][]; style?: CommonStyle }
-  | { id: string; type: 'divider'; style?: CommonStyle }
-  | { id: string; type: 'dm-button'; label: string; style?: CommonStyle }
-  | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle }
-  | { id: string; type: 'quote'; text: string; author?: string; source?: string; style?: CommonStyle }
-  | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; style?: CommonStyle }
-  | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle }
-  | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle }
-  | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle }
-  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle };
+  | { id: string; type: 'heading'; level: 1 | 2 | 3; text: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'text'; content: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'image'; url: string; alt?: string; caption?: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'gallery'; urls: string[]; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'links'; title?: string; items: { label: string; url: string }[]; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'list'; title?: string; items: string[]; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'embed'; nostrRef: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'bookmark-folder'; folderName: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'columns'; count: 2 | 3; content: Block[][]; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'divider'; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'dm-button'; label: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'quote'; text: string; author?: string; source?: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; attrs?: BlockAttrs };
 
 export type BlockType = Block['type'];
 
@@ -43,6 +54,9 @@ export interface NospressPageV2 {
   description?: string;
   blocks: Block[];
   style?: CommonStyle;
+  /** Raw user CSS, scoped to `.user-site` at apply time via `cssScope.ts`.
+   *  Persisted with the rest of the page — same NIP-78 event content. */
+  customCss?: string;
 }
 
 export function isPageV2(data: unknown): data is NospressPageV2 {

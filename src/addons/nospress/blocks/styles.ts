@@ -168,6 +168,25 @@ export function sanitizeStyleValue(raw: string): string {
   return raw.replace(/[;<>"'\\]/g, '').trim().slice(0, 100);
 }
 
+/**
+ * Validate a CSS identifier (for `class` and `id` HTML attribute values).
+ * Tokens must start with a letter and may contain letters, digits, hyphens
+ * and underscores. Multi mode allows space-separated tokens (for `class`),
+ * single mode rejects whitespace.
+ *
+ * Returns the cleaned value or empty string if no token survived.
+ */
+export function sanitizeCssIdent(raw: string, mode: 'single' | 'multi' = 'single'): string {
+  const trimmed = raw.trim().slice(0, 80);
+  if (!trimmed) return '';
+  const tokenRe = /^[a-zA-Z][a-zA-Z0-9_-]*$/;
+  if (mode === 'single') {
+    return tokenRe.test(trimmed) ? trimmed : '';
+  }
+  const tokens = trimmed.split(/\s+/).filter(t => tokenRe.test(t)).slice(0, 5);
+  return tokens.join(' ');
+}
+
 /** Build the `style="…"` payload from a CommonStyle, restricted to schema. */
 export function buildInlineStyle(schema: PropertyEntry[], style: CommonStyle | undefined): string {
   if (!style) return '';
@@ -240,6 +259,10 @@ export interface RenderPropertyPanelOptions {
   scope: string;
   /** Active style values (used to populate input `value` attributes). */
   style: CommonStyle | undefined;
+  /** Active HTML-attribute overrides (`class` / `id` on the block wrapper).
+   *  Only meaningful for block scopes — the page wrapper is always
+   *  `.user-site`, so this is ignored when scope === 'page'. */
+  attrs?: { class?: string; id?: string } | undefined;
   /** Header label. Default 'Properties'. */
   header?: string;
 }
@@ -256,14 +279,26 @@ export interface RenderPropertyPanelOptions {
  * emitted (even when the block has no style yet) so the
  * `data-styled-block-id` hook is available for `applyBlockStyleToDOM()`
  * to live-update the very first edit without forcing a re-render.
+ *
+ * Custom HTML attributes (`attrs.class`, `attrs.id`) come from the user's
+ * Identifiers panel and are sanitized through `sanitizeCssIdent()` before
+ * being merged into the wrapper. This is what lets `customCss` selectors
+ * like `.my-block` or `#hero` target an individual block.
  */
 export function styleWrap(
-  block: { id: string; type: string; style?: CommonStyle },
+  block: { id: string; type: string; style?: CommonStyle; attrs?: { class?: string; id?: string } },
   inner: string,
 ): string {
   const inlineStyle = buildInlineStyle(schemaFor(block.type), block.style);
   const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
-  return `<div class="nospress-block-style" data-styled-block-id="${block.id}"${styleAttr}>${inner}</div>`;
+
+  const customClass = sanitizeCssIdent(block.attrs?.class ?? '', 'multi');
+  const classAttr = customClass ? ` nospress-block-style--custom ${escapeHtmlAttr(customClass)}` : '';
+
+  const customId = sanitizeCssIdent(block.attrs?.id ?? '', 'single');
+  const idAttr = customId ? ` id="${escapeHtmlAttr(customId)}"` : '';
+
+  return `<div class="nospress-block-style${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}>${inner}</div>`;
 }
 
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
@@ -298,12 +333,31 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     entry.kind === 'single' ? single(entry) : quad(entry)
   ).join('');
 
+  // Identifiers section — only for block scopes. The page itself doesn't get
+  // a configurable class/id (its wrapper is always `.user-site`).
+  const identifiersHtml = opts.scope === 'page' ? '' : `
+    <div class="nospress-block-properties__section-label">Identifiers</div>
+    <div class="nospress-prop-row">
+      <label class="nospress-prop-row__label">CSS Class</label>
+      <input type="text" class="input nospress-prop-row__input"
+             data-attr-scope="${scopeAttr}" data-attr-field="class"
+             value="${escapeHtmlAttr(opts.attrs?.class ?? '')}" placeholder="e.g. hero featured" />
+    </div>
+    <div class="nospress-prop-row">
+      <label class="nospress-prop-row__label">CSS ID</label>
+      <input type="text" class="input nospress-prop-row__input"
+             data-attr-scope="${scopeAttr}" data-attr-field="id"
+             value="${escapeHtmlAttr(opts.attrs?.id ?? '')}" placeholder="e.g. main-cta" />
+    </div>
+  `;
+
   return `
     <div class="nospress-block-properties" data-properties-for="${scopeAttr}">
       <div class="nospress-block-properties__header">
         <span class="nospress-block-properties__label">${escapeHtmlAttr(opts.header ?? 'Properties')}</span>
       </div>
       <div class="nospress-block-properties__body">
+        ${identifiersHtml}
         ${body}
       </div>
     </div>

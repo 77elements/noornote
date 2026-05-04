@@ -339,6 +339,23 @@
   font-size: 0.9rem;
 }
 
+// Section divider inside the property body — used to separate the
+// "Identifiers" group (class/id inputs) from the CSS-property rows.
+.nospress-block-properties__section-label {
+  margin: calc($gap / 2) 0;
+  font-style: normal;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-4);
+  opacity: 0.8;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
 // Property rows / quad layout — the body's italic + dim is for placeholder
 // text only; once real inputs render, normal styling kicks in.
 .nospress-prop-row {
@@ -744,6 +761,69 @@
 
   &--selected {
     border-color: $color-6;
+  }
+}
+
+// Custom-CSS editor panel — sits between the header and the page-edit area.
+// Toggled by the header "CSS Editor" button or the Library "Custom CSS" card.
+.nospress-css-editor {
+  margin-bottom: $gap;
+  padding: $gap;
+  border: 1px solid $color-2;
+  border-radius: $radius-xl;
+  background: var(--color-1);
+
+  &__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: calc($gap / 2);
+  }
+
+  &__label {
+    font-weight: 600;
+    color: var(--color-4);
+  }
+
+  &__textarea {
+    min-height: 180px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  &__hint {
+    margin-top: calc($gap / 2);
+    font-size: 0.8rem;
+    color: var(--text-alpha-light);
+
+    p {
+      margin: 0 0 calc($gap / 2) 0;
+    }
+
+    code {
+      padding: 1px 4px;
+      background: var(--color-2);
+      border-radius: 3px;
+    }
+  }
+
+  &__tree {
+    margin: 0;
+    padding: calc($gap / 2) $gap;
+    background: var(--color-2);
+    border-radius: $radius-xl;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.75rem;
+    line-height: 1.6;
+    color: var(--color-5);
+    white-space: pre;
+    overflow-x: auto;
+  }
+
+  &__tree-note {
+    color: var(--text-alpha-light);
+    font-style: italic;
   }
 }
 

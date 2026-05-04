@@ -12,9 +12,9 @@ html.layout--public {
 }
 
 // Admin bar — visible only when a NoorNote user is logged in. Sticky top,
-// full-width, sits above the centered .public-page content. Padding-top on
-// .public-page makes room so the page header isn't hidden behind it.
-.public-page-bar {
+// full-width, sits above the centered .user-site content. Padding-top on
+// .user-site makes room so the page header isn't hidden behind it.
+.user-site-bar {
   position: fixed;
   top: 0;
   left: 0;
@@ -94,8 +94,7 @@ html.layout--public {
   }
 }
 
-.public-page {
-  max-width: 700px;
+.user-site {
   margin: 0 auto;
   padding: calc($gap * 2) $gap;
   min-height: 100vh;
@@ -105,14 +104,14 @@ html.layout--public {
 
   // Push content below the fixed admin bar when one is rendered. The bar
   // is a sibling earlier in the DOM, so we use :has() to detect it.
-  &:has(> .public-page-bar) {
+  &:has(> .user-site-bar) {
     padding-top: calc(40px + $gap * 2);
   }
 
   @include tablet {
     padding: calc($gap * 3) $gap;
 
-    &:has(> .public-page-bar) {
+    &:has(> .user-site-bar) {
       padding-top: calc(40px + $gap * 3);
     }
   }

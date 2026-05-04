@@ -212,6 +212,8 @@ export class NospressOrchestrator {
         if (typeof parsed.title === 'string') page.title = parsed.title;
         if (typeof parsed.subtitle === 'string') page.subtitle = parsed.subtitle;
         if (typeof parsed.description === 'string') page.description = parsed.description;
+        if (parsed.style && typeof parsed.style === 'object') page.style = parsed.style;
+        if (typeof parsed.customCss === 'string') page.customCss = parsed.customCss;
         return page;
       }
       // Legacy v1 → migrate to v2 inline
