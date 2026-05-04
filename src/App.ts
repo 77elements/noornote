@@ -274,11 +274,7 @@ export class App {
     // Parameterized routes (public)
     this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false,
       (params) => params.noteId ?? '');
-    this.registerRoute('/profile/:npub/nospress/edit/fullscreen', 'nospress-fullscreen', 'nospress-fullscreen', 'npev', true,
-      (params) => params.npub ?? '');
-    this.registerRoute('/profile/:npub/nospress/edit', 'nospress-edit', 'nospress-edit', 'npev', true,
-      (params) => params.npub ?? '');
-    this.registerRoute('/profile/:npub/nospress', 'nospress', 'nospress', 'npv', false,
+    this.registerRoute('/profile/:npub/nospress', 'nospress', 'nospress', 'npev', true,
       (params) => params.npub ?? '');
     this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false,
       (params) => params.npub ?? '');

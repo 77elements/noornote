@@ -285,14 +285,11 @@ export class ProfileView extends View {
           NospressOrchestrator.getInstance().syncFromRelays(),
         ]);
         this.loadProfileLists();
-        this.loadNospressLink();
       } else {
         if (this.profileListsComponent) {
           this.profileListsComponent.destroy();
           this.profileListsComponent = null;
         }
-        const nospressMount = this.container.querySelector('.profile-nospress-mount');
-        if (nospressMount) nospressMount.innerHTML = '';
       }
     });
     this.eventBusSubscriptions.push(id);
@@ -625,7 +622,6 @@ export class ProfileView extends View {
         </div>
 
       </div>
-      <div class="profile-nospress-mount"></div>
 
       <div class="profile-articles-mount"></div>
       <div class="profile-videos-mount"></div>
@@ -645,9 +641,6 @@ export class ProfileView extends View {
 
       // Load profile lists (mounted bookmark folders)
       this.loadProfileLists();
-
-      // Load NosPress link
-      this.loadNospressLink();
 
       // Load articles carousel
       this.loadArticlesCarousel();
@@ -1216,8 +1209,13 @@ export class ProfileView extends View {
       }
     }
 
-    const nospressMount = this.container.querySelector('.profile-nospress-mount');
-    if (!nospressMount) return;
+    // Anchor for ProfileListsComponent — it inserts the rendered Portfolio
+    // sibling AFTER this element. `.profile-nip01` is the profile-header
+    // wrapper; rendering after it lands the Portfolio between the header
+    // and the articles/timeline sections (same position as before the
+    // dedicated mount div was removed).
+    const anchor = this.container.querySelector('.profile-nip01');
+    if (!anchor) return;
 
     const { isBookmarksEnabled } = await import('../../addons/bookmarks/index');
     if (!isBookmarksEnabled()) return;
@@ -1229,45 +1227,7 @@ export class ProfileView extends View {
 
     const { ProfileListsComponent: PLC } = await import('../profile/ProfileListsComponent');
     this.profileListsComponent = new PLC(this.pubkey);
-    await this.profileListsComponent.render(nospressMount);
-  }
-
-  /**
-   * Load "NosPress" link for the user's NosPress (custom list + mounts)
-   * Visible if either the custom list OR at least one mounted folder exists.
-   */
-  private async loadNospressLink(): Promise<void> {
-    const { isNospressEnabled } = await import('../../addons/nospress/index');
-    if (!isNospressEnabled()) return;
-
-    try {
-      const isOwn = this.authService.isCurrentUser(this.pubkey);
-
-      const { NospressOrchestrator } = await import('../../services/orchestration/NospressOrchestrator');
-      const page = await NospressOrchestrator.getInstance().fetchFromRelays(this.pubkey, false);
-      const hasContent = !!page && page.blocks.length > 0;
-
-      // Foreign profile with no content → nothing to show
-      if (!hasContent && !isOwn) return;
-
-      const mount = this.container.querySelector('.profile-nospress-mount');
-      if (!mount) return;
-
-      if (hasContent) {
-        mount.innerHTML = `<a href="/profile/${this.npub}/nospress" class="profile-nospress-link" data-action="view-page">NosPress <span class="chevron-right"></span></a>`;
-      } else {
-        mount.innerHTML = `<a href="/profile/${this.npub}/nospress/edit" class="profile-nospress-link" data-action="edit-page">Set up NosPress <span class="chevron-right"></span></a>`;
-      }
-
-      mount.querySelector('a')?.addEventListener('click', async (e: MouseEvent) => {
-        e.preventDefault();
-        const { Router } = await import('../../services/Router');
-        const href = (e.currentTarget as HTMLAnchorElement).getAttribute('href')!;
-        Router.getInstance().navigate(href);
-      });
-    } catch {
-      // Silently fail
-    }
+    await this.profileListsComponent.render(anchor);
   }
 
   /**

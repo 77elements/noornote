@@ -2,31 +2,6 @@
 @use '../abstracts/mixins' as *;
 
 // ==========================================
-// PV link to NosPress
-// ==========================================
-
-.profile-nospress-mount {
-  margin-top: $gap;
-  text-align: right;
-}
-
-.profile-nospress-link {
-  .chevron-right {
-    @extend %chevron-right;
-  }
-
-  a {
-    color: $color-4;
-    text-decoration: none;
-    font-size: 0.9rem;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-}
-
-// ==========================================
 // NosPress View (readonly)
 // ==========================================
 
@@ -44,10 +19,6 @@
 
 .nospress-view {
   margin: 0 auto;
-}
-
-.nospress-header {
-  margin-bottom: $gap * 2;
 }
 
 .nospress-action-bar {
@@ -1288,21 +1259,9 @@
   }
 }
 
-// Hide the in-page nospress-header while the view is hosted by the
-// fullscreen overlay — the overlay supplies its own title + exit button
-// and a duplicate header below would feel wrong.
-.nospress-view--fullscreen .nospress-header {
-  display: none;
-}
-
 // On phone width, .view-content adds its own padding ($gap top/sides) — drop
 // it here so the fullscreen editor pane runs edge-to-edge inside the overlay.
 html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   padding: 0;
-}
-
-.nospress-header__actions {
-  display: flex;
-  gap: calc($gap / 2);
 }
 

@@ -186,26 +186,6 @@ export class ViewMountingService {
           }
         };
 
-      case 'nospress-edit':
-        return {
-          requiresParam: true,
-          factory: async (param) => {
-            const { NospressView } = await import('../addons/nospress/NospressView');
-            const view = new NospressView(param!, { editMode: true });
-            return { element: view.getElement(), view };
-          }
-        };
-
-      case 'nospress-fullscreen':
-        return {
-          requiresParam: true,
-          factory: async (param) => {
-            const { NospressView } = await import('../addons/nospress/NospressView');
-            const view = new NospressView(param!, { editMode: true, fullscreen: true });
-            return { element: view.getElement(), view };
-          }
-        };
-
       case 'follow-pack':
         return {
           requiresParam: true,

@@ -12,7 +12,6 @@
  */
 
 import { View } from '../../components/views/View';
-import { AuthService } from '../../services/AuthService';
 import { NospressOrchestrator } from '../../services/orchestration/NospressOrchestrator';
 import { NospressService } from '../../services/NospressService';
 import { BlockRenderer } from './blocks/BlockRenderer';
@@ -38,20 +37,16 @@ import {
   type CommonStyle,
 } from './blocks/styles';
 import { applyUserCss, removeUserCss } from './cssScope';
+import { bindCssTextareaUx } from './cssTextareaUx';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { MediaUploadService } from '../../services/MediaUploadService';
-import { mountNospressEmbeds } from './embedMount';
 import { mountNospressProfileCards } from './profileCardMount';
 import { mountNospressArticlesLists } from './articlesListMount';
 import { mountNospressWeblogs } from './weblogMount';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
-import DOMPurify from 'dompurify';
-
-const BLOCK_LIBRARY_TAB_ID = 'nospress-block-library';
 
 /** Reserved value for `selectedBlockId` that selects the virtual Page wrapper
  *  (the always-present outer frame in the editor). Not a real Block.id —
@@ -68,7 +63,6 @@ export class NospressView extends View {
   private container: HTMLElement;
   private npub: string;
   private pubkey: string;
-  private isOwnProfile: boolean;
   private orchestrator: NospressOrchestrator;
   private listService: NospressService;
   /** One ProfileListsComponent per inline bookmark-folder block in the page,
@@ -77,7 +71,10 @@ export class NospressView extends View {
   private profileCardInstances: UserIdentity[] = [];
   private articlesCarousels: ProfileArticlesCarousel[] = [];
   private blockLibrary: BlockLibraryView | null = null;
-  private editMode: boolean = false;
+  /** Always true for own profile (foreign profiles redirect on construction).
+   *  Kept as a field instead of a const so existing call sites that read it
+   *  read consistently — semantically NosPress is now always edit mode. */
+  private editMode: boolean = true;
   private folderPickers: BookmarkFolderPicker[] = [];
   private blockDropdowns: CustomDropdown[] = [];
   private cursorRow: CursorRow | null = null;
@@ -96,24 +93,17 @@ export class NospressView extends View {
    *  storage only when the user clicks Save. Null until first edit. */
   private editingPage: NospressPageV2 | null = null;
   private isDirty: boolean = false;
-  /** v2 page fetched from a foreign user's relays (NIP-65 outbox).
-   *  Null for own profile (which renders from local draft/published). */
-  private remotePage: NospressPageV2 | null = null;
   /** Fullscreen overlay handle. Active means this.container is currently
    *  re-parented into the overlay's editor slot. */
   private fullscreenOverlay: FullscreenOverlay | null = null;
   private fullscreenOriginParent: HTMLElement | null = null;
   private fullscreenOriginAnchor: Node | null = null;
-  /** True when the view was mounted via the /edit/fullscreen route. The
-   *  initial render triggers enterFullscreenEditor() automatically once the
-   *  page is ready. Cleared after the first successful trigger. */
-  private bootFullscreen: boolean = false;
   /** True when the Custom-CSS editor panel is visible between header and
-   *  the page-edit area. Toggled by the header "CSS Editor" button or the
+   *  the page-edit area. Toggled by the overlay "CSS Editor" button or the
    *  Library "Custom CSS" entry. UI-only; no relay impact. */
   private cssEditorOpen: boolean = false;
 
-  constructor(npub: string, opts: { editMode?: boolean; fullscreen?: boolean } = {}) {
+  constructor(npub: string) {
     super();
     this.npub = npub;
     this.container = document.createElement('div');
@@ -130,12 +120,9 @@ export class NospressView extends View {
       this.pubkey = '';
     }
 
-    this.isOwnProfile = AuthService.getInstance().isCurrentUser(this.pubkey);
-    if (opts.editMode && this.isOwnProfile) this.editMode = true;
-    if (opts.fullscreen && this.isOwnProfile) this.bootFullscreen = true;
-
     this.setupChangeListeners();
     this.setupEditDelegation();
+    bindCssTextareaUx(this.container);
     this.loadAndRender();
   }
 
@@ -157,7 +144,8 @@ export class NospressView extends View {
       this.fullscreenOverlay.unmount();
       this.fullscreenOverlay = null;
     }
-    this.closeBlockLibrary();
+    this.blockLibrary?.destroy();
+    this.blockLibrary = null;
     removeUserCss();
     this.container.innerHTML = '';
   }
@@ -183,7 +171,6 @@ export class NospressView extends View {
    * a full re-mount, e.g. via browser history)
    */
   private setupChangeListeners(): void {
-    if (!this.isOwnProfile) return;
     const eventBus = EventBus.getInstance();
     this.eventBusSubscriptions.push(
       eventBus.on('nospressList:changed', () => this.rerenderEditable())
@@ -202,52 +189,25 @@ export class NospressView extends View {
     `;
 
     try {
-      if (this.isOwnProfile) {
-        // Own profile: always pull the latest published state from relays so
-        // edits made on a different instance show up immediately on this one.
-        // Updates the publishedV2 mirror; renderList still prefers draftV2 /
-        // editingPage when present so unsaved local work isn't clobbered.
-        const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true);
-        if (remote && remote.blocks.length > 0) {
-          this.listService.savePublishedV2(remote);
-        }
-      } else {
-        this.remotePage = await this.orchestrator.fetchFromRelays(this.pubkey, true);
+      // Own profile only — foreign profiles redirect in the constructor.
+      // Pull the latest published state from relays so edits made on a
+      // different instance show up here. publishedV2 is updated; renderList
+      // still prefers draftV2 / editingPage so unsaved local work survives.
+      const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true);
+      if (remote && remote.blocks.length > 0) {
+        this.listService.savePublishedV2(remote);
       }
 
-      const hasContent = this.isOwnProfile
-        ? this.listService.hasV2Content()
-        : !!(this.remotePage && this.remotePage.blocks.length > 0);
-
-      // Edit-mode renders the editable shell even when content is empty
-      // (so the cursor row is visible on a fresh page).
-      if (hasContent || (this.editMode && this.isOwnProfile)) {
-        await this.renderList();
-      } else {
-        this.renderShellWithoutList();
-      }
+      await this.renderList();
 
       // Mount inline bookmark-folder content into the slots emitted by
       // BookmarkFolderRenderer's readonly path.
       await this.mountInlineBookmarkFolders();
 
-      // Empty state: only when there is no content AND no inline mounts. In
-      // edit mode the cursor row is already the empty-state affordance.
-      const hasMounts = this.container.querySelectorAll('.profile-lists-mount').length > 0;
-      if (!hasContent && !hasMounts && !this.editMode) {
-        this.renderEmpty();
-      }
-
-      // When the route opens us directly in edit mode, also open the full
-      // editor surface — fullscreen overlay if /edit/fullscreen, otherwise
-      // the SCC Block Library tab for /edit.
-      if (this.editMode && this.isOwnProfile) {
-        if (this.bootFullscreen) {
-          this.bootFullscreen = false;
-          this.enterFullscreenEditor();
-        } else if (!this.blockLibrary) {
-          this.openBlockLibrary();
-        }
+      // NosPress is fullscreen-only — open the editor overlay automatically
+      // after the first render so the user lands directly in the editor.
+      if (!this.fullscreenOverlay) {
+        this.enterFullscreenEditor();
       }
     } catch (error) {
       console.error('Failed to load NosPress:', error);
@@ -255,71 +215,16 @@ export class NospressView extends View {
     }
   }
 
-  private renderEmpty(): void {
-    this.container.innerHTML = `
-      <div class="nospress-empty">
-        <p>This user hasn't set up a page yet.</p>
-      </div>
-    `;
-  }
-
-  /**
-   * Render header + empty list area when no custom list exists yet
-   * (mounts can still be appended below by renderMounts()).
-   */
-  private async renderShellWithoutList(): Promise<void> {
-    const username = await this.loadUsername();
-    this.container.innerHTML = `
-      <div class="nospress-view">
-        <div class="nospress-header l-spread">
-          <div>
-            <button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>
-          </div>
-          <div>
-            ${this.isOwnProfile ? `
-              <button class="btn btn--medium btn--passive" data-action="open-block-editor">
-                <svg width="14" height="14"><use href="#icon-edit"/></svg>
-                Block Editor
-              </button>
-            ` : ''}
-          </div>
-        </div>
-      </div>
-    `;
-    this.bindHeaderEvents();
-  }
-
-  private async loadUsername(): Promise<string> {
-    try {
-      const profile = await UserProfileService.getInstance().getUserProfile(this.pubkey);
-      return profile?.name || profile?.display_name || this.npub.slice(0, 12) + '...';
-    } catch {
-      return this.npub.slice(0, 12) + '...';
-    }
-  }
-
   private async renderList(): Promise<void> {
-    const username = await this.loadUsername();
+    // NosPress is owner-only in-app; foreign profiles redirect in the
+    // constructor, so this view always renders the owner's editable page.
+    const stored = this.listService.getDraftV2()
+      ?? this.listService.getPublishedV2()
+      ?? this.listService.getPageV2();
+    const page: NospressPageV2 = this.editingPage ?? stored;
+    const editable = true;
 
-    // Render priority for own profile:
-    //   - Edit mode: in-memory editingPage (live unsaved edits) ?? saved draft ?? published ?? migrated v1
-    //   - Preview:   saved draft ?? published ?? migrated v1 (NEVER in-memory edits)
-    // Foreign profile: the v2 page fetched from the author's outbox relays.
-    let page: NospressPageV2;
-    if (this.isOwnProfile) {
-      const stored = this.listService.getDraftV2()
-        ?? this.listService.getPublishedV2()
-        ?? this.listService.getPageV2();
-      page = (this.editMode && this.editingPage) ? this.editingPage : stored;
-    } else {
-      page = this.remotePage ?? { version: 2, blocks: [] };
-    }
-
-    const editable = this.editMode && this.isOwnProfile;
-
-    if (editable) {
-      this.normalizeCursor(page);
-    }
+    this.normalizeCursor(page);
 
     // Page-meta (title/subtitle/description) are no longer rendered as a fixed
     // top section — the user composes them via Heading + Text blocks like any
@@ -335,19 +240,7 @@ export class NospressView extends View {
     this.destroyProfileCards();
     this.destroyArticlesCarousels();
 
-    const leftButtonHtml = editable
-      ? `<button class="btn btn--medium btn--passive" data-action="preview-page" title="Close the editor and see the page as visitors see it">Preview Page</button>`
-      : `<button class="btn btn--medium btn--passive" data-action="back">&larr; Back to ${DOMPurify.sanitize(username)}'s profile</button>`;
-
-    const fullscreenButtonHtml = editable
-      ? `<button class="btn btn--medium btn--passive" data-action="open-fullscreen" title="Open the editor in fullscreen with a side-by-side block library">Fullscreen</button>`
-      : '';
-
-    const rightButtonHtml = this.isOwnProfile
-      ? `<button class="btn btn--medium btn--passive" data-action="open-block-editor" title="Open Block Library in the right sidebar"><svg width="14" height="14"><use href="#icon-edit"/></svg> Block Editor</button>`
-      : '';
-
-    const pageSelected = editable && this.selectedBlockId === PAGE_SELECTION_ID;
+    const pageSelected = this.selectedBlockId === PAGE_SELECTION_ID;
     const inlineStyle = buildInlineStyle(schemaFor('page'), page.style);
     const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
     // Two-tier structure mirrors the Public page so user CSS targeting
@@ -361,27 +254,21 @@ export class NospressView extends View {
       </div>
     `;
 
-    const composedBlocksHtml = editable
-      ? `
-        <div class="nospress-page-edit${pageSelected ? ' nospress-page-edit--selected' : ''}" data-block-id="${PAGE_SELECTION_ID}">
-          <div class="nospress-page-edit__title-bar">PAGE</div>
-          ${pageContentHtml}
-        </div>
-        ${pageSelected ? this.renderInlinePageProperties() : ''}
-      `
-      : pageContentHtml;
+    const composedBlocksHtml = `
+      <div class="nospress-page-edit${pageSelected ? ' nospress-page-edit--selected' : ''}" data-block-id="${PAGE_SELECTION_ID}">
+        <div class="nospress-page-edit__title-bar">PAGE</div>
+        ${pageContentHtml}
+      </div>
+      ${pageSelected ? this.renderInlinePageProperties() : ''}
+    `;
 
-    const cssEditorHtml = (editable && this.cssEditorOpen) ? this.renderCssEditorPanel(page) : '';
-    const cssEditorBtnHtml = editable
-      ? `<button class="btn btn--medium btn--passive" data-action="toggle-css-editor" title="Custom CSS for this page">CSS Editor</button>`
-      : '';
+    const cssEditorHtml = this.cssEditorOpen ? this.renderCssEditorPanel(page) : '';
 
+    // No in-PCC header: the only edit surface is the FullscreenOverlay,
+    // which provides its own header (title + Exit + extraActions like
+    // See Website / CSS Editor toggle).
     this.container.innerHTML = `
       <div class="nospress-view">
-        <div class="nospress-header l-spread">
-          <div>${leftButtonHtml}</div>
-          <div class="nospress-header__actions">${fullscreenButtonHtml}${rightButtonHtml}${cssEditorBtnHtml}</div>
-        </div>
         ${cssEditorHtml}
         ${composedBlocksHtml}
         ${this.renderActionBar(editable)}
@@ -392,23 +279,16 @@ export class NospressView extends View {
     // because the user explicitly opted in to "Save click applies" instead
     // of live keystroke updates. This means selectBlock / cursor moves don't
     // re-apply unsaved CSS edits.
-    const savedPage = this.isOwnProfile
-      ? (this.listService.getDraftV2() ?? this.listService.getPublishedV2())
-      : this.remotePage;
+    const savedPage = this.listService.getDraftV2() ?? this.listService.getPublishedV2();
     applyUserCss(savedPage?.customCss ?? '');
 
-    if (editable) {
-      this.mountFolderPickers();
-      this.mountBlockDropdowns();
-      this.mountCursorRow();
-      this.applySelectedBlockClass();
-    }
-    if (!editable) mountNospressEmbeds(this.container);
+    this.mountFolderPickers();
+    this.mountBlockDropdowns();
+    this.mountCursorRow();
+    this.applySelectedBlockClass();
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: this.pubkey });
     this.articlesCarousels = mountNospressArticlesLists(this.container, { ownerPubkey: this.pubkey });
     mountNospressWeblogs(this.container, { ownerPubkey: this.pubkey });
-
-    this.bindHeaderEvents();
   }
 
   private destroyProfileCards(): void {
@@ -422,7 +302,6 @@ export class NospressView extends View {
   }
 
   private renderActionBar(editable: boolean): string {
-    if (!this.isOwnProfile) return '';
     const isDirty = this.isDirty;
     const hasDraft = this.listService.hasDraftV2();
     const hasPublished = this.listService.getPublishedV2() !== null;
@@ -448,7 +327,7 @@ export class NospressView extends View {
     const bar = this.container.querySelector('.nospress-action-bar');
     if (!bar) return;
     const tmp = document.createElement('div');
-    tmp.innerHTML = this.renderActionBar(this.editMode && this.isOwnProfile);
+    tmp.innerHTML = this.renderActionBar(this.editMode);
     const next = tmp.firstElementChild;
     if (next) bar.replaceWith(next);
   }
@@ -479,24 +358,6 @@ export class NospressView extends View {
     this.inlineMountsComponents = [];
   }
 
-  private bindHeaderEvents(): void {
-    this.container.querySelector('[data-action="open-block-editor"]')?.addEventListener('click', () => {
-      this.openBlockLibrary();
-    });
-
-    this.container.querySelector('[data-action="open-fullscreen"]')?.addEventListener('click', () => {
-      this.enterFullscreenEditor();
-    });
-
-    this.container.querySelector('[data-action="preview-page"]')?.addEventListener('click', () => {
-      this.closeBlockLibrary();
-    });
-
-    this.container.querySelector('[data-action="back"]')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      Router.getInstance().navigate(`/profile/${this.npub}`);
-    });
-  }
 
   private async confirmAndUnpublish(): Promise<void> {
     const confirmed = await ModalService.getInstance().confirm({
@@ -519,86 +380,14 @@ export class NospressView extends View {
   }
 
   /**
-   * Inject the Block Library tab into the SCC and switch to it.
-   * Tab is removed when NospressView destroys (= user navigates away).
-   */
-  private openBlockLibrary(): void {
-    const sidebarTabs = document.querySelector('#sidebar-tabs');
-    const contentBody = document.querySelector('.secondary-content-body');
-    const secondaryContent = document.querySelector('.secondary-content') as HTMLElement | null;
-    if (!sidebarTabs || !contentBody || !secondaryContent) return;
-
-    // Reuse existing tab if already open
-    let tabContent = contentBody.querySelector(`[data-tab-content="${BLOCK_LIBRARY_TAB_ID}"]`) as HTMLElement | null;
-    if (!tabContent) {
-      const tabButton = createClosableTab(
-        BLOCK_LIBRARY_TAB_ID,
-        'Block Library',
-        () => this.closeBlockLibrary()
-      );
-      tabButton.addEventListener('click', () => switchTabWithContent(secondaryContent, BLOCK_LIBRARY_TAB_ID));
-      sidebarTabs.appendChild(tabButton);
-
-      this.blockLibrary = new BlockLibraryView({
-        onApply: (type) => this.applyBlock(type),
-        onSelectPage: () => this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID),
-        onSelectCss: () => this.toggleCssEditor(),
-      });
-      tabContent = document.createElement('div');
-      tabContent.className = 'tab-content';
-      tabContent.dataset.tabContent = BLOCK_LIBRARY_TAB_ID;
-      tabContent.appendChild(this.blockLibrary.getElement());
-      contentBody.appendChild(tabContent);
-    }
-
-    switchTabWithContent(secondaryContent, BLOCK_LIBRARY_TAB_ID);
-    window.history.pushState({}, '', `/profile/${this.npub}/nospress/edit`);
-    if (!this.editMode) {
-      this.editMode = true;
-      this.rerenderEditable();
-    }
-  }
-
-  private closeBlockLibrary(): void {
-    document.querySelector(`#sidebar-tabs > [data-tab="${BLOCK_LIBRARY_TAB_ID}"]`)?.remove();
-    document.querySelector(`.secondary-content-body > [data-tab-content="${BLOCK_LIBRARY_TAB_ID}"]`)?.remove();
-    this.blockLibrary?.destroy();
-    this.blockLibrary = null;
-
-    // After removing the tab, fall back to System Logs (the always-present tab).
-    const secondaryContent = document.querySelector('.secondary-content') as HTMLElement | null;
-    if (secondaryContent) {
-      const stillActive = secondaryContent.querySelector('.tab--active');
-      if (!stillActive) switchTabWithContent(secondaryContent, 'system-log');
-    }
-
-    window.history.pushState({}, '', `/profile/${this.npub}/nospress`);
-    if (this.editMode) {
-      this.editMode = false;
-      this.rerenderEditable();
-    }
-  }
-
-  /**
-   * Open the editor in a fullscreen overlay with a side-by-side block library
-   * (70/30 split on desktop, library hidden on mobile — slash menu remains).
-   * Re-parents `this.container` into the overlay's editor slot so the existing
-   * render pipeline keeps writing to the same element. Cursor, selection, and
-   * draft state are preserved across the transition because the single source
-   * of truth is `NospressService.draftV2`.
+   * Mount the fullscreen editor — the only edit surface. Re-parents
+   * `this.container` into the overlay's editor slot so the existing render
+   * pipeline keeps writing to the same element. The 70/30 desktop split
+   * shows the page on the left, the BlockLibrary on the right; phones
+   * collapse to single-column with the slash menu doing block selection.
    */
   private enterFullscreenEditor(): void {
     if (this.fullscreenOverlay?.isMounted()) return;
-
-    // Tear down the SCC tab if it was open — but keep editMode + cursor state.
-    document.querySelector(`#sidebar-tabs > [data-tab="${BLOCK_LIBRARY_TAB_ID}"]`)?.remove();
-    document.querySelector(`.secondary-content-body > [data-tab-content="${BLOCK_LIBRARY_TAB_ID}"]`)?.remove();
-    this.blockLibrary?.destroy();
-    this.blockLibrary = null;
-    const secondaryContent = document.querySelector('.secondary-content') as HTMLElement | null;
-    if (secondaryContent && !secondaryContent.querySelector('.tab--active')) {
-      switchTabWithContent(secondaryContent, 'system-log');
-    }
 
     // Build the split body. Editor slot will host this.container; library slot
     // gets a fresh BlockLibraryView.
@@ -624,18 +413,11 @@ export class NospressView extends View {
     });
     librarySlot.appendChild(this.blockLibrary.getElement());
 
-    if (!this.editMode) this.editMode = true;
     this.rerenderEditable();
 
-    const fullscreenPath = `/profile/${this.npub}/nospress/edit/fullscreen`;
-    if (window.location.pathname !== fullscreenPath) {
-      window.history.pushState({}, '', fullscreenPath);
-    }
-
     // "See Website" → opens the public NosPress page in a new tab.
-    // Initial url uses the canonical npub form (works always); upgraded
-    // to the prettier nip05 form in-place if the profile has one. The
-    // public URL itself is rendered by Phase 5's boot path on noornote.app.
+    // Initial URL uses the canonical npub form (always works); upgraded
+    // in-place to the prettier nip05 form if the profile has one.
     const seeWebsiteButton = document.createElement('button');
     seeWebsiteButton.type = 'button';
     seeWebsiteButton.className = 'btn btn--passive btn--medium';
@@ -649,17 +431,30 @@ export class NospressView extends View {
       if (nip05) seeWebsiteUrl = `https://noornote.app/${nip05}/`;
     }).catch(() => { /* keep npub fallback */ });
 
+    // CSS Editor toggle — opens the Custom-CSS textarea panel inside the
+    // editor body. Same target as the Block Library "Custom CSS" card.
+    const cssEditorButton = document.createElement('button');
+    cssEditorButton.type = 'button';
+    cssEditorButton.className = 'btn btn--passive btn--medium';
+    cssEditorButton.textContent = 'CSS Editor';
+    cssEditorButton.addEventListener('click', () => this.toggleCssEditor());
+
     this.fullscreenOverlay = new FullscreenOverlay({
-      title: 'Edit Page',
-      exitLabel: 'Exit Fullscreen',
+      title: 'Edit NosPress Site',
+      exitLabel: 'Exit NosPress',
       body: split,
       maxWidth: '100%',
-      extraActions: [seeWebsiteButton],
+      extraActions: [seeWebsiteButton, cssEditorButton],
       onExit: () => this.cleanupFullscreenEditor(),
     });
     this.fullscreenOverlay.mount();
   }
 
+  /**
+   * "Exit NosPress" handler — re-parents this.container so ViewMountingService
+   * finds it in the expected place during teardown, then navigates back to
+   * the addon settings page (the only NosPress entry point in-app).
+   */
   private cleanupFullscreenEditor(): void {
     this.container.classList.remove('nospress-view--fullscreen');
 
@@ -675,18 +470,9 @@ export class NospressView extends View {
 
     this.blockLibrary?.destroy();
     this.blockLibrary = null;
-
-    if (this.editMode) {
-      this.editMode = false;
-      this.rerenderEditable();
-    }
-
-    const previewPath = `/profile/${this.npub}/nospress`;
-    if (window.location.pathname !== previewPath) {
-      window.history.pushState({}, '', previewPath);
-    }
-
     this.fullscreenOverlay = null;
+
+    Router.getInstance().navigate('/addons/nospress');
   }
 
   /**
@@ -895,12 +681,9 @@ export class NospressView extends View {
     `;
   }
 
-  /** Toggle the Custom-CSS panel. Forces edit mode if it was off. */
+  /** Toggle the Custom-CSS panel. */
   private toggleCssEditor(): void {
     this.cssEditorOpen = !this.cssEditorOpen;
-    if (this.cssEditorOpen && !this.editMode) {
-      this.editMode = true;
-    }
     this.rerenderEditable();
   }
 
@@ -1069,7 +852,6 @@ export class NospressView extends View {
       this.editingPage = null;
       this.isDirty = false;
       ToastService.show('Page published', 'success');
-      this.closeBlockLibrary();
     } catch (error) {
       console.error('Failed to publish page:', error);
       ToastService.show('Publish failed — try again', 'error');
@@ -1291,7 +1073,6 @@ export class NospressView extends View {
         case 'publish':                this.publishDraft(); return;
         case 'delete-list':            this.confirmAndUnpublish(); return;
         case 'dm-page-owner':          Router.getInstance().navigate(`/messages/${this.npub}`); return;
-        case 'toggle-css-editor':      this.toggleCssEditor(); return;
         case 'close-css-editor':       this.toggleCssEditor(); return;
       }
 

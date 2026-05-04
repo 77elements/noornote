@@ -55,10 +55,10 @@ export class NospressAddonView extends View {
       return;
     }
 
-    const href = `/profile/${npub}/nospress/edit`;
-    slot.innerHTML = `<a class="btn" href="${href}" data-action="setup-nospress">Set up your NosPress-Site</a>`;
+    const href = `/profile/${npub}/nospress`;
+    slot.innerHTML = `<a class="btn" href="${href}" data-action="open-nospress">Open NosPress</a>`;
 
-    const btn = slot.querySelector('[data-action="setup-nospress"]') as HTMLAnchorElement | null;
+    const btn = slot.querySelector('[data-action="open-nospress"]') as HTMLAnchorElement | null;
     btn?.addEventListener('click', (e) => {
       e.preventDefault();
       Router.getInstance().navigate(href);

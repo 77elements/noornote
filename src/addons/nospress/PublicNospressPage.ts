@@ -226,7 +226,7 @@ export class PublicNospressPage {
 
     const isOwner = this.ownerNpub !== null && this.ownerNpub === this.viewerNpub;
     const editLink = isOwner
-      ? `<a class="user-site-bar__link user-site-bar__link--accent" href="/profile/${this.viewerNpub}/nospress/edit/fullscreen">Edit page →</a>`
+      ? `<a class="user-site-bar__link user-site-bar__link--accent" href="/profile/${this.viewerNpub}/nospress">Edit page →</a>`
       : '';
 
     const name = viewerProfile ? extractDisplayName(viewerProfile) : '';
