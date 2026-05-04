@@ -279,7 +279,7 @@
   padding: $gap;
   border: 1px solid $color-6;
   border-radius: $radius-xl;
-  background: color-mix(in srgb, $color-6 8%, transparent);
+  background: $color-2;
 }
 
 .nospress-block-properties__header {
@@ -288,7 +288,7 @@
   gap: calc($gap / 2);
   margin-bottom: calc($gap / 2);
   padding-bottom: calc($gap / 2);
-  border-bottom: 1px solid color-mix(in srgb, $color-6 30%, transparent);
+  border-bottom: 1px solid $color-6;
 }
 
 .nospress-block-properties__type {
@@ -320,7 +320,6 @@
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--color-4);
-  opacity: 0.8;
 
   &:first-child {
     margin-top: 0;
@@ -477,7 +476,7 @@
   margin: $gap * 2 0;
   padding: $gap calc($gap * 1.5);
   border-left: 3px solid var(--color-6);
-  background: rgba($color-2, 0.4);
+  background: $color-2;
   border-radius: $radius-xl;
   font-style: italic;
   color: $text-alpha-heavy;
@@ -726,7 +725,6 @@
   padding: $gap;
   border: 1px solid $color-2;
   border-radius: $radius-xl;
-  background: rgba($color-white, 0.02);
   cursor: pointer;
   transition: $transition-colors;
 
@@ -1028,8 +1026,7 @@
     transform: rotate(-90deg);
 
     .upload-progress-bg {
-      stroke: currentColor;
-      opacity: 0.2;
+      stroke: $color-2;
     }
 
     .upload-progress-bar {
