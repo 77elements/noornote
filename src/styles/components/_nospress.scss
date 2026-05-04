@@ -315,6 +315,13 @@
   font-size: 0.9rem;
 }
 
+// Empty state for the Properties tab when nothing is selected.
+.nospress-properties-empty {
+  margin: $gap 0;
+  color: $color-3;
+  font-style: italic;
+}
+
 // Section divider inside the property body — used to separate the
 // "Identifiers" group (class/id inputs) from the CSS-property rows.
 .nospress-block-properties__section-label {
@@ -1302,16 +1309,31 @@
   height: 100%;
   min-height: 0;
 
-  &__editor,
-  &__library {
+  &__editor {
     overflow-y: auto;
     min-height: 0;
     @include custom-scrollbar;
   }
 
+  // The library now hosts a tab strip + scrolling tab-content. Switch it
+  // to a flex column so the tabs stay pinned and the active content
+  // scrolls inside the pane (no double scrollbar).
   &__library {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
     border-left: 1px solid var(--color-2);
     padding-left: $gap;
+
+    > .tabs {
+      flex-shrink: 0;
+    }
+
+    > .tab-content {
+      flex: 1;
+      min-height: 0;
+    }
   }
 
   // "Hide Library" toggle in the overlay header — collapses the right

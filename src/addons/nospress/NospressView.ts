@@ -36,6 +36,7 @@ import {
 } from './blocks/styles';
 import { removeUserCss } from './cssScope';
 import { bindCssTextareaUx } from './cssTextareaUx';
+import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
@@ -103,6 +104,10 @@ export class NospressView extends View {
   private fullscreenSplit: HTMLElement | null = null;
   private libraryToggleBtn: HTMLButtonElement | null = null;
   private libraryHidden: boolean = false;
+  /** Right pane (tabs container). Holds the Blocks + Properties tabs. */
+  private rightPaneEl: HTMLElement | null = null;
+  /** Direct ref to the Properties tab body — re-rendered on selectBlock. */
+  private propertiesTabContent: HTMLElement | null = null;
   /** True when the Custom-CSS editor panel is visible between header and
    *  the page-edit area. Toggled by the overlay "CSS Editor" button or the
    *  Library "Custom CSS" entry. UI-only; no relay impact. */
@@ -262,7 +267,6 @@ export class NospressView extends View {
         <div class="nospress-page-edit__title-bar">PAGE</div>
         ${pageContentHtml}
       </div>
-      ${pageSelected ? this.renderInlinePageProperties() : ''}
     `;
 
     const cssEditorHtml = this.cssEditorOpen ? this.renderCssEditorPanel(page) : '';
@@ -409,7 +413,7 @@ export class NospressView extends View {
       onSelectPage: () => this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID),
       onSelectCss: () => this.toggleCssEditor(),
     });
-    librarySlot.appendChild(this.blockLibrary.getElement());
+    this.mountRightPane(librarySlot);
 
     this.rerenderEditable();
 
@@ -457,6 +461,93 @@ export class NospressView extends View {
     this.fullscreenOverlay.mount();
   }
 
+  /**
+   * Build the tab-area UI inside the right pane (Blocks + Properties).
+   * Same `tabs` / `tab-content` markup pattern as the SCC so the existing
+   * NoorNote tab styling applies. Initial active tab: Blocks. Properties
+   * tab updates lazily when the user selects a block.
+   */
+  private mountRightPane(librarySlot: HTMLElement): void {
+    const tabBar = document.createElement('div');
+    tabBar.className = 'tabs nospress-tabs';
+    tabBar.innerHTML = `
+      <button type="button" class="tab tab--active" data-tab="blocks"><span class="tab__label">Blocks</span></button>
+      <button type="button" class="tab" data-tab="properties"><span class="tab__label">Properties</span></button>
+    `;
+
+    const blocksContent = document.createElement('div');
+    blocksContent.className = 'tab-content tab-content--active';
+    blocksContent.dataset.tabContent = 'blocks';
+    if (this.blockLibrary) blocksContent.appendChild(this.blockLibrary.getElement());
+
+    const propertiesContent = document.createElement('div');
+    propertiesContent.className = 'tab-content';
+    propertiesContent.dataset.tabContent = 'properties';
+    propertiesContent.innerHTML = this.renderPropertiesContent();
+
+    librarySlot.appendChild(tabBar);
+    librarySlot.appendChild(blocksContent);
+    librarySlot.appendChild(propertiesContent);
+
+    setupTabClickHandlers(librarySlot, (tabId) => switchTabWithContent(librarySlot, tabId));
+
+    // Style/Attr inputs in the Properties tab live OUTSIDE this.container,
+    // so the editor's input-delegation never sees them. Mirror the relevant
+    // dispatch on the right pane.
+    const propsHandler = (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      const styleScope = target.dataset?.styleScope;
+      const styleField = target.dataset?.styleField;
+      if (styleScope && styleField) this.handleStyleInput(styleScope, styleField, target.value);
+
+      const attrScope = target.dataset?.attrScope;
+      const attrField = target.dataset?.attrField;
+      if (attrScope && attrField) this.handleAttrInput(attrScope, attrField, target.value);
+    };
+    librarySlot.addEventListener('input', propsHandler);
+    librarySlot.addEventListener('change', propsHandler);
+
+    this.rightPaneEl = librarySlot;
+    this.propertiesTabContent = propertiesContent;
+  }
+
+  /**
+   * Build the HTML for the Properties tab body. Empty placeholder when no
+   * selection; page-properties panel when the page frame is selected;
+   * block-properties panel for an individual block.
+   */
+  private renderPropertiesContent(): string {
+    if (!this.selectedBlockId) {
+      return `<p class="nospress-properties-empty">Select a block or the page frame to edit properties.</p>`;
+    }
+    if (this.selectedBlockId === PAGE_SELECTION_ID) {
+      return this.renderInlinePageProperties();
+    }
+    const page = this.editingPage
+      ?? this.listService.getDraftV2()
+      ?? this.listService.getPublishedV2()
+      ?? this.listService.getPageV2();
+    const loc = findBlockInPage(page, this.selectedBlockId);
+    if (!loc) {
+      return `<p class="nospress-properties-empty">Block not found.</p>`;
+    }
+    return this.renderInlineProperties(loc.block);
+  }
+
+  /**
+   * Re-render the Properties tab body and (when something is selected)
+   * auto-switch the right pane to the Properties tab so the user gets
+   * immediate feedback after clicking a block.
+   */
+  private updatePropertiesTab(): void {
+    if (this.propertiesTabContent) {
+      this.propertiesTabContent.innerHTML = this.renderPropertiesContent();
+    }
+    if (this.selectedBlockId && this.rightPaneEl) {
+      switchTabWithContent(this.rightPaneEl, 'properties');
+    }
+  }
+
   /** Collapse / restore the right-hand Block Library pane. Pure CSS toggle —
    *  the library element stays in the DOM so re-showing is instant. */
   private toggleLibraryHidden(): void {
@@ -492,6 +583,8 @@ export class NospressView extends View {
     this.fullscreenSplit = null;
     this.libraryToggleBtn = null;
     this.libraryHidden = false;
+    this.rightPaneEl = null;
+    this.propertiesTabContent = null;
 
     Router.getInstance().navigate('/addons/nospress');
   }
@@ -609,9 +702,6 @@ export class NospressView extends View {
       if (i === pageCursorIndex) parts.push(slot);
       const block = blocks[i]!;
       parts.push(this.renderEditableBlock(block));
-      if (block.id === this.selectedBlockId) {
-        parts.push(this.renderInlineProperties(block));
-      }
     }
     if (pageCursorIndex >= blocks.length) parts.push(slot);
     return parts.join('');
@@ -658,9 +748,6 @@ export class NospressView extends View {
           if (cursorHere && cur.index === i) inner.push(slot);
           const cb = colBlocks[i]!;
           inner.push(this.renderEditableBlock(cb));
-          if (cb.id === this.selectedBlockId) {
-            inner.push(this.renderInlineProperties(cb));
-          }
         }
         if (cursorHere && cur.index >= colBlocks.length) inner.push(slot);
         return inner.join('');
@@ -696,9 +783,6 @@ export class NospressView extends View {
           if (cursorHere && cur.index === i) inner.push(slot);
           const cb = block.children[i]!;
           inner.push(this.renderEditableBlock(cb));
-          if (cb.id === this.selectedBlockId) {
-            inner.push(this.renderInlineProperties(cb));
-          }
         }
         if (cursorHere && cur.index >= block.children.length) inner.push(slot);
         return inner.join('');
@@ -907,6 +991,7 @@ export class NospressView extends View {
     if (this.selectedBlockId === blockId) return;
     this.selectedBlockId = blockId;
     this.rerenderEditable();
+    this.updatePropertiesTab();
   }
 
   /** Toggle the `--selected` class on the matching wrapper. Called after

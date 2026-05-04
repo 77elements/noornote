@@ -87,9 +87,6 @@ export class BlockLibraryView {
     `).join('');
 
     this.container.innerHTML = `
-      <div class="block-library__intro">
-        <p>Click <strong>Apply</strong> to add a block to the end of your page.</p>
-      </div>
       <div class="block-library__rows">${pageRowHtml}${cssRowHtml}${rowsHtml}</div>
     `;
   }
