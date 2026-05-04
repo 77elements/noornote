@@ -751,6 +751,43 @@
     margin-bottom: calc($gap / 2);
   }
 
+  &__head-actions {
+    display: flex;
+    gap: calc($gap / 2);
+    align-items: center;
+  }
+
+  &__palette-label {
+    margin-top: $gap;
+  }
+
+  // Two-column reference grid showing each palette variable + its purpose.
+  // Pure documentation — no inputs, no state.
+  &__palette {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: calc($gap / 4) $gap;
+    margin: calc($gap / 4) 0 0 0;
+
+    > div {
+      display: flex;
+      gap: calc($gap / 2);
+      align-items: baseline;
+    }
+
+    code {
+      padding: 1px 4px;
+      background: var(--color-2);
+      border-radius: 3px;
+      font-size: 0.78rem;
+      flex-shrink: 0;
+    }
+
+    span {
+      color: var(--text-alpha-light);
+    }
+  }
+
   &__label {
     font-weight: 600;
     color: var(--color-4);

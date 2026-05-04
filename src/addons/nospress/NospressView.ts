@@ -663,7 +663,10 @@ export class NospressView extends View {
       <div class="nospress-css-editor">
         <div class="nospress-css-editor__head">
           <label class="nospress-css-editor__label">Custom CSS</label>
-          <button type="button" class="btn btn--mini btn--passive" data-action="close-css-editor" aria-label="Close">×</button>
+          <div class="nospress-css-editor__head-actions">
+            <button type="button" class="btn btn--mini btn--passive" data-action="insert-palette-template" title="Insert a palette skeleton at the cursor — override the site-wide colors in one place">+ Palette</button>
+            <button type="button" class="btn btn--mini btn--passive" data-action="close-css-editor" aria-label="Close">×</button>
+          </div>
         </div>
         <textarea
           class="textarea textarea--code nospress-css-editor__textarea"
@@ -676,9 +679,51 @@ export class NospressView extends View {
           <pre class="nospress-css-editor__tree">body
   .layout-wrapper
     [your blocks]   <span class="nospress-css-editor__tree-note">— target via the Identifiers panel (CSS Class / CSS ID)</span></pre>
+          <p class="nospress-css-editor__palette-label"><strong>Palette</strong> — override site-wide by setting these inside <code>body { … }</code>:</p>
+          <div class="nospress-css-editor__palette">
+            <div><code>--color-1</code> <span>background</span></div>
+            <div><code>--color-4</code> <span>interactive (links, buttons)</span></div>
+            <div><code>--color-2</code> <span>surfaces, borders</span></div>
+            <div><code>--color-5</code> <span>text</span></div>
+            <div><code>--color-3</code> <span>accent</span></div>
+            <div><code>--color-6</code> <span>status indicators</span></div>
+          </div>
         </div>
       </div>
     `;
+  }
+
+  /** Skeleton inserted by the "+ Palette" button — current NoorNote defaults
+   *  with comments next to each line. The user tweaks values from there. */
+  private static readonly PALETTE_TEMPLATE = `body {
+  --color-1: #0f0d23;  /* background */
+  --color-2: #252343;  /* surfaces, borders */
+  --color-3: #9b79b9;  /* accent */
+  --color-4: #dc85ad;  /* interactive (links, buttons) */
+  --color-5: #ede2da;  /* text */
+  --color-6: #7dd87d;  /* status */
+}
+`;
+
+  /**
+   * Insert the palette skeleton at the textarea's cursor position. Empty
+   * textarea → starts at column 0; otherwise injected at caret with a
+   * leading newline if the previous char isn't already one. Dispatches a
+   * synthetic `input` event so the silent draft save runs.
+   */
+  private insertPaletteTemplate(): void {
+    const ta = this.container.querySelector('textarea[data-css-editor]') as HTMLTextAreaElement | null;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const end = ta.selectionEnd;
+    const value = ta.value;
+    const prefix = (start > 0 && value[start - 1] !== '\n') ? '\n' : '';
+    const insertion = prefix + NospressView.PALETTE_TEMPLATE;
+    ta.value = value.slice(0, start) + insertion + value.slice(end);
+    const caret = start + insertion.length;
+    ta.selectionStart = ta.selectionEnd = caret;
+    ta.focus();
+    ta.dispatchEvent(new Event('input', { bubbles: true }));
   }
 
   /** Toggle the Custom-CSS panel. */
@@ -1074,6 +1119,7 @@ export class NospressView extends View {
         case 'delete-list':            this.confirmAndUnpublish(); return;
         case 'dm-page-owner':          Router.getInstance().navigate(`/messages/${this.npub}`); return;
         case 'close-css-editor':       this.toggleCssEditor(); return;
+        case 'insert-palette-template': this.insertPaletteTemplate(); return;
       }
 
       const blockId = btn.dataset.blockId;
