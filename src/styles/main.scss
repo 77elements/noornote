@@ -105,6 +105,7 @@
 @use 'components/follow-packs';
 @use 'components/git-event-card';
 @use 'components/zapstore-app-view';
+@use 'components/upload-progress-overlay';
 
 // Add-Ons
 @use '../addons/marketplace/marketplace';

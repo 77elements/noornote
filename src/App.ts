@@ -100,6 +100,11 @@ export class App {
     import('./services/ImageClickHandler').then(m => m.getImageClickHandler().init());
     import('./services/VideoPlayerService').then(m => m.getVideoPlayerService().init());
 
+    // Global upload progress overlay — singleton, listens for media-upload:status
+    // events from MediaUploadService. Renders compression + upload progress for
+    // every video/audio upload regardless of which UI surface triggered it.
+    import('./components/ui/UploadProgressOverlay').then(m => m.UploadProgressOverlay.getInstance().mount());
+
     const isOnline = await ConnectivityService.getInstance().checkConnectivity();
     if (!isOnline) {
       OfflineOverlay.getInstance().show();

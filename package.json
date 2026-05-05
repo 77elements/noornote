@@ -91,6 +91,7 @@
     "fflate": "^0.8.2",
     "hls.js": "^1.6.15",
     "marked": "^16.4.0",
+    "mediabunny": "^1.43.1",
     "nostr-signer-capacitor-plugin": "^0.0.5",
     "qrcode": "^1.5.4"
   },

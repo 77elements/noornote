@@ -313,6 +313,27 @@
 }
 
 
+// ========================================
+// Media Compression Subsection
+// ========================================
+
+.compression-detail {
+  margin: calc($gap / 2) 0 $gap calc($gap * 1.5);
+  padding-left: $gap;
+  border-left: 2px solid var(--color-2);
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+
+  &.hidden {
+    display: none;
+  }
+}
+
+.compression-min-size {
+  width: 5rem;
+}
+
 
 // ========================================
 // Sensitive Media Subsection

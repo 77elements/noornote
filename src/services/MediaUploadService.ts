@@ -16,6 +16,16 @@ import { PlatformService } from './PlatformService';
 import { ToastService } from './ToastService';
 import { createMediaUploadAdapter, type MediaUploadAdapter } from './media';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { EventBus } from './EventBus';
+import { diagLog } from './DiagnosticLogger';
+import {
+  DEFAULT_MEDIA_COMPRESSION_SETTINGS,
+  detectMediaKind,
+  type MediaCompressionSettings,
+  type MediaKind,
+  type UploadStatus,
+} from './media/compression-types';
+import { UPLOAD_STATUS_EVENT } from '../components/ui/UploadProgressOverlay';
 
 interface MediaServerSettings {
   url: string;
@@ -99,7 +109,156 @@ export class MediaUploadService {
     );
   }
 
-  private validateFile(file: File, settings: MediaServerSettings): { valid: boolean; error?: string } {
+  private loadCompressionSettings(): MediaCompressionSettings {
+    const stored = PerAccountLocalStorage.getInstance().get<MediaCompressionSettings>(
+      StorageKeys.MEDIA_COMPRESSION,
+      DEFAULT_MEDIA_COMPRESSION_SETTINGS,
+    );
+    return {
+      video: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.video, ...stored.video },
+      audio: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.audio, ...stored.audio },
+      minSizeBytes: stored.minSizeBytes ?? DEFAULT_MEDIA_COMPRESSION_SETTINGS.minSizeBytes,
+    };
+  }
+
+  private emitStatus(status: UploadStatus): void {
+    EventBus.getInstance().emit(UPLOAD_STATUS_EVENT, status);
+  }
+
+  /**
+   * Compress a video or audio file before upload, if compression is enabled
+   * for that media kind and the file is above the min-size threshold. Returns
+   * the file to upload (compressed or original on skip/failure).
+   *
+   * The original file is uploaded as-is on any failure (compression is a
+   * best-effort optimization, never a blocker for the upload itself).
+   */
+  private async maybeCompressMedia(
+    file: File,
+    mediaKind: MediaKind,
+    onStatus: (s: UploadStatus) => void,
+    fileIndex?: number,
+    totalFiles?: number,
+  ): Promise<File> {
+    if (mediaKind !== 'video' && mediaKind !== 'audio') return file;
+
+    const settings = this.loadCompressionSettings();
+    const enabled = mediaKind === 'video' ? settings.video.enabled : settings.audio.enabled;
+    if (!enabled) {
+      diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'disabled-in-settings' });
+      return file;
+    }
+    if (file.size < settings.minSizeBytes) {
+      diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'below-min-size', size: file.size });
+      return file;
+    }
+
+    let service: typeof import('./media/MediaCompressionService').MediaCompressionService;
+    try {
+      const mod = await import('./media/MediaCompressionService');
+      service = mod.MediaCompressionService;
+    } catch (err) {
+      diagLog('system', 'Media compression failed', { kind: mediaKind, reason: 'chunk-load-failed', error: String(err) });
+      ToastService.show('Compression unavailable, uploading original.', 'info');
+      return file;
+    }
+
+    const supported = mediaKind === 'video'
+      ? await service.isVideoSupported()
+      : await service.isAudioSupported();
+    if (!supported) {
+      diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'webcodecs-unsupported' });
+      return file;
+    }
+
+    diagLog('system', 'Media compression started', {
+      kind: mediaKind,
+      filename: file.name,
+      originalBytes: file.size,
+      quality: mediaKind === 'video' ? settings.video.quality : settings.audio.quality,
+    });
+
+    const startedAt = performance.now();
+    let compressed: File;
+    try {
+      const onProgress = (percent: number) => {
+        const status: UploadStatus = {
+          phase: 'compressing',
+          percent,
+          mediaKind,
+          filename: file.name,
+          originalBytes: file.size,
+          fileIndex,
+          totalFiles,
+        };
+        onStatus(status);
+        this.emitStatus(status);
+      };
+      compressed = mediaKind === 'video'
+        ? await service.compressVideo(file, settings.video, onProgress)
+        : await service.compressAudio(file, settings.audio, onProgress);
+    } catch (err) {
+      diagLog('system', 'Media compression failed', { kind: mediaKind, error: String(err) });
+      ToastService.show('Compression failed, uploading original.', 'info');
+      return file;
+    }
+
+    if (compressed.size >= file.size) {
+      diagLog('system', 'Compressed file larger than original — using original', {
+        kind: mediaKind,
+        originalBytes: file.size,
+        compressedBytes: compressed.size,
+      });
+      // Surface this in the overlay so the user sees the compression DID run
+      // and we deliberately kept the original. Without this, the overlay would
+      // jump straight from "Compressing…" to "Uploading…" with no closure.
+      const noBenefitStatus: UploadStatus = {
+        phase: 'compressed',
+        percent: 100,
+        mediaKind,
+        filename: file.name,
+        originalBytes: file.size,
+        compressedBytes: file.size, // same — overlay will render "Already well-compressed"
+        fileIndex,
+        totalFiles,
+      };
+      onStatus(noBenefitStatus);
+      this.emitStatus(noBenefitStatus);
+      return file;
+    }
+
+    const durationMs = Math.round(performance.now() - startedAt);
+    diagLog('system', 'Media compression complete', {
+      kind: mediaKind,
+      originalBytes: file.size,
+      compressedBytes: compressed.size,
+      durationMs,
+    });
+
+    const status: UploadStatus = {
+      phase: 'compressed',
+      percent: 100,
+      mediaKind,
+      filename: file.name,
+      originalBytes: file.size,
+      compressedBytes: compressed.size,
+      fileIndex,
+      totalFiles,
+    };
+    onStatus(status);
+    this.emitStatus(status);
+
+    return compressed;
+  }
+
+  private validateFileType(file: File): { valid: boolean; error?: string } {
+    if (!/^(image|video|audio)\//.test(file.type)) {
+      return { valid: false, error: 'Unsupported file type. Only images, videos, and audio are allowed.' };
+    }
+    return { valid: true };
+  }
+
+  private validateFileSize(file: File, settings: MediaServerSettings): { valid: boolean; error?: string } {
     const maxSize = settings.maxFileSize
       || (settings.protocol === 'blossom' ? this.DEFAULT_BLOSSOM_MAX_FILE_SIZE : this.DEFAULT_NIP96_MAX_FILE_SIZE);
 
@@ -107,11 +266,6 @@ export class MediaUploadService {
       const maxSizeMB = Math.floor(maxSize / 1024 / 1024);
       return { valid: false, error: `File too large. Maximum size: ${maxSizeMB} MB` };
     }
-
-    if (!/^(image|video|audio)\//.test(file.type)) {
-      return { valid: false, error: 'Unsupported file type. Only images, videos, and audio are allowed.' };
-    }
-
     return { valid: true };
   }
 
@@ -441,6 +595,20 @@ export class MediaUploadService {
   }
 
   public async uploadFile(file: File, onProgress?: ProgressCallback): Promise<UploadResult> {
+    return this.uploadFileInternal(file, onProgress);
+  }
+
+  /**
+   * Internal upload path that supports rich UploadStatus events alongside
+   * the legacy onProgress callback. Used by uploadFiles() to thread batch
+   * indices into the global progress overlay.
+   */
+  private async uploadFileInternal(
+    file: File,
+    onProgress?: ProgressCallback,
+    fileIndex?: number,
+    totalFiles?: number,
+  ): Promise<UploadResult> {
     try {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) {
@@ -451,15 +619,70 @@ export class MediaUploadService {
 
       const settings = this.loadMediaServerSettings();
 
-      const validation = this.validateFile(file, settings);
-      if (!validation.valid) {
-        ToastService.show(validation.error || 'Invalid file', 'error');
-        return this.errorResult(validation.error || 'Invalid file');
+      // Type validation runs before compression — no point compressing a file
+      // we wouldn't accept anyway.
+      const typeCheck = this.validateFileType(file);
+      if (!typeCheck.valid) {
+        ToastService.show(typeCheck.error || 'Invalid file', 'error');
+        return this.errorResult(typeCheck.error || 'Invalid file');
       }
 
+      const mediaKind = detectMediaKind(file);
+      const originalBytes = file.size;
+
+      // Best-effort compression for video/audio. Falls back to the original
+      // file on skip / failure, never blocks the upload.
+      const noopStatus = (_s: UploadStatus) => { /* events still go via emitStatus */ };
+      const fileToUpload = await this.maybeCompressMedia(
+        file,
+        mediaKind,
+        noopStatus,
+        fileIndex,
+        totalFiles,
+      );
+
+      // Size validation runs AFTER compression so videos that exceed the
+      // server's free-tier limit may still pass once compressed. The whole
+      // point of pre-upload compression is to make oversized media uploadable.
+      const sizeCheck = this.validateFileSize(fileToUpload, settings);
+      if (!sizeCheck.valid) {
+        ToastService.show(sizeCheck.error || 'File too large', 'error');
+        return this.errorResult(sizeCheck.error || 'File too large');
+      }
+
+      // Wrap the legacy progress callback so the global overlay also sees the
+      // upload phase. Existing callers' button-replaced-with-circle UI keeps
+      // working through onProgress unchanged.
+      const wrappedProgress: ProgressCallback = (percent) => {
+        onProgress?.(percent);
+        this.emitStatus({
+          phase: 'uploading',
+          percent,
+          mediaKind,
+          filename: file.name,
+          originalBytes,
+          compressedBytes: fileToUpload.size !== originalBytes ? fileToUpload.size : undefined,
+          fileIndex,
+          totalFiles,
+        });
+      };
+
       const result = settings.protocol === 'blossom'
-        ? await this.uploadBlossom(file, settings.url, onProgress)
-        : await this.uploadNIP96(file, settings.url, onProgress);
+        ? await this.uploadBlossom(fileToUpload, settings.url, wrappedProgress)
+        : await this.uploadNIP96(fileToUpload, settings.url, wrappedProgress);
+
+      if (result.success) {
+        this.emitStatus({
+          phase: 'uploaded',
+          percent: 100,
+          mediaKind,
+          filename: file.name,
+          originalBytes,
+          compressedBytes: fileToUpload.size !== originalBytes ? fileToUpload.size : undefined,
+          fileIndex,
+          totalFiles,
+        });
+      }
 
       ToastService.show(
         result.success ? 'File uploaded successfully!' : (result.error || 'Upload failed'),
@@ -482,9 +705,9 @@ export class MediaUploadService {
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (!file) continue;
-      const result = await this.uploadFile(file, (progress) => {
+      const result = await this.uploadFileInternal(file, (progress) => {
         onProgress?.(i, progress, files.length);
-      });
+      }, i, files.length);
       results.push(result);
 
       if (!result.success) break;

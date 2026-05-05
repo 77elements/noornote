@@ -1,0 +1,92 @@
+// Upload Progress Overlay
+// Singleton bottom-right floating chip that shows compression + upload state.
+// Driven by EventBus events from MediaUploadService.
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+.upload-progress-overlay {
+  position: fixed;
+  right: $gap;
+  bottom: $gap;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  min-width: 18rem;
+  max-width: calc(100vw - #{$gap * 2});
+  padding: calc($gap / 1.5) $gap;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
+  border-radius: $radius-xl;
+  box-shadow: $box-shadow;
+  color: var(--color-5);
+  transform: translateY(0);
+  opacity: 1;
+  transition: opacity $transition-all, transform $transition-all;
+
+  &--hidden {
+    opacity: 0;
+    transform: translateY(calc($gap / 2));
+    pointer-events: none;
+  }
+}
+
+.upload-progress-overlay__icon {
+  flex: 0 0 auto;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.upload-progress-overlay__body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 4);
+  min-width: 0;
+}
+
+.upload-progress-overlay__line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: $gap;
+}
+
+.upload-progress-overlay__message {
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.upload-progress-overlay__percent {
+  flex: 0 0 auto;
+  font-size: 0.85rem;
+  color: var(--color-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.upload-progress-overlay__bar {
+  height: 4px;
+  background: var(--color-1);
+  border-radius: $radius-pill;
+  overflow: hidden;
+
+  &--hidden {
+    visibility: hidden;
+  }
+}
+
+.upload-progress-overlay__bar-fill {
+  height: 100%;
+  background: var(--color-4);
+  border-radius: $radius-pill;
+  width: 0;
+  transition: width $transition-fast linear;
+}
