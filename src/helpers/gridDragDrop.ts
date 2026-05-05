@@ -1,8 +1,11 @@
 /**
- * Shared grid drag-drop mechanics for list views (bookmarks, tribes)
+ * Shared grid drag-drop mechanics — bookmarks, tribes, NosPress nav menus.
  *
  * Extracts the identical mousedown/mousemove/mouseup + threshold + placeholder
- * + fixed-positioning logic. List-specific drop handling stays in onDrop callback.
+ * + fixed-positioning logic. Caller-specific drop handling stays in onDrop.
+ *
+ * Mouse-only by design (touch is handled by MoveDropdown / arrow buttons in
+ * the consuming UIs).
  */
 
 export interface GridDragDropConfig {

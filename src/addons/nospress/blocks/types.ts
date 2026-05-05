@@ -41,7 +41,8 @@ export type Block =
   | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle; attrs?: BlockAttrs }
   | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; attrs?: BlockAttrs }
   | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; attrs?: BlockAttrs };
+  | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; attrs?: BlockAttrs }
+  | { id: string; type: 'nav-menu'; menuId: string; style?: CommonStyle; attrs?: BlockAttrs };
 
 /** Allowed semantic block-level HTML elements for the generic `div` block. */
 export const DIV_TAGS = ['div', 'header', 'footer', 'main', 'section', 'article', 'aside', 'nav', 'fieldset'] as const;
@@ -51,6 +52,7 @@ export type BlockType = Block['type'];
 
 // CommonStyle / per-scope schema defined in `./styles.ts`.
 import type { CommonStyle } from './styles';
+import { PRIMARY_MENU_ID } from './menu';
 
 export interface NospressPageV2 {
   version: 2;
@@ -96,6 +98,7 @@ export function createBlock(type: BlockType): Block {
     case 'articles-list':   return { id, type };
     case 'weblog':          return { id, type, hashtags: [] };
     case 'div':             return { id, type, tag: 'div', children: [] };
+    case 'nav-menu':        return { id, type, menuId: PRIMARY_MENU_ID };
   }
 }
 

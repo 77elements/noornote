@@ -1,11 +1,14 @@
 import { decodeNip19, encodeNpub } from '../../services/NostrToolsAdapter';
 import { resolveNip05 } from './Nip05Resolver';
 import { NospressOrchestrator } from '../../services/orchestration/NospressOrchestrator';
+import { NospressMenuOrchestrator } from '../../services/orchestration/NospressMenuOrchestrator';
+import { NospressPageIndexOrchestrator } from '../../services/orchestration/NospressPageIndexOrchestrator';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { buildInlineStyle, schemaFor } from './blocks/styles';
 import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG } from './blocks/pageIndex';
+import { mountNospressNavMenus } from './navMenuMount';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { showLoggedOutReactionModal } from '../../helpers/LoggedOutModals';
@@ -85,16 +88,21 @@ export class PublicNospressPage {
       : Promise.resolve(null);
 
     const orch = NospressOrchestrator.getInstance();
-    // Site composition: parallel fetch of body, global header, global footer.
-    // Each lives in a separate NIP-78 event (d-tags noornote/list,
-    // noornote/header, noornote/footer). Owner profile only matters for the
-    // empty-state name; cheap parallel fetch keeps render fast.
-    const [profile, body, header, footer, viewerProfile] = await Promise.all([
+    const menuOrch = NospressMenuOrchestrator.getInstance();
+    const pageIndexOrch = NospressPageIndexOrchestrator.getInstance();
+    // Site composition: parallel fetch of body (per route slug), global
+    // header, global footer, plus the menu set + page index for nav-menu
+    // blocks. Each lives in its own NIP-78 event. Owner profile is only
+    // needed for the empty-state name; the rest informs nav-menu mounting.
+    const bodySlug = this.route.slug || HOME_SLUG;
+    const [profile, body, header, footer, viewerProfile, menuSet, pageIndex] = await Promise.all([
       UserProfileService.getInstance().getUserProfile(pubkey).catch(() => null),
-      orch.fetchFromRelays(pubkey, true, HOME_SLUG).catch(() => null),
+      orch.fetchFromRelays(pubkey, true, bodySlug).catch(() => null),
       orch.fetchFromRelays(pubkey, true, GLOBAL_HEADER_SLUG).catch(() => null),
       orch.fetchFromRelays(pubkey, true, GLOBAL_FOOTER_SLUG).catch(() => null),
       viewerProfilePromise,
+      menuOrch.fetchFromRelays(pubkey, true).catch(() => null),
+      pageIndexOrch.fetchFromRelays(pubkey, true).catch(() => null),
     ]);
 
     const isEmpty = (p: NospressPageV2 | null): boolean => !p || p.blocks.length === 0;
@@ -111,6 +119,15 @@ export class PublicNospressPage {
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: pubkey });
     this.articlesCarousels = mountNospressArticlesLists(this.container, { ownerPubkey: pubkey });
     mountNospressWeblogs(this.container, { ownerPubkey: pubkey });
+    if (menuSet && pageIndex) {
+      mountNospressNavMenus(this.container, {
+        menuSet,
+        pageIndex,
+        ownerHandle: this.route.type === 'nip05' ? this.route.handle : this.route.npub,
+        currentSlug: this.route.slug,
+        editorPreview: false,
+      });
+    }
     this.bindSigningActionCtas();
   }
 
@@ -260,8 +277,11 @@ export class PublicNospressPage {
     if (!this.viewerNpub) return '';
 
     const isOwner = this.ownerNpub !== null && this.ownerNpub === this.viewerNpub;
+    // Carry the current page slug into the editor so "Edit page →" lands on
+    // the page the visitor is actually looking at.
+    const editPageQuery = this.route.slug ? `?page=${encodeURIComponent(this.route.slug)}` : '';
     const editLink = isOwner
-      ? `<a class="user-site-bar__link user-site-bar__link--accent" href="/profile/${this.viewerNpub}/nospress">Edit page →</a>`
+      ? `<a class="user-site-bar__link user-site-bar__link--accent" href="/profile/${this.viewerNpub}/nospress${editPageQuery}">Edit page →</a>`
       : '';
 
     const name = viewerProfile ? extractDisplayName(viewerProfile) : '';

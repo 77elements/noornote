@@ -14,9 +14,12 @@
 import { View } from '../../components/views/View';
 import { NospressOrchestrator } from '../../services/orchestration/NospressOrchestrator';
 import { NospressPageIndexOrchestrator } from '../../services/orchestration/NospressPageIndexOrchestrator';
+import { NospressMenuOrchestrator } from '../../services/orchestration/NospressMenuOrchestrator';
 import { NospressService } from '../../services/NospressService';
 import { NospressPageIndexService } from '../../services/NospressPageIndexService';
+import { NospressMenuService } from '../../services/NospressMenuService';
 import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, normalizeSlug, isValidSlug, type PageIndexEntry } from './blocks/pageIndex';
+import { PRIMARY_MENU_ID, type NavItem, type NospressMenu } from './blocks/menu';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns } from './blocks/renderers/ColumnsRenderer';
 import { renderDiv } from './blocks/renderers/DivRenderer';
@@ -41,12 +44,14 @@ import { removeUserCss } from './cssScope';
 import { bindCssTextareaUx } from './cssTextareaUx';
 import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { setupGridDragDrop } from '../../helpers/gridDragDrop';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { mountNospressProfileCards } from './profileCardMount';
 import { mountNospressArticlesLists } from './articlesListMount';
 import { mountNospressWeblogs } from './weblogMount';
+import { mountNospressNavMenus } from './navMenuMount';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
 
@@ -113,6 +118,8 @@ export class NospressView extends View {
   private propertiesTabContent: HTMLElement | null = null;
   /** Direct ref to the Pages tab body — re-rendered on page-index changes. */
   private pagesTabContent: HTMLElement | null = null;
+  /** Direct ref to the Nav tab body — re-rendered on menu changes. */
+  private navTabContent: HTMLElement | null = null;
   /** Currently edited page-slug. '' = home (legacy d-tag noornote/list).
    *  Initialized from `?page=<slug>` URL query-param, falls back to home. */
   private activeSlug: string = HOME_SLUG;
@@ -125,6 +132,8 @@ export class NospressView extends View {
   private editingTarget: 'body' | 'header' | 'footer' = 'body';
   private pageIndexService: NospressPageIndexService;
   private pageIndexOrchestrator: NospressPageIndexOrchestrator;
+  private menuService: NospressMenuService;
+  private menuOrchestrator: NospressMenuOrchestrator;
   /** True when the Custom-CSS editor panel is visible between header and
    *  the page-edit area. Toggled by the overlay "CSS Editor" button or the
    *  Library "Custom CSS" entry. UI-only; no relay impact. */
@@ -139,6 +148,8 @@ export class NospressView extends View {
     this.listService = NospressService.getInstance();
     this.pageIndexService = NospressPageIndexService.getInstance();
     this.pageIndexOrchestrator = NospressPageIndexOrchestrator.getInstance();
+    this.menuService = NospressMenuService.getInstance();
+    this.menuOrchestrator = NospressMenuOrchestrator.getInstance();
 
     try {
       const decoded = decodeNip19(npub);
@@ -212,6 +223,9 @@ export class NospressView extends View {
     this.eventBusSubscriptions.push(
       eventBus.on('nospressPageIndex:changed', () => this.updatePagesTab())
     );
+    this.eventBusSubscriptions.push(
+      eventBus.on('nospressMenus:changed', () => this.updateNavTab())
+    );
   }
 
   private async loadAndRender(): Promise<void> {
@@ -230,10 +244,18 @@ export class NospressView extends View {
       // Pull the latest published state from relays so edits made on a
       // different instance show up here. publishedV2 is updated; renderList
       // still prefers draftV2 / editingPage so unsaved local work survives.
-      // Fetch the page-index first so the Pages tab has data; failures are
-      // non-fatal — empty index just means a single-page user.
-      const remoteIndex = await this.pageIndexOrchestrator.fetchFromRelays(this.pubkey, true);
+      // Fetch the page-index + menus first so the Pages and Nav tabs have
+      // data; failures are non-fatal — empty index = single-page user, no
+      // menus = primary navigation seeds locally from the page-index.
+      const [remoteIndex, remoteMenus] = await Promise.all([
+        this.pageIndexOrchestrator.fetchFromRelays(this.pubkey, true),
+        this.menuOrchestrator.fetchFromRelays(this.pubkey, true),
+      ]);
       if (remoteIndex) this.pageIndexService.setIndexFromRelay(remoteIndex);
+      if (remoteMenus) this.menuService.setMenuSetFromRelay(remoteMenus);
+      // Reconcile menus with whatever pages are now in the local index —
+      // covers the case where pages were added/removed on another device.
+      this.menuService.syncWithPages();
 
       const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true, this.activeSlug);
       if (remote && remote.blocks.length > 0) {
@@ -330,6 +352,31 @@ export class NospressView extends View {
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: this.pubkey });
     this.articlesCarousels = mountNospressArticlesLists(this.container, { ownerPubkey: this.pubkey });
     mountNospressWeblogs(this.container, { ownerPubkey: this.pubkey });
+    this.mountNavMenuPreviews();
+  }
+
+  /** Fill every nav-menu mount slot in the editor container with a real
+   *  `<nav><ul><li><a>` preview, plus populate the menu-picker `<select>`s
+   *  in editable mode with all available menu ids. */
+  private mountNavMenuPreviews(): void {
+    const menuSet = this.menuService.getMenuSet();
+    const pageIndex = this.pageIndexService.getIndex();
+    mountNospressNavMenus(this.container, {
+      menuSet,
+      pageIndex,
+      ownerHandle: this.npub,
+      currentSlug: this.activeSlug,
+      editorPreview: true,
+    });
+    // Fill the menu-picker dropdowns with the full menu list (the renderer
+    // can only emit the picked menuId by itself; we own the full set here).
+    const selects = this.container.querySelectorAll<HTMLSelectElement>('.nospress-block-nav-menu__select');
+    selects.forEach(sel => {
+      const current = sel.value;
+      sel.innerHTML = menuSet.menus.map(m =>
+        `<option value="${escapeHtml(m.id)}"${m.id === current ? ' selected' : ''}>${escapeHtml(m.name)}</option>`
+      ).join('');
+    });
   }
 
   private destroyProfileCards(): void {
@@ -463,20 +510,26 @@ export class NospressView extends View {
 
     this.rerenderEditable();
 
-    // "See Website" → opens the public NosPress page in a new tab.
-    // Initial URL uses the canonical npub form (always works); upgraded
-    // in-place to the prettier nip05 form if the profile has one.
+    // "See Website" → opens the public NosPress page in a new tab. URL
+    // composes handle + the active page slug (empty = home). Initial form
+    // uses the canonical npub (always works); async-upgraded to nip05 if
+    // the profile has one. Slug is read live from `activeSlug` at click
+    // time, so navigating between pages in the editor opens the right one.
     const seeWebsiteButton = document.createElement('button');
     seeWebsiteButton.type = 'button';
     seeWebsiteButton.className = 'btn btn--passive btn--medium';
     seeWebsiteButton.textContent = 'See Website';
-    let seeWebsiteUrl = `https://noornote.app/${this.npub}/`;
+    let seeWebsiteHandle = this.npub;
     seeWebsiteButton.addEventListener('click', () => {
-      window.open(seeWebsiteUrl, '_blank', 'noopener,noreferrer');
+      const slugPath = this.activeSlug && this.activeSlug !== HOME_SLUG
+        ? `${encodeURIComponent(this.activeSlug)}/`
+        : '';
+      const url = `https://noornote.app/${seeWebsiteHandle}/${slugPath}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
     });
     UserProfileService.getInstance().getUserProfile(this.pubkey).then(profile => {
       const nip05 = profile?.nip05?.trim();
-      if (nip05) seeWebsiteUrl = `https://noornote.app/${nip05}/`;
+      if (nip05) seeWebsiteHandle = nip05;
     }).catch(() => { /* keep npub fallback */ });
 
     // CSS Editor toggle — opens the Custom-CSS textarea panel inside the
@@ -520,6 +573,7 @@ export class NospressView extends View {
       <button type="button" class="tab tab--active" data-tab="pages"><span class="tab__label">Pages</span></button>
       <button type="button" class="tab" data-tab="blocks"><span class="tab__label">Blocks</span></button>
       <button type="button" class="tab" data-tab="properties"><span class="tab__label">Properties</span></button>
+      <button type="button" class="tab" data-tab="nav"><span class="tab__label">Nav</span></button>
     `;
 
     const pagesContent = document.createElement('div');
@@ -537,10 +591,16 @@ export class NospressView extends View {
     propertiesContent.dataset.tabContent = 'properties';
     propertiesContent.innerHTML = this.renderPropertiesContent();
 
+    const navContent = document.createElement('div');
+    navContent.className = 'tab-content';
+    navContent.dataset.tabContent = 'nav';
+    navContent.innerHTML = this.renderNavContent();
+
     librarySlot.appendChild(tabBar);
     librarySlot.appendChild(pagesContent);
     librarySlot.appendChild(blocksContent);
     librarySlot.appendChild(propertiesContent);
+    librarySlot.appendChild(navContent);
 
     setupTabClickHandlers(librarySlot, (tabId) => switchTabWithContent(librarySlot, tabId));
 
@@ -564,9 +624,15 @@ export class NospressView extends View {
     pagesContent.addEventListener('keydown', (e) => this.handleInlineRenameKeydown(e));
     pagesContent.addEventListener('focusout', (e) => this.handleInlineRenameFocusout(e));
 
+    navContent.addEventListener('click', (e) => this.handleNavTabClick(e));
+    navContent.addEventListener('change', (e) => this.handleNavTabChange(e));
+    navContent.addEventListener('submit', (e) => this.handleNavTabSubmit(e));
+
     this.rightPaneEl = librarySlot;
     this.propertiesTabContent = propertiesContent;
     this.pagesTabContent = pagesContent;
+    this.navTabContent = navContent;
+    this.attachNavDragHandlers();
   }
 
   /**
@@ -666,16 +732,14 @@ export class NospressView extends View {
       : 'nospress-pages__section nospress-pages__section--placeholder';
     return `
       <div class="nospress-pages__item" data-page-slug="${escapeHtml(entry.slug)}" ${isActive ? 'data-active="true"' : ''}>
-        ${isHome
-          ? `<h3
-              class="nospress-pages__title nospress-pages__title--editable"
-              contenteditable="true"
-              spellcheck="false"
-              data-inline-rename
-              data-page-slug="${escapeHtml(entry.slug)}"
-              data-original-title="${escapeHtml(entry.title)}"
-            >${escapeHtml(entry.title)}</h3>`
-          : `<h3 class="nospress-pages__title">${escapeHtml(entry.title)}</h3>`}
+        <h3
+          class="nospress-pages__title nospress-pages__title--editable"
+          contenteditable="true"
+          spellcheck="false"
+          data-inline-rename
+          data-page-slug="${escapeHtml(entry.slug)}"
+          data-original-title="${escapeHtml(entry.title)}"
+        >${escapeHtml(entry.title)}</h3>
         <div class="nn-card" data-page-template>
           <div class="nn-card__content">
             <div class="nospress-pages__sections">
@@ -693,7 +757,6 @@ export class NospressView extends View {
         </div>
         ${isHome ? '' : `
           <div class="nospress-pages__card-actions">
-            <button type="button" class="btn btn--passive btn--mini" data-action="rename-page" data-page-slug="${escapeHtml(entry.slug)}">Rename</button>
             <button type="button" class="btn btn--passive btn--mini" data-action="delete-page" data-page-slug="${escapeHtml(entry.slug)}">Delete</button>
           </div>
         `}
@@ -726,6 +789,300 @@ export class NospressView extends View {
   private updatePagesTab(): void {
     if (this.pagesTabContent) {
       this.pagesTabContent.innerHTML = this.renderPagesContent();
+    }
+  }
+
+  /**
+   * Render the Nav tab body. One section per menu; Primary Navigation
+   * comes first. Each menu shows its items with up/down/remove controls
+   * and a "+ Add page" picker for any pages not yet in the menu.
+   *
+   * Multiple menus + external URL items come in Slice 2.4 — for now the
+   * Add menu UI is hidden.
+   */
+  private renderNavContent(): string {
+    const set = this.menuService.getMenuSet();
+    const orderedMenus = [...set.menus].sort((a, b) => {
+      if (a.id === PRIMARY_MENU_ID) return -1;
+      if (b.id === PRIMARY_MENU_ID) return 1;
+      return 0;
+    });
+    const sections = orderedMenus.map(menu => this.renderMenuTile(menu)).join('');
+    return `
+      <div class="nospress-nav">
+        ${sections}
+        <div class="nospress-nav__add-menu">
+          <button type="button" class="btn btn--passive btn--mini" data-action="add-menu">+ Add menu</button>
+        </div>
+      </div>
+    `;
+  }
+
+  private renderMenuTile(menu: NospressMenu): string {
+    const isPrimary = menu.id === PRIMARY_MENU_ID;
+    const itemsHtml = menu.items.length > 0
+      ? menu.items.map((item, i) => this.renderMenuItemRow(menu, item, i)).join('')
+      : `<p class="nospress-nav__empty">No items yet.</p>`;
+
+    const usedSlugs = new Set(
+      menu.items.filter(i => i.type === 'page').map(i => (i as Extract<NavItem, { type: 'page' }>).pageSlug)
+    );
+    const availablePages = this.pageIndexService.getIndex().pages.filter(p => !usedSlugs.has(p.slug));
+    const pageOptions = availablePages.length > 0
+      ? availablePages.map(p => `<option value="${escapeHtml(p.slug)}">${escapeHtml(p.title)}</option>`).join('')
+      : '';
+
+    const addPagePickerHtml = availablePages.length > 0
+      ? `
+        <select class="nospress-nav__add-select" data-menu-id="${escapeHtml(menu.id)}">
+          <option value="">+ Add page…</option>
+          ${pageOptions}
+        </select>
+      `
+      : '';
+
+    const addUrlButtonHtml = `
+      <button type="button" class="btn btn--passive btn--mini" data-action="add-url-toggle" data-menu-id="${escapeHtml(menu.id)}">+ Add URL</button>
+    `;
+
+    const addUrlFormHtml = `
+      <form class="nospress-nav__url-form" data-menu-id="${escapeHtml(menu.id)}" hidden>
+        <input type="text" class="nospress-nav__url-input" data-field="label" placeholder="Label (e.g. Twitter)" />
+        <input type="url" class="nospress-nav__url-input" data-field="url" placeholder="https://example.com" />
+        <button type="submit" class="btn btn--mini">Add</button>
+      </form>
+    `;
+
+    const menuActionsHtml = isPrimary ? '' : `
+      <span class="nospress-nav__menu-actions">
+        <button type="button" class="btn btn--passive btn--mini" data-action="menu-rename" data-menu-id="${escapeHtml(menu.id)}">Rename</button>
+        <button type="button" class="btn btn--passive btn--mini" data-action="menu-delete" data-menu-id="${escapeHtml(menu.id)}">Delete</button>
+      </span>
+    `;
+
+    return `
+      <section class="nospress-nav__menu" data-menu-id="${escapeHtml(menu.id)}">
+        <header class="nospress-nav__menu-header">
+          <h3 class="nospress-nav__title">${escapeHtml(menu.name)}</h3>
+          ${menuActionsHtml}
+        </header>
+        <ol class="nospress-nav__items" data-menu-id="${escapeHtml(menu.id)}">${itemsHtml}</ol>
+        <div class="nospress-nav__add">
+          ${addPagePickerHtml}
+          ${addUrlButtonHtml}
+        </div>
+        ${addUrlFormHtml}
+      </section>
+    `;
+  }
+
+  private renderMenuItemRow(menu: NospressMenu, item: NavItem, index: number): string {
+    const total = menu.items.length;
+    const upDisabled = index === 0 ? 'disabled' : '';
+    const downDisabled = index === total - 1 ? 'disabled' : '';
+
+    const label = (() => {
+      if (item.type === 'page') {
+        const entry = this.pageIndexService.getEntry(item.pageSlug);
+        return entry ? entry.title : `(missing: ${item.pageSlug})`;
+      }
+      return item.label || item.url;
+    })();
+    const sub = item.type === 'url' ? `<span class="nospress-nav__item-sub">${escapeHtml(item.url)}</span>` : '';
+
+    return `
+      <li class="nospress-nav__item" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}">
+        <span class="nospress-nav__item-label">${escapeHtml(label)}${sub}</span>
+        <span class="nospress-nav__item-actions">
+          <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-up" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}" ${upDisabled}>↑</button>
+          <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-down" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}" ${downDisabled}>↓</button>
+          <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-remove" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}">×</button>
+        </span>
+      </li>
+    `;
+  }
+
+  private updateNavTab(): void {
+    if (this.navTabContent) {
+      this.navTabContent.innerHTML = this.renderNavContent();
+      this.attachNavDragHandlers();
+    }
+  }
+
+  /** Wire drag-and-drop reorder on every menu's `<ol>` after the Nav tab
+   *  body is (re-)rendered. Mouse-only — the up/down buttons stay as the
+   *  touch-friendly fallback. */
+  private attachNavDragHandlers(): void {
+    if (!this.navTabContent) return;
+    this.navTabContent.querySelectorAll<HTMLElement>('.nospress-nav__items').forEach(grid => {
+      const menuId = grid.dataset.menuId ?? '';
+      if (!menuId) return;
+      setupGridDragDrop(grid, {
+        itemSelector: '.nospress-nav__item',
+        excludeSelector: 'button, .nospress-nav__item-actions',
+        placeholderClass: 'nospress-nav__item-placeholder',
+        getItemId: el => el.dataset.itemIndex ?? null,
+        onDrop: (draggedIdStr, _draggedEl, dropTarget) => {
+          const fromIndex = parseInt(draggedIdStr, 10);
+          const toIndex = parseInt(dropTarget.dataset.itemIndex ?? '-1', 10);
+          if (isNaN(fromIndex) || isNaN(toIndex) || fromIndex === toIndex) return;
+          void this.commitMenuChange(() => this.menuService.moveMenuItem(menuId, fromIndex, toIndex));
+        },
+      });
+    });
+  }
+
+  private handleNavTabClick(e: Event): void {
+    const target = e.target as HTMLElement;
+    const select = target.closest('.nospress-nav__add-select') as HTMLSelectElement | null;
+    // Add picker is `change`-driven, not click. Bail out if a menu's <select>
+    // is the click target — let the change handler (below) deal with it.
+    if (select) return;
+
+    const actionEl = target.closest('[data-action]') as HTMLElement | null;
+    if (!actionEl) return;
+    const action = actionEl.dataset.action;
+    const menuId = actionEl.dataset.menuId ?? '';
+    const indexStr = actionEl.dataset.itemIndex;
+    const index = indexStr !== undefined ? parseInt(indexStr, 10) : -1;
+
+    if (action === 'menu-item-up' && index > 0) {
+      void this.commitMenuChange(() => this.menuService.moveMenuItem(menuId, index, index - 1));
+      return;
+    }
+    if (action === 'menu-item-down' && index >= 0) {
+      void this.commitMenuChange(() => this.menuService.moveMenuItem(menuId, index, index + 1));
+      return;
+    }
+    if (action === 'menu-item-remove' && index >= 0) {
+      void this.commitMenuChange(() => this.menuService.removeMenuItem(menuId, index));
+      return;
+    }
+    if (action === 'add-url-toggle') {
+      this.toggleAddUrlForm(menuId);
+      return;
+    }
+    if (action === 'add-menu') {
+      void this.createNewMenu();
+      return;
+    }
+    if (action === 'menu-rename') {
+      void this.renameMenu(menuId);
+      return;
+    }
+    if (action === 'menu-delete') {
+      void this.deleteMenu(menuId);
+      return;
+    }
+  }
+
+  /** Show/hide the inline URL-form for a given menu. Other forms close so
+   *  only one is open at a time. */
+  private toggleAddUrlForm(menuId: string): void {
+    if (!this.navTabContent) return;
+    const allForms = this.navTabContent.querySelectorAll<HTMLFormElement>('.nospress-nav__url-form');
+    allForms.forEach(f => {
+      const isMatch = f.dataset.menuId === menuId;
+      if (isMatch) {
+        f.hidden = !f.hidden;
+        if (!f.hidden) f.querySelector<HTMLInputElement>('[data-field="label"]')?.focus();
+      } else {
+        f.hidden = true;
+      }
+    });
+  }
+
+  private handleNavTabSubmit(e: Event): void {
+    const form = (e.target as HTMLElement).closest('.nospress-nav__url-form') as HTMLFormElement | null;
+    if (!form) return;
+    e.preventDefault();
+    const menuId = form.dataset.menuId ?? '';
+    const labelInput = form.querySelector<HTMLInputElement>('[data-field="label"]');
+    const urlInput = form.querySelector<HTMLInputElement>('[data-field="url"]');
+    const label = labelInput?.value.trim() ?? '';
+    const url = urlInput?.value.trim() ?? '';
+    if (!menuId || !label || !url) return;
+
+    void this.commitMenuChange(() =>
+      this.menuService.appendMenuItem(menuId, { type: 'url', label, url })
+    );
+  }
+
+  private async createNewMenu(): Promise<void> {
+    const name = await ModalService.getInstance().prompt({
+      title: 'New menu',
+      message: 'Menu name (e.g. "Footer Menu"):',
+      placeholder: 'Footer Menu',
+    });
+    if (!name) return;
+    const id = this.uniqueMenuId(this.slugifyMenuId(name));
+    void this.commitMenuChange(() => this.menuService.addMenu({ id, name, items: [] }));
+  }
+
+  private slugifyMenuId(input: string): string {
+    return input.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 30) || 'menu';
+  }
+
+  private uniqueMenuId(base: string): string {
+    const set = this.menuService.getMenuSet();
+    const taken = new Set(set.menus.map(m => m.id));
+    if (!taken.has(base)) return base;
+    let i = 2;
+    while (taken.has(`${base}-${i}`)) i++;
+    return `${base}-${i}`;
+  }
+
+  private async renameMenu(menuId: string): Promise<void> {
+    const menu = this.menuService.getMenu(menuId);
+    if (!menu) return;
+    const name = await ModalService.getInstance().prompt({
+      title: 'Rename menu',
+      message: 'New name:',
+      defaultValue: menu.name,
+    });
+    if (!name || name === menu.name) return;
+    void this.commitMenuChange(() => this.menuService.renameMenu(menuId, name));
+  }
+
+  private async deleteMenu(menuId: string): Promise<void> {
+    if (menuId === PRIMARY_MENU_ID) return;
+    const menu = this.menuService.getMenu(menuId);
+    if (!menu) return;
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete menu',
+      message: `Delete "${menu.name}"? This removes the menu from your relays. Cannot be undone.`,
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+    void this.commitMenuChange(() => this.menuService.removeMenu(menuId));
+  }
+
+  /** Handle the "+ Add page…" picker on each menu tile. */
+  private handleNavTabChange(e: Event): void {
+    const target = e.target as HTMLElement;
+    const select = target.closest('.nospress-nav__add-select') as HTMLSelectElement | null;
+    if (!select) return;
+
+    const slug = select.value;
+    const menuId = select.dataset.menuId ?? '';
+    if (!menuId) return;
+    select.value = '';
+    if (slug === '') return;
+
+    void this.commitMenuChange(() =>
+      this.menuService.appendMenuItem(menuId, { type: 'page', pageSlug: slug })
+    );
+  }
+
+  /** Persist a menu change locally + publish to relays. The local mutation
+   *  fires `nospressMenus:changed`, which re-renders the Nav tab. */
+  private async commitMenuChange(mutate: () => void): Promise<void> {
+    try {
+      mutate();
+      await this.menuOrchestrator.publishToRelays(this.menuService.getMenuSet());
+    } catch (error) {
+      console.error('Failed to update menu:', error);
+      ToastService.show('Menu update failed', 'error');
     }
   }
 
@@ -827,11 +1184,24 @@ export class NospressView extends View {
     try {
       this.pageIndexService.addPage({ slug, title: title.trim() });
       await this.pageIndexOrchestrator.publishToRelays(this.pageIndexService.getIndex());
+      await this.syncMenusAndPublish();
       await this.switchToPage(slug);
       ToastService.show(`Page "${title.trim()}" created`, 'success');
     } catch (error) {
       console.error('Failed to create page:', error);
       ToastService.show('Failed to create page', 'error');
+    }
+  }
+
+  /** Reconcile menus with the current page index and publish to relays.
+   *  Best-effort — local sync always succeeds; relay publish failures
+   *  surface as a console warning so the local UI stays consistent. */
+  private async syncMenusAndPublish(): Promise<void> {
+    this.menuService.syncWithPages();
+    try {
+      await this.menuOrchestrator.publishToRelays(this.menuService.getMenuSet());
+    } catch (err) {
+      console.warn('Failed to publish menu set after page change', err);
     }
   }
 
@@ -977,6 +1347,7 @@ export class NospressView extends View {
       // 3) Update the index + republish.
       this.pageIndexService.removePage(slug);
       await this.pageIndexOrchestrator.publishToRelays(this.pageIndexService.getIndex());
+      await this.syncMenusAndPublish();
 
       // 4) If we deleted the page we were editing, fall back to home.
       if (this.activeSlug === slug) {
@@ -1963,6 +2334,8 @@ export class NospressView extends View {
           const v = el.value.trim();
           if (v) block.pubkey = v; else delete block.pubkey;
         }
+      } else if (block.type === 'nav-menu') {
+        if (field === 'menu-id') block.menuId = el.value;
       } else if (block.type === 'weblog') {
         if (field === 'weblog-pubkey') {
           const v = el.value.trim();
@@ -1983,6 +2356,14 @@ export class NospressView extends View {
         }
       }
     }, { silent: true });
+
+    // nav-menu's menu-id is read at render time to set `data-menu-id` on
+    // the mount slot. A silent mutate updates the in-memory block but
+    // leaves the slot pointing at the old menu — re-render so the preview
+    // reflects the new pick.
+    if (field === 'menu-id') {
+      this.rerenderEditable();
+    }
   }
 
   private deleteBlock(blockId: string): void {

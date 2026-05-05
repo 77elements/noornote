@@ -15,7 +15,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { StorageKeys, readList, writeList, deduplicateByPubkey, now, mergeByKey } from './storage';
-import { setupGridDragDrop } from './drag-drop';
+import { setupGridDragDrop } from '../helpers/gridDragDrop';
 import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {

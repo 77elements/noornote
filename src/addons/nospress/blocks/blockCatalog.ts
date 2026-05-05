@@ -47,4 +47,7 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
   { type: 'profile-card',    label: 'Profile Card',    description: 'Avatar + display name + NIP-05 of the page owner', icon: '👤', enabled: true },
   { type: 'articles-list',   label: 'Articles',        description: 'Long-form NIP-23 articles by the page owner',      icon: '📰', enabled: true },
   { type: 'weblog',          label: 'Weblog',          description: 'Owner notes filtered by hashtags — your blog feed', icon: '📝', enabled: true },
+
+  // 5. Site-structure blocks.
+  { type: 'nav-menu',        label: 'Nav Menu',        description: 'Site navigation rendered as <nav><ul><li><a>',     icon: '🧭', enabled: true },
 ];

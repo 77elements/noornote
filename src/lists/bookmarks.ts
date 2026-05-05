@@ -55,7 +55,7 @@ import { MoveDropdown } from '../components/ui/MoveDropdown';
 
 // Shared helpers from /src/lists/
 import { readList, writeList, StorageKeys, now, deduplicateById, mergeByKey } from './storage';
-import { setupGridDragDrop } from './drag-drop';
+import { setupGridDragDrop } from '../helpers/gridDragDrop';
 import { renderListHeader, renderListBreadcrumb, bindHeaderDropdown } from './list-header';
 import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './file';
 import {
