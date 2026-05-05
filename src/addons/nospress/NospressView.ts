@@ -1201,7 +1201,7 @@ export class NospressView extends View {
     try {
       await this.menuOrchestrator.publishToRelays(this.menuService.getMenuSet());
     } catch (err) {
-      console.warn('Failed to publish menu set after page change', err);
+      console.debug('Failed to publish menu set after page change', err);
     }
   }
 
@@ -1337,7 +1337,7 @@ export class NospressView extends View {
       try {
         await this.orchestrator.deleteFromRelays(slug);
       } catch (err) {
-        console.warn('Failed to publish NIP-09 deletion for page', slug, err);
+        console.debug('Failed to publish NIP-09 deletion for page', slug, err);
       }
 
       // 2) Drop local copies for this slug.
