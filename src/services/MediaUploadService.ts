@@ -122,6 +122,7 @@ export class MediaUploadService {
   }
 
   private emitStatus(status: UploadStatus): void {
+    console.debug('[MediaUploadService] emit', status.phase, status.percent, status.mediaKind);
     EventBus.getInstance().emit(UPLOAD_STATUS_EVENT, status);
   }
 
