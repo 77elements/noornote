@@ -13,7 +13,10 @@
 
 import { View } from '../../components/views/View';
 import { NospressOrchestrator } from '../../services/orchestration/NospressOrchestrator';
+import { NospressPageIndexOrchestrator } from '../../services/orchestration/NospressPageIndexOrchestrator';
 import { NospressService } from '../../services/NospressService';
+import { NospressPageIndexService } from '../../services/NospressPageIndexService';
+import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, normalizeSlug, isValidSlug, type PageIndexEntry } from './blocks/pageIndex';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns } from './blocks/renderers/ColumnsRenderer';
 import { renderDiv } from './blocks/renderers/DivRenderer';
@@ -104,10 +107,24 @@ export class NospressView extends View {
   private fullscreenSplit: HTMLElement | null = null;
   private libraryToggleBtn: HTMLButtonElement | null = null;
   private libraryHidden: boolean = false;
-  /** Right pane (tabs container). Holds the Blocks + Properties tabs. */
+  /** Right pane (tabs container). Holds the Blocks + Properties + Pages tabs. */
   private rightPaneEl: HTMLElement | null = null;
   /** Direct ref to the Properties tab body — re-rendered on selectBlock. */
   private propertiesTabContent: HTMLElement | null = null;
+  /** Direct ref to the Pages tab body — re-rendered on page-index changes. */
+  private pagesTabContent: HTMLElement | null = null;
+  /** Currently edited page-slug. '' = home (legacy d-tag noornote/list).
+   *  Initialized from `?page=<slug>` URL query-param, falls back to home. */
+  private activeSlug: string = HOME_SLUG;
+  /** Which slot of the active page is being edited.
+   *   - 'body'   → page-specific blocks (default; the only target with real
+   *               data in Slice 1)
+   *   - 'header' → site-wide global header (Slice 2)
+   *   - 'footer' → site-wide global footer (Slice 2)
+   *  Reflected in the editor h2 and the active pill in the Pages tab. */
+  private editingTarget: 'body' | 'header' | 'footer' = 'body';
+  private pageIndexService: NospressPageIndexService;
+  private pageIndexOrchestrator: NospressPageIndexOrchestrator;
   /** True when the Custom-CSS editor panel is visible between header and
    *  the page-edit area. Toggled by the overlay "CSS Editor" button or the
    *  Library "Custom CSS" entry. UI-only; no relay impact. */
@@ -120,6 +137,8 @@ export class NospressView extends View {
     this.container.className = 'view-content view-content--nospress';
     this.orchestrator = NospressOrchestrator.getInstance();
     this.listService = NospressService.getInstance();
+    this.pageIndexService = NospressPageIndexService.getInstance();
+    this.pageIndexOrchestrator = NospressPageIndexOrchestrator.getInstance();
 
     try {
       const decoded = decodeNip19(npub);
@@ -129,6 +148,11 @@ export class NospressView extends View {
     } catch {
       this.pubkey = '';
     }
+
+    // Read active slug from URL — `?page=<slug>` with empty / missing = home.
+    const params = new URLSearchParams(window.location.search);
+    const urlSlug = params.get('page') ?? HOME_SLUG;
+    this.activeSlug = isValidSlug(urlSlug) ? urlSlug : HOME_SLUG;
 
     this.setupChangeListeners();
     this.setupEditDelegation();
@@ -185,6 +209,9 @@ export class NospressView extends View {
     this.eventBusSubscriptions.push(
       eventBus.on('nospressList:changed', () => this.rerenderEditable())
     );
+    this.eventBusSubscriptions.push(
+      eventBus.on('nospressPageIndex:changed', () => this.updatePagesTab())
+    );
   }
 
   private async loadAndRender(): Promise<void> {
@@ -203,9 +230,14 @@ export class NospressView extends View {
       // Pull the latest published state from relays so edits made on a
       // different instance show up here. publishedV2 is updated; renderList
       // still prefers draftV2 / editingPage so unsaved local work survives.
-      const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true);
+      // Fetch the page-index first so the Pages tab has data; failures are
+      // non-fatal — empty index just means a single-page user.
+      const remoteIndex = await this.pageIndexOrchestrator.fetchFromRelays(this.pubkey, true);
+      if (remoteIndex) this.pageIndexService.setIndexFromRelay(remoteIndex);
+
+      const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true, this.activeSlug);
       if (remote && remote.blocks.length > 0) {
-        this.listService.savePublishedV2(remote);
+        this.listService.savePublishedV2(remote, this.activeSlug);
       }
 
       await this.renderList();
@@ -228,9 +260,10 @@ export class NospressView extends View {
   private async renderList(): Promise<void> {
     // NosPress is owner-only in-app; foreign profiles redirect in the
     // constructor, so this view always renders the owner's editable page.
-    const stored = this.listService.getDraftV2()
-      ?? this.listService.getPublishedV2()
-      ?? this.listService.getPageV2();
+    const editSlug = this.currentEditSlug();
+    const stored = this.listService.getDraftV2(editSlug)
+      ?? this.listService.getPublishedV2(editSlug)
+      ?? this.listService.getPageV2(editSlug);
     const page: NospressPageV2 = this.editingPage ?? stored;
     const editable = true;
 
@@ -262,14 +295,21 @@ export class NospressView extends View {
       </div>
     `;
 
+    const titleBarLabel = this.editingTarget === 'header'
+      ? 'GLOBAL HEADER'
+      : this.editingTarget === 'footer'
+        ? 'GLOBAL FOOTER'
+        : 'PAGE';
     const composedBlocksHtml = `
       <div class="nospress-page-edit${pageSelected ? ' nospress-page-edit--selected' : ''}" data-block-id="${PAGE_SELECTION_ID}">
-        <div class="nospress-page-edit__title-bar">PAGE</div>
+        <div class="nospress-page-edit__title-bar">${titleBarLabel}</div>
         ${pageContentHtml}
       </div>
     `;
 
     const cssEditorHtml = this.cssEditorOpen ? this.renderCssEditorPanel(page) : '';
+
+    const templateHeadingHtml = `<h2>${escapeHtml(this.computeTemplateHeading())}</h2>`;
 
     // No in-PCC header: the only edit surface is the FullscreenOverlay,
     // which provides its own header (title + Exit + extraActions like
@@ -277,6 +317,7 @@ export class NospressView extends View {
     this.container.innerHTML = `
       <div class="nospress-view">
         ${cssEditorHtml}
+        ${templateHeadingHtml}
         ${composedBlocksHtml}
         ${this.renderActionBar(editable)}
       </div>
@@ -303,8 +344,9 @@ export class NospressView extends View {
 
   private renderActionBar(editable: boolean): string {
     const isDirty = this.isDirty;
-    const hasDraft = this.listService.hasDraftV2();
-    const hasPublished = this.listService.getPublishedV2() !== null;
+    const editSlug = this.currentEditSlug();
+    const hasDraft = this.listService.hasDraftV2(editSlug);
+    const hasPublished = this.listService.getPublishedV2(editSlug) !== null;
     const localButtons = editable
       ? `
         <button type="button" class="btn" data-action="save" ${isDirty ? '' : 'disabled'}>Save</button>
@@ -368,10 +410,14 @@ export class NospressView extends View {
     if (!confirmed) return;
 
     try {
-      await this.orchestrator.deleteFromRelays();
-      this.listService.clearPublishedV2();
-      this.listService.deleteList();
+      const editSlug = this.currentEditSlug();
+      await this.orchestrator.deleteFromRelays(editSlug);
+      this.listService.clearPublishedV2(editSlug);
+      if (editSlug === HOME_SLUG) {
+        this.listService.deleteList();
+      }
       this.refreshActionBar();
+      this.updatePagesTab();
       ToastService.show('Unpublished', 'success');
     } catch (error) {
       console.error('Failed to unpublish:', error);
@@ -471,12 +517,18 @@ export class NospressView extends View {
     const tabBar = document.createElement('div');
     tabBar.className = 'tabs nospress-tabs';
     tabBar.innerHTML = `
-      <button type="button" class="tab tab--active" data-tab="blocks"><span class="tab__label">Blocks</span></button>
+      <button type="button" class="tab tab--active" data-tab="pages"><span class="tab__label">Pages</span></button>
+      <button type="button" class="tab" data-tab="blocks"><span class="tab__label">Blocks</span></button>
       <button type="button" class="tab" data-tab="properties"><span class="tab__label">Properties</span></button>
     `;
 
+    const pagesContent = document.createElement('div');
+    pagesContent.className = 'tab-content tab-content--active';
+    pagesContent.dataset.tabContent = 'pages';
+    pagesContent.innerHTML = this.renderPagesContent();
+
     const blocksContent = document.createElement('div');
-    blocksContent.className = 'tab-content tab-content--active';
+    blocksContent.className = 'tab-content';
     blocksContent.dataset.tabContent = 'blocks';
     if (this.blockLibrary) blocksContent.appendChild(this.blockLibrary.getElement());
 
@@ -486,6 +538,7 @@ export class NospressView extends View {
     propertiesContent.innerHTML = this.renderPropertiesContent();
 
     librarySlot.appendChild(tabBar);
+    librarySlot.appendChild(pagesContent);
     librarySlot.appendChild(blocksContent);
     librarySlot.appendChild(propertiesContent);
 
@@ -507,8 +560,435 @@ export class NospressView extends View {
     librarySlot.addEventListener('input', propsHandler);
     librarySlot.addEventListener('change', propsHandler);
 
+    pagesContent.addEventListener('click', (e) => this.handlePagesTabClick(e));
+    pagesContent.addEventListener('keydown', (e) => this.handleInlineRenameKeydown(e));
+    pagesContent.addEventListener('focusout', (e) => this.handleInlineRenameFocusout(e));
+
     this.rightPaneEl = librarySlot;
     this.propertiesTabContent = propertiesContent;
+    this.pagesTabContent = pagesContent;
+  }
+
+  /**
+   * Render the Pages tab body. Each tile has a `.nn-card` (with 3 stacked
+   * Header / Body / Footer sections inside) plus a title + meta below the
+   * card itself. Order:
+   *   1. Default Website Template tile (Slice 2 hooks Header/Body/Footer)
+   *   2. One tile per page in the index
+   *   3. "Add new page" tile — dashed, click opens the new-page prompt
+   */
+  private renderPagesContent(): string {
+    const index = this.pageIndexService.getIndex();
+    const pageTiles = index.pages.map(p => this.renderPageTile(p)).join('');
+    return `
+      <div class="nospress-pages">
+        <div class="nospress-pages__grid">
+          ${this.renderDefaultTemplateTile()}
+          ${pageTiles}
+          ${this.renderAddPageTile()}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * "Default Website Template" tile — 3 dashed placeholder sections inside
+   * the card; title + meta sit below the card on the tab background. Slice 2
+   * activates the rows by wiring them to `noornote/header` + `noornote/footer`.
+   */
+  private renderDefaultTemplateTile(): string {
+    const headerActive = this.editingTarget === 'header';
+    const footerActive = this.editingTarget === 'footer';
+    const headerHasContent = this.hasGlobalContent(GLOBAL_HEADER_SLUG);
+    const footerHasContent = this.hasGlobalContent(GLOBAL_FOOTER_SLUG);
+
+    const headerCls = this.globalSectionClass(headerHasContent, headerActive);
+    const footerCls = this.globalSectionClass(footerHasContent, footerActive);
+    const headerLabel = headerHasContent ? 'Global Header' : '+ Add Global Header';
+    const footerLabel = footerHasContent ? 'Global Footer' : '+ Add Global Footer';
+
+    return `
+      <div class="nospress-pages__item" data-template-default>
+        <h3 class="nospress-pages__title">Header &amp; Footer</h3>
+        <div class="nn-card" data-page-template data-template-default>
+          <div class="nn-card__content">
+            <div class="nospress-pages__sections">
+              <div class="${headerCls}" data-action="select-global-header">
+                <span class="nospress-pages__section-label">${escapeHtml(headerLabel)}</span>
+              </div>
+              <div class="nospress-pages__section nospress-pages__section--placeholder" data-disabled>
+                <span class="nospress-pages__section-label"></span>
+              </div>
+              <div class="${footerCls}" data-action="select-global-footer">
+                <span class="nospress-pages__section-label">${escapeHtml(footerLabel)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /** Has the given global slug ('__header'/'__footer') been saved with at
+   *  least one block? Reads draft → published; both are local-first. */
+  private hasGlobalContent(slug: string): boolean {
+    return this.listService.hasV2Content(slug);
+  }
+
+  /** CSS class for the Header / Footer section pill on the H&F card.
+   *   - active = pink ($color-4)
+   *   - has content = green ($color-6)
+   *   - empty = dashed placeholder */
+  private globalSectionClass(hasContent: boolean, isActive: boolean): string {
+    if (isActive) return 'nospress-pages__section nospress-pages__section--active';
+    if (hasContent) return 'nospress-pages__section nospress-pages__section--global-filled';
+    return 'nospress-pages__section nospress-pages__section--placeholder';
+  }
+
+  /** Page tile: card with 3 sections (Global Header inherited, Custom Body
+   *  per page, Global Footer inherited) + title + action buttons below.
+   *  Header/Footer pills inherit their color from the global state — green
+   *  when the H&F card has saved content, dashed placeholder otherwise. */
+  private renderPageTile(entry: PageIndexEntry): string {
+    const isActiveSlug = entry.slug === this.activeSlug;
+    const isActive = isActiveSlug && this.editingTarget === 'body';
+    const isHome = entry.slug === HOME_SLUG;
+    const bodyClass = isActive
+      ? 'nospress-pages__section nospress-pages__section--active'
+      : 'nospress-pages__section nospress-pages__section--filled';
+    const headerHasContent = this.hasGlobalContent(GLOBAL_HEADER_SLUG);
+    const footerHasContent = this.hasGlobalContent(GLOBAL_FOOTER_SLUG);
+    const headerCls = headerHasContent
+      ? 'nospress-pages__section nospress-pages__section--global-filled'
+      : 'nospress-pages__section nospress-pages__section--placeholder';
+    const footerCls = footerHasContent
+      ? 'nospress-pages__section nospress-pages__section--global-filled'
+      : 'nospress-pages__section nospress-pages__section--placeholder';
+    return `
+      <div class="nospress-pages__item" data-page-slug="${escapeHtml(entry.slug)}" ${isActive ? 'data-active="true"' : ''}>
+        ${isHome
+          ? `<h3
+              class="nospress-pages__title nospress-pages__title--editable"
+              contenteditable="true"
+              spellcheck="false"
+              data-inline-rename
+              data-page-slug="${escapeHtml(entry.slug)}"
+              data-original-title="${escapeHtml(entry.title)}"
+            >${escapeHtml(entry.title)}</h3>`
+          : `<h3 class="nospress-pages__title">${escapeHtml(entry.title)}</h3>`}
+        <div class="nn-card" data-page-template>
+          <div class="nn-card__content">
+            <div class="nospress-pages__sections">
+              <div class="${headerCls}" data-disabled>
+                <span class="nospress-pages__section-label">Global Header</span>
+              </div>
+              <div class="${bodyClass}" data-action="switch-page" data-page-slug="${escapeHtml(entry.slug)}">
+                <span class="nospress-pages__section-label">Custom Body</span>
+              </div>
+              <div class="${footerCls}" data-disabled>
+                <span class="nospress-pages__section-label">Global Footer</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        ${isHome ? '' : `
+          <div class="nospress-pages__card-actions">
+            <button type="button" class="btn btn--passive btn--mini" data-action="rename-page" data-page-slug="${escapeHtml(entry.slug)}">Rename</button>
+            <button type="button" class="btn btn--passive btn--mini" data-action="delete-page" data-page-slug="${escapeHtml(entry.slug)}">Delete</button>
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  /** Last tile — full-card dashed placeholder. Click triggers the new-page
+   *  prompt. No sections inside; just centered "+ Add new page". */
+  private renderAddPageTile(): string {
+    return `
+      <div class="nospress-pages__item" data-add-page>
+        <div
+          class="nn-card nospress-pages__add-card"
+          data-page-template
+          data-action="new-page"
+          role="button"
+          tabindex="0"
+        >
+          <div class="nn-card__content">
+            <span class="nospress-pages__add-label">+ Add new page</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  /** Re-render the Pages tab body. Called on page-index changes (incl. CRUD)
+   *  and after activeSlug changes. */
+  private updatePagesTab(): void {
+    if (this.pagesTabContent) {
+      this.pagesTabContent.innerHTML = this.renderPagesContent();
+    }
+  }
+
+  /** Heading text shown above the editor body — reflects which template
+   *  slot is currently being edited. */
+  private computeTemplateHeading(): string {
+    if (this.editingTarget === 'header') return 'Template: Global Header';
+    if (this.editingTarget === 'footer') return 'Template: Global Footer';
+    const entry = this.pageIndexService.getEntry(this.activeSlug);
+    const pageTitle = entry?.title ?? 'Home';
+    return `Template: ${pageTitle} - Custom Body`;
+  }
+
+  /** The slug under which the currently-edited content is stored. For 'body'
+   *  this is the active page slug; for 'header'/'footer' it's the reserved
+   *  global slug. Storage and orchestrator calls use this — `activeSlug` is
+   *  reserved for the page being edited as body. */
+  private currentEditSlug(): string {
+    if (this.editingTarget === 'header') return GLOBAL_HEADER_SLUG;
+    if (this.editingTarget === 'footer') return GLOBAL_FOOTER_SLUG;
+    return this.activeSlug;
+  }
+
+  /** Switch which template slot the editor is editing. Persists the current
+   *  draft for the previous target before flipping, so unsaved edits survive
+   *  the switch. */
+  private selectEditingTarget(target: 'body' | 'header' | 'footer'): void {
+    if (this.editingTarget === target) return;
+
+    // Persist current in-memory edits to the slug we're leaving.
+    if (this.editingPage && this.isDirty) {
+      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.currentEditSlug() });
+    }
+
+    this.editingTarget = target;
+    this.editingPage = null;
+    this.isDirty = false;
+    this.selectedBlockId = null;
+    this.cursor = { scope: 'page', index: -1 };
+
+    this.rerenderEditable();
+    this.updatePagesTab();
+    this.updatePropertiesTab();
+  }
+
+  private handlePagesTabClick(e: Event): void {
+    const target = e.target as HTMLElement;
+    const actionEl = target.closest('[data-action]') as HTMLElement | null;
+    if (!actionEl) return;
+    const action = actionEl.dataset.action;
+    const slug = actionEl.dataset.pageSlug ?? '';
+
+    if (action === 'new-page') {
+      void this.createNewPage();
+      return;
+    }
+    if (action === 'switch-page') {
+      void this.switchToPage(slug);
+      return;
+    }
+    if (action === 'rename-page') {
+      void this.renameActivePage(slug);
+      return;
+    }
+    if (action === 'delete-page') {
+      void this.deletePageBySlug(slug);
+      return;
+    }
+    if (action === 'select-global-header') {
+      this.selectEditingTarget('header');
+      return;
+    }
+    if (action === 'select-global-footer') {
+      this.selectEditingTarget('footer');
+      return;
+    }
+  }
+
+  /**
+   * Create a new page. Prompts the user for a title; derives a unique slug
+   * from it. Persists locally and publishes the updated page-index to relays.
+   * Switches to the new page on success.
+   */
+  private async createNewPage(): Promise<void> {
+    const title = await ModalService.getInstance().prompt({
+      title: 'New page',
+      message: 'Page title (e.g. "About", "Projects"):',
+      placeholder: 'About',
+    });
+    if (!title || !title.trim()) return;
+
+    const baseSlug = normalizeSlug(title);
+    if (!baseSlug) {
+      ToastService.show('Invalid title — pick something with letters or numbers', 'error');
+      return;
+    }
+    const slug = this.uniqueSlug(baseSlug);
+
+    try {
+      this.pageIndexService.addPage({ slug, title: title.trim() });
+      await this.pageIndexOrchestrator.publishToRelays(this.pageIndexService.getIndex());
+      await this.switchToPage(slug);
+      ToastService.show(`Page "${title.trim()}" created`, 'success');
+    } catch (error) {
+      console.error('Failed to create page:', error);
+      ToastService.show('Failed to create page', 'error');
+    }
+  }
+
+  private uniqueSlug(base: string): string {
+    if (!this.pageIndexService.hasSlug(base)) return base;
+    let i = 2;
+    while (this.pageIndexService.hasSlug(`${base}-${i}`)) i++;
+    return `${base}-${i}`;
+  }
+
+  /**
+   * Switch the editor to a different page. Persists the current draft
+   * silently before switching, resets per-page editor state (cursor,
+   * selection, dirty flag), updates the URL, and re-renders.
+   */
+  private async switchToPage(slug: string): Promise<void> {
+    if (slug === this.activeSlug && this.editingTarget === 'body') return;
+    if (!this.pageIndexService.hasSlug(slug)) {
+      ToastService.show('Page not found', 'error');
+      return;
+    }
+
+    // Persist any in-memory edits to the current slug so they survive the switch.
+    if (this.editingPage && this.isDirty) {
+      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.activeSlug });
+    }
+
+    this.activeSlug = slug;
+    this.editingTarget = 'body';
+    this.editingPage = null;
+    this.isDirty = false;
+    this.selectedBlockId = null;
+    this.cursor = { scope: 'page', index: -1 };
+
+    // Reflect the active slug in the URL so a reload returns to the same page.
+    const url = new URL(window.location.href);
+    if (slug === HOME_SLUG) url.searchParams.delete('page');
+    else url.searchParams.set('page', slug);
+    window.history.replaceState(null, '', url.toString());
+
+    // Pull the latest published state for the new slug; absent = empty page.
+    try {
+      const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true, slug);
+      if (remote && remote.blocks.length > 0) {
+        this.listService.savePublishedV2(remote, slug);
+      }
+    } catch {
+      // Non-fatal — local fallbacks render an empty page.
+    }
+
+    this.rerenderEditable();
+    this.updatePagesTab();
+    this.updatePropertiesTab();
+  }
+
+  private async renameActivePage(slug: string): Promise<void> {
+    const entry = this.pageIndexService.getEntry(slug);
+    if (!entry) return;
+    const newTitle = await ModalService.getInstance().prompt({
+      title: 'Rename page',
+      message: 'New title:',
+      defaultValue: entry.title,
+    });
+    if (!newTitle || !newTitle.trim() || newTitle.trim() === entry.title) return;
+    await this.commitPageRename(slug, newTitle.trim());
+  }
+
+  /** Save+publish a page rename. Shared by the prompt-based Rename button
+   *  and the inline-editable Home title. */
+  private async commitPageRename(slug: string, newTitle: string): Promise<void> {
+    try {
+      this.pageIndexService.renamePage(slug, newTitle);
+      await this.pageIndexOrchestrator.publishToRelays(this.pageIndexService.getIndex());
+      this.updatePagesTab();
+      ToastService.show('Page renamed', 'success');
+    } catch (error) {
+      console.error('Failed to rename page:', error);
+      ToastService.show('Rename failed', 'error');
+    }
+  }
+
+  /** Enter commits, Escape reverts. Both blur the contenteditable so the
+   *  focusout handler runs (or doesn't, if Escape already restored text). */
+  private handleInlineRenameKeydown(e: Event): void {
+    const ke = e as KeyboardEvent;
+    const target = ke.target as HTMLElement;
+    if (!target?.matches?.('[data-inline-rename]')) return;
+
+    if (ke.key === 'Enter') {
+      ke.preventDefault();
+      target.blur();
+      return;
+    }
+    if (ke.key === 'Escape') {
+      ke.preventDefault();
+      const original = target.dataset.originalTitle ?? '';
+      target.textContent = original;
+      target.blur();
+    }
+  }
+
+  /** Commit on focus loss when the title actually changed. Empty input or
+   *  unchanged text reverts silently. */
+  private handleInlineRenameFocusout(e: Event): void {
+    const target = e.target as HTMLElement;
+    if (!target?.matches?.('[data-inline-rename]')) return;
+
+    const slug = target.dataset.pageSlug ?? '';
+    const original = target.dataset.originalTitle ?? '';
+    const next = (target.textContent ?? '').trim();
+
+    if (!next || next === original) {
+      target.textContent = original;
+      return;
+    }
+    void this.commitPageRename(slug, next);
+  }
+
+  private async deletePageBySlug(slug: string): Promise<void> {
+    if (slug === HOME_SLUG) return;
+    const entry = this.pageIndexService.getEntry(slug);
+    if (!entry) return;
+
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete page',
+      message: `Delete "${entry.title}"? This removes the page from your relays. Cannot be undone.`,
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+
+    try {
+      // 1) Remove the published event from relays (best-effort).
+      try {
+        await this.orchestrator.deleteFromRelays(slug);
+      } catch (err) {
+        console.warn('Failed to publish NIP-09 deletion for page', slug, err);
+      }
+
+      // 2) Drop local copies for this slug.
+      this.listService.clearDraftV2(slug);
+      this.listService.clearPublishedV2(slug);
+
+      // 3) Update the index + republish.
+      this.pageIndexService.removePage(slug);
+      await this.pageIndexOrchestrator.publishToRelays(this.pageIndexService.getIndex());
+
+      // 4) If we deleted the page we were editing, fall back to home.
+      if (this.activeSlug === slug) {
+        await this.switchToPage(HOME_SLUG);
+      } else {
+        this.updatePagesTab();
+      }
+      ToastService.show(`Page "${entry.title}" deleted`, 'success');
+    } catch (error) {
+      console.error('Failed to delete page:', error);
+      ToastService.show('Delete failed', 'error');
+    }
   }
 
   /**
@@ -523,10 +1003,11 @@ export class NospressView extends View {
     if (this.selectedBlockId === PAGE_SELECTION_ID) {
       return this.renderInlinePageProperties();
     }
+    const editSlug = this.currentEditSlug();
     const page = this.editingPage
-      ?? this.listService.getDraftV2()
-      ?? this.listService.getPublishedV2()
-      ?? this.listService.getPageV2();
+      ?? this.listService.getDraftV2(editSlug)
+      ?? this.listService.getPublishedV2(editSlug)
+      ?? this.listService.getPageV2(editSlug);
     const loc = findBlockInPage(page, this.selectedBlockId);
     if (!loc) {
       return `<p class="nospress-properties-empty">Block not found.</p>`;
@@ -901,10 +1382,11 @@ export class NospressView extends View {
 
   /** Read the active page style (in-memory draft → saved draft → published → migrated v1). */
   private currentPageStyle(): CommonStyle | undefined {
+    const editSlug = this.currentEditSlug();
     return (this.editingPage
-      ?? this.listService.getDraftV2()
-      ?? this.listService.getPublishedV2()
-      ?? this.listService.getPageV2()
+      ?? this.listService.getDraftV2(editSlug)
+      ?? this.listService.getPublishedV2(editSlug)
+      ?? this.listService.getPageV2(editSlug)
     ).style;
   }
 
@@ -936,9 +1418,10 @@ export class NospressView extends View {
    *  blocks AND blocks nested inside a `columns` column or a `div`
    *  (regardless of where that container itself sits in the page tree). */
   private async setCursorAfterBlock(blockId: string): Promise<void> {
-    const current = this.listService.getDraftV2()
-      ?? this.listService.getPublishedV2()
-      ?? this.listService.getPageV2();
+    const editSlug = this.currentEditSlug();
+    const current = this.listService.getDraftV2(editSlug)
+      ?? this.listService.getPublishedV2(editSlug)
+      ?? this.listService.getPageV2(editSlug);
     const loc = findBlockInPage(current, blockId);
     if (!loc) return;
 
@@ -1017,9 +1500,10 @@ export class NospressView extends View {
       ToastService.show('Nothing to save', 'error');
       return;
     }
-    this.listService.saveDraftV2(this.editingPage, { silent: true });
+    this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.currentEditSlug() });
     this.isDirty = false;
     this.refreshActionBar();
+    this.updatePagesTab();
     ToastService.show('Saved', 'success');
   }
 
@@ -1030,32 +1514,35 @@ export class NospressView extends View {
       confirmDestructive: true,
     });
     if (!confirmed) return;
-    this.listService.clearDraftV2();
+    this.listService.clearDraftV2(this.currentEditSlug());
     this.editingPage = null;
     this.isDirty = false;
     ToastService.show('Draft discarded', 'success');
     this.rerenderEditable();
+    this.updatePagesTab();
   }
 
   private async publishDraft(): Promise<void> {
+    const editSlug = this.currentEditSlug();
     if (this.isDirty && this.editingPage) {
       // Persist pending edits before publishing
-      this.listService.saveDraftV2(this.editingPage, { silent: true });
+      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: editSlug });
       this.isDirty = false;
     }
-    const draft = this.listService.getDraftV2();
+    const draft = this.listService.getDraftV2(editSlug);
     if (!draft) {
       ToastService.show('No draft to publish', 'error');
       return;
     }
 
     try {
-      await this.orchestrator.publishV2ToRelays(draft);
-      this.listService.savePublishedV2(draft);
+      await this.orchestrator.publishV2ToRelays(draft, editSlug);
+      this.listService.savePublishedV2(draft, editSlug);
 
-      this.listService.clearDraftV2();
+      this.listService.clearDraftV2(editSlug);
       this.editingPage = null;
       this.isDirty = false;
+      this.updatePagesTab();
       ToastService.show('Page published', 'success');
     } catch (error) {
       console.error('Failed to publish page:', error);
@@ -1399,10 +1886,11 @@ export class NospressView extends View {
    */
   private mutateDraft(updater: (page: NospressPageV2) => void, opts: { silent?: boolean } = {}): void {
     if (!this.editingPage) {
+      const editSlug = this.currentEditSlug();
       this.editingPage = JSON.parse(JSON.stringify(
-        this.listService.getDraftV2()
-          ?? this.listService.getPublishedV2()
-          ?? this.listService.getPageV2()
+        this.listService.getDraftV2(editSlug)
+          ?? this.listService.getPublishedV2(editSlug)
+          ?? this.listService.getPageV2(editSlug)
       ));
     }
     updater(this.editingPage!);

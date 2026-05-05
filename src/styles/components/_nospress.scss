@@ -1367,3 +1367,195 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   padding: 0;
 }
 
+
+// ==========================================
+// Pages Tab — multi-page index card grid (Divi-inspired)
+// Solid colors only — palette from _variables.scss, no transparencies.
+// ==========================================
+
+.nospress-pages {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+  padding: 1rem 0 0 0;
+}
+
+// Tile = card + title + meta + actions stacked vertically. The grid lays
+// tiles out, not cards, so the title sits visually outside the card on the
+// tab background — same look as Divi's Theme Builder.
+//
+// `min(180px, 50%)` keeps the grid at minimum 2 columns even when the right
+// pane is narrow. Wider panes get 3+ columns automatically.
+.nospress-pages__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 50%), 1fr));
+  gap: $gap;
+}
+
+.nospress-pages__item {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 4);
+
+  &[data-add-page] {
+    // The add tile only contains the dashed card; stretch it so it reads
+    // as a peer of the other tiles even though it has no title underneath.
+    > .nn-card { flex: 1; }
+  }
+}
+
+// Card visual — solid bg, rounded, no hover lift (the click target is
+// inside, on the row level).
+.nn-card[data-page-template] {
+  background: $color-2;
+  border-radius: $radius-xl;
+  cursor: default;
+
+  &:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .nn-card__content {
+    padding: calc($gap / 2);
+  }
+}
+
+// 3 stacked sections inside the card — Header / Body / Footer — with
+// 0.5rem gap between them (Divi-style template tile).
+.nospress-pages__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+// Single section row inside the card. Solid colors only, palette-driven.
+.nospress-pages__section {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc($gap / 2) calc($gap * 0.75);
+  border-radius: $radius-xl;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: center;
+  min-height: 32px;
+  transition: background 0.15s ease;
+
+  // "Inherits global / not yet defined" — dashed outline, muted text.
+  &--placeholder {
+    background: transparent;
+    border: 1px dashed $color-3;
+    color: $color-3;
+    cursor: default;
+  }
+
+  // Per-page Custom Body for an inactive page — pink fill, clickable.
+  &--filled {
+    background: $color-4;
+    color: $color-1;
+    cursor: pointer;
+
+    &:hover {
+      background: $color-3;
+    }
+  }
+
+  // Currently active page — dark fill, light text.
+  &--active {
+    background: $color-1;
+    color: $color-5;
+    cursor: pointer;
+  }
+
+  // Global header / footer that has saved content — solid green fill so
+  // every page card visualises the inherited template without the user
+  // having to inspect each page.
+  &--global-filled {
+    background: $color-6;
+    color: $color-1;
+    cursor: pointer;
+  }
+}
+
+// Title + meta sit below the card on the tab background, no card-style
+// container — matches Divi's tile typography.
+.nospress-pages__title {
+  margin: 0;
+  padding: 0 calc($gap / 4);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: $color-5;
+  line-height: 1.2;
+
+  // Editable variant — subtle hover hint, solid focus outline, no transparency.
+  &--editable {
+    cursor: text;
+    border-radius: $radius-xl;
+    padding: calc($gap / 8) calc($gap / 2);
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: $color-2;
+    }
+
+    &:focus {
+      background: $color-2;
+      outline: 1px solid $color-4;
+      outline-offset: 0;
+    }
+  }
+}
+
+.nospress-pages__meta {
+  margin: 0;
+  padding: 0 calc($gap / 4);
+  font-size: 0.8rem;
+  color: $color-3;
+  font-family: monospace;
+}
+
+.nospress-pages__card-actions {
+  display: flex;
+  gap: calc($gap / 4);
+  padding: 0 calc($gap / 4);
+}
+
+// "Add new page" tile — dashed full-height card, centered label, no inner
+// sections. Click target is the whole card.
+.nospress-pages__add-card {
+  background: transparent;
+  border: 2px dashed $color-3;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+
+  &:hover {
+    background: $color-2;
+    border-color: $color-4;
+    transform: none;
+    box-shadow: none;
+
+    .nospress-pages__add-label {
+      color: $color-5;
+    }
+  }
+
+  .nn-card__content {
+    padding: $gap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+  }
+}
+
+.nospress-pages__add-label {
+  color: $color-3;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition: color 0.15s ease;
+}
+

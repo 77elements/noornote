@@ -95,16 +95,6 @@ html.layout--public {
 }
 
 .user-site {
-  margin: 0 auto;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  gap: calc($gap * 2);
-
-  &__content {
-    flex: 1;
-  }
-
   &__loading,
   &__empty,
   &__error {
@@ -118,6 +108,14 @@ html.layout--public {
     margin-bottom: $gap;
   }
 
+  // User-defined global header / body / footer — empty class hooks only.
+  // No paddings, margins, widths, or flex sizing dictated here; the user
+  // controls everything via the Properties panel and custom CSS.
+  &__site-header {}
+  &__site-body {}
+  &__site-footer {}
+
+  // noornote-branded footer (always present below the user's site-footer).
   &__footer {
     margin-top: calc($gap * 2);
     padding-top: calc($gap * 2);

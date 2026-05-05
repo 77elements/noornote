@@ -5,6 +5,7 @@ import { UserProfileService, type UserProfile } from '../../services/UserProfile
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { buildInlineStyle, schemaFor } from './blocks/styles';
+import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG } from './blocks/pageIndex';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { showLoggedOutReactionModal } from '../../helpers/LoggedOutModals';
@@ -83,19 +84,28 @@ export class PublicNospressPage {
       ? UserProfileService.getInstance().getUserProfile(this.viewerPubkey).catch(() => null)
       : Promise.resolve(null);
 
-    const [profile, page, viewerProfile] = await Promise.all([
+    const orch = NospressOrchestrator.getInstance();
+    // Site composition: parallel fetch of body, global header, global footer.
+    // Each lives in a separate NIP-78 event (d-tags noornote/list,
+    // noornote/header, noornote/footer). Owner profile only matters for the
+    // empty-state name; cheap parallel fetch keeps render fast.
+    const [profile, body, header, footer, viewerProfile] = await Promise.all([
       UserProfileService.getInstance().getUserProfile(pubkey).catch(() => null),
-      NospressOrchestrator.getInstance().fetchFromRelays(pubkey, true).catch(() => null),
+      orch.fetchFromRelays(pubkey, true, HOME_SLUG).catch(() => null),
+      orch.fetchFromRelays(pubkey, true, GLOBAL_HEADER_SLUG).catch(() => null),
+      orch.fetchFromRelays(pubkey, true, GLOBAL_FOOTER_SLUG).catch(() => null),
       viewerProfilePromise,
     ]);
 
-    if (!page || page.blocks.length === 0) {
+    const isEmpty = (p: NospressPageV2 | null): boolean => !p || p.blocks.length === 0;
+    if (isEmpty(body) && isEmpty(header) && isEmpty(footer)) {
       this.renderEmpty(profile, viewerProfile);
       return;
     }
 
-    this.renderPage(profile, page, viewerProfile);
-    applyUserCss(page.customCss ?? '');
+    this.renderPage({ body, header, footer, viewerProfile });
+    // Body's customCss wins for now — Slice 2 may split header/footer-scoped CSS.
+    applyUserCss(body?.customCss ?? '');
     await this.mountInlineBookmarkFolders(pubkey);
     mountNospressEmbeds(this.container);
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: pubkey });
@@ -203,14 +213,39 @@ export class PublicNospressPage {
     `;
   }
 
-  private renderPage(_profile: UserProfile | null, page: NospressPageV2, viewerProfile: UserProfile | null): void {
-    const blocksHtml = BlockRenderer.renderAll(page.blocks, { editable: false });
-    const inlineStyle = buildInlineStyle(schemaFor('page'), page.style);
+  private renderPage(parts: {
+    body: NospressPageV2 | null;
+    header: NospressPageV2 | null;
+    footer: NospressPageV2 | null;
+    viewerProfile: UserProfile | null;
+  }): void {
+    const { body, header, footer, viewerProfile } = parts;
+
+    const headerHtml = header && header.blocks.length > 0
+      ? `<header class="user-site__site-header">${BlockRenderer.renderAll(header.blocks, { editable: false })}</header>`
+      : '';
+
+    const footerHtml = footer && footer.blocks.length > 0
+      ? `<footer class="user-site__site-footer">${BlockRenderer.renderAll(footer.blocks, { editable: false })}</footer>`
+      : '';
+
+    // Page-level inline style (color/background/padding etc.) applies to the
+    // body's main content, not the global header/footer (those have their
+    // own styles in Slice 2 — for now they inherit the site bg).
+    const bodyBlocksHtml = body && body.blocks.length > 0
+      ? BlockRenderer.renderAll(body.blocks, { editable: false })
+      : '';
+    const inlineStyle = body ? buildInlineStyle(schemaFor('page'), body.style) : '';
     const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
+    const bodyHtml = bodyBlocksHtml
+      ? `<main class="user-site__site-body"><div class="layout-wrapper"${styleAttr}>${bodyBlocksHtml}</div></main>`
+      : '';
 
     this.container.innerHTML = `
       ${this.adminBarHtml(viewerProfile)}
-      <div class="layout-wrapper"${styleAttr}>${blocksHtml}</div>
+      ${headerHtml}
+      ${bodyHtml}
+      ${footerHtml}
       ${this.footerHtml()}
     `;
   }
@@ -253,10 +288,13 @@ export class PublicNospressPage {
 
 
   private footerHtml(): string {
+    // Platform attribution — NOT the user's page footer. Wrapped in <small>
+    // (the HTML5 element for footer-style fine print) so the only <footer>
+    // on the page is the user's own one.
     return `
-      <footer class="user-site__footer">
-        <p>Made with <a href="/">NoorNote</a> — sovereign personal pages on Nostr.</p>
-      </footer>
+      <div class="user-site__footer">
+        <small>Made with <a href="/">NoorNote</a> — sovereign personal pages on Nostr.</small>
+      </div>
     `;
   }
 

@@ -1,12 +1,16 @@
 /**
  * NospressOrchestrator
- * Manages NIP-78 events for NosPress custom lists
+ * Manages NIP-78 events for NosPress page content (per slug).
  *
- * kind:30078 with d-tag "noornote/list" stores a user's custom list
- * (freetext sections with items — skills, hobbies, books, projects, anything).
+ * d-tag scheme:
+ *  - slug=''            → "noornote/list"          (legacy home, BC)
+ *  - slug='about'       → "noornote/page/about"
  *
- * @purpose Publish/fetch NosPress lists to/from relays
- * @used-by NospressView, AutoSyncService
+ * v1 (`{version:1, sections}`) is migrated to v2 inline on read; the home
+ * slot keeps the legacy d-tag forever so older clients see a usable event.
+ *
+ * @purpose Publish/fetch NosPress pages to/from relays
+ * @used-by NospressView, AutoSyncService, PublicNospressPage
  */
 
 import { NostrTransport } from '../transport/NostrTransport';
@@ -14,13 +18,20 @@ import { AuthService } from '../AuthService';
 import { NospressService, type NospressListData } from '../NospressService';
 import { isPageV2, type NospressPageV2 } from '../../addons/nospress/blocks/types';
 import { migrateV1ToV2 } from '../../addons/nospress/blocks/migrate';
+import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG } from '../../addons/nospress/blocks/pageIndex';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { DeletionService } from '../DeletionService';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { diagLog } from '../DiagnosticLogger';
 
 const NIP78_KIND = 30078;
-const D_TAG = 'noornote/list';
+const HOME_D_TAG = 'noornote/list';
+
+function dTagFor(slug: string): string {
+  if (slug === GLOBAL_HEADER_SLUG) return 'noornote/header';
+  if (slug === GLOBAL_FOOTER_SLUG) return 'noornote/footer';
+  return slug === HOME_SLUG ? HOME_D_TAG : `noornote/page/${slug}`;
+}
 
 export class NospressOrchestrator {
   private static instance: NospressOrchestrator;
@@ -29,6 +40,7 @@ export class NospressOrchestrator {
   private listService: NospressService;
   private systemLogger: SystemLogger;
 
+  /** Cache key: `${pubkey}::${slug}` to keep slugs separate per author. */
   private cache: Map<string, { page: NospressPageV2 | null; fetchedAt: number }> = new Map();
   private readonly CACHE_TTL = 60000;
 
@@ -46,6 +58,7 @@ export class NospressOrchestrator {
     return NospressOrchestrator.instance;
   }
 
+  /** Legacy v1 publish — only valid for the home slug. */
   public async publishToRelays(): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
@@ -58,7 +71,7 @@ export class NospressOrchestrator {
     const event = {
       kind: NIP78_KIND,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [['d', D_TAG]],
+      tags: [['d', HOME_D_TAG]],
       content: JSON.stringify(listData),
       pubkey: currentUser.pubkey
     };
@@ -68,7 +81,7 @@ export class NospressOrchestrator {
 
     await this.transport.publish(writeRelays, signed);
 
-    this.cache.delete(currentUser.pubkey);
+    this.invalidateCache(currentUser.pubkey, HOME_SLUG);
 
     diagLog('lists', 'NospressOrchestrator publishToRelays', {
       sectionCount: listData.sections.length
@@ -80,23 +93,21 @@ export class NospressOrchestrator {
   }
 
   /**
-   * Publish a v2 (block-based) page to relays. Same NIP-78 slot as v1
-   * (kind:30078, d-tag noornote/list) — v2 events overwrite v1 because the
-   * d-tag matches. Older NoorNote installations reading v1-only will see
-   * an empty page until they're updated; the only current user is the
-   * developer so this is acceptable transitional state.
+   * Publish a v2 page to relays under the given slug. The home slug stays
+   * on the legacy d-tag `noornote/list` so older clients keep working.
    */
-  public async publishV2ToRelays(page: NospressPageV2): Promise<void> {
+  public async publishV2ToRelays(page: NospressPageV2, slug: string = HOME_SLUG): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
 
     const writeRelays = this.transport.getWriteRelays();
     if (writeRelays.length === 0) throw new Error('No write relays available');
 
+    const dTag = dTagFor(slug);
     const event = {
       kind: NIP78_KIND,
       created_at: Math.floor(Date.now() / 1000),
-      tags: [['d', D_TAG]],
+      tags: [['d', dTag]],
       content: JSON.stringify(page),
       pubkey: currentUser.pubkey
     };
@@ -105,9 +116,11 @@ export class NospressOrchestrator {
     if (!signed) throw new Error('Failed to sign v2 page event');
 
     await this.transport.publish(writeRelays, signed);
-    this.cache.delete(currentUser.pubkey);
+    this.invalidateCache(currentUser.pubkey, slug);
 
     diagLog('lists', 'NospressOrchestrator publishV2ToRelays', {
+      slug,
+      dTag,
       blockCount: page.blocks.length,
       hasTitle: !!page.title,
       hasSubtitle: !!page.subtitle,
@@ -115,31 +128,36 @@ export class NospressOrchestrator {
     });
 
     this.systemLogger.info('NospressOrchestrator',
-      `Published NosPress v2: ${page.blocks.length} blocks`
+      `Published NosPress v2 (${dTag}): ${page.blocks.length} blocks`
     );
   }
 
-  public async deleteFromRelays(): Promise<void> {
+  public async deleteFromRelays(slug: string = HOME_SLUG): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
 
-    const coordinate = `${NIP78_KIND}:${currentUser.pubkey}:${D_TAG}`;
+    const dTag = dTagFor(slug);
+    const coordinate = `${NIP78_KIND}:${currentUser.pubkey}:${dTag}`;
     const ok = await DeletionService.getInstance().deleteEvents({ coordinates: [coordinate] });
     if (!ok) throw new Error('Failed to publish NIP-09 deletion event');
 
-    this.cache.set(currentUser.pubkey, { page: null, fetchedAt: Date.now() });
+    this.cache.set(this.cacheKey(currentUser.pubkey, slug), { page: null, fetchedAt: Date.now() });
     diagLog('lists', 'NospressOrchestrator deleteFromRelays', { coordinate });
   }
 
   /**
-   * Fetch the latest published NosPress page for a pubkey, normalized to v2.
-   * Uses NIP-65 outbox discovery: combines own read-relays + the author's
-   * write-relays + aggregator relays so any NoorNote user can see any other
-   * NoorNote user's NosPress page even when their relay sets don't overlap.
+   * Fetch the latest published page for a pubkey + slug, normalized to v2.
+   * Uses NIP-65 outbox discovery so any NoorNote user can read any other
+   * user's NosPress pages even when relay sets don't overlap.
    */
-  public async fetchFromRelays(pubkey: string, forceRefresh: boolean = false): Promise<NospressPageV2 | null> {
+  public async fetchFromRelays(
+    pubkey: string,
+    forceRefresh: boolean = false,
+    slug: string = HOME_SLUG
+  ): Promise<NospressPageV2 | null> {
+    const ckey = this.cacheKey(pubkey, slug);
     if (!forceRefresh) {
-      const cached = this.cache.get(pubkey);
+      const cached = this.cache.get(ckey);
       if (cached && (Date.now() - cached.fetchedAt) < this.CACHE_TTL) {
         return cached.page;
       }
@@ -148,16 +166,17 @@ export class NospressOrchestrator {
     const relays = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([pubkey], true);
     if (relays.length === 0) return null;
 
+    const dTag = dTagFor(slug);
     try {
       const events = await this.transport.fetch(relays, [{
         kinds: [NIP78_KIND],
         authors: [pubkey],
-        '#d': [D_TAG],
+        '#d': [dTag],
         limit: 1
       }], 5000, false, 'NospressOrch');
 
       if (events.length === 0) {
-        this.cache.set(pubkey, { page: null, fetchedAt: Date.now() });
+        this.cache.set(ckey, { page: null, fetchedAt: Date.now() });
         return null;
       }
 
@@ -166,42 +185,52 @@ export class NospressOrchestrator {
 
       const page = this.parseContent(event.content);
 
-      this.cache.set(pubkey, { page, fetchedAt: Date.now() });
+      this.cache.set(ckey, { page, fetchedAt: Date.now() });
       return page;
     } catch (error) {
       this.systemLogger.error('NospressOrchestrator',
-        `Failed to fetch page for ${pubkey}: ${error}`
+        `Failed to fetch page for ${pubkey} (${dTag}): ${error}`
       );
       return null;
     }
   }
 
-  public async syncFromRelays(): Promise<void> {
+  public async syncFromRelays(slug: string = HOME_SLUG): Promise<void> {
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
 
-    const page = await this.fetchFromRelays(currentUser.pubkey, true);
+    const page = await this.fetchFromRelays(currentUser.pubkey, true, slug);
     if (page && page.blocks.length > 0) {
-      this.listService.savePublishedV2(page);
+      this.listService.savePublishedV2(page, slug);
     }
 
     diagLog('lists', 'NospressOrchestrator syncFromRelays', {
+      slug,
       blockCount: page?.blocks.length ?? 0
     });
   }
 
   public clearCache(pubkey?: string): void {
     if (pubkey) {
-      this.cache.delete(pubkey);
+      for (const k of Array.from(this.cache.keys())) {
+        if (k.startsWith(`${pubkey}::`)) this.cache.delete(k);
+      }
     } else {
       this.cache.clear();
     }
   }
 
+  private invalidateCache(pubkey: string, slug: string): void {
+    this.cache.delete(this.cacheKey(pubkey, slug));
+  }
+
+  private cacheKey(pubkey: string, slug: string): string {
+    return `${pubkey}::${slug}`;
+  }
+
   /**
    * Parse the NIP-78 event content as a v2 page. v1 events are migrated to
-   * v2 inline (sections → list blocks), so the rest of the app only deals
-   * with v2.
+   * v2 inline (sections → list blocks).
    */
   private parseContent(content: string): NospressPageV2 | null {
     if (!content) return null;
@@ -216,7 +245,6 @@ export class NospressOrchestrator {
         if (typeof parsed.customCss === 'string') page.customCss = parsed.customCss;
         return page;
       }
-      // Legacy v1 → migrate to v2 inline
       if (parsed && parsed.version === 1 && Array.isArray(parsed.sections)) {
         const v1: NospressListData = { version: 1, sections: parsed.sections };
         if (typeof parsed.title === 'string') v1.title = parsed.title;

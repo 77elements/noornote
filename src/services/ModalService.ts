@@ -25,6 +25,15 @@ export interface ConfirmConfig {
   confirmDestructive?: boolean; // default: false - if true, confirm button styled as destructive
 }
 
+export interface PromptConfig {
+  title: string;
+  message: string;
+  placeholder?: string;
+  defaultValue?: string;
+  confirmText?: string;        // default: 'OK'
+  cancelText?: string;         // default: 'Cancel'
+}
+
 export class ModalService {
   private static instance: ModalService | null = null;
   private container: HTMLElement | null = null;
@@ -186,6 +195,79 @@ export class ModalService {
         closeOnEsc: true,
         onClose: () => settle(false),
       });
+    });
+  }
+
+  /**
+   * Show a single-line text-input prompt and resolve with the entered value
+   * (trimmed) or null if cancelled. Submits on Enter; cancels on Escape /
+   * overlay click. Modal-helper replacement for `window.prompt()`.
+   */
+  public prompt(config: PromptConfig): Promise<string | null> {
+    return new Promise((resolve) => {
+      const confirmText = config.confirmText || 'OK';
+      const cancelText = config.cancelText || 'Cancel';
+
+      const content = document.createElement('div');
+      content.className = 'modal-prompt';
+      content.innerHTML = `
+        <p class="modal-prompt__message">${escapeHtml(config.message)}</p>
+        <div class="form__row">
+          <input
+            type="text"
+            class="modal-prompt__input"
+            placeholder="${escapeHtml(config.placeholder ?? '')}"
+            value="${escapeHtml(config.defaultValue ?? '')}"
+          />
+        </div>
+        <div class="l-row l-row--center">
+          <button class="btn btn--passive modal-prompt__cancel">${escapeHtml(cancelText)}</button>
+          <button class="btn btn-primary modal-prompt__confirm">${escapeHtml(confirmText)}</button>
+        </div>
+      `;
+
+      const input = content.querySelector('.modal-prompt__input') as HTMLInputElement | null;
+      const cancelBtn = content.querySelector('.modal-prompt__cancel');
+      const confirmBtn = content.querySelector('.modal-prompt__confirm');
+
+      let settled = false;
+      const settle = (value: string | null): void => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+
+      const submit = (): void => {
+        const v = input?.value?.trim() ?? '';
+        settle(v.length > 0 ? v : null);
+        this.hide();
+      };
+
+      cancelBtn?.addEventListener('click', () => {
+        settle(null);
+        this.hide();
+      });
+      confirmBtn?.addEventListener('click', submit);
+      input?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          submit();
+        }
+      });
+
+      this.show({
+        title: config.title,
+        content,
+        width: '400px',
+        height: 'auto',
+        showCloseButton: true,
+        closeOnOverlay: true,
+        closeOnEsc: true,
+        onClose: () => settle(null),
+      });
+
+      // Focus the input after the modal mounts.
+      setTimeout(() => input?.focus(), 0);
     });
   }
 
