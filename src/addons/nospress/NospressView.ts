@@ -633,6 +633,14 @@ export class NospressView extends View {
     // dispatch on the right pane.
     const propsHandler = (e: Event) => {
       const target = e.target as HTMLInputElement;
+
+      // Native color picker inside a Color/Background row's "custom" swatch:
+      // forward the picked hex to the sibling text input + repaint trigger.
+      if (target.classList?.contains('nospress-prop-color-native')) {
+        this.applyColorPick(target, target.value);
+        return;
+      }
+
       const styleScope = target.dataset?.styleScope;
       const styleField = target.dataset?.styleField;
       if (styleScope && styleField) this.handleStyleInput(styleScope, styleField, target.value);
@@ -643,6 +651,11 @@ export class NospressView extends View {
     };
     librarySlot.addEventListener('input', propsHandler);
     librarySlot.addEventListener('change', propsHandler);
+
+    // Color/Background palette popover — trigger toggle + swatch picks +
+    // native picker. Sets the sibling text input's value and dispatches
+    // an `input` event so the existing propsHandler persists the change.
+    librarySlot.addEventListener('click', (e) => this.handlePropColorClick(e, librarySlot));
 
     pagesContent.addEventListener('click', (e) => this.handlePagesTabClick(e));
     pagesContent.addEventListener('keydown', (e) => this.handleInlineRenameKeydown(e));
@@ -1058,6 +1071,59 @@ export class NospressView extends View {
     if (isEmpty) delete cursor[lastSeg];
     else cursor[lastSeg] = value;
     this.siteSettingsService.saveSettings(settings, { silent: true });
+  }
+
+  /** Property-tab color/background row click delegate. Three concerns:
+   *   - circle trigger toggles the popover (and closes any others)
+   *   - palette swatch sets the sibling input to `var(--<key>)`
+   *   - the "custom" swatch fires the hidden native color picker
+   *
+   *  In every value-set path we dispatch an `input` event on the sibling
+   *  text input so the existing propsHandler routes the change through
+   *  `handleStyleInput`. Trigger swatch is repainted inline so the user
+   *  sees their choice without waiting for the next prop-panel re-render.
+   */
+  private handlePropColorClick(e: Event, librarySlot: HTMLElement): void {
+    const target = e.target as HTMLElement;
+
+    const trigger = target.closest('.nospress-prop-color-trigger');
+    if (trigger) {
+      e.stopPropagation();
+      const popover = trigger.parentElement?.querySelector('.nospress-prop-color-popover') as HTMLElement | null;
+      if (!popover) return;
+      const wasOpen = !popover.hidden;
+      librarySlot.querySelectorAll<HTMLElement>('.nospress-prop-color-popover').forEach(p => { p.hidden = true; });
+      popover.hidden = wasOpen;
+      return;
+    }
+
+    const paletteSwatch = target.closest('.nospress-prop-color-swatch[data-palette-key]') as HTMLElement | null;
+    if (paletteSwatch) {
+      const key = paletteSwatch.dataset.paletteKey!;
+      this.applyColorPick(paletteSwatch, `var(--${key})`);
+      return;
+    }
+
+    // Click outside any picker → close all open popovers.
+    if (!target.closest('.nospress-prop-color-picker')) {
+      librarySlot.querySelectorAll<HTMLElement>('.nospress-prop-color-popover').forEach(p => { p.hidden = true; });
+    }
+  }
+
+  /** Set the sibling text input's value, repaint the trigger circle, fire
+   *  `input` so existing handlers persist, close the popover. */
+  private applyColorPick(originSwatch: HTMLElement, value: string): void {
+    const row = originSwatch.closest('.nospress-prop-row--color');
+    if (!row) return;
+    const input = row.querySelector<HTMLInputElement>('.nospress-prop-row__input');
+    const trigger = row.querySelector<HTMLElement>('.nospress-prop-color-trigger');
+    const popover = row.querySelector<HTMLElement>('.nospress-prop-color-popover');
+    if (input) {
+      input.value = value;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (trigger) trigger.style.background = value;
+    if (popover) popover.hidden = true;
   }
 
   /** Click delegate for the Global tab — accordion toggle, Save&Publish,

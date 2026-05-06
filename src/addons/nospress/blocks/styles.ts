@@ -22,6 +22,7 @@
  */
 
 import { escapeHtmlAttr } from '../../../helpers/escapeHtml';
+import { PALETTE_KEYS } from './siteSettings';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
@@ -307,26 +308,66 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   const scopeAttr = escapeHtmlAttr(opts.scope);
   const v = (path: string): string => escapeHtmlAttr(readStyleField(opts.style, path) ?? '');
 
-  const single = (e: SinglePropertyEntry) => `
-    <div class="nospress-prop-row">
-      <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
-      <input type="text" class="input nospress-prop-row__input"
-             data-style-scope="${scopeAttr}" data-style-field="${e.key}"
-             value="${v(e.key)}" placeholder="${escapeHtmlAttr(e.placeholder)}" />
-    </div>
-  `;
+  const single = (e: SinglePropertyEntry) => {
+    if (e.key === 'color' || e.key === 'background') return colorRow(e);
+    return `
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
+        <input type="text" class="input nospress-prop-row__input"
+               data-style-scope="${scopeAttr}" data-style-field="${e.key}"
+               value="${v(e.key)}" placeholder="${escapeHtmlAttr(e.placeholder)}" />
+      </div>
+    `;
+  };
+
+  /** Color/Background row: narrower text input + circular trigger button.
+   *  Trigger opens a popover with the 6 palette swatches (resolve to
+   *  `var(--color-X)`) and one custom-color swatch (opens native picker). */
+  const colorRow = (e: SinglePropertyEntry) => {
+    const value = v(e.key);
+    const triggerBg = value || 'transparent';
+    const paletteSwatches = PALETTE_KEYS.map(k => `
+      <button type="button"
+              class="nospress-prop-color-swatch"
+              data-palette-key="${k}"
+              style="background: var(--${k})"
+              aria-label="--${k}"></button>
+    `).join('');
+    return `
+      <div class="nospress-prop-row nospress-prop-row--color">
+        <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
+        <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
+               data-style-scope="${scopeAttr}" data-style-field="${e.key}"
+               value="${value}" placeholder="${escapeHtmlAttr(e.placeholder)}" />
+        <span class="nospress-prop-color-picker">
+          <button type="button"
+                  class="nospress-prop-color-trigger"
+                  style="background: ${escapeHtmlAttr(triggerBg)}"
+                  aria-label="Pick color"></button>
+          <div class="nospress-prop-color-popover" hidden>
+            ${paletteSwatches}
+            <label class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
+              <input type="color" class="nospress-prop-color-native" />
+            </label>
+          </div>
+        </span>
+      </div>
+    `;
+  };
 
   const quad = (e: QuadPropertyEntry) => `
-    <div class="nospress-prop-grouplabel">${escapeHtmlAttr(e.label)}</div>
-    <div class="nospress-prop-quad">
-      ${QUAD_SIDES.map(side => `
-        <div class="nospress-prop-quad__cell">
-          <input type="text" class="input nospress-prop-quad__input"
-                 data-style-scope="${scopeAttr}" data-style-field="${e.key}.${side}"
-                 value="${v(`${e.key}.${side}`)}" placeholder="0px" />
-          <span class="nospress-prop-quad__caption">${side.charAt(0).toUpperCase()}${side.slice(1)}</span>
-        </div>
-      `).join('')}
+    <div class="nospress-prop-row">
+      <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
+      <div class="nospress-prop-quad">
+        ${QUAD_SIDES.map(side => `
+          <div class="nospress-prop-quad__cell">
+            <input type="text" class="input nospress-prop-quad__input"
+                   data-style-scope="${scopeAttr}" data-style-field="${e.key}.${side}"
+                   value="${v(`${e.key}.${side}`)}" placeholder="0px" />
+            <span class="nospress-prop-quad__caption">${side.charAt(0).toUpperCase()}${side.slice(1)}</span>
+          </div>
+        `).join('')}
+      </div>
     </div>
   `;
 
@@ -337,7 +378,6 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`).
   const identifiersHtml = opts.scope === 'page' ? '' : `
-    <div class="nospress-block-properties__section-label">Identifiers</div>
     <div class="nospress-prop-row">
       <label class="nospress-prop-row__label">CSS Class</label>
       <input type="text" class="input nospress-prop-row__input"

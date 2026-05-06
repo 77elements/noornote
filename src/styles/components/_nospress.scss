@@ -301,9 +301,7 @@
 .nospress-block-properties {
   margin: 0 0 $gap;
   padding: $gap;
-  border: 1px solid $color-6;
   border-radius: $radius-xl;
-  background: $color-2;
 }
 
 .nospress-block-properties__header {
@@ -312,7 +310,7 @@
   gap: calc($gap / 2);
   margin-bottom: calc($gap / 2);
   padding-bottom: calc($gap / 2);
-  border-bottom: 1px solid $color-6;
+  border-bottom: 1px solid $color-3;
 }
 
 .nospress-block-properties__type {
@@ -359,6 +357,85 @@
 
 // Property rows / quad layout — the body's italic + dim is for placeholder
 // text only; once real inputs render, normal styling kicks in.
+// Color/Background row: smaller text input + circular trigger that opens
+// a popover with palette quick-picks + a custom-color picker.
+// Selector doubled so the modifier wins over the base `.nospress-prop-row`
+// rule (which is declared later in the file with the same single-class
+// specificity).
+.nospress-prop-row.nospress-prop-row--color {
+  grid-template-columns: 7rem minmax(8em, 1fr) auto;
+}
+
+.nospress-prop-row__input--narrow {
+  width: 100%;
+  max-width: 14em;
+}
+
+.nospress-prop-color-picker {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.nospress-prop-color-trigger {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--color-3);
+  border-radius: 50%;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+.nospress-prop-color-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 100;
+  background: var(--color-1);
+  border: 1px solid var(--color-3);
+  border-radius: $radius-xl;
+  padding: calc($gap / 2);
+  white-space: nowrap;
+  box-shadow: $box-shadow;
+}
+
+.nospress-prop-color-swatch {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  margin-right: calc($gap / 4);
+  padding: 0;
+  border: 1px solid var(--color-3);
+  border-radius: 50%;
+  cursor: pointer;
+  vertical-align: middle;
+
+  &:last-child { margin-right: 0; }
+
+  &--custom {
+    position: relative;
+    overflow: hidden;
+    background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+  }
+}
+
+// Native <input type="color"> overlays its parent label-swatch entirely
+// so the browser-rendered picker anchors to the rainbow circle (not to
+// the page corner). Visual layer is fully transparent — the conic
+// gradient on the parent shows through.
+.nospress-prop-color-native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .nospress-prop-row {
   display: grid;
   grid-template-columns: 7rem 1fr;
