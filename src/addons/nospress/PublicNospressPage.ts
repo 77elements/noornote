@@ -7,7 +7,7 @@ import { UserProfileService, type UserProfile } from '../../services/UserProfile
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { buildInlineStyle, schemaFor } from './blocks/styles';
-import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG } from './blocks/pageIndex';
+import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG, pageHeaderSlug, pageFooterSlug } from './blocks/pageIndex';
 import { mountNospressNavMenus } from './navMenuMount';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
@@ -95,15 +95,22 @@ export class PublicNospressPage {
     // blocks. Each lives in its own NIP-78 event. Owner profile is only
     // needed for the empty-state name; the rest informs nav-menu mounting.
     const bodySlug = this.route.slug || HOME_SLUG;
-    const [profile, body, header, footer, viewerProfile, menuSet, pageIndex] = await Promise.all([
+    // Per-page header/footer overrides take precedence over the global slot.
+    // We fetch both in parallel and pick the override only when it's non-empty.
+    const [profile, body, pageHeader, globalHeader, pageFooter, globalFooter, viewerProfile, menuSet, pageIndex] = await Promise.all([
       UserProfileService.getInstance().getUserProfile(pubkey).catch(() => null),
       orch.fetchFromRelays(pubkey, true, bodySlug).catch(() => null),
+      orch.fetchFromRelays(pubkey, true, pageHeaderSlug(bodySlug)).catch(() => null),
       orch.fetchFromRelays(pubkey, true, GLOBAL_HEADER_SLUG).catch(() => null),
+      orch.fetchFromRelays(pubkey, true, pageFooterSlug(bodySlug)).catch(() => null),
       orch.fetchFromRelays(pubkey, true, GLOBAL_FOOTER_SLUG).catch(() => null),
       viewerProfilePromise,
       menuOrch.fetchFromRelays(pubkey, true).catch(() => null),
       pageIndexOrch.fetchFromRelays(pubkey, true).catch(() => null),
     ]);
+
+    const header = (pageHeader && pageHeader.blocks.length > 0) ? pageHeader : globalHeader;
+    const footer = (pageFooter && pageFooter.blocks.length > 0) ? pageFooter : globalFooter;
 
     const isEmpty = (p: NospressPageV2 | null): boolean => !p || p.blocks.length === 0;
     if (isEmpty(body) && isEmpty(header) && isEmpty(footer)) {

@@ -31,6 +31,30 @@ export const HOME_SLUG = '';
 export const GLOBAL_HEADER_SLUG = '__header';
 export const GLOBAL_FOOTER_SLUG = '__footer';
 
+/** Page-specific header / footer overrides. Composite slugs of the form
+ *  `__header:<pageSlug>` / `__footer:<pageSlug>`. Encoded into d-tags as
+ *  `noornote/page/<slug>/header` (or `noornote/list/header` for home) by
+ *  the orchestrator. */
+export function pageHeaderSlug(pageSlug: string): string {
+  return `__header:${pageSlug}`;
+}
+export function pageFooterSlug(pageSlug: string): string {
+  return `__footer:${pageSlug}`;
+}
+export function isPageHeaderSlug(slug: string): boolean {
+  return slug.startsWith('__header:');
+}
+export function isPageFooterSlug(slug: string): boolean {
+  return slug.startsWith('__footer:');
+}
+/** Extract the underlying page slug from a `__header:<x>` / `__footer:<x>`
+ *  composite. Returns the input unchanged for non-composite slugs. */
+export function extractPagePart(slug: string): string {
+  if (isPageHeaderSlug(slug)) return slug.slice('__header:'.length);
+  if (isPageFooterSlug(slug)) return slug.slice('__footer:'.length);
+  return slug;
+}
+
 export const DEFAULT_PAGE_INDEX: NospressPageIndex = {
   version: 1,
   pages: [{ slug: HOME_SLUG, title: 'Home' }],

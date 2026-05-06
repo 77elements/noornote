@@ -18,7 +18,14 @@ import { AuthService } from '../AuthService';
 import { NospressService, type NospressListData } from '../NospressService';
 import { isPageV2, type NospressPageV2 } from '../../addons/nospress/blocks/types';
 import { migrateV1ToV2 } from '../../addons/nospress/blocks/migrate';
-import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG } from '../../addons/nospress/blocks/pageIndex';
+import {
+  HOME_SLUG,
+  GLOBAL_HEADER_SLUG,
+  GLOBAL_FOOTER_SLUG,
+  isPageHeaderSlug,
+  isPageFooterSlug,
+  extractPagePart,
+} from '../../addons/nospress/blocks/pageIndex';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { DeletionService } from '../DeletionService';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
@@ -30,6 +37,14 @@ const HOME_D_TAG = 'noornote/list';
 function dTagFor(slug: string): string {
   if (slug === GLOBAL_HEADER_SLUG) return 'noornote/header';
   if (slug === GLOBAL_FOOTER_SLUG) return 'noornote/footer';
+  if (isPageHeaderSlug(slug)) {
+    const pageSlug = extractPagePart(slug);
+    return pageSlug === HOME_SLUG ? 'noornote/list/header' : `noornote/page/${pageSlug}/header`;
+  }
+  if (isPageFooterSlug(slug)) {
+    const pageSlug = extractPagePart(slug);
+    return pageSlug === HOME_SLUG ? 'noornote/list/footer' : `noornote/page/${pageSlug}/footer`;
+  }
   return slug === HOME_SLUG ? HOME_D_TAG : `noornote/page/${slug}`;
 }
 

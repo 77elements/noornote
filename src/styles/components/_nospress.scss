@@ -1635,6 +1635,22 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
     color: $color-1;
     cursor: pointer;
   }
+
+  // Per-page header/footer pill: neutral inheritance indicator. Clickable
+  // (creates a page-specific override on first click), but never green —
+  // the green state is reserved for the master "Header & Footer" tile so
+  // the visual hierarchy stays unambiguous.
+  &--inherit {
+    background: transparent;
+    border: 1px solid $color-3;
+    color: $color-3;
+    cursor: pointer;
+
+    &:hover {
+      background: $color-2;
+      color: $color-5;
+    }
+  }
 }
 
 // Title + meta sit below the card on the tab background, no card-style

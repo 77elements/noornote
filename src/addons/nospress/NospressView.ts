@@ -18,7 +18,7 @@ import { NospressMenuOrchestrator } from '../../services/orchestration/NospressM
 import { NospressService } from '../../services/NospressService';
 import { NospressPageIndexService } from '../../services/NospressPageIndexService';
 import { NospressMenuService } from '../../services/NospressMenuService';
-import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, normalizeSlug, isValidSlug, type PageIndexEntry } from './blocks/pageIndex';
+import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, normalizeSlug, isValidSlug, pageHeaderSlug, pageFooterSlug, type PageIndexEntry } from './blocks/pageIndex';
 import { PRIMARY_MENU_ID, type NavItem, type NospressMenu } from './blocks/menu';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns } from './blocks/renderers/ColumnsRenderer';
@@ -129,7 +129,7 @@ export class NospressView extends View {
    *   - 'header' → site-wide global header (Slice 2)
    *   - 'footer' → site-wide global footer (Slice 2)
    *  Reflected in the editor h2 and the active pill in the Pages tab. */
-  private editingTarget: 'body' | 'header' | 'footer' = 'body';
+  private editingTarget: 'body' | 'header' | 'footer' | 'page-header' | 'page-footer' = 'body';
   private pageIndexService: NospressPageIndexService;
   private pageIndexOrchestrator: NospressPageIndexOrchestrator;
   private menuService: NospressMenuService;
@@ -394,8 +394,13 @@ export class NospressView extends View {
     const editSlug = this.currentEditSlug();
     const hasDraft = this.listService.hasDraftV2(editSlug);
     const hasPublished = this.listService.getPublishedV2(editSlug) !== null;
+    const isPageOverride = this.editingTarget === 'page-header' || this.editingTarget === 'page-footer';
+    const resetButton = isPageOverride
+      ? `<button type="button" class="btn btn--passive btn--danger" data-action="reset-page-override">Reset to Global</button>`
+      : '';
     const localButtons = editable
       ? `
+        ${resetButton}
         <button type="button" class="btn" data-action="save" ${isDirty ? '' : 'disabled'}>Save</button>
         <button type="button" class="btn btn--passive" data-action="discard" ${hasDraft ? '' : 'disabled'}>Discard</button>
       `
@@ -711,27 +716,37 @@ export class NospressView extends View {
     return 'nospress-pages__section nospress-pages__section--placeholder';
   }
 
-  /** Page tile: card with 3 sections (Global Header inherited, Custom Body
-   *  per page, Global Footer inherited) + title + action buttons below.
-   *  Header/Footer pills inherit their color from the global state — green
-   *  when the H&F card has saved content, dashed placeholder otherwise. */
+  /** Page tile: card with 3 sections (per-page Header, Custom Body, per-page
+   *  Footer) + title + action buttons below. Header/Footer pills are always
+   *  neutral on page tiles — they're not the global master, just inheritance
+   *  indicators with click-to-override behavior. Label flips between
+   *  "Global Header/Footer" (no override yet) and "Specific Header/Footer"
+   *  (override exists). */
   private renderPageTile(entry: PageIndexEntry): string {
     const isActiveSlug = entry.slug === this.activeSlug;
-    const isActive = isActiveSlug && this.editingTarget === 'body';
+    const isBodyActive = isActiveSlug && this.editingTarget === 'body';
+    const isHeaderActive = isActiveSlug && this.editingTarget === 'page-header';
+    const isFooterActive = isActiveSlug && this.editingTarget === 'page-footer';
     const isHome = entry.slug === HOME_SLUG;
-    const bodyClass = isActive
+
+    const bodyClass = isBodyActive
       ? 'nospress-pages__section nospress-pages__section--active'
       : 'nospress-pages__section nospress-pages__section--filled';
-    const headerHasContent = this.hasGlobalContent(GLOBAL_HEADER_SLUG);
-    const footerHasContent = this.hasGlobalContent(GLOBAL_FOOTER_SLUG);
-    const headerCls = headerHasContent
-      ? 'nospress-pages__section nospress-pages__section--global-filled'
-      : 'nospress-pages__section nospress-pages__section--placeholder';
-    const footerCls = footerHasContent
-      ? 'nospress-pages__section nospress-pages__section--global-filled'
-      : 'nospress-pages__section nospress-pages__section--placeholder';
+
+    const hasPageHeader = this.listService.hasV2Content(pageHeaderSlug(entry.slug));
+    const hasPageFooter = this.listService.hasV2Content(pageFooterSlug(entry.slug));
+
+    const headerCls = isHeaderActive
+      ? 'nospress-pages__section nospress-pages__section--active'
+      : 'nospress-pages__section nospress-pages__section--inherit';
+    const footerCls = isFooterActive
+      ? 'nospress-pages__section nospress-pages__section--active'
+      : 'nospress-pages__section nospress-pages__section--inherit';
+    const headerLabel = hasPageHeader ? 'Specific Header' : 'Global Header';
+    const footerLabel = hasPageFooter ? 'Specific Footer' : 'Global Footer';
+
     return `
-      <div class="nospress-pages__item" data-page-slug="${escapeHtml(entry.slug)}" ${isActive ? 'data-active="true"' : ''}>
+      <div class="nospress-pages__item" data-page-slug="${escapeHtml(entry.slug)}" ${isBodyActive ? 'data-active="true"' : ''}>
         <h3
           class="nospress-pages__title nospress-pages__title--editable"
           contenteditable="true"
@@ -743,14 +758,14 @@ export class NospressView extends View {
         <div class="nn-card" data-page-template>
           <div class="nn-card__content">
             <div class="nospress-pages__sections">
-              <div class="${headerCls}" data-disabled>
-                <span class="nospress-pages__section-label">Global Header</span>
+              <div class="${headerCls}" data-action="select-page-header" data-page-slug="${escapeHtml(entry.slug)}">
+                <span class="nospress-pages__section-label">${headerLabel}</span>
               </div>
               <div class="${bodyClass}" data-action="switch-page" data-page-slug="${escapeHtml(entry.slug)}">
                 <span class="nospress-pages__section-label">Custom Body</span>
               </div>
-              <div class="${footerCls}" data-disabled>
-                <span class="nospress-pages__section-label">Global Footer</span>
+              <div class="${footerCls}" data-action="select-page-footer" data-page-slug="${escapeHtml(entry.slug)}">
+                <span class="nospress-pages__section-label">${footerLabel}</span>
               </div>
             </div>
           </div>
@@ -1093,23 +1108,28 @@ export class NospressView extends View {
     if (this.editingTarget === 'footer') return 'Template: Global Footer';
     const entry = this.pageIndexService.getEntry(this.activeSlug);
     const pageTitle = entry?.title ?? 'Home';
+    if (this.editingTarget === 'page-header') return `Template: ${pageTitle} - Specific Header`;
+    if (this.editingTarget === 'page-footer') return `Template: ${pageTitle} - Specific Footer`;
     return `Template: ${pageTitle} - Custom Body`;
   }
 
   /** The slug under which the currently-edited content is stored. For 'body'
    *  this is the active page slug; for 'header'/'footer' it's the reserved
-   *  global slug. Storage and orchestrator calls use this — `activeSlug` is
-   *  reserved for the page being edited as body. */
+   *  global slug; for page-specific overrides it's the composite slug
+   *  `__header:<page>` / `__footer:<page>`. Storage and orchestrator calls
+   *  use this — `activeSlug` is reserved for the page being edited as body. */
   private currentEditSlug(): string {
     if (this.editingTarget === 'header') return GLOBAL_HEADER_SLUG;
     if (this.editingTarget === 'footer') return GLOBAL_FOOTER_SLUG;
+    if (this.editingTarget === 'page-header') return pageHeaderSlug(this.activeSlug);
+    if (this.editingTarget === 'page-footer') return pageFooterSlug(this.activeSlug);
     return this.activeSlug;
   }
 
   /** Switch which template slot the editor is editing. Persists the current
    *  draft for the previous target before flipping, so unsaved edits survive
    *  the switch. */
-  private selectEditingTarget(target: 'body' | 'header' | 'footer'): void {
+  private selectEditingTarget(target: 'body' | 'header' | 'footer' | 'page-header' | 'page-footer'): void {
     if (this.editingTarget === target) return;
 
     // Persist current in-memory edits to the slug we're leaving.
@@ -1126,6 +1146,92 @@ export class NospressView extends View {
     this.rerenderEditable();
     this.updatePagesTab();
     this.updatePropertiesTab();
+  }
+
+  /** Open the editor for a page-specific header. If no override exists yet,
+   *  load a deep clone of the current global header into the in-memory edit
+   *  buffer as a starting point — but DON'T persist it. The override only
+   *  becomes "real" (label flips to "Specific Header", `hasV2Content` true)
+   *  once the user actually clicks Save. Just visiting and leaving leaves
+   *  the page on Global. */
+  private selectPageHeader(slug: string): void {
+    if (slug !== this.activeSlug) this.activeSlug = slug;
+    this.openPageOverride('page-header', pageHeaderSlug(slug), GLOBAL_HEADER_SLUG);
+  }
+
+  /** Open the editor for a page-specific footer. See {@link selectPageHeader}. */
+  private selectPageFooter(slug: string): void {
+    if (slug !== this.activeSlug) this.activeSlug = slug;
+    this.openPageOverride('page-footer', pageFooterSlug(slug), GLOBAL_FOOTER_SLUG);
+  }
+
+  /** Shared transition into a page-specific override edit. Mirrors
+   *  `selectEditingTarget` but additionally seeds `editingPage` from the
+   *  global slot when no override-draft+no-published-mirror exists yet,
+   *  so the editor opens prefilled instead of blank. The seed is kept in
+   *  memory only — first Save persists it as the page-specific draft. */
+  private openPageOverride(
+    target: 'page-header' | 'page-footer',
+    overrideSlug: string,
+    globalSlug: string
+  ): void {
+    if (this.editingTarget === target && this.currentEditSlug() === overrideSlug) return;
+
+    // Persist current in-memory edits to the slug we're leaving.
+    if (this.editingPage && this.isDirty) {
+      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.currentEditSlug() });
+    }
+
+    this.editingTarget = target;
+    this.editingPage = null;
+    this.isDirty = false;
+    this.selectedBlockId = null;
+    this.cursor = { scope: 'page', index: -1 };
+
+    // Seed only if the override doesn't exist yet — otherwise the existing
+    // draft/published mirror is what the editor should show.
+    if (!this.listService.hasV2Content(overrideSlug)) {
+      const sourceDraft = this.listService.getDraftV2(globalSlug);
+      const sourcePublished = this.listService.getPublishedV2(globalSlug);
+      const source = sourceDraft ?? sourcePublished ?? { version: 2 as const, blocks: [] };
+      this.editingPage = JSON.parse(JSON.stringify(source));
+    }
+
+    this.rerenderEditable();
+    this.updatePagesTab();
+    this.updatePropertiesTab();
+  }
+
+  /** Reset a page-specific header/footer override back to inheriting from
+   *  the global. Local: clear draft + published mirror. Relay: kind:5 only
+   *  if there was a published mirror (otherwise nothing to delete). After
+   *  reset, switches the editor back to the page body. */
+  private async resetPageOverrideToGlobal(): Promise<void> {
+    if (this.editingTarget !== 'page-header' && this.editingTarget !== 'page-footer') return;
+    const slug = this.currentEditSlug();
+    const wasPublished = !!this.listService.getPublishedV2(slug);
+
+    this.listService.clearDraftV2(slug);
+    this.listService.clearPublishedV2(slug);
+
+    if (wasPublished) {
+      try {
+        await this.orchestrator.deleteFromRelays(slug);
+      } catch (err) {
+        console.error('Failed to publish kind:5 deletion for page override:', err);
+        ToastService.show('Reset locally, but relay deletion failed', 'error');
+      }
+    }
+
+    this.editingTarget = 'body';
+    this.editingPage = null;
+    this.isDirty = false;
+    this.selectedBlockId = null;
+    this.cursor = { scope: 'page', index: -1 };
+    this.rerenderEditable();
+    this.updatePagesTab();
+    this.updatePropertiesTab();
+    ToastService.show('Reset to global', 'success');
   }
 
   private handlePagesTabClick(e: Event): void {
@@ -1157,6 +1263,14 @@ export class NospressView extends View {
     }
     if (action === 'select-global-footer') {
       this.selectEditingTarget('footer');
+      return;
+    }
+    if (action === 'select-page-header') {
+      this.selectPageHeader(slug);
+      return;
+    }
+    if (action === 'select-page-footer') {
+      this.selectPageFooter(slug);
       return;
     }
   }
@@ -2123,6 +2237,7 @@ export class NospressView extends View {
         case 'discard':                this.discardDraft(); return;
         case 'publish':                this.publishDraft(); return;
         case 'delete-list':            this.confirmAndUnpublish(); return;
+        case 'reset-page-override':    void this.resetPageOverrideToGlobal(); return;
         case 'dm-page-owner':          Router.getInstance().navigate(`/messages/${this.npub}`); return;
         case 'close-css-editor':       this.toggleCssEditor(); return;
         case 'insert-palette-template': this.insertPaletteTemplate(); return;
