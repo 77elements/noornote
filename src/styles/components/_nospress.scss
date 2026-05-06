@@ -364,6 +364,7 @@
 // specificity).
 .nospress-prop-row.nospress-prop-row--color {
   grid-template-columns: 7rem minmax(8em, 1fr) auto;
+  position: relative; // anchor for the swatch popover
 }
 
 .nospress-prop-row__input--narrow {
@@ -387,17 +388,45 @@
   vertical-align: middle;
 }
 
-.nospress-prop-color-popover {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 100;
-  background: var(--color-1);
-  border: 1px solid var(--color-3);
-  border-radius: $radius-xl;
-  padding: calc($gap / 2);
-  white-space: nowrap;
-  box-shadow: $box-shadow;
+// Inline swatches row — sibling of the color row, opens below it when the
+// trigger circle is clicked. Pushes the rest of the property panel down.
+// Same visual block treatment as the gradient editor for consistency.
+.nospress-prop-color-swatches-inline {
+  margin-bottom: calc($gap / 2);
+  padding: 0.5rem 0 0.5rem;
+  text-align: right;
+
+  &[hidden] { display: none; }
+}
+
+// Inline gradient editor — opens below the swatches row when the user
+// clicks the gradient swatch from the inline swatches.
+.nospress-prop-gradient-inline {
+  margin-bottom: calc($gap / 2);
+
+  &[hidden] { display: none; }
+}
+
+// Generic input wrapper that places a unit hint (% / px / °) inside the
+// right edge of the input. Wraps `<input>` + `<span class="...__hint">`
+// with the input getting padding-right and the hint absolutely positioned.
+.nospress-input-suffix {
+  position: relative;
+  display: block;
+
+  .input {
+    width: 100%;
+    padding-right: 2em;
+  }
+
+  &__hint {
+    position: absolute;
+    top: 50%;
+    right: calc($gap * 0.75);
+    transform: translateY(-50%);
+    color: var(--color-3);
+    pointer-events: none;
+  }
 }
 
 .nospress-prop-color-swatch {
@@ -417,6 +446,100 @@
     position: relative;
     overflow: hidden;
     background: conic-gradient(red, yellow, lime, cyan, blue, magenta, red);
+  }
+
+  &--gradient {
+    background: linear-gradient(135deg, var(--color-4) 0%, var(--color-6) 100%);
+  }
+}
+
+// Gradient editor — inline expansion below the Background row, full
+// width within the property panel.
+.nospress-gradient-editor {
+  width: 100%;
+
+  &__row {
+    margin-bottom: 1rem;
+
+    // Direct-child only — descendants (e.g. labels wrapping nested inputs
+    // inside swatches/checkboxes) keep their own display rules.
+    > label {
+      @extend %small;
+      color: var(--color-3);
+      margin-bottom: calc($gap / 4);
+    }
+
+    .input,
+    select.input {
+      width: 100%;
+    }
+  }
+
+  &__stop-actions {
+    margin-bottom: 0.5rem;
+
+    .btn { margin-right: calc($gap / 4); }
+  }
+
+  &__angle {
+    width: 100%;
+    vertical-align: middle;
+    margin-bottom: 1rem;
+  }
+
+  &__palette {
+    margin-top: calc($gap / 4);
+    white-space: nowrap;
+    // `font-size: 0` collapses the whitespace browsers render between
+    // inline-block children (one ~4px space per swatch otherwise). Without
+    // this the 7th swatch (custom rainbow) wraps to a new line on narrow
+    // property columns even though math says it should fit.
+    font-size: 0;
+  }
+
+  &__actions {
+    margin-bottom: 1rem;
+    text-align: right;
+
+    .btn { margin-left: calc($gap / 4); }
+  }
+}
+
+.nospress-gradient-preview {
+  width: 100%;
+  height: 48px;
+  border: 1px solid var(--color-3);
+  border-radius: $radius-xl;
+  margin-bottom: calc($gap / 2);
+}
+
+.nospress-gradient-track {
+  position: relative;
+  height: 24px;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--color-3);
+  border-radius: $radius-pill;
+  user-select: none;
+}
+
+.nospress-gradient-stop {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid var(--color-1);
+  outline: 1px solid var(--color-3);
+  border-radius: 50%;
+  cursor: grab;
+
+  &.is-selected {
+    outline: 2px solid var(--color-4);
+  }
+
+  &:active {
+    cursor: grabbing;
   }
 }
 

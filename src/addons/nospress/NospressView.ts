@@ -21,6 +21,15 @@ import { NospressPageIndexService } from '../../services/NospressPageIndexServic
 import { NospressMenuService } from '../../services/NospressMenuService';
 import { NospressSiteSettingsService } from '../../services/NospressSiteSettingsService';
 import { DEFAULT_PALETTE, PALETTE_KEYS, type NospressSiteSettings } from './blocks/siteSettings';
+import {
+  defaultGradient,
+  formatGradient,
+  parseGradient,
+  renderGradientEditor,
+  type GradientDraft,
+  type GradientType,
+  type GradientUnit,
+} from './blocks/gradientPicker';
 import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, normalizeSlug, isValidSlug, pageHeaderSlug, pageFooterSlug, type PageIndexEntry } from './blocks/pageIndex';
 import { PRIMARY_MENU_ID, type NavItem, type NospressMenu } from './blocks/menu';
 import { BlockRenderer } from './blocks/BlockRenderer';
@@ -50,6 +59,11 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 import { setupGridDragDrop } from '../../helpers/gridDragDrop';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
+
+function clamp(n: number, min: number, max: number): number {
+  if (Number.isNaN(n)) return min;
+  return Math.min(max, Math.max(min, n));
+}
 import { MediaUploadService } from '../../services/MediaUploadService';
 import { mountNospressProfileCards } from './profileCardMount';
 import { mountNospressArticlesLists } from './articlesListMount';
@@ -143,6 +157,16 @@ export class NospressView extends View {
    *  the page-edit area. Toggled by the overlay "CSS Editor" button or the
    *  Library "Custom CSS" entry. UI-only; no relay impact. */
   private cssEditorOpen: boolean = false;
+  /** Active gradient editor session, if any. Holds the row context, the
+   *  in-progress draft, and the currently-selected stop index. Discarded
+   *  on Apply, Cancel, or popover close. */
+  private gradientEdit: {
+    rowEl: HTMLElement;
+    draft: GradientDraft;
+    selectedStopIndex: number;
+    typeDropdown?: CustomDropdown;
+    unitDropdown?: CustomDropdown;
+  } | null = null;
 
   constructor(npub: string) {
     super();
@@ -649,12 +673,22 @@ export class NospressView extends View {
       const attrField = target.dataset?.attrField;
       if (attrScope && attrField) this.handleAttrInput(attrScope, attrField, target.value);
     };
-    librarySlot.addEventListener('input', propsHandler);
-    librarySlot.addEventListener('change', propsHandler);
+    librarySlot.addEventListener('input', (e) => {
+      // Gradient editor inputs run BEFORE propsHandler so the editor draft
+      // updates without persisting solid-color values to the row's text
+      // field — the gradient applies as a single string only on Apply.
+      if (this.handleGradientEditorInput(e)) return;
+      propsHandler(e);
+    });
+    librarySlot.addEventListener('change', (e) => {
+      if (this.handleGradientEditorInput(e)) return;
+      propsHandler(e);
+    });
 
     // Color/Background palette popover — trigger toggle + swatch picks +
-    // native picker. Sets the sibling text input's value and dispatches
-    // an `input` event so the existing propsHandler persists the change.
+    // native picker + gradient editor. Sets the sibling text input's value
+    // and dispatches an `input` event so the existing propsHandler persists
+    // the change.
     librarySlot.addEventListener('click', (e) => this.handlePropColorClick(e, librarySlot));
 
     pagesContent.addEventListener('click', (e) => this.handlePagesTabClick(e));
@@ -1089,41 +1123,345 @@ export class NospressView extends View {
     const trigger = target.closest('.nospress-prop-color-trigger');
     if (trigger) {
       e.stopPropagation();
-      const popover = trigger.parentElement?.querySelector('.nospress-prop-color-popover') as HTMLElement | null;
-      if (!popover) return;
-      const wasOpen = !popover.hidden;
-      librarySlot.querySelectorAll<HTMLElement>('.nospress-prop-color-popover').forEach(p => { p.hidden = true; });
-      popover.hidden = wasOpen;
+      const row = trigger.closest('.nospress-prop-row--color') as HTMLElement | null;
+      if (!row) return;
+      const swatchesInline = this.findSwatchesInline(row);
+      if (!swatchesInline) return;
+      const wasOpen = !swatchesInline.hidden;
+      // Close any other open swatch rows (one at a time keeps the panel clean).
+      librarySlot.querySelectorAll<HTMLElement>('.nospress-prop-color-swatches-inline').forEach(p => { p.hidden = true; });
+      swatchesInline.hidden = wasOpen;
+      // Toggling the swatches closes any active gradient editor too.
+      if (wasOpen && this.gradientEdit?.rowEl === row) this.closeGradientEditor(false);
       return;
     }
 
     const paletteSwatch = target.closest('.nospress-prop-color-swatch[data-palette-key]') as HTMLElement | null;
     if (paletteSwatch) {
+      // Gradient-editor stop-color picker reuses the same palette swatch
+      // class but lives inside the gradient mount — different code path.
+      if (paletteSwatch.closest('[data-gradient-mount-for]')) return;
       const key = paletteSwatch.dataset.paletteKey!;
       this.applyColorPick(paletteSwatch, `var(--${key})`);
       return;
     }
 
-    // Click outside any picker → close all open popovers.
-    if (!target.closest('.nospress-prop-color-picker')) {
-      librarySlot.querySelectorAll<HTMLElement>('.nospress-prop-color-popover').forEach(p => { p.hidden = true; });
+    // Gradient editor open / back / stop-select / add / remove / apply / cancel
+    if (target.closest('[data-open-gradient-editor]')) {
+      this.openGradientEditor(target);
+      return;
+    }
+    if (target.closest('[data-gradient-cancel]')) {
+      this.closeGradientEditor(false);
+      return;
+    }
+    if (target.closest('[data-gradient-apply]')) {
+      this.closeGradientEditor(true);
+      return;
+    }
+    if (target.closest('[data-gradient-add-stop]')) {
+      this.addGradientStop();
+      return;
+    }
+    if (target.closest('[data-gradient-remove-stop]')) {
+      this.removeGradientStop();
+      return;
+    }
+    const stopHandle = target.closest('[data-gradient-stop-index]') as HTMLElement | null;
+    if (stopHandle) {
+      const idx = parseInt(stopHandle.dataset.gradientStopIndex || '0', 10);
+      this.selectGradientStop(idx);
+      return;
+    }
+    const stopColorSwatch = target.closest('[data-gradient-stop-color]') as HTMLElement | null;
+    if (stopColorSwatch) {
+      const value = stopColorSwatch.dataset.gradientStopColor!;
+      this.setSelectedStopColor(value);
+      return;
+    }
+
+    // Click outside the picker / swatches / gradient editor → collapse
+    // any open inline swatch row (gradient editor stays — it has explicit
+    // Apply / Cancel and is too laborious to lose accidentally).
+    if (!target.closest('.nospress-prop-color-picker, .nospress-prop-color-swatches-inline, .nospress-prop-gradient-inline')) {
+      librarySlot.querySelectorAll<HTMLElement>('.nospress-prop-color-swatches-inline').forEach(p => { p.hidden = true; });
     }
   }
 
+  /** Open the gradient editor inline below the color row containing
+   *  `originEl`. Parses the text input's current value as a gradient if
+   *  possible, otherwise starts from a sensible default. The swatch
+   *  popover is closed so we don't have two color UIs at once. */
+  private openGradientEditor(originEl: HTMLElement): void {
+    // The gradient swatch lives inside the swatches-inline row, which is a
+    // sibling of the color row. Walk up to swatches → previous sibling.
+    // The swatches row stays visible — users may want to flip back to a
+    // palette color or reopen the editor without losing context.
+    const swatchesInline = originEl.closest('.nospress-prop-color-swatches-inline') as HTMLElement | null;
+    const row = swatchesInline?.previousElementSibling as HTMLElement | null;
+    if (!row || !row.classList.contains('nospress-prop-row--color')) return;
+    const input = row.querySelector<HTMLInputElement>('.nospress-prop-row__input');
+    const draft = parseGradient(input?.value ?? '') ?? defaultGradient();
+    this.gradientEdit = { rowEl: row, draft, selectedStopIndex: 0 };
+    this.renderGradientEditorInline();
+  }
+
+  /** Close the gradient editor. If `commit` is true, the draft is
+   *  serialized into a CSS string and written to the row's text input.
+   *  Either way the inline section collapses and editor state is cleared. */
+  private closeGradientEditor(commit: boolean): void {
+    if (!this.gradientEdit) return;
+    const row = this.gradientEdit.rowEl;
+    if (commit) {
+      const css = formatGradient(this.gradientEdit.draft);
+      const input = row.querySelector<HTMLInputElement>('.nospress-prop-row__input');
+      if (input) {
+        input.value = css;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+    // Tear down dropdown instances before the DOM is cleared.
+    this.gradientEdit.typeDropdown?.destroy();
+    this.gradientEdit.unitDropdown?.destroy();
+    this.hideGradientInlineMount(row);
+    this.gradientEdit = null;
+  }
+
+  /** Find the inline mount for the row and render the editor into it. */
+  private renderGradientEditorInline(): void {
+    if (!this.gradientEdit) return;
+    const mount = this.findGradientInlineMount(this.gradientEdit.rowEl);
+    if (!mount) return;
+    // Tear down previous-render's dropdowns before innerHTML wipes the DOM.
+    // Subsequent assignments in `mountGradientDropdowns` replace the refs.
+    this.gradientEdit.typeDropdown?.destroy();
+    this.gradientEdit.unitDropdown?.destroy();
+
+    mount.innerHTML = renderGradientEditor(this.gradientEdit.draft, this.gradientEdit.selectedStopIndex);
+    mount.hidden = false;
+    this.bindGradientStopDrag(mount);
+    this.mountGradientDropdowns(mount);
+  }
+
+  /** Replace the placeholder divs left by the gradient editor render with
+   *  CustomDropdown instances for the Type and Unit selectors. App-wide
+   *  rule: never raw `<select>` (see `/scss` skill). */
+  private mountGradientDropdowns(root: HTMLElement): void {
+    if (!this.gradientEdit) return;
+    const draft = this.gradientEdit.draft;
+
+    const typeMount = root.querySelector<HTMLElement>('[data-gradient-type-mount]');
+    if (typeMount) {
+      const dd = new CustomDropdown({
+        options: [
+          { value: 'linear', label: 'Linear' },
+          { value: 'radial', label: 'Radial' },
+          { value: 'conic',  label: 'Conic'  },
+        ],
+        selectedValue: draft.type,
+        width: '100%',
+        onChange: (value) => {
+          if (!this.gradientEdit) return;
+          this.gradientEdit.draft.type = value as GradientType;
+          this.rerenderGradientEditor();
+        },
+      });
+      typeMount.appendChild(dd.getElement());
+      this.gradientEdit.typeDropdown = dd;
+    }
+
+    const unitMount = root.querySelector<HTMLElement>('[data-gradient-unit-mount]');
+    if (unitMount) {
+      const dd = new CustomDropdown({
+        options: [
+          { value: 'percent', label: 'Percent' },
+          { value: 'pixel',   label: 'Pixel'   },
+        ],
+        selectedValue: draft.unit,
+        width: '100%',
+        onChange: (value) => {
+          if (!this.gradientEdit) return;
+          this.gradientEdit.draft.unit = value as GradientUnit;
+          this.rerenderGradientEditor();
+        },
+      });
+      unitMount.appendChild(dd.getElement());
+      this.gradientEdit.unitDropdown = dd;
+    }
+  }
+
+  /** Re-render — full replacement of the inline mount's contents. Cheap
+   *  enough for the editor's size; per-input deltas not worth the code. */
+  private rerenderGradientEditor(): void {
+    this.renderGradientEditorInline();
+  }
+
+  /** The inline mount is rendered as a sibling of the color row, paired
+   *  via `data-gradient-mount-for` matching the row's `data-color-row-key`. */
+  private findGradientInlineMount(row: HTMLElement): HTMLElement | null {
+    const key = row.dataset.colorRowKey;
+    if (!key) return null;
+    const sibling = row.nextElementSibling as HTMLElement | null;
+    if (sibling?.dataset.gradientMountFor === key) return sibling;
+    // Fallback: search within the property panel root.
+    return row.parentElement?.querySelector<HTMLElement>(`[data-gradient-mount-for="${key}"]`) ?? null;
+  }
+
+  private hideGradientInlineMount(row: HTMLElement): void {
+    const mount = this.findGradientInlineMount(row);
+    if (!mount) return;
+    mount.hidden = true;
+    mount.innerHTML = '';
+  }
+
+  private selectGradientStop(idx: number): void {
+    if (!this.gradientEdit) return;
+    if (idx < 0 || idx >= this.gradientEdit.draft.stops.length) return;
+    this.gradientEdit.selectedStopIndex = idx;
+    this.rerenderGradientEditor();
+  }
+
+  private addGradientStop(): void {
+    if (!this.gradientEdit) return;
+    const stops = this.gradientEdit.draft.stops;
+    // Insert a new stop halfway between the last two.
+    const last = stops[stops.length - 1]!;
+    const prev = stops[stops.length - 2]!;
+    const newStop = {
+      color: last.color,
+      position: Math.min(100, Math.round((prev.position + last.position) / 2)),
+    };
+    stops.push(newStop);
+    stops.sort((a, b) => a.position - b.position);
+    this.gradientEdit.selectedStopIndex = stops.indexOf(newStop);
+    this.rerenderGradientEditor();
+  }
+
+  private removeGradientStop(): void {
+    if (!this.gradientEdit) return;
+    const stops = this.gradientEdit.draft.stops;
+    if (stops.length <= 2) return; // never below 2
+    stops.splice(this.gradientEdit.selectedStopIndex, 1);
+    this.gradientEdit.selectedStopIndex = Math.max(0, this.gradientEdit.selectedStopIndex - 1);
+    this.rerenderGradientEditor();
+  }
+
+  private setSelectedStopColor(value: string): void {
+    if (!this.gradientEdit) return;
+    const stop = this.gradientEdit.draft.stops[this.gradientEdit.selectedStopIndex];
+    if (!stop) return;
+    stop.color = value;
+    this.rerenderGradientEditor();
+  }
+
+  /** Centralised handler for every Gradient-Editor `<input>` / `<select>` /
+   *  `<input type=checkbox>` event. Returns true if the event was consumed
+   *  (so the parent listener can short-circuit and skip propsHandler). */
+  private handleGradientEditorInput(e: Event): boolean {
+    if (!this.gradientEdit) return false;
+    const target = e.target as HTMLInputElement | HTMLSelectElement;
+    const draft = this.gradientEdit.draft;
+
+    if (target.dataset?.gradientStopColorInput !== undefined) {
+      this.setSelectedStopColor(target.value);
+      return true;
+    }
+    if (target.dataset?.gradientStopColorNative !== undefined) {
+      this.setSelectedStopColor(target.value);
+      return true;
+    }
+    if (target.dataset?.gradientStopPosition !== undefined) {
+      const stop = draft.stops[this.gradientEdit.selectedStopIndex];
+      if (stop) {
+        stop.position = clamp(parseFloat(target.value || '0'), 0, draft.unit === 'percent' ? 100 : 9999);
+        draft.stops.sort((a, b) => a.position - b.position);
+        this.gradientEdit.selectedStopIndex = draft.stops.indexOf(stop);
+      }
+      this.rerenderGradientEditor();
+      return true;
+    }
+    if (target.dataset?.gradientAngleRange !== undefined || target.dataset?.gradientAngleNumber !== undefined) {
+      draft.angle = clamp(parseFloat(target.value || '0'), 0, 360);
+      this.rerenderGradientEditor();
+      return true;
+    }
+    if (target.dataset?.gradientRepeat !== undefined) {
+      draft.repeat = (target as HTMLInputElement).checked;
+      this.rerenderGradientEditor();
+      return true;
+    }
+    if (target.dataset?.gradientAboveBg !== undefined) {
+      draft.aboveBackgroundImage = (target as HTMLInputElement).checked;
+      // No rerender needed — toggle is cosmetic for v1, doesn't affect output.
+      return true;
+    }
+    return false;
+  }
+
+  /** Stop-handle drag: mousedown captures the active index, mousemove on
+   *  document recomputes position from the track's bounding rect, mouseup
+   *  releases. We re-render after each move so preview + slider stay in
+   *  sync. Click without movement is preserved by the click handler above
+   *  (selectGradientStop fires on the same mousedown→mouseup cycle without
+   *  a move). */
+  private bindGradientStopDrag(mount: HTMLElement): void {
+    const track = mount.querySelector<HTMLElement>('[data-gradient-track]');
+    if (!track) return;
+    track.querySelectorAll<HTMLElement>('.nospress-gradient-stop').forEach(stop => {
+      stop.addEventListener('mousedown', (e) => {
+        if (!this.gradientEdit) return;
+        const idx = parseInt(stop.dataset.gradientStopIndex || '0', 10);
+        this.gradientEdit.selectedStopIndex = idx;
+        const onMove = (ev: MouseEvent) => {
+          if (!this.gradientEdit) return;
+          const rect = track.getBoundingClientRect();
+          const pct = clamp(((ev.clientX - rect.left) / rect.width) * 100, 0, 100);
+          const target = this.gradientEdit.draft.stops[idx];
+          if (target) target.position = Math.round(pct);
+          this.rerenderGradientEditor();
+        };
+        const onUp = () => {
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+          if (this.gradientEdit) {
+            this.gradientEdit.draft.stops.sort((a, b) => a.position - b.position);
+            this.rerenderGradientEditor();
+          }
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+        e.preventDefault();
+      });
+    });
+  }
+
   /** Set the sibling text input's value, repaint the trigger circle, fire
-   *  `input` so existing handlers persist, close the popover. */
+   *  `input` so existing handlers persist, close the inline swatches row. */
   private applyColorPick(originSwatch: HTMLElement, value: string): void {
-    const row = originSwatch.closest('.nospress-prop-row--color');
-    if (!row) return;
+    // The origin can be either the swatches-inline row (sibling of the
+    // color row) or the native picker inside it. Walk up to find the
+    // swatches block, then up to its preceding row sibling.
+    const swatchesInline = originSwatch.closest('.nospress-prop-color-swatches-inline') as HTMLElement | null;
+    const row = swatchesInline?.previousElementSibling as HTMLElement | null;
+    if (!row || !row.classList.contains('nospress-prop-row--color')) return;
     const input = row.querySelector<HTMLInputElement>('.nospress-prop-row__input');
     const trigger = row.querySelector<HTMLElement>('.nospress-prop-color-trigger');
-    const popover = row.querySelector<HTMLElement>('.nospress-prop-color-popover');
     if (input) {
       input.value = value;
       input.dispatchEvent(new Event('input', { bubbles: true }));
     }
     if (trigger) trigger.style.background = value;
-    if (popover) popover.hidden = true;
+    if (swatchesInline) swatchesInline.hidden = true;
+  }
+
+  /** Find the inline swatches row paired with the given color row, via the
+   *  shared `data-color-row-key` ↔ `data-swatches-for` linkage. */
+  private findSwatchesInline(row: HTMLElement): HTMLElement | null {
+    const key = row.dataset.colorRowKey;
+    if (!key) return null;
+    const sibling = row.nextElementSibling as HTMLElement | null;
+    if (sibling?.dataset.swatchesFor === key) return sibling;
+    return row.parentElement?.querySelector<HTMLElement>(`[data-swatches-for="${key}"]`) ?? null;
   }
 
   /** Click delegate for the Global tab — accordion toggle, Save&Publish,

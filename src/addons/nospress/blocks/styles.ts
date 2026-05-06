@@ -334,7 +334,7 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
               aria-label="--${k}"></button>
     `).join('');
     return `
-      <div class="nospress-prop-row nospress-prop-row--color">
+      <div class="nospress-prop-row nospress-prop-row--color" data-color-row-key="${e.key}">
         <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
         <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
                data-style-scope="${scopeAttr}" data-style-field="${e.key}"
@@ -344,14 +344,23 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
                   class="nospress-prop-color-trigger"
                   style="background: ${escapeHtmlAttr(triggerBg)}"
                   aria-label="Pick color"></button>
-          <div class="nospress-prop-color-popover" hidden>
-            ${paletteSwatches}
-            <label class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
-              <input type="color" class="nospress-prop-color-native" />
-            </label>
-          </div>
         </span>
       </div>
+      <div class="nospress-prop-color-swatches-inline" hidden data-swatches-for="${e.key}">
+        ${paletteSwatches}
+        ${e.key === 'background' ? `
+          <button type="button"
+                  class="nospress-prop-color-swatch nospress-prop-color-swatch--gradient"
+                  data-open-gradient-editor
+                  aria-label="Gradient"></button>
+        ` : ''}
+        <label class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
+          <input type="color" class="nospress-prop-color-native" />
+        </label>
+      </div>
+      ${e.key === 'background' ? `
+        <div class="nospress-prop-gradient-inline" hidden data-gradient-mount-for="${e.key}"></div>
+      ` : ''}
     `;
   };
 
