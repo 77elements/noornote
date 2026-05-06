@@ -400,8 +400,13 @@ function renderDividerSvg(cfg: DividerConfig | undefined, side: 'top' | 'bottom'
   if (!cfg || !cfg.style || cfg.style === 'none') return '';
   const path = DIVIDER_PATHS[cfg.style];
   if (!path) return '';
-  const colorAttr = cfg.color ? ` style="color: ${escapeHtmlAttr(sanitizeStyleValue(cfg.color))}; --nospress-divider-height: ${escapeHtmlAttr(sanitizeStyleValue(cfg.height ?? '60px'))}"` : ` style="--nospress-divider-height: ${escapeHtmlAttr(sanitizeStyleValue(cfg.height ?? '60px'))}"`;
-  return `<div class="nospress-divider nospress-divider--${side}"${colorAttr} aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="${path}" fill="currentColor"/></svg></div>`;
+  // Default fill is the page background colour (`var(--color-1)`) so the
+  // divider visually "cuts" into the block, revealing the page bg behind
+  // it — the typical Divi-style sloped-edge look. The user can override
+  // with any colour for a decorative band instead of a cut.
+  const fill = cfg.color ? sanitizeStyleValue(cfg.color) : 'var(--color-1)';
+  const heightVar = `--nospress-divider-height: ${escapeHtmlAttr(sanitizeStyleValue(cfg.height ?? '60px'))}`;
+  return `<div class="nospress-divider nospress-divider--${side}" style="${heightVar}" aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="${path}" fill="${escapeHtmlAttr(fill)}"/></svg></div>`;
 }
 
 /** Simple SVG paths for the divider shapes. viewBox is `0 0 100 10` so each
