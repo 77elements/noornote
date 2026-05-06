@@ -211,7 +211,7 @@ export class MediaCompressionService {
         blob = await transferExif(file, blob);
       } catch (err) {
         // Don't fail compression because EXIF transfer choked.
-        console.warn('Failed to preserve EXIF, dropping metadata:', err);
+        console.debug('Failed to preserve EXIF, dropping metadata:', err);
       }
     }
 
