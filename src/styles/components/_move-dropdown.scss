@@ -5,6 +5,7 @@
 
 @use 'sass:color';
 @use '../abstracts/variables' as *;
+@use '../base/typography' as *;
 
 .move-dropdown {
   &__trigger {
@@ -31,6 +32,15 @@
     border-radius: $radius-xl;
     padding: calc($gap / 4) 0;
     box-shadow: $box-shadow;
+  }
+
+  &__header {
+    @extend %small;
+    padding: calc($gap / 2) calc($gap * 0.75) calc($gap / 4);
+    color: var(--color-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
   }
 
   &__item {

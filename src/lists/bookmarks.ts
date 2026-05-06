@@ -43,7 +43,7 @@ export interface RootOrderItem<T extends string = string> {
 }
 
 import { encodeNevent } from '../services/NostrToolsAdapter';
-import { formatTimestamp } from '../helpers/formatTimestamp';
+import { formatBookmarkTimestamp } from '../helpers/formatTimestamp';
 import { applyFolderAssignments } from '../helpers/FolderAssignmentHelper';
 import { renderListSyncButtons, bindListSyncButtons, isEasyMode } from '../helpers/ListSyncMode';
 import { SyncConfirmationModal, type MovedItemInfo } from '../components/modals/SyncConfirmationModal';
@@ -2217,7 +2217,7 @@ export class BookmarkCard {
       const username = profile?.name || 'Anonymous';
       const profilePic = profile?.picture || '';
       const snippet = this.getEventSnippet(event);
-      const timeAgo = formatTimestamp(event.created_at);
+      const timeAgo = formatBookmarkTimestamp(event.created_at);
 
       card.innerHTML = `
         ${isPrivate ? '<span class="private-badge">🔒</span>' : ''}

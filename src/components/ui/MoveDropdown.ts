@@ -56,6 +56,11 @@ export class MoveDropdown {
     this.dropdown = document.createElement('div');
     this.dropdown.className = 'move-dropdown__menu';
 
+    const header = document.createElement('div');
+    header.className = 'move-dropdown__header';
+    header.textContent = 'Move to';
+    this.dropdown.appendChild(header);
+
     this.targets.forEach(target => {
       const item = document.createElement('div');
       item.className = 'move-dropdown__item';

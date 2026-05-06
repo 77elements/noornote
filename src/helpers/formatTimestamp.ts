@@ -80,6 +80,54 @@ export function formatTimestamp(timestamp: number): string {
 }
 
 /**
+ * Compact timestamp variant for bookmark cards.
+ *
+ * The full `formatTimestamp` output (esp. with `both` calendar setting) is too
+ * long for the cramped card footer next to delete/move icons. Uses month names
+ * instead of numeric `DD.MM` to avoid the "looks like a clock time" trap.
+ *
+ *   - Calendar setting `both` → forced to Gregorian, compact form.
+ *   - Calendar setting `gregorian` / `hijri` → render in that calendar only.
+ *   - Current year:  `DD <Month>`        (e.g. "10 Apr",  "22 Shawwal")
+ *   - Past year:     `<Month> 'YY`       (e.g. "Apr '24", "Shawwal '45")
+ *
+ * Time-of-day and full year are dropped — they don't fit and the user already
+ * has the canonical timestamp inside the linked note itself.
+ */
+export function formatBookmarkTimestamp(timestamp: number): string {
+  if (!timestamp) return '';
+
+  const now = new Date();
+  const date = new Date(timestamp * 1000);
+  const calendarSystem = getCalendarSystem();
+
+  let formatted: string;
+
+  if (calendarSystem === 'hijri') {
+    const hijriDate = dayjs(date).toCalendarSystem('hijri' as any);
+    const hijriNow = dayjs(now).toCalendarSystem('hijri' as any);
+    const month = HIJRI_MONTHS[hijriDate.month()];
+    if (hijriDate.year() === hijriNow.year()) {
+      formatted = `${hijriDate.date()} ${month}`;
+    } else {
+      const yearShort = String(hijriDate.year()).slice(-2);
+      formatted = `${month} '${yearShort}`;
+    }
+  } else {
+    // 'gregorian' OR 'both' (forced compact Gregorian)
+    const month = getMonthShort(date);
+    if (date.getFullYear() === now.getFullYear()) {
+      formatted = `${date.getDate()} ${month}`;
+    } else {
+      const yearShort = String(date.getFullYear()).slice(-2);
+      formatted = `${month} '${yearShort}`;
+    }
+  }
+
+  return `<span class="date-time">${formatted}</span>`;
+}
+
+/**
  * Get user's calendar system preference
  */
 function getCalendarSystem(): CalendarSystem {
