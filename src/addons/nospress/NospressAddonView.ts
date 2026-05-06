@@ -49,13 +49,12 @@ export class NospressAddonView extends View {
       return;
     }
 
-    const npub = AuthService.getInstance().getCurrentUser()?.npub;
-    if (!npub) {
+    if (!AuthService.getInstance().getCurrentUser()?.npub) {
       slot.innerHTML = '';
       return;
     }
 
-    const href = `/profile/${npub}/nospress`;
+    const href = '/nospress';
     const hasRoom = window.innerWidth >= NospressAddonView.MIN_WIDTH_PX;
 
     if (hasRoom) {

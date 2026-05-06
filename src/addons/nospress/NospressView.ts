@@ -2,7 +2,7 @@
  * NospressView
  * Readonly display of a user's NosPress (custom list + mounted bookmark folders)
  *
- * Route: /profile/:npub/page
+ * Route: /nospress (owner-only, npub from AuthService)
  * Aggregates the custom list (freetext sections) and any mounted bookmark
  * folders into one personal page. Owner sees Edit + Delete buttons (apply
  * only to the custom list — folder mounts are managed via bookmarks).

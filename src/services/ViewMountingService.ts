@@ -178,10 +178,11 @@ export class ViewMountingService {
 
       case 'nospress':
         return {
-          requiresParam: true,
-          factory: async (param) => {
+          factory: async () => {
             const { NospressView } = await import('../addons/nospress/NospressView');
-            const view = new NospressView(param!);
+            const { AuthService } = await import('./AuthService');
+            const npub = AuthService.getInstance().getCurrentUser()?.npub ?? '';
+            const view = new NospressView(npub);
             return { element: view.getElement(), view };
           }
         };

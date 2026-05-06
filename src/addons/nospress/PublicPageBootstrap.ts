@@ -12,7 +12,7 @@ import { PlatformService } from '../../services/PlatformService';
  *   2. mountPublicView — logged-out branch: render PublicNospressPage,
  *                        no MainLayout, no app chrome.
  *   3. resolveToNpub   — logged-in branch: hand back an npub for the
- *                        Router to navigate to /profile/{npub}/nospress.
+ *                        Router to navigate to /nospress.
  *
  * Browser-only by design (Electron / Capacitor never hit public URLs).
  */

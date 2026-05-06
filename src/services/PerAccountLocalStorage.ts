@@ -126,6 +126,7 @@ export const StorageKeys = {
   NOSPRESS_PUBLISHED_BY_SLUG: 'noornote_nospress_published_by_slug_map',
   NOSPRESS_PAGE_INDEX: 'noornote_nospress_page_index_map',
   NOSPRESS_MENUS: 'noornote_nospress_menus_map',
+  NOSPRESS_SITE_SETTINGS: 'noornote_nospress_site_settings_map',
   LIST_SYNC_MODE: 'noornote_list_sync_mode_map',
   EMOJI_FREQUENTLY_USED: 'noornote_emoji_frequently_used_map',
   PERSONAL_EMOJI_PACK: 'noornote_personal_emoji_pack_map',

@@ -280,8 +280,7 @@ export class App {
     // Parameterized routes (public)
     this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false,
       (params) => params.noteId ?? '');
-    this.registerRoute('/profile/:npub/nospress', 'nospress', 'nospress', 'npev', true,
-      (params) => params.npub ?? '');
+    this.registerRoute('/nospress', 'nospress', 'nospress', 'npev', true);
     this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false,
       (params) => params.npub ?? '');
     this.registerRoute('/article/:naddr', 'article', 'article', 'av', false,

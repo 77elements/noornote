@@ -30,7 +30,7 @@ import type { NospressPageV2 } from './blocks/types';
  * no SCC). All data is fetched from relays at render time.
  *
  * The path through the App for logged-in users is different: they get
- * redirected to the in-app `/profile/{npub}/nospress` view (full editor
+ * redirected to the in-app `/nospress` view (full editor
  * surface). This view is exclusively for visitors from outside.
  */
 export class PublicNospressPage {
@@ -288,7 +288,7 @@ export class PublicNospressPage {
     // the page the visitor is actually looking at.
     const editPageQuery = this.route.slug ? `?page=${encodeURIComponent(this.route.slug)}` : '';
     const editLink = isOwner
-      ? `<a class="user-site-bar__link user-site-bar__link--accent" href="/profile/${this.viewerNpub}/nospress${editPageQuery}">Edit page →</a>`
+      ? `<a class="user-site-bar__link user-site-bar__link--accent" href="/nospress${editPageQuery}">Edit page →</a>`
       : '';
 
     const name = viewerProfile ? extractDisplayName(viewerProfile) : '';
