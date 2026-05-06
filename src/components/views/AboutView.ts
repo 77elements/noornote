@@ -8,8 +8,41 @@
 
 import { View } from './View';
 import { PlatformService } from '../../services/PlatformService';
+import { UserProfileService } from '../../services/UserProfileService';
+import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
+import { extractDisplayName } from '../../helpers/extractDisplayName';
+import { npubToHex } from '../../helpers/nip19';
 
 declare const __APP_VERSION__: string;
+
+interface CreditEntry {
+  product: string;
+  productUrl: string;
+  /** Use UserMentionHelper when present. */
+  npub?: string;
+  /** Plain author name + URL fallback for non-Nostr authors. */
+  authorName?: string;
+  authorUrl?: string;
+}
+
+const CREDITS: CreditEntry[] = [
+  {
+    product: 'Follow Packs',
+    productUrl: 'https://github.com/callebtc/following.space',
+    npub: 'npub12rv5lskctqxxs2c8rf2zlzc7xx3qpvzs3w4etgemauy9thegr43sf485vg',
+  },
+  {
+    product: 'Video / Image / Audio Compression',
+    productUrl: 'https://github.com/iefanx/nostr-compress',
+    npub: 'npub1cmmswlckn82se7f2jeftl6ll4szlc6zzh8hrjyyfm9vm3t2afr7svqlr6f',
+  },
+  {
+    product: 'Hijri Calendar (dayjs-calendarsystems)',
+    productUrl: 'https://github.com/calidy-com/dayjs-calendarsystems',
+    authorName: 'Calidy',
+    authorUrl: 'https://calidy.com/',
+  },
+];
 
 export class AboutView extends View {
   private container: HTMLElement;
@@ -21,6 +54,7 @@ export class AboutView extends View {
     this.container.className = 'view-content view-content--about';
     this.render();
     this.bindListeners();
+    void this.populateCredits();
   }
 
   private render(): void {
@@ -88,6 +122,33 @@ export class AboutView extends View {
         </section>
 
         <section class="about-section">
+          <h2>Credits</h2>
+          <p>NoorNote integrates third-party open-source work. Thanks to:</p>
+          <ul>
+            ${CREDITS.map(c => {
+              const author = c.npub
+                ? `<span class="about-credit-mention" data-pubkey="${npubToHex(c.npub) ?? ''}"></span>`
+                : `<a href="${c.authorUrl ?? '#'}" rel="noopener noreferrer">${c.authorName ?? ''}</a>`;
+              return `
+                <li>
+                  <a href="${c.productUrl}" rel="noopener noreferrer">${c.product}</a>
+                  by ${author}
+                </li>
+              `;
+            }).join('')}
+          </ul>
+          <p>
+            Special thanks to <span class="about-credit-mention" data-pubkey="${npubToHex('npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6') ?? ''}"></span>
+            for inventing the Nostr protocol, and to all <a href="https://github.com/nostr-protocol/nips" rel="noopener noreferrer">NIP</a>
+            authors and other Nostr devs for the inspiration.
+          </p>
+          <p>
+            And finally, thanks to every user who actively shapes NoorNote with feedback and support.
+          </p>
+          <p lang="ar" dir="rtl" class="about-credits-doxology">وَلِلَّهِ الْحَمْد</p>
+        </section>
+
+        <section class="about-section">
           <h2>Version</h2>
           <p>NoorNote v${__APP_VERSION__}</p>
           ${this.platform.isDesktop ? '<button class="btn btn--mini" id="about-check-update-btn">Check for updates</button>' : ''}
@@ -152,6 +213,25 @@ export class AboutView extends View {
       const { UpdateCheckService } = await import('../../services/UpdateCheckService');
       await UpdateCheckService.getInstance().checkManually(checkUpdateBtn as HTMLButtonElement);
     });
+  }
+
+  private async populateCredits(): Promise<void> {
+    const placeholders = this.container.querySelectorAll<HTMLElement>('.about-credit-mention[data-pubkey]');
+    if (placeholders.length === 0) return;
+
+    const profileService = UserProfileService.getInstance();
+    await Promise.all(Array.from(placeholders).map(async (el) => {
+      const pubkey = el.dataset.pubkey;
+      if (!pubkey) return;
+      const profile = await profileService.getUserProfile(pubkey);
+      const username = extractDisplayName(profile) || pubkey.slice(0, 8);
+      el.outerHTML = renderUserMention(pubkey, {
+        username,
+        avatarUrl: profile.picture ?? '',
+      });
+    }));
+
+    setupUserMentionHandlers(this.container);
   }
 
   public getElement(): HTMLElement {

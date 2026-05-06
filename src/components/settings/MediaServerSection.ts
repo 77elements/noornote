@@ -155,8 +155,63 @@ export class MediaServerSection extends SettingsSection {
         </section>
 
         <section class="section">
+          ${this.renderExifStripCritical()}
+        </section>
+
+        <section class="section">
+          ${this.renderExifStripMedium()}
+        </section>
+
+        <section class="section">
+          ${this.renderExifStripWeak()}
+        </section>
+
+        <section class="section">
           ${this.renderSensitiveMedia()}
         </section>
+    `;
+  }
+
+  private renderExifStripCritical(): string {
+    return `
+        <div class="setting">
+          <span class="setting__label">Strip location & identity (EXIF)</span>
+          <div class="setting__control" id="strip-exif-critical-mount"></div>
+          <p class="setting__desc">
+            When uploading JPEG images, removes: GPS coordinates, GPS altitude, GPS timestamp,
+            GPS direction, GPS destination; Artist, Copyright, OwnerName, CameraOwnerName,
+            BodySerialNumber, LensSerialNumber, ImageUniqueID; Windows XP tags
+            (Title, Author, Comment, Keywords, Subject).
+          </p>
+        </div>
+    `;
+  }
+
+  private renderExifStripMedium(): string {
+    return `
+        <div class="setting">
+          <span class="setting__label">Strip timestamps & maker blob (EXIF)</span>
+          <div class="setting__control" id="strip-exif-medium-mount"></div>
+          <p class="setting__desc">
+            When uploading JPEG images, removes: DateTime, DateTimeOriginal, DateTimeDigitized,
+            OffsetTime / OffsetTimeOriginal / OffsetTimeDigitized (timezone),
+            SubSecTime / SubSecTimeOriginal / SubSecTimeDigitized; MakerNote
+            (vendor-specific binary blob, may contain serials or internal IDs).
+          </p>
+        </div>
+    `;
+  }
+
+  private renderExifStripWeak(): string {
+    return `
+        <div class="setting">
+          <span class="setting__label">Strip device info (EXIF)</span>
+          <div class="setting__control" id="strip-exif-weak-mount"></div>
+          <p class="setting__desc">
+            When uploading JPEG images, removes: Make, Model, LensMake, LensModel,
+            Software, HostComputer.
+          </p>
+        </div>
     `;
   }
 
@@ -387,6 +442,7 @@ export class MediaServerSection extends SettingsSection {
           this.compressionSettings.video.enabled = checked;
           this.saveCompressionSettings();
           setVideoDetailVisible(checked);
+          ToastService.show(checked ? 'Video compression enabled' : 'Video compression disabled', 'success');
         },
       });
       videoSwitchMount.innerHTML = sw.render();
@@ -436,6 +492,7 @@ export class MediaServerSection extends SettingsSection {
           this.compressionSettings.audio.enabled = checked;
           this.saveCompressionSettings();
           setAudioDetailVisible(checked);
+          ToastService.show(checked ? 'Audio compression enabled' : 'Audio compression disabled', 'success');
         },
       });
       audioSwitchMount.innerHTML = sw.render();
@@ -476,6 +533,7 @@ export class MediaServerSection extends SettingsSection {
           this.compressionSettings.image.enabled = checked;
           this.saveCompressionSettings();
           setImageDetailVisible(checked);
+          ToastService.show(checked ? 'Image compression enabled' : 'Image compression disabled', 'success');
         },
       });
       imageSwitchMount.innerHTML = sw.render();
@@ -539,6 +597,52 @@ export class MediaServerSection extends SettingsSection {
       this.compressionSettings.audio.minSizeBytes = mb * 1024 * 1024;
       this.saveCompressionSettings();
     });
+
+    // ---- EXIF stripping switches (privacy)
+    const stripCriticalMount = contentContainer.querySelector('#strip-exif-critical-mount') as HTMLElement | null;
+    if (stripCriticalMount) {
+      const sw = new Switch({
+        label: '',
+        checked: this.compressionSettings.image.stripExifCritical,
+        onChange: (checked) => {
+          this.compressionSettings.image.stripExifCritical = checked;
+          this.saveCompressionSettings();
+          ToastService.show(`Location & identity stripping ${checked ? 'enabled' : 'disabled'}`, 'success');
+        },
+      });
+      stripCriticalMount.innerHTML = sw.render();
+      sw.setupEventListeners(stripCriticalMount);
+    }
+
+    const stripMediumMount = contentContainer.querySelector('#strip-exif-medium-mount') as HTMLElement | null;
+    if (stripMediumMount) {
+      const sw = new Switch({
+        label: '',
+        checked: this.compressionSettings.image.stripExifMedium,
+        onChange: (checked) => {
+          this.compressionSettings.image.stripExifMedium = checked;
+          this.saveCompressionSettings();
+          ToastService.show(`Timestamps & maker blob stripping ${checked ? 'enabled' : 'disabled'}`, 'success');
+        },
+      });
+      stripMediumMount.innerHTML = sw.render();
+      sw.setupEventListeners(stripMediumMount);
+    }
+
+    const stripWeakMount = contentContainer.querySelector('#strip-exif-weak-mount') as HTMLElement | null;
+    if (stripWeakMount) {
+      const sw = new Switch({
+        label: '',
+        checked: this.compressionSettings.image.stripExifWeak,
+        onChange: (checked) => {
+          this.compressionSettings.image.stripExifWeak = checked;
+          this.saveCompressionSettings();
+          ToastService.show(`Device info stripping ${checked ? 'enabled' : 'disabled'}`, 'success');
+        },
+      });
+      stripWeakMount.innerHTML = sw.render();
+      sw.setupEventListeners(stripWeakMount);
+    }
   }
 
   /**

@@ -204,11 +204,16 @@ export class MediaCompressionService {
     });
     onProgress(80);
 
-    // Restore EXIF for JPEG sources. Skipped silently when piexifjs fails or
-    // there's no EXIF to copy — the compressed JPEG is still valid.
+    // Restore EXIF for JPEG sources, optionally stripping privacy categories.
+    // Skipped silently when piexifjs fails or there's no EXIF to copy — the
+    // compressed JPEG is still valid.
     if (isJpeg) {
       try {
-        blob = await transferExif(file, blob);
+        blob = await transferExif(file, blob, {
+          critical: settings.stripExifCritical,
+          medium: settings.stripExifMedium,
+          weak: settings.stripExifWeak,
+        });
       } catch (err) {
         // Don't fail compression because EXIF transfer choked.
         console.debug('Failed to preserve EXIF, dropping metadata:', err);
@@ -364,15 +369,67 @@ function stripExtension(name: string): string {
   return dot > 0 ? name.slice(0, dot) : name;
 }
 
-/** Copy EXIF from a JPEG source onto a (canvas-encoded) JPEG blob. piexifjs
- *  works on data-URLs so we round-trip via FileReader. The library is loaded
- *  on-demand because EXIF preservation only matters for JPEG inputs and we
- *  don't want to pay the bundle cost for PNG / WebP uploads. */
-async function transferExif(source: File, encoded: Blob): Promise<Blob> {
+/** EXIF tag IDs (decimal) per privacy category. The "keep" set (Orientation,
+ *  Resolution, ColorSpace, ICC, dimensions, version headers) is everything NOT
+ *  listed here — we only delete what's enumerated. */
+const STRIP_CRITICAL_0TH = [315, 33432, 40091, 40092, 40093, 40094, 40095];
+// Artist, Copyright, XPTitle, XPComment, XPAuthor, XPKeywords, XPSubject
+const STRIP_CRITICAL_EXIF = [42016, 42032, 42033, 42037];
+// ImageUniqueID, CameraOwnerName, BodySerialNumber, LensSerialNumber
+const STRIP_MEDIUM_0TH = [306]; // DateTime
+const STRIP_MEDIUM_EXIF = [
+  36867, 36868,         // DateTimeOriginal, DateTimeDigitized
+  36880, 36881, 36882,  // OffsetTime, OffsetTimeOriginal, OffsetTimeDigitized
+  37520, 37521, 37522,  // SubSecTime, SubSecTimeOriginal, SubSecTimeDigitized
+  37500,                // MakerNote
+];
+const STRIP_WEAK_0TH = [271, 272, 305, 316]; // Make, Model, Software, HostComputer
+const STRIP_WEAK_EXIF = [42035, 42036];      // LensMake, LensModel
+
+interface ExifStripOptions {
+  critical: boolean;
+  medium: boolean;
+  weak: boolean;
+}
+
+type ExifIfd = Record<number, unknown> | undefined;
+type ExifObj = Record<string, ExifIfd | string | undefined>;
+
+function deleteFromIfd(ifd: ExifIfd, tagIds: number[]): void {
+  if (!ifd) return;
+  for (const id of tagIds) delete ifd[id];
+}
+
+function applyExifStrip(exifObj: ExifObj, opts: ExifStripOptions): void {
+  if (opts.critical) {
+    delete exifObj.GPS;
+    deleteFromIfd(exifObj['0th'] as ExifIfd, STRIP_CRITICAL_0TH);
+    deleteFromIfd(exifObj.Exif as ExifIfd, STRIP_CRITICAL_EXIF);
+  }
+  if (opts.medium) {
+    deleteFromIfd(exifObj['0th'] as ExifIfd, STRIP_MEDIUM_0TH);
+    deleteFromIfd(exifObj.Exif as ExifIfd, STRIP_MEDIUM_EXIF);
+  }
+  if (opts.weak) {
+    deleteFromIfd(exifObj['0th'] as ExifIfd, STRIP_WEAK_0TH);
+    deleteFromIfd(exifObj.Exif as ExifIfd, STRIP_WEAK_EXIF);
+  }
+}
+
+/** Copy EXIF from a JPEG source onto a (canvas-encoded) JPEG blob, optionally
+ *  stripping privacy-relevant tag groups. piexifjs works on data-URLs so we
+ *  round-trip via FileReader. The library is loaded on-demand because EXIF
+ *  preservation only matters for JPEG inputs. */
+async function transferExif(
+  source: File,
+  encoded: Blob,
+  strip: ExifStripOptions,
+): Promise<Blob> {
   const piexif = (await import('piexifjs')) as typeof import('piexifjs');
   const sourceUrl = await blobToDataUrl(source);
-  const exifObj = piexif.load(sourceUrl);
-  const exifBin = piexif.dump(exifObj);
+  const exifObj = piexif.load(sourceUrl) as ExifObj;
+  applyExifStrip(exifObj, strip);
+  const exifBin = piexif.dump(exifObj as Record<string, unknown>);
   if (!exifBin) return encoded; // No EXIF in source — nothing to transfer.
   const encodedUrl = await blobToDataUrl(encoded);
   const merged = piexif.insert(exifBin, encodedUrl);

@@ -30,6 +30,12 @@ export interface ImageCompressionSettings {
   maxResolution: MaxResolution;
   /** Files below this size are uploaded as-is. */
   minSizeBytes: number;
+  /** GPS block + Artist/Copyright/owner/serial/Windows-XP/ImageUniqueID. */
+  stripExifCritical: boolean;
+  /** DateTime, OffsetTime, SubSecTime variants + MakerNote. */
+  stripExifMedium: boolean;
+  /** Make/Model, LensMake/LensModel, Software, HostComputer. */
+  stripExifWeak: boolean;
 }
 
 export interface MediaCompressionSettings {
@@ -44,6 +50,9 @@ export const DEFAULT_MEDIA_COMPRESSION_SETTINGS: MediaCompressionSettings = {
     quality: 'high',
     maxResolution: 1280,
     minSizeBytes: 100 * 1024, // 100 KB
+    stripExifCritical: false,
+    stripExifMedium: false,
+    stripExifWeak: false,
   },
   video: {
     enabled: true,
