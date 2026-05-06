@@ -30,6 +30,7 @@
         "marked": "^16.4.0",
         "mediabunny": "^1.43.1",
         "nostr-signer-capacitor-plugin": "^0.0.5",
+        "piexifjs": "^1.0.6",
         "qrcode": "^1.5.4",
       },
       "devDependencies": {
@@ -1126,6 +1127,8 @@
     "picocolors": ["picocolors@1.1.1", "", {}, ""],
 
     "picomatch": ["picomatch@4.0.3", "", {}, ""],
+
+    "piexifjs": ["piexifjs@1.0.6", "", {}, "sha512-0wVyH0cKohzBQ5Gi2V1BuxYpxWfxF3cSqfFXfPIpl5tl9XLS5z4ogqhUCD20AbHi0h9aJkqXNJnkVev6gwh2ag=="],
 
     "pirates": ["pirates@4.0.7", "", {}, "sha512-TfySrs/5nm8fQJDcBDuUng3VOUKsd7S+zqvbOTiGXHfxX4wK31ard+hoNuvkicM/2YFzlpDgABOevKSsB4G/FA=="],
 

@@ -115,9 +115,9 @@ export class MediaUploadService {
       DEFAULT_MEDIA_COMPRESSION_SETTINGS,
     );
     return {
+      image: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.image, ...stored.image },
       video: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.video, ...stored.video },
       audio: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.audio, ...stored.audio },
-      minSizeBytes: stored.minSizeBytes ?? DEFAULT_MEDIA_COMPRESSION_SETTINGS.minSizeBytes,
     };
   }
 
@@ -141,15 +141,17 @@ export class MediaUploadService {
     fileIndex?: number,
     totalFiles?: number,
   ): Promise<File> {
-    if (mediaKind !== 'video' && mediaKind !== 'audio') return file;
+    if (mediaKind !== 'video' && mediaKind !== 'audio' && mediaKind !== 'image') return file;
 
     const settings = this.loadCompressionSettings();
-    const enabled = mediaKind === 'video' ? settings.video.enabled : settings.audio.enabled;
-    if (!enabled) {
+    const kindSettings = mediaKind === 'video' ? settings.video
+      : mediaKind === 'audio' ? settings.audio
+      : settings.image;
+    if (!kindSettings.enabled) {
       diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'disabled-in-settings' });
       return file;
     }
-    if (file.size < settings.minSizeBytes) {
+    if (file.size < kindSettings.minSizeBytes) {
       diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'below-min-size', size: file.size });
       return file;
     }
@@ -164,9 +166,9 @@ export class MediaUploadService {
       return file;
     }
 
-    const supported = mediaKind === 'video'
-      ? await service.isVideoSupported()
-      : await service.isAudioSupported();
+    const supported = mediaKind === 'video' ? await service.isVideoSupported()
+      : mediaKind === 'audio' ? await service.isAudioSupported()
+      : await service.isImageSupported();
     if (!supported) {
       diagLog('system', 'Media compression skipped', { kind: mediaKind, reason: 'webcodecs-unsupported' });
       return file;
@@ -176,7 +178,9 @@ export class MediaUploadService {
       kind: mediaKind,
       filename: file.name,
       originalBytes: file.size,
-      quality: mediaKind === 'video' ? settings.video.quality : settings.audio.quality,
+      quality: mediaKind === 'video' ? settings.video.quality
+        : mediaKind === 'audio' ? settings.audio.quality
+        : settings.image.quality,
     });
 
     const startedAt = performance.now();
@@ -197,7 +201,9 @@ export class MediaUploadService {
       };
       compressed = mediaKind === 'video'
         ? await service.compressVideo(file, settings.video, onProgress)
-        : await service.compressAudio(file, settings.audio, onProgress);
+        : mediaKind === 'audio'
+        ? await service.compressAudio(file, settings.audio, onProgress)
+        : await service.compressImage(file, settings.image, onProgress);
     } catch (err) {
       diagLog('system', 'Media compression failed', { kind: mediaKind, error: String(err) });
       ToastService.show('Compression failed, uploading original.', 'info');

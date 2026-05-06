@@ -7,36 +7,63 @@
  */
 
 export type CompressionQuality = 'low' | 'medium' | 'high' | 'ultra';
-export type MaxResolution = 480 | 720 | 1080 | 0; // 0 = keep original
+export type MaxResolution = 480 | 720 | 1024 | 1080 | 1280 | 0; // 0 = keep original
 
 export interface VideoCompressionSettings {
   enabled: boolean;
   quality: CompressionQuality;
   maxResolution: MaxResolution;
+  /** Files below this size are uploaded as-is. */
+  minSizeBytes: number;
 }
 
 export interface AudioCompressionSettings {
   enabled: boolean;
   quality: CompressionQuality;
-}
-
-export interface MediaCompressionSettings {
-  video: VideoCompressionSettings;
-  audio: AudioCompressionSettings;
+  /** Files below this size are uploaded as-is. */
   minSizeBytes: number;
 }
 
+export interface ImageCompressionSettings {
+  enabled: boolean;
+  quality: CompressionQuality;
+  maxResolution: MaxResolution;
+  /** Files below this size are uploaded as-is. */
+  minSizeBytes: number;
+}
+
+export interface MediaCompressionSettings {
+  image: ImageCompressionSettings;
+  video: VideoCompressionSettings;
+  audio: AudioCompressionSettings;
+}
+
 export const DEFAULT_MEDIA_COMPRESSION_SETTINGS: MediaCompressionSettings = {
+  image: {
+    enabled: true,
+    quality: 'high',
+    maxResolution: 1280,
+    minSizeBytes: 100 * 1024, // 100 KB
+  },
   video: {
     enabled: true,
     quality: 'medium',
     maxResolution: 1080,
+    minSizeBytes: 5 * 1024 * 1024, // 5 MB
   },
   audio: {
     enabled: true,
     quality: 'medium',
+    minSizeBytes: 2 * 1024 * 1024, // 2 MB
   },
-  minSizeBytes: 5 * 1024 * 1024,
+};
+
+/** JPEG quality factor (0..1) per preset. */
+export const IMAGE_JPEG_QUALITY: Record<CompressionQuality, number> = {
+  low:    0.5,
+  medium: 0.7,
+  high:   0.85,
+  ultra:  0.95,
 };
 
 // Bitrate per audio quality preset, in kbps.

@@ -29,8 +29,10 @@ import {
 import { PlatformService } from '../PlatformService';
 import {
   AUDIO_BITRATE_KBPS,
+  IMAGE_JPEG_QUALITY,
   type AudioCompressionSettings,
   type CompressionQuality,
+  type ImageCompressionSettings,
   type VideoCompressionSettings,
 } from './compression-types';
 
@@ -125,6 +127,98 @@ export class MediaCompressionService {
   /** True if at least one usable audio codec is encodable in this browser. */
   static async isAudioSupported(): Promise<boolean> {
     return (await getEncodableAudioCodecs()).length > 0;
+  }
+
+  /** Image compression uses Canvas + `canvas.toBlob('image/jpeg')`, which
+   *  is universally available in every supported runtime. */
+  static async isImageSupported(): Promise<boolean> {
+    return typeof document !== 'undefined' && typeof HTMLCanvasElement !== 'undefined';
+  }
+
+  /**
+   * Compress an image by resizing to the configured max dimension and
+   * re-encoding in the source format: PNG → PNG (lossless, transparency
+   * preserved), JPEG → JPEG at the configured quality with EXIF copied
+   * via piexifjs. Other formats (WebP/GIF/AVIF/...) fall back to JPEG.
+   */
+  static async compressImage(
+    file: File,
+    settings: ImageCompressionSettings,
+    onProgress: ProgressCallback,
+  ): Promise<File> {
+    onProgress(5);
+
+    // Decode the source so we can read its dimensions.
+    const sourceUrl = URL.createObjectURL(file);
+    const img = new Image();
+    try {
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Image decode failed'));
+        img.src = sourceUrl;
+      });
+    } finally {
+      URL.revokeObjectURL(sourceUrl);
+    }
+
+    onProgress(25);
+
+    // Compute the target dimensions while preserving aspect ratio.
+    const maxDim = settings.maxResolution > 0 ? settings.maxResolution : Math.max(img.width, img.height);
+    let targetW = img.width;
+    let targetH = img.height;
+    if (img.width > maxDim || img.height > maxDim) {
+      if (img.width >= img.height) {
+        targetW = maxDim;
+        targetH = Math.round(img.height * (maxDim / img.width));
+      } else {
+        targetH = maxDim;
+        targetW = Math.round(img.width * (maxDim / img.height));
+      }
+    }
+
+    // Draw to canvas. PNG sources keep their alpha channel; JPEG/other are
+    // composited onto whatever the canvas defaults to (transparent → black
+    // when JPEG-encoded), which is fine for opaque sources.
+    const canvas = document.createElement('canvas');
+    canvas.width = targetW;
+    canvas.height = targetH;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) throw new Error('Canvas 2D context unavailable');
+    ctx.drawImage(img, 0, 0, targetW, targetH);
+    onProgress(60);
+
+    const isPng = file.type === 'image/png';
+    const isJpeg = file.type === 'image/jpeg';
+    const outputMime = isPng ? 'image/png' : 'image/jpeg';
+    const outputExt = isPng ? '.png' : '.jpg';
+    const quality = IMAGE_JPEG_QUALITY[settings.quality] ?? IMAGE_JPEG_QUALITY.high;
+
+    let blob: Blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error('Canvas toBlob failed'))),
+        outputMime,
+        // PNG ignores the quality arg; JPEG honors it.
+        isPng ? undefined : quality,
+      );
+    });
+    onProgress(80);
+
+    // Restore EXIF for JPEG sources. Skipped silently when piexifjs fails or
+    // there's no EXIF to copy — the compressed JPEG is still valid.
+    if (isJpeg) {
+      try {
+        blob = await transferExif(file, blob);
+      } catch (err) {
+        // Don't fail compression because EXIF transfer choked.
+        console.warn('Failed to preserve EXIF, dropping metadata:', err);
+      }
+    }
+
+    onProgress(100);
+
+    const baseName = file.name.replace(/\.[^.]+$/, '') || 'image';
+    return new File([blob], `${baseName}${outputExt}`, { type: outputMime });
   }
 
   /**
@@ -268,4 +362,29 @@ export class MediaCompressionService {
 function stripExtension(name: string): string {
   const dot = name.lastIndexOf('.');
   return dot > 0 ? name.slice(0, dot) : name;
+}
+
+/** Copy EXIF from a JPEG source onto a (canvas-encoded) JPEG blob. piexifjs
+ *  works on data-URLs so we round-trip via FileReader. The library is loaded
+ *  on-demand because EXIF preservation only matters for JPEG inputs and we
+ *  don't want to pay the bundle cost for PNG / WebP uploads. */
+async function transferExif(source: File, encoded: Blob): Promise<Blob> {
+  const piexif = (await import('piexifjs')) as typeof import('piexifjs');
+  const sourceUrl = await blobToDataUrl(source);
+  const exifObj = piexif.load(sourceUrl);
+  const exifBin = piexif.dump(exifObj);
+  if (!exifBin) return encoded; // No EXIF in source — nothing to transfer.
+  const encodedUrl = await blobToDataUrl(encoded);
+  const merged = piexif.insert(exifBin, encodedUrl);
+  const res = await fetch(merged);
+  return await res.blob();
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'));
+    reader.readAsDataURL(blob);
+  });
 }

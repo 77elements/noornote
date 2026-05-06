@@ -93,6 +93,7 @@
     "marked": "^16.4.0",
     "mediabunny": "^1.43.1",
     "nostr-signer-capacitor-plugin": "^0.0.5",
+    "piexifjs": "^1.0.6",
     "qrcode": "^1.5.4"
   },
   "engines": {

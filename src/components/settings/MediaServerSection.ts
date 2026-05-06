@@ -55,9 +55,9 @@ export class MediaServerSection extends SettingsSection {
     );
     // Merge with defaults so newer fields backfill on existing accounts.
     return {
+      image: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.image, ...stored.image },
       video: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.video, ...stored.video },
       audio: { ...DEFAULT_MEDIA_COMPRESSION_SETTINGS.audio, ...stored.audio },
-      minSizeBytes: stored.minSizeBytes ?? DEFAULT_MEDIA_COMPRESSION_SETTINGS.minSizeBytes,
     };
   }
 
@@ -143,7 +143,15 @@ export class MediaServerSection extends SettingsSection {
         </section>
 
         <section class="section">
-          ${this.renderMediaCompression()}
+          ${this.renderImageCompression()}
+        </section>
+
+        <section class="section">
+          ${this.renderVideoCompression()}
+        </section>
+
+        <section class="section">
+          ${this.renderAudioCompression()}
         </section>
 
         <section class="section">
@@ -152,49 +160,99 @@ export class MediaServerSection extends SettingsSection {
     `;
   }
 
-  private renderMediaCompression(): string {
-    const minMb = Math.round(this.compressionSettings.minSizeBytes / (1024 * 1024));
+  private renderImageCompression(): string {
+    const minKb = Math.round(this.compressionSettings.image.minSizeBytes / 1024);
     return `
         <div class="setting">
-          <span class="setting__label">Media Compression</span>
+          <span class="setting__label">Image Compression</span>
+          <div class="setting__control" id="compress-image-switch-mount"></div>
           <p class="setting__desc">
-            Videos and audio are compressed locally using your device's hardware encoder (WebCodecs)
-            before upload. Significantly reduces file size and saves CDN bandwidth — your media never
-            leaves your device until upload.
+            Images are resized and re-encoded as JPEG locally before upload, reducing file size and
+            saving CDN bandwidth. EXIF metadata is preserved verbatim — no privacy fields are
+            stripped at this layer.
           </p>
+        </div>
 
+        <div class="setting" id="compress-image-quality-row">
+          <span class="setting__label">Quality</span>
+          <div class="setting__control" id="compress-image-quality-mount"></div>
+        </div>
+
+        <div class="setting" id="compress-image-resolution-row">
+          <span class="setting__label">Max resolution</span>
+          <div class="setting__control" id="compress-image-resolution-mount"></div>
+        </div>
+
+        <div class="form__row form__row--oneline" id="compress-image-min-size-row">
+          <label for="compression-image-min-size-input">Skip compression for files below</label>
+          <input
+            type="text"
+            class="input"
+            id="compression-image-min-size-input"
+            value="${minKb}"
+          /> KB
+        </div>
+    `;
+  }
+
+  private renderVideoCompression(): string {
+    const minMb = Math.round(this.compressionSettings.video.minSizeBytes / (1024 * 1024));
+    return `
+        <div class="setting">
+          <span class="setting__label">Video Compression</span>
           <div class="setting__control" id="compress-video-switch-mount"></div>
-          <div class="compression-detail" id="compress-video-detail">
-            <div class="form__row form__row--oneline">
-              <label>Quality</label>
-              <div id="compress-video-quality-mount"></div>
-            </div>
-            <div class="form__row form__row--oneline">
-              <label>Max resolution</label>
-              <div id="compress-video-resolution-mount"></div>
-            </div>
-          </div>
+          <p class="setting__desc">
+            Videos are compressed locally using your device's hardware encoder (WebCodecs) before
+            upload — your video never leaves your device until upload.
+          </p>
+        </div>
 
+        <div class="setting" id="compress-video-quality-row">
+          <span class="setting__label">Quality</span>
+          <div class="setting__control" id="compress-video-quality-mount"></div>
+        </div>
+
+        <div class="setting" id="compress-video-resolution-row">
+          <span class="setting__label">Max resolution</span>
+          <div class="setting__control" id="compress-video-resolution-mount"></div>
+        </div>
+
+        <div class="form__row form__row--oneline" id="compress-video-min-size-row">
+          <label for="compression-video-min-size-input">Skip compression for files below</label>
+          <input
+            type="text"
+            class="input"
+            id="compression-video-min-size-input"
+            value="${minMb}"
+          /> MB
+        </div>
+    `;
+  }
+
+  private renderAudioCompression(): string {
+    const minMb = Math.round(this.compressionSettings.audio.minSizeBytes / (1024 * 1024));
+    return `
+        <div class="setting">
+          <span class="setting__label">Audio Compression</span>
           <div class="setting__control" id="compress-audio-switch-mount"></div>
-          <div class="compression-detail" id="compress-audio-detail">
-            <div class="form__row form__row--oneline">
-              <label>Quality</label>
-              <div id="compress-audio-quality-mount"></div>
-            </div>
-          </div>
+          <p class="setting__desc">
+            Audio files are compressed locally before upload using a hardware-supported codec.
+          </p>
+        </div>
 
-          <div class="form__row form__row--oneline">
-            <label>Skip compression for files below</label>
-            <input
-              type="number"
-              class="input compression-min-size"
-              id="compression-min-size-input"
-              min="1"
-              max="100"
-              step="1"
-              value="${minMb}"
-            /> MB
-          </div>
+        <div class="setting" id="compress-audio-quality-row">
+          <span class="setting__label">Quality</span>
+          <div class="setting__control" id="compress-audio-quality-mount"></div>
+        </div>
+
+        <div class="form__row form__row--oneline" id="compress-audio-min-size-row">
+          <label for="compression-audio-min-size-input">Skip compression for files below</label>
+          <input
+            type="text"
+            class="input"
+            id="compression-audio-min-size-input"
+            value="${minMb}"
+          /> MB
         </div>
     `;
   }
@@ -301,27 +359,40 @@ export class MediaServerSection extends SettingsSection {
       { value: '1080', label: '1080p (Full HD)' },
       { value: '0', label: 'Original' },
     ];
+    const imageResolutionOptions = [
+      { value: '720', label: '720 px' },
+      { value: '1024', label: '1024 px' },
+      { value: '1280', label: '1280 px' },
+      { value: '0', label: 'Original' },
+    ];
 
-    // ---- Video toggle + detail panel
+    // ---- Video toggle + detail rows
     const videoSwitchMount = contentContainer.querySelector('#compress-video-switch-mount') as HTMLElement | null;
-    const videoDetail = contentContainer.querySelector('#compress-video-detail') as HTMLElement | null;
+    const videoDetailRows = [
+      contentContainer.querySelector('#compress-video-quality-row') as HTMLElement | null,
+      contentContainer.querySelector('#compress-video-resolution-row') as HTMLElement | null,
+      contentContainer.querySelector('#compress-video-min-size-row') as HTMLElement | null,
+    ];
+    const setVideoDetailVisible = (show: boolean) => {
+      videoDetailRows.forEach(row => row?.classList.toggle('hidden', !show));
+    };
     const videoQualityMount = contentContainer.querySelector('#compress-video-quality-mount') as HTMLElement | null;
     const videoResolutionMount = contentContainer.querySelector('#compress-video-resolution-mount') as HTMLElement | null;
 
     if (videoSwitchMount) {
       const sw = new Switch({
-        label: 'Compress videos before upload',
+        label: '',
         checked: this.compressionSettings.video.enabled,
         onChange: (checked) => {
           this.compressionSettings.video.enabled = checked;
           this.saveCompressionSettings();
-          if (videoDetail) videoDetail.classList.toggle('hidden', !checked);
+          setVideoDetailVisible(checked);
         },
       });
       videoSwitchMount.innerHTML = sw.render();
       sw.setupEventListeners(videoSwitchMount);
     }
-    if (videoDetail) videoDetail.classList.toggle('hidden', !this.compressionSettings.video.enabled);
+    setVideoDetailVisible(this.compressionSettings.video.enabled);
 
     if (videoQualityMount) {
       const dropdown = new CustomDropdown({
@@ -346,25 +417,31 @@ export class MediaServerSection extends SettingsSection {
       videoResolutionMount.appendChild(dropdown.getElement());
     }
 
-    // ---- Audio toggle + detail panel
+    // ---- Audio toggle + detail rows
     const audioSwitchMount = contentContainer.querySelector('#compress-audio-switch-mount') as HTMLElement | null;
-    const audioDetail = contentContainer.querySelector('#compress-audio-detail') as HTMLElement | null;
+    const audioDetailRows = [
+      contentContainer.querySelector('#compress-audio-quality-row') as HTMLElement | null,
+      contentContainer.querySelector('#compress-audio-min-size-row') as HTMLElement | null,
+    ];
+    const setAudioDetailVisible = (show: boolean) => {
+      audioDetailRows.forEach(row => row?.classList.toggle('hidden', !show));
+    };
     const audioQualityMount = contentContainer.querySelector('#compress-audio-quality-mount') as HTMLElement | null;
 
     if (audioSwitchMount) {
       const sw = new Switch({
-        label: 'Compress audio before upload',
+        label: '',
         checked: this.compressionSettings.audio.enabled,
         onChange: (checked) => {
           this.compressionSettings.audio.enabled = checked;
           this.saveCompressionSettings();
-          if (audioDetail) audioDetail.classList.toggle('hidden', !checked);
+          setAudioDetailVisible(checked);
         },
       });
       audioSwitchMount.innerHTML = sw.render();
       sw.setupEventListeners(audioSwitchMount);
     }
-    if (audioDetail) audioDetail.classList.toggle('hidden', !this.compressionSettings.audio.enabled);
+    setAudioDetailVisible(this.compressionSettings.audio.enabled);
 
     if (audioQualityMount) {
       const dropdown = new CustomDropdown({
@@ -378,15 +455,88 @@ export class MediaServerSection extends SettingsSection {
       audioQualityMount.appendChild(dropdown.getElement());
     }
 
-    // ---- Min size threshold
-    const minSizeInput = contentContainer.querySelector('#compression-min-size-input') as HTMLInputElement | null;
-    minSizeInput?.addEventListener('change', () => {
-      const mb = parseInt(minSizeInput.value, 10);
-      if (!Number.isFinite(mb) || mb < 1) {
-        minSizeInput.value = String(Math.round(this.compressionSettings.minSizeBytes / (1024 * 1024)));
+    // ---- Image toggle + detail rows
+    const imageSwitchMount = contentContainer.querySelector('#compress-image-switch-mount') as HTMLElement | null;
+    const imageDetailRows = [
+      contentContainer.querySelector('#compress-image-quality-row') as HTMLElement | null,
+      contentContainer.querySelector('#compress-image-resolution-row') as HTMLElement | null,
+      contentContainer.querySelector('#compress-image-min-size-row') as HTMLElement | null,
+    ];
+    const setImageDetailVisible = (show: boolean) => {
+      imageDetailRows.forEach(row => row?.classList.toggle('hidden', !show));
+    };
+    const imageQualityMount = contentContainer.querySelector('#compress-image-quality-mount') as HTMLElement | null;
+    const imageResolutionMount = contentContainer.querySelector('#compress-image-resolution-mount') as HTMLElement | null;
+
+    if (imageSwitchMount) {
+      const sw = new Switch({
+        label: '',
+        checked: this.compressionSettings.image.enabled,
+        onChange: (checked) => {
+          this.compressionSettings.image.enabled = checked;
+          this.saveCompressionSettings();
+          setImageDetailVisible(checked);
+        },
+      });
+      imageSwitchMount.innerHTML = sw.render();
+      sw.setupEventListeners(imageSwitchMount);
+    }
+    setImageDetailVisible(this.compressionSettings.image.enabled);
+
+    if (imageQualityMount) {
+      const dropdown = new CustomDropdown({
+        options: qualityOptions,
+        selectedValue: this.compressionSettings.image.quality,
+        onChange: (value) => {
+          this.compressionSettings.image.quality = value as CompressionQuality;
+          this.saveCompressionSettings();
+        },
+      });
+      imageQualityMount.appendChild(dropdown.getElement());
+    }
+    if (imageResolutionMount) {
+      const dropdown = new CustomDropdown({
+        options: imageResolutionOptions,
+        selectedValue: String(this.compressionSettings.image.maxResolution),
+        onChange: (value) => {
+          this.compressionSettings.image.maxResolution = Number(value) as MaxResolution;
+          this.saveCompressionSettings();
+        },
+      });
+      imageResolutionMount.appendChild(dropdown.getElement());
+    }
+
+    // ---- Per-kind min-size thresholds
+    const imageMinInput = contentContainer.querySelector('#compression-image-min-size-input') as HTMLInputElement | null;
+    imageMinInput?.addEventListener('change', () => {
+      const kb = parseInt(imageMinInput.value, 10);
+      if (!Number.isFinite(kb) || kb < 1) {
+        imageMinInput.value = String(Math.round(this.compressionSettings.image.minSizeBytes / 1024));
         return;
       }
-      this.compressionSettings.minSizeBytes = mb * 1024 * 1024;
+      this.compressionSettings.image.minSizeBytes = kb * 1024;
+      this.saveCompressionSettings();
+    });
+
+    const videoMinInput = contentContainer.querySelector('#compression-video-min-size-input') as HTMLInputElement | null;
+    videoMinInput?.addEventListener('change', () => {
+      const mb = parseInt(videoMinInput.value, 10);
+      if (!Number.isFinite(mb) || mb < 1) {
+        videoMinInput.value = String(Math.round(this.compressionSettings.video.minSizeBytes / (1024 * 1024)));
+        return;
+      }
+      this.compressionSettings.video.minSizeBytes = mb * 1024 * 1024;
+      this.saveCompressionSettings();
+    });
+
+    const audioMinInput = contentContainer.querySelector('#compression-audio-min-size-input') as HTMLInputElement | null;
+    audioMinInput?.addEventListener('change', () => {
+      const mb = parseInt(audioMinInput.value, 10);
+      if (!Number.isFinite(mb) || mb < 1) {
+        audioMinInput.value = String(Math.round(this.compressionSettings.audio.minSizeBytes / (1024 * 1024)));
+        return;
+      }
+      this.compressionSettings.audio.minSizeBytes = mb * 1024 * 1024;
       this.saveCompressionSettings();
     });
   }
