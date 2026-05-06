@@ -47,6 +47,17 @@ export interface PostOptions {
   };
 }
 
+export interface HighlightOptions {
+  /** The exact text passage being highlighted (verbatim quote of source) */
+  highlightedText: string;
+  /** Optional commentary by the highlighter (rendered above the quote) */
+  comment?: string;
+  /** Source event being highlighted */
+  sourceEvent: NostrEvent;
+  /** Target relays to publish to */
+  relays: string[];
+}
+
 export interface ReplyOptions {
   /** Reply content (plain text) */
   content: string;
@@ -230,6 +241,104 @@ export class PostService {
         'PostService.createPost',
         true,
         'Failed to post note. Please try again.'
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Create and publish a NIP-84 Highlight (Kind 9802)
+   *
+   * `content` is the verbatim quote of the source. The user's optional
+   * commentary goes into a `comment` tag. The source is referenced via
+   * an `e` tag (regular events) or `a` tag (addressable events).
+   *
+   * @param options - Highlight configuration
+   * @returns Promise<boolean> - Success status
+   */
+  public async createHighlight(options: HighlightOptions): Promise<boolean> {
+    const { highlightedText, comment, sourceEvent, relays } = options;
+
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser) {
+      this.systemLogger.error('PostService', 'Cannot create highlight: User not authenticated');
+      return false;
+    }
+    if (!highlightedText || highlightedText.trim().length === 0) {
+      this.systemLogger.error('PostService', 'Cannot create highlight: Highlighted text is empty');
+      return false;
+    }
+    if (!relays || relays.length === 0) {
+      this.systemLogger.error('PostService', 'Cannot create highlight: No relays specified');
+      return false;
+    }
+
+    try {
+      const tags: string[][] = [];
+
+      // Source reference (NIP-84): addressable → a-tag, otherwise e-tag.
+      // The "source" marker at index 3 mirrors Jumble's convention so other
+      // clients can prioritize it when multiple references exist.
+      const isAddressable = sourceEvent.kind !== undefined
+        && sourceEvent.kind >= 30000
+        && sourceEvent.kind < 40000;
+
+      if (isAddressable) {
+        const dTag = getTag(sourceEvent.tags, 'd');
+        tags.push(['a', `${sourceEvent.kind}:${sourceEvent.pubkey}:${dTag}`, '', 'source']);
+      } else if (sourceEvent.id) {
+        tags.push(['e', sourceEvent.id, '', 'source']);
+      }
+
+      // Source author (NIP-84 'author' role)
+      tags.push(['p', sourceEvent.pubkey, '', 'author']);
+
+      // Add mentions from the comment as p-tags (skip duplicates)
+      const trimmedComment = (comment || '').trim();
+      if (trimmedComment) {
+        const { extractPubkeysFromText } = await import('../helpers/nip19');
+        const mentioned = new Set(extractPubkeysFromText(trimmedComment));
+        mentioned.delete(sourceEvent.pubkey); // already tagged as author
+        mentioned.forEach(pubkey => {
+          tags.push(['p', pubkey, '', 'mention']);
+        });
+
+        tags.push(['comment', trimmedComment]);
+      }
+
+      const finalTags = await this.maybeAttachEmojiTags(trimmedComment, tags);
+
+      const unsignedEvent = {
+        kind: 9802,
+        created_at: Math.floor(Date.now() / 1000),
+        tags: finalTags,
+        content: highlightedText,
+        pubkey: currentUser.pubkey
+      };
+
+      const signedEvent = await this.authService.signEvent(unsignedEvent);
+
+      if (!signedEvent) {
+        this.systemLogger.error('PostService', 'Failed to sign highlight event');
+        return false;
+      }
+
+      await this.transport.publish(relays, signedEvent);
+
+      this.systemLogger.info(
+        'PostService',
+        `Highlight published to ${relays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
+      );
+
+      ToastService.show('Highlight posted successfully!', 'success');
+
+      return true;
+    } catch (error) {
+      ErrorService.handle(
+        error,
+        'PostService.createHighlight',
+        true,
+        'Failed to post highlight. Please try again.'
       );
       return false;
     }

@@ -35,6 +35,14 @@ import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHandlerManager';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
+
+export interface HighlightSource {
+  /** The selected text passage (verbatim quote of source) */
+  selectedText: string;
+  /** The source event being highlighted */
+  event: NostrEvent;
+}
 
 export class PostNoteModal {
   private static instance: PostNoteModal;
@@ -65,6 +73,7 @@ export class PostNoteModal {
   private isNSFW: boolean = false;
   private pollData: PollData | null = null;
   private scheduledAt: number | null = null;
+  private highlightSource: HighlightSource | null = null;
 
   private constructor() {
     this.modalService = ModalService.getInstance();
@@ -84,17 +93,30 @@ export class PostNoteModal {
 
   /**
    * Show the post note modal
-   * @param initialContent - Optional pre-filled content (for quoted reposts)
+   * @param options - Either a pre-filled content string (legacy quoted reposts)
+   *                  or an options object with optional `highlightSource` to
+   *                  switch into NIP-84 Highlight mode.
    */
-  public show(initialContent?: string): void {
+  public show(options?: string | { initialContent?: string; highlightSource?: HighlightSource }): void {
+    let initialContent: string | undefined;
+    if (typeof options === 'string') {
+      initialContent = options;
+    } else if (options) {
+      initialContent = options.initialContent;
+      this.highlightSource = options.highlightSource ?? null;
+    }
+
     this.currentTab = 'edit';
-    this.content = initialContent || this.draftContent;
+    // In Highlight mode the textarea is the comment (start empty, no draft reuse).
+    this.content = this.highlightSource
+      ? (initialContent ?? '')
+      : (initialContent ?? this.draftContent);
     this.loadRelayConfiguration();
 
     const modalContent = this.renderContent();
 
     this.modalService.show({
-      title: 'New Note',
+      title: this.highlightSource ? 'New Highlight' : 'New Note',
       content: modalContent,
       width: '650px',
       height: 'auto',
@@ -150,9 +172,23 @@ export class PostNoteModal {
     return `
       <div class="post-note-modal">
         ${this.renderTabs()}
+        ${this.renderHighlightQuote()}
         ${this.renderEditor()}
         <div id="poll-creator-container"></div>
         ${this.renderActions()}
+      </div>
+    `;
+  }
+
+  /**
+   * Render the read-only quote box for Highlight mode (NIP-84).
+   * The user cannot edit the source passage; their thoughts go in the textarea.
+   */
+  private renderHighlightQuote(): string {
+    if (!this.highlightSource) return '';
+    return `
+      <div class="post-note-highlight-quote">
+        <blockquote class="highlight__quote">${escapeHtml(this.highlightSource.selectedText)}</blockquote>
       </div>
     `;
   }
@@ -197,10 +233,13 @@ export class PostNoteModal {
    */
   private renderEditor(): string {
     if (this.currentTab === 'edit') {
+      const placeholder = this.highlightSource
+        ? 'Write your thoughts about this highlight (optional)…'
+        : "What's on your mind?";
       return `
         <textarea
           class="textarea"
-          placeholder="What's on your mind?"
+          placeholder="${escapeHtml(placeholder)}"
           data-textarea
         >${this.content}</textarea>
       `;
@@ -233,13 +272,19 @@ export class PostNoteModal {
       showSchedule: isScheduledPostsEnabled(),
     });
 
-    const validation = ContentValidationManager.validate({
-      content: this.content,
-      selectedRelays: this.selectedRelays,
-      pollData: this.pollData
-    });
+    // Highlight mode: comment is optional, only require relays.
+    // Regular notes: require content (or poll) + relays.
+    const isValid = this.highlightSource
+      ? this.selectedRelays.size > 0
+      : ContentValidationManager.validate({
+          content: this.content,
+          selectedRelays: this.selectedRelays,
+          pollData: this.pollData
+        }).isValid;
 
-    const postButtonLabel = this.scheduledAt !== null ? 'Schedule' : 'Post';
+    const postButtonLabel = this.highlightSource
+      ? 'Post Highlight'
+      : (this.scheduledAt !== null ? 'Schedule' : 'Post');
     return `
       <div class="l-row l-row--split">
         <div>
@@ -249,7 +294,7 @@ export class PostNoteModal {
         </div>
         <div>
           <button class="btn btn--passive" data-action="cancel">Cancel</button>
-          <button class="btn" data-action="post" ${validation.isValid ? '' : 'disabled'}>${postButtonLabel}</button>
+          <button class="btn" data-action="post" ${isValid ? '' : 'disabled'}>${postButtonLabel}</button>
         </div>
       </div>
     `;
@@ -441,6 +486,11 @@ export class PostNoteModal {
    * Update post button state
    */
   private updatePostButton(): void {
+    if (this.highlightSource) {
+      const btn = document.querySelector('[data-action="post"]') as HTMLButtonElement | null;
+      if (btn) btn.disabled = this.selectedRelays.size === 0;
+      return;
+    }
     EditorStateManager.updatePostButton(
       '[data-action="post"]',
       this.content,
@@ -556,11 +606,11 @@ export class PostNoteModal {
    * Handle cancel button click
    */
   private handleCancel(): void {
-    const textarea = document.querySelector('[data-textarea]') as HTMLTextAreaElement;
-    if (textarea) {
-      this.draftContent = textarea.value;
-    } else {
-      this.draftContent = this.content;
+    // Don't carry an unfinished highlight comment over into the next regular
+    // note's draft — that text was meant for a specific source.
+    if (!this.highlightSource) {
+      const textarea = document.querySelector('[data-textarea]') as HTMLTextAreaElement;
+      this.draftContent = textarea ? textarea.value : this.content;
     }
 
     this.cleanup();
@@ -571,6 +621,11 @@ export class PostNoteModal {
    * Handle post button click
    */
   private async handlePost(): Promise<void> {
+    if (this.highlightSource) {
+      await this.handlePostHighlight();
+      return;
+    }
+
     const validation = ContentValidationManager.validate({
       content: this.content,
       selectedRelays: this.selectedRelays,
@@ -669,6 +724,46 @@ export class PostNoteModal {
   }
 
   /**
+   * Publish a NIP-84 Highlight (kind 9802). Content = the verbatim quote;
+   * the textarea contents become the optional `comment` tag.
+   */
+  private async handlePostHighlight(): Promise<void> {
+    if (!this.highlightSource) return;
+    if (this.selectedRelays.size === 0) return;
+    if (!AuthGuard.requireAuth('post a highlight')) return;
+
+    this.toolbar?.hideEmojiPicker();
+
+    const modalContainer = document.querySelector('.modal') as HTMLElement;
+    let originalDisplay = '';
+    if (modalContainer) {
+      originalDisplay = modalContainer.style.display;
+      modalContainer.style.display = 'none';
+    }
+
+    try {
+      const success = await this.postService.createHighlight({
+        highlightedText: this.highlightSource.selectedText,
+        comment: this.content,
+        sourceEvent: this.highlightSource.event,
+        relays: Array.from(this.selectedRelays)
+      });
+
+      if (success) {
+        this.draftContent = '';
+        this.highlightSource = null;
+        this.cleanup();
+        this.modalService.hide();
+      } else {
+        ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post Highlight');
+      }
+    } catch (error) {
+      console.error('Highlight post error:', error);
+      ModalEventHandlerManager.restoreAfterError(modalContainer, originalDisplay, 'Post Highlight');
+    }
+  }
+
+  /**
    * Render quoted notes in preview
    */
   private async renderQuotedNotesInPreview(container: HTMLElement): Promise<void> {
@@ -760,6 +855,7 @@ export class PostNoteModal {
 
     this.pollData = null;
     this.scheduledAt = null;
+    this.highlightSource = null;
   }
 
   /**

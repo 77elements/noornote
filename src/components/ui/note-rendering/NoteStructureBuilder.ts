@@ -17,6 +17,7 @@ import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
 import { UserHoverCard } from '../UserHoverCard';
 import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
+import { NoteService } from '../../../services/NoteService';
 
 // Store component instances for cleanup
 const noteHeaderInstances: Map<string, NoteHeader> = new Map();
@@ -130,6 +131,11 @@ export class NoteStructureBuilder {
     const noteDiv = document.createElement('div');
     noteDiv.className = `note-card ${buildOptions.cssClass}`;
     noteDiv.dataset.eventId = note.id;
+
+    // Register the raw event with NoteService so features that need a sync
+    // event lookup by id (e.g. TextSelectionToolbar → highlight publishing)
+    // can resolve it without re-fetching from relays.
+    NoteService.getInstance().registerNote(note.rawEvent);
 
     // Create note header component
     const noteHeader = new NoteHeader({

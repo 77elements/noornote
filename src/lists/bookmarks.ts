@@ -2422,6 +2422,11 @@ export class BookmarkCard {
       const snippet = question.length > 80 ? question.slice(0, 80) + '...' : question;
       return snippet ? `Poll: ${snippet}` : 'Poll';
     }
+    if (event.kind === 9802) {
+      const text = (event.content || '').trim();
+      const snippet = text.length > 80 ? text.slice(0, 80) + '...' : text;
+      return snippet ? `Highlight: ${snippet}` : 'Highlight';
+    }
     if (event.kind === 30617) {
       const name = event.tags.find(t => t[0] === 'name')?.[1] || 'Repo';
       return `Git Repository: ${name}`;

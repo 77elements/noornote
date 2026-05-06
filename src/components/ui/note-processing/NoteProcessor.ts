@@ -16,6 +16,7 @@ import { PictureNoteProcessor } from './PictureNoteProcessor';
 import { FileMetadataProcessor } from './FileMetadataProcessor';
 import { FollowPackProcessor } from './FollowPackProcessor';
 import { GitEventProcessor } from './GitEventProcessor';
+import { HighlightProcessor } from './HighlightProcessor';
 
 export class NoteProcessor {
   /**
@@ -42,6 +43,8 @@ export class NoteProcessor {
           return PollProcessor.process(event);
         case 9735:
           return ZapReceiptProcessor.process(event);
+        case 9802:
+          return HighlightProcessor.process(event);
         case 30023:
           return ArticleProcessor.process(event);
         case 39089:

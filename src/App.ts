@@ -16,6 +16,7 @@ import { PlatformService } from './services/PlatformService';
 import { ConnectivityService } from './services/ConnectivityService';
 import { OfflineOverlay } from './components/system/OfflineOverlay';
 import { CollapsibleManager } from './components/ui/note-features/CollapsibleManager';
+import { TextSelectionToolbar } from './components/ui/TextSelectionToolbar';
 import { FontSizeService } from './services/FontSizeService';
 import { ThemeService } from './services/ThemeService';
 import { initDiagnosticLogger, destroyDiagnosticLogger } from './services/DiagnosticLogger';
@@ -388,6 +389,9 @@ export class App {
     this.setupExternalLinkHandler();
     this.setupHashtagClickHandler();
     this.setupDeepLinkHandler();
+
+    // Mouse-selection driven NIP-84 highlight trigger (desktop only).
+    TextSelectionToolbar.getInstance().init();
 
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
       initDiagnosticLogger(data.npub);

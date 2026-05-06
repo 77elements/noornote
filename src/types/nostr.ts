@@ -159,6 +159,7 @@ export enum EventKind {
   LIVE_CHAT_MESSAGE = 1311,
   COMIC_STRIP = 6969,
   ZAP_RECEIPT = 9735,
+  HIGHLIGHT = 9802,
   LONG_FORM_CONTENT = 30023,
 }
 
@@ -175,6 +176,7 @@ export const USER_CONTENT_KINDS: number[] = [
   EventKind.COMMENT,
   EventKind.FILE_METADATA,
   EventKind.COMIC_STRIP,
+  EventKind.HIGHLIGHT,
   EventKind.LONG_FORM_CONTENT,
 ];
 

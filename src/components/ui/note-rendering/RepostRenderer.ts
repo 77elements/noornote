@@ -9,6 +9,7 @@ import { UserProfileService } from '../../../services/UserProfileService';
 import { NoteProcessor } from '../note-processing/NoteProcessor';
 import { OriginalNoteRenderer } from './OriginalNoteRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
+import { HighlightRenderer } from './HighlightRenderer';
 import { GIT_EVENT_KINDS } from '../../../types/nostr';
 import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
 import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
@@ -325,6 +326,14 @@ export class RepostRenderer {
       });
 
       repostDiv.appendChild(appContainer);
+    } else if (note.repostedEvent.kind === 9802) {
+      // Reposted event is a NIP-84 highlight (kind:9802)
+      const highlightContainer = document.createElement('div');
+      highlightContainer.className = 'repost-article-container';
+      const processedHighlight = NoteProcessor.process(note.repostedEvent);
+      const highlightElement = HighlightRenderer.render(processedHighlight, { collapsible: false, depth: (opts.depth ?? 0) + 1 });
+      highlightContainer.appendChild(highlightElement);
+      repostDiv.appendChild(highlightContainer);
     } else if (note.repostedEvent.kind !== undefined && GIT_EVENT_KINDS.includes(note.repostedEvent.kind)) {
       // Reposted event is a NIP-34 git event (Patch / PR / Issue / Status / Repo)
       const gitContainer = document.createElement('div');

@@ -13,6 +13,7 @@ import { ZapReceiptRenderer } from './ZapReceiptRenderer';
 import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { FollowPackRenderer } from './FollowPackRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
+import { HighlightRenderer } from './HighlightRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -33,6 +34,8 @@ export class NoteRendererFactory {
         return FollowPackRenderer.render(note, options);
       case 'git-event':
         return GitEventRenderer.render(note, options);
+      case 'highlight':
+        return HighlightRenderer.render(note, options);
       default:
         return OriginalNoteRenderer.render(note, options);
     }

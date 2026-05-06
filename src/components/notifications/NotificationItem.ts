@@ -175,7 +175,7 @@ export class NotificationItem {
    */
   private isTextNotification(): boolean {
     const type = this.options.type;
-    return type === 'mention' || type === 'reply' || type === 'thread-reply';
+    return type === 'mention' || type === 'reply' || type === 'thread-reply' || type === 'highlight';
   }
 
   /**
@@ -298,6 +298,9 @@ export class NotificationItem {
       case 'mutual_new':
         return '✅';
 
+      case 'highlight':
+        return `<svg width="18" height="18"><use href="#icon-highlight"/></svg>`;
+
       default:
         return '🔔';
     }
@@ -374,6 +377,7 @@ export class NotificationItem {
       }
       case 'mutual_unfollow': return 'stopped following you back';
       case 'mutual_new': return 'started following you back!';
+      case 'highlight': return `highlighted your ${target}`;
       default: return `interacted with your ${target}`;
     }
   }

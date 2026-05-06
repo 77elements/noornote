@@ -202,7 +202,7 @@ export class ProfileOrchestrator extends Orchestrator {
     const relays = this.relayConfig.getReadRelays();
     const filters: NDKFilter[] = [{
       authors: [pubkey],
-      kinds: [1, 21, 22, 1063],
+      kinds: [1, 21, 22, 1063, 9802],
       since: 0,
       limit: 5000
     }];

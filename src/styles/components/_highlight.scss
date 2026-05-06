@@ -1,0 +1,52 @@
+// NIP-84 Highlight (kind 9802) — body markup produced by HighlightProcessor.
+// Reuses the shared note-card shell; only the body atoms are defined here.
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.note-card--highlight {
+  margin: $gap 0;
+}
+
+.highlight {
+  &__comment {
+    margin-bottom: $gap;
+  }
+
+  &__quote {
+    margin: $gap 0;
+    padding-left: $gap;
+    border-left: calc($gap / 4) solid var(--color-4);
+    font-style: italic;
+    color: var(--color-5);
+  }
+
+  &__source {
+    @extend %small;
+    margin-top: $gap;
+    color: var(--color-3);
+  }
+
+  &__source-link {
+    color: var(--color-4);
+  }
+}
+
+// Floating "Post highlight" trigger that follows mouse-driven text selection
+// inside .event-content / .article-view-content.
+.text-selection-toolbar {
+  position: fixed;
+  z-index: 1000;
+
+  > svg {
+    margin-right: calc($gap / 4);
+    vertical-align: middle;
+  }
+}
+
+// Read-only quote box at the top of PostNoteModal in NIP-84 Highlight mode.
+// Reuses the .highlight__quote atom; just adds vertical breathing room.
+.post-note-highlight-quote {
+  margin-bottom: $gap;
+}
+

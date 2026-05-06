@@ -24,6 +24,7 @@ import { formatQuotedReferences, type QuotedReference } from '../../helpers/form
 import { ContentProcessor } from '../../services/ContentProcessor';
 import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../../services/ArticlePreviewRenderer';
+import { NoteService } from '../../services/NoteService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -87,9 +88,13 @@ export class ArticleView {
     // Render markdown and extract quoted references
     const { html: articleHtml, quotedReferences } = this.renderMarkdown(event.content);
 
+    // Register the article event so TextSelectionToolbar can resolve it sync
+    // (NIP-84 highlights need the source event for a-tag construction).
+    NoteService.getInstance().registerNote(event);
+
     // Create article structure with replies container
     this.container.innerHTML = `
-      <div class="article-view-content">
+      <div class="article-view-content" data-event-id="${event.id}">
         <div class="article-header">
           ${metadata.image ? `<img src="${metadata.image}" alt="${escapeHtml(metadata.title)}" class="article-banner" />` : ''}
           <div class="article-title-row">

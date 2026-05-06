@@ -133,6 +133,16 @@ export class QuotedNoteRenderer {
           return;
         }
 
+        // Route NIP-84 highlights (kind 9802) to HighlightRenderer
+        if (result.event.kind === 9802) {
+          const { HighlightRenderer } = await import('../components/ui/note-rendering/HighlightRenderer');
+          const { HighlightProcessor } = await import('../components/ui/note-processing/HighlightProcessor');
+          const processedNote = HighlightProcessor.process(result.event);
+          const highlightElement = HighlightRenderer.render(processedNote, { collapsible: false, depth: 1 });
+          skeleton.replaceWith(highlightElement);
+          return;
+        }
+
         // Route zap receipts (kind 9735) to ZapReceiptRenderer
         if (result.event.kind === 9735) {
           const { ZapReceiptRenderer } = await import('../components/ui/note-rendering/ZapReceiptRenderer');
