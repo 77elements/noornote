@@ -56,12 +56,31 @@ export class NospressAddonView extends View {
     }
 
     const href = `/profile/${npub}/nospress`;
-    slot.innerHTML = `<a class="btn" href="${href}" data-action="open-nospress">Open NosPress</a>`;
+    const hasRoom = window.innerWidth >= NospressAddonView.MIN_WIDTH_PX;
 
-    const btn = slot.querySelector('[data-action="open-nospress"]') as HTMLAnchorElement | null;
-    btn?.addEventListener('click', (e) => {
-      e.preventDefault();
-      Router.getInstance().navigate(href);
-    });
+    if (hasRoom) {
+      slot.innerHTML = `
+        <div class="nospress-addon__open">
+          <a class="btn" href="${href}" data-action="open-nospress">Open NosPress</a>
+        </div>
+      `;
+      const btn = slot.querySelector('[data-action="open-nospress"]') as HTMLAnchorElement | null;
+      btn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        Router.getInstance().navigate(href);
+      });
+    } else {
+      slot.innerHTML = `
+        <div class="nospress-addon__open">
+          <button class="btn" disabled data-action="open-nospress-disabled">Open NosPress</button>
+          <p class="nospress-addon__hint">
+            NosPress requires a screen at least ${NospressAddonView.MIN_WIDTH_PX}px wide and is best used on the desktop app (Linux / macOS) or the web app on a desktop browser.
+          </p>
+        </div>
+      `;
+    }
   }
+
+  /** Minimum viewport width for the NosPress editor. Below this we hard-gate. */
+  private static readonly MIN_WIDTH_PX = 1024;
 }

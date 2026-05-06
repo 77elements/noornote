@@ -1,5 +1,24 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+// ==========================================
+// NosPress Addon (Settings page entry)
+// ==========================================
+
+.nospress-addon {
+  &__open {
+    margin-top: $gap;
+    text-align: center;
+  }
+
+  &__hint {
+    @extend %small;
+    margin: $gap auto 0;
+    max-width: 36rem;
+    color: var(--color-3);
+  }
+}
 
 // ==========================================
 // NosPress View (readonly)
