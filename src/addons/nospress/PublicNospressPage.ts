@@ -3,6 +3,8 @@ import { resolveNip05 } from './Nip05Resolver';
 import { NospressOrchestrator } from '../../services/orchestration/NospressOrchestrator';
 import { NospressMenuOrchestrator } from '../../services/orchestration/NospressMenuOrchestrator';
 import { NospressPageIndexOrchestrator } from '../../services/orchestration/NospressPageIndexOrchestrator';
+import { NospressSiteSettingsOrchestrator } from '../../services/orchestration/NospressSiteSettingsOrchestrator';
+import type { NospressSiteSettings } from './blocks/siteSettings';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { BlockRenderer } from './blocks/BlockRenderer';
@@ -40,6 +42,15 @@ export class PublicNospressPage {
   private profileCardInstances: UserIdentity[] = [];
   private articlesCarousels: ProfileArticlesCarousel[] = [];
   private clickAbort: AbortController | null = null;
+  /** Saved values from before site-settings were applied, so destroy() can
+   *  restore the document to its pre-public-page state. */
+  private savedDocumentTitle: string | null = null;
+  private savedCssVariables: Map<string, string> = new Map();
+  private savedBodyFontFamily: string | null = null;
+  /** Original `<meta>` / `<link>` elements that we replaced during the
+   *  public-render. Cloned at remove-time, re-inserted on destroy() so
+   *  the in-app head returns to its pre-public state. */
+  private savedHeadElements: Element[] = [];
   /** Owner of the page (= page author). Resolved from the route during load,
    *  reused by the signing-action CTAs to build action-specific post-login
    *  redirects (e.g. dm-button → /messages/{ownerNpub}). */
@@ -90,6 +101,7 @@ export class PublicNospressPage {
     const orch = NospressOrchestrator.getInstance();
     const menuOrch = NospressMenuOrchestrator.getInstance();
     const pageIndexOrch = NospressPageIndexOrchestrator.getInstance();
+    const siteSettingsOrch = NospressSiteSettingsOrchestrator.getInstance();
     // Site composition: parallel fetch of body (per route slug), global
     // header, global footer, plus the menu set + page index for nav-menu
     // blocks. Each lives in its own NIP-78 event. Owner profile is only
@@ -97,7 +109,7 @@ export class PublicNospressPage {
     const bodySlug = this.route.slug || HOME_SLUG;
     // Per-page header/footer overrides take precedence over the global slot.
     // We fetch both in parallel and pick the override only when it's non-empty.
-    const [profile, body, pageHeader, globalHeader, pageFooter, globalFooter, viewerProfile, menuSet, pageIndex] = await Promise.all([
+    const [profile, body, pageHeader, globalHeader, pageFooter, globalFooter, viewerProfile, menuSet, pageIndex, siteSettings] = await Promise.all([
       UserProfileService.getInstance().getUserProfile(pubkey).catch(() => null),
       orch.fetchFromRelays(pubkey, true, bodySlug).catch(() => null),
       orch.fetchFromRelays(pubkey, true, pageHeaderSlug(bodySlug)).catch(() => null),
@@ -107,10 +119,18 @@ export class PublicNospressPage {
       viewerProfilePromise,
       menuOrch.fetchFromRelays(pubkey, true).catch(() => null),
       pageIndexOrch.fetchFromRelays(pubkey, true).catch(() => null),
+      siteSettingsOrch.fetchFromRelays(pubkey, true).catch(() => null),
     ]);
 
     const header = (pageHeader && pageHeader.blocks.length > 0) ? pageHeader : globalHeader;
     const footer = (pageFooter && pageFooter.blocks.length > 0) ? pageFooter : globalFooter;
+
+    // Apply site-settings BEFORE renderPage so theme palette is in place
+    // when blocks measure / read computed styles.
+    const pageTitleForMeta = body?.title?.trim()
+      || pageIndex?.pages.find(p => p.slug === bodySlug)?.title
+      || (this.route.type === 'nip05' ? this.route.handle : '');
+    this.applySiteSettings(siteSettings, pageTitleForMeta);
 
     const isEmpty = (p: NospressPageV2 | null): boolean => !p || p.blocks.length === 0;
     if (isEmpty(body) && isEmpty(header) && isEmpty(footer)) {
@@ -148,8 +168,136 @@ export class PublicNospressPage {
     this.articlesCarousels.forEach(c => c.destroy());
     this.articlesCarousels = [];
     removeUserCss();
+    this.resetSiteSettings();
     this.container.innerHTML = '';
   }
+
+  /**
+   * Apply NosPress site-settings to the document at public-render time.
+   *   - `<title>` derived from the title template + page title + site name
+   *   - `<meta name="description">`, `og:*`, plus user-defined custom tags
+   *   - `<link rel="icon">` for favicon
+   *   - `--color-1` … `--color-6` CSS variables on the `<html>` element
+   *     (overrides the active app theme for this single page)
+   *   - `font-family` on the `<body>` element
+   *
+   * All injected `<meta>` / `<link>` carry `data-nospress-injected="true"`
+   * so {@link resetSiteSettings} can find them on teardown. Pre-existing
+   * values for title / CSS variables / font-family are saved for restore.
+   */
+  private applySiteSettings(settings: NospressSiteSettings | null, pageTitle: string): void {
+    if (!settings) return;
+    const meta = settings.meta ?? {};
+    const theme = settings.theme ?? {};
+
+    // ---- Title ---------------------------------------------------------
+    // Format: `<pageTitle> — <siteName>` if both, whichever exists otherwise.
+    const siteName = (meta.siteName ?? '').trim();
+    const computedTitle = pageTitle && siteName
+      ? `${pageTitle} — ${siteName}`
+      : (pageTitle || siteName);
+    if (computedTitle) {
+      if (this.savedDocumentTitle === null) this.savedDocumentTitle = document.title;
+      document.title = computedTitle;
+    }
+
+    // ---- <meta> tags ---------------------------------------------------
+    // We REPLACE existing tags with the same key — most crawlers query the
+    // first match (`querySelector('meta[name="description"]')`), so simply
+    // appending leaves the NoorNote defaults winning. Originals are saved
+    // for destroy()-time restore.
+    if (meta.description) {
+      this.replaceMetaTag('name', 'description', meta.description);
+      this.replaceMetaTag('property', 'og:description', meta.description);
+    }
+    if (computedTitle) {
+      this.replaceMetaTag('property', 'og:title', computedTitle);
+      this.replaceMetaTag('name', 'twitter:title', computedTitle);
+    }
+    if (meta.ogImage) {
+      this.replaceMetaTag('property', 'og:image', meta.ogImage);
+      this.replaceMetaTag('name', 'twitter:image', meta.ogImage);
+      this.replaceMetaTag('name', 'twitter:card', 'summary_large_image');
+    }
+    (meta.customTags ?? []).forEach(t => {
+      const name = t.name?.trim();
+      const content = t.content?.trim();
+      if (name && content) this.replaceMetaTag('name', name, content);
+    });
+
+    // ---- Favicon -------------------------------------------------------
+    if (meta.favicon) {
+      this.replaceFavicon(meta.favicon);
+    }
+
+    // ---- Theme palette + font-family ----------------------------------
+    const root = document.documentElement;
+    if (theme.palette) {
+      for (const [key, value] of Object.entries(theme.palette)) {
+        if (!value) continue;
+        if (!this.savedCssVariables.has(key)) {
+          this.savedCssVariables.set(key, root.style.getPropertyValue(`--${key}`));
+        }
+        root.style.setProperty(`--${key}`, value);
+      }
+    }
+    if (theme.fontFamily) {
+      if (this.savedBodyFontFamily === null) this.savedBodyFontFamily = document.body.style.fontFamily;
+      document.body.style.fontFamily = theme.fontFamily;
+    }
+  }
+
+  /** Replace any existing `<meta name|property="<key>">` with our own. The
+   *  removed originals are saved (cloned) for destroy()-time restore. */
+  private replaceMetaTag(attr: 'name' | 'property', key: string, content: string): void {
+    const escapedKey = key.replace(/"/g, '\\"');
+    document.head.querySelectorAll(`meta[${attr}="${escapedKey}"]`).forEach(el => {
+      this.savedHeadElements.push(el.cloneNode(true) as Element);
+      el.remove();
+    });
+    const next = document.createElement('meta');
+    next.setAttribute(attr, key);
+    next.setAttribute('content', content);
+    next.setAttribute('data-nospress-injected', 'true');
+    document.head.appendChild(next);
+  }
+
+  /** Replace every `<link rel="icon">` (and apple-touch-icon) with our
+   *  custom favicon URL. Originals saved for restore. */
+  private replaceFavicon(href: string): void {
+    document.head.querySelectorAll('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(el => {
+      this.savedHeadElements.push(el.cloneNode(true) as Element);
+      el.remove();
+    });
+    const next = document.createElement('link');
+    next.setAttribute('rel', 'icon');
+    next.setAttribute('href', href);
+    next.setAttribute('data-nospress-injected', 'true');
+    document.head.appendChild(next);
+  }
+
+  /** Restore the document to its pre-public-page state. Removes every
+   *  injected meta/link, re-inserts the originals we replaced, restores
+   *  CSS variables, title, and body font. */
+  private resetSiteSettings(): void {
+    if (this.savedDocumentTitle !== null) {
+      document.title = this.savedDocumentTitle;
+      this.savedDocumentTitle = null;
+    }
+    document.head.querySelectorAll('[data-nospress-injected="true"]').forEach(el => el.remove());
+    this.savedHeadElements.forEach(el => document.head.appendChild(el));
+    this.savedHeadElements = [];
+    this.savedCssVariables.forEach((value, key) => {
+      if (value) document.documentElement.style.setProperty(`--${key}`, value);
+      else document.documentElement.style.removeProperty(`--${key}`);
+    });
+    this.savedCssVariables.clear();
+    if (this.savedBodyFontFamily !== null) {
+      document.body.style.fontFamily = this.savedBodyFontFamily;
+      this.savedBodyFontFamily = null;
+    }
+  }
+
 
   /**
    * Delegated click handler on the page root: any `data-action` listed in

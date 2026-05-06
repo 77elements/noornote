@@ -15,10 +15,6 @@ html.layout--public {
 // full-width, sits above the centered .user-site content. Padding-top on
 // .user-site makes room so the page header isn't hidden behind it.
 .user-site-bar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
   z-index: 100;
   height: 40px;
   display: flex;

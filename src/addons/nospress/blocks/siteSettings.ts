@@ -8,15 +8,27 @@
  * NIP-78 event.
  */
 
-const PALETTE_KEYS = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6'] as const;
-type PaletteKey = typeof PALETTE_KEYS[number];
+export const PALETTE_KEYS = ['color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6'] as const;
+export type PaletteKey = typeof PALETTE_KEYS[number];
+
+/** Deep Purple — the default theme palette as defined in `_themes.scss`
+ *  (`:root`). Used as the visual baseline in the Global tab swatches: each
+ *  unset palette slot in `NospressSiteSettings.theme.palette` is rendered
+ *  with these values so the user sees what they're overriding. */
+export const DEFAULT_PALETTE: Record<PaletteKey, string> = {
+  'color-1': '#0f0d23',
+  'color-2': '#252343',
+  'color-3': '#9b79b9',
+  'color-4': '#dc85ad',
+  'color-5': '#ede2da',
+  'color-6': '#7dd87d',
+};
 
 export interface NospressSiteMeta {
-  /** Display name of the site (used in `titleTemplate`). */
+  /** Display name of the site, used as a brand suffix in the document
+   *  title: `<pageTitle> — <siteName>`. If empty, the page title shows
+   *  alone. */
   siteName?: string;
-  /** Title template with `{pageTitle}` / `{siteName}` tokens. Default
-   *  `'{pageTitle} — {siteName}'` when both are set, otherwise just one. */
-  titleTemplate?: string;
   /** Site-wide default `<meta name="description">`. Overridable per page. */
   description?: string;
   /** Default OG image URL for sharing previews. */
@@ -25,6 +37,10 @@ export interface NospressSiteMeta {
   favicon?: string;
   /** Twitter card type. */
   twitterCard?: 'summary' | 'summary_large_image';
+  /** Free-form additional `<meta>` tags. Each entry renders as
+   *  `<meta name="<name>" content="<content>">`. Used for verification
+   *  meta tags, analytics opt-outs, custom NIP-05 metadata, etc. */
+  customTags?: Array<{ name: string; content: string }>;
 }
 
 export interface NospressSiteTheme {
@@ -72,7 +88,7 @@ export function isSiteSettings(data: unknown): data is NospressSiteSettings {
 export function hasSiteSettingsContent(s: NospressSiteSettings | null | undefined): boolean {
   if (!s) return false;
   const m = s.meta;
-  if (m && (m.siteName || m.titleTemplate || m.description || m.ogImage || m.favicon || m.twitterCard)) return true;
+  if (m && (m.siteName || m.description || m.ogImage || m.favicon || m.twitterCard || (m.customTags?.length ?? 0) > 0)) return true;
   const t = s.theme;
   if (t && (t.fontFamily || (t.palette && Object.keys(t.palette).length > 0))) return true;
   const i = s.injection;

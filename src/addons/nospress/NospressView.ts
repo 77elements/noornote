@@ -15,9 +15,12 @@ import { View } from '../../components/views/View';
 import { NospressOrchestrator } from '../../services/orchestration/NospressOrchestrator';
 import { NospressPageIndexOrchestrator } from '../../services/orchestration/NospressPageIndexOrchestrator';
 import { NospressMenuOrchestrator } from '../../services/orchestration/NospressMenuOrchestrator';
+import { NospressSiteSettingsOrchestrator } from '../../services/orchestration/NospressSiteSettingsOrchestrator';
 import { NospressService } from '../../services/NospressService';
 import { NospressPageIndexService } from '../../services/NospressPageIndexService';
 import { NospressMenuService } from '../../services/NospressMenuService';
+import { NospressSiteSettingsService } from '../../services/NospressSiteSettingsService';
+import { DEFAULT_PALETTE, PALETTE_KEYS, type NospressSiteSettings } from './blocks/siteSettings';
 import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, normalizeSlug, isValidSlug, pageHeaderSlug, pageFooterSlug, type PageIndexEntry } from './blocks/pageIndex';
 import { PRIMARY_MENU_ID, type NavItem, type NospressMenu } from './blocks/menu';
 import { BlockRenderer } from './blocks/BlockRenderer';
@@ -134,6 +137,8 @@ export class NospressView extends View {
   private pageIndexOrchestrator: NospressPageIndexOrchestrator;
   private menuService: NospressMenuService;
   private menuOrchestrator: NospressMenuOrchestrator;
+  private siteSettingsService: NospressSiteSettingsService;
+  private siteSettingsOrchestrator: NospressSiteSettingsOrchestrator;
   /** True when the Custom-CSS editor panel is visible between header and
    *  the page-edit area. Toggled by the overlay "CSS Editor" button or the
    *  Library "Custom CSS" entry. UI-only; no relay impact. */
@@ -150,6 +155,8 @@ export class NospressView extends View {
     this.pageIndexOrchestrator = NospressPageIndexOrchestrator.getInstance();
     this.menuService = NospressMenuService.getInstance();
     this.menuOrchestrator = NospressMenuOrchestrator.getInstance();
+    this.siteSettingsService = NospressSiteSettingsService.getInstance();
+    this.siteSettingsOrchestrator = NospressSiteSettingsOrchestrator.getInstance();
 
     try {
       const decoded = decodeNip19(npub);
@@ -575,11 +582,17 @@ export class NospressView extends View {
     const tabBar = document.createElement('div');
     tabBar.className = 'tabs nospress-tabs';
     tabBar.innerHTML = `
+      <button type="button" class="tab" data-tab="global"><span class="tab__label">Global</span></button>
       <button type="button" class="tab tab--active" data-tab="pages"><span class="tab__label">Pages</span></button>
       <button type="button" class="tab" data-tab="blocks"><span class="tab__label">Blocks</span></button>
       <button type="button" class="tab" data-tab="properties"><span class="tab__label">Properties</span></button>
       <button type="button" class="tab" data-tab="nav"><span class="tab__label">Nav</span></button>
     `;
+
+    const globalContent = document.createElement('div');
+    globalContent.className = 'tab-content';
+    globalContent.dataset.tabContent = 'global';
+    globalContent.innerHTML = this.renderGlobalContent();
 
     const pagesContent = document.createElement('div');
     pagesContent.className = 'tab-content tab-content--active';
@@ -602,10 +615,16 @@ export class NospressView extends View {
     navContent.innerHTML = this.renderNavContent();
 
     librarySlot.appendChild(tabBar);
+    librarySlot.appendChild(globalContent);
     librarySlot.appendChild(pagesContent);
     librarySlot.appendChild(blocksContent);
     librarySlot.appendChild(propertiesContent);
     librarySlot.appendChild(navContent);
+
+    // Global-tab event wiring (input persistence + accordion toggle + Save+Publish click)
+    globalContent.addEventListener('input', (e) => this.handleGlobalTabInput(e));
+    globalContent.addEventListener('change', (e) => this.handleGlobalTabInput(e));
+    globalContent.addEventListener('click', (e) => this.handleGlobalTabClick(e));
 
     setupTabClickHandlers(librarySlot, (tabId) => switchTabWithContent(librarySlot, tabId));
 
@@ -804,6 +823,296 @@ export class NospressView extends View {
   private updatePagesTab(): void {
     if (this.pagesTabContent) {
       this.pagesTabContent.innerHTML = this.renderPagesContent();
+    }
+  }
+
+  /**
+  /**
+   * Render the Global tab body — site-wide settings (Phase 4.9b skeleton).
+   * Three accordion sections: Meta & SEO, Theme & Palette, Code Integration.
+   * All inputs are bound via `data-global-field="<dotted.path>"` and persist
+   * to {@link NospressSiteSettingsService} on the input/change event. The
+   * "Save & Publish" button additionally pushes to relays via
+   * {@link NospressSiteSettingsOrchestrator}. Apply-side (head injection,
+   * theme override) is Phase 4.9c+.
+   */
+  private renderGlobalContent(): string {
+    const settings = this.siteSettingsService.getSettings();
+    const m = settings.meta ?? {};
+    const t = settings.theme ?? {};
+    const i = settings.injection ?? {};
+    const palette = t.palette ?? {};
+    // Each palette slot renders as: circular swatch (native color picker) +
+    // editable HEX text input + variable label. Unset slots show the
+    // Deep-Purple default so the user sees what they'd be overriding.
+    const paletteRows = PALETTE_KEYS.map(k => {
+      const effective = palette[k] ?? DEFAULT_PALETTE[k];
+      return `
+        <div class="nospress-palette-row" data-palette-key="${k}">
+          <input type="color"
+                 class="nospress-palette-swatch"
+                 data-global-field="theme.palette.${k}"
+                 value="${escapeHtml(effective)}"
+                 aria-label="--${k} color picker" />
+          <input type="text"
+                 class="input nospress-palette-hex"
+                 data-global-field="theme.palette.${k}"
+                 value="${escapeHtml(effective)}"
+                 maxlength="7"
+                 aria-label="--${k} HEX value" />
+          <span class="nospress-palette-label">--${k}</span>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="nospress-global">
+        <section class="nn-ui-toggle nospress-global__section open">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Meta &amp; SEO</h2>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            <div class="form__row">
+              <label for="ssg-siteName">Site name</label>
+              <input id="ssg-siteName" type="text" class="input" data-global-field="meta.siteName" value="${escapeHtml(m.siteName ?? '')}" />
+              <p class="form__note">Used as the document title: <code>&lt;page&gt; — &lt;site name&gt;</code>.</p>
+            </div>
+            <div class="form__row">
+              <label for="ssg-description">Description</label>
+              <textarea id="ssg-description" class="textarea textarea--small" data-global-field="meta.description">${escapeHtml(m.description ?? '')}</textarea>
+            </div>
+            <div class="form__row">
+              <label for="ssg-ogImage">Open Graph image URL</label>
+              <input id="ssg-ogImage" type="text" class="input" data-global-field="meta.ogImage" value="${escapeHtml(m.ogImage ?? '')}" />
+            </div>
+            <div class="form__row">
+              <label for="ssg-favicon">Favicon URL</label>
+              <input id="ssg-favicon" type="text" class="input" data-global-field="meta.favicon" value="${escapeHtml(m.favicon ?? '')}" />
+            </div>
+            <div class="form__row">
+              <label>Custom meta tags</label>
+              <div class="nospress-meta-custom" data-meta-custom-list>
+                ${this.renderMetaCustomTagsRows(m.customTags ?? [])}
+              </div>
+              <button type="button" class="btn btn--mini btn--passive" data-action="add-meta-tag">+ Add tag</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="nn-ui-toggle nospress-global__section">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Theme &amp; Palette</h2>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            ${paletteRows}
+            <div class="form__row">
+              <label for="ssg-fontFamily">Font family</label>
+              <input id="ssg-fontFamily" type="text" class="input" placeholder="e.g. 'Inter', sans-serif" data-global-field="theme.fontFamily" value="${escapeHtml(t.fontFamily ?? '')}" />
+            </div>
+          </div>
+        </section>
+
+        <section class="nn-ui-toggle nospress-global__section">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Code Integration</h2>
+              <p class="nn-ui-toggle__description">Code you inject runs on your own NosPress page under noornote.app. Use only sources you trust.</p>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            <div class="form__row">
+              <label for="ssg-headSnippet">&lt;head&gt; snippet</label>
+              <textarea id="ssg-headSnippet" class="textarea textarea--small input--monospace" data-global-field="injection.headSnippet">${escapeHtml(i.headSnippet ?? '')}</textarea>
+            </div>
+            <div class="form__row">
+              <label for="ssg-bodyEndSnippet">Pre-&lt;/body&gt; snippet</label>
+              <textarea id="ssg-bodyEndSnippet" class="textarea textarea--small input--monospace" data-global-field="injection.bodyEndSnippet">${escapeHtml(i.bodyEndSnippet ?? '')}</textarea>
+            </div>
+            <div class="form__row">
+              <label for="ssg-cssLinks">External CSS URLs <small>(one per line)</small></label>
+              <textarea id="ssg-cssLinks" class="textarea textarea--small input--monospace" data-global-field="injection.cssLinks">${escapeHtml((i.cssLinks ?? []).join('\n'))}</textarea>
+            </div>
+            <div class="form__row">
+              <label for="ssg-jsScripts">External JS URLs <small>(one per line)</small></label>
+              <textarea id="ssg-jsScripts" class="textarea textarea--small input--monospace" data-global-field="injection.jsScripts">${escapeHtml((i.jsScripts ?? []).join('\n'))}</textarea>
+            </div>
+          </div>
+        </section>
+
+        <div class="nospress-global__actions">
+          <button type="button" class="btn" data-action="save-global-settings">Save &amp; Publish</button>
+        </div>
+      </div>
+    `;
+  }
+
+  /** Render the custom meta-tags row list. Each row is two text inputs
+   *  (`name` and `content`) plus a remove-button. */
+  private renderMetaCustomTagsRows(tags: Array<{ name: string; content: string }>): string {
+    return tags.map((t, i) => `
+      <div class="nospress-meta-custom__row" data-meta-tag-row data-tag-index="${i}">
+        <input type="text" class="input" placeholder="name (e.g. robots)" data-meta-tag-field="name" value="${escapeHtml(t.name)}" />
+        <input type="text" class="input" placeholder="content (e.g. noindex)" data-meta-tag-field="content" value="${escapeHtml(t.content)}" />
+        <button type="button" class="btn btn--mini btn--passive btn--danger" data-action="remove-meta-tag" aria-label="Remove">×</button>
+      </div>
+    `).join('');
+  }
+
+  /** Read every meta-tag row currently in the DOM and persist as
+   *  `meta.customTags`. Fully-empty rows (both name and content blank) are
+   *  dropped; partial rows are kept so the user can finish typing without
+   *  losing intermediate state. */
+  private collectAndPersistMetaCustomTags(): void {
+    const list = this.container.ownerDocument.querySelector('[data-meta-custom-list]');
+    if (!list) return;
+    const rows = list.querySelectorAll<HTMLElement>('[data-meta-tag-row]');
+    const tags: Array<{ name: string; content: string }> = [];
+    rows.forEach(row => {
+      const name = (row.querySelector<HTMLInputElement>('[data-meta-tag-field="name"]')?.value ?? '').trim();
+      const content = (row.querySelector<HTMLInputElement>('[data-meta-tag-field="content"]')?.value ?? '').trim();
+      if (!name && !content) return;
+      tags.push({ name, content });
+    });
+    this.persistGlobalField('meta.customTags', tags);
+  }
+
+  /** Persist a single Global-tab field change to local storage. The dotted
+   *  path encodes the location in the {@link NospressSiteSettings} object,
+   *  e.g. `meta.siteName`, `theme.palette.color-1`, `injection.cssLinks`.
+   *  Empty values prune the property instead of storing empty strings, so
+   *  `hasSiteSettingsContent()` stays accurate. Palette rows mirror the
+   *  swatch ↔ HEX inputs and validate hex syntax before persisting. */
+  private handleGlobalTabInput(e: Event): void {
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null;
+
+    // Custom meta-tag rows persist as a single array via DOM-collection,
+    // so any input within a row reuses the same code path.
+    if (target?.dataset?.metaTagField) {
+      this.collectAndPersistMetaCustomTags();
+      return;
+    }
+
+    const path = target?.dataset?.globalField;
+    if (!target || !path) return;
+
+    const raw = target.value;
+
+    // Palette: validate, normalize, mirror to sibling input, then persist.
+    if (path.startsWith('theme.palette.')) {
+      const inputEl = target as HTMLInputElement;
+      let hex = raw.trim();
+      if (inputEl.type === 'text') {
+        // Allow shorthand without leading '#'
+        if (hex && !hex.startsWith('#')) hex = `#${hex}`;
+        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return; // invalid → ignore until valid
+        hex = hex.toLowerCase();
+      }
+      // Mirror to sibling so swatch and hex stay visually in sync.
+      const row = inputEl.closest('.nospress-palette-row');
+      if (row) {
+        row.querySelectorAll<HTMLInputElement>(`[data-global-field="${path}"]`).forEach(el => {
+          if (el !== inputEl) el.value = hex;
+        });
+      }
+      this.persistGlobalField(path, hex);
+      return;
+    }
+
+    // List-fields: split by newline, trim, drop empties.
+    let value: unknown;
+    if (path === 'injection.cssLinks' || path === 'injection.jsScripts') {
+      value = raw.split('\n').map(s => s.trim()).filter(Boolean);
+    } else {
+      value = raw.trim();
+    }
+
+    this.persistGlobalField(path, value);
+  }
+
+  /** Walk the dotted path, set or prune the leaf property, and persist
+   *  silently. Shared by every Global-tab input. */
+  private persistGlobalField(path: string, value: unknown): void {
+    const settings: NospressSiteSettings = JSON.parse(JSON.stringify(this.siteSettingsService.getSettings()));
+    const segments = path.split('.');
+    const lastSeg = segments[segments.length - 1]!;
+    let cursor: any = settings;
+    for (let i = 0; i < segments.length - 1; i++) {
+      const seg = segments[i]!;
+      if (cursor[seg] === undefined || cursor[seg] === null) cursor[seg] = {};
+      cursor = cursor[seg];
+    }
+    const isEmpty = value === '' || (Array.isArray(value) && (value as unknown[]).length === 0);
+    if (isEmpty) delete cursor[lastSeg];
+    else cursor[lastSeg] = value;
+    this.siteSettingsService.saveSettings(settings, { silent: true });
+  }
+
+  /** Click delegate for the Global tab — accordion toggle, Save&Publish,
+   *  and the custom meta-tag list (add/remove). */
+  private handleGlobalTabClick(e: Event): void {
+    const target = e.target as HTMLElement;
+
+    const toggleHeader = target.closest('.nn-ui-toggle__header');
+    if (toggleHeader) {
+      toggleHeader.closest('.nn-ui-toggle')?.classList.toggle('open');
+      return;
+    }
+
+    const action = target.closest('[data-action]') as HTMLElement | null;
+    if (!action) return;
+
+    if (action.dataset.action === 'save-global-settings') {
+      void this.publishGlobalSettings();
+      return;
+    }
+
+    if (action.dataset.action === 'add-meta-tag') {
+      const list = action.closest('.form__row')?.querySelector('[data-meta-custom-list]') as HTMLElement | null;
+      if (!list) return;
+      const row = document.createElement('div');
+      row.className = 'nospress-meta-custom__row';
+      row.dataset.metaTagRow = '';
+      row.innerHTML = `
+        <input type="text" class="input" placeholder="name (e.g. robots)" data-meta-tag-field="name" value="" />
+        <input type="text" class="input" placeholder="content (e.g. noindex)" data-meta-tag-field="content" value="" />
+        <button type="button" class="btn btn--mini btn--passive btn--danger" data-action="remove-meta-tag" aria-label="Remove">×</button>
+      `;
+      list.appendChild(row);
+      row.querySelector<HTMLInputElement>('input')?.focus();
+      // No persist yet — empty rows are kept out by `collectAndPersistMetaCustomTags`.
+      return;
+    }
+
+    if (action.dataset.action === 'remove-meta-tag') {
+      action.closest('[data-meta-tag-row]')?.remove();
+      this.collectAndPersistMetaCustomTags();
+      return;
+    }
+  }
+
+  /** Publish current local site-settings to relays. Local was already
+   *  persisted by the input handler — this just kicks the orchestrator. */
+  private async publishGlobalSettings(): Promise<void> {
+    try {
+      const settings = this.siteSettingsService.getSettings();
+      await this.siteSettingsOrchestrator.publishToRelays(settings);
+      ToastService.show('Site settings published', 'success');
+    } catch (error) {
+      console.error('Failed to publish site-settings:', error);
+      ToastService.show('Publish failed', 'error');
     }
   }
 
@@ -1797,7 +2106,6 @@ export class NospressView extends View {
         <div class="nospress-css-editor__head">
           <label class="nospress-css-editor__label">Custom CSS</label>
           <div class="nospress-css-editor__head-actions">
-            <button type="button" class="btn btn--mini btn--passive" data-action="insert-palette-template" title="Insert a palette skeleton at the cursor — override the site-wide colors in one place">+ Palette</button>
             <button type="button" class="btn btn--mini btn--passive" data-action="close-css-editor" aria-label="Close">×</button>
           </div>
         </div>
@@ -1826,38 +2134,6 @@ export class NospressView extends View {
     `;
   }
 
-  /** Skeleton inserted by the "+ Palette" button — current NoorNote defaults
-   *  with comments next to each line. The user tweaks values from there. */
-  private static readonly PALETTE_TEMPLATE = `body {
-  --color-1: #0f0d23;  /* background */
-  --color-2: #252343;  /* surfaces, borders */
-  --color-3: #9b79b9;  /* accent */
-  --color-4: #dc85ad;  /* interactive (links, buttons) */
-  --color-5: #ede2da;  /* text */
-  --color-6: #7dd87d;  /* status */
-}
-`;
-
-  /**
-   * Insert the palette skeleton at the textarea's cursor position. Empty
-   * textarea → starts at column 0; otherwise injected at caret with a
-   * leading newline if the previous char isn't already one. Dispatches a
-   * synthetic `input` event so the silent draft save runs.
-   */
-  private insertPaletteTemplate(): void {
-    const ta = this.container.querySelector('textarea[data-css-editor]') as HTMLTextAreaElement | null;
-    if (!ta) return;
-    const start = ta.selectionStart;
-    const end = ta.selectionEnd;
-    const value = ta.value;
-    const prefix = (start > 0 && value[start - 1] !== '\n') ? '\n' : '';
-    const insertion = prefix + NospressView.PALETTE_TEMPLATE;
-    ta.value = value.slice(0, start) + insertion + value.slice(end);
-    const caret = start + insertion.length;
-    ta.selectionStart = ta.selectionEnd = caret;
-    ta.focus();
-    ta.dispatchEvent(new Event('input', { bubbles: true }));
-  }
 
   /** Toggle the Custom-CSS panel. */
   private toggleCssEditor(): void {
@@ -2240,7 +2516,6 @@ export class NospressView extends View {
         case 'reset-page-override':    void this.resetPageOverrideToGlobal(); return;
         case 'dm-page-owner':          Router.getInstance().navigate(`/messages/${this.npub}`); return;
         case 'close-css-editor':       this.toggleCssEditor(); return;
-        case 'insert-palette-template': this.insertPaletteTemplate(); return;
       }
 
       const blockId = btn.dataset.blockId;

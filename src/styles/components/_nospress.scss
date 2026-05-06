@@ -1539,6 +1539,81 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   gap: $gap;
 }
 
+// Global tab — site-wide settings (Phase 4.9b skeleton). Container is plain
+// block flow; sections inherit the .nn-ui-toggle accordion molecule.
+.nospress-global {
+  &__section {
+    margin-bottom: $gap;
+  }
+
+  &__actions {
+    margin-top: $gap;
+    text-align: right;
+  }
+}
+
+// Custom meta-tag rows in the Meta & SEO accordion: each row is two text
+// inputs (name + content) plus a remove button on the same line.
+.nospress-meta-custom {
+  margin-bottom: calc($gap / 2);
+
+  &__row {
+    margin-bottom: calc($gap / 4);
+
+    .input {
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: calc($gap / 4);
+      width: calc(45% - #{$gap});
+    }
+
+    .btn {
+      vertical-align: middle;
+    }
+  }
+}
+
+// Palette row inside the Theme & Palette accordion: circular swatch +
+// editable HEX text + variable label, all on one line via inline-block.
+.nospress-palette-row {
+  margin-bottom: calc($gap / 2);
+
+  // Native <input type="color"> reskinned as a circle. Native picker still
+  // opens on click; we just chrome the trigger.
+  .nospress-palette-swatch {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid var(--color-3);
+    border-radius: 50%;
+    vertical-align: middle;
+    margin-right: calc($gap / 2);
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+
+    &::-webkit-color-swatch-wrapper { padding: 0; }
+    &::-webkit-color-swatch { border: none; border-radius: 50%; }
+    &::-moz-color-swatch { border: none; border-radius: 50%; }
+  }
+
+  .nospress-palette-hex {
+    display: inline-block;
+    width: 8em;
+    vertical-align: middle;
+    margin-right: calc($gap / 2);
+    font-family: monospace;
+  }
+
+  .nospress-palette-label {
+    display: inline-block;
+    vertical-align: middle;
+    color: var(--color-3);
+    font-family: monospace;
+  }
+}
+
 // Tile = card + title + meta + actions stacked vertically. The grid lays
 // tiles out, not cards, so the title sits visually outside the card on the
 // tab background — same look as Divi's Theme Builder.
