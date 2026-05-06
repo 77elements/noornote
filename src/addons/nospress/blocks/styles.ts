@@ -41,6 +41,19 @@ export interface BoxValues {
  * properties listed in their STYLE_MATRIX row, but the type here stays
  * unified so the helpers don't need to be parameterised.
  */
+/** Decorative divider shape rendered as an absolutely-positioned SVG at
+ *  the top or bottom edge of a block. Available shapes intentionally kept
+ *  to the simplest set — Divi-style elaborate (waves/clouds/mountains)
+ *  shapes are out of scope. */
+export type DividerStyle = 'none' | 'slant' | 'curve' | 'triangle';
+
+export interface DividerConfig {
+  style?: DividerStyle;
+  color?: string;
+  /** CSS length (e.g. `60px`, `4rem`). Default applied at render time. */
+  height?: string;
+}
+
 export interface CommonStyle {
   color?: string;
   background?: string;
@@ -52,6 +65,9 @@ export interface CommonStyle {
   borderRadius?: string;
   margin?: BoxValues;
   padding?: BoxValues;
+  /** Top / bottom edge dividers — available only on the `div` block scope
+   *  (and its HTML-tag variants header/footer/main/section/nav etc.). */
+  divider?: { top?: DividerConfig; bottom?: DividerConfig };
 }
 
 export type PropertyKey = keyof CommonStyle;
@@ -73,7 +89,15 @@ export interface QuadPropertyEntry {
   cssPrefix: string;
 }
 
-export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry;
+/** A "divider" entry: top + bottom edge decorations rendered as absolute
+ *  SVG children of the block wrapper (NOT a CSS declaration). */
+export interface DividerPropertyEntry {
+  kind: 'divider';
+  key: 'divider';
+  label: string;
+}
+
+export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry | DividerPropertyEntry;
 
 const QUAD_SIDES = ['top', 'bottom', 'left', 'right'] as const;
 type QuadSide = typeof QUAD_SIDES[number];
@@ -93,6 +117,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   borderRadius: { kind: 'single', key: 'borderRadius', label: 'Border radius', cssProp: 'border-radius', placeholder: 'e.g. 8px' },
   margin:       { kind: 'quad',   key: 'margin',       label: 'Margin',        cssPrefix: 'margin' },
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
+  divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
 };
 
 /**
@@ -142,7 +167,10 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   audio:             CONTAINER_PROPS,
   'articles-list':   CONTAINER_PROPS,
   weblog:            CONTAINER_PROPS,
-  div:               TEXTUAL_PROPS,
+  // DIV (and its HTML-tag variants header/footer/main/section/article/aside/nav/fieldset)
+  // is the container block — only it gets the divider property in addition
+  // to the textual props.
+  div:               [...TEXTUAL_PROPS, 'divider'],
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */
@@ -201,28 +229,38 @@ export function buildInlineStyle(schema: PropertyEntry[], style: CommonStyle | u
   for (const entry of schema) {
     if (entry.kind === 'single') {
       push(entry.cssProp, style[entry.key]);
-    } else {
+    } else if (entry.kind === 'quad') {
       const box = style[entry.key];
       if (!box) continue;
       for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
     }
+    // 'divider' is rendered as separate SVG children of the wrapper,
+    // not as an inline style declaration.
   }
   return parts.join('; ');
 }
 
-/** Read a dotted path: 'color' or 'margin.top'. */
+/** Read a dotted path: `color`, `margin.top`, or `divider.top.style`. */
 export function readStyleField(style: CommonStyle | undefined, path: string): string | undefined {
   if (!style) return undefined;
-  const dot = path.indexOf('.');
-  if (dot < 0) {
-    const v = style[path as PropertyKey];
+  const segments = path.split('.');
+  if (segments.length === 1) {
+    const v = style[segments[0] as PropertyKey];
     return typeof v === 'string' ? v : undefined;
   }
-  const head = path.slice(0, dot) as PropertyKey;
-  const side = path.slice(dot + 1) as QuadSide;
-  const group = style[head];
-  if (!group || typeof group === 'string') return undefined;
-  return group[side];
+  if (segments.length === 2) {
+    const [head, side] = segments as [PropertyKey, QuadSide];
+    const group = style[head];
+    if (!group || typeof group === 'string') return undefined;
+    return (group as Record<string, string | undefined>)[side];
+  }
+  if (segments.length === 3 && segments[0] === 'divider') {
+    const side = segments[1] as 'top' | 'bottom';
+    const field = segments[2] as keyof DividerConfig;
+    const cfg = style.divider?.[side];
+    return cfg?.[field];
+  }
+  return undefined;
 }
 
 /**
@@ -233,21 +271,41 @@ export function readStyleField(style: CommonStyle | undefined, path: string): st
  */
 export function writeStyleField(style: CommonStyle, path: string, rawValue: string): void {
   const trimmed = rawValue.trim();
-  const dot = path.indexOf('.');
-  if (dot < 0) {
-    if (path === 'color' || path === 'background' || path === 'fontSize' || path === 'lineHeight') {
-      if (trimmed) style[path] = trimmed;
-      else delete style[path];
+  const segments = path.split('.');
+  if (segments.length === 1) {
+    const head = segments[0] as PropertyKey;
+    if (head === 'color' || head === 'background' || head === 'fontSize' || head === 'lineHeight') {
+      if (trimmed) style[head] = trimmed;
+      else delete style[head];
     }
     return;
   }
-  const head = path.slice(0, dot);
-  const side = path.slice(dot + 1) as QuadSide;
-  if (head !== 'margin' && head !== 'padding') return;
-  if (side !== 'top' && side !== 'bottom' && side !== 'left' && side !== 'right') return;
-  if (!style[head]) style[head] = {};
-  if (trimmed) style[head]![side] = trimmed;
-  else delete style[head]![side];
+  if (segments.length === 2) {
+    const head = segments[0];
+    const side = segments[1] as QuadSide;
+    if (head !== 'margin' && head !== 'padding') return;
+    if (side !== 'top' && side !== 'bottom' && side !== 'left' && side !== 'right') return;
+    if (!style[head]) style[head] = {};
+    if (trimmed) style[head]![side] = trimmed;
+    else delete style[head]![side];
+    return;
+  }
+  if (segments.length === 3 && segments[0] === 'divider') {
+    const side = segments[1] as 'top' | 'bottom';
+    const field = segments[2] as keyof DividerConfig;
+    if (side !== 'top' && side !== 'bottom') return;
+    if (field !== 'style' && field !== 'color' && field !== 'height') return;
+    if (!style.divider) style.divider = {};
+    if (!style.divider[side]) style.divider[side] = {};
+    if (trimmed) {
+      (style.divider[side] as DividerConfig)[field] = trimmed as DividerStyle;
+    } else {
+      delete (style.divider[side] as DividerConfig)[field];
+    }
+    // Prune empty objects so `hasV2Content` reports the slot as unused.
+    if (Object.keys(style.divider[side] as DividerConfig).length === 0) delete style.divider[side];
+    if (Object.keys(style.divider).length === 0) delete style.divider;
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -267,6 +325,27 @@ export interface RenderPropertyPanelOptions {
   attrs?: { class?: string; id?: string } | undefined;
   /** Header label. Default 'Properties'. */
   header?: string;
+  /** Currently selected divider side in the Top/Bottom switch (only
+   *  relevant when the schema includes the divider property). Default top. */
+  activeDividerSide?: 'top' | 'bottom';
+}
+
+/** UI-side metadata for the divider style picker — value + visible label. */
+export const DIVIDER_STYLE_OPTIONS: Array<{ value: DividerStyle; label: string }> = [
+  { value: 'none',     label: 'None' },
+  { value: 'slant',    label: 'Slant' },
+  { value: 'curve',    label: 'Curve' },
+  { value: 'triangle', label: 'Triangle' },
+];
+
+/** Tiny inline SVG thumbnail for one divider style (or a flat line for
+ *  'none'). Used in the dropdown trigger and in each menu option. */
+export function dividerThumbSvg(style: DividerStyle | string): string {
+  if (style === 'none' || !DIVIDER_PATHS[style as Exclude<DividerStyle, 'none'>]) {
+    return `<svg viewBox="0 0 100 10" preserveAspectRatio="none"><line x1="0" y1="9" x2="100" y2="9" stroke="currentColor" stroke-width="1"/></svg>`;
+  }
+  const path = DIVIDER_PATHS[style as Exclude<DividerStyle, 'none'>];
+  return `<svg viewBox="0 0 100 10" preserveAspectRatio="none"><path d="${path}" fill="currentColor"/></svg>`;
 }
 
 /** Render a property panel for a given scope. The schema is looked up via
@@ -300,8 +379,41 @@ export function styleWrap(
   const customId = sanitizeCssIdent(block.attrs?.id ?? '', 'single');
   const idAttr = customId ? ` id="${escapeHtmlAttr(customId)}"` : '';
 
-  return `<div class="nospress-block-style${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}>${inner}</div>`;
+  // Divider markup is emitted as SVG children of the wrapper. Only the
+  // div block (and its HTML-tag variants) supports it via STYLE_MATRIX.
+  const dividers = renderDividers(block.style?.divider);
+
+  return `<div class="nospress-block-style${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}>${dividers.top}${inner}${dividers.bottom}</div>`;
 }
+
+/** Render top/bottom divider SVGs from a `CommonStyle.divider` config.
+ *  Returns empty strings for unset / 'none' slots so the wrapper output
+ *  stays clean when the user hasn't configured anything. */
+function renderDividers(divider: CommonStyle['divider']): { top: string; bottom: string } {
+  return {
+    top: renderDividerSvg(divider?.top, 'top'),
+    bottom: renderDividerSvg(divider?.bottom, 'bottom'),
+  };
+}
+
+function renderDividerSvg(cfg: DividerConfig | undefined, side: 'top' | 'bottom'): string {
+  if (!cfg || !cfg.style || cfg.style === 'none') return '';
+  const path = DIVIDER_PATHS[cfg.style];
+  if (!path) return '';
+  const colorAttr = cfg.color ? ` style="color: ${escapeHtmlAttr(sanitizeStyleValue(cfg.color))}; --nospress-divider-height: ${escapeHtmlAttr(sanitizeStyleValue(cfg.height ?? '60px'))}"` : ` style="--nospress-divider-height: ${escapeHtmlAttr(sanitizeStyleValue(cfg.height ?? '60px'))}"`;
+  return `<div class="nospress-divider nospress-divider--${side}"${colorAttr} aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="${path}" fill="currentColor"/></svg></div>`;
+}
+
+/** Simple SVG paths for the divider shapes. viewBox is `0 0 100 10` so each
+ *  shape is a thin band that scales to the container's height via CSS. */
+const DIVIDER_PATHS: Record<Exclude<DividerStyle, 'none'>, string> = {
+  // Diagonal slope from bottom-left up to top-right, filled below.
+  slant:    'M0,10 L100,0 L100,10 Z',
+  // Symmetric bow, filled below.
+  curve:    'M0,10 Q50,0 100,10 Z',
+  // Centered downward triangle.
+  triangle: 'M0,10 L50,0 L100,10 Z',
+};
 
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   const schema = schemaFor(opts.scope);
@@ -380,8 +492,98 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     </div>
   `;
 
+  /** Render the Top/Bottom switch + the edit area for the currently
+   *  active side. Active side is controlled by the caller (`opts.activeDividerSide`)
+   *  so it persists across re-renders driven by other property changes.
+   *  Inputs target `divider.<side>.<field>` so writeStyleField persists into
+   *  the right slot. */
+  const dividerSide = (side: 'top' | 'bottom') => {
+    const styleVal = v(`divider.${side}.style`) || 'none';
+    const colorVal = v(`divider.${side}.color`);
+    const heightVal = v(`divider.${side}.height`);
+    const triggerBg = colorVal || 'transparent';
+    const paletteSwatches = PALETTE_KEYS.map(k => `
+      <button type="button"
+              class="nospress-prop-color-swatch"
+              data-palette-key="${k}"
+              style="background: var(--${k})"
+              aria-label="--${k}"></button>
+    `).join('');
+    const colorKey = `divider.${side}.color`;
+
+    const styleOptionsHtml = DIVIDER_STYLE_OPTIONS.map(opt => `
+      <button type="button"
+              class="nospress-divider-picker__option ${opt.value === styleVal ? 'is-selected' : ''}"
+              data-divider-style-pick="${opt.value}"
+              data-style-scope="${scopeAttr}"
+              data-style-field="divider.${side}.style"
+              aria-label="${escapeHtmlAttr(opt.label)}">
+        <span class="nospress-divider-picker__option-thumb">${dividerThumbSvg(opt.value)}</span>
+        <span class="nospress-divider-picker__option-label">${escapeHtmlAttr(opt.label)}</span>
+      </button>
+    `).join('');
+
+    const selectedOpt = DIVIDER_STYLE_OPTIONS.find(o => o.value === styleVal) ?? DIVIDER_STYLE_OPTIONS[0]!;
+
+    return `
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">Style</label>
+        <div class="nospress-divider-picker" data-divider-picker>
+          <button type="button" class="nospress-divider-picker__trigger" data-divider-picker-toggle aria-haspopup="listbox">
+            <span class="nospress-divider-picker__trigger-thumb">${dividerThumbSvg(styleVal)}</span>
+            <span class="nospress-divider-picker__trigger-label">${escapeHtmlAttr(selectedOpt.label)}</span>
+          </button>
+          <div class="nospress-divider-picker__menu" hidden>
+            ${styleOptionsHtml}
+          </div>
+        </div>
+      </div>
+      <div class="nospress-prop-row nospress-prop-row--color" data-color-row-key="${escapeHtmlAttr(colorKey)}">
+        <label class="nospress-prop-row__label">Color</label>
+        <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
+               data-style-scope="${scopeAttr}" data-style-field="${colorKey}"
+               value="${escapeHtmlAttr(colorVal)}" placeholder="e.g. #0f0d23" />
+        <span class="nospress-prop-color-picker">
+          <button type="button"
+                  class="nospress-prop-color-trigger"
+                  style="background: ${escapeHtmlAttr(triggerBg)}"
+                  aria-label="Pick color"></button>
+        </span>
+      </div>
+      <div class="nospress-prop-color-swatches-inline" hidden data-swatches-for="${escapeHtmlAttr(colorKey)}">
+        ${paletteSwatches}
+        <button type="button" class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
+          <input type="color" class="nospress-prop-color-native" />
+        </button>
+      </div>
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">Height</label>
+        <input type="text" class="input nospress-prop-row__input"
+               data-style-scope="${scopeAttr}" data-style-field="divider.${side}.height"
+               value="${escapeHtmlAttr(heightVal)}" placeholder="60px" />
+      </div>
+    `;
+  };
+
+  const divider = (_e: DividerPropertyEntry) => {
+    const active = opts.activeDividerSide ?? 'top';
+    return `
+      <div class="nospress-prop-grouplabel">Divider</div>
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">Side</label>
+        <div class="nospress-prop-divider__sideswitch" role="tablist">
+          <button type="button" class="nospress-prop-divider__sideswitch-btn ${active === 'top' ? 'is-active' : ''}" data-divider-side-switch="top">Top</button>
+          <button type="button" class="nospress-prop-divider__sideswitch-btn ${active === 'bottom' ? 'is-active' : ''}" data-divider-side-switch="bottom">Bottom</button>
+        </div>
+      </div>
+      ${dividerSide(active)}
+    `;
+  };
+
   const body = schema.map(entry =>
-    entry.kind === 'single' ? single(entry) : quad(entry)
+    entry.kind === 'single' ? single(entry)
+      : entry.kind === 'quad' ? quad(entry)
+      : divider(entry)
   ).join('');
 
   // Identifiers section — only for block scopes. The page itself doesn't get

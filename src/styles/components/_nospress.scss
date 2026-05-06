@@ -388,6 +388,164 @@
   vertical-align: middle;
 }
 
+// Block style wrapper — every styled block is wrapped in this. Made
+// position-relative so any divider SVG children can absolutely position
+// themselves to the wrapper edges.
+.nospress-block-style {
+  position: relative;
+}
+
+// Divider — absolutely positioned SVG band at the top or bottom edge of a
+// block. Color comes from `currentColor` (the wrapper's inline `color: …`),
+// height from the `--nospress-divider-height` CSS variable.
+.nospress-divider {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--nospress-divider-height, 60px);
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+
+  svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  &--top {
+    top: 0;
+    // SVG paths are designed to point downward (filled below). Top side
+    // flips so the slant/curve/triangle "tilts up" instead.
+    transform: scaleY(-1);
+  }
+
+  &--bottom {
+    bottom: 0;
+  }
+}
+
+// Property panel — Divider section: Top/Bottom switch above an edit
+// area for the active side. Two-button toggle (one active at a time);
+// click flips the panel.
+.nospress-prop-divider {
+  margin-bottom: $gap;
+
+  // Two-up grid so the Top + Bottom buttons split the row's input column
+  // 50/50, matching the property-row width established by 7rem 1fr.
+  &__sideswitch {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--color-3);
+    border-radius: $radius-pill;
+    overflow: hidden;
+  }
+
+  &__sideswitch-btn {
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    color: var(--color-5);
+    cursor: pointer;
+    font-weight: 500;
+    width: 100%;
+
+    &.is-active {
+      background: var(--color-4);
+      color: var(--color-1);
+    }
+  }
+}
+
+// Graphical divider-style picker: trigger button shows an SVG thumb of
+// the current selection; clicking opens a menu of all options, each with
+// its own SVG thumb.
+.nospress-divider-picker {
+  position: relative;
+  width: 100%;
+
+  &__trigger {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: calc($gap / 2);
+    width: 100%;
+    padding: 0.75rem;
+    border-radius: $radius-pill;
+    background: var(--color-2);
+    color: var(--color-5);
+    cursor: pointer;
+  }
+
+  &__trigger-label {
+    text-align: right;
+  }
+
+  &__trigger-thumb,
+  &__option-thumb {
+    display: inline-block;
+    width: 60px;
+    height: 14px;
+    margin-right: calc($gap / 2);
+    color: var(--color-3);
+
+    svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+  }
+
+  &__trigger-label,
+  &__option-label {
+    @extend %small;
+    color: var(--color-5);
+  }
+
+  &__menu {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0;
+    z-index: 100;
+    max-height: 220px;
+    overflow-y: auto;
+    background: var(--color-1);
+    border: 1px solid var(--color-3);
+    border-radius: $radius-xl;
+    padding: calc($gap / 4);
+    box-shadow: $box-shadow;
+
+    &[hidden] { display: none; }
+  }
+
+  &__option {
+    display: block;
+    width: 100%;
+    padding: calc($gap / 4) calc($gap / 2);
+    border: none;
+    background: transparent;
+    color: var(--color-5);
+    cursor: pointer;
+    text-align: left;
+    border-radius: $radius-xl;
+
+    > * { vertical-align: middle; }
+
+    &:hover {
+      background: var(--color-2);
+    }
+
+    &.is-selected {
+      background: var(--color-2);
+
+      .nospress-divider-picker__option-thumb {
+        color: var(--color-4);
+      }
+    }
+  }
+}
+
 // Inline swatches row — sibling of the color row, opens below it when the
 // trigger circle is clicked. Pushes the rest of the property panel down.
 // Same visual block treatment as the gradient editor for consistency.

@@ -133,6 +133,13 @@ export class NospressView extends View {
   private rightPaneEl: HTMLElement | null = null;
   /** Direct ref to the Properties tab body — re-rendered on selectBlock. */
   private propertiesTabContent: HTMLElement | null = null;
+  /** Live CustomDropdown instances inside the property panel (divider
+   *  style pickers). Tracked so each re-render disposes the previous
+   *  generation cleanly — see `updatePropertiesTab`. */
+  /** Which side of the divider is currently being edited. The Top/Bottom
+   *  switch in the property panel toggles this; the rest of the divider UI
+   *  re-renders against this side. Default: top. */
+  private activeDividerSide: 'top' | 'bottom' = 'top';
   /** Direct ref to the Pages tab body — re-rendered on page-index changes. */
   private pagesTabContent: HTMLElement | null = null;
   /** Direct ref to the Nav tab body — re-rendered on menu changes. */
@@ -610,7 +617,6 @@ export class NospressView extends View {
       <button type="button" class="tab tab--active" data-tab="pages"><span class="tab__label">Pages</span></button>
       <button type="button" class="tab" data-tab="blocks"><span class="tab__label">Blocks</span></button>
       <button type="button" class="tab" data-tab="properties"><span class="tab__label">Properties</span></button>
-      <button type="button" class="tab" data-tab="nav"><span class="tab__label">Nav</span></button>
     `;
 
     const globalContent = document.createElement('div');
@@ -633,17 +639,11 @@ export class NospressView extends View {
     propertiesContent.dataset.tabContent = 'properties';
     propertiesContent.innerHTML = this.renderPropertiesContent();
 
-    const navContent = document.createElement('div');
-    navContent.className = 'tab-content';
-    navContent.dataset.tabContent = 'nav';
-    navContent.innerHTML = this.renderNavContent();
-
     librarySlot.appendChild(tabBar);
     librarySlot.appendChild(globalContent);
     librarySlot.appendChild(pagesContent);
     librarySlot.appendChild(blocksContent);
     librarySlot.appendChild(propertiesContent);
-    librarySlot.appendChild(navContent);
 
     // Global-tab event wiring (input persistence + accordion toggle + Save+Publish click)
     globalContent.addEventListener('input', (e) => this.handleGlobalTabInput(e));
@@ -691,18 +691,25 @@ export class NospressView extends View {
     // the change.
     librarySlot.addEventListener('click', (e) => this.handlePropColorClick(e, librarySlot));
 
+    // Divider property — Top/Bottom switch and the graphical style picker.
+    librarySlot.addEventListener('click', (e) => this.handleDividerPropClick(e));
+
     pagesContent.addEventListener('click', (e) => this.handlePagesTabClick(e));
     pagesContent.addEventListener('keydown', (e) => this.handleInlineRenameKeydown(e));
     pagesContent.addEventListener('focusout', (e) => this.handleInlineRenameFocusout(e));
 
-    navContent.addEventListener('click', (e) => this.handleNavTabClick(e));
-    navContent.addEventListener('change', (e) => this.handleNavTabChange(e));
-    navContent.addEventListener('submit', (e) => this.handleNavTabSubmit(e));
+    // Navigation menus now live inside the Global tab. Listeners attach to
+    // globalContent (already attached above for Global-tab clicks/inputs) —
+    // the nav handlers only act on `data-action` values they recognise so
+    // they coexist with the Global-tab handlers without overlap.
+    globalContent.addEventListener('click', (e) => this.handleNavTabClick(e));
+    globalContent.addEventListener('change', (e) => this.handleNavTabChange(e));
+    globalContent.addEventListener('submit', (e) => this.handleNavTabSubmit(e));
 
     this.rightPaneEl = librarySlot;
     this.propertiesTabContent = propertiesContent;
     this.pagesTabContent = pagesContent;
-    this.navTabContent = navContent;
+    this.navTabContent = globalContent.querySelector<HTMLElement>('[data-nav-mount]');
     this.attachNavDragHandlers();
   }
 
@@ -972,6 +979,20 @@ export class NospressView extends View {
         <section class="nn-ui-toggle nospress-global__section">
           <div class="nn-ui-toggle__header">
             <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Navigation menus</h2>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            <div data-nav-mount>${this.renderNavContent()}</div>
+          </div>
+        </section>
+
+        <section class="nn-ui-toggle nospress-global__section">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Code Integration</h2>
               <p class="nn-ui-toggle__description">Code you inject runs on your own NosPress page under noornote.app. Use only sources you trust.</p>
             </div>
@@ -1105,6 +1126,62 @@ export class NospressView extends View {
     if (isEmpty) delete cursor[lastSeg];
     else cursor[lastSeg] = value;
     this.siteSettingsService.saveSettings(settings, { silent: true });
+  }
+
+  /** Property-tab Divider section click delegate. Three concerns:
+   *   - Top/Bottom switch (data-divider-side-switch) flips the active side
+   *     and re-renders the property panel against the new side.
+   *   - Picker trigger (data-divider-picker-toggle) opens / closes the
+   *     style menu inside the picker.
+   *   - Picker option (data-divider-style-pick) commits the chosen style
+   *     via handleStyleInput and closes the menu.
+   */
+  private handleDividerPropClick(e: Event): void {
+    const target = e.target as HTMLElement;
+
+    const sideBtn = target.closest('[data-divider-side-switch]') as HTMLElement | null;
+    if (sideBtn) {
+      const next = sideBtn.dataset.dividerSideSwitch as 'top' | 'bottom';
+      if (next === 'top' || next === 'bottom') {
+        this.activeDividerSide = next;
+        this.updatePropertiesTab();
+      }
+      return;
+    }
+
+    const toggle = target.closest('[data-divider-picker-toggle]') as HTMLElement | null;
+    if (toggle) {
+      e.stopPropagation();
+      const menu = toggle.closest('[data-divider-picker]')?.querySelector('.nospress-divider-picker__menu') as HTMLElement | null;
+      if (!menu) return;
+      const wasOpen = !menu.hidden;
+      // Close any other open pickers first.
+      document.querySelectorAll<HTMLElement>('.nospress-divider-picker__menu').forEach(m => { m.hidden = true; });
+      menu.hidden = wasOpen;
+      return;
+    }
+
+    const pick = target.closest('[data-divider-style-pick]') as HTMLElement | null;
+    if (pick) {
+      const value = pick.dataset.dividerStylePick ?? 'none';
+      const scope = pick.dataset.styleScope ?? '';
+      const field = pick.dataset.styleField ?? '';
+      if (scope && field) {
+        // 'none' prunes the field via writeStyleField's empty-string handling.
+        this.handleStyleInput(scope, field, value === 'none' ? '' : value);
+        // Re-render so the trigger thumb + selected highlight update.
+        this.updatePropertiesTab();
+      }
+      // Close the menu either way.
+      const menu = pick.closest('.nospress-divider-picker__menu') as HTMLElement | null;
+      if (menu) menu.hidden = true;
+      return;
+    }
+
+    // Click outside any picker → close all open style menus.
+    if (!target.closest('[data-divider-picker]')) {
+      document.querySelectorAll<HTMLElement>('.nospress-divider-picker__menu').forEach(m => { m.hidden = true; });
+    }
   }
 
   /** Property-tab color/background row click delegate. Three concerns:
@@ -2482,6 +2559,7 @@ export class NospressView extends View {
       style: block.style,
       attrs: block.attrs,
       header: 'Block properties',
+      activeDividerSide: this.activeDividerSide,
     });
   }
 
@@ -2490,6 +2568,7 @@ export class NospressView extends View {
       scope: 'page',
       style: this.currentPageStyle(),
       header: 'Page properties',
+      activeDividerSide: this.activeDividerSide,
     });
   }
 
