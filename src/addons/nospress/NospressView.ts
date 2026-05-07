@@ -65,6 +65,7 @@ function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
 }
 import { MediaUploadService } from '../../services/MediaUploadService';
+import { triggerSingleMediaUpload, handleSingleMediaUpload } from './editor/uploadHelpers';
 import { mountNospressProfileCards } from './profileCardMount';
 import { mountNospressArticlesLists } from './articlesListMount';
 import { mountNospressWeblogs } from './weblogMount';
@@ -76,6 +77,18 @@ import type { ProfileArticlesCarousel } from '../../components/profile/ProfileAr
  *  (the always-present outer frame in the editor). Not a real Block.id —
  *  prefixed with `__` so it can never collide with a UUID. */
 const PAGE_SELECTION_ID = '__page__';
+
+/** Inline-comment labels used by `pastePaletteToCustomCss` — mirrored from
+ *  the CSS-editor's hint panel so the inserted CSS reads consistently with
+ *  the in-app legend. */
+const PALETTE_COMMENTS: Record<typeof PALETTE_KEYS[number], string> = {
+  'color-1': 'background',
+  'color-2': 'surfaces, borders',
+  'color-3': 'accent',
+  'color-4': 'interactive (links, buttons)',
+  'color-5': 'text',
+  'color-6': 'status',
+};
 
 /** Active editor cursor — page level, inside a `columns` block's column, or
  *  inside a `div` block's children. `index` is the position WITHIN the
@@ -291,12 +304,16 @@ export class NospressView extends View {
       // browser instance shows "+ Add Global Header" placeholders even when
       // the events exist on relays from another device. Per-page H/F
       // overrides stay lazy (loaded when the user clicks a page tile).
+      // forceRefresh=false (default) lets each orchestrator's 60s LRU cache
+      // absorb quick re-mounts (navigate away + back, reload of editor view)
+      // without re-hitting relays. Cross-device sync still works because the
+      // first mount in a fresh JS instance always misses cache.
       const [remoteIndex, remoteMenus, remoteHeader, remoteFooter, remoteBody] = await Promise.all([
-        this.pageIndexOrchestrator.fetchFromRelays(this.pubkey, true),
-        this.menuOrchestrator.fetchFromRelays(this.pubkey, true),
-        this.orchestrator.fetchFromRelays(this.pubkey, true, GLOBAL_HEADER_SLUG),
-        this.orchestrator.fetchFromRelays(this.pubkey, true, GLOBAL_FOOTER_SLUG),
-        this.orchestrator.fetchFromRelays(this.pubkey, true, this.activeSlug),
+        this.pageIndexOrchestrator.fetchFromRelays(this.pubkey),
+        this.menuOrchestrator.fetchFromRelays(this.pubkey),
+        this.orchestrator.fetchFromRelays(this.pubkey, false, GLOBAL_HEADER_SLUG),
+        this.orchestrator.fetchFromRelays(this.pubkey, false, GLOBAL_FOOTER_SLUG),
+        this.orchestrator.fetchFromRelays(this.pubkey, false, this.activeSlug),
         // Site-settings persists itself via setSettingsFromRelay; we run it
         // in parallel for speed but don't need the return value.
         this.siteSettingsOrchestrator.syncFromRelays().catch(() => undefined),
@@ -986,6 +1003,10 @@ export class NospressView extends View {
           <div class="nn-ui-toggle__content">
             ${paletteRows}
             <div class="form__row">
+              <button type="button" class="btn btn--mini btn--passive" data-action="paste-palette-to-css">Paste palette to Custom CSS</button>
+              <p class="form__note">Inserts the current palette as CSS variables at the top of your Custom CSS.</p>
+            </div>
+            <div class="form__row">
               <label for="ssg-fontFamily">Font family</label>
               <input id="ssg-fontFamily" type="text" class="input" placeholder="e.g. 'Inter', sans-serif" data-global-field="theme.fontFamily" value="${escapeHtml(t.fontFamily ?? '')}" />
             </div>
@@ -1598,6 +1619,36 @@ export class NospressView extends View {
       this.collectAndPersistMetaCustomTags();
       return;
     }
+
+    if (action.dataset.action === 'paste-palette-to-css') {
+      this.pastePaletteToCustomCss();
+      return;
+    }
+  }
+
+  /**
+   * Build a `body { --color-1: …; … }` block from the current palette
+   * (effective values, falling back to the Deep Purple defaults for any
+   * unset slot) and prepend it to the page's Custom CSS draft. The CSS
+   * editor panel is opened so the user immediately sees the inserted
+   * block. Re-clicking adds another block — clean up is left to the user.
+   */
+  private pastePaletteToCustomCss(): void {
+    const palette = this.siteSettingsService.getSettings().theme?.palette ?? {};
+    const lines = PALETTE_KEYS.map(k => {
+      const value = palette[k] ?? DEFAULT_PALETTE[k];
+      const label = PALETTE_COMMENTS[k];
+      return `  --${k}: ${value}; /* ${label} */`;
+    }).join('\n');
+    const block = `body {\n${lines}\n}\n\n`;
+
+    this.mutateDraft((page) => {
+      page.customCss = block + (page.customCss ?? '');
+    }, { silent: true });
+
+    if (!this.cssEditorOpen) this.cssEditorOpen = true;
+    this.rerenderEditable();
+    ToastService.show('Palette inserted into Custom CSS', 'success');
   }
 
   /** Publish current local site-settings to relays. Local was already
@@ -3069,6 +3120,10 @@ export class NospressView extends View {
 
       // Skip clicks on interactive controls — those have their own handlers
       if (target.closest('button, input, textarea, select, a, [data-action]')) return;
+      // Inviolable media-click rule: clicks on rendered images/videos must
+      // reach the global ImageClickHandler/VideoPlayerService, never get
+      // pre-empted by block-selection. (See /build-validate guard.)
+      if (target.closest('img, video, .note-media, .note-image--clickable')) return;
       // Click inside the inline properties panel of the selected block:
       // keep selection (don't toggle off, the user is interacting with the panel)
       if (target.closest('.nospress-block-properties')) return;
@@ -3147,11 +3202,11 @@ export class NospressView extends View {
   private mutateDraft(updater: (page: NospressPageV2) => void, opts: { silent?: boolean } = {}): void {
     if (!this.editingPage) {
       const editSlug = this.currentEditSlug();
-      this.editingPage = JSON.parse(JSON.stringify(
+      this.editingPage = structuredClone(
         this.listService.getDraftV2(editSlug)
           ?? this.listService.getPublishedV2(editSlug)
           ?? this.listService.getPageV2(editSlug)
-      ));
+      );
     }
     updater(this.editingPage!);
     this.isDirty = true;
@@ -3308,108 +3363,33 @@ export class NospressView extends View {
   }
 
   private triggerImageUpload(blockId: string): void {
-    const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-image-file]`) as HTMLInputElement | null;
-    fileInput?.click();
+    triggerSingleMediaUpload(this.container, blockId, 'image');
   }
 
   private triggerVideoUpload(blockId: string): void {
-    const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-video-file]`) as HTMLInputElement | null;
-    fileInput?.click();
+    triggerSingleMediaUpload(this.container, blockId, 'video');
   }
 
   private triggerAudioUpload(blockId: string): void {
-    const fileInput = this.container.querySelector(`[data-block-id="${blockId}"][data-audio-file]`) as HTMLInputElement | null;
-    fileInput?.click();
+    triggerSingleMediaUpload(this.container, blockId, 'audio');
   }
 
   private async handleVideoUpload(blockId: string, file: File): Promise<void> {
-    if (!file.type.startsWith('video/')) {
-      ToastService.show('Please select a video file', 'error');
-      return;
-    }
-    const uploadBtn = this.container.querySelector(`[data-block-id="${blockId}"][data-action="upload-video"]`) as HTMLButtonElement | null;
-    if (!uploadBtn) return;
-
-    const originalHTML = uploadBtn.innerHTML;
-    uploadBtn.disabled = true;
-    uploadBtn.innerHTML = `
-      <svg width="20" height="20" class="upload-progress" viewBox="0 0 24 24">
-        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
-        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
-      </svg>
-    `;
-
-    const updateProgress = (progress: number) => {
-      const bar = uploadBtn.querySelector('.upload-progress-bar') as SVGCircleElement | null;
-      if (!bar) return;
-      const circumference = 62.83;
-      const offset = circumference - (progress / 100) * circumference;
-      bar.style.strokeDashoffset = String(offset);
-    };
-
-    try {
-      const result = await MediaUploadService.getInstance().uploadFile(file, updateProgress);
-      if (result.success && result.url) {
-        const url = result.url;
-        this.mutateDraft((page) => {
-          const block = findBlockInPage(page, blockId)?.block;
-          if (block?.type === 'video') block.url = url;
-        });
-      }
-    } catch (error) {
-      console.error('Video upload failed:', error);
-      ToastService.show('Video upload failed', 'error');
-    } finally {
-      if (uploadBtn.isConnected) {
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = originalHTML;
-      }
-    }
+    await handleSingleMediaUpload(this.container, blockId, file, 'video', (url) => {
+      this.mutateDraft((page) => {
+        const block = findBlockInPage(page, blockId)?.block;
+        if (block?.type === 'video') block.url = url;
+      });
+    });
   }
 
   private async handleAudioUpload(blockId: string, file: File): Promise<void> {
-    if (!file.type.startsWith('audio/')) {
-      ToastService.show('Please select an audio file', 'error');
-      return;
-    }
-    const uploadBtn = this.container.querySelector(`[data-block-id="${blockId}"][data-action="upload-audio"]`) as HTMLButtonElement | null;
-    if (!uploadBtn) return;
-
-    const originalHTML = uploadBtn.innerHTML;
-    uploadBtn.disabled = true;
-    uploadBtn.innerHTML = `
-      <svg width="20" height="20" class="upload-progress" viewBox="0 0 24 24">
-        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
-        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
-      </svg>
-    `;
-
-    const updateProgress = (progress: number) => {
-      const bar = uploadBtn.querySelector('.upload-progress-bar') as SVGCircleElement | null;
-      if (!bar) return;
-      const circumference = 62.83;
-      const offset = circumference - (progress / 100) * circumference;
-      bar.style.strokeDashoffset = String(offset);
-    };
-
-    try {
-      const result = await MediaUploadService.getInstance().uploadFile(file, updateProgress);
-      if (result.success && result.url) {
-        const url = result.url;
-        this.mutateDraft((page) => {
-          const block = findBlockInPage(page, blockId)?.block;
-          if (block?.type === 'audio') block.url = url;
-        });
-      }
-    } catch (error) {
-      console.error('Audio upload failed:', error);
-      ToastService.show('Audio upload failed', 'error');
-    } finally {
-      if (uploadBtn.isConnected) {
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = originalHTML;
-      }
-    }
+    await handleSingleMediaUpload(this.container, blockId, file, 'audio', (url) => {
+      this.mutateDraft((page) => {
+        const block = findBlockInPage(page, blockId)?.block;
+        if (block?.type === 'audio') block.url = url;
+      });
+    });
   }
 
   private addGalleryUrl(blockId: string): void {
@@ -3465,53 +3445,11 @@ export class NospressView extends View {
   }
 
   private async handleImageUpload(blockId: string, file: File): Promise<void> {
-    if (!file.type.startsWith('image/')) {
-      ToastService.show('Please select an image file', 'error');
-      return;
-    }
-    const uploadBtn = this.container.querySelector(`[data-block-id="${blockId}"][data-action="upload-image"]`) as HTMLButtonElement | null;
-    if (!uploadBtn) return;
-
-    const originalHTML = uploadBtn.innerHTML;
-    uploadBtn.disabled = true;
-    // Inline the SVG (instead of <use href="#icon-upload-progress">) because
-    // <use> clones its referenced symbol into shadow DOM — querySelector
-    // can't reach into shadow DOM, so JS-driven strokeDashoffset updates
-    // don't work. The same pattern in PostEditorToolbar / ImageUploader
-    // appears to silently no-op for the same reason.
-    uploadBtn.innerHTML = `
-      <svg width="20" height="20" class="upload-progress" viewBox="0 0 24 24">
-        <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
-        <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
-      </svg>
-    `;
-
-    const updateProgress = (progress: number) => {
-      const bar = uploadBtn.querySelector('.upload-progress-bar') as SVGCircleElement | null;
-      if (!bar) return;
-      const circumference = 62.83; // 2 * PI * r=10
-      const offset = circumference - (progress / 100) * circumference;
-      bar.style.strokeDashoffset = String(offset);
-    };
-
-    try {
-      const result = await MediaUploadService.getInstance().uploadFile(file, updateProgress);
-      if (result.success && result.url) {
-        const url = result.url;
-        this.mutateDraft((page) => {
-          const block = findBlockInPage(page, blockId)?.block;
-          if (block?.type === 'image') block.url = url;
-        });
-      }
-    } catch (error) {
-      console.error('Image upload failed:', error);
-      ToastService.show('Image upload failed', 'error');
-    } finally {
-      // Re-render via mutateDraft may have already rebuilt the button — guard
-      if (uploadBtn.isConnected) {
-        uploadBtn.disabled = false;
-        uploadBtn.innerHTML = originalHTML;
-      }
-    }
+    await handleSingleMediaUpload(this.container, blockId, file, 'image', (url) => {
+      this.mutateDraft((page) => {
+        const block = findBlockInPage(page, blockId)?.block;
+        if (block?.type === 'image') block.url = url;
+      });
+    });
   }
 }

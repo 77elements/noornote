@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { escapeHtml, escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
@@ -18,7 +18,7 @@ export function renderQuote(block: Extract<Block, { type: 'quote' }>, editable =
     return wrapEditable(block.id, 'quote', `${textInput}${authorInput}${sourceInput}`);
   }
 
-  const text = DOMPurify.sanitize((block.text || '').trim());
+  const text = sanitizeUserHtml((block.text || '').trim());
   if (!text) return '';
 
   const author = (block.author || '').trim();

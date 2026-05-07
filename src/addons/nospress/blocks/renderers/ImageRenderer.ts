@@ -1,10 +1,13 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
+import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { buildLightboxImagesHtml } from '../../../../helpers/lightboxImages';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
 
 export function renderImage(block: Extract<Block, { type: 'image' }>, editable = false): string {
+  const safeUrl = sanitizeUrl(block.url);
+
   if (editable) {
     const inner = `
       <div class="nospress-block-image__edit">
@@ -26,9 +29,9 @@ export function renderImage(block: Extract<Block, { type: 'image' }>, editable =
           <label>Caption (optional)</label>
           <input type="text" class="input" data-block-id="${block.id}" data-field="caption" value="${escapeHtmlAttr(block.caption || '')}" placeholder="Caption shown below the image..." />
         </div>
-        ${block.url ? `
+        ${safeUrl ? `
           <div class="nospress-block-image__preview">
-            <img src="${escapeHtmlAttr(block.url)}" alt="${escapeHtmlAttr(block.alt || '')}" />
+            <img src="${escapeHtmlAttr(safeUrl)}" alt="${escapeHtmlAttr(block.alt || '')}" />
           </div>
         ` : ''}
       </div>
@@ -36,12 +39,12 @@ export function renderImage(block: Extract<Block, { type: 'image' }>, editable =
     return wrapEditable(block.id, 'image', inner);
   }
 
-  if (!block.url?.trim()) return '';
+  if (!safeUrl) return '';
 
   const captionHtml = block.caption?.trim()
-    ? `<figcaption class="nospress-block-image__caption">${DOMPurify.sanitize(block.caption)}</figcaption>`
+    ? `<figcaption class="nospress-block-image__caption">${sanitizeUserHtml(block.caption)}</figcaption>`
     : '';
-  const { imagesHtml, containerDataAttr } = buildLightboxImagesHtml([block.url], { alts: [block.alt ?? ''] });
+  const { imagesHtml, containerDataAttr } = buildLightboxImagesHtml([safeUrl], { alts: [block.alt ?? ''] });
   return `
     <figure class="nospress-block-image note-media" ${containerDataAttr}>
       ${imagesHtml}

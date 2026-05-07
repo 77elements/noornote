@@ -1,9 +1,9 @@
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
-import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { AuthService } from '../../services/AuthService';
 import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
 import { NoteUI } from '../../components/ui/NoteUI';
+import { resolvePubkey } from '../../helpers/resolvePubkey';
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 
 const DEFAULT_POSTS_PER_PAGE = 5;
@@ -203,17 +203,6 @@ function filterEvents(events: NostrEvent[], state: WeblogState): NostrEvent[] {
     }
     return true;
   });
-}
-
-function resolvePubkey(raw: string | undefined, fallback: string): string {
-  const trimmed = (raw || '').trim();
-  if (!trimmed) return fallback;
-  if (/^[0-9a-f]{64}$/i.test(trimmed)) return trimmed.toLowerCase();
-  try {
-    const decoded = decodeNip19(trimmed);
-    if (decoded.type === 'npub') return decoded.data as string;
-  } catch { /* fall through */ }
-  return fallback;
 }
 
 function parseHashtags(raw: string | undefined): string[] {

@@ -8,7 +8,7 @@ import type { NospressSiteSettings } from './blocks/siteSettings';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { BlockRenderer } from './blocks/BlockRenderer';
-import { buildInlineStyle, schemaFor } from './blocks/styles';
+import { buildInlineStyle, schemaFor, sanitizeStyleValue } from './blocks/styles';
 import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG, pageHeaderSlug, pageFooterSlug } from './blocks/pageIndex';
 import { mountNospressNavMenus } from './navMenuMount';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -231,9 +231,14 @@ export class PublicNospressPage {
     }
 
     // ---- Theme palette + font-family ----------------------------------
+    // Run every value through sanitizeStyleValue so a hostile theme cannot
+    // smuggle a `url(javascript:…)` payload via a CSS-variable that some
+    // downstream rule references.
     const root = document.documentElement;
     if (theme.palette) {
-      for (const [key, value] of Object.entries(theme.palette)) {
+      for (const [key, rawValue] of Object.entries(theme.palette)) {
+        if (!rawValue) continue;
+        const value = sanitizeStyleValue(rawValue);
         if (!value) continue;
         if (!this.savedCssVariables.has(key)) {
           this.savedCssVariables.set(key, root.style.getPropertyValue(`--${key}`));
@@ -242,8 +247,11 @@ export class PublicNospressPage {
       }
     }
     if (theme.fontFamily) {
-      if (this.savedBodyFontFamily === null) this.savedBodyFontFamily = document.body.style.fontFamily;
-      document.body.style.fontFamily = theme.fontFamily;
+      const ff = sanitizeStyleValue(theme.fontFamily);
+      if (ff) {
+        if (this.savedBodyFontFamily === null) this.savedBodyFontFamily = document.body.style.fontFamily;
+        document.body.style.fontFamily = ff;
+      }
     }
   }
 

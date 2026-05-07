@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
@@ -12,6 +12,6 @@ export function renderHeading(block: Extract<Block, { type: 'heading' }>, editab
     `;
     return wrapEditable(block.id, 'heading', inner);
   }
-  const text = DOMPurify.sanitize(block.text || '');
+  const text = sanitizeUserHtml(block.text);
   return `<h${block.level} class="nospress-block-heading nospress-block-heading--h${block.level}">${text}</h${block.level}>`;
 }

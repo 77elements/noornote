@@ -15,7 +15,7 @@ import {
 } from '../addons/nospress/blocks/siteSettings';
 
 export class NospressSiteSettingsService {
-  private static instance: NospressSiteSettingsService;
+  private static instance: NospressSiteSettingsService | null = null;
   private eventBus: EventBus;
 
   private constructor() {
@@ -27,6 +27,11 @@ export class NospressSiteSettingsService {
       NospressSiteSettingsService.instance = new NospressSiteSettingsService();
     }
     return NospressSiteSettingsService.instance;
+  }
+
+  /** Release the singleton. See NospressService.destroy() for rationale. */
+  public destroy(): void {
+    NospressSiteSettingsService.instance = null;
   }
 
   public getSettings(): NospressSiteSettings {

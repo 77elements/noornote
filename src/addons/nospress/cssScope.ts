@@ -55,6 +55,32 @@ export function transformUserCss(raw: string): string {
     },
   });
 
+  // Drop any Declaration that contains a dangerous `url()` (javascript:,
+  // data:, vbscript:) or an IE-legacy `expression()` function. These
+  // protocols can execute script when used inside `background-image`,
+  // `cursor`, `list-style-image`, etc. Removing the whole declaration is
+  // safer than rewriting the value (no risk of leaving a half-formed
+  // payload that browsers parse permissively).
+  walk(ast, {
+    visit: 'Declaration',
+    enter(node, item, list) {
+      if (!item || !list) return;
+      let dangerous = false;
+      walk(node.value as CssNode, {
+        enter(child: CssNode) {
+          if (child.type === 'Url') {
+            if (/^\s*(javascript|data|vbscript)\s*:/i.test(getUrlValue(child))) {
+              dangerous = true;
+            }
+          } else if (child.type === 'Function' && child.name.toLowerCase() === 'expression') {
+            dangerous = true;
+          }
+        },
+      });
+      if (dangerous) list.remove(item);
+    },
+  });
+
   // Scope every selector inside a real Rule (not @keyframes percentage rules).
   walk(ast, {
     visit: 'Rule',
@@ -68,6 +94,19 @@ export function transformUserCss(raw: string): string {
   });
 
   return generate(ast);
+}
+
+/**
+ * Extract the string from a css-tree Url node. Older css-tree versions
+ * exposed a `String` child; newer ones expose a plain string. Handle both.
+ */
+function getUrlValue(node: CssNode): string {
+  const raw = (node as { value: unknown }).value;
+  if (typeof raw === 'string') return raw;
+  if (raw && typeof (raw as { value?: unknown }).value === 'string') {
+    return (raw as { value: string }).value;
+  }
+  return '';
 }
 
 /**

@@ -22,7 +22,7 @@ import {
 } from '../addons/nospress/blocks/menu';
 
 export class NospressMenuService {
-  private static instance: NospressMenuService;
+  private static instance: NospressMenuService | null = null;
   private eventBus: EventBus;
 
   private constructor() {
@@ -34,6 +34,11 @@ export class NospressMenuService {
       NospressMenuService.instance = new NospressMenuService();
     }
     return NospressMenuService.instance;
+  }
+
+  /** Release the singleton. See NospressService.destroy() for rationale. */
+  public destroy(): void {
+    NospressMenuService.instance = null;
   }
 
   /**

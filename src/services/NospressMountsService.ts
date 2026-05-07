@@ -27,7 +27,7 @@ interface NospressMountsStorage {
 const MAX_MOUNTS = 15;
 
 export class NospressMountsService {
-  private static instance: NospressMountsService;
+  private static instance: NospressMountsService | null = null;
   private eventBus: EventBus;
 
   private constructor() {
@@ -39,6 +39,11 @@ export class NospressMountsService {
       NospressMountsService.instance = new NospressMountsService();
     }
     return NospressMountsService.instance;
+  }
+
+  /** Release the singleton. See NospressService.destroy() for rationale. */
+  public destroy(): void {
+    NospressMountsService.instance = null;
   }
 
   public getMounts(): string[] {

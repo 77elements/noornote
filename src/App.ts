@@ -25,7 +25,7 @@ import { PostLoginService } from './services/PostLoginService';
 import { AddonLoader } from './addons/AddonLoader';
 import { registerCoreAddons } from './addons/registerAddons';
 import { decodeNip19 } from './services/NostrToolsAdapter';
-import { PublicPageBootstrap } from './addons/nospress/PublicPageBootstrap';
+import type { PublicPageBootstrap as PublicPageBootstrapT } from './addons/nospress/PublicPageBootstrap';
 import { hexToNpub } from './helpers/nip19';
 
 /** Maps viewName to the AppState key that stores the route parameter */
@@ -68,6 +68,10 @@ export class App {
     // Public-page boot path: when the URL is a top-level npub or nip05, we
     // skip MainLayout entirely. The actual decision (logged-in redirect vs.
     // public-view mount) finalizes after auth-init below.
+    // Dynamic-imported so the addon's nospress code stays out of the core
+    // chunk when the URL is not a public-page route.
+    const PublicPageBootstrap: typeof PublicPageBootstrapT =
+      (await import('./addons/nospress/PublicPageBootstrap')).PublicPageBootstrap;
     const publicMatch = PublicPageBootstrap.detect();
     if (!publicMatch) this.setupUI();
 

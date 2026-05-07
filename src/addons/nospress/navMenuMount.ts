@@ -12,6 +12,7 @@
  */
 
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { sanitizeUrl } from '../../helpers/sanitizeUrl';
 import { HOME_SLUG } from './blocks/pageIndex';
 import { PRIMARY_MENU_ID, type NospressMenuSet } from './blocks/menu';
 import type { NospressPageIndex } from './blocks/pageIndex';
@@ -50,7 +51,9 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
         return `<li${liClass}><a href="${escapeHtmlAttr(href)}">${escapeHtml(entry.title)}</a></li>`;
       }
       // External URL item — never gets the active class (it's outside the site).
-      const href = ctx.editorPreview ? '#' : item.url;
+      const safeUrl = sanitizeUrl(item.url);
+      if (!ctx.editorPreview && !safeUrl) return '';
+      const href = ctx.editorPreview ? '#' : safeUrl;
       return `<li><a href="${escapeHtmlAttr(href)}" rel="noopener noreferrer" target="_blank">${escapeHtml(item.label)}</a></li>`;
     }).filter(s => s.length > 0).join('');
 

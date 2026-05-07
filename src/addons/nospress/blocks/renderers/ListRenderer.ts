@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
@@ -26,10 +26,10 @@ export function renderList(block: Extract<Block, { type: 'list' }>, editable = f
   }
 
   const titleHtml = block.title?.trim()
-    ? `<h2 class="nospress-section__title">${DOMPurify.sanitize(block.title)}</h2>`
+    ? `<h2 class="nospress-section__title">${sanitizeUserHtml(block.title)}</h2>`
     : '';
   const itemsHtml = block.items
-    .map(item => `<li class="nospress-section__item">${DOMPurify.sanitize(item)}</li>`)
+    .map(item => `<li class="nospress-section__item">${sanitizeUserHtml(item)}</li>`)
     .join('');
   return `<div class="nospress-section nospress-block-list">${titleHtml}<ul class="nospress-section__items">${itemsHtml}</ul></div>`;
 }

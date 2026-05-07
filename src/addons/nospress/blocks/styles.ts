@@ -193,9 +193,18 @@ export function schemaFor(scope: string): PropertyEntry[] {
  * Strip characters that could break out of `style="…"` or the CSS
  * declaration itself, plus a length cap. Surviving characters cover
  * normal CSS values: numbers, units, colours, var(), spaces, etc.
+ *
+ * Additionally drop the value entirely if it contains a `url(...)` with
+ * a dangerous scheme (javascript:, data:, vbscript:) — characters like
+ * `:` are allowed for `var(--x)` and `calc()`, so the bracket-stripping
+ * pass alone cannot block these. Browsers commonly refuse to execute
+ * script-URLs inside `style="…"`, but CSP / browser-bug surface makes
+ * defence-in-depth worthwhile.
  */
 export function sanitizeStyleValue(raw: string): string {
-  return raw.replace(/[;<>"'\\]/g, '').trim().slice(0, 100);
+  const stripped = raw.replace(/[;<>"'\\]/g, '').trim().slice(0, 100);
+  if (/url\s*\(\s*['"]?\s*(javascript|data|vbscript)\s*:/i.test(stripped)) return '';
+  return stripped;
 }
 
 /**

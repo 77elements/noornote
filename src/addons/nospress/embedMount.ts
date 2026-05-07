@@ -1,7 +1,6 @@
 import { AuthService } from '../../services/AuthService';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
-import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
-import { RelayConfig } from '../../services/RelayConfig';
+import { NoteService } from '../../services/NoteService';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { NoteUI } from '../../components/ui/NoteUI';
 import { escapeHtml } from '../../helpers/escapeHtml';
@@ -33,28 +32,24 @@ async function resolveAndMount(slot: HTMLElement, nostrRef: string): Promise<voi
 
     if (cleaned.startsWith('naddr1')) {
       event = await LongFormOrchestrator.getInstance().fetchAddressableEvent(cleaned);
-    } else if (cleaned.startsWith('nevent1') || cleaned.startsWith('note1')) {
-      const decoded = decodeNip19(cleaned);
-      const id = decoded.type === 'nevent'
-        ? (decoded.data as { id: string }).id
-        : decoded.type === 'note'
-        ? (decoded.data as string)
-        : '';
-      if (id) {
-        const result = await fetchNostrEvents({
-          relays: RelayConfig.getInstance().getReadRelays(),
-          ids: [id],
-          limit: 1,
-        });
-        event = result.events[0] ?? null;
+    } else {
+      // nevent1 / note1 / raw 64-char hex → resolve to event id, then go through
+      // NoteService so repeated embeds of the same note hit the LRU cache and
+      // parallel fetches dedupe.
+      let id: string | null = null;
+      if (cleaned.startsWith('nevent1') || cleaned.startsWith('note1')) {
+        const decoded = decodeNip19(cleaned);
+        id = decoded.type === 'nevent'
+          ? (decoded.data as { id: string }).id
+          : decoded.type === 'note'
+          ? (decoded.data as string)
+          : null;
+      } else if (/^[0-9a-fA-F]{64}$/.test(cleaned)) {
+        id = cleaned.toLowerCase();
       }
-    } else if (/^[0-9a-fA-F]{64}$/.test(cleaned)) {
-      const result = await fetchNostrEvents({
-        relays: RelayConfig.getInstance().getReadRelays(),
-        ids: [cleaned.toLowerCase()],
-        limit: 1,
-      });
-      event = result.events[0] ?? null;
+      if (id) {
+        event = await NoteService.getInstance().getNote(id);
+      }
     }
 
     if (!slot.isConnected) return;

@@ -18,7 +18,7 @@ import {
 } from '../addons/nospress/blocks/pageIndex';
 
 export class NospressPageIndexService {
-  private static instance: NospressPageIndexService;
+  private static instance: NospressPageIndexService | null = null;
   private eventBus: EventBus;
 
   private constructor() {
@@ -30,6 +30,11 @@ export class NospressPageIndexService {
       NospressPageIndexService.instance = new NospressPageIndexService();
     }
     return NospressPageIndexService.instance;
+  }
+
+  /** Release the singleton. See NospressService.destroy() for rationale. */
+  public destroy(): void {
+    NospressPageIndexService.instance = null;
   }
 
   public getIndex(): NospressPageIndex {

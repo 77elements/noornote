@@ -51,7 +51,7 @@ export function nospressHasContent(data: NospressListData | null): boolean {
 type SlugMap<T> = Record<string, T>;
 
 export class NospressService {
-  private static instance: NospressService;
+  private static instance: NospressService | null = null;
   private eventBus: EventBus;
 
   private constructor() {
@@ -63,6 +63,16 @@ export class NospressService {
       NospressService.instance = new NospressService();
     }
     return NospressService.instance;
+  }
+
+  /**
+   * Release the singleton so a subsequent getInstance() returns a fresh
+   * object. Used by NospressRuntime.destroy() on addon toggle-OFF, logout,
+   * or account switch. NEVER calls clear() — clear() is a destructive
+   * persistent-data operation, not in-memory teardown.
+   */
+  public destroy(): void {
+    NospressService.instance = null;
   }
 
   // ── v1 list (legacy, home only) ─────────────────────────────────────

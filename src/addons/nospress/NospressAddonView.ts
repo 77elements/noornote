@@ -23,7 +23,7 @@ export class NospressAddonView extends View {
     this.settings.mount(this.container);
 
     this.renderSetupButton();
-    this.toggleSubId = EventBus.getInstance().on('nospress:toggle', () => this.renderSetupButton());
+    this.toggleSubId = EventBus.getInstance().on('nospress:addon-toggle', () => this.renderSetupButton());
   }
 
   public getElement(): HTMLElement {

@@ -1,4 +1,4 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
@@ -10,6 +10,6 @@ export function renderDmButton(block: Extract<Block, { type: 'dm-button' }>, edi
     return wrapEditable(block.id, 'dm-button', `${labelInput}${hint}`);
   }
 
-  const label = DOMPurify.sanitize((block.label || '').trim() || 'Send me a message');
+  const label = sanitizeUserHtml((block.label || '').trim() || 'Send me a message');
   return `<div class="nospress-block-dm-button"><button type="button" class="btn" data-action="dm-page-owner">${label}</button></div>`;
 }

@@ -1,5 +1,5 @@
 import { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
-import { decodeNip19 } from '../../services/NostrToolsAdapter';
+import { resolvePubkey } from '../../helpers/resolvePubkey';
 
 /**
  * Mount each `<div data-articles-list-mount>` slot with a
@@ -31,15 +31,4 @@ export function mountNospressArticlesLists(
     void carousel.render();
   });
   return instances;
-}
-
-function resolvePubkey(raw: string | undefined, fallback: string): string {
-  const trimmed = (raw || '').trim();
-  if (!trimmed) return fallback;
-  if (/^[0-9a-f]{64}$/i.test(trimmed)) return trimmed.toLowerCase();
-  try {
-    const decoded = decodeNip19(trimmed);
-    if (decoded.type === 'npub') return decoded.data as string;
-  } catch { /* fall through */ }
-  return fallback;
 }

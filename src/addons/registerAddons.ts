@@ -21,6 +21,7 @@ import { isCustomEmojisEnabled } from './custom-emojis/index';
 import { isMarketplaceEnabled } from './marketplace/index';
 import { isFollowPacksEnabled } from './follow-packs/index';
 import { isScheduledPostsEnabled } from './scheduled-posts/index';
+import { isNospressEnabled } from './nospress/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -80,6 +81,12 @@ export function registerCoreAddons(): void {
     load: () => import('./scheduled-posts/runtime').then(m => m.default),
   });
 
+  loader.register({
+    id: 'nospress',
+    isEnabled: isNospressEnabled,
+    load: () => import('./nospress/runtime').then(m => m.default),
+  });
+
   // Out of scope (list-adjacent, deferred — separate decision):
-  //   list-settings, extended-follows, nospress, bookmarks, tribes
+  //   list-settings, extended-follows, bookmarks, tribes
 }

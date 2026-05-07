@@ -1,16 +1,19 @@
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
-const STORAGE_KEY = 'noornote_nospress_enabled';
+const LEGACY_GLOBAL_KEY = 'noornote_nospress_enabled';
 
 export function isNospressEnabled(): boolean {
-  const perAccount = PerAccountLocalStorage.getInstance().get<boolean | null>(
-    StorageKeys.NOSPRESS_ENABLED, null
+  const enabled = PerAccountLocalStorage.getInstance().get<boolean>(
+    StorageKeys.NOSPRESS_ENABLED, false
   );
-  if (perAccount !== null) return perAccount;
-  return localStorage.getItem(STORAGE_KEY) === 'true';
+  // One-time legacy cleanup: a previous version dual-wrote a global key as
+  // fallback, which leaked the toggle across accounts. Remove on first read.
+  if (localStorage.getItem(LEGACY_GLOBAL_KEY) !== null) {
+    localStorage.removeItem(LEGACY_GLOBAL_KEY);
+  }
+  return enabled;
 }
 
 export function setNospressEnabled(enabled: boolean): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.NOSPRESS_ENABLED, enabled);
-  localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
 }

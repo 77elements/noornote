@@ -28,7 +28,7 @@ interface NospressMountsContent {
 }
 
 export class NospressMountsOrchestrator {
-  private static instance: NospressMountsOrchestrator;
+  private static instance: NospressMountsOrchestrator | null = null;
   private transport: NostrTransport;
   private authService: AuthService;
   private nospressMountsService: NospressMountsService;
@@ -48,6 +48,12 @@ export class NospressMountsOrchestrator {
       NospressMountsOrchestrator.instance = new NospressMountsOrchestrator();
     }
     return NospressMountsOrchestrator.instance;
+  }
+
+  /** Tear down. See NospressOrchestrator.destroy() for rationale. */
+  public destroy(): void {
+    this.cache.clear();
+    NospressMountsOrchestrator.instance = null;
   }
 
   public async publishToRelays(): Promise<void> {

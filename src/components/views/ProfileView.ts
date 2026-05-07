@@ -268,11 +268,16 @@ export class ProfileView extends View {
    * Setup listener for NosPress addon toggle (mount/unmount profile lists without app restart)
    */
   private setupNospressToggleListener(): void {
-    const id = this.eventBus.on('nospress:toggle', async (data: { enabled: boolean }) => {
+    const id = this.eventBus.on('nospress:addon-toggle', async (data: { enabled: boolean }) => {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser || currentUser.pubkey !== this.pubkey) return;
 
       if (data.enabled) {
+        // ProfileMounts is independent of the NosPress addon; sync directly.
+        // For NosPress: AddonLoader is loading the runtime in parallel; both
+        // paths target the same singleton via getInstance(), so this dynamic
+        // import is functionally identical to going through the runtime —
+        // skipping the runtime field avoids a race with init() population.
         const [
           { ProfileMountsOrchestrator },
           { NospressOrchestrator },

@@ -1,4 +1,5 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
+import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
@@ -17,6 +18,9 @@ import type { Block } from '../types';
  * later if a use-case appears.
  */
 export function renderVideo(block: Extract<Block, { type: 'video' }>, editable = false): string {
+  const safeUrl = sanitizeUrl(block.url);
+  const safePoster = sanitizeUrl(block.poster);
+
   if (editable) {
     const inner = `
       <div class="nospress-block-video__edit">
@@ -38,9 +42,9 @@ export function renderVideo(block: Extract<Block, { type: 'video' }>, editable =
           <label>Poster image URL (optional)</label>
           <input type="url" class="input" data-block-id="${block.id}" data-field="video-poster" value="${escapeHtmlAttr(block.poster || '')}" placeholder="Thumbnail shown before play…" />
         </div>
-        ${block.url ? `
+        ${safeUrl ? `
           <div class="nospress-block-video__preview">
-            <video class="note-video" controls preload="metadata" src="${escapeHtmlAttr(block.url)}"${block.poster ? ` poster="${escapeHtmlAttr(block.poster)}"` : ''}></video>
+            <video class="note-video" controls preload="metadata" src="${escapeHtmlAttr(safeUrl)}"${safePoster ? ` poster="${escapeHtmlAttr(safePoster)}"` : ''}></video>
           </div>
         ` : ''}
       </div>
@@ -48,15 +52,15 @@ export function renderVideo(block: Extract<Block, { type: 'video' }>, editable =
     return wrapEditable(block.id, 'video', inner);
   }
 
-  if (!block.url?.trim()) return '';
+  if (!safeUrl) return '';
 
   const captionHtml = block.caption?.trim()
-    ? `<figcaption class="nospress-block-video__caption">${DOMPurify.sanitize(block.caption)}</figcaption>`
+    ? `<figcaption class="nospress-block-video__caption">${sanitizeUserHtml(block.caption)}</figcaption>`
     : '';
-  const posterAttr = block.poster?.trim() ? ` poster="${escapeHtmlAttr(block.poster)}"` : '';
+  const posterAttr = safePoster ? ` poster="${escapeHtmlAttr(safePoster)}"` : '';
 
   return `<figure class="nospress-block-video">
-    <video class="note-video" controls preload="metadata" src="${escapeHtmlAttr(block.url)}"${posterAttr}></video>
+    <video class="note-video" controls preload="metadata" src="${escapeHtmlAttr(safeUrl)}"${posterAttr}></video>
     ${captionHtml}
   </figure>`;
 }

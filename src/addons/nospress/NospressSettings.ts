@@ -20,7 +20,7 @@ export class NospressSettings extends SettingsSection {
       checked: isNospressEnabled(),
       onChange: (checked) => {
         setNospressEnabled(checked);
-        EventBus.getInstance().emit('nospress:toggle', { enabled: checked });
+        EventBus.getInstance().emit('nospress:addon-toggle', { enabled: checked });
         ToastService.show(checked ? 'NosPress enabled' : 'NosPress disabled', 'success');
       }
     });

@@ -1,4 +1,5 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
+import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
@@ -26,13 +27,13 @@ export function renderButtonCta(block: Extract<Block, { type: 'button-cta' }>, e
     return wrapEditable(block.id, 'button-cta', `${labelInput}${urlInput}${variantSelect}`);
   }
 
-  const label = DOMPurify.sanitize((block.label || '').trim() || 'Click me');
-  const url = (block.url || '').trim();
+  const label = sanitizeUserHtml((block.label || '').trim() || 'Click me');
+  const safeUrl = sanitizeUrl(block.url);
   const btnClass = variant === 'secondary' ? 'btn btn--passive' : 'btn';
 
-  if (!url) {
+  if (!safeUrl) {
     return `<div class="nospress-block-button-cta"><button type="button" class="${btnClass}" disabled>${label}</button></div>`;
   }
 
-  return `<div class="nospress-block-button-cta"><a class="${btnClass}" href="${escapeHtmlAttr(url)}" target="_blank" rel="noopener noreferrer">${label}</a></div>`;
+  return `<div class="nospress-block-button-cta"><a class="${btnClass}" href="${escapeHtmlAttr(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a></div>`;
 }

@@ -20,6 +20,8 @@ import { PlatformService } from './PlatformService';
 import { SystemLogger } from '../components/system/SystemLogger';
 import { isEasyMode } from '../helpers/ListSyncMode';
 import { diagLog } from './DiagnosticLogger';
+import { AddonLoader } from '../addons/AddonLoader';
+import type { NospressRuntime } from '../addons/nospress/runtime';
 
 import {
   saveToFile as saveFollowsToFile,
@@ -207,19 +209,23 @@ export class AutoSyncService {
       await this.syncFromRelaysAll();
       this.startPeriodicSync();
 
-      // Sync NosPress data from relays (startup only, not periodic)
+      // ProfileMounts sync (independent of the NosPress addon).
       try {
-        const { isNospressEnabled } = await import('../addons/nospress/index');
-        if (isNospressEnabled()) {
-          const [{ ProfileMountsOrchestrator }, { NospressMountsOrchestrator }, { NospressOrchestrator }] = await Promise.all([
-            import('./orchestration/ProfileMountsOrchestrator'),
-            import('./orchestration/NospressMountsOrchestrator'),
-            import('./orchestration/NospressOrchestrator'),
-          ]);
+        const { ProfileMountsOrchestrator } = await import('./orchestration/ProfileMountsOrchestrator');
+        await ProfileMountsOrchestrator.getInstance().syncFromRelays();
+      } catch {
+        // ProfileMounts sync failed silently
+      }
+
+      // NosPress sync — only when the addon runtime is loaded. The 10s
+      // startup delay above gives AddonLoader plenty of time to activate
+      // the runtime via the user:login event before this code runs.
+      try {
+        const runtime = AddonLoader.getInstance().getRuntime<NospressRuntime>('nospress');
+        if (runtime) {
           await Promise.all([
-            ProfileMountsOrchestrator.getInstance().syncFromRelays(),
-            NospressMountsOrchestrator.getInstance().syncFromRelays(),
-            NospressOrchestrator.getInstance().syncFromRelays(),
+            runtime.mounts?.syncFromRelays(),
+            runtime.nospress?.syncFromRelays(),
           ]);
         }
       } catch {

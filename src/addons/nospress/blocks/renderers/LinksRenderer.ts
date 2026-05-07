@@ -1,4 +1,5 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
+import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
@@ -20,15 +21,16 @@ export function renderLinks(block: Extract<Block, { type: 'links' }>, editable =
   }
 
   const titleHtml = block.title?.trim()
-    ? `<h3 class="nospress-block-links__title">${DOMPurify.sanitize(block.title)}</h3>`
+    ? `<h3 class="nospress-block-links__title">${sanitizeUserHtml(block.title)}</h3>`
     : '';
   const itemsHtml = block.items
-    .filter(item => item.url?.trim())
     .map(item => {
-      const href = escapeHtmlAttr(item.url);
-      const label = DOMPurify.sanitize(item.label?.trim() || item.url);
-      return `<a class="nospress-block-links__item" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+      const safeUrl = sanitizeUrl(item.url);
+      if (!safeUrl) return '';
+      const label = sanitizeUserHtml(item.label?.trim() || safeUrl);
+      return `<a class="nospress-block-links__item" href="${escapeHtmlAttr(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
     })
+    .filter(Boolean)
     .join('');
   return `<div class="nospress-block-links">${titleHtml}<div class="nospress-block-links__items">${itemsHtml}</div></div>`;
 }

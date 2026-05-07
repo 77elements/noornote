@@ -3,39 +3,45 @@
  * NIP-78 (kind:30078) publish/fetch for the NosPress site menus
  * under d-tag "noornote/menus".
  *
+ * Thin wrapper over Nip78ResourceOrchestrator — see that file for the
+ * shared NIP-78 lifecycle (cache TTL, sign+publish via AuthService /
+ * NostrTransport, NIP-65 outbox discovery on fetch).
+ *
  * @purpose Persist + retrieve site menus across devices/clients
- * @used-by NospressView (Nav tab), public-page navigation rendering (Slice 2.5)
+ * @used-by NospressView (Nav tab), public-page navigation rendering
  */
 
-import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { NospressMenuService } from '../NospressMenuService';
-import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
+import { Nip78ResourceOrchestrator } from './Nip78ResourceOrchestrator';
 import {
   isMenuSet,
   type NospressMenuSet,
 } from '../../addons/nospress/blocks/menu';
 
-const NIP78_KIND = 30078;
-const D_TAG = 'noornote/menus';
-
 export class NospressMenuOrchestrator {
-  private static instance: NospressMenuOrchestrator;
-  private transport: NostrTransport;
-  private authService: AuthService;
+  private static instance: NospressMenuOrchestrator | null = null;
+  private resource: Nip78ResourceOrchestrator<NospressMenuSet>;
   private menuService: NospressMenuService;
   private systemLogger: SystemLogger;
 
-  private cache: Map<string, { set: NospressMenuSet | null; fetchedAt: number }> = new Map();
-  private readonly CACHE_TTL = 60000;
-
   private constructor() {
-    this.transport = NostrTransport.getInstance();
-    this.authService = AuthService.getInstance();
     this.menuService = NospressMenuService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
+    this.resource = new Nip78ResourceOrchestrator<NospressMenuSet>({
+      name: 'NospressMenuOrchestrator',
+      fetchLabel: 'NospressMenuOrch',
+      dTagFor: () => 'noornote/menus',
+      parse: (content) => {
+        if (!content) return null;
+        try {
+          const parsed = JSON.parse(content);
+          return isMenuSet(parsed) ? parsed : null;
+        } catch { return null; }
+      },
+    });
   }
 
   public static getInstance(): NospressMenuOrchestrator {
@@ -45,28 +51,13 @@ export class NospressMenuOrchestrator {
     return NospressMenuOrchestrator.instance;
   }
 
+  public destroy(): void {
+    this.resource.destroyCache();
+    NospressMenuOrchestrator.instance = null;
+  }
+
   public async publishToRelays(set: NospressMenuSet): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) throw new Error('User not authenticated');
-
-    const writeRelays = this.transport.getWriteRelays();
-    if (writeRelays.length === 0) throw new Error('No write relays available');
-
-    const event = {
-      kind: NIP78_KIND,
-      created_at: Math.floor(Date.now() / 1000),
-      tags: [['d', D_TAG]],
-      content: JSON.stringify(set),
-      pubkey: currentUser.pubkey,
-    };
-
-    const signed = await this.authService.signEvent(event);
-    if (!signed) throw new Error('Failed to sign menus event');
-
-    await this.transport.publish(writeRelays, signed);
-    this.cache.delete(currentUser.pubkey);
-
-    diagLog('lists', 'NospressMenuOrchestrator publishToRelays', {
+    await this.resource.publish(set, '', {
       menuCount: set.menus.length,
       itemCounts: set.menus.map(m => m.items.length),
     });
@@ -76,48 +67,14 @@ export class NospressMenuOrchestrator {
   }
 
   public async fetchFromRelays(pubkey: string, forceRefresh: boolean = false): Promise<NospressMenuSet | null> {
-    if (!forceRefresh) {
-      const cached = this.cache.get(pubkey);
-      if (cached && (Date.now() - cached.fetchedAt) < this.CACHE_TTL) {
-        return cached.set;
-      }
-    }
-
-    const relays = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([pubkey], true);
-    if (relays.length === 0) return null;
-
-    try {
-      const events = await this.transport.fetch(relays, [{
-        kinds: [NIP78_KIND],
-        authors: [pubkey],
-        '#d': [D_TAG],
-        limit: 1,
-      }], 5000, false, 'NospressMenuOrch');
-
-      if (events.length === 0) {
-        this.cache.set(pubkey, { set: null, fetchedAt: Date.now() });
-        return null;
-      }
-
-      const event = events.sort((a, b) => b.created_at - a.created_at)[0];
-      if (!event) return null;
-
-      const parsed = this.parseContent(event.content);
-      this.cache.set(pubkey, { set: parsed, fetchedAt: Date.now() });
-      return parsed;
-    } catch (error) {
-      this.systemLogger.error('NospressMenuOrchestrator',
-        `Failed to fetch menus for ${pubkey}: ${error}`
-      );
-      return null;
-    }
+    return this.resource.fetch(pubkey, '', forceRefresh);
   }
 
   public async syncFromRelays(): Promise<void> {
-    const currentUser = this.authService.getCurrentUser();
+    const currentUser = AuthService.getInstance().getCurrentUser();
     if (!currentUser) throw new Error('User not authenticated');
 
-    const remote = await this.fetchFromRelays(currentUser.pubkey, true);
+    const remote = await this.resource.fetch(currentUser.pubkey, '', true);
     if (remote) this.menuService.setMenuSetFromRelay(remote);
 
     diagLog('lists', 'NospressMenuOrchestrator syncFromRelays', {
@@ -126,17 +83,6 @@ export class NospressMenuOrchestrator {
   }
 
   public clearCache(pubkey?: string): void {
-    if (pubkey) this.cache.delete(pubkey);
-    else this.cache.clear();
-  }
-
-  private parseContent(content: string): NospressMenuSet | null {
-    if (!content) return null;
-    try {
-      const parsed = JSON.parse(content);
-      return isMenuSet(parsed) ? parsed : null;
-    } catch {
-      return null;
-    }
+    this.resource.clearCache(pubkey);
   }
 }

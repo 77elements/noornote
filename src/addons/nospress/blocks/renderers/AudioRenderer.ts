@@ -1,4 +1,5 @@
-import DOMPurify from 'dompurify';
+import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
+import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
 import type { Block } from '../types';
@@ -11,6 +12,8 @@ import type { Block } from '../types';
  * class so it picks up the same styling used elsewhere in the app.
  */
 export function renderAudio(block: Extract<Block, { type: 'audio' }>, editable = false): string {
+  const safeUrl = sanitizeUrl(block.url);
+
   if (editable) {
     const inner = `
       <div class="nospress-block-audio__edit">
@@ -28,9 +31,9 @@ export function renderAudio(block: Extract<Block, { type: 'audio' }>, editable =
           <label>Caption (optional)</label>
           <input type="text" class="input" data-block-id="${block.id}" data-field="audio-caption" value="${escapeHtmlAttr(block.caption || '')}" placeholder="Caption shown below the player…" />
         </div>
-        ${block.url ? `
+        ${safeUrl ? `
           <div class="nospress-block-audio__preview">
-            <audio class="note-audio" controls preload="metadata" src="${escapeHtmlAttr(block.url)}"></audio>
+            <audio class="note-audio" controls preload="metadata" src="${escapeHtmlAttr(safeUrl)}"></audio>
           </div>
         ` : ''}
       </div>
@@ -38,14 +41,14 @@ export function renderAudio(block: Extract<Block, { type: 'audio' }>, editable =
     return wrapEditable(block.id, 'audio', inner);
   }
 
-  if (!block.url?.trim()) return '';
+  if (!safeUrl) return '';
 
   const captionHtml = block.caption?.trim()
-    ? `<figcaption class="nospress-block-audio__caption">${DOMPurify.sanitize(block.caption)}</figcaption>`
+    ? `<figcaption class="nospress-block-audio__caption">${sanitizeUserHtml(block.caption)}</figcaption>`
     : '';
 
   return `<figure class="nospress-block-audio">
-    <audio class="note-audio" controls preload="metadata" src="${escapeHtmlAttr(block.url)}"></audio>
+    <audio class="note-audio" controls preload="metadata" src="${escapeHtmlAttr(safeUrl)}"></audio>
     ${captionHtml}
   </figure>`;
 }
