@@ -127,7 +127,7 @@ export class AboutView extends View {
           <ul>
             ${CREDITS.map(c => {
               const author = c.npub
-                ? `<span class="about-credit-mention" data-pubkey="${npubToHex(c.npub) ?? ''}"></span>`
+                ? `<span data-credit-mention data-pubkey="${npubToHex(c.npub) ?? ''}"></span>`
                 : `<a href="${c.authorUrl ?? '#'}" rel="noopener noreferrer">${c.authorName ?? ''}</a>`;
               return `
                 <li>
@@ -138,14 +138,14 @@ export class AboutView extends View {
             }).join('')}
           </ul>
           <p>
-            Special thanks to <span class="about-credit-mention" data-pubkey="${npubToHex('npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6') ?? ''}"></span>
+            Special thanks to <span data-credit-mention data-pubkey="${npubToHex('npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6') ?? ''}"></span>
             for inventing the Nostr protocol, and to all <a href="https://github.com/nostr-protocol/nips" rel="noopener noreferrer">NIP</a>
             authors and other Nostr devs for the inspiration.
           </p>
           <p>
             And finally, thanks to every user who actively shapes NoorNote with feedback and support.
           </p>
-          <p lang="ar" dir="rtl" class="about-credits-doxology">وَلِلَّهِ الْحَمْد</p>
+          <p lang="ar" dir="rtl" class="about-section__doxology">وَلِلَّهِ الْحَمْد</p>
         </section>
 
         <section class="about-section">
@@ -216,7 +216,7 @@ export class AboutView extends View {
   }
 
   private async populateCredits(): Promise<void> {
-    const placeholders = this.container.querySelectorAll<HTMLElement>('.about-credit-mention[data-pubkey]');
+    const placeholders = this.container.querySelectorAll<HTMLElement>('[data-credit-mention][data-pubkey]');
     if (placeholders.length === 0) return;
 
     const profileService = UserProfileService.getInstance();

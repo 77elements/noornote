@@ -65,6 +65,12 @@
     @extend %small;
   }
 
+  &__doxology {
+    text-align: center;
+    font-size: 1.6em;
+    margin-top: $gap * 1.5;
+  }
+
   &--footer {
     background: transparent;
     border: none;
