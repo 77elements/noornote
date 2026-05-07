@@ -1030,7 +1030,6 @@
 .nospress-block-columns {
   display: grid;
   gap: $gap;
-  margin-bottom: $gap;
   grid-template-columns: 1fr;
 
   @include tablet-up {
@@ -1068,10 +1067,6 @@
   .custom-dropdown {
     width: 140px;
   }
-}
-
-.nospress-block-links {
-  margin-bottom: $gap * 2;
 }
 
 .nospress-block-links__title {

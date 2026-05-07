@@ -411,14 +411,12 @@ export class NospressView extends View {
     this.destroyProfileCards();
     this.destroyArticlesCarousels();
 
-    // Mirror PublicNospressPage's DOM (.user-site > .layout-wrapper > blocks)
-    // so user CSS selectors written against `body` / `.layout-wrapper`
-    // map 1:1 to the published view. Page-level inline styles are gone —
-    // page-wide visuals live in Global theme + palette + Custom CSS.
+    // Mirror PublicNospressPage's DOM — user CSS scopes to `#app` and the
+    // user's content sits as a `.layout-wrapper` directly inside it. No
+    // extra `.user-site` wrapper here either, so what the user sees
+    // matches what gets published 1:1.
     const composedBlocksHtml = `
-      <div class="user-site">
-        <div class="layout-wrapper nospress-page-content">${blocksHtml}</div>
-      </div>
+      <div class="layout-wrapper nospress-page-content">${blocksHtml}</div>
     `;
 
     const cssEditorHtml = this.cssEditorOpen ? this.renderCssEditorPanel(page) : '';
@@ -2666,10 +2664,10 @@ export class NospressView extends View {
           class="textarea textarea--code nospress-css-editor__textarea"
           data-css-editor
           spellcheck="false"
-          placeholder="/* Selectors are scoped to .user-site\n   Use 'body' to target the page itself.\n   Click Save below to apply. */"
+          placeholder="/* Selectors are scoped to #app\n   Use 'body' to target the page itself.\n   Click Save below to apply. */"
         >${escapeHtml(value)}</textarea>
         <div class="nospress-css-editor__hint">
-          <p>Selectors apply to <code>.user-site</code> and its descendants. <code>body</code> targets the page wrapper itself.</p>
+          <p>Selectors apply to <code>#app</code> and its descendants. <code>body</code> targets the page root itself.</p>
           <pre class="nospress-css-editor__tree">body
   .layout-wrapper
     [your blocks]   <span class="nospress-css-editor__tree-note">— target via the Identifiers panel (CSS Class / CSS ID)</span></pre>

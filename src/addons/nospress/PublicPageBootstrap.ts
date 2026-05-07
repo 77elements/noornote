@@ -27,8 +27,9 @@ export class PublicPageBootstrap {
     appElement.innerHTML = '';
 
     const { PublicNospressPage } = await import('./PublicNospressPage');
-    const view = new PublicNospressPage(route);
-    appElement.appendChild(view.getElement());
+    // PublicNospressPage renders directly into `#app` — no extra wrapper.
+    // cssScope anchors user CSS to `#app` for the same isolation.
+    const view = new PublicNospressPage(route, appElement);
     void view.load();
   }
 

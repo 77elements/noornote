@@ -71,17 +71,18 @@ export class PublicNospressPage {
     'dm-page-owner': 'dm',
   };
 
-  constructor(route: PublicPageRoute) {
+  /**
+   * `host` is the `#app` element from PublicPageBootstrap. We render
+   * directly into it instead of nesting our own `<div class="user-site">`
+   * wrapper — that wrapper used to be the cssScope anchor, but cssScope
+   * now anchors to `#app` so the extra DOM node is gone.
+   */
+  constructor(route: PublicPageRoute, host: HTMLElement) {
     this.route = route;
-    this.container = document.createElement('div');
-    this.container.className = 'user-site';
+    this.container = host;
     const viewer = AuthService.getInstance().getCurrentUser();
     this.viewerNpub = viewer?.npub ?? null;
     this.viewerPubkey = viewer?.pubkey ?? null;
-  }
-
-  public getElement(): HTMLElement {
-    return this.container;
   }
 
   public async load(): Promise<void> {

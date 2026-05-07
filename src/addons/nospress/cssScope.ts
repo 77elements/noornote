@@ -1,6 +1,9 @@
 /**
- * Scope user-supplied CSS to the `.user-site` host so the styles only ever
- * affect a NosPress page — never leak into the rest of the app.
+ * Scope user-supplied CSS to the `#app` host so the styles only ever affect
+ * the NosPress page surface — never leak out to other top-level chrome
+ * (admin bar moved out is the next step; today admin bar lives inside
+ * `#app` so it remains reachable, identical to the previous `.user-site`
+ * behaviour).
  *
  * Why csstree: the rendered CSS gets PUBLISHED on relays and runs on every
  * visitor's browser. A regex-based transformer is too brittle for the edge
@@ -9,9 +12,9 @@
  * surgically.
  *
  * Transformation rules:
- *   - `body { ... }`               → `.user-site { ... }`
- *   - `body > x { ... }`           → `.user-site > x { ... }`
- *   - any other selector           → `.user-site <selector>`
+ *   - `body { ... }`               → `#app { ... }`
+ *   - `body > x { ... }`           → `#app > x { ... }`
+ *   - any other selector           → `#app <selector>`
  *   - `@import …`                  → DROPPED (no remote CSS loading)
  *   - `@keyframes … { 0% { … } }`  → passes through (percentages aren't selectors)
  *   - `@media`, `@supports`, etc.  → contained Rules are visited recursively
@@ -24,7 +27,7 @@
 
 import { parse, walk, generate, type CssNode, type Selector } from 'css-tree';
 
-const SCOPE_CLASS = 'user-site';
+const SCOPE_ID = 'app';
 const STYLE_TAG_ID = 'user-site-custom-css';
 const MAX_LENGTH = 10_000;
 
@@ -110,27 +113,27 @@ function getUrlValue(node: CssNode): string {
 }
 
 /**
- * Mutate a single Selector in place so it lives under `.user-site`.
- *   - If the first non-combinator part is `body`, swap it for `.user-site`.
- *   - Otherwise, prepend `.user-site` plus a descendant combinator.
+ * Mutate a single Selector in place so it lives under `#app`.
+ *   - If the first non-combinator part is `body`, swap it for `#app`.
+ *   - Otherwise, prepend `#app` plus a descendant combinator.
  */
 function scopeSelector(selector: Selector): void {
   const first = selector.children.first;
 
   if (first && first.type === 'TypeSelector' && first.name.toLowerCase() === 'body') {
-    // Replace the leading `body` with `.user-site`. Mutate type+name in place
-    // so the rest of the selector chain (combinators, classes, pseudos) is
+    // Replace the leading `body` with `#app`. Mutate type+name in place so
+    // the rest of the selector chain (combinators, classes, pseudos) is
     // preserved untouched.
     const node = first as unknown as { type: string; name: string };
-    node.type = 'ClassSelector';
-    node.name = SCOPE_CLASS;
+    node.type = 'IdSelector';
+    node.name = SCOPE_ID;
     return;
   }
 
   // Default: descendant scope. Prepend in reverse order so the resulting list
-  // is [ClassSelector(user-site), Combinator(' '), …existing].
+  // is [IdSelector(app), Combinator(' '), …existing].
   selector.children.prependData({ type: 'Combinator', name: ' ' });
-  selector.children.prependData({ type: 'ClassSelector', name: SCOPE_CLASS });
+  selector.children.prependData({ type: 'IdSelector', name: SCOPE_ID });
 }
 
 /**
