@@ -75,6 +75,8 @@ export class BlockRenderer {
     if (editable) {
       return `<div class="nospress-block-style" data-styled-block-id="${block.id}">${inner}</div>`;
     }
+    // Div blocks self-wrap with the user-chosen tag — see renderDiv.
+    if (block.type === 'div') return inner;
     return styleWrap(block, inner);
   }
 }

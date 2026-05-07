@@ -15,9 +15,6 @@ import { escapeHtml } from '../../../helpers/escapeHtml';
 
 interface BlockLibraryViewOptions {
   onApply: (type: BlockType) => void;
-  /** Click on the virtual "Page" entry at the top of the library — toggles
-   *  the page-frame selection in the editor. No Apply button on that row. */
-  onSelectPage: () => void;
   /** Click on the virtual "Custom CSS" entry — toggles the Custom-CSS panel
    *  between the page header and the page-edit area. No Apply button. */
   onSelectCss: () => void;
@@ -44,18 +41,6 @@ export class BlockLibraryView {
   }
 
   private render(): void {
-    // Virtual "Page" entry — the always-present page frame. Not a real block
-    // type, no Apply button. Click toggles selection of the page frame in the
-    // editor so the user can edit page-level properties.
-    const pageRowHtml = `
-      <div class="nn-card" data-action="select-page" role="button" tabindex="0">
-        <div class="nn-card__content">
-          <div class="icon" aria-hidden="true">▣</div>
-          <h3>Page</h3>
-        </div>
-      </div>
-    `;
-
     // Virtual "Custom CSS" entry — opens the textarea panel between header
     // and page-edit. Same panel as the header "CSS Editor" button, so the
     // user has two equivalent entry points.
@@ -87,19 +72,13 @@ export class BlockLibraryView {
     `).join('');
 
     this.container.innerHTML = `
-      <div class="block-library__rows">${pageRowHtml}${cssRowHtml}${rowsHtml}</div>
+      <div class="block-library__rows">${cssRowHtml}${rowsHtml}</div>
     `;
   }
 
   private bindEvents(): void {
     this.container.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
-
-      const pageRow = target.closest('[data-action="select-page"]');
-      if (pageRow) {
-        this.opts.onSelectPage();
-        return;
-      }
 
       const cssRow = target.closest('[data-action="select-css"]');
       if (cssRow) {

@@ -365,20 +365,27 @@ export function dividerThumbSvg(style: DividerStyle | string): string {
 // ──────────────────────────────────────────────────────────────────────────
 
 /**
- * Wrap rendered block HTML with a styled outer div. The wrapper is always
- * emitted (even when the block has no style yet) so the
- * `data-styled-block-id` hook is available for `applyBlockStyleToDOM()`
- * to live-update the very first edit without forcing a re-render.
+ * Wrap rendered block HTML with a styled outer element. The wrapper is
+ * always emitted (even when the block has no style yet) so the
+ * `data-styled-block-id` hook is available for live-updates.
  *
  * Custom HTML attributes (`attrs.class`, `attrs.id`) come from the user's
  * Identifiers panel and are sanitized through `sanitizeCssIdent()` before
  * being merged into the wrapper. This is what lets `customCss` selectors
  * like `.my-block` or `#hero` target an individual block.
+ *
+ * `opts.tag` and `opts.baseClass` let self-wrapping renderers (e.g. the
+ * Div block, whose chosen HTML tag IS the wrapper) call styleWrap with
+ * their own outer element so we don't end up nesting `<div><header>…`.
  */
 export function styleWrap(
   block: { id: string; type: string; style?: CommonStyle; attrs?: { class?: string; id?: string } },
   inner: string,
+  opts: { tag?: string; baseClass?: string } = {},
 ): string {
+  const tag = opts.tag ?? 'div';
+  const baseClass = opts.baseClass ?? 'nospress-block-style';
+
   const inlineStyle = buildInlineStyle(schemaFor(block.type), block.style);
   const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
 
@@ -392,7 +399,7 @@ export function styleWrap(
   // div block (and its HTML-tag variants) supports it via STYLE_MATRIX.
   const dividers = renderDividers(block.style?.divider);
 
-  return `<div class="nospress-block-style${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}>${dividers.top}${inner}${dividers.bottom}</div>`;
+  return `<${tag} class="${baseClass}${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}>${dividers.top}${inner}${dividers.bottom}</${tag}>`;
 }
 
 /** Render top/bottom divider SVGs from a `CommonStyle.divider` config.

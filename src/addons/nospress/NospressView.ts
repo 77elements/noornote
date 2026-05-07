@@ -50,7 +50,6 @@ import {
   renderPropertyPanel,
   sanitizeCssIdent,
   writeStyleField,
-  type CommonStyle,
 } from './blocks/styles';
 import { removeUserCss } from './cssScope';
 import { bindCssTextareaUx } from './cssTextareaUx';
@@ -72,11 +71,6 @@ import { mountNospressWeblogs } from './weblogMount';
 import { mountNospressNavMenus } from './navMenuMount';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
-
-/** Reserved value for `selectedBlockId` that selects the virtual Page wrapper
- *  (the always-present outer frame in the editor). Not a real Block.id —
- *  prefixed with `__` so it can never collide with a UUID. */
-const PAGE_SELECTION_ID = '__page__';
 
 /**
  * Accept a user-typed palette value and return a canonical CSS color
@@ -159,8 +153,8 @@ export class NospressView extends View {
   /** Most-recently-used block types in MRU order. In-memory only. */
   private recentBlockTypes: BlockType[] = [];
   /** Currently focused/selected block in the editor. Null = none. UI-only.
-   *  May also be PAGE_SELECTION_ID — selects the virtual Page wrapper, whose
-   *  properties panel surfaces site-level options (color, background, etc.). */
+   *  Page-frame selection was removed; site-level visuals live in the
+   *  Global tab and Custom CSS. */
   private selectedBlockId: string | null = null;
   private eventBusSubscriptions: string[] = [];
   /** Live in-memory edit state. All mutations go here; persisted to draft
@@ -417,27 +411,13 @@ export class NospressView extends View {
     this.destroyProfileCards();
     this.destroyArticlesCarousels();
 
-    const pageSelected = this.selectedBlockId === PAGE_SELECTION_ID;
-    // The editor is a schematic composer — we keep the same DOM structure
-    // as PublicNospressPage (.user-site > .layout-wrapper > blocks) so the
-    // user can mentally map their selectors to the published view, but we
-    // do NOT emit the page-level inline style here. Live preview of styles
-    // happens on the public page only.
-    const pageContentHtml = `
+    // Mirror PublicNospressPage's DOM (.user-site > .layout-wrapper > blocks)
+    // so user CSS selectors written against `body` / `.layout-wrapper`
+    // map 1:1 to the published view. Page-level inline styles are gone —
+    // page-wide visuals live in Global theme + palette + Custom CSS.
+    const composedBlocksHtml = `
       <div class="user-site">
         <div class="layout-wrapper nospress-page-content">${blocksHtml}</div>
-      </div>
-    `;
-
-    const titleBarLabel = this.editingTarget === 'header'
-      ? 'GLOBAL HEADER'
-      : this.editingTarget === 'footer'
-        ? 'GLOBAL FOOTER'
-        : 'PAGE';
-    const composedBlocksHtml = `
-      <div class="nospress-page-edit${pageSelected ? ' nospress-page-edit--selected' : ''}" data-block-id="${PAGE_SELECTION_ID}">
-        <div class="nospress-page-edit__title-bar">${titleBarLabel}</div>
-        ${pageContentHtml}
       </div>
     `;
 
@@ -626,7 +606,6 @@ export class NospressView extends View {
 
     this.blockLibrary = new BlockLibraryView({
       onApply: (type) => this.applyBlock(type),
-      onSelectPage: () => this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID),
       onSelectCss: () => this.toggleCssEditor(),
     });
     this.mountRightPane(librarySlot);
@@ -2372,10 +2351,7 @@ export class NospressView extends View {
    */
   private renderPropertiesContent(): string {
     if (!this.selectedBlockId) {
-      return `<p class="nospress-properties-empty">Select a block or the page frame to edit properties.</p>`;
-    }
-    if (this.selectedBlockId === PAGE_SELECTION_ID) {
-      return this.renderInlinePageProperties();
+      return `<p class="nospress-properties-empty">Select a block to edit properties.</p>`;
     }
     const editSlug = this.currentEditSlug();
     const page = this.editingPage
@@ -2662,15 +2638,6 @@ export class NospressView extends View {
     });
   }
 
-  private renderInlinePageProperties(): string {
-    return renderPropertyPanel({
-      scope: 'page',
-      style: this.currentPageStyle(),
-      header: 'Page properties',
-      activeDividerSide: this.activeDividerSide,
-    });
-  }
-
   /**
    * Custom-CSS editor panel — sits between the header and the page-edit
    * area. Same UI is opened from the header "CSS Editor" button and from
@@ -2725,16 +2692,6 @@ export class NospressView extends View {
   private toggleCssEditor(): void {
     this.cssEditorOpen = !this.cssEditorOpen;
     this.rerenderEditable();
-  }
-
-  /** Read the active page style (in-memory draft → saved draft → published → migrated v1). */
-  private currentPageStyle(): CommonStyle | undefined {
-    const editSlug = this.currentEditSlug();
-    return (this.editingPage
-      ?? this.listService.getDraftV2(editSlug)
-      ?? this.listService.getPublishedV2(editSlug)
-      ?? this.listService.getPageV2(editSlug)
-    ).style;
   }
 
   private mountCursorRow(): void {
@@ -2825,17 +2782,12 @@ export class NospressView extends View {
   }
 
   /** Toggle the `--selected` class on the matching wrapper. Called after
-   *  every editable re-render so the focus survives state changes. Also
-   *  handles the virtual Page frame when PAGE_SELECTION_ID is selected. */
+   *  every editable re-render so the focus survives state changes. */
   private applySelectedBlockClass(): void {
-    this.container.querySelectorAll('.nospress-block-edit--selected, .nospress-page-edit--selected').forEach(el => {
-      el.classList.remove('nospress-block-edit--selected', 'nospress-page-edit--selected');
+    this.container.querySelectorAll('.nospress-block-edit--selected').forEach(el => {
+      el.classList.remove('nospress-block-edit--selected');
     });
     if (!this.selectedBlockId) return;
-    if (this.selectedBlockId === PAGE_SELECTION_ID) {
-      this.container.querySelector('.nospress-page-edit')?.classList.add('nospress-page-edit--selected');
-      return;
-    }
     const wrapper = this.container.querySelector(
       `.nospress-block-edit[data-block-id="${this.selectedBlockId}"]`
     );
@@ -2916,6 +2868,9 @@ export class NospressView extends View {
     // before publishing so we don't keep mirroring the value on every
     // page event. Read path tolerates both for older relays' data.
     if (draft.customCss !== undefined) delete draft.customCss;
+    // Page-level inline styles were removed entirely; site-wide visuals
+    // live in Global theme + palette + Custom CSS. Drop the legacy slot.
+    if (draft.style !== undefined) delete draft.style;
 
     try {
       await this.orchestrator.publishV2ToRelays(draft, editSlug);
@@ -3037,14 +2992,9 @@ export class NospressView extends View {
    * the published Public page.
    */
   private handleStyleInput(scope: string, field: string, rawValue: string): void {
-    if (scope === 'page') {
-      this.mutateDraft((page) => {
-        if (!page.style) page.style = {};
-        writeStyleField(page.style, field, rawValue);
-      }, { silent: true });
-      return;
-    }
     // Block scope: '<blockType>:<uuid>' — only the id portion is needed.
+    // Page-scope styles were removed; site-wide styling lives in the Global
+    // tab (palette / theme) and in Custom CSS.
     const colon = scope.indexOf(':');
     if (colon < 0) return;
     const blockId = scope.slice(colon + 1);
@@ -3246,14 +3196,7 @@ export class NospressView extends View {
         return;
       }
 
-      // Click landed inside the page frame but not on any inner block — select page
-      const pageWrapper = target.closest('.nospress-page-edit') as HTMLElement | null;
-      if (pageWrapper) {
-        this.selectBlock(this.selectedBlockId === PAGE_SELECTION_ID ? null : PAGE_SELECTION_ID);
-        return;
-      }
-
-      // Click outside everything → deselect
+      // Click outside any block → deselect
       this.selectBlock(null);
     });
 

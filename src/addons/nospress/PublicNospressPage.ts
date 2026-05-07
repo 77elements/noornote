@@ -8,7 +8,7 @@ import type { NospressSiteSettings } from './blocks/siteSettings';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { BlockRenderer } from './blocks/BlockRenderer';
-import { buildInlineStyle, schemaFor, sanitizeStyleValue } from './blocks/styles';
+import { sanitizeStyleValue } from './blocks/styles';
 import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG, pageHeaderSlug, pageFooterSlug } from './blocks/pageIndex';
 import { mountNospressNavMenus } from './navMenuMount';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -404,24 +404,25 @@ export class PublicNospressPage {
   }): void {
     const { body, header, footer, viewerProfile } = parts;
 
+    // Header / footer blocks render bare — no `<header>` / `<footer>`
+    // wrapper. The user owns the container shape: if they want a
+    // sectioning element, they add a Div block with the desired tag.
     const headerHtml = header && header.blocks.length > 0
-      ? `<header class="user-site__site-header">${BlockRenderer.renderAll(header.blocks, { editable: false })}</header>`
+      ? BlockRenderer.renderAll(header.blocks, { editable: false })
       : '';
 
     const footerHtml = footer && footer.blocks.length > 0
-      ? `<footer class="user-site__site-footer">${BlockRenderer.renderAll(footer.blocks, { editable: false })}</footer>`
+      ? BlockRenderer.renderAll(footer.blocks, { editable: false })
       : '';
 
-    // Page-level inline style (color/background/padding etc.) applies to the
-    // body's main content, not the global header/footer (those have their
-    // own styles in Slice 2 — for now they inherit the site bg).
+    // Page-level inline styles were removed; site-wide visuals come from
+    // the Global theme/palette + Custom CSS (which targets `body` and
+    // `.layout-wrapper` directly via cssScope).
     const bodyBlocksHtml = body && body.blocks.length > 0
       ? BlockRenderer.renderAll(body.blocks, { editable: false })
       : '';
-    const inlineStyle = body ? buildInlineStyle(schemaFor('page'), body.style) : '';
-    const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
     const bodyHtml = bodyBlocksHtml
-      ? `<main class="user-site__site-body"><div class="layout-wrapper"${styleAttr}>${bodyBlocksHtml}</div></main>`
+      ? `<main class="user-site__site-body"><div class="layout-wrapper">${bodyBlocksHtml}</div></main>`
       : '';
 
     this.container.innerHTML = `

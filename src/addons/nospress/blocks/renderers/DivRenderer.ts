@@ -15,6 +15,7 @@
 import { BlockRenderer } from '../BlockRenderer';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import { DIV_TAGS, type Block, type DivTag } from '../types';
 
 function safeTag(raw: string | undefined): DivTag {
@@ -44,6 +45,9 @@ export function renderDiv(
     return wrapEditable(block.id, 'div', inner);
   }
 
+  // Self-wrapping readonly: the user-chosen tag IS the styled outer
+  // element. BlockRenderer skips its default styleWrap for 'div', so we
+  // don't end up with `<div class="nospress-block-style"><header>…`.
   const childrenHtml = BlockRenderer.renderAll(block.children, { editable: false });
-  return `<${tag} class="nospress-block-div">${childrenHtml}</${tag}>`;
+  return styleWrap(block, childrenHtml, { tag, baseClass: 'nospress-block-div' });
 }
