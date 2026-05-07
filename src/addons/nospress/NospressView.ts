@@ -285,19 +285,35 @@ export class NospressView extends View {
       // Fetch the page-index + menus first so the Pages and Nav tabs have
       // data; failures are non-fatal — empty index = single-page user, no
       // menus = primary navigation seeds locally from the page-index.
-      const [remoteIndex, remoteMenus] = await Promise.all([
+      // Fetch every site-wide thing the editor's UI reads from local-first
+      // services — page-index, menus, site-settings, the active page body,
+      // AND the global header/footer slugs. Without the H&F fetch, a fresh
+      // browser instance shows "+ Add Global Header" placeholders even when
+      // the events exist on relays from another device. Per-page H/F
+      // overrides stay lazy (loaded when the user clicks a page tile).
+      const [remoteIndex, remoteMenus, remoteHeader, remoteFooter, remoteBody] = await Promise.all([
         this.pageIndexOrchestrator.fetchFromRelays(this.pubkey, true),
         this.menuOrchestrator.fetchFromRelays(this.pubkey, true),
+        this.orchestrator.fetchFromRelays(this.pubkey, true, GLOBAL_HEADER_SLUG),
+        this.orchestrator.fetchFromRelays(this.pubkey, true, GLOBAL_FOOTER_SLUG),
+        this.orchestrator.fetchFromRelays(this.pubkey, true, this.activeSlug),
+        // Site-settings persists itself via setSettingsFromRelay; we run it
+        // in parallel for speed but don't need the return value.
+        this.siteSettingsOrchestrator.syncFromRelays().catch(() => undefined),
       ]);
       if (remoteIndex) this.pageIndexService.setIndexFromRelay(remoteIndex);
       if (remoteMenus) this.menuService.setMenuSetFromRelay(remoteMenus);
       // Reconcile menus with whatever pages are now in the local index —
       // covers the case where pages were added/removed on another device.
       this.menuService.syncWithPages();
-
-      const remote = await this.orchestrator.fetchFromRelays(this.pubkey, true, this.activeSlug);
-      if (remote && remote.blocks.length > 0) {
-        this.listService.savePublishedV2(remote, this.activeSlug);
+      if (remoteHeader && remoteHeader.blocks.length > 0) {
+        this.listService.savePublishedV2(remoteHeader, GLOBAL_HEADER_SLUG);
+      }
+      if (remoteFooter && remoteFooter.blocks.length > 0) {
+        this.listService.savePublishedV2(remoteFooter, GLOBAL_FOOTER_SLUG);
+      }
+      if (remoteBody && remoteBody.blocks.length > 0) {
+        this.listService.savePublishedV2(remoteBody, this.activeSlug);
       }
 
       await this.renderList();
