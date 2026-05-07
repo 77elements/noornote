@@ -48,6 +48,7 @@ import { CursorRow } from './blocks/CursorRow';
 import { createBlock, findBlockInPage, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
 import {
   renderPropertyPanel,
+  resolvePaletteVars,
   sanitizeCssIdent,
   writeStyleField,
 } from './blocks/styles';
@@ -1569,31 +1570,53 @@ export class NospressView extends View {
 
   /** Stop-handle drag: mousedown captures the active index, mousemove on
    *  document recomputes position from the track's bounding rect, mouseup
-   *  releases. We re-render after each move so preview + slider stay in
-   *  sync. Click without movement is preserved by the click handler above
-   *  (selectGradientStop fires on the same mousedown→mouseup cycle without
-   *  a move). */
+   *  releases.
+   *
+   *  During drag we update the draft AND the visual handle/preview band
+   *  in-place — NO full re-render — because re-rendering detaches the
+   *  `track` element captured in this closure, after which
+   *  `getBoundingClientRect()` returns zero width and pct calculations
+   *  produce Infinity → clamp(0,100) → stop snaps to 100%. The mouseup
+   *  handler is the only place that sorts + commits + re-renders.
+   *
+   *  Click without movement is preserved by the click handler above
+   *  (selectGradientStop fires on the same mousedown→mouseup cycle
+   *  without a move). */
   private bindGradientStopDrag(mount: HTMLElement): void {
     const track = mount.querySelector<HTMLElement>('[data-gradient-track]');
     if (!track) return;
+    const previewEl = mount.querySelector<HTMLElement>('.nospress-gradient-preview');
     track.querySelectorAll<HTMLElement>('.nospress-gradient-stop').forEach(stop => {
       stop.addEventListener('mousedown', (e) => {
         if (!this.gradientEdit) return;
         const idx = parseInt(stop.dataset.gradientStopIndex || '0', 10);
         this.gradientEdit.selectedStopIndex = idx;
+        const palette = this.effectivePalette();
         const onMove = (ev: MouseEvent) => {
           if (!this.gradientEdit) return;
           const rect = track.getBoundingClientRect();
+          if (rect.width <= 0) return; // track was detached — bail
           const pct = clamp(((ev.clientX - rect.left) / rect.width) * 100, 0, 100);
           const target = this.gradientEdit.draft.stops[idx];
-          if (target) target.position = Math.round(pct);
-          this.commitGradientLive();
+          if (!target) return;
+          target.position = Math.round(pct);
+          // In-place visual update: move the dragged handle, refresh the
+          // preview band's CSS. Avoid re-rendering the editor so `track`
+          // and `stop` stay valid for the rest of the drag.
+          stop.style.left = `${target.position}%`;
+          if (previewEl) {
+            previewEl.style.background = resolvePaletteVars(formatGradient(this.gradientEdit.draft), palette);
+          }
         };
         const onUp = () => {
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
           if (this.gradientEdit) {
             this.gradientEdit.draft.stops.sort((a, b) => a.position - b.position);
+            // Recompute selected index after sort so subsequent edits hit
+            // the same stop the user was dragging.
+            const dragged = this.gradientEdit.draft.stops[idx];
+            if (dragged) this.gradientEdit.selectedStopIndex = this.gradientEdit.draft.stops.indexOf(dragged);
             this.commitGradientLive();
           }
         };
