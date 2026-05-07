@@ -22,7 +22,7 @@
  */
 
 import { escapeHtmlAttr } from '../../../helpers/escapeHtml';
-import { PALETTE_KEYS } from './siteSettings';
+import { PALETTE_KEYS, type PaletteKey } from './siteSettings';
 
 // ──────────────────────────────────────────────────────────────────────────
 // Types
@@ -191,8 +191,9 @@ export function schemaFor(scope: string): PropertyEntry[] {
 
 /**
  * Strip characters that could break out of `style="…"` or the CSS
- * declaration itself, plus a length cap. Surviving characters cover
- * normal CSS values: numbers, units, colours, var(), spaces, etc.
+ * declaration itself, plus a generous length cap. Surviving characters
+ * cover normal CSS values: numbers, units, colours, var(), calc(),
+ * gradients with multiple stops, etc.
  *
  * Additionally drop the value entirely if it contains a `url(...)` with
  * a dangerous scheme (javascript:, data:, vbscript:) — characters like
@@ -201,8 +202,9 @@ export function schemaFor(scope: string): PropertyEntry[] {
  * script-URLs inside `style="…"`, but CSP / browser-bug surface makes
  * defence-in-depth worthwhile.
  */
+const MAX_STYLE_VALUE_LEN = 1000; // multi-stop gradients with var() refs add up
 export function sanitizeStyleValue(raw: string): string {
-  const stripped = raw.replace(/[;<>"'\\]/g, '').trim().slice(0, 100);
+  const stripped = raw.replace(/[;<>"'\\]/g, '').trim().slice(0, MAX_STYLE_VALUE_LEN);
   if (/url\s*\(\s*['"]?\s*(javascript|data|vbscript)\s*:/i.test(stripped)) return '';
   return stripped;
 }
@@ -337,6 +339,12 @@ export interface RenderPropertyPanelOptions {
   /** Currently selected divider side in the Top/Bottom switch (only
    *  relevant when the schema includes the divider property). Default top. */
   activeDividerSide?: 'top' | 'bottom';
+  /** Effective palette (user overrides + Deep Purple defaults) used to
+   *  paint the inline color swatches with the user's actual colors,
+   *  without pushing CSS variables onto the editor scope. The clicked
+   *  swatch still records `var(--color-N)` so the public site tracks
+   *  palette changes dynamically. */
+  palette?: Partial<Record<PaletteKey, string>>;
 }
 
 /** UI-side metadata for the divider style picker — value + visible label. */
@@ -436,10 +444,62 @@ const DIVIDER_PATHS: Record<Exclude<DividerStyle, 'none'>, string> = {
   triangle: 'M0,10 L50,0 L100,10 Z',
 };
 
+/**
+ * Substitute every `var(--color-N)` reference in a CSS value string with
+ * the literal hex from the given palette. Used to paint editor-only
+ * previews (color/background trigger, gradient band, stop handles, track)
+ * with the user's actual colors — the editor scope deliberately keeps
+ * `:root` defaults so chrome / tabs aren't tinted, so any preview that
+ * needs the user's palette must resolve via this helper.
+ *
+ * The stored data model keeps `var(--color-N)` intact so the public site
+ * tracks palette changes dynamically.
+ */
+export function resolvePaletteVars(css: string, palette: Partial<Record<PaletteKey, string>>): string {
+  return css.replace(
+    /var\s*\(\s*--(color-[1-6])\s*\)/g,
+    (match, key) => palette[key as PaletteKey] ?? match,
+  );
+}
+
+/**
+ * Reusable palette-swatches row used by every "pick a color" UI in the
+ * editor (block color/background props, divider color, gradient stop
+ * color). Each swatch renders with the user's effective palette as a
+ * literal hex fill (no `var(--color-N)` so the editor chrome / tabs are
+ * untouched), and carries the supplied data-attribute so the consumer's
+ * click handler can read which palette slot was picked.
+ *
+ * @param palette  effective palette (custom values + Deep Purple defaults).
+ * @param dataAttrName  e.g. `palette-key` — final attr is `data-<name>`,
+ *                      value is the slot id (`color-1` / `color-2` / …).
+ * @param dataAttrValueFn  optional override for the attribute value, used
+ *                      by gradient picker which records `var(--color-N)`
+ *                      directly. Default: the slot id.
+ */
+export function renderPaletteSwatches(
+  palette: Partial<Record<PaletteKey, string>>,
+  dataAttrName: string,
+  dataAttrValueFn: (k: PaletteKey) => string = (k) => k,
+): string {
+  return PALETTE_KEYS.map(k => {
+    const fill = escapeHtmlAttr(palette[k] ?? '');
+    const attrValue = escapeHtmlAttr(dataAttrValueFn(k));
+    return `
+      <button type="button"
+              class="nospress-prop-color-swatch"
+              data-${dataAttrName}="${attrValue}"
+              style="background: ${fill}"
+              aria-label="--${k}"></button>
+    `;
+  }).join('');
+}
+
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   const schema = schemaFor(opts.scope);
   const scopeAttr = escapeHtmlAttr(opts.scope);
   const v = (path: string): string => escapeHtmlAttr(readStyleField(opts.style, path) ?? '');
+  const palette = opts.palette ?? {};
 
   const single = (e: SinglePropertyEntry) => {
     if (e.key === 'color' || e.key === 'background') return colorRow(e);
@@ -458,14 +518,11 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
    *  `var(--color-X)`) and one custom-color swatch (opens native picker). */
   const colorRow = (e: SinglePropertyEntry) => {
     const value = v(e.key);
-    const triggerBg = value || 'transparent';
-    const paletteSwatches = PALETTE_KEYS.map(k => `
-      <button type="button"
-              class="nospress-prop-color-swatch"
-              data-palette-key="${k}"
-              style="background: var(--${k})"
-              aria-label="--${k}"></button>
-    `).join('');
+    // Resolve any `var(--color-N)` in the stored value to a literal hex
+    // so the trigger circle previews the user's actual palette (the
+    // editor scope keeps `:root` defaults for chrome / tabs).
+    const triggerBg = value ? resolvePaletteVars(value, palette) : 'transparent';
+    const paletteSwatches = renderPaletteSwatches(palette, 'palette-key');
     return `
       <div class="nospress-prop-row nospress-prop-row--color" data-color-row-key="${e.key}">
         <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
@@ -522,14 +579,8 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     const styleVal = v(`divider.${side}.style`) || 'none';
     const colorVal = v(`divider.${side}.color`);
     const heightVal = v(`divider.${side}.height`);
-    const triggerBg = colorVal || 'transparent';
-    const paletteSwatches = PALETTE_KEYS.map(k => `
-      <button type="button"
-              class="nospress-prop-color-swatch"
-              data-palette-key="${k}"
-              style="background: var(--${k})"
-              aria-label="--${k}"></button>
-    `).join('');
+    const triggerBg = colorVal ? resolvePaletteVars(colorVal, palette) : 'transparent';
+    const paletteSwatches = renderPaletteSwatches(palette, 'palette-key');
     const colorKey = `divider.${side}.color`;
 
     const styleOptionsHtml = DIVIDER_STYLE_OPTIONS.map(opt => `

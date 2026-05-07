@@ -219,6 +219,9 @@ export class NospressView extends View {
     rowEl: HTMLElement;
     draft: GradientDraft;
     selectedStopIndex: number;
+    /** Value of the row's input at editor-open time. Cancel writes this
+     *  back so block.style.background reverts to its pre-edit state. */
+    originalValue: string;
     typeDropdown?: CustomDropdown;
     unitDropdown?: CustomDropdown;
   } | null = null;
@@ -1137,7 +1140,9 @@ export class NospressView extends View {
 
     // Palette: accept #hex (3 or 6, with or without leading '#'), rgb(…),
     // or rgba(…). Anything else is rejected silently until the user types
-    // a valid value. The swatch button repaints live to mirror.
+    // a valid value. The swatch button repaints live to mirror; the editor
+    // scope's CSS variable picks up the new color so all `var(--color-N)`
+    // swatches in the Properties panel + block previews track live.
     if (path.startsWith('theme.palette.')) {
       const inputEl = target as HTMLInputElement;
       const normalized = normalizePaletteColor(raw);
@@ -1146,6 +1151,9 @@ export class NospressView extends View {
       const swatch = row?.querySelector<HTMLElement>('[data-palette-swatch-for]');
       if (swatch) swatch.style.backgroundColor = normalized;
       this.persistGlobalField(path, normalized);
+      // Re-render the Properties tab so palette swatches there pick up
+      // the new color. Cheap; only fires per valid keystroke.
+      this.updatePropertiesTab();
       return;
     }
 
@@ -1272,8 +1280,11 @@ export class NospressView extends View {
       // Gradient-editor stop-color picker reuses the same palette swatch
       // class but lives inside the gradient mount — different code path.
       if (paletteSwatch.closest('[data-gradient-mount-for]')) return;
-      const key = paletteSwatch.dataset.paletteKey!;
-      this.applyColorPick(paletteSwatch, `var(--${key})`);
+      const key = paletteSwatch.dataset.paletteKey as keyof ReturnType<typeof this.effectivePalette>;
+      // Write the literal hex from the user's effective palette — what
+      // the user sees in the swatch is exactly what the public page
+      // renders, no `var(--color-N)` late-binding indirection.
+      this.applyColorPick(paletteSwatch, this.effectivePalette()[key]);
       return;
     }
 
@@ -1332,22 +1343,27 @@ export class NospressView extends View {
     const row = swatchesInline?.previousElementSibling as HTMLElement | null;
     if (!row || !row.classList.contains('nospress-prop-row--color')) return;
     const input = row.querySelector<HTMLInputElement>('.nospress-prop-row__input');
-    const draft = parseGradient(input?.value ?? '') ?? defaultGradient();
-    this.gradientEdit = { rowEl: row, draft, selectedStopIndex: 0 };
+    const originalValue = input?.value ?? '';
+    const draft = parseGradient(originalValue) ?? defaultGradient();
+    this.gradientEdit = { rowEl: row, draft, selectedStopIndex: 0, originalValue };
+    // Don't commit on open — that would overwrite an existing
+    // multi-stop value with the parsed-or-defaulted draft (defaultGradient
+    // is just 2 stops). The first actual edit triggers commitGradientLive
+    // and from then on every change flows through the standard pipeline.
     this.renderGradientEditorInline();
   }
 
-  /** Close the gradient editor. If `commit` is true, the draft is
-   *  serialized into a CSS string and written to the row's text input.
-   *  Either way the inline section collapses and editor state is cleared. */
+  /** Close the gradient editor. Edits are already live-committed to the
+   *  row's input via `commitGradientLive`, so Apply is just a close.
+   *  Cancel writes the saved `originalValue` back so block.style.background
+   *  reverts to its pre-edit state. */
   private closeGradientEditor(commit: boolean): void {
     if (!this.gradientEdit) return;
     const row = this.gradientEdit.rowEl;
-    if (commit) {
-      const css = formatGradient(this.gradientEdit.draft);
+    if (!commit) {
       const input = row.querySelector<HTMLInputElement>('.nospress-prop-row__input');
       if (input) {
-        input.value = css;
+        input.value = this.gradientEdit.originalValue;
         input.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
@@ -1356,6 +1372,25 @@ export class NospressView extends View {
     this.gradientEdit.unitDropdown?.destroy();
     this.hideGradientInlineMount(row);
     this.gradientEdit = null;
+  }
+
+  /**
+   * Write the current gradient draft to the row's text input as formatted
+   * CSS and dispatch an input event. The bubbling event flows through the
+   * normal property-input pipeline (`handleStyleInput` → `mutateDraft`) so
+   * the page draft, dirty flag, and Save button all update like every
+   * other edit. Then re-render the editor so previews / handles / track
+   * reflect the new state.
+   */
+  private commitGradientLive(): void {
+    if (!this.gradientEdit) return;
+    const css = formatGradient(this.gradientEdit.draft);
+    const input = this.gradientEdit.rowEl.querySelector<HTMLInputElement>('.nospress-prop-row__input');
+    if (input) {
+      input.value = css;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    this.renderGradientEditorInline();
   }
 
   /** Find the inline mount for the row and render the editor into it. */
@@ -1368,7 +1403,7 @@ export class NospressView extends View {
     this.gradientEdit.typeDropdown?.destroy();
     this.gradientEdit.unitDropdown?.destroy();
 
-    mount.innerHTML = renderGradientEditor(this.gradientEdit.draft, this.gradientEdit.selectedStopIndex);
+    mount.innerHTML = renderGradientEditor(this.gradientEdit.draft, this.gradientEdit.selectedStopIndex, this.effectivePalette());
     mount.hidden = false;
     this.bindGradientStopDrag(mount);
     this.mountGradientDropdowns(mount);
@@ -1394,7 +1429,7 @@ export class NospressView extends View {
         onChange: (value) => {
           if (!this.gradientEdit) return;
           this.gradientEdit.draft.type = value as GradientType;
-          this.rerenderGradientEditor();
+          this.commitGradientLive();
         },
       });
       typeMount.appendChild(dd.getElement());
@@ -1413,18 +1448,12 @@ export class NospressView extends View {
         onChange: (value) => {
           if (!this.gradientEdit) return;
           this.gradientEdit.draft.unit = value as GradientUnit;
-          this.rerenderGradientEditor();
+          this.commitGradientLive();
         },
       });
       unitMount.appendChild(dd.getElement());
       this.gradientEdit.unitDropdown = dd;
     }
-  }
-
-  /** Re-render — full replacement of the inline mount's contents. Cheap
-   *  enough for the editor's size; per-input deltas not worth the code. */
-  private rerenderGradientEditor(): void {
-    this.renderGradientEditorInline();
   }
 
   /** The inline mount is rendered as a sibling of the color row, paired
@@ -1449,7 +1478,10 @@ export class NospressView extends View {
     if (!this.gradientEdit) return;
     if (idx < 0 || idx >= this.gradientEdit.draft.stops.length) return;
     this.gradientEdit.selectedStopIndex = idx;
-    this.rerenderGradientEditor();
+    // Selection only — the gradient itself didn't change. Re-render so
+    // the "Stop color" / "Stop position" inputs show the new active
+    // stop's values without dispatching a redundant input event.
+    this.renderGradientEditorInline();
   }
 
   private addGradientStop(): void {
@@ -1458,14 +1490,20 @@ export class NospressView extends View {
     // Insert a new stop halfway between the last two.
     const last = stops[stops.length - 1]!;
     const prev = stops[stops.length - 2]!;
+    // Pick a palette slot the gradient isn't already using so the new
+    // stop visibly contributes a new color band — duplicating the last
+    // stop's color would just shift its position with no visual gain.
+    const used = new Set(stops.map(s => s.color));
+    const fresh = PALETTE_KEYS.find(k => !used.has(`var(--${k})`));
+    const newColor = fresh ? `var(--${fresh})` : last.color;
     const newStop = {
-      color: last.color,
+      color: newColor,
       position: Math.min(100, Math.round((prev.position + last.position) / 2)),
     };
     stops.push(newStop);
     stops.sort((a, b) => a.position - b.position);
     this.gradientEdit.selectedStopIndex = stops.indexOf(newStop);
-    this.rerenderGradientEditor();
+    this.commitGradientLive();
   }
 
   private removeGradientStop(): void {
@@ -1474,7 +1512,7 @@ export class NospressView extends View {
     if (stops.length <= 2) return; // never below 2
     stops.splice(this.gradientEdit.selectedStopIndex, 1);
     this.gradientEdit.selectedStopIndex = Math.max(0, this.gradientEdit.selectedStopIndex - 1);
-    this.rerenderGradientEditor();
+    this.commitGradientLive();
   }
 
   private setSelectedStopColor(value: string): void {
@@ -1482,7 +1520,7 @@ export class NospressView extends View {
     const stop = this.gradientEdit.draft.stops[this.gradientEdit.selectedStopIndex];
     if (!stop) return;
     stop.color = value;
-    this.rerenderGradientEditor();
+    this.commitGradientLive();
   }
 
   /** Centralised handler for every Gradient-Editor `<input>` / `<select>` /
@@ -1508,17 +1546,17 @@ export class NospressView extends View {
         draft.stops.sort((a, b) => a.position - b.position);
         this.gradientEdit.selectedStopIndex = draft.stops.indexOf(stop);
       }
-      this.rerenderGradientEditor();
+      this.commitGradientLive();
       return true;
     }
     if (target.dataset?.gradientAngleRange !== undefined || target.dataset?.gradientAngleNumber !== undefined) {
       draft.angle = clamp(parseFloat(target.value || '0'), 0, 360);
-      this.rerenderGradientEditor();
+      this.commitGradientLive();
       return true;
     }
     if (target.dataset?.gradientRepeat !== undefined) {
       draft.repeat = (target as HTMLInputElement).checked;
-      this.rerenderGradientEditor();
+      this.commitGradientLive();
       return true;
     }
     if (target.dataset?.gradientAboveBg !== undefined) {
@@ -1549,14 +1587,14 @@ export class NospressView extends View {
           const pct = clamp(((ev.clientX - rect.left) / rect.width) * 100, 0, 100);
           const target = this.gradientEdit.draft.stops[idx];
           if (target) target.position = Math.round(pct);
-          this.rerenderGradientEditor();
+          this.commitGradientLive();
         };
         const onUp = () => {
           document.removeEventListener('mousemove', onMove);
           document.removeEventListener('mouseup', onUp);
           if (this.gradientEdit) {
             this.gradientEdit.draft.stops.sort((a, b) => a.position - b.position);
-            this.rerenderGradientEditor();
+            this.commitGradientLive();
           }
         };
         document.addEventListener('mousemove', onMove);
@@ -1657,6 +1695,20 @@ export class NospressView extends View {
    * editor panel is opened so the user immediately sees the inserted
    * block. Re-clicking adds another block — clean up is left to the user.
    */
+  /**
+   * Resolve the user's effective palette (custom values from
+   * site-settings, falling back to the Deep Purple defaults). Used to
+   * paint Properties-tab swatches with literal hex values so the
+   * preview shows the user's colors WITHOUT pushing CSS variables onto
+   * the editor scope (which would tint tabs / chrome too).
+   */
+  private effectivePalette(): Record<typeof PALETTE_KEYS[number], string> {
+    const custom = this.siteSettingsService.getSettings().theme?.palette ?? {};
+    const out = {} as Record<typeof PALETTE_KEYS[number], string>;
+    for (const key of PALETTE_KEYS) out[key] = custom[key] ?? DEFAULT_PALETTE[key];
+    return out;
+  }
+
   private pastePaletteToCustomCss(): void {
     const palette = this.siteSettingsService.getSettings().theme?.palette ?? {};
     const lines = PALETTE_KEYS.map(k => {
@@ -2633,6 +2685,7 @@ export class NospressView extends View {
       attrs: block.attrs,
       header: 'Block properties',
       activeDividerSide: this.activeDividerSide,
+      palette: this.effectivePalette(),
     });
   }
 

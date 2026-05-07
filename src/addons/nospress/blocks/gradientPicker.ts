@@ -13,7 +13,8 @@
  */
 
 import { escapeHtmlAttr } from '../../../helpers/escapeHtml';
-import { PALETTE_KEYS } from './siteSettings';
+import type { PaletteKey } from './siteSettings';
+import { renderPaletteSwatches, resolvePaletteVars } from './styles';
 
 export type GradientType = 'linear' | 'radial' | 'conic';
 export type GradientUnit = 'percent' | 'pixel';
@@ -164,8 +165,16 @@ function splitTopLevel(s: string, sep: string): string[] {
  *  a back button (returns to swatches), a preview, a multi-stop slider,
  *  a per-stop color picker (palette + custom), Type / Angle / Repeat /
  *  Unit / Above-BG controls, plus Apply / Cancel. */
-export function renderGradientEditor(draft: GradientDraft, selectedStopIndex: number): string {
-  const previewCss = formatGradient(draft);
+export function renderGradientEditor(
+  draft: GradientDraft,
+  selectedStopIndex: number,
+  palette: Partial<Record<PaletteKey, string>> = {},
+): string {
+  // Editor preview uses literal hex from the user's palette so the bands /
+  // stops / track render the colors the user actually picked. The stored
+  // stop value stays as `var(--color-N)` so the published page tracks any
+  // palette change dynamically.
+  const previewCss = resolvePaletteVars(formatGradient(draft), palette);
   const angleVisible = draft.type === 'linear' || draft.type === 'conic';
   const selectedStop = draft.stops[selectedStopIndex] ?? draft.stops[0]!;
   const unit = UNIT_TO_CSS[draft.unit];
@@ -174,24 +183,21 @@ export function renderGradientEditor(draft: GradientDraft, selectedStopIndex: nu
     <button type="button"
             class="nospress-gradient-stop ${i === selectedStopIndex ? 'is-selected' : ''}"
             data-gradient-stop-index="${i}"
-            style="left: ${s.position}%; background: ${escapeHtmlAttr(s.color)}"
+            style="left: ${s.position}%; background: ${escapeHtmlAttr(resolvePaletteVars(s.color, palette))}"
             aria-label="Stop ${i + 1}"></button>
   `).join('');
 
-  const paletteSwatches = PALETTE_KEYS.map(k => `
-    <button type="button"
-            class="nospress-prop-color-swatch"
-            data-gradient-stop-color="var(--${k})"
-            style="background: var(--${k})"
-            aria-label="--${k}"></button>
-  `).join('');
+  // Swatch click writes the LITERAL HEX from the user's palette into the
+  // gradient stop, not `var(--color-N)`. Editor preview, stored value, and
+  // public-page render all see the same string — no late-binding mismatch.
+  const paletteSwatches = renderPaletteSwatches(palette, 'gradient-stop-color', (k) => palette[k] ?? '');
 
   return `
     <div class="nospress-gradient-editor">
       <div class="nospress-gradient-preview" style="background: ${escapeHtmlAttr(previewCss)}"></div>
 
       <div class="nospress-gradient-editor__row">
-        <div class="nospress-gradient-track" data-gradient-track style="background: ${escapeHtmlAttr(linearOnlyForTrack(draft))}">
+        <div class="nospress-gradient-track" data-gradient-track style="background: ${escapeHtmlAttr(resolvePaletteVars(linearOnlyForTrack(draft), palette))}">
           ${stopHandles}
         </div>
         <div class="nospress-gradient-editor__stop-actions">
