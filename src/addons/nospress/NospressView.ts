@@ -55,7 +55,7 @@ import {
 import { removeUserCss } from './cssScope';
 import { bindCssTextareaUx } from './cssTextareaUx';
 import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { setupGridDragDrop } from '../../helpers/gridDragDrop';
 import { BookmarkFolderPicker } from '../../components/ui/BookmarkFolderPicker';
 import { CustomDropdown } from '../../components/ui/CustomDropdown';
@@ -77,6 +77,41 @@ import type { ProfileArticlesCarousel } from '../../components/profile/ProfileAr
  *  (the always-present outer frame in the editor). Not a real Block.id —
  *  prefixed with `__` so it can never collide with a UUID. */
 const PAGE_SELECTION_ID = '__page__';
+
+/**
+ * Accept a user-typed palette value and return a canonical CSS color
+ * string, or null if the input is not yet valid (typed too few hex
+ * digits, half-typed `rgb(`, etc. — caller stays silent in that case).
+ *
+ * Supported forms:
+ *   - `#abc`       → `#aabbcc`
+ *   - `#aabbcc`    → kept (lowercased)
+ *   - `aabbcc`     → `#aabbcc`
+ *   - `rgb(…)`     → kept (lowercased, whitespace collapsed)
+ *   - `rgba(…)`    → kept
+ *
+ * Named CSS colors (`red`, `tomato`) are intentionally NOT accepted —
+ * the palette wants concrete codes so the user can copy-paste values
+ * back into design tools without ambiguity.
+ */
+function normalizePaletteColor(raw: string): string | null {
+  const v = raw.trim().toLowerCase();
+  if (!v) return null;
+  // hex 6
+  if (/^#[0-9a-f]{6}$/.test(v)) return v;
+  // hex 3 → expand to 6
+  const hex3 = v.match(/^#([0-9a-f])([0-9a-f])([0-9a-f])$/);
+  if (hex3) return `#${hex3[1]}${hex3[1]}${hex3[2]}${hex3[2]}${hex3[3]}${hex3[3]}`;
+  // bare hex without '#'
+  if (/^[0-9a-f]{6}$/.test(v)) return `#${v}`;
+  if (/^[0-9a-f]{3}$/.test(v)) return `#${v[0]}${v[0]}${v[1]}${v[1]}${v[2]}${v[2]}`;
+  // rgb / rgba — accept the basic functional form; the browser validates
+  // the inner numbers when applied as inline-style.
+  if (/^rgba?\s*\(\s*[0-9.,\s%/]+\s*\)$/.test(v)) {
+    return v.replace(/\s+/g, ' ');
+  }
+  return null;
+}
 
 /** Inline-comment labels used by `pastePaletteToCustomCss` — mirrored from
  *  the CSS-editor's hint panel so the inserted CSS reads consistently with
@@ -132,6 +167,12 @@ export class NospressView extends View {
    *  storage only when the user clicks Save. Null until first edit. */
   private editingPage: NospressPageV2 | null = null;
   private isDirty: boolean = false;
+  /** True when site-settings has unsynced local changes — flipped by every
+   *  Global-tab input (palette, meta, theme, injection) and by Custom CSS
+   *  edits. The main editor's Publish path checks this flag and pushes
+   *  site-settings alongside the page event so the user only ever needs
+   *  the single Save / Publish pair, never a separate global commit. */
+  private siteSettingsDirty: boolean = false;
   /** Fullscreen overlay handle. Active means this.container is currently
    *  re-parented into the overlay's editor slot. */
   private fullscreenOverlay: FullscreenOverlay | null = null;
@@ -461,9 +502,15 @@ export class NospressView extends View {
   }
 
   private renderActionBar(editable: boolean): string {
-    const isDirty = this.isDirty;
+    // Save targets only the page draft. Site-settings are auto-persisted
+    // on every input so there is nothing to "save" for them — they only
+    // need shipping, which is the Publish button's job.
+    const saveDirty = this.isDirty;
+    // Publish ships anything that has not yet hit relays — page draft
+    // (in-memory or persisted) AND site-settings if they were touched.
     const editSlug = this.currentEditSlug();
     const hasDraft = this.listService.hasDraftV2(editSlug);
+    const publishDirty = this.isDirty || hasDraft || this.siteSettingsDirty;
     const hasPublished = this.listService.getPublishedV2(editSlug) !== null;
     const isPageOverride = this.editingTarget === 'page-header' || this.editingTarget === 'page-footer';
     const resetButton = isPageOverride
@@ -472,14 +519,14 @@ export class NospressView extends View {
     const localButtons = editable
       ? `
         ${resetButton}
-        <button type="button" class="btn" data-action="save" ${isDirty ? '' : 'disabled'}>Save</button>
+        <button type="button" class="btn" data-action="save" ${saveDirty ? '' : 'disabled'}>Save</button>
         <button type="button" class="btn btn--passive" data-action="discard" ${hasDraft ? '' : 'disabled'}>Discard</button>
       `
       : '';
     return `
       <div class="nospress-action-bar l-row--split">
         <div>
-          <button type="button" class="btn" data-action="publish" ${(isDirty || hasDraft) ? '' : 'disabled'}>Publish</button>
+          <button type="button" class="btn" data-action="publish" ${publishDirty ? '' : 'disabled'}>Publish</button>
           <button type="button" class="btn btn--passive btn--danger" data-action="delete-list" ${hasPublished ? '' : 'disabled'}>Unpublish</button>
         </div>
         <div>${localButtons}</div>
@@ -915,13 +962,13 @@ export class NospressView extends View {
 
   /**
   /**
-   * Render the Global tab body — site-wide settings (Phase 4.9b skeleton).
-   * Three accordion sections: Meta & SEO, Theme & Palette, Code Integration.
-   * All inputs are bound via `data-global-field="<dotted.path>"` and persist
-   * to {@link NospressSiteSettingsService} on the input/change event. The
-   * "Save & Publish" button additionally pushes to relays via
-   * {@link NospressSiteSettingsOrchestrator}. Apply-side (head injection,
-   * theme override) is Phase 4.9c+.
+   * Render the Global tab body — site-wide settings.
+   * Accordion sections: Meta & SEO, Theme & Palette, Navigation, Code
+   * Integration. All inputs are bound via `data-global-field="<dotted.path>"`
+   * and persist locally on input/change via `persistGlobalField`, which
+   * also flags `siteSettingsDirty=true`. The shared editor Save / Publish
+   * pair (right of the action bar) commits and ships these changes — there
+   * is no separate Global save button.
    */
   private renderGlobalContent(): string {
     const settings = this.siteSettingsService.getSettings();
@@ -936,17 +983,17 @@ export class NospressView extends View {
       const effective = palette[k] ?? DEFAULT_PALETTE[k];
       return `
         <div class="nospress-palette-row" data-palette-key="${k}">
-          <input type="color"
-                 class="nospress-palette-swatch"
-                 data-global-field="theme.palette.${k}"
-                 value="${escapeHtml(effective)}"
-                 aria-label="--${k} color picker" />
+          <button type="button"
+                  class="nospress-palette-swatch"
+                  data-palette-swatch-for="${k}"
+                  style="background-color: ${escapeHtmlAttr(effective)};"
+                  aria-label="Focus --${k} HEX field"></button>
           <input type="text"
                  class="input nospress-palette-hex"
                  data-global-field="theme.palette.${k}"
-                 value="${escapeHtml(effective)}"
-                 maxlength="7"
-                 aria-label="--${k} HEX value" />
+                 value="${escapeHtmlAttr(effective)}"
+                 placeholder="#hex / rgb(…) / rgba(…)"
+                 aria-label="--${k} color value" />
           <span class="nospress-palette-label">--${k}</span>
         </div>
       `;
@@ -1056,10 +1103,6 @@ export class NospressView extends View {
             </div>
           </div>
         </section>
-
-        <div class="nospress-global__actions">
-          <button type="button" class="btn" data-action="save-global-settings">Save &amp; Publish</button>
-        </div>
       </div>
     `;
   }
@@ -1115,24 +1158,17 @@ export class NospressView extends View {
 
     const raw = target.value;
 
-    // Palette: validate, normalize, mirror to sibling input, then persist.
+    // Palette: accept #hex (3 or 6, with or without leading '#'), rgb(…),
+    // or rgba(…). Anything else is rejected silently until the user types
+    // a valid value. The swatch button repaints live to mirror.
     if (path.startsWith('theme.palette.')) {
       const inputEl = target as HTMLInputElement;
-      let hex = raw.trim();
-      if (inputEl.type === 'text') {
-        // Allow shorthand without leading '#'
-        if (hex && !hex.startsWith('#')) hex = `#${hex}`;
-        if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return; // invalid → ignore until valid
-        hex = hex.toLowerCase();
-      }
-      // Mirror to sibling so swatch and hex stay visually in sync.
+      const normalized = normalizePaletteColor(raw);
+      if (!normalized) return;
       const row = inputEl.closest('.nospress-palette-row');
-      if (row) {
-        row.querySelectorAll<HTMLInputElement>(`[data-global-field="${path}"]`).forEach(el => {
-          if (el !== inputEl) el.value = hex;
-        });
-      }
-      this.persistGlobalField(path, hex);
+      const swatch = row?.querySelector<HTMLElement>('[data-palette-swatch-for]');
+      if (swatch) swatch.style.backgroundColor = normalized;
+      this.persistGlobalField(path, normalized);
       return;
     }
 
@@ -1148,9 +1184,10 @@ export class NospressView extends View {
   }
 
   /** Walk the dotted path, set or prune the leaf property, and persist
-   *  silently. Shared by every Global-tab input. */
+   *  silently. Shared by every Global-tab input. Marks site-settings
+   *  dirty so the next main Publish ships them alongside the page event. */
   private persistGlobalField(path: string, value: unknown): void {
-    const settings: NospressSiteSettings = JSON.parse(JSON.stringify(this.siteSettingsService.getSettings()));
+    const settings: NospressSiteSettings = structuredClone(this.siteSettingsService.getSettings());
     const segments = path.split('.');
     const lastSeg = segments[segments.length - 1]!;
     let cursor: any = settings;
@@ -1163,6 +1200,9 @@ export class NospressView extends View {
     if (isEmpty) delete cursor[lastSeg];
     else cursor[lastSeg] = value;
     this.siteSettingsService.saveSettings(settings, { silent: true });
+    this.isDirty = true;
+    this.siteSettingsDirty = true;
+    this.refreshActionBar();
   }
 
   /** Property-tab Divider section click delegate. Three concerns:
@@ -1589,13 +1629,20 @@ export class NospressView extends View {
       return;
     }
 
-    const action = target.closest('[data-action]') as HTMLElement | null;
-    if (!action) return;
-
-    if (action.dataset.action === 'save-global-settings') {
-      void this.publishGlobalSettings();
+    // Palette swatch click: focus + select the sibling HEX text input so
+    // the user can paste/type a hex code immediately. We dropped the
+    // native `<input type="color">` because Chromium's picker opens in
+    // HSL mode and there's no JS API to flip it to Hex.
+    const swatch = target.closest('[data-palette-swatch-for]') as HTMLElement | null;
+    if (swatch) {
+      const hexInput = swatch.parentElement?.querySelector<HTMLInputElement>('.nospress-palette-hex');
+      hexInput?.focus();
+      hexInput?.select();
       return;
     }
+
+    const action = target.closest('[data-action]') as HTMLElement | null;
+    if (!action) return;
 
     if (action.dataset.action === 'add-meta-tag') {
       const list = action.closest('.form__row')?.querySelector('[data-meta-custom-list]') as HTMLElement | null;
@@ -1642,26 +1689,11 @@ export class NospressView extends View {
     }).join('\n');
     const block = `body {\n${lines}\n}\n\n`;
 
-    this.mutateDraft((page) => {
-      page.customCss = block + (page.customCss ?? '');
-    }, { silent: true });
+    this.writeSiteCustomCss(block + this.currentCustomCss());
 
     if (!this.cssEditorOpen) this.cssEditorOpen = true;
     this.rerenderEditable();
     ToastService.show('Palette inserted into Custom CSS', 'success');
-  }
-
-  /** Publish current local site-settings to relays. Local was already
-   *  persisted by the input handler — this just kicks the orchestrator. */
-  private async publishGlobalSettings(): Promise<void> {
-    try {
-      const settings = this.siteSettingsService.getSettings();
-      await this.siteSettingsOrchestrator.publishToRelays(settings);
-      ToastService.show('Site settings published', 'success');
-    } catch (error) {
-      console.error('Failed to publish site-settings:', error);
-      ToastService.show('Publish failed', 'error');
-    }
   }
 
   /**
@@ -2644,13 +2676,17 @@ export class NospressView extends View {
    * area. Same UI is opened from the header "CSS Editor" button and from
    * the "Custom CSS" card in the Block Library.
    *
-   * Live behavior: typing in the textarea silently mutates the draft (no
-   * re-render so focus stays put). The CSS is NOT applied to the DOM until
-   * the user clicks Save — same trade-off the user picked, since constant
-   * re-parses on every keystroke would flicker.
+   * Custom CSS is **site-wide** (lives in `NospressSiteSettings.customCss`)
+   * — every template/page sees the same value. The legacy per-page
+   * `page.customCss` is migrated on first load (see currentCustomCss()).
+   *
+   * Live behavior: typing in the textarea silently mutates site-settings
+   * (no re-render so focus stays put). The CSS is NOT applied to the DOM
+   * until the user clicks Save — constant re-parses on every keystroke
+   * would flicker.
    */
-  private renderCssEditorPanel(page: NospressPageV2): string {
-    const value = page.customCss ?? '';
+  private renderCssEditorPanel(_page: NospressPageV2): string {
+    const value = this.currentCustomCss();
     return `
       <div class="nospress-css-editor">
         <div class="nospress-css-editor__head">
@@ -2807,11 +2843,16 @@ export class NospressView extends View {
   }
 
   private saveDraft(): void {
-    if (!this.editingPage) {
+    // Page draft: persist if there are in-memory edits.
+    if (this.editingPage) {
+      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.currentEditSlug() });
+    } else if (!this.isDirty) {
       ToastService.show('Nothing to save', 'error');
       return;
     }
-    this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.currentEditSlug() });
+    // Acknowledge the dirty state — site-settings were already auto-saved
+    // on input; `siteSettingsDirty` stays so Publish still knows there is
+    // unshipped work for the relays.
     this.isDirty = false;
     this.refreshActionBar();
     this.updatePagesTab();
@@ -2841,10 +2882,40 @@ export class NospressView extends View {
       this.isDirty = false;
     }
     const draft = this.listService.getDraftV2(editSlug);
+
+    // Site-settings (Custom CSS, palette, meta, theme, injection) live
+    // in their own NIP-78 event and ship independently of any page draft.
+    // Run this branch first so a "site-settings only" publish still works
+    // when there is no draft on the active slug.
+    let sitePublished = false;
+    if (this.siteSettingsDirty) {
+      try {
+        await this.siteSettingsOrchestrator.publishToRelays(this.siteSettingsService.getSettings());
+        this.siteSettingsDirty = false;
+        sitePublished = true;
+      } catch (e) {
+        console.error('Failed to publish site-settings:', e);
+        ToastService.show('Site settings publish failed — try again', 'error');
+        this.refreshActionBar();
+        return;
+      }
+    }
+
     if (!draft) {
-      ToastService.show('No draft to publish', 'error');
+      // Nothing on the page side; the only work was site-settings.
+      if (sitePublished) {
+        this.refreshActionBar();
+        ToastService.show('Site settings published', 'success');
+      } else {
+        ToastService.show('Nothing to publish', 'error');
+      }
       return;
     }
+
+    // Custom CSS moved to site-settings — strip the legacy per-page slot
+    // before publishing so we don't keep mirroring the value on every
+    // page event. Read path tolerates both for older relays' data.
+    if (draft.customCss !== undefined) delete draft.customCss;
 
     try {
       await this.orchestrator.publishV2ToRelays(draft, editSlug);
@@ -2854,7 +2925,7 @@ export class NospressView extends View {
       this.editingPage = null;
       this.isDirty = false;
       this.updatePagesTab();
-      ToastService.show('Page published', 'success');
+      ToastService.show(sitePublished ? 'Page + site settings published' : 'Page published', 'success');
     } catch (error) {
       console.error('Failed to publish page:', error);
       ToastService.show('Publish failed — try again', 'error');
@@ -3006,13 +3077,52 @@ export class NospressView extends View {
   }
 
   /**
-   * Custom-CSS textarea input. Silent draft mutation only — no DOM apply
-   * here; the user explicitly clicks Save to push the new CSS to the page.
+   * Custom-CSS textarea input. Silent local write into site-settings
+   * (NosPress Custom CSS is site-wide — one value across home, sub-pages,
+   * headers, footers). User has to click Publish for the change to ship
+   * to relays; the dirty flag below tells the publish path that
+   * site-settings need to ride along.
    */
   private handleCssEditorInput(value: string): void {
-    this.mutateDraft((page) => {
-      page.customCss = value;
-    }, { silent: true });
+    this.writeSiteCustomCss(value);
+  }
+
+  /**
+   * Write Custom CSS into site-settings (silent local) and flag both
+   * dirty signals: `isDirty` enables the Save button, `siteSettingsDirty`
+   * tells Publish to ship the site-settings event to relays.
+   */
+  private writeSiteCustomCss(value: string): void {
+    const settings = structuredClone(this.siteSettingsService.getSettings());
+    if (value.trim()) settings.customCss = value;
+    else delete settings.customCss;
+    this.siteSettingsService.saveSettings(settings, { silent: true });
+    this.isDirty = true;
+    this.siteSettingsDirty = true;
+    this.refreshActionBar();
+  }
+
+  /**
+   * Read the active Custom CSS, performing a one-shot migration from
+   * the legacy per-page slot if site-settings has no value yet. Migration
+   * source is the Home Body page (the only legacy slot most users had).
+   */
+  private currentCustomCss(): string {
+    const settings = this.siteSettingsService.getSettings();
+    if (typeof settings.customCss === 'string') return settings.customCss;
+    const homeBody = this.listService.getDraftV2(HOME_SLUG)
+      ?? this.listService.getPublishedV2(HOME_SLUG)
+      ?? this.listService.getPageV2(HOME_SLUG);
+    const legacy = homeBody?.customCss?.trim() ?? '';
+    if (!legacy) return '';
+    // Migrate lazily — first read fills site-settings; subsequent reads
+    // hit the fast path above. Mark dirty so next Publish ships it under
+    // the new home (and a follow-up save will drop it from page.customCss).
+    const settingsCopy = structuredClone(settings);
+    settingsCopy.customCss = legacy;
+    this.siteSettingsService.saveSettings(settingsCopy, { silent: true });
+    this.siteSettingsDirty = true;
+    return legacy;
   }
 
   private handleBookmarkFolderChange(blockId: string, folderName: string): void {

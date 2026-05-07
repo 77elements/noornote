@@ -1936,8 +1936,10 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 .nospress-palette-row {
   margin-bottom: calc($gap / 2);
 
-  // Native <input type="color"> reskinned as a circle. Native picker still
-  // opens on click; we just chrome the trigger.
+  // Visual swatch button — purely a color indicator + focus shortcut for
+  // the sibling HEX text input. The native <input type="color"> was
+  // removed because Chromium's picker defaults to HSL with no JS-side
+  // way to flip it to Hex.
   .nospress-palette-swatch {
     width: 32px;
     height: 32px;
@@ -1947,18 +1949,11 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
     vertical-align: middle;
     margin-right: calc($gap / 2);
     cursor: pointer;
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-
-    &::-webkit-color-swatch-wrapper { padding: 0; }
-    &::-webkit-color-swatch { border: none; border-radius: 50%; }
-    &::-moz-color-swatch { border: none; border-radius: 50%; }
   }
 
   .nospress-palette-hex {
     display: inline-block;
-    width: 8em;
+    width: 16em;
     vertical-align: middle;
     margin-right: calc($gap / 2);
     font-family: monospace;

@@ -69,6 +69,11 @@ export interface NospressSiteSettings {
   meta?: NospressSiteMeta;
   theme?: NospressSiteTheme;
   injection?: NospressSiteInjection;
+  /** Site-wide Custom CSS — applies to every page (home, sub-pages,
+   *  global header / footer, per-page header / footer). Replaces the
+   *  legacy per-page `NospressPageV2.customCss` field; first read of a
+   *  legacy `page.customCss` migrates it here. */
+  customCss?: string;
 }
 
 export const EMPTY_SITE_SETTINGS: NospressSiteSettings = { version: 1 };
@@ -93,5 +98,6 @@ export function hasSiteSettingsContent(s: NospressSiteSettings | null | undefine
   if (t && (t.fontFamily || (t.palette && Object.keys(t.palette).length > 0))) return true;
   const i = s.injection;
   if (i && (i.headSnippet || i.bodyEndSnippet || (i.cssLinks?.length ?? 0) > 0 || (i.jsScripts?.length ?? 0) > 0)) return true;
+  if (s.customCss && s.customCss.trim().length > 0) return true;
   return false;
 }

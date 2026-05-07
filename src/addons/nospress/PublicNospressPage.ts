@@ -139,8 +139,11 @@ export class PublicNospressPage {
     }
 
     this.renderPage({ body, header, footer, viewerProfile });
-    // Body's customCss wins for now — Slice 2 may split header/footer-scoped CSS.
-    applyUserCss(body?.customCss ?? '');
+    // Custom CSS is site-wide — read from site-settings first; fall back
+    // to the legacy per-page slot on the home body for events published
+    // before the migration shipped.
+    const siteCss = (siteSettings?.customCss ?? '').trim();
+    applyUserCss(siteCss || (body?.customCss ?? ''));
     await this.mountInlineBookmarkFolders(pubkey);
     mountNospressEmbeds(this.container);
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: pubkey });
