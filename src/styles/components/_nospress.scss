@@ -302,6 +302,12 @@
   margin: 0 0 $gap;
   padding: $gap;
   border-radius: $radius-xl;
+
+  // Stack divider flip checkboxes (and any future checkbox row) with a
+  // small breathing gap so they don't visually fuse with the next prop row.
+  .nn-checkbox {
+    margin-bottom: 0.5rem;
+  }
 }
 
 .nospress-block-properties__header {
@@ -524,6 +530,13 @@
     box-shadow: $box-shadow;
 
     &[hidden] { display: none; }
+
+    // When the trigger sits low in the viewport and the menu would
+    // overflow below, JS adds this modifier to flip the popover above.
+    &--up {
+      top: auto;
+      bottom: calc(100% + 2px);
+    }
   }
 
   &__option {

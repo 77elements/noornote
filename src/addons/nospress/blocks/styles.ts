@@ -41,13 +41,21 @@ export interface BoxValues {
  * properties listed in their STYLE_MATRIX row, but the type here stays
  * unified so the helpers don't need to be parameterised.
  */
-/** Decorative divider shape rendered as an absolutely-positioned SVG at
- *  the top or bottom edge of a block. Each entry resolves through
- *  `DIVIDER_CATALOG` to one or more stacked SVG layers — multi-layer
- *  styles use opacity for depth (Divi-style "+ shadow" variants). The
- *  fill is always `var(--color-1)` so the divider visually matches the
- *  page body, no per-block color picker needed. */
-export type DividerStyle = 'none' | 'slant' | 'curve' | 'triangle' | 'wave' | 'mountains';
+/** Decorative divider shape applied as a `clip-path` on the wrapper's
+ *  top or bottom edge. Each entry resolves through `DIVIDER_CATALOG` to
+ *  a polygon-style cut — what sits behind the wrapper (the page body,
+ *  next section, …) shows through, no color picker needed. */
+export type DividerStyle =
+  | 'none'
+  | 'slant'
+  | 'curve'
+  | 'curve-asymmetric'
+  | 'triangle'
+  | 'triangle-asymmetric'
+  | 'wave'
+  | 'wave-double'
+  | 'mountains'
+  | 'notch';
 
 export interface CommonStyle {
   color?: string;
@@ -62,9 +70,12 @@ export interface CommonStyle {
   padding?: BoxValues;
   /** Top / bottom edge dividers — available only on the `div` block scope
    *  (and its HTML-tag variants header/footer/main/section/nav etc.).
-   *  Value per side is the style identifier directly; per-side height +
-   *  color come from `DIVIDER_CATALOG`. */
-  divider?: { top?: DividerStyle; bottom?: DividerStyle };
+   *  Value per side is the style identifier directly; height + cut path
+   *  come from `DIVIDER_CATALOG`. `flipX` mirrors every divider on this
+   *  block horizontally (x → 100−x), `flipY` vertically (y → 10−y).
+   *  Both can be combined. Doubles/quadruples the effective shape variety
+   *  without growing the catalog. */
+  divider?: { top?: DividerStyle; bottom?: DividerStyle; flipX?: boolean; flipY?: boolean };
 }
 
 export type PropertyKey = keyof CommonStyle;
@@ -262,6 +273,10 @@ export function readStyleField(style: CommonStyle | undefined, path: string): st
     if (!group || typeof group === 'string') return undefined;
     const v = (group as Record<string, unknown>)[side];
     if (typeof v === 'string') return v;
+    // Boolean flags inside groups (e.g. `divider.flipX`) — surface as
+    // '1'/'' so the checkbox-rendering UI gets a non-empty truthy
+    // marker without us inventing a separate boolean read API.
+    if (typeof v === 'boolean') return v ? '1' : '';
     // Tolerate the legacy divider shape `{ style?, color?, height? }`
     // — expose its `.style` field so events stored before the shape
     // change still pre-fill the picker correctly.
@@ -302,13 +317,20 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
       return;
     }
     if (head === 'divider') {
-      const side = segments[1] as 'top' | 'bottom';
-      if (side !== 'top' && side !== 'bottom') return;
-      if (!style.divider) style.divider = {};
-      if (trimmed && trimmed !== 'none') {
-        style.divider[side] = trimmed as DividerStyle;
+      const sub = segments[1];
+      if (sub === 'top' || sub === 'bottom') {
+        if (!style.divider) style.divider = {};
+        if (trimmed && trimmed !== 'none') {
+          style.divider[sub] = trimmed as DividerStyle;
+        } else {
+          delete style.divider[sub];
+        }
+      } else if (sub === 'flipX' || sub === 'flipY') {
+        if (!style.divider) style.divider = {};
+        if (trimmed) style.divider[sub] = true;
+        else delete style.divider[sub];
       } else {
-        delete style.divider[side];
+        return;
       }
       // Prune empty objects so `hasV2Content` reports the slot as unused.
       if (Object.keys(style.divider).length === 0) delete style.divider;
@@ -389,10 +411,20 @@ export const DIVIDER_CATALOG: Record<Exclude<DividerStyle, 'none'>, DividerStyle
     height: '80px',
     cutPath: sampleQuad([0, 10], [50, 0], [100, 10], 12),
   },
+  'curve-asymmetric': {
+    name: 'Curve Asymmetric',
+    height: '80px',
+    cutPath: sampleQuad([0, 10], [33, 0], [100, 10], 12),
+  },
   triangle: {
     name: 'Triangle',
     height: '60px',
     cutPath: [[0, 10], [50, 0], [100, 10]],
+  },
+  'triangle-asymmetric': {
+    name: 'Triangle Asymmetric',
+    height: '60px',
+    cutPath: [[0, 10], [33, 0], [100, 10]],
   },
   wave: {
     name: 'Wave',
@@ -402,10 +434,26 @@ export const DIVIDER_CATALOG: Record<Exclude<DividerStyle, 'none'>, DividerStyle
       ...sampleQuad([50, 10], [75, 0], [100, 10], 6).slice(1),
     ],
   },
+  'wave-double': {
+    name: 'Wave Double',
+    height: '60px',
+    cutPath: [
+      ...sampleQuad([0, 10], [12.5, 0], [25, 10], 4),
+      ...sampleQuad([25, 10], [37.5, 0], [50, 10], 4).slice(1),
+      ...sampleQuad([50, 10], [62.5, 0], [75, 10], 4).slice(1),
+      ...sampleQuad([75, 10], [87.5, 0], [100, 10], 4).slice(1),
+    ],
+  },
   mountains: {
     name: 'Mountains',
     height: '80px',
     cutPath: [[0, 10], [20, 4], [40, 7], [60, 2], [80, 6], [100, 10]],
+  },
+  notch: {
+    name: 'Notch',
+    height: '60px',
+    // Rectangular indent in the middle — vertical edges at x=35 and x=65.
+    cutPath: [[0, 10], [35, 10], [35, 0], [65, 0], [65, 10], [100, 10]],
   },
 };
 
@@ -426,18 +474,37 @@ function resolveDividerStyle(value: unknown): Exclude<DividerStyle, 'none'> | nu
  *  wrapper's perimeter clockwise, perturbing the top edge with the top
  *  cut path (left→right) and the bottom edge with the bottom cut path
  *  (right→left). When only one side is set, the other side stays straight. */
+/** Apply the user's flip flags to a cut path.
+ *   - `flipY` (vertical = mirror at x-axis): y → 10−y. Order preserved.
+ *   - `flipX` (horizontal = mirror at y-axis): x → 100−x + reverse so
+ *     the result still walks left→right.
+ *  Both can be combined; the operations commute. */
+function transformCutPath(
+  cutPath: Array<[number, number]>,
+  flipX: boolean,
+  flipY: boolean,
+): Array<[number, number]> {
+  let pts: Array<[number, number]> = cutPath;
+  if (flipY) pts = pts.map(([x, y]) => [x, 10 - y]);
+  if (flipX) pts = [...pts].reverse().map(([x, y]) => [100 - x, y]);
+  return pts;
+}
+
 function buildClipPath(divider: CommonStyle['divider']): string | null {
   const topStyle = resolveDividerStyle(divider?.top);
   const bottomStyle = resolveDividerStyle(divider?.bottom);
   if (!topStyle && !bottomStyle) return null;
+  const flipX = !!divider?.flipX;
+  const flipY = !!divider?.flipY;
 
   const points: string[] = [];
 
   if (topStyle) {
     const def = DIVIDER_CATALOG[topStyle];
+    const path = transformCutPath(def.cutPath, flipX, flipY);
     // For a TOP cut, band y=10 is the wrapper's outer top (y=0%) and y=0
     // is the inner peak (y = topHeight). Map: wrapY = topH * (10 - bandY) / 10
-    for (const [x, y] of def.cutPath) {
+    for (const [x, y] of path) {
       points.push(`${x}% calc(${def.height} * ${((10 - y) / 10).toFixed(3)})`);
     }
   } else {
@@ -446,11 +513,12 @@ function buildClipPath(divider: CommonStyle['divider']): string | null {
 
   if (bottomStyle) {
     const def = DIVIDER_CATALOG[bottomStyle];
+    const path = transformCutPath(def.cutPath, flipX, flipY);
     // For a BOTTOM cut, band y=10 is the wrapper's outer bottom (y=100%)
     // and y=0 is the inner peak (y = 100% - bottomHeight).
     // Map: wrapY = calc(100% - bottomH * (10 - bandY) / 10)
     // Reverse the cut path so we walk right→left (CW perimeter).
-    const reversed = [...def.cutPath].reverse();
+    const reversed = [...path].reverse();
     for (const [x, y] of reversed) {
       points.push(`${x}% calc(100% - ${def.height} * ${((10 - y) / 10).toFixed(3)})`);
     }
@@ -669,10 +737,16 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
    *  so it persists across re-renders driven by other property changes.
    *  The picked value targets `divider.<side>` directly — no per-side
    *  Color or Height (fill is always `var(--color-1)`, height comes from
-   *  the catalog entry). Effect-only. */
+   *  the catalog entry). Effect-only.
+   *
+   *  Below the picker, a single global `flipX` checkbox mirrors every
+   *  divider on this block horizontally. Same checkbox state is shown on
+   *  Top and Bottom — toggling once flips both. */
   const dividerSide = (side: 'top' | 'bottom') => {
     const styleVal = v(`divider.${side}`) || 'none';
     const styleField = `divider.${side}`;
+    const flipXChecked = !!opts.style?.divider?.flipX;
+    const flipYChecked = !!opts.style?.divider?.flipY;
 
     const styleOptionsHtml = DIVIDER_STYLE_OPTIONS.map(opt => `
       <button type="button"
@@ -701,6 +775,20 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
           </div>
         </div>
       </div>
+      <label class="nn-checkbox nn-checkbox--label-left">
+        <span>Flip horizontally</span>
+        <input type="checkbox"
+               data-style-scope="${scopeAttr}"
+               data-style-field="divider.flipX"
+               ${flipXChecked ? 'checked' : ''} />
+      </label>
+      <label class="nn-checkbox nn-checkbox--label-left">
+        <span>Flip vertically</span>
+        <input type="checkbox"
+               data-style-scope="${scopeAttr}"
+               data-style-field="divider.flipY"
+               ${flipYChecked ? 'checked' : ''} />
+      </label>
     `;
   };
 

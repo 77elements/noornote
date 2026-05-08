@@ -728,7 +728,12 @@ export class NospressView extends View {
 
       const styleScope = target.dataset?.styleScope;
       const styleField = target.dataset?.styleField;
-      if (styleScope && styleField) this.handleStyleInput(styleScope, styleField, target.value);
+      if (styleScope && styleField) {
+        // Checkboxes write a truthy '1' / empty-string flag — the
+        // default `target.value` is "on" regardless of state.
+        const value = target.type === 'checkbox' ? (target.checked ? '1' : '') : target.value;
+        this.handleStyleInput(styleScope, styleField, value);
+      }
 
       const attrScope = target.dataset?.attrScope;
       const attrField = target.dataset?.attrField;
@@ -1219,8 +1224,24 @@ export class NospressView extends View {
       if (!menu) return;
       const wasOpen = !menu.hidden;
       // Close any other open pickers first.
-      document.querySelectorAll<HTMLElement>('.nospress-divider-picker__menu').forEach(m => { m.hidden = true; });
-      menu.hidden = wasOpen;
+      document.querySelectorAll<HTMLElement>('.nospress-divider-picker__menu').forEach(m => {
+        m.hidden = true;
+        m.classList.remove('nospress-divider-picker__menu--up');
+      });
+      if (!wasOpen) {
+        menu.hidden = false;
+        // Pick direction based on available space below the trigger. The
+        // Properties tab usually sits low on tall pages, so the picker
+        // would otherwise get clipped at the viewport edge — flip up
+        // when there is more room above.
+        const triggerRect = toggle.getBoundingClientRect();
+        const desired = Math.min(menu.scrollHeight, 220); // matches max-height
+        const spaceBelow = window.innerHeight - triggerRect.bottom;
+        const spaceAbove = triggerRect.top;
+        if (spaceBelow < desired + 10 && spaceAbove > spaceBelow) {
+          menu.classList.add('nospress-divider-picker__menu--up');
+        }
+      }
       return;
     }
 
