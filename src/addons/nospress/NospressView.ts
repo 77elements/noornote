@@ -460,8 +460,9 @@ export class NospressView extends View {
   }
 
   /** Fill every nav-menu mount slot in the editor container with a real
-   *  `<nav><ul><li><a>` preview, plus populate the menu-picker `<select>`s
-   *  in editable mode with all available menu ids. */
+   *  `<nav><ul><li><a>` preview. The menu-picker is a CustomDropdown
+   *  mounted by `mountBlockDropdowns` (case `nav-menu-id`) — no select-
+   *  filling step needed here anymore. */
   private mountNavMenuPreviews(): void {
     const menuSet = this.menuService.getMenuSet();
     const pageIndex = this.pageIndexService.getIndex();
@@ -471,15 +472,6 @@ export class NospressView extends View {
       ownerHandle: this.npub,
       currentSlug: this.activeSlug,
       editorPreview: true,
-    });
-    // Fill the menu-picker dropdowns with the full menu list (the renderer
-    // can only emit the picked menuId by itself; we own the full set here).
-    const selects = this.container.querySelectorAll<HTMLSelectElement>('.nospress-block-nav-menu__select');
-    selects.forEach(sel => {
-      const current = sel.value;
-      sel.innerHTML = menuSet.menus.map(m =>
-        `<option value="${escapeHtml(m.id)}"${m.id === current ? ' selected' : ''}>${escapeHtml(m.name)}</option>`
-      ).join('');
     });
   }
 
@@ -3389,6 +3381,21 @@ export class NospressView extends View {
               if (block && block.type === 'div' && (DIV_TAGS as readonly string[]).includes(value)) {
                 block.tag = value as DivTag;
               }
+            }, { silent: false });
+          }
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
+      } else if (kind === 'nav-menu-id') {
+        const current = slot.dataset.currentValue || PRIMARY_MENU_ID;
+        const set = this.menuService.getMenuSet();
+        const dropdown = new CustomDropdown({
+          options: set.menus.map(m => ({ value: m.id, label: m.name })),
+          selectedValue: current,
+          onChange: (value) => {
+            this.mutateDraft((page) => {
+              const block = findBlockInPage(page, blockId)?.block;
+              if (block && block.type === 'nav-menu') block.menuId = value;
             }, { silent: false });
           }
         });

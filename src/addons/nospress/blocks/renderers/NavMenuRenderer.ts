@@ -14,7 +14,7 @@
  */
 
 import { wrapEditable } from './blockEditWrapper';
-import { escapeHtml, escapeHtmlAttr } from '../../../../helpers/escapeHtml';
+import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import type { Block } from '../types';
 
 export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, editable: boolean): string {
@@ -24,15 +24,15 @@ export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, edita
   const horizontalAttr = block.horizontal ? ' data-horizontal="true"' : '';
 
   if (editable) {
-    // The `<select>` options are filled by NospressView's mount step
-    // because the renderer doesn't have menu-set context. Until then,
-    // show the currently-picked menu id as a single placeholder option.
+    // CustomDropdown slot — NospressView.mountBlockDropdowns reads the
+    // menu list from NospressMenuService and populates options. App-wide
+    // rule: never raw `<select>` (see /scss skill).
     const inner = `
       <div class="nospress-block-nav-menu__pick">
-        <label>Menu:</label>
-        <select class="input nospress-block-nav-menu__select" data-block-id="${block.id}" data-field="menu-id">
-          <option value="${escapeHtmlAttr(block.menuId)}">${escapeHtml(block.menuId)}</option>
-        </select>
+        <div class="nospress-block-nav-menu__select-slot"
+             data-block-dropdown="nav-menu-id"
+             data-block-id="${block.id}"
+             data-current-value="${escapeHtmlAttr(block.menuId)}"></div>
       </div>
       <div
         class="nospress-nav-menu-mount"
