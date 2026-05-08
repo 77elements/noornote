@@ -42,17 +42,12 @@ export interface BoxValues {
  * unified so the helpers don't need to be parameterised.
  */
 /** Decorative divider shape rendered as an absolutely-positioned SVG at
- *  the top or bottom edge of a block. Available shapes intentionally kept
- *  to the simplest set — Divi-style elaborate (waves/clouds/mountains)
- *  shapes are out of scope. */
-export type DividerStyle = 'none' | 'slant' | 'curve' | 'triangle';
-
-export interface DividerConfig {
-  style?: DividerStyle;
-  color?: string;
-  /** CSS length (e.g. `60px`, `4rem`). Default applied at render time. */
-  height?: string;
-}
+ *  the top or bottom edge of a block. Each entry resolves through
+ *  `DIVIDER_CATALOG` to one or more stacked SVG layers — multi-layer
+ *  styles use opacity for depth (Divi-style "+ shadow" variants). The
+ *  fill is always `var(--color-1)` so the divider visually matches the
+ *  page body, no per-block color picker needed. */
+export type DividerStyle = 'none' | 'slant' | 'curve' | 'triangle' | 'wave' | 'mountains';
 
 export interface CommonStyle {
   color?: string;
@@ -66,8 +61,10 @@ export interface CommonStyle {
   margin?: BoxValues;
   padding?: BoxValues;
   /** Top / bottom edge dividers — available only on the `div` block scope
-   *  (and its HTML-tag variants header/footer/main/section/nav etc.). */
-  divider?: { top?: DividerConfig; bottom?: DividerConfig };
+   *  (and its HTML-tag variants header/footer/main/section/nav etc.).
+   *  Value per side is the style identifier directly; per-side height +
+   *  color come from `DIVIDER_CATALOG`. */
+  divider?: { top?: DividerStyle; bottom?: DividerStyle };
 }
 
 export type PropertyKey = keyof CommonStyle;
@@ -251,7 +248,7 @@ export function buildInlineStyle(schema: PropertyEntry[], style: CommonStyle | u
   return parts.join('; ');
 }
 
-/** Read a dotted path: `color`, `margin.top`, or `divider.top.style`. */
+/** Read a dotted path: `color`, `margin.top`, or `divider.top`. */
 export function readStyleField(style: CommonStyle | undefined, path: string): string | undefined {
   if (!style) return undefined;
   const segments = path.split('.');
@@ -260,16 +257,19 @@ export function readStyleField(style: CommonStyle | undefined, path: string): st
     return typeof v === 'string' ? v : undefined;
   }
   if (segments.length === 2) {
-    const [head, side] = segments as [PropertyKey, QuadSide];
+    const [head, side] = segments as [PropertyKey, string];
     const group = style[head];
     if (!group || typeof group === 'string') return undefined;
-    return (group as Record<string, string | undefined>)[side];
-  }
-  if (segments.length === 3 && segments[0] === 'divider') {
-    const side = segments[1] as 'top' | 'bottom';
-    const field = segments[2] as keyof DividerConfig;
-    const cfg = style.divider?.[side];
-    return cfg?.[field];
+    const v = (group as Record<string, unknown>)[side];
+    if (typeof v === 'string') return v;
+    // Tolerate the legacy divider shape `{ style?, color?, height? }`
+    // — expose its `.style` field so events stored before the shape
+    // change still pre-fill the picker correctly.
+    if (head === 'divider' && v && typeof v === 'object'
+        && typeof (v as { style?: unknown }).style === 'string') {
+      return (v as { style: string }).style;
+    }
+    return undefined;
   }
   return undefined;
 }
@@ -293,29 +293,27 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
   }
   if (segments.length === 2) {
     const head = segments[0];
-    const side = segments[1] as QuadSide;
-    if (head !== 'margin' && head !== 'padding') return;
-    if (side !== 'top' && side !== 'bottom' && side !== 'left' && side !== 'right') return;
-    if (!style[head]) style[head] = {};
-    if (trimmed) style[head]![side] = trimmed;
-    else delete style[head]![side];
-    return;
-  }
-  if (segments.length === 3 && segments[0] === 'divider') {
-    const side = segments[1] as 'top' | 'bottom';
-    const field = segments[2] as keyof DividerConfig;
-    if (side !== 'top' && side !== 'bottom') return;
-    if (field !== 'style' && field !== 'color' && field !== 'height') return;
-    if (!style.divider) style.divider = {};
-    if (!style.divider[side]) style.divider[side] = {};
-    if (trimmed) {
-      (style.divider[side] as DividerConfig)[field] = trimmed as DividerStyle;
-    } else {
-      delete (style.divider[side] as DividerConfig)[field];
+    if (head === 'margin' || head === 'padding') {
+      const side = segments[1] as QuadSide;
+      if (side !== 'top' && side !== 'bottom' && side !== 'left' && side !== 'right') return;
+      if (!style[head]) style[head] = {};
+      if (trimmed) style[head]![side] = trimmed;
+      else delete style[head]![side];
+      return;
     }
-    // Prune empty objects so `hasV2Content` reports the slot as unused.
-    if (Object.keys(style.divider[side] as DividerConfig).length === 0) delete style.divider[side];
-    if (Object.keys(style.divider).length === 0) delete style.divider;
+    if (head === 'divider') {
+      const side = segments[1] as 'top' | 'bottom';
+      if (side !== 'top' && side !== 'bottom') return;
+      if (!style.divider) style.divider = {};
+      if (trimmed && trimmed !== 'none') {
+        style.divider[side] = trimmed as DividerStyle;
+      } else {
+        delete style.divider[side];
+      }
+      // Prune empty objects so `hasV2Content` reports the slot as unused.
+      if (Object.keys(style.divider).length === 0) delete style.divider;
+      return;
+    }
   }
 }
 
@@ -347,21 +345,146 @@ export interface RenderPropertyPanelOptions {
   palette?: Partial<Record<PaletteKey, string>>;
 }
 
-/** UI-side metadata for the divider style picker — value + visible label. */
+interface DividerStyleDef {
+  /** UI label shown in the picker. */
+  name: string;
+  /** Vertical extent of the cut. Per-style because a wave needs more
+   *  headroom than a slant; user has no override (= keep config minimal). */
+  height: string;
+  /** Sample points along the cut edge in band coords, ordered LEFT→RIGHT.
+   *  x ∈ [0, 100], y ∈ [0, 10] where y=0 is the inner peak (deepest into
+   *  the wrapper) and y=10 is the wrapper's outer edge.
+   *  First x must be 0, last x must be 100 — the cut spans the full width.
+   *  Curves are pre-sampled to polygon points so we get a single uniform
+   *  pipeline (CSS `clip-path: polygon()` doesn't take Bezier directly). */
+  cutPath: Array<[number, number]>;
+}
+
+/** Sample n+1 evenly-spaced points along a quadratic Bezier. Used to
+ *  approximate smooth curves as polygon points. */
+function sampleQuad(p0: [number, number], cp: [number, number], p1: [number, number], n: number): Array<[number, number]> {
+  const pts: Array<[number, number]> = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n;
+    const u = 1 - t;
+    const x = u * u * p0[0] + 2 * t * u * cp[0] + t * t * p1[0];
+    const y = u * u * p0[1] + 2 * t * u * cp[1] + t * t * p1[1];
+    pts.push([Math.round(x * 100) / 100, Math.round(y * 100) / 100]);
+  }
+  return pts;
+}
+
+/** Catalog of available divider styles. Each entry is the cut shape; the
+ *  renderer applies it as `clip-path` on the wrapper so the parent
+ *  container's bottom (or top) edge is geometrically removed and whatever
+ *  sits behind shows through. Adding a new shape = one entry here. */
+export const DIVIDER_CATALOG: Record<Exclude<DividerStyle, 'none'>, DividerStyleDef> = {
+  slant: {
+    name: 'Slant',
+    height: '60px',
+    cutPath: [[0, 10], [100, 0]],
+  },
+  curve: {
+    name: 'Curve',
+    height: '80px',
+    cutPath: sampleQuad([0, 10], [50, 0], [100, 10], 12),
+  },
+  triangle: {
+    name: 'Triangle',
+    height: '60px',
+    cutPath: [[0, 10], [50, 0], [100, 10]],
+  },
+  wave: {
+    name: 'Wave',
+    height: '80px',
+    cutPath: [
+      ...sampleQuad([0, 10], [25, 0], [50, 10], 6),
+      ...sampleQuad([50, 10], [75, 0], [100, 10], 6).slice(1),
+    ],
+  },
+  mountains: {
+    name: 'Mountains',
+    height: '80px',
+    cutPath: [[0, 10], [20, 4], [40, 7], [60, 2], [80, 6], [100, 10]],
+  },
+};
+
+/** Resolve a divider field (the value at `style.divider.<side>`) to a
+ *  catalog key, tolerating the legacy `{ style, color, height }` shape. */
+function resolveDividerStyle(value: unknown): Exclude<DividerStyle, 'none'> | null {
+  let s: string | null = null;
+  if (typeof value === 'string') s = value;
+  else if (value && typeof value === 'object' && typeof (value as { style?: unknown }).style === 'string') {
+    s = (value as { style: string }).style;
+  }
+  if (!s || s === 'none') return null;
+  return s in DIVIDER_CATALOG ? (s as Exclude<DividerStyle, 'none'>) : null;
+}
+
+/** Build a CSS `clip-path: polygon(...)` string from the divider config.
+ *  Returns null when no divider is configured. The polygon walks the
+ *  wrapper's perimeter clockwise, perturbing the top edge with the top
+ *  cut path (left→right) and the bottom edge with the bottom cut path
+ *  (right→left). When only one side is set, the other side stays straight. */
+function buildClipPath(divider: CommonStyle['divider']): string | null {
+  const topStyle = resolveDividerStyle(divider?.top);
+  const bottomStyle = resolveDividerStyle(divider?.bottom);
+  if (!topStyle && !bottomStyle) return null;
+
+  const points: string[] = [];
+
+  if (topStyle) {
+    const def = DIVIDER_CATALOG[topStyle];
+    // For a TOP cut, band y=10 is the wrapper's outer top (y=0%) and y=0
+    // is the inner peak (y = topHeight). Map: wrapY = topH * (10 - bandY) / 10
+    for (const [x, y] of def.cutPath) {
+      points.push(`${x}% calc(${def.height} * ${((10 - y) / 10).toFixed(3)})`);
+    }
+  } else {
+    points.push('0% 0%', '100% 0%');
+  }
+
+  if (bottomStyle) {
+    const def = DIVIDER_CATALOG[bottomStyle];
+    // For a BOTTOM cut, band y=10 is the wrapper's outer bottom (y=100%)
+    // and y=0 is the inner peak (y = 100% - bottomHeight).
+    // Map: wrapY = calc(100% - bottomH * (10 - bandY) / 10)
+    // Reverse the cut path so we walk right→left (CW perimeter).
+    const reversed = [...def.cutPath].reverse();
+    for (const [x, y] of reversed) {
+      points.push(`${x}% calc(100% - ${def.height} * ${((10 - y) / 10).toFixed(3)})`);
+    }
+  } else {
+    points.push('100% 100%', '0% 100%');
+  }
+
+  return `polygon(${points.join(', ')})`;
+}
+
+/** UI-side metadata for the divider style picker — value + visible label.
+ *  Derived from `DIVIDER_CATALOG` so adding a shape automatically adds it
+ *  to the picker. `none` is hard-coded as the first option. */
 export const DIVIDER_STYLE_OPTIONS: Array<{ value: DividerStyle; label: string }> = [
-  { value: 'none',     label: 'None' },
-  { value: 'slant',    label: 'Slant' },
-  { value: 'curve',    label: 'Curve' },
-  { value: 'triangle', label: 'Triangle' },
+  { value: 'none', label: 'None' },
+  ...(Object.entries(DIVIDER_CATALOG) as Array<[Exclude<DividerStyle, 'none'>, DividerStyleDef]>)
+    .map(([value, def]) => ({ value: value as DividerStyle, label: def.name })),
 ];
 
 /** Tiny inline SVG thumbnail for one divider style (or a flat line for
- *  'none'). Used in the dropdown trigger and in each menu option. */
+ *  'none'). Used in the dropdown trigger and in each menu option. Closes
+ *  the cutPath back along the bottom edge to render the area-that-gets-cut
+ *  as a filled polygon — matches the visual the user gets on the page. */
 export function dividerThumbSvg(style: DividerStyle | string): string {
-  if (style === 'none' || !DIVIDER_PATHS[style as Exclude<DividerStyle, 'none'>]) {
+  if (style === 'none' || !DIVIDER_CATALOG[style as Exclude<DividerStyle, 'none'>]) {
     return `<svg viewBox="0 0 100 10" preserveAspectRatio="none"><line x1="0" y1="9" x2="100" y2="9" stroke="currentColor" stroke-width="1"/></svg>`;
   }
-  const path = DIVIDER_PATHS[style as Exclude<DividerStyle, 'none'>];
+  const def = DIVIDER_CATALOG[style as Exclude<DividerStyle, 'none'>];
+  const moves = def.cutPath
+    .map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x},${y}`)
+    .join(' ');
+  // Close back along the band's bottom (y=10) to the first point.
+  const last = def.cutPath[def.cutPath.length - 1]!;
+  const path = `${moves} L${last[0]},10 L${def.cutPath[0]![0]},10 Z`;
   return `<svg viewBox="0 0 100 10" preserveAspectRatio="none"><path d="${path}" fill="currentColor"/></svg>`;
 }
 
@@ -395,7 +518,16 @@ export function styleWrap(
   const baseClass = opts.baseClass ?? 'nospress-block-style';
 
   const inlineStyle = buildInlineStyle(schemaFor(block.type), block.style);
-  const styleAttr = inlineStyle ? ` style="${escapeHtmlAttr(inlineStyle)}"` : '';
+
+  // Divider is a clip-path on the wrapper itself — a true geometric cut so
+  // whatever sits behind the block (the page body, the next section's bg,
+  // a backdrop image, …) shows through without color guessing. Only the
+  // div block (and its HTML-tag variants) supports divider via STYLE_MATRIX.
+  const clipPath = buildClipPath(block.style?.divider);
+  const combinedStyle = clipPath
+    ? (inlineStyle ? `${inlineStyle}; clip-path: ${clipPath}` : `clip-path: ${clipPath}`)
+    : inlineStyle;
+  const styleAttr = combinedStyle ? ` style="${escapeHtmlAttr(combinedStyle)}"` : '';
 
   const customClass = sanitizeCssIdent(block.attrs?.class ?? '', 'multi');
   const classAttr = customClass ? ` nospress-block-style--custom ${escapeHtmlAttr(customClass)}` : '';
@@ -403,46 +535,8 @@ export function styleWrap(
   const customId = sanitizeCssIdent(block.attrs?.id ?? '', 'single');
   const idAttr = customId ? ` id="${escapeHtmlAttr(customId)}"` : '';
 
-  // Divider markup is emitted as SVG children of the wrapper. Only the
-  // div block (and its HTML-tag variants) supports it via STYLE_MATRIX.
-  const dividers = renderDividers(block.style?.divider);
-
-  return `<${tag} class="${baseClass}${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}>${dividers.top}${inner}${dividers.bottom}</${tag}>`;
+  return `<${tag} class="${baseClass}${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}>${inner}</${tag}>`;
 }
-
-/** Render top/bottom divider SVGs from a `CommonStyle.divider` config.
- *  Returns empty strings for unset / 'none' slots so the wrapper output
- *  stays clean when the user hasn't configured anything. */
-function renderDividers(divider: CommonStyle['divider']): { top: string; bottom: string } {
-  return {
-    top: renderDividerSvg(divider?.top, 'top'),
-    bottom: renderDividerSvg(divider?.bottom, 'bottom'),
-  };
-}
-
-function renderDividerSvg(cfg: DividerConfig | undefined, side: 'top' | 'bottom'): string {
-  if (!cfg || !cfg.style || cfg.style === 'none') return '';
-  const path = DIVIDER_PATHS[cfg.style];
-  if (!path) return '';
-  // Default fill is the page background colour (`var(--color-1)`) so the
-  // divider visually "cuts" into the block, revealing the page bg behind
-  // it — the typical Divi-style sloped-edge look. The user can override
-  // with any colour for a decorative band instead of a cut.
-  const fill = cfg.color ? sanitizeStyleValue(cfg.color) : 'var(--color-1)';
-  const heightVar = `--nospress-divider-height: ${escapeHtmlAttr(sanitizeStyleValue(cfg.height ?? '60px'))}`;
-  return `<div class="nospress-divider nospress-divider--${side}" style="${heightVar}" aria-hidden="true"><svg viewBox="0 0 100 10" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><path d="${path}" fill="${escapeHtmlAttr(fill)}"/></svg></div>`;
-}
-
-/** Simple SVG paths for the divider shapes. viewBox is `0 0 100 10` so each
- *  shape is a thin band that scales to the container's height via CSS. */
-const DIVIDER_PATHS: Record<Exclude<DividerStyle, 'none'>, string> = {
-  // Diagonal slope from bottom-left up to top-right, filled below.
-  slant:    'M0,10 L100,0 L100,10 Z',
-  // Symmetric bow, filled below.
-  curve:    'M0,10 Q50,0 100,10 Z',
-  // Centered downward triangle.
-  triangle: 'M0,10 L50,0 L100,10 Z',
-};
 
 /**
  * Substitute every `var(--color-N)` reference in a CSS value string with
@@ -573,22 +667,19 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   /** Render the Top/Bottom switch + the edit area for the currently
    *  active side. Active side is controlled by the caller (`opts.activeDividerSide`)
    *  so it persists across re-renders driven by other property changes.
-   *  Inputs target `divider.<side>.<field>` so writeStyleField persists into
-   *  the right slot. */
+   *  The picked value targets `divider.<side>` directly — no per-side
+   *  Color or Height (fill is always `var(--color-1)`, height comes from
+   *  the catalog entry). Effect-only. */
   const dividerSide = (side: 'top' | 'bottom') => {
-    const styleVal = v(`divider.${side}.style`) || 'none';
-    const colorVal = v(`divider.${side}.color`);
-    const heightVal = v(`divider.${side}.height`);
-    const triggerBg = colorVal ? resolvePaletteVars(colorVal, palette) : 'transparent';
-    const paletteSwatches = renderPaletteSwatches(palette, 'palette-key');
-    const colorKey = `divider.${side}.color`;
+    const styleVal = v(`divider.${side}`) || 'none';
+    const styleField = `divider.${side}`;
 
     const styleOptionsHtml = DIVIDER_STYLE_OPTIONS.map(opt => `
       <button type="button"
               class="nospress-divider-picker__option ${opt.value === styleVal ? 'is-selected' : ''}"
               data-divider-style-pick="${opt.value}"
               data-style-scope="${scopeAttr}"
-              data-style-field="divider.${side}.style"
+              data-style-field="${styleField}"
               aria-label="${escapeHtmlAttr(opt.label)}">
         <span class="nospress-divider-picker__option-thumb">${dividerThumbSvg(opt.value)}</span>
         <span class="nospress-divider-picker__option-label">${escapeHtmlAttr(opt.label)}</span>
@@ -609,30 +700,6 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
             ${styleOptionsHtml}
           </div>
         </div>
-      </div>
-      <div class="nospress-prop-row nospress-prop-row--color" data-color-row-key="${escapeHtmlAttr(colorKey)}">
-        <label class="nospress-prop-row__label">Color</label>
-        <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
-               data-style-scope="${scopeAttr}" data-style-field="${colorKey}"
-               value="${escapeHtmlAttr(colorVal)}" placeholder="e.g. #0f0d23" />
-        <span class="nospress-prop-color-picker">
-          <button type="button"
-                  class="nospress-prop-color-trigger"
-                  style="background: ${escapeHtmlAttr(triggerBg)}"
-                  aria-label="Pick color"></button>
-        </span>
-      </div>
-      <div class="nospress-prop-color-swatches-inline" hidden data-swatches-for="${escapeHtmlAttr(colorKey)}">
-        ${paletteSwatches}
-        <button type="button" class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
-          <input type="color" class="nospress-prop-color-native" />
-        </button>
-      </div>
-      <div class="nospress-prop-row">
-        <label class="nospress-prop-row__label">Height</label>
-        <input type="text" class="input nospress-prop-row__input"
-               data-style-scope="${scopeAttr}" data-style-field="divider.${side}.height"
-               value="${escapeHtmlAttr(heightVal)}" placeholder="60px" />
       </div>
     `;
   };

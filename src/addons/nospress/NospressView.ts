@@ -1380,16 +1380,29 @@ export class NospressView extends View {
    * CSS and dispatch an input event. The bubbling event flows through the
    * normal property-input pipeline (`handleStyleInput` → `mutateDraft`) so
    * the page draft, dirty flag, and Save button all update like every
-   * other edit. Then re-render the editor so previews / handles / track
-   * reflect the new state.
+   * other edit.
+   *
+   * `opts.light` skips the editor re-render and instead refreshes only
+   * the preview band in-place. Used by keystroke-fast paths (position
+   * number input, angle range/number input) so the focused input doesn't
+   * get torn down mid-edit — re-rendering would lose cursor focus and
+   * truncate typing to a single digit.
    */
-  private commitGradientLive(): void {
+  private commitGradientLive(opts: { light?: boolean } = {}): void {
     if (!this.gradientEdit) return;
     const css = formatGradient(this.gradientEdit.draft);
     const input = this.gradientEdit.rowEl.querySelector<HTMLInputElement>('.nospress-prop-row__input');
     if (input) {
       input.value = css;
       input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    if (opts.light) {
+      const mount = this.findGradientInlineMount(this.gradientEdit.rowEl);
+      const preview = mount?.querySelector<HTMLElement>('.nospress-gradient-preview');
+      if (preview) {
+        preview.style.background = resolvePaletteVars(css, this.effectivePalette());
+      }
+      return;
     }
     this.renderGradientEditorInline();
   }
@@ -1544,15 +1557,31 @@ export class NospressView extends View {
       const stop = draft.stops[this.gradientEdit.selectedStopIndex];
       if (stop) {
         stop.position = clamp(parseFloat(target.value || '0'), 0, draft.unit === 'percent' ? 100 : 9999);
-        draft.stops.sort((a, b) => a.position - b.position);
-        this.gradientEdit.selectedStopIndex = draft.stops.indexOf(stop);
       }
-      this.commitGradientLive();
+      // Light commit on every keystroke (no re-render → cursor focus
+      // survives, user can type multi-digit numbers). The `change` event
+      // (fires on blur/Enter) reorders + re-renders below.
+      if (e.type === 'change') {
+        if (stop) {
+          draft.stops.sort((a, b) => a.position - b.position);
+          this.gradientEdit.selectedStopIndex = draft.stops.indexOf(stop);
+        }
+        this.commitGradientLive();
+      } else {
+        this.commitGradientLive({ light: true });
+      }
       return true;
     }
     if (target.dataset?.gradientAngleRange !== undefined || target.dataset?.gradientAngleNumber !== undefined) {
       draft.angle = clamp(parseFloat(target.value || '0'), 0, 360);
-      this.commitGradientLive();
+      // Light commit so range-drag stays smooth and number-input keeps
+      // multi-digit typing alive. `change` fires on blur and does a full
+      // re-render to sync the sibling input/range with the final value.
+      if (e.type === 'change') {
+        this.commitGradientLive();
+      } else {
+        this.commitGradientLive({ light: true });
+      }
       return true;
     }
     if (target.dataset?.gradientRepeat !== undefined) {

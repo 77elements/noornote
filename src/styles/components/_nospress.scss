@@ -391,7 +391,14 @@
 // Block style wrapper — every styled block is wrapped in this. Made
 // position-relative so any divider SVG children can absolutely position
 // themselves to the wrapper edges.
-.nospress-block-style {
+.nospress-block-style,
+.nospress-block-div {
+  // Anchor for absolutely-positioned divider SVGs at the wrapper's
+  // top/bottom edges. Both classes are produced by `styleWrap` — the
+  // generic `.nospress-block-style` for non-div blocks, and
+  // `.nospress-block-div` for self-wrapping div blocks (header, footer,
+  // section, etc.). Without this, the divider would anchor to the next
+  // positioned ancestor.
   position: relative;
 }
 
