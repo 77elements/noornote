@@ -45,6 +45,7 @@ export function switchTab(
   const tabs = container.querySelectorAll(selector);
   tabs.forEach(tab => {
     const el = tab as HTMLElement;
+    if (el.dataset.tab === undefined) return;
     if (el.dataset.tab === tabId) {
       el.classList.add('tab--active');
     } else {
@@ -62,9 +63,13 @@ export function switchTabWithContent(
   container: HTMLElement,
   tabId: string
 ): void {
-  // Update tabs
+  // Update tabs — only ones that opt in via `data-tab`. Tabs that share
+  // the `.tab` class but track their own state via a different attribute
+  // (e.g. `data-bp-tab` for the Properties-panel breakpoint tabs) must
+  // not be reset here.
   container.querySelectorAll('.tab').forEach(tab => {
     const el = tab as HTMLElement;
+    if (el.dataset.tab === undefined) return;
     if (el.dataset.tab === tabId) {
       el.classList.add('tab--active');
     } else {

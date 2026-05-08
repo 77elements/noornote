@@ -1946,6 +1946,44 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   }
 }
 
+// Breakpoints rows in the Breakpoints accordion: name + type-dropdown +
+// value(s) + remove on a single grid line. The second value (`Max`)
+// stays in the layout via the `hidden` HTML attribute when type !==
+// 'between' so toggling the type doesn't reflow neighbouring rows.
+.nospress-breakpoints {
+  margin-bottom: calc($gap / 2);
+}
+
+.nospress-breakpoint-row {
+  display: grid;
+  // Default: 4 columns when type is min/max (no value2). Button sits in
+  // the auto track at its natural width — no stretch.
+  grid-template-columns: 1fr 1fr 1fr auto;
+  gap: calc($gap / 4);
+  margin-bottom: calc($gap / 4);
+
+  // Type 'between' shows the second value input → 5 columns total. The
+  // dataset is set on the row by the dropdown's onChange so layout flips
+  // without a re-render.
+  &[data-bp-type="between"] {
+    grid-template-columns: 1fr 1fr 1fr 1fr auto;
+  }
+
+  .input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  &__type-mount {
+    min-width: 0;
+
+    // Stretch the CustomDropdown to fill the grid cell.
+    .custom-dropdown {
+      width: 100%;
+    }
+  }
+}
+
 // Palette row inside the Theme & Palette accordion: circular swatch +
 // editable HEX text + variable label, all on one line via inline-block.
 .nospress-palette-row {

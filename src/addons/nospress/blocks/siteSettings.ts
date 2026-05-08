@@ -64,6 +64,20 @@ export interface NospressSiteInjection {
   jsScripts?: string[];
 }
 
+/** A user-defined breakpoint — name + media-query shape. The user picks
+ *  these in the Global tab; later they're consumed by per-block style
+ *  variants and by Custom CSS via `@media`-helpers. Max 5 enforced in UI. */
+export type BreakpointType = 'min' | 'max' | 'between';
+export interface NospressBreakpoint {
+  /** Free-form identifier (e.g. 'tablet', 'mobile'). */
+  name: string;
+  type: BreakpointType;
+  /** CSS length, e.g. `768px`, `48rem`. */
+  value: string;
+  /** Upper bound — only used when `type === 'between'`. */
+  value2?: string;
+}
+
 export interface NospressSiteSettings {
   version: 1;
   meta?: NospressSiteMeta;
@@ -74,6 +88,8 @@ export interface NospressSiteSettings {
    *  legacy per-page `NospressPageV2.customCss` field; first read of a
    *  legacy `page.customCss` migrates it here. */
   customCss?: string;
+  /** Responsive-design breakpoints. Cap of 5 enforced by the editor UI. */
+  breakpoints?: NospressBreakpoint[];
 }
 
 export const EMPTY_SITE_SETTINGS: NospressSiteSettings = { version: 1 };
@@ -99,5 +115,6 @@ export function hasSiteSettingsContent(s: NospressSiteSettings | null | undefine
   const i = s.injection;
   if (i && (i.headSnippet || i.bodyEndSnippet || (i.cssLinks?.length ?? 0) > 0 || (i.jsScripts?.length ?? 0) > 0)) return true;
   if (s.customCss && s.customCss.trim().length > 0) return true;
+  if ((s.breakpoints?.length ?? 0) > 0) return true;
   return false;
 }

@@ -8,7 +8,7 @@ import type { NospressSiteSettings } from './blocks/siteSettings';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { BlockRenderer } from './blocks/BlockRenderer';
-import { sanitizeStyleValue } from './blocks/styles';
+import { sanitizeStyleValue, buildPageBreakpointCss } from './blocks/styles';
 import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG, pageHeaderSlug, pageFooterSlug } from './blocks/pageIndex';
 import { mountNospressNavMenus } from './navMenuMount';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -139,7 +139,7 @@ export class PublicNospressPage {
       return;
     }
 
-    this.renderPage({ body, header, footer, viewerProfile });
+    this.renderPage({ body, header, footer, viewerProfile, breakpoints: siteSettings?.breakpoints ?? [] });
     // Custom CSS is site-wide — read from site-settings first; fall back
     // to the legacy per-page slot on the home body for events published
     // before the migration shipped.
@@ -402,8 +402,9 @@ export class PublicNospressPage {
     header: NospressPageV2 | null;
     footer: NospressPageV2 | null;
     viewerProfile: UserProfile | null;
+    breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>;
   }): void {
-    const { body, header, footer, viewerProfile } = parts;
+    const { body, header, footer, viewerProfile, breakpoints } = parts;
 
     // Header / footer blocks render bare — no `<header>` / `<footer>`
     // wrapper. The user owns the container shape: if they want a
@@ -426,8 +427,24 @@ export class PublicNospressPage {
       ? `<main class="user-site__site-body"><div class="layout-wrapper">${bodyBlocksHtml}</div></main>`
       : '';
 
+    // Per-breakpoint block CSS. Each block's `breakpointStyles[<name>]`
+    // becomes an `@media`-wrapped rule scoped via `[data-styled-block-id]`.
+    // Wrappers render the base / Default-tab styles inline; overrides win
+    // at their matching breakpoint via `!important`. Empty when the user
+    // has no breakpoints or no per-breakpoint overrides yet.
+    const allBlocks = [
+      ...(header?.blocks ?? []),
+      ...(body?.blocks ?? []),
+      ...(footer?.blocks ?? []),
+    ];
+    const breakpointCss = buildPageBreakpointCss(allBlocks, breakpoints);
+    const breakpointStyleHtml = breakpointCss
+      ? `<style class="nospress-block-breakpoints">${breakpointCss}</style>`
+      : '';
+
     this.container.innerHTML = `
       ${this.adminBarHtml(viewerProfile)}
+      ${breakpointStyleHtml}
       ${headerHtml}
       ${bodyHtml}
       ${footerHtml}

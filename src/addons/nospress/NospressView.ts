@@ -20,7 +20,7 @@ import { NospressService } from '../../services/NospressService';
 import { NospressPageIndexService } from '../../services/NospressPageIndexService';
 import { NospressMenuService } from '../../services/NospressMenuService';
 import { NospressSiteSettingsService } from '../../services/NospressSiteSettingsService';
-import { DEFAULT_PALETTE, PALETTE_KEYS, type NospressSiteSettings } from './blocks/siteSettings';
+import { DEFAULT_PALETTE, PALETTE_KEYS, type NospressSiteSettings, type NospressBreakpoint, type BreakpointType } from './blocks/siteSettings';
 import {
   defaultGradient,
   formatGradient,
@@ -51,6 +51,7 @@ import {
   resolvePaletteVars,
   sanitizeCssIdent,
   writeStyleField,
+  type CommonStyle,
 } from './blocks/styles';
 import { removeUserCss } from './cssScope';
 import { bindCssTextareaUx } from './cssTextareaUx';
@@ -189,6 +190,13 @@ export class NospressView extends View {
    *  switch in the property panel toggles this; the rest of the divider UI
    *  re-renders against this side. Default: top. */
   private activeDividerSide: 'top' | 'bottom' = 'top';
+  /** Currently-selected breakpoint tab in the Properties panel. Empty
+   *  string when no breakpoints exist (single-style block). The first
+   *  breakpoint (= mobile-first base) maps to `block.style`; subsequent
+   *  breakpoints map to `block.breakpointStyles[<name>]`. State persists
+   *  across block selections so the user keeps editing the same screen
+   *  size as they jump between blocks. */
+  private activeBpName: string = '';
   /** Direct ref to the Pages tab body — re-rendered on page-index changes. */
   private pagesTabContent: HTMLElement | null = null;
   /** Direct ref to the Nav tab body — re-rendered on menu changes. */
@@ -272,6 +280,8 @@ export class NospressView extends View {
     this.destroyInlineMounts();
     this.destroyFolderPickers();
     this.destroyBlockDropdowns();
+    this.breakpointDropdowns.forEach(d => d.destroy());
+    this.breakpointDropdowns = [];
     this.destroyCursorRow();
     this.destroyProfileCards();
     this.destroyArticlesCarousels();
@@ -684,6 +694,9 @@ export class NospressView extends View {
     globalContent.className = 'tab-content';
     globalContent.dataset.tabContent = 'global';
     globalContent.innerHTML = this.renderGlobalContent();
+    // Mount breakpoint type-dropdowns (CustomDropdown is JS-driven so it
+    // needs a post-render walk to fill its slots).
+    this.mountBreakpointDropdowns(globalContent);
 
     const pagesContent = document.createElement('div');
     pagesContent.className = 'tab-content tab-content--active';
@@ -759,6 +772,11 @@ export class NospressView extends View {
 
     // Divider property — Top/Bottom switch and the graphical style picker.
     librarySlot.addEventListener('click', (e) => this.handleDividerPropClick(e));
+
+    // Properties-panel breakpoint tabs — switch which style slot the panel
+    // edits. Lives on the librarySlot so it survives properties-tab
+    // re-renders.
+    librarySlot.addEventListener('click', (e) => this.handlePropertiesBpTabClick(e));
 
     pagesContent.addEventListener('click', (e) => this.handlePagesTabClick(e));
     pagesContent.addEventListener('keydown', (e) => this.handleInlineRenameKeydown(e));
@@ -1063,6 +1081,21 @@ export class NospressView extends View {
         <section class="nn-ui-toggle nospress-global__section">
           <div class="nn-ui-toggle__header">
             <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Breakpoints</h2>
+              <p class="nn-ui-toggle__description">Named media-query thresholds you can target from per-block styles + Custom CSS. Up to 5.</p>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            ${this.renderBreakpointsSection(settings.breakpoints ?? [])}
+          </div>
+        </section>
+
+        <section class="nn-ui-toggle nospress-global__section">
+          <div class="nn-ui-toggle__header">
+            <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Code Integration</h2>
               <p class="nn-ui-toggle__description">Code you inject runs on your own NosPress page under noornote.app. Use only sources you trust.</p>
             </div>
@@ -1123,6 +1156,173 @@ export class NospressView extends View {
     this.persistGlobalField('meta.customTags', tags);
   }
 
+  /** Maximum number of breakpoints the user may define. Anything beyond
+   *  that and the responsive matrix becomes unmanageable in the UI. */
+  private static readonly MAX_BREAKPOINTS = 5;
+
+  /** Render the Breakpoints section body — list of rows + Add button.
+   *  The CustomDropdown for the type field is mounted post-render via
+   *  {@link mountBreakpointDropdowns}; the slot carries the active value
+   *  in `data-current-value` so it survives between renders. */
+  private renderBreakpointsSection(breakpoints: NospressBreakpoint[]): string {
+    const rows = breakpoints.length > 0
+      ? breakpoints.map((bp, i) => this.renderBreakpointRow(bp, i)).join('')
+      : '';
+    const atMax = breakpoints.length >= NospressView.MAX_BREAKPOINTS;
+    return `
+      <div class="nospress-breakpoints" data-breakpoints-list>${rows}</div>
+      <button type="button"
+              class="btn btn--passive btn--mini"
+              data-action="add-breakpoint"
+              ${atMax ? 'disabled' : ''}>+ Add breakpoint</button>
+    `;
+  }
+
+  private renderBreakpointRow(bp: NospressBreakpoint, index: number): string {
+    const isBetween = bp.type === 'between';
+    return `
+      <div class="nospress-breakpoint-row" data-breakpoint-row data-breakpoint-index="${index}" data-bp-type="${escapeHtmlAttr(bp.type)}">
+        <input type="text" class="input"
+               placeholder="Name (e.g. tablet)"
+               data-breakpoint-field="name"
+               value="${escapeHtml(bp.name)}" />
+        <div class="nospress-breakpoint-row__type-mount"
+             data-breakpoint-type-dropdown
+             data-breakpoint-index="${index}"
+             data-current-value="${escapeHtmlAttr(bp.type)}"></div>
+        <input type="text" class="input"
+               placeholder="${isBetween ? 'Min (e.g. 640px)' : 'Value (e.g. 768px)'}"
+               data-breakpoint-field="value"
+               value="${escapeHtml(bp.value)}" />
+        <input type="text" class="input"
+               placeholder="Max (e.g. 1024px)"
+               data-breakpoint-field="value2"
+               value="${escapeHtml(bp.value2 ?? '')}"
+               ${isBetween ? '' : 'hidden'} />
+        <button type="button" class="btn btn--mini btn--passive btn--danger"
+                data-action="remove-breakpoint"
+                data-breakpoint-index="${index}"
+                aria-label="Remove">×</button>
+      </div>
+    `;
+  }
+
+  /** Walk every `[data-breakpoint-type-dropdown]` slot and mount a
+   *  CustomDropdown for its type field. Disposes any previous-generation
+   *  instances first so re-renders don't leak listeners. */
+  private breakpointDropdowns: CustomDropdown[] = [];
+  private mountBreakpointDropdowns(root: HTMLElement): void {
+    this.breakpointDropdowns.forEach(d => d.destroy());
+    this.breakpointDropdowns = [];
+    const slots = root.querySelectorAll<HTMLElement>('[data-breakpoint-type-dropdown]');
+    slots.forEach(slot => {
+      const idx = parseInt(slot.dataset.breakpointIndex ?? '-1', 10);
+      const current = (slot.dataset.currentValue as BreakpointType) || 'min';
+      const dd = new CustomDropdown({
+        options: [
+          { value: 'min',     label: 'min-width' },
+          { value: 'max',     label: 'max-width' },
+          { value: 'between', label: 'between' },
+        ],
+        selectedValue: current,
+        onChange: (value) => {
+          slot.dataset.currentValue = value;
+          // Toggle the second value input's visibility without re-render so
+          // the user's focus / typing in name+value isn't disturbed. The
+          // row's `data-bp-type` drives the SCSS grid template (4 cols vs
+          // 5 cols), so the row layout adapts in lockstep.
+          const row = slot.closest('[data-breakpoint-row]') as HTMLElement | null;
+          if (row) row.dataset.bpType = value;
+          const v2Input = row?.querySelector<HTMLInputElement>('[data-breakpoint-field="value2"]');
+          const v1Input = row?.querySelector<HTMLInputElement>('[data-breakpoint-field="value"]');
+          if (v2Input) v2Input.hidden = value !== 'between';
+          if (v1Input) v1Input.placeholder = value === 'between' ? 'Min (e.g. 640px)' : 'Value (e.g. 768px)';
+          this.collectAndPersistBreakpoints(idx);
+        },
+      });
+      slot.appendChild(dd.getElement());
+      this.breakpointDropdowns.push(dd);
+    });
+  }
+
+  /** Read every breakpoint row in the DOM and persist as `breakpoints`.
+   *  Fully-empty rows (no name + no values) are dropped; partial rows are
+   *  kept so the user can finish typing. The `value2` field is only
+   *  written when the row's type is 'between'. */
+  private collectAndPersistBreakpoints(_changedIndex: number = -1): void {
+    const list = this.container.ownerDocument.querySelector('[data-breakpoints-list]');
+    if (!list) return;
+    const rows = list.querySelectorAll<HTMLElement>('[data-breakpoint-row]');
+    const breakpoints: NospressBreakpoint[] = [];
+    rows.forEach(row => {
+      const name = (row.querySelector<HTMLInputElement>('[data-breakpoint-field="name"]')?.value ?? '').trim();
+      const slot = row.querySelector<HTMLElement>('[data-breakpoint-type-dropdown]');
+      const type = (slot?.dataset.currentValue as BreakpointType) || 'min';
+      const value = (row.querySelector<HTMLInputElement>('[data-breakpoint-field="value"]')?.value ?? '').trim();
+      const value2 = (row.querySelector<HTMLInputElement>('[data-breakpoint-field="value2"]')?.value ?? '').trim();
+      if (!name && !value && !value2) return;
+      const bp: NospressBreakpoint = { name, type, value };
+      if (type === 'between' && value2) bp.value2 = value2;
+      breakpoints.push(bp);
+    });
+    this.persistGlobalField('breakpoints', breakpoints);
+    // Tab-bar in the Properties panel mirrors the breakpoint names. Re-
+    // render it so name edits flow through to the tabs (and a fully-
+    // emptied row that just got dropped no longer shows as a tab).
+    this.updatePropertiesTab();
+  }
+
+  /** Append an empty breakpoint to the array, persist, then re-render the
+   *  Breakpoints section in place so the new row + dropdown appear without
+   *  blowing away the rest of the Global tab. */
+  private addBreakpoint(): void {
+    const settings = structuredClone(this.siteSettingsService.getSettings());
+    const list = settings.breakpoints ?? [];
+    if (list.length >= NospressView.MAX_BREAKPOINTS) return;
+    list.push({ name: '', type: 'min', value: '' });
+    settings.breakpoints = list;
+    this.siteSettingsService.saveSettings(settings, { silent: true });
+    this.isDirty = true;
+    this.siteSettingsDirty = true;
+    this.refreshActionBar();
+    this.rerenderBreakpointsSection();
+    // Properties tabs are bound to the breakpoint set — re-render so the
+    // user sees the new tab appear without re-selecting the block.
+    this.updatePropertiesTab();
+  }
+
+  private removeBreakpoint(index: number): void {
+    const settings = structuredClone(this.siteSettingsService.getSettings());
+    const list = settings.breakpoints ?? [];
+    if (index < 0 || index >= list.length) return;
+    list.splice(index, 1);
+    if (list.length === 0) delete settings.breakpoints;
+    else settings.breakpoints = list;
+    this.siteSettingsService.saveSettings(settings, { silent: true });
+    this.isDirty = true;
+    this.siteSettingsDirty = true;
+    this.refreshActionBar();
+    this.rerenderBreakpointsSection();
+    this.updatePropertiesTab();
+  }
+
+  /** Re-render only the Breakpoints list + Add-button state. Keeps the
+   *  rest of the Global tab (and any focused input outside this section)
+   *  untouched. Re-mounts CustomDropdowns afterwards. */
+  private rerenderBreakpointsSection(): void {
+    const list = this.container.ownerDocument.querySelector<HTMLElement>('[data-breakpoints-list]');
+    if (!list) return;
+    const settings = this.siteSettingsService.getSettings();
+    const bps = settings.breakpoints ?? [];
+    list.innerHTML = bps.map((bp, i) => this.renderBreakpointRow(bp, i)).join('');
+    const addBtn = list.parentElement?.querySelector<HTMLButtonElement>('[data-action="add-breakpoint"]');
+    if (addBtn) addBtn.disabled = bps.length >= NospressView.MAX_BREAKPOINTS;
+    // Walk from the parent so the slots inside the freshly-rendered rows
+    // are visible to the dropdown mounter.
+    const root = list.parentElement ?? list;
+    this.mountBreakpointDropdowns(root as HTMLElement);
+  }
+
   /** Persist a single Global-tab field change to local storage. The dotted
    *  path encodes the location in the {@link NospressSiteSettings} object,
    *  e.g. `meta.siteName`, `theme.palette.color-1`, `injection.cssLinks`.
@@ -1136,6 +1336,14 @@ export class NospressView extends View {
     // so any input within a row reuses the same code path.
     if (target?.dataset?.metaTagField) {
       this.collectAndPersistMetaCustomTags();
+      return;
+    }
+
+    // Breakpoint rows — same DOM-collection pattern. The type dropdown
+    // persists via its own onChange callback in mountBreakpointDropdowns;
+    // text inputs (name / value / value2) flow through here.
+    if (target?.dataset?.breakpointField) {
+      this.collectAndPersistBreakpoints();
       return;
     }
 
@@ -1194,6 +1402,18 @@ export class NospressView extends View {
     this.isDirty = true;
     this.siteSettingsDirty = true;
     this.refreshActionBar();
+  }
+
+  /** Properties-panel breakpoint tab click delegate. Switches which style
+   *  slot the panel edits, re-renders the body against the new active
+   *  slot. State persists across block selections via `this.activeBpName`. */
+  private handlePropertiesBpTabClick(e: Event): void {
+    const tab = (e.target as HTMLElement).closest<HTMLElement>('[data-bp-tab]');
+    if (!tab) return;
+    const name = tab.dataset.bpTab ?? '';
+    if (name === this.activeBpName) return;
+    this.activeBpName = name;
+    this.updatePropertiesTab();
   }
 
   /** Property-tab Divider section click delegate. Three concerns:
@@ -1757,6 +1977,17 @@ export class NospressView extends View {
 
     if (action.dataset.action === 'paste-palette-to-css') {
       this.pastePaletteToCustomCss();
+      return;
+    }
+
+    if (action.dataset.action === 'add-breakpoint') {
+      this.addBreakpoint();
+      return;
+    }
+
+    if (action.dataset.action === 'remove-breakpoint') {
+      const idx = parseInt(action.dataset.breakpointIndex ?? '-1', 10);
+      if (idx >= 0) this.removeBreakpoint(idx);
       return;
     }
   }
@@ -2747,19 +2978,72 @@ export class NospressView extends View {
 
   /**
    * Inline properties panel — rendered directly under the selected block,
-   * pushing later blocks down. Empty placeholder for now; real controls
-   * (margin, padding, color, alignment, …) follow per block-type later.
-   * Works on Mobile too because it's just another row in the same column.
+   * pushing later blocks down. When the user has defined breakpoints in
+   * the Global tab, the panel header is replaced by tabs (one per BP) —
+   * the first/smallest BP is the mobile-first base (`block.style`), the
+   * rest are per-breakpoint overrides (`block.breakpointStyles[<name>]`).
    */
   private renderInlineProperties(block: Block): string {
+    const breakpoints = this.siteSettingsService.getSettings().breakpoints ?? [];
+    // Mobile-first: the first tab is the unconditional Default (no media
+    // query), backed by `block.style`. Each named breakpoint adds an
+    // override tab backed by `block.breakpointStyles[<name>]`. Unnamed
+    // breakpoints (just-added empty rows) get filtered — they'd collide
+    // with the Default tab's empty-string name and confuse the active-tab
+    // resolution. With no named breakpoints, no tabs render at all.
+    const namedBps = breakpoints.filter(bp => bp.name.trim());
+    const tabs = namedBps.length > 0
+      ? [{ name: '', label: 'Default' }, ...namedBps.map(bp => ({ name: bp.name, label: bp.name }))]
+      : [];
+    // Reset to Default if the previous active tab no longer exists
+    // (breakpoint deleted, etc.) — the Default tab is always valid.
+    if (tabs.length > 0 && !tabs.some(t => t.name === this.activeBpName)) {
+      this.activeBpName = '';
+    }
+    const activeStyle = this.getActiveBpStyleSlot(block).read();
     return renderPropertyPanel({
       scope: `${block.type}:${block.id}`,
-      style: block.style,
+      style: activeStyle,
       attrs: block.attrs,
-      header: 'Block properties',
       activeDividerSide: this.activeDividerSide,
       palette: this.effectivePalette(),
+      breakpointTabs: tabs,
+      activeBreakpoint: this.activeBpName,
     });
+  }
+
+  /**
+   * Resolve which style slot is active given the currently-selected tab.
+   * Empty `activeBpName` (= Default tab, or no breakpoints defined) maps
+   * to `block.style` — that's the unconditional base, applied to every
+   * screen size. Any other name maps to `block.breakpointStyles[<name>]`,
+   * which the public renderer wraps in the matching `@media` query.
+   *
+   * Returns a pair: a `read()` accessor and a `getOrCreate()` accessor.
+   * `getOrCreate` mutates the block to ensure the slot exists and returns
+   * a writable reference — used by `handleStyleInput` before writeStyleField.
+   */
+  private getActiveBpStyleSlot(
+    block: Block,
+  ): { read: () => CommonStyle | undefined; getOrCreate: () => CommonStyle } {
+    if (!this.activeBpName) {
+      return {
+        read: () => block.style,
+        getOrCreate: () => {
+          if (!block.style) block.style = {};
+          return block.style;
+        },
+      };
+    }
+    const name = this.activeBpName;
+    return {
+      read: () => block.breakpointStyles?.[name],
+      getOrCreate: () => {
+        if (!block.breakpointStyles) block.breakpointStyles = {};
+        if (!block.breakpointStyles[name]) block.breakpointStyles[name] = {};
+        return block.breakpointStyles[name]!;
+      },
+    };
   }
 
   /**
@@ -3125,8 +3409,23 @@ export class NospressView extends View {
     this.mutateDraft((page) => {
       const loc = findBlockInPage(page, blockId);
       if (!loc) return;
-      if (!loc.block.style) loc.block.style = {};
-      writeStyleField(loc.block.style, field, rawValue);
+      // Route the write to the right slot based on the active breakpoint
+      // tab. Empty `activeBpName` = Default tab = `block.style` (mobile-
+      // first base). Any other name = `block.breakpointStyles[<name>]`.
+      const slot = this.getActiveBpStyleSlot(loc.block).getOrCreate();
+      writeStyleField(slot, field, rawValue);
+      // Prune empty per-breakpoint slots so JSON stays clean and
+      // `hasV2Content` doesn't flag empty objects as content.
+      if (loc.block.breakpointStyles) {
+        for (const k of Object.keys(loc.block.breakpointStyles)) {
+          if (Object.keys(loc.block.breakpointStyles[k]!).length === 0) {
+            delete loc.block.breakpointStyles[k];
+          }
+        }
+        if (Object.keys(loc.block.breakpointStyles).length === 0) {
+          delete loc.block.breakpointStyles;
+        }
+      }
     }, { silent: true });
   }
 

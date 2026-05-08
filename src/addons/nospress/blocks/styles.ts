@@ -358,14 +358,14 @@ export interface RenderPropertyPanelOptions {
    *  for a block-level panel. Used as `data-style-scope` on every input
    *  so the input-delegation in NospressView can dispatch correctly. */
   scope: string;
-  /** Active style values (used to populate input `value` attributes). */
+  /** Active style values (used to populate input `value` attributes).
+   *  When breakpoint tabs are active, this is the resolved slot for the
+   *  currently-selected tab — caller does the slot-picking. */
   style: CommonStyle | undefined;
   /** Active HTML-attribute overrides (`class` / `id` on the block wrapper).
    *  Only meaningful for block scopes — the page wrapper is always
    *  `.user-site`, so this is ignored when scope === 'page'. */
   attrs?: { class?: string; id?: string } | undefined;
-  /** Header label. Default 'Properties'. */
-  header?: string;
   /** Currently selected divider side in the Top/Bottom switch (only
    *  relevant when the schema includes the divider property). Default top. */
   activeDividerSide?: 'top' | 'bottom';
@@ -375,6 +375,14 @@ export interface RenderPropertyPanelOptions {
    *  swatch still records `var(--color-N)` so the public site tracks
    *  palette changes dynamically. */
   palette?: Partial<Record<PaletteKey, string>>;
+  /** Breakpoint tabs row at the top of the panel. Empty / undefined
+   *  array = no tabs rendered (single-style block). The first tab in
+   *  the array is mobile-first / base; selecting it edits `block.style`.
+   *  Subsequent tabs edit `block.breakpointStyles[<name>]`. */
+  breakpointTabs?: Array<{ name: string; label: string }>;
+  /** Currently active breakpoint tab name. Must match one of
+   *  `breakpointTabs[i].name`. */
+  activeBreakpoint?: string;
 }
 
 interface DividerStyleDef {
@@ -466,6 +474,107 @@ export const DIVIDER_CATALOG: Record<Exclude<DividerStyle, 'none'>, DividerStyle
     cutPath: [[0, 10], [35, 10], [35, 0], [65, 0], [65, 10], [100, 10]],
   },
 };
+
+/** Build a CSS string for a single block's per-breakpoint style overrides.
+ *  Returns an array of @media-wrapped rule sets — one per breakpoint that
+ *  has a non-empty override slot. Selectors target the wrapper via
+ *  `[data-styled-block-id="<uuid>"]`, and each declaration is suffixed
+ *  with `!important` so the override outranks the wrapper's inline
+ *  `style="…"` (which carries the base / Default-tab styles).
+ *
+ *  Empty / unknown breakpoint names are skipped silently — happens after
+ *  the user deletes a breakpoint without touching every block that
+ *  referenced it. */
+export function buildBlockBreakpointCss(
+  block: { id: string; type: string; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  const overrides = block.breakpointStyles;
+  if (!overrides) return '';
+  const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
+  const schema = schemaFor(block.type);
+  const parts: string[] = [];
+  for (const [name, style] of Object.entries(overrides)) {
+    const bp = byName.get(name);
+    if (!bp) continue;
+    const declarations = buildImportantInlineStyle(schema, style);
+    if (!declarations) continue;
+    const mediaQuery = buildMediaQuery(bp);
+    if (!mediaQuery) continue;
+    parts.push(
+      `@media ${mediaQuery} { [data-styled-block-id="${block.id}"] { ${declarations} } }`,
+    );
+  }
+  return parts.join('\n');
+}
+
+/** Compose a single CSS `@media (...)` clause for a user-defined breakpoint. */
+function buildMediaQuery(bp: { type: 'min' | 'max' | 'between'; value: string; value2?: string }): string | null {
+  const v1 = sanitizeStyleValue(bp.value);
+  if (!v1) return null;
+  if (bp.type === 'min') return `(min-width: ${v1})`;
+  if (bp.type === 'max') return `(max-width: ${v1})`;
+  if (bp.type === 'between') {
+    const v2 = sanitizeStyleValue(bp.value2 ?? '');
+    if (!v2) return null;
+    return `(min-width: ${v1}) and (max-width: ${v2})`;
+  }
+  return null;
+}
+
+/** Same payload as `buildInlineStyle` but appends `!important` to every
+ *  declaration so per-breakpoint overrides outrank the wrapper's inline
+ *  base styles when their media query matches. */
+function buildImportantInlineStyle(schema: PropertyEntry[], style: CommonStyle | undefined): string {
+  if (!style) return '';
+  const parts: string[] = [];
+  const push = (prop: string, value: string | undefined) => {
+    if (!value) return;
+    const v = sanitizeStyleValue(value);
+    if (v) parts.push(`${prop}: ${v} !important`);
+  };
+  for (const entry of schema) {
+    if (entry.kind === 'single') {
+      push(entry.cssProp, style[entry.key]);
+    } else if (entry.kind === 'quad') {
+      const box = style[entry.key];
+      if (!box) continue;
+      for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+    }
+    // 'divider' (clip-path) is not yet supported per-breakpoint — single
+    // property, lives on the base wrapper for now.
+  }
+  return parts.join('; ');
+}
+
+/** Walk an entire block tree and concatenate per-breakpoint CSS. Used by
+ *  the public renderer to emit a single `<style>` block alongside the
+ *  rendered HTML. */
+export function buildPageBreakpointCss(
+  blocks: Array<{ id: string; type: string; breakpointStyles?: Record<string, CommonStyle> } & Record<string, unknown>>,
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (breakpoints.length === 0) return '';
+  const out: string[] = [];
+  const walk = (list: Array<{ id?: string; type?: string; breakpointStyles?: Record<string, CommonStyle> } & Record<string, unknown>>) => {
+    for (const b of list) {
+      if (b.type && b.id) {
+        const css = buildBlockBreakpointCss(b as { id: string; type: string; breakpointStyles?: Record<string, CommonStyle> }, breakpoints);
+        if (css) out.push(css);
+      }
+      // Recurse into containers
+      if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {
+        for (const col of (b as { content: Array<unknown[]> }).content) {
+          walk(col as never);
+        }
+      } else if (b.type === 'div' && Array.isArray((b as { children?: unknown }).children)) {
+        walk((b as { children: never[] }).children);
+      }
+    }
+  };
+  walk(blocks as never);
+  return out.join('\n');
+}
 
 /** Resolve a divider field (the value at `style.divider.<side>`) to a
  *  catalog key, tolerating the legacy `{ style, color, height }` shape. */
@@ -840,11 +949,29 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     </div>
   `;
 
+  // Breakpoint tabs replace the static "Properties" header when the user
+  // has any breakpoints defined. First tab is mobile-first / base; the
+  // active tab marker carries through to inputs so `handleStyleInput`
+  // routes writes to the right slot.
+  const tabs = opts.breakpointTabs ?? [];
+  const activeBp = opts.activeBreakpoint ?? '';
+  const headerHtml = tabs.length > 0
+    ? `
+      <div class="tabs nospress-block-properties__tabs">
+        ${tabs.map(t => `
+          <button type="button"
+                  class="tab${t.name === activeBp ? ' tab--active' : ''}"
+                  data-bp-tab="${escapeHtmlAttr(t.name)}">
+            <span class="tab__label">${escapeHtmlAttr(t.label)}</span>
+          </button>
+        `).join('')}
+      </div>
+    `
+    : '';
+
   return `
     <div class="nospress-block-properties" data-properties-for="${scopeAttr}">
-      <div class="nospress-block-properties__header">
-        <span class="nospress-block-properties__label">${escapeHtmlAttr(opts.header ?? 'Properties')}</span>
-      </div>
+      ${headerHtml}
       <div class="nospress-block-properties__body">
         ${identifiersHtml}
         ${body}

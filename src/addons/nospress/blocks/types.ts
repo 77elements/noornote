@@ -23,26 +23,26 @@ export interface BlockAttrs {
 }
 
 export type Block =
-  | { id: string; type: 'heading'; level: 1 | 2 | 3; text: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'text'; content: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'image'; url: string; alt?: string; caption?: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'gallery'; urls: string[]; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'links'; title?: string; items: { label: string; url: string }[]; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'list'; title?: string; items: string[]; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'embed'; nostrRef: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'bookmark-folder'; folderName: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'columns'; count: 2 | 3; content: Block[][]; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'divider'; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'dm-button'; label: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'quote'; text: string; author?: string; source?: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; attrs?: BlockAttrs }
-  | { id: string; type: 'nav-menu'; menuId: string; style?: CommonStyle; attrs?: BlockAttrs };
+  | { id: string; type: 'heading'; level: 1 | 2 | 3; text: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'text'; content: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'image'; url: string; alt?: string; caption?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'gallery'; urls: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'links'; title?: string; items: { label: string; url: string }[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'list'; title?: string; items: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'embed'; nostrRef: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'bookmark-folder'; folderName: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'columns'; count: 2 | 3; content: Block[][]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'divider'; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'dm-button'; label: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'quote'; text: string; author?: string; source?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'nav-menu'; menuId: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs };
 
 /** Allowed semantic block-level HTML elements for the generic `div` block. */
 export const DIV_TAGS = ['div', 'header', 'footer', 'main', 'section', 'article', 'aside', 'nav', 'fieldset'] as const;
