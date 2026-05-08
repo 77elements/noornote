@@ -18,6 +18,11 @@ import { escapeHtml, escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import type { Block } from '../types';
 
 export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, editable: boolean): string {
+  // `data-horizontal` is read by `mountNospressNavMenus` to apply a
+  // modifier class on the rendered `<nav>` — flips the `<ul>` from the
+  // default vertical stack into a side-by-side row without bullets.
+  const horizontalAttr = block.horizontal ? ' data-horizontal="true"' : '';
+
   if (editable) {
     // The `<select>` options are filled by NospressView's mount step
     // because the renderer doesn't have menu-set context. Until then,
@@ -32,12 +37,12 @@ export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, edita
       <div
         class="nospress-nav-menu-mount"
         data-menu-id="${escapeHtmlAttr(block.menuId)}"
-        data-mode="editable"
+        data-mode="editable"${horizontalAttr}
       ></div>
     `;
     return wrapEditable(block.id, 'nav-menu', inner);
   }
 
   // Read-only: just the mount slot. PublicNospressPage's mount step fills it.
-  return `<div class="nospress-nav-menu-mount" data-menu-id="${escapeHtmlAttr(block.menuId)}"></div>`;
+  return `<div class="nospress-nav-menu-mount" data-menu-id="${escapeHtmlAttr(block.menuId)}"${horizontalAttr}></div>`;
 }

@@ -194,6 +194,10 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   audio:             CONTAINER_PROPS,
   'articles-list':   CONTAINER_PROPS,
   weblog:            CONTAINER_PROPS,
+  // Nav-menu mirrors the div block (minus divider) — text styles for the
+  // links, plus container sizing for the wrapper. Lets the user constrain
+  // the menu width / height and tune typography in one go.
+  'nav-menu':        [...TEXTUAL_PROPS, 'height'],
   // DIV (and its HTML-tag variants header/footer/main/section/article/aside/nav/fieldset)
   // is the container block — gets the textual props (since users do put
   // headings + text inside) plus `height` (hero divs / fixed-band layouts)
@@ -398,6 +402,11 @@ export interface RenderPropertyPanelOptions {
   /** Currently active breakpoint tab name. Must match one of
    *  `breakpointTabs[i].name`. */
   activeBreakpoint?: string;
+  /** Block-type-specific extra controls (e.g. nav-menu's Horizontal
+   *  toggle). Rendered between the Identifiers section and the standard
+   *  property rows. Caller is responsible for the inner HTML; tabs +
+   *  base styling come from `.nn-checkbox` / `.form__row` etc. */
+  extras?: string;
 }
 
 interface DividerStyleDef {
@@ -989,6 +998,7 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
       ${headerHtml}
       <div class="nospress-block-properties__body">
         ${identifiersHtml}
+        ${opts.extras ?? ''}
         ${body}
       </div>
     </div>

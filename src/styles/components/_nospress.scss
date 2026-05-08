@@ -1954,6 +1954,19 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   margin-bottom: calc($gap / 2);
 }
 
+// Nav-menu horizontal layout — opt-in via the Properties-panel "Horizontal"
+// checkbox, which sets `data-horizontal="true"` on the mount slot and the
+// mounter renders the `<nav>` with this modifier. Default (no class) keeps
+// the standard `<ul>` vertical stack with bullets. Grid (no flex), no
+// margin/padding — the user controls spacing via the block's own
+// margin/padding/width properties.
+.nospress-nav-menu--horizontal ul {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  list-style: none;
+}
+
 .nospress-breakpoint-row {
   display: grid;
   // Default: 4 columns when type is min/max (no value2). Button sits in

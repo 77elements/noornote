@@ -57,6 +57,10 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
       return `<li><a href="${escapeHtmlAttr(href)}" rel="noopener noreferrer" target="_blank">${escapeHtml(item.label)}</a></li>`;
     }).filter(s => s.length > 0).join('');
 
-    slot.innerHTML = `<nav><ul>${items}</ul></nav>`;
+    // Slot's `data-horizontal="true"` flips the layout to a side-by-side
+    // row without bullets — toggled from the Properties panel's "Horizontal"
+    // checkbox. Default (no attribute) is the standard vertical stack.
+    const horizontalClass = slot.dataset.horizontal === 'true' ? ' class="nospress-nav-menu--horizontal"' : '';
+    slot.innerHTML = `<nav${horizontalClass}><ul>${items}</ul></nav>`;
   });
 }

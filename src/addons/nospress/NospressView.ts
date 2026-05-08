@@ -751,6 +751,14 @@ export class NospressView extends View {
       const attrScope = target.dataset?.attrScope;
       const attrField = target.dataset?.attrField;
       if (attrScope && attrField) this.handleAttrInput(attrScope, attrField, target.value);
+
+      // Block-type-specific extras rendered inside the Properties panel
+      // (e.g. nav-menu's Horizontal toggle) flow through the same per-
+      // block-field dispatch the editable views use, but are rooted in
+      // the Properties panel which lives outside this.container.
+      const blockId = target.dataset?.blockId;
+      const blockField = target.dataset?.field;
+      if (blockId && blockField) this.handleBlockFieldInput(blockId, blockField, target);
     };
     librarySlot.addEventListener('input', (e) => {
       // Gradient editor inputs run BEFORE propsHandler so the editor draft
@@ -3009,7 +3017,27 @@ export class NospressView extends View {
       palette: this.effectivePalette(),
       breakpointTabs: tabs,
       activeBreakpoint: this.activeBpName,
+      extras: this.renderBlockExtras(block),
     });
+  }
+
+  /**
+   * Block-type-specific extra controls rendered above the standard property
+   * rows. Currently only the nav-menu's "Horizontal" toggle — slots into
+   * the existing `data-block-id` / `data-field` dispatch via the
+   * `handleBlockFieldInput` switch.
+   */
+  private renderBlockExtras(block: Block): string {
+    if (block.type === 'nav-menu') {
+      const checked = !!block.horizontal ? 'checked' : '';
+      return `
+        <label class="nn-checkbox nn-checkbox--label-left">
+          <span>Horizontal</span>
+          <input type="checkbox" data-block-id="${block.id}" data-field="horizontal" ${checked} />
+        </label>
+      `;
+    }
+    return '';
   }
 
   /**
@@ -3756,6 +3784,10 @@ export class NospressView extends View {
         }
       } else if (block.type === 'nav-menu') {
         if (field === 'menu-id') block.menuId = el.value;
+        if (field === 'horizontal' && el instanceof HTMLInputElement) {
+          if (el.checked) block.horizontal = true;
+          else delete block.horizontal;
+        }
       } else if (block.type === 'weblog') {
         if (field === 'weblog-pubkey') {
           const v = el.value.trim();
@@ -3777,11 +3809,11 @@ export class NospressView extends View {
       }
     }, { silent: true });
 
-    // nav-menu's menu-id is read at render time to set `data-menu-id` on
-    // the mount slot. A silent mutate updates the in-memory block but
-    // leaves the slot pointing at the old menu — re-render so the preview
-    // reflects the new pick.
-    if (field === 'menu-id') {
+    // nav-menu's menu-id and horizontal are read at render time — both
+    // affect the rendered slot's data attributes / class. A silent mutate
+    // updates the in-memory block but leaves the slot stale, so re-render
+    // for either field.
+    if (field === 'menu-id' || field === 'horizontal') {
       this.rerenderEditable();
     }
   }
