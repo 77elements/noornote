@@ -1,6 +1,7 @@
 import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 export function renderDmButton(block: Extract<Block, { type: 'dm-button' }>, editable = false): string {
@@ -11,5 +12,9 @@ export function renderDmButton(block: Extract<Block, { type: 'dm-button' }>, edi
   }
 
   const label = sanitizeUserHtml((block.label || '').trim() || 'Send me a message');
-  return `<div class="nospress-block-dm-button"><button type="button" class="btn" data-action="dm-page-owner">${label}</button></div>`;
+  return styleWrap(
+    block,
+    `<button type="button" class="btn" data-action="dm-page-owner">${label}</button>`,
+    { tag: 'div', baseClass: 'nospress-block-dm-button' },
+  );
 }

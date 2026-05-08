@@ -1,5 +1,6 @@
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -34,7 +35,13 @@ export function renderEmbed(block: Extract<Block, { type: 'embed' }>, editable =
 
   if (!block.nostrRef?.trim()) return '';
 
-  return `<div class="nospress-block-embed" data-embed-mount data-block-id="${block.id}" data-nostr-ref="${escapeHtmlAttr(block.nostrRef)}">
-    <div class="nospress-block-embed__loading pulsate">Loading note…</div>
-  </div>`;
+  return styleWrap(
+    block,
+    `<div class="nospress-block-embed__loading pulsate">Loading note…</div>`,
+    {
+      tag: 'div',
+      baseClass: 'nospress-block-embed',
+      extraAttrs: `data-embed-mount data-block-id="${block.id}" data-nostr-ref="${escapeHtmlAttr(block.nostrRef)}"`,
+    },
+  );
 }

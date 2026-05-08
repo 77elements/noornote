@@ -767,10 +767,15 @@ export function dividerThumbSvg(style: DividerStyle | string): string {
  * Div block, whose chosen HTML tag IS the wrapper) call styleWrap with
  * their own outer element so we don't end up nesting `<div><header>…`.
  */
+/** HTML void elements — emitted self-closing so `<hr ...>` doesn't end up
+ *  with an invalid closing tag. The list is intentionally narrow; only
+ *  the elements actually used as block roots are covered. */
+const VOID_ELEMENTS = new Set(['hr', 'br', 'img', 'input']);
+
 export function styleWrap(
   block: { id: string; type: string; style?: CommonStyle; attrs?: { class?: string; id?: string } },
   inner: string,
-  opts: { tag?: string; baseClass?: string } = {},
+  opts: { tag?: string; baseClass?: string; extraAttrs?: string } = {},
 ): string {
   const tag = opts.tag ?? 'div';
   const baseClass = opts.baseClass ?? 'nospress-block-style';
@@ -793,7 +798,15 @@ export function styleWrap(
   const customId = sanitizeCssIdent(block.attrs?.id ?? '', 'single');
   const idAttr = customId ? ` id="${escapeHtmlAttr(customId)}"` : '';
 
-  return `<${tag} class="${baseClass}${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}>${inner}</${tag}>`;
+  // Renderer-supplied data attributes (mount-slot markers like
+  // `data-embed-mount`, lightbox container ids, etc.) get appended to
+  // the opening tag verbatim — caller is responsible for escaping.
+  const extraAttrs = opts.extraAttrs ? ` ${opts.extraAttrs}` : '';
+
+  if (VOID_ELEMENTS.has(tag)) {
+    return `<${tag} class="${baseClass}${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}${extraAttrs} />`;
+  }
+  return `<${tag} class="${baseClass}${classAttr}" data-styled-block-id="${block.id}"${idAttr}${styleAttr}${extraAttrs}>${inner}</${tag}>`;
 }
 
 /**

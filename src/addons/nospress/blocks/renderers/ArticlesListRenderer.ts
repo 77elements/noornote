@@ -1,5 +1,6 @@
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -15,11 +16,10 @@ import type { Block } from '../types';
 export function renderArticlesList(block: Extract<Block, { type: 'articles-list' }>, editable = false): string {
   const pubkey = block.pubkey ?? '';
 
-  const slot = `<div class="nospress-block-articles-list" data-articles-list-mount data-block-id="${block.id}" data-pubkey="${escapeHtmlAttr(pubkey)}">
-    <div class="nospress-block-articles-list__loading pulsate">Loading articles…</div>
-  </div>`;
-
   if (editable) {
+    const slot = `<div class="nospress-block-articles-list" data-articles-list-mount data-block-id="${block.id}" data-pubkey="${escapeHtmlAttr(pubkey)}">
+      <div class="nospress-block-articles-list__loading pulsate">Loading articles…</div>
+    </div>`;
     const editForm = `
       <div class="nospress-block-articles-list__edit">
         <div class="form__row">
@@ -32,5 +32,13 @@ export function renderArticlesList(block: Extract<Block, { type: 'articles-list'
     return wrapEditable(block.id, 'articles-list', editForm);
   }
 
-  return slot;
+  return styleWrap(
+    block,
+    `<div class="nospress-block-articles-list__loading pulsate">Loading articles…</div>`,
+    {
+      tag: 'div',
+      baseClass: 'nospress-block-articles-list',
+      extraAttrs: `data-articles-list-mount data-block-id="${block.id}" data-pubkey="${escapeHtmlAttr(pubkey)}"`,
+    },
+  );
 }

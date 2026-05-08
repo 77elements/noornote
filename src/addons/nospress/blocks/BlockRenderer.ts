@@ -11,7 +11,6 @@
  */
 
 import type { Block } from './types';
-import { styleWrap } from './styles';
 import { renderHeading } from './renderers/HeadingRenderer';
 import { renderText } from './renderers/TextRenderer';
 import { renderList } from './renderers/ListRenderer';
@@ -75,10 +74,10 @@ export class BlockRenderer {
     if (editable) {
       return `<div class="nospress-block-style" data-styled-block-id="${block.id}">${inner}</div>`;
     }
-    // Self-wrapping renderers handle styleWrap internally so the user's
-    // styles land directly on the semantic tag (`<h1>`, `<p>`, `<header>`)
-    // rather than on a wrapper div that would shadow inherited defaults.
-    if (block.type === 'div' || block.type === 'heading' || block.type === 'text') return inner;
-    return styleWrap(block, inner);
+    // Readonly: every renderer self-wraps via styleWrap on its semantic
+    // outermost element (`<h1>`, `<p>`, `<figure>`, `<blockquote>`, …).
+    // No double-wrapping here so user styles land directly on the tag
+    // and aren't shadowed by inherited defaults of the inner element.
+    return inner;
   }
 }

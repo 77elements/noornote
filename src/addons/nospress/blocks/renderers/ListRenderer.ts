@@ -1,6 +1,7 @@
 import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 export function renderList(block: Extract<Block, { type: 'list' }>, editable = false): string {
@@ -31,5 +32,9 @@ export function renderList(block: Extract<Block, { type: 'list' }>, editable = f
   const itemsHtml = block.items
     .map(item => `<li class="nospress-section__item">${sanitizeUserHtml(item)}</li>`)
     .join('');
-  return `<div class="nospress-section nospress-block-list">${titleHtml}<ul class="nospress-section__items">${itemsHtml}</ul></div>`;
+  return styleWrap(
+    block,
+    `${titleHtml}<ul class="nospress-section__items">${itemsHtml}</ul>`,
+    { tag: 'div', baseClass: 'nospress-section nospress-block-list' },
+  );
 }

@@ -1,6 +1,7 @@
 import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { escapeHtml, escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -28,5 +29,9 @@ export function renderQuote(block: Extract<Block, { type: 'quote' }>, editable =
     ? `<footer class="nospress-block-quote__footer">— ${escapeHtml(attribution)}</footer>`
     : '';
 
-  return `<blockquote class="nospress-block-quote"><p class="nospress-block-quote__text-content">${text}</p>${footer}</blockquote>`;
+  return styleWrap(
+    block,
+    `<p class="nospress-block-quote__text-content">${text}</p>${footer}`,
+    { tag: 'blockquote', baseClass: 'nospress-block-quote' },
+  );
 }

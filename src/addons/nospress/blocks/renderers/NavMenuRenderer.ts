@@ -14,6 +14,7 @@
  */
 
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import type { Block } from '../types';
 
@@ -43,6 +44,14 @@ export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, edita
     return wrapEditable(block.id, 'nav-menu', inner);
   }
 
-  // Read-only: just the mount slot. PublicNospressPage's mount step fills it.
-  return `<div class="nospress-nav-menu-mount" data-menu-id="${escapeHtmlAttr(block.menuId)}"${horizontalAttr}></div>`;
+  // Read-only: mount slot — self-wrapped so styles land directly on it.
+  return styleWrap(
+    block,
+    '',
+    {
+      tag: 'div',
+      baseClass: 'nospress-nav-menu-mount',
+      extraAttrs: `data-menu-id="${escapeHtmlAttr(block.menuId)}"${horizontalAttr}`,
+    },
+  );
 }

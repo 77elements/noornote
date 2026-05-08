@@ -2,6 +2,7 @@ import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -47,8 +48,9 @@ export function renderAudio(block: Extract<Block, { type: 'audio' }>, editable =
     ? `<figcaption class="nospress-block-audio__caption">${sanitizeUserHtml(block.caption)}</figcaption>`
     : '';
 
-  return `<figure class="nospress-block-audio">
-    <audio class="note-audio" controls preload="metadata" src="${escapeHtmlAttr(safeUrl)}"></audio>
-    ${captionHtml}
-  </figure>`;
+  return styleWrap(
+    block,
+    `<audio class="note-audio" controls preload="metadata" src="${escapeHtmlAttr(safeUrl)}"></audio>${captionHtml}`,
+    { tag: 'figure', baseClass: 'nospress-block-audio' },
+  );
 }

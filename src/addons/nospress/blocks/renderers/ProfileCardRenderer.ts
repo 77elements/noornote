@@ -1,4 +1,5 @@
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -10,14 +11,21 @@ import type { Block } from '../types';
  * after the page HTML is in the DOM — see profileCardMount.ts.
  */
 export function renderProfileCard(block: Extract<Block, { type: 'profile-card' }>, editable = false): string {
-  const slot = `<div class="nospress-block-profile-card" data-profile-card-mount data-block-id="${block.id}"${block.pubkey ? ` data-pubkey="${block.pubkey}"` : ''}>
-    <div class="nospress-block-profile-card__loading pulsate">Loading profile…</div>
-  </div>`;
-
   if (editable) {
+    const slot = `<div class="nospress-block-profile-card" data-profile-card-mount data-block-id="${block.id}"${block.pubkey ? ` data-pubkey="${block.pubkey}"` : ''}>
+      <div class="nospress-block-profile-card__loading pulsate">Loading profile…</div>
+    </div>`;
     const hint = `<small class="nospress-block-profile-card__hint">Shows the page owner's avatar, name and NIP-05.</small>`;
     return wrapEditable(block.id, 'profile-card', `${slot}${hint}`);
   }
 
-  return slot;
+  return styleWrap(
+    block,
+    `<div class="nospress-block-profile-card__loading pulsate">Loading profile…</div>`,
+    {
+      tag: 'div',
+      baseClass: 'nospress-block-profile-card',
+      extraAttrs: `data-profile-card-mount data-block-id="${block.id}"${block.pubkey ? ` data-pubkey="${block.pubkey}"` : ''}`,
+    },
+  );
 }

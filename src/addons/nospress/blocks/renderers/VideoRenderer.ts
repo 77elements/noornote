@@ -2,6 +2,7 @@ import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -59,8 +60,9 @@ export function renderVideo(block: Extract<Block, { type: 'video' }>, editable =
     : '';
   const posterAttr = safePoster ? ` poster="${escapeHtmlAttr(safePoster)}"` : '';
 
-  return `<figure class="nospress-block-video">
-    <video class="note-video" controls preload="metadata" src="${escapeHtmlAttr(safeUrl)}"${posterAttr}></video>
-    ${captionHtml}
-  </figure>`;
+  return styleWrap(
+    block,
+    `<video class="note-video" controls preload="metadata" src="${escapeHtmlAttr(safeUrl)}"${posterAttr}></video>${captionHtml}`,
+    { tag: 'figure', baseClass: 'nospress-block-video' },
+  );
 }

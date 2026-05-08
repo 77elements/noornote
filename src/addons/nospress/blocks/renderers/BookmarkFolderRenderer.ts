@@ -14,6 +14,7 @@
 
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 export function renderBookmarkFolder(
@@ -35,9 +36,13 @@ export function renderBookmarkFolder(
     return wrapEditable(block.id, 'bookmark-folder', inner);
   }
   if (!block.folderName) return '';
-  return `
-    <div class="nospress-bookmark-folder-mount"
-         data-folder-name="${escapeHtmlAttr(block.folderName)}"
-         data-block-id="${block.id}"></div>
-  `;
+  return styleWrap(
+    block,
+    '',
+    {
+      tag: 'div',
+      baseClass: 'nospress-bookmark-folder-mount',
+      extraAttrs: `data-folder-name="${escapeHtmlAttr(block.folderName)}" data-block-id="${block.id}"`,
+    },
+  );
 }

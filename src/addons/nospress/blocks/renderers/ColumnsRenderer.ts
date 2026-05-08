@@ -16,6 +16,7 @@
 import type { Block } from '../types';
 import { BlockRenderer } from '../BlockRenderer';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 
 export interface ColumnsRenderOptions {
   editable?: boolean;
@@ -43,16 +44,26 @@ export function renderColumns(
     `);
   }
 
-  const countSwitcher = editable
-    ? `<div class="nospress-block-columns__count-slot" data-block-dropdown="columns-count" data-block-id="${block.id}" data-current-value="${block.count}"></div>`
-    : '';
+  if (editable) {
+    const countSwitcher = `<div class="nospress-block-columns__count-slot" data-block-dropdown="columns-count" data-block-id="${block.id}" data-current-value="${block.count}"></div>`;
+    const inner = `
+      ${countSwitcher}
+      <div class="nospress-block-columns nospress-block-columns--${block.count}" data-columns-block-id="${block.id}">
+        ${cols.join('')}
+      </div>
+    `;
+    return wrapEditable(block.id, 'columns', inner);
+  }
 
-  const inner = `
-    ${countSwitcher}
-    <div class="nospress-block-columns nospress-block-columns--${block.count}" data-columns-block-id="${block.id}">
-      ${cols.join('')}
-    </div>
-  `;
-
-  return editable ? wrapEditable(block.id, 'columns', inner) : inner;
+  // Readonly: self-wrap on the columns container so styles land directly
+  // on it instead of on a wrapper div.
+  return styleWrap(
+    block,
+    cols.join(''),
+    {
+      tag: 'div',
+      baseClass: `nospress-block-columns nospress-block-columns--${block.count}`,
+      extraAttrs: `data-columns-block-id="${block.id}"`,
+    },
+  );
 }

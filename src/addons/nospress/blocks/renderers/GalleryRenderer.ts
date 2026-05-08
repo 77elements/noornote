@@ -1,6 +1,7 @@
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { buildLightboxImagesHtml } from '../../../../helpers/lightboxImages';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -43,5 +44,9 @@ export function renderGallery(block: Extract<Block, { type: 'gallery' }>, editab
 
   const grid = gridModifierFor(validUrls.length);
   const { imagesHtml, containerDataAttr } = buildLightboxImagesHtml(validUrls);
-  return `<div class="note-media${grid} nospress-block-gallery" ${containerDataAttr}>${imagesHtml}</div>`;
+  return styleWrap(
+    block,
+    imagesHtml,
+    { tag: 'div', baseClass: `note-media${grid} nospress-block-gallery`, extraAttrs: containerDataAttr },
+  );
 }

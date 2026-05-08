@@ -2,6 +2,7 @@ import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -31,9 +32,8 @@ export function renderButtonCta(block: Extract<Block, { type: 'button-cta' }>, e
   const safeUrl = sanitizeUrl(block.url);
   const btnClass = variant === 'secondary' ? 'btn btn--passive' : 'btn';
 
-  if (!safeUrl) {
-    return `<div class="nospress-block-button-cta"><button type="button" class="${btnClass}" disabled>${label}</button></div>`;
-  }
-
-  return `<div class="nospress-block-button-cta"><a class="${btnClass}" href="${escapeHtmlAttr(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a></div>`;
+  const inner = safeUrl
+    ? `<a class="${btnClass}" href="${escapeHtmlAttr(safeUrl)}" target="_blank" rel="noopener noreferrer">${label}</a>`
+    : `<button type="button" class="${btnClass}" disabled>${label}</button>`;
+  return styleWrap(block, inner, { tag: 'div', baseClass: 'nospress-block-button-cta' });
 }

@@ -1,5 +1,6 @@
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 /**
@@ -24,18 +25,12 @@ export function renderWeblog(block: Extract<Block, { type: 'weblog' }>, editable
   const excludeReplies = block.excludeReplies !== false; // default true
   const excludeReposts = block.excludeReposts === true; // default false
 
-  const slot = `<div class="nospress-block-weblog"
-    data-weblog-mount
-    data-block-id="${block.id}"
-    data-pubkey="${escapeHtmlAttr(pubkey)}"
-    data-hashtags="${escapeHtmlAttr(hashtags)}"
-    data-posts-per-page="${postsPerPage}"
-    data-exclude-replies="${excludeReplies ? '1' : '0'}"
-    data-exclude-reposts="${excludeReposts ? '1' : '0'}">
-    <div class="nospress-block-weblog__loading pulsate">Loading posts…</div>
-  </div>`;
+  const mountAttrs = `data-weblog-mount data-block-id="${block.id}" data-pubkey="${escapeHtmlAttr(pubkey)}" data-hashtags="${escapeHtmlAttr(hashtags)}" data-posts-per-page="${postsPerPage}" data-exclude-replies="${excludeReplies ? '1' : '0'}" data-exclude-reposts="${excludeReposts ? '1' : '0'}"`;
 
   if (editable) {
+    const slot = `<div class="nospress-block-weblog" ${mountAttrs}>
+      <div class="nospress-block-weblog__loading pulsate">Loading posts…</div>
+    </div>`;
     const editForm = `
       <div class="nospress-block-weblog__edit">
         <div class="form__row">
@@ -68,5 +63,13 @@ export function renderWeblog(block: Extract<Block, { type: 'weblog' }>, editable
     return wrapEditable(block.id, 'weblog', editForm);
   }
 
-  return slot;
+  return styleWrap(
+    block,
+    `<div class="nospress-block-weblog__loading pulsate">Loading posts…</div>`,
+    {
+      tag: 'div',
+      baseClass: 'nospress-block-weblog',
+      extraAttrs: mountAttrs,
+    },
+  );
 }

@@ -2,6 +2,7 @@ import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 export function renderLinks(block: Extract<Block, { type: 'links' }>, editable = false): string {
@@ -32,5 +33,9 @@ export function renderLinks(block: Extract<Block, { type: 'links' }>, editable =
     })
     .filter(Boolean)
     .join('');
-  return `<div class="nospress-block-links">${titleHtml}<div class="nospress-block-links__items">${itemsHtml}</div></div>`;
+  return styleWrap(
+    block,
+    `${titleHtml}<div class="nospress-block-links__items">${itemsHtml}</div>`,
+    { tag: 'div', baseClass: 'nospress-block-links' },
+  );
 }

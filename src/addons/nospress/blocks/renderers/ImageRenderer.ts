@@ -3,6 +3,7 @@ import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { buildLightboxImagesHtml } from '../../../../helpers/lightboxImages';
 import { wrapEditable } from './blockEditWrapper';
+import { styleWrap } from '../styles';
 import type { Block } from '../types';
 
 export function renderImage(block: Extract<Block, { type: 'image' }>, editable = false): string {
@@ -45,10 +46,9 @@ export function renderImage(block: Extract<Block, { type: 'image' }>, editable =
     ? `<figcaption class="nospress-block-image__caption">${sanitizeUserHtml(block.caption)}</figcaption>`
     : '';
   const { imagesHtml, containerDataAttr } = buildLightboxImagesHtml([safeUrl], { alts: [block.alt ?? ''] });
-  return `
-    <figure class="nospress-block-image note-media" ${containerDataAttr}>
-      ${imagesHtml}
-      ${captionHtml}
-    </figure>
-  `;
+  return styleWrap(
+    block,
+    `${imagesHtml}${captionHtml}`,
+    { tag: 'figure', baseClass: 'nospress-block-image note-media', extraAttrs: containerDataAttr },
+  );
 }
