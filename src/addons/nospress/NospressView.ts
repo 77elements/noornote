@@ -3605,6 +3605,7 @@ export class NospressView extends View {
         case 'upload-gallery-images':  this.triggerGalleryUpload(blockId); break;
         case 'upload-video':           this.triggerVideoUpload(blockId); break;
         case 'upload-audio':           this.triggerAudioUpload(blockId); break;
+        case 'insert-link':            void this.handleInsertLink(blockId); break;
       }
     });
 
@@ -3874,6 +3875,55 @@ export class NospressView extends View {
     this.mutateDraft((page) => {
       const block = findBlockInPage(page, blockId)?.block;
       if (block?.type === 'links') block.items.splice(itemIndex, 1);
+    });
+  }
+
+  /**
+   * Insert-link action on heading / text blocks. Captures the current
+   * input/textarea selection (works even after focus moves to the
+   * toolbar button — `selectionStart`/`selectionEnd` survive blur),
+   * pops the link modal, then splices the resulting `<a>` markup back
+   * into the block's content at the saved range.
+   */
+  private async handleInsertLink(blockId: string): Promise<void> {
+    // Find the block + its editable input. Heading uses `data-field="text"`
+    // (text input); Text uses `data-field="content"` (textarea). Both
+    // expose `selectionStart`/`selectionEnd` so we read the range first.
+    const block = this.editingPage ? findBlockInPage(this.editingPage, blockId)?.block : null;
+    const fallback = block ?? findBlockInPage(
+      this.listService.getDraftV2(this.currentEditSlug())
+        ?? this.listService.getPublishedV2(this.currentEditSlug())
+        ?? this.listService.getPageV2(this.currentEditSlug()),
+      blockId,
+    )?.block;
+    if (!fallback) return;
+    const fieldName = fallback.type === 'heading' ? 'text'
+      : fallback.type === 'text' ? 'content'
+      : null;
+    if (!fieldName) return;
+
+    const inputEl = this.container.querySelector<HTMLInputElement | HTMLTextAreaElement>(
+      `[data-block-id="${blockId}"][data-field="${fieldName}"]`,
+    );
+    if (!inputEl) return;
+
+    const start = inputEl.selectionStart ?? inputEl.value.length;
+    const end = inputEl.selectionEnd ?? inputEl.value.length;
+    const initialText = inputEl.value.substring(start, end);
+
+    const { openInsertLinkModal, buildLinkHtml } = await import('./editor/insertLinkModal');
+    const values = await openInsertLinkModal(initialText);
+    if (!values) return;
+
+    const linkHtml = buildLinkHtml(values);
+    const before = inputEl.value.substring(0, start);
+    const after = inputEl.value.substring(end);
+    const nextValue = before + linkHtml + after;
+
+    this.mutateDraft((page) => {
+      const b = findBlockInPage(page, blockId)?.block;
+      if (b?.type === 'heading' && fieldName === 'text') b.text = nextValue;
+      else if (b?.type === 'text' && fieldName === 'content') b.content = nextValue;
     });
   }
 

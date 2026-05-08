@@ -1058,13 +1058,6 @@
   }
 }
 
-.nospress-block-columns__col {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: calc($gap / 2);
-}
-
 .nospress-block-columns__placeholder {
   padding: $gap;
   text-align: center;
@@ -1965,6 +1958,11 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   grid-auto-flow: column;
   grid-auto-columns: max-content;
   list-style: none;
+  padding: 0;
+
+  li {
+    margin-bottom: 0;
+  }
 }
 
 .nospress-breakpoint-row {

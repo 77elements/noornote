@@ -66,6 +66,12 @@ export interface CommonStyle {
   fontStyle?: string;
   border?: string;
   borderRadius?: string;
+  /** Text shadow — composed at render time as
+   *  `<h> <v> <blur> <color>` from sub-fields. Each input is independent
+   *  so the user can leave fields empty and the renderer fills with
+   *  sensible defaults (`0` for offsets/blur, `black` for color). The
+   *  property emits only when at least one sub-field is set. */
+  textShadow?: { h?: string; v?: string; blur?: string; color?: string };
   /** CSS `width` — universally available across text-flow + container
    *  blocks so users can constrain elements to custom widths (e.g. a
    *  narrow centered Heading, a 60ch reading column, a 800px hero band). */
@@ -114,7 +120,17 @@ export interface DividerPropertyEntry {
   label: string;
 }
 
-export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry | DividerPropertyEntry;
+/** A "text-shadow" entry: 3 numeric inputs (H / V / Blur) + a Color row
+ *  with the same swatches popover as the regular Color/Background props.
+ *  Composed into a single `text-shadow: <h> <v> <blur> <color>` CSS
+ *  declaration at render time. */
+export interface TextShadowPropertyEntry {
+  kind: 'text-shadow';
+  key: 'textShadow';
+  label: string;
+}
+
+export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry | DividerPropertyEntry | TextShadowPropertyEntry;
 
 const QUAD_SIDES = ['top', 'bottom', 'left', 'right'] as const;
 type QuadSide = typeof QUAD_SIDES[number];
@@ -137,6 +153,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   margin:       { kind: 'quad',   key: 'margin',       label: 'Margin',        cssPrefix: 'margin' },
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
+  textShadow:   { kind: 'text-shadow', key: 'textShadow', label: 'Text shadow' },
 };
 
 /**
@@ -154,7 +171,9 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
  * height on text-flow content tends to clip silently.
  */
 const TEXTUAL_PROPS: PropertyKey[] = [
-  'color', 'background', 'lineHeight', 'fontWeight', 'fontStyle',
+  'color', 'background',
+  'fontSize', 'lineHeight', 'fontWeight', 'fontStyle',
+  'textShadow',
   'width',
   'margin', 'padding', 'border', 'borderRadius',
 ];
@@ -276,11 +295,27 @@ export function buildInlineStyle(schema: PropertyEntry[], style: CommonStyle | u
       const box = style[entry.key];
       if (!box) continue;
       for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+    } else if (entry.kind === 'text-shadow') {
+      const composed = composeTextShadow(style.textShadow);
+      if (composed) push('text-shadow', composed);
     }
     // 'divider' is rendered as separate SVG children of the wrapper,
     // not as an inline style declaration.
   }
   return parts.join('; ');
+}
+
+/** Compose `text-shadow` from its 4 sub-fields. Emits nothing when all
+ *  sub-fields are empty; otherwise fills missing pieces with sensible
+ *  defaults (`0` for offsets/blur, `black` for color). */
+function composeTextShadow(ts: CommonStyle['textShadow']): string {
+  if (!ts) return '';
+  const h = (ts.h ?? '').trim();
+  const v = (ts.v ?? '').trim();
+  const blur = (ts.blur ?? '').trim();
+  const color = (ts.color ?? '').trim();
+  if (!h && !v && !blur && !color) return '';
+  return `${h || '0'} ${v || '0'} ${blur || '0'} ${color || 'black'}`;
 }
 
 /** Read a dotted path: `color`, `margin.top`, or `divider.top`. */
@@ -363,6 +398,15 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
       }
       // Prune empty objects so `hasV2Content` reports the slot as unused.
       if (Object.keys(style.divider).length === 0) delete style.divider;
+      return;
+    }
+    if (head === 'textShadow') {
+      const sub = segments[1] as 'h' | 'v' | 'blur' | 'color';
+      if (sub !== 'h' && sub !== 'v' && sub !== 'blur' && sub !== 'color') return;
+      if (!style.textShadow) style.textShadow = {};
+      if (trimmed) style.textShadow[sub] = trimmed;
+      else delete style.textShadow[sub];
+      if (Object.keys(style.textShadow).length === 0) delete style.textShadow;
       return;
     }
   }
@@ -564,6 +608,9 @@ function buildImportantInlineStyle(schema: PropertyEntry[], style: CommonStyle |
       const box = style[entry.key];
       if (!box) continue;
       for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+    } else if (entry.kind === 'text-shadow') {
+      const composed = composeTextShadow(style.textShadow);
+      if (composed) push('text-shadow', composed);
     }
     // 'divider' (clip-path) is not yet supported per-breakpoint — single
     // property, lives on the base wrapper for now.
@@ -935,6 +982,57 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     `;
   };
 
+  /** Render the Text-shadow group: 3 numeric inputs (H / V / Blur) on
+   *  one row + a Color row matching the regular Color/Background swatches
+   *  popover. The four sub-fields write to `textShadow.h|v|blur|color`
+   *  via the standard `data-style-field` dispatch; `composeTextShadow`
+   *  joins them into a single CSS declaration at render time. */
+  const textShadow = (_e: TextShadowPropertyEntry) => {
+    const colorVal = v('textShadow.color');
+    const triggerBg = colorVal ? resolvePaletteVars(colorVal, palette) : 'transparent';
+    const paletteSwatches = renderPaletteSwatches(palette, 'palette-key');
+    const colorKey = 'textShadow.color';
+    return `
+      <div class="nospress-prop-grouplabel">Text shadow</div>
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">Horizontal length</label>
+        <input type="text" class="input nospress-prop-row__input"
+               data-style-scope="${scopeAttr}" data-style-field="textShadow.h"
+               value="${v('textShadow.h')}" placeholder="e.g. 2px" />
+      </div>
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">Vertical length</label>
+        <input type="text" class="input nospress-prop-row__input"
+               data-style-scope="${scopeAttr}" data-style-field="textShadow.v"
+               value="${v('textShadow.v')}" placeholder="e.g. 2px" />
+      </div>
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">Blur strength</label>
+        <input type="text" class="input nospress-prop-row__input"
+               data-style-scope="${scopeAttr}" data-style-field="textShadow.blur"
+               value="${v('textShadow.blur')}" placeholder="e.g. 4px" />
+      </div>
+      <div class="nospress-prop-row nospress-prop-row--color" data-color-row-key="${escapeHtmlAttr(colorKey)}">
+        <label class="nospress-prop-row__label">Shadow color</label>
+        <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
+               data-style-scope="${scopeAttr}" data-style-field="${colorKey}"
+               value="${colorVal}" placeholder="e.g. #000" />
+        <span class="nospress-prop-color-picker">
+          <button type="button"
+                  class="nospress-prop-color-trigger"
+                  style="background: ${escapeHtmlAttr(triggerBg)}"
+                  aria-label="Pick color"></button>
+        </span>
+      </div>
+      <div class="nospress-prop-color-swatches-inline" hidden data-swatches-for="${escapeHtmlAttr(colorKey)}">
+        ${paletteSwatches}
+        <label class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
+          <input type="color" class="nospress-prop-color-native" />
+        </label>
+      </div>
+    `;
+  };
+
   const divider = (_e: DividerPropertyEntry) => {
     const active = opts.activeDividerSide ?? 'top';
     return `
@@ -953,6 +1051,7 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   const body = schema.map(entry =>
     entry.kind === 'single' ? single(entry)
       : entry.kind === 'quad' ? quad(entry)
+      : entry.kind === 'text-shadow' ? textShadow(entry)
       : divider(entry)
   ).join('');
 

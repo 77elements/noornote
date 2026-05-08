@@ -2,13 +2,18 @@
  * Wraps an editable block's content with the always-visible Move/Delete
  * toolbar. Used by all block renderers when editable=true. Mobile-first,
  * no hover — toolbar is permanently rendered.
+ *
+ * `extraButtons` lets specific block types prepend their own toolbar
+ * actions (e.g. heading/text inject an Insert-Link button before the
+ * generic move/delete cluster).
  */
-export function wrapEditable(blockId: string, type: string, contentHtml: string): string {
+export function wrapEditable(blockId: string, type: string, contentHtml: string, extraButtons: string = ''): string {
   return `
     <div class="nospress-block-edit" data-block-id="${blockId}" data-block-type="${type}">
       <div class="nospress-block-edit__toolbar">
         <span class="nospress-block-edit__type-badge">${type}</span>
         <div class="nospress-block-edit__actions">
+          ${extraButtons}
           <button type="button" class="nospress-block-edit__btn" data-block-id="${blockId}" data-action="cursor-after" title="Move cursor below this block" aria-label="Move cursor below">
             <svg width="14" height="14"><use href="#icon-plus"/></svg>
           </button>
