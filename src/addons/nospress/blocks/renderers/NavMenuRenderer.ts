@@ -19,10 +19,16 @@ import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import type { Block } from '../types';
 
 export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, editable: boolean): string {
-  // `data-horizontal` is read by `mountNospressNavMenus` to apply a
-  // modifier class on the rendered `<nav>` — flips the `<ul>` from the
-  // default vertical stack into a side-by-side row without bullets.
+  // The mount slot exposes the layout knobs as data-attributes. The
+  // mounter reads them and applies modifier classes / generates the
+  // per-block CSS for hamburger visibility.
   const horizontalAttr = block.horizontal ? ' data-horizontal="true"' : '';
+  const alignmentAttr = (block.alignment === 'right' || block.alignment === 'center')
+    ? ` data-alignment="${block.alignment}"`
+    : '';
+  const hamburgerBps = (block.hamburgerBreakpoints ?? []).join(',');
+  const hamburgerAttr = hamburgerBps ? ` data-hamburger-bps="${escapeHtmlAttr(hamburgerBps)}"` : '';
+  const mountAttrs = `data-menu-id="${escapeHtmlAttr(block.menuId)}"${horizontalAttr}${alignmentAttr}${hamburgerAttr}`;
 
   if (editable) {
     // CustomDropdown slot — NospressView.mountBlockDropdowns reads the
@@ -37,8 +43,8 @@ export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, edita
       </div>
       <div
         class="nospress-nav-menu-mount"
-        data-menu-id="${escapeHtmlAttr(block.menuId)}"
-        data-mode="editable"${horizontalAttr}
+        data-mode="editable"
+        ${mountAttrs}
       ></div>
     `;
     return wrapEditable(block.id, 'nav-menu', inner);
@@ -51,7 +57,7 @@ export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, edita
     {
       tag: 'div',
       baseClass: 'nospress-nav-menu-mount',
-      extraAttrs: `data-menu-id="${escapeHtmlAttr(block.menuId)}"${horizontalAttr}`,
+      extraAttrs: mountAttrs,
     },
   );
 }

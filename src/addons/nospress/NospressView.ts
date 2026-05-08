@@ -466,12 +466,14 @@ export class NospressView extends View {
   private mountNavMenuPreviews(): void {
     const menuSet = this.menuService.getMenuSet();
     const pageIndex = this.pageIndexService.getIndex();
+    const breakpoints = this.siteSettingsService.getSettings().breakpoints ?? [];
     mountNospressNavMenus(this.container, {
       menuSet,
       pageIndex,
       ownerHandle: this.npub,
       currentSlug: this.activeSlug,
       editorPreview: true,
+      breakpoints,
     });
   }
 
@@ -3021,11 +3023,41 @@ export class NospressView extends View {
    */
   private renderBlockExtras(block: Block): string {
     if (block.type === 'nav-menu') {
-      const checked = !!block.horizontal ? 'checked' : '';
+      const horizontalChecked = !!block.horizontal ? 'checked' : '';
+      const align = block.alignment ?? 'left';
+      const radioName = `nav-align-${block.id}`;
+      // Hamburger is per-breakpoint: the toggle reflects whether the
+      // currently-active breakpoint tab is in `hamburgerBreakpoints`.
+      // Empty `activeBpName` = Default tab, stored as '' in the array.
+      const hamburgerOn = (block.hamburgerBreakpoints ?? []).includes(this.activeBpName) ? 'checked' : '';
+      const hamburgerLabel = this.activeBpName
+        ? `Display as Hamburger menu (at "${this.activeBpName}")`
+        : 'Display as Hamburger menu';
       return `
         <label class="nn-checkbox nn-checkbox--label-left">
           <span>Horizontal</span>
-          <input type="checkbox" data-block-id="${block.id}" data-field="horizontal" ${checked} />
+          <input type="checkbox" data-block-id="${block.id}" data-field="horizontal" ${horizontalChecked} />
+        </label>
+        <div class="nospress-prop-row">
+          <label class="nospress-prop-row__label">Alignment</label>
+          <div class="nospress-prop-row__radio-pair">
+            <label class="nn-checkbox nn-checkbox--label-left">
+              <span>Left</span>
+              <input type="radio" name="${radioName}" data-block-id="${block.id}" data-field="alignment" value="left" ${align === 'left' ? 'checked' : ''} />
+            </label>
+            <label class="nn-checkbox nn-checkbox--label-left">
+              <span>Center</span>
+              <input type="radio" name="${radioName}" data-block-id="${block.id}" data-field="alignment" value="center" ${align === 'center' ? 'checked' : ''} />
+            </label>
+            <label class="nn-checkbox nn-checkbox--label-left">
+              <span>Right</span>
+              <input type="radio" name="${radioName}" data-block-id="${block.id}" data-field="alignment" value="right" ${align === 'right' ? 'checked' : ''} />
+            </label>
+          </div>
+        </div>
+        <label class="nn-checkbox nn-checkbox--label-left">
+          <span>${hamburgerLabel}</span>
+          <input type="checkbox" data-block-id="${block.id}" data-field="hamburger" data-bp="${escapeHtmlAttr(this.activeBpName)}" ${hamburgerOn} />
         </label>
       `;
     }
@@ -3796,6 +3828,19 @@ export class NospressView extends View {
           if (el.checked) block.horizontal = true;
           else delete block.horizontal;
         }
+        if (field === 'alignment' && el instanceof HTMLInputElement && el.checked) {
+          if (el.value === 'right') block.alignment = 'right';
+          else if (el.value === 'center') block.alignment = 'center';
+          else delete block.alignment;
+        }
+        if (field === 'hamburger' && el instanceof HTMLInputElement) {
+          const bp = el.dataset.bp ?? '';
+          if (!block.hamburgerBreakpoints) block.hamburgerBreakpoints = [];
+          const idx = block.hamburgerBreakpoints.indexOf(bp);
+          if (el.checked && idx < 0) block.hamburgerBreakpoints.push(bp);
+          else if (!el.checked && idx >= 0) block.hamburgerBreakpoints.splice(idx, 1);
+          if (block.hamburgerBreakpoints.length === 0) delete block.hamburgerBreakpoints;
+        }
       } else if (block.type === 'weblog') {
         if (field === 'weblog-pubkey') {
           const v = el.value.trim();
@@ -3817,11 +3862,11 @@ export class NospressView extends View {
       }
     }, { silent: true });
 
-    // nav-menu's menu-id and horizontal are read at render time — both
-    // affect the rendered slot's data attributes / class. A silent mutate
-    // updates the in-memory block but leaves the slot stale, so re-render
-    // for either field.
-    if (field === 'menu-id' || field === 'horizontal') {
+    // nav-menu's menu-id, horizontal, alignment, and hamburger are read
+    // at render time — all affect the rendered slot's data attributes /
+    // emitted style block. A silent mutate updates the in-memory block
+    // but leaves the slot stale, so re-render for any of them.
+    if (field === 'menu-id' || field === 'horizontal' || field === 'alignment' || field === 'hamburger') {
       this.rerenderEditable();
     }
   }

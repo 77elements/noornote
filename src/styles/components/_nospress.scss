@@ -1965,6 +1965,53 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   }
 }
 
+// Alignment — Left (default, no class) / Center / Right. Works in both
+// vertical (text-align) and horizontal (grid justify-content) modes.
+.nospress-nav-menu--align-center {
+  ul { text-align: center; }
+  &.nospress-nav-menu--horizontal ul { justify-content: center; }
+  > .nospress-nav-menu__hamburger { margin-inline: auto; }
+}
+
+.nospress-nav-menu--align-right {
+  ul { text-align: right; }
+  &.nospress-nav-menu--horizontal ul { justify-content: end; }
+  > .nospress-nav-menu__hamburger { margin-left: auto; }
+}
+
+// Hamburger button + collapsible list. The button is hidden by default;
+// the per-block `<style>` injected by the mounter shows it (and hides
+// the list) at the user-picked breakpoints. `is-open` on the list
+// re-opens the menu.
+.nospress-nav-menu__hamburger {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--color-5);
+  cursor: pointer;
+  padding: 0;
+
+  svg {
+    width: 22px;
+    height: 22px;
+    display: block;
+  }
+}
+
+.nospress-nav-menu__list {
+  // Default state — visible. The per-block hamburger CSS hides it via
+  // `:not(.is-open)` when active for the matching breakpoint.
+}
+
+// Equal-width radio columns in one Properties row (Alignment
+// Left/Center/Right). Auto-fits however many labels are present.
+.nospress-prop-row__radio-pair {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: calc($gap / 4);
+}
+
 .nospress-breakpoint-row {
   display: grid;
   // Default: 4 columns when type is min/max (no value2). Button sits in

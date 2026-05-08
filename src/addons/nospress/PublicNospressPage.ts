@@ -157,6 +157,7 @@ export class PublicNospressPage {
         ownerHandle: this.route.type === 'nip05' ? this.route.handle : this.route.npub,
         currentSlug: this.route.slug,
         editorPreview: false,
+        breakpoints: siteSettings?.breakpoints ?? [],
       });
     }
     this.bindSigningActionCtas();
