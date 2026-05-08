@@ -66,6 +66,10 @@ export interface CommonStyle {
   fontStyle?: string;
   border?: string;
   borderRadius?: string;
+  /** CSS `width` — currently exposed only on the `columns` scope so users
+   *  can constrain a 2-/3-column layout to a custom container width
+   *  (e.g. centered narrow columns inside a wide page). */
+  width?: string;
   margin?: BoxValues;
   padding?: BoxValues;
   /** Top / bottom edge dividers — available only on the `div` block scope
@@ -83,7 +87,7 @@ export type PropertyKey = keyof CommonStyle;
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
   kind: 'single';
-  key: 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight' | 'fontStyle' | 'border' | 'borderRadius';
+  key: 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight' | 'fontStyle' | 'border' | 'borderRadius' | 'width';
   label: string;
   cssProp: string;
   placeholder: string;
@@ -123,6 +127,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   fontStyle:    { kind: 'single', key: 'fontStyle',    label: 'Font style',    cssProp: 'font-style',    placeholder: 'normal | italic' },
   border:       { kind: 'single', key: 'border',       label: 'Border',        cssProp: 'border',        placeholder: '1px solid #252343' },
   borderRadius: { kind: 'single', key: 'borderRadius', label: 'Border radius', cssProp: 'border-radius', placeholder: 'e.g. 8px' },
+  width:        { kind: 'single', key: 'width',        label: 'Width',         cssProp: 'width',         placeholder: 'e.g. 100%, 800px, 60ch' },
   margin:       { kind: 'quad',   key: 'margin',       label: 'Margin',        cssPrefix: 'margin' },
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
@@ -167,7 +172,7 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   gallery:           CONTAINER_PROPS,
   embed:             CONTAINER_PROPS,
   'bookmark-folder': CONTAINER_PROPS,
-  columns:           CONTAINER_PROPS,
+  columns:           [...CONTAINER_PROPS, 'width'],
   'profile-card':    CONTAINER_PROPS,
   quote:             TEXTUAL_PROPS,
   'button-cta':      TEXTUAL_PROPS,
@@ -300,9 +305,14 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
   const segments = path.split('.');
   if (segments.length === 1) {
     const head = segments[0] as PropertyKey;
-    if (head === 'color' || head === 'background' || head === 'fontSize' || head === 'lineHeight') {
-      if (trimmed) style[head] = trimmed;
-      else delete style[head];
+    // Single-string properties go straight onto the style record. The
+    // catalog tells us which keys are `kind: 'single'` — anything else
+    // (margin/padding quad, divider object) needs the multi-segment
+    // branches below.
+    const entry = PROPERTY_CATALOG[head];
+    if (entry?.kind === 'single') {
+      if (trimmed) (style as Record<string, string>)[head] = trimmed;
+      else delete (style as Record<string, unknown>)[head];
     }
     return;
   }
