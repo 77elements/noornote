@@ -66,10 +66,15 @@ export interface CommonStyle {
   fontStyle?: string;
   border?: string;
   borderRadius?: string;
-  /** CSS `width` — currently exposed only on the `columns` scope so users
-   *  can constrain a 2-/3-column layout to a custom container width
-   *  (e.g. centered narrow columns inside a wide page). */
+  /** CSS `width` — universally available across text-flow + container
+   *  blocks so users can constrain elements to custom widths (e.g. a
+   *  narrow centered Heading, a 60ch reading column, a 800px hero band). */
   width?: string;
+  /** CSS `height` — exposed only on container/media blocks where a fixed
+   *  height makes sense (hero divs, sized image placeholders, video boxes).
+   *  Skipped on text-flow blocks because forcing height on prose-style
+   *  blocks tends to clip content unexpectedly. */
+  height?: string;
   margin?: BoxValues;
   padding?: BoxValues;
   /** Top / bottom edge dividers — available only on the `div` block scope
@@ -87,7 +92,7 @@ export type PropertyKey = keyof CommonStyle;
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
   kind: 'single';
-  key: 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight' | 'fontStyle' | 'border' | 'borderRadius' | 'width';
+  key: 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight' | 'fontStyle' | 'border' | 'borderRadius' | 'width' | 'height';
   label: string;
   cssProp: string;
   placeholder: string;
@@ -128,6 +133,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   border:       { kind: 'single', key: 'border',       label: 'Border',        cssProp: 'border',        placeholder: '1px solid #252343' },
   borderRadius: { kind: 'single', key: 'borderRadius', label: 'Border radius', cssProp: 'border-radius', placeholder: 'e.g. 8px' },
   width:        { kind: 'single', key: 'width',        label: 'Width',         cssProp: 'width',         placeholder: 'e.g. 100%, 800px, 60ch' },
+  height:       { kind: 'single', key: 'height',       label: 'Height',        cssProp: 'height',        placeholder: 'e.g. 480px, 60vh, auto' },
   margin:       { kind: 'quad',   key: 'margin',       label: 'Margin',        cssPrefix: 'margin' },
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
@@ -143,18 +149,26 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
  * Common text-block properties: applies to anything where the user types
  * prose (heading, text, list, links, dm-button). Shared for consistency
  * so a future Property addition propagates everywhere automatically.
+ * `width` is included so a Heading or paragraph can be constrained to a
+ * narrow reading column; `height` is intentionally skipped — forcing a
+ * height on text-flow content tends to clip silently.
  */
 const TEXTUAL_PROPS: PropertyKey[] = [
   'color', 'background', 'lineHeight', 'fontWeight', 'fontStyle',
+  'width',
   'margin', 'padding', 'border', 'borderRadius',
 ];
 
 /**
  * Container-only properties: blocks whose content is a media element or a
- * mounted sub-component, where text styling does not apply.
+ * mounted sub-component, where text styling does not apply. Both `width`
+ * and `height` apply because containers commonly need explicit sizing
+ * (hero bands, square cards, fixed-aspect media boxes).
  */
 const CONTAINER_PROPS: PropertyKey[] = [
-  'background', 'margin', 'padding', 'border', 'borderRadius',
+  'background',
+  'width', 'height',
+  'margin', 'padding', 'border', 'borderRadius',
 ];
 
 export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
@@ -172,7 +186,7 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   gallery:           CONTAINER_PROPS,
   embed:             CONTAINER_PROPS,
   'bookmark-folder': CONTAINER_PROPS,
-  columns:           [...CONTAINER_PROPS, 'width'],
+  columns:           CONTAINER_PROPS,
   'profile-card':    CONTAINER_PROPS,
   quote:             TEXTUAL_PROPS,
   'button-cta':      TEXTUAL_PROPS,
@@ -181,9 +195,10 @@ export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
   'articles-list':   CONTAINER_PROPS,
   weblog:            CONTAINER_PROPS,
   // DIV (and its HTML-tag variants header/footer/main/section/article/aside/nav/fieldset)
-  // is the container block — only it gets the divider property in addition
-  // to the textual props.
-  div:               [...TEXTUAL_PROPS, 'divider'],
+  // is the container block — gets the textual props (since users do put
+  // headings + text inside) plus `height` (hero divs / fixed-band layouts)
+  // plus the divider edge-shapes that no other block scope supports.
+  div:               [...TEXTUAL_PROPS, 'height', 'divider'],
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */
