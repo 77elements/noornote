@@ -2003,6 +2003,26 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   // `:not(.is-open)` when active for the matching breakpoint.
 }
 
+// Slide-in drawer backdrop. Sibling of <nav> so the fixed-position list
+// can sit above it without DOM re-parenting. Default-hidden; the
+// per-block hamburger CSS sets `display: block` when the drawer is
+// active, the click handler toggles `is-visible` to fade it in.
+.nospress-nav-menu__overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: $alpha-medium;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 199;
+
+  &.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 // Equal-width radio columns in one Properties row (Alignment
 // Left/Center/Right). Auto-fits however many labels are present.
 .nospress-prop-row__radio-pair {

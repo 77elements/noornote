@@ -70,7 +70,7 @@ import { triggerSingleMediaUpload, handleSingleMediaUpload } from './editor/uplo
 import { mountNospressProfileCards } from './profileCardMount';
 import { mountNospressArticlesLists } from './articlesListMount';
 import { mountNospressWeblogs } from './weblogMount';
-import { mountNospressNavMenus } from './navMenuMount';
+import { mountNospressNavMenus, unmountNospressNavMenus } from './navMenuMount';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
 
@@ -292,6 +292,7 @@ export class NospressView extends View {
     this.blockLibrary?.destroy();
     this.blockLibrary = null;
     removeUserCss();
+    unmountNospressNavMenus();
     this.container.innerHTML = '';
   }
 

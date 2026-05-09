@@ -10,7 +10,7 @@ import { ProfileListsComponent } from '../../components/profile/ProfileListsComp
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { sanitizeStyleValue, buildPageBreakpointCss } from './blocks/styles';
 import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG, pageHeaderSlug, pageFooterSlug } from './blocks/pageIndex';
-import { mountNospressNavMenus } from './navMenuMount';
+import { mountNospressNavMenus, unmountNospressNavMenus } from './navMenuMount';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { showLoggedOutReactionModal } from '../../helpers/LoggedOutModals';
@@ -174,6 +174,7 @@ export class PublicNospressPage {
     this.articlesCarousels = [];
     removeUserCss();
     this.resetSiteSettings();
+    unmountNospressNavMenus();
     this.container.innerHTML = '';
   }
 

@@ -45,7 +45,23 @@ export interface NavMenuMountCtx {
   breakpoints?: NospressBreakpoint[];
 }
 
+/** Marker attribute we set on portaled drawer + overlay elements so a
+ *  re-mount can find and clean up the previous render's leftovers. */
+const PORTAL_ATTR = 'data-nospress-nav-portal';
+
+/** Remove every drawer + overlay this module has portaled to <body>.
+ *  Call on view destroy so navigating away doesn't leak fixed-position
+ *  panels into the next view. */
+export function unmountNospressNavMenus(): void {
+  document.querySelectorAll(`[${PORTAL_ATTR}]`).forEach(el => el.remove());
+}
+
 export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountCtx): void {
+  // Wipe any leftovers from a previous render of the same view — the
+  // portaled drawer/overlay elements live on <body>, so a fresh
+  // container.innerHTML didn't take them out.
+  unmountNospressNavMenus();
+
   const slots = container.querySelectorAll<HTMLElement>('.nospress-nav-menu-mount');
   slots.forEach(slot => {
     const menuId = slot.dataset.menuId ?? PRIMARY_MENU_ID;
@@ -87,7 +103,9 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
 
     // Hamburger: button always rendered, default-hidden via SCSS. The
     // per-block <style> below toggles its visibility based on the
-    // user-picked breakpoints.
+    // user-picked breakpoints. The overlay sits as a sibling to <nav> so
+    // a fixed-position drawer + click-away backdrop works without DOM
+    // re-parenting.
     slot.innerHTML = `
       <nav${navClassAttr}>
         <button type="button" class="nospress-nav-menu__hamburger" aria-label="Toggle menu" aria-expanded="false">
@@ -95,28 +113,61 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
         </button>
         <ul class="nospress-nav-menu__list">${items}</ul>
       </nav>
+      <div class="nospress-nav-menu__overlay" aria-hidden="true"></div>
     `;
 
-    // Click handler: toggle `is-open` on the list. Body-level click-away
-    // closes the menu so it doesn't linger when the user reads on.
+    // Click handler: toggle `is-open` on the list + `is-visible` on the
+    // overlay. Overlay click and any anchor click inside the drawer close
+    // the menu so it doesn't linger.
     const navEl = slot.querySelector<HTMLElement>('nav');
     const button = slot.querySelector<HTMLButtonElement>('.nospress-nav-menu__hamburger');
     const list = slot.querySelector<HTMLElement>('.nospress-nav-menu__list');
-    if (navEl && button && list) {
+    const overlay = slot.querySelector<HTMLElement>('.nospress-nav-menu__overlay');
+    if (navEl && button && list && overlay) {
+      const close = () => {
+        list.classList.remove('is-open');
+        overlay.classList.remove('is-visible');
+        button.setAttribute('aria-expanded', 'false');
+      };
       button.addEventListener('click', (e) => {
         e.stopPropagation();
         const open = list.classList.toggle('is-open');
+        overlay.classList.toggle('is-visible', open);
         button.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      overlay.addEventListener('click', close);
+      list.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('a')) close();
       });
     }
 
     // Inject per-block hamburger CSS into a `<style>` right next to the
     // slot. Each block gets its own scope via the slot's
-    // `data-styled-block-id` attribute (set by styleWrap upstream).
+    // `data-styled-block-id` attribute (set by styleWrap upstream). The
+    // alignment dictates whether the menu becomes a left/right slide-in
+    // drawer or stays a center dropdown (current behaviour).
     const blockId = slot.dataset.styledBlockId;
     if (blockId && hamburgerBps.length > 0) {
+      const drawerSide: 'left' | 'right' | null =
+        alignment === 'right' ? 'right' :
+        alignment === 'center' ? null : 'left';
+
+      // Drawer mode: portal the list + overlay to <body> so an ancestor
+      // `clip-path` (e.g. a divider on the wrapping div block) doesn't
+      // visually clip the fixed-position drawer. Tag both elements with
+      // their own `data-styled-block-id` + portal marker so the per-block
+      // CSS selector can match them directly outside the wrapper tree.
+      if (drawerSide && list && overlay) {
+        list.setAttribute('data-styled-block-id', blockId);
+        list.setAttribute(PORTAL_ATTR, blockId);
+        overlay.setAttribute('data-styled-block-id', blockId);
+        overlay.setAttribute(PORTAL_ATTR, blockId);
+        document.body.appendChild(list);
+        document.body.appendChild(overlay);
+      }
+
       const styleEl = document.createElement('style');
-      styleEl.textContent = buildHamburgerCss(blockId, hamburgerBps, ctx.breakpoints ?? []);
+      styleEl.textContent = buildHamburgerCss(blockId, hamburgerBps, ctx.breakpoints ?? [], drawerSide);
       slot.appendChild(styleEl);
     }
   });
@@ -124,13 +175,22 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
 
 /** Build the @media-wrapped CSS rules that flip the menu into hamburger
  *  mode at the user-picked breakpoints. Empty-string entry means Default
- *  (no media query — always hamburger). Unknown BP names are skipped. */
-function buildHamburgerCss(blockId: string, bpNames: string[], breakpoints: NospressBreakpoint[]): string {
+ *  (no media query — always hamburger). Unknown BP names are skipped.
+ *
+ *  `drawerSide` picks the hamburger flavour:
+ *    - `'left'` / `'right'`: slide-in drawer from that side, with backdrop
+ *    - `null` (alignment=center): collapsed dropdown, items stay in flow
+ */
+function buildHamburgerCss(
+  blockId: string,
+  bpNames: string[],
+  breakpoints: NospressBreakpoint[],
+  drawerSide: 'left' | 'right' | null,
+): string {
   const sel = `[data-styled-block-id="${blockId}"]`;
-  const innerRules = `
-    ${sel} .nospress-nav-menu__hamburger { display: block; }
-    ${sel} .nospress-nav-menu__list:not(.is-open) { display: none; }
-  `;
+  const innerRules = drawerSide
+    ? buildDrawerRules(sel, drawerSide)
+    : buildCenterDropdownRules(sel);
   const out: string[] = [];
   for (const name of bpNames) {
     if (name === '') {
@@ -143,6 +203,55 @@ function buildHamburgerCss(blockId: string, bpNames: string[], breakpoints: Nosp
     if (mq) out.push(`@media ${mq} { ${innerRules} }`);
   }
   return out.join('\n');
+}
+
+/** Slide-in drawer: list becomes a fixed off-screen panel that slides on
+ *  `is-open`. Resets list-item layout to a vertical stack regardless of
+ *  the block's `--horizontal` / `--align-*` modifiers (they only make
+ *  sense for the inline desktop rendering).
+ *
+ *  Drawer + overlay are portaled out of the wrapper tree to escape any
+ *  ancestor `clip-path`, so they're addressed directly via their own
+ *  `data-styled-block-id` attribute (set on each portaled element by the
+ *  mounter), not as descendants of the slot's wrapper. */
+function buildDrawerRules(sel: string, side: 'left' | 'right'): string {
+  const offscreen = side === 'left' ? 'translateX(-100%)' : 'translateX(100%)';
+  const sideRule = side === 'left' ? 'left: 0;' : 'right: 0;';
+  return `
+    ${sel} .nospress-nav-menu__hamburger { display: block; }
+    .nospress-nav-menu__overlay${sel} { display: block; }
+    .nospress-nav-menu__list${sel} {
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      ${sideRule}
+      width: 250px;
+      max-width: 80vw;
+      z-index: 200;
+      display: block;
+      grid-auto-flow: initial;
+      grid-auto-columns: initial;
+      list-style: none;
+      margin: 0;
+      padding: 1rem;
+      text-align: left;
+      background: var(--color-1);
+      overflow-y: auto;
+      transform: ${offscreen};
+      transition: transform 0.3s ease;
+    }
+    .nospress-nav-menu__list${sel}.is-open { transform: translateX(0); }
+    .nospress-nav-menu__list${sel} li { display: block; text-align: left; }
+  `;
+}
+
+/** Center alignment: keep the original behaviour — list collapses in
+ *  place, expands on `is-open` without leaving the document flow. */
+function buildCenterDropdownRules(sel: string): string {
+  return `
+    ${sel} .nospress-nav-menu__hamburger { display: block; }
+    ${sel} .nospress-nav-menu__list:not(.is-open) { display: none; }
+  `;
 }
 
 function mediaQueryFor(bp: NospressBreakpoint): string | null {
