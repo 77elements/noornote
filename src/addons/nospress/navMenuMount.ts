@@ -74,13 +74,10 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
 
     const horizontal = slot.dataset.horizontal === 'true';
     const alignment = slot.dataset.alignment; // 'right' | 'center' | undefined
-    const hamburgerBps = (slot.dataset.hamburgerBps ?? '').split(',').filter(s => s.length > 0 || s === '');
-    // Empty string in the array means Default (always-on). Filter() above
-    // drops empty strings, so re-add it explicitly when the raw includes it.
+    // Missing attribute = no hamburger configured. Empty-string entry in the
+    // attribute means Default (always-on, no media-query wrapping).
     const rawHamburger = slot.dataset.hamburgerBps;
-    if (rawHamburger !== undefined && rawHamburger.split(',').some(s => s === '')) {
-      if (!hamburgerBps.includes('')) hamburgerBps.push('');
-    }
+    const hamburgerBps = rawHamburger === undefined ? [] : rawHamburger.split(',');
 
     const navClasses: string[] = [];
     if (horizontal) navClasses.push('nospress-nav-menu--horizontal');

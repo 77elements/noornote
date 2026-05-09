@@ -26,8 +26,10 @@ export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, edita
   const alignmentAttr = (block.alignment === 'right' || block.alignment === 'center')
     ? ` data-alignment="${block.alignment}"`
     : '';
-  const hamburgerBps = (block.hamburgerBreakpoints ?? []).join(',');
-  const hamburgerAttr = hamburgerBps ? ` data-hamburger-bps="${escapeHtmlAttr(hamburgerBps)}"` : '';
+  const bps = block.hamburgerBreakpoints ?? [];
+  const hamburgerAttr = bps.length > 0
+    ? ` data-hamburger-bps="${escapeHtmlAttr(bps.join(','))}"`
+    : '';
   const mountAttrs = `data-menu-id="${escapeHtmlAttr(block.menuId)}"${horizontalAttr}${alignmentAttr}${hamburgerAttr}`;
 
   if (editable) {
