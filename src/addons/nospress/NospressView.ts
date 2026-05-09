@@ -295,6 +295,8 @@ export class NospressView extends View {
     this.breakpointDropdowns = [];
     this.navAddPageDropdowns.forEach(d => d.destroy());
     this.navAddPageDropdowns = [];
+    this.styleDropdowns.forEach(d => d.destroy());
+    this.styleDropdowns = [];
     this.destroyCursorRow();
     this.destroyProfileCards();
     this.destroyArticlesCarousels();
@@ -793,6 +795,19 @@ export class NospressView extends View {
     // edits. Lives on the librarySlot so it survives properties-tab
     // re-renders.
     librarySlot.addEventListener('click', (e) => this.handlePropertiesBpTabClick(e));
+
+    // Accordion toggle for sub-scope panels (mobile-menu sections).
+    // Mirrors the global-tab `nn-ui-toggle` handler — same data-attrs,
+    // different host (right-pane Properties tab vs Global tab).
+    librarySlot.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      const toggleHeader = target.closest('[data-toggle-header]');
+      if (!toggleHeader) return;
+      // Don't fire on Global-tab headers — those are wired separately
+      // through globalContent and would double-toggle if both fire.
+      if (toggleHeader.closest('[data-tab-content="global"]')) return;
+      toggleHeader.closest('[data-toggle-section]')?.classList.toggle('open');
+    });
 
     pagesContent.addEventListener('click', (e) => this.handlePagesTabClick(e));
     pagesContent.addEventListener('keydown', (e) => this.handleInlineRenameKeydown(e));
@@ -2764,11 +2779,48 @@ export class NospressView extends View {
    */
   private updatePropertiesTab(): void {
     if (this.propertiesTabContent) {
+      // Tear down any CustomDropdowns from the previous render before
+      // overwriting the DOM, otherwise they'd leak listeners on the
+      // detached nodes.
+      this.styleDropdowns.forEach(d => d.destroy());
+      this.styleDropdowns = [];
       this.propertiesTabContent.innerHTML = this.renderPropertiesContent();
+      this.mountStyleDropdowns(this.propertiesTabContent);
     }
     if (this.selectedBlockId && this.rightPaneEl) {
       switchTabWithContent(this.rightPaneEl, 'properties');
     }
+  }
+
+  /** Per-render-mounted CustomDropdowns inside the Properties tab.
+   *  Tracked so they can be torn down before the next render replaces
+   *  the DOM they own. */
+  private styleDropdowns: CustomDropdown[] = [];
+
+  /** Walk every `[data-style-dropdown]` slot in `host` and mount a
+   *  CustomDropdown with the catalog-supplied options. The slot's
+   *  `data-style-scope` / `data-style-field` are mirrored onto the
+   *  CustomDropdown's hidden input on change so the standard style-
+   *  field dispatch (`handleStyleInput`) persists the value via
+   *  `writeStyleField`. */
+  private mountStyleDropdowns(host: HTMLElement): void {
+    const slots = host.querySelectorAll<HTMLElement>('[data-style-dropdown]');
+    slots.forEach(slot => {
+      const scope = slot.dataset.styleScope ?? '';
+      const field = slot.dataset.styleField ?? '';
+      const current = slot.dataset.currentValue ?? '';
+      let options: Array<{ value: string; label: string }> = [];
+      try { options = JSON.parse(slot.dataset.options ?? '[]'); }
+      catch { options = []; }
+      if (!scope || !field || options.length === 0) return;
+      const dropdown = new CustomDropdown({
+        options,
+        selectedValue: current,
+        onChange: (value) => this.handleStyleInput(scope, field, value),
+      });
+      slot.appendChild(dropdown.getElement());
+      this.styleDropdowns.push(dropdown);
+    });
   }
 
   /** Collapse / restore the right-hand Block Library pane. Pure CSS toggle —

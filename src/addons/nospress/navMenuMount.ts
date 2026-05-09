@@ -27,6 +27,14 @@ import { HOME_SLUG } from './blocks/pageIndex';
 import { PRIMARY_MENU_ID, type NospressMenuSet } from './blocks/menu';
 import type { NospressPageIndex } from './blocks/pageIndex';
 import type { NospressBreakpoint } from './blocks/siteSettings';
+import {
+  MOBILE_MENU_SECTIONS,
+  MOBILE_MENU_SECTION_KEYS,
+  PROPERTY_CATALOG,
+  buildImportantInlineStyle,
+  type MobileMenuSection,
+  type CommonStyle,
+} from './blocks/styles';
 
 export interface NavMenuMountCtx {
   menuSet: NospressMenuSet;
@@ -179,58 +187,63 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
   });
 }
 
-/** Mobile sub-scope keys → CSS targeting inside the per-block scope.
- *  Each entry produces one declaration per active BP, applied with
- *  `!important` so it outranks the drawer base rules emitted alongside.
- *  Selector takes the wrapper attribute selector (e.g.
- *  `[data-styled-block-id="X"]`) and returns the full target selector. */
-const MOBILE_STYLE_TARGETS: Record<
-  string,
-  { selector: (sel: string) => string; cssProp: string }
-> = {
-  mobileBackground:  { selector: (sel) => `.nospress-nav-menu__list${sel}`,           cssProp: 'background' },
-  mobileColor:       { selector: (sel) => `.nospress-nav-menu__list${sel} li a`,      cssProp: 'color' },
-  mobileActiveColor: { selector: (sel) => `.nospress-nav-menu__list${sel} li.active a`, cssProp: 'color' },
-  mobileFontSize:    { selector: (sel) => `.nospress-nav-menu__list${sel} li a`,      cssProp: 'font-size' },
-  hamburgerColor:    { selector: (sel) => `${sel} .nospress-nav-menu__hamburger`,     cssProp: 'color' },
-  overlayBackground: { selector: (sel) => `.nospress-nav-menu__overlay${sel}`,        cssProp: 'background' },
+/** Per-section CSS-selector composition. Takes the wrapper attribute
+ *  selector (e.g. `[data-styled-block-id="X"]`) and returns the full
+ *  target selector for that section's style declarations. The selectors
+ *  match the drawer-DOM structure produced by this mounter. */
+const MOBILE_SECTION_SELECTORS: Record<MobileMenuSection, (sel: string) => string> = {
+  ul:        (sel) => `.nospress-nav-menu__list${sel}`,
+  li:        (sel) => `.nospress-nav-menu__list${sel} li`,
+  a:         (sel) => `.nospress-nav-menu__list${sel} li a`,
+  aActive:   (sel) => `.nospress-nav-menu__list${sel} li.active a`,
+  hamburger: (sel) => `${sel} .nospress-nav-menu__hamburger`,
+  overlay:   (sel) => `.nospress-nav-menu__overlay${sel}`,
 };
 
-/** Strip characters that could break out of `style="…"` mirror — same
- *  ruleset as `sanitizeStyleValue` in styles.ts but tolerant of the
- *  characters we actually need (colons for var(), commas for rgba). */
-function sanitizeMobileValue(raw: string): string {
-  const stripped = raw.replace(/[;<>"'\\]/g, '').trim().slice(0, 1000);
-  if (/url\s*\(\s*['"]?\s*(javascript|data|vbscript)\s*:/i.test(stripped)) return '';
-  return stripped;
+/** Pre-resolved schema per section — `PropertyEntry[]` flat list
+ *  matching the section's catalog groups. Built once at module load so
+ *  `buildImportantInlineStyle` can be called per render without
+ *  re-resolving the section's group composition every time. */
+const MOBILE_SECTION_SCHEMAS: Record<MobileMenuSection, ReturnType<typeof resolveSchemaForSection>> =
+  Object.fromEntries(
+    MOBILE_MENU_SECTIONS.map(sec => [sec.key, resolveSchemaForSection(sec)] as const),
+  ) as Record<MobileMenuSection, ReturnType<typeof resolveSchemaForSection>>;
+
+function resolveSchemaForSection(sec: typeof MOBILE_MENU_SECTIONS[number]) {
+  return sec.groups.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k]));
 }
 
-/** Compose the override declarations from a mobile-style slice. */
-function buildMobileOverrides(sel: string, style: Record<string, string>): string {
+/** Compose the override declarations for one section's slice of the
+ *  nested mobileMenu data. Reuses `buildImportantInlineStyle` from
+ *  styles.ts so the standard per-property rendering rules (quad
+ *  margin/padding, text-shadow composition, etc.) apply uniformly with
+ *  the rest of the per-breakpoint override pipeline. */
+function buildMobileOverrides(sel: string, mobile: Record<string, unknown>): string {
   const parts: string[] = [];
-  for (const [key, raw] of Object.entries(style)) {
-    const target = MOBILE_STYLE_TARGETS[key];
-    if (!target) continue;
-    const v = sanitizeMobileValue(raw);
-    if (!v) continue;
-    parts.push(`${target.selector(sel)} { ${target.cssProp}: ${v} !important; }`);
+  for (const sectionKey of MOBILE_MENU_SECTION_KEYS) {
+    const sectionStyle = mobile[sectionKey] as CommonStyle | undefined;
+    if (!sectionStyle || typeof sectionStyle !== 'object') continue;
+    const schema = MOBILE_SECTION_SCHEMAS[sectionKey];
+    const decls = buildImportantInlineStyle(schema, sectionStyle);
+    if (!decls) continue;
+    parts.push(`${MOBILE_SECTION_SELECTORS[sectionKey](sel)} { ${decls} }`);
   }
   return parts.join('\n');
 }
 
-function parseStyleAttr(raw: string | undefined): Record<string, string> {
+function parseStyleAttr(raw: string | undefined): Record<string, unknown> {
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, string> : {};
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, unknown> : {};
   } catch { return {}; }
 }
 
-function parseBpStylesAttr(raw: string | undefined): Record<string, Record<string, string>> {
+function parseBpStylesAttr(raw: string | undefined): Record<string, Record<string, unknown>> {
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
-    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, Record<string, string>> : {};
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, Record<string, unknown>> : {};
   } catch { return {}; }
 }
 
@@ -253,8 +266,8 @@ function buildHamburgerCss(
   bpNames: string[],
   breakpoints: NospressBreakpoint[],
   drawerSide: 'left' | 'right' | null,
-  mobileStyle: Record<string, string> = {},
-  mobileBpStyles: Record<string, Record<string, string>> = {},
+  mobileStyle: Record<string, unknown> = {},
+  mobileBpStyles: Record<string, Record<string, unknown>> = {},
 ): string {
   const sel = `[data-styled-block-id="${blockId}"]`;
   const drawerRules = drawerSide

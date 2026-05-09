@@ -64,8 +64,20 @@ export interface CommonStyle {
   lineHeight?: string;
   fontWeight?: string;
   fontStyle?: string;
-  border?: string;
+  /** Per-side border widths (CSS shorthand emitted as
+   *  `border-width: <top> <right> <bottom> <left>`). */
+  borderWidth?: BoxValues;
+  /** Single border style (solid / dashed / dotted / double) — applies to
+   *  all sides. CSS-style-specific 3D effects (groove/ridge/inset/outset)
+   *  intentionally omitted; `none` is represented by absence. */
+  borderStyle?: string;
+  /** Per-side border colours — same quad shape as widths. */
+  borderColor?: BoxValues;
   borderRadius?: string;
+  /** Legacy `border` shorthand string (e.g. `'1px solid #ede2da'`). Kept
+   *  on the type so reads of older saved data don't error; auto-migrated
+   *  to `borderWidth/Style/Color` on the next write. */
+  border?: string;
   /** Text shadow — composed at render time as
    *  `<h> <v> <blur> <color>` from sub-fields. Each input is independent
    *  so the user can leave fields empty and the renderer fills with
@@ -91,40 +103,78 @@ export interface CommonStyle {
    *  Both can be combined. Doubles/quadruples the effective shape variety
    *  without growing the catalog. */
   divider?: { top?: DividerStyle; bottom?: DividerStyle; flipX?: boolean; flipY?: boolean };
-  /** Nav-menu mobile drawer styling. Lives on the same per-breakpoint
-   *  slot as the rest of the wrapper styles, but only the nav-menu block
-   *  surfaces these (via the `nav-menu-mobile` matrix entry — opened
-   *  through the hamburger trigger button on the block itself). */
-  mobileBackground?: string;
-  mobileColor?: string;
-  mobileActiveColor?: string;
-  mobileFontSize?: string;
-  hamburgerColor?: string;
-  overlayBackground?: string;
+  /** Nav-menu mobile drawer sub-scope styling. Each section maps to a
+   *  selector on the rendered drawer DOM:
+   *    - `ul`        → `.nospress-nav-menu__list[data-styled-block-id=X]`
+   *    - `li`        → `.nospress-nav-menu__list[..=X] li`
+   *    - `a`         → `.nospress-nav-menu__list[..=X] li a`
+   *    - `aActive`   → `.nospress-nav-menu__list[..=X] li.active a`
+   *    - `hamburger` → `[..=X] .nospress-nav-menu__hamburger`
+   *    - `overlay`   → `.nospress-nav-menu__overlay[..=X]`
+   *
+   *  The sub-scope panel is opened by the hamburger trigger on the block
+   *  and renders one accordion section per selector, each containing the
+   *  standard property groups (Spacing/Sizing/Typography/Background/Border).
+   *
+   *  Each section's value is itself a `CommonStyle` so all the standard
+   *  property machinery (writeStyleField/buildInlineStyle/etc.) works
+   *  recursively — the only twist is that read/writeStyleField walk a
+   *  3-or-4 segment dotted path (`mobileMenu.<sec>.<prop>[.subKey]`). */
+  mobileMenu?: Partial<Record<MobileMenuSection, CommonStyle>>;
 }
 
-export type PropertyKey = keyof CommonStyle;
+/** Selectors covered by the mobile-menu sub-scope. Order is the
+ *  display order of the accordion sections in the property panel. */
+export const MOBILE_MENU_SECTION_KEYS = ['ul', 'li', 'a', 'aActive', 'hamburger', 'overlay'] as const;
+export type MobileMenuSection = typeof MOBILE_MENU_SECTION_KEYS[number];
+
+/** All catalog-addressable property keys (everything on `CommonStyle`
+ *  except `mobileMenu`, which is a sub-scope container with its own
+ *  recursive structure handled by the sub-scope render path; and
+ *  `border`, the legacy shorthand kept on the type for read-side
+ *  migration only — never surfaced as an editable entry). */
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
   kind: 'single';
   key:
     | 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight'
-    | 'fontStyle' | 'border' | 'borderRadius' | 'width' | 'height'
-    // Nav-menu mobile sub-scope keys.
-    | 'mobileBackground' | 'mobileColor' | 'mobileActiveColor'
-    | 'mobileFontSize' | 'hamburgerColor' | 'overlayBackground';
+    | 'fontStyle' | 'borderRadius' | 'width' | 'height';
   label: string;
   cssProp: string;
   placeholder: string;
 }
 
-/** A "quad" entry maps to four CSS declarations (e.g. `margin-top: 0px; …`). */
+/** A "quad" entry maps to four CSS declarations (e.g. `margin-top: 0px; …`)
+ *  OR to a single shorthand declaration (`border-width: T R B L`) — the
+ *  caller decides via `cssShorthand`. Defaults to per-side declarations
+ *  when omitted, preserving the original margin/padding behaviour. */
 export interface QuadPropertyEntry {
   kind: 'quad';
-  key: 'margin' | 'padding';
+  key: 'margin' | 'padding' | 'borderWidth' | 'borderColor';
   label: string;
-  cssPrefix: string;
+  /** Used when `cssShorthand` is unset — emits `<cssPrefix>-<side>: <v>`
+   *  per non-empty side. */
+  cssPrefix?: string;
+  /** Used when set — emits a single shorthand declaration in CSS order
+   *  `<top> <right> <bottom> <left>`. Empty sides fall back to `0` so
+   *  the shorthand always has 4 tokens. */
+  cssShorthand?: string;
+  /** Per-side input placeholder. Defaults to '0px' when omitted. */
+  placeholder?: string;
+}
+
+/** A "dropdown" entry — single CSS value, picked from a fixed list of
+ *  options via the project-wide `CustomDropdown` molecule. The renderer
+ *  emits a slot the dropdown gets mounted into; NospressView wires the
+ *  CustomDropdown instance after each render. */
+export interface DropdownPropertyEntry {
+  kind: 'dropdown';
+  key: 'borderStyle';
+  label: string;
+  cssProp: string;
+  options: Array<{ value: string; label: string }>;
 }
 
 /** A "divider" entry: top + bottom edge decorations rendered as absolute
@@ -145,7 +195,7 @@ export interface TextShadowPropertyEntry {
   label: string;
 }
 
-export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry | DividerPropertyEntry | TextShadowPropertyEntry;
+export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry | DividerPropertyEntry | TextShadowPropertyEntry | DropdownPropertyEntry;
 
 const QUAD_SIDES = ['top', 'bottom', 'left', 'right'] as const;
 type QuadSide = typeof QUAD_SIDES[number];
@@ -161,7 +211,20 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   lineHeight:   { kind: 'single', key: 'lineHeight',   label: 'Line height',   cssProp: 'line-height',   placeholder: 'e.g. 1.5' },
   fontWeight:   { kind: 'single', key: 'fontWeight',   label: 'Font weight',   cssProp: 'font-weight',   placeholder: '400 | 600 | bold' },
   fontStyle:    { kind: 'single', key: 'fontStyle',    label: 'Font style',    cssProp: 'font-style',    placeholder: 'normal | italic' },
-  border:       { kind: 'single', key: 'border',       label: 'Border',        cssProp: 'border',        placeholder: '1px solid #252343' },
+  // Border split into 3 properties: width (quad), style (dropdown), color (quad).
+  // All emit shorthand declarations so the rendered CSS stays compact.
+  borderWidth:  { kind: 'quad',   key: 'borderWidth',  label: 'Border width',  cssShorthand: 'border-width', placeholder: 'e.g. 1px' },
+  borderStyle:  {
+    kind: 'dropdown', key: 'borderStyle', label: 'Border style', cssProp: 'border-style',
+    options: [
+      { value: '',       label: '(none)' },
+      { value: 'solid',  label: 'Solid' },
+      { value: 'dashed', label: 'Dashed' },
+      { value: 'dotted', label: 'Dotted' },
+      { value: 'double', label: 'Double' },
+    ],
+  },
+  borderColor:  { kind: 'quad',   key: 'borderColor',  label: 'Border color',  cssShorthand: 'border-color', placeholder: 'e.g. var(--color-3)' },
   borderRadius: { kind: 'single', key: 'borderRadius', label: 'Border radius', cssProp: 'border-radius', placeholder: 'e.g. 8px' },
   width:        { kind: 'single', key: 'width',        label: 'Width',         cssProp: 'width',         placeholder: 'e.g. 100%, 800px, 60ch' },
   height:       { kind: 'single', key: 'height',       label: 'Height',        cssProp: 'height',        placeholder: 'e.g. 480px, 60vh, auto' },
@@ -169,14 +232,6 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
   textShadow:   { kind: 'text-shadow', key: 'textShadow', label: 'Text shadow' },
-  // Nav-menu mobile drawer — surfaced only via `STYLE_MATRIX['nav-menu-mobile']`,
-  // which is opened by the hamburger trigger button on the block.
-  mobileBackground:  { kind: 'single', key: 'mobileBackground',  label: 'Drawer background',  cssProp: 'background', placeholder: 'e.g. #0f0d23' },
-  mobileColor:       { kind: 'single', key: 'mobileColor',       label: 'Link color',         cssProp: 'color',      placeholder: 'e.g. #ede2da' },
-  mobileActiveColor: { kind: 'single', key: 'mobileActiveColor', label: 'Active link color',  cssProp: 'color',      placeholder: 'e.g. #dc85ad' },
-  mobileFontSize:    { kind: 'single', key: 'mobileFontSize',    label: 'Link font size',     cssProp: 'font-size',  placeholder: 'e.g. 1.25rem' },
-  hamburgerColor:    { kind: 'single', key: 'hamburgerColor',    label: 'Hamburger color',    cssProp: 'color',      placeholder: 'e.g. #ede2da' },
-  overlayBackground: { kind: 'single', key: 'overlayBackground', label: 'Backdrop',           cssProp: 'background', placeholder: 'rgba(0,0,0,0.5)' },
 };
 
 /**
@@ -205,7 +260,7 @@ const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',   
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
 const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: ['color', 'fontSize', 'lineHeight', 'fontWeight', 'fontStyle', 'textShadow'] };
 const GROUP_BACKGROUND: PropertyGroup = { key: 'background', label: 'Background', props: ['background'] };
-const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',     props: ['border', 'borderRadius'] };
+const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',     props: ['borderWidth', 'borderStyle', 'borderColor', 'borderRadius'] };
 const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['divider'] };
 
 /** Composition shorthand for prose-flow blocks (heading/text/list/links/
@@ -258,25 +313,51 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // Nav-menu wrapper: like the textual blocks plus full sizing — the
   // menu container is positioned/sized like a media block.
   'nav-menu':        [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
-  // Nav-menu mobile drawer sub-scope — opened by the hamburger trigger
-  // button on the block. Single-section list of mobile-* keys today;
-  // will split into per-selector accordion sections (ul/li/a/...) in
-  // a follow-up step.
-  'nav-menu-mobile': [
-    {
-      key: 'mobile',
-      label: 'Mobile drawer',
-      props: ['mobileBackground', 'overlayBackground',
-              'mobileColor', 'mobileActiveColor', 'mobileFontSize',
-              'hamburgerColor'],
-    },
-  ],
+  // Nav-menu mobile drawer sub-scope is rendered through a separate
+  // section-aware path (`renderMobileMenuSubScope`), not via the flat
+  // matrix here — the panel is per-selector accordion sections, each
+  // containing the standard groups for that selector.
   // DIV (and its HTML-tag variants header/footer/main/section/article/
   // aside/nav/fieldset) is the most permissive container — full
   // typography (users do put headings + text inside), full sizing, plus
   // the divider edge-shapes that no other block scope supports.
   div:               [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS],
 };
+
+// ──────────────────────────────────────────────────────────────────────────
+// Mobile-menu sub-scope sections
+// ──────────────────────────────────────────────────────────────────────────
+
+/** One section per drawer-DOM selector, each composed of the same
+ *  property-group primitives that block scopes use. The mobile-menu
+ *  property panel renders one accordion entry per section. */
+export interface MobileMenuSectionDef {
+  key: MobileMenuSection;
+  label: string;
+  groups: PropertyGroup[];
+}
+
+export const MOBILE_MENU_SECTIONS: MobileMenuSectionDef[] = [
+  // Drawer panel — container styling. Full sizing (drawer width is
+  // user-tuneable), spacing, background, border. No typography (children
+  // inherit the regular page font).
+  { key: 'ul',        label: 'Drawer (ul)',           groups: [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER] },
+  // Item rows — list-item-level styling. Full set: spacing, sizing
+  // (height for fixed-height rows), typography (per-item overrides),
+  // background, border (separators).
+  { key: 'li',        label: 'Items (li)',            groups: [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  // Links — text styling primary. Spacing for hit-area padding,
+  // typography + background + border. No sizing (anchors are inline).
+  { key: 'a',         label: 'Links (a)',             groups: [GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  // Active link — same prop set as `a`, just targets `<li class="active">`.
+  { key: 'aActive',   label: 'Active link (a.active)', groups: [GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  // Hamburger button — color + sizing + spacing + box. No fontSize/etc
+  // since it's an icon, but `color` (from typography) drives the SVG
+  // currentColor stroke.
+  { key: 'hamburger', label: 'Hamburger button',      groups: [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  // Backdrop — just a background colour / image.
+  { key: 'overlay',   label: 'Backdrop overlay',      groups: [GROUP_BACKGROUND] },
+];
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */
 function matrixKey(scope: string): string {
@@ -358,8 +439,9 @@ export function sanitizeCssIdent(raw: string, mode: 'single' | 'multi' = 'single
 }
 
 /** Build the `style="…"` payload from a CommonStyle, restricted to schema. */
-export function buildInlineStyle(schema: PropertyEntry[], style: CommonStyle | undefined): string {
-  if (!style) return '';
+export function buildInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle | undefined): string {
+  if (!styleIn) return '';
+  const style = migrateLegacyBorder(styleIn);
   const parts: string[] = [];
   const push = (prop: string, value: string | undefined) => {
     if (!value) return;
@@ -372,7 +454,14 @@ export function buildInlineStyle(schema: PropertyEntry[], style: CommonStyle | u
     } else if (entry.kind === 'quad') {
       const box = style[entry.key];
       if (!box) continue;
-      for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+      if (entry.cssShorthand) {
+        const shorthand = composeQuadShorthand(box);
+        if (shorthand) parts.push(`${entry.cssShorthand}: ${shorthand}`);
+      } else if (entry.cssPrefix) {
+        for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+      }
+    } else if (entry.kind === 'dropdown') {
+      push(entry.cssProp, style[entry.key]);
     } else if (entry.kind === 'text-shadow') {
       const composed = composeTextShadow(style.textShadow);
       if (composed) push('text-shadow', composed);
@@ -381,6 +470,59 @@ export function buildInlineStyle(schema: PropertyEntry[], style: CommonStyle | u
     // not as an inline style declaration.
   }
   return parts.join('; ');
+}
+
+/** Compose a CSS shorthand `<top> <right> <bottom> <left>` from a
+ *  BoxValues. Empty sides collapse to `0` so the shorthand always
+ *  carries 4 tokens; returns empty string when ALL sides are empty so
+ *  callers can skip the declaration entirely. */
+function composeQuadShorthand(box: BoxValues): string {
+  const t = sanitizeStyleValue(box.top ?? '');
+  const r = sanitizeStyleValue(box.right ?? '');
+  const b = sanitizeStyleValue(box.bottom ?? '');
+  const l = sanitizeStyleValue(box.left ?? '');
+  if (!t && !r && !b && !l) return '';
+  return `${t || '0'} ${r || '0'} ${b || '0'} ${l || '0'}`;
+}
+
+/** Parse a legacy CSS `border` shorthand into width/style/color. Used
+ *  to migrate old data where `border?: string` was the single field on
+ *  CommonStyle. Tolerant: any token can appear in any order; unknown
+ *  tokens get swept into the colour bucket so multi-token colour
+ *  values like `rgb(...)` survive (joined back with spaces). */
+const BORDER_STYLE_TOKENS = new Set([
+  'none', 'hidden', 'solid', 'dashed', 'dotted', 'double',
+  'groove', 'ridge', 'inset', 'outset',
+]);
+function parseBorderShorthand(input: string): { width?: string; style?: string; color?: string } {
+  const tokens = input.trim().split(/\s+/).filter(Boolean);
+  const out: { width?: string; style?: string; color?: string } = {};
+  const colourTokens: string[] = [];
+  for (const t of tokens) {
+    if (BORDER_STYLE_TOKENS.has(t)) out.style = t;
+    else if (/^[\d.]+(px|em|rem|%|vh|vw|pt|cm|mm|in|ch|ex)?$/i.test(t)) out.width = t;
+    else colourTokens.push(t);
+  }
+  if (colourTokens.length) out.color = colourTokens.join(' ');
+  return out;
+}
+
+/** Hydrate the new `borderWidth/borderStyle/borderColor` fields from the
+ *  legacy `border` shorthand when the new ones are missing. Returns a
+ *  shallow-merged COPY — never mutates the input. Build / read paths
+ *  call this so old-data-only blocks keep rendering until the user
+ *  touches a border input (which clears `style.border` on next write). */
+function migrateLegacyBorder(style: CommonStyle): CommonStyle {
+  if (!style.border) return style;
+  if (style.borderWidth || style.borderStyle || style.borderColor) return style;
+  const p = parseBorderShorthand(style.border);
+  const fillBox = (v: string): BoxValues => ({ top: v, right: v, bottom: v, left: v });
+  return {
+    ...style,
+    ...(p.width ? { borderWidth: fillBox(p.width) } : {}),
+    ...(p.style ? { borderStyle: p.style } : {}),
+    ...(p.color ? { borderColor: fillBox(p.color) } : {}),
+  };
 }
 
 /** Compose `text-shadow` from its 4 sub-fields. Emits nothing when all
@@ -397,8 +539,22 @@ function composeTextShadow(ts: CommonStyle['textShadow']): string {
 }
 
 /** Read a dotted path: `color`, `margin.top`, or `divider.top`. */
-export function readStyleField(style: CommonStyle | undefined, path: string): string | undefined {
-  if (!style) return undefined;
+export function readStyleField(styleIn: CommonStyle | undefined, path: string): string | undefined {
+  if (!styleIn) return undefined;
+  // Mobile-menu sub-scope: `mobileMenu.<section>.<rest>` → recurse into
+  // the per-selector sub-style. The rest can be 1- or 2-segment (e.g.
+  // 'background' or 'margin.top'), so we re-enter readStyleField with
+  // the remainder.
+  if (path.startsWith('mobileMenu.')) {
+    const [, section, ...rest] = path.split('.');
+    const sub = styleIn.mobileMenu?.[section as MobileMenuSection];
+    return readStyleField(sub, rest.join('.'));
+  }
+  // Hydrate the new border fields from the legacy shorthand if the user
+  // hasn't touched them yet. Returned values pre-fill the property panel
+  // inputs so old data is visible + editable; the next write clears the
+  // legacy `border` field via `writeStyleField`.
+  const style = migrateLegacyBorder(styleIn);
   const segments = path.split('.');
   if (segments.length === 1) {
     const v = style[segments[0] as PropertyKey];
@@ -434,28 +590,48 @@ export function readStyleField(style: CommonStyle | undefined, path: string): st
  */
 export function writeStyleField(style: CommonStyle, path: string, rawValue: string): void {
   const trimmed = rawValue.trim();
+  // Mobile-menu sub-scope: `mobileMenu.<section>.<rest>` → ensure the
+  // section sub-style exists, recurse into it. Prune empty sections +
+  // the parent `mobileMenu` so `hasV2Content` stays accurate.
+  if (path.startsWith('mobileMenu.')) {
+    const [, section, ...rest] = path.split('.');
+    const sec = section as MobileMenuSection;
+    if (!style.mobileMenu) style.mobileMenu = {};
+    if (!style.mobileMenu[sec]) style.mobileMenu[sec] = {};
+    writeStyleField(style.mobileMenu[sec]!, rest.join('.'), rawValue);
+    if (Object.keys(style.mobileMenu[sec]!).length === 0) delete style.mobileMenu[sec];
+    if (Object.keys(style.mobileMenu).length === 0) delete style.mobileMenu;
+    return;
+  }
   const segments = path.split('.');
   if (segments.length === 1) {
     const head = segments[0] as PropertyKey;
-    // Single-string properties go straight onto the style record. The
-    // catalog tells us which keys are `kind: 'single'` — anything else
-    // (margin/padding quad, divider object) needs the multi-segment
-    // branches below.
+    // Single-string properties go straight onto the style record.
+    // Dropdown entries also write to a single string slot (the catalog
+    // entry's `key` matches the CommonStyle field).
     const entry = PROPERTY_CATALOG[head];
-    if (entry?.kind === 'single') {
+    if (entry?.kind === 'single' || entry?.kind === 'dropdown') {
       if (trimmed) (style as Record<string, string>)[head] = trimmed;
       else delete (style as Record<string, unknown>)[head];
+      // Touching any of the new border fields clears the legacy
+      // shorthand so the next save persists clean data.
+      if (head === 'borderStyle') delete style.border;
     }
     return;
   }
   if (segments.length === 2) {
     const head = segments[0];
-    if (head === 'margin' || head === 'padding') {
+    if (head === 'margin' || head === 'padding'
+        || head === 'borderWidth' || head === 'borderColor') {
       const side = segments[1] as QuadSide;
       if (side !== 'top' && side !== 'bottom' && side !== 'left' && side !== 'right') return;
       if (!style[head]) style[head] = {};
       if (trimmed) style[head]![side] = trimmed;
       else delete style[head]![side];
+      // Prune empty quad slots so `hasV2Content` stays accurate.
+      if (Object.keys(style[head]!).length === 0) delete style[head];
+      // Touching any of the new border quads clears the legacy shorthand.
+      if (head === 'borderWidth' || head === 'borderColor') delete style.border;
       return;
     }
     if (head === 'divider') {
@@ -676,8 +852,9 @@ function buildMediaQuery(bp: { type: 'min' | 'max' | 'between'; value: string; v
 /** Same payload as `buildInlineStyle` but appends `!important` to every
  *  declaration so per-breakpoint overrides outrank the wrapper's inline
  *  base styles when their media query matches. */
-function buildImportantInlineStyle(schema: PropertyEntry[], style: CommonStyle | undefined): string {
-  if (!style) return '';
+export function buildImportantInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle | undefined): string {
+  if (!styleIn) return '';
+  const style = migrateLegacyBorder(styleIn);
   const parts: string[] = [];
   const push = (prop: string, value: string | undefined) => {
     if (!value) return;
@@ -690,7 +867,14 @@ function buildImportantInlineStyle(schema: PropertyEntry[], style: CommonStyle |
     } else if (entry.kind === 'quad') {
       const box = style[entry.key];
       if (!box) continue;
-      for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+      if (entry.cssShorthand) {
+        const shorthand = composeQuadShorthand(box);
+        if (shorthand) parts.push(`${entry.cssShorthand}: ${shorthand} !important`);
+      } else if (entry.cssPrefix) {
+        for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+      }
+    } else if (entry.kind === 'dropdown') {
+      push(entry.cssProp, style[entry.key]);
     } else if (entry.kind === 'text-shadow') {
       const composed = composeTextShadow(style.textShadow);
       if (composed) push('text-shadow', composed);
@@ -1008,18 +1192,38 @@ export function renderColorPickerRow(opts: {
 }
 
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
-  const groups = groupedSchemaFor(opts.scope);
+  // Mobile-menu sub-scope is rendered through a dedicated path that
+  // splits the panel into per-selector accordion sections (ul/li/a/...).
+  // It still goes through the same panel chrome (header / identifiers
+  // are skipped by the sub-scope caller), so the branch happens here.
+  if (opts.scope.startsWith('nav-menu-mobile')) {
+    return renderMobileMenuSubScopePanel(opts);
+  }
+  return renderPanelInternal(opts, groupedSchemaFor(opts.scope), '');
+}
+
+/** Render just the per-group body markup (no panel chrome). Pure
+ *  function over (opts, groups, fieldPrefix) — used by both the
+ *  regular panel and the mobile-menu sub-scope's accordion sections.
+ *  The prefix lets sub-scope sections write to nested paths
+ *  (`mobileMenu.<sec>.<prop>`) without each entry-render function
+ *  having to know about sub-scope semantics. */
+function renderEntriesForGroups(
+  opts: RenderPropertyPanelOptions,
+  groups: ResolvedPropertyGroup[],
+  fieldPrefix: string,
+): string {
   const scopeAttr = escapeHtmlAttr(opts.scope);
-  const v = (path: string): string => escapeHtmlAttr(readStyleField(opts.style, path) ?? '');
+  const v = (subPath: string): string => escapeHtmlAttr(readStyleField(opts.style, fieldPrefix + subPath) ?? '');
   const palette = opts.palette ?? {};
 
   const single = (e: SinglePropertyEntry) => {
-    if (e.key === 'color' || e.key === 'background') return colorRow(e);
+    if (e.cssProp === 'color' || e.cssProp === 'background') return colorRow(e);
     return `
       <div class="nospress-prop-row">
         <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
         <input type="text" class="input nospress-prop-row__input"
-               data-style-scope="${scopeAttr}" data-style-field="${e.key}"
+               data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}${e.key}"
                value="${v(e.key)}" placeholder="${escapeHtmlAttr(e.placeholder)}" />
       </div>
     `;
@@ -1030,7 +1234,7 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
    *  doesn't (gradient is a fill concept, not a foreground concept). */
   const colorRow = (e: SinglePropertyEntry) => renderColorPickerRow({
     scope: opts.scope,
-    field: e.key,
+    field: fieldPrefix + e.key,
     label: e.label,
     value: v(e.key),
     placeholder: e.placeholder,
@@ -1038,19 +1242,36 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     includeGradient: e.cssProp === 'background',
   });
 
-  const quad = (e: QuadPropertyEntry) => `
+  const quad = (e: QuadPropertyEntry) => {
+    const ph = escapeHtmlAttr(e.placeholder ?? '0px');
+    return `
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
+        <div class="nospress-prop-quad">
+          ${QUAD_SIDES.map(side => `
+            <div class="nospress-prop-quad__cell">
+              <input type="text" class="input nospress-prop-quad__input"
+                     data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}${e.key}.${side}"
+                     value="${v(`${e.key}.${side}`)}" placeholder="${ph}" />
+              <span class="nospress-prop-quad__caption">${side.charAt(0).toUpperCase()}${side.slice(1)}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  };
+
+  /** Dropdown row — emits a slot div that NospressView's
+   *  `mountStyleDropdowns` fills with a `CustomDropdown` instance. */
+  const dropdown = (e: DropdownPropertyEntry) => `
     <div class="nospress-prop-row">
       <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
-      <div class="nospress-prop-quad">
-        ${QUAD_SIDES.map(side => `
-          <div class="nospress-prop-quad__cell">
-            <input type="text" class="input nospress-prop-quad__input"
-                   data-style-scope="${scopeAttr}" data-style-field="${e.key}.${side}"
-                   value="${v(`${e.key}.${side}`)}" placeholder="0px" />
-            <span class="nospress-prop-quad__caption">${side.charAt(0).toUpperCase()}${side.slice(1)}</span>
-          </div>
-        `).join('')}
-      </div>
+      <div class="nospress-prop-row__input"
+           data-style-dropdown
+           data-style-scope="${scopeAttr}"
+           data-style-field="${fieldPrefix}${e.key}"
+           data-current-value="${escapeHtmlAttr(v(e.key))}"
+           data-options="${escapeHtmlAttr(JSON.stringify(e.options))}"></div>
     </div>
   `;
 
@@ -1066,9 +1287,12 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
    *  Top and Bottom — toggling once flips both. */
   const dividerSide = (side: 'top' | 'bottom') => {
     const styleVal = v(`divider.${side}`) || 'none';
-    const styleField = `divider.${side}`;
-    const flipXChecked = !!opts.style?.divider?.flipX;
-    const flipYChecked = !!opts.style?.divider?.flipY;
+    const styleField = `${fieldPrefix}divider.${side}`;
+    // Use the prefix-aware reader so per-sub-scope divider state (currently
+    // unused — no mobile-menu section includes the divider entry) would
+    // resolve correctly if it ever gets surfaced.
+    const flipXChecked = (v('divider.flipX') === '1');
+    const flipYChecked = (v('divider.flipY') === '1');
 
     const styleOptionsHtml = DIVIDER_STYLE_OPTIONS.map(opt => `
       <button type="button"
@@ -1101,14 +1325,14 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
         <span>Flip horizontally</span>
         <input type="checkbox"
                data-style-scope="${scopeAttr}"
-               data-style-field="divider.flipX"
+               data-style-field="${fieldPrefix}divider.flipX"
                ${flipXChecked ? 'checked' : ''} />
       </label>
       <label class="nn-checkbox nn-checkbox--label-left">
         <span>Flip vertically</span>
         <input type="checkbox"
                data-style-scope="${scopeAttr}"
-               data-style-field="divider.flipY"
+               data-style-field="${fieldPrefix}divider.flipY"
                ${flipYChecked ? 'checked' : ''} />
       </label>
     `;
@@ -1127,24 +1351,24 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     <div class="nospress-prop-row">
       <label class="nospress-prop-row__label">Text shadow H</label>
       <input type="text" class="input nospress-prop-row__input"
-             data-style-scope="${scopeAttr}" data-style-field="textShadow.h"
+             data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.h"
              value="${v('textShadow.h')}" placeholder="e.g. 2px" />
     </div>
     <div class="nospress-prop-row">
       <label class="nospress-prop-row__label">Text shadow V</label>
       <input type="text" class="input nospress-prop-row__input"
-             data-style-scope="${scopeAttr}" data-style-field="textShadow.v"
+             data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.v"
              value="${v('textShadow.v')}" placeholder="e.g. 2px" />
     </div>
     <div class="nospress-prop-row">
       <label class="nospress-prop-row__label">Text shadow blur</label>
       <input type="text" class="input nospress-prop-row__input"
-             data-style-scope="${scopeAttr}" data-style-field="textShadow.blur"
+             data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.blur"
              value="${v('textShadow.blur')}" placeholder="e.g. 4px" />
     </div>
     ${renderColorPickerRow({
       scope: opts.scope,
-      field: 'textShadow.color',
+      field: `${fieldPrefix}textShadow.color`,
       label: 'Text shadow color',
       value: v('textShadow.color'),
       placeholder: 'e.g. #000',
@@ -1169,6 +1393,7 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   const renderEntry = (entry: PropertyEntry): string =>
     entry.kind === 'single' ? single(entry)
       : entry.kind === 'quad' ? quad(entry)
+      : entry.kind === 'dropdown' ? dropdown(entry)
       : entry.kind === 'text-shadow' ? textShadow(entry)
       : divider(entry);
 
@@ -1178,12 +1403,24 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   // standard `margin-bottom: $gap` (see _typography.scss). Section
   // wrapper keeps a `data-group-key` for accordion-state hooks
   // downstream (mobile-menu sub-scope).
-  const body = groups.map(g => `
+  return groups.map(g => `
     <section class="nospress-prop-group" data-group-key="${escapeHtmlAttr(g.key)}">
       <h3 class="h4">${escapeHtmlAttr(g.label)}</h3>
       ${g.entries.map(renderEntry).join('')}
     </section>
   `).join('');
+}
+
+/** Wrap a body in the standard panel chrome: header (tabs OR caller-
+ *  provided header), identifiers, extras, body. Both the regular and
+ *  the mobile-menu sub-scope paths terminate here. */
+function renderPanelInternal(
+  opts: RenderPropertyPanelOptions,
+  groups: ResolvedPropertyGroup[],
+  fieldPrefix: string,
+): string {
+  const scopeAttr = escapeHtmlAttr(opts.scope);
+  const body = renderEntriesForGroups(opts, groups, fieldPrefix);
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`).
@@ -1232,3 +1469,56 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     </div>
   `;
 }
+
+/** Mobile-menu sub-scope panel — one accordion section per drawer
+ *  selector, each containing the standard property groups for that
+ *  selector (defined in `MOBILE_MENU_SECTIONS`). Inputs write to the
+ *  nested `mobileMenu.<sec>.<prop>` slot via the `fieldPrefix` mechanism
+ *  in `renderPanelInternal`.
+ *
+ *  Reuses `nn-ui-toggle` for the accordion (same molecule the Global
+ *  tab uses), with `data-toggle-section` / `data-toggle-header` so the
+ *  existing click handler in NospressView toggles the `.open` class. */
+function renderMobileMenuSubScopePanel(opts: RenderPropertyPanelOptions): string {
+  const scopeAttr = escapeHtmlAttr(opts.scope);
+  const sectionsHtml = MOBILE_MENU_SECTIONS.map((sec, idx) => {
+    // First section (Drawer / ul) starts open; the rest collapsed.
+    const open = idx === 0 ? ' open' : '';
+    // Resolve this section's groups against the catalog so the body
+    // renderer gets ready-to-emit `PropertyEntry` instances.
+    const resolvedGroups: ResolvedPropertyGroup[] = sec.groups.map(g => ({
+      key: g.key,
+      label: g.label,
+      entries: g.props.map(k => PROPERTY_CATALOG[k]),
+    }));
+    // Emit just the body markup (groups + their entries) for this
+    // section, bypassing the panel chrome — that's owned by the outer
+    // wrapper below.
+    const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `mobileMenu.${sec.key}.`);
+    return `
+      <section class="nn-ui-toggle nospress-prop-mobile-section${open}" data-toggle-section data-mobile-section="${sec.key}">
+        <div class="nn-ui-toggle__header" data-toggle-header>
+          <div class="nn-ui-toggle__info">
+            <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(sec.label)}</h2>
+          </div>
+          <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+          </button>
+        </div>
+        <div class="nn-ui-toggle__content">
+          ${sectionBody}
+        </div>
+      </section>
+    `;
+  }).join('');
+
+  return `
+    <div class="nospress-block-properties" data-properties-for="${scopeAttr}">
+      ${opts.header ?? ''}
+      <div class="nospress-block-properties__body">
+        ${sectionsHtml}
+      </div>
+    </div>
+  `;
+}
+

@@ -19,30 +19,29 @@ import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import type { Block } from '../types';
 import type { CommonStyle } from '../styles';
 
-/** Mobile-menu sub-scope keys persisted on `block.style` /
- *  `block.breakpointStyles[<bp>]`. Encoded as JSON on the mount slot
- *  so `navMenuMount` can apply them inside the per-block hamburger CSS
- *  without needing access to the raw block tree at mount time. */
-const MOBILE_STYLE_KEYS = [
-  'mobileBackground', 'mobileColor', 'mobileActiveColor',
-  'mobileFontSize', 'hamburgerColor', 'overlayBackground',
-] as const;
-
-function pickMobileStyle(style: CommonStyle | undefined): Record<string, string> {
-  if (!style) return {};
-  const out: Record<string, string> = {};
-  for (const k of MOBILE_STYLE_KEYS) {
-    const v = style[k];
-    if (typeof v === 'string' && v) out[k] = v;
+/** Pick the nested `mobileMenu` slice off a CommonStyle. Returns the
+ *  raw nested object — the mounter walks it section-by-section to emit
+ *  per-selector CSS overrides. Empty/missing slot → empty object so the
+ *  caller can short-circuit emitting the data-attr. */
+function pickMobileStyle(style: CommonStyle | undefined): Record<string, unknown> {
+  const sub = style?.mobileMenu;
+  if (!sub) return {};
+  // Filter out any sections that came back empty (e.g. fully pruned
+  // after the user cleared every input in that section).
+  const out: Record<string, unknown> = {};
+  for (const [section, val] of Object.entries(sub)) {
+    if (val && typeof val === 'object' && Object.keys(val).length > 0) {
+      out[section] = val;
+    }
   }
   return out;
 }
 
 function pickMobileBpStyles(
   bps: Record<string, CommonStyle> | undefined,
-): Record<string, Record<string, string>> {
+): Record<string, Record<string, unknown>> {
   if (!bps) return {};
-  const out: Record<string, Record<string, string>> = {};
+  const out: Record<string, Record<string, unknown>> = {};
   for (const [name, style] of Object.entries(bps)) {
     const slice = pickMobileStyle(style);
     if (Object.keys(slice).length > 0) out[name] = slice;
