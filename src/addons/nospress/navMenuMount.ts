@@ -166,11 +166,72 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
         document.body.appendChild(overlay);
       }
 
+      const mobileStyle = parseStyleAttr(slot.dataset.mobileStyle);
+      const mobileBpStyles = parseBpStylesAttr(slot.dataset.mobileBpStyles);
+
       const styleEl = document.createElement('style');
-      styleEl.textContent = buildHamburgerCss(blockId, hamburgerBps, ctx.breakpoints ?? [], drawerSide);
+      styleEl.textContent = buildHamburgerCss(
+        blockId, hamburgerBps, ctx.breakpoints ?? [], drawerSide,
+        mobileStyle, mobileBpStyles,
+      );
       slot.appendChild(styleEl);
     }
   });
+}
+
+/** Mobile sub-scope keys → CSS targeting inside the per-block scope.
+ *  Each entry produces one declaration per active BP, applied with
+ *  `!important` so it outranks the drawer base rules emitted alongside.
+ *  Selector takes the wrapper attribute selector (e.g.
+ *  `[data-styled-block-id="X"]`) and returns the full target selector. */
+const MOBILE_STYLE_TARGETS: Record<
+  string,
+  { selector: (sel: string) => string; cssProp: string }
+> = {
+  mobileBackground:  { selector: (sel) => `.nospress-nav-menu__list${sel}`,           cssProp: 'background' },
+  mobileColor:       { selector: (sel) => `.nospress-nav-menu__list${sel} li a`,      cssProp: 'color' },
+  mobileActiveColor: { selector: (sel) => `.nospress-nav-menu__list${sel} li.active a`, cssProp: 'color' },
+  mobileFontSize:    { selector: (sel) => `.nospress-nav-menu__list${sel} li a`,      cssProp: 'font-size' },
+  hamburgerColor:    { selector: (sel) => `${sel} .nospress-nav-menu__hamburger`,     cssProp: 'color' },
+  overlayBackground: { selector: (sel) => `.nospress-nav-menu__overlay${sel}`,        cssProp: 'background' },
+};
+
+/** Strip characters that could break out of `style="…"` mirror — same
+ *  ruleset as `sanitizeStyleValue` in styles.ts but tolerant of the
+ *  characters we actually need (colons for var(), commas for rgba). */
+function sanitizeMobileValue(raw: string): string {
+  const stripped = raw.replace(/[;<>"'\\]/g, '').trim().slice(0, 1000);
+  if (/url\s*\(\s*['"]?\s*(javascript|data|vbscript)\s*:/i.test(stripped)) return '';
+  return stripped;
+}
+
+/** Compose the override declarations from a mobile-style slice. */
+function buildMobileOverrides(sel: string, style: Record<string, string>): string {
+  const parts: string[] = [];
+  for (const [key, raw] of Object.entries(style)) {
+    const target = MOBILE_STYLE_TARGETS[key];
+    if (!target) continue;
+    const v = sanitizeMobileValue(raw);
+    if (!v) continue;
+    parts.push(`${target.selector(sel)} { ${target.cssProp}: ${v} !important; }`);
+  }
+  return parts.join('\n');
+}
+
+function parseStyleAttr(raw: string | undefined): Record<string, string> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, string> : {};
+  } catch { return {}; }
+}
+
+function parseBpStylesAttr(raw: string | undefined): Record<string, Record<string, string>> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return typeof parsed === 'object' && parsed !== null ? parsed as Record<string, Record<string, string>> : {};
+  } catch { return {}; }
 }
 
 /** Build the @media-wrapped CSS rules that flip the menu into hamburger
@@ -180,27 +241,38 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
  *  `drawerSide` picks the hamburger flavour:
  *    - `'left'` / `'right'`: slide-in drawer from that side, with backdrop
  *    - `null` (alignment=center): collapsed dropdown, items stay in flow
+ *
+ *  `mobileStyle` (Default tab values) gets folded into every BP's rule
+ *  block. `mobileBpStyles[bpName]` (per-BP overrides) only gets folded
+ *  into that one BP's @media. Per-BP overrides win because they're
+ *  emitted last with `!important` (same as the rest of the per-BP
+ *  override pipeline in `buildBlockBreakpointCss`).
  */
 function buildHamburgerCss(
   blockId: string,
   bpNames: string[],
   breakpoints: NospressBreakpoint[],
   drawerSide: 'left' | 'right' | null,
+  mobileStyle: Record<string, string> = {},
+  mobileBpStyles: Record<string, Record<string, string>> = {},
 ): string {
   const sel = `[data-styled-block-id="${blockId}"]`;
-  const innerRules = drawerSide
+  const drawerRules = drawerSide
     ? buildDrawerRules(sel, drawerSide)
     : buildCenterDropdownRules(sel);
+  const defaultOverrides = buildMobileOverrides(sel, mobileStyle);
   const out: string[] = [];
   for (const name of bpNames) {
+    const bpOverrides = buildMobileOverrides(sel, mobileBpStyles[name] ?? {});
+    const bundle = `${drawerRules}\n${defaultOverrides}\n${bpOverrides}`;
     if (name === '') {
-      out.push(innerRules);
+      out.push(bundle);
       continue;
     }
     const bp = breakpoints.find(b => b.name === name);
     if (!bp) continue;
     const mq = mediaQueryFor(bp);
-    if (mq) out.push(`@media ${mq} { ${innerRules} }`);
+    if (mq) out.push(`@media ${mq} { ${bundle} }`);
   }
   return out.join('\n');
 }

@@ -25,17 +25,6 @@
 // ==========================================
 
 .nospress-loading,
-.nospress-empty,
-.nospress-error {
-  padding: $gap * 2;
-  text-align: center;
-  color: $text-alpha-medium;
-}
-
-.nospress-empty .btn {
-  margin-top: $gap;
-}
-
 .nospress-view {
   margin: 0 auto;
 }
@@ -45,30 +34,10 @@
   bottom: 0;
   margin-top: $gap * 2;
   padding-top: $gap;
-  padding-bottom: 1rem;
+  padding-bottom: $gap;
   background: $color-1;
   border-top: 1px solid $color-2;
   z-index: 10;
-}
-
-.nospress-view__title {
-  font-size: 1.8rem;
-  font-weight: 700;
-  margin: 0 0 calc($gap / 2);
-  color: $color-5;
-}
-
-.nospress-view__subtitle {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0 0 $gap;
-}
-
-.nospress-view__description {
-  color: $text-alpha-heavy;
-  white-space: pre-wrap;
-  line-height: 1.6;
-  margin: 0 0 $gap * 2;
 }
 
 .nospress-section {
@@ -98,176 +67,8 @@
 }
 
 // ==========================================
-// NosPress Editor
-// ==========================================
-
-.nospress-editor {
-  padding: $gap;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.nospress-editor__pagefields {
-  margin-top: $gap;
-  margin-bottom: $gap * 2;
-}
-
-.nospress-editor__listsection {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: $gap * 2;
-}
-
-.nospress-editor__empty {
-  padding: $gap * 2;
-  text-align: center;
-  color: $text-alpha-medium;
-}
-
-.nospress-editor__footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: $gap * 2;
-}
-
-// Section
-.nospress-editor__section {
-  margin-bottom: $gap;
-  border: 1px solid $color-2;
-  border-radius: $radius-xl;
-  padding: $gap;
-}
-
-.nospress-editor__section-header {
-  @include flex-between;
-  align-items: center;
-  margin-bottom: calc($gap / 2);
-}
-
-.nospress-editor__section-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.nospress-editor__section-delete {
-  background: none;
-  border: none;
-  color: $text-alpha-medium;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: calc($gap / 4);
-
-  &:hover {
-    color: $color-red;
-  }
-}
-
-// Items
-.nospress-editor__item {
-  @include flex-between;
-  align-items: center;
-  padding: calc($gap / 4) 0;
-  border-bottom: 1px solid $color-2;
-}
-
-.nospress-editor__item-text {
-  flex: 1;
-  color: $color-5;
-}
-
-.nospress-editor__item-delete {
-  background: none;
-  border: none;
-  color: $text-alpha-medium;
-  font-size: 1.1rem;
-  cursor: pointer;
-  padding: 0 calc($gap / 4);
-
-  &:hover {
-    color: $color-red;
-  }
-}
-
-// New item row
-.nospress-editor__new-item-row {
-  display: flex;
-  align-items: center;
-  gap: calc($gap / 2);
-  margin-top: calc($gap / 2);
-}
-
-.nospress-editor__new-item-input {
-  flex: 1;
-  padding: calc($gap / 4) calc($gap / 2);
-  border: 1px solid $color-2;
-  border-radius: $radius-xl;
-  background: $color-1;
-  color: $color-5;
-  font-size: 0.9rem;
-
-  &::placeholder {
-    color: $text-alpha-light;
-  }
-
-  &:focus {
-    outline: none;
-    border-color: $color-4;
-  }
-}
-
-.nospress-editor__new-item-add {
-  background: none;
-  border: 1px solid $color-2;
-  border-radius: $radius-xl;
-  color: $color-4;
-  font-size: 1.2rem;
-  cursor: pointer;
-  padding: calc($gap / 4) calc($gap / 2);
-  line-height: 1;
-
-  &:hover {
-    background: $surface-tint;
-  }
-}
-
-// New section title input
-.nospress-editor__new-section-row {
-  margin-bottom: $gap;
-}
-
-.nospress-editor__section-title-input {
-  width: 100%;
-  padding: calc($gap / 2);
-  border: 1px dashed $color-2;
-  border-radius: $radius-xl;
-  background: $color-1;
-  color: $color-5;
-  font-size: 1.1rem;
-  font-weight: 600;
-
-  &::placeholder {
-    color: $text-alpha-light;
-    font-weight: 400;
-  }
-
-  &:focus {
-    outline: none;
-    border-color: $color-4;
-  }
-}
-
-// ==========================================
 // Block Library (SCC tab)
 // ==========================================
-
-.block-library__intro {
-  margin-bottom: $gap;
-  color: $text-alpha-medium;
-  font-size: 0.9rem;
-
-  p { margin: 0; }
-}
 
 // Block Library — 2-3 nn-cards per row, icon top, label centered, Apply
 // button at the bottom. Visual base comes from `.nn-card`; only the grid
@@ -306,36 +107,14 @@
   // Stack divider flip checkboxes (and any future checkbox row) with a
   // small breathing gap so they don't visually fuse with the next prop row.
   .nn-checkbox {
-    margin-bottom: 0.5rem;
+    margin-bottom: calc($gap / 2);
   }
-}
-
-.nospress-block-properties__header {
-  display: flex;
-  align-items: baseline;
-  gap: calc($gap / 2);
-  margin-bottom: calc($gap / 2);
-  padding-bottom: calc($gap / 2);
-  border-bottom: 1px solid $color-3;
-}
-
-.nospress-block-properties__type {
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  font-size: 0.85rem;
-  color: $color-6;
-}
-
-.nospress-block-properties__label {
-  font-size: 0.85rem;
-  color: $text-alpha-medium;
 }
 
 .nospress-block-properties__body {
   color: $text-alpha-medium;
   font-style: italic;
-  font-size: 0.9rem;
+  @extend %compact;
 }
 
 // Empty state for the Properties tab when nothing is selected.
@@ -345,29 +124,8 @@
   font-style: italic;
 }
 
-// Section divider inside the property body — used to separate the
-// "Identifiers" group (class/id inputs) from the CSS-property rows.
-.nospress-block-properties__section-label {
-  margin: calc($gap / 2) 0;
-  font-style: normal;
-  font-size: 0.8rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--color-4);
-
-  &:first-child {
-    margin-top: 0;
-  }
-}
-
-// Property rows / quad layout — the body's italic + dim is for placeholder
-// text only; once real inputs render, normal styling kicks in.
-// Color/Background row: smaller text input + circular trigger that opens
-// a popover with palette quick-picks + a custom-color picker.
-// Selector doubled so the modifier wins over the base `.nospress-prop-row`
-// rule (which is declared later in the file with the same single-class
-// specificity).
+// Color/Background row — selector doubled so this modifier wins over the
+// base `.nospress-prop-row` rule (declared later with same specificity).
 .nospress-prop-row.nospress-prop-row--color {
   grid-template-columns: 7rem minmax(8em, 1fr) auto;
   position: relative; // anchor for the swatch popover
@@ -406,36 +164,6 @@
   // section, etc.). Without this, the divider would anchor to the next
   // positioned ancestor.
   position: relative;
-}
-
-// Divider — absolutely positioned SVG band at the top or bottom edge of a
-// block. Color comes from `currentColor` (the wrapper's inline `color: …`),
-// height from the `--nospress-divider-height` CSS variable.
-.nospress-divider {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: var(--nospress-divider-height, 60px);
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 1;
-
-  svg {
-    width: 100%;
-    height: 100%;
-    display: block;
-  }
-
-  &--top {
-    top: 0;
-    // SVG paths are designed to point downward (filled below). Top side
-    // flips so the slant/curve/triangle "tilts up" instead.
-    transform: scaleY(-1);
-  }
-
-  &--bottom {
-    bottom: 0;
-  }
 }
 
 // Property panel — Divider section: Top/Bottom switch above an edit
@@ -571,7 +299,7 @@
 // Same visual block treatment as the gradient editor for consistency.
 .nospress-prop-color-swatches-inline {
   margin-bottom: calc($gap / 2);
-  padding: 0.5rem 0 0.5rem;
+  padding: calc($gap / 2) 0;
   text-align: right;
 
   &[hidden] { display: none; }
@@ -637,7 +365,7 @@
   width: 100%;
 
   &__row {
-    margin-bottom: 1rem;
+    margin-bottom: $gap;
 
     // Direct-child only — descendants (e.g. labels wrapping nested inputs
     // inside swatches/checkboxes) keep their own display rules.
@@ -654,7 +382,7 @@
   }
 
   &__stop-actions {
-    margin-bottom: 0.5rem;
+    margin-bottom: calc($gap / 2);
 
     .btn { margin-right: calc($gap / 4); }
   }
@@ -662,7 +390,7 @@
   &__angle {
     width: 100%;
     vertical-align: middle;
-    margin-bottom: 1rem;
+    margin-bottom: $gap;
   }
 
   &__palette {
@@ -676,7 +404,7 @@
   }
 
   &__actions {
-    margin-bottom: 1rem;
+    margin-bottom: $gap;
     text-align: right;
 
     .btn { margin-left: calc($gap / 4); }
@@ -748,7 +476,7 @@
 }
 
 .nospress-prop-row__label {
-  font-size: 0.85rem;
+  @extend %small;
   color: $color-5;
 }
 
@@ -756,14 +484,6 @@
   width: 100%;
 }
 
-.nospress-prop-grouplabel {
-  margin-top: $gap;
-  margin-bottom: calc($gap / 2);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: $color-5;
-  font-style: normal;
-}
 
 .nospress-prop-quad {
   display: grid;
@@ -785,75 +505,22 @@
 }
 
 .nospress-prop-quad__caption {
-  font-size: 0.75rem;
+  @extend %small;
   color: $text-alpha-medium;
 }
 
 // Block-library icon (oversized emoji at the top of each card).
 .block-library .nn-card .icon {
-  font-size: 2rem;
-}
-
-.block-library__footer {
-  margin-top: $gap * 2;
-  padding-top: $gap;
-  border-top: 1px solid $color-2;
-  display: flex;
-  flex-direction: column;
-  gap: calc($gap / 2);
-}
-
-.block-library__footer-status {
-  text-align: center;
-  font-size: 0.85rem;
-}
-
-.block-library__saved-indicator {
-  color: $color-6;
-  font-weight: 500;
-}
-
-.block-library__no-draft {
-  color: $text-alpha-medium;
-}
-
-.block-library__footer-actions {
-  display: flex;
-  justify-content: space-between;
-  gap: calc($gap / 2);
+  @extend %huge;
 }
 
 // ==========================================
 // Danger Zone (page-level destructive actions)
 // ==========================================
 
-.nospress-danger-zone {
-  margin-top: $gap * 4;
-  padding: $gap;
-  border: 1px dashed $color-red;
-  border-radius: $radius-xl;
-  text-align: center;
-  background: $bg-error;
-}
-
-.nospress-danger-zone__hint {
-  margin: calc($gap / 2) 0 0;
-  font-size: 0.8rem;
-  color: $text-alpha-medium;
-}
-
 // ==========================================
 // Block placeholders (renderers pending)
 // ==========================================
-
-.nospress-block-placeholder {
-  padding: $gap;
-  border: 1px dashed $color-2;
-  border-radius: $radius-xl;
-  color: $text-alpha-medium;
-  font-style: italic;
-  margin-bottom: $gap;
-}
 
 .nospress-block-text {
   white-space: pre-wrap;
@@ -899,7 +566,7 @@
   &__footer {
     margin-top: calc($gap / 2);
     font-style: normal;
-    font-size: 0.9rem;
+    @extend %compact;
     color: $text-alpha-medium;
   }
 }
@@ -949,7 +616,7 @@
 
   &__caption {
     margin-top: calc($gap / 2);
-    font-size: 0.9rem;
+    @extend %compact;
     color: $text-alpha-medium;
     text-align: center;
     font-style: italic;
@@ -984,7 +651,7 @@
 
   &__caption {
     margin-top: calc($gap / 2);
-    font-size: 0.9rem;
+    @extend %compact;
     color: $text-alpha-medium;
     text-align: center;
     font-style: italic;
@@ -1109,13 +776,6 @@
 // Block edit-mode wrappers (mobile-first, always-visible toolbars)
 // ==========================================
 
-.nospress-view__pagefields {
-  margin-bottom: $gap * 2;
-  padding: $gap;
-  border: 1px dashed $color-2;
-  border-radius: $radius-xl;
-}
-
 .nospress-block-edit {
   position: relative;
   margin-bottom: $gap;
@@ -1171,10 +831,6 @@
     }
 
     code {
-      padding: 1px 4px;
-      background: var(--color-2);
-      border-radius: 3px;
-      font-size: 0.78rem;
       flex-shrink: 0;
     }
 
@@ -1190,25 +846,20 @@
 
   &__textarea {
     min-height: 180px;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 0.85rem;
+    font-family: $font-family-mono;
+    @extend %small;
     line-height: 1.4;
   }
 
   &__hint {
     margin-top: calc($gap / 2);
-    font-size: 0.8rem;
+    @extend %small;
     color: var(--text-alpha-light);
 
     p {
       margin: 0 0 calc($gap / 2) 0;
     }
 
-    code {
-      padding: 1px 4px;
-      background: var(--color-2);
-      border-radius: 3px;
-    }
   }
 
   &__tree {
@@ -1216,8 +867,8 @@
     padding: calc($gap / 2) $gap;
     background: var(--color-2);
     border-radius: $radius-xl;
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    font-size: 0.75rem;
+    font-family: $font-family-mono;
+    @extend %small;
     line-height: 1.6;
     color: var(--color-5);
     white-space: pre;
@@ -1232,31 +883,6 @@
 
 // Page frame — virtual outer wrapper around all blocks in edit mode.
 // Always present, never movable / removable, always selectable.
-.nospress-page-edit {
-  position: relative;
-  margin-bottom: $gap;
-  padding: $gap;
-  border: 1px solid $color-2;
-  border-radius: $radius-xl;
-  cursor: pointer;
-  transition: $transition-colors;
-
-  &--selected {
-    border-color: $color-6;
-  }
-}
-
-.nospress-page-edit__title-bar {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: $text-alpha-medium;
-  margin-bottom: calc($gap / 2);
-  padding-bottom: calc($gap / 2);
-  border-bottom: 1px dashed $color-2;
-}
-
 .nospress-block-edit__toolbar {
   @include flex-between;
   align-items: center;
@@ -1266,7 +892,7 @@
 }
 
 .nospress-block-edit__type-badge {
-  font-size: 0.75rem;
+  @extend %small;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1391,16 +1017,9 @@
 }
 
 .nospress-block-bookmark-folder__label {
-  font-size: 0.85rem;
+  @extend %small;
   color: $color-4;
   font-weight: 500;
-}
-
-.nospress-block-bookmark-folder__hint {
-  font-size: 0.8rem;
-  color: $text-alpha-medium;
-  font-style: italic;
-  margin: 0;
 }
 
 // Bookmark folder picker (shared component)
@@ -1430,7 +1049,7 @@
 .nospress-block-image__caption {
   margin-top: calc($gap / 2);
   text-align: center;
-  font-size: 0.85rem;
+  @extend %small;
   color: $text-alpha-medium;
   font-style: italic;
 }
@@ -1460,7 +1079,7 @@
     .upload-progress-bar {
       stroke: var(--color-6);
       stroke-linecap: round;
-      transition: stroke-dashoffset 0.3s ease;
+      transition: $transition-all;
     }
   }
 }
@@ -1528,7 +1147,7 @@
   padding: $gap;
   text-align: center;
   color: $text-alpha-medium;
-  font-size: 0.9rem;
+  @extend %compact;
   border: 1px dashed $color-2;
   border-radius: $radius-xl;
 }
@@ -1545,7 +1164,7 @@
 }
 
 .nospress-block-embed__hint {
-  font-size: 0.8rem;
+  @extend %small;
   color: $text-alpha-medium;
   font-style: italic;
   margin: 0;
@@ -1565,7 +1184,7 @@
 }
 
 @keyframes nospress-cursor-flash {
-  0%   { background: color-mix(in srgb, $color-6 30%, transparent); }
+  0%   { background: $color-6; }
   100% { background: transparent; }
 }
 
@@ -1573,11 +1192,10 @@
   width: 100%;
   padding: calc($gap / 2) $gap;
   background: transparent;
-  border: 1px dashed color-mix(in srgb, $color-4 40%, transparent);
+  border: 1px dashed $color-4;
   border-radius: $radius-pill;
   color: $color-5;
   font-family: inherit;
-  font-size: 1rem;
   transition: $transition-colors;
 
   &::placeholder {
@@ -1589,7 +1207,7 @@
     outline: none;
     border-style: solid;
     border-color: $color-4;
-    box-shadow: 0 0 0 2px color-mix(in srgb, $color-4 20%, transparent);
+    box-shadow: 0 0 0 2px $color-4;
   }
 }
 
@@ -1610,7 +1228,7 @@
 
 .nospress-cursor-row__menu-section {
   padding: calc($gap / 2) $gap calc($gap / 4);
-  font-size: 0.75rem;
+  @extend %small;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -1650,7 +1268,7 @@
   width: 24px;
   text-align: center;
   flex-shrink: 0;
-  font-size: 1.1rem;
+  @extend %compact;
 }
 
 .nospress-cursor-row__menu-label {
@@ -1660,7 +1278,7 @@
 }
 
 .nospress-cursor-row__menu-desc {
-  font-size: 0.85rem;
+  @extend %small;
   color: $text-alpha-medium;
   @include text-truncate;
   flex: 1;
@@ -1718,7 +1336,7 @@
     > .tab-content {
       flex: 1;
       min-height: 0;
-      padding: 1rem 0 0 0;
+      padding-top: $gap;
     }
   }
 
@@ -1771,7 +1389,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 .nospress-nav__title {
   margin: 0;
   padding: 0;
-  font-size: 0.95rem;
+  @extend %compact;
   font-weight: 600;
   color: $color-5;
 }
@@ -1796,7 +1414,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   margin: 0 0 calc($gap / 4);
   padding: calc($gap / 2) calc($gap * 0.75);
   color: $color-5;
-  font-size: 0.9rem;
+  @extend %compact;
   cursor: grab;
   user-select: none;
 
@@ -1832,7 +1450,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 .nospress-nav__empty {
   margin: 0 0 calc($gap / 2);
   color: $color-3;
-  font-size: 0.85rem;
+  @extend %small;
 }
 
 .nospress-nav__add {
@@ -1858,7 +1476,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   color: $color-5;
   border: 1px solid $color-2;
   border-radius: $radius-xl;
-  font-size: 0.9rem;
+  @extend %compact;
 
   &:focus {
     outline: none;
@@ -1875,7 +1493,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 .nospress-nav__item-sub {
   margin-left: calc($gap / 2);
   color: $color-3;
-  font-size: 0.8rem;
+  @extend %small;
 }
 
 .nospress-nav__add-select {
@@ -1885,7 +1503,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   color: $color-5;
   border: 1px solid $color-2;
   border-radius: $radius-xl;
-  font-size: 0.9rem;
+  @extend %compact;
 
   &:focus {
     outline: none;
@@ -1965,6 +1583,54 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   }
 }
 
+// Editor-only: picker dropdown row for the nav-menu block. The mobile-
+// sub-scope trigger sits next to the menu picker and only renders when
+// at least one breakpoint has the hamburger checkbox on.
+.nospress-block-nav-menu__pick {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: calc($gap / 2);
+  padding: calc($gap / 2);
+  width: max-content;
+}
+
+.nospress-block-nav-menu__mobile-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--color-4);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-4);
+  cursor: pointer;
+  transition: $transition-colors;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+
+  &:hover {
+    background: var(--color-4);
+    color: var(--color-1);
+  }
+
+  // Active sub-scope = pressed state. The toggle stays "on" while the
+  // properties panel is showing the mobile-menu row set; the wrapper
+  // `.nospress-block-edit--selected` ancestor signals that this block
+  // owns the open sub-scope (only one block can be selected at a time
+  // and only the selected block exposes the trigger anyway).
+  .nospress-block-edit--selected &[aria-pressed="true"],
+  &.is-active {
+    background: var(--color-4);
+    color: var(--color-1);
+  }
+}
+
 // Alignment — Left (default, no class) / Center / Right. Works in both
 // vertical (text-align) and horizontal (grid justify-content) modes.
 .nospress-nav-menu--align-center {
@@ -2003,6 +1669,16 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   // `:not(.is-open)` when active for the matching breakpoint.
 }
 
+// Portaled drawer + overlay live on <body> outside any clipped wrapper.
+// Both are hidden by default — the per-block hamburger CSS reactivates
+// them inside the matching @media query. Without this, at breakpoints
+// where hamburger isn't active the portaled <ul> would float ungstyled
+// at the top of body.
+.nospress-nav-menu__list[data-nospress-nav-portal],
+.nospress-nav-menu__overlay[data-nospress-nav-portal] {
+  display: none;
+}
+
 // Slide-in drawer backdrop. Sibling of <nav> so the fixed-position list
 // can sit above it without DOM re-parenting. Default-hidden; the
 // per-block hamburger CSS sets `display: block` when the drawer is
@@ -2014,7 +1690,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   background: $alpha-medium;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition: $transition-all;
   z-index: 199;
 
   &.is-visible {
@@ -2087,14 +1763,14 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
     width: 16em;
     vertical-align: middle;
     margin-right: calc($gap / 2);
-    font-family: monospace;
+    font-family: $font-family-mono;
   }
 
   .nospress-palette-label {
     display: inline-block;
     vertical-align: middle;
     color: var(--color-3);
-    font-family: monospace;
+    font-family: $font-family-mono;
   }
 }
 
@@ -2144,7 +1820,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 .nospress-pages__sections {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: calc($gap / 2);
 }
 
 // Single section row inside the card. Solid colors only, palette-driven.
@@ -2154,11 +1830,11 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   justify-content: center;
   padding: calc($gap / 2) calc($gap * 0.75);
   border-radius: $radius-xl;
-  font-size: 0.85rem;
+  @extend %small;
   font-weight: 500;
   text-align: center;
   min-height: 32px;
-  transition: background 0.15s ease;
+  transition: $transition-colors;
 
   // "Inherits global / not yet defined" — dashed outline, muted text.
   &--placeholder {
@@ -2217,7 +1893,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 .nospress-pages__title {
   margin: 0;
   padding: 0 calc($gap / 4);
-  font-size: 0.95rem;
+  @extend %compact;
   font-weight: 600;
   color: $color-5;
   line-height: 1.2;
@@ -2227,7 +1903,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
     cursor: text;
     border-radius: $radius-xl;
     padding: calc($gap / 8) calc($gap / 2);
-    transition: background 0.15s ease;
+    transition: $transition-colors;
 
     &:hover {
       background: $color-2;
@@ -2239,14 +1915,6 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
       outline-offset: 0;
     }
   }
-}
-
-.nospress-pages__meta {
-  margin: 0;
-  padding: 0 calc($gap / 4);
-  font-size: 0.8rem;
-  color: $color-3;
-  font-family: monospace;
 }
 
 .nospress-pages__card-actions {
@@ -2289,7 +1957,7 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 .nospress-pages__add-label {
   color: $color-3;
   font-weight: 500;
-  font-size: 0.95rem;
-  transition: color 0.15s ease;
+  @extend %compact;
+  transition: $transition-colors;
 }
 

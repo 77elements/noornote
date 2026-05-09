@@ -158,6 +158,13 @@ export class NospressView extends View {
    *  Page-frame selection was removed; site-level visuals live in the
    *  Global tab and Custom CSS. */
   private selectedBlockId: string | null = null;
+  /** Sub-scope toggle for the currently-selected block. Today only used
+   *  by the nav-menu block: when set to `'mobile-menu'`, the property
+   *  panel resolves its schema from `STYLE_MATRIX['nav-menu-mobile']`
+   *  instead of `nav-menu`, surfacing drawer/active-link/hamburger
+   *  styling controls. Always null when no block is selected, or when
+   *  the selected block has no sub-scope variant. */
+  private selectedSubScope: 'mobile-menu' | null = null;
   private eventBusSubscriptions: string[] = [];
   /** Live in-memory edit state. All mutations go here; persisted to draft
    *  storage only when the user clicks Save. Null until first edit. */
@@ -2366,6 +2373,7 @@ export class NospressView extends View {
     this.editingPage = null;
     this.isDirty = false;
     this.selectedBlockId = null;
+    this.selectedSubScope = null;
     this.cursor = { scope: 'page', index: -1 };
 
     this.rerenderEditable();
@@ -2411,6 +2419,7 @@ export class NospressView extends View {
     this.editingPage = null;
     this.isDirty = false;
     this.selectedBlockId = null;
+    this.selectedSubScope = null;
     this.cursor = { scope: 'page', index: -1 };
 
     // Seed only if the override doesn't exist yet — otherwise the existing
@@ -2452,6 +2461,7 @@ export class NospressView extends View {
     this.editingPage = null;
     this.isDirty = false;
     this.selectedBlockId = null;
+    this.selectedSubScope = null;
     this.cursor = { scope: 'page', index: -1 };
     this.rerenderEditable();
     this.updatePagesTab();
@@ -2573,6 +2583,7 @@ export class NospressView extends View {
     this.editingPage = null;
     this.isDirty = false;
     this.selectedBlockId = null;
+    this.selectedSubScope = null;
     this.cursor = { scope: 'page', index: -1 };
 
     // Reflect the active slug in the URL so a reload returns to the same page.
@@ -3003,16 +3014,28 @@ export class NospressView extends View {
     if (tabs.length > 0 && !tabs.some(t => t.name === this.activeBpName)) {
       this.activeBpName = '';
     }
-    const activeStyle = this.getActiveBpStyleSlot(block).read();
+    // Sub-scope override: when the user has opened the nav-menu's mobile
+    // sub-panel via the hamburger trigger, the panel resolves through
+    // `STYLE_MATRIX['nav-menu-mobile']` instead. Identifiers / extras /
+    // breakpoint tabs are wrapper-level concerns and stay hidden in
+    // sub-scope — Mobile Menu styles are always-on (single style slot).
+    const inSubScope = block.type === 'nav-menu' && this.selectedSubScope === 'mobile-menu';
+    // Scope format: `<matrixKey>:<blockId>` — `matrixKey()` in styles.ts
+    // strips after the first colon, so `nav-menu-mobile:<uuid>` resolves
+    // to `STYLE_MATRIX['nav-menu-mobile']` while `handleStyleInput` still
+    // recovers the block id from the same string.
+    const matrixScope = inSubScope ? `nav-menu-mobile:${block.id}` : `${block.type}:${block.id}`;
+    const activeStyle = inSubScope ? block.style : this.getActiveBpStyleSlot(block).read();
     return renderPropertyPanel({
-      scope: `${block.type}:${block.id}`,
+      scope: matrixScope,
       style: activeStyle,
-      attrs: block.attrs,
+      attrs: inSubScope ? undefined : block.attrs,
       activeDividerSide: this.activeDividerSide,
       palette: this.effectivePalette(),
-      breakpointTabs: tabs,
-      activeBreakpoint: this.activeBpName,
-      extras: this.renderBlockExtras(block),
+      breakpointTabs: inSubScope ? [] : tabs,
+      activeBreakpoint: inSubScope ? '' : this.activeBpName,
+      ...(inSubScope ? { header: '<h2>Mobile Menu</h2>' } : {}),
+      extras: inSubScope ? '' : this.renderBlockExtras(block),
     });
   }
 
@@ -3238,21 +3261,55 @@ export class NospressView extends View {
   private selectBlock(blockId: string | null): void {
     if (this.selectedBlockId === blockId) return;
     this.selectedBlockId = blockId;
+    // Sub-scope is per-block — selecting a different block (or
+    // deselecting) drops it. Otherwise the panel would show e.g.
+    // mobile-menu rows for a Heading the user clicked.
+    this.selectedSubScope = null;
+    this.rerenderEditable();
+    this.updatePropertiesTab();
+  }
+
+  /**
+   * Flip the nav-menu's mobile-drawer sub-scope. Called from the inline
+   * hamburger trigger inside the block. Selects the block first if it
+   * isn't already, so the user can open the sub-panel directly without
+   * a prior selection click. Toggling on the same block exits the sub-
+   * scope (option (a) from the UX spec).
+   */
+  private toggleMobileSubScope(blockId: string): void {
+    if (this.selectedBlockId !== blockId) {
+      this.selectedBlockId = blockId;
+      this.selectedSubScope = 'mobile-menu';
+    } else {
+      this.selectedSubScope = this.selectedSubScope === 'mobile-menu' ? null : 'mobile-menu';
+    }
     this.rerenderEditable();
     this.updatePropertiesTab();
   }
 
   /** Toggle the `--selected` class on the matching wrapper. Called after
-   *  every editable re-render so the focus survives state changes. */
+   *  every editable re-render so the focus survives state changes.
+   *  Also stamps the nav-menu mobile-sub-scope trigger with `is-active`
+   *  when its block owns the open sub-scope, so the SCSS can paint the
+   *  pressed state without re-rendering the trigger HTML. */
   private applySelectedBlockClass(): void {
     this.container.querySelectorAll('.nospress-block-edit--selected').forEach(el => {
       el.classList.remove('nospress-block-edit--selected');
+    });
+    this.container.querySelectorAll('.nospress-block-nav-menu__mobile-trigger.is-active').forEach(el => {
+      el.classList.remove('is-active');
     });
     if (!this.selectedBlockId) return;
     const wrapper = this.container.querySelector(
       `.nospress-block-edit[data-block-id="${this.selectedBlockId}"]`
     );
     wrapper?.classList.add('nospress-block-edit--selected');
+    if (this.selectedSubScope === 'mobile-menu') {
+      const trigger = wrapper?.querySelector(
+        `.nospress-block-nav-menu__mobile-trigger[data-block-id="${this.selectedBlockId}"]`
+      );
+      trigger?.classList.add('is-active');
+    }
   }
 
   private saveDraft(): void {
@@ -3474,13 +3531,17 @@ export class NospressView extends View {
     const colon = scope.indexOf(':');
     if (colon < 0) return;
     const blockId = scope.slice(colon + 1);
+    // Sub-scope (`nav-menu-mobile:<id>`) has no breakpoint tabs — Mobile
+    // Menu styling is single-slot. Always-on writes go to `block.style`
+    // regardless of the previous main-scope `activeBpName` (which is
+    // preserved for when the user exits the sub-scope).
+    const inSubScope = scope.startsWith('nav-menu-mobile:');
     this.mutateDraft((page) => {
       const loc = findBlockInPage(page, blockId);
       if (!loc) return;
-      // Route the write to the right slot based on the active breakpoint
-      // tab. Empty `activeBpName` = Default tab = `block.style` (mobile-
-      // first base). Any other name = `block.breakpointStyles[<name>]`.
-      const slot = this.getActiveBpStyleSlot(loc.block).getOrCreate();
+      const slot = inSubScope
+        ? (loc.block.style ??= {})
+        : this.getActiveBpStyleSlot(loc.block).getOrCreate();
       writeStyleField(slot, field, rawValue);
       // Prune empty per-breakpoint slots so JSON stays clean and
       // `hasV2Content` doesn't flag empty objects as content.
@@ -3670,6 +3731,17 @@ export class NospressView extends View {
         }
       }
 
+      // Mobile-sub-scope trigger on the nav-menu block: toggles the
+      // properties panel between wrapper-style and drawer-style scopes.
+      // Handled BEFORE the generic interactive-control skip below so the
+      // <button> element doesn't fall through to it.
+      const subScopeBtn = target.closest('[data-mobile-subscope-toggle]') as HTMLElement | null;
+      if (subScopeBtn) {
+        const blockId = subScopeBtn.dataset.blockId ?? null;
+        if (blockId) this.toggleMobileSubScope(blockId);
+        return;
+      }
+
       // Skip clicks on interactive controls — those have their own handlers
       if (target.closest('button, input, textarea, select, a, [data-action]')) return;
       // Inviolable media-click rule: clicks on rendered images/videos must
@@ -3684,6 +3756,20 @@ export class NospressView extends View {
       const blockWrapper = target.closest('.nospress-block-edit') as HTMLElement | null;
       if (blockWrapper) {
         const blockId = blockWrapper.dataset.blockId ?? null;
+        // (c): clicking the nav-menu block-frame outside the trigger
+        // exits the mobile sub-scope but keeps the block selected. Same
+        // block-id, sub-scope active, click landed on the wrapper but
+        // not on the trigger button (handled earlier).
+        if (
+          blockId
+          && blockId === this.selectedBlockId
+          && this.selectedSubScope === 'mobile-menu'
+        ) {
+          this.selectedSubScope = null;
+          this.rerenderEditable();
+          this.updatePropertiesTab();
+          return;
+        }
         this.selectBlock(blockId === this.selectedBlockId ? null : blockId);
         return;
       }
@@ -3868,6 +3954,17 @@ export class NospressView extends View {
     // emitted style block. A silent mutate updates the in-memory block
     // but leaves the slot stale, so re-render for any of them.
     if (field === 'menu-id' || field === 'horizontal' || field === 'alignment' || field === 'hamburger') {
+      // Auto-revert: if the user just turned off the LAST hamburger BP,
+      // the trigger button vanishes — revert the open mobile sub-scope
+      // so the user isn't stranded in an unreachable panel.
+      if (field === 'hamburger' && this.selectedSubScope === 'mobile-menu' && this.selectedBlockId === blockId) {
+        const page = this.editingPage;
+        const block = page ? findBlockInPage(page, blockId)?.block : null;
+        if (block && block.type === 'nav-menu' && (block.hamburgerBreakpoints ?? []).length === 0) {
+          this.selectedSubScope = null;
+          this.updatePropertiesTab();
+        }
+      }
       this.rerenderEditable();
     }
   }

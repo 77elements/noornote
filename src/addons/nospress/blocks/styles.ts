@@ -91,6 +91,16 @@ export interface CommonStyle {
    *  Both can be combined. Doubles/quadruples the effective shape variety
    *  without growing the catalog. */
   divider?: { top?: DividerStyle; bottom?: DividerStyle; flipX?: boolean; flipY?: boolean };
+  /** Nav-menu mobile drawer styling. Lives on the same per-breakpoint
+   *  slot as the rest of the wrapper styles, but only the nav-menu block
+   *  surfaces these (via the `nav-menu-mobile` matrix entry — opened
+   *  through the hamburger trigger button on the block itself). */
+  mobileBackground?: string;
+  mobileColor?: string;
+  mobileActiveColor?: string;
+  mobileFontSize?: string;
+  hamburgerColor?: string;
+  overlayBackground?: string;
 }
 
 export type PropertyKey = keyof CommonStyle;
@@ -98,7 +108,12 @@ export type PropertyKey = keyof CommonStyle;
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
   kind: 'single';
-  key: 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight' | 'fontStyle' | 'border' | 'borderRadius' | 'width' | 'height';
+  key:
+    | 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight'
+    | 'fontStyle' | 'border' | 'borderRadius' | 'width' | 'height'
+    // Nav-menu mobile sub-scope keys.
+    | 'mobileBackground' | 'mobileColor' | 'mobileActiveColor'
+    | 'mobileFontSize' | 'hamburgerColor' | 'overlayBackground';
   label: string;
   cssProp: string;
   placeholder: string;
@@ -154,74 +169,113 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
   textShadow:   { kind: 'text-shadow', key: 'textShadow', label: 'Text shadow' },
+  // Nav-menu mobile drawer — surfaced only via `STYLE_MATRIX['nav-menu-mobile']`,
+  // which is opened by the hamburger trigger button on the block.
+  mobileBackground:  { kind: 'single', key: 'mobileBackground',  label: 'Drawer background',  cssProp: 'background', placeholder: 'e.g. #0f0d23' },
+  mobileColor:       { kind: 'single', key: 'mobileColor',       label: 'Link color',         cssProp: 'color',      placeholder: 'e.g. #ede2da' },
+  mobileActiveColor: { kind: 'single', key: 'mobileActiveColor', label: 'Active link color',  cssProp: 'color',      placeholder: 'e.g. #dc85ad' },
+  mobileFontSize:    { kind: 'single', key: 'mobileFontSize',    label: 'Link font size',     cssProp: 'font-size',  placeholder: 'e.g. 1.25rem' },
+  hamburgerColor:    { kind: 'single', key: 'hamburgerColor',    label: 'Hamburger color',    cssProp: 'color',      placeholder: 'e.g. #ede2da' },
+  overlayBackground: { kind: 'single', key: 'overlayBackground', label: 'Backdrop',           cssProp: 'background', placeholder: 'rgba(0,0,0,0.5)' },
 };
 
 /**
- * Matrix of allowed properties per scope. The scope key matches whatever
- * comes BEFORE the first `:` in the runtime scope string — so 'page' and
+ * Property groups — the canonical CSS-concept partition. Each block scope
+ * is a composition of these groups, rendered top-to-bottom in a fixed
+ * canonical order (set in `groupedSchemaFor`). Adding a new property to
+ * an existing group automatically propagates it to every block scope
+ * that includes the group.
+ *
+ * Modularization rationale: the same group composition pattern carries
+ * through to nested sub-scopes (mobile-menu's per-selector panels) where
+ * one selector's "available styles" is just a group composition again.
+ */
+export interface PropertyGroup {
+  /** Stable id used for SCSS hooks / accordion state. */
+  key: string;
+  /** Section header shown in the property panel. */
+  label: string;
+  /** Catalog-key list — order within the group is the rendered row
+   *  order, e.g. Typography always shows color first then fontSize. */
+  props: PropertyKey[];
+}
+
+const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
+const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width', 'height'] };
+const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
+const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: ['color', 'fontSize', 'lineHeight', 'fontWeight', 'fontStyle', 'textShadow'] };
+const GROUP_BACKGROUND: PropertyGroup = { key: 'background', label: 'Background', props: ['background'] };
+const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',     props: ['border', 'borderRadius'] };
+const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['divider'] };
+
+/** Composition shorthand for prose-flow blocks (heading/text/list/links/
+ *  dm-button/quote/button-cta) — typography + width sizing, no height
+ *  (forcing height on text content clips silently). */
+const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER];
+
+/** Composition shorthand for media/sub-component containers — full
+ *  sizing (width + height for hero bands, fixed-aspect boxes), no
+ *  typography (text styling doesn't apply to image/video/etc.). */
+const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER];
+
+/**
+ * Per-scope group composition. The scope key matches whatever comes
+ * BEFORE the first `:` in the runtime scope string — so 'page' and
  * 'heading:<uuid>' both resolve via this map. Add new rows here when a
  * block type starts supporting style.
+ *
+ * Display order is the canonical group order: Spacing → Sizing →
+ * Typography → Background → Border → Effects. Each scope's array is
+ * already authored in that order so the renderer iterates as-is.
  */
-/**
- * Common text-block properties: applies to anything where the user types
- * prose (heading, text, list, links, dm-button). Shared for consistency
- * so a future Property addition propagates everywhere automatically.
- * `width` is included so a Heading or paragraph can be constrained to a
- * narrow reading column; `height` is intentionally skipped — forcing a
- * height on text-flow content tends to clip silently.
- */
-const TEXTUAL_PROPS: PropertyKey[] = [
-  'color', 'background',
-  'fontSize', 'lineHeight', 'fontWeight', 'fontStyle',
-  'textShadow',
-  'width',
-  'margin', 'padding', 'border', 'borderRadius',
-];
-
-/**
- * Container-only properties: blocks whose content is a media element or a
- * mounted sub-component, where text styling does not apply. Both `width`
- * and `height` apply because containers commonly need explicit sizing
- * (hero bands, square cards, fixed-aspect media boxes).
- */
-const CONTAINER_PROPS: PropertyKey[] = [
-  'background',
-  'width', 'height',
-  'margin', 'padding', 'border', 'borderRadius',
-];
-
-export const STYLE_MATRIX: Record<string, PropertyKey[]> = {
-  // Page keeps its full set (incl. fontSize) — the global page surface
-  // controls site-wide typography defaults.
-  page: ['color', 'background', 'fontSize', 'lineHeight', 'fontWeight', 'fontStyle',
-         'margin', 'padding', 'border', 'borderRadius'],
-  heading:           TEXTUAL_PROPS,
-  text:              TEXTUAL_PROPS,
-  list:              TEXTUAL_PROPS,
-  links:             TEXTUAL_PROPS,
-  'dm-button':       TEXTUAL_PROPS,
-  divider:           ['color', 'margin', 'padding', 'border', 'borderRadius'],
-  image:             CONTAINER_PROPS,
-  gallery:           CONTAINER_PROPS,
-  embed:             CONTAINER_PROPS,
-  'bookmark-folder': CONTAINER_PROPS,
-  columns:           CONTAINER_PROPS,
-  'profile-card':    CONTAINER_PROPS,
-  quote:             TEXTUAL_PROPS,
-  'button-cta':      TEXTUAL_PROPS,
-  video:             CONTAINER_PROPS,
-  audio:             CONTAINER_PROPS,
-  'articles-list':   CONTAINER_PROPS,
-  weblog:            CONTAINER_PROPS,
-  // Nav-menu mirrors the div block (minus divider) — text styles for the
-  // links, plus container sizing for the wrapper. Lets the user constrain
-  // the menu width / height and tune typography in one go.
-  'nav-menu':        [...TEXTUAL_PROPS, 'height'],
-  // DIV (and its HTML-tag variants header/footer/main/section/article/aside/nav/fieldset)
-  // is the container block — gets the textual props (since users do put
-  // headings + text inside) plus `height` (hero divs / fixed-band layouts)
-  // plus the divider edge-shapes that no other block scope supports.
-  div:               [...TEXTUAL_PROPS, 'height', 'divider'],
+export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
+  // Page: everything except sizing — the page surface fills its host.
+  page: [GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
+  heading:           TEXTUAL_GROUPS,
+  text:              TEXTUAL_GROUPS,
+  list:              TEXTUAL_GROUPS,
+  links:             TEXTUAL_GROUPS,
+  'dm-button':       TEXTUAL_GROUPS,
+  // Divider block is restricted: only `color` from typography (no font
+  // styling — there's no text to style), plus standard box edges.
+  divider:           [
+    GROUP_SPACING,
+    { key: 'typography', label: 'Typography', props: ['color'] },
+    GROUP_BORDER,
+  ],
+  image:             CONTAINER_GROUPS,
+  gallery:           CONTAINER_GROUPS,
+  embed:             CONTAINER_GROUPS,
+  'bookmark-folder': CONTAINER_GROUPS,
+  columns:           CONTAINER_GROUPS,
+  'profile-card':    CONTAINER_GROUPS,
+  quote:             TEXTUAL_GROUPS,
+  'button-cta':      TEXTUAL_GROUPS,
+  video:             CONTAINER_GROUPS,
+  audio:             CONTAINER_GROUPS,
+  'articles-list':   CONTAINER_GROUPS,
+  weblog:            CONTAINER_GROUPS,
+  // Nav-menu wrapper: like the textual blocks plus full sizing — the
+  // menu container is positioned/sized like a media block.
+  'nav-menu':        [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
+  // Nav-menu mobile drawer sub-scope — opened by the hamburger trigger
+  // button on the block. Single-section list of mobile-* keys today;
+  // will split into per-selector accordion sections (ul/li/a/...) in
+  // a follow-up step.
+  'nav-menu-mobile': [
+    {
+      key: 'mobile',
+      label: 'Mobile drawer',
+      props: ['mobileBackground', 'overlayBackground',
+              'mobileColor', 'mobileActiveColor', 'mobileFontSize',
+              'hamburgerColor'],
+    },
+  ],
+  // DIV (and its HTML-tag variants header/footer/main/section/article/
+  // aside/nav/fieldset) is the most permissive container — full
+  // typography (users do put headings + text inside), full sizing, plus
+  // the divider edge-shapes that no other block scope supports.
+  div:               [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS],
 };
 
 /** Strip the disambiguator (e.g. block UUID) from a runtime scope. */
@@ -230,10 +284,34 @@ function matrixKey(scope: string): string {
   return colon < 0 ? scope : scope.slice(0, colon);
 }
 
-/** Resolve a runtime scope ('page', 'heading:<uuid>', …) to its schema. */
+/** Resolved group: a `PropertyGroup` with its `props` keys mapped through
+ *  `PROPERTY_CATALOG` to ready-to-render entries. Used by the panel
+ *  renderer; build* functions stay on the flat `schemaFor` API. */
+export interface ResolvedPropertyGroup {
+  key: string;
+  label: string;
+  entries: PropertyEntry[];
+}
+
+/** Resolve a runtime scope ('page', 'heading:<uuid>', …) to a flat
+ *  schema list. Used by `buildInlineStyle` / `buildBlockBreakpointCss` /
+ *  `buildImportantInlineStyle` — these don't care about grouping, only
+ *  the per-property CSS mapping. */
 export function schemaFor(scope: string): PropertyEntry[] {
-  const keys = STYLE_MATRIX[matrixKey(scope)] ?? [];
-  return keys.map(k => PROPERTY_CATALOG[k]);
+  return groupedSchemaFor(scope).flatMap(g => g.entries);
+}
+
+/** Resolve a runtime scope to its grouped schema. Used by
+ *  `renderPropertyPanel` to emit one section header + property rows
+ *  per group. Returns groups in the canonical display order as defined
+ *  in `STYLE_MATRIX[scope]`. */
+export function groupedSchemaFor(scope: string): ResolvedPropertyGroup[] {
+  const groups = STYLE_MATRIX[matrixKey(scope)] ?? [];
+  return groups.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: g.props.map(k => PROPERTY_CATALOG[k]),
+  }));
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -451,6 +529,11 @@ export interface RenderPropertyPanelOptions {
    *  property rows. Caller is responsible for the inner HTML; tabs +
    *  base styling come from `.nn-checkbox` / `.form__row` etc. */
   extras?: string;
+  /** Optional raw HTML to render in the panel header slot instead of the
+   *  breakpoint tabs. Used by sub-scope panels (e.g. nav-menu's Mobile
+   *  Menu) to show a single-line title where the tabs would normally be.
+   *  When set, `breakpointTabs` is ignored. */
+  header?: string;
 }
 
 interface DividerStyleDef {
@@ -860,8 +943,71 @@ export function renderPaletteSwatches(
   }).join('');
 }
 
+/**
+ * Reusable color-picker row — full markup bundle for any "pick a color"
+ * field in the editor: label + narrow text input + circular trigger
+ * button + hidden inline swatches popover (palette + optional
+ * gradient/custom swatches) + optional gradient-editor mount slot.
+ *
+ * Used by `renderPropertyPanel`'s color/background and text-shadow rows
+ * today; designed to scale to the per-block mobile-menu sub-scope where
+ * 5+ color rows live alongside each other.
+ *
+ * Click handling is centralized in `NospressView.handlePropColorClick`
+ * which delegates by class — no per-instance wiring needed here.
+ */
+export function renderColorPickerRow(opts: {
+  scope: string;
+  /** Dotted-path field id, e.g. `color`, `background`, `textShadow.color`,
+   *  `mobileBackground`. Used as `data-style-field` on the input AND as
+   *  the `data-swatches-for` / `data-color-row-key` correlation key so
+   *  the click handler maps trigger → popover unambiguously. */
+  field: string;
+  label: string;
+  value: string;
+  placeholder: string;
+  palette: Partial<Record<PaletteKey, string>>;
+  /** Adds the gradient-swatch trigger + the gradient-editor mount slot
+   *  below the popover. Today only the wrapper Background row sets this. */
+  includeGradient?: boolean;
+}): string {
+  const triggerBg = opts.value ? resolvePaletteVars(opts.value, opts.palette) : 'transparent';
+  const paletteSwatches = renderPaletteSwatches(opts.palette, 'palette-key');
+  const scopeAttr = escapeHtmlAttr(opts.scope);
+  const fieldAttr = escapeHtmlAttr(opts.field);
+  return `
+    <div class="nospress-prop-row nospress-prop-row--color" data-color-row-key="${fieldAttr}">
+      <label class="nospress-prop-row__label">${escapeHtmlAttr(opts.label)}</label>
+      <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
+             data-style-scope="${scopeAttr}" data-style-field="${fieldAttr}"
+             value="${escapeHtmlAttr(opts.value)}" placeholder="${escapeHtmlAttr(opts.placeholder)}" />
+      <span class="nospress-prop-color-picker">
+        <button type="button"
+                class="nospress-prop-color-trigger"
+                style="background: ${escapeHtmlAttr(triggerBg)}"
+                aria-label="Pick color"></button>
+      </span>
+    </div>
+    <div class="nospress-prop-color-swatches-inline" hidden data-swatches-for="${fieldAttr}">
+      ${paletteSwatches}
+      ${opts.includeGradient ? `
+        <button type="button"
+                class="nospress-prop-color-swatch nospress-prop-color-swatch--gradient"
+                data-open-gradient-editor
+                aria-label="Gradient"></button>
+      ` : ''}
+      <label class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
+        <input type="color" class="nospress-prop-color-native" />
+      </label>
+    </div>
+    ${opts.includeGradient ? `
+      <div class="nospress-prop-gradient-inline" hidden data-gradient-mount-for="${fieldAttr}"></div>
+    ` : ''}
+  `;
+}
+
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
-  const schema = schemaFor(opts.scope);
+  const groups = groupedSchemaFor(opts.scope);
   const scopeAttr = escapeHtmlAttr(opts.scope);
   const v = (path: string): string => escapeHtmlAttr(readStyleField(opts.style, path) ?? '');
   const palette = opts.palette ?? {};
@@ -878,46 +1024,18 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     `;
   };
 
-  /** Color/Background row: narrower text input + circular trigger button.
-   *  Trigger opens a popover with the 6 palette swatches (resolve to
-   *  `var(--color-X)`) and one custom-color swatch (opens native picker). */
-  const colorRow = (e: SinglePropertyEntry) => {
-    const value = v(e.key);
-    // Resolve any `var(--color-N)` in the stored value to a literal hex
-    // so the trigger circle previews the user's actual palette (the
-    // editor scope keeps `:root` defaults for chrome / tabs).
-    const triggerBg = value ? resolvePaletteVars(value, palette) : 'transparent';
-    const paletteSwatches = renderPaletteSwatches(palette, 'palette-key');
-    return `
-      <div class="nospress-prop-row nospress-prop-row--color" data-color-row-key="${e.key}">
-        <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
-        <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
-               data-style-scope="${scopeAttr}" data-style-field="${e.key}"
-               value="${value}" placeholder="${escapeHtmlAttr(e.placeholder)}" />
-        <span class="nospress-prop-color-picker">
-          <button type="button"
-                  class="nospress-prop-color-trigger"
-                  style="background: ${escapeHtmlAttr(triggerBg)}"
-                  aria-label="Pick color"></button>
-        </span>
-      </div>
-      <div class="nospress-prop-color-swatches-inline" hidden data-swatches-for="${e.key}">
-        ${paletteSwatches}
-        ${e.key === 'background' ? `
-          <button type="button"
-                  class="nospress-prop-color-swatch nospress-prop-color-swatch--gradient"
-                  data-open-gradient-editor
-                  aria-label="Gradient"></button>
-        ` : ''}
-        <label class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
-          <input type="color" class="nospress-prop-color-native" />
-        </label>
-      </div>
-      ${e.key === 'background' ? `
-        <div class="nospress-prop-gradient-inline" hidden data-gradient-mount-for="${e.key}"></div>
-      ` : ''}
-    `;
-  };
+  /** Color/Background row delegates to the shared helper. Background
+   *  gets the gradient swatch + gradient-editor mount slot; plain Color
+   *  doesn't (gradient is a fill concept, not a foreground concept). */
+  const colorRow = (e: SinglePropertyEntry) => renderColorPickerRow({
+    scope: opts.scope,
+    field: e.key,
+    label: e.label,
+    value: v(e.key),
+    placeholder: e.placeholder,
+    palette,
+    includeGradient: e.cssProp === 'background',
+  });
 
   const quad = (e: QuadPropertyEntry) => `
     <div class="nospress-prop-row">
@@ -999,57 +1117,43 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
    *  one row + a Color row matching the regular Color/Background swatches
    *  popover. The four sub-fields write to `textShadow.h|v|blur|color`
    *  via the standard `data-style-field` dispatch; `composeTextShadow`
-   *  joins them into a single CSS declaration at render time. */
-  const textShadow = (_e: TextShadowPropertyEntry) => {
-    const colorVal = v('textShadow.color');
-    const triggerBg = colorVal ? resolvePaletteVars(colorVal, palette) : 'transparent';
-    const paletteSwatches = renderPaletteSwatches(palette, 'palette-key');
-    const colorKey = 'textShadow.color';
-    return `
-      <div class="nospress-prop-grouplabel">Text shadow</div>
-      <div class="nospress-prop-row">
-        <label class="nospress-prop-row__label">Horizontal length</label>
-        <input type="text" class="input nospress-prop-row__input"
-               data-style-scope="${scopeAttr}" data-style-field="textShadow.h"
-               value="${v('textShadow.h')}" placeholder="e.g. 2px" />
-      </div>
-      <div class="nospress-prop-row">
-        <label class="nospress-prop-row__label">Vertical length</label>
-        <input type="text" class="input nospress-prop-row__input"
-               data-style-scope="${scopeAttr}" data-style-field="textShadow.v"
-               value="${v('textShadow.v')}" placeholder="e.g. 2px" />
-      </div>
-      <div class="nospress-prop-row">
-        <label class="nospress-prop-row__label">Blur strength</label>
-        <input type="text" class="input nospress-prop-row__input"
-               data-style-scope="${scopeAttr}" data-style-field="textShadow.blur"
-               value="${v('textShadow.blur')}" placeholder="e.g. 4px" />
-      </div>
-      <div class="nospress-prop-row nospress-prop-row--color" data-color-row-key="${escapeHtmlAttr(colorKey)}">
-        <label class="nospress-prop-row__label">Shadow color</label>
-        <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
-               data-style-scope="${scopeAttr}" data-style-field="${colorKey}"
-               value="${colorVal}" placeholder="e.g. #000" />
-        <span class="nospress-prop-color-picker">
-          <button type="button"
-                  class="nospress-prop-color-trigger"
-                  style="background: ${escapeHtmlAttr(triggerBg)}"
-                  aria-label="Pick color"></button>
-        </span>
-      </div>
-      <div class="nospress-prop-color-swatches-inline" hidden data-swatches-for="${escapeHtmlAttr(colorKey)}">
-        ${paletteSwatches}
-        <label class="nospress-prop-color-swatch nospress-prop-color-swatch--custom" aria-label="Custom color">
-          <input type="color" class="nospress-prop-color-native" />
-        </label>
-      </div>
-    `;
-  };
+   *  joins them into a single CSS declaration at render time.
+   *
+   *  No own header — the parent Typography group section header now
+   *  scopes it. The compound's structure (3 numeric inputs + a color
+   *  row) is self-evident enough without a sub-label. */
+  const textShadow = (_e: TextShadowPropertyEntry) => `
+    <div class="nospress-prop-row">
+      <label class="nospress-prop-row__label">Text shadow H</label>
+      <input type="text" class="input nospress-prop-row__input"
+             data-style-scope="${scopeAttr}" data-style-field="textShadow.h"
+             value="${v('textShadow.h')}" placeholder="e.g. 2px" />
+    </div>
+    <div class="nospress-prop-row">
+      <label class="nospress-prop-row__label">Text shadow V</label>
+      <input type="text" class="input nospress-prop-row__input"
+             data-style-scope="${scopeAttr}" data-style-field="textShadow.v"
+             value="${v('textShadow.v')}" placeholder="e.g. 2px" />
+    </div>
+    <div class="nospress-prop-row">
+      <label class="nospress-prop-row__label">Text shadow blur</label>
+      <input type="text" class="input nospress-prop-row__input"
+             data-style-scope="${scopeAttr}" data-style-field="textShadow.blur"
+             value="${v('textShadow.blur')}" placeholder="e.g. 4px" />
+    </div>
+    ${renderColorPickerRow({
+      scope: opts.scope,
+      field: 'textShadow.color',
+      label: 'Text shadow color',
+      value: v('textShadow.color'),
+      placeholder: 'e.g. #000',
+      palette,
+    })}
+  `;
 
   const divider = (_e: DividerPropertyEntry) => {
     const active = opts.activeDividerSide ?? 'top';
     return `
-      <div class="nospress-prop-grouplabel">Divider</div>
       <div class="nospress-prop-row">
         <label class="nospress-prop-row__label">Side</label>
         <div class="nospress-prop-divider__sideswitch" role="tablist">
@@ -1061,12 +1165,24 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     `;
   };
 
-  const body = schema.map(entry =>
+  const renderEntry = (entry: PropertyEntry): string =>
     entry.kind === 'single' ? single(entry)
       : entry.kind === 'quad' ? quad(entry)
       : entry.kind === 'text-shadow' ? textShadow(entry)
-      : divider(entry)
-  ).join('');
+      : divider(entry);
+
+  // Group sections — one section per resolved group, containing all of
+  // its entries in declaration order. Section header is a plain `<h3
+  // class="h4">` so it inherits the project's heading typography +
+  // standard `margin-bottom: $gap` (see _typography.scss). Section
+  // wrapper keeps a `data-group-key` for accordion-state hooks
+  // downstream (mobile-menu sub-scope).
+  const body = groups.map(g => `
+    <section class="nospress-prop-group" data-group-key="${escapeHtmlAttr(g.key)}">
+      <h3 class="h4">${escapeHtmlAttr(g.label)}</h3>
+      ${g.entries.map(renderEntry).join('')}
+    </section>
+  `).join('');
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`).
@@ -1085,13 +1201,12 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
     </div>
   `;
 
-  // Breakpoint tabs replace the static "Properties" header when the user
-  // has any breakpoints defined. First tab is mobile-first / base; the
-  // active tab marker carries through to inputs so `handleStyleInput`
-  // routes writes to the right slot.
+  // Header slot: caller-provided raw HTML wins (used by sub-scope panels
+  // to show a title in place of the tabs); otherwise breakpoint tabs are
+  // rendered when defined; otherwise nothing.
   const tabs = opts.breakpointTabs ?? [];
   const activeBp = opts.activeBreakpoint ?? '';
-  const headerHtml = tabs.length > 0
+  const headerHtml = opts.header ?? (tabs.length > 0
     ? `
       <div class="tabs nospress-block-properties__tabs">
         ${tabs.map(t => `
@@ -1103,7 +1218,7 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
         `).join('')}
       </div>
     `
-    : '';
+    : '');
 
   return `
     <div class="nospress-block-properties" data-properties-for="${scopeAttr}">
