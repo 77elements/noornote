@@ -64,6 +64,19 @@ export interface CommonStyle {
   lineHeight?: string;
   fontWeight?: string;
   fontStyle?: string;
+  /** CSS `position` mode (static / relative / absolute / fixed / sticky).
+   *  Always defaults to `static` (the CSS default for every element). */
+  position?: string;
+  /** Per-side `top` / `right` / `bottom` / `left` offsets — only
+   *  meaningful when `position` is `absolute` / `fixed` / `sticky` /
+   *  `relative`. Surfaced in the panel only for `absolute` / `sticky`
+   *  (the cases the user asked for). */
+  positionInsets?: BoxValues;
+  /** CSS `display` mode — pre-filled in the panel with the block's
+   *  natural default (e.g. `block` for headings, `inline-block` for
+   *  buttons). Only written to inline styles when the user picks
+   *  something explicit. */
+  display?: string;
   /** Per-side border widths (CSS shorthand emitted as
    *  `border-width: <top> <right> <bottom> <left>`). */
   borderWidth?: BoxValues;
@@ -152,7 +165,7 @@ export interface SinglePropertyEntry {
  *  when omitted, preserving the original margin/padding behaviour. */
 export interface QuadPropertyEntry {
   kind: 'quad';
-  key: 'margin' | 'padding' | 'borderWidth' | 'borderColor';
+  key: 'margin' | 'padding' | 'borderWidth' | 'borderColor' | 'positionInsets';
   label: string;
   /** Used when `cssShorthand` is unset — emits `<cssPrefix>-<side>: <v>`
    *  per non-empty side. */
@@ -171,7 +184,7 @@ export interface QuadPropertyEntry {
  *  CustomDropdown instance after each render. */
 export interface DropdownPropertyEntry {
   kind: 'dropdown';
-  key: 'borderStyle';
+  key: 'borderStyle' | 'display' | 'position';
   label: string;
   cssProp: string;
   options: Array<{ value: string; label: string }>;
@@ -211,6 +224,8 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   lineHeight:   { kind: 'single', key: 'lineHeight',   label: 'Line height',   cssProp: 'line-height',   placeholder: 'e.g. 1.5' },
   fontWeight:   { kind: 'single', key: 'fontWeight',   label: 'Font weight',   cssProp: 'font-weight',   placeholder: '400 | 600 | bold' },
   fontStyle:    { kind: 'single', key: 'fontStyle',    label: 'Font style',    cssProp: 'font-style',    placeholder: 'normal | italic' },
+  // (Border-related catalog entries follow — and per-block default
+  // `display` values are computed via `getDefaultDisplayFor` further down.)
   // Border split into 3 properties: width (quad), style (dropdown), color (quad).
   // All emit shorthand declarations so the rendered CSS stays compact.
   borderWidth:  { kind: 'quad',   key: 'borderWidth',  label: 'Border width',  cssShorthand: 'border-width', placeholder: 'e.g. 1px' },
@@ -228,6 +243,34 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   borderRadius: { kind: 'single', key: 'borderRadius', label: 'Border radius', cssProp: 'border-radius', placeholder: 'e.g. 8px' },
   width:        { kind: 'single', key: 'width',        label: 'Width',         cssProp: 'width',         placeholder: 'e.g. 100%, 800px, 60ch' },
   height:       { kind: 'single', key: 'height',       label: 'Height',        cssProp: 'height',        placeholder: 'e.g. 480px, 60vh, auto' },
+  display:      {
+    kind: 'dropdown', key: 'display', label: 'Display', cssProp: 'display',
+    options: [
+      { value: 'block',         label: 'block' },
+      { value: 'inline',        label: 'inline' },
+      { value: 'inline-block',  label: 'inline-block' },
+      { value: 'flex',          label: 'flex' },
+      { value: 'inline-flex',   label: 'inline-flex' },
+      { value: 'grid',          label: 'grid' },
+      { value: 'inline-grid',   label: 'inline-grid' },
+      { value: 'none',          label: 'none' },
+    ],
+  },
+  position:     {
+    kind: 'dropdown', key: 'position', label: 'Position', cssProp: 'position',
+    options: [
+      { value: 'static',   label: 'static' },
+      { value: 'relative', label: 'relative' },
+      { value: 'absolute', label: 'absolute' },
+      { value: 'fixed',    label: 'fixed' },
+      { value: 'sticky',   label: 'sticky' },
+    ],
+  },
+  // Per-side top/right/bottom/left offsets. Empty `cssPrefix` means the
+  // emitted CSS props are the side names directly (`top: <v>`, etc.) —
+  // not `<prefix>-<side>`. The renderer surfaces this entry only when
+  // the current `position` value is `absolute` or `sticky`.
+  positionInsets: { kind: 'quad', key: 'positionInsets', label: 'Offsets', cssPrefix: '', placeholder: 'e.g. 10px' },
   margin:       { kind: 'quad',   key: 'margin',       label: 'Margin',        cssPrefix: 'margin' },
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
@@ -255,6 +298,8 @@ export interface PropertyGroup {
   props: PropertyKey[];
 }
 
+const GROUP_POSITION:   PropertyGroup = { key: 'position',   label: 'Position',   props: ['position', 'positionInsets'] };
+const GROUP_DISPLAY:    PropertyGroup = { key: 'display',    label: 'Layout',     props: ['display'] };
 const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
 const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width', 'height'] };
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
@@ -266,12 +311,12 @@ const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',  
 /** Composition shorthand for prose-flow blocks (heading/text/list/links/
  *  dm-button/quote/button-cta) — typography + width sizing, no height
  *  (forcing height on text content clips silently). */
-const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER];
+const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER];
 
 /** Composition shorthand for media/sub-component containers — full
  *  sizing (width + height for hero bands, fixed-aspect boxes), no
  *  typography (text styling doesn't apply to image/video/etc.). */
-const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER];
+const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER];
 
 /**
  * Per-scope group composition. The scope key matches whatever comes
@@ -285,7 +330,7 @@ const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_SPACING, GROUP_SIZING_FULL, GRO
  */
 export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // Page: everything except sizing — the page surface fills its host.
-  page: [GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
+  page: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
   heading:           TEXTUAL_GROUPS,
   text:              TEXTUAL_GROUPS,
   list:              TEXTUAL_GROUPS,
@@ -312,7 +357,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   weblog:            CONTAINER_GROUPS,
   // Nav-menu wrapper: like the textual blocks plus full sizing — the
   // menu container is positioned/sized like a media block.
-  'nav-menu':        [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
+  'nav-menu':        [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
   // Nav-menu mobile drawer sub-scope is rendered through a separate
   // section-aware path (`renderMobileMenuSubScope`), not via the flat
   // matrix here — the panel is per-selector accordion sections, each
@@ -321,7 +366,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // aside/nav/fieldset) is the most permissive container — full
   // typography (users do put headings + text inside), full sizing, plus
   // the divider edge-shapes that no other block scope supports.
-  div:               [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS],
+  div:               [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS],
 };
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -341,20 +386,20 @@ export const MOBILE_MENU_SECTIONS: MobileMenuSectionDef[] = [
   // Drawer panel — container styling. Full sizing (drawer width is
   // user-tuneable), spacing, background, border. No typography (children
   // inherit the regular page font).
-  { key: 'ul',        label: 'Drawer (ul)',           groups: [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER] },
+  { key: 'ul',        label: 'Drawer (ul)',           groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER] },
   // Item rows — list-item-level styling. Full set: spacing, sizing
   // (height for fixed-height rows), typography (per-item overrides),
   // background, border (separators).
-  { key: 'li',        label: 'Items (li)',            groups: [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  { key: 'li',        label: 'Items (li)',            groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
   // Links — text styling primary. Spacing for hit-area padding,
   // typography + background + border. No sizing (anchors are inline).
-  { key: 'a',         label: 'Links (a)',             groups: [GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  { key: 'a',         label: 'Links (a)',             groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
   // Active link — same prop set as `a`, just targets `<li class="active">`.
-  { key: 'aActive',   label: 'Active link (a.active)', groups: [GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  { key: 'aActive',   label: 'Active link (a.active)', groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
   // Hamburger button — color + sizing + spacing + box. No fontSize/etc
   // since it's an icon, but `color` (from typography) drives the SVG
   // currentColor stroke.
-  { key: 'hamburger', label: 'Hamburger button',      groups: [GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  { key: 'hamburger', label: 'Hamburger button',      groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
   // Backdrop — just a background colour / image.
   { key: 'overlay',   label: 'Backdrop overlay',      groups: [GROUP_BACKGROUND] },
 ];
@@ -363,6 +408,56 @@ export const MOBILE_MENU_SECTIONS: MobileMenuSectionDef[] = [
 function matrixKey(scope: string): string {
   const colon = scope.indexOf(':');
   return colon < 0 ? scope : scope.slice(0, colon);
+}
+
+/** Natural CSS `display` value per block scope — used to pre-fill the
+ *  Display dropdown so the user always sees what the element actually
+ *  renders as before they pick an explicit override. */
+export const BLOCK_DEFAULT_DISPLAY: Record<string, string> = {
+  page:              'block',
+  heading:           'block',
+  text:              'block',
+  list:              'block',
+  links:             'block',
+  divider:           'block',
+  image:             'block',
+  gallery:           'block',
+  embed:             'block',
+  'bookmark-folder': 'block',
+  columns:           'grid',
+  'profile-card':    'block',
+  quote:             'block',
+  'button-cta':      'inline-block',
+  'dm-button':       'inline-block',
+  video:             'block',
+  audio:             'block',
+  'articles-list':   'block',
+  weblog:            'block',
+  div:               'block',
+  'nav-menu':        'block',
+};
+
+/** Same idea for the mobile-menu sub-scope, indexed by section selector
+ *  (the section drives which DOM element the styles target). */
+export const MOBILE_SECTION_DEFAULT_DISPLAY: Record<MobileMenuSection, string> = {
+  ul:        'block',
+  li:        'block',
+  a:         'inline',
+  aActive:   'inline',
+  hamburger: 'inline-block',
+  overlay:   'block',
+};
+
+/** Resolve the natural display value for a property-panel render. The
+ *  scope tells us the block type; the field prefix tells us whether
+ *  we're editing the wrapper (`''`) or a mobile-menu sub-section
+ *  (`mobileMenu.<sec>.`). */
+export function getDefaultDisplayFor(scope: string, fieldPrefix: string): string {
+  if (fieldPrefix.startsWith('mobileMenu.')) {
+    const sec = fieldPrefix.slice('mobileMenu.'.length).split('.')[0] as MobileMenuSection;
+    return MOBILE_SECTION_DEFAULT_DISPLAY[sec] ?? '';
+  }
+  return BLOCK_DEFAULT_DISPLAY[matrixKey(scope)] ?? '';
 }
 
 /** Resolved group: a `PropertyGroup` with its `props` keys mapped through
@@ -457,8 +552,13 @@ export function buildInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle |
       if (entry.cssShorthand) {
         const shorthand = composeQuadShorthand(box);
         if (shorthand) parts.push(`${entry.cssShorthand}: ${shorthand}`);
-      } else if (entry.cssPrefix) {
-        for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+      } else if (entry.cssPrefix !== undefined) {
+        // Empty prefix → side names ARE the CSS props (e.g. `top: 10px`
+        // for `positionInsets`). Otherwise: `<prefix>-<side>`.
+        for (const side of QUAD_SIDES) {
+          const cssProp = entry.cssPrefix ? `${entry.cssPrefix}-${side}` : side;
+          push(cssProp, box[side]);
+        }
       }
     } else if (entry.kind === 'dropdown') {
       push(entry.cssProp, style[entry.key]);
@@ -622,7 +722,8 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
   if (segments.length === 2) {
     const head = segments[0];
     if (head === 'margin' || head === 'padding'
-        || head === 'borderWidth' || head === 'borderColor') {
+        || head === 'borderWidth' || head === 'borderColor'
+        || head === 'positionInsets') {
       const side = segments[1] as QuadSide;
       if (side !== 'top' && side !== 'bottom' && side !== 'left' && side !== 'right') return;
       if (!style[head]) style[head] = {};
@@ -870,8 +971,11 @@ export function buildImportantInlineStyle(schema: PropertyEntry[], styleIn: Comm
       if (entry.cssShorthand) {
         const shorthand = composeQuadShorthand(box);
         if (shorthand) parts.push(`${entry.cssShorthand}: ${shorthand} !important`);
-      } else if (entry.cssPrefix) {
-        for (const side of QUAD_SIDES) push(`${entry.cssPrefix}-${side}`, box[side]);
+      } else if (entry.cssPrefix !== undefined) {
+        for (const side of QUAD_SIDES) {
+          const cssProp = entry.cssPrefix ? `${entry.cssPrefix}-${side}` : side;
+          push(cssProp, box[side]);
+        }
       }
     } else if (entry.kind === 'dropdown') {
       push(entry.cssProp, style[entry.key]);
@@ -1263,17 +1367,30 @@ function renderEntriesForGroups(
 
   /** Dropdown row — emits a slot div that NospressView's
    *  `mountStyleDropdowns` fills with a `CustomDropdown` instance. */
-  const dropdown = (e: DropdownPropertyEntry) => `
-    <div class="nospress-prop-row">
-      <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
-      <div class="nospress-prop-row__input"
-           data-style-dropdown
-           data-style-scope="${scopeAttr}"
-           data-style-field="${fieldPrefix}${e.key}"
-           data-current-value="${escapeHtmlAttr(v(e.key))}"
-           data-options="${escapeHtmlAttr(JSON.stringify(e.options))}"></div>
-    </div>
-  `;
+  const dropdown = (e: DropdownPropertyEntry) => {
+    // Pre-fill: stored value wins, else a per-key fallback. `display`
+    // uses the block's natural CSS default; `position` defaults to
+    // `relative` everywhere (rather than the CSS-spec `static`) so
+    // descendant absolute children resolve against the block by
+    // default. `borderStyle` has its own `(none)` first option, no
+    // fallback needed.
+    const stored = v(e.key);
+    const fallback = e.key === 'display' ? getDefaultDisplayFor(opts.scope, fieldPrefix)
+      : e.key === 'position' ? 'relative'
+      : '';
+    const current = stored || fallback;
+    return `
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
+        <div class="nospress-prop-row__input"
+             data-style-dropdown
+             data-style-scope="${scopeAttr}"
+             data-style-field="${fieldPrefix}${e.key}"
+             data-current-value="${escapeHtmlAttr(current)}"
+             data-options="${escapeHtmlAttr(JSON.stringify(e.options))}"></div>
+      </div>
+    `;
+  };
 
   /** Render the Top/Bottom switch + the edit area for the currently
    *  active side. Active side is controlled by the caller (`opts.activeDividerSide`)
@@ -1390,12 +1507,23 @@ function renderEntriesForGroups(
     `;
   };
 
-  const renderEntry = (entry: PropertyEntry): string =>
-    entry.kind === 'single' ? single(entry)
+  const renderEntry = (entry: PropertyEntry): string => {
+    // Conditional: positionInsets only surfaces when the current
+    // `position` value is `absolute` or `sticky` — otherwise the
+    // four offset inputs would do nothing and just clutter the panel.
+    if (entry.kind === 'quad' && entry.key === 'positionInsets') {
+      // Match the panel's pre-fill default for `position` (see
+      // `dropdown` closure above) so the conditional behaves the same
+      // whether or not the user has explicitly picked a value.
+      const pos = readStyleField(opts.style, fieldPrefix + 'position') || 'relative';
+      if (pos !== 'absolute' && pos !== 'sticky') return '';
+    }
+    return entry.kind === 'single' ? single(entry)
       : entry.kind === 'quad' ? quad(entry)
       : entry.kind === 'dropdown' ? dropdown(entry)
       : entry.kind === 'text-shadow' ? textShadow(entry)
       : divider(entry);
+  };
 
   // Group sections — one section per resolved group, containing all of
   // its entries in declaration order. Section header is a plain `<h3

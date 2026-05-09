@@ -3651,6 +3651,13 @@ export class NospressView extends View {
         }
       }
     }, { silent: true });
+    // `position` toggles whether `positionInsets` is rendered — re-render
+    // the panel so the 4 offset inputs appear / vanish accordingly.
+    // Match the bare field as well as any prefixed sub-scope variant
+    // (e.g. `mobileMenu.ul.position`).
+    if (field === 'position' || field.endsWith('.position')) {
+      this.updatePropertiesTab();
+    }
   }
 
   /**
