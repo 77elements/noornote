@@ -44,11 +44,11 @@ export class CursorRow {
     this.container = document.createElement('div');
     this.container.className = 'nospress-cursor-row';
     this.container.innerHTML = `
-      <input type="text" class="nospress-cursor-row__input" placeholder="Type / for block menu, or text to start writing…" autocomplete="off" spellcheck="false" />
-      <div class="nospress-cursor-row__menu" hidden></div>
+      <input type="text" class="nospress-cursor-row__input" data-cursor-input placeholder="Type / for block menu, or text to start writing…" autocomplete="off" spellcheck="false" />
+      <div class="nospress-cursor-row__menu" data-cursor-menu hidden></div>
     `;
-    this.input = this.container.querySelector('.nospress-cursor-row__input') as HTMLInputElement;
-    this.menu = this.container.querySelector('.nospress-cursor-row__menu') as HTMLDivElement;
+    this.input = this.container.querySelector('[data-cursor-input]') as HTMLInputElement;
+    this.menu = this.container.querySelector('[data-cursor-menu]') as HTMLDivElement;
     this.clickAwayHandler = this.handleClickAway.bind(this);
     this.bindEvents();
   }

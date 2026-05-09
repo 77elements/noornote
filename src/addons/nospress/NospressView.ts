@@ -147,6 +147,10 @@ export class NospressView extends View {
   private editMode: boolean = true;
   private folderPickers: BookmarkFolderPicker[] = [];
   private blockDropdowns: CustomDropdown[] = [];
+  /** Per-menu "Add page…" CustomDropdowns rendered into the Nav tab.
+   *  One instance per menu; tracked so they can be torn down before the
+   *  tab re-renders without leaking event listeners. */
+  private navAddPageDropdowns: CustomDropdown[] = [];
   private cursorRow: CursorRow | null = null;
   /** Where the next block insert lands. Either at page level between
    *  top-level blocks, or inside a specific column of a `columns` block.
@@ -289,6 +293,8 @@ export class NospressView extends View {
     this.destroyBlockDropdowns();
     this.breakpointDropdowns.forEach(d => d.destroy());
     this.breakpointDropdowns = [];
+    this.navAddPageDropdowns.forEach(d => d.destroy());
+    this.navAddPageDropdowns = [];
     this.destroyCursorRow();
     this.destroyProfileCards();
     this.destroyArticlesCarousels();
@@ -518,7 +524,7 @@ export class NospressView extends View {
       `
       : '';
     return `
-      <div class="nospress-action-bar l-row--split">
+      <div class="nospress-action-bar l-row--split" data-action-bar>
         <div>
           <button type="button" class="btn" data-action="publish" ${publishDirty ? '' : 'disabled'}>Publish</button>
           <button type="button" class="btn btn--passive btn--danger" data-action="delete-list" ${hasPublished ? '' : 'disabled'}>Unpublish</button>
@@ -530,7 +536,7 @@ export class NospressView extends View {
 
   /** Re-render only the action bar (used after save/dirty state changes). */
   private refreshActionBar(): void {
-    const bar = this.container.querySelector('.nospress-action-bar');
+    const bar = this.container.querySelector('[data-action-bar]');
     if (!bar) return;
     const tmp = document.createElement('div');
     tmp.innerHTML = this.renderActionBar(this.editMode);
@@ -797,7 +803,6 @@ export class NospressView extends View {
     // the nav handlers only act on `data-action` values they recognise so
     // they coexist with the Global-tab handlers without overlap.
     globalContent.addEventListener('click', (e) => this.handleNavTabClick(e));
-    globalContent.addEventListener('change', (e) => this.handleNavTabChange(e));
     globalContent.addEventListener('submit', (e) => this.handleNavTabSubmit(e));
 
     this.rightPaneEl = librarySlot;
@@ -1015,8 +1020,8 @@ export class NospressView extends View {
 
     return `
       <div class="nospress-global">
-        <section class="nn-ui-toggle nospress-global__section open">
-          <div class="nn-ui-toggle__header">
+        <section class="nn-ui-toggle nospress-global__section open" data-toggle-section>
+          <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Meta &amp; SEO</h2>
             </div>
@@ -1052,8 +1057,8 @@ export class NospressView extends View {
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section">
-          <div class="nn-ui-toggle__header">
+        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+          <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Theme &amp; Palette</h2>
             </div>
@@ -1074,8 +1079,8 @@ export class NospressView extends View {
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section">
-          <div class="nn-ui-toggle__header">
+        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+          <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Navigation menus</h2>
             </div>
@@ -1088,8 +1093,8 @@ export class NospressView extends View {
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section">
-          <div class="nn-ui-toggle__header">
+        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+          <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Breakpoints</h2>
               <p class="nn-ui-toggle__description">Named media-query thresholds you can target from per-block styles + Custom CSS. Up to 5.</p>
@@ -1103,8 +1108,8 @@ export class NospressView extends View {
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section">
-          <div class="nn-ui-toggle__header">
+        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+          <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Code Integration</h2>
               <p class="nn-ui-toggle__description">Code you inject runs on your own NosPress page under noornote.app. Use only sources you trust.</p>
@@ -1371,7 +1376,7 @@ export class NospressView extends View {
       const inputEl = target as HTMLInputElement;
       const normalized = normalizePaletteColor(raw);
       if (!normalized) return;
-      const row = inputEl.closest('.nospress-palette-row');
+      const row = inputEl.closest('[data-palette-key]');
       const swatch = row?.querySelector<HTMLElement>('[data-palette-swatch-for]');
       if (swatch) swatch.style.backgroundColor = normalized;
       this.persistGlobalField(path, normalized);
@@ -1450,11 +1455,11 @@ export class NospressView extends View {
     const toggle = target.closest('[data-divider-picker-toggle]') as HTMLElement | null;
     if (toggle) {
       e.stopPropagation();
-      const menu = toggle.closest('[data-divider-picker]')?.querySelector('.nospress-divider-picker__menu') as HTMLElement | null;
+      const menu = toggle.closest('[data-divider-picker]')?.querySelector('[data-divider-picker-menu]') as HTMLElement | null;
       if (!menu) return;
       const wasOpen = !menu.hidden;
       // Close any other open pickers first.
-      document.querySelectorAll<HTMLElement>('.nospress-divider-picker__menu').forEach(m => {
+      document.querySelectorAll<HTMLElement>('[data-divider-picker-menu]').forEach(m => {
         m.hidden = true;
         m.classList.remove('nospress-divider-picker__menu--up');
       });
@@ -1487,14 +1492,14 @@ export class NospressView extends View {
         this.updatePropertiesTab();
       }
       // Close the menu either way.
-      const menu = pick.closest('.nospress-divider-picker__menu') as HTMLElement | null;
+      const menu = pick.closest('[data-divider-picker-menu]') as HTMLElement | null;
       if (menu) menu.hidden = true;
       return;
     }
 
     // Click outside any picker → close all open style menus.
     if (!target.closest('[data-divider-picker]')) {
-      document.querySelectorAll<HTMLElement>('.nospress-divider-picker__menu').forEach(m => { m.hidden = true; });
+      document.querySelectorAll<HTMLElement>('[data-divider-picker-menu]').forEach(m => { m.hidden = true; });
     }
   }
 
@@ -1511,23 +1516,23 @@ export class NospressView extends View {
   private handlePropColorClick(e: Event, librarySlot: HTMLElement): void {
     const target = e.target as HTMLElement;
 
-    const trigger = target.closest('.nospress-prop-color-trigger');
+    const trigger = target.closest('[data-color-trigger]');
     if (trigger) {
       e.stopPropagation();
-      const row = trigger.closest('.nospress-prop-row--color') as HTMLElement | null;
+      const row = trigger.closest('[data-color-row-key]') as HTMLElement | null;
       if (!row) return;
       const swatchesInline = this.findSwatchesInline(row);
       if (!swatchesInline) return;
       const wasOpen = !swatchesInline.hidden;
       // Close any other open swatch rows (one at a time keeps the panel clean).
-      librarySlot.querySelectorAll<HTMLElement>('.nospress-prop-color-swatches-inline').forEach(p => { p.hidden = true; });
+      librarySlot.querySelectorAll<HTMLElement>('[data-swatches-for]').forEach(p => { p.hidden = true; });
       swatchesInline.hidden = wasOpen;
       // Toggling the swatches closes any active gradient editor too.
       if (wasOpen && this.gradientEdit?.rowEl === row) this.closeGradientEditor(false);
       return;
     }
 
-    const paletteSwatch = target.closest('.nospress-prop-color-swatch[data-palette-key]') as HTMLElement | null;
+    const paletteSwatch = target.closest('button[data-palette-key]') as HTMLElement | null;
     if (paletteSwatch) {
       // Gradient-editor stop-color picker reuses the same palette swatch
       // class but lives inside the gradient mount — different code path.
@@ -1577,8 +1582,8 @@ export class NospressView extends View {
     // Click outside the picker / swatches / gradient editor → collapse
     // any open inline swatch row (gradient editor stays — it has explicit
     // Apply / Cancel and is too laborious to lose accidentally).
-    if (!target.closest('.nospress-prop-color-picker, .nospress-prop-color-swatches-inline, .nospress-prop-gradient-inline')) {
-      librarySlot.querySelectorAll<HTMLElement>('.nospress-prop-color-swatches-inline').forEach(p => { p.hidden = true; });
+    if (!target.closest('[data-color-picker], [data-swatches-for], [data-gradient-mount-for]')) {
+      librarySlot.querySelectorAll<HTMLElement>('[data-swatches-for]').forEach(p => { p.hidden = true; });
     }
   }
 
@@ -1591,10 +1596,10 @@ export class NospressView extends View {
     // sibling of the color row. Walk up to swatches → previous sibling.
     // The swatches row stays visible — users may want to flip back to a
     // palette color or reopen the editor without losing context.
-    const swatchesInline = originEl.closest('.nospress-prop-color-swatches-inline') as HTMLElement | null;
+    const swatchesInline = originEl.closest('[data-swatches-for]') as HTMLElement | null;
     const row = swatchesInline?.previousElementSibling as HTMLElement | null;
-    if (!row || !row.classList.contains('nospress-prop-row--color')) return;
-    const input = row.querySelector<HTMLInputElement>('.nospress-prop-row__input');
+    if (!row || !row.hasAttribute('data-color-row-key')) return;
+    const input = row.querySelector<HTMLInputElement>('[data-style-field]');
     const originalValue = input?.value ?? '';
     const draft = parseGradient(originalValue) ?? defaultGradient();
     this.gradientEdit = { rowEl: row, draft, selectedStopIndex: 0, originalValue };
@@ -1913,11 +1918,11 @@ export class NospressView extends View {
     // The origin can be either the swatches-inline row (sibling of the
     // color row) or the native picker inside it. Walk up to find the
     // swatches block, then up to its preceding row sibling.
-    const swatchesInline = originSwatch.closest('.nospress-prop-color-swatches-inline') as HTMLElement | null;
+    const swatchesInline = originSwatch.closest('[data-swatches-for]') as HTMLElement | null;
     const row = swatchesInline?.previousElementSibling as HTMLElement | null;
-    if (!row || !row.classList.contains('nospress-prop-row--color')) return;
-    const input = row.querySelector<HTMLInputElement>('.nospress-prop-row__input');
-    const trigger = row.querySelector<HTMLElement>('.nospress-prop-color-trigger');
+    if (!row || !row.hasAttribute('data-color-row-key')) return;
+    const input = row.querySelector<HTMLInputElement>('[data-style-field]');
+    const trigger = row.querySelector<HTMLElement>('[data-color-trigger]');
     if (input) {
       input.value = value;
       input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -1941,9 +1946,9 @@ export class NospressView extends View {
   private handleGlobalTabClick(e: Event): void {
     const target = e.target as HTMLElement;
 
-    const toggleHeader = target.closest('.nn-ui-toggle__header');
+    const toggleHeader = target.closest('[data-toggle-header]');
     if (toggleHeader) {
-      toggleHeader.closest('.nn-ui-toggle')?.classList.toggle('open');
+      toggleHeader.closest('[data-toggle-section]')?.classList.toggle('open');
       return;
     }
 
@@ -1963,7 +1968,9 @@ export class NospressView extends View {
     if (!action) return;
 
     if (action.dataset.action === 'add-meta-tag') {
-      const list = action.closest('.form__row')?.querySelector('[data-meta-custom-list]') as HTMLElement | null;
+      // Single list per page (Global tab); look up directly instead of
+      // walking through the .form__row molecule.
+      const list = this.container.querySelector('[data-meta-custom-list]') as HTMLElement | null;
       if (!list) return;
       const row = document.createElement('div');
       row.className = 'nospress-meta-custom__row';
@@ -2075,17 +2082,12 @@ export class NospressView extends View {
       menu.items.filter(i => i.type === 'page').map(i => (i as Extract<NavItem, { type: 'page' }>).pageSlug)
     );
     const availablePages = this.pageIndexService.getIndex().pages.filter(p => !usedSlugs.has(p.slug));
-    const pageOptions = availablePages.length > 0
-      ? availablePages.map(p => `<option value="${escapeHtml(p.slug)}">${escapeHtml(p.title)}</option>`).join('')
-      : '';
 
+    // CustomDropdown slot — populated post-render by mountNavAddPagePickers
+    // (which re-derives the available-pages list at mount time). App-wide
+    // rule: never raw `<select>`.
     const addPagePickerHtml = availablePages.length > 0
-      ? `
-        <select class="nospress-nav__add-select" data-menu-id="${escapeHtml(menu.id)}">
-          <option value="">+ Add page…</option>
-          ${pageOptions}
-        </select>
-      `
+      ? `<div data-add-page-picker data-menu-id="${escapeHtml(menu.id)}"></div>`
       : '';
 
     const addUrlButtonHtml = `
@@ -2093,7 +2095,7 @@ export class NospressView extends View {
     `;
 
     const addUrlFormHtml = `
-      <form class="nospress-nav__url-form" data-menu-id="${escapeHtml(menu.id)}" hidden>
+      <form class="nospress-nav__url-form" data-nav-url-form data-menu-id="${escapeHtml(menu.id)}" hidden>
         <input type="text" class="nospress-nav__url-input" data-field="label" placeholder="Label (e.g. Twitter)" />
         <input type="url" class="nospress-nav__url-input" data-field="url" placeholder="https://example.com" />
         <button type="submit" class="btn btn--mini">Add</button>
@@ -2151,9 +2153,52 @@ export class NospressView extends View {
 
   private updateNavTab(): void {
     if (this.navTabContent) {
+      // Tear down old dropdowns BEFORE replacing innerHTML — otherwise the
+      // CustomDropdown instances would leak listeners on detached DOM.
+      this.navAddPageDropdowns.forEach(d => d.destroy());
+      this.navAddPageDropdowns = [];
       this.navTabContent.innerHTML = this.renderNavContent();
       this.attachNavDragHandlers();
+      this.mountNavAddPagePickers();
     }
+  }
+
+  /** Mount one CustomDropdown per `[data-add-page-picker]` slot in the
+   *  Nav tab. Picking an entry appends it to the menu and clears the
+   *  picker so the same page isn't added twice in a row. */
+  private mountNavAddPagePickers(): void {
+    if (!this.navTabContent) return;
+    const slots = this.navTabContent.querySelectorAll<HTMLElement>('[data-add-page-picker]');
+    const allPages = this.pageIndexService.getIndex().pages;
+    const set = this.menuService.getMenuSet();
+    slots.forEach(slot => {
+      const menuId = slot.dataset.menuId ?? '';
+      if (!menuId) return;
+      const menu = set.menus.find(m => m.id === menuId);
+      const usedSlugs = new Set(
+        (menu?.items ?? [])
+          .filter((it): it is { type: 'page'; pageSlug: string } => it.type === 'page')
+          .map(it => it.pageSlug),
+      );
+      const available = allPages.filter(p => !usedSlugs.has(p.slug));
+      const dropdown = new CustomDropdown({
+        options: [
+          { value: '', label: '+ Add page…' },
+          ...available.map(p => ({ value: p.slug, label: p.title })),
+        ],
+        selectedValue: '',
+        onChange: (value) => {
+          if (!value) return;
+          // Reset the picker label back to placeholder for the next add.
+          dropdown.setValue('');
+          void this.commitMenuChange(() =>
+            this.menuService.appendMenuItem(menuId, { type: 'page', pageSlug: value }),
+          );
+        },
+      });
+      slot.appendChild(dropdown.getElement());
+      this.navAddPageDropdowns.push(dropdown);
+    });
   }
 
   /** Wire drag-and-drop reorder on every menu's `<ol>` after the Nav tab
@@ -2181,11 +2226,6 @@ export class NospressView extends View {
 
   private handleNavTabClick(e: Event): void {
     const target = e.target as HTMLElement;
-    const select = target.closest('.nospress-nav__add-select') as HTMLSelectElement | null;
-    // Add picker is `change`-driven, not click. Bail out if a menu's <select>
-    // is the click target — let the change handler (below) deal with it.
-    if (select) return;
-
     const actionEl = target.closest('[data-action]') as HTMLElement | null;
     if (!actionEl) return;
     const action = actionEl.dataset.action;
@@ -2227,7 +2267,7 @@ export class NospressView extends View {
    *  only one is open at a time. */
   private toggleAddUrlForm(menuId: string): void {
     if (!this.navTabContent) return;
-    const allForms = this.navTabContent.querySelectorAll<HTMLFormElement>('.nospress-nav__url-form');
+    const allForms = this.navTabContent.querySelectorAll<HTMLFormElement>('[data-nav-url-form]');
     allForms.forEach(f => {
       const isMatch = f.dataset.menuId === menuId;
       if (isMatch) {
@@ -2240,7 +2280,7 @@ export class NospressView extends View {
   }
 
   private handleNavTabSubmit(e: Event): void {
-    const form = (e.target as HTMLElement).closest('.nospress-nav__url-form') as HTMLFormElement | null;
+    const form = (e.target as HTMLElement).closest('[data-nav-url-form]') as HTMLFormElement | null;
     if (!form) return;
     e.preventDefault();
     const menuId = form.dataset.menuId ?? '';
@@ -2304,22 +2344,6 @@ export class NospressView extends View {
     void this.commitMenuChange(() => this.menuService.removeMenu(menuId));
   }
 
-  /** Handle the "+ Add page…" picker on each menu tile. */
-  private handleNavTabChange(e: Event): void {
-    const target = e.target as HTMLElement;
-    const select = target.closest('.nospress-nav__add-select') as HTMLSelectElement | null;
-    if (!select) return;
-
-    const slug = select.value;
-    const menuId = select.dataset.menuId ?? '';
-    if (!menuId) return;
-    select.value = '';
-    if (slug === '') return;
-
-    void this.commitMenuChange(() =>
-      this.menuService.appendMenuItem(menuId, { type: 'page', pageSlug: slug })
-    );
-  }
 
   /** Persist a menu change locally + publish to relays. The local mutation
    *  fires `nospressMenus:changed`, which re-renders the Nav tab. */
@@ -2939,7 +2963,7 @@ export class NospressView extends View {
         if (colBlocks.length === 0) {
           return cursorHere
             ? slot
-            : `<div class="nospress-block-columns__placeholder" data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here</div>`;
+            : `<div class="nospress-block-columns__placeholder" data-columns-placeholder data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here</div>`;
         }
 
         const inner: string[] = [];
@@ -2974,7 +2998,7 @@ export class NospressView extends View {
         if (block.children.length === 0) {
           return cursorHere
             ? slot
-            : `<div class="nospress-block-div__placeholder" data-div-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here</div>`;
+            : `<div class="nospress-block-div__placeholder" data-div-placeholder data-div-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here</div>`;
         }
 
         const inner: string[] = [];
@@ -3293,22 +3317,22 @@ export class NospressView extends View {
    *  when its block owns the open sub-scope, so the SCSS can paint the
    *  pressed state without re-rendering the trigger HTML. */
   private applySelectedBlockClass(): void {
-    this.container.querySelectorAll('.nospress-block-edit--selected').forEach(el => {
-      el.classList.remove('nospress-block-edit--selected');
+    this.container.querySelectorAll<HTMLElement>('[data-block-edit][data-selected]').forEach(el => {
+      delete el.dataset.selected;
     });
-    this.container.querySelectorAll('.nospress-block-nav-menu__mobile-trigger.is-active').forEach(el => {
-      el.classList.remove('is-active');
+    this.container.querySelectorAll<HTMLElement>('[data-mobile-subscope-toggle][data-active]').forEach(el => {
+      delete el.dataset.active;
     });
     if (!this.selectedBlockId) return;
-    const wrapper = this.container.querySelector(
-      `.nospress-block-edit[data-block-id="${this.selectedBlockId}"]`
+    const wrapper = this.container.querySelector<HTMLElement>(
+      `[data-block-edit][data-block-id="${this.selectedBlockId}"]`
     );
-    wrapper?.classList.add('nospress-block-edit--selected');
+    if (wrapper) wrapper.dataset.selected = '';
     if (this.selectedSubScope === 'mobile-menu') {
-      const trigger = wrapper?.querySelector(
-        `.nospress-block-nav-menu__mobile-trigger[data-block-id="${this.selectedBlockId}"]`
+      const trigger = wrapper?.querySelector<HTMLElement>(
+        `[data-mobile-subscope-toggle][data-block-id="${this.selectedBlockId}"]`
       );
-      trigger?.classList.add('is-active');
+      if (trigger) trigger.dataset.active = '';
     }
   }
 
@@ -3486,6 +3510,25 @@ export class NospressView extends View {
             this.mutateDraft((page) => {
               const block = findBlockInPage(page, blockId)?.block;
               if (block && block.type === 'nav-menu') block.menuId = value;
+            }, { silent: false });
+          }
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
+      } else if (kind === 'cta-variant') {
+        const current = slot.dataset.currentValue || 'primary';
+        const dropdown = new CustomDropdown({
+          options: [
+            { value: 'primary',   label: 'Primary' },
+            { value: 'secondary', label: 'Secondary' },
+          ],
+          selectedValue: current,
+          onChange: (value) => {
+            this.mutateDraft((page) => {
+              const block = findBlockInPage(page, blockId)?.block;
+              if (block && block.type === 'button-cta') {
+                block.variant = value === 'secondary' ? 'secondary' : 'primary';
+              }
             }, { silent: false });
           }
         });
@@ -3711,7 +3754,7 @@ export class NospressView extends View {
       const target = e.target as HTMLElement;
 
       // Click on an empty-column placeholder → put cursor in that column
-      const ph = target.closest('.nospress-block-columns__placeholder') as HTMLElement | null;
+      const ph = target.closest('[data-columns-placeholder]') as HTMLElement | null;
       if (ph) {
         const cbId = ph.dataset.columnsBlockId;
         const colIdx = ph.dataset.colIndex !== undefined ? parseInt(ph.dataset.colIndex, 10) : -1;
@@ -3722,7 +3765,7 @@ export class NospressView extends View {
       }
 
       // Click on an empty-div placeholder → put cursor in that div
-      const divPh = target.closest('.nospress-block-div__placeholder') as HTMLElement | null;
+      const divPh = target.closest('[data-div-placeholder]') as HTMLElement | null;
       if (divPh) {
         const dbId = divPh.dataset.divBlockId;
         if (dbId) {
@@ -3750,10 +3793,10 @@ export class NospressView extends View {
       if (target.closest('img, video, .note-media, .note-image--clickable')) return;
       // Click inside the inline properties panel of the selected block:
       // keep selection (don't toggle off, the user is interacting with the panel)
-      if (target.closest('.nospress-block-properties')) return;
+      if (target.closest('[data-properties-for]')) return;
 
       // Inner block wrapper takes precedence over the outer page frame
-      const blockWrapper = target.closest('.nospress-block-edit') as HTMLElement | null;
+      const blockWrapper = target.closest('[data-block-edit]') as HTMLElement | null;
       if (blockWrapper) {
         const blockId = blockWrapper.dataset.blockId ?? null;
         // (c): clicking the nav-menu block-frame outside the trigger
@@ -3896,7 +3939,7 @@ export class NospressView extends View {
       } else if (block.type === 'button-cta') {
         if (field === 'cta-label')   block.label = el.value;
         if (field === 'cta-url')     block.url = el.value;
-        if (field === 'cta-variant') block.variant = el.value === 'secondary' ? 'secondary' : 'primary';
+        // cta-variant is driven by the CustomDropdown — see mountBlockDropdowns
       } else if (block.type === 'video') {
         if (field === 'video-url')     block.url = el.value;
         if (field === 'video-caption') block.caption = el.value;

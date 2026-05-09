@@ -981,9 +981,10 @@ export function renderColorPickerRow(opts: {
       <input type="text" class="input nospress-prop-row__input nospress-prop-row__input--narrow"
              data-style-scope="${scopeAttr}" data-style-field="${fieldAttr}"
              value="${escapeHtmlAttr(opts.value)}" placeholder="${escapeHtmlAttr(opts.placeholder)}" />
-      <span class="nospress-prop-color-picker">
+      <span class="nospress-prop-color-picker" data-color-picker>
         <button type="button"
                 class="nospress-prop-color-trigger"
+                data-color-trigger
                 style="background: ${escapeHtmlAttr(triggerBg)}"
                 aria-label="Pick color"></button>
       </span>
@@ -1091,7 +1092,7 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
             <span class="nospress-divider-picker__trigger-thumb">${dividerThumbSvg(styleVal)}</span>
             <span class="nospress-divider-picker__trigger-label">${escapeHtmlAttr(selectedOpt.label)}</span>
           </button>
-          <div class="nospress-divider-picker__menu" hidden>
+          <div class="nospress-divider-picker__menu" data-divider-picker-menu hidden>
             ${styleOptionsHtml}
           </div>
         </div>

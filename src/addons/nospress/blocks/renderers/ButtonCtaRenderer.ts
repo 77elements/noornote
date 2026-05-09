@@ -19,13 +19,10 @@ export function renderButtonCta(block: Extract<Block, { type: 'button-cta' }>, e
   if (editable) {
     const labelInput = `<input type="text" class="input nospress-block-button-cta__label-input" data-block-id="${block.id}" data-field="cta-label" value="${escapeHtmlAttr(block.label || '')}" placeholder="Button label" />`;
     const urlInput = `<input type="url" class="input nospress-block-button-cta__url-input" data-block-id="${block.id}" data-field="cta-url" value="${escapeHtmlAttr(block.url || '')}" placeholder="https://…" />`;
-    const variantSelect = `
-      <select class="input nospress-block-button-cta__variant-select" data-block-id="${block.id}" data-field="cta-variant">
-        <option value="primary" ${variant === 'primary' ? 'selected' : ''}>Primary</option>
-        <option value="secondary" ${variant === 'secondary' ? 'selected' : ''}>Secondary</option>
-      </select>
-    `;
-    return wrapEditable(block.id, 'button-cta', `${labelInput}${urlInput}${variantSelect}`);
+    // CustomDropdown slot — populated by NospressView.mountBlockDropdowns
+    // (case 'cta-variant'). App-wide rule: never raw `<select>`.
+    const variantSlot = `<div data-block-dropdown="cta-variant" data-block-id="${block.id}" data-current-value="${escapeHtmlAttr(variant)}"></div>`;
+    return wrapEditable(block.id, 'button-cta', `${labelInput}${urlInput}${variantSlot}`);
   }
 
   const label = sanitizeUserHtml((block.label || '').trim() || 'Click me');

@@ -7,10 +7,11 @@
  * mutate-draft on success, restore button on finally. This module owns
  * the shared parts so the editor only carries kind-specific glue.
  *
- * The progress SVG is inlined (not an `icons.svg` `<use>`) because <use>
- * clones into shadow DOM and JS can't reach in to drive
- * `strokeDashoffset` for the radial fill animation. Same trade-off as
- * `PostEditorToolbar` / `ImageUploader`.
+ * The progress ring uses the shared `#icon-upload-progress` sprite
+ * symbol — same as `PostEditorToolbar` / `ImageUploader`. The cloned
+ * `<circle class="upload-progress-bar">` is reachable via querySelector
+ * on the live SVG tree, so JS can drive `strokeDashoffset` for the
+ * radial fill animation.
  *
  * Gallery upload (`handleGalleryUpload`) deliberately stays in
  * NospressView — it operates on multiple files with text-based progress
@@ -35,12 +36,7 @@ const KIND_CFG: Record<SingleMediaKind, KindCfg> = {
   audio: { mimePrefix: 'audio/', actionAttr: 'upload-audio', errorLabel: 'Audio upload failed' },
 };
 
-const PROGRESS_SVG = `
-  <svg width="20" height="20" class="upload-progress" viewBox="0 0 24 24">
-    <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
-    <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
-  </svg>
-`;
+const PROGRESS_SVG = `<svg width="20" height="20" class="upload-progress"><use href="#icon-upload-progress"/></svg>`;
 const PROGRESS_CIRCUMFERENCE = 62.83; // 2 * PI * r=10
 
 /**
@@ -86,7 +82,7 @@ export async function handleSingleMediaUpload(
   uploadBtn.innerHTML = PROGRESS_SVG;
 
   const updateProgress = (progress: number) => {
-    const bar = uploadBtn.querySelector('.upload-progress-bar') as SVGCircleElement | null;
+    const bar = uploadBtn.querySelector('[data-progress-bar]') as SVGCircleElement | null;
     if (!bar) return;
     const offset = PROGRESS_CIRCUMFERENCE - (progress / 100) * PROGRESS_CIRCUMFERENCE;
     bar.style.strokeDashoffset = String(offset);

@@ -45,7 +45,6 @@
 }
 
 .nospress-section__title {
-  font-weight: 600;
   margin-bottom: calc($gap / 2);
   color: $color-5;
 }
@@ -188,7 +187,6 @@
     background: transparent;
     color: var(--color-5);
     cursor: pointer;
-    font-weight: 500;
     width: 100%;
 
     &.is-active {
@@ -750,7 +748,6 @@
 }
 
 .nospress-block-links__title {
-  font-weight: 600;
   margin-bottom: calc($gap / 2);
   color: $color-5;
 }
@@ -785,7 +782,10 @@
   cursor: pointer;
   transition: $transition-colors;
 
-  &--selected {
+  // Selected state — driven by `data-selected` attribute set in
+  // `applySelectedBlockClass` after each editable re-render. Per /scss
+  // skill: state lookups go through `data-*`, not class names.
+  &[data-selected] {
     border-color: $color-6;
   }
 }
@@ -840,7 +840,6 @@
   }
 
   &__label {
-    font-weight: 600;
     color: var(--color-4);
   }
 
@@ -893,9 +892,6 @@
 
 .nospress-block-edit__type-badge {
   @extend %small;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: $text-alpha-medium;
 }
 
@@ -945,9 +941,6 @@
   }
 }
 
-.nospress-block-heading__input {
-  font-weight: 600;
-}
 
 // DIV block edit — generic block-level wrapper. Tag-slot houses the
 // CustomDropdown for switching the underlying element. Children-container
@@ -1019,7 +1012,6 @@
 .nospress-block-bookmark-folder__label {
   @extend %small;
   color: $color-4;
-  font-weight: 500;
 }
 
 // Bookmark folder picker (shared component)
@@ -1229,9 +1221,6 @@
 .nospress-cursor-row__menu-section {
   padding: calc($gap / 2) $gap calc($gap / 4);
   @extend %small;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
   color: $text-alpha-medium;
 }
 
@@ -1272,7 +1261,6 @@
 }
 
 .nospress-cursor-row__menu-label {
-  font-weight: 600;
   flex-shrink: 0;
   min-width: 110px;
 }
@@ -1390,7 +1378,6 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   margin: 0;
   padding: 0;
   @extend %compact;
-  font-weight: 600;
   color: $color-5;
 }
 
@@ -1619,13 +1606,10 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
     color: var(--color-1);
   }
 
-  // Active sub-scope = pressed state. The toggle stays "on" while the
-  // properties panel is showing the mobile-menu row set; the wrapper
-  // `.nospress-block-edit--selected` ancestor signals that this block
-  // owns the open sub-scope (only one block can be selected at a time
-  // and only the selected block exposes the trigger anyway).
-  .nospress-block-edit--selected &[aria-pressed="true"],
-  &.is-active {
+  // Active sub-scope = pressed state. `data-active` is set by
+  // `applySelectedBlockClass` while the mobile-menu sub-scope owns the
+  // properties panel.
+  &[data-active] {
     background: var(--color-4);
     color: var(--color-1);
   }
@@ -1831,7 +1815,6 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   padding: calc($gap / 2) calc($gap * 0.75);
   border-radius: $radius-xl;
   @extend %small;
-  font-weight: 500;
   text-align: center;
   min-height: 32px;
   transition: $transition-colors;
@@ -1894,7 +1877,6 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   margin: 0;
   padding: 0 calc($gap / 4);
   @extend %compact;
-  font-weight: 600;
   color: $color-5;
   line-height: 1.2;
 
@@ -1956,7 +1938,6 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 
 .nospress-pages__add-label {
   color: $color-3;
-  font-weight: 500;
   @extend %compact;
   transition: $transition-colors;
 }

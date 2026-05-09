@@ -381,7 +381,7 @@
   <!-- Upload progress (circular) -->
   <symbol id="icon-upload-progress" viewBox="0 0 24 24">
     <circle class="upload-progress-bg" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" opacity="0.2"/>
-    <circle class="upload-progress-bar" cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
+    <circle class="upload-progress-bar" data-progress-bar cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="62.83" stroke-dashoffset="62.83"/>
   </symbol>
 
   <!-- Syncing (two-arrow refresh) -->

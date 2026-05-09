@@ -9,7 +9,7 @@
  */
 export function wrapEditable(blockId: string, type: string, contentHtml: string, extraButtons: string = ''): string {
   return `
-    <div class="nospress-block-edit" data-block-id="${blockId}" data-block-type="${type}">
+    <div class="nospress-block-edit" data-block-edit data-block-id="${blockId}" data-block-type="${type}">
       <div class="nospress-block-edit__toolbar">
         <span class="nospress-block-edit__type-badge">${type}</span>
         <div class="nospress-block-edit__actions">

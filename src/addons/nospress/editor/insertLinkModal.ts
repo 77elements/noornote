@@ -46,7 +46,7 @@ export function openInsertLinkModal(initialText: string): Promise<InsertLinkValu
       </div>
       <div class="form__row">
         <label>Target</label>
-        <div class="nospress-link-modal__target-mount"></div>
+        <div class="nospress-link-modal__target-mount" data-target-mount></div>
       </div>
       <div class="l-row--end-pair">
         <button type="button" class="btn btn--passive" data-link-cancel>Cancel</button>
@@ -59,7 +59,7 @@ export function openInsertLinkModal(initialText: string): Promise<InsertLinkValu
       selectedValue: '',
       onChange: () => { /* read on submit */ },
     });
-    root.querySelector('.nospress-link-modal__target-mount')!.appendChild(targetDropdown.getElement());
+    root.querySelector('[data-target-mount]')!.appendChild(targetDropdown.getElement());
 
     let resolved = false;
     const cleanupAndResolve = (value: InsertLinkValues | null) => {
