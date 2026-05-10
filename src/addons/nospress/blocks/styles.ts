@@ -140,6 +140,16 @@ export interface CommonStyle {
    *  recursively — the only twist is that read/writeStyleField walk a
    *  3-or-4 segment dotted path (`mobileMenu.<sec>.<prop>[.subKey]`). */
   mobileMenu?: Partial<Record<MobileMenuSection, CommonStyle>>;
+  /** Per-block hyperlink styling — each pseudo-class (`:link` / `:visited`
+   *  / `:hover` / `:focus` / `:active`) takes a full `CommonStyle` slice
+   *  applied to descendant `<a>` elements via the wrapper's
+   *  `[data-styled-block-id]` scope. Same recursive pattern as
+   *  `mobileMenu` — read/writeStyleField walks `links.<pseudo>.<rest>`. */
+  links?: Partial<Record<LinkPseudo, CommonStyle>>;
+  /** CSS `text-decoration` (none / underline / overline / line-through).
+   *  Applies to the block itself in regular Typography AND to any link
+   *  sub-scope where overriding the underline is the most common case. */
+  textDecoration?: string;
 }
 
 /** Selectors covered by the mobile-menu sub-scope. Order is the
@@ -147,12 +157,28 @@ export interface CommonStyle {
 export const MOBILE_MENU_SECTION_KEYS = ['ul', 'li', 'a', 'aActive', 'hamburger', 'overlay'] as const;
 export type MobileMenuSection = typeof MOBILE_MENU_SECTION_KEYS[number];
 
+/** Pseudo-class slots covered by the per-block link sub-scope. Order is
+ *  the display order of the accordion sections in the property panel. */
+export const LINK_PSEUDO_KEYS = ['link', 'visited', 'hover', 'focus', 'active'] as const;
+export type LinkPseudo = typeof LINK_PSEUDO_KEYS[number];
+
+/** Block types that surface the link sub-scope in the Properties panel.
+ *  These are the blocks whose rendered output can contain `<a>` elements
+ *  (either directly via user content, or transitively via mounted lists,
+ *  embeds, weblogs, articles, nav-menus). Other block types (image,
+ *  gallery, video, audio, embed, divider) skip the sub-scope. */
+export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
+  'heading', 'text', 'quote', 'list', 'links', 'columns', 'div',
+  'bookmark-folder', 'button-cta', 'dm-button', 'profile-card',
+  'articles-list', 'weblog', 'nav-menu',
+]);
+
 /** All catalog-addressable property keys (everything on `CommonStyle`
- *  except `mobileMenu`, which is a sub-scope container with its own
- *  recursive structure handled by the sub-scope render path; and
- *  `border`, the legacy shorthand kept on the type for read-side
- *  migration only — never surfaced as an editable entry). */
-export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border'>;
+ *  except sub-scope containers `mobileMenu` / `links`, which have their
+ *  own recursive render paths; and `border`, the legacy shorthand kept
+ *  on the type for read-side migration only — never surfaced as an
+ *  editable entry). */
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
@@ -190,7 +216,7 @@ export interface QuadPropertyEntry {
  *  CustomDropdown instance after each render. */
 export interface DropdownPropertyEntry {
   kind: 'dropdown';
-  key: 'borderStyle' | 'display' | 'position';
+  key: 'borderStyle' | 'display' | 'position' | 'textDecoration';
   label: string;
   cssProp: string;
   options: Array<{ value: string; label: string }>;
@@ -249,6 +275,15 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   borderRadius: { kind: 'single', key: 'borderRadius', label: 'Border radius', cssProp: 'border-radius', placeholder: 'e.g. 8px' },
   width:        { kind: 'single', key: 'width',        label: 'Width',         cssProp: 'width',         placeholder: 'e.g. 100%, 800px, 60ch' },
   height:       { kind: 'single', key: 'height',       label: 'Height',        cssProp: 'height',        placeholder: 'e.g. 480px, 60vh, auto' },
+  textDecoration: {
+    kind: 'dropdown', key: 'textDecoration', label: 'Text decoration', cssProp: 'text-decoration',
+    options: [
+      { value: 'none',         label: 'none' },
+      { value: 'underline',    label: 'underline' },
+      { value: 'overline',     label: 'overline' },
+      { value: 'line-through', label: 'line-through' },
+    ],
+  },
   display:      {
     kind: 'dropdown', key: 'display', label: 'Display', cssProp: 'display',
     options: [
@@ -310,7 +345,7 @@ const GROUP_DISPLAY:    PropertyGroup = { key: 'display',    label: 'Layout',   
 const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
 const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width', 'height'] };
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
-const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: ['color', 'fontSize', 'lineHeight', 'fontWeight', 'fontStyle', 'textShadow'] };
+const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: ['color', 'fontSize', 'lineHeight', 'fontWeight', 'fontStyle', 'textDecoration', 'textShadow'] };
 const GROUP_BACKGROUND: PropertyGroup = { key: 'background', label: 'Background', props: ['background'] };
 const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',     props: ['borderWidth', 'borderStyle', 'borderColor', 'borderRadius'] };
 const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['divider'] };
@@ -319,6 +354,14 @@ const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',  
  *  dm-button/quote/button-cta) — typography + width sizing, no height
  *  (forcing height on text content clips silently). */
 const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER];
+
+/** Schema slice surfaced inside each link sub-scope section
+ *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
+ *  inline by default and sizing rarely makes sense. No effects/divider —
+ *  same reasoning. */
+export const LINK_SUBSCOPE_GROUPS: PropertyGroup[] = [
+  GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER,
+];
 
 /** Composition shorthand for media/sub-component containers — full
  *  sizing (width + height for hero bands, fixed-aspect boxes), no
@@ -657,6 +700,13 @@ export function readStyleField(styleIn: CommonStyle | undefined, path: string): 
     const sub = styleIn.mobileMenu?.[section as MobileMenuSection];
     return readStyleField(sub, rest.join('.'));
   }
+  // Link sub-scope: `links.<pseudo>.<rest>` → recurse into the per-pseudo
+  // sub-style. Same recursive trick as mobileMenu.
+  if (path.startsWith('links.')) {
+    const [, pseudo, ...rest] = path.split('.');
+    const sub = styleIn.links?.[pseudo as LinkPseudo];
+    return readStyleField(sub, rest.join('.'));
+  }
   // Hydrate the new border fields from the legacy shorthand if the user
   // hasn't touched them yet. Returned values pre-fill the property panel
   // inputs so old data is visible + editable; the next write clears the
@@ -708,6 +758,18 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
     writeStyleField(style.mobileMenu[sec]!, rest.join('.'), rawValue);
     if (Object.keys(style.mobileMenu[sec]!).length === 0) delete style.mobileMenu[sec];
     if (Object.keys(style.mobileMenu).length === 0) delete style.mobileMenu;
+    return;
+  }
+  // Link sub-scope: `links.<pseudo>.<rest>` → ensure the per-pseudo sub
+  // exists, recurse into it, prune empty sub + parent.
+  if (path.startsWith('links.')) {
+    const [, pseudo, ...rest] = path.split('.');
+    const ps = pseudo as LinkPseudo;
+    if (!style.links) style.links = {};
+    if (!style.links[ps]) style.links[ps] = {};
+    writeStyleField(style.links[ps]!, rest.join('.'), rawValue);
+    if (Object.keys(style.links[ps]!).length === 0) delete style.links[ps];
+    if (Object.keys(style.links).length === 0) delete style.links;
     return;
   }
   const segments = path.split('.');
@@ -943,6 +1005,64 @@ export function buildBlockBreakpointCss(
   return parts.join('\n');
 }
 
+/** Flat schema for the link sub-scope — derived once from
+ *  `LINK_SUBSCOPE_GROUPS` so `buildInlineStyle` /
+ *  `buildImportantInlineStyle` can be called per-pseudo-class without
+ *  re-resolving the group list every time. */
+const LINK_SUBSCOPE_SCHEMA: PropertyEntry[] = LINK_SUBSCOPE_GROUPS
+  .flatMap(g => g.props.map(k => PROPERTY_CATALOG[k]));
+
+/** Emit per-block link sub-scope CSS rules for both the Default tab
+ *  (`block.style.links.<pseudo>` → unwrapped rules) and per-BP
+ *  overrides (`block.breakpointStyles[bp].links.<pseudo>` →
+ *  @media-wrapped `!important` rules). Scope is the wrapper attribute
+ *  selector + descendant `a:<pseudo>` so the rules apply only to links
+ *  rendered inside this block. */
+export function buildBlockLinksCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (!BLOCKS_WITH_LINKS_SUBSCOPE.has(block.type)) return '';
+  const sel = `[data-styled-block-id="${block.id}"]`;
+  const parts: string[] = [];
+
+  // Default-tab rules — applied at all viewports, no @media wrap, no
+  // !important (they're the base, nothing to outrank).
+  const defaultLinks = block.style?.links;
+  if (defaultLinks) {
+    for (const pseudo of LINK_PSEUDO_KEYS) {
+      const linkStyle = defaultLinks[pseudo];
+      if (!linkStyle) continue;
+      const decls = buildInlineStyle(LINK_SUBSCOPE_SCHEMA, linkStyle);
+      if (decls) parts.push(`${sel} a:${pseudo} { ${decls} }`);
+    }
+  }
+
+  // Per-BP overrides — wrapped in @media, declarations get !important
+  // so they outrank the Default-tab rules above.
+  if (block.breakpointStyles) {
+    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
+    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+      const linkOverrides = style.links;
+      if (!linkOverrides) continue;
+      const bp = byName.get(bpName);
+      if (!bp) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      const inner: string[] = [];
+      for (const pseudo of LINK_PSEUDO_KEYS) {
+        const linkStyle = linkOverrides[pseudo];
+        if (!linkStyle) continue;
+        const decls = buildImportantInlineStyle(LINK_SUBSCOPE_SCHEMA, linkStyle);
+        if (decls) inner.push(`${sel} a:${pseudo} { ${decls} }`);
+      }
+      if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
 /** Compose a single CSS `@media (...)` clause for a user-defined breakpoint. */
 function buildMediaQuery(bp: { type: 'min' | 'max' | 'between'; value: string; value2?: string }): string | null {
   const v1 = sanitizeStyleValue(bp.value);
@@ -1003,13 +1123,19 @@ export function buildPageBreakpointCss(
   blocks: Array<{ id: string; type: string; breakpointStyles?: Record<string, CommonStyle> } & Record<string, unknown>>,
   breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
 ): string {
-  if (breakpoints.length === 0) return '';
+  // Default-tab link sub-scope rules emit even when the user has no
+  // breakpoints defined yet — they are unwrapped CSS rules, not @media
+  // queries. Per-BP overrides need the breakpoint list to resolve, so
+  // they're skipped silently when the array is empty.
   const out: string[] = [];
-  const walk = (list: Array<{ id?: string; type?: string; breakpointStyles?: Record<string, CommonStyle> } & Record<string, unknown>>) => {
+  const walk = (list: Array<{ id?: string; type?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> } & Record<string, unknown>>) => {
     for (const b of list) {
       if (b.type && b.id) {
-        const css = buildBlockBreakpointCss(b as { id: string; type: string; breakpointStyles?: Record<string, CommonStyle> }, breakpoints);
-        if (css) out.push(css);
+        const blockTyped = b as { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> };
+        const bpCss = buildBlockBreakpointCss(blockTyped, breakpoints);
+        if (bpCss) out.push(bpCss);
+        const linksCss = buildBlockLinksCss(blockTyped, breakpoints);
+        if (linksCss) out.push(linksCss);
       }
       // Recurse into containers
       if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {
@@ -1565,7 +1691,19 @@ function renderPanelInternal(
   fieldPrefix: string,
 ): string {
   const scopeAttr = escapeHtmlAttr(opts.scope);
-  const body = renderEntriesForGroups(opts, groups, fieldPrefix);
+  const mainBody = renderEntriesForGroups(opts, groups, fieldPrefix);
+  // Link sub-scope: 5 accordion sections (link/visited/hover/focus/active)
+  // appended to the panel body for any block whose rendered output can
+  // contain `<a>` elements. Same `nn-ui-toggle` accordion molecule as the
+  // mobile-menu sub-scope so the existing toggle handler in NospressView
+  // works without changes. Empty for non-block scopes (`page`) and for
+  // sub-scope panels (handled separately above) and for sub-scope fields
+  // already (no nested links inside links).
+  const blockType = matrixKey(opts.scope);
+  const showLinks = !fieldPrefix
+    && BLOCKS_WITH_LINKS_SUBSCOPE.has(blockType);
+  const linksBody = showLinks ? renderLinkSubScopeSections(opts) : '';
+  const body = mainBody + linksBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`).
@@ -1665,5 +1803,46 @@ function renderMobileMenuSubScopePanel(opts: RenderPropertyPanelOptions): string
       </div>
     </div>
   `;
+}
+
+/** Per-block link sub-scope panel — 5 accordion sections, one per
+ *  pseudo-class, appended below the main block properties for blocks
+ *  in `BLOCKS_WITH_LINKS_SUBSCOPE`. Reuses `LINK_SUBSCOPE_GROUPS` (no
+ *  sizing — `<a>` is inline by default). Inputs write to nested
+ *  `links.<pseudo>.<prop>` slots via the `fieldPrefix` mechanism. */
+const LINK_PSEUDO_LABELS: Record<LinkPseudo, string> = {
+  link:    'Link (a:link)',
+  visited: 'Visited (a:visited)',
+  hover:   'Hover (a:hover)',
+  focus:   'Focus (a:focus)',
+  active:  'Active (a:active)',
+};
+
+function renderLinkSubScopeSections(opts: RenderPropertyPanelOptions): string {
+  const resolvedGroups: ResolvedPropertyGroup[] = LINK_SUBSCOPE_GROUPS.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: g.props.map(k => PROPERTY_CATALOG[k]),
+  }));
+  return LINK_PSEUDO_KEYS.map(pseudo => {
+    // All collapsed by default — rare-use sub-scope, don't crowd the
+    // panel on every block selection.
+    const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `links.${pseudo}.`);
+    return `
+      <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-link-pseudo="${pseudo}">
+        <div class="nn-ui-toggle__header" data-toggle-header>
+          <div class="nn-ui-toggle__info">
+            <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(LINK_PSEUDO_LABELS[pseudo])}</h2>
+          </div>
+          <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+          </button>
+        </div>
+        <div class="nn-ui-toggle__content">
+          ${sectionBody}
+        </div>
+      </section>
+    `;
+  }).join('');
 }
 
