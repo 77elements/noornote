@@ -61,6 +61,7 @@ export class ProfileListsComponent {
   private lists: ProfileListData[] = [];
   private elements: HTMLElement[] = [];
   private insertAfterEl: Element | null = null;
+  private insertMode: 'after' | 'append' = 'after';
   private resolvedDisplay: Map<string, string> = new Map();  // item.id (events) or item.value (a-tags) → display text
   private destroyed: boolean = false;
 
@@ -82,16 +83,30 @@ export class ProfileListsComponent {
   }
 
   /**
-   * Render mounted lists into the DOM after the given element.
+   * Render mounted lists into the DOM. Default mode (`'after'`) inserts
+   * each list as a sibling **after** `anchor` — used by ProfileView,
+   * where a stable anchor element marks the insertion point.
    *
-   * @param insertAfter - DOM element to insert mounts after
+   * NosPress's bookmark-folder block needs the lists INSIDE the styled
+   * wrapper instead (so per-block `style` / `breakpointStyles` like
+   * width/margin actually constrain the rendered list). For that path,
+   * pass `mode: 'append'` — lists become children of `anchor`.
+   *
+   * @param anchor - DOM element used as the insertion reference
    * @param folderNamesOverride - if provided, use these folder names directly
    *   instead of querying mountsService/mountsOrch. Used by NospressView to
    *   render from v2 bookmark-folder blocks (draft/published) so the readonly
    *   view reflects in-progress edits without waiting for publish.
+   * @param mode - `'after'` (default) inserts as siblings; `'append'`
+   *   inserts as children of `anchor`.
    */
-  public async render(insertAfter: Element, folderNamesOverride?: string[]): Promise<void> {
-    this.insertAfterEl = insertAfter;
+  public async render(
+    anchor: Element,
+    folderNamesOverride?: string[],
+    mode: 'after' | 'append' = 'after',
+  ): Promise<void> {
+    this.insertAfterEl = anchor;
+    this.insertMode = mode;
 
     try {
       let mountedFolders: string[];
@@ -173,15 +188,32 @@ export class ProfileListsComponent {
 
     if (this.lists.length === 0 || !this.insertAfterEl) return;
 
-    let insertAfter = this.insertAfterEl;
-    for (let i = 0; i < this.lists.length; i++) {
-      const el = document.createElement('div');
-      el.className = 'profile-lists-mount';
-      el.dataset.listIndex = String(i);
-      el.innerHTML = this.renderListInner(this.lists[i]!, i);
-      insertAfter.after(el);
-      this.elements.push(el);
-      insertAfter = el;
+    if (this.insertMode === 'append') {
+      // NosPress mode: lists become children of `anchor` so the styled
+      // wrapper's width/margin/etc. actually constrain the rendered
+      // list content.
+      for (let i = 0; i < this.lists.length; i++) {
+        const el = document.createElement('div');
+        el.className = 'profile-lists-mount';
+        el.dataset.listIndex = String(i);
+        el.innerHTML = this.renderListInner(this.lists[i]!, i);
+        this.insertAfterEl.appendChild(el);
+        this.elements.push(el);
+      }
+    } else {
+      // ProfileView mode: lists become siblings AFTER `anchor`, in
+      // order — each new entry appended after the previous so they
+      // stay sequential in the DOM.
+      let insertAfter: Element = this.insertAfterEl;
+      for (let i = 0; i < this.lists.length; i++) {
+        const el = document.createElement('div');
+        el.className = 'profile-lists-mount';
+        el.dataset.listIndex = String(i);
+        el.innerHTML = this.renderListInner(this.lists[i]!, i);
+        insertAfter.after(el);
+        this.elements.push(el);
+        insertAfter = el;
+      }
     }
 
     this.bindEvents();

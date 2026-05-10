@@ -534,7 +534,11 @@ export class PublicNospressPage {
       if (!folderName) continue;
       const component = new ProfileListsComponent(pubkey, 'nospress');
       this.inlineMounts.push(component);
-      await component.render(slot, [folderName]);
+      // 'append' so the rendered list lands INSIDE the styled wrapper —
+      // otherwise per-block width/margin/breakpoint overrides on the
+      // bookmark-folder block don't constrain the list (sibling lives
+      // outside the styled scope).
+      await component.render(slot, [folderName], 'append');
     }
   }
 }

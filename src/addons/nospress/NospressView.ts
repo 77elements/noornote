@@ -561,9 +561,10 @@ export class NospressView extends View {
       if (!folderName) continue;
       const component = new ProfileListsComponent(this.pubkey, 'nospress');
       this.inlineMountsComponents.push(component);
-      // ProfileListsComponent.render inserts a `.profile-lists-mount` element
-      // AFTER the given anchor — perfect for our slot-as-anchor use case.
-      await component.render(slot, [folderName]);
+      // 'append' — list goes INSIDE the styled wrapper so per-block
+      // width/margin/breakpoint overrides constrain it (matching the
+      // public-page render path).
+      await component.render(slot, [folderName], 'append');
     }
   }
 
