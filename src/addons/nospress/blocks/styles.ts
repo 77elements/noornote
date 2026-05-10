@@ -153,6 +153,13 @@ export interface CommonStyle {
    *  on itself, not as ancestor) is unaffected. Only surfaced for the
    *  nav-menu block in the Properties panel. */
   navMenu?: Partial<Record<NavMenuDesktopKey, CommonStyle>>;
+  /** Bookmark-folder sub-scope — narrow per-element styling slots inside
+   *  the rendered list (`.profile-list-item` item row, its icon, its
+   *  description). Each slot is restricted to ONE property only (item
+   *  → background, icon → color, desc → color) so the NoorNote default
+   *  look stays mostly intact; the user just retints. Surfaced for the
+   *  bookmark-folder block in the Properties panel. */
+  bookmarkFolder?: Partial<Record<BookmarkFolderKey, CommonStyle>>;
   /** CSS `text-decoration` (none / underline / overline / line-through).
    *  Applies to the block itself in regular Typography AND to any link
    *  sub-scope where overriding the underline is the most common case. */
@@ -177,6 +184,13 @@ export type LinkPseudo = typeof LINK_PSEUDO_KEYS[number];
 export const NAV_MENU_DESKTOP_KEYS = ['ul', 'li', 'aActive'] as const;
 export type NavMenuDesktopKey = typeof NAV_MENU_DESKTOP_KEYS[number];
 
+/** Element keys covered by the bookmark-folder sub-scope. Narrow set:
+ *  `item` (.profile-list-item row), `icon` (.profile-list-item__icon),
+ *  `desc` (.profile-list-item__desc). Each section exposes ONE property
+ *  only (see BOOKMARK_FOLDER_SCHEMAS below). */
+export const BOOKMARK_FOLDER_KEYS = ['item', 'icon', 'desc'] as const;
+export type BookmarkFolderKey = typeof BOOKMARK_FOLDER_KEYS[number];
+
 /** Block types that surface the link sub-scope in the Properties panel.
  *  These are the blocks whose rendered output can contain `<a>` elements
  *  (either directly via user content, or transitively via mounted lists,
@@ -193,7 +207,7 @@ export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
  *  which have their own recursive render paths; and `border`, the
  *  legacy shorthand kept on the type for read-side migration only —
  *  never surfaced as an editable entry). */
-export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu'>;
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
@@ -382,6 +396,17 @@ export const LINK_SUBSCOPE_GROUPS: PropertyGroup[] = [
  *  (ul/li). Reuses the link sub-scope group set — `<ul>` and `<li>` get
  *  the same kind of structural / typography / box styling. */
 export const NAV_MENU_DESKTOP_GROUPS: PropertyGroup[] = LINK_SUBSCOPE_GROUPS;
+
+/** Per-key restricted schemas for the bookmark-folder sub-scope. Each
+ *  section exposes EXACTLY ONE property — the NoorNote default chrome
+ *  stays intact, the user just adjusts the slot that diverged from the
+ *  desired look. Wider styling is reachable via the block's main
+ *  wrapper properties and the link sub-scope on the inner `<a>`. */
+export const BOOKMARK_FOLDER_GROUPS: Record<BookmarkFolderKey, PropertyGroup[]> = {
+  item: [{ key: 'background', label: 'Background', props: ['background'] }],
+  icon: [{ key: 'typography', label: 'Color', props: ['color'] }],
+  desc: [{ key: 'typography', label: 'Color', props: ['color'] }],
+};
 
 /** Composition shorthand for media/sub-component containers — full
  *  sizing (width + height for hero bands, fixed-aspect boxes), no
@@ -740,6 +765,12 @@ export function readStyleField(styleIn: CommonStyle | undefined, path: string): 
     const sub = styleIn.navMenu?.[key as NavMenuDesktopKey];
     return readStyleField(sub, rest.join('.'));
   }
+  // Bookmark-folder sub-scope: `bookmarkFolder.<item|icon|desc>.<rest>` → recurse.
+  if (path.startsWith('bookmarkFolder.')) {
+    const [, key, ...rest] = path.split('.');
+    const sub = styleIn.bookmarkFolder?.[key as BookmarkFolderKey];
+    return readStyleField(sub, rest.join('.'));
+  }
   // Hydrate the new border fields from the legacy shorthand if the user
   // hasn't touched them yet. Returned values pre-fill the property panel
   // inputs so old data is visible + editable; the next write clears the
@@ -814,6 +845,17 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
     writeStyleField(style.navMenu[k]!, rest.join('.'), rawValue);
     if (Object.keys(style.navMenu[k]!).length === 0) delete style.navMenu[k];
     if (Object.keys(style.navMenu).length === 0) delete style.navMenu;
+    return;
+  }
+  // Bookmark-folder sub-scope: `bookmarkFolder.<item|icon|desc>.<rest>` → recurse, prune.
+  if (path.startsWith('bookmarkFolder.')) {
+    const [, key, ...rest] = path.split('.');
+    const k = key as BookmarkFolderKey;
+    if (!style.bookmarkFolder) style.bookmarkFolder = {};
+    if (!style.bookmarkFolder[k]) style.bookmarkFolder[k] = {};
+    writeStyleField(style.bookmarkFolder[k]!, rest.join('.'), rawValue);
+    if (Object.keys(style.bookmarkFolder[k]!).length === 0) delete style.bookmarkFolder[k];
+    if (Object.keys(style.bookmarkFolder).length === 0) delete style.bookmarkFolder;
     return;
   }
   const segments = path.split('.');
@@ -1062,6 +1104,65 @@ const LINK_SUBSCOPE_SCHEMA: PropertyEntry[] = LINK_SUBSCOPE_GROUPS
 const NAV_MENU_DESKTOP_SCHEMA: PropertyEntry[] = NAV_MENU_DESKTOP_GROUPS
   .flatMap(g => g.props.map(k => PROPERTY_CATALOG[k]));
 
+/** Flat per-key schemas for the bookmark-folder sub-scope. Each entry
+ *  is the single PropertyEntry the section exposes (background for
+ *  item, color for icon/desc). */
+const BOOKMARK_FOLDER_SCHEMAS: Record<BookmarkFolderKey, PropertyEntry[]> = {
+  item: BOOKMARK_FOLDER_GROUPS.item.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
+  icon: BOOKMARK_FOLDER_GROUPS.icon.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
+  desc: BOOKMARK_FOLDER_GROUPS.desc.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
+};
+
+/** CSS selector suffixes for the bookmark-folder sub-scope keys. The
+ *  rendered list lives inside `[data-styled-block-id="X"]` so all
+ *  selectors stay descendant-scoped. */
+const BOOKMARK_FOLDER_SELECTORS: Record<BookmarkFolderKey, string> = {
+  item: ' .profile-list-item',
+  icon: ' .profile-list-item__icon',
+  desc: ' .profile-list-item__desc',
+};
+
+export function buildBlockBookmarkFolderCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'bookmark-folder') return '';
+  const sel = `[data-styled-block-id="${block.id}"]`;
+  const parts: string[] = [];
+
+  const defaults = block.style?.bookmarkFolder;
+  if (defaults) {
+    for (const key of BOOKMARK_FOLDER_KEYS) {
+      const sub = defaults[key];
+      if (!sub) continue;
+      const decls = buildInlineStyle(BOOKMARK_FOLDER_SCHEMAS[key], sub);
+      if (decls) parts.push(`${sel}${BOOKMARK_FOLDER_SELECTORS[key]} { ${decls} }`);
+    }
+  }
+
+  if (block.breakpointStyles) {
+    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
+    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+      const overrides = style.bookmarkFolder;
+      if (!overrides) continue;
+      const bp = byName.get(bpName);
+      if (!bp) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      const inner: string[] = [];
+      for (const key of BOOKMARK_FOLDER_KEYS) {
+        const sub = overrides[key];
+        if (!sub) continue;
+        const decls = buildImportantInlineStyle(BOOKMARK_FOLDER_SCHEMAS[key], sub);
+        if (decls) inner.push(`${sel}${BOOKMARK_FOLDER_SELECTORS[key]} { ${decls} }`);
+      }
+      if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
 /** Emit per-block nav-menu desktop sub-scope CSS rules — `<ul>` and
  *  `<li>` styling for the inline rendering. Same Default + per-BP
  *  pattern as the link sub-scope. Scope is the wrapper attribute
@@ -1245,6 +1346,8 @@ export function buildPageBreakpointCss(
         if (navMenuCss) out.push(navMenuCss);
         const linksCss = buildBlockLinksCss(blockTyped, breakpoints);
         if (linksCss) out.push(linksCss);
+        const bookmarkFolderCss = buildBlockBookmarkFolderCss(blockTyped, breakpoints);
+        if (bookmarkFolderCss) out.push(bookmarkFolderCss);
       }
       // Recurse into containers
       if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {
@@ -1820,7 +1923,12 @@ function renderPanelInternal(
   const navMenuTopBody = showNavMenuDesktop ? renderNavMenuDesktopSections(opts, ['ul', 'li']) : '';
   const navMenuBottomBody = showNavMenuDesktop ? renderNavMenuDesktopSections(opts, ['aActive']) : '';
   const linksBody = showLinks ? renderLinkSubScopeSections(opts) : '';
-  const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody;
+  // Bookmark-folder sub-scope: 3 narrow sections (item/icon/desc), each
+  // restricted to a single property. Rendered AFTER the link sub-scope
+  // since the link styling is the more common case.
+  const showBookmarkFolder = !fieldPrefix && blockType === 'bookmark-folder';
+  const bookmarkFolderBody = showBookmarkFolder ? renderBookmarkFolderSections(opts) : '';
+  const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody + bookmarkFolderBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`).
@@ -1957,6 +2065,38 @@ function renderNavMenuDesktopSections(
         <div class="nn-ui-toggle__header" data-toggle-header>
           <div class="nn-ui-toggle__info">
             <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(NAV_MENU_DESKTOP_LABELS[key])}</h2>
+          </div>
+          <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+          </button>
+        </div>
+        <div class="nn-ui-toggle__content">
+          ${sectionBody}
+        </div>
+      </section>
+    `;
+  }).join('');
+}
+
+const BOOKMARK_FOLDER_LABELS: Record<BookmarkFolderKey, string> = {
+  item: 'Items (.profile-list-item)',
+  icon: 'Icons (.profile-list-item__icon)',
+  desc: 'Description (.profile-list-item__desc)',
+};
+
+function renderBookmarkFolderSections(opts: RenderPropertyPanelOptions): string {
+  return BOOKMARK_FOLDER_KEYS.map(key => {
+    const resolvedGroups: ResolvedPropertyGroup[] = BOOKMARK_FOLDER_GROUPS[key].map(g => ({
+      key: g.key,
+      label: g.label,
+      entries: g.props.map(k => PROPERTY_CATALOG[k]),
+    }));
+    const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `bookmarkFolder.${key}.`);
+    return `
+      <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-bookmark-folder-section="${key}">
+        <div class="nn-ui-toggle__header" data-toggle-header>
+          <div class="nn-ui-toggle__info">
+            <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(BOOKMARK_FOLDER_LABELS[key])}</h2>
           </div>
           <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
             <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
