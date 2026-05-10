@@ -28,8 +28,10 @@
 
   &__actions {
     display: flex;
+    align-items: center;
     gap: calc($gap / 2);
   }
+
 
   &__body {
     flex: 1;

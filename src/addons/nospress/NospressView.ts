@@ -676,6 +676,7 @@ export class NospressView extends View {
     this.fullscreenOverlay = new FullscreenOverlay({
       title: 'Edit NosPress Site',
       exitLabel: 'Exit NosPress',
+      exitAsIcon: true,
       body: split,
       maxWidth: '100%',
       extraActions: [seeWebsiteButton, cssEditorButton, libraryToggleBtn],

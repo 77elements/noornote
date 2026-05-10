@@ -2,6 +2,12 @@ export interface FullscreenOverlayOptions {
   title: string;
   body: HTMLElement;
   exitLabel?: string;
+  /** Render the Exit button as a transparent X icon (`#icon-close`)
+   *  instead of a labeled pill. `exitLabel` becomes the `aria-label` so
+   *  screen readers still get the verbose name. Useful when the header
+   *  already carries other pills and a labeled Exit button would crowd
+   *  the row. */
+  exitAsIcon?: boolean;
   onExit?: () => void;
   closeOnEsc?: boolean;
   maxWidth?: string;
@@ -18,6 +24,7 @@ export class FullscreenOverlay {
   private readonly title: string;
   private readonly body: HTMLElement;
   private readonly exitLabel: string;
+  private readonly exitAsIcon: boolean;
   private readonly onExit: () => void;
   private readonly closeOnEsc: boolean;
   private readonly maxWidth: string;
@@ -27,6 +34,7 @@ export class FullscreenOverlay {
     this.title = opts.title;
     this.body = opts.body;
     this.exitLabel = opts.exitLabel ?? 'Exit Fullscreen';
+    this.exitAsIcon = opts.exitAsIcon ?? false;
     this.onExit = opts.onExit ?? (() => {});
     this.closeOnEsc = opts.closeOnEsc ?? true;
     this.maxWidth = opts.maxWidth ?? '960px';
@@ -56,9 +64,17 @@ export class FullscreenOverlay {
       actions.appendChild(action);
     }
     const exitBtn = document.createElement('button');
-    exitBtn.className = 'btn btn--passive btn--medium';
+    exitBtn.type = 'button';
     exitBtn.dataset.fullscreenExit = '';
-    exitBtn.textContent = this.exitLabel;
+    if (this.exitAsIcon) {
+      exitBtn.className = 'btn btn--square-sm btn--passive';
+      exitBtn.setAttribute('aria-label', this.exitLabel);
+      exitBtn.title = this.exitLabel;
+      exitBtn.textContent = '×';
+    } else {
+      exitBtn.className = 'btn btn--passive btn--medium';
+      exitBtn.textContent = this.exitLabel;
+    }
     exitBtn.addEventListener('click', () => this.unmount());
     actions.appendChild(exitBtn);
 
