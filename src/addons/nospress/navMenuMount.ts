@@ -109,11 +109,10 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
     else if (alignment === 'center') navClasses.push('nospress-nav-menu--align-center');
     const navClassAttr = navClasses.length ? ` class="${navClasses.join(' ')}"` : '';
 
-    // Hamburger: button always rendered, default-hidden via SCSS. The
-    // per-block <style> below toggles its visibility based on the
-    // user-picked breakpoints. The overlay sits as a sibling to <nav> so
-    // a fixed-position drawer + click-away backdrop works without DOM
-    // re-parenting.
+    // Inline render: <nav> with hamburger button + <ul>. Hamburger is
+    // default-hidden via SCSS; per-block <style> below shows it inside
+    // the user-picked breakpoints. No inline overlay — the drawer
+    // backdrop is a portaled element created on demand.
     slot.innerHTML = `
       <nav${navClassAttr}>
         <button type="button" class="nospress-nav-menu__hamburger" aria-label="Toggle menu" aria-expanded="false">
@@ -121,59 +120,68 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
         </button>
         <ul class="nospress-nav-menu__list">${items}</ul>
       </nav>
-      <div class="nospress-nav-menu__overlay" aria-hidden="true"></div>
     `;
 
-    // Click handler: toggle `is-open` on the list + `is-visible` on the
-    // overlay. Overlay click and any anchor click inside the drawer close
-    // the menu so it doesn't linger.
-    const navEl = slot.querySelector<HTMLElement>('nav');
     const button = slot.querySelector<HTMLButtonElement>('.nospress-nav-menu__hamburger');
-    const list = slot.querySelector<HTMLElement>('.nospress-nav-menu__list');
-    const overlay = slot.querySelector<HTMLElement>('.nospress-nav-menu__overlay');
-    if (navEl && button && list && overlay) {
+    const inlineList = slot.querySelector<HTMLElement>('.nospress-nav-menu__list');
+
+    // Drawer mode: clone the inline <ul> + create a fresh overlay, both
+    // portaled to <body> so an ancestor `clip-path` (e.g. a divider on
+    // the wrapping div block) can't visually clip the fixed-position
+    // drawer. The inline <ul> stays in place — the per-block CSS hides
+    // it inside hamburger breakpoints and styles the portaled clone as
+    // the drawer. Outside hamburger breakpoints the inline <ul> remains
+    // visible (the actual menu the user sees on desktop), and the
+    // portaled clone stays hidden via the default SCSS rule on
+    // `[data-nospress-nav-portal]`.
+    const blockId = slot.dataset.styledBlockId;
+    let drawerList: HTMLElement | null = null;
+    let drawerOverlay: HTMLElement | null = null;
+    const drawerSide: 'left' | 'right' | null = hamburgerBps.length > 0
+      ? (alignment === 'right' ? 'right' : alignment === 'center' ? null : 'left')
+      : null;
+    if (blockId && drawerSide && inlineList) {
+      drawerList = inlineList.cloneNode(true) as HTMLElement;
+      drawerList.setAttribute('data-styled-block-id', blockId);
+      drawerList.setAttribute(PORTAL_ATTR, blockId);
+      document.body.appendChild(drawerList);
+
+      drawerOverlay = document.createElement('div');
+      drawerOverlay.className = 'nospress-nav-menu__overlay';
+      drawerOverlay.setAttribute('aria-hidden', 'true');
+      drawerOverlay.setAttribute('data-styled-block-id', blockId);
+      drawerOverlay.setAttribute(PORTAL_ATTR, blockId);
+      document.body.appendChild(drawerOverlay);
+    }
+
+    // Click handler: hamburger toggles whichever list is the active
+    // open-target — drawer when portaled, otherwise the inline list
+    // (center alignment, where the in-flow <ul> collapses/expands). An
+    // anchor click inside the open list closes it.
+    const toggleTarget = drawerList ?? inlineList;
+    if (button && toggleTarget) {
       const close = () => {
-        list.classList.remove('is-open');
-        overlay.classList.remove('is-visible');
+        toggleTarget.classList.remove('is-open');
+        drawerOverlay?.classList.remove('is-visible');
         button.setAttribute('aria-expanded', 'false');
       };
       button.addEventListener('click', (e) => {
         e.stopPropagation();
-        const open = list.classList.toggle('is-open');
-        overlay.classList.toggle('is-visible', open);
+        const open = toggleTarget.classList.toggle('is-open');
+        drawerOverlay?.classList.toggle('is-visible', open);
         button.setAttribute('aria-expanded', open ? 'true' : 'false');
       });
-      overlay.addEventListener('click', close);
-      list.addEventListener('click', (e) => {
+      drawerOverlay?.addEventListener('click', close);
+      toggleTarget.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).closest('a')) close();
       });
     }
 
-    // Inject per-block hamburger CSS into a `<style>` right next to the
-    // slot. Each block gets its own scope via the slot's
-    // `data-styled-block-id` attribute (set by styleWrap upstream). The
-    // alignment dictates whether the menu becomes a left/right slide-in
-    // drawer or stays a center dropdown (current behaviour).
-    const blockId = slot.dataset.styledBlockId;
+    // Inject per-block hamburger CSS. Scope = slot's
+    // `data-styled-block-id` (set by styleWrap upstream). Alignment
+    // picks the drawer flavour (left/right slide-in vs center
+    // collapsed-dropdown).
     if (blockId && hamburgerBps.length > 0) {
-      const drawerSide: 'left' | 'right' | null =
-        alignment === 'right' ? 'right' :
-        alignment === 'center' ? null : 'left';
-
-      // Drawer mode: portal the list + overlay to <body> so an ancestor
-      // `clip-path` (e.g. a divider on the wrapping div block) doesn't
-      // visually clip the fixed-position drawer. Tag both elements with
-      // their own `data-styled-block-id` + portal marker so the per-block
-      // CSS selector can match them directly outside the wrapper tree.
-      if (drawerSide && list && overlay) {
-        list.setAttribute('data-styled-block-id', blockId);
-        list.setAttribute(PORTAL_ATTR, blockId);
-        overlay.setAttribute('data-styled-block-id', blockId);
-        overlay.setAttribute(PORTAL_ATTR, blockId);
-        document.body.appendChild(list);
-        document.body.appendChild(overlay);
-      }
-
       const mobileStyle = parseStyleAttr(slot.dataset.mobileStyle);
       const mobileBpStyles = parseBpStylesAttr(slot.dataset.mobileBpStyles);
 
@@ -302,8 +310,15 @@ function buildHamburgerCss(
 function buildDrawerRules(sel: string, side: 'left' | 'right'): string {
   const offscreen = side === 'left' ? 'translateX(-100%)' : 'translateX(100%)';
   const sideRule = side === 'left' ? 'left: 0;' : 'right: 0;';
+  // `${sel} .nospress-nav-menu__list` matches only the inline <ul>
+  // (descendant of the slot). The portaled drawer copy carries the
+  // attribute on itself and lives on <body>, so it's matched by the
+  // attribute-on-element selectors below — never by this descendant
+  // rule. Hiding inline inside the hamburger media query is what makes
+  // room for the drawer.
   return `
     ${sel} .nospress-nav-menu__hamburger { display: block; }
+    ${sel} .nospress-nav-menu__list { display: none; }
     .nospress-nav-menu__overlay${sel} { display: block; }
     .nospress-nav-menu__list${sel} {
       position: fixed;
