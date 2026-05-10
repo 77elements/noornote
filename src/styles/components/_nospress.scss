@@ -1102,12 +1102,25 @@
 
 .nospress-block-image {
   margin: $gap 0;
+  // Default radius lives on the figure so the user's inline override
+  // (via Properties → Border radius, which lands on the figure wrapper
+  // through styleWrap) flows down to the <img> automatically via
+  // `border-radius: inherit`. Without this the radius would visually
+  // only round the (transparent) figure box, not the photo itself.
+  border-radius: $radius-xl;
 
-  img {
+  // Specificity bump: `.note-media .note-image` in `_media.scss`
+  // hard-codes `border-radius: $radius-xl` (specificity 0,2,0) on the
+  // inner `<img>` which the lightbox helper labels `note-image`.
+  // Match that selector chain here so the user's inline figure radius
+  // actually wins via `inherit`. `_nospress.scss` is loaded after
+  // `_media.scss` so same-specificity rules cascade in our favour.
+  &.note-media .note-image,
+  &.note-media img {
     display: block;
     width: 100%;
     height: auto;
-    border-radius: $radius-xl;
+    border-radius: inherit;
   }
 }
 
