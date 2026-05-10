@@ -146,6 +146,13 @@ export interface CommonStyle {
    *  `[data-styled-block-id]` scope. Same recursive pattern as
    *  `mobileMenu` — read/writeStyleField walks `links.<pseudo>.<rest>`. */
   links?: Partial<Record<LinkPseudo, CommonStyle>>;
+  /** Nav-menu desktop sub-scope — `ul` + `li` styling for the inline
+   *  rendering (NOT the portaled hamburger drawer; that's `mobileMenu`).
+   *  Selector targets the descendant `<ul>` / `<li>` of the block
+   *  wrapper, so the portaled drawer (which carries `data-styled-block-id`
+   *  on itself, not as ancestor) is unaffected. Only surfaced for the
+   *  nav-menu block in the Properties panel. */
+  navMenu?: Partial<Record<NavMenuDesktopKey, CommonStyle>>;
   /** CSS `text-decoration` (none / underline / overline / line-through).
    *  Applies to the block itself in regular Typography AND to any link
    *  sub-scope where overriding the underline is the most common case. */
@@ -162,6 +169,12 @@ export type MobileMenuSection = typeof MOBILE_MENU_SECTION_KEYS[number];
 export const LINK_PSEUDO_KEYS = ['link', 'visited', 'hover', 'focus', 'active'] as const;
 export type LinkPseudo = typeof LINK_PSEUDO_KEYS[number];
 
+/** Element keys covered by the nav-menu desktop sub-scope (the inline
+ *  `<ul>` + `<li>` styling). Order is the display order of the
+ *  accordion sections in the property panel. */
+export const NAV_MENU_DESKTOP_KEYS = ['ul', 'li'] as const;
+export type NavMenuDesktopKey = typeof NAV_MENU_DESKTOP_KEYS[number];
+
 /** Block types that surface the link sub-scope in the Properties panel.
  *  These are the blocks whose rendered output can contain `<a>` elements
  *  (either directly via user content, or transitively via mounted lists,
@@ -174,11 +187,11 @@ export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
 ]);
 
 /** All catalog-addressable property keys (everything on `CommonStyle`
- *  except sub-scope containers `mobileMenu` / `links`, which have their
- *  own recursive render paths; and `border`, the legacy shorthand kept
- *  on the type for read-side migration only — never surfaced as an
- *  editable entry). */
-export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links'>;
+ *  except sub-scope containers `mobileMenu` / `links` / `navMenu`,
+ *  which have their own recursive render paths; and `border`, the
+ *  legacy shorthand kept on the type for read-side migration only —
+ *  never surfaced as an editable entry). */
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
@@ -362,6 +375,11 @@ const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_SP
 export const LINK_SUBSCOPE_GROUPS: PropertyGroup[] = [
   GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER,
 ];
+
+/** Schema slice surfaced inside each nav-menu desktop section
+ *  (ul/li). Reuses the link sub-scope group set — `<ul>` and `<li>` get
+ *  the same kind of structural / typography / box styling. */
+export const NAV_MENU_DESKTOP_GROUPS: PropertyGroup[] = LINK_SUBSCOPE_GROUPS;
 
 /** Composition shorthand for media/sub-component containers — full
  *  sizing (width + height for hero bands, fixed-aspect boxes), no
@@ -707,6 +725,12 @@ export function readStyleField(styleIn: CommonStyle | undefined, path: string): 
     const sub = styleIn.links?.[pseudo as LinkPseudo];
     return readStyleField(sub, rest.join('.'));
   }
+  // Nav-menu desktop sub-scope: `navMenu.<ul|li>.<rest>` → recurse.
+  if (path.startsWith('navMenu.')) {
+    const [, key, ...rest] = path.split('.');
+    const sub = styleIn.navMenu?.[key as NavMenuDesktopKey];
+    return readStyleField(sub, rest.join('.'));
+  }
   // Hydrate the new border fields from the legacy shorthand if the user
   // hasn't touched them yet. Returned values pre-fill the property panel
   // inputs so old data is visible + editable; the next write clears the
@@ -770,6 +794,17 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
     writeStyleField(style.links[ps]!, rest.join('.'), rawValue);
     if (Object.keys(style.links[ps]!).length === 0) delete style.links[ps];
     if (Object.keys(style.links).length === 0) delete style.links;
+    return;
+  }
+  // Nav-menu desktop sub-scope: `navMenu.<ul|li>.<rest>` → recurse, prune.
+  if (path.startsWith('navMenu.')) {
+    const [, key, ...rest] = path.split('.');
+    const k = key as NavMenuDesktopKey;
+    if (!style.navMenu) style.navMenu = {};
+    if (!style.navMenu[k]) style.navMenu[k] = {};
+    writeStyleField(style.navMenu[k]!, rest.join('.'), rawValue);
+    if (Object.keys(style.navMenu[k]!).length === 0) delete style.navMenu[k];
+    if (Object.keys(style.navMenu).length === 0) delete style.navMenu;
     return;
   }
   const segments = path.split('.');
@@ -1012,6 +1047,59 @@ export function buildBlockBreakpointCss(
 const LINK_SUBSCOPE_SCHEMA: PropertyEntry[] = LINK_SUBSCOPE_GROUPS
   .flatMap(g => g.props.map(k => PROPERTY_CATALOG[k]));
 
+/** Same flat-schema treatment for the nav-menu desktop sub-scope
+ *  (ul/li). Currently identical to LINK_SUBSCOPE_SCHEMA — kept as a
+ *  separate symbol so future divergence stays cheap. */
+const NAV_MENU_DESKTOP_SCHEMA: PropertyEntry[] = NAV_MENU_DESKTOP_GROUPS
+  .flatMap(g => g.props.map(k => PROPERTY_CATALOG[k]));
+
+/** Emit per-block nav-menu desktop sub-scope CSS rules — `<ul>` and
+ *  `<li>` styling for the inline rendering. Same Default + per-BP
+ *  pattern as the link sub-scope. Scope is the wrapper attribute
+ *  selector + descendant `ul` / `li`, so the portaled hamburger drawer
+ *  (which carries the attribute on itself, not as ancestor) is NOT
+ *  matched — the drawer is styled via the mobile-menu sub-scope. */
+export function buildBlockNavMenuDesktopCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'nav-menu') return '';
+  const sel = `[data-styled-block-id="${block.id}"]`;
+  const parts: string[] = [];
+
+  const defaultNav = block.style?.navMenu;
+  if (defaultNav) {
+    for (const key of NAV_MENU_DESKTOP_KEYS) {
+      const sub = defaultNav[key];
+      if (!sub) continue;
+      const decls = buildInlineStyle(NAV_MENU_DESKTOP_SCHEMA, sub);
+      if (decls) parts.push(`${sel} ${key} { ${decls} }`);
+    }
+  }
+
+  if (block.breakpointStyles) {
+    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
+    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+      const overrides = style.navMenu;
+      if (!overrides) continue;
+      const bp = byName.get(bpName);
+      if (!bp) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      const inner: string[] = [];
+      for (const key of NAV_MENU_DESKTOP_KEYS) {
+        const sub = overrides[key];
+        if (!sub) continue;
+        const decls = buildImportantInlineStyle(NAV_MENU_DESKTOP_SCHEMA, sub);
+        if (decls) inner.push(`${sel} ${key} { ${decls} }`);
+      }
+      if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
 /** Emit per-block link sub-scope CSS rules for both the Default tab
  *  (`block.style.links.<pseudo>` → unwrapped rules) and per-BP
  *  overrides (`block.breakpointStyles[bp].links.<pseudo>` →
@@ -1134,6 +1222,8 @@ export function buildPageBreakpointCss(
         const blockTyped = b as { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> };
         const bpCss = buildBlockBreakpointCss(blockTyped, breakpoints);
         if (bpCss) out.push(bpCss);
+        const navMenuCss = buildBlockNavMenuDesktopCss(blockTyped, breakpoints);
+        if (navMenuCss) out.push(navMenuCss);
         const linksCss = buildBlockLinksCss(blockTyped, breakpoints);
         if (linksCss) out.push(linksCss);
       }
@@ -1702,8 +1792,15 @@ function renderPanelInternal(
   const blockType = matrixKey(opts.scope);
   const showLinks = !fieldPrefix
     && BLOCKS_WITH_LINKS_SUBSCOPE.has(blockType);
+  // Nav-menu desktop sub-scope: 2 sections (ul/li) for the inline
+  // rendering. Surfaced ABOVE the link sections so the user sees the
+  // structural list/item styling first, then the link-pseudo styling.
+  // Mobile-menu drawer styling stays in its own dedicated panel
+  // (opened via the hamburger trigger in the editor).
+  const showNavMenuDesktop = !fieldPrefix && blockType === 'nav-menu';
+  const navMenuBody = showNavMenuDesktop ? renderNavMenuDesktopSections(opts) : '';
   const linksBody = showLinks ? renderLinkSubScopeSections(opts) : '';
-  const body = mainBody + linksBody;
+  const body = mainBody + navMenuBody + linksBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`).
@@ -1817,6 +1914,37 @@ const LINK_PSEUDO_LABELS: Record<LinkPseudo, string> = {
   focus:   'Focus (a:focus)',
   active:  'Active (a:active)',
 };
+
+const NAV_MENU_DESKTOP_LABELS: Record<NavMenuDesktopKey, string> = {
+  ul: 'List (ul)',
+  li: 'Items (li)',
+};
+
+function renderNavMenuDesktopSections(opts: RenderPropertyPanelOptions): string {
+  const resolvedGroups: ResolvedPropertyGroup[] = NAV_MENU_DESKTOP_GROUPS.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: g.props.map(k => PROPERTY_CATALOG[k]),
+  }));
+  return NAV_MENU_DESKTOP_KEYS.map(key => {
+    const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `navMenu.${key}.`);
+    return `
+      <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-nav-menu-section="${key}">
+        <div class="nn-ui-toggle__header" data-toggle-header>
+          <div class="nn-ui-toggle__info">
+            <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(NAV_MENU_DESKTOP_LABELS[key])}</h2>
+          </div>
+          <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+          </button>
+        </div>
+        <div class="nn-ui-toggle__content">
+          ${sectionBody}
+        </div>
+      </section>
+    `;
+  }).join('');
+}
 
 function renderLinkSubScopeSections(opts: RenderPropertyPanelOptions): string {
   const resolvedGroups: ResolvedPropertyGroup[] = LINK_SUBSCOPE_GROUPS.map(g => ({

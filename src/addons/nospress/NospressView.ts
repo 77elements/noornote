@@ -121,6 +121,15 @@ const PALETTE_COMMENTS: Record<typeof PALETTE_KEYS[number], string> = {
   'color-6': 'status',
 };
 
+/** Compact byte-size formatter for the Publish button label. KB+ rounded
+ *  to whole numbers, MB to one decimal — short enough to fit on a button
+ *  next to "Publish" without wrapping. */
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 /** Active editor cursor — page level, inside a `columns` block's column, or
  *  inside a `div` block's children. `index` is the position WITHIN the
  *  parent array. */
@@ -525,15 +534,51 @@ export class NospressView extends View {
         <button type="button" class="btn btn--passive" data-action="discard" ${hasDraft ? '' : 'disabled'}>Discard</button>
       `
       : '';
+    const breakdown = publishDirty ? this.computePublishSize(editSlug) : { page: 0, siteSettings: 0, total: 0 };
+    const publishLabel = publishDirty ? `Publish ${formatBytes(breakdown.total)}` : 'Publish';
+    const publishTooltip = publishDirty
+      ? escapeHtmlAttr(
+          `Publish target: ${editSlug || 'Home (noornote/list)'}\n` +
+          `  page draft:    ${formatBytes(breakdown.page)}\n` +
+          `  site-settings: ${formatBytes(breakdown.siteSettings)}\n` +
+          `  total:         ${formatBytes(breakdown.total)}\n` +
+          `(other pages, header/footer, page-index and menus publish separately)`
+        )
+      : '';
     return `
       <div class="nospress-action-bar l-row--split" data-action-bar>
         <div>
-          <button type="button" class="btn" data-action="publish" ${publishDirty ? '' : 'disabled'}>Publish</button>
+          <button type="button" class="btn" data-action="publish" title="${publishTooltip}" ${publishDirty ? '' : 'disabled'}>${publishLabel}</button>
           <button type="button" class="btn btn--passive btn--danger" data-action="delete-list" ${hasPublished ? '' : 'disabled'}>Unpublish</button>
         </div>
         <div>${localButtons}</div>
       </div>
     `;
+  }
+
+  /** Estimate the total bytes the next Publish would push to relays —
+   *  page draft (after the same `customCss`/`style` strip as
+   *  `publishDraft`) plus site-settings when dirty. Returns raw JSON
+   *  byte length; relays compress on the wire so the actual transferred
+   *  size is smaller, but the JSON size is what NIP-78 size limits
+   *  evaluate against. */
+  private computePublishSize(editSlug: string): { page: number; siteSettings: number; total: number } {
+    let page = 0;
+    let siteSettings = 0;
+    const draft = this.editingPage ?? this.listService.getDraftV2(editSlug);
+    if (draft) {
+      // Mirror the strip in `publishDraft` (customCss + page-level style
+      // fields are dropped before send). Clone first so we don't mutate
+      // the live draft.
+      const clone = structuredClone(draft) as { customCss?: unknown; style?: unknown };
+      delete clone.customCss;
+      delete clone.style;
+      page = new Blob([JSON.stringify(clone)]).size;
+    }
+    if (this.siteSettingsDirty) {
+      siteSettings = new Blob([JSON.stringify(this.siteSettingsService.getSettings())]).size;
+    }
+    return { page, siteSettings, total: page + siteSettings };
   }
 
   /** Re-render only the action bar (used after save/dirty state changes). */
