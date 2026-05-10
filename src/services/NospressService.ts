@@ -23,6 +23,7 @@ import { EventBus } from './EventBus';
 import { NospressMountsService } from './NospressMountsService';
 import { migrateV1ToV2 } from '../addons/nospress/blocks/migrate';
 import { HOME_SLUG } from '../addons/nospress/blocks/pageIndex';
+import { normalizePage } from '../addons/nospress/blocks/types';
 import type { NospressPageV2 } from '../addons/nospress/blocks/types';
 
 export interface NospressListSection {
@@ -108,20 +109,24 @@ export class NospressService {
     }
     const v1 = this.getList();
     const mounts = NospressMountsService.getInstance().getMounts();
-    return migrateV1ToV2(v1, mounts);
+    return normalizePage(migrateV1ToV2(v1, mounts));
   }
 
   // ── v2 drafts (per slug) ────────────────────────────────────────────
 
   public getDraftV2(slug: string = HOME_SLUG): NospressPageV2 | null {
     const map = this.readDraftMap();
-    if (slug in map) return map[slug] ?? null;
+    if (slug in map) {
+      const draft = map[slug];
+      return draft ? normalizePage(draft) : null;
+    }
     if (slug === HOME_SLUG) {
       // Legacy fallback: old single-key store. Migrate lazily on next save.
-      return PerAccountLocalStorage.getInstance().get<NospressPageV2 | null>(
+      const legacy = PerAccountLocalStorage.getInstance().get<NospressPageV2 | null>(
         StorageKeys.NOSPRESS_DRAFT_V2,
         null
       );
+      return legacy ? normalizePage(legacy) : null;
     }
     return null;
   }
@@ -157,12 +162,16 @@ export class NospressService {
 
   public getPublishedV2(slug: string = HOME_SLUG): NospressPageV2 | null {
     const map = this.readPublishedMap();
-    if (slug in map) return map[slug] ?? null;
+    if (slug in map) {
+      const pub = map[slug];
+      return pub ? normalizePage(pub) : null;
+    }
     if (slug === HOME_SLUG) {
-      return PerAccountLocalStorage.getInstance().get<NospressPageV2 | null>(
+      const legacy = PerAccountLocalStorage.getInstance().get<NospressPageV2 | null>(
         StorageKeys.NOSPRESS_PUBLISHED_V2,
         null
       );
+      return legacy ? normalizePage(legacy) : null;
     }
     return null;
   }

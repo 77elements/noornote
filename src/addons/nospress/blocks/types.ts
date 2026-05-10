@@ -31,7 +31,7 @@ export type Block =
   | { id: string; type: 'list'; title?: string; items: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'embed'; nostrRef: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'bookmark-folder'; folderName: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
-  | { id: string; type: 'columns'; count: 2 | 3; content: Block[][]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'columns'; layout: number[]; content: Block[][]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'divider'; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'dm-button'; label: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
@@ -87,7 +87,7 @@ export function createBlock(type: BlockType): Block {
     case 'list':            return { id, type, items: [] };
     case 'embed':           return { id, type, nostrRef: '' };
     case 'bookmark-folder': return { id, type, folderName: '' };
-    case 'columns':         return { id, type, count: 2, content: [[], []] };
+    case 'columns':         return { id, type, layout: [1, 1], content: [[], []] };
     case 'divider':         return { id, type };
     case 'dm-button':       return { id, type, label: 'Send me a message' };
     case 'profile-card':    return { id, type };
@@ -127,6 +127,81 @@ export interface BlockLocation {
  */
 export function findBlockInPage(page: NospressPageV2, blockId: string): BlockLocation | null {
   return findInArray(page.blocks, blockId, undefined);
+}
+
+/**
+ * Available column-layout presets shown in the picker modal. Each entry
+ * is a ratio array — the renderer maps it to `grid-template-columns:
+ * <r1>fr <r2>fr ...`. Order matters: it's the order the picker renders
+ * the cards in (grouped by column count, asymmetrics last).
+ */
+export const COLUMN_LAYOUT_PRESETS: number[][] = [
+  // 2 columns
+  [1, 1],
+  [1, 2],
+  [2, 1],
+  [1, 3],
+  [3, 1],
+  [2, 3],
+  [3, 2],
+  // 3 columns
+  [1, 1, 1],
+  [1, 1, 2],
+  [2, 1, 1],
+  [1, 2, 1],
+  [1, 3, 1],
+  // 4 columns
+  [1, 1, 1, 1],
+  [1, 1, 1, 2],
+  [2, 1, 1, 1],
+  [1, 2, 1, 1],
+  [1, 1, 2, 1],
+  // 5 / 6 columns
+  [1, 1, 1, 1, 1],
+  [1, 1, 1, 1, 1, 1],
+];
+
+/**
+ * In-place migration: legacy `columns` blocks stored `count: 2 | 3` and
+ * implicitly equal-width columns. New shape uses `layout: number[]` as
+ * the single source of truth. Walk every block recursively (columns can
+ * sit inside `div`, and divs can nest), so that deep pages don't slip
+ * past unconverted.
+ *
+ * Idempotent: pages that already have `layout` are left alone.
+ */
+export function normalizePage(page: NospressPageV2): NospressPageV2 {
+  normalizeBlocks(page.blocks);
+  return page;
+}
+
+function normalizeBlocks(blocks: Block[]): void {
+  for (const b of blocks) {
+    if (b.type === 'columns') {
+      const legacy = b as unknown as { count?: number; layout?: number[] };
+      if (!Array.isArray(legacy.layout) || legacy.layout.length === 0) {
+        const fallback = legacy.count === 3 ? 3 : Math.max(2, b.content?.length ?? 2);
+        legacy.layout = Array.from({ length: fallback }, () => 1);
+      }
+      // Align content array length with layout — defensive: an old page
+      // could have layout=[1,1,1] but only 2 content arrays, or vice versa.
+      while (b.content.length < b.layout.length) b.content.push([]);
+      if (b.content.length > b.layout.length) {
+        const survivor = b.content[b.layout.length - 1] ?? [];
+        for (let i = b.layout.length; i < b.content.length; i++) {
+          survivor.push(...(b.content[i] ?? []));
+        }
+        b.content[b.layout.length - 1] = survivor;
+        b.content.length = b.layout.length;
+      }
+      // Drop the legacy field so JSON.stringify doesn't keep emitting it.
+      delete legacy.count;
+      // Recurse into nested blocks per column.
+      for (const col of b.content) normalizeBlocks(col);
+    } else if (b.type === 'div') {
+      normalizeBlocks(b.children);
+    }
+  }
 }
 
 function findInArray(

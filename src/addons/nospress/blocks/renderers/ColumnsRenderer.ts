@@ -1,5 +1,9 @@
 /**
- * ColumnsRenderer — 2- or 3-column layout with nested blocks per column.
+ * ColumnsRenderer — multi-column layout with nested blocks per column.
+ *
+ * Width per column comes from `block.layout` (number array of fr ratios,
+ * e.g. `[1,2,1]` = 1/4 + 1/2 + 1/4). The picker exposes 19 presets; the
+ * grid is driven inline via `style="grid-template-columns: 1fr 2fr 1fr"`.
  *
  * Readonly: pure CSS grid with each column rendering its own blocks list.
  * Editable: wraps via wrapEditable for the outer toolbar (move/delete/cursor),
@@ -11,6 +15,10 @@
  *   data-columns-block-id  (the parent columns block id)
  *   data-col-index         (0-based column index)
  * NospressView reads those to attach per-column cursor + add/insert handlers.
+ *
+ * Layout-picker trigger (editable mode only): a button with a mini bars
+ * preview of the current layout. NospressView attaches a click handler
+ * that opens a modal with all 19 preset cards.
  */
 
 import type { Block } from '../types';
@@ -25,13 +33,27 @@ export interface ColumnsRenderOptions {
   columnInner?: (colIndex: number) => string;
 }
 
+/** Build the inline `grid-template-columns` value from a ratio array.
+ *  `[1,2,1]` → `1fr 2fr 1fr`. */
+function gridTemplateFor(layout: number[]): string {
+  return layout.map(r => `${r}fr`).join(' ');
+}
+
+/** Render a mini bars preview of a layout. Reused by the trigger button
+ *  AND the modal cards so the visual signature stays identical. */
+export function renderLayoutPreview(layout: number[]): string {
+  const cols = gridTemplateFor(layout);
+  const bars = layout.map(() => '<span></span>').join('');
+  return `<span class="nospress-columns-layout-preview" style="grid-template-columns: ${cols};">${bars}</span>`;
+}
+
 export function renderColumns(
   block: Extract<Block, { type: 'columns' }>,
   opts: ColumnsRenderOptions = {}
 ): string {
   const editable = opts.editable === true;
   const cols: string[] = [];
-  for (let c = 0; c < block.count; c++) {
+  for (let c = 0; c < block.layout.length; c++) {
     const inner = opts.columnInner
       ? opts.columnInner(c)
       : BlockRenderer.renderAll(block.content[c] ?? [], { editable });
@@ -44,11 +66,22 @@ export function renderColumns(
     `);
   }
 
+  const gridStyle = `--nospress-cols: ${gridTemplateFor(block.layout)}`;
+
   if (editable) {
-    const countSwitcher = `<div class="nospress-block-columns__count-slot" data-block-dropdown="columns-count" data-block-id="${block.id}" data-current-value="${block.count}"></div>`;
+    const layoutAttr = block.layout.join(',');
+    const triggerHtml = `
+      <button type="button"
+              class="nospress-block-columns__layout-trigger"
+              data-block-layout-trigger
+              data-block-id="${block.id}"
+              data-current-layout="${layoutAttr}"
+              aria-label="Change column layout">
+        ${renderLayoutPreview(block.layout)}
+      </button>`;
     const inner = `
-      ${countSwitcher}
-      <div class="nospress-block-columns nospress-block-columns--${block.count}" data-columns-block-id="${block.id}">
+      ${triggerHtml}
+      <div class="nospress-block-columns" data-columns-block-id="${block.id}" style="${gridStyle}">
         ${cols.join('')}
       </div>
     `;
@@ -56,14 +89,16 @@ export function renderColumns(
   }
 
   // Readonly: self-wrap on the columns container so styles land directly
-  // on it instead of on a wrapper div.
+  // on it instead of on a wrapper div. Grid template flows in via the
+  // `--nospress-cols` custom property, picked up by SCSS at tablet-up.
   return styleWrap(
     block,
     cols.join(''),
     {
       tag: 'div',
-      baseClass: `nospress-block-columns nospress-block-columns--${block.count}`,
+      baseClass: 'nospress-block-columns',
       extraAttrs: `data-columns-block-id="${block.id}"`,
+      extraInlineStyle: gridStyle,
     },
   );
 }

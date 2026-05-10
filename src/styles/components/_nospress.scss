@@ -711,15 +711,17 @@
 }
 
 
-// Columns block — desktop/tablet shows N columns side-by-side, mobile stacks
+// Columns block — desktop/tablet renders the user-picked layout via the
+// `--nospress-cols` custom property (set inline by the renderer from the
+// `layout` ratio array). Mobile collapses to a single stack so narrow
+// viewports stay legible regardless of preset.
 .nospress-block-columns {
   display: grid;
   gap: $gap;
   grid-template-columns: 1fr;
 
   @include tablet-up {
-    &--2 { grid-template-columns: 1fr 1fr; }
-    &--3 { grid-template-columns: 1fr 1fr 1fr; }
+    grid-template-columns: var(--nospress-cols, 1fr);
   }
 }
 
@@ -738,12 +740,82 @@
   }
 }
 
-.nospress-block-columns__count-slot {
+// Inline trigger button on the editable columns block. Shows a small
+// preview of the current layout; click opens the preset-picker modal.
+.nospress-block-columns__layout-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  padding: calc($gap / 2);
   margin-bottom: calc($gap / 2);
-  align-self: flex-start;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
+  border-radius: $radius-xl;
+  color: var(--color-5);
+  cursor: pointer;
+  transition: $transition-colors;
 
-  .custom-dropdown {
-    width: 140px;
+  &:hover {
+    background: var(--color-3);
+    border-color: var(--color-4);
+  }
+}
+
+// Mini bars preview reused by the trigger button AND the picker cards.
+// Heights differ per context — the trigger is compact, modal cards are
+// taller for legibility.
+.nospress-columns-layout-preview {
+  display: grid;
+  gap: 3px;
+  width: 60px;
+  height: 16px;
+
+  span {
+    background: var(--color-4);
+    border-radius: 2px;
+    min-width: 0;
+  }
+}
+
+// Picker modal — responsive grid of preset cards. Container queries
+// keep the card columns sensible across modal widths.
+.nospress-columns-layout-grid {
+  display: grid;
+  gap: $gap;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  padding: calc($gap / 2) 0;
+}
+
+.nospress-columns-layout-preset {
+  display: grid;
+  gap: calc($gap / 2);
+  padding: $gap;
+  background: var(--color-2);
+  border: 1px solid var(--color-3);
+  border-radius: $radius-xl;
+  color: var(--color-5);
+  cursor: pointer;
+  transition: $transition-colors;
+  justify-items: center;
+
+  &:hover {
+    background: var(--color-3);
+    border-color: var(--color-4);
+  }
+
+  &.is-active {
+    border-color: var(--color-4);
+    background: var(--color-3);
+  }
+
+  // Modal-card preview: bigger than the trigger preview so users can
+  // distinguish ratios at a glance.
+  .nospress-columns-layout-preview {
+    width: 100%;
+    height: 18px;
+    gap: 4px;
+
+    span { border-radius: 4px; }
   }
 }
 

@@ -24,7 +24,7 @@
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { NospressService, type NospressListData } from '../NospressService';
-import { isPageV2, type NospressPageV2 } from '../../addons/nospress/blocks/types';
+import { isPageV2, normalizePage, type NospressPageV2 } from '../../addons/nospress/blocks/types';
 import { migrateV1ToV2 } from '../../addons/nospress/blocks/migrate';
 import {
   HOME_SLUG,
@@ -70,14 +70,14 @@ function parsePageContent(content: string): NospressPageV2 | null {
       if (typeof parsed.description === 'string') page.description = parsed.description;
       if (parsed.style && typeof parsed.style === 'object') page.style = parsed.style;
       if (typeof parsed.customCss === 'string') page.customCss = parsed.customCss;
-      return page;
+      return normalizePage(page);
     }
     if (parsed && parsed.version === 1 && Array.isArray(parsed.sections)) {
       const v1: NospressListData = { version: 1, sections: parsed.sections };
       if (typeof parsed.title === 'string') v1.title = parsed.title;
       if (typeof parsed.subtitle === 'string') v1.subtitle = parsed.subtitle;
       if (typeof parsed.description === 'string') v1.description = parsed.description;
-      return migrateV1ToV2(v1, []);
+      return normalizePage(migrateV1ToV2(v1, []));
     }
     return null;
   } catch {

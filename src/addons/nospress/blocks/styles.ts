@@ -1146,7 +1146,7 @@ const VOID_ELEMENTS = new Set(['hr', 'br', 'img', 'input']);
 export function styleWrap(
   block: { id: string; type: string; style?: CommonStyle; attrs?: { class?: string; id?: string } },
   inner: string,
-  opts: { tag?: string; baseClass?: string; extraAttrs?: string } = {},
+  opts: { tag?: string; baseClass?: string; extraAttrs?: string; extraInlineStyle?: string } = {},
 ): string {
   const tag = opts.tag ?? 'div';
   const baseClass = opts.baseClass ?? 'nospress-block-style';
@@ -1158,9 +1158,9 @@ export function styleWrap(
   // a backdrop image, …) shows through without color guessing. Only the
   // div block (and its HTML-tag variants) supports divider via STYLE_MATRIX.
   const clipPath = buildClipPath(block.style?.divider);
-  const combinedStyle = clipPath
-    ? (inlineStyle ? `${inlineStyle}; clip-path: ${clipPath}` : `clip-path: ${clipPath}`)
-    : inlineStyle;
+  const pieces = [inlineStyle, clipPath ? `clip-path: ${clipPath}` : '', opts.extraInlineStyle ?? '']
+    .filter(p => p && p.length > 0);
+  const combinedStyle = pieces.join('; ');
   const styleAttr = combinedStyle ? ` style="${escapeHtmlAttr(combinedStyle)}"` : '';
 
   const customClass = sanitizeCssIdent(block.attrs?.class ?? '', 'multi');

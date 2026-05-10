@@ -33,7 +33,7 @@ import {
 import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, normalizeSlug, isValidSlug, pageHeaderSlug, pageFooterSlug, type PageIndexEntry } from './blocks/pageIndex';
 import { PRIMARY_MENU_ID, type NavItem, type NospressMenu } from './blocks/menu';
 import { BlockRenderer } from './blocks/BlockRenderer';
-import { renderColumns } from './blocks/renderers/ColumnsRenderer';
+import { renderColumns, renderLayoutPreview } from './blocks/renderers/ColumnsRenderer';
 import { renderDiv } from './blocks/renderers/DivRenderer';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
@@ -45,7 +45,7 @@ import { EventBus } from '../../services/EventBus';
 import { FullscreenOverlay } from '../../components/ui/FullscreenOverlay';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
-import { createBlock, findBlockInPage, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
+import { createBlock, findBlockInPage, COLUMN_LAYOUT_PRESETS, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
 import {
   renderPropertyPanel,
   resolvePaletteVars,
@@ -2938,7 +2938,7 @@ export class NospressView extends View {
     }
     if (cur.scope === 'column') {
       const loc = findBlockInPage(page, cur.columnsBlockId);
-      if (!loc || loc.block.type !== 'columns' || cur.colIndex >= loc.block.count) {
+      if (!loc || loc.block.type !== 'columns' || cur.colIndex >= loc.block.layout.length) {
         this.cursor = { scope: 'page', index: page.blocks.length };
         return;
       }
@@ -3524,18 +3524,6 @@ export class NospressView extends View {
         });
         slot.appendChild(dropdown.getElement());
         this.blockDropdowns.push(dropdown);
-      } else if (kind === 'columns-count') {
-        const current = slot.dataset.currentValue || '2';
-        const dropdown = new CustomDropdown({
-          options: [
-            { value: '2', label: '2 columns' },
-            { value: '3', label: '3 columns' }
-          ],
-          selectedValue: current,
-          onChange: (value) => this.changeColumnsCount(blockId, parseInt(value, 10) as 2 | 3)
-        });
-        slot.appendChild(dropdown.getElement());
-        this.blockDropdowns.push(dropdown);
       } else if (kind === 'div-tag') {
         const current = slot.dataset.currentValue || 'div';
         const dropdown = new CustomDropdown({
@@ -3590,17 +3578,60 @@ export class NospressView extends View {
     });
   }
 
-  /** Resize a `columns` block. On grow, append empty column arrays. On shrink,
-   *  merge dropped columns' blocks into the last surviving column so no data
-   *  is lost. */
-  private changeColumnsCount(blockId: string, newCount: 2 | 3): void {
+  /** Open the column-layout picker modal for a `columns` block. Renders
+   *  every preset from `COLUMN_LAYOUT_PRESETS` as a card with a mini
+   *  bars preview. Clicking a card applies the layout and closes the
+   *  modal. The card matching the current layout is marked active so
+   *  the user can see what's selected. */
+  private openColumnsLayoutPicker(blockId: string, currentLayout: number[]): void {
+    const isSame = (a: number[], b: number[]) =>
+      a.length === b.length && a.every((v, i) => v === b[i]);
+    const cards = COLUMN_LAYOUT_PRESETS.map((preset) => {
+      const active = isSame(preset, currentLayout) ? ' is-active' : '';
+      const layoutAttr = preset.join(',');
+      return `<button type="button" class="nospress-columns-layout-preset${active}" data-layout="${layoutAttr}">
+        ${renderLayoutPreview(preset)}
+      </button>`;
+    }).join('');
+    const content = document.createElement('div');
+    content.className = 'nospress-columns-layout-grid';
+    content.innerHTML = cards;
+    content.addEventListener('click', (e) => {
+      const card = (e.target as HTMLElement).closest<HTMLElement>('[data-layout]');
+      if (!card) return;
+      const next = (card.dataset.layout ?? '')
+        .split(',')
+        .map(n => parseInt(n, 10))
+        .filter(n => Number.isFinite(n) && n > 0);
+      if (next.length === 0) return;
+      this.changeColumnsLayout(blockId, next);
+      ModalService.getInstance().hide();
+    });
+    ModalService.getInstance().show({
+      title: 'Choose column layout',
+      content,
+      width: '600px',
+      height: 'auto',
+    });
+  }
+
+  /** Apply a new column layout to a `columns` block. On grow, append empty
+   *  column arrays. On shrink, merge dropped columns' blocks into the last
+   *  surviving column so no nested content is lost. */
+  private changeColumnsLayout(blockId: string, newLayout: number[]): void {
+    if (!Array.isArray(newLayout) || newLayout.length === 0) return;
     this.mutateDraft((page) => {
       const block = findBlockInPage(page, blockId)?.block;
-      if (!block || block.type !== 'columns' || block.count === newCount) return;
+      if (!block || block.type !== 'columns') return;
+      const sameLayout =
+        block.layout.length === newLayout.length &&
+        block.layout.every((r, i) => r === newLayout[i]);
+      if (sameLayout) return;
 
-      if (newCount > block.count) {
+      const newCount = newLayout.length;
+      if (newCount > block.content.length) {
         while (block.content.length < newCount) block.content.push([]);
-      } else {
+      } else if (newCount < block.content.length) {
         const survivor = block.content[newCount - 1] ?? [];
         for (let i = newCount; i < block.content.length; i++) {
           survivor.push(...(block.content[i] ?? []));
@@ -3608,7 +3639,7 @@ export class NospressView extends View {
         block.content[newCount - 1] = survivor;
         block.content.length = newCount;
       }
-      block.count = newCount;
+      block.layout = [...newLayout];
     });
   }
 
@@ -3841,6 +3872,20 @@ export class NospressView extends View {
       if (subScopeBtn) {
         const blockId = subScopeBtn.dataset.blockId ?? null;
         if (blockId) this.toggleMobileSubScope(blockId);
+        return;
+      }
+
+      // Layout-trigger on the columns block: open the preset picker modal.
+      // Handled BEFORE the generic interactive-control skip below so the
+      // <button> element doesn't fall through to it.
+      const layoutBtn = target.closest('[data-block-layout-trigger]') as HTMLElement | null;
+      if (layoutBtn) {
+        const blockId = layoutBtn.dataset.blockId ?? null;
+        const current = (layoutBtn.dataset.currentLayout ?? '')
+          .split(',')
+          .map(n => parseInt(n, 10))
+          .filter(n => Number.isFinite(n) && n > 0);
+        if (blockId) this.openColumnsLayoutPicker(blockId, current);
         return;
       }
 
