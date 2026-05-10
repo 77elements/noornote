@@ -54,6 +54,7 @@ import {
   type CommonStyle,
 } from './blocks/styles';
 import { removeUserCss } from './cssScope';
+import { buildBackupBundle, downloadBackupZip, readBackupZip, applyBackupBundle, type NospressBackupBundle } from './backup';
 import { bindCssTextareaUx } from './cssTextareaUx';
 import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -182,6 +183,12 @@ export class NospressView extends View {
   /** Live in-memory edit state. All mutations go here; persisted to draft
    *  storage only when the user clicks Save. Null until first edit. */
   private editingPage: NospressPageV2 | null = null;
+  /** The slug `editingPage` was seeded from. Persistence MUST use this
+   *  rather than recomputing the slug at save time — otherwise a
+   *  template switch can mis-route the in-memory buffer (the bug that
+   *  silently overwrote Home Body with Header content prior to
+   *  2026-05-11). Reset to null whenever `editingPage` is nulled. */
+  private editingPageSlug: string | null = null;
   private isDirty: boolean = false;
   /** True when site-settings has unsynced local changes — flipped by every
    *  Global-tab input (palette, meta, theme, injection) and by Custom CSS
@@ -721,13 +728,23 @@ export class NospressView extends View {
     libraryToggleBtn.addEventListener('click', () => this.toggleLibraryHidden());
     this.libraryToggleBtn = libraryToggleBtn;
 
+    // Backup button — opens a modal with Export + Restore options. Local
+    // ZIP backup of every NosPress slot for the current account; final
+    // defence layer against data loss (see docs/todos/nospress.md
+    // "Datensicherheits-Schichten").
+    const backupBtn = document.createElement('button');
+    backupBtn.type = 'button';
+    backupBtn.className = 'btn btn--passive btn--medium';
+    backupBtn.textContent = 'Backup';
+    backupBtn.addEventListener('click', () => this.openBackupModal());
+
     this.fullscreenOverlay = new FullscreenOverlay({
       title: 'Edit NosPress Site',
       exitLabel: 'Exit NosPress',
       exitAsIcon: true,
       body: split,
       maxWidth: '100%',
-      extraActions: [seeWebsiteButton, cssEditorButton, libraryToggleBtn],
+      extraActions: [seeWebsiteButton, cssEditorButton, libraryToggleBtn, backupBtn],
       onExit: () => this.cleanupFullscreenEditor(),
     });
     this.fullscreenOverlay.mount();
@@ -2488,11 +2505,12 @@ export class NospressView extends View {
 
     // Persist current in-memory edits to the slug we're leaving.
     if (this.editingPage && this.isDirty) {
-      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.currentEditSlug() });
+      this.persistEditingPage();
     }
 
     this.editingTarget = target;
     this.editingPage = null;
+    this.editingPageSlug = null;
     this.isDirty = false;
     this.selectedBlockId = null;
     this.selectedSubScope = null;
@@ -2534,11 +2552,12 @@ export class NospressView extends View {
 
     // Persist current in-memory edits to the slug we're leaving.
     if (this.editingPage && this.isDirty) {
-      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.currentEditSlug() });
+      this.persistEditingPage();
     }
 
     this.editingTarget = target;
     this.editingPage = null;
+    this.editingPageSlug = null;
     this.isDirty = false;
     this.selectedBlockId = null;
     this.selectedSubScope = null;
@@ -2551,6 +2570,7 @@ export class NospressView extends View {
       const sourcePublished = this.listService.getPublishedV2(globalSlug);
       const source = sourceDraft ?? sourcePublished ?? { version: 2 as const, blocks: [] };
       this.editingPage = JSON.parse(JSON.stringify(source));
+      this.editingPageSlug = overrideSlug;
     }
 
     this.rerenderEditable();
@@ -2581,6 +2601,7 @@ export class NospressView extends View {
 
     this.editingTarget = 'body';
     this.editingPage = null;
+    this.editingPageSlug = null;
     this.isDirty = false;
     this.selectedBlockId = null;
     this.selectedSubScope = null;
@@ -2699,14 +2720,19 @@ export class NospressView extends View {
       return;
     }
 
-    // Persist any in-memory edits to the current slug so they survive the switch.
+    // Persist any in-memory edits to the slug we're LEAVING. The slug
+    // ALWAYS comes from `editingPageSlug` — the buffer carries its
+    // origin slug since 2026-05-11, eliminating the bug class where
+    // computed-at-save-time slug disagreed with the buffer's actual
+    // content.
     if (this.editingPage && this.isDirty) {
-      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.activeSlug });
+      this.persistEditingPage();
     }
 
     this.activeSlug = slug;
     this.editingTarget = 'body';
     this.editingPage = null;
+    this.editingPageSlug = null;
     this.isDirty = false;
     this.selectedBlockId = null;
     this.selectedSubScope = null;
@@ -3512,10 +3538,30 @@ export class NospressView extends View {
     }
   }
 
+  /** Save the in-memory `editingPage` to the slot it ORIGINATED from
+   *  (`editingPageSlug`). This is the single chokepoint for persisting
+   *  draft edits — every call site goes through here so the slug can't
+   *  be mis-computed at save time. Falls back to `currentEditSlug()`
+   *  only as a defensive last resort (shouldn't happen in practice
+   *  since mutateDraft always sets editingPageSlug when creating the
+   *  buffer); logs a console.debug if those two disagree so future
+   *  drift becomes visible. */
+  private persistEditingPage(): void {
+    if (!this.editingPage) return;
+    const slug = this.editingPageSlug ?? this.currentEditSlug();
+    if (this.editingPageSlug !== null && this.editingPageSlug !== this.currentEditSlug()) {
+      console.debug(
+        '[NosPress] editingPage slug drift — saving to origin slug '
+        + `'${this.editingPageSlug}', not current edit slug '${this.currentEditSlug()}'`,
+      );
+    }
+    this.listService.saveDraftV2(this.editingPage, { silent: true, slug });
+  }
+
   private saveDraft(): void {
     // Page draft: persist if there are in-memory edits.
     if (this.editingPage) {
-      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: this.currentEditSlug() });
+      this.persistEditingPage();
     } else if (!this.isDirty) {
       ToastService.show('Nothing to save', 'error');
       return;
@@ -3529,6 +3575,100 @@ export class NospressView extends View {
     ToastService.show('Saved', 'success');
   }
 
+  /** Open a small modal with Export + Restore actions. Export downloads
+   *  a ZIP snapshot of every NosPress storage slot for the current
+   *  pubkey; Restore opens a file picker and confirms before
+   *  overwriting local data. */
+  private async openBackupModal(): Promise<void> {
+    const content = document.createElement('div');
+    content.className = 'nospress-backup-modal';
+    content.innerHTML = `
+      <p class="form__note">
+        Export a ZIP snapshot of all your NosPress data (drafts, published mirrors,
+        page index, menus, site settings) to your downloads folder. Restore reads
+        such a ZIP back into local storage, overwriting whatever's there.
+      </p>
+      <div class="l-row l-row--center" style="gap: ${' '}.5rem; margin-top: 1rem;">
+        <button type="button" class="btn" data-action="export-backup">Export Backup (.zip)</button>
+        <button type="button" class="btn btn--passive" data-action="restore-backup">Restore from Backup…</button>
+      </div>
+      <input type="file" accept=".zip,application/zip" data-restore-file-input style="display:none" />
+    `;
+    content.addEventListener('click', (e) => {
+      const action = (e.target as HTMLElement).closest<HTMLElement>('[data-action]')?.dataset.action;
+      if (action === 'export-backup') {
+        this.exportBackupZip();
+      } else if (action === 'restore-backup') {
+        content.querySelector<HTMLInputElement>('[data-restore-file-input]')?.click();
+      }
+    });
+    content.addEventListener('change', (e) => {
+      const input = e.target as HTMLInputElement;
+      if (input?.dataset.restoreFileInput !== undefined && input.files?.[0]) {
+        const file = input.files[0];
+        input.value = '';
+        void this.restoreBackupZip(file);
+      }
+    });
+    ModalService.getInstance().show({
+      title: 'Backup',
+      content,
+      width: '480px',
+      height: 'auto',
+    });
+  }
+
+  private exportBackupZip(): void {
+    try {
+      const bundle = buildBackupBundle(this.pubkey);
+      downloadBackupZip(bundle);
+      ToastService.show('Backup downloaded', 'success');
+      ModalService.getInstance().hide();
+    } catch (err) {
+      console.error('NosPress backup export failed', err);
+      ToastService.show('Backup export failed', 'error');
+    }
+  }
+
+  private async restoreBackupZip(file: File): Promise<void> {
+    let bundle: NospressBackupBundle;
+    try {
+      bundle = await readBackupZip(file);
+    } catch (err) {
+      ToastService.show((err as Error).message ?? 'Could not read backup', 'error');
+      return;
+    }
+    const sameAccount = bundle.pubkey === this.pubkey;
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Restore backup?',
+      message: sameAccount
+        ? `This will OVERWRITE your local NosPress data with the snapshot from ${bundle.exportedAt.slice(0, 10)}. Published content on relays is not affected — re-publish to push the restored state out. Cannot be undone.`
+        : `This backup was exported by a DIFFERENT account (${bundle.pubkey.slice(0, 12)}…). Restoring would overwrite your current account's NosPress data with content not signed by you. Continue?`,
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+    try {
+      // Reset in-memory editor state so the post-restore re-render
+      // doesn't show stale buffer.
+      this.editingPage = null;
+      this.editingPageSlug = null;
+      this.isDirty = false;
+      this.selectedBlockId = null;
+      this.selectedSubScope = null;
+      applyBackupBundle(bundle, this.pubkey);
+      // Force a full re-load so services pick up the new storage state.
+      this.rerenderEditable();
+      this.updatePagesTab();
+      this.updatePropertiesTab();
+      this.refreshActionBar();
+      ToastService.show('Backup restored', 'success');
+      ModalService.getInstance().hide();
+    } catch (err) {
+      console.error('NosPress backup restore failed', err);
+      ToastService.show('Backup restore failed', 'error');
+    }
+  }
+
   private async discardDraft(): Promise<void> {
     const confirmed = await ModalService.getInstance().confirm({
       title: 'Discard draft',
@@ -3536,8 +3676,13 @@ export class NospressView extends View {
       confirmDestructive: true,
     });
     if (!confirmed) return;
-    this.listService.clearDraftV2(this.currentEditSlug());
+    // Use editingPageSlug when available — that's the slot the in-memory
+    // buffer actually came from. Falls back to currentEditSlug for the
+    // (rare) case where no edits happened yet but a stored draft exists.
+    const slug = this.editingPageSlug ?? this.currentEditSlug();
+    this.listService.clearDraftV2(slug);
     this.editingPage = null;
+    this.editingPageSlug = null;
     this.isDirty = false;
     ToastService.show('Draft discarded', 'success');
     this.rerenderEditable();
@@ -3547,8 +3692,11 @@ export class NospressView extends View {
   private async publishDraft(): Promise<void> {
     const editSlug = this.currentEditSlug();
     if (this.isDirty && this.editingPage) {
-      // Persist pending edits before publishing
-      this.listService.saveDraftV2(this.editingPage, { silent: true, slug: editSlug });
+      // Persist pending edits before publishing. `persistEditingPage()`
+      // uses `editingPageSlug` as the source of truth so the buffer's
+      // origin governs where it lands — same defence as the
+      // template-switch path.
+      this.persistEditingPage();
       this.isDirty = false;
     }
     const draft = this.listService.getDraftV2(editSlug);
@@ -3596,6 +3744,7 @@ export class NospressView extends View {
 
       this.listService.clearDraftV2(editSlug);
       this.editingPage = null;
+      this.editingPageSlug = null;
       this.isDirty = false;
       this.updatePagesTab();
       ToastService.show(sitePublished ? 'Page + site settings published' : 'Page published', 'success');
@@ -4153,6 +4302,7 @@ export class NospressView extends View {
           ?? this.listService.getPublishedV2(editSlug)
           ?? this.listService.getPageV2(editSlug)
       );
+      this.editingPageSlug = editSlug;
     }
     updater(this.editingPage!);
     this.isDirty = true;

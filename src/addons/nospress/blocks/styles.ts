@@ -64,6 +64,11 @@ export interface CommonStyle {
   lineHeight?: string;
   fontWeight?: string;
   fontStyle?: string;
+  /** CSS `text-align` (left / center / right / justify). Surfaced only
+   *  for heading + text blocks in the Properties panel (the other
+   *  textual blocks have layout-driven content where left-default is
+   *  the right call). */
+  textAlign?: string;
   /** CSS `position` mode (static / relative / absolute / fixed / sticky).
    *  Always defaults to `static` (the CSS default for every element). */
   position?: string;
@@ -257,7 +262,7 @@ export interface QuadPropertyEntry {
  *  CustomDropdown instance after each render. */
 export interface DropdownPropertyEntry {
   kind: 'dropdown';
-  key: 'borderStyle' | 'display' | 'position' | 'textDecoration';
+  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign';
   label: string;
   cssProp: string;
   options: Array<{ value: string; label: string }>;
@@ -323,6 +328,15 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
       { value: 'underline',    label: 'underline' },
       { value: 'overline',     label: 'overline' },
       { value: 'line-through', label: 'line-through' },
+    ],
+  },
+  textAlign: {
+    kind: 'dropdown', key: 'textAlign', label: 'Text align', cssProp: 'text-align',
+    options: [
+      { value: 'left',    label: 'left' },
+      { value: 'center',  label: 'center' },
+      { value: 'right',   label: 'right' },
+      { value: 'justify', label: 'justify' },
     ],
   },
   display:      {
@@ -396,6 +410,11 @@ const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',  
  *  (forcing height on text content clips silently). */
 const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER];
 
+/** Standalone single-prop group used to surface `text-align` ONLY on
+ *  heading + text blocks (the other TEXTUAL_GROUPS sharers have
+ *  layout-driven content where the default left-align is right). */
+const GROUP_TEXT_ALIGN: PropertyGroup = { key: 'text-align', label: 'Alignment', props: ['textAlign'] };
+
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
  *  inline by default and sizing rarely makes sense. No effects/divider —
@@ -446,8 +465,8 @@ const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_
 export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // Page: everything except sizing — the page surface fills its host.
   page: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
-  heading:           TEXTUAL_GROUPS,
-  text:              TEXTUAL_GROUPS,
+  heading:           [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
+  text:              [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
   list:              TEXTUAL_GROUPS,
   links:             TEXTUAL_GROUPS,
   'dm-button':       TEXTUAL_GROUPS,
