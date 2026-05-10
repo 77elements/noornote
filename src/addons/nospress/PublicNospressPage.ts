@@ -240,16 +240,31 @@ export class PublicNospressPage {
     // Run every value through sanitizeStyleValue so a hostile theme cannot
     // smuggle a `url(javascript:…)` payload via a CSS-variable that some
     // downstream rule references.
-    const root = document.documentElement;
+    //
+    // The palette is mirrored on TWO elements:
+    //   1. `<html>` — so `body { background-color: var(--color-1) }` (in
+    //      `_base.scss`) picks up the user's color-1. `<body>` is outside
+    //      `#app`, so it can only see `--color-X` if it's defined at or
+    //      above body in the cascade.
+    //   2. `#app` (the host) — so it beats any cssScope-rewritten stale
+    //      Custom CSS where the user previously clicked "Paste palette to
+    //      Custom CSS" and the values diverged. cssScope rewrites
+    //      `body { --color-X: … }` to `#app { --color-X: … }`, which
+    //      would otherwise win over `<html>`'s inline value for any
+    //      descendant of `#app` (CSS custom properties resolve at the
+    //      closest defining ancestor).
     if (theme.palette) {
+      const html = document.documentElement;
+      const host = this.container instanceof HTMLElement ? this.container : html;
       for (const [key, rawValue] of Object.entries(theme.palette)) {
         if (!rawValue) continue;
         const value = sanitizeStyleValue(rawValue);
         if (!value) continue;
         if (!this.savedCssVariables.has(key)) {
-          this.savedCssVariables.set(key, root.style.getPropertyValue(`--${key}`));
+          this.savedCssVariables.set(key, html.style.getPropertyValue(`--${key}`));
         }
-        root.style.setProperty(`--${key}`, value);
+        html.style.setProperty(`--${key}`, value);
+        if (host !== html) host.style.setProperty(`--${key}`, value);
       }
     }
     if (theme.fontFamily) {
@@ -301,9 +316,16 @@ export class PublicNospressPage {
     document.head.querySelectorAll('[data-nospress-injected="true"]').forEach(el => el.remove());
     this.savedHeadElements.forEach(el => document.head.appendChild(el));
     this.savedHeadElements = [];
+    // Palette is mirrored on both <html> and `#app` — see applySiteSettings
+    // — so restore the saved <html> values AND wipe the mirror inline
+    // values on `#app` so we don't leak the published palette into the
+    // editor / next page.
+    const html = document.documentElement;
+    const host = this.container instanceof HTMLElement ? this.container : null;
     this.savedCssVariables.forEach((value, key) => {
-      if (value) document.documentElement.style.setProperty(`--${key}`, value);
-      else document.documentElement.style.removeProperty(`--${key}`);
+      if (value) html.style.setProperty(`--${key}`, value);
+      else html.style.removeProperty(`--${key}`);
+      if (host) host.style.removeProperty(`--${key}`);
     });
     this.savedCssVariables.clear();
     if (this.savedBodyFontFamily !== null) {

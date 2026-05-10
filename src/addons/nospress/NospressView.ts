@@ -1015,6 +1015,7 @@ export class NospressView extends View {
     // Deep-Purple default so the user sees what they'd be overriding.
     const paletteRows = PALETTE_KEYS.map(k => {
       const effective = palette[k] ?? DEFAULT_PALETTE[k];
+      const purpose = PALETTE_COMMENTS[k];
       return `
         <div class="nospress-palette-row" data-palette-key="${k}">
           <button type="button"
@@ -1029,6 +1030,7 @@ export class NospressView extends View {
                  placeholder="#hex / rgb(…) / rgba(…)"
                  aria-label="--${k} color value" />
           <span class="nospress-palette-label">--${k}</span>
+          <span class="nospress-palette-purpose">${escapeHtml(purpose)}</span>
         </div>
       `;
     }).join('');

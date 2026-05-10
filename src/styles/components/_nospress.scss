@@ -1828,6 +1828,19 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
     color: var(--color-3);
     font-family: $font-family-mono;
   }
+
+  // Plain-language hint of what the slot is used for (background,
+  // surfaces/borders, accent, interactive, text, status). Mirrors the
+  // comments emitted by `pastePaletteToCustomCss` so the user can pick
+  // values informed by purpose without leaving the Global tab.
+  .nospress-palette-purpose {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: calc($gap / 2);
+    color: $text-alpha-medium;
+    font-style: italic;
+    @extend %small;
+  }
 }
 
 // Tile = card + title + meta + actions stacked vertically. The grid lays

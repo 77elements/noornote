@@ -79,8 +79,8 @@ export function newId(): string {
 export function createBlock(type: BlockType): Block {
   const id = newId();
   switch (type) {
-    case 'heading':         return { id, type, level: 2, text: '' };
-    case 'text':            return { id, type, content: '' };
+    case 'heading':         return { id, type, level: 2, text: '', style: { color: 'var(--color-5)' } };
+    case 'text':            return { id, type, content: '', style: { color: 'var(--color-5)' } };
     case 'image':           return { id, type, url: '' };
     case 'gallery':         return { id, type, urls: [] };
     case 'links':           return { id, type, items: [] };
@@ -177,6 +177,15 @@ export function normalizePage(page: NospressPageV2): NospressPageV2 {
 
 function normalizeBlocks(blocks: Block[]): void {
   for (const b of blocks) {
+    // Default text-color: heading + text blocks fall back to the
+    // palette's text slot (`var(--color-5)`) when the user hasn't picked
+    // one. Applied here so old drafts written before the default landed
+    // get the same look as freshly-created blocks. Idempotent — only
+    // fills when the slot is missing.
+    if (b.type === 'heading' || b.type === 'text') {
+      if (!b.style) b.style = {};
+      if (b.style.color === undefined) b.style.color = 'var(--color-5)';
+    }
     if (b.type === 'columns') {
       const legacy = b as unknown as { count?: number; layout?: number[] };
       if (!Array.isArray(legacy.layout) || legacy.layout.length === 0) {
