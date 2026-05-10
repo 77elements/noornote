@@ -160,6 +160,11 @@ export interface CommonStyle {
    *  look stays mostly intact; the user just retints. Surfaced for the
    *  bookmark-folder block in the Properties panel. */
   bookmarkFolder?: Partial<Record<BookmarkFolderKey, CommonStyle>>;
+  /** Articles-list sub-scope — narrow per-element styling slots inside
+   *  the rendered carousel of `.nn-card` article tiles. Same pattern
+   *  as `bookmarkFolder`: one property per slot (card → background,
+   *  title → color, meta → color). */
+  articlesList?: Partial<Record<ArticlesListKey, CommonStyle>>;
   /** CSS `text-decoration` (none / underline / overline / line-through).
    *  Applies to the block itself in regular Typography AND to any link
    *  sub-scope where overriding the underline is the most common case. */
@@ -191,6 +196,13 @@ export type NavMenuDesktopKey = typeof NAV_MENU_DESKTOP_KEYS[number];
 export const BOOKMARK_FOLDER_KEYS = ['item', 'icon', 'desc'] as const;
 export type BookmarkFolderKey = typeof BOOKMARK_FOLDER_KEYS[number];
 
+/** Element keys covered by the articles-list sub-scope. Targets the
+ *  `.nn-card`-based article tiles inside the rendered carousel:
+ *  `card` (the card surface), `title` (the `<h3>` inside), `meta` (the
+ *  author/date strip). Each section exposes ONE property only. */
+export const ARTICLES_LIST_KEYS = ['card', 'title', 'meta'] as const;
+export type ArticlesListKey = typeof ARTICLES_LIST_KEYS[number];
+
 /** Block types that surface the link sub-scope in the Properties panel.
  *  These are the blocks whose rendered output can contain `<a>` elements
  *  (either directly via user content, or transitively via mounted lists,
@@ -207,7 +219,7 @@ export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
  *  which have their own recursive render paths; and `border`, the
  *  legacy shorthand kept on the type for read-side migration only —
  *  never surfaced as an editable entry). */
-export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder'>;
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
@@ -406,6 +418,14 @@ export const BOOKMARK_FOLDER_GROUPS: Record<BookmarkFolderKey, PropertyGroup[]> 
   item: [{ key: 'background', label: 'Background', props: ['background'] }],
   icon: [{ key: 'typography', label: 'Color', props: ['color'] }],
   desc: [{ key: 'typography', label: 'Color', props: ['color'] }],
+};
+
+/** Per-key restricted schemas for the articles-list sub-scope.
+ *  Card → background only; title → color only; meta → color only. */
+export const ARTICLES_LIST_GROUPS: Record<ArticlesListKey, PropertyGroup[]> = {
+  card:  [{ key: 'background', label: 'Background', props: ['background'] }],
+  title: [{ key: 'typography', label: 'Color', props: ['color'] }],
+  meta:  [{ key: 'typography', label: 'Color', props: ['color'] }],
 };
 
 /** Composition shorthand for media/sub-component containers — full
@@ -771,6 +791,12 @@ export function readStyleField(styleIn: CommonStyle | undefined, path: string): 
     const sub = styleIn.bookmarkFolder?.[key as BookmarkFolderKey];
     return readStyleField(sub, rest.join('.'));
   }
+  // Articles-list sub-scope: `articlesList.<card|title|meta>.<rest>` → recurse.
+  if (path.startsWith('articlesList.')) {
+    const [, key, ...rest] = path.split('.');
+    const sub = styleIn.articlesList?.[key as ArticlesListKey];
+    return readStyleField(sub, rest.join('.'));
+  }
   // Hydrate the new border fields from the legacy shorthand if the user
   // hasn't touched them yet. Returned values pre-fill the property panel
   // inputs so old data is visible + editable; the next write clears the
@@ -856,6 +882,17 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
     writeStyleField(style.bookmarkFolder[k]!, rest.join('.'), rawValue);
     if (Object.keys(style.bookmarkFolder[k]!).length === 0) delete style.bookmarkFolder[k];
     if (Object.keys(style.bookmarkFolder).length === 0) delete style.bookmarkFolder;
+    return;
+  }
+  // Articles-list sub-scope: `articlesList.<card|title|meta>.<rest>` → recurse, prune.
+  if (path.startsWith('articlesList.')) {
+    const [, key, ...rest] = path.split('.');
+    const k = key as ArticlesListKey;
+    if (!style.articlesList) style.articlesList = {};
+    if (!style.articlesList[k]) style.articlesList[k] = {};
+    writeStyleField(style.articlesList[k]!, rest.join('.'), rawValue);
+    if (Object.keys(style.articlesList[k]!).length === 0) delete style.articlesList[k];
+    if (Object.keys(style.articlesList).length === 0) delete style.articlesList;
     return;
   }
   const segments = path.split('.');
@@ -1122,6 +1159,18 @@ const BOOKMARK_FOLDER_SELECTORS: Record<BookmarkFolderKey, string> = {
   desc: ' .profile-list-item__desc',
 };
 
+const ARTICLES_LIST_SCHEMAS: Record<ArticlesListKey, PropertyEntry[]> = {
+  card:  ARTICLES_LIST_GROUPS.card.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
+  title: ARTICLES_LIST_GROUPS.title.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
+  meta:  ARTICLES_LIST_GROUPS.meta.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
+};
+
+const ARTICLES_LIST_SELECTORS: Record<ArticlesListKey, string> = {
+  card:  ' .nn-card',
+  title: ' .nn-card h3',
+  meta:  ' .nn-card .meta',
+};
+
 export function buildBlockBookmarkFolderCss(
   block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
   breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
@@ -1155,6 +1204,47 @@ export function buildBlockBookmarkFolderCss(
         if (!sub) continue;
         const decls = buildImportantInlineStyle(BOOKMARK_FOLDER_SCHEMAS[key], sub);
         if (decls) inner.push(`${sel}${BOOKMARK_FOLDER_SELECTORS[key]} { ${decls} }`);
+      }
+      if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
+export function buildBlockArticlesListCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'articles-list') return '';
+  const sel = `[data-styled-block-id="${block.id}"]`;
+  const parts: string[] = [];
+
+  const defaults = block.style?.articlesList;
+  if (defaults) {
+    for (const key of ARTICLES_LIST_KEYS) {
+      const sub = defaults[key];
+      if (!sub) continue;
+      const decls = buildInlineStyle(ARTICLES_LIST_SCHEMAS[key], sub);
+      if (decls) parts.push(`${sel}${ARTICLES_LIST_SELECTORS[key]} { ${decls} }`);
+    }
+  }
+
+  if (block.breakpointStyles) {
+    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
+    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+      const overrides = style.articlesList;
+      if (!overrides) continue;
+      const bp = byName.get(bpName);
+      if (!bp) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      const inner: string[] = [];
+      for (const key of ARTICLES_LIST_KEYS) {
+        const sub = overrides[key];
+        if (!sub) continue;
+        const decls = buildImportantInlineStyle(ARTICLES_LIST_SCHEMAS[key], sub);
+        if (decls) inner.push(`${sel}${ARTICLES_LIST_SELECTORS[key]} { ${decls} }`);
       }
       if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
     }
@@ -1348,6 +1438,8 @@ export function buildPageBreakpointCss(
         if (linksCss) out.push(linksCss);
         const bookmarkFolderCss = buildBlockBookmarkFolderCss(blockTyped, breakpoints);
         if (bookmarkFolderCss) out.push(bookmarkFolderCss);
+        const articlesListCss = buildBlockArticlesListCss(blockTyped, breakpoints);
+        if (articlesListCss) out.push(articlesListCss);
       }
       // Recurse into containers
       if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {
@@ -1928,7 +2020,11 @@ function renderPanelInternal(
   // since the link styling is the more common case.
   const showBookmarkFolder = !fieldPrefix && blockType === 'bookmark-folder';
   const bookmarkFolderBody = showBookmarkFolder ? renderBookmarkFolderSections(opts) : '';
-  const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody + bookmarkFolderBody;
+  // Articles-list sub-scope: 3 narrow sections (card/title/meta) on the
+  // rendered `.nn-card` carousel tiles. Same single-property pattern.
+  const showArticlesList = !fieldPrefix && blockType === 'articles-list';
+  const articlesListBody = showArticlesList ? renderArticlesListSections(opts) : '';
+  const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody + bookmarkFolderBody + articlesListBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`).
@@ -2097,6 +2193,38 @@ function renderBookmarkFolderSections(opts: RenderPropertyPanelOptions): string 
         <div class="nn-ui-toggle__header" data-toggle-header>
           <div class="nn-ui-toggle__info">
             <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(BOOKMARK_FOLDER_LABELS[key])}</h2>
+          </div>
+          <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+          </button>
+        </div>
+        <div class="nn-ui-toggle__content">
+          ${sectionBody}
+        </div>
+      </section>
+    `;
+  }).join('');
+}
+
+const ARTICLES_LIST_LABELS: Record<ArticlesListKey, string> = {
+  card:  'Card (.nn-card)',
+  title: 'Title (.nn-card h3)',
+  meta:  'Meta (.nn-card .meta)',
+};
+
+function renderArticlesListSections(opts: RenderPropertyPanelOptions): string {
+  return ARTICLES_LIST_KEYS.map(key => {
+    const resolvedGroups: ResolvedPropertyGroup[] = ARTICLES_LIST_GROUPS[key].map(g => ({
+      key: g.key,
+      label: g.label,
+      entries: g.props.map(k => PROPERTY_CATALOG[k]),
+    }));
+    const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `articlesList.${key}.`);
+    return `
+      <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-articles-list-section="${key}">
+        <div class="nn-ui-toggle__header" data-toggle-header>
+          <div class="nn-ui-toggle__info">
+            <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(ARTICLES_LIST_LABELS[key])}</h2>
           </div>
           <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
             <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
