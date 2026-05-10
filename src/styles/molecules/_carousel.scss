@@ -146,6 +146,14 @@
     scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    // CSS doesn't let us mix `overflow-x: auto` with `overflow-y: visible`
+    // (one axis with a "scrolling" value forces the other off `visible`),
+    // which clips the card hover drop-shadow at the viewport's bottom
+    // edge. Workaround: give the viewport internal bottom space so the
+    // shadow fits within the clipping box, then pull subsequent layout
+    // back up with the same negative margin — no visible layout shift.
+    padding-bottom: $gap;
+    margin-bottom: -$gap;
 
     &::-webkit-scrollbar {
       display: none;
