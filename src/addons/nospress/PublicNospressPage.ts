@@ -8,7 +8,7 @@ import type { NospressSiteSettings } from './blocks/siteSettings';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { BlockRenderer } from './blocks/BlockRenderer';
-import { sanitizeStyleValue, buildPageBreakpointCss } from './blocks/styles';
+import { sanitizeStyleValue, buildPageBreakpointCss, buildInlineStyle, schemaFor, type CommonStyle } from './blocks/styles';
 import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG, pageHeaderSlug, pageFooterSlug } from './blocks/pageIndex';
 import { mountNospressNavMenus, unmountNospressNavMenus } from './navMenuMount';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -23,7 +23,7 @@ import { applyUserCss, removeUserCss } from './cssScope';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
 import type { PublicPageRoute } from './detectPublicPageRoute';
-import type { NospressPageV2 } from './blocks/types';
+import type { NospressPageV2, Block } from './blocks/types';
 
 /**
  * Public NosPress page for unauthenticated visitors. Mounted by App.ts's
@@ -139,7 +139,7 @@ export class PublicNospressPage {
       return;
     }
 
-    this.renderPage({ body, header, footer, viewerProfile, breakpoints: siteSettings?.breakpoints ?? [] });
+    this.renderPage({ body, header, footer, viewerProfile, breakpoints: siteSettings?.breakpoints ?? [], ...(siteSettings?.vendorFooter ? { vendorFooter: siteSettings.vendorFooter } : {}) });
     // Custom CSS is site-wide — read from site-settings first; fall back
     // to the legacy per-page slot on the home body for events published
     // before the migration shipped.
@@ -427,8 +427,9 @@ export class PublicNospressPage {
     footer: NospressPageV2 | null;
     viewerProfile: UserProfile | null;
     breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>;
+    vendorFooter?: { style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> };
   }): void {
-    const { body, header, footer, viewerProfile, breakpoints } = parts;
+    const { body, header, footer, viewerProfile, breakpoints, vendorFooter } = parts;
 
     // Header / footer blocks render bare — no `<header>` / `<footer>`
     // wrapper. The user owns the container shape: if they want a
@@ -461,6 +462,18 @@ export class PublicNospressPage {
       ...(body?.blocks ?? []),
       ...(footer?.blocks ?? []),
     ];
+    // Vendor footer participates in the breakpoint-CSS bundle as a
+    // synthetic block keyed by `data-styled-block-id="vendor-footer"`.
+    // The per-block render emits the Default-tab style inline; per-BP
+    // overrides and link-sub-scope rules ride along here.
+    if (vendorFooter && (vendorFooter.style || vendorFooter.breakpointStyles)) {
+      allBlocks.push({
+        id: 'vendor-footer',
+        type: 'vendor-footer',
+        ...(vendorFooter.style ? { style: vendorFooter.style } : {}),
+        ...(vendorFooter.breakpointStyles ? { breakpointStyles: vendorFooter.breakpointStyles } : {}),
+      } as unknown as Block);
+    }
     const breakpointCss = buildPageBreakpointCss(allBlocks, breakpoints);
     const breakpointStyleHtml = breakpointCss
       ? `<style class="nospress-block-breakpoints">${breakpointCss}</style>`
@@ -472,7 +485,7 @@ export class PublicNospressPage {
       ${headerHtml}
       ${bodyHtml}
       ${footerHtml}
-      ${this.footerHtml()}
+      ${this.footerHtml(vendorFooter)}
     `;
   }
 
@@ -516,12 +529,19 @@ export class PublicNospressPage {
   }
 
 
-  private footerHtml(): string {
+  private footerHtml(vendorFooter?: { style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> }): string {
     // Platform attribution — NOT the user's page footer. Wrapped in <small>
     // (the HTML5 element for footer-style fine print) so the only <footer>
-    // on the page is the user's own one.
+    // on the page is the user's own one. The `data-styled-block-id`
+    // hook lets the site-owner customize appearance via the Pages-Tab
+    // "Vendor Footer" target (Properties panel + link sub-scope).
+    // Content is fixed — NoorNote attribution is mandatory.
+    const inline = vendorFooter?.style
+      ? buildInlineStyle(schemaFor('vendor-footer'), vendorFooter.style)
+      : '';
+    const styleAttr = inline ? ` style="${escapeHtmlAttr(inline)}"` : '';
     return `
-      <div class="user-site__footer">
+      <div class="user-site__footer" data-styled-block-id="vendor-footer"${styleAttr}>
         <small>Made with <a href="/">NoorNote</a> — sovereign personal pages on Nostr.</small>
       </div>
     `;

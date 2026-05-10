@@ -30,6 +30,11 @@ export const HOME_SLUG = '';
  *  can never collide with a user-chosen slug (validation rejects `_`). */
 export const GLOBAL_HEADER_SLUG = '__header';
 export const GLOBAL_FOOTER_SLUG = '__footer';
+/** Sentinel slug for the vendor-footer edit target. The vendor footer
+ *  has no draft event (its style lives in siteSettings.vendorFooter),
+ *  so this slug never reaches the orchestrator — it's purely an editor
+ *  identifier for `editingTarget === 'vendor-footer'`. */
+export const VENDOR_FOOTER_SLUG = '__vendor-footer';
 
 /** Page-specific header / footer overrides. Composite slugs of the form
  *  `__header:<pageSlug>` / `__footer:<pageSlug>`. Encoded into d-tags as

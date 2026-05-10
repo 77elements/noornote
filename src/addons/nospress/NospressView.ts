@@ -30,7 +30,7 @@ import {
   type GradientType,
   type GradientUnit,
 } from './blocks/gradientPicker';
-import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, normalizeSlug, isValidSlug, pageHeaderSlug, pageFooterSlug, type PageIndexEntry } from './blocks/pageIndex';
+import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, VENDOR_FOOTER_SLUG, normalizeSlug, isValidSlug, pageHeaderSlug, pageFooterSlug, type PageIndexEntry } from './blocks/pageIndex';
 import { PRIMARY_MENU_ID, type NavItem, type NospressMenu } from './blocks/menu';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns, renderLayoutPreview } from './blocks/renderers/ColumnsRenderer';
@@ -230,7 +230,7 @@ export class NospressView extends View {
    *   - 'header' → site-wide global header (Slice 2)
    *   - 'footer' → site-wide global footer (Slice 2)
    *  Reflected in the editor h2 and the active pill in the Pages tab. */
-  private editingTarget: 'body' | 'header' | 'footer' | 'page-header' | 'page-footer' = 'body';
+  private editingTarget: 'body' | 'header' | 'footer' | 'page-header' | 'page-footer' | 'vendor-footer' = 'body';
   private pageIndexService: NospressPageIndexService;
   private pageIndexOrchestrator: NospressPageIndexOrchestrator;
   private menuService: NospressMenuService;
@@ -440,9 +440,11 @@ export class NospressView extends View {
     // top section — the user composes them via Heading + Text blocks like any
     // other page content. The fields remain in NospressPageV2 for backwards
     // compatibility when reading old v2 events; they are no-ops in the UI.
-    const blocksHtml = editable
-      ? this.renderBlocksWithCursor(page.blocks)
-      : BlockRenderer.renderAll(page.blocks, { editable: false });
+    const blocksHtml = this.editingTarget === 'vendor-footer'
+      ? this.renderVendorFooterEditableBlock()
+      : (editable
+        ? this.renderBlocksWithCursor(page.blocks)
+        : BlockRenderer.renderAll(page.blocks, { editable: false }));
 
     // Tear down old picker / mount instances before innerHTML replaces their DOM
     this.destroyFolderPickers();
@@ -891,6 +893,32 @@ export class NospressView extends View {
           ${this.renderDefaultTemplateTile()}
           ${pageTiles}
           ${this.renderAddPageTile()}
+          ${this.renderVendorFooterTile()}
+        </div>
+      </div>
+    `;
+  }
+
+  /** "Vendor Footer" tile — site-wide platform-attribution footer
+   *  styling. Always last in the grid; new pages push it down. Click
+   *  switches editingTarget to 'vendor-footer' and the editor body
+   *  shows a single virtual block. */
+  private renderVendorFooterTile(): string {
+    const isActive = this.editingTarget === 'vendor-footer';
+    const cls = isActive
+      ? 'nospress-pages__section nospress-pages__section--active'
+      : 'nospress-pages__section nospress-pages__section--global-filled';
+    return `
+      <div class="nospress-pages__item" data-template-vendor-footer>
+        <h3 class="nospress-pages__title">Vendor Footer</h3>
+        <div class="nn-card" data-page-template>
+          <div class="nn-card__content">
+            <div class="nospress-pages__sections">
+              <div class="${cls}" data-action="select-vendor-footer">
+                <span class="nospress-pages__section-label">Vendor Footer</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -2426,6 +2454,7 @@ export class NospressView extends View {
   private computeTemplateHeading(): string {
     if (this.editingTarget === 'header') return 'Template: Global Header';
     if (this.editingTarget === 'footer') return 'Template: Global Footer';
+    if (this.editingTarget === 'vendor-footer') return 'Template: Vendor Footer';
     const entry = this.pageIndexService.getEntry(this.activeSlug);
     const pageTitle = entry?.title ?? 'Home';
     if (this.editingTarget === 'page-header') return `Template: ${pageTitle} - Specific Header`;
@@ -2443,13 +2472,18 @@ export class NospressView extends View {
     if (this.editingTarget === 'footer') return GLOBAL_FOOTER_SLUG;
     if (this.editingTarget === 'page-header') return pageHeaderSlug(this.activeSlug);
     if (this.editingTarget === 'page-footer') return pageFooterSlug(this.activeSlug);
+    // 'vendor-footer' has no per-page draft — its style data lives in
+    // siteSettings.vendorFooter (one NIP-78 event for the whole site).
+    // Returning a sentinel slug here keeps callers that rely on a string
+    // happy without polluting the real draft map.
+    if (this.editingTarget === 'vendor-footer') return VENDOR_FOOTER_SLUG;
     return this.activeSlug;
   }
 
   /** Switch which template slot the editor is editing. Persists the current
    *  draft for the previous target before flipping, so unsaved edits survive
    *  the switch. */
-  private selectEditingTarget(target: 'body' | 'header' | 'footer' | 'page-header' | 'page-footer'): void {
+  private selectEditingTarget(target: 'body' | 'header' | 'footer' | 'page-header' | 'page-footer' | 'vendor-footer'): void {
     if (this.editingTarget === target) return;
 
     // Persist current in-memory edits to the slug we're leaving.
@@ -2594,6 +2628,10 @@ export class NospressView extends View {
     }
     if (action === 'select-page-footer') {
       this.selectPageFooter(slug);
+      return;
+    }
+    if (action === 'select-vendor-footer') {
+      this.selectEditingTarget('vendor-footer');
       return;
     }
   }
@@ -2809,6 +2847,20 @@ export class NospressView extends View {
     if (!this.selectedBlockId) {
       return `<p class="nospress-properties-empty">Select a block to edit properties.</p>`;
     }
+    // Vendor-footer is a virtual block — style lives in siteSettings,
+    // not in the page tree. Synthesize a Block-shaped object so the
+    // existing renderInlineProperties path resolves the schema +
+    // breakpoint-tabs the same way as any other block.
+    if (this.selectedBlockId === 'vendor-footer' && this.editingTarget === 'vendor-footer') {
+      const vf = this.siteSettingsService.getSettings().vendorFooter ?? {};
+      const synthetic = {
+        id: 'vendor-footer',
+        type: 'vendor-footer',
+        ...(vf.style ? { style: vf.style } : {}),
+        ...(vf.breakpointStyles ? { breakpointStyles: vf.breakpointStyles } : {}),
+      } as unknown as Block;
+      return this.renderInlineProperties(synthetic);
+    }
     const editSlug = this.currentEditSlug();
     const page = this.editingPage
       ?? this.listService.getDraftV2(editSlug)
@@ -3015,6 +3067,29 @@ export class NospressView extends View {
    * `columns` blocks, recursively renders each column with its own block
    * list so the cursor can land inside any column.
    */
+  /** Editable-side render of the vendor-footer virtual block. Same
+   *  `nospress-block-edit` chrome as any block so selection / properties
+   *  panel routing work the same way, but the toolbar carries no
+   *  +/↑/↓/× actions (the footer is mandatory, can't be moved or
+   *  deleted) and the inner content is the locked attribution markup.
+   *  The wrapper carries `data-block-id="vendor-footer"` and the inner
+   *  preview gets `data-styled-block-id="vendor-footer"` so the link
+   *  sub-scope CSS + per-BP overrides line up with the public render. */
+  private renderVendorFooterEditableBlock(): string {
+    return `
+      <div class="nospress-block-edit nospress-block-edit--locked" data-block-edit data-block-id="vendor-footer" data-block-type="vendor-footer">
+        <div class="nospress-block-edit__toolbar">
+          <span class="nospress-block-edit__type-badge">vendor-footer</span>
+        </div>
+        <div class="nospress-block-edit__content">
+          <div class="user-site__footer" data-styled-block-id="vendor-footer">
+            <small>Made with <a href="#">NoorNote</a> — sovereign personal pages on Nostr.</small>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   private renderBlocksWithCursor(blocks: Block[]): string {
     const slot = `<div data-cursor-mount></div>`;
     const pageCursorIndex = this.cursor.scope === 'page' ? this.cursor.index : -1;
@@ -3700,6 +3775,14 @@ export class NospressView extends View {
    * the published Public page.
    */
   private handleStyleInput(scope: string, field: string, rawValue: string): void {
+    // Vendor-footer scope: style lives in `siteSettings.vendorFooter`,
+    // NOT in any page tree. Same per-BP active-slot semantics as a
+    // regular block (Default vs. per-BP tab via `activeBpName`).
+    if (scope === 'vendor-footer:vendor-footer') {
+      this.writeVendorFooterStyle(field, rawValue);
+      if (field === 'position' || field.endsWith('.position')) this.updatePropertiesTab();
+      return;
+    }
     // Block scope: '<blockType>:<uuid>' — only the id portion is needed.
     // Page-scope styles were removed; site-wide styling lives in the Global
     // tab (palette / theme) and in Custom CSS.
@@ -3738,6 +3821,42 @@ export class NospressView extends View {
     if (field === 'position' || field.endsWith('.position')) {
       this.updatePropertiesTab();
     }
+  }
+
+  /** Mutate `siteSettings.vendorFooter.style` or
+   *  `siteSettings.vendorFooter.breakpointStyles[<bp>]` from a Properties
+   *  panel input. Mirrors the regular handleStyleInput active-BP slot
+   *  logic but reads/writes through siteSettingsService instead of the
+   *  page tree. Flags `siteSettingsDirty` so the next Publish ships it. */
+  private writeVendorFooterStyle(field: string, rawValue: string): void {
+    const settings = this.siteSettingsService.getSettings();
+    const vf = settings.vendorFooter ?? {};
+    let slot: CommonStyle;
+    if (this.activeBpName) {
+      vf.breakpointStyles = vf.breakpointStyles ?? {};
+      vf.breakpointStyles[this.activeBpName] = vf.breakpointStyles[this.activeBpName] ?? {};
+      slot = vf.breakpointStyles[this.activeBpName]!;
+    } else {
+      vf.style = vf.style ?? {};
+      slot = vf.style;
+    }
+    writeStyleField(slot, field, rawValue);
+    // Prune empty per-BP buckets so JSON stays small.
+    if (vf.breakpointStyles) {
+      for (const k of Object.keys(vf.breakpointStyles)) {
+        if (Object.keys(vf.breakpointStyles[k]!).length === 0) delete vf.breakpointStyles[k];
+      }
+      if (Object.keys(vf.breakpointStyles).length === 0) delete vf.breakpointStyles;
+    }
+    if (vf.style && Object.keys(vf.style).length === 0) delete vf.style;
+    if (!vf.style && !vf.breakpointStyles) {
+      delete settings.vendorFooter;
+    } else {
+      settings.vendorFooter = vf;
+    }
+    this.siteSettingsService.saveSettings(settings, { silent: true });
+    this.siteSettingsDirty = true;
+    this.refreshActionBar();
   }
 
   /**

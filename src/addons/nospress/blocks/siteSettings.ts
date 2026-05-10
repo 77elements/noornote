@@ -90,6 +90,21 @@ export interface NospressSiteSettings {
   customCss?: string;
   /** Responsive-design breakpoints. Cap of 5 enforced by the editor UI. */
   breakpoints?: NospressBreakpoint[];
+  /** Per-site styling for the platform-attribution footer
+   *  (`.user-site__footer` — the "Made with NoorNote…" line, mandatory
+   *  on every site, content not user-editable). The owner CAN customize
+   *  visual appearance: full block-style + per-BP overrides + link
+   *  sub-scope on the inner `<a>`. Render path mirrors a regular block
+   *  via a synthetic `data-styled-block-id="vendor-footer"` wrapper. */
+  vendorFooter?: VendorFooterStyle;
+}
+
+/** Style data for the mandatory platform-attribution footer. Same shape
+ *  as a regular block's style fields but without `id` / `type` / content
+ *  (those are fixed by the renderer). */
+export interface VendorFooterStyle {
+  style?: import('./styles').CommonStyle;
+  breakpointStyles?: Record<string, import('./styles').CommonStyle>;
 }
 
 export const EMPTY_SITE_SETTINGS: NospressSiteSettings = { version: 1 };
@@ -116,5 +131,7 @@ export function hasSiteSettingsContent(s: NospressSiteSettings | null | undefine
   if (i && (i.headSnippet || i.bodyEndSnippet || (i.cssLinks?.length ?? 0) > 0 || (i.jsScripts?.length ?? 0) > 0)) return true;
   if (s.customCss && s.customCss.trim().length > 0) return true;
   if ((s.breakpoints?.length ?? 0) > 0) return true;
+  const vf = s.vendorFooter;
+  if (vf && (vf.style || (vf.breakpointStyles && Object.keys(vf.breakpointStyles).length > 0))) return true;
   return false;
 }

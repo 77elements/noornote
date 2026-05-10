@@ -169,10 +169,12 @@ export type MobileMenuSection = typeof MOBILE_MENU_SECTION_KEYS[number];
 export const LINK_PSEUDO_KEYS = ['link', 'visited', 'hover', 'focus', 'active'] as const;
 export type LinkPseudo = typeof LINK_PSEUDO_KEYS[number];
 
-/** Element keys covered by the nav-menu desktop sub-scope (the inline
- *  `<ul>` + `<li>` styling). Order is the display order of the
- *  accordion sections in the property panel. */
-export const NAV_MENU_DESKTOP_KEYS = ['ul', 'li'] as const;
+/** Element keys covered by the nav-menu desktop sub-scope. `ul` + `li`
+ *  style the inline list/items; `aActive` styles the link of the
+ *  currently-visited page (selector: `li.active a`). Order in the
+ *  array is the storage order; render order is split so `ul`/`li`
+ *  appear above the link sub-scope and `aActive` appears below it. */
+export const NAV_MENU_DESKTOP_KEYS = ['ul', 'li', 'aActive'] as const;
 export type NavMenuDesktopKey = typeof NAV_MENU_DESKTOP_KEYS[number];
 
 /** Block types that surface the link sub-scope in the Properties panel.
@@ -183,7 +185,7 @@ export type NavMenuDesktopKey = typeof NAV_MENU_DESKTOP_KEYS[number];
 export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
   'heading', 'text', 'quote', 'list', 'links', 'columns', 'div',
   'bookmark-folder', 'button-cta', 'dm-button', 'profile-card',
-  'articles-list', 'weblog', 'nav-menu',
+  'articles-list', 'weblog', 'nav-menu', 'vendor-footer',
 ]);
 
 /** All catalog-addressable property keys (everything on `CommonStyle`
@@ -435,6 +437,12 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // typography (users do put headings + text inside), full sizing, plus
   // the divider edge-shapes that no other block scope supports.
   div:               [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS],
+  // Vendor footer (.user-site__footer) — site-wide platform-attribution
+  // wrapper, fixed content, fully styleable. Same schema as textual
+  // blocks plus the link sub-scope (rendered as the inner <a>). Storage
+  // lives in siteSettings.vendorFooter, NOT as a regular block in the
+  // page tree.
+  'vendor-footer':   TEXTUAL_GROUPS,
 };
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -503,6 +511,7 @@ export const BLOCK_DEFAULT_DISPLAY: Record<string, string> = {
   weblog:            'block',
   div:               'block',
   'nav-menu':        'block',
+  'vendor-footer':   'block',
 };
 
 /** Same idea for the mobile-menu sub-scope, indexed by section selector
@@ -1059,6 +1068,16 @@ const NAV_MENU_DESKTOP_SCHEMA: PropertyEntry[] = NAV_MENU_DESKTOP_GROUPS
  *  selector + descendant `ul` / `li`, so the portaled hamburger drawer
  *  (which carries the attribute on itself, not as ancestor) is NOT
  *  matched — the drawer is styled via the mobile-menu sub-scope. */
+/** Per-key CSS selector suffixes for the nav-menu desktop sub-scope.
+ *  Selector is `[data-styled-block-id="X"]<suffix>`. Descendant
+ *  selectors so the portaled hamburger drawer (which carries the
+ *  attribute on itself, not as ancestor) is NOT matched. */
+const NAV_MENU_DESKTOP_SELECTORS: Record<NavMenuDesktopKey, string> = {
+  ul:      ' ul',
+  li:      ' li',
+  aActive: ' li.active a',
+};
+
 export function buildBlockNavMenuDesktopCss(
   block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
   breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
@@ -1073,7 +1092,7 @@ export function buildBlockNavMenuDesktopCss(
       const sub = defaultNav[key];
       if (!sub) continue;
       const decls = buildInlineStyle(NAV_MENU_DESKTOP_SCHEMA, sub);
-      if (decls) parts.push(`${sel} ${key} { ${decls} }`);
+      if (decls) parts.push(`${sel}${NAV_MENU_DESKTOP_SELECTORS[key]} { ${decls} }`);
     }
   }
 
@@ -1091,7 +1110,7 @@ export function buildBlockNavMenuDesktopCss(
         const sub = overrides[key];
         if (!sub) continue;
         const decls = buildImportantInlineStyle(NAV_MENU_DESKTOP_SCHEMA, sub);
-        if (decls) inner.push(`${sel} ${key} { ${decls} }`);
+        if (decls) inner.push(`${sel}${NAV_MENU_DESKTOP_SELECTORS[key]} { ${decls} }`);
       }
       if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
     }
@@ -1792,15 +1811,16 @@ function renderPanelInternal(
   const blockType = matrixKey(opts.scope);
   const showLinks = !fieldPrefix
     && BLOCKS_WITH_LINKS_SUBSCOPE.has(blockType);
-  // Nav-menu desktop sub-scope: 2 sections (ul/li) for the inline
-  // rendering. Surfaced ABOVE the link sections so the user sees the
-  // structural list/item styling first, then the link-pseudo styling.
+  // Nav-menu desktop sub-scope: ul/li sections appear ABOVE the link
+  // sub-scope (structural list/item styling first), aActive appears
+  // BELOW it (active-page indicator after the generic link pseudos).
   // Mobile-menu drawer styling stays in its own dedicated panel
   // (opened via the hamburger trigger in the editor).
   const showNavMenuDesktop = !fieldPrefix && blockType === 'nav-menu';
-  const navMenuBody = showNavMenuDesktop ? renderNavMenuDesktopSections(opts) : '';
+  const navMenuTopBody = showNavMenuDesktop ? renderNavMenuDesktopSections(opts, ['ul', 'li']) : '';
+  const navMenuBottomBody = showNavMenuDesktop ? renderNavMenuDesktopSections(opts, ['aActive']) : '';
   const linksBody = showLinks ? renderLinkSubScopeSections(opts) : '';
-  const body = mainBody + navMenuBody + linksBody;
+  const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`).
@@ -1918,15 +1938,19 @@ const LINK_PSEUDO_LABELS: Record<LinkPseudo, string> = {
 const NAV_MENU_DESKTOP_LABELS: Record<NavMenuDesktopKey, string> = {
   ul: 'List (ul)',
   li: 'Items (li)',
+  aActive: 'Active page link (li.active a)',
 };
 
-function renderNavMenuDesktopSections(opts: RenderPropertyPanelOptions): string {
+function renderNavMenuDesktopSections(
+  opts: RenderPropertyPanelOptions,
+  keys: ReadonlyArray<NavMenuDesktopKey>,
+): string {
   const resolvedGroups: ResolvedPropertyGroup[] = NAV_MENU_DESKTOP_GROUPS.map(g => ({
     key: g.key,
     label: g.label,
     entries: g.props.map(k => PROPERTY_CATALOG[k]),
   }));
-  return NAV_MENU_DESKTOP_KEYS.map(key => {
+  return keys.map(key => {
     const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `navMenu.${key}.`);
     return `
       <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-nav-menu-section="${key}">
