@@ -77,6 +77,12 @@ export interface CommonStyle {
    *  buttons). Only written to inline styles when the user picks
    *  something explicit. */
   display?: string;
+  /** CSS `gap` for grid containers. Surfaced in the panel only when the
+   *  effective `display` is `grid` — for any other display the property
+   *  has no effect, so cluttering the panel with it would just confuse.
+   *  CSS default is `0`; the panel placeholder mirrors that so users see
+   *  what they'd be overriding. */
+  gridGap?: string;
   /** Per-side border widths (CSS shorthand emitted as
    *  `border-width: <top> <right> <bottom> <left>`). */
   borderWidth?: BoxValues;
@@ -153,7 +159,7 @@ export interface SinglePropertyEntry {
   kind: 'single';
   key:
     | 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight'
-    | 'fontStyle' | 'borderRadius' | 'width' | 'height';
+    | 'fontStyle' | 'borderRadius' | 'width' | 'height' | 'gridGap';
   label: string;
   cssProp: string;
   placeholder: string;
@@ -256,6 +262,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
       { value: 'none',          label: 'none' },
     ],
   },
+  gridGap:      { kind: 'single', key: 'gridGap',      label: 'Gap',           cssProp: 'gap',           placeholder: '0' },
   position:     {
     kind: 'dropdown', key: 'position', label: 'Position', cssProp: 'position',
     options: [
@@ -299,7 +306,7 @@ export interface PropertyGroup {
 }
 
 const GROUP_POSITION:   PropertyGroup = { key: 'position',   label: 'Position',   props: ['position', 'positionInsets'] };
-const GROUP_DISPLAY:    PropertyGroup = { key: 'display',    label: 'Layout',     props: ['display'] };
+const GROUP_DISPLAY:    PropertyGroup = { key: 'display',    label: 'Layout',     props: ['display', 'gridGap'] };
 const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
 const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width', 'height'] };
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
@@ -1517,6 +1524,16 @@ function renderEntriesForGroups(
       // whether or not the user has explicitly picked a value.
       const pos = readStyleField(opts.style, fieldPrefix + 'position') || 'relative';
       if (pos !== 'absolute' && pos !== 'sticky') return '';
+    }
+    // Conditional: gridGap only surfaces when the effective `display` is
+    // `grid` or `inline-grid` — otherwise `gap` is a no-op and the row
+    // would just clutter the Layout group. Mirrors the display
+    // dropdown's pre-fill default so the conditional kicks in even when
+    // the user hasn't explicitly set `display`.
+    if (entry.kind === 'single' && entry.key === 'gridGap') {
+      const display = readStyleField(opts.style, fieldPrefix + 'display')
+        || getDefaultDisplayFor(opts.scope, fieldPrefix);
+      if (display !== 'grid' && display !== 'inline-grid') return '';
     }
     return entry.kind === 'single' ? single(entry)
       : entry.kind === 'quad' ? quad(entry)

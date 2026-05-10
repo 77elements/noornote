@@ -714,10 +714,11 @@
 // Columns block — desktop/tablet renders the user-picked layout via the
 // `--nospress-cols` custom property (set inline by the renderer from the
 // `layout` ratio array). Mobile collapses to a single stack so narrow
-// viewports stay legible regardless of preset.
+// viewports stay legible regardless of preset. `gap` defaults to the CSS
+// default (0) and is set per-block via the `gridGap` Properties row,
+// surfaced under Layout when display is `grid`.
 .nospress-block-columns {
   display: grid;
-  gap: $gap;
   grid-template-columns: 1fr;
 
   @include tablet-up {
