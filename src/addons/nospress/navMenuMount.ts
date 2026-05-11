@@ -30,7 +30,7 @@ import type { NospressBreakpoint } from './blocks/siteSettings';
 import {
   MOBILE_MENU_SECTIONS,
   MOBILE_MENU_SECTION_KEYS,
-  PROPERTY_CATALOG,
+  flattenGroupProps,
   buildImportantInlineStyle,
   type MobileMenuSection,
   type CommonStyle,
@@ -218,7 +218,7 @@ const MOBILE_SECTION_SCHEMAS: Record<MobileMenuSection, ReturnType<typeof resolv
   ) as Record<MobileMenuSection, ReturnType<typeof resolveSchemaForSection>>;
 
 function resolveSchemaForSection(sec: typeof MOBILE_MENU_SECTIONS[number]) {
-  return sec.groups.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k]));
+  return sec.groups.flatMap(g => flattenGroupProps(g.props));
 }
 
 /** Compose the override declarations for one section's slice of the

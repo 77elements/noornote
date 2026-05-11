@@ -174,6 +174,14 @@ export interface CommonStyle {
    *  Applies to the block itself in regular Typography AND to any link
    *  sub-scope where overriding the underline is the most common case. */
   textDecoration?: string;
+  /** Horizontal placement of an inline-block child within its parent — used
+   *  by the `dm-button` block to position the button left / center / right
+   *  inside the page flow. Emitted as `text-align` on an outer wrapper DIV
+   *  (NOT on the button itself, which is inline-flex and would only
+   *  affect its own text content). Labelled "Align Button" in the
+   *  Properties panel so it isn't confused with text-alignment of label
+   *  content. */
+  alignButton?: string;
 }
 
 /** Selectors covered by the mobile-menu sub-scope. Order is the
@@ -262,10 +270,15 @@ export interface QuadPropertyEntry {
  *  CustomDropdown instance after each render. */
 export interface DropdownPropertyEntry {
   kind: 'dropdown';
-  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign';
+  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton';
   label: string;
   cssProp: string;
   options: Array<{ value: string; label: string }>;
+  /** When set, `buildInlineStyle` / `buildImportantInlineStyle` skip
+   *  emitting this property even though it lives in the schema. Used by
+   *  `alignButton` (dm-button) where the value drives a renderer-side
+   *  wrapper, not an inline declaration on the block itself. */
+  skipInlineEmit?: boolean;
 }
 
 /** A "divider" entry: top + bottom edge decorations rendered as absolute
@@ -339,6 +352,19 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
       { value: 'justify', label: 'justify' },
     ],
   },
+  alignButton: {
+    // Drives an outer wrapper DIV in DmButtonRenderer (and any future block
+    // with the same need). `skipInlineEmit` keeps the value out of the
+    // block's own inline-style; the renderer reads `style.alignButton`
+    // directly and emits `text-align` on the wrapper.
+    kind: 'dropdown', key: 'alignButton', label: 'Align Button', cssProp: 'text-align',
+    skipInlineEmit: true,
+    options: [
+      { value: 'left',   label: 'left' },
+      { value: 'center', label: 'center' },
+      { value: 'right',  label: 'right' },
+    ],
+  },
   display:      {
     kind: 'dropdown', key: 'display', label: 'Display', cssProp: 'display',
     options: [
@@ -391,36 +417,56 @@ export interface PropertyGroup {
   /** Section header shown in the property panel. */
   label: string;
   /** Catalog-key list — order within the group is the rendered row
-   *  order, e.g. Typography always shows color first then fontSize. */
-  props: PropertyKey[];
+   *  order, e.g. Typography always shows color first then fontSize.
+   *  A nested array marks adjacent entries as one paired row: at wide
+   *  panel widths they share a row (CSS-grid `auto-fit`), at narrow
+   *  widths they collapse to one-per-row. Quads (margin / padding /
+   *  border-width / border-color) can technically be paired but
+   *  visually need full width — keep them single. */
+  props: Array<PropertyKey | PropertyKey[]>;
 }
 
-const GROUP_POSITION:   PropertyGroup = { key: 'position',   label: 'Position',   props: ['position', 'positionInsets'] };
-const GROUP_DISPLAY:    PropertyGroup = { key: 'display',    label: 'Layout',     props: ['display', 'gridGap'] };
+// Position + Display + grid-gap fold into one "Layout" section. The first
+// row pairs position + display (two dropdowns side-by-side). positionInsets
+// is a quad — needs the full row width — and gridGap is conditional, so
+// both stay single below the pair.
+const GROUP_LAYOUT:     PropertyGroup = { key: 'layout',     label: 'Layout',     props: [['position', 'display'], 'positionInsets', 'gridGap'] };
 const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
-const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width', 'height'] };
+const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: [['width', 'height']] };
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
-const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: ['color', 'fontSize', 'lineHeight', 'fontWeight', 'fontStyle', 'textDecoration', 'textShadow'] };
+// Typography now opens with a paired color + background row so the two
+// most-common color slots sit side-by-side. Scopes that want background
+// without typography (image / gallery / video / …) still use
+// GROUP_BACKGROUND below.
+const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: [['color', 'background'], ['fontSize', 'lineHeight'], ['fontWeight', 'fontStyle'], 'textDecoration', 'textShadow'] };
 const GROUP_BACKGROUND: PropertyGroup = { key: 'background', label: 'Background', props: ['background'] };
-const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',     props: ['borderWidth', 'borderStyle', 'borderColor', 'borderRadius'] };
+const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',     props: ['borderWidth', ['borderStyle', 'borderRadius'], 'borderColor'] };
 const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['divider'] };
 
 /** Composition shorthand for prose-flow blocks (heading/text/list/links/
  *  dm-button/quote/button-cta) — typography + width sizing, no height
- *  (forcing height on text content clips silently). */
-const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER];
+ *  (forcing height on text content clips silently). Background sits
+ *  inside GROUP_TYPOGRAPHY (paired with color), so no separate
+ *  GROUP_BACKGROUND here. */
+const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER];
 
 /** Standalone single-prop group used to surface `text-align` ONLY on
  *  heading + text blocks (the other TEXTUAL_GROUPS sharers have
  *  layout-driven content where the default left-align is right). */
 const GROUP_TEXT_ALIGN: PropertyGroup = { key: 'text-align', label: 'Alignment', props: ['textAlign'] };
 
+/** Dm-button uses an extended Layout group that adds `alignButton`
+ *  (horizontal placement within the parent flow). Sits in the Layout
+ *  section alongside position/display/positionInsets/gridGap — no
+ *  separate Alignment section. */
+const GROUP_LAYOUT_DM_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', 'alignButton'] };
+
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
  *  inline by default and sizing rarely makes sense. No effects/divider —
- *  same reasoning. */
+ *  same reasoning. Background pairs with color inside GROUP_TYPOGRAPHY. */
 export const LINK_SUBSCOPE_GROUPS: PropertyGroup[] = [
-  GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER,
+  GROUP_LAYOUT, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BORDER,
 ];
 
 /** Schema slice surfaced inside each nav-menu desktop section
@@ -449,8 +495,10 @@ export const ARTICLES_LIST_GROUPS: Record<ArticlesListKey, PropertyGroup[]> = {
 
 /** Composition shorthand for media/sub-component containers — full
  *  sizing (width + height for hero bands, fixed-aspect boxes), no
- *  typography (text styling doesn't apply to image/video/etc.). */
-const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER];
+ *  typography (text styling doesn't apply to image/video/etc.).
+ *  Background stays in its own section here — no typography to merge
+ *  into. */
+const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER];
 
 /**
  * Per-scope group composition. The scope key matches whatever comes
@@ -464,12 +512,12 @@ const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_POSITION, GROUP_DISPLAY, GROUP_
  */
 export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // Page: everything except sizing — the page surface fills its host.
-  page: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
+  page: [GROUP_LAYOUT, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BORDER],
   heading:           [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
   text:              [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
   list:              TEXTUAL_GROUPS,
   links:             TEXTUAL_GROUPS,
-  'dm-button':       TEXTUAL_GROUPS,
+  'dm-button':       [GROUP_LAYOUT_DM_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER],
   // Divider block is restricted: only `color` from typography (no font
   // styling — there's no text to style), plus standard box edges.
   divider:           [
@@ -491,7 +539,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   weblog:            CONTAINER_GROUPS,
   // Nav-menu wrapper: like the textual blocks plus full sizing — the
   // menu container is positioned/sized like a media block.
-  'nav-menu':        [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER],
+  'nav-menu':        [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER],
   // Nav-menu mobile drawer sub-scope is rendered through a separate
   // section-aware path (`renderMobileMenuSubScope`), not via the flat
   // matrix here — the panel is per-selector accordion sections, each
@@ -500,7 +548,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // aside/nav/fieldset) is the most permissive container — full
   // typography (users do put headings + text inside), full sizing, plus
   // the divider edge-shapes that no other block scope supports.
-  div:               [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS],
+  div:               [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
   // Vendor footer (.user-site__footer) — site-wide platform-attribution
   // wrapper, fixed content, fully styleable. Same schema as textual
   // blocks plus the link sub-scope (rendered as the inner <a>). Storage
@@ -526,20 +574,22 @@ export const MOBILE_MENU_SECTIONS: MobileMenuSectionDef[] = [
   // Drawer panel — container styling. Full sizing (drawer width is
   // user-tuneable), spacing, background, border. No typography (children
   // inherit the regular page font).
-  { key: 'ul',        label: 'Drawer (ul)',           groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER] },
+  { key: 'ul',        label: 'Drawer (ul)',           groups: [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER] },
   // Item rows — list-item-level styling. Full set: spacing, sizing
-  // (height for fixed-height rows), typography (per-item overrides),
-  // background, border (separators).
-  { key: 'li',        label: 'Items (li)',            groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  // (height for fixed-height rows), typography (per-item overrides
+  // — typography already carries background as the paired first row),
+  // border (separators).
+  { key: 'li',        label: 'Items (li)',            groups: [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER] },
   // Links — text styling primary. Spacing for hit-area padding,
-  // typography + background + border. No sizing (anchors are inline).
-  { key: 'a',         label: 'Links (a)',             groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  // typography (carries background paired with color), border. No sizing
+  // (anchors are inline).
+  { key: 'a',         label: 'Links (a)',             groups: [GROUP_LAYOUT, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BORDER] },
   // Active link — same prop set as `a`, just targets `<li class="active">`.
-  { key: 'aActive',   label: 'Active link (a.active)', groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  { key: 'aActive',   label: 'Active link (a.active)', groups: [GROUP_LAYOUT, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BORDER] },
   // Hamburger button — color + sizing + spacing + box. No fontSize/etc
   // since it's an icon, but `color` (from typography) drives the SVG
   // currentColor stroke.
-  { key: 'hamburger', label: 'Hamburger button',      groups: [GROUP_POSITION, GROUP_DISPLAY, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BACKGROUND, GROUP_BORDER] },
+  { key: 'hamburger', label: 'Hamburger button',      groups: [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER] },
   // Backdrop — just a background colour / image.
   { key: 'overlay',   label: 'Backdrop overlay',      groups: [GROUP_BACKGROUND] },
 ];
@@ -602,20 +652,25 @@ export function getDefaultDisplayFor(scope: string, fieldPrefix: string): string
 }
 
 /** Resolved group: a `PropertyGroup` with its `props` keys mapped through
- *  `PROPERTY_CATALOG` to ready-to-render entries. Used by the panel
- *  renderer; build* functions stay on the flat `schemaFor` API. */
+ *  `PROPERTY_CATALOG` to ready-to-render entries. Nested arrays preserve
+ *  the source's paired-row marker — renderer turns them into
+ *  `.nospress-prop-pair` grid containers. Used by the panel renderer;
+ *  build* functions stay on the flat `schemaFor` API. */
 export interface ResolvedPropertyGroup {
   key: string;
   label: string;
-  entries: PropertyEntry[];
+  entries: Array<PropertyEntry | PropertyEntry[]>;
 }
 
 /** Resolve a runtime scope ('page', 'heading:<uuid>', …) to a flat
  *  schema list. Used by `buildInlineStyle` / `buildBlockBreakpointCss` /
  *  `buildImportantInlineStyle` — these don't care about grouping, only
- *  the per-property CSS mapping. */
+ *  the per-property CSS mapping. Pair markers are flattened here so the
+ *  CSS-emit pipeline iterates a uniform list. */
 export function schemaFor(scope: string): PropertyEntry[] {
-  return groupedSchemaFor(scope).flatMap(g => g.entries);
+  return groupedSchemaFor(scope).flatMap(g =>
+    g.entries.flatMap(e => (Array.isArray(e) ? e : [e])),
+  );
 }
 
 /** Resolve a runtime scope to its grouped schema. Used by
@@ -627,8 +682,31 @@ export function groupedSchemaFor(scope: string): ResolvedPropertyGroup[] {
   return groups.map(g => ({
     key: g.key,
     label: g.label,
-    entries: g.props.map(k => PROPERTY_CATALOG[k]),
+    entries: resolveGroupEntries(g.props),
   }));
+}
+
+/** Resolve a `PropertyGroup.props` list to a renderer-ready
+ *  `ResolvedPropertyGroup.entries` value — keeps nested arrays intact
+ *  so the panel renderer can wrap them in pair grids. */
+export function resolveGroupEntries(
+  props: Array<PropertyKey | PropertyKey[]>,
+): Array<PropertyEntry | PropertyEntry[]> {
+  return props.map(k => Array.isArray(k)
+    ? k.map(kk => PROPERTY_CATALOG[kk])
+    : PROPERTY_CATALOG[k]);
+}
+
+/** Same source list, but flattened — used by build-side schemas
+ *  (LINK_SUBSCOPE_SCHEMA / NAV_MENU_DESKTOP_SCHEMA / …) where the
+ *  CSS-emit pipeline iterates one PropertyEntry at a time and doesn't
+ *  care about pairing. */
+export function flattenGroupProps(
+  props: Array<PropertyKey | PropertyKey[]>,
+): PropertyEntry[] {
+  return props.flatMap(k => Array.isArray(k)
+    ? k.map(kk => PROPERTY_CATALOG[kk])
+    : [PROPERTY_CATALOG[k]]);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -712,6 +790,7 @@ export function buildInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle |
         }
       }
     } else if (entry.kind === 'dropdown') {
+      if (entry.skipInlineEmit) continue;
       push(entry.cssProp, style[entry.key]);
     } else if (entry.kind === 'text-shadow') {
       const composed = composeTextShadow(style.textShadow);
@@ -1162,21 +1241,21 @@ export function buildBlockBreakpointCss(
  *  `buildImportantInlineStyle` can be called per-pseudo-class without
  *  re-resolving the group list every time. */
 const LINK_SUBSCOPE_SCHEMA: PropertyEntry[] = LINK_SUBSCOPE_GROUPS
-  .flatMap(g => g.props.map(k => PROPERTY_CATALOG[k]));
+  .flatMap(g => flattenGroupProps(g.props));
 
 /** Same flat-schema treatment for the nav-menu desktop sub-scope
  *  (ul/li). Currently identical to LINK_SUBSCOPE_SCHEMA — kept as a
  *  separate symbol so future divergence stays cheap. */
 const NAV_MENU_DESKTOP_SCHEMA: PropertyEntry[] = NAV_MENU_DESKTOP_GROUPS
-  .flatMap(g => g.props.map(k => PROPERTY_CATALOG[k]));
+  .flatMap(g => flattenGroupProps(g.props));
 
 /** Flat per-key schemas for the bookmark-folder sub-scope. Each entry
  *  is the single PropertyEntry the section exposes (background for
  *  item, color for icon/desc). */
 const BOOKMARK_FOLDER_SCHEMAS: Record<BookmarkFolderKey, PropertyEntry[]> = {
-  item: BOOKMARK_FOLDER_GROUPS.item.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
-  icon: BOOKMARK_FOLDER_GROUPS.icon.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
-  desc: BOOKMARK_FOLDER_GROUPS.desc.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
+  item: BOOKMARK_FOLDER_GROUPS.item.flatMap(g => flattenGroupProps(g.props)),
+  icon: BOOKMARK_FOLDER_GROUPS.icon.flatMap(g => flattenGroupProps(g.props)),
+  desc: BOOKMARK_FOLDER_GROUPS.desc.flatMap(g => flattenGroupProps(g.props)),
 };
 
 /** CSS selector suffixes for the bookmark-folder sub-scope keys. The
@@ -1189,9 +1268,9 @@ const BOOKMARK_FOLDER_SELECTORS: Record<BookmarkFolderKey, string> = {
 };
 
 const ARTICLES_LIST_SCHEMAS: Record<ArticlesListKey, PropertyEntry[]> = {
-  card:  ARTICLES_LIST_GROUPS.card.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
-  title: ARTICLES_LIST_GROUPS.title.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
-  meta:  ARTICLES_LIST_GROUPS.meta.flatMap(g => g.props.map(k => PROPERTY_CATALOG[k])),
+  card:  ARTICLES_LIST_GROUPS.card.flatMap(g => flattenGroupProps(g.props)),
+  title: ARTICLES_LIST_GROUPS.title.flatMap(g => flattenGroupProps(g.props)),
+  meta:  ARTICLES_LIST_GROUPS.meta.flatMap(g => flattenGroupProps(g.props)),
 };
 
 const ARTICLES_LIST_SELECTORS: Record<ArticlesListKey, string> = {
@@ -1439,6 +1518,7 @@ export function buildImportantInlineStyle(schema: PropertyEntry[], styleIn: Comm
         }
       }
     } else if (entry.kind === 'dropdown') {
+      if (entry.skipInlineEmit) continue;
       push(entry.cssProp, style[entry.key]);
     } else if (entry.kind === 'text-shadow') {
       const composed = composeTextShadow(style.textShadow);
@@ -1928,42 +2008,50 @@ function renderEntriesForGroups(
     `;
   };
 
-  /** Render the Text-shadow group: 3 numeric inputs (H / V / Blur) on
-   *  one row + a Color row matching the regular Color/Background swatches
-   *  popover. The four sub-fields write to `textShadow.h|v|blur|color`
-   *  via the standard `data-style-field` dispatch; `composeTextShadow`
-   *  joins them into a single CSS declaration at render time.
+  /** Render the Text-shadow group as two paired rows: H + V on one row,
+   *  blur + color on the next. The four sub-fields write to
+   *  `textShadow.h|v|blur|color` via the standard `data-style-field`
+   *  dispatch; `composeTextShadow` joins them into a single CSS
+   *  declaration at render time.
    *
-   *  No own header — the parent Typography group section header now
-   *  scopes it. The compound's structure (3 numeric inputs + a color
-   *  row) is self-evident enough without a sub-label. */
+   *  No own header — the parent Typography group section header scopes
+   *  it. The pair containers collapse to single-column at narrow widths
+   *  via the standard `.nospress-prop-pair` grid. */
+  const textShadowCell = (axis: 'h' | 'v', label: string, placeholder: string) => `
+    <div class="nospress-prop-pair__cell">
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">${label}</label>
+        <input type="text" class="input nospress-prop-row__input"
+               data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.${axis}"
+               value="${v(`textShadow.${axis}`)}" placeholder="${placeholder}" />
+      </div>
+    </div>
+  `;
   const textShadow = (_e: TextShadowPropertyEntry) => `
-    <div class="nospress-prop-row">
-      <label class="nospress-prop-row__label">Text shadow H</label>
-      <input type="text" class="input nospress-prop-row__input"
-             data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.h"
-             value="${v('textShadow.h')}" placeholder="e.g. 2px" />
+    <div class="nospress-prop-pair">
+      ${textShadowCell('h', 'Text shadow H', 'e.g. 2px')}
+      ${textShadowCell('v', 'Text shadow V', 'e.g. 2px')}
     </div>
-    <div class="nospress-prop-row">
-      <label class="nospress-prop-row__label">Text shadow V</label>
-      <input type="text" class="input nospress-prop-row__input"
-             data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.v"
-             value="${v('textShadow.v')}" placeholder="e.g. 2px" />
+    <div class="nospress-prop-pair">
+      <div class="nospress-prop-pair__cell">
+        <div class="nospress-prop-row">
+          <label class="nospress-prop-row__label">Text shadow blur</label>
+          <input type="text" class="input nospress-prop-row__input"
+                 data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.blur"
+                 value="${v('textShadow.blur')}" placeholder="e.g. 4px" />
+        </div>
+      </div>
+      <div class="nospress-prop-pair__cell">
+        ${renderColorPickerRow({
+          scope: opts.scope,
+          field: `${fieldPrefix}textShadow.color`,
+          label: 'Text shadow color',
+          value: v('textShadow.color'),
+          placeholder: 'e.g. #000',
+          palette,
+        })}
+      </div>
     </div>
-    <div class="nospress-prop-row">
-      <label class="nospress-prop-row__label">Text shadow blur</label>
-      <input type="text" class="input nospress-prop-row__input"
-             data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.blur"
-             value="${v('textShadow.blur')}" placeholder="e.g. 4px" />
-    </div>
-    ${renderColorPickerRow({
-      scope: opts.scope,
-      field: `${fieldPrefix}textShadow.color`,
-      label: 'Text shadow color',
-      value: v('textShadow.color'),
-      placeholder: 'e.g. #000',
-      palette,
-    })}
   `;
 
   const divider = (_e: DividerPropertyEntry) => {
@@ -2008,6 +2096,28 @@ function renderEntriesForGroups(
       : divider(entry);
   };
 
+  // Paired entries (declared as nested arrays in PropertyGroup.props) wrap
+  // their rendered rows in `.nospress-prop-pair` so CSS-grid lays them
+  // side-by-side at wide panel widths and stacks them at narrow widths
+  // (responsive via `auto-fit minmax`). Each cell wraps ONE entry so the
+  // color-picker's sibling popover / gradient mount stays inside its
+  // own pair cell instead of leaking into the neighbour column.
+  const renderEntryOrPair = (e: PropertyEntry | PropertyEntry[]): string => {
+    if (!Array.isArray(e)) return renderEntry(e);
+    const cells = e
+      .map(sub => renderEntry(sub))
+      .filter(html => html.length > 0)
+      .map(html => `<div class="nospress-prop-pair__cell">${html}</div>`);
+    if (cells.length === 0) return '';
+    // Lone surviving cell (one of the paired entries was conditionally
+    // hidden — e.g. positionInsets without absolute) renders as a normal
+    // single row to avoid an empty grid column.
+    if (cells.length === 1) return e
+      .map(sub => renderEntry(sub))
+      .find(html => html.length > 0) ?? '';
+    return `<div class="nospress-prop-pair">${cells.join('')}</div>`;
+  };
+
   // Group sections — one section per resolved group, containing all of
   // its entries in declaration order. Section header is a plain `<h3
   // class="h4">` so it inherits the project's heading typography +
@@ -2016,8 +2126,8 @@ function renderEntriesForGroups(
   // downstream (mobile-menu sub-scope).
   return groups.map(g => `
     <section class="nospress-prop-group" data-group-key="${escapeHtmlAttr(g.key)}">
-      <h3 class="h4">${escapeHtmlAttr(g.label)}</h3>
-      ${g.entries.map(renderEntry).join('')}
+      <h3 class="h3">${escapeHtmlAttr(g.label)}</h3>
+      ${g.entries.map(renderEntryOrPair).join('')}
     </section>
   `).join('');
 }
@@ -2063,19 +2173,27 @@ function renderPanelInternal(
   const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody + bookmarkFolderBody + articlesListBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
-  // a configurable class/id (its wrapper is always `.user-site`).
+  // a configurable class/id (its wrapper is always `.user-site`). Paired
+  // so the two narrow inputs share one row at wide panel widths and
+  // collapse to stacked at narrow widths via `.nospress-prop-pair`.
   const identifiersHtml = opts.scope === 'page' ? '' : `
-    <div class="nospress-prop-row">
-      <label class="nospress-prop-row__label">CSS Class</label>
-      <input type="text" class="input nospress-prop-row__input"
-             data-attr-scope="${scopeAttr}" data-attr-field="class"
-             value="${escapeHtmlAttr(opts.attrs?.class ?? '')}" placeholder="e.g. hero featured" />
-    </div>
-    <div class="nospress-prop-row">
-      <label class="nospress-prop-row__label">CSS ID</label>
-      <input type="text" class="input nospress-prop-row__input"
-             data-attr-scope="${scopeAttr}" data-attr-field="id"
-             value="${escapeHtmlAttr(opts.attrs?.id ?? '')}" placeholder="e.g. main-cta" />
+    <div class="nospress-prop-pair">
+      <div class="nospress-prop-pair__cell">
+        <div class="nospress-prop-row">
+          <label class="nospress-prop-row__label">CSS Class</label>
+          <input type="text" class="input nospress-prop-row__input"
+                 data-attr-scope="${scopeAttr}" data-attr-field="class"
+                 value="${escapeHtmlAttr(opts.attrs?.class ?? '')}" placeholder="e.g. hero featured" />
+        </div>
+      </div>
+      <div class="nospress-prop-pair__cell">
+        <div class="nospress-prop-row">
+          <label class="nospress-prop-row__label">CSS ID</label>
+          <input type="text" class="input nospress-prop-row__input"
+                 data-attr-scope="${scopeAttr}" data-attr-field="id"
+                 value="${escapeHtmlAttr(opts.attrs?.id ?? '')}" placeholder="e.g. main-cta" />
+        </div>
+      </div>
     </div>
   `;
 
@@ -2129,7 +2247,7 @@ function renderMobileMenuSubScopePanel(opts: RenderPropertyPanelOptions): string
     const resolvedGroups: ResolvedPropertyGroup[] = sec.groups.map(g => ({
       key: g.key,
       label: g.label,
-      entries: g.props.map(k => PROPERTY_CATALOG[k]),
+      entries: resolveGroupEntries(g.props),
     }));
     // Emit just the body markup (groups + their entries) for this
     // section, bypassing the panel chrome — that's owned by the outer
@@ -2188,7 +2306,7 @@ function renderNavMenuDesktopSections(
   const resolvedGroups: ResolvedPropertyGroup[] = NAV_MENU_DESKTOP_GROUPS.map(g => ({
     key: g.key,
     label: g.label,
-    entries: g.props.map(k => PROPERTY_CATALOG[k]),
+    entries: resolveGroupEntries(g.props),
   }));
   return keys.map(key => {
     const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `navMenu.${key}.`);
@@ -2221,7 +2339,7 @@ function renderBookmarkFolderSections(opts: RenderPropertyPanelOptions): string 
     const resolvedGroups: ResolvedPropertyGroup[] = BOOKMARK_FOLDER_GROUPS[key].map(g => ({
       key: g.key,
       label: g.label,
-      entries: g.props.map(k => PROPERTY_CATALOG[k]),
+      entries: resolveGroupEntries(g.props),
     }));
     const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `bookmarkFolder.${key}.`);
     return `
@@ -2253,7 +2371,7 @@ function renderArticlesListSections(opts: RenderPropertyPanelOptions): string {
     const resolvedGroups: ResolvedPropertyGroup[] = ARTICLES_LIST_GROUPS[key].map(g => ({
       key: g.key,
       label: g.label,
-      entries: g.props.map(k => PROPERTY_CATALOG[k]),
+      entries: resolveGroupEntries(g.props),
     }));
     const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `articlesList.${key}.`);
     return `
@@ -2278,7 +2396,7 @@ function renderLinkSubScopeSections(opts: RenderPropertyPanelOptions): string {
   const resolvedGroups: ResolvedPropertyGroup[] = LINK_SUBSCOPE_GROUPS.map(g => ({
     key: g.key,
     label: g.label,
-    entries: g.props.map(k => PROPERTY_CATALOG[k]),
+    entries: resolveGroupEntries(g.props),
   }));
   return LINK_PSEUDO_KEYS.map(pseudo => {
     // All collapsed by default — rare-use sub-scope, don't crowd the

@@ -473,6 +473,43 @@
   color: $color-5;
 }
 
+// Two-up paired rows. Used for short, related properties (color +
+// background, width + height, position + display, fontSize + lineHeight,
+// fontWeight + fontStyle, textShadow H + V, textShadow blur + color).
+// Each cell wraps ONE entry's full output (row + any sibling popover /
+// gradient mount) so popovers stay inside their own column. At narrow
+// panel widths the cells collapse to one-per-row via CSS-grid's
+// `auto-fit` behaviour. The minmax minimum (~12rem) is sized so the
+// 7rem label + a usable input fits before collapse triggers.
+.nospress-prop-pair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: $gap;
+  margin-bottom: calc($gap / 2);
+
+  // Inner rows already have their own bottom margin from
+  // `.nospress-prop-row`; clear it inside the pair so the grid gap is
+  // the single source of spacing between cells.
+  .nospress-prop-row {
+    margin-bottom: 0;
+  }
+
+  // Color/Background rows carry an extra trailing column for the
+  // circular color trigger. The single-row default uses
+  // `7rem minmax(8em, 1fr) auto` to keep the trigger visible at full
+  // panel width — but the 8em input minimum forces the row past the
+  // pair cell width and the trigger overflows. Inside a pair cell, let
+  // the input shrink to 0 (still claims the leftover 1fr at sane
+  // widths) so the trigger always fits within the cell.
+  .nospress-prop-row.nospress-prop-row--color {
+    grid-template-columns: 7rem minmax(0, 1fr) auto;
+  }
+}
+
+.nospress-prop-pair__cell {
+  min-width: 0; // allow inputs to shrink instead of overflowing the cell
+}
+
 .nospress-prop-row__label {
   @extend %small;
   color: $color-5;
@@ -530,12 +567,6 @@
 .nospress-block-divider {
   border: none;
   border-top: 1px solid $color-2;
-  margin: $gap * 2 0;
-}
-
-.nospress-block-dm-button {
-  display: flex;
-  justify-content: center;
   margin: $gap * 2 0;
 }
 
@@ -714,12 +745,14 @@
 // Columns block — desktop/tablet renders the user-picked layout via the
 // `--nospress-cols` custom property (set inline by the renderer from the
 // `layout` ratio array). Mobile collapses to a single stack so narrow
-// viewports stay legible regardless of preset. `gap` defaults to the CSS
-// default (0) and is set per-block via the `gridGap` Properties row,
-// surfaced under Layout when display is `grid`.
+// viewports stay legible regardless of preset. A small default `gap`
+// keeps adjacent column children visually separated; the user-set
+// `gridGap` Properties row (surfaced under Layout when display is grid)
+// inlines as `gap: …` on the wrapper and beats this default.
 .nospress-block-columns {
   display: grid;
   grid-template-columns: 1fr;
+  gap: calc($gap / 2);
 
   @include tablet-up {
     grid-template-columns: var(--nospress-cols, 1fr);

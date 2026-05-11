@@ -1,7 +1,7 @@
 import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
-import { styleWrap } from '../styles';
+import { styleWrap, sanitizeStyleValue } from '../styles';
 import type { Block } from '../types';
 
 export function renderDmButton(block: Extract<Block, { type: 'dm-button' }>, editable = false): string {
@@ -12,9 +12,22 @@ export function renderDmButton(block: Extract<Block, { type: 'dm-button' }>, edi
   }
 
   const label = sanitizeUserHtml((block.label || '').trim() || 'Send me a message');
-  return styleWrap(
+  const buttonHtml = styleWrap(
     block,
-    `<button type="button" class="btn" data-action="dm-page-owner">${label}</button>`,
-    { tag: 'div', baseClass: 'nospress-block-dm-button' },
+    label,
+    {
+      tag: 'button',
+      baseClass: 'nospress-block-dm-button btn',
+      extraAttrs: 'type="button" data-action="dm-page-owner"',
+    },
   );
+
+  // `alignButton` lives on the block's style payload but is suppressed
+  // from the button's inline style (skipInlineEmit on the catalog entry).
+  // It only renders as `text-align` on an outer wrapper DIV so the
+  // inline-flex button can be positioned left / center / right within
+  // its parent.
+  const align = sanitizeStyleValue(block.style?.alignButton ?? '');
+  if (!align) return buttonHtml;
+  return `<div class="nospress-block-dm-button-align" style="text-align: ${align}">${buttonHtml}</div>`;
 }
