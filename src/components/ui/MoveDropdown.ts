@@ -1,10 +1,9 @@
 /**
  * MoveDropdown Component
  * Reusable "Move to..." button + dropdown for moving items between folders/zones.
- * Browser-only (not shown in desktop app where mouse drag works).
+ * Shown on all platforms — drag&drop is mouse-only, so touch users (Capacitor)
+ * depend on this entirely, and desktop users get it as an explicit alternative.
  */
-
-import { PlatformService } from '../../services/PlatformService';
 
 export interface MoveTarget {
   id: string;
@@ -119,8 +118,8 @@ export class MoveDropdown {
     this.button.remove();
   }
 
-  /** Returns true if MoveDropdown should be shown (browser only) */
+  /** Returns true if MoveDropdown should be shown — always, on every platform. */
   static shouldShow(): boolean {
-    return PlatformService.getInstance().isBrowser;
+    return true;
   }
 }

@@ -4,8 +4,8 @@
  * Extracts the identical mousedown/mousemove/mouseup + threshold + placeholder
  * + fixed-positioning logic. Caller-specific drop handling stays in onDrop.
  *
- * Mouse-only by design (touch is handled by MoveDropdown / arrow buttons in
- * the consuming UIs).
+ * Mouse-only by design (touch users move items via the MoveDropdown / arrow
+ * buttons in the consuming UIs, which are now shown on every platform).
  */
 
 export interface GridDragDropConfig {
