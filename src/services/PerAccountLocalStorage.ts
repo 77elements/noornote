@@ -27,12 +27,21 @@ export const StorageKeys = {
   BOOKMARK_FOLDERS: 'noornote_bookmark_folders_map',
   BOOKMARK_FOLDER_ASSIGNMENTS: 'noornote_bookmark_folder_assignments_map',
   BOOKMARK_ROOT_ORDER: 'noornote_bookmark_root_order_map',
+  // Client-side tombstones — Record<folderName, deletionTimestampSec>.
+  // Set when the user deletes a folder, cleared when a folder of the same name
+  // is re-created. Honored by fetch/apply/publish paths to filter out any
+  // resurrection events that slip through the NIP-09 created_at check.
+  BOOKMARK_TOMBSTONES: 'noornote_bookmark_tombstones_map',
   FOLLOWS: 'noornote_follows_map',
   MUTES: 'noornote_mutes_map',
   TRIBES: 'noornote_tribes_map',
   TRIBE_FOLDERS: 'noornote_tribe_folders_map',
   TRIBE_MEMBER_ASSIGNMENTS: 'noornote_tribe_member_assignments_map',
   TRIBE_ROOT_ORDER: 'noornote_tribe_root_order_map',
+  // Client-side tombstones for tribes — Record<tribeName, deletionTimestampSec>.
+  // Tribe names are stored WITHOUT the "tribes/" d-tag prefix; the publish/fetch
+  // paths strip the prefix before the tombstone check.
+  TRIBE_TOMBSTONES: 'noornote_tribe_tombstones_map',
 
   // Notification subscriptions (per-account)
   HASHTAG_SUBSCRIPTIONS: 'noornote_hashtag_subscriptions_map',

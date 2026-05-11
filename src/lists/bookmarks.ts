@@ -692,6 +692,10 @@ class BookmarkFolderServiceImpl {
   }
 
   public createFolder(name: string): BookmarkFolder {
+    // Clear any prior tombstone for this folder name — explicit user re-creation
+    // re-instates the folder and must override past delete intent.
+    removeBookmarkFolderTombstone(name);
+
     const folders = this.getFoldersFromStorage();
     const newFolder: BookmarkFolder = {
       id: crypto.randomUUID(),
@@ -971,11 +975,19 @@ export function applyRelayFetchResult(
   // Build folders from categories (skip empty/root category)
   const newFolders: BookmarkFolder[] = [];
   const folderNameToId = new Map<string, string>();
+  const skippedTombstoned: string[] = [];
 
   if (categories) {
     for (const dTag of categories) {
       // Skip root category (empty or generic "bookmarks")
       if (!dTag || dTag === '' || dTag === 'bookmarks') continue;
+
+      // Defense in depth: even if a tombstoned folder leaked past the fetch
+      // filter, never re-create it in the local state here.
+      if (isBookmarkFolderTombstoned(dTag)) {
+        skippedTombstoned.push(dTag);
+        continue;
+      }
 
       // Use category name as folder name
       const folderName = dTag;
@@ -987,6 +999,10 @@ export function applyRelayFetchResult(
       });
       folderNameToId.set(folderName, folderId);
     }
+  }
+
+  if (skippedTombstoned.length > 0) {
+    diagLog('lists', 'applyRelayFetchResult: suppressed tombstoned categories', { skipped: skippedTombstoned });
   }
 
   // Build assignments from item categories
@@ -1054,6 +1070,16 @@ export function addNewBookmarksToFolders(newItems: BookmarkItem[]): void {
     const categoryName = item.category || '';
     if (!categoryName) {
       // Root item — add to root order if not already there
+      const alreadyInRoot = existingRootOrder.some(r => r.type === 'bookmark' && r.id === item.id);
+      if (!alreadyInRoot) {
+        addedRootOrderItems.push({ type: 'bookmark', id: item.id });
+      }
+      continue;
+    }
+
+    // Defense in depth: if the item's category was tombstoned on this device,
+    // drop the item into root rather than re-creating the dead folder.
+    if (isBookmarkFolderTombstoned(categoryName)) {
       const alreadyInRoot = existingRootOrder.some(r => r.type === 'bookmark' && r.id === item.id);
       if (!alreadyInRoot) {
         addedRootOrderItems.push({ type: 'bookmark', id: item.id });
@@ -1421,6 +1447,48 @@ export async function saveBookmarksToFile(): Promise<void> {
   logger.info('bookmarks.ts', `Saved to file: ${setData.sets.length} sets`);
 }
 
+// ============================================================
+// Client-side tombstones for deleted bookmark folders.
+// Honors the user's intent ("I deleted this") locally and independently of
+// what relays still serve. NIP-09's created_at-based deletion leaves a gap
+// any later kind:30003 event with a newer timestamp resurrects the folder.
+// Tombstones plug that gap on every machine where the user explicitly deleted.
+// Re-creating a folder with the same name clears its tombstone.
+// See docs/features/lists.md "Folder-Resurrection".
+// ============================================================
+
+function getBookmarkTombstones(): Record<string, number> {
+  return PerAccountLocalStorage.getInstance().get<Record<string, number>>(
+    PerAccountStorageKeys.BOOKMARK_TOMBSTONES, {}
+  );
+}
+
+function setBookmarkTombstones(map: Record<string, number>): void {
+  PerAccountLocalStorage.getInstance().set(PerAccountStorageKeys.BOOKMARK_TOMBSTONES, map);
+}
+
+export function isBookmarkFolderTombstoned(folderName: string): boolean {
+  if (!folderName) return false;
+  return folderName in getBookmarkTombstones();
+}
+
+export function addBookmarkFolderTombstone(folderName: string): void {
+  if (!folderName) return;
+  const map = getBookmarkTombstones();
+  map[folderName] = Math.floor(Date.now() / 1000);
+  setBookmarkTombstones(map);
+  diagLog('lists', 'addBookmarkFolderTombstone', { folderName, total: Object.keys(map).length });
+}
+
+export function removeBookmarkFolderTombstone(folderName: string): void {
+  if (!folderName) return;
+  const map = getBookmarkTombstones();
+  if (!(folderName in map)) return;
+  delete map[folderName];
+  setBookmarkTombstones(map);
+  diagLog('lists', 'removeBookmarkFolderTombstone', { folderName, remaining: Object.keys(map).length });
+}
+
 /**
  * Publish bookmarks to relays (NIP-51)
  */
@@ -1486,9 +1554,21 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
   const folderService = getBookmarkFolderService();
   const localFolders = folderService.getFolders();
   const skippedSets: string[] = [];
+  const skippedTombstoned: string[] = [];
 
   const filteredSets = setData.sets.filter(set => {
     if (set.d === '') return true; // root set always publishes
+
+    // (1) Client-side tombstone — hard veto. If the user deleted this folder
+    // on this device, never publish it (even if it somehow slipped back into
+    // setData via a stale apply path).
+    if (isBookmarkFolderTombstoned(set.d)) {
+      skippedTombstoned.push(set.d);
+      return false;
+    }
+
+    // (2) Publish-side self-correction against stale-tab republishes that
+    // never went through deleteFolder on this device. See lists.md.
     const coordinate = `30003:${pubkey}:${set.d}`;
     const deletionTs = activeDeletions.get(coordinate);
     if (deletionTs === undefined) return true; // no deletion → publish
@@ -1501,6 +1581,14 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
     skippedSets.push(set.d);
     return false; // stale — skip to prevent resurrection
   });
+
+  if (skippedTombstoned.length > 0) {
+    diagLog('lists', 'publishBookmarksToRelays: skipped sets due to client-side tombstone', {
+      skipped: skippedTombstoned,
+      callerTag,
+    });
+    logger.warn('bookmarks.ts', `Skipped ${skippedTombstoned.length} tombstoned bookmark set(s): ${skippedTombstoned.join(', ')}`);
+  }
 
   if (skippedSets.length > 0) {
     diagLog('lists', 'publishBookmarksToRelays: skipped sets due to active relay deletion (anti-resurrection)', {
@@ -1560,8 +1648,11 @@ export async function publishBookmarksToRelays(callerTag: string = 'unknown'): P
 
   logger.info('bookmarks.ts', `Published ${totalPublished} bookmark set events to relays`);
 
-  // Publish folder order metadata (NIP-78 kind:30078)
-  const folderOrder = setData.metadata.setOrder.filter(d => d !== '');
+  // Publish folder order metadata (NIP-78 kind:30078) — exclude tombstoned
+  // folders so they don't reappear via the order event after suppression.
+  const folderOrder = setData.metadata.setOrder
+    .filter(d => d !== '')
+    .filter(d => !isBookmarkFolderTombstoned(d));
   diagLog('lists', 'publishBookmarksToRelays: folder order for kind:30078', { folderOrder });
   if (folderOrder.length > 0) {
     const orderTags: string[][] = [
@@ -1633,15 +1724,25 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     // Deduplicate by d-tag and filter out deleted ones
     const eventsByDTag = new Map<string, NostrEvent>();
     let filteredDeletedCount = 0;
+    let filteredTombstonedCount = 0;
+    const tombstonedSkipped: string[] = [];
 
     for (const event of events) {
       const dTag = getTag(event.tags, 'd');
 
-      // Reverted to created_at-based suppression after strict mode broke
-      // legitimately re-created folders (regression 2026-05-01): live folders
-      // had old kind:5 events from earlier deletions still on relays, strict
-      // filter skipped their fresh kind:30003 too. True resurrection fix
-      // requires Schritt 2 (lokale Tombstones) — see lists.md.
+      // (1) Client-side tombstone filter (Schritt 2, 2026-05-11): if the user
+      // explicitly deleted this folder on this device, suppress every event for
+      // it regardless of created_at. createFolder/rename clear the tombstone
+      // when the user revives the name, so legit re-creation stays intact.
+      if (dTag && isBookmarkFolderTombstoned(dTag)) {
+        filteredTombstonedCount++;
+        tombstonedSkipped.push(dTag);
+        continue;
+      }
+
+      // (2) NIP-09 created_at-based suppression: events older than a deletion
+      // are dropped per spec. Resurrection events newer than the deletion slip
+      // through here — the tombstone above is what stops those on this device.
       const coordinate = `30003:${pubkey}:${dTag}`;
       const deletionTimestamp = deletedCoordinates.get(coordinate);
       if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
@@ -1653,6 +1754,11 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
       if (!existing || event.created_at > existing.created_at) {
         eventsByDTag.set(dTag, event);
       }
+    }
+
+    if (filteredTombstonedCount > 0) {
+      diagLog('lists', 'fetchBookmarksFromRelays: suppressed by tombstone', { count: filteredTombstonedCount, dTags: tombstonedSkipped });
+      logger.info('bookmarks.ts', `Suppressed ${filteredTombstonedCount} tombstoned bookmark set(s) from relay fetch: ${tombstonedSkipped.join(', ')}`);
     }
 
     diagLog('lists', 'fetchBookmarksFromRelays: events after d-tag dedup', { count: eventsByDTag.size, dTags: Array.from(eventsByDTag.keys()), filteredDeletedCount });
@@ -3517,6 +3623,14 @@ export class BookmarkManager {
             }
           }
 
+          // Tombstone the old folder name so the soon-to-be-orphaned kind:30003
+          // event cannot resurrect under its old name; clear any tombstone on
+          // the new name in case the user is reviving a previously deleted one.
+          if (oldName && oldName !== newName) {
+            addBookmarkFolderTombstone(oldName);
+          }
+          removeBookmarkFolderTombstone(newName);
+
           this.folderService.renameFolder(folderId, newName);
 
           this.profileMountsService.handleFolderRename(folder.name, newName);
@@ -3576,6 +3690,10 @@ export class BookmarkManager {
       }
 
       this.profileMountsService.handleFolderDelete(folderName);
+
+      // Record a client-side tombstone so this folder cannot resurrect on
+      // this device, regardless of what relays still serve.
+      addBookmarkFolderTombstone(folderName);
 
       const affectedIds = this.folderService.deleteFolder(folderId);
 

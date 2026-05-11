@@ -466,6 +466,10 @@ function buildInitialRootOrder(): RootOrderItem[] {
 // ============================================================
 
 export function createFolder(name: string): TribeFolder {
+  // Clear any prior tombstone for this tribe name — explicit user re-creation
+  // re-instates the tribe and must override past delete intent.
+  removeTribeTombstone(name);
+
   const folders = getFolders();
   // Use deterministic ID based on name for consistency across file/relay sync
   const id = `folder_${name}`;
@@ -873,6 +877,7 @@ export function applyRelayFetchResult(
   const newFolders: TribeFolder[] = [];
   const folderNameToId = new Map<string, string>();
 
+  const skippedTombstoned: string[] = [];
   if (categories) {
     for (const dTag of categories) {
       // Skip root category (tribes/ or empty)
@@ -881,6 +886,12 @@ export function applyRelayFetchResult(
       // Extract tribe name from d-tag (remove "tribes/" prefix if present)
       const tribeName = dTag.startsWith('tribes/') ? dTag.substring(7) : dTag;
       if (!tribeName) continue;
+
+      // Defense in depth: never re-instate a tombstoned tribe in the local state.
+      if (isTribeTombstoned(tribeName)) {
+        skippedTombstoned.push(tribeName);
+        continue;
+      }
 
       // Create folder (use deterministic ID based on name for consistency with extractFromSetData)
       const folderId = `folder_${tribeName}`;
@@ -891,6 +902,10 @@ export function applyRelayFetchResult(
       });
       folderNameToId.set(tribeName, folderId);
     }
+  }
+
+  if (skippedTombstoned.length > 0) {
+    diagLog('lists', 'tribes applyRelayFetchResult: suppressed tombstoned categories', { skipped: skippedTombstoned });
   }
 
   // Build assignments from member categories
@@ -955,6 +970,11 @@ export function addNewMembersToFolders(newMembers: TribeMember[]): void {
   for (const member of newMembers) {
     const tribeName = member.category || '';
     if (!tribeName) continue;
+
+    // Defense in depth: skip members belonging to a tombstoned tribe — unlike
+    // bookmarks, tribes members cannot live at root, so the member is dropped
+    // entirely (consistent with deleteFolderUI deleting all members).
+    if (isTribeTombstoned(tribeName)) continue;
 
     // Create folder if it doesn't exist yet
     let folderId = folderNameToId.get(tribeName);
@@ -1273,6 +1293,7 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
 
     // Deduplicate by d-tag (keep newest per tribe)
     const eventsByDTag = new Map<string, NostrEvent>();
+    const tombstonedSkipped: string[] = [];
 
     for (const event of events) {
       const dTag = getTag(event.tags, 'd');
@@ -1280,7 +1301,15 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       // Only process events with "tribes/" prefix
       if (!dTag.startsWith('tribes/')) continue;
 
-      // Check if deleted
+      // (1) Client-side tombstone filter (Schritt 2, 2026-05-11): tribe names
+      // are stored without the "tribes/" prefix in the tombstone map.
+      const tribeName = dTag.substring(7);
+      if (tribeName && isTribeTombstoned(tribeName)) {
+        tombstonedSkipped.push(tribeName);
+        continue;
+      }
+
+      // (2) NIP-09 created_at-based suppression
       const coordinate = `30000:${pubkey}:${dTag}`;
       const deletionTimestamp = deletedCoordinates.get(coordinate);
       if (deletionTimestamp !== undefined && event.created_at < deletionTimestamp) {
@@ -1291,6 +1320,11 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
       if (!existing || event.created_at > existing.created_at) {
         eventsByDTag.set(dTag, event);
       }
+    }
+
+    if (tombstonedSkipped.length > 0) {
+      diagLog('lists', 'tribes fetchFromRelays: suppressed by tombstone', { count: tombstonedSkipped.length, tribeNames: tombstonedSkipped });
+      logger.info('Tribes', `Suppressed ${tombstonedSkipped.length} tombstoned tribe(s) from relay fetch: ${tombstonedSkipped.join(', ')}`);
     }
 
     if (eventsByDTag.size === 0) {
@@ -1436,6 +1470,45 @@ export async function fetchFromRelays(): Promise<FetchFromRelaysResult> {
   }
 }
 
+// ============================================================
+// Client-side tombstones for deleted tribes (folder = tribe).
+// Mirrors the bookmark tombstone mechanism. Names are stored WITHOUT the
+// "tribes/" d-tag prefix — callers strip the prefix before checking.
+// See docs/features/lists.md "Folder-Resurrection".
+// ============================================================
+
+function getTribeTombstones(): Record<string, number> {
+  return PerAccountLocalStorage.getInstance().get<Record<string, number>>(
+    StorageKeys.TRIBE_TOMBSTONES, {}
+  );
+}
+
+function setTribeTombstones(map: Record<string, number>): void {
+  PerAccountLocalStorage.getInstance().set(StorageKeys.TRIBE_TOMBSTONES, map);
+}
+
+export function isTribeTombstoned(tribeName: string): boolean {
+  if (!tribeName) return false;
+  return tribeName in getTribeTombstones();
+}
+
+export function addTribeTombstone(tribeName: string): void {
+  if (!tribeName) return;
+  const map = getTribeTombstones();
+  map[tribeName] = Math.floor(Date.now() / 1000);
+  setTribeTombstones(map);
+  diagLog('lists', 'addTribeTombstone', { tribeName, total: Object.keys(map).length });
+}
+
+export function removeTribeTombstone(tribeName: string): void {
+  if (!tribeName) return;
+  const map = getTribeTombstones();
+  if (!(tribeName in map)) return;
+  delete map[tribeName];
+  setTribeTombstones(map);
+  diagLog('lists', 'removeTribeTombstone', { tribeName, remaining: Object.keys(map).length });
+}
+
 /**
  * Publish tribes to relays
  */
@@ -1443,44 +1516,43 @@ export async function publishToRelays(): Promise<void> {
   const user = requireAuth();
   const setData = buildSetDataFromBrowser();
 
-  // Get local tribes (with "tribes/" prefix for comparison)
-  const localTribes = new Set(
-    setData.sets.map(s => s.d === '' ? 'tribes/' : `tribes/${s.d}`)
-  );
-
-  // Fetch existing to find deleted
-  const relayResult = await fetchFromRelays();
-  const relayTribes = new Set(relayResult.categories || []);
-
-  // Find deleted tribes
-  const deletedTribes: string[] = [];
-  for (const relayTribe of relayTribes) {
-    if (!localTribes.has(relayTribe)) {
-      deletedTribes.push(relayTribe);
+  // Tombstone filter: never publish a tribe set whose name is in the local
+  // tombstone map. This catches stale-state publishes (browser still has the
+  // tribe in setData because some apply path put it back) BEFORE they hit the
+  // relay and resurrect under a newer timestamp.
+  // Removed (2026-05-11): the prior "relay − local = delete" path that fetched
+  // the relay state and published kind:5 for tribes missing locally. With
+  // explicit user deletes already covered by eager kind:5 in deleteFolderUI,
+  // that conditional path is redundant and high-risk (cross-device stale state
+  // could trigger spurious mass-deletions, see Bug 1 fix in bookmarks.ts).
+  const skippedTombstoned: string[] = [];
+  const filteredSets = setData.sets.filter(set => {
+    if (set.d === '') return true; // root always publishes
+    if (isTribeTombstoned(set.d)) {
+      skippedTombstoned.push(set.d);
+      return false;
     }
-  }
-
-  const totalMembers = setData.sets.reduce((sum, s) => sum + s.publicMembers.length + s.privateMembers.length, 0);
-  diagLog('lists', 'tribes publishToRelays', {
-    setCount: setData.sets.length,
-    totalMembers,
-    deletedTribes,
-    sets: setData.sets.map(s => ({ d: s.d, publicCount: s.publicMembers.length, privateCount: s.privateMembers.length, publicPubkeys: s.publicMembers.map(p => p.pubkey.slice(0, 8)) }))
+    return true;
   });
-  logger.info('Tribes', `Publishing: ${setData.sets.length} sets, ${totalMembers} total members, ${deletedTribes.length} deleted`);
-  console.debug(`[Tribes] publishToRelays: ${setData.sets.length} sets, ${totalMembers} members, ${deletedTribes.length} deletions`, setData.sets.map(s => ({ d: s.d, pub: s.publicMembers.length, priv: s.privateMembers.length })));
 
-  // Publish deletions
-  if (deletedTribes.length > 0) {
-    const coords = deletedTribes.map(dTag => `30000:${user.pubkey}:${dTag}`);
-    const deletionService = DeletionService.getInstance();
-    await deletionService.deleteByCoordinates(coords, 'Tribe deleted');
+  if (skippedTombstoned.length > 0) {
+    diagLog('lists', 'tribes publishToRelays: skipped sets due to client-side tombstone', { skipped: skippedTombstoned });
+    logger.warn('Tribes', `Skipped ${skippedTombstoned.length} tombstoned tribe set(s): ${skippedTombstoned.join(', ')}`);
   }
+
+  const totalMembers = filteredSets.reduce((sum, s) => sum + s.publicMembers.length + s.privateMembers.length, 0);
+  diagLog('lists', 'tribes publishToRelays', {
+    setCount: filteredSets.length,
+    totalMembers,
+    sets: filteredSets.map(s => ({ d: s.d, publicCount: s.publicMembers.length, privateCount: s.privateMembers.length, publicPubkeys: s.publicMembers.map(p => p.pubkey.slice(0, 8)) }))
+  });
+  logger.info('Tribes', `Publishing: ${filteredSets.length} sets, ${totalMembers} total members`);
+  console.debug(`[Tribes] publishToRelays: ${filteredSets.length} sets, ${totalMembers} members`, filteredSets.map(s => ({ d: s.d, pub: s.publicMembers.length, priv: s.privateMembers.length })));
 
   // Publish each tribe
   let totalPublished = 0;
 
-  for (const set of setData.sets) {
+  for (const set of filteredSets) {
     // Skip empty sets (except root)
     if (set.publicMembers.length === 0 && set.privateMembers.length === 0 && set.d !== '') {
       continue;
@@ -1529,8 +1601,11 @@ export async function publishToRelays(): Promise<void> {
     logger.info('Tribes', `Published tribe "${set.d || 'root'}": ${set.publicMembers.length} public + ${set.privateMembers.length} private`);
   }
 
-  // Publish folder order metadata (NIP-78)
-  const folderOrder = setData.metadata.setOrder.filter(d => d !== '');
+  // Publish folder order metadata (NIP-78) — exclude tombstoned tribes so
+  // they don't reappear via the order event after suppression elsewhere.
+  const folderOrder = setData.metadata.setOrder
+    .filter(d => d !== '')
+    .filter(d => !isTribeTombstoned(d));
   if (folderOrder.length > 0) {
     const orderTags: string[][] = [['d', 'noornote:tribe-folders-order']];
 
@@ -2217,6 +2292,13 @@ export class TribeManager {
           }
         }
 
+        // Tombstone the old tribe name; clear any tombstone on the new name
+        // in case the user is reviving a previously deleted tribe.
+        if (oldName && oldName !== newName) {
+          addTribeTombstone(oldName);
+        }
+        removeTribeTombstone(newName);
+
         renameFolder(folderId, newName);
         ToastService.show('Tribe renamed', 'success');
         this.rerenderCurrentView();
@@ -2284,6 +2366,10 @@ export class TribeManager {
               }
             }
           }
+
+          // Record a client-side tombstone so this tribe cannot resurrect on
+          // this device, regardless of what relays still serve.
+          addTribeTombstone(tribeName);
 
           // Get member pubkeys and delete them
           const pubkeys = getMemberPubkeysInFolder(folderId);
