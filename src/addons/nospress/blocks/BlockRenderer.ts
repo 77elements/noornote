@@ -31,6 +31,7 @@ import { renderArticlesList } from './renderers/ArticlesListRenderer';
 import { renderWeblog } from './renderers/WeblogRenderer';
 import { renderDiv } from './renderers/DivRenderer';
 import { renderNavMenu } from './renderers/NavMenuRenderer';
+import { renderPortfolio } from './renderers/PortfolioRenderer';
 
 export interface BlockRenderOptions {
   editable?: boolean;
@@ -65,6 +66,7 @@ export class BlockRenderer {
         case 'weblog':          return renderWeblog(block, editable);
         case 'div':             return renderDiv(block, { editable });
         case 'nav-menu':        return renderNavMenu(block, editable);
+        case 'portfolio':       return renderPortfolio(block, editable);
       }
     })();
     // The editor is a schematic composer — no live preview of user styles.

@@ -239,6 +239,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   audio:             CONTAINER_GROUPS,
   'articles-list':   CONTAINER_GROUPS,
   weblog:            CONTAINER_GROUPS,
+  portfolio:         CONTAINER_GROUPS,
   // Nav-menu wrapper: like the textual blocks plus full sizing — the
   // menu container is positioned/sized like a media block.
   'nav-menu':        [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER],
@@ -323,6 +324,7 @@ export const BLOCK_DEFAULT_DISPLAY: Record<string, string> = {
   div:               'block',
   'nav-menu':        'block',
   'vendor-footer':   'block',
+  portfolio:         'block',
 };
 
 /** Same idea for the mobile-menu sub-scope, indexed by section selector

@@ -50,4 +50,5 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
 
   // 5. Site-structure blocks.
   { type: 'nav-menu',        label: 'Nav Menu',        description: 'Site navigation rendered as <nav><ul><li><a>',     icon: '🧭', enabled: true },
+  { type: 'portfolio',       label: 'Portfolio',       description: 'Grid of projects with click-to-expand screenshot carousels, paginated', icon: '🖼', enabled: true },
 ];

@@ -19,6 +19,7 @@ import { mountNospressEmbeds } from './embedMount';
 import { mountNospressProfileCards } from './profileCardMount';
 import { mountNospressArticlesLists } from './articlesListMount';
 import { mountNospressWeblogs } from './weblogMount';
+import { mountNospressPortfolios } from './portfolioMount';
 import { applyUserCss, removeUserCss } from './cssScope';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
@@ -150,6 +151,7 @@ export class PublicNospressPage {
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: pubkey });
     this.articlesCarousels = mountNospressArticlesLists(this.container, { ownerPubkey: pubkey });
     mountNospressWeblogs(this.container, { ownerPubkey: pubkey });
+    mountNospressPortfolios(this.container);
     if (menuSet && pageIndex) {
       mountNospressNavMenus(this.container, {
         menuSet,

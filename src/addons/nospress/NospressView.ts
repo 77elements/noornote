@@ -66,12 +66,12 @@ function clamp(n: number, min: number, max: number): number {
   if (Number.isNaN(n)) return min;
   return Math.min(max, Math.max(min, n));
 }
-import { MediaUploadService } from '../../services/MediaUploadService';
-import { triggerSingleMediaUpload, handleSingleMediaUpload } from './editor/uploadHelpers';
+import { triggerSingleMediaUpload, handleSingleMediaUpload, handleMultiMediaUpload } from './editor/uploadHelpers';
 import { mountNospressProfileCards } from './profileCardMount';
 import { mountNospressArticlesLists } from './articlesListMount';
 import { mountNospressWeblogs } from './weblogMount';
 import { mountNospressNavMenus, unmountNospressNavMenus } from './navMenuMount';
+import { mountNospressPortfolios } from './portfolioMount';
 import type { UserIdentity } from '../../components/shared/UserIdentity';
 import type { ProfileArticlesCarousel } from '../../components/profile/ProfileArticlesCarousel';
 
@@ -248,6 +248,15 @@ export class NospressView extends View {
    *  the page-edit area. Toggled by the overlay "CSS Editor" button or the
    *  Library "Custom CSS" entry. UI-only; no relay impact. */
   private cssEditorOpen: boolean = false;
+  /** Accordion state for the per-portfolio-block project list — `blockId →
+   *  projectId of the currently-open project`. Editor-only, not persisted.
+   *  Updated on header-click, on `addPortfolioProject` (new project opens),
+   *  and on `deletePortfolioProject` (clears if the deleted project was
+   *  open). When a portfolio block has no entry here, the renderer falls
+   *  back to opening the first project so the user always sees an
+   *  editable form. */
+  private portfolioOpenProjects: Map<string, string> = new Map();
+
   /** Active gradient editor session, if any. Holds the row context, the
    *  in-progress draft, and the currently-selected stop index. Discarded
    *  on Apply, Cancel, or popover close. */
@@ -490,6 +499,8 @@ export class NospressView extends View {
     this.profileCardInstances = mountNospressProfileCards(this.container, { ownerPubkey: this.pubkey });
     this.articlesCarousels = mountNospressArticlesLists(this.container, { ownerPubkey: this.pubkey });
     mountNospressWeblogs(this.container, { ownerPubkey: this.pubkey });
+    mountNospressPortfolios(this.container);
+    this.applyPortfolioOpenState();
     this.mountNavMenuPreviews();
   }
 
@@ -3847,6 +3858,27 @@ export class NospressView extends View {
         });
         slot.appendChild(dropdown.getElement());
         this.blockDropdowns.push(dropdown);
+      } else if (kind === 'portfolio-sort') {
+        // Options come from the renderer's `data-options` JSON — keeps
+        // the catalog of choices co-located with the markup that needs
+        // them. NospressView only hosts the wiring.
+        const current = slot.dataset.currentValue || 'manual';
+        let options: Array<{ value: string; label: string }> = [];
+        try { options = JSON.parse(slot.dataset.options ?? '[]'); } catch { /* keep empty */ }
+        const dropdown = new CustomDropdown({
+          options,
+          selectedValue: current,
+          onChange: (value) => {
+            this.mutateDraft((page) => {
+              const block = findBlockInPage(page, blockId)?.block;
+              if (block?.type !== 'portfolio') return;
+              if (value === 'newest' || value === 'oldest') block.sortOrder = value;
+              else delete block.sortOrder;
+            }, { silent: false });
+          }
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
       }
     });
   }
@@ -4115,6 +4147,17 @@ export class NospressView extends View {
     this.container.addEventListener('change', handleFieldEvent);
 
     this.container.addEventListener('click', (e) => {
+      // Portfolio accordion: header toggle. Handled BEFORE the generic
+      // `[data-action]` dispatch because the toggle doesn't carry an
+      // action attribute (it's a pure UI affordance).
+      const toggleEl = (e.target as HTMLElement).closest('[data-portfolio-project-toggle]') as HTMLElement | null;
+      if (toggleEl) {
+        const tBlockId = toggleEl.dataset.blockId;
+        const tProjectId = toggleEl.dataset.projectId;
+        if (tBlockId && tProjectId) this.togglePortfolioProject(tBlockId, tProjectId);
+        return;
+      }
+
       const btn = (e.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
       if (!btn || (btn as HTMLButtonElement).disabled) return;
       const action = btn.dataset.action!;
@@ -4150,6 +4193,22 @@ export class NospressView extends View {
         case 'upload-video':           this.triggerVideoUpload(blockId); break;
         case 'upload-audio':           this.triggerAudioUpload(blockId); break;
         case 'insert-link':            void this.handleInsertLink(blockId); break;
+      }
+
+      // Portfolio actions — sub-keyed by `data-project-id` and
+      // (optionally) `data-shot-index`. Routed separately so each handler
+      // has the typed arguments it needs.
+      const projectId = btn.dataset.projectId;
+      const shotIdx = btn.dataset.shotIndex !== undefined ? parseInt(btn.dataset.shotIndex, 10) : -1;
+      switch (action) {
+        case 'portfolio-add-project':     this.addPortfolioProject(blockId); break;
+        case 'portfolio-project-up':      if (projectId) this.movePortfolioProject(blockId, projectId, -1); break;
+        case 'portfolio-project-down':    if (projectId) this.movePortfolioProject(blockId, projectId, +1); break;
+        case 'portfolio-project-delete':  if (projectId) this.deletePortfolioProject(blockId, projectId); break;
+        case 'portfolio-shot-up':         if (projectId && shotIdx >= 0) this.movePortfolioShot(blockId, projectId, shotIdx, -1); break;
+        case 'portfolio-shot-down':       if (projectId && shotIdx >= 0) this.movePortfolioShot(blockId, projectId, shotIdx, +1); break;
+        case 'portfolio-shot-delete':     if (projectId && shotIdx >= 0) this.deletePortfolioShot(blockId, projectId, shotIdx); break;
+        case 'portfolio-shot-upload':     if (projectId) this.triggerPortfolioShotUpload(blockId, projectId); break;
       }
     });
 
@@ -4276,6 +4335,18 @@ export class NospressView extends View {
         await this.handleAudioUpload(blockId, file);
         return;
       }
+      // Portfolio multi-file upload — same MediaUploadService pipeline
+      // as Gallery, but appends to a specific project's screenshots
+      // array instead of the block's top-level urls.
+      if (target?.dataset?.portfolioShotFiles !== undefined) {
+        const blockId = target.dataset.blockId;
+        const projectId = target.dataset.projectId;
+        const files = Array.from(target.files ?? []);
+        if (!blockId || !projectId || files.length === 0) return;
+        target.value = '';
+        await this.handlePortfolioShotUpload(blockId, projectId, files);
+        return;
+      }
     });
 
     this.container.addEventListener('keydown', (e) => {
@@ -4392,6 +4463,33 @@ export class NospressView extends View {
           if (el.checked && idx < 0) block.hamburgerBreakpoints.push(bp);
           else if (!el.checked && idx >= 0) block.hamburgerBreakpoints.splice(idx, 1);
           if (block.hamburgerBreakpoints.length === 0) delete block.hamburgerBreakpoints;
+        }
+      } else if (block.type === 'portfolio') {
+        const projectId = el.dataset?.projectId;
+        if (field === 'portfolio-per-page') {
+          const n = parseInt(el.value, 10);
+          if (Number.isFinite(n) && n > 0) block.perPage = n;
+          else delete block.perPage;
+        } else if (projectId) {
+          const project = block.projects.find(p => p.id === projectId);
+          if (!project) return;
+          if (field === 'portfolio-title') project.title = el.value;
+          else if (field === 'portfolio-link') {
+            const v = el.value.trim();
+            if (v) project.link = v; else delete project.link;
+          }
+          else if (field === 'portfolio-description') {
+            const v = el.value;
+            if (v.trim()) project.description = v; else delete project.description;
+          }
+          else if (field === 'portfolio-date') {
+            const v = el.value.trim();
+            if (v) project.date = v; else delete project.date;
+          }
+          else if (field === 'portfolio-shot') {
+            const idx = el.dataset?.shotIndex !== undefined ? parseInt(el.dataset.shotIndex, 10) : -1;
+            if (idx >= 0) project.screenshots[idx] = el.value;
+          }
         }
       } else if (block.type === 'weblog') {
         if (field === 'weblog-pubkey') {
@@ -4585,36 +4683,18 @@ export class NospressView extends View {
   }
 
   private async handleGalleryUpload(blockId: string, files: File[]): Promise<void> {
-    const images = files.filter(f => f.type.startsWith('image/'));
-    if (images.length === 0) {
-      ToastService.show('Please select image files', 'error');
-      return;
-    }
-    const uploadBtn = this.container.querySelector(`[data-block-id="${blockId}"][data-action="upload-gallery-images"]`) as HTMLButtonElement | null;
-    if (!uploadBtn) return;
-
-    const originalText = uploadBtn.textContent ?? '';
-    uploadBtn.disabled = true;
-
-    try {
-      const results = await MediaUploadService.getInstance().uploadFiles(images, (fileIndex, _progress, totalFiles) => {
-        uploadBtn.textContent = `Uploading ${fileIndex + 1}/${totalFiles}…`;
-      });
-      const newUrls = results.filter(r => r.success && r.url).map(r => r.url as string);
-      if (newUrls.length === 0) return;
-      this.mutateDraft((page) => {
+    const trigger = this.container.querySelector(
+      `[data-block-id="${blockId}"][data-action="upload-gallery-images"]`,
+    ) as HTMLButtonElement | null;
+    await handleMultiMediaUpload(
+      trigger,
+      files,
+      (urls) => this.mutateDraft((page) => {
         const block = findBlockInPage(page, blockId)?.block;
-        if (block?.type === 'gallery') block.urls.push(...newUrls);
-      });
-    } catch (error) {
-      console.error('Gallery upload failed:', error);
-      ToastService.show('Gallery upload failed', 'error');
-    } finally {
-      if (uploadBtn.isConnected) {
-        uploadBtn.disabled = false;
-        uploadBtn.textContent = originalText;
-      }
-    }
+        if (block?.type === 'gallery') block.urls.push(...urls);
+      }),
+      { mimePrefix: 'image/', rejectLabel: 'Please select image files' },
+    );
   }
 
   private async handleImageUpload(blockId: string, file: File): Promise<void> {
@@ -4624,5 +4704,135 @@ export class NospressView extends View {
         if (block?.type === 'image') block.url = url;
       });
     });
+  }
+
+  // ── Portfolio editor helpers ─────────────────────────────────────────
+
+  /** Walk every portfolio block in the editor and apply the accordion's
+   *  `.is-open` class to whichever project is currently open for that
+   *  block. Called after every `renderList()` so the open-state survives
+   *  re-renders. When the block has no map entry yet, the first project
+   *  is opened by default so the user always sees one editable form. */
+  private applyPortfolioOpenState(): void {
+    const blocks = this.container.querySelectorAll<HTMLElement>('[data-block-edit][data-block-type="portfolio"]');
+    blocks.forEach(blockEl => {
+      const blockId = blockEl.dataset.blockId;
+      if (!blockId) return;
+      const projects = blockEl.querySelectorAll<HTMLElement>('[data-portfolio-project]');
+      if (projects.length === 0) return;
+      let openId = this.portfolioOpenProjects.get(blockId);
+      // Fall back to the first project when nothing's tracked (or the
+      // tracked one was deleted in a previous mutation).
+      const ids = Array.from(projects).map(p => p.dataset.projectId ?? '');
+      if (!openId || !ids.includes(openId)) {
+        openId = ids[0] ?? '';
+        if (openId) this.portfolioOpenProjects.set(blockId, openId);
+      }
+      projects.forEach(p => {
+        const isOpen = p.dataset.projectId === openId;
+        p.classList.toggle('is-open', isOpen);
+        const toggle = p.querySelector<HTMLElement>('[data-portfolio-project-toggle]');
+        toggle?.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      });
+    });
+  }
+
+  /** Click handler for the accordion header. Wired from `setupEditDelegation`
+   *  via `[data-portfolio-project-toggle]`. Toggling the open project also
+   *  collapses any sibling that was open in the same block. Clicking the
+   *  already-open header collapses without opening another (the renderer's
+   *  fallback re-opens the first project on the next render, so the
+   *  panel never goes completely empty in practice). */
+  private togglePortfolioProject(blockId: string, projectId: string): void {
+    const current = this.portfolioOpenProjects.get(blockId);
+    if (current === projectId) {
+      this.portfolioOpenProjects.delete(blockId);
+    } else {
+      this.portfolioOpenProjects.set(blockId, projectId);
+    }
+    this.applyPortfolioOpenState();
+  }
+
+  private addPortfolioProject(blockId: string): void {
+    const newId = crypto.randomUUID();
+    // Open the freshly-added project so the user starts editing it
+    // immediately. Captured BEFORE mutateDraft because applyPortfolioOpenState
+    // (called after re-render) reads from the map.
+    this.portfolioOpenProjects.set(blockId, newId);
+    this.mutateDraft((page) => {
+      const block = findBlockInPage(page, blockId)?.block;
+      if (block?.type !== 'portfolio') return;
+      block.projects.push({ id: newId, title: '', screenshots: [] });
+    });
+  }
+
+  private deletePortfolioProject(blockId: string, projectId: string): void {
+    if (this.portfolioOpenProjects.get(blockId) === projectId) {
+      this.portfolioOpenProjects.delete(blockId);
+    }
+    this.mutateDraft((page) => {
+      const block = findBlockInPage(page, blockId)?.block;
+      if (block?.type !== 'portfolio') return;
+      block.projects = block.projects.filter(p => p.id !== projectId);
+    });
+  }
+
+  private movePortfolioProject(blockId: string, projectId: string, delta: -1 | 1): void {
+    this.mutateDraft((page) => {
+      const block = findBlockInPage(page, blockId)?.block;
+      if (block?.type !== 'portfolio') return;
+      const i = block.projects.findIndex(p => p.id === projectId);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= block.projects.length) return;
+      const tmp = block.projects[i]!;
+      block.projects[i] = block.projects[j]!;
+      block.projects[j] = tmp;
+    });
+  }
+
+  private deletePortfolioShot(blockId: string, projectId: string, shotIdx: number): void {
+    this.mutateDraft((page) => {
+      const block = findBlockInPage(page, blockId)?.block;
+      if (block?.type !== 'portfolio') return;
+      const project = block.projects.find(p => p.id === projectId);
+      project?.screenshots.splice(shotIdx, 1);
+    });
+  }
+
+  private movePortfolioShot(blockId: string, projectId: string, shotIdx: number, delta: -1 | 1): void {
+    this.mutateDraft((page) => {
+      const block = findBlockInPage(page, blockId)?.block;
+      if (block?.type !== 'portfolio') return;
+      const project = block.projects.find(p => p.id === projectId);
+      if (!project) return;
+      const j = shotIdx + delta;
+      if (j < 0 || j >= project.screenshots.length) return;
+      const tmp = project.screenshots[shotIdx]!;
+      project.screenshots[shotIdx] = project.screenshots[j]!;
+      project.screenshots[j] = tmp;
+    });
+  }
+
+  private triggerPortfolioShotUpload(blockId: string, projectId: string): void {
+    const sel = `[data-block-id="${blockId}"][data-project-id="${projectId}"][data-portfolio-shot-files]`;
+    const fileInput = this.container.querySelector(sel) as HTMLInputElement | null;
+    fileInput?.click();
+  }
+
+  private async handlePortfolioShotUpload(blockId: string, projectId: string, files: File[]): Promise<void> {
+    const trigger = this.container.querySelector(
+      `[data-block-id="${blockId}"][data-project-id="${projectId}"][data-action="portfolio-shot-upload"]`,
+    ) as HTMLButtonElement | null;
+    await handleMultiMediaUpload(
+      trigger,
+      files,
+      (urls) => this.mutateDraft((page) => {
+        const block = findBlockInPage(page, blockId)?.block;
+        if (block?.type !== 'portfolio') return;
+        const project = block.projects.find(p => p.id === projectId);
+        project?.screenshots.push(...urls);
+      }),
+      { mimePrefix: 'image/', rejectLabel: 'Please select image files' },
+    );
   }
 }

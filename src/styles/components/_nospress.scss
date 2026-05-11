@@ -717,6 +717,354 @@
   }
 }
 
+// Portfolio — paginated grid of project cards with click-to-expand
+// inline screenshot carousel. Layout:
+//   .nospress-block-portfolio                      ← wrapper (block root)
+//     .nospress-block-portfolio__grid              ← responsive 4/2/1 grid
+//       .nospress-block-portfolio__card            ← collapsed = 1 cell;
+//         .__card-trigger                          //   expanded = full row
+//           .__hero
+//           .__card-meta { .__title .__count }
+//         .__expanded { .__close, .__carousel, .__dots, .__body }
+//     .nospress-block-portfolio__pagination        ← page-buttons + »
+//
+// The carousel is CSS scroll-snap; dot-update is JS in portfolioMount.
+// Page-visibility is driven by `data-current-page` on the grid + a CSS
+// attribute-selector that hides `[data-page]` rows that don't match.
+.nospress-block-portfolio {
+  margin: $gap * 2 0;
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: $gap;
+
+    @include tablet-up {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    @media (min-width: 1024px) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+
+  // Per-page filtering — the grid carries `data-current-page="N"` and
+  // each card carries `data-page="<page-idx>"`. CSS hides everything
+  // that doesn't match. No JS-driven display toggles.
+  @for $p from 0 through 9 {
+    &__grid[data-current-page="#{$p}"] .nospress-block-portfolio__card:not([data-page="#{$p}"]) {
+      display: none;
+    }
+  }
+
+  &__card {
+    position: relative;
+    border-radius: $radius-xl;
+    overflow: hidden;
+    background: var(--color-2);
+    transition: $transition-colors;
+
+    // Expand-in-place: when a card is open, it spans every column of the
+    // grid row it sits in. Following cards reflow with the standard CSS
+    // grid auto-placement.
+    &.is-expanded {
+      grid-column: 1 / -1;
+      background: var(--color-1);
+    }
+  }
+
+  &__card-trigger {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-5);
+    text-align: left;
+    cursor: pointer;
+
+    &:hover .nospress-block-portfolio__hero {
+      transform: scale(1.03);
+    }
+  }
+
+  &__hero {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+
+    &--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: $text-alpha-medium;
+      background: var(--color-1);
+    }
+  }
+
+  &__card-meta {
+    padding: calc($gap / 2) $gap;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 4);
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-5);
+  }
+
+  &__count {
+    @extend %small;
+    color: $text-alpha-medium;
+  }
+
+  &__date {
+    @extend %small;
+    color: $text-alpha-medium;
+  }
+
+  &__expanded {
+    padding: $gap;
+    position: relative;
+
+    &[hidden] { display: none; }
+  }
+
+  &__close {
+    position: absolute;
+    top: calc($gap / 2);
+    right: calc($gap / 2);
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-2);
+    color: var(--color-5);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+
+    &:hover { background: var(--color-3); }
+  }
+
+  &__carousel {
+    display: flex;
+    gap: $gap;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: thin;
+    padding-bottom: calc($gap / 2);
+  }
+
+  &__slide {
+    flex: 0 0 100%;
+    scroll-snap-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+
+    @include tablet-up {
+      flex: 0 0 70%;
+    }
+    @media (min-width: 1024px) {
+      flex: 0 0 60%;
+    }
+
+    img {
+      width: 100%;
+      max-height: 70vh;
+      object-fit: contain;
+      border-radius: $radius-xl;
+      cursor: zoom-in;
+    }
+  }
+
+  &__dots {
+    display: flex;
+    justify-content: center;
+    gap: calc($gap / 2);
+    margin-top: calc($gap / 2);
+  }
+
+  &__dot {
+    width: 10px;
+    height: 10px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--color-3);
+    cursor: pointer;
+    transition: $transition-colors;
+
+    &.is-active { background: var(--color-4); }
+  }
+
+  &__body {
+    margin-top: $gap;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+    align-items: flex-start;
+  }
+
+  &__desc {
+    margin: 0;
+    color: var(--color-5);
+  }
+
+  &__pagination {
+    margin-top: $gap;
+    display: flex;
+    justify-content: center;
+    gap: calc($gap / 4);
+  }
+
+  &__page-btn {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 calc($gap / 2);
+    border: 1px solid var(--color-3);
+    border-radius: $radius-pill;
+    background: transparent;
+    color: var(--color-5);
+    cursor: pointer;
+    transition: $transition-colors;
+
+    &:hover { background: var(--color-2); }
+    &.is-active {
+      background: var(--color-4);
+      color: var(--color-1);
+      border-color: var(--color-4);
+    }
+  }
+
+  // ── Editor-side styling ──────────────────────────────────────────────
+  // Flex-column with `flex-start` so the "+ Add project" button (and any
+  // future single trigger here) sits at its natural width instead of
+  // stretching to fill the editor column.
+  &__edit {
+    display: flex;
+    flex-direction: column;
+    gap: $gap;
+    align-items: flex-start;
+  }
+
+  // `__projects` and the inner project cards stretch to the editor's
+  // full width — only the action triggers below the list stay compact.
+  &__projects {
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  // Single-open accordion: each project is a collapsible section. The
+  // header (toggle button + reorder/delete actions) is always visible;
+  // the body shows only when the section carries `.is-open`. State is
+  // tracked per-block in NospressView (`portfolioOpenProjects` map).
+  &__project {
+    border: 1px solid var(--color-2);
+    border-radius: $radius-xl;
+    overflow: hidden;
+  }
+
+  &__project-header {
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 4);
+    padding: calc($gap / 2) $gap;
+  }
+
+  &__project-toggle {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-5);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  &__project-caret {
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+
+  &__project.is-open &__project-caret {
+    transform: rotate(180deg);
+  }
+
+  &__project-index {
+    @extend %small;
+    color: $text-alpha-medium;
+    flex-shrink: 0;
+  }
+
+  &__project-title-preview {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--color-5);
+  }
+
+  &__project-actions {
+    display: flex;
+    gap: calc($gap / 4);
+    flex-shrink: 0;
+  }
+
+  // Hidden by default; only revealed when the parent carries `.is-open`.
+  &__project-body {
+    display: none;
+    padding: 0 $gap $gap;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  &__project.is-open &__project-body {
+    display: flex;
+  }
+
+  &__shots {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 4);
+  }
+
+  &__shot-row {
+    display: grid;
+    grid-template-columns: 1fr 48px auto auto auto;
+    gap: calc($gap / 4);
+    align-items: center;
+  }
+
+  &__shot-thumb {
+    width: 48px;
+    height: 32px;
+    object-fit: cover;
+    border-radius: calc($gap / 4);
+  }
+
+  &__shots-actions {
+    display: flex;
+    gap: calc($gap / 4);
+    margin-top: calc($gap / 4);
+  }
+}
+
+
 // Weblog — owner timeline rendered via NoteUI with a single load-more bar
 .nospress-block-weblog {
   margin: $gap * 2 0;

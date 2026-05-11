@@ -42,7 +42,30 @@ export type Block =
   | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
-  | { id: string; type: 'nav-menu'; menuId: string; horizontal?: boolean; alignment?: 'left' | 'center' | 'right'; hamburgerBreakpoints?: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs };
+  | { id: string; type: 'nav-menu'; menuId: string; horizontal?: boolean; alignment?: 'left' | 'center' | 'right'; hamburgerBreakpoints?: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'portfolio'; projects: PortfolioProject[]; perPage?: number; sortOrder?: PortfolioSortOrder; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs };
+
+/** Project sort modes:
+ *   - `manual`  → use the drag-order the editor maintains in `projects[]`
+ *   - `newest`  → newest `date` first (missing dates sink to the end)
+ *   - `oldest`  → oldest `date` first (missing dates sink to the end)
+ *  Default = `'manual'` so existing portfolios render unchanged. */
+export type PortfolioSortOrder = 'manual' | 'newest' | 'oldest';
+
+/** One project entry inside a `portfolio` block. `screenshots[0]` is the
+ *  hero shown in the collapsed card; clicking the card expands it inline
+ *  to reveal the full screenshot list in a horizontal carousel.
+ *  `id` is generated client-side (UUID) so editor reorders + per-project
+ *  expand state survive across re-renders. `date` is ISO (`YYYY-MM` or
+ *  `YYYY-MM-DD`) — sortable as a plain string and locale-agnostic. */
+export interface PortfolioProject {
+  id: string;
+  title: string;
+  description?: string;
+  link?: string;
+  date?: string;
+  screenshots: string[];
+}
 
 /** Allowed semantic block-level HTML elements for the generic `div` block. */
 export const DIV_TAGS = ['div', 'header', 'footer', 'main', 'section', 'article', 'aside', 'nav', 'fieldset'] as const;
@@ -99,6 +122,7 @@ export function createBlock(type: BlockType): Block {
     case 'weblog':          return { id, type, hashtags: [] };
     case 'div':             return { id, type, tag: 'div', children: [] };
     case 'nav-menu':        return { id, type, menuId: PRIMARY_MENU_ID };
+    case 'portfolio':       return { id, type, projects: [] };
   }
 }
 

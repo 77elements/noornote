@@ -32,7 +32,9 @@ export function renderGallery(block: Extract<Block, { type: 'gallery' }>, editab
     const addRow = `
       <div class="nospress-block-gallery__add-row">
         <button type="button" class="btn btn--passive btn--mini" data-block-id="${block.id}" data-action="add-gallery-url">+ Add URL</button>
-        <button type="button" class="btn btn--passive btn--mini" data-block-id="${block.id}" data-action="upload-gallery-images">↑ Upload images</button>
+        <button type="button" class="btn-icon" data-block-id="${block.id}" data-action="upload-gallery-images" title="Upload images" aria-label="Upload images">
+          <svg width="20" height="20"><use href="#icon-upload"/></svg>
+        </button>
         <input type="file" accept="image/*" multiple data-block-id="${block.id}" data-gallery-files style="display: none;" />
       </div>
     `;
