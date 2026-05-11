@@ -225,6 +225,11 @@ function renderPortfolioReadonly(block: Extract<Block, { type: 'portfolio' }>): 
   const total = projects.length;
   const pageCount = Math.max(1, Math.ceil(total / perPage));
 
+  // Background redirection to cards happens centrally in
+  // `buildBlockPortfolioCardCss` (called by the page-level breakpoint
+  // walker). The wrapper itself never paints background because
+  // `WRAPPER_SKIP_PROPS.portfolio` filters it out of `schemaFor`.
+
   // Cards: render ALL of them with a `data-page` index. The mount script
   // shows / hides them per page via a class on the wrapper — avoids a
   // re-render round-trip on page click.
@@ -266,17 +271,23 @@ function renderPortfolioReadonly(block: Extract<Block, { type: 'portfolio' }>): 
 
 function renderReadonlyCard(project: PortfolioProject, pageIdx: number): string {
   const hero = sanitizeUrl(project.screenshots[0] ?? '');
-  const heroHtml = hero
-    ? `<img class="nospress-block-portfolio__hero" src="${escapeHtmlAttr(hero)}" alt="${escapeHtmlAttr(project.title)}" loading="lazy" />`
-    : `<div class="nospress-block-portfolio__hero nospress-block-portfolio__hero--empty">No image</div>`;
+  // `.nn-card__media` brings a fixed 180px height + object-fit: cover —
+  // consistent with how the rest of the app renders card thumbnails
+  // (articles carousel, bookmarks, listings).
+  const mediaHtml = hero
+    ? `<div class="nn-card__media"><img src="${escapeHtmlAttr(hero)}" alt="${escapeHtmlAttr(project.title)}" loading="lazy" /></div>`
+    : `<div class="nn-card__media nn-card__media--empty">No image</div>`;
 
   const shotCount = project.screenshots.length;
-  const countBadge = shotCount > 1
-    ? `<span class="nospress-block-portfolio__count">${shotCount} screenshots</span>`
-    : '';
+  const countLabel = shotCount > 1 ? `${shotCount} screenshots` : '';
   const dateLabel = formatProjectDate(project.date);
-  const dateHtml = dateLabel
-    ? `<span class="nospress-block-portfolio__date">${escapeHtml(dateLabel)}</span>`
+  // Use the `.nn-card .meta` molecule slot — separator dot ("·") joins
+  // date and screenshot count, same pattern as ArticlesCarousel cards.
+  const metaParts: string[] = [];
+  if (dateLabel) metaParts.push(`<span>${escapeHtml(dateLabel)}</span>`);
+  if (countLabel) metaParts.push(`<span>${escapeHtml(countLabel)}</span>`);
+  const metaHtml = metaParts.length > 0
+    ? `<div class="meta">${metaParts.join('<span>·</span>')}</div>`
     : '';
 
   // Expanded body — rendered ALWAYS but hidden via SCSS until the
@@ -309,13 +320,12 @@ function renderReadonlyCard(project: PortfolioProject, pageIdx: number): string 
     : '';
 
   return `
-    <article class="nospress-block-portfolio__card" data-portfolio-card data-project-id="${project.id}" data-page="${pageIdx}">
+    <article class="nn-card nospress-block-portfolio__card" data-portfolio-card data-project-id="${project.id}" data-page="${pageIdx}">
       <button type="button" class="nospress-block-portfolio__card-trigger" data-portfolio-card-toggle aria-expanded="false">
-        ${heroHtml}
-        <div class="nospress-block-portfolio__card-meta">
-          <h3 class="nospress-block-portfolio__title">${escapeHtml(project.title || 'Untitled project')}</h3>
-          ${dateHtml}
-          ${countBadge}
+        ${mediaHtml}
+        <div class="nn-card__content">
+          <h3>${escapeHtml(project.title || 'Untitled project')}</h3>
+          ${metaHtml}
         </div>
       </button>
       <div class="nospress-block-portfolio__expanded" data-portfolio-expanded hidden>

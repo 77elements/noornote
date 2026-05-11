@@ -354,15 +354,30 @@ export function getDefaultDisplayFor(scope: string, fieldPrefix: string): string
 // they need the same disambiguator-stripping behaviour.
 export { matrixKey };
 
+/** Per-scope set of properties that the Properties panel SHOWS (so the
+ *  user can edit them) but the wrapper-emit pipeline SKIPS (so they
+ *  don't paint the block's outer element). Used today by the `portfolio`
+ *  block — background should colour each card, not the wrapper that
+ *  also contains the pagination bar. The matching per-element CSS is
+ *  emitted by a dedicated builder in `breakpointCss.ts`. */
+export const WRAPPER_SKIP_PROPS: Record<string, Set<PropertyKey>> = {
+  portfolio: new Set<PropertyKey>(['background']),
+};
+
 /** Resolve a runtime scope ('page', 'heading:<uuid>', …) to a flat
  *  schema list. Used by `buildInlineStyle` / `buildBlockBreakpointCss` /
  *  `buildImportantInlineStyle` — these don't care about grouping, only
  *  the per-property CSS mapping. Pair markers are flattened here so the
- *  CSS-emit pipeline iterates a uniform list. */
+ *  CSS-emit pipeline iterates a uniform list. Properties listed in
+ *  `WRAPPER_SKIP_PROPS[scope]` are removed so the wrapper inline style
+ *  + per-BP wrapper CSS never carry them — they reach the public page
+ *  through scope-specific builders instead. */
 export function schemaFor(scope: string): PropertyEntry[] {
-  return groupedSchemaFor(scope).flatMap(g =>
+  const skip = WRAPPER_SKIP_PROPS[matrixKey(scope)];
+  const flat = groupedSchemaFor(scope).flatMap(g =>
     g.entries.flatMap(e => (Array.isArray(e) ? e : [e])),
   );
+  return skip ? flat.filter(e => !skip.has(e.key as PropertyKey)) : flat;
 }
 
 /** Resolve a runtime scope to its grouped schema. Used by

@@ -59,6 +59,7 @@ export {
   buildBlockArticlesListCss,
   buildBlockNavMenuDesktopCss,
   buildBlockLinksCss,
+  buildBlockPortfolioCardCss,
   buildPageBreakpointCss,
 } from './breakpointCss';
 

@@ -312,6 +312,42 @@ export function buildBlockLinksCss(
   return parts.join('\n');
 }
 
+/** Portfolio card background — `block.style.background` is intentionally
+ *  stripped from the wrapper's inline / per-BP CSS (see
+ *  `WRAPPER_SKIP_PROPS` in catalog.ts) and re-emitted here as a
+ *  card-scoped rule. Per-BP overrides ride `@media` + `!important` like
+ *  the other sub-scope builders. */
+export function buildBlockPortfolioCardCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'portfolio') return '';
+  const sel = `[data-styled-block-id="${block.id}"] .nospress-block-portfolio__card`;
+  const parts: string[] = [];
+
+  const def = block.style?.background;
+  if (def) {
+    const v = sanitizeStyleValue(def);
+    if (v) parts.push(`${sel} { background: ${v}; }`);
+  }
+
+  if (block.breakpointStyles) {
+    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
+    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+      const bg = style.background;
+      if (!bg) continue;
+      const bp = byName.get(bpName);
+      if (!bp) continue;
+      const mq = buildMediaQuery(bp);
+      if (!mq) continue;
+      const v = sanitizeStyleValue(bg);
+      if (v) parts.push(`@media ${mq} { ${sel} { background: ${v} !important; } }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
 /** Compose a single CSS `@media (...)` clause for a user-defined breakpoint. */
 function buildMediaQuery(bp: { type: 'min' | 'max' | 'between'; value: string; value2?: string }): string | null {
   const v1 = sanitizeStyleValue(bp.value);
@@ -352,6 +388,8 @@ export function buildPageBreakpointCss(
         if (bookmarkFolderCss) out.push(bookmarkFolderCss);
         const articlesListCss = buildBlockArticlesListCss(blockTyped, breakpoints);
         if (articlesListCss) out.push(articlesListCss);
+        const portfolioCardCss = buildBlockPortfolioCardCss(blockTyped, breakpoints);
+        if (portfolioCardCss) out.push(portfolioCardCss);
       }
       // Recurse into containers
       if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {

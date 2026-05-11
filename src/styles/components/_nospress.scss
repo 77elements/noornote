@@ -756,16 +756,15 @@
     }
   }
 
+  // Card extends `.nn-card` molecule — background, border-radius, hover
+  // lift, and the `__media` / `__content` slot styles all come from
+  // there. Portfolio only adds expand-state + ensures the trigger
+  // button is a full-bleed click target instead of a button-sized box.
   &__card {
-    position: relative;
-    border-radius: $radius-xl;
-    overflow: hidden;
-    background: var(--color-2);
-    transition: $transition-colors;
-
-    // Expand-in-place: when a card is open, it spans every column of the
-    // grid row it sits in. Following cards reflow with the standard CSS
-    // grid auto-placement.
+    // When expanded, the card claims the entire grid row so the
+    // carousel + description have full width. `.nn-card`'s default
+    // background gets overridden so the expanded body reads as a
+    // distinct surface.
     &.is-expanded {
       grid-column: 1 / -1;
       background: var(--color-1);
@@ -778,53 +777,9 @@
     padding: 0;
     border: none;
     background: transparent;
-    color: var(--color-5);
+    color: inherit;
     text-align: left;
     cursor: pointer;
-
-    &:hover .nospress-block-portfolio__hero {
-      transform: scale(1.03);
-    }
-  }
-
-  &__hero {
-    display: block;
-    width: 100%;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-
-    &--empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: $text-alpha-medium;
-      background: var(--color-1);
-    }
-  }
-
-  &__card-meta {
-    padding: calc($gap / 2) $gap;
-    display: flex;
-    flex-direction: column;
-    gap: calc($gap / 4);
-  }
-
-  &__title {
-    margin: 0;
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-5);
-  }
-
-  &__count {
-    @extend %small;
-    color: $text-alpha-medium;
-  }
-
-  &__date {
-    @extend %small;
-    color: $text-alpha-medium;
   }
 
   &__expanded {
