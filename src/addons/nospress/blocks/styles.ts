@@ -690,6 +690,16 @@ export function buildInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle |
     } else if (entry.kind === 'quad') {
       const box = style[entry.key];
       if (!box) continue;
+      // Special case: `border-color` shorthand requires <color>{1,4};
+      // filling missing sides with the literal `0` (the shorthand
+      // composer's default) makes the declaration invalid and the
+      // browser rejects the whole rule. Emit per-side
+      // `border-<side>-color` for set sides only; unset sides keep
+      // their inherited / currentColor default.
+      if (entry.key === 'borderColor') {
+        for (const side of QUAD_SIDES) push(`border-${side}-color`, box[side]);
+        continue;
+      }
       if (entry.cssShorthand) {
         const shorthand = composeQuadShorthand(box);
         if (shorthand) parts.push(`${entry.cssShorthand}: ${shorthand}`);
@@ -1412,6 +1422,13 @@ export function buildImportantInlineStyle(schema: PropertyEntry[], styleIn: Comm
     } else if (entry.kind === 'quad') {
       const box = style[entry.key];
       if (!box) continue;
+      // Same `border-color` per-side special case as buildInlineStyle:
+      // the shorthand requires <color>{1,4}; literal `0` filler is
+      // invalid and rejects the whole rule.
+      if (entry.key === 'borderColor') {
+        for (const side of QUAD_SIDES) push(`border-${side}-color`, box[side]);
+        continue;
+      }
       if (entry.cssShorthand) {
         const shorthand = composeQuadShorthand(box);
         if (shorthand) parts.push(`${entry.cssShorthand}: ${shorthand} !important`);
