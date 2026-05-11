@@ -102,6 +102,28 @@
     }
   }
 
+  // Match the Move trigger to the Delete button's footprint so the two icons
+  // line up at equal height. Keeps the btn--secondary pill border (matches
+  // the Bookmark cards' Move trigger look).
+  .actions > span.move > .move-dropdown__trigger {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: none;
+    color: var(--color-5);
+    opacity: 0.6;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: var(--color-2);
+      opacity: 1;
+    }
+  }
+
   .private-badge {
     position: absolute;
     top: calc($gap / 2);
