@@ -151,9 +151,18 @@ export class Router {
       this.saveHistory();
     }
 
-    // Update browser history (only if path changed)
+    // Update browser history (only if path changed).
     if (path !== this.currentPath) {
-      window.history.pushState({}, '', path);
+      // The browser may have already navigated to this URL (e.g. on boot
+      // after a full page-load via `window.location.href`). Pushing
+      // again would create a duplicate history entry, so the user would
+      // need TWO Back-button presses to leave. Detect and use
+      // replaceState in that case.
+      if (window.location.pathname === path) {
+        window.history.replaceState({}, '', path);
+      } else {
+        window.history.pushState({}, '', path);
+      }
     }
 
     // Persist current URL for reload

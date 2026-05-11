@@ -153,12 +153,20 @@ export class ProfileArticlesCarousel {
       title: 'Articles',
       cards,
       onCardClick: (_index, data) => {
-        if (data.naddr) {
-          const route = data.isDraft === 'true'
-            ? `/edit-article/${data.naddr}`
-            : `/article/${data.naddr}`;
-          Router.getInstance().navigate(route);
+        if (!data.naddr) return;
+        const route = data.isDraft === 'true'
+          ? `/edit-article/${data.naddr}`
+          : `/article/${data.naddr}`;
+        // Public NosPress page has no MainLayout (setupUI is skipped),
+        // so the in-app `Router.navigate` has no mount target. Full
+        // page-load reboots through App.ts → setupUI → article view,
+        // works for logged-in AND logged-out visitors (`/article/`
+        // route has `requiresAuth: false`).
+        if (document.documentElement.classList.contains('layout--public')) {
+          window.location.href = route;
+          return;
         }
+        Router.getInstance().navigate(route);
       }
     });
 
