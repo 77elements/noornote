@@ -7,6 +7,12 @@ import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteHeader } from '../NoteHeader';
 import { InteractionStatusLine } from '../InteractionStatusLine';
 import { parseFollowPackEvent } from '../../../helpers/parseFollowPack';
+import {
+  computeFollowPackDiffLines,
+  getFollowPackSnapshot,
+  setFollowPackSnapshot,
+  snapshotFromPack,
+} from '../../../helpers/followPackDiff';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { Router } from '../../../services/Router';
@@ -39,6 +45,24 @@ export class FollowPackRenderer {
       showMenu: true
     });
     element.appendChild(noteHeader.getElement());
+
+    const hintLines = buildHintLines(pack);
+    if (hintLines.length > 0) {
+      const hint = document.createElement('div');
+      hint.className = 'follow-pack-hint';
+      if (hintLines.length === 1) {
+        hint.textContent = hintLines[0]!;
+      } else {
+        const ul = document.createElement('ul');
+        hintLines.forEach(line => {
+          const li = document.createElement('li');
+          li.textContent = line;
+          ul.appendChild(li);
+        });
+        hint.appendChild(ul);
+      }
+      element.appendChild(hint);
+    }
 
     const card = document.createElement('div');
     card.className = 'nn-card';
@@ -85,4 +109,22 @@ export class FollowPackRenderer {
 
     return element;
   }
+}
+
+function buildHintLines(pack: ReturnType<typeof parseFollowPackEvent>): string[] {
+  if (!pack.authorPubkey || !pack.id) return [];
+
+  const prev = getFollowPackSnapshot(pack.authorPubkey, pack.id);
+  const fallback = ['Follow pack was updated'];
+
+  if (!prev) {
+    setFollowPackSnapshot(pack.authorPubkey, pack.id, snapshotFromPack(pack));
+    return fallback;
+  }
+
+  if (pack.createdAt <= prev.createdAt) return [];
+
+  const diff = computeFollowPackDiffLines(prev, pack);
+  setFollowPackSnapshot(pack.authorPubkey, pack.id, snapshotFromPack(pack));
+  return diff.length > 0 ? diff : fallback;
 }
