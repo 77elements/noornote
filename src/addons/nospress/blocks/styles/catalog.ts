@@ -209,6 +209,21 @@ export const PORTFOLIO_GROUPS: Record<PortfolioKey, PropertyGroup[]> = {
     { key: 'typography', label: 'Icon color', props: ['color'] },
     { key: 'background', label: 'Background',  props: ['background'] },
   ],
+  pageBtn: [
+    { key: 'typography', label: 'Color',        props: ['color'] },
+    { key: 'background', label: 'Background',   props: ['background'] },
+    { key: 'border',     label: 'Border color', props: ['borderColor'] },
+  ],
+  pageBtnHover: [
+    { key: 'typography', label: 'Color',        props: ['color'] },
+    { key: 'background', label: 'Background',   props: ['background'] },
+    { key: 'border',     label: 'Border color', props: ['borderColor'] },
+  ],
+  pageBtnActive: [
+    { key: 'typography', label: 'Color',        props: ['color'] },
+    { key: 'background', label: 'Background',   props: ['background'] },
+    { key: 'border',     label: 'Border color', props: ['borderColor'] },
+  ],
 };
 
 /** Composition shorthand for media/sub-component containers — full

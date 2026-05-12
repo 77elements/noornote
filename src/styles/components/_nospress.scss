@@ -1098,6 +1098,31 @@
   }
 }
 
+// Paste-button rendered inside an empty column/div placeholder when the
+// clipboard holds a block. Subtle pill that sits beside the
+// "Click to add blocks here" hint; click pastes the clipboard block
+// straight into the slot, bypassing the cursor step.
+.nospress-block-columns__paste,
+.nospress-block-div__paste {
+  display: inline-block;
+  margin-left: calc($gap / 2);
+  padding: calc($gap / 4) calc($gap / 2);
+  border: 1px solid $color-3;
+  border-radius: $radius-pill;
+  background: transparent;
+  color: $color-5;
+  font-style: normal;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: $transition-colors;
+
+  &:hover {
+    background: $color-4;
+    border-color: $color-4;
+    color: $color-1;
+  }
+}
+
 // Inline trigger button on the editable columns block. Shows a small
 // preview of the current layout; click opens the preset-picker modal.
 .nospress-block-columns__layout-trigger {

@@ -126,6 +126,34 @@ export function createBlock(type: BlockType): Block {
   }
 }
 
+/**
+ * Deep-clone a block, regenerating every `id` field encountered along the
+ * way (the root block + every nested block inside `columns.content[][]`
+ * and `div.children[]`). Used by the editor's copy/paste action so a
+ * pasted block never collides with the original's DOM keys when both
+ * sit on the same page.
+ *
+ * Sub-arrays like `portfolio.projects[*].id` carry their own UUIDs for
+ * editor reorder + per-project expand state, which must also be reset
+ * — otherwise two portfolios would map to the same expand-state slot.
+ */
+export function cloneBlockWithFreshIds(block: Block): Block {
+  const copy = JSON.parse(JSON.stringify(block)) as Block;
+  resetBlockIds(copy);
+  return copy;
+}
+
+function resetBlockIds(block: Block): void {
+  block.id = newId();
+  if (block.type === 'columns') {
+    for (const col of block.content) for (const b of col) resetBlockIds(b);
+  } else if (block.type === 'div') {
+    for (const b of block.children) resetBlockIds(b);
+  } else if (block.type === 'portfolio') {
+    for (const p of block.projects) p.id = newId();
+  }
+}
+
 /** Where a block sits in the page tree. `container` is undefined when the
  *  block lives directly on the page; otherwise it points back at the owning
  *  container so callers can derive the cursor scope without re-walking. */

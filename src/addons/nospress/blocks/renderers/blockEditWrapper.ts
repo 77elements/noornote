@@ -14,6 +14,9 @@ export function wrapEditable(blockId: string, type: string, contentHtml: string,
         <span class="nospress-block-edit__type-badge">${type}</span>
         <div class="nospress-block-edit__actions">
           ${extraButtons}
+          <button type="button" class="nospress-block-edit__btn" data-block-id="${blockId}" data-action="copy-block" title="Copy block (with properties)" aria-label="Copy block">
+            <svg width="14" height="14"><use href="#icon-copy"/></svg>
+          </button>
           <button type="button" class="nospress-block-edit__btn" data-block-id="${blockId}" data-action="cursor-after" title="Move cursor below this block" aria-label="Move cursor below">
             <svg width="14" height="14"><use href="#icon-plus"/></svg>
           </button>

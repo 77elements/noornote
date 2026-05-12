@@ -94,6 +94,9 @@ const ARTICLES_LIST_SELECTORS: Record<ArticlesListKey, string> = {
 const PORTFOLIO_SCHEMAS: Record<PortfolioKey, PropertyEntry[]> = {
   closeBtn:      PORTFOLIO_GROUPS.closeBtn.flatMap(g => flattenGroupProps(g.props)),
   closeBtnHover: PORTFOLIO_GROUPS.closeBtnHover.flatMap(g => flattenGroupProps(g.props)),
+  pageBtn:       PORTFOLIO_GROUPS.pageBtn.flatMap(g => flattenGroupProps(g.props)),
+  pageBtnHover:  PORTFOLIO_GROUPS.pageBtnHover.flatMap(g => flattenGroupProps(g.props)),
+  pageBtnActive: PORTFOLIO_GROUPS.pageBtnActive.flatMap(g => flattenGroupProps(g.props)),
 };
 
 /** CSS selector suffixes for the portfolio sub-scope keys. The close
@@ -102,6 +105,9 @@ const PORTFOLIO_SCHEMAS: Record<PortfolioKey, PropertyEntry[]> = {
 const PORTFOLIO_SELECTORS: Record<PortfolioKey, string> = {
   closeBtn:      ' .nospress-block-portfolio__close',
   closeBtnHover: ' .nospress-block-portfolio__close:hover',
+  pageBtn:       ' .nospress-block-portfolio__page-btn',
+  pageBtnHover:  ' .nospress-block-portfolio__page-btn:hover',
+  pageBtnActive: ' .nospress-block-portfolio__page-btn.is-active',
 };
 
 /** Per-key CSS selector suffixes for the nav-menu desktop sub-scope.

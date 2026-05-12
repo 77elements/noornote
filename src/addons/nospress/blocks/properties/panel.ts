@@ -664,6 +664,9 @@ function renderArticlesListSections(opts: RenderPropertyPanelOptions): string {
 const PORTFOLIO_LABELS: Record<PortfolioKey, string> = {
   closeBtn:      'Close button',
   closeBtnHover: 'Close button (hover)',
+  pageBtn:       'Pagination button',
+  pageBtnHover:  'Pagination button (hover)',
+  pageBtnActive: 'Pagination button (active)',
 };
 
 function renderPortfolioSections(opts: RenderPropertyPanelOptions): string {

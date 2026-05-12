@@ -39,13 +39,14 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
 import { EventBus } from '../../services/EventBus';
 import { FullscreenOverlay } from '../../components/ui/FullscreenOverlay';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
-import { createBlock, findBlockInPage, COLUMN_LAYOUT_PRESETS, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
+import { cloneBlockWithFreshIds, createBlock, findBlockInPage, COLUMN_LAYOUT_PRESETS, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
 import {
   renderPropertyPanel,
   resolvePaletteVars,
@@ -3174,9 +3175,12 @@ export class NospressView extends View {
           && cur.colIndex === colIndex;
 
         if (colBlocks.length === 0) {
-          return cursorHere
-            ? slot
-            : `<div class="nospress-block-columns__placeholder" data-columns-placeholder data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here</div>`;
+          if (cursorHere) return slot;
+          const clip = this.getClipboardBlock();
+          const pasteHint = clip
+            ? `<button type="button" class="nospress-block-columns__paste" data-paste-here data-paste-target="column" data-columns-block-id="${block.id}" data-col-index="${colIndex}">Paste ${clip.type}</button>`
+            : '';
+          return `<div class="nospress-block-columns__placeholder" data-columns-placeholder data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here${pasteHint}</div>`;
         }
 
         const inner: string[] = [];
@@ -3209,9 +3213,12 @@ export class NospressView extends View {
       editable: true,
       childrenInner: () => {
         if (block.children.length === 0) {
-          return cursorHere
-            ? slot
-            : `<div class="nospress-block-div__placeholder" data-div-placeholder data-div-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here</div>`;
+          if (cursorHere) return slot;
+          const clip = this.getClipboardBlock();
+          const pasteHint = clip
+            ? `<button type="button" class="nospress-block-div__paste" data-paste-here data-paste-target="div" data-div-block-id="${block.id}">Paste ${clip.type}</button>`
+            : '';
+          return `<div class="nospress-block-div__placeholder" data-div-placeholder data-div-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here${pasteHint}</div>`;
         }
 
         const inner: string[] = [];
@@ -3423,7 +3430,9 @@ export class NospressView extends View {
     this.cursorRow = new CursorRow({
       onTextEntered: (text) => this.handleCursorText(text),
       onBlockTypeChosen: (type) => this.handleCursorBlockType(type),
-      getRecentBlockTypes: () => this.recentBlockTypes
+      getRecentBlockTypes: () => this.recentBlockTypes,
+      getClipboardBlockType: () => this.getClipboardBlock()?.type ?? null,
+      onPasteClipboard: () => this.pasteClipboardAtCursor()
     });
     slot.appendChild(this.cursorRow.getElement());
   }
@@ -3460,6 +3469,74 @@ export class NospressView extends View {
 
     await this.rerenderEditable();
     this.flashCursorRow();
+  }
+
+  // ── Block clipboard (copy/paste with properties) ──────────────────────
+  //
+  // The clipboard lives in PerAccountLocalStorage so it persists across
+  // page-switches and editor sessions on the same account. One slot,
+  // overwritten by each copy; survives until the next copy or until the
+  // user clears it via a future explicit UI. Browser + Electron parity
+  // is automatic (both back PerAccountLocalStorage with the same
+  // localStorage API).
+
+  private getClipboardBlock(): Block | null {
+    return PerAccountLocalStorage.getInstance().get<Block | null>(
+      StorageKeys.NOSPRESS_CLIPBOARD, null
+    );
+  }
+
+  private setClipboardBlock(block: Block | null): void {
+    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSPRESS_CLIPBOARD, block);
+  }
+
+  /** Copy a block (with all properties + nested children) into the
+   *  per-account clipboard. The stored snapshot keeps the original IDs;
+   *  fresh IDs are minted at paste time so multiple pastes never collide. */
+  private async copyBlock(blockId: string): Promise<void> {
+    const editSlug = this.currentEditSlug();
+    const current = this.listService.getDraftV2(editSlug)
+      ?? this.listService.getPublishedV2(editSlug)
+      ?? this.listService.getPageV2(editSlug);
+    const loc = findBlockInPage(current, blockId);
+    if (!loc) return;
+    // Deep-clone via JSON so the stored snapshot is decoupled from the
+    // live page tree — subsequent edits to the original block won't
+    // mutate the clipboard payload.
+    const snapshot = JSON.parse(JSON.stringify(loc.block)) as Block;
+    this.setClipboardBlock(snapshot);
+    ToastService.show(`Copied ${loc.block.type} block`, 'success');
+    await this.rerenderEditable();
+  }
+
+  /** Insert the clipboard block at the current cursor position with
+   *  freshly-minted IDs (recursively, for columns/div children + portfolio
+   *  project IDs). Clipboard stays filled — re-paste allowed. */
+  private pasteClipboardAtCursor(): void {
+    const stored = this.getClipboardBlock();
+    if (!stored) {
+      ToastService.show('Clipboard is empty', 'info');
+      return;
+    }
+    const fresh = cloneBlockWithFreshIds(stored);
+    this.insertBlockAtCursor(fresh, {});
+    this.bumpRecentBlockType(fresh.type);
+  }
+
+  /** Same as `pasteClipboardAtCursor` but targets an empty column slot
+   *  directly — used when the user clicks "Paste <type>" inside an empty
+   *  column placeholder. */
+  private async pasteClipboardInColumn(columnsBlockId: string, colIndex: number): Promise<void> {
+    if (!this.getClipboardBlock()) return;
+    this.cursor = { scope: 'column', columnsBlockId, colIndex, index: 0 };
+    this.pasteClipboardAtCursor();
+  }
+
+  /** Same as above for a div block's empty children slot. */
+  private async pasteClipboardInDiv(divBlockId: string): Promise<void> {
+    if (!this.getClipboardBlock()) return;
+    this.cursor = { scope: 'div', divBlockId, index: 0 };
+    this.pasteClipboardAtCursor();
   }
 
   /** Move cursor INTO an empty column. Triggered by clicking the column's
@@ -4179,6 +4256,7 @@ export class NospressView extends View {
 
       switch (action) {
         case 'delete':                 this.deleteBlock(blockId); break;
+        case 'copy-block':             void this.copyBlock(blockId); break;
         case 'move-up':                this.moveBlock(blockId, -1); break;
         case 'move-down':              this.moveBlock(blockId, +1); break;
         case 'cursor-after':           this.setCursorAfterBlock(blockId); break;
@@ -4218,6 +4296,24 @@ export class NospressView extends View {
     this.container.addEventListener('click', (e) => {
       if (!this.editMode) return;
       const target = e.target as HTMLElement;
+
+      // Paste button inside an empty column/div placeholder — direct
+      // paste, no cursor-into-slot step. Handled before the placeholder
+      // click so the click doesn't double-trigger.
+      const pasteBtn = target.closest('[data-paste-here]') as HTMLElement | null;
+      if (pasteBtn) {
+        e.stopPropagation();
+        const pasteTarget = pasteBtn.dataset.pasteTarget;
+        if (pasteTarget === 'column') {
+          const cbId = pasteBtn.dataset.columnsBlockId;
+          const colIdx = pasteBtn.dataset.colIndex !== undefined ? parseInt(pasteBtn.dataset.colIndex, 10) : -1;
+          if (cbId && colIdx >= 0) void this.pasteClipboardInColumn(cbId, colIdx);
+        } else if (pasteTarget === 'div') {
+          const dbId = pasteBtn.dataset.divBlockId;
+          if (dbId) void this.pasteClipboardInDiv(dbId);
+        }
+        return;
+      }
 
       // Click on an empty-column placeholder → put cursor in that column
       const ph = target.closest('[data-columns-placeholder]') as HTMLElement | null;

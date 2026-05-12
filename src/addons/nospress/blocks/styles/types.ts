@@ -214,11 +214,13 @@ export type BookmarkFolderKey = typeof BOOKMARK_FOLDER_KEYS[number];
 export const ARTICLES_LIST_KEYS = ['card', 'title', 'meta'] as const;
 export type ArticlesListKey = typeof ARTICLES_LIST_KEYS[number];
 
-/** Element keys covered by the portfolio sub-scope. Two slots for the
- *  close button at the top-right of the expanded card: `closeBtn` is
- *  the default state, `closeBtnHover` is the hover state. Each section
- *  exposes both `color` (icon) and `background` (circle fill). */
-export const PORTFOLIO_KEYS = ['closeBtn', 'closeBtnHover'] as const;
+/** Element keys covered by the portfolio sub-scope.
+ *  Close button (top-right of expanded card): `closeBtn` default state,
+ *  `closeBtnHover` hover state — each exposes color (icon) + background.
+ *  Pagination buttons (below the grid): `pageBtn` default state,
+ *  `pageBtnActive` `.is-active` state — each exposes color + background
+ *  + borderColor (quad). */
+export const PORTFOLIO_KEYS = ['closeBtn', 'closeBtnHover', 'pageBtn', 'pageBtnHover', 'pageBtnActive'] as const;
 export type PortfolioKey = typeof PORTFOLIO_KEYS[number];
 
 /** Block types that surface the link sub-scope in the Properties panel.
