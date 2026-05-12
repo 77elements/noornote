@@ -98,6 +98,16 @@ export interface RenderPropertyPanelOptions {
    *  Menu) to show a single-line title where the tabs would normally be.
    *  When set, `breakpointTabs` is ignored. */
   header?: string;
+  /** When set, overrides the schema resolved from `groupedSchemaFor(scope)`.
+   *  Used by multi-block selection to render only the intersection of all
+   *  selected blocks' schemas (the common-denominator property set). */
+  groupsOverride?: ResolvedPropertyGroup[];
+  /** Optional set of fully-qualified style field paths whose value differs
+   *  across the selected blocks. The input for any path in this set
+   *  renders with an empty value and a "(modified)" placeholder so the
+   *  user sees the inputs are "mixed". Writing into such a field will
+   *  overwrite the value on every selected block. */
+  mixedFields?: ReadonlySet<string>;
 }
 
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
@@ -108,7 +118,8 @@ export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
   if (opts.scope.startsWith('nav-menu-mobile')) {
     return renderMobileMenuSubScopePanel(opts);
   }
-  return renderPanelInternal(opts, groupedSchemaFor(opts.scope), '');
+  const groups = opts.groupsOverride ?? groupedSchemaFor(opts.scope);
+  return renderPanelInternal(opts, groups, '');
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -127,7 +138,20 @@ function renderEntriesForGroups(
   fieldPrefix: string,
 ): string {
   const scopeAttr = escapeHtmlAttr(opts.scope);
-  const v = (subPath: string): string => escapeHtmlAttr(readStyleField(opts.style, fieldPrefix + subPath) ?? '');
+  // Resolve the value for a sub-path. When the path is in `mixedFields`,
+  // the inputs render empty so the "(modified)" placeholder is visible.
+  // Writing any non-empty value into the field overwrites all selected
+  // blocks (multi-block) or the single block (single-mode) uniformly.
+  const isMixed = (subPath: string): boolean => !!opts.mixedFields?.has(fieldPrefix + subPath);
+  const v = (subPath: string): string => isMixed(subPath)
+    ? ''
+    : escapeHtmlAttr(readStyleField(opts.style, fieldPrefix + subPath) ?? '');
+  /** Placeholder text for an input. If the field is mixed across the
+   *  multi-selection, override the catalog-provided placeholder with
+   *  "(modified)" so the user sees the inputs aren't on consensus. */
+  const ph = (subPath: string, fallback: string): string => isMixed(subPath)
+    ? '(modified)'
+    : fallback;
   const palette = opts.palette ?? {};
 
   const single = (e: SinglePropertyEntry) => {
@@ -137,7 +161,7 @@ function renderEntriesForGroups(
         <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
         <input type="text" class="input nospress-prop-row__input"
                data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}${e.key}"
-               value="${v(e.key)}" placeholder="${escapeHtmlAttr(e.placeholder)}" />
+               value="${v(e.key)}" placeholder="${escapeHtmlAttr(ph(e.key, e.placeholder))}" />
       </div>
     `;
   };
@@ -150,13 +174,13 @@ function renderEntriesForGroups(
     field: fieldPrefix + e.key,
     label: e.label,
     value: v(e.key),
-    placeholder: e.placeholder,
+    placeholder: isMixed(e.key) ? '(modified)' : e.placeholder,
     palette,
     includeGradient: e.cssProp === 'background',
   });
 
   const quad = (e: QuadPropertyEntry) => {
-    const ph = escapeHtmlAttr(e.placeholder ?? '0px');
+    const basePh = e.placeholder ?? '0px';
     return `
       <div class="nospress-prop-row">
         <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
@@ -165,7 +189,7 @@ function renderEntriesForGroups(
             <div class="nospress-prop-quad__cell">
               <input type="text" class="input nospress-prop-quad__input"
                      data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}${e.key}.${side}"
-                     value="${v(`${e.key}.${side}`)}" placeholder="${ph}" />
+                     value="${v(`${e.key}.${side}`)}" placeholder="${escapeHtmlAttr(ph(`${e.key}.${side}`, basePh))}" />
               <span class="nospress-prop-quad__caption">${side.charAt(0).toUpperCase()}${side.slice(1)}</span>
             </div>
           `).join('')}
@@ -188,6 +212,7 @@ function renderEntriesForGroups(
       : e.key === 'position' ? 'relative'
       : '';
     const current = stored || fallback;
+    const mixed = isMixed(e.key);
     return `
       <div class="nospress-prop-row">
         <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
@@ -195,7 +220,8 @@ function renderEntriesForGroups(
              data-style-dropdown
              data-style-scope="${scopeAttr}"
              data-style-field="${fieldPrefix}${e.key}"
-             data-current-value="${escapeHtmlAttr(current)}"
+             data-current-value="${escapeHtmlAttr(mixed ? '' : current)}"
+             ${mixed ? `data-placeholder="${escapeHtmlAttr('(modified)')}"` : ''}
              data-options="${escapeHtmlAttr(JSON.stringify(e.options))}"></div>
       </div>
     `;
@@ -279,7 +305,7 @@ function renderEntriesForGroups(
         <label class="nospress-prop-row__label">${label}</label>
         <input type="text" class="input nospress-prop-row__input"
                data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.${axis}"
-               value="${v(`textShadow.${axis}`)}" placeholder="${placeholder}" />
+               value="${v(`textShadow.${axis}`)}" placeholder="${escapeHtmlAttr(ph(`textShadow.${axis}`, placeholder))}" />
       </div>
     </div>
   `;
@@ -294,7 +320,7 @@ function renderEntriesForGroups(
           <label class="nospress-prop-row__label">Text shadow blur</label>
           <input type="text" class="input nospress-prop-row__input"
                  data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}textShadow.blur"
-                 value="${v('textShadow.blur')}" placeholder="e.g. 4px" />
+                 value="${v('textShadow.blur')}" placeholder="${escapeHtmlAttr(ph('textShadow.blur', 'e.g. 4px'))}" />
         </div>
       </div>
       <div class="nospress-prop-pair__cell">
@@ -303,7 +329,7 @@ function renderEntriesForGroups(
           field: `${fieldPrefix}textShadow.color`,
           label: 'Text shadow color',
           value: v('textShadow.color'),
-          placeholder: 'e.g. #000',
+          placeholder: ph('textShadow.color', 'e.g. #000'),
           palette,
         })}
       </div>

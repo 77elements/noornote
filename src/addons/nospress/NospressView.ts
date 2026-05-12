@@ -48,11 +48,15 @@ import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
 import { cloneBlockWithFreshIds, createBlock, findBlockInPage, COLUMN_LAYOUT_PRESETS, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
 import {
+  groupedSchemaFor,
+  readStyleField,
   renderPropertyPanel,
   resolvePaletteVars,
   sanitizeCssIdent,
   writeStyleField,
   type CommonStyle,
+  type PropertyEntry,
+  type ResolvedPropertyGroup,
 } from './blocks/styles';
 import { removeUserCss } from './cssScope';
 import { buildBackupBundle, downloadBackupZip, readBackupZip, applyBackupBundle, type NospressBackupBundle } from './backup';
@@ -169,10 +173,21 @@ export class NospressView extends View {
   private cursor: Cursor = { scope: 'page', index: -1 };
   /** Most-recently-used block types in MRU order. In-memory only. */
   private recentBlockTypes: BlockType[] = [];
-  /** Currently focused/selected block in the editor. Null = none. UI-only.
-   *  Page-frame selection was removed; site-level visuals live in the
-   *  Global tab and Custom CSS. */
-  private selectedBlockId: string | null = null;
+  /** Currently focused/selected block ids in the editor. Empty set = no
+   *  selection. UI-only. Plain click → single-id set; Shift+click →
+   *  add/remove from the set. The legacy `selectedBlockId` accessor below
+   *  surfaces the "primary" id (first one) so single-block code paths
+   *  keep working — every assignment to it routes through `_setSingle`
+   *  which clears the set first, matching the original single-select
+   *  semantics. */
+  private selectedBlockIds: Set<string> = new Set();
+  private get selectedBlockId(): string | null {
+    return this.selectedBlockIds.values().next().value ?? null;
+  }
+  private set selectedBlockId(id: string | null) {
+    this.selectedBlockIds.clear();
+    if (id !== null) this.selectedBlockIds.add(id);
+  }
   /** Sub-scope toggle for the currently-selected block. Today only used
    *  by the nav-menu block: when set to `'mobile-menu'`, the property
    *  panel resolves its schema from `STYLE_MATRIX['nav-menu-mobile']`
@@ -2882,13 +2897,14 @@ export class NospressView extends View {
    * block-properties panel for an individual block.
    */
   private renderPropertiesContent(): string {
-    if (!this.selectedBlockId) {
+    if (this.selectedBlockIds.size === 0) {
       return `<p class="nospress-properties-empty">Select a block to edit properties.</p>`;
     }
     // Vendor-footer is a virtual block — style lives in siteSettings,
     // not in the page tree. Synthesize a Block-shaped object so the
     // existing renderInlineProperties path resolves the schema +
-    // breakpoint-tabs the same way as any other block.
+    // breakpoint-tabs the same way as any other block. (Vendor-footer
+    // is mutually exclusive with multi-select.)
     if (this.selectedBlockId === 'vendor-footer' && this.editingTarget === 'vendor-footer') {
       const vf = this.siteSettingsService.getSettings().vendorFooter ?? {};
       const synthetic = {
@@ -2904,7 +2920,24 @@ export class NospressView extends View {
       ?? this.listService.getDraftV2(editSlug)
       ?? this.listService.getPublishedV2(editSlug)
       ?? this.listService.getPageV2(editSlug);
-    const loc = findBlockInPage(page, this.selectedBlockId);
+    // Multi-select path: render the intersection of all selected blocks'
+    // schemas. Class/id, sub-scopes and per-block extras are hidden in
+    // multi-mode (user must single-select to edit those).
+    if (this.selectedBlockIds.size > 1) {
+      const blocks: Block[] = [];
+      for (const id of this.selectedBlockIds) {
+        const loc = findBlockInPage(page, id);
+        if (loc) blocks.push(loc.block);
+      }
+      if (blocks.length === 0) {
+        return `<p class="nospress-properties-empty">Selected blocks not found.</p>`;
+      }
+      if (blocks.length === 1) {
+        return this.renderInlineProperties(blocks[0]!);
+      }
+      return this.renderMultiInlineProperties(blocks);
+    }
+    const loc = findBlockInPage(page, this.selectedBlockId!);
     if (!loc) {
       return `<p class="nospress-properties-empty">Block not found.</p>`;
     }
@@ -3283,6 +3316,94 @@ export class NospressView extends View {
     });
   }
 
+  /** Render the Properties panel for a multi-block selection. Schema is
+   *  the intersection by `(group.key, entry.key)` across every selected
+   *  block — only properties that ALL selected blocks expose survive.
+   *  Per surviving leaf-path, the active-BP slot is read on each block:
+   *  consensus values pre-fill the input; divergent values land the path
+   *  in `mixedFields` so the input renders empty with a "(modified)"
+   *  placeholder. Sub-scopes, identifiers and per-block extras are
+   *  intentionally hidden in multi-mode (see the user-confirmed UX spec).
+   *
+   *  Writes route through `handleStyleInput` with scope `'multi:'`, which
+   *  iterates `selectedBlockIds` and applies the value to every block's
+   *  active slot — so editing a "(modified)" field harmonises it across
+   *  all selected blocks. */
+  private renderMultiInlineProperties(blocks: Block[]): string {
+    const perBlockGroups = blocks.map(b => groupedSchemaFor(`${b.type}:${b.id}`));
+    const firstSchema = perBlockGroups[0]!;
+    const commonGroups: ResolvedPropertyGroup[] = [];
+
+    for (const group of firstSchema) {
+      if (!perBlockGroups.every(s => s.some(g => g.key === group.key))) continue;
+      // Intersect entries within this group by entry.key. Pairs ([entry, entry]
+      // for paired-row rendering) survive only if every contained entry is in
+      // every block's matching group. The pair structure is preserved so the
+      // rendered panel keeps the same paired layout the single-mode panel uses.
+      const filteredEntries = group.entries.filter(entryOrPair => {
+        const list = Array.isArray(entryOrPair) ? entryOrPair : [entryOrPair];
+        return list.every(entry => perBlockGroups.every(s => {
+          const matchingGroup = s.find(g => g.key === group.key);
+          if (!matchingGroup) return false;
+          return matchingGroup.entries.some(eOrP => {
+            const subList = Array.isArray(eOrP) ? eOrP : [eOrP];
+            return subList.some(e => e.key === entry.key);
+          });
+        }));
+      });
+      if (filteredEntries.length > 0) {
+        commonGroups.push({ key: group.key, label: group.label, entries: filteredEntries });
+      }
+    }
+
+    // Read each block's active-BP style slot — the one the current
+    // breakpoint tab targets. Writes will use the same slot.
+    const activeSlots: (CommonStyle | undefined)[] = blocks.map(b => this.getActiveBpStyleSlot(b).read());
+
+    const aggregated: CommonStyle = {};
+    const mixedFields = new Set<string>();
+
+    for (const group of commonGroups) {
+      for (const entryOrPair of group.entries) {
+        const entries = Array.isArray(entryOrPair) ? entryOrPair : [entryOrPair];
+        for (const entry of entries) {
+          for (const path of leafPathsForEntry(entry)) {
+            const values = activeSlots.map(s => readStyleField(s, path) ?? '');
+            const first = values[0]!;
+            const consensus = values.every(v => v === first);
+            if (consensus) {
+              if (first) writeStyleField(aggregated, path, first);
+            } else {
+              mixedFields.add(path);
+            }
+          }
+        }
+      }
+    }
+
+    const breakpoints = this.siteSettingsService.getSettings().breakpoints ?? [];
+    const namedBps = breakpoints.filter(bp => bp.name.trim());
+    const tabs = namedBps.length > 0
+      ? [{ name: '', label: 'Default' }, ...namedBps.map(bp => ({ name: bp.name, label: bp.name }))]
+      : [];
+    if (tabs.length > 0 && !tabs.some(t => t.name === this.activeBpName)) {
+      this.activeBpName = '';
+    }
+
+    return renderPropertyPanel({
+      scope: 'multi:',
+      style: aggregated,
+      attrs: undefined,
+      activeDividerSide: this.activeDividerSide,
+      palette: this.effectivePalette(),
+      breakpointTabs: tabs,
+      activeBreakpoint: this.activeBpName,
+      extras: '',
+      groupsOverride: commonGroups,
+      mixedFields,
+    });
+  }
+
   /**
    * Block-type-specific extra controls rendered above the standard property
    * rows. Currently only the nav-menu's "Horizontal" toggle — slots into
@@ -3573,11 +3694,27 @@ export class NospressView extends View {
    * fetch — selection is local UI state, no remote data is needed.
    */
   private selectBlock(blockId: string | null): void {
-    if (this.selectedBlockId === blockId) return;
+    // Optimization: same single-selection target → no-op. Always falls
+    // through when leaving multi-mode (size > 1) so the panel re-renders.
+    if (this.selectedBlockIds.size <= 1 && this.selectedBlockId === blockId) return;
     this.selectedBlockId = blockId;
     // Sub-scope is per-block — selecting a different block (or
     // deselecting) drops it. Otherwise the panel would show e.g.
     // mobile-menu rows for a Heading the user clicked.
+    this.selectedSubScope = null;
+    this.rerenderEditable();
+    this.updatePropertiesTab();
+  }
+
+  /** Shift+click handler — add or remove a block from the multi-selection
+   *  without affecting the others. Sub-scope is incompatible with
+   *  multi-select; entering multi-mode drops any active sub-scope. */
+  private toggleBlockInSelection(blockId: string): void {
+    if (this.selectedBlockIds.has(blockId)) {
+      this.selectedBlockIds.delete(blockId);
+    } else {
+      this.selectedBlockIds.add(blockId);
+    }
     this.selectedSubScope = null;
     this.rerenderEditable();
     this.updatePropertiesTab();
@@ -3613,14 +3750,23 @@ export class NospressView extends View {
     this.container.querySelectorAll<HTMLElement>('[data-mobile-subscope-toggle][data-active]').forEach(el => {
       delete el.dataset.active;
     });
-    if (!this.selectedBlockId) return;
-    const wrapper = this.container.querySelector<HTMLElement>(
-      `[data-block-edit][data-block-id="${this.selectedBlockId}"]`
-    );
-    if (wrapper) wrapper.dataset.selected = '';
-    if (this.selectedSubScope === 'mobile-menu') {
+    if (this.selectedBlockIds.size === 0) return;
+    // Multi-selection paints `data-selected` on every selected wrapper.
+    for (const id of this.selectedBlockIds) {
+      const wrapper = this.container.querySelector<HTMLElement>(
+        `[data-block-edit][data-block-id="${id}"]`
+      );
+      if (wrapper) wrapper.dataset.selected = '';
+    }
+    // Mobile sub-scope is single-block only — only paint the trigger if
+    // exactly one block is selected and it owns the open sub-scope.
+    if (this.selectedSubScope === 'mobile-menu' && this.selectedBlockIds.size === 1) {
+      const id = this.selectedBlockId!;
+      const wrapper = this.container.querySelector<HTMLElement>(
+        `[data-block-edit][data-block-id="${id}"]`
+      );
       const trigger = wrapper?.querySelector<HTMLElement>(
-        `[data-mobile-subscope-toggle][data-block-id="${this.selectedBlockId}"]`
+        `[data-mobile-subscope-toggle][data-block-id="${id}"]`
       );
       if (trigger) trigger.dataset.active = '';
     }
@@ -4041,6 +4187,39 @@ export class NospressView extends View {
       if (field === 'position' || field.endsWith('.position')) this.updatePropertiesTab();
       return;
     }
+    // Multi-block scope: write to every currently-selected block's
+    // active-BP slot. Mirrors the single-block path's per-block pruning
+    // so JSON stays clean. Caller already ensured the field is part of
+    // the intersected schema, so every block legitimately exposes it.
+    if (scope === 'multi:') {
+      this.mutateDraft((page) => {
+        for (const id of this.selectedBlockIds) {
+          const loc = findBlockInPage(page, id);
+          if (!loc) continue;
+          const slot = this.getActiveBpStyleSlot(loc.block).getOrCreate();
+          writeStyleField(slot, field, rawValue);
+          if (loc.block.breakpointStyles) {
+            for (const k of Object.keys(loc.block.breakpointStyles)) {
+              if (Object.keys(loc.block.breakpointStyles[k]!).length === 0) {
+                delete loc.block.breakpointStyles[k];
+              }
+            }
+            if (Object.keys(loc.block.breakpointStyles).length === 0) {
+              delete loc.block.breakpointStyles;
+            }
+          }
+        }
+      }, { silent: true });
+      // Match the single-block path: the panel is NOT re-rendered on
+      // every keystroke (that would tear the focused input down and
+      // drop the cursor mid-typing — exact regression reported on
+      // 2026-05-12). Only re-render on `position`, which has to flip
+      // the four positionInsets rows in/out of view.
+      if (field === 'position' || field.endsWith('.position')) {
+        this.updatePropertiesTab();
+      }
+      return;
+    }
     // Block scope: '<blockType>:<uuid>' — only the id portion is needed.
     // Page-scope styles were removed; site-wide styling lives in the Global
     // tab (palette / theme) and in Custom CSS.
@@ -4378,9 +4557,11 @@ export class NospressView extends View {
         // (c): clicking the nav-menu block-frame outside the trigger
         // exits the mobile sub-scope but keeps the block selected. Same
         // block-id, sub-scope active, click landed on the wrapper but
-        // not on the trigger button (handled earlier).
+        // not on the trigger button (handled earlier). Single-mode only —
+        // sub-scope doesn't exist in multi-select.
         if (
           blockId
+          && this.selectedBlockIds.size === 1
           && blockId === this.selectedBlockId
           && this.selectedSubScope === 'mobile-menu'
         ) {
@@ -4389,11 +4570,18 @@ export class NospressView extends View {
           this.updatePropertiesTab();
           return;
         }
-        this.selectBlock(blockId === this.selectedBlockId ? null : blockId);
+        // Shift+click = add/remove from the multi-selection without
+        // dropping existing picks. Plain click = single select (toggle
+        // the clicked block off when it's the only one currently picked).
+        if (blockId && e.shiftKey) {
+          this.toggleBlockInSelection(blockId);
+          return;
+        }
+        this.selectBlock(blockId === this.selectedBlockId && this.selectedBlockIds.size === 1 ? null : blockId);
         return;
       }
 
-      // Click outside any block → deselect
+      // Click outside any block → deselect (everything, multi or single)
       this.selectBlock(null);
     });
 
@@ -4930,5 +5118,27 @@ export class NospressView extends View {
       }),
       { mimePrefix: 'image/', rejectLabel: 'Please select image files' },
     );
+  }
+}
+
+/** Enumerate every leaf field path a `PropertyEntry` writes to. Used by
+ *  the multi-block panel to compare values across blocks at the finest
+ *  granularity each input maps to:
+ *   - `single` / `dropdown`  → one path (`entry.key`)
+ *   - `quad`                 → four sides (top/right/bottom/left)
+ *   - `divider`              → four facets (top/bottom + flipX/flipY)
+ *   - `text-shadow`          → four facets (h/v/blur/color) */
+function leafPathsForEntry(entry: PropertyEntry): string[] {
+  switch (entry.kind) {
+    case 'quad':
+      return [`${entry.key}.top`, `${entry.key}.right`, `${entry.key}.bottom`, `${entry.key}.left`];
+    case 'divider':
+      return [`${entry.key}.top`, `${entry.key}.bottom`, `${entry.key}.flipX`, `${entry.key}.flipY`];
+    case 'text-shadow':
+      return [`${entry.key}.h`, `${entry.key}.v`, `${entry.key}.blur`, `${entry.key}.color`];
+    case 'single':
+    case 'dropdown':
+    default:
+      return [entry.key];
   }
 }
