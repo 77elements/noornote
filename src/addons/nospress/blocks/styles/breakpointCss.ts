@@ -140,12 +140,19 @@ export function buildBlockBreakpointCss(
 ): string {
   const overrides = block.breakpointStyles;
   if (!overrides) return '';
-  const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
   const schema = schemaFor(block.type);
   const parts: string[] = [];
-  for (const [name, style] of Object.entries(overrides)) {
-    const bp = byName.get(name);
-    if (!bp) continue;
+  // Iterate the site-settings breakpoint array, NOT Object.entries on
+  // the per-block overrides object. Equal-specificity @media rules
+  // resolve by source order in the CSS, so the bundle must follow
+  // site-settings order (where the user sorts smallest→broadest) — not
+  // the per-block insertion order of style overrides. Mixing those two
+  // produced the desktop-shows-tablet-l-value cascade bug (fixed
+  // 2026-05-12) when the user typed values into the BP tabs in a
+  // different order than the BPs sit in site-settings.
+  for (const bp of breakpoints) {
+    const style = overrides[bp.name];
+    if (!style) continue;
     const declarations = buildImportantInlineStyle(schema, style);
     if (!declarations) continue;
     const mediaQuery = buildMediaQuery(bp);
@@ -176,12 +183,13 @@ export function buildBlockBookmarkFolderCss(
   }
 
   if (block.breakpointStyles) {
-    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
-    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+    // Walk site-settings BP order so the cascade is well-defined; see
+    // `buildBlockBreakpointCss` for the rationale.
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style) continue;
       const overrides = style.bookmarkFolder;
       if (!overrides) continue;
-      const bp = byName.get(bpName);
-      if (!bp) continue;
       const mediaQuery = buildMediaQuery(bp);
       if (!mediaQuery) continue;
       const inner: string[] = [];
@@ -221,12 +229,11 @@ export function buildBlockPortfolioCloseBtnCss(
   }
 
   if (block.breakpointStyles) {
-    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
-    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style) continue;
       const overrides = style.portfolio;
       if (!overrides) continue;
-      const bp = byName.get(bpName);
-      if (!bp) continue;
       const mediaQuery = buildMediaQuery(bp);
       if (!mediaQuery) continue;
       const inner: string[] = [];
@@ -262,12 +269,11 @@ export function buildBlockArticlesListCss(
   }
 
   if (block.breakpointStyles) {
-    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
-    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style) continue;
       const overrides = style.articlesList;
       if (!overrides) continue;
-      const bp = byName.get(bpName);
-      if (!bp) continue;
       const mediaQuery = buildMediaQuery(bp);
       if (!mediaQuery) continue;
       const inner: string[] = [];
@@ -309,12 +315,11 @@ export function buildBlockNavMenuDesktopCss(
   }
 
   if (block.breakpointStyles) {
-    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
-    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style) continue;
       const overrides = style.navMenu;
       if (!overrides) continue;
-      const bp = byName.get(bpName);
-      if (!bp) continue;
       const mediaQuery = buildMediaQuery(bp);
       if (!mediaQuery) continue;
       const inner: string[] = [];
@@ -360,12 +365,11 @@ export function buildBlockLinksCss(
   // Per-BP overrides — wrapped in @media, declarations get !important
   // so they outrank the Default-tab rules above.
   if (block.breakpointStyles) {
-    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
-    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style) continue;
       const linkOverrides = style.links;
       if (!linkOverrides) continue;
-      const bp = byName.get(bpName);
-      if (!bp) continue;
       const mediaQuery = buildMediaQuery(bp);
       if (!mediaQuery) continue;
       const inner: string[] = [];
@@ -402,12 +406,11 @@ export function buildBlockPortfolioCardCss(
   }
 
   if (block.breakpointStyles) {
-    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
-    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style) continue;
       const bg = style.background;
       if (!bg) continue;
-      const bp = byName.get(bpName);
-      if (!bp) continue;
       const mq = buildMediaQuery(bp);
       if (!mq) continue;
       const v = sanitizeStyleValue(bg);
