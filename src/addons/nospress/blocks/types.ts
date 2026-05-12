@@ -154,6 +154,125 @@ function resetBlockIds(block: Block): void {
   }
 }
 
+/**
+ * Strip a block of its user-entered content while keeping every
+ * presentation property intact. Used when saving a multi-block selection
+ * as a reusable Custom Block template — the layout, styling and per-block
+ * configuration round-trip; only the "what's written in this slot" half
+ * is reset so the user re-fills it on each insert.
+ *
+ * Preserved across the board: `style`, `breakpointStyles`, `attrs`.
+ *
+ * Per-type rules for what counts as "content" vs "configuration":
+ *
+ *   heading       → text reset (level kept — it's structural)
+ *   text          → content reset
+ *   image / video → url, caption, alt, poster reset
+ *   audio         → url, caption reset
+ *   gallery       → urls reset
+ *   links / list  → title + items reset
+ *   embed         → nostrRef reset
+ *   bookmark-folder, profile-card, articles-list → folderName / pubkey reset
+ *   quote         → text, author, source reset
+ *   button-cta    → label, url reset (variant kept — picker pre-selects)
+ *   dm-button     → label reset
+ *   weblog        → pubkey, hashtags reset; postsPerPage / excludeReplies
+ *                   / excludeReposts kept (they're behaviour switches)
+ *   portfolio     → projects[] reset; perPage / sortOrder kept
+ *   nav-menu      → ALL fields kept (menuId / horizontal / alignment /
+ *                   hamburgerBreakpoints are all configuration)
+ *   columns / div → recurse into children, layout / tag kept
+ *   divider       → nothing to reset (no content field)
+ *
+ * Pure (deep-clones first; never touches the input tree).
+ */
+export function stripBlockContent(block: Block): Block {
+  const fresh = JSON.parse(JSON.stringify(block)) as Block;
+  switch (fresh.type) {
+    case 'heading':         fresh.text = ''; break;
+    case 'text':            fresh.content = ''; break;
+    case 'image':
+      fresh.url = '';
+      delete fresh.alt;
+      delete fresh.caption;
+      break;
+    case 'gallery':         fresh.urls = []; break;
+    case 'links':
+      delete fresh.title;
+      fresh.items = [];
+      break;
+    case 'list':
+      delete fresh.title;
+      fresh.items = [];
+      break;
+    case 'embed':           fresh.nostrRef = ''; break;
+    case 'bookmark-folder': fresh.folderName = ''; break;
+    case 'dm-button':       fresh.label = ''; break;
+    case 'profile-card':    delete fresh.pubkey; break;
+    case 'quote':
+      fresh.text = '';
+      delete fresh.author;
+      delete fresh.source;
+      break;
+    case 'button-cta':
+      fresh.label = '';
+      fresh.url = '';
+      break;
+    case 'video':
+      fresh.url = '';
+      delete fresh.caption;
+      delete fresh.poster;
+      break;
+    case 'audio':
+      fresh.url = '';
+      delete fresh.caption;
+      break;
+    case 'articles-list':   delete fresh.pubkey; break;
+    case 'weblog':
+      delete fresh.pubkey;
+      delete fresh.hashtags;
+      // postsPerPage, excludeReplies, excludeReposts kept (behaviour)
+      break;
+    case 'columns':
+      fresh.content = fresh.content.map(col => col.map(stripBlockContent));
+      break;
+    case 'div':
+      fresh.children = fresh.children.map(stripBlockContent);
+      break;
+    case 'portfolio':
+      fresh.projects = [];
+      // perPage, sortOrder kept (display behaviour)
+      break;
+    case 'nav-menu':
+    case 'divider':
+      // No content slot — pure config / no content.
+      break;
+  }
+  return fresh;
+}
+
+/**
+ * Filter a flat list of block locations down to those that are NOT
+ * contained inside any other block in the same list. Used by the
+ * "group as custom block" / "copy group" actions so a multi-selection
+ * like `[columns, image-inside-columns]` doesn't end up storing the
+ * image twice (once in columns.content, once at the group root).
+ */
+export function topLevelOnly(blocks: Block[]): Block[] {
+  const ids = new Set(blocks.map(b => b.id));
+  return blocks.filter(b => !blocks.some(other => other.id !== b.id && containsBlockId(other, b.id, ids)));
+}
+
+function containsBlockId(parent: Block, childId: string, _seen: Set<string>): boolean {
+  if (parent.type === 'columns') {
+    return parent.content.some(col => col.some(b => b.id === childId || containsBlockId(b, childId, _seen)));
+  }
+  if (parent.type === 'div') {
+    return parent.children.some(b => b.id === childId || containsBlockId(b, childId, _seen));
+  }
+  return false;
+}
+
 /** Where a block sits in the page tree. `container` is undefined when the
  *  block lives directly on the page; otherwise it points back at the owning
  *  container so callers can derive the cursor scope without re-walking. */

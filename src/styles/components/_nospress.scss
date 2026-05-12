@@ -78,6 +78,13 @@
   gap: calc($gap / 2);
 }
 
+// Custom-block cards — Apply + delete-× sit side by side in one row.
+.block-library__custom-actions {
+  display: flex;
+  gap: calc($gap / 4);
+  justify-content: center;
+}
+
 .block-library .nn-card {
   min-height: 130px;
   text-align: center;
@@ -1098,6 +1105,40 @@
   }
 }
 
+// Floating toolbar that appears above the first selected block when 2+
+// blocks are selected (Shift+Click multi-selection). Hosts the
+// "Copy group" and "Save as custom block" actions. Position is relative
+// to the block-edit wrapper which carries `position: relative` already.
+.nospress-multi-toolbar {
+  position: absolute;
+  top: calc(-1 * $gap * 1.5);
+  right: 0;
+  z-index: 10;
+  display: flex;
+  gap: calc($gap / 4);
+  padding: calc($gap / 4);
+  background: $color-1;
+  border: 1px solid $color-6;
+  border-radius: $radius-pill;
+  box-shadow: $box-hover;
+}
+
+.nospress-multi-toolbar__btn {
+  padding: calc($gap / 4) calc($gap / 2);
+  border: none;
+  border-radius: $radius-pill;
+  background: transparent;
+  color: $color-5;
+  font-size: 0.85em;
+  cursor: pointer;
+  transition: $transition-colors;
+
+  &:hover {
+    background: $color-6;
+    color: $color-1;
+  }
+}
+
 // Paste-button rendered inside an empty column/div placeholder when the
 // clipboard holds a block. Subtle pill that sits beside the
 // "Click to add blocks here" hint; click pastes the clipboard block
@@ -1105,6 +1146,7 @@
 .nospress-block-columns__paste,
 .nospress-block-div__paste {
   display: inline-block;
+  margin-top: calc($gap / 2);
   margin-left: calc($gap / 2);
   padding: calc($gap / 4) calc($gap / 2);
   border: 1px solid $color-3;

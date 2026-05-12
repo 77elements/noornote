@@ -46,7 +46,8 @@ import { EventBus } from '../../services/EventBus';
 import { FullscreenOverlay } from '../../components/ui/FullscreenOverlay';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
-import { cloneBlockWithFreshIds, createBlock, findBlockInPage, COLUMN_LAYOUT_PRESETS, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
+import { cloneBlockWithFreshIds, createBlock, findBlockInPage, stripBlockContent, topLevelOnly, COLUMN_LAYOUT_PRESETS, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
+import { deleteCustomBlock, findCustomBlock, saveCustomBlock } from './customBlocks';
 import {
   groupedSchemaFor,
   readStyleField,
@@ -711,6 +712,8 @@ export class NospressView extends View {
     this.blockLibrary = new BlockLibraryView({
       onApply: (type) => this.applyBlock(type),
       onSelectCss: () => this.toggleCssEditor(),
+      onApplyCustom: (id) => this.applyCustomBlock(id),
+      onDeleteCustom: (id) => this.deleteCustomBlockEntry(id),
     });
     this.mountRightPane(librarySlot);
 
@@ -3552,7 +3555,11 @@ export class NospressView extends View {
       onTextEntered: (text) => this.handleCursorText(text),
       onBlockTypeChosen: (type) => this.handleCursorBlockType(type),
       getRecentBlockTypes: () => this.recentBlockTypes,
-      getClipboardBlockType: () => this.getClipboardBlock()?.type ?? null,
+      getClipboardInfo: () => {
+        const blocks = this.getClipboardBlocks();
+        if (blocks.length === 0) return null;
+        return { count: blocks.length, firstType: blocks[0]!.type };
+      },
       onPasteClipboard: () => this.pasteClipboardAtCursor()
     });
     slot.appendChild(this.cursorRow.getElement());
@@ -3601,19 +3608,32 @@ export class NospressView extends View {
   // is automatic (both back PerAccountLocalStorage with the same
   // localStorage API).
 
-  private getClipboardBlock(): Block | null {
-    return PerAccountLocalStorage.getInstance().get<Block | null>(
+  /** Read the clipboard, normalising single-block legacy entries (stored
+   *  before the multi-block clipboard upgrade) into a `Block[]` so the
+   *  rest of the editor doesn't need a special case. */
+  private getClipboardBlocks(): Block[] {
+    const stored = PerAccountLocalStorage.getInstance().get<Block | Block[] | null>(
       StorageKeys.NOSPRESS_CLIPBOARD, null
     );
+    if (!stored) return [];
+    return Array.isArray(stored) ? stored : [stored];
   }
 
-  private setClipboardBlock(block: Block | null): void {
-    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSPRESS_CLIPBOARD, block);
+  private setClipboardBlocks(blocks: Block[]): void {
+    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSPRESS_CLIPBOARD, blocks);
   }
 
-  /** Copy a block (with all properties + nested children) into the
-   *  per-account clipboard. The stored snapshot keeps the original IDs;
-   *  fresh IDs are minted at paste time so multiple pastes never collide. */
+  /** Convenience used by the CursorRow slash-menu label and by the
+   *  empty-column placeholder hint — returns the first clipboard block
+   *  for the icon/type pick, or null if the clipboard is empty. */
+  private getClipboardBlock(): Block | null {
+    return this.getClipboardBlocks()[0] ?? null;
+  }
+
+  /** Copy a single block (with all properties + nested children) into
+   *  the per-account clipboard. The stored snapshot keeps the original
+   *  IDs; fresh IDs are minted at paste time so repeat-pastes never
+   *  collide. Multi-block copy goes through `copyGroupToClipboard`. */
   private async copyBlock(blockId: string): Promise<void> {
     const editSlug = this.currentEditSlug();
     const current = this.listService.getDraftV2(editSlug)
@@ -3621,43 +3641,132 @@ export class NospressView extends View {
       ?? this.listService.getPageV2(editSlug);
     const loc = findBlockInPage(current, blockId);
     if (!loc) return;
-    // Deep-clone via JSON so the stored snapshot is decoupled from the
-    // live page tree — subsequent edits to the original block won't
-    // mutate the clipboard payload.
     const snapshot = JSON.parse(JSON.stringify(loc.block)) as Block;
-    this.setClipboardBlock(snapshot);
+    this.setClipboardBlocks([snapshot]);
     ToastService.show(`Copied ${loc.block.type} block`, 'success');
     await this.rerenderEditable();
   }
 
-  /** Insert the clipboard block at the current cursor position with
-   *  freshly-minted IDs (recursively, for columns/div children + portfolio
-   *  project IDs). Clipboard stays filled — re-paste allowed. */
+  /** Copy every currently-selected block as a single ordered group
+   *  into the clipboard. Top-level resolution filters out blocks that
+   *  live inside another selected block, so a `[columns, image-inside]`
+   *  pick stores `columns` once (the image rides along inside it).
+   *  Original IDs are preserved in the snapshot; fresh IDs are minted
+   *  at paste time. */
+  private async copyGroupToClipboard(): Promise<void> {
+    const blocks = this.resolveTopLevelSelection();
+    if (blocks.length === 0) return;
+    const snapshot = blocks.map(b => JSON.parse(JSON.stringify(b)) as Block);
+    this.setClipboardBlocks(snapshot);
+    ToastService.show(`Copied ${snapshot.length} blocks`, 'success');
+    await this.rerenderEditable();
+  }
+
+  /** Paste every block in the clipboard at the current cursor position,
+   *  in stored order. Each block gets fresh IDs (recursively). Cursor
+   *  advances after every insert so consecutive blocks stack naturally. */
   private pasteClipboardAtCursor(): void {
-    const stored = this.getClipboardBlock();
-    if (!stored) {
+    const stored = this.getClipboardBlocks();
+    if (stored.length === 0) {
       ToastService.show('Clipboard is empty', 'info');
       return;
     }
-    const fresh = cloneBlockWithFreshIds(stored);
-    this.insertBlockAtCursor(fresh, {});
-    this.bumpRecentBlockType(fresh.type);
+    for (const b of stored) {
+      const fresh = cloneBlockWithFreshIds(b);
+      this.insertBlockAtCursor(fresh, {});
+      this.bumpRecentBlockType(fresh.type);
+    }
   }
 
   /** Same as `pasteClipboardAtCursor` but targets an empty column slot
-   *  directly — used when the user clicks "Paste <type>" inside an empty
+   *  directly — used when the user clicks "Paste …" inside an empty
    *  column placeholder. */
   private async pasteClipboardInColumn(columnsBlockId: string, colIndex: number): Promise<void> {
-    if (!this.getClipboardBlock()) return;
+    if (this.getClipboardBlocks().length === 0) return;
     this.cursor = { scope: 'column', columnsBlockId, colIndex, index: 0 };
     this.pasteClipboardAtCursor();
   }
 
   /** Same as above for a div block's empty children slot. */
   private async pasteClipboardInDiv(divBlockId: string): Promise<void> {
-    if (!this.getClipboardBlock()) return;
+    if (this.getClipboardBlocks().length === 0) return;
     this.cursor = { scope: 'div', divBlockId, index: 0 };
     this.pasteClipboardAtCursor();
+  }
+
+  // ── Custom Block library (per-account templates) ──────────────────────
+
+  /** Resolve `selectedBlockIds` into a top-level-only list of Block
+   *  references in DOM order. Used by both "Copy group" and
+   *  "Save as custom block" so the user can shift-click freely without
+   *  worrying about redundant nested picks. */
+  private resolveTopLevelSelection(): Block[] {
+    if (this.selectedBlockIds.size === 0) return [];
+    const editSlug = this.currentEditSlug();
+    const page = this.editingPage
+      ?? this.listService.getDraftV2(editSlug)
+      ?? this.listService.getPublishedV2(editSlug)
+      ?? this.listService.getPageV2(editSlug);
+    const locs: Array<{ block: Block; topIndex: number }> = [];
+    let topIdx = 0;
+    const walk = (arr: Block[]) => {
+      for (const b of arr) {
+        if (this.selectedBlockIds.has(b.id)) locs.push({ block: b, topIndex: topIdx });
+        topIdx++;
+        if (b.type === 'columns') for (const col of b.content) walk(col);
+        else if (b.type === 'div') walk(b.children);
+      }
+    };
+    walk(page.blocks);
+    // Document-order matters for paste/group reconstruction.
+    locs.sort((a, b) => a.topIndex - b.topIndex);
+    return topLevelOnly(locs.map(l => l.block));
+  }
+
+  /** Prompt for a name and save the current top-level selection as a
+   *  reusable Custom Block. Each block in the snapshot is stripped of
+   *  user content, styles, and attribute overrides — only the
+   *  structural skeleton is preserved (block type + nesting + layout
+   *  ratios + semantic div tag + nav-menu target). */
+  private async saveSelectionAsCustomBlock(): Promise<void> {
+    const blocks = this.resolveTopLevelSelection();
+    if (blocks.length === 0) return;
+    const name = await ModalService.getInstance().prompt({
+      title: 'Save as custom block',
+      message: 'Give this block a name so you can re-use it from the Block Library:',
+      placeholder: 'e.g. Testimonial',
+    });
+    if (!name || !name.trim()) return;
+    const stripped = blocks.map(stripBlockContent);
+    saveCustomBlock(name.trim(), stripped);
+    this.blockLibrary?.refresh();
+    ToastService.show(`Saved "${name.trim()}" to your custom blocks`, 'success');
+  }
+
+  /** Apply a Custom Block template at the cursor — every template block
+   *  is cloned with fresh IDs and inserted in order. */
+  private applyCustomBlock(id: string): void {
+    const entry = findCustomBlock(id);
+    if (!entry) return;
+    for (const b of entry.blocks) {
+      const fresh = cloneBlockWithFreshIds(b);
+      this.insertBlockAtCursor(fresh, {});
+      this.bumpRecentBlockType(fresh.type);
+    }
+    ToastService.show(`Inserted "${entry.name}"`, 'success');
+  }
+
+  private async deleteCustomBlockEntry(id: string): Promise<void> {
+    const entry = findCustomBlock(id);
+    if (!entry) return;
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete custom block',
+      message: `Delete "${entry.name}"? This only removes it from your local library; it does not affect any page that already uses this layout.`,
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+    deleteCustomBlock(id);
+    this.blockLibrary?.refresh();
   }
 
   /** Move cursor INTO an empty column. Triggered by clicking the column's
@@ -3750,6 +3859,9 @@ export class NospressView extends View {
     this.container.querySelectorAll<HTMLElement>('[data-mobile-subscope-toggle][data-active]').forEach(el => {
       delete el.dataset.active;
     });
+    // Tear down any prior floating multi-selection toolbar so we can
+    // re-attach it to the right wrapper (or omit it when size < 2).
+    this.container.querySelectorAll<HTMLElement>('[data-multi-toolbar]').forEach(el => el.remove());
     if (this.selectedBlockIds.size === 0) return;
     // Multi-selection paints `data-selected` on every selected wrapper.
     for (const id of this.selectedBlockIds) {
@@ -3757,6 +3869,25 @@ export class NospressView extends View {
         `[data-block-edit][data-block-id="${id}"]`
       );
       if (wrapper) wrapper.dataset.selected = '';
+    }
+    // Group toolbar — only at size >= 2. Attached to the topmost-in-DOM
+    // selected wrapper so it floats above that block. Position-absolute
+    // styling lives in SCSS.
+    if (this.selectedBlockIds.size >= 2) {
+      const wrappers = Array.from(
+        this.container.querySelectorAll<HTMLElement>('[data-block-edit][data-selected]')
+      );
+      const first = wrappers[0];
+      if (first) {
+        const toolbar = document.createElement('div');
+        toolbar.className = 'nospress-multi-toolbar';
+        toolbar.dataset.multiToolbar = '';
+        toolbar.innerHTML = `
+          <button type="button" class="nospress-multi-toolbar__btn" data-action="multi-copy-group" title="Copy these blocks as a group to the clipboard">Copy group (${this.selectedBlockIds.size})</button>
+          <button type="button" class="nospress-multi-toolbar__btn" data-action="multi-save-custom" title="Save this group as a reusable custom block">Save as custom block</button>
+        `;
+        first.appendChild(toolbar);
+      }
     }
     // Mobile sub-scope is single-block only — only paint the trigger if
     // exactly one block is selected and it owns the open sub-scope.
@@ -4475,6 +4606,18 @@ export class NospressView extends View {
     this.container.addEventListener('click', (e) => {
       if (!this.editMode) return;
       const target = e.target as HTMLElement;
+
+      // Floating multi-selection toolbar (Copy group / Save as custom
+      // block). Handled before the wrapper-level selection click so the
+      // toolbar buttons don't double-trigger as a block click.
+      const multiBtn = target.closest('[data-multi-toolbar] [data-action]') as HTMLElement | null;
+      if (multiBtn) {
+        e.stopPropagation();
+        const action = multiBtn.dataset.action;
+        if (action === 'multi-copy-group') void this.copyGroupToClipboard();
+        else if (action === 'multi-save-custom') void this.saveSelectionAsCustomBlock();
+        return;
+      }
 
       // Paste button inside an empty column/div placeholder — direct
       // paste, no cursor-into-slot step. Handled before the placeholder

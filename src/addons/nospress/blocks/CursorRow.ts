@@ -26,13 +26,13 @@ export interface CursorRowOptions {
   onBlockTypeChosen: (type: BlockType) => void;
   /** Recent block types in MRU order. Shown at the top of the slash menu. */
   getRecentBlockTypes: () => BlockType[];
-  /** Returns the block type currently in the clipboard, or null if empty.
-   *  When non-null, the slash menu shows a "Paste copied <type> block"
-   *  entry at the top as a one-click shortcut. */
-  getClipboardBlockType: () => BlockType | null;
+  /** Describes the clipboard contents for the slash-menu label. `count`
+   *  is the number of blocks parked there; `firstType` is the type of
+   *  the first block — used to render the icon. `null` when empty. */
+  getClipboardInfo: () => { count: number; firstType: BlockType } | null;
   /** Invoked when the user picks the "Paste copied block" entry from the
-   *  slash menu. NospressView clones the clipboard block with fresh ids
-   *  and inserts it at the cursor. */
+   *  slash menu. NospressView clones the clipboard block(s) with fresh
+   *  ids and inserts them at the cursor. */
   onPasteClipboard: () => void;
 }
 
@@ -177,22 +177,26 @@ export class CursorRow {
     `;
 
     let html = '';
-    // Clipboard section — only when a block is parked there. The label
-    // mentions the type so the user knows what they're about to paste
-    // (e.g. "Paste copied columns block").
-    const clipboardType = this.opts.getClipboardBlockType();
-    if (clipboardType) {
-      const clipboardMeta = enabled.find(m => m.type === clipboardType);
+    // Clipboard section — only when at least one block is parked there.
+    // Label adapts to single-vs-group so the user can tell what they're
+    // about to paste (e.g. "Paste copied columns block" vs.
+    // "Paste copied group (4 blocks)").
+    const clipboardInfo = this.opts.getClipboardInfo();
+    if (clipboardInfo) {
+      const clipboardMeta = enabled.find(m => m.type === clipboardInfo.firstType);
       const matchesFilter = !this.menuFilter
         || 'paste'.includes(this.menuFilter)
-        || clipboardType.toLowerCase().includes(this.menuFilter);
+        || clipboardInfo.firstType.toLowerCase().includes(this.menuFilter);
       if (matchesFilter) {
+        const label = clipboardInfo.count === 1
+          ? `Paste copied ${clipboardInfo.firstType} block`
+          : `Paste copied group (${clipboardInfo.count} blocks)`;
         html += `<div class="nospress-cursor-row__menu-section">Clipboard</div>`;
         html += `
           <button type="button" class="nospress-cursor-row__menu-item" data-paste-clipboard>
             <span class="nospress-cursor-row__menu-icon">${escapeHtml(clipboardMeta?.icon ?? '📋')}</span>
-            <span class="nospress-cursor-row__menu-label">Paste copied ${escapeHtml(clipboardType)} block</span>
-            <span class="nospress-cursor-row__menu-desc">Inserts the last copied block (with its properties) at the cursor.</span>
+            <span class="nospress-cursor-row__menu-label">${escapeHtml(label)}</span>
+            <span class="nospress-cursor-row__menu-desc">Inserts the copied block(s) with their properties at the cursor.</span>
           </button>
         `;
       }
