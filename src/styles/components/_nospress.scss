@@ -843,13 +843,13 @@
   &__dots {
     display: flex;
     justify-content: center;
-    gap: calc($gap / 2);
+    gap: $gap;
     margin-top: calc($gap / 2);
   }
 
   &__dot {
-    width: 10px;
-    height: 10px;
+    width: 16px;
+    height: 16px;
     padding: 0;
     border: none;
     border-radius: 50%;
