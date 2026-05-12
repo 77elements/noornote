@@ -783,7 +783,7 @@
   }
 
   &__expanded {
-    padding: $gap;
+    padding: 0 $gap $gap;
     position: relative;
 
     &[hidden] { display: none; }
@@ -815,6 +815,14 @@
     scroll-snap-type: x mandatory;
     scrollbar-width: thin;
     padding-bottom: calc($gap / 2);
+
+    // Carousel doubles as a `.note-media` container (the data-image-urls
+    // attribute on the same node powers the global lightbox handler).
+    // Strip the inherited `.note-media { margin: 1rem 0 }` so the
+    // portfolio's own vertical rhythm stays intact.
+    &.note-media {
+      margin: 0;
+    }
   }
 
   &__slide {
@@ -860,17 +868,30 @@
     &.is-active { background: var(--color-4); }
   }
 
-  &__body {
-    margin-top: $gap;
-    display: flex;
-    flex-direction: column;
-    gap: calc($gap / 2);
-    align-items: flex-start;
+  // Description sits between the close button and the carousel inside
+  // the expanded body. Bottom-margin keeps it visually distinct from the
+  // image strip below.
+  &__desc {
+    margin: 0 0 $gap;
+    color: var(--color-5);
   }
 
-  &__desc {
-    margin: 0;
-    color: var(--color-5);
+  // Meta-row lives outside `.nn-card__content` (sibling of the trigger
+  // button) so the visit-website link can be a real `<a>`. Inherit the
+  // card-content padding manually to match the surrounding rhythm.
+  &__meta {
+    padding: 0 $gap $gap;
+    cursor: pointer;
+  }
+
+  // Plain inline link — inherits the meta-row's color (the user's chosen
+  // palette slot for meta text). No underline by default to keep the row
+  // visually uniform; reveal on hover.
+  &__visit-link {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover { text-decoration: underline; }
   }
 
   &__pagination {

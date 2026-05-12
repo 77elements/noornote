@@ -21,6 +21,7 @@ import {
   BOOKMARK_FOLDER_GROUPS,
   LINK_SUBSCOPE_GROUPS,
   NAV_MENU_DESKTOP_GROUPS,
+  PORTFOLIO_GROUPS,
   flattenGroupProps,
   schemaFor,
 } from './catalog';
@@ -31,10 +32,12 @@ import {
   BOOKMARK_FOLDER_KEYS,
   LINK_PSEUDO_KEYS,
   NAV_MENU_DESKTOP_KEYS,
+  PORTFOLIO_KEYS,
   type ArticlesListKey,
   type BookmarkFolderKey,
   type CommonStyle,
   type NavMenuDesktopKey,
+  type PortfolioKey,
   type PropertyEntry,
 } from './types';
 
@@ -83,6 +86,22 @@ const ARTICLES_LIST_SELECTORS: Record<ArticlesListKey, string> = {
   card:  ' .nn-card',
   title: ' .nn-card h3',
   meta:  ' .nn-card .meta',
+};
+
+/** Flat per-key schemas for the portfolio sub-scope. Two slots
+ *  (closeBtn / closeBtnHover) each exposing icon color + circle
+ *  background. */
+const PORTFOLIO_SCHEMAS: Record<PortfolioKey, PropertyEntry[]> = {
+  closeBtn:      PORTFOLIO_GROUPS.closeBtn.flatMap(g => flattenGroupProps(g.props)),
+  closeBtnHover: PORTFOLIO_GROUPS.closeBtnHover.flatMap(g => flattenGroupProps(g.props)),
+};
+
+/** CSS selector suffixes for the portfolio sub-scope keys. The close
+ *  button lives inside the expanded card body — descendant scope keeps
+ *  the rest of the portfolio markup untouched. */
+const PORTFOLIO_SELECTORS: Record<PortfolioKey, string> = {
+  closeBtn:      ' .nospress-block-portfolio__close',
+  closeBtnHover: ' .nospress-block-portfolio__close:hover',
 };
 
 /** Per-key CSS selector suffixes for the nav-menu desktop sub-scope.
@@ -165,6 +184,51 @@ export function buildBlockBookmarkFolderCss(
         if (!sub) continue;
         const decls = buildImportantInlineStyle(BOOKMARK_FOLDER_SCHEMAS[key], sub);
         if (decls) inner.push(`${sel}${BOOKMARK_FOLDER_SELECTORS[key]} { ${decls} }`);
+      }
+      if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
+/** Per-block portfolio sub-scope CSS — emits the user's close-button
+ *  tints (default + hover state) scoped to this portfolio instance via
+ *  `[data-styled-block-id="<id>"]`. Same Default + per-BP pattern as
+ *  the other sub-scopes. */
+export function buildBlockPortfolioCloseBtnCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'portfolio') return '';
+  const sel = `[data-styled-block-id="${block.id}"]`;
+  const parts: string[] = [];
+
+  const defaults = block.style?.portfolio;
+  if (defaults) {
+    for (const key of PORTFOLIO_KEYS) {
+      const sub = defaults[key];
+      if (!sub) continue;
+      const decls = buildInlineStyle(PORTFOLIO_SCHEMAS[key], sub);
+      if (decls) parts.push(`${sel}${PORTFOLIO_SELECTORS[key]} { ${decls} }`);
+    }
+  }
+
+  if (block.breakpointStyles) {
+    const byName = new Map(breakpoints.map(bp => [bp.name, bp]));
+    for (const [bpName, style] of Object.entries(block.breakpointStyles)) {
+      const overrides = style.portfolio;
+      if (!overrides) continue;
+      const bp = byName.get(bpName);
+      if (!bp) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      const inner: string[] = [];
+      for (const key of PORTFOLIO_KEYS) {
+        const sub = overrides[key];
+        if (!sub) continue;
+        const decls = buildImportantInlineStyle(PORTFOLIO_SCHEMAS[key], sub);
+        if (decls) inner.push(`${sel}${PORTFOLIO_SELECTORS[key]} { ${decls} }`);
       }
       if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
     }
@@ -390,6 +454,8 @@ export function buildPageBreakpointCss(
         if (articlesListCss) out.push(articlesListCss);
         const portfolioCardCss = buildBlockPortfolioCardCss(blockTyped, breakpoints);
         if (portfolioCardCss) out.push(portfolioCardCss);
+        const portfolioCloseBtnCss = buildBlockPortfolioCloseBtnCss(blockTyped, breakpoints);
+        if (portfolioCloseBtnCss) out.push(portfolioCloseBtnCss);
       }
       // Recurse into containers
       if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {

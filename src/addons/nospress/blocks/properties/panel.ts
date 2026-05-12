@@ -23,6 +23,7 @@ import {
   LINK_SUBSCOPE_GROUPS,
   MOBILE_MENU_SECTIONS,
   NAV_MENU_DESKTOP_GROUPS,
+  PORTFOLIO_GROUPS,
   getDefaultDisplayFor,
   groupedSchemaFor,
   matrixKey,
@@ -34,6 +35,7 @@ import {
   BLOCKS_WITH_LINKS_SUBSCOPE,
   BOOKMARK_FOLDER_KEYS,
   LINK_PSEUDO_KEYS,
+  PORTFOLIO_KEYS,
   QUAD_SIDES,
   type ArticlesListKey,
   type BookmarkFolderKey,
@@ -42,6 +44,7 @@ import {
   type DropdownPropertyEntry,
   type LinkPseudo,
   type NavMenuDesktopKey,
+  type PortfolioKey,
   type PropertyEntry,
   type QuadPropertyEntry,
   type ResolvedPropertyGroup,
@@ -427,7 +430,12 @@ function renderPanelInternal(
   // rendered `.nn-card` carousel tiles. Same single-property pattern.
   const showArticlesList = !fieldPrefix && blockType === 'articles-list';
   const articlesListBody = showArticlesList ? renderArticlesListSections(opts) : '';
-  const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody + bookmarkFolderBody + articlesListBody;
+  // Portfolio sub-scope: 2 sections (close button default + hover) for
+  // the expanded-card close icon. Each section exposes icon color +
+  // circle background.
+  const showPortfolio = !fieldPrefix && blockType === 'portfolio';
+  const portfolioBody = showPortfolio ? renderPortfolioSections(opts) : '';
+  const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody + bookmarkFolderBody + articlesListBody + portfolioBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`). Paired
@@ -640,6 +648,37 @@ function renderArticlesListSections(opts: RenderPropertyPanelOptions): string {
         <div class="nn-ui-toggle__header" data-toggle-header>
           <div class="nn-ui-toggle__info">
             <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(ARTICLES_LIST_LABELS[key])}</h2>
+          </div>
+          <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+            <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+          </button>
+        </div>
+        <div class="nn-ui-toggle__content">
+          ${sectionBody}
+        </div>
+      </section>
+    `;
+  }).join('');
+}
+
+const PORTFOLIO_LABELS: Record<PortfolioKey, string> = {
+  closeBtn:      'Close button',
+  closeBtnHover: 'Close button (hover)',
+};
+
+function renderPortfolioSections(opts: RenderPropertyPanelOptions): string {
+  return PORTFOLIO_KEYS.map(key => {
+    const resolvedGroups: ResolvedPropertyGroup[] = PORTFOLIO_GROUPS[key].map(g => ({
+      key: g.key,
+      label: g.label,
+      entries: resolveGroupEntries(g.props),
+    }));
+    const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `portfolio.${key}.`);
+    return `
+      <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-portfolio-section="${key}">
+        <div class="nn-ui-toggle__header" data-toggle-header>
+          <div class="nn-ui-toggle__info">
+            <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(PORTFOLIO_LABELS[key])}</h2>
           </div>
           <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
             <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>

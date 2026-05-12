@@ -49,9 +49,14 @@ function wireWrapper(wrapper: HTMLElement): void {
       return;
     }
 
-    // Card trigger (hero + title button) — toggle expand.
-    const trigger = target.closest<HTMLElement>('[data-portfolio-card-toggle]');
+    // Card trigger (hero + title button) OR meta row — both toggle expand.
+    // Meta is rendered as a sibling div so the "Visit website" link can be
+    // a real `<a>` (nested `<a>` in `<button>` is HTML-invalid). Clicks on
+    // the link itself fall through to the browser's default navigation.
+    const trigger = target.closest<HTMLElement>('[data-portfolio-card-toggle], [data-portfolio-card-meta]');
     if (trigger) {
+      // Let the visit-website link follow naturally.
+      if (target.closest('a')) return;
       // Don't expand when the user clicked an actual image to open the
       // lightbox — the inviolable media-click rule.
       if (target.tagName === 'IMG' && target.classList.contains('note-image--clickable')) return;

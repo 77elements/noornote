@@ -157,6 +157,13 @@ export interface CommonStyle {
    *  as `bookmarkFolder`: one property per slot (card → background,
    *  title → color, meta → color). */
   articlesList?: Partial<Record<ArticlesListKey, CommonStyle>>;
+  /** Portfolio sub-scope — per-element styling slots inside the
+   *  rendered grid. Currently surfaces the inline-expanded close button:
+   *  `closeBtn` is the default state (color = icon, background = circle
+   *  fill) and `closeBtnHover` is the hover state. Same recursive pattern
+   *  as `bookmarkFolder` / `articlesList`. Only surfaced for the
+   *  portfolio block in the Properties panel. */
+  portfolio?: Partial<Record<PortfolioKey, CommonStyle>>;
   /** CSS `text-decoration` (none / underline / overline / line-through).
    *  Applies to the block itself in regular Typography AND to any link
    *  sub-scope where overriding the underline is the most common case. */
@@ -207,6 +214,13 @@ export type BookmarkFolderKey = typeof BOOKMARK_FOLDER_KEYS[number];
 export const ARTICLES_LIST_KEYS = ['card', 'title', 'meta'] as const;
 export type ArticlesListKey = typeof ARTICLES_LIST_KEYS[number];
 
+/** Element keys covered by the portfolio sub-scope. Two slots for the
+ *  close button at the top-right of the expanded card: `closeBtn` is
+ *  the default state, `closeBtnHover` is the hover state. Each section
+ *  exposes both `color` (icon) and `background` (circle fill). */
+export const PORTFOLIO_KEYS = ['closeBtn', 'closeBtnHover'] as const;
+export type PortfolioKey = typeof PORTFOLIO_KEYS[number];
+
 /** Block types that surface the link sub-scope in the Properties panel.
  *  These are the blocks whose rendered output can contain `<a>` elements
  *  (either directly via user content, or transitively via mounted lists,
@@ -227,7 +241,7 @@ export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
  *  which have their own recursive render paths; and `border`, the
  *  legacy shorthand kept on the type for read-side migration only —
  *  never surfaced as an editable entry). */
-export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList'>;
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList' | 'portfolio'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {

@@ -26,6 +26,13 @@ export class PublicPageBootstrap {
     document.documentElement.classList.add('layout--public');
     appElement.innerHTML = '';
 
+    // Public-page boot skips App.setupUI(), so the global delegated click
+    // handler that powers `.note-image--clickable` lightbox openings is
+    // never registered here. Register it explicitly so portfolio (and any
+    // future) galleries open the full-screen viewer on the public site
+    // exactly like they do inside the in-app editor.
+    void import('../../services/ImageClickHandler').then(m => m.getImageClickHandler().init());
+
     const { PublicNospressPage } = await import('./PublicNospressPage');
     // PublicNospressPage renders directly into `#app` — no extra wrapper.
     // cssScope anchors user CSS to `#app` for the same isolation.

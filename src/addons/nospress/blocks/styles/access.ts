@@ -25,6 +25,7 @@ import type {
   LinkPseudo,
   MobileMenuSection,
   NavMenuDesktopKey,
+  PortfolioKey,
   PropertyKey,
   QuadSide,
 } from './types';
@@ -64,6 +65,12 @@ export function readStyleField(styleIn: CommonStyle | undefined, path: string): 
   if (path.startsWith('articlesList.')) {
     const [, key, ...rest] = path.split('.');
     const sub = styleIn.articlesList?.[key as ArticlesListKey];
+    return readStyleField(sub, rest.join('.'));
+  }
+  // Portfolio sub-scope: `portfolio.<closeBtn|closeBtnHover>.<rest>` → recurse.
+  if (path.startsWith('portfolio.')) {
+    const [, key, ...rest] = path.split('.');
+    const sub = styleIn.portfolio?.[key as PortfolioKey];
     return readStyleField(sub, rest.join('.'));
   }
   // Hydrate the new border fields from the legacy shorthand if the user
@@ -162,6 +169,17 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
     writeStyleField(style.articlesList[k]!, rest.join('.'), rawValue);
     if (Object.keys(style.articlesList[k]!).length === 0) delete style.articlesList[k];
     if (Object.keys(style.articlesList).length === 0) delete style.articlesList;
+    return;
+  }
+  // Portfolio sub-scope: `portfolio.<closeBtn|closeBtnHover>.<rest>` → recurse, prune.
+  if (path.startsWith('portfolio.')) {
+    const [, key, ...rest] = path.split('.');
+    const k = key as PortfolioKey;
+    if (!style.portfolio) style.portfolio = {};
+    if (!style.portfolio[k]) style.portfolio[k] = {};
+    writeStyleField(style.portfolio[k]!, rest.join('.'), rawValue);
+    if (Object.keys(style.portfolio[k]!).length === 0) delete style.portfolio[k];
+    if (Object.keys(style.portfolio).length === 0) delete style.portfolio;
     return;
   }
   const segments = path.split('.');

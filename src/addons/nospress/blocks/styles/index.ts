@@ -20,6 +20,7 @@ export {
   NAV_MENU_DESKTOP_GROUPS,
   BOOKMARK_FOLDER_GROUPS,
   ARTICLES_LIST_GROUPS,
+  PORTFOLIO_GROUPS,
   MOBILE_MENU_SECTIONS,
   BLOCK_DEFAULT_DISPLAY,
   MOBILE_SECTION_DEFAULT_DISPLAY,
@@ -60,6 +61,7 @@ export {
   buildBlockNavMenuDesktopCss,
   buildBlockLinksCss,
   buildBlockPortfolioCardCss,
+  buildBlockPortfolioCloseBtnCss,
   buildPageBreakpointCss,
 } from './breakpointCss';
 

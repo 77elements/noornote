@@ -24,6 +24,7 @@ import type {
   BookmarkFolderKey,
   MobileMenuSection,
   MobileMenuSectionDef,
+  PortfolioKey,
   PropertyEntry,
   PropertyGroup,
   PropertyKey,
@@ -193,6 +194,21 @@ export const ARTICLES_LIST_GROUPS: Record<ArticlesListKey, PropertyGroup[]> = {
   card:  [{ key: 'background', label: 'Background', props: ['background'] }],
   title: [{ key: 'typography', label: 'Color', props: ['color'] }],
   meta:  [{ key: 'typography', label: 'Color', props: ['color'] }],
+};
+
+/** Per-key restricted schemas for the portfolio sub-scope. Two slots
+ *  for the inline-expanded close button: `closeBtn` is the default
+ *  state, `closeBtnHover` is the hover state. Each slot exposes icon
+ *  color + circle background. */
+export const PORTFOLIO_GROUPS: Record<PortfolioKey, PropertyGroup[]> = {
+  closeBtn: [
+    { key: 'typography', label: 'Icon color', props: ['color'] },
+    { key: 'background', label: 'Background',  props: ['background'] },
+  ],
+  closeBtnHover: [
+    { key: 'typography', label: 'Icon color', props: ['color'] },
+    { key: 'background', label: 'Background',  props: ['background'] },
+  ],
 };
 
 /** Composition shorthand for media/sub-component containers — full

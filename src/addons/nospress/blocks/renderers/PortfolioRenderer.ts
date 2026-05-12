@@ -18,6 +18,7 @@
 import { escapeHtml, escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { sanitizeUserHtml } from '../../../../helpers/sanitizeUserHtml';
 import { sanitizeUrl } from '../../../../helpers/sanitizeUrl';
+import { lightboxContainerDataUrlsAttr } from '../../../../helpers/lightboxImages';
 import { wrapEditable } from './blockEditWrapper';
 import { styleWrap } from '../styles';
 import type { Block, PortfolioProject, PortfolioSortOrder } from '../types';
@@ -35,7 +36,7 @@ function formatProjectDate(raw: string | undefined): string {
   if (ymd) {
     const d = new Date(`${ymd[1]}-${ymd[2]}-${ymd[3]}T00:00:00`);
     if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
     }
   }
   // YYYY-MM
@@ -43,7 +44,7 @@ function formatProjectDate(raw: string | undefined): string {
   if (ym) {
     const d = new Date(`${ym[1]}-${ym[2]}-01T00:00:00`);
     if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short' });
     }
   }
   return trimmed;
@@ -281,25 +282,34 @@ function renderReadonlyCard(project: PortfolioProject, pageIdx: number): string 
   const shotCount = project.screenshots.length;
   const countLabel = shotCount > 1 ? `${shotCount} screenshots` : '';
   const dateLabel = formatProjectDate(project.date);
-  // Use the `.nn-card .meta` molecule slot — separator dot ("·") joins
-  // date and screenshot count, same pattern as ArticlesCarousel cards.
+  const safeLink = sanitizeUrl(project.link ?? '');
+  // Meta-Row: date · screenshot count · visit-website link (when set).
+  // Pulled out of the `<button>` trigger so the link can be a real `<a>`
+  // (nested `<a>` in `<button>` is HTML-invalid). The mount script
+  // treats clicks anywhere on the meta row as expand-toggles except
+  // when the click target is the link itself.
   const metaParts: string[] = [];
   if (dateLabel) metaParts.push(`<span>${escapeHtml(dateLabel)}</span>`);
   if (countLabel) metaParts.push(`<span>${escapeHtml(countLabel)}</span>`);
+  if (safeLink) {
+    metaParts.push(
+      `<a class="nospress-block-portfolio__visit-link" href="${escapeHtmlAttr(safeLink)}" target="_blank" rel="noopener noreferrer">Visit</a>`
+    );
+  }
   const metaHtml = metaParts.length > 0
-    ? `<div class="meta">${metaParts.join('<span>·</span>')}</div>`
+    ? `<div class="meta nospress-block-portfolio__meta" data-portfolio-card-meta>${metaParts.join('<span>·</span>')}</div>`
     : '';
 
   // Expanded body — rendered ALWAYS but hidden via SCSS until the
   // wrapper carries `.is-expanded`. Keeps the markup self-contained so
   // the mount script doesn't have to inject HTML on click.
-  const carouselHtml = project.screenshots.map((url, i) => {
-    const safe = sanitizeUrl(url);
-    if (!safe) return '';
-    return `<div class="nospress-block-portfolio__slide" data-slide-index="${i}">
-      <img class="note-image note-image--clickable" src="${escapeHtmlAttr(safe)}" alt="${escapeHtmlAttr(project.title)} screenshot ${i + 1}" loading="lazy" />
-    </div>`;
-  }).filter(Boolean).join('');
+  const safeShotUrls = project.screenshots.map(u => sanitizeUrl(u)).filter(Boolean) as string[];
+  const carouselUrlsAttr = safeShotUrls.length > 0 ? lightboxContainerDataUrlsAttr(safeShotUrls) : '';
+  const carouselHtml = safeShotUrls.map((safe, i) => `
+    <div class="nospress-block-portfolio__slide" data-slide-index="${i}">
+      <img class="note-image note-image--clickable" src="${escapeHtmlAttr(safe)}" alt="${escapeHtmlAttr(project.title)} screenshot ${i + 1}" loading="lazy" data-image-index="${i}" />
+    </div>
+  `).join('');
 
   const dotsHtml = shotCount > 1
     ? `<div class="nospress-block-portfolio__dots" data-portfolio-dots>
@@ -314,27 +324,22 @@ function renderReadonlyCard(project: PortfolioProject, pageIdx: number): string 
     ? `<p class="nospress-block-portfolio__desc">${sanitizeUserHtml(project.description)}</p>`
     : '';
 
-  const safeLink = sanitizeUrl(project.link ?? '');
-  const linkHtml = safeLink
-    ? `<a class="btn btn--passive btn--mini" href="${escapeHtmlAttr(safeLink)}" target="_blank" rel="noopener noreferrer">Visit website ↗</a>`
-    : '';
-
   return `
     <article class="nn-card nospress-block-portfolio__card" data-portfolio-card data-project-id="${project.id}" data-page="${pageIdx}">
       <button type="button" class="nospress-block-portfolio__card-trigger" data-portfolio-card-toggle aria-expanded="false">
         ${mediaHtml}
         <div class="nn-card__content">
           <h3>${escapeHtml(project.title || 'Untitled project')}</h3>
-          ${metaHtml}
         </div>
       </button>
+      ${metaHtml}
       <div class="nospress-block-portfolio__expanded" data-portfolio-expanded hidden>
         <button type="button" class="nospress-block-portfolio__close" data-portfolio-card-close aria-label="Close">×</button>
-        <div class="nospress-block-portfolio__carousel" data-portfolio-carousel>
+        ${descHtml}
+        <div class="nospress-block-portfolio__carousel note-media" data-portfolio-carousel ${carouselUrlsAttr}>
           ${carouselHtml}
         </div>
         ${dotsHtml}
-        ${descHtml ? `<div class="nospress-block-portfolio__body">${descHtml}${linkHtml}</div>` : (linkHtml ? `<div class="nospress-block-portfolio__body">${linkHtml}</div>` : '')}
       </div>
     </article>
   `;
