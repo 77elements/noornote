@@ -245,6 +245,15 @@ export const WEBLOG_GROUPS: Record<WeblogKey, PropertyGroup[]> = {
     { key: 'typography', label: 'Color',      props: ['color'] },
     { key: 'background', label: 'Background', props: ['background'] },
   ],
+  loading: [
+    { key: 'typography', label: 'Color',      props: ['color'] },
+  ],
+  meta: [
+    { key: 'typography', label: 'Color',      props: ['color'] },
+  ],
+  mention: [
+    { key: 'background', label: 'Background', props: ['background'] },
+  ],
 };
 
 /** Composition shorthand for media/sub-component containers — full

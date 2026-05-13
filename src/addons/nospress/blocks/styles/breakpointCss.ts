@@ -113,21 +113,41 @@ const PORTFOLIO_SELECTORS: Record<PortfolioKey, string> = {
   pageBtnActive: ' .nospress-block-portfolio__page-btn.is-active',
 };
 
-/** Flat per-key schemas for the weblog sub-scope. Three slots (note /
- *  noteHover / isl), each exposing color + background. */
+/** Flat per-key schemas for the weblog sub-scope. */
 const WEBLOG_SCHEMAS: Record<WeblogKey, PropertyEntry[]> = {
   note:      WEBLOG_GROUPS.note.flatMap(g => flattenGroupProps(g.props)),
   noteHover: WEBLOG_GROUPS.noteHover.flatMap(g => flattenGroupProps(g.props)),
   isl:       WEBLOG_GROUPS.isl.flatMap(g => flattenGroupProps(g.props)),
+  loading:   WEBLOG_GROUPS.loading.flatMap(g => flattenGroupProps(g.props)),
+  meta:      WEBLOG_GROUPS.meta.flatMap(g => flattenGroupProps(g.props)),
+  mention:   WEBLOG_GROUPS.mention.flatMap(g => flattenGroupProps(g.props)),
 };
 
-/** CSS selector suffixes for the weblog sub-scope keys. Targets the
- *  rendered NoteUI markup that lives inside the weblog block's
- *  `[data-styled-block-id="X"]` wrapper. */
-const WEBLOG_SELECTORS: Record<WeblogKey, string> = {
-  note:      ' .note-card',
-  noteHover: ' .note-card:hover',
-  isl:       ' .isl-action',
+/** CSS selector suffixes for the weblog sub-scope keys. Each value is a
+ *  list — most keys carry exactly one suffix, but `meta` fans out to
+ *  three (timestamp + @handle + via-client) so a single color slot tints
+ *  the whole byline strip. The build loop comma-joins all entries after
+ *  prepending the wrapper selector. */
+const WEBLOG_SELECTORS: Record<WeblogKey, string[]> = {
+  note:      [' .note-card'],
+  noteHover: [' .note-card:hover'],
+  // `:not(:hover)` excludes the hover state so NoorNote's own
+  // `.isl-action:hover { color: var(--color-5); background: var(--color-2); }`
+  // takes over uninterrupted. Without this, the user's color override
+  // would also apply on hover and collide with NoorNote's hover
+  // background (text + bg in the same custom tint = invisible).
+  isl:       [' .isl-action:not(:hover)'],
+  loading:   [' .nospress-block-weblog__loading'],
+  // The timestamp is rendered as `<time class="note-header__timestamp">
+  // <span class="date-time">…</span></time>` via `formatTimestamp`. The
+  // inner `.date-time` atom carries its own `color: var(--color-3)`, so
+  // a rule on the outer `<time>` alone doesn't propagate — we target
+  // both layers explicitly to win the cascade.
+  meta:      [' .note-header__timestamp', ' .note-header__timestamp .date-time', ' .user-identity__handle', ' .note-header__client'],
+  // The user-hover-card pops up when hovering a mention and is portaled
+  // to `document.body`; it gets the same background tint so the pill
+  // and its preview card read as one piece.
+  mention:   [' .mention-link--bg', ' .user-hover-card'],
 };
 
 /** Per-key CSS selector suffixes for the nav-menu desktop sub-scope.
@@ -238,13 +258,24 @@ export function buildBlockWeblogCss(
   const sel = `[data-styled-block-id="${block.id}"]`;
   const parts: string[] = [];
 
+  // `mention` is the lone exception in this fan-out: `.mention-link--bg`
+  // appears both inside the rendered note content (scoped under the
+  // wrapper) AND inside the Analytics modal that ModalService portals
+  // to `document.body` (well outside the wrapper). Emit the rule global
+  // for this key so both render paths pick up the user's tint. The
+  // `<style>` block lives in the public-page container, so the rule
+  // only ever loads on a NosPress site — not in the NoorNote app shell.
+  const joinSel = (key: WeblogKey): string => key === 'mention'
+    ? WEBLOG_SELECTORS[key].map(s => s.trimStart()).join(', ')
+    : WEBLOG_SELECTORS[key].map(s => `${sel}${s}`).join(', ');
+
   const defaults = block.style?.weblog;
   if (defaults) {
     for (const key of WEBLOG_KEYS) {
       const sub = defaults[key];
       if (!sub) continue;
       const decls = buildInlineStyle(WEBLOG_SCHEMAS[key], sub);
-      if (decls) parts.push(`${sel}${WEBLOG_SELECTORS[key]} { ${decls} }`);
+      if (decls) parts.push(`${joinSel(key)} { ${decls} }`);
     }
   }
 
@@ -261,7 +292,7 @@ export function buildBlockWeblogCss(
         const sub = overrides[key];
         if (!sub) continue;
         const decls = buildImportantInlineStyle(WEBLOG_SCHEMAS[key], sub);
-        if (decls) inner.push(`${sel}${WEBLOG_SELECTORS[key]} { ${decls} }`);
+        if (decls) inner.push(`${joinSel(key)} { ${decls} }`);
       }
       if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
     }

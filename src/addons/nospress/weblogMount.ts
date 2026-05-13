@@ -63,9 +63,15 @@ async function mountSlot(slot: HTMLElement, ownerPubkey: string): Promise<void> 
   };
   slotState.set(slot, state);
 
-  // Initial container scaffold: posts area + load-more bar.
+  // Initial container scaffold: posts area + load-more bar. The
+  // `.pulsate` placeholder sits inside `__items` until the first fetch
+  // resolves; `fetchAndAppend` removes it before rendering the first
+  // page (or the empty-state message). Subsequent load-more calls find
+  // no placeholder so the removal is a no-op.
   slot.innerHTML = `
-    <div class="nospress-block-weblog__items"></div>
+    <div class="nospress-block-weblog__items">
+      <div class="nospress-block-weblog__loading pulsate">Loading posts…</div>
+    </div>
     <div class="nospress-block-weblog__bar">
       <button type="button" class="btn btn--passive btn--medium nospress-block-weblog__load-more">Load more</button>
     </div>
@@ -99,6 +105,12 @@ async function fetchAndAppend(
     filtered.sort((a, b) => b.created_at - a.created_at);
     const next = filtered.slice(0, state.postsPerPage);
 
+    // First fetch completed — drop the initial loading placeholder so
+    // the empty-state check + the note appends below work against a
+    // clean items host. No-op on subsequent load-more calls.
+    const loadingEl = itemsHost.querySelector('.nospress-block-weblog__loading');
+    if (loadingEl) loadingEl.remove();
+
     if (next.length === 0) {
       if (itemsHost.children.length === 0) {
         itemsHost.innerHTML = `<p class="nospress-block-weblog__empty">No posts yet.</p>`;
@@ -127,6 +139,8 @@ async function fetchAndAppend(
     }
   } catch (error) {
     console.error('Weblog mount failed:', error);
+    const loadingEl = itemsHost.querySelector('.nospress-block-weblog__loading');
+    if (loadingEl) loadingEl.remove();
     if (slot.isConnected && loadMoreBtn) loadMoreBtn.disabled = false;
   }
 }

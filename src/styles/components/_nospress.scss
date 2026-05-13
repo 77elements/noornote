@@ -1070,6 +1070,16 @@
     padding: $gap;
     color: $text-alpha-medium;
   }
+
+  // ISL hover pill — NoorNote's default `.isl-action:hover` paints a
+  // `var(--color-2)` background that doubles as the page background tint
+  // in the standard app. Inside a NosPress weblog block the page palette
+  // is user-customisable, so `--color-2` can collide with whatever the
+  // author chose for the surrounding card. Drop the pill in this scope
+  // and let the per-action icon hover colors do the work alone.
+  .isl-action:hover {
+    background: transparent;
+  }
 }
 
 

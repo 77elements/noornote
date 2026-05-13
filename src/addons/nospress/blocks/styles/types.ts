@@ -232,9 +232,13 @@ export type PortfolioKey = typeof PORTFOLIO_KEYS[number];
 /** Element keys covered by the weblog sub-scope.
  *  `note` (.note-card default state), `noteHover` (.note-card:hover),
  *  `isl` (.isl-action — color propagates via currentColor to icons +
- *  counts; hover tints stay NoorNote-controlled). Each exposes color +
- *  background. */
-export const WEBLOG_KEYS = ['note', 'noteHover', 'isl'] as const;
+ *  counts; hover tints stay NoorNote-controlled), `loading` (the
+ *  `.nospress-block-weblog__loading` placeholder visible until the
+ *  first batch arrives — color only), `meta` (date + handle row under
+ *  the username, retinted via a single color slot — fans out to
+ *  `.note-header__timestamp`, `.user-identity__handle`, and
+ *  `.note-header__client` so the byline reads as one unified strip). */
+export const WEBLOG_KEYS = ['note', 'noteHover', 'isl', 'loading', 'meta', 'mention'] as const;
 export type WeblogKey = typeof WEBLOG_KEYS[number];
 
 /** Block types that surface the link sub-scope in the Properties panel.

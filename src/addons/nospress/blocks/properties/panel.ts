@@ -778,6 +778,27 @@ function renderWeblogSections(opts: RenderPropertyPanelOptions): string {
   }));
   const islBody = renderEntriesForGroups(opts, islGroups, 'weblog.isl.');
 
+  const loadingGroups: ResolvedPropertyGroup[] = WEBLOG_GROUPS.loading.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const loadingBody = renderEntriesForGroups(opts, loadingGroups, 'weblog.loading.');
+
+  const metaGroups: ResolvedPropertyGroup[] = WEBLOG_GROUPS.meta.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const metaBody = renderEntriesForGroups(opts, metaGroups, 'weblog.meta.');
+
+  const mentionGroups: ResolvedPropertyGroup[] = WEBLOG_GROUPS.mention.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const mentionBody = renderEntriesForGroups(opts, mentionGroups, 'weblog.mention.');
+
   return `
     <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-weblog-section="note">
       <div class="nn-ui-toggle__header" data-toggle-header>
@@ -803,6 +824,45 @@ function renderWeblogSections(opts: RenderPropertyPanelOptions): string {
       </div>
       <div class="nn-ui-toggle__content">
         ${islBody}
+      </div>
+    </section>
+    <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-weblog-section="loading">
+      <div class="nn-ui-toggle__header" data-toggle-header>
+        <div class="nn-ui-toggle__info">
+          <h2 class="nn-ui-toggle__title">Loading (.nospress-block-weblog__loading)</h2>
+        </div>
+        <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </div>
+      <div class="nn-ui-toggle__content">
+        ${loadingBody}
+      </div>
+    </section>
+    <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-weblog-section="meta">
+      <div class="nn-ui-toggle__header" data-toggle-header>
+        <div class="nn-ui-toggle__info">
+          <h2 class="nn-ui-toggle__title">Date + Handle row</h2>
+        </div>
+        <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </div>
+      <div class="nn-ui-toggle__content">
+        ${metaBody}
+      </div>
+    </section>
+    <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-weblog-section="mention">
+      <div class="nn-ui-toggle__header" data-toggle-header>
+        <div class="nn-ui-toggle__info">
+          <h2 class="nn-ui-toggle__title">Mention (.mention-link--bg)</h2>
+        </div>
+        <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </div>
+      <div class="nn-ui-toggle__content">
+        ${mentionBody}
       </div>
     </section>
   `;
