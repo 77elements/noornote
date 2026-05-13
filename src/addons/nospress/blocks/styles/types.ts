@@ -346,8 +346,11 @@ export interface TextShadowPropertyEntry {
 export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry | DividerPropertyEntry | TextShadowPropertyEntry | DropdownPropertyEntry;
 
 /** Side identifiers used by quad properties (margin/padding/border-*).
- *  Exported so the build / breakpointCss modules iterate the same set. */
-export const QUAD_SIDES = ['top', 'bottom', 'left', 'right'] as const;
+ *  Order mirrors the CSS shorthand (top → right → bottom → left) so the
+ *  panel rows read the same way as the `margin: T R B L` syntax users
+ *  already know. Exported so the build / breakpointCss modules iterate
+ *  the same set. */
+export const QUAD_SIDES = ['top', 'right', 'bottom', 'left'] as const;
 export type QuadSide = typeof QUAD_SIDES[number];
 
 // ──────────────────────────────────────────────────────────────────────────
