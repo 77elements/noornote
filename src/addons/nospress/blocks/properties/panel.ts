@@ -594,11 +594,19 @@ function renderMobileMenuSubScopePanel(opts: RenderPropertyPanelOptions): string
     `;
   }).join('');
 
+  // Wrap in a Specific fieldset so the mobile-menu sub-scope panel
+  // mirrors the main panel's General/Specific structure. There is no
+  // wrapper-level "General" content here — the whole panel IS the
+  // nav-menu's mobile-specific sub-scope — so only the Specific
+  // fieldset renders.
   return `
     <div class="nospress-block-properties" data-properties-for="${scopeAttr}">
       ${opts.header ?? ''}
       <div class="nospress-block-properties__body">
-        ${sectionsHtml}
+        <fieldset>
+          <legend>Specific</legend>
+          ${sectionsHtml}
+        </fieldset>
       </div>
     </div>
   `;
