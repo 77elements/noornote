@@ -105,6 +105,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
     ],
   },
   gridGap:      { kind: 'single', key: 'gridGap',      label: 'Gap',           cssProp: 'gap',           placeholder: '0' },
+  gridTemplateColumns: { kind: 'single', key: 'gridTemplateColumns', label: 'Grid columns', cssProp: 'grid-template-columns', placeholder: 'e.g. 1fr 2fr 1fr' },
   position:     {
     kind: 'dropdown', key: 'position', label: 'Position', cssProp: 'position',
     options: [
@@ -164,6 +165,12 @@ const GROUP_TEXT_ALIGN: PropertyGroup = { key: 'text-align', label: 'Alignment',
  *  section alongside position/display/positionInsets/gridGap — no
  *  separate Alignment section. */
 const GROUP_LAYOUT_DM_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', 'alignButton'] };
+
+/** Columns block uses a slightly fattened Layout group: `gridTemplateColumns`
+ *  is exposed right before `gridGap` so the user can override the preset
+ *  picker's `--nospress-cols` with a raw `grid-template-columns` value
+ *  (mix of `fr`, fixed widths, `minmax()`, `auto-fit`, …). */
+const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap'] };
 
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
@@ -292,7 +299,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   gallery:           CONTAINER_GROUPS,
   embed:             CONTAINER_GROUPS,
   'bookmark-folder': CONTAINER_GROUPS,
-  columns:           CONTAINER_GROUPS,
+  columns:           [GROUP_LAYOUT_COLUMNS, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER],
   'profile-card':    CONTAINER_GROUPS,
   quote:             TEXTUAL_GROUPS,
   'button-cta':      TEXTUAL_GROUPS,

@@ -75,6 +75,12 @@ export interface CommonStyle {
    *  CSS default is `0`; the panel placeholder mirrors that so users see
    *  what they'd be overriding. */
   gridGap?: string;
+  /** Raw `grid-template-columns` value — only surfaced on the `columns`
+   *  block as a Layout-group entry. When set, overrides the preset
+   *  ratio that the renderer pipes through `--nospress-cols`. Pure
+   *  string passthrough so the user can mix `fr`, fixed widths,
+   *  `minmax()`, `auto-fit`, etc. */
+  gridTemplateColumns?: string;
   /** Per-side border widths (CSS shorthand emitted as
    *  `border-width: <top> <right> <bottom> <left>`). */
   borderWidth?: BoxValues;
@@ -268,7 +274,8 @@ export interface SinglePropertyEntry {
   kind: 'single';
   key:
     | 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight'
-    | 'fontStyle' | 'borderRadius' | 'width' | 'height' | 'gridGap';
+    | 'fontStyle' | 'borderRadius' | 'width' | 'height' | 'gridGap'
+    | 'gridTemplateColumns';
   label: string;
   cssProp: string;
   placeholder: string;
