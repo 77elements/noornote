@@ -146,6 +146,18 @@
     scroll-behavior: smooth;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    // Scroll-snap turns the native overflow into a swipe-carousel feel:
+    // touch flicks settle on a card edge instead of stopping mid-card.
+    // `pan-x` tells the browser this element is for horizontal panning
+    // only — fixes the case where the user's swipe is read as a
+    // vertical page-scroll attempt and never reaches the carousel.
+    scroll-snap-type: x mandatory;
+    touch-action: pan-x;
+    // Container queries: card widths adapt to THIS viewport's width, not
+    // the global viewport — works whether the carousel sits in a wide
+    // page or a narrow Columns cell.
+    container-type: inline-size;
+    container-name: nn-scroll-carousel;
     // CSS doesn't let us mix `overflow-x: auto` with `overflow-y: visible`
     // (one axis with a "scrolling" value forces the other off `visible`),
     // which clips the card hover drop-shadow at the viewport's bottom
@@ -165,9 +177,12 @@
     gap: $gap;
 
     // Track items keep their natural width (set by the consumer) and
-    // never shrink. Visual styling comes from .nn-card.
+    // never shrink. Visual styling comes from .nn-card. The snap-align
+    // pairs with the viewport's `scroll-snap-type` so each card lands
+    // flush against the left edge.
     > * {
       flex: 0 0 auto;
+      scroll-snap-align: start;
     }
   }
 }
