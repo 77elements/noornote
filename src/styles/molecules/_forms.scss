@@ -208,7 +208,10 @@ label {
 .form__row {
   margin-bottom: $gap;
 
-  label {
+  // `:not(.switch-label)` leaves the Switch molecule's own grid layout
+  // intact — without the exclusion, this block-display rule wins on
+  // specificity and stacks the toggle below the label.
+  label:not(.switch-label) {
     display: block;
     margin-bottom: calc($gap / 2);
     color: var(--color-4);

@@ -22,6 +22,7 @@ export class Router {
   private history: string[] = [];
   private historyIndex: number = -1;
   private isNavigatingHistory: boolean = false;
+  private fullReloadCheck?: (path: string) => boolean;
   private readonly SESSION_STORAGE_KEY = 'noornote_last_url';
   private readonly HISTORY_STORAGE_KEY = 'noornote_url_history';
   private readonly MAX_HISTORY = 50;
@@ -32,12 +33,34 @@ export class Router {
     // Restore URL history from sessionStorage
     this.restoreHistory();
 
-    // Listen for browser back/forward
+    // Listen for browser back/forward. Some URLs (e.g. NosPress public
+    // pages like `/npub1…` or `/alp@nostrplebs.com`) are owned by a
+    // boot-time bootstrap that only runs on the initial page load —
+    // there's no registered Route the SPA can switch back to. App.ts
+    // registers a predicate via `setFullReloadOnPopstate` so popstate
+    // on those paths triggers a full page reload, letting the
+    // bootstrap pick the URL up fresh instead of leaving the previous
+    // view stuck on screen with a mismatching URL.
     window.addEventListener('popstate', () => {
-      this.handleRoute(window.location.pathname);
+      const path = window.location.pathname;
+      if (this.fullReloadCheck?.(path)) {
+        window.location.reload();
+        return;
+      }
+      this.handleRoute(path);
     });
 
     // Don't handle route here - let App.ts call navigate() after routes are registered
+  }
+
+  /**
+   * Register a predicate that decides whether a popstate-landed path
+   * should bypass the in-app Route table and trigger a full browser
+   * reload instead. Used for boot-only routes (NosPress public pages)
+   * whose mount path isn't wired into the SPA's Route table.
+   */
+  public setFullReloadOnPopstate(check: (path: string) => boolean): void {
+    this.fullReloadCheck = check;
   }
 
   public static getInstance(): Router {

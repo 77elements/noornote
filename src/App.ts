@@ -73,6 +73,11 @@ export class App {
     const PublicPageBootstrap: typeof PublicPageBootstrapT =
       (await import('./addons/nospress/PublicPageBootstrap')).PublicPageBootstrap;
     const publicMatch = PublicPageBootstrap.detect();
+    // Wire the central popstate fallback: a Back button that lands on
+    // a NosPress public URL (`/npub1…` or `/alp@nostrplebs.com`) has no
+    // Route handler — only the boot path knows how to mount that view.
+    // Reloading lets PublicPageBootstrap pick the URL up again.
+    this.router.setFullReloadOnPopstate(path => PublicPageBootstrap.detect(path) !== null);
     if (!publicMatch) this.setupUI();
 
     this.setupEventListeners();

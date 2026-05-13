@@ -4698,8 +4698,13 @@ export class NospressView extends View {
         return;
       }
 
-      // Skip clicks on interactive controls — those have their own handlers
-      if (target.closest('button, input, textarea, select, a, [data-action]')) return;
+      // Skip clicks on interactive controls — those have their own handlers.
+      // `label` covers the Switch molecule: the visible part the user
+      // actually clicks (`.switch-slider`) is a sibling of the hidden
+      // `<input>`, so a plain `closest('input')` misses it and the
+      // block-selection re-render below would race the native
+      // label→checkbox toggle and discard the input mid-flip.
+      if (target.closest('button, input, textarea, select, a, label, [data-action]')) return;
       // Inviolable media-click rule: clicks on rendered images/videos must
       // reach the global ImageClickHandler/VideoPlayerService, never get
       // pre-empted by block-selection. (See /build-validate guard.)

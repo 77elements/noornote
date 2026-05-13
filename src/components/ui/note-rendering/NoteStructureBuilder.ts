@@ -281,9 +281,17 @@ export class NoteStructureBuilder {
         return;
       }
 
-      // Navigate to Single Note View via ViewNavigationController
-      const navController = getViewNavigationController();
+      // Navigate to Single Note View. The public NosPress page boots
+      // through PublicPageBootstrap and skips `App.setupUI()`, so the
+      // in-app Router has no mount target. Mirror the pattern used in
+      // ProfileArticlesCarousel: detect `layout--public` and fall back
+      // to a full page-load through App.ts → setupUI → SNV.
       const nevent = encodeNevent(note.id);
+      if (document.documentElement.classList.contains('layout--public')) {
+        window.location.href = `/note/${nevent}`;
+        return;
+      }
+      const navController = getViewNavigationController();
       navController.openView('single-note', nevent, e);
     });
 

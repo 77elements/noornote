@@ -1080,6 +1080,15 @@
   .isl-action:hover {
     background: transparent;
   }
+
+  // Compact switch layout — the editor's edit form is wide, so the
+  // default `.switch-label { grid-template-columns: 1fr auto }` pushes
+  // the toggle to the far right of the form and visually disconnects
+  // it from its label. Keep it next to the text instead.
+  &__edit .switch-label {
+    grid-template-columns: auto auto;
+    justify-content: start;
+  }
 }
 
 

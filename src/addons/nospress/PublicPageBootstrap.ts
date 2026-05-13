@@ -17,9 +17,9 @@ import { PlatformService } from '../../services/PlatformService';
  * Browser-only by design (Electron / Capacitor never hit public URLs).
  */
 export class PublicPageBootstrap {
-  static detect(): PublicPageRoute | null {
+  static detect(path?: string): PublicPageRoute | null {
     if (!PlatformService.getInstance().isBrowser) return null;
-    return detectPublicPageRoute(window.location.pathname);
+    return detectPublicPageRoute(path ?? window.location.pathname);
   }
 
   static async mountPublicView(route: PublicPageRoute, appElement: HTMLElement): Promise<void> {

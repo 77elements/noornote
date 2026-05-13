@@ -30,9 +30,9 @@ export function renderWeblog(block: Extract<Block, { type: 'weblog' }>, editable
   const mountAttrs = `data-weblog-mount data-block-id="${block.id}" data-pubkey="${escapeHtmlAttr(pubkey)}" data-hashtags="${escapeHtmlAttr(hashtags)}" data-posts-per-page="${postsPerPage}" data-include-without-hash="${includeWithoutHash ? '1' : '0'}" data-exclude-replies="${excludeReplies ? '1' : '0'}" data-exclude-reposts="${excludeReposts ? '1' : '0'}"`;
 
   if (editable) {
-    const slot = `<div class="nospress-block-weblog" ${mountAttrs}>
-      <div class="nospress-block-weblog__loading pulsate">Loading posts…</div>
-    </div>`;
+    // No live blog preview inside the editor — the public page already
+    // shows the rendered list, and fetching here just spams relays
+    // every time the user opens the block.
     const editForm = `
       <div class="nospress-block-weblog__edit">
         <div class="form__row">
@@ -54,9 +54,9 @@ export function renderWeblog(block: Extract<Block, { type: 'weblog' }>, editable
             </label>
           </div>
         </div>
-        <div class="form__row">
+        <div class="form__row form__row--oneline">
           <label>Posts per page</label>
-          <input type="number" class="input" data-block-id="${block.id}" data-field="weblog-posts-per-page" value="${postsPerPage}" min="1" max="20" />
+          <input type="number" class="input nospress-prop-row__input--narrow" data-block-id="${block.id}" data-field="weblog-posts-per-page" value="${postsPerPage}" min="1" max="20" />
         </div>
         <div class="form__row">
           <div class="switch-container">
@@ -70,13 +70,17 @@ export function renderWeblog(block: Extract<Block, { type: 'weblog' }>, editable
           </div>
         </div>
         <div class="form__row">
-          <label>
-            <input type="checkbox" data-block-id="${block.id}" data-field="weblog-exclude-reposts" ${excludeReposts ? 'checked' : ''} />
-            Exclude reposts
-          </label>
+          <div class="switch-container">
+            <label class="switch-label">
+              <span class="switch-text">Exclude reposts</span>
+              <div class="switch-toggle">
+                <input type="checkbox" class="switch-input" data-block-id="${block.id}" data-field="weblog-exclude-reposts" ${excludeReposts ? 'checked' : ''} />
+                <span class="switch-slider"></span>
+              </div>
+            </label>
+          </div>
         </div>
       </div>
-      ${slot}
     `;
     return wrapEditable(block.id, 'weblog', editForm);
   }
