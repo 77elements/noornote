@@ -274,7 +274,15 @@ export function buildBlockWeblogCss(
     for (const key of WEBLOG_KEYS) {
       const sub = defaults[key];
       if (!sub) continue;
-      const decls = buildInlineStyle(WEBLOG_SCHEMAS[key], sub);
+      // Use `!important` even for the Default-tab rules here — the weblog
+      // sub-scopes target classes (`.note-card:hover`, `.isl-action`,
+      // `.mention-link--bg`, …) that the rendered NoteUI / atom layer
+      // also styles with state-specific rules. Specificity alone wins
+      // most of those battles, but the rendered DOM occasionally adds
+      // extra modifier classes (`.note-card--repost > .note-card:hover`
+      // for nested reposts has spec 0,4,0 and outranks our 0,3,0). The
+      // user explicitly set a value here, so it should always win.
+      const decls = buildImportantInlineStyle(WEBLOG_SCHEMAS[key], sub);
       if (decls) parts.push(`${joinSel(key)} { ${decls} }`);
     }
   }

@@ -49,6 +49,7 @@ import { CursorRow } from './blocks/CursorRow';
 import { cloneBlockWithFreshIds, createBlock, findBlockInPage, stripBlockContent, topLevelOnly, COLUMN_LAYOUT_PRESETS, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
 import { deleteCustomBlock, findCustomBlock, saveCustomBlock } from './customBlocks';
 import {
+  buildPageBreakpointCss,
   groupedSchemaFor,
   readStyleField,
   renderPropertyPanel,
@@ -497,6 +498,19 @@ export class NospressView extends View {
 
     const templateHeadingHtml = `<h2>${escapeHtml(this.computeTemplateHeading())}</h2>`;
 
+    // Editor-side live preview of the per-block CSS bundle. Mirrors the
+    // `<style class="nospress-block-breakpoints">` that PublicNospressPage
+    // emits — without this, sub-scope rules (weblog note hover, ISL
+    // tints, mention bg, etc.) would only ever paint on the published
+    // site and the editor preview would silently drop back to the
+    // framework defaults, making it look like the user's settings did
+    // nothing.
+    const breakpoints = this.siteSettingsService.getSettings().breakpoints ?? [];
+    const blockCss = buildPageBreakpointCss(page.blocks as never, breakpoints);
+    const blockCssHtml = blockCss
+      ? `<style class="nospress-block-breakpoints">${blockCss}</style>`
+      : '';
+
     // No in-PCC header: the only edit surface is the FullscreenOverlay,
     // which provides its own header (title + Exit + extraActions like
     // See Website / CSS Editor toggle).
@@ -504,6 +518,7 @@ export class NospressView extends View {
       <div class="nospress-view">
         ${cssEditorHtml}
         ${templateHeadingHtml}
+        ${blockCssHtml}
         ${composedBlocksHtml}
         ${this.renderActionBar(editable)}
       </div>
