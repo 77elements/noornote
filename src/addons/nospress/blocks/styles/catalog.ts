@@ -106,6 +106,26 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   },
   gridGap:      { kind: 'single', key: 'gridGap',      label: 'Gap',           cssProp: 'gap',           placeholder: '0' },
   gridTemplateColumns: { kind: 'single', key: 'gridTemplateColumns', label: 'Grid columns', cssProp: 'grid-template-columns', placeholder: 'e.g. 1fr 2fr 1fr' },
+  justifyItems: {
+    kind: 'dropdown', key: 'justifyItems', label: 'Justify (horizontal)', cssProp: 'justify-items',
+    options: [
+      { value: '',        label: '(default)' },
+      { value: 'start',   label: 'start' },
+      { value: 'center',  label: 'center' },
+      { value: 'end',     label: 'end' },
+      { value: 'stretch', label: 'stretch' },
+    ],
+  },
+  alignItems: {
+    kind: 'dropdown', key: 'alignItems', label: 'Align (vertical)', cssProp: 'align-items',
+    options: [
+      { value: '',        label: '(default)' },
+      { value: 'start',   label: 'start' },
+      { value: 'center',  label: 'center' },
+      { value: 'end',     label: 'end' },
+      { value: 'stretch', label: 'stretch' },
+    ],
+  },
   position:     {
     kind: 'dropdown', key: 'position', label: 'Position', cssProp: 'position',
     options: [
@@ -170,7 +190,7 @@ const GROUP_LAYOUT_DM_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', 
  *  is exposed right before `gridGap` so the user can override the preset
  *  picker's `--nospress-cols` with a raw `grid-template-columns` value
  *  (mix of `fr`, fixed widths, `minmax()`, `auto-fit`, …). */
-const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap'] };
+const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', ['justifyItems', 'alignItems']] };
 
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are

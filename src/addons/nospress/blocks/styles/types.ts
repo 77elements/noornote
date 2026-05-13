@@ -81,6 +81,14 @@ export interface CommonStyle {
    *  string passthrough so the user can mix `fr`, fixed widths,
    *  `minmax()`, `auto-fit`, etc. */
   gridTemplateColumns?: string;
+  /** CSS `justify-items` — horizontal alignment of grid items within
+   *  their cells. Only surfaces on grid containers (currently the
+   *  `columns` block); pairs with `alignItems` in the Layout group. */
+  justifyItems?: string;
+  /** CSS `align-items` — vertical alignment of grid items within their
+   *  row (also applies as cross-axis on flex containers). Pairs with
+   *  `justifyItems` in the Layout group. */
+  alignItems?: string;
   /** Per-side border widths (CSS shorthand emitted as
    *  `border-width: <top> <right> <bottom> <left>`). */
   borderWidth?: BoxValues;
@@ -306,7 +314,7 @@ export interface QuadPropertyEntry {
  *  CustomDropdown instance after each render. */
 export interface DropdownPropertyEntry {
   kind: 'dropdown';
-  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton';
+  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton' | 'justifyItems' | 'alignItems';
   label: string;
   cssProp: string;
   options: Array<{ value: string; label: string }>;
