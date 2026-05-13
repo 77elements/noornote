@@ -164,6 +164,12 @@ export interface CommonStyle {
    *  as `bookmarkFolder` / `articlesList`. Only surfaced for the
    *  portfolio block in the Properties panel. */
   portfolio?: Partial<Record<PortfolioKey, CommonStyle>>;
+  /** Weblog sub-scope — per-element styling slots inside the rendered
+   *  NoteUI list. `note` retints the `.note-card` default state, `noteHover`
+   *  retints `.note-card:hover`, `isl` retints `.isl-action` (color
+   *  propagates via `currentColor` to icons + counts). Same recursive
+   *  pattern as `portfolio`. Only surfaced for the weblog block. */
+  weblog?: Partial<Record<WeblogKey, CommonStyle>>;
   /** CSS `text-decoration` (none / underline / overline / line-through).
    *  Applies to the block itself in regular Typography AND to any link
    *  sub-scope where overriding the underline is the most common case. */
@@ -223,6 +229,14 @@ export type ArticlesListKey = typeof ARTICLES_LIST_KEYS[number];
 export const PORTFOLIO_KEYS = ['closeBtn', 'closeBtnHover', 'pageBtn', 'pageBtnHover', 'pageBtnActive'] as const;
 export type PortfolioKey = typeof PORTFOLIO_KEYS[number];
 
+/** Element keys covered by the weblog sub-scope.
+ *  `note` (.note-card default state), `noteHover` (.note-card:hover),
+ *  `isl` (.isl-action — color propagates via currentColor to icons +
+ *  counts; hover tints stay NoorNote-controlled). Each exposes color +
+ *  background. */
+export const WEBLOG_KEYS = ['note', 'noteHover', 'isl'] as const;
+export type WeblogKey = typeof WEBLOG_KEYS[number];
+
 /** Block types that surface the link sub-scope in the Properties panel.
  *  These are the blocks whose rendered output can contain `<a>` elements
  *  (either directly via user content, or transitively via mounted lists,
@@ -243,7 +257,7 @@ export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
  *  which have their own recursive render paths; and `border`, the
  *  legacy shorthand kept on the type for read-side migration only —
  *  never surfaced as an editable entry). */
-export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList' | 'portfolio'>;
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList' | 'portfolio' | 'weblog'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {

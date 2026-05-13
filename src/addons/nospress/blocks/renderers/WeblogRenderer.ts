@@ -22,10 +22,12 @@ export function renderWeblog(block: Extract<Block, { type: 'weblog' }>, editable
   const pubkey = block.pubkey ?? '';
   const hashtags = (block.hashtags ?? []).join(',');
   const postsPerPage = block.postsPerPage ?? 5;
+  const includeWithoutHash = block.includeWithoutHash === true; // default false
   const excludeReplies = block.excludeReplies !== false; // default true
   const excludeReposts = block.excludeReposts === true; // default false
+  const includeReplies = !excludeReplies;
 
-  const mountAttrs = `data-weblog-mount data-block-id="${block.id}" data-pubkey="${escapeHtmlAttr(pubkey)}" data-hashtags="${escapeHtmlAttr(hashtags)}" data-posts-per-page="${postsPerPage}" data-exclude-replies="${excludeReplies ? '1' : '0'}" data-exclude-reposts="${excludeReposts ? '1' : '0'}"`;
+  const mountAttrs = `data-weblog-mount data-block-id="${block.id}" data-pubkey="${escapeHtmlAttr(pubkey)}" data-hashtags="${escapeHtmlAttr(hashtags)}" data-posts-per-page="${postsPerPage}" data-include-without-hash="${includeWithoutHash ? '1' : '0'}" data-exclude-replies="${excludeReplies ? '1' : '0'}" data-exclude-reposts="${excludeReposts ? '1' : '0'}"`;
 
   if (editable) {
     const slot = `<div class="nospress-block-weblog" ${mountAttrs}>
@@ -42,14 +44,30 @@ export function renderWeblog(block: Extract<Block, { type: 'weblog' }>, editable
           <input type="text" class="input" data-block-id="${block.id}" data-field="weblog-hashtags" value="${escapeHtmlAttr(hashtags)}" placeholder="blog, longread, …" />
         </div>
         <div class="form__row">
+          <div class="switch-container">
+            <label class="switch-label" title="Also match posts containing the term in content without a leading #">
+              <span class="switch-text">Match term also without #</span>
+              <div class="switch-toggle">
+                <input type="checkbox" class="switch-input" data-block-id="${block.id}" data-field="weblog-include-without-hash" ${includeWithoutHash ? 'checked' : ''} />
+                <span class="switch-slider"></span>
+              </div>
+            </label>
+          </div>
+        </div>
+        <div class="form__row">
           <label>Posts per page</label>
           <input type="number" class="input" data-block-id="${block.id}" data-field="weblog-posts-per-page" value="${postsPerPage}" min="1" max="20" />
         </div>
         <div class="form__row">
-          <label>
-            <input type="checkbox" data-block-id="${block.id}" data-field="weblog-exclude-replies" ${excludeReplies ? 'checked' : ''} />
-            Exclude replies (top-level posts only)
-          </label>
+          <div class="switch-container">
+            <label class="switch-label">
+              <span class="switch-text">Including user's replies</span>
+              <div class="switch-toggle">
+                <input type="checkbox" class="switch-input" data-block-id="${block.id}" data-field="weblog-include-replies" ${includeReplies ? 'checked' : ''} />
+                <span class="switch-slider"></span>
+              </div>
+            </label>
+          </div>
         </div>
         <div class="form__row">
           <label>

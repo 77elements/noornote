@@ -11,6 +11,7 @@ const DEFAULT_POSTS_PER_PAGE = 5;
 interface WeblogState {
   pubkey: string;
   hashtags: string[];
+  includeWithoutHash: boolean;
   postsPerPage: number;
   excludeReplies: boolean;
   excludeReposts: boolean;
@@ -46,6 +47,7 @@ async function mountSlot(slot: HTMLElement, ownerPubkey: string): Promise<void> 
   }
 
   const hashtags = parseHashtags(slot.dataset.hashtags);
+  const includeWithoutHash = slot.dataset.includeWithoutHash === '1';
   const postsPerPage = clampInt(slot.dataset.postsPerPage, 1, 20, DEFAULT_POSTS_PER_PAGE);
   const excludeReplies = slot.dataset.excludeReplies !== '0';
   const excludeReposts = slot.dataset.excludeReposts === '1';
@@ -53,6 +55,7 @@ async function mountSlot(slot: HTMLElement, ownerPubkey: string): Promise<void> 
   const state: WeblogState = {
     pubkey,
     hashtags,
+    includeWithoutHash,
     postsPerPage,
     excludeReplies,
     excludeReposts,
@@ -157,10 +160,15 @@ async function fetchByAuthor(state: WeblogState): Promise<NostrEvent[]> {
 async function fetchByHashtagSearch(state: WeblogState): Promise<NostrEvent[]> {
   const search = SearchOrchestrator.getInstance();
   const limit = state.postsPerPage * 4; // generous, post-filter narrows it
+  const queries: string[] = [];
+  for (const tag of state.hashtags) {
+    queries.push(`#${tag}`);
+    if (state.includeWithoutHash) queries.push(tag);
+  }
   const results = await Promise.all(
-    state.hashtags.map(tag =>
+    queries.map(q =>
       search.searchPaginated(
-        { query: `#${tag}`, authors: [state.pubkey], limit },
+        { query: q, authors: [state.pubkey], limit },
         state.oldestSeen,
       ).catch(() => [] as NostrEvent[]),
     ),
@@ -185,14 +193,16 @@ function filterEvents(events: NostrEvent[], state: WeblogState): NostrEvent[] {
 
     // Hashtag verification: search relays return fuzzy matches, so check
     // each hit actually carries the hashtag (case-insensitive) either
-    // as a `#t` tag or as `#hashtag` text in the content.
+    // as a `#t` tag, as `#hashtag` text, or — when includeWithoutHash is
+    // on — as a plain occurrence of the term inside the content.
     if (lowerTags.length > 0) {
       const tags = event.tags ?? [];
       const content = (event.content ?? '').toLowerCase();
       const matches = lowerTags.some(tag => {
         const inTag = tags.some(t => t[0] === 't' && t[1]?.toLowerCase() === tag);
         const inContent = content.includes(`#${tag}`);
-        return inTag || inContent;
+        const inContentBare = state.includeWithoutHash && content.includes(tag);
+        return inTag || inContent || inContentBare;
       });
       if (!matches) return false;
     }

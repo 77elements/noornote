@@ -4930,8 +4930,11 @@ export class NospressView extends View {
           const n = parseInt(el.value, 10);
           if (Number.isFinite(n) && n > 0) block.postsPerPage = n; else delete block.postsPerPage;
         }
-        if (field === 'weblog-exclude-replies' && el instanceof HTMLInputElement) {
-          block.excludeReplies = el.checked;
+        if (field === 'weblog-include-without-hash' && el instanceof HTMLInputElement) {
+          block.includeWithoutHash = el.checked;
+        }
+        if (field === 'weblog-include-replies' && el instanceof HTMLInputElement) {
+          block.excludeReplies = !el.checked;
         }
         if (field === 'weblog-exclude-reposts' && el instanceof HTMLInputElement) {
           block.excludeReposts = el.checked;

@@ -24,6 +24,7 @@ import {
   MOBILE_MENU_SECTIONS,
   NAV_MENU_DESKTOP_GROUPS,
   PORTFOLIO_GROUPS,
+  WEBLOG_GROUPS,
   getDefaultDisplayFor,
   groupedSchemaFor,
   matrixKey,
@@ -461,7 +462,14 @@ function renderPanelInternal(
   // circle background.
   const showPortfolio = !fieldPrefix && blockType === 'portfolio';
   const portfolioBody = showPortfolio ? renderPortfolioSections(opts) : '';
-  const body = mainBody + navMenuTopBody + linksBody + navMenuBottomBody + bookmarkFolderBody + articlesListBody + portfolioBody;
+  // Weblog sub-scope: 3 sections (note default + hover, ISL row) placed
+  // BEFORE the link pseudos so the note-card chrome is closer to the
+  // main block properties than the inner-link styling.
+  const showWeblog = !fieldPrefix && blockType === 'weblog';
+  const weblogBody = showWeblog ? renderWeblogSections(opts) : '';
+  const specificBody = (opts.extras ?? '')
+    + navMenuTopBody + weblogBody + linksBody + navMenuBottomBody
+    + bookmarkFolderBody + articlesListBody + portfolioBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`). Paired
@@ -507,13 +515,34 @@ function renderPanelInternal(
     `
     : '');
 
+  // The panel body is split into two semantic groups: a "General"
+  // fieldset that wraps the identifiers and the standard CSS-property
+  // groups (Spacing/Sizing/Typography/Background/Border), and a
+  // "Specific" fieldset that wraps the block-specific structural
+  // controls (`extras`) plus every sub-scope section (link pseudos,
+  // nav-menu ul/li/aActive, weblog, bookmark-folder, articles-list,
+  // portfolio). The Specific fieldset is omitted when empty so simple
+  // blocks (heading, text, divider) don't show a dangling box.
+  const generalFieldset = `
+    <fieldset>
+      <legend>General</legend>
+      ${identifiersHtml}
+      ${mainBody}
+    </fieldset>
+  `;
+  const specificFieldset = specificBody.trim() ? `
+    <fieldset>
+      <legend>Specific</legend>
+      ${specificBody}
+    </fieldset>
+  ` : '';
+
   return `
     <div class="nospress-block-properties" data-properties-for="${scopeAttr}">
       ${headerHtml}
       <div class="nospress-block-properties__body">
-        ${identifiersHtml}
-        ${opts.extras ?? ''}
-        ${body}
+        ${generalFieldset}
+        ${specificFieldset}
       </div>
     </div>
   `;
@@ -719,6 +748,64 @@ function renderPortfolioSections(opts: RenderPropertyPanelOptions): string {
       </section>
     `;
   }).join('');
+}
+
+/** Render the weblog sub-scope as TWO accordion sections:
+ *  - "Note" merges the `note` (default) + `noteHover` (`:hover`) slots
+ *    in a single toggle; the hover side reuses the same property groups
+ *    but with " (hover)" suffixed to the group labels so the user sees
+ *    both state's color + background inputs next to each other.
+ *  - "ISL" stays a standalone toggle. */
+function renderWeblogSections(opts: RenderPropertyPanelOptions): string {
+  const noteDefaultGroups: ResolvedPropertyGroup[] = WEBLOG_GROUPS.note.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const noteHoverGroups: ResolvedPropertyGroup[] = WEBLOG_GROUPS.noteHover.map(g => ({
+    key: `${g.key}-hover`,
+    label: `${g.label} (hover)`,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const noteBody =
+    renderEntriesForGroups(opts, noteDefaultGroups, 'weblog.note.') +
+    renderEntriesForGroups(opts, noteHoverGroups, 'weblog.noteHover.');
+
+  const islGroups: ResolvedPropertyGroup[] = WEBLOG_GROUPS.isl.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const islBody = renderEntriesForGroups(opts, islGroups, 'weblog.isl.');
+
+  return `
+    <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-weblog-section="note">
+      <div class="nn-ui-toggle__header" data-toggle-header>
+        <div class="nn-ui-toggle__info">
+          <h2 class="nn-ui-toggle__title">Note (.note-card)</h2>
+        </div>
+        <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </div>
+      <div class="nn-ui-toggle__content">
+        ${noteBody}
+      </div>
+    </section>
+    <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-weblog-section="isl">
+      <div class="nn-ui-toggle__header" data-toggle-header>
+        <div class="nn-ui-toggle__info">
+          <h2 class="nn-ui-toggle__title">ISL (.isl-action)</h2>
+        </div>
+        <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </div>
+      <div class="nn-ui-toggle__content">
+        ${islBody}
+      </div>
+    </section>
+  `;
 }
 
 function renderLinkSubScopeSections(opts: RenderPropertyPanelOptions): string {

@@ -22,6 +22,7 @@ import {
   LINK_SUBSCOPE_GROUPS,
   NAV_MENU_DESKTOP_GROUPS,
   PORTFOLIO_GROUPS,
+  WEBLOG_GROUPS,
   flattenGroupProps,
   schemaFor,
 } from './catalog';
@@ -33,12 +34,14 @@ import {
   LINK_PSEUDO_KEYS,
   NAV_MENU_DESKTOP_KEYS,
   PORTFOLIO_KEYS,
+  WEBLOG_KEYS,
   type ArticlesListKey,
   type BookmarkFolderKey,
   type CommonStyle,
   type NavMenuDesktopKey,
   type PortfolioKey,
   type PropertyEntry,
+  type WeblogKey,
 } from './types';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -108,6 +111,23 @@ const PORTFOLIO_SELECTORS: Record<PortfolioKey, string> = {
   pageBtn:       ' .nospress-block-portfolio__page-btn',
   pageBtnHover:  ' .nospress-block-portfolio__page-btn:hover',
   pageBtnActive: ' .nospress-block-portfolio__page-btn.is-active',
+};
+
+/** Flat per-key schemas for the weblog sub-scope. Three slots (note /
+ *  noteHover / isl), each exposing color + background. */
+const WEBLOG_SCHEMAS: Record<WeblogKey, PropertyEntry[]> = {
+  note:      WEBLOG_GROUPS.note.flatMap(g => flattenGroupProps(g.props)),
+  noteHover: WEBLOG_GROUPS.noteHover.flatMap(g => flattenGroupProps(g.props)),
+  isl:       WEBLOG_GROUPS.isl.flatMap(g => flattenGroupProps(g.props)),
+};
+
+/** CSS selector suffixes for the weblog sub-scope keys. Targets the
+ *  rendered NoteUI markup that lives inside the weblog block's
+ *  `[data-styled-block-id="X"]` wrapper. */
+const WEBLOG_SELECTORS: Record<WeblogKey, string> = {
+  note:      ' .note-card',
+  noteHover: ' .note-card:hover',
+  isl:       ' .isl-action',
 };
 
 /** Per-key CSS selector suffixes for the nav-menu desktop sub-scope.
@@ -198,6 +218,50 @@ export function buildBlockBookmarkFolderCss(
         if (!sub) continue;
         const decls = buildImportantInlineStyle(BOOKMARK_FOLDER_SCHEMAS[key], sub);
         if (decls) inner.push(`${sel}${BOOKMARK_FOLDER_SELECTORS[key]} { ${decls} }`);
+      }
+      if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
+/** Per-block weblog sub-scope CSS — emits the user's tints for the
+ *  rendered NoteUI list (`.note-card` default + hover; `.isl-action`
+ *  color/background) scoped via `[data-styled-block-id="<id>"]`. Same
+ *  Default + per-BP pattern as the other sub-scopes. */
+export function buildBlockWeblogCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'weblog') return '';
+  const sel = `[data-styled-block-id="${block.id}"]`;
+  const parts: string[] = [];
+
+  const defaults = block.style?.weblog;
+  if (defaults) {
+    for (const key of WEBLOG_KEYS) {
+      const sub = defaults[key];
+      if (!sub) continue;
+      const decls = buildInlineStyle(WEBLOG_SCHEMAS[key], sub);
+      if (decls) parts.push(`${sel}${WEBLOG_SELECTORS[key]} { ${decls} }`);
+    }
+  }
+
+  if (block.breakpointStyles) {
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style) continue;
+      const overrides = style.weblog;
+      if (!overrides) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      const inner: string[] = [];
+      for (const key of WEBLOG_KEYS) {
+        const sub = overrides[key];
+        if (!sub) continue;
+        const decls = buildImportantInlineStyle(WEBLOG_SCHEMAS[key], sub);
+        if (decls) inner.push(`${sel}${WEBLOG_SELECTORS[key]} { ${decls} }`);
       }
       if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
     }
@@ -465,6 +529,8 @@ export function buildPageBreakpointCss(
         if (portfolioCardCss) out.push(portfolioCardCss);
         const portfolioCloseBtnCss = buildBlockPortfolioCloseBtnCss(blockTyped, breakpoints);
         if (portfolioCloseBtnCss) out.push(portfolioCloseBtnCss);
+        const weblogCss = buildBlockWeblogCss(blockTyped, breakpoints);
+        if (weblogCss) out.push(weblogCss);
       }
       // Recurse into containers
       if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {

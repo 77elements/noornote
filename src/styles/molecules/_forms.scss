@@ -356,3 +356,24 @@ label {
     }
   }
 }
+
+// ========================================
+// Fieldset / Legend
+// ========================================
+// Groups related controls inside the NosPress Properties panel
+// ("General" vs "Specific"). Browser defaults are intentionally
+// neutralised — only the requested chrome (color-3 border, pill
+// radius, $gap padding) survives.
+fieldset {
+  margin: $gap 0;
+  padding: $gap;
+  border: 1px solid var(--color-3);
+  border-radius: $radius-pill;
+  min-inline-size: 0; // override UA default that forces min-width: min-content
+
+  legend {
+    padding: 0 calc($gap / 2);
+    color: var(--color-3);
+    font-weight: 500;
+  }
+}

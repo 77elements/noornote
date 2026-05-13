@@ -40,7 +40,7 @@ export type Block =
   | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
-  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; includeWithoutHash?: boolean; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'nav-menu'; menuId: string; horizontal?: boolean; alignment?: 'left' | 'center' | 'right'; hamburgerBreakpoints?: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'portfolio'; projects: PortfolioProject[]; perPage?: number; sortOrder?: PortfolioSortOrder; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs };
@@ -176,8 +176,8 @@ function resetBlockIds(block: Block): void {
  *   quote         → text, author, source reset
  *   button-cta    → label, url reset (variant kept — picker pre-selects)
  *   dm-button     → label reset
- *   weblog        → pubkey, hashtags reset; postsPerPage / excludeReplies
- *                   / excludeReposts kept (they're behaviour switches)
+ *   weblog        → pubkey, hashtags reset; postsPerPage / includeWithoutHash
+ *                   / excludeReplies / excludeReposts kept (behaviour switches)
  *   portfolio     → projects[] reset; perPage / sortOrder kept
  *   nav-menu      → ALL fields kept (menuId / horizontal / alignment /
  *                   hamburgerBreakpoints are all configuration)

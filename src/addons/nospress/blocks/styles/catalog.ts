@@ -29,6 +29,7 @@ import type {
   PropertyGroup,
   PropertyKey,
   ResolvedPropertyGroup,
+  WeblogKey,
 } from './types';
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -223,6 +224,26 @@ export const PORTFOLIO_GROUPS: Record<PortfolioKey, PropertyGroup[]> = {
     { key: 'typography', label: 'Color',        props: ['color'] },
     { key: 'background', label: 'Background',   props: ['background'] },
     { key: 'border',     label: 'Border color', props: ['borderColor'] },
+  ],
+};
+
+/** Per-key restricted schemas for the weblog sub-scope. Three slots:
+ *  `note` (the `.note-card` default), `noteHover` (the `.note-card:hover`
+ *  background tint), `isl` (the `.isl-action` row — color propagates via
+ *  `currentColor` to all interaction icons + counts). Each exposes
+ *  color + background. */
+export const WEBLOG_GROUPS: Record<WeblogKey, PropertyGroup[]> = {
+  note: [
+    { key: 'typography', label: 'Color',      props: ['color'] },
+    { key: 'background', label: 'Background', props: ['background'] },
+  ],
+  noteHover: [
+    { key: 'typography', label: 'Color',      props: ['color'] },
+    { key: 'background', label: 'Background', props: ['background'] },
+  ],
+  isl: [
+    { key: 'typography', label: 'Color',      props: ['color'] },
+    { key: 'background', label: 'Background', props: ['background'] },
   ],
 };
 

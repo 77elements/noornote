@@ -13,6 +13,8 @@
  *   - `navMenu.<key>.<rest>`                 — recursive sub-scope
  *   - `bookmarkFolder.<key>.<rest>`          — recursive sub-scope
  *   - `articlesList.<key>.<rest>`            — recursive sub-scope
+ *   - `portfolio.<key>.<rest>`               — recursive sub-scope
+ *   - `weblog.<key>.<rest>`                  — recursive sub-scope
  */
 
 import { migrateLegacyBorder } from './build';
@@ -28,6 +30,7 @@ import type {
   PortfolioKey,
   PropertyKey,
   QuadSide,
+  WeblogKey,
 } from './types';
 
 /** Read a dotted path: `color`, `margin.top`, or `divider.top`. */
@@ -71,6 +74,12 @@ export function readStyleField(styleIn: CommonStyle | undefined, path: string): 
   if (path.startsWith('portfolio.')) {
     const [, key, ...rest] = path.split('.');
     const sub = styleIn.portfolio?.[key as PortfolioKey];
+    return readStyleField(sub, rest.join('.'));
+  }
+  // Weblog sub-scope: `weblog.<note|noteHover|isl>.<rest>` → recurse.
+  if (path.startsWith('weblog.')) {
+    const [, key, ...rest] = path.split('.');
+    const sub = styleIn.weblog?.[key as WeblogKey];
     return readStyleField(sub, rest.join('.'));
   }
   // Hydrate the new border fields from the legacy shorthand if the user
@@ -180,6 +189,17 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
     writeStyleField(style.portfolio[k]!, rest.join('.'), rawValue);
     if (Object.keys(style.portfolio[k]!).length === 0) delete style.portfolio[k];
     if (Object.keys(style.portfolio).length === 0) delete style.portfolio;
+    return;
+  }
+  // Weblog sub-scope: `weblog.<note|noteHover|isl>.<rest>` → recurse, prune.
+  if (path.startsWith('weblog.')) {
+    const [, key, ...rest] = path.split('.');
+    const k = key as WeblogKey;
+    if (!style.weblog) style.weblog = {};
+    if (!style.weblog[k]) style.weblog[k] = {};
+    writeStyleField(style.weblog[k]!, rest.join('.'), rawValue);
+    if (Object.keys(style.weblog[k]!).length === 0) delete style.weblog[k];
+    if (Object.keys(style.weblog).length === 0) delete style.weblog;
     return;
   }
   const segments = path.split('.');
