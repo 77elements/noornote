@@ -175,13 +175,30 @@ const NAV_MENU_DESKTOP_SELECTORS: Record<NavMenuDesktopKey, string> = {
  *  the user deletes a breakpoint without touching every block that
  *  referenced it. */
 export function buildBlockBreakpointCss(
-  block: { id: string; type: string; breakpointStyles?: Record<string, CommonStyle> },
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
   breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
 ): string {
-  const overrides = block.breakpointStyles;
-  if (!overrides) return '';
   const schema = schemaFor(block.type);
   const parts: string[] = [];
+
+  // Default-tab styles also emit as a regular (non-media) CSS rule —
+  // not just as inline `style="…"` on the readonly wrapper. The editor
+  // preview wrapper (`.nospress-block-style[data-styled-block-id]`)
+  // carries the attribute but NOT the inline style, so without this
+  // rule margin / padding / sizing / etc. set on the Default tab look
+  // dead inside the editor. The same selector matches the readonly
+  // wrapper too, but inline style there wins on specificity so this is
+  // a no-op on the public page.
+  const defaults = block.style;
+  if (defaults) {
+    const defaultDecls = buildInlineStyle(schema, defaults);
+    if (defaultDecls) {
+      parts.push(`[data-styled-block-id="${block.id}"] { ${defaultDecls} }`);
+    }
+  }
+
+  const overrides = block.breakpointStyles;
+  if (!overrides) return parts.join('\n');
   // Iterate the site-settings breakpoint array, NOT Object.entries on
   // the per-block overrides object. Equal-specificity @media rules
   // resolve by source order in the CSS, so the bundle must follow
