@@ -646,9 +646,15 @@
 }
 
 .nospress-block-button-cta {
-  display: flex;
-  justify-content: center;
-  margin: $gap * 2 0;
+  // Center is the historical default. The renderer overrides via inline
+  // `text-align: …` when the user picks left / right in the Align Button
+  // property (which feeds CommonStyle.alignButton with skipInlineEmit, so
+  // the value is piped through extraInlineStyle here, not via the regular
+  // style-emit pipeline). No flex — the `.btn` inside is inline-block, so
+  // plain text-align on this wrapper aligns it left / center / right.
+  // No default margin — the user controls vertical spacing via the
+  // Margin property like every other block.
+  text-align: center;
 
   .btn {
     text-decoration: none;

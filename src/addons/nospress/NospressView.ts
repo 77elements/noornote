@@ -4232,6 +4232,28 @@ export class NospressView extends View {
         });
         slot.appendChild(dropdown.getElement());
         this.blockDropdowns.push(dropdown);
+      } else if (kind === 'cta-target') {
+        // Persist `_blank` explicitly so the value round-trips through
+        // localStorage / NIP-78. Default-on-empty is `_blank` to keep the
+        // pre-target rendering behavior intact for legacy blocks.
+        const current = slot.dataset.currentValue || '_blank';
+        const dropdown = new CustomDropdown({
+          options: [
+            { value: '_blank', label: 'New tab' },
+            { value: '_self',  label: 'Same tab' },
+          ],
+          selectedValue: current,
+          onChange: (value) => {
+            this.mutateDraft((page) => {
+              const block = findBlockInPage(page, blockId)?.block;
+              if (block && block.type === 'button-cta') {
+                block.target = value === '_self' ? '_self' : '_blank';
+              }
+            }, { silent: false });
+          }
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
       } else if (kind === 'portfolio-sort') {
         // Options come from the renderer's `data-options` JSON — keeps
         // the catalog of choices co-located with the markup that needs

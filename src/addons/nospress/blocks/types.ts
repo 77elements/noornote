@@ -36,7 +36,7 @@ export type Block =
   | { id: string; type: 'dm-button'; label: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'profile-card'; pubkey?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'quote'; text: string; author?: string; source?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
-  | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'button-cta'; label: string; url: string; variant?: 'primary' | 'secondary'; target?: '_self' | '_blank'; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'video'; url: string; caption?: string; poster?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'audio'; url: string; caption?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }

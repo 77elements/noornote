@@ -14,7 +14,24 @@ html.layout--public {
 // Admin bar — visible only when a NoorNote user is logged in. Sticky top,
 // full-width, sits above the centered .user-site content. Padding-top on
 // .user-site makes room so the page header isn't hidden behind it.
+//
+// Palette decoupling: the admin bar is NoorNote chrome on top of the
+// user's site, NOT part of the site. PublicNospressPage.applySiteSettings()
+// rewrites `--color-1..6` on `<html>` AND `#app` to the site owner's
+// palette — and the global `a:visited { color: var(--color-4) }` rule
+// (specificity 0,1,1) overrides any `.user-site-bar__link` color
+// (specificity 0,1,0), so the visited links pick up the user's palette
+// regardless of what we set on the class. The fix below side-steps both
+// problems by hard-baking neutral hex colors AND scoping the link state
+// selectors through `.user-site-bar a:link/:visited/:hover/:focus/:active`
+// (specificity 0,2,1) which outranks the global `a:visited` rule.
+//
+// Hex literals are deliberate here — these are NoorNote chrome, not a
+// surface that should track the user's site palette.
 .user-site-bar {
+  $admin-bar-bg: #1f1f24;
+  $admin-bar-text: #ffffff;
+
   z-index: 100;
   height: 40px;
   display: flex;
@@ -22,10 +39,23 @@ html.layout--public {
   justify-content: space-between;
   gap: $gap;
   padding: 0 $gap;
-  background: rgba($color-1, 0.85);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--color-2);
+  background: $admin-bar-bg;
+  border-bottom: 1px solid #000000;
+  color: $admin-bar-text;
   font-size: 0.85rem;
+
+  // Link-state override: outranks the global `a:visited` rule via
+  // specificity (0,2,1 vs 0,1,1) so the bar stays white-on-dark even
+  // after the visitor follows a link.
+  a,
+  a:link,
+  a:visited,
+  a:hover,
+  a:focus,
+  a:active {
+    color: $admin-bar-text;
+    text-decoration: none;
+  }
 
   &__nav {
     display: flex;
@@ -37,14 +67,10 @@ html.layout--public {
 
   &__brand {
     font-weight: 700;
-    color: var(--color-4);
-    text-decoration: none;
     white-space: nowrap;
   }
 
   &__link {
-    color: var(--color-5);
-    text-decoration: none;
     white-space: nowrap;
     opacity: 0.8;
     transition: opacity $transition-fast;
@@ -54,7 +80,6 @@ html.layout--public {
     }
 
     &--accent {
-      color: var(--color-4);
       font-weight: 500;
       opacity: 1;
     }
@@ -65,14 +90,11 @@ html.layout--public {
     align-items: center;
     gap: calc($gap / 2);
     flex-shrink: 0;
-    color: var(--color-5);
-    text-decoration: none;
     opacity: 0.85;
     transition: opacity $transition-fast;
 
     &:hover {
       opacity: 1;
-      text-decoration: none;
     }
   }
 
@@ -84,7 +106,6 @@ html.layout--public {
   }
 
   &__name {
-    color: var(--color-5);
     @include text-truncate;
     max-width: 160px;
   }

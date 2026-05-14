@@ -70,8 +70,16 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
     ],
   },
   textAlign: {
+    // First option is the empty "(default)" entry — same rationale as
+    // `alignButton`: CustomDropdown's trigger-label falls back to
+    // options[0].label when the backing slot has no value, so without an
+    // explicit empty option the trigger would mislabel as "left" while
+    // `style.textAlign` is actually unset. Browser-default flow already
+    // renders text left-aligned in LTR, so empty = "let the browser /
+    // SCSS decide" and the four explicit values are explicit overrides.
     kind: 'dropdown', key: 'textAlign', label: 'Text align', cssProp: 'text-align',
     options: [
+      { value: '',        label: '(default)' },
       { value: 'left',    label: 'left' },
       { value: 'center',  label: 'center' },
       { value: 'right',   label: 'right' },
@@ -83,9 +91,16 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
     // with the same need). `skipInlineEmit` keeps the value out of the
     // block's own inline-style; the renderer reads `style.alignButton`
     // directly and emits `text-align` on the wrapper.
+    //
+    // First option is the empty "(default)" entry — CustomDropdown's
+    // trigger-label falls back to `options[0].label` when the backing
+    // slot has no value, so without an explicit empty option the trigger
+    // would mislabel as "left" while the block's `style.alignButton` is
+    // actually unset (renderer emits nothing, SCSS default rules).
     kind: 'dropdown', key: 'alignButton', label: 'Align Button', cssProp: 'text-align',
     skipInlineEmit: true,
     options: [
+      { value: '',       label: '(default)' },
       { value: 'left',   label: 'left' },
       { value: 'center', label: 'center' },
       { value: 'right',  label: 'right' },
@@ -185,11 +200,13 @@ const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZI
  *  layout-driven content where the default left-align is right). */
 const GROUP_TEXT_ALIGN: PropertyGroup = { key: 'text-align', label: 'Alignment', props: ['textAlign'] };
 
-/** Dm-button uses an extended Layout group that adds `alignButton`
- *  (horizontal placement within the parent flow). Sits in the Layout
- *  section alongside position/display/positionInsets/gridGap — no
- *  separate Alignment section. */
-const GROUP_LAYOUT_DM_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', 'alignButton'] };
+/** Button-style blocks (dm-button + button-cta) share an extended Layout
+ *  group that adds `alignButton` (horizontal placement within the parent
+ *  flow). Sits in the Layout section alongside position/display/
+ *  positionInsets/gridGap — no separate Alignment section, mirrors the
+ *  dm-button placement so the same property lands in the same slot
+ *  regardless of which button block the user is editing. */
+const GROUP_LAYOUT_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', 'alignButton'] };
 
 /** Columns block uses a slightly fattened Layout group: `gridTemplateColumns`
  *  is exposed right before `gridGap` so the user can override the preset
@@ -312,7 +329,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   text:              [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
   list:              TEXTUAL_GROUPS,
   links:             TEXTUAL_GROUPS,
-  'dm-button':       [GROUP_LAYOUT_DM_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER],
+  'dm-button':       [GROUP_LAYOUT_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER],
   // Divider block is restricted: only `color` from typography (no font
   // styling — there's no text to style), plus standard box edges.
   divider:           [
@@ -327,7 +344,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   columns:           [GROUP_LAYOUT_COLUMNS, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER],
   'profile-card':    CONTAINER_GROUPS,
   quote:             TEXTUAL_GROUPS,
-  'button-cta':      TEXTUAL_GROUPS,
+  'button-cta':      [GROUP_LAYOUT_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER],
   video:             CONTAINER_GROUPS,
   audio:             CONTAINER_GROUPS,
   'articles-list':   CONTAINER_GROUPS,
