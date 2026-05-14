@@ -5,7 +5,7 @@
  *   - Card click  → expand the picked card to span the grid's full row
  *                   width (`is-expanded`). Collapses any previously-open
  *                   card on the same grid. Click on hero a second time
- *                   (or the × close button) collapses.
+ *                   (or the × close button, or ESC) collapses.
  *   - Carousel    → CSS scroll-snap drives the swipe; this script only
  *                   updates the active-dot indicator on scroll + lets
  *                   the dots click to scroll-into-view.
@@ -85,6 +85,23 @@ function wireWrapper(wrapper: HTMLElement): void {
       return;
     }
   });
+
+  // ── ESC closes the currently expanded card in this grid ───────────────
+  // Self-prunes when the wrapper is removed from the DOM (editor re-renders
+  // swap the wrapper element), so we don't accumulate stale document listeners.
+  const escHandler = (e: KeyboardEvent) => {
+    if (!wrapper.isConnected) {
+      document.removeEventListener('keydown', escHandler);
+      return;
+    }
+    if (e.key !== 'Escape') return;
+    const expanded = grid.querySelector<HTMLElement>('[data-portfolio-card].is-expanded');
+    if (expanded) {
+      collapseCard(expanded);
+      e.stopPropagation();
+    }
+  };
+  document.addEventListener('keydown', escHandler);
 
   // ── Pagination ─────────────────────────────────────────────────────────
   if (pagination) {
