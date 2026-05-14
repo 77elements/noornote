@@ -22,6 +22,11 @@
 
 .wallet-balance-content {
   display: inline-block;
+  // Keep the sats / fiat / toggle on one line — without this the pill
+  // wraps inside narrow sidebars (Lucide-sprite migration made the
+  // exchange glyph a real 14px SVG with surrounding whitespace, which
+  // creates additional natural break points).
+  white-space: nowrap;
   color: var(--color-5);
   padding: calc($gap / 2) calc($gap * 3 / 4);
   background-color: var(--color-2);
@@ -42,9 +47,19 @@
 }
 
 .wallet-balance-exchange {
+  // Inline SVG sized to roughly match the surrounding glyph height.
+  // Replaces the legacy Unicode `⇄` character with the unified Lucide
+  // arrow-left-right sprite reference.
+  // `display: inline-block` overrides the global `display: block` that
+  // _reset.scss applies to `img, picture, video, canvas, svg` — without
+  // this the SVG drops onto its own line inside the pill.
+  display: inline-block;
+  width: 18px;
+  height: 18px;
   color: var(--color-5);
   opacity: 0.6;
-  margin: 0 calc($gap / 4);
+  margin: 0 calc($gap / 4) 0 0;
+  vertical-align: middle;
 }
 
 .wallet-balance-fiat-amount {

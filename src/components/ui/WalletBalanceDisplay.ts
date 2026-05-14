@@ -89,7 +89,7 @@ export class WalletBalanceDisplay {
       <div class="wallet-balance-content">
         <span class="wallet-balance-amount">--</span>
         <img src="${satsIconUrl}" class="sats-icon" alt="sats" />
-        <span class="wallet-balance-exchange">⇄</span>
+        <svg class="wallet-balance-exchange"><use href="#icon-switch-arrows-horizontal"/></svg>
         <span class="wallet-balance-fiat-amount">--</span>
         <button class="wallet-balance-toggle" title="Toggle visibility" aria-label="Toggle balance visibility">
           <svg class="eye-icon eye-open"><use href="#icon-eye-open"/></svg>
