@@ -551,6 +551,33 @@
   color: $text-alpha-medium;
 }
 
+// Per-column order inputs on the columns block — one cell per column,
+// number input on top, 1-based column index caption below. Grid columns
+// count comes from `grid-template-columns: repeat(N, 1fr)` set inline by
+// the panel renderer (N is dynamic per block).
+.nospress-prop-column-order {
+  display: grid;
+  gap: calc($gap / 2);
+  font-style: normal;
+}
+
+.nospress-prop-column-order__cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc($gap / 4);
+}
+
+.nospress-prop-column-order__input {
+  width: 100%;
+  text-align: center;
+}
+
+.nospress-prop-column-order__caption {
+  @extend %small;
+  color: $text-alpha-medium;
+}
+
 // Block-library icon (oversized emoji at the top of each card).
 .block-library .nn-card .icon {
   @extend %huge;

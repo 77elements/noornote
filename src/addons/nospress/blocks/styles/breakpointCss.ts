@@ -7,6 +7,7 @@
  *   - `buildBlockNavMenuDesktopCss`    → ul/li/active inline-menu styling
  *   - `buildBlockBookmarkFolderCss`    → item/icon/desc tinting
  *   - `buildBlockArticlesListCss`      → card/title/meta tinting
+ *   - `buildBlockColumnsCss`           → per-column `order` (default + per-BP)
  *   - `buildPageBreakpointCss`         → walk a whole block tree, emit
  *                                        a single combined CSS string
  *
@@ -541,6 +542,58 @@ export function buildBlockPortfolioCardCss(
   return parts.join('\n');
 }
 
+/** Emit per-column CSS `order` rules for the `columns` block. Targets each
+ *  `> .nospress-block-columns__col:nth-child(I+1)` separately because the
+ *  `order` declaration cannot ride along on the block wrapper — it has to
+ *  land on the grid item.
+ *
+ *  Default-tab values render as plain (non-media) rules so the editor
+ *  preview wrapper picks them up live. Per-BP overrides emit as `@media`
+ *  rules with `!important` so they outrank the Default rule when the
+ *  matching breakpoint kicks in.
+ *
+ *  Sparse: only indices that actually carry a value emit a rule. */
+export function buildBlockColumnsCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'columns') return '';
+  const sel = `[data-styled-block-id="${block.id}"] > .nospress-block-columns__col`;
+  const parts: string[] = [];
+
+  const emit = (orders: { [idx: string]: string } | undefined, important: boolean): string[] => {
+    if (!orders) return [];
+    const rules: string[] = [];
+    for (const [key, raw] of Object.entries(orders)) {
+      if (!/^\d+$/.test(key)) continue;
+      const value = sanitizeStyleValue(raw);
+      if (!value) continue;
+      const nth = parseInt(key, 10) + 1;
+      const decl = important ? `order: ${value} !important` : `order: ${value}`;
+      rules.push(`${sel}:nth-child(${nth}) { ${decl} }`);
+    }
+    return rules;
+  };
+
+  parts.push(...emit(block.style?.columnOrder, false));
+
+  if (block.breakpointStyles) {
+    // Walk site-settings BP order so the cascade is well-defined; same
+    // rationale as `buildBlockBreakpointCss`.
+    for (const bp of breakpoints) {
+      const bpStyle = block.breakpointStyles[bp.name];
+      if (!bpStyle) continue;
+      const rules = emit(bpStyle.columnOrder, true);
+      if (rules.length === 0) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      parts.push(`@media ${mediaQuery} { ${rules.join(' ')} }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
 /** Compose a single CSS `@media (...)` clause for a user-defined breakpoint. */
 function buildMediaQuery(bp: { type: 'min' | 'max' | 'between'; value: string; value2?: string }): string | null {
   const v1 = sanitizeStyleValue(bp.value);
@@ -587,6 +640,8 @@ export function buildPageBreakpointCss(
         if (portfolioCloseBtnCss) out.push(portfolioCloseBtnCss);
         const weblogCss = buildBlockWeblogCss(blockTyped, breakpoints);
         if (weblogCss) out.push(weblogCss);
+        const columnsCss = buildBlockColumnsCss(blockTyped, breakpoints);
+        if (columnsCss) out.push(columnsCss);
       }
       // Recurse into containers
       if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {

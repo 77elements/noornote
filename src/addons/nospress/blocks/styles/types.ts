@@ -89,6 +89,13 @@ export interface CommonStyle {
    *  row (also applies as cross-axis on flex containers). Pairs with
    *  `justifyItems` in the Layout group. */
   alignItems?: string;
+  /** Per-column CSS `order` overrides — only meaningful on the `columns`
+   *  block. Key is the 0-based column index as a string, value is the
+   *  `order` integer. Empty slots = source order. Default-tab values land
+   *  on `__col` as inline `style="order: N"`; per-BP overrides emit as
+   *  `@media … { > .nospress-block-columns__col:nth-child(I) { order: N } }`
+   *  via `buildBlockColumnsCss`. */
+  columnOrder?: { [idx: string]: string };
   /** Per-side border widths (CSS shorthand emitted as
    *  `border-width: <top> <right> <bottom> <left>`). */
   borderWidth?: BoxValues;
@@ -343,7 +350,19 @@ export interface TextShadowPropertyEntry {
   label: string;
 }
 
-export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry | DividerPropertyEntry | TextShadowPropertyEntry | DropdownPropertyEntry;
+/** A "column-order" entry: N number inputs side-by-side (N = current
+ *  `block.layout.length` on the columns block). Each input writes to
+ *  `columnOrder.<idx>` and drives CSS `order` on the i-th
+ *  `.nospress-block-columns__col`. Only surfaced on the `columns` block —
+ *  the panel renderer needs `opts.columnsCount` to know how many cells
+ *  to draw; without it the entry renders nothing. */
+export interface ColumnOrderPropertyEntry {
+  kind: 'column-order';
+  key: 'columnOrder';
+  label: string;
+}
+
+export type PropertyEntry = SinglePropertyEntry | QuadPropertyEntry | DividerPropertyEntry | TextShadowPropertyEntry | DropdownPropertyEntry | ColumnOrderPropertyEntry;
 
 /** Side identifiers used by quad properties (margin/padding/border-*).
  *  Order mirrors the CSS shorthand (top → right → bottom → left) so the

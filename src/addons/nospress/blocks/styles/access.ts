@@ -263,5 +263,17 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
       if (Object.keys(style.textShadow).length === 0) delete style.textShadow;
       return;
     }
+    if (head === 'columnOrder') {
+      // Sub-key is the 0-based column index as a string. Accept only
+      // non-negative integers — anything else silently no-ops so a stray
+      // form path can't corrupt the slot.
+      const idx = segments[1];
+      if (!idx || !/^\d+$/.test(idx)) return;
+      if (!style.columnOrder) style.columnOrder = {};
+      if (trimmed) style.columnOrder[idx] = trimmed;
+      else delete style.columnOrder[idx];
+      if (Object.keys(style.columnOrder).length === 0) delete style.columnOrder;
+      return;
+    }
   }
 }

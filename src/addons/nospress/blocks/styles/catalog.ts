@@ -126,6 +126,11 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
       { value: 'stretch', label: 'stretch' },
     ],
   },
+  // N number inputs side-by-side, one per column on the columns block.
+  // CSS effect lives on the `__col` children (inline `order: N` for the
+  // Default tab, @media rules for per-BP overrides) — emitted by the
+  // renderer / `buildBlockColumnsCss`, NOT by `buildInlineStyle`.
+  columnOrder: { kind: 'column-order', key: 'columnOrder', label: 'Order' },
   position:     {
     kind: 'dropdown', key: 'position', label: 'Position', cssProp: 'position',
     options: [
@@ -190,7 +195,7 @@ const GROUP_LAYOUT_DM_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', 
  *  is exposed right before `gridGap` so the user can override the preset
  *  picker's `--nospress-cols` with a raw `grid-template-columns` value
  *  (mix of `fr`, fixed widths, `minmax()`, `auto-fit`, …). */
-const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', ['justifyItems', 'alignItems']] };
+const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', 'columnOrder', ['justifyItems', 'alignItems']] };
 
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
@@ -450,6 +455,11 @@ export { matrixKey };
  *  emitted by a dedicated builder in `breakpointCss.ts`. */
 export const WRAPPER_SKIP_PROPS: Record<string, Set<PropertyKey>> = {
   portfolio: new Set<PropertyKey>(['background']),
+  // columnOrder lives on the `__col` children, not on the columns wrapper —
+  // routed through `buildBlockColumnsCss` (per-BP @media rules) and the
+  // ColumnsRenderer (inline Default-tab order). Skipping it here keeps the
+  // wrapper schema free of a property that has no wrapper-level effect.
+  columns: new Set<PropertyKey>(['columnOrder']),
 };
 
 /** Resolve a runtime scope ('page', 'heading:<uuid>', …) to a flat

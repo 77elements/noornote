@@ -62,6 +62,7 @@ export {
   buildBlockLinksCss,
   buildBlockPortfolioCardCss,
   buildBlockPortfolioCloseBtnCss,
+  buildBlockColumnsCss,
   buildPageBreakpointCss,
 } from './breakpointCss';
 

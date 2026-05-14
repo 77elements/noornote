@@ -3331,6 +3331,11 @@ export class NospressView extends View {
       activeBreakpoint: inSubScope ? '' : this.activeBpName,
       ...(inSubScope ? { header: '<h2>Mobile Menu</h2>' } : {}),
       extras: inSubScope ? '' : this.renderBlockExtras(block),
+      // Columns block: pass the live layout length so the columnOrder
+      // property row draws exactly N number inputs. Other block types
+      // don't carry the field at all — spread-conditional keeps the
+      // shape clean under exactOptionalPropertyTypes.
+      ...(block.type === 'columns' ? { columnsCount: block.layout.length } : {}),
     });
   }
 

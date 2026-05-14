@@ -38,7 +38,7 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
   { type: 'list',            label: 'Custom List',     description: 'Title + bullet items',                     icon: '☰', enabled: true },
   { type: 'links',           label: 'Links',           description: 'List of clickable links with labels',      icon: '🔗', enabled: true },
   { type: 'gallery',         label: 'Gallery',         description: 'Multi-image grid',                         icon: '⚏', enabled: true },
-  { type: 'columns',         label: 'Columns',         description: 'Multi-column layout (19 presets)',         icon: '⊞', enabled: true },
+  { type: 'columns',         label: 'Columns',         description: 'Multi-column layout (20 presets)',         icon: '⊞', enabled: true },
 
   // 4. Nostr / NoorNote-specific blocks (consume on-relay data).
   { type: 'embed',           label: 'Nostr Embed',     description: 'Embed a Nostr note or article',            icon: '🔮', enabled: true },

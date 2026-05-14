@@ -52,15 +52,29 @@ export function renderColumns(
   opts: ColumnsRenderOptions = {}
 ): string {
   const editable = opts.editable === true;
+  // Default-tab column orders ride along inline on each `__col`. Per-BP
+  // overrides land via `buildBlockColumnsCss` as `@media` rules with
+  // `!important`. Read the Default slot only — `block.style.columnOrder`
+  // is the mobile-first base.
+  const orders = block.style?.columnOrder;
+  const orderFor = (idx: number): string => {
+    const raw = orders?.[String(idx)];
+    if (!raw) return '';
+    // Cheap inline sanitization: keep integer / leading-minus only so a
+    // stray paste can't poison the inline-style attribute.
+    return /^-?\d+$/.test(raw.trim()) ? raw.trim() : '';
+  };
   const cols: string[] = [];
   for (let c = 0; c < block.layout.length; c++) {
     const inner = opts.columnInner
       ? opts.columnInner(c)
       : BlockRenderer.renderAll(block.content[c] ?? [], { editable });
+    const order = orderFor(c);
+    const styleAttr = order ? ` style="order: ${order}"` : '';
     cols.push(`
       <div class="nospress-block-columns__col"
            data-columns-block-id="${block.id}"
-           data-col-index="${c}">
+           data-col-index="${c}"${styleAttr}>
         ${inner}
       </div>
     `);

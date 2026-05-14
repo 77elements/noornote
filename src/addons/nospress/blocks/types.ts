@@ -307,6 +307,8 @@ export function findBlockInPage(page: NospressPageV2, blockId: string): BlockLoc
  * the cards in (grouped by column count, asymmetrics last).
  */
 export const COLUMN_LAYOUT_PRESETS: number[][] = [
+  // 1 column
+  [1],
   // 2 columns
   [1, 1],
   [1, 2],

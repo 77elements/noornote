@@ -40,6 +40,7 @@ import {
   QUAD_SIDES,
   type ArticlesListKey,
   type BookmarkFolderKey,
+  type ColumnOrderPropertyEntry,
   type CommonStyle,
   type DividerPropertyEntry,
   type DropdownPropertyEntry,
@@ -109,6 +110,10 @@ export interface RenderPropertyPanelOptions {
    *  user sees the inputs are "mixed". Writing into such a field will
    *  overwrite the value on every selected block. */
   mixedFields?: ReadonlySet<string>;
+  /** Number of columns on the active block — only meaningful for the
+   *  `columns` block. Drives the dynamic N inputs in the `column-order`
+   *  property row. Undefined / 0 → the row renders nothing. */
+  columnsCount?: number;
 }
 
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
@@ -337,6 +342,37 @@ function renderEntriesForGroups(
     </div>
   `;
 
+  /** Render N number inputs side-by-side, one per column on the columns
+   *  block. Each input's `data-style-field` is `columnOrder.<idx>` so the
+   *  bog-standard input-delegation + `writeStyleField` path persists into
+   *  `block.style.columnOrder[idx]` (or per-BP slot when a BP tab is
+   *  active). Empty input = no override (source order); writing a value
+   *  drives CSS `order: N` on the i-th `__col`. */
+  const columnOrder = (e: ColumnOrderPropertyEntry) => {
+    const count = opts.columnsCount ?? 0;
+    if (count <= 0) return '';
+    const cells = Array.from({ length: count }, (_, i) => {
+      const field = `${e.key}.${i}`;
+      return `
+        <div class="nospress-prop-column-order__cell">
+          <input type="number" class="input nospress-prop-column-order__input"
+                 inputmode="numeric" pattern="-?\\d*"
+                 data-style-scope="${scopeAttr}" data-style-field="${fieldPrefix}${field}"
+                 value="${v(field)}" placeholder="${escapeHtmlAttr(ph(field, String(i + 1)))}" />
+          <span class="nospress-prop-column-order__caption">${i + 1}</span>
+        </div>
+      `;
+    }).join('');
+    return `
+      <div class="nospress-prop-row">
+        <label class="nospress-prop-row__label">${escapeHtmlAttr(e.label)}</label>
+        <div class="nospress-prop-column-order" style="grid-template-columns: repeat(${count}, 1fr);">
+          ${cells}
+        </div>
+      </div>
+    `;
+  };
+
   const divider = (_e: DividerPropertyEntry) => {
     const active = opts.activeDividerSide ?? 'top';
     return `
@@ -372,10 +408,21 @@ function renderEntriesForGroups(
         || getDefaultDisplayFor(opts.scope, fieldPrefix);
       if (display !== 'grid' && display !== 'inline-grid') return '';
     }
+    // Conditional: columnOrder only surfaces when (a) the caller passed a
+    // positive columnsCount AND (b) the effective `display` is `grid` —
+    // CSS `order` does nothing outside grid/flex context, so showing the
+    // inputs there would mislead.
+    if (entry.kind === 'column-order') {
+      if (!opts.columnsCount || opts.columnsCount <= 0) return '';
+      const display = readStyleField(opts.style, fieldPrefix + 'display')
+        || getDefaultDisplayFor(opts.scope, fieldPrefix);
+      if (display !== 'grid' && display !== 'inline-grid') return '';
+    }
     return entry.kind === 'single' ? single(entry)
       : entry.kind === 'quad' ? quad(entry)
       : entry.kind === 'dropdown' ? dropdown(entry)
       : entry.kind === 'text-shadow' ? textShadow(entry)
+      : entry.kind === 'column-order' ? columnOrder(entry)
       : divider(entry);
   };
 
