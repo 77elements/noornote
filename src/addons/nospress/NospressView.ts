@@ -2973,6 +2973,13 @@ export class NospressView extends View {
       this.styleDropdowns = [];
       this.propertiesTabContent.innerHTML = this.renderPropertiesContent();
       this.mountStyleDropdowns(this.propertiesTabContent);
+      // Also mount any block-level `[data-block-dropdown]` slots that
+      // renderBlockExtras places in the Properties panel (e.g. the
+      // text-tag picker that replaced the heading-block's level dropdown).
+      // `mountBlockDropdowns` is otherwise only triggered from renderList,
+      // which scans the block-composer DOM — without this call the slot
+      // sits empty until the next full editor re-render.
+      this.mountBlockDropdownsIn(this.propertiesTabContent);
     }
     if (this.selectedBlockId && this.rightPaneEl) {
       switchTabWithContent(this.rightPaneEl, 'properties');
@@ -3328,6 +3335,21 @@ export class NospressView extends View {
       activeBreakpoint: inSubScope ? '' : this.activeBpName,
       ...(inSubScope ? { header: '<h2>Mobile Menu</h2>' } : {}),
       extras: inSubScope ? '' : this.renderBlockExtras(block),
+      // Text block: the semantic-tag picker (`p` / `h1`..`h6`) renders as
+      // the very first row of the General fieldset — it changes WHAT HTML
+      // the block emits, which is more fundamental than any class/id or
+      // CSS-property setting on the same block.
+      ...(block.type === 'text' && !inSubScope ? {
+        preIdentifiers: `
+          <div class="nospress-prop-row">
+            <label class="nospress-prop-row__label">Tag</label>
+            <div class="nospress-prop-row__input"
+                 data-block-dropdown="text-tag"
+                 data-block-id="${block.id}"
+                 data-current-value="${escapeHtmlAttr((block as Extract<Block, { type: 'text' }>).tag ?? 'p')}"></div>
+          </div>
+        `,
+      } : {}),
       // Columns block: pass the live layout length so the columnOrder
       // property row draws exactly N number inputs. Other block types
       // don't carry the field at all — spread-conditional keeps the
@@ -4153,28 +4175,53 @@ export class NospressView extends View {
   }
 
   private mountBlockDropdowns(): void {
-    const slots = this.container.querySelectorAll<HTMLElement>('[data-block-dropdown]');
+    this.mountBlockDropdownsIn(this.container);
+  }
+
+  private mountBlockDropdownsIn(host: HTMLElement): void {
+    const slots = host.querySelectorAll<HTMLElement>('[data-block-dropdown]');
     slots.forEach(slot => {
+      // Idempotent: if this slot is already filled with a CustomDropdown
+      // (renderList scoped at this.container can hit slots inside the
+      // Properties panel that updatePropertiesTab already mounted, and
+      // vice-versa). The CustomDropdown root is appended as a child of
+      // the slot — non-zero childElementCount means "already mounted".
+      if (slot.childElementCount > 0) return;
       const kind = slot.dataset.blockDropdown;
       const blockId = slot.dataset.blockId;
       if (!kind || !blockId) return;
 
-      if (kind === 'heading-level') {
-        const current = slot.dataset.currentValue || '1';
+      if (kind === 'text-tag') {
+        // Tag picker for the merged text/heading block. Slot is rendered
+        // in `renderBlockExtras` (Properties panel), not in the block
+        // composer — keeps the composer toolbar layout unaffected when
+        // the user switches between p and h1–h6.
+        const current = slot.dataset.currentValue || 'p';
         const dropdown = new CustomDropdown({
           options: [
-            { value: '1', label: 'H1' },
-            { value: '2', label: 'H2' },
-            { value: '3', label: 'H3' }
+            { value: 'p',  label: 'p' },
+            { value: 'h1', label: 'H1' },
+            { value: 'h2', label: 'H2' },
+            { value: 'h3', label: 'H3' },
+            { value: 'h4', label: 'H4' },
+            { value: 'h5', label: 'H5' },
+            { value: 'h6', label: 'H6' },
           ],
           selectedValue: current,
           onChange: (value) => {
+            // silent:true — the editor is schematic, so a tag swap has no
+            // visual effect on the composer DOM. Skipping rerenderEditable
+            // keeps the Properties panel intact (a full editor rerender
+            // would tear down this dropdown's DOM mid-click).
             this.mutateDraft((page) => {
               const block = findBlockInPage(page, blockId)?.block;
-              if (block && block.type === 'heading') {
-                block.level = parseInt(value, 10) as 1 | 2 | 3;
+              if (block && block.type === 'text') {
+                if (value === 'p') delete block.tag;
+                else if (/^h[1-6]$/.test(value)) {
+                  block.tag = value as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+                }
               }
-            }, { silent: false });
+            }, { silent: true });
           }
         });
         slot.appendChild(dropdown.getElement());
@@ -4874,10 +4921,7 @@ export class NospressView extends View {
       const block = findBlockInPage(page, blockId)?.block;
       if (!block) return;
 
-      if (block.type === 'heading') {
-        if (field === 'text')  block.text = el.value;
-        if (field === 'level') block.level = parseInt(el.value, 10) as 1 | 2 | 3;
-      } else if (block.type === 'text') {
+      if (block.type === 'text') {
         if (field === 'content') block.content = el.value;
       } else if (block.type === 'list') {
         if (field === 'title') block.title = el.value;
@@ -5077,13 +5121,10 @@ export class NospressView extends View {
       blockId,
     )?.block;
     if (!fallback) return;
-    const fieldName = fallback.type === 'heading' ? 'text'
-      : fallback.type === 'text' ? 'content'
-      : null;
-    if (!fieldName) return;
+    if (fallback.type !== 'text') return;
 
     const inputEl = this.container.querySelector<HTMLInputElement | HTMLTextAreaElement>(
-      `[data-block-id="${blockId}"][data-field="${fieldName}"]`,
+      `[data-block-id="${blockId}"][data-field="content"]`,
     );
     if (!inputEl) return;
 
@@ -5102,8 +5143,7 @@ export class NospressView extends View {
 
     this.mutateDraft((page) => {
       const b = findBlockInPage(page, blockId)?.block;
-      if (b?.type === 'heading' && fieldName === 'text') b.text = nextValue;
-      else if (b?.type === 'text' && fieldName === 'content') b.content = nextValue;
+      if (b?.type === 'text') b.content = nextValue;
     });
   }
 

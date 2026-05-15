@@ -114,6 +114,12 @@ export interface RenderPropertyPanelOptions {
    *  `columns` block. Drives the dynamic N inputs in the `column-order`
    *  property row. Undefined / 0 → the row renders nothing. */
   columnsCount?: number;
+  /** Block-specific HTML rendered as the very first row of the General
+   *  fieldset, ABOVE Class / ID and all CSS-property groups. Used for
+   *  semantic-shape pickers that change what HTML the block emits (e.g.
+   *  the merged text block's `p` / `h1`..`h6` tag picker). Empty / unset
+   *  → no row. */
+  preIdentifiers?: string;
 }
 
 export function renderPropertyPanel(opts: RenderPropertyPanelOptions): string {
@@ -573,6 +579,7 @@ function renderPanelInternal(
   const generalFieldset = `
     <fieldset>
       <legend>General</legend>
+      ${opts.preIdentifiers ?? ''}
       ${identifiersHtml}
       ${mainBody}
     </fieldset>

@@ -22,9 +22,16 @@ export interface BlockAttrs {
   id?: string;
 }
 
+/** Tags the merged text block can render as. Default `p`; the user picks
+ *  `h1`..`h6` via the Properties panel to use the same block as a section
+ *  heading. The legacy `'heading'` block type was folded into this in
+ *  2026-05-15 — old data on relays is not auto-migrated (the few existing
+ *  pages will be re-authored). */
+export type TextBlockTag = 'p' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+export const TEXT_BLOCK_TAGS: readonly TextBlockTag[] = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
+
 export type Block =
-  | { id: string; type: 'heading'; level: 1 | 2 | 3; text: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
-  | { id: string; type: 'text'; content: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'text'; content: string; tag?: TextBlockTag; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'image'; url: string; alt?: string; caption?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'gallery'; urls: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'links'; title?: string; items: { label: string; url: string }[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
@@ -102,7 +109,6 @@ export function newId(): string {
 export function createBlock(type: BlockType): Block {
   const id = newId();
   switch (type) {
-    case 'heading':         return { id, type, level: 2, text: '', style: { color: 'var(--color-5)' } };
     case 'text':            return { id, type, content: '', style: { color: 'var(--color-5)' } };
     case 'image':           return { id, type, url: '' };
     case 'gallery':         return { id, type, urls: [] };
@@ -165,7 +171,6 @@ function resetBlockIds(block: Block): void {
  *
  * Per-type rules for what counts as "content" vs "configuration":
  *
- *   heading       → text reset (level kept — it's structural)
  *   text          → content reset
  *   image / video → url, caption, alt, poster reset
  *   audio         → url, caption reset
@@ -189,7 +194,6 @@ function resetBlockIds(block: Block): void {
 export function stripBlockContent(block: Block): Block {
   const fresh = JSON.parse(JSON.stringify(block)) as Block;
   switch (fresh.type) {
-    case 'heading':         fresh.text = ''; break;
     case 'text':            fresh.content = ''; break;
     case 'image':
       fresh.url = '';
@@ -350,12 +354,30 @@ export function normalizePage(page: NospressPageV2): NospressPageV2 {
 
 function normalizeBlocks(blocks: Block[]): void {
   for (const b of blocks) {
-    // Default text-color: heading + text blocks fall back to the
-    // palette's text slot (`var(--color-5)`) when the user hasn't picked
-    // one. Applied here so old drafts written before the default landed
-    // get the same look as freshly-created blocks. Idempotent — only
-    // fills when the slot is missing.
-    if (b.type === 'heading' || b.type === 'text') {
+    // Legacy heading → text migration (2026-05-15). Old block type
+    // `'heading'` carried `level: 1|2|3` + `text: string`; merged into
+    // `'text'` with optional `tag: 'h1'..'h6'` + `content: string`. Run
+    // in-place so renderers + Properties panel never see the legacy
+    // shape (otherwise BlockRenderer's switch falls through and the
+    // editor renders "undefined" with no edit toolbar). Idempotent —
+    // already-migrated blocks are `type: 'text'` and skip this branch.
+    const legacyHeading = b as unknown as { type: string; level?: number; text?: string; content?: string; tag?: string };
+    if (legacyHeading.type === 'heading') {
+      const lvl = typeof legacyHeading.level === 'number' ? legacyHeading.level : 1;
+      const clamped = Math.max(1, Math.min(6, Math.trunc(lvl)));
+      legacyHeading.type = 'text';
+      legacyHeading.tag = `h${clamped}`;
+      legacyHeading.content = typeof legacyHeading.text === 'string' ? legacyHeading.text : '';
+      delete legacyHeading.text;
+      delete legacyHeading.level;
+    }
+
+    // Default text-color: text blocks fall back to the palette's text
+    // slot (`var(--color-5)`) when the user hasn't picked one. Applied
+    // here so old drafts written before the default landed get the same
+    // look as freshly-created blocks. Idempotent — only fills when the
+    // slot is missing.
+    if (b.type === 'text') {
       if (!b.style) b.style = {};
       if (b.style.color === undefined) b.style.color = 'var(--color-5)';
     }

@@ -325,7 +325,6 @@ const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SI
 export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // Page: everything except sizing — the page surface fills its host.
   page: [GROUP_LAYOUT, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BORDER],
-  heading:           [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
   text:              [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
   list:              TEXTUAL_GROUPS,
   links:             TEXTUAL_GROUPS,

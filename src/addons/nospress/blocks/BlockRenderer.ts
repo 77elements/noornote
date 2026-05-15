@@ -11,7 +11,6 @@
  */
 
 import type { Block } from './types';
-import { renderHeading } from './renderers/HeadingRenderer';
 import { renderText } from './renderers/TextRenderer';
 import { renderList } from './renderers/ListRenderer';
 import { renderDivider } from './renderers/DividerRenderer';
@@ -46,7 +45,6 @@ export class BlockRenderer {
     const editable = opts.editable === true;
     const inner = (() => {
       switch (block.type) {
-        case 'heading':         return renderHeading(block, editable);
         case 'text':            return renderText(block, editable);
         case 'list':            return renderList(block, editable);
         case 'divider':         return renderDivider(block, editable);

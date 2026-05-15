@@ -268,7 +268,7 @@ export type WeblogKey = typeof WEBLOG_KEYS[number];
  *  embeds, weblogs, articles, nav-menus). Other block types (image,
  *  gallery, video, audio, embed, divider) skip the sub-scope. */
 export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
-  'heading', 'text', 'quote', 'list', 'links', 'columns', 'div',
+  'text', 'quote', 'list', 'links', 'columns', 'div',
   'bookmark-folder', 'button-cta', 'dm-button', 'profile-card',
   'articles-list', 'weblog', 'nav-menu', 'vendor-footer',
 ]);

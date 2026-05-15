@@ -25,8 +25,7 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
   { type: 'div',             label: 'DIV',             description: 'Generic block-level wrapper — switch tag to header / section / fieldset / etc.', icon: '▭', enabled: true },
 
   // 2. Native HTML primitives — 1:1 mapping to a single element.
-  { type: 'heading',         label: 'Heading',         description: 'Section title (h1/h2/h3)',                icon: '◆', enabled: true },
-  { type: 'text',            label: 'Text',            description: 'Plain paragraph with line breaks',         icon: '¶', enabled: true },
+  { type: 'text',            label: 'Text',            description: 'Paragraph or heading — tag (p / h1-h6) set in Properties', icon: '¶', enabled: true },
   { type: 'divider',         label: 'Divider',         description: 'Horizontal separator line',                icon: '─', enabled: true },
   { type: 'quote',           label: 'Quote',           description: 'Pull quote with optional author and source',       icon: '❝', enabled: true },
   { type: 'image',           label: 'Image',           description: 'Single image with optional caption',       icon: '🖼', enabled: true },
