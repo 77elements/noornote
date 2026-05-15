@@ -9,7 +9,7 @@
   position: fixed;
   right: $gap;
   bottom: $gap;
-  z-index: 10500; // Above modals (10000/10001) so the chip stays visible when an upload is triggered from inside a modal (NewNoteModal etc.).
+  z-index: $z-upload-chip; // see _variables.scss — must stay above modals so the chip is visible when upload is triggered from inside NewNoteModal etc.
   display: flex;
   align-items: center;
   gap: $gap;
