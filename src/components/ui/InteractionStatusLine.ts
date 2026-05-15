@@ -185,7 +185,7 @@ export class InteractionStatusLine {
 
     container.innerHTML = `
       <button class="isl-action isl-reply" type="button" data-action="reply" title="Reply">
-        <span class="isl-icon"><svg width="18" height="18"><use href="#icon-reply"/></svg></span>
+        <span class="isl-icon"><svg width="18" height="18"><use href="#icon-thread-bubble"/></svg></span>
         <span class="isl-count">${formatCount(this.stats.replies)}</span>
       </button>
 
