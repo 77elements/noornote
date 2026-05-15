@@ -9,16 +9,20 @@
 @use 'sass:color';
 
 .isl {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
+  // Each button takes only the space it needs (icon + counter). Flex with
+  // space-between distributes the 5 buttons + Analytics evenly across the
+  // available width — the gap between them emerges from the leftover space,
+  // not from an explicit gap. Fully responsive: shrinks/expands with the row.
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: $gap;
   padding: calc($gap / 2) 0;
 }
 
 .isl-action {
   display: grid;
-  grid-template-columns: 18px auto;
+  // 20px click area around the 18px icon, plus auto-sized counter beside it.
+  grid-template-columns: 20px auto;
   align-items: center;
   gap: calc($gap / 4);
   padding: 0;
@@ -57,8 +61,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  // 20px click target around the 18px icon — 1px ring of hit-zone.
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
 
   svg {
@@ -91,14 +96,8 @@
   color: $color-success; // Green
 }
 
-// Middle items centered in their grid cells
-.isl-zap,
-.isl-repost,
-.isl-quote,
-.isl-like {
-  justify-self: center;
-  justify-content: center;
-}
+// (Removed justify-self: center — was needed for the old 1fr grid cells. With
+// flex space-between each button is content-snug, no centering needed.)
 
 .isl-quote:hover {
   color: var(--color-3); // Purple
@@ -209,11 +208,4 @@
   }
 }
 
-// Mobile: compact layout
-@media (max-width: 639px) {
-  .isl {
-    grid-template-columns: auto auto auto auto auto auto;
-    justify-content: space-between;
-    gap: 0;
-  }
-}
+// Mobile keeps the same flex space-between layout — already responsive.
