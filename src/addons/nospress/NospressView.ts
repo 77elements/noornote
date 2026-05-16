@@ -1542,7 +1542,7 @@ export class NospressView extends View {
         </div>
         <p class="form__note">
           Will write into Custom CSS on Save:
-          <code>body { font-family: ${escapeHtml(cascadePreview)}; }</code>
+          <code data-cascade-preview>body { font-family: ${escapeHtml(cascadePreview)}; }</code>
         </p>
         <div class="l-row--right">
           <button type="button" class="btn" data-action="save-body-fonts">Save</button>
@@ -1758,7 +1758,10 @@ export class NospressView extends View {
     // the chosen value so the next Save (or re-render) reflects it.
     if (target?.dataset?.fontPickRadio !== undefined) {
       const radio = target as HTMLInputElement;
-      if (radio.checked) this.persistGlobalField('theme.defaultFontPick', radio.value);
+      if (radio.checked) {
+        this.persistGlobalField('theme.defaultFontPick', radio.value);
+        this.refreshCascadePreview();
+      }
       return;
     }
 
@@ -1795,6 +1798,24 @@ export class NospressView extends View {
     }
 
     this.persistGlobalField(path, value);
+
+    // Live preview: when the Site default font field changes, the cascade
+    // line ("Will write into Custom CSS on Save: …") needs to reflect it
+    // immediately. Cheap textContent swap, no re-render.
+    if (path === 'theme.fontFamily') {
+      this.refreshCascadePreview();
+    }
+  }
+
+  /** Recompute the body-font cascade from current settings and update the
+   *  preview line in the Fonts section. No-op if the preview isn't mounted
+   *  (e.g. another tab is active). */
+  private refreshCascadePreview(): void {
+    const node = document.querySelector('[data-cascade-preview]');
+    if (!node) return;
+    const theme = { ...(this.siteSettingsService.getSettings().theme ?? {}) };
+    theme.defaultFontPick = this.effectiveDefaultFontPick();
+    node.textContent = `body { font-family: ${buildBodyFontFamilyValue(theme)}; }`;
   }
 
   /** Walk the dotted path, set or prune the leaf property, and persist
