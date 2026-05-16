@@ -56,6 +56,12 @@ export class ContentProcessor {
 
   private constructor() {
     this.userProfileService = UserProfileService.getInstance();
+    // Patch mention chips whenever ANY profile arrives — covers profiles that
+    // were filled by another path (UserHoverCard, NoteHeader, RepostRenderer)
+    // and would otherwise leave the chip stuck on the loading placeholder.
+    this.userProfileService.subscribeToAnyProfileUpdate((pubkey, profile) => {
+      this.updateMentionsInDOM(pubkey, profile);
+    });
   }
 
   static getInstance(): ContentProcessor {
@@ -204,21 +210,28 @@ export class ContentProcessor {
    * Applies profile recognition blinking if addon is loaded
    */
   private updateMentionsInDOM(hexPubkey: string, profile: any): void {
-    const username = profile.name || profile.display_name;
-    if (!username) return;
-
     // Convert hex to npub for profile URL
     const npub = hexToNpub(hexPubkey);
-    const picture = profile.picture || '';
+    if (!npub) return;
+
+    // Bail early if no mention chips for this pubkey are in the DOM — the
+    // global subscription fires for every profile update, so most calls have
+    // nothing to patch. querySelectorAll(...) is the cheapest filter.
+    const mentionLinks = document.querySelectorAll(`a[href="/profile/${npub}"][data-mention]`);
+    if (mentionLinks.length === 0) return;
+
+    // Render-ready values from the cache (real or fallback — see UserProfileService).
+    const rawUsername = profile.name || profile.display_name;
+    const username = UserProfileService.displayNameOf(profile, hexPubkey);
+    const picture = UserProfileService.displayPictureOf(profile, hexPubkey);
 
     // Profile Recognition: check if name/picture changed and should blink.
     // Runtime lookup is fresh per call — if the addon was toggled off or
     // reinitialized for a new account, we transparently pick up the new state.
     const recognitionRuntime = this.getRecognitionRuntime();
-    const shouldBlink = recognitionRuntime?.service?.checkRecognition(hexPubkey, username, picture);
-
-    // Find all mention links for this profile (both loading and already loaded)
-    const mentionLinks = document.querySelectorAll(`a[href="/profile/${npub}"][data-mention]`);
+    const shouldBlink = rawUsername
+      ? recognitionRuntime?.service?.checkRecognition(hexPubkey, username, picture)
+      : null;
 
     mentionLinks.forEach((link) => {
       const linkElement = link as HTMLAnchorElement;

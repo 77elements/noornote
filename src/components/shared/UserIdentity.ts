@@ -103,6 +103,7 @@ export class UserIdentity {
       avatar.className = 'profile-pic profile-pic--medium';
       avatar.alt = 'Avatar';
       avatar.loading = 'lazy';
+      avatar.dataset.pubkey = this.config.pubkey; // for global 404 fallback
       container.appendChild(avatar);
     }
 
@@ -140,9 +141,10 @@ export class UserIdentity {
       (profile) => {
         this.profile = profile;
 
-        // Extract data from profile object
-        const username = profile.display_name || profile.name || profile.username || 'Anon';
-        const picture = profile.picture || '';
+        // Render-ready values from the cache (single source of truth: real
+        // data when known, deterministic fallback otherwise — see UserProfileService).
+        const username = UserProfileService.displayNameOf(profile, this.config.pubkey);
+        const picture = UserProfileService.displayPictureOf(profile, this.config.pubkey);
 
         // Get NIP-05 handle(s)
         const nip05s = profile.nip05s && profile.nip05s.length > 0

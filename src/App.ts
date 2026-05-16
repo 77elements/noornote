@@ -110,6 +110,11 @@ export class App {
     import('./services/ImageClickHandler').then(m => m.getImageClickHandler().init());
     import('./services/VideoPlayerService').then(m => m.getVideoPlayerService().init());
 
+    // Global avatar 404 fallback — any <img class="profile-pic"> whose URL fails
+    // to load is swapped to its deterministic identicon. Pubkey comes from
+    // data-pubkey on the img or its closest ancestor.
+    import('./helpers/avatarFallback').then(m => m.installImgErrorFallback());
+
     // Global upload progress overlay — singleton, listens for media-upload:status
     // events from MediaUploadService. Renders compression + upload progress for
     // every video/audio upload regardless of which UI surface triggered it.

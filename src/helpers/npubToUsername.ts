@@ -6,6 +6,7 @@
 import { UserProfileService } from '../services/UserProfileService';
 import { npubToHex, nprofileToNpub } from './nip19';
 import { escapeHtml, escapeHtmlAttr } from './escapeHtml';
+import { getAvatarFallback } from './avatarFallback';
 
 export interface Profile {
   name?: string;
@@ -95,9 +96,9 @@ function npubToUsernameHTMLSingle(npub: string, profileResolver: ProfileResolver
     const profile = profileResolver(hexPubkey);
     const username = profile?.display_name || profile?.name || npub;
     const escapedUsername = escapeHtml(username);
-    const picture = profile?.picture || '';
-    const escapedPicture = picture ? escapeHtmlAttr(picture) : '';
-    return `<a href="/profile/${npub}" class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${escapedPicture}" alt="" />${escapedUsername}</a>`;
+    const picture = profile?.picture || getAvatarFallback(hexPubkey);
+    const escapedPicture = escapeHtmlAttr(picture);
+    return `<a href="/profile/${npub}" class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${escapedPicture}" data-pubkey="${hexPubkey}" alt="" />${escapedUsername}</a>`;
   } catch {
     return npub;
   }
@@ -107,11 +108,13 @@ function npubToUsernameHTMLSingle(npub: string, profileResolver: ProfileResolver
 /**
  * Build mention HTML with profile picture (full mode)
  */
-function buildMentionHTML(npub: string, username: string, picture?: string, isLoading = false): string {
-  const avatarSrc = picture ? escapeHtmlAttr(picture) : '';
+function buildMentionHTML(npub: string, username: string, picture?: string, isLoading = false, hexPubkey?: string): string {
+  const fallback = hexPubkey ? getAvatarFallback(hexPubkey) : '';
+  const avatarSrc = escapeHtmlAttr(picture || fallback);
+  const pubkeyAttr = hexPubkey ? `data-pubkey="${hexPubkey}"` : '';
   const escapedUsername = escapeHtml(username);
   const attrs = isLoading ? 'data-mention data-loading' : 'data-mention';
-  return `<a href="/profile/${npub}" ${attrs} class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${avatarSrc}" alt="" />${escapedUsername}</a>`;
+  return `<a href="/profile/${npub}" ${attrs} class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${avatarSrc}" ${pubkeyAttr} alt="" />${escapedUsername}</a>`;
 }
 
 /**
@@ -156,19 +159,20 @@ function isInsideExistingHTML(text: string, offset: number): boolean {
 function resolveProfileToMentionHTML(
   npub: string,
   profile: Profile | null,
-  useSimpleMode: boolean
+  useSimpleMode: boolean,
+  hexPubkey?: string
 ): string {
   if (profile?.name || profile?.display_name) {
     const username = (profile.name || profile.display_name)!;
     return useSimpleMode
       ? buildSimpleMentionHTML(npub, username)
-      : buildMentionHTML(npub, username, profile.picture);
+      : buildMentionHTML(npub, username, profile.picture, false, hexPubkey);
   }
 
   // Loading placeholder, updated later by ContentProcessor.updateMentionsInDOM
   return useSimpleMode
     ? buildSimpleMentionHTML(npub, '...', true)
-    : buildMentionHTML(npub, '...', undefined, true);
+    : buildMentionHTML(npub, '...', undefined, true, hexPubkey);
 }
 
 /**
@@ -190,7 +194,7 @@ function npubToUsernameHTMLMulti(
       const npub = nprofileToNpub(nprofile);
       const hexPubkey = npubToHex(npub);
       if (!hexPubkey) return fullMatch;
-      return resolveProfileToMentionHTML(npub, profileResolver(hexPubkey), useSimpleMode);
+      return resolveProfileToMentionHTML(npub, profileResolver(hexPubkey), useSimpleMode, hexPubkey);
     } catch {
       return fullMatch;
     }
@@ -203,7 +207,7 @@ function npubToUsernameHTMLMulti(
     try {
       const hexPubkey = npubToHex(npub);
       if (!hexPubkey) return fullMatch;
-      return resolveProfileToMentionHTML(npub, profileResolver(hexPubkey), useSimpleMode);
+      return resolveProfileToMentionHTML(npub, profileResolver(hexPubkey), useSimpleMode, hexPubkey);
     } catch {
       return fullMatch;
     }

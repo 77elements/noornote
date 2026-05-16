@@ -35,8 +35,11 @@ export class TextBlinker {
    * Start blinking between two text values
    */
   public start(currentText: string, firstEncounterText: string): void {
-    // Don't start if already blinking or if texts are the same
-    if (this.interval || currentText === firstEncounterText) {
+    // Don't start if already blinking, if texts are the same, or if either side
+    // is missing — blinking against an empty baseline would make the element
+    // disappear every other cycle (the "missing avatar" bug).
+    if (this.interval || !currentText || !firstEncounterText || currentText === firstEncounterText) {
+      this.textElement.textContent = currentText;
       return;
     }
 
@@ -116,8 +119,11 @@ export class ProfileBlinker {
    * Start blinking between two profile pictures
    */
   public start(currentPic: string, firstEncounterPic: string): void {
-    // Don't start if already blinking or if pics are the same
-    if (this.interval || currentPic === firstEncounterPic) {
+    // Don't start if already blinking, if pics are the same, or if either side
+    // is missing — blinking against an empty baseline would make the avatar
+    // disappear every other cycle (the "missing avatar" bug).
+    if (this.interval || !currentPic || !firstEncounterPic || currentPic === firstEncounterPic) {
+      this.imgElement.src = currentPic;
       return;
     }
 

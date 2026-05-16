@@ -11,6 +11,8 @@
 
 import { ProfileOrchestrator } from './orchestration/ProfileOrchestrator';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
+import { getAvatarFallback } from '../helpers/avatarFallback';
+import { hexToNpub } from '../helpers/nip19';
 
 export interface UserProfile {
   pubkey: string;
@@ -33,11 +35,13 @@ export class UserProfileService {
   private static instance: UserProfileService;
 
   /** LRU Cache for profiles (platform-aware size) */
-  private profileCache = new LRUCache<UserProfile>(getCacheSize(500, 300, 200));
+  private profileCache = new LRUCache<UserProfile>(getCacheSize(2000, 1000, 500));
 
   private orchestrator: ProfileOrchestrator;
   private fetchingProfiles: Map<string, Promise<UserProfile>> = new Map();
   private profileUpdateCallbacks: Map<string, Set<(profile: UserProfile) => void>> = new Map();
+  /** Listeners that want to be notified for EVERY profile update (any pubkey). */
+  private anyProfileUpdateCallbacks: Set<(pubkey: string, profile: UserProfile) => void> = new Set();
 
   /** Track failed fetches to prevent rapid retry storms (pubkey → timestamp) */
   private failedFetches: Map<string, number> = new Map();
@@ -56,7 +60,8 @@ export class UserProfileService {
 
   /**
    * Get username ONLY (lightweight, fast)
-   * Returns cached username or null if not yet loaded
+   * Returns cached username or null if not yet loaded.
+   * For rendering use getDisplayName() — it always returns a usable string.
    */
   public getUsername(pubkey: string): string | null {
     const cached = this.profileCache.get(pubkey);
@@ -68,11 +73,49 @@ export class UserProfileService {
 
   /**
    * Get profile picture ONLY (lightweight, fast)
-   * Returns cached picture or null if not yet loaded
+   * Returns cached picture URL or null if not yet loaded.
+   * For rendering use getDisplayPicture() — it always returns a usable URL.
    */
   public getProfilePicture(pubkey: string): string | null {
     const cached = this.profileCache.get(pubkey);
     return cached?.picture || null;
+  }
+
+  /**
+   * Render-ready name: real cached name, or a shortened npub fallback so the
+   * UI never has to invent its own placeholder. Triggers a background fetch
+   * on cache miss; subscribers will be updated when the real name arrives.
+   */
+  public getDisplayName(pubkey: string): string {
+    return UserProfileService.displayNameOf(this.profileCache.get(pubkey) ?? null, pubkey);
+  }
+
+  /**
+   * Render-ready picture URL: real cached picture, or a deterministic identicon
+   * so the UI never has to render an empty <img>. Same cache-miss semantics as
+   * getDisplayName().
+   */
+  public getDisplayPicture(pubkey: string): string {
+    return UserProfileService.displayPictureOf(this.profileCache.get(pubkey) ?? null, pubkey);
+  }
+
+  /**
+   * Extract render-ready name from a profile object (e.g. inside a
+   * subscribeToProfile callback). Always returns a usable string.
+   */
+  public static displayNameOf(profile: UserProfile | null, pubkey: string): string {
+    const real = profile?.display_name || profile?.name || profile?.username;
+    if (real) return real;
+    const npub = hexToNpub(pubkey);
+    return npub ? `@${npub.slice(0, 12)}…` : pubkey.slice(0, 8);
+  }
+
+  /**
+   * Extract render-ready picture from a profile object. Always returns a
+   * usable URL (real or identicon).
+   */
+  public static displayPictureOf(profile: UserProfile | null, pubkey: string): string {
+    return profile?.picture || getAvatarFallback(pubkey);
   }
 
   /**
@@ -270,6 +313,19 @@ export class UserProfileService {
     if (callbacks) {
       callbacks.forEach(callback => callback(profile));
     }
+    this.anyProfileUpdateCallbacks.forEach(cb => cb(pubkey, profile));
+  }
+
+  /**
+   * Subscribe to ALL profile updates (any pubkey). Use for cross-cutting consumers
+   * like mention-chip DOM patchers that don't know in advance which pubkeys will
+   * appear. Returns an unsubscribe function.
+   */
+  public subscribeToAnyProfileUpdate(callback: (pubkey: string, profile: UserProfile) => void): () => void {
+    this.anyProfileUpdateCallbacks.add(callback);
+    return () => {
+      this.anyProfileUpdateCallbacks.delete(callback);
+    };
   }
 
   /**
@@ -301,7 +357,7 @@ export class UserProfileService {
   public getCacheStats(): { size: number; maxSize: number } {
     return {
       size: this.profileCache.size,
-      maxSize: getCacheSize(500, 300, 200)
+      maxSize: getCacheSize(2000, 1000, 500)
     };
   }
 }

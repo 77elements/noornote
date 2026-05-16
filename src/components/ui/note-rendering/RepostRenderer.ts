@@ -19,7 +19,6 @@ import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { hexToNpub } from '../../../helpers/nip19';
-import { npubToUsername } from '../../../helpers/npubToUsername';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
 import { Router } from '../../../services/Router';
@@ -56,14 +55,17 @@ export class RepostRenderer {
     repostDiv.dataset.eventId = note.id;
     repostDiv.dataset.noteType = 'repost';
 
-    // Repost header showing who reposted
+    // Repost header showing who reposted. Pull render-ready values from the
+    // profile cache: it always returns either real data or a deterministic
+    // fallback (identicon / shortened npub). When the real profile arrives
+    // the subscription below repaints both.
     const reposterPubkey = note.reposter?.pubkey || '';
     const reposterNpub = reposterPubkey ? hexToNpub(reposterPubkey) || '' : '';
-    const reposterName = reposterNpub ? npubToUsername(reposterNpub) : 'Unknown';
-
-    // Get profile picture (lightweight, non-blocking)
+    const reposterName = reposterPubkey
+      ? RepostRenderer.userProfileService.getDisplayName(reposterPubkey)
+      : 'Unknown';
     const reposterPicture = reposterPubkey
-      ? RepostRenderer.userProfileService.getProfilePicture(reposterPubkey)
+      ? RepostRenderer.userProfileService.getDisplayPicture(reposterPubkey)
       : '';
 
     const repostHeader = document.createElement('div');
@@ -72,7 +74,7 @@ export class RepostRenderer {
       <span class="repost-icon"><svg width="16" height="16"><use href="#icon-repost"/></svg></span>
       <span class="user-mention" data-pubkey="${reposterPubkey}">
         <a href="/profile/${reposterNpub}" class="mention-link" data-profile-pubkey="${reposterPubkey}">
-          <img src="${escapeHtmlAttr(reposterPicture || '')}" alt="" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
+          <img src="${escapeHtmlAttr(reposterPicture)}" alt="" data-pubkey="${reposterPubkey}" class="profile-pic profile-pic--mini" /><span class="reposter-username"></span></a></span><span class="repost-label">reposted</span>
     `;
 
     // Set initial username (may be npub if not cached)
@@ -90,8 +92,8 @@ export class RepostRenderer {
     // switches are transparent (new runtime picked up automatically).
     if (reposterPubkey) {
       RepostRenderer.userProfileService.subscribeToProfile(reposterPubkey, (profile) => {
-        const newUsername = profile.display_name || profile.name || reposterNpub;
-        const newPicture = profile.picture || '';
+        const newUsername = UserProfileService.displayNameOf(profile, reposterPubkey);
+        const newPicture = UserProfileService.displayPictureOf(profile, reposterPubkey);
         const usernameEl = repostHeader.querySelector('.reposter-username') as HTMLElement;
         const avatarElement = repostHeader.querySelector('.profile-pic--mini') as HTMLImageElement;
 
@@ -129,7 +131,7 @@ export class RepostRenderer {
           } else {
             if (avatarBlinker && avatarBlinker.isBlinking()) {
               avatarBlinker.stop(newPicture);
-            } else if (newPicture) {
+            } else {
               avatarElement.src = newPicture;
             }
           }
