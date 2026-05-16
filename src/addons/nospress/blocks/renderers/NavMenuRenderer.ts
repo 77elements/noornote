@@ -90,7 +90,7 @@ export function renderNavMenu(block: Extract<Block, { type: 'nav-menu' }>, edita
                 data-mobile-subscope-toggle
                 data-block-id="${block.id}"
                 aria-label="Mobile menu properties">
-           <svg width="16" height="16" aria-hidden="true"><use href="#icon-hamburger"/></svg>
+           <svg width="16" height="16" aria-hidden="true"><use href="#icon-menu-bars"/></svg>
          </button>`
       : '';
     const inner = `

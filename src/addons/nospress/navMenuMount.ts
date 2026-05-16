@@ -116,7 +116,7 @@ export function mountNospressNavMenus(container: HTMLElement, ctx: NavMenuMountC
     slot.innerHTML = `
       <nav${navClassAttr}>
         <button type="button" class="nospress-nav-menu__hamburger" aria-label="Toggle menu" aria-expanded="false">
-          <svg width="22" height="22" aria-hidden="true"><use href="#icon-hamburger"/></svg>
+          <svg width="22" height="22" aria-hidden="true"><use href="#icon-menu-bars"/></svg>
         </button>
         <ul class="nospress-nav-menu__list">${items}</ul>
       </nav>

@@ -1162,7 +1162,7 @@ export class MainLayout {
     layout.innerHTML = `
       <header class="mobile-header">
         <button class="mobile-header__hamburger" aria-label="Open menu">
-          <svg width="24" height="24"><use href="#icon-hamburger"/></svg>
+          <svg width="24" height="24"><use href="#icon-menu-bars"/></svg>
           <span class="hamburger-badge"></span>
         </button>
         <span class="nn-logo">NoorNote</span>

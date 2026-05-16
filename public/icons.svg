@@ -228,13 +228,22 @@
       <path d="M9 3v18" />
       <path d="M15 3v18" />
   </symbol>
+  <symbol id="icon-menu-bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Lucide `menu` — three horizontal lines, the canonical mobile-nav /
+         drawer trigger. Use this for hamburger buttons in MainLayout,
+         NosPress nav-menu drawer, etc. The list-tree shape (#icon-hamburger
+         below) is reserved for the Lists sidebar item. -->
+    <path d="M4 6h16" />
+    <path d="M4 12h16" />
+    <path d="M4 18h16" />
+  </symbol>
   <symbol id="icon-hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <!-- Sourced from Lucide `list-tree` — the Lists sidebar item shows an
          accordion of child lists (Bookmarks / Follows / Mutes / Tribes),
          and the branched tree shape mirrors that structure. The id keeps
          the legacy `hamburger` name so consumer code stays unchanged.
          Avoid Lucide `hamburger` (the food burger) and Lucide `menu`
-         (three lines — reserved for the mobile-nav hamburger trigger). -->
+         (three lines — use #icon-menu-bars for the mobile-nav trigger). -->
     <path d="M8 5h13" />
     <path d="M13 12h8" />
     <path d="M13 19h8" />
