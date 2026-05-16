@@ -13,10 +13,12 @@
  * the block entirely (no orphan markers).
  */
 
-import type { NospressCustomFont } from './blocks/siteSettings';
+import { SITE_DEFAULT_FONT_PICK, type NospressCustomFont, type NospressSiteTheme } from './blocks/siteSettings';
 
 const START_MARKER = '/* @font-face-start (auto, edit via Global tab) */';
 const END_MARKER = '/* @font-face-end */';
+const BODY_START_MARKER = '/* @fonts-body-start (auto, edit via Global tab) */';
+const BODY_END_MARKER = '/* @fonts-body-end */';
 
 /** Build the `@font-face { … }` lines for one font. */
 function buildFontFaceRule(font: NospressCustomFont): string {
@@ -54,6 +56,72 @@ export function mirrorFontFacesIntoCss(css: string, fonts: NospressCustomFont[])
   const block = buildFontFaceBlock(fonts);
   if (!block) return stripped.trimStart();
   return block + stripped.trimStart();
+}
+
+/** Resolve the effective body font-family cascade. Returns the full CSS
+ *  value (e.g. `'Zen Kurenaido', Arial, sans-serif`) or just `sans-serif`
+ *  when nothing meaningful is configured. Pure: never touches state. */
+export function buildBodyFontFamilyValue(theme: NospressSiteTheme | undefined): string {
+  const fonts = theme?.customFonts ?? [];
+  const siteDefault = (theme?.fontFamily ?? '').trim();
+  const pickRaw = (theme?.defaultFontPick ?? '').trim();
+
+  // Resolve auto-default if the explicit pick is empty / invalid.
+  const customFamilies = fonts.map(f => f.family);
+  let pick = pickRaw;
+  const pickValid = pick === SITE_DEFAULT_FONT_PICK
+    || (pick !== '' && customFamilies.includes(pick));
+  if (!pickValid) {
+    pick = customFamilies[0] ?? (siteDefault ? SITE_DEFAULT_FONT_PICK : '');
+  }
+
+  // Build the chain. Primary first; if primary is a custom font and a
+  // site-default is set, append it as fallback; always end with sans-serif.
+  const parts: string[] = [];
+  if (pick === SITE_DEFAULT_FONT_PICK) {
+    if (siteDefault) parts.push(siteDefault);
+  } else if (pick !== '') {
+    parts.push(`'${pick.replace(/'/g, "\\'")}'`);
+    if (siteDefault) parts.push(siteDefault);
+  }
+  parts.push('sans-serif');
+  return parts.join(', ');
+}
+
+/** Build the marker-fenced `body { font-family: …; }` block. Empty string
+ *  when the cascade collapses to bare `sans-serif` AND no fonts at all are
+ *  configured — but for consistency we always emit a block when called from
+ *  the Save button, so callers control that distinction. */
+export function buildBodyFontBlock(cascade: string): string {
+  return `${BODY_START_MARKER}\nbody { font-family: ${cascade}; }\n${BODY_END_MARKER}\n\n`;
+}
+
+/** Strip the body-font marker block from CSS. */
+export function stripBodyFontBlock(css: string): string {
+  if (!css) return '';
+  const startIdx = css.indexOf(BODY_START_MARKER);
+  if (startIdx === -1) return css;
+  const endIdx = css.indexOf(BODY_END_MARKER, startIdx);
+  if (endIdx === -1) return css;
+  const tail = css.slice(endIdx + BODY_END_MARKER.length);
+  return css.slice(0, startIdx).replace(/\n*$/, '') + tail.replace(/^\n+/, '\n');
+}
+
+/** Replace (or prepend) the body-font marker block. */
+export function mirrorBodyFontIntoCss(css: string, cascade: string): string {
+  const stripped = stripBodyFontBlock(css);
+  const block = buildBodyFontBlock(cascade);
+  // Insert AFTER the @font-face block if present, else at the top, so the
+  // body rule comes after the @font-face declarations it depends on.
+  const faceEndIdx = stripped.indexOf(END_MARKER);
+  if (faceEndIdx === -1) {
+    return block + stripped.trimStart();
+  }
+  const insertPos = faceEndIdx + END_MARKER.length;
+  // Walk past any blank lines so the inserted block keeps tidy spacing.
+  let cut = insertPos;
+  while (cut < stripped.length && stripped[cut] === '\n') cut++;
+  return stripped.slice(0, cut) + block + stripped.slice(cut).trimStart();
 }
 
 // --- internal helpers --------------------------------------------------------

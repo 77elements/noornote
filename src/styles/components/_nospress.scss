@@ -2083,6 +2083,32 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
     margin-top: $gap;
     text-align: right;
   }
+
+  // "Save" button under the palette swatches in Color Theme: small breathing
+  // room above so it doesn't visually glue to the last palette row. Scoped to
+  // the Global tab so the standalone .btn rule isn't affected elsewhere.
+  [data-action="paste-palette-to-css"] {
+    margin-top: calc($gap / 2);
+  }
+}
+
+// Breathing room below the "+ Add font" and "Save" button rows in the Fonts
+// section so they don't visually collide with the rows directly underneath.
+.nospress-global__section--fonts .l-row--right {
+  margin-bottom: $gap;
+}
+
+// Custom-font name cell in the Fonts section. Shows the family name in its
+// own typeface (live preview) plus the inline remove × button.
+.nospress-font-name {
+  display: inline-flex;
+  align-items: center;
+  gap: calc($gap / 2);
+  color: var(--color-5);
+
+  .btn--danger {
+    margin-left: calc($gap / 4);
+  }
 }
 
 // Custom meta-tag rows in the Meta & SEO accordion: each row is two text

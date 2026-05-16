@@ -18,8 +18,11 @@ import { buildNip98AuthHeader, sha256Hex } from '../../helpers/nip98';
  * dev-proxy can forward localhost requests to live PHP transparently.
  */
 const FONT_HOST = 'https://noornote.app';
-export const FONT_UPLOAD_ENDPOINT = '/fonts/upload.php';
-export const FONT_DELETE_ENDPOINT = '/fonts/delete.php';
+// Lives under `_nospress-user/` to keep user uploads strictly separated
+// from the app's own static `/fonts/` assets (Saira logo font, …). Avoids
+// FTP collisions during app updates.
+export const FONT_UPLOAD_ENDPOINT = '/_nospress-user/fonts/upload.php';
+export const FONT_DELETE_ENDPOINT = '/_nospress-user/fonts/delete.php';
 
 export interface UploadedFont {
   url: string;

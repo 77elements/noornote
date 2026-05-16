@@ -45,16 +45,14 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/proxy\/blossom\.primal\.net/, ''),
       },
-      // In dev mode, /fonts/upload.php and /fonts/delete.php must hit the
-      // live PHP endpoint (Vite serves .php as static text). Static font
-      // files under /fonts/<pubkey>/... and /fonts/Saira/ would also serve
-      // from local public/fonts when present — the proxy only kicks in for
-      // the two .php paths.
-      '/fonts/upload.php': {
+      // In dev mode, the NosPress font endpoints must hit the live PHP
+      // (Vite serves .php as static text). Path lives under
+      // `_nospress-user/fonts/` to stay clear of the app's static `/fonts/`.
+      '/_nospress-user/fonts/upload.php': {
         target: 'https://noornote.app',
         changeOrigin: true,
       },
-      '/fonts/delete.php': {
+      '/_nospress-user/fonts/delete.php': {
         target: 'https://noornote.app',
         changeOrigin: true,
       },

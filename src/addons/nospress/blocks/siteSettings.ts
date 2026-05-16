@@ -52,9 +52,19 @@ export interface NospressSiteTheme {
   /** User-uploaded webfonts. Each entry yields one `@font-face` rule —
    *  mirrored into a marker-fenced block in `customCss` automatically and
    *  selectable per-block via the `fontFamily` Property. Files are hosted
-   *  on `noornote.app/fonts/{pubkey}/...` (PHP NIP-98 upload). */
+   *  on `noornote.app/_nospress-user/fonts/{npub}/...` (PHP NIP-98 upload). */
   customFonts?: NospressCustomFont[];
+  /** Which font is the body-text default. Either a `customFonts[i].family`
+   *  string or the sentinel `'__site-default__'` for the `fontFamily` text
+   *  field above. Empty / missing = auto-resolve (first custom, else
+   *  site-default). Used by the Save button in the Fonts section to emit
+   *  the `body { font-family: ... }` cascade into customCss. */
+  defaultFontPick?: string;
 }
+
+/** Sentinel value for `theme.defaultFontPick` meaning "use the text-field
+ *  Site default font family". */
+export const SITE_DEFAULT_FONT_PICK = '__site-default__';
 
 /** One uploaded webfont. `family` is the user-chosen CSS family name (also
  *  the label in the per-block dropdown); `src` is the hosted URL. `format`

@@ -169,7 +169,7 @@ if (file_put_contents($dest, $rawBody) === false) {
 
 // --- Response ----------------------------------------------------------------
 
-$publicUrl = $scheme . '://' . $host . '/fonts/' . $npub . '/' . $slug;
+$publicUrl = $scheme . '://' . $host . '/_nospress-user/fonts/' . $npub . '/' . $slug;
 respond(200, [
     'ok'     => true,
     'url'    => $publicUrl,

@@ -20,8 +20,8 @@ import { NospressService } from '../../services/NospressService';
 import { NospressPageIndexService } from '../../services/NospressPageIndexService';
 import { NospressMenuService } from '../../services/NospressMenuService';
 import { NospressSiteSettingsService } from '../../services/NospressSiteSettingsService';
-import { DEFAULT_PALETTE, PALETTE_KEYS, type NospressSiteSettings, type NospressBreakpoint, type BreakpointType, type NospressCustomFont } from './blocks/siteSettings';
-import { mirrorFontFacesIntoCss } from './fontFaceMirror';
+import { DEFAULT_PALETTE, PALETTE_KEYS, SITE_DEFAULT_FONT_PICK, type NospressSiteSettings, type NospressBreakpoint, type BreakpointType, type NospressCustomFont } from './blocks/siteSettings';
+import { mirrorFontFacesIntoCss, mirrorBodyFontIntoCss, buildBodyFontFamilyValue } from './fontFaceMirror';
 import { uploadCustomFont, deleteCustomFont } from './fontUpload';
 import {
   defaultGradient,
@@ -1174,7 +1174,7 @@ export class NospressView extends View {
 
     return `
       <div class="nospress-global">
-        <section class="nn-ui-toggle nospress-global__section open" data-toggle-section>
+        <section class="nn-ui-toggle nospress-global__section nospress-global__section--meta" data-toggle-section>
           <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Meta &amp; SEO</h2>
@@ -1206,15 +1206,17 @@ export class NospressView extends View {
               <div class="nospress-meta-custom" data-meta-custom-list>
                 ${this.renderMetaCustomTagsRows(m.customTags ?? [])}
               </div>
-              <button type="button" class="btn btn--mini btn--passive" data-action="add-meta-tag">+ Add tag</button>
+            </div>
+            <div class="l-row--right">
+              <button type="button" class="btn" data-action="add-meta-tag">+ Add tag</button>
             </div>
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+        <section class="nn-ui-toggle nospress-global__section nospress-global__section--color-theme" data-toggle-section>
           <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Theme &amp; Palette</h2>
+              <h2 class="nn-ui-toggle__title">Color Theme</h2>
             </div>
             <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
               <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
@@ -1222,33 +1224,29 @@ export class NospressView extends View {
           </div>
           <div class="nn-ui-toggle__content">
             ${paletteRows}
-            <div class="form__row">
-              <button type="button" class="btn btn--mini btn--passive" data-action="paste-palette-to-css">Paste palette to Custom CSS</button>
-              <p class="form__note">Inserts the current palette as CSS variables at the top of your Custom CSS.</p>
-            </div>
-            <div class="form__row">
-              <label for="ssg-fontFamily">Font family</label>
-              <input id="ssg-fontFamily" type="text" class="input" placeholder="e.g. 'Inter', sans-serif" data-global-field="theme.fontFamily" value="${escapeHtml(t.fontFamily ?? '')}" />
+            <p class="form__note">Writes the current palette as CSS variables into your Custom CSS, saves locally, and publishes to your relays.</p>
+            <div class="l-row--right">
+              <button type="button" class="btn" data-action="paste-palette-to-css">Save</button>
             </div>
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+        <section class="nn-ui-toggle nospress-global__section nospress-global__section--fonts" data-toggle-section>
           <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
-              <h2 class="nn-ui-toggle__title">Custom Fonts</h2>
-              <p class="nn-ui-toggle__description">Upload webfonts (woff2 / woff / ttf / otf). The family names become available in every block's <em>Font family</em> dropdown.</p>
+              <h2 class="nn-ui-toggle__title">Fonts</h2>
             </div>
             <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
               <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
+            <p class="form__note">Upload webfonts (woff2 / woff / ttf / otf). The family names become available in every block's <em>Font family</em> dropdown.</p>
             ${this.renderCustomFontsSection(t.customFonts ?? [])}
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+        <section class="nn-ui-toggle nospress-global__section nospress-global__section--nav" data-toggle-section>
           <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Navigation menus</h2>
@@ -1262,32 +1260,32 @@ export class NospressView extends View {
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+        <section class="nn-ui-toggle nospress-global__section nospress-global__section--breakpoints" data-toggle-section>
           <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Breakpoints</h2>
-              <p class="nn-ui-toggle__description">Named media-query thresholds you can target from per-block styles + Custom CSS. Up to 5.</p>
             </div>
             <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
               <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
+            <p class="form__note">Named media-query thresholds you can target from per-block styles + Custom CSS. Up to 5.</p>
             ${this.renderBreakpointsSection(settings.breakpoints ?? [])}
           </div>
         </section>
 
-        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+        <section class="nn-ui-toggle nospress-global__section nospress-global__section--code-integration" data-toggle-section>
           <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Code Integration</h2>
-              <p class="nn-ui-toggle__description">Code you inject runs on your own NosPress page under noornote.app. Use only sources you trust.</p>
             </div>
             <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
               <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
             </button>
           </div>
           <div class="nn-ui-toggle__content">
+            <p class="form__note">Code you inject runs on your own NosPress page under noornote.app. Use only sources you trust.</p>
             <div class="form__row">
               <label for="ssg-headSnippet">&lt;head&gt; snippet</label>
               <textarea id="ssg-headSnippet" class="textarea textarea--small input--monospace" data-global-field="injection.headSnippet">${escapeHtml(i.headSnippet ?? '')}</textarea>
@@ -1355,10 +1353,12 @@ export class NospressView extends View {
     const atMax = breakpoints.length >= NospressView.MAX_BREAKPOINTS;
     return `
       <div class="nospress-breakpoints" data-breakpoints-list>${rows}</div>
-      <button type="button"
-              class="btn btn--passive btn--mini"
-              data-action="add-breakpoint"
-              ${atMax ? 'disabled' : ''}>+ Add breakpoint</button>
+      <div class="l-row--right">
+        <button type="button"
+                class="btn"
+                data-action="add-breakpoint"
+                ${atMax ? 'disabled' : ''}>+ Add breakpoint</button>
+      </div>
     `;
   }
 
@@ -1492,35 +1492,82 @@ export class NospressView extends View {
 
   // ---- Custom Fonts ---------------------------------------------------------
 
-  /** Render the Custom Fonts list + Add button for the Global tab. Upload
-   *  / delete are only wired on Web — the PHP endpoint lives at
-   *  noornote.app/fonts/ and Electron / Capacitor have no same-origin path
-   *  to reach it. Existing fonts (uploaded from Web) keep working
-   *  everywhere via the auto-mirrored @font-face block in Custom CSS. */
+  /** Render the entire Fonts toggle content: custom-font rows with radios,
+   *  the Site-default input row with its radio, and the Save button that
+   *  emits the body cascade into Custom CSS + Save + Publish.
+   *
+   *  Upload / delete are only wired on Web — the PHP endpoint lives at
+   *  noornote.app/_nospress-user/fonts/ and Electron / Capacitor have no
+   *  same-origin path to reach it. Existing fonts (uploaded from Web) keep
+   *  working everywhere via the auto-mirrored @font-face block in Custom CSS.
+   *
+   *  Radio mechanic: native `<input type="radio" name="nospress-font-pick">`
+   *  for free mutual exclusion. The currently-effective pick is computed at
+   *  render time — if the persisted `defaultFontPick` is empty / invalid we
+   *  auto-resolve to the first custom font, else the site-default, else
+   *  nothing. */
   private renderCustomFontsSection(fonts: NospressCustomFont[]): string {
     const isWeb = PlatformService.getInstance().isBrowser;
-    const rows = fonts.length === 0
-      ? `<p class="form__note">No custom fonts yet.${isWeb ? ' Add one to use it in any block\'s <em>Font family</em> dropdown.' : ''}</p>`
-      : `<ul class="ui-list ui-list--compact" data-custom-fonts-list>
-          ${fonts.map(f => `
-            <li class="ui-list__item">
-              <span class="ui-list__title" style="font-family: ${escapeHtmlAttr(`'${f.family}'`)};">${escapeHtml(f.family)}</span>
-              <span class="ui-list__meta">${escapeHtml(f.format)}${f.weight ? ' · ' + escapeHtml(f.weight) : ''}${f.style && f.style !== 'normal' ? ' · ' + escapeHtml(f.style) : ''}</span>
-              ${isWeb ? `<button type="button" class="btn btn--mini btn--passive btn--danger" data-action="remove-custom-font" data-font-family="${escapeHtmlAttr(f.family)}" aria-label="Remove ${escapeHtmlAttr(f.family)}">×</button>` : ''}
-            </li>
-          `).join('')}
-        </ul>`;
-    const controls = isWeb
-      ? `<div class="form__row">
-          <button type="button" class="btn" data-action="add-custom-font">+ Add font</button>
+    const theme = this.siteSettingsService.getSettings().theme ?? {};
+    const siteDefault = theme.fontFamily ?? '';
+    const effectivePick = this.effectiveDefaultFontPick();
+
+    const addBtn = isWeb
+      ? `<div class="l-row--right">
+          <button type="button" class="btn btn--passive" data-action="add-custom-font">+ Add font</button>
         </div>`
       : `<p class="form__note">Custom fonts can be uploaded and removed only from <a href="https://noornote.app/nospress" target="_blank" rel="noopener">noornote.app</a> — the upload endpoint lives there. Fonts you added from Web keep working everywhere.</p>`;
+
+    const customRows = fonts.map(f => `
+      <div class="form__row form__row--3cols">
+        <label>Custom Font:</label>
+        <span class="nospress-font-name">
+          <span class="nospress-font-name__label" style="font-family: ${escapeHtmlAttr(`'${f.family}'`)};">${escapeHtml(f.family)}</span>
+          ${isWeb ? `<button type="button" class="btn btn--mini btn--passive btn--danger" data-action="remove-custom-font" data-font-family="${escapeHtmlAttr(f.family)}" aria-label="Remove ${escapeHtmlAttr(f.family)}">×</button>` : ''}
+        </span>
+        <input type="radio" name="nospress-font-pick" value="${escapeHtmlAttr(f.family)}" ${effectivePick === f.family ? 'checked' : ''} data-font-pick-radio aria-label="Use ${escapeHtmlAttr(f.family)} as body default" />
+      </div>
+    `).join('');
+
+    const cascadePreview = buildBodyFontFamilyValue({ ...theme, defaultFontPick: effectivePick });
+
     return `
       <div data-custom-fonts-mount>
-        ${rows}
-        ${controls}
+        ${addBtn}
+        ${customRows}
+        <div class="form__row form__row--3cols">
+          <label for="ssg-fontFamily">Default</label>
+          <input id="ssg-fontFamily" type="text" class="input" placeholder="e.g. 'Inter', sans-serif" data-global-field="theme.fontFamily" value="${escapeHtml(siteDefault)}" />
+          <input type="radio" name="nospress-font-pick" value="${SITE_DEFAULT_FONT_PICK}" ${effectivePick === SITE_DEFAULT_FONT_PICK ? 'checked' : ''} data-font-pick-radio aria-label="Use Site default as body default" />
+        </div>
+        <p class="form__note">
+          Will write into Custom CSS on Save:
+          <code>body { font-family: ${escapeHtml(cascadePreview)}; }</code>
+        </p>
+        <div class="l-row--right">
+          <button type="button" class="btn" data-action="save-body-fonts">Save</button>
+        </div>
       </div>
     `;
+  }
+
+  /** Pure resolver for the active radio. Returns the family-name or the
+   *  SITE_DEFAULT_FONT_PICK sentinel, or empty string when nothing is
+   *  selectable (no customs + empty site-default). Mirrors the auto-default
+   *  in `buildBodyFontFamilyValue`. */
+  private effectiveDefaultFontPick(): string {
+    const theme = this.siteSettingsService.getSettings().theme ?? {};
+    const customs = theme.customFonts ?? [];
+    const siteDefault = (theme.fontFamily ?? '').trim();
+    const raw = (theme.defaultFontPick ?? '').trim();
+    const customFamilies = customs.map(f => f.family);
+
+    if (raw === SITE_DEFAULT_FONT_PICK && siteDefault) return raw;
+    if (raw !== '' && customFamilies.includes(raw)) return raw;
+    // Auto-default: first custom, else site-default, else nothing.
+    if (customFamilies.length > 0) return customFamilies[0]!;
+    if (siteDefault) return SITE_DEFAULT_FONT_PICK;
+    return '';
   }
 
   /** Re-render only the Custom Fonts list after add/remove. The mount lives
@@ -1551,10 +1598,10 @@ export class NospressView extends View {
         <input id="nospress-font-file" type="file" class="input" accept=".woff2,.woff,.ttf,.otf" required />
         <p class="form__note">Supported: woff2, woff, ttf, otf · max 2 MB</p>
       </div>
-      <div class="form__row">
+      <p class="form__note" data-font-upload-status></p>
+      <div class="l-row--right">
         <button type="submit" class="btn">Upload</button>
       </div>
-      <p class="form__note" data-font-upload-status></p>
     `;
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1622,6 +1669,12 @@ export class NospressView extends View {
     if (!settings.theme) settings.theme = {};
     if (remaining.length === 0) delete settings.theme.customFonts;
     else settings.theme.customFonts = remaining;
+    // If the deleted font was the body-default pick, clear it — the next
+    // render auto-resolves to the new fallback (first remaining custom or
+    // site-default).
+    if (settings.theme.defaultFontPick === family) {
+      delete settings.theme.defaultFontPick;
+    }
     settings.customCss = mirrorFontFacesIntoCss(settings.customCss ?? '', remaining);
     this.siteSettingsService.saveSettings(settings, { silent: true });
     this.isDirty = true;
@@ -1633,6 +1686,30 @@ export class NospressView extends View {
       'success',
       7000
     );
+  }
+
+  /** Save button in the Fonts section: persists the effective radio pick,
+   *  writes `body { font-family: <cascade>; }` into the marker-fenced block
+   *  of Custom CSS, then runs Save (local) + Publish (relays). Idempotent:
+   *  re-clicking just refreshes the block from current state. */
+  private async saveBodyFontsToCustomCss(): Promise<void> {
+    const settings = structuredClone(this.siteSettingsService.getSettings());
+    settings.theme ??= {};
+    const pick = this.effectiveDefaultFontPick();
+    // Persist the auto-resolved pick so subsequent renders / relay-syncs
+    // start from a stable explicit value rather than recomputing each time.
+    if (pick) settings.theme.defaultFontPick = pick;
+    else delete settings.theme.defaultFontPick;
+    const cascade = buildBodyFontFamilyValue(settings.theme);
+    settings.customCss = mirrorBodyFontIntoCss(settings.customCss ?? '', cascade);
+    this.siteSettingsService.saveSettings(settings, { silent: true });
+    this.isDirty = true;
+    this.siteSettingsDirty = true;
+    this.refreshActionBar();
+    if (!this.cssEditorOpen) this.cssEditorOpen = true;
+    this.rerenderEditable();
+    this.saveDraft();
+    await this.publishDraft();
   }
 
   /** Re-render only the Breakpoints list + Add-button state. Keeps the
@@ -1673,6 +1750,15 @@ export class NospressView extends View {
     // text inputs (name / value / value2) flow through here.
     if (target?.dataset?.breakpointField) {
       this.collectAndPersistBreakpoints();
+      return;
+    }
+
+    // Fonts section: radio that picks the body-text default font. Native
+    // [name="nospress-font-pick"] gives mutual exclusion; we just persist
+    // the chosen value so the next Save (or re-render) reflects it.
+    if (target?.dataset?.fontPickRadio !== undefined) {
+      const radio = target as HTMLInputElement;
+      if (radio.checked) this.persistGlobalField('theme.defaultFontPick', radio.value);
       return;
     }
 
@@ -2316,6 +2402,11 @@ export class NospressView extends View {
       return;
     }
 
+    if (action.dataset.action === 'save-body-fonts') {
+      this.saveBodyFontsToCustomCss();
+      return;
+    }
+
     if (action.dataset.action === 'remove-custom-font') {
       const family = action.dataset.fontFamily ?? '';
       if (family) this.removeCustomFontByFamily(family);
@@ -2355,7 +2446,7 @@ export class NospressView extends View {
     return out;
   }
 
-  private pastePaletteToCustomCss(): void {
+  private async pastePaletteToCustomCss(): Promise<void> {
     const palette = this.siteSettingsService.getSettings().theme?.palette ?? {};
     const lines = PALETTE_KEYS.map(k => {
       const value = palette[k] ?? DEFAULT_PALETTE[k];
@@ -2364,11 +2455,22 @@ export class NospressView extends View {
     }).join('\n');
     const block = `body {\n${lines}\n}\n\n`;
 
-    this.writeSiteCustomCss(block + this.currentCustomCss());
+    // Replace any existing auto-generated palette block (re-clicking Save
+    // must not stack duplicates). Strip the previous block by signature,
+    // then prepend the fresh one.
+    const stripped = this.currentCustomCss().replace(
+      /^body \{\n(?:  --color-\d:[^\n]*\n){6}\}\n+/m,
+      ''
+    );
+    this.writeSiteCustomCss(block + stripped);
 
     if (!this.cssEditorOpen) this.cssEditorOpen = true;
     this.rerenderEditable();
-    ToastService.show('Palette inserted into Custom CSS', 'success');
+    // Save (local) + Publish (relays) so a freshly chosen palette is
+    // immediately live without an extra click. Errors surface via the
+    // publishDraft toast.
+    this.saveDraft();
+    await this.publishDraft();
   }
 
   /**
@@ -2391,7 +2493,7 @@ export class NospressView extends View {
       <div class="nospress-nav">
         ${sections}
         <div class="nospress-nav__add-menu">
-          <button type="button" class="btn btn--passive btn--mini" data-action="add-menu">+ Add menu</button>
+          <button type="button" class="btn" data-action="add-menu">+ Add menu</button>
         </div>
       </div>
     `;

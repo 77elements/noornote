@@ -56,7 +56,7 @@ if (!is_string($targetUrl) || $targetUrl === '') {
     respond(400, ['error' => 'Body must be {"url":"..."}']);
 }
 
-// Parse and validate the URL: must point at /fonts/<our npub>/<filename>.
+// Parse and validate the URL: must point at /_nospress-user/fonts/<our npub>/<filename>.
 // The signing pubkey (hex) is re-encoded to npub and compared to the URL
 // segment — no bech32 decode required server-side.
 try {
@@ -70,7 +70,7 @@ if (!$parts || ($parts['host'] ?? '') !== $host) {
     respond(400, ['error' => 'URL host does not match this server']);
 }
 $p = $parts['path'] ?? '';
-if (!preg_match('#^/fonts/(npub1[a-z0-9]{58})/([a-z0-9-]{1,40}\.(?:woff2|woff|ttf|otf))$#', $p, $m)) {
+if (!preg_match('#^/_nospress-user/fonts/(npub1[a-z0-9]{58})/([a-z0-9-]{1,40}\.(?:woff2|woff|ttf|otf))$#', $p, $m)) {
     respond(400, ['error' => 'URL path is not a valid font location']);
 }
 if ($m[1] !== $authNpub) {
