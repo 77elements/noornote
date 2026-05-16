@@ -51,6 +51,11 @@ export interface CommonStyle {
   lineHeight?: string;
   fontWeight?: string;
   fontStyle?: string;
+  /** CSS `font-family`. Dropdown options come from
+   *  `siteSettings.theme.customFonts` (each user-uploaded font becomes an
+   *  entry) plus a fixed set of system fallbacks. Empty = inherit from
+   *  the site root / browser default. */
+  fontFamily?: string;
   /** CSS `text-align` (left / center / right / justify). Surfaced only
    *  for heading + text blocks in the Properties panel (the other
    *  textual blocks have layout-driven content where left-default is
@@ -321,7 +326,7 @@ export interface QuadPropertyEntry {
  *  CustomDropdown instance after each render. */
 export interface DropdownPropertyEntry {
   kind: 'dropdown';
-  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton' | 'justifyItems' | 'alignItems';
+  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton' | 'justifyItems' | 'alignItems' | 'fontFamily';
   label: string;
   cssProp: string;
   options: Array<{ value: string; label: string }>;

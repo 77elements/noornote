@@ -1,0 +1,20 @@
+# NosPress Custom Fonts directory
+
+# Upload size caps (defensive — server-side hard cap is in upload.php)
+php_value upload_max_filesize 2M
+php_value post_max_size 4M
+
+# Disable directory listing (fallback — index.html in this folder also blocks it)
+Options -Indexes
+
+# Webfont MIME types (some shared hosts default to octet-stream which breaks @font-face on Firefox)
+AddType font/woff2 .woff2
+AddType font/woff  .woff
+AddType font/ttf   .ttf
+AddType font/otf   .otf
+
+# Long cache for served fonts — they are content-addressed via the filename
+<FilesMatch "\.(woff2|woff|ttf|otf)$">
+  Header set Cache-Control "public, max-age=31536000, immutable"
+  Header set Access-Control-Allow-Origin "*"
+</FilesMatch>

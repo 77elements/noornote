@@ -43,6 +43,24 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   lineHeight:   { kind: 'single', key: 'lineHeight',   label: 'Line height',   cssProp: 'line-height',   placeholder: 'e.g. 1.5' },
   fontWeight:   { kind: 'single', key: 'fontWeight',   label: 'Font weight',   cssProp: 'font-weight',   placeholder: '400 | 600 | bold' },
   fontStyle:    { kind: 'single', key: 'fontStyle',    label: 'Font style',    cssProp: 'font-style',    placeholder: 'normal | italic' },
+  fontFamily: {
+    // Options here are the static system fallbacks. NospressView's
+    // `mountStyleDropdowns` augments this list with the user's uploaded
+    // custom fonts (from siteSettings.theme.customFonts) before mounting
+    // the CustomDropdown — so adding a font in the Global tab makes it
+    // appear in every block's dropdown without re-rendering the catalog.
+    kind: 'dropdown', key: 'fontFamily', label: 'Font family', cssProp: 'font-family',
+    options: [
+      { value: '',                                                  label: '(default)' },
+      { value: 'system-ui, sans-serif',                             label: 'System' },
+      { value: 'Arial, sans-serif',                                 label: 'Arial' },
+      { value: '"Times New Roman", Times, serif',                   label: 'Times New Roman' },
+      { value: 'Georgia, serif',                                    label: 'Georgia' },
+      { value: '"Trebuchet MS", sans-serif',                        label: 'Trebuchet' },
+      { value: 'Verdana, sans-serif',                               label: 'Verdana' },
+      { value: '"Courier New", Courier, monospace',                 label: 'Courier' },
+    ],
+  },
   // Border split into 3 properties: width (quad), style (dropdown), color (quad).
   // All emit shorthand declarations so the rendered CSS stays compact.
   borderWidth:  { kind: 'quad',   key: 'borderWidth',  label: 'Border width',  cssShorthand: 'border-width', placeholder: 'e.g. 1px' },
@@ -183,7 +201,7 @@ const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',   
 // most-common color slots sit side-by-side. Scopes that want background
 // without typography (image / gallery / video / …) still use
 // GROUP_BACKGROUND below.
-const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: [['color', 'background'], ['fontSize', 'lineHeight'], ['fontWeight', 'fontStyle'], 'textDecoration', 'textShadow'] };
+const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: [['color', 'background'], 'fontFamily', ['fontSize', 'lineHeight'], ['fontWeight', 'fontStyle'], 'textDecoration', 'textShadow'] };
 const GROUP_BACKGROUND: PropertyGroup = { key: 'background', label: 'Background', props: ['background'] };
 const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',     props: ['borderWidth', ['borderStyle', 'borderRadius'], 'borderColor'] };
 const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['divider'] };

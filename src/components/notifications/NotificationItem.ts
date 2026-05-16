@@ -256,7 +256,7 @@ export class NotificationItem {
       case 'mention':
       case 'reply':
       case 'thread-reply':
-        return `<svg width="18" height="18"><use href="#icon-reply"/></svg>`;
+        return `<svg width="18" height="18"><use href="#icon-thread-bubble"/></svg>`;
 
       case 'repost':
         return `<svg width="18" height="18"><use href="#icon-repost"/></svg>`;

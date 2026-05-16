@@ -49,6 +49,27 @@ export interface NospressSiteTheme {
   palette?: Partial<Record<PaletteKey, string>>;
   /** Optional CSS `font-family` value applied to the public site root. */
   fontFamily?: string;
+  /** User-uploaded webfonts. Each entry yields one `@font-face` rule —
+   *  mirrored into a marker-fenced block in `customCss` automatically and
+   *  selectable per-block via the `fontFamily` Property. Files are hosted
+   *  on `noornote.app/fonts/{pubkey}/...` (PHP NIP-98 upload). */
+  customFonts?: NospressCustomFont[];
+}
+
+/** One uploaded webfont. `family` is the user-chosen CSS family name (also
+ *  the label in the per-block dropdown); `src` is the hosted URL. `format`
+ *  is the `format(...)` hint for the `@font-face src` declaration. */
+export interface NospressCustomFont {
+  /** Display + CSS family name, e.g. "Zen Kurenaido". */
+  family: string;
+  /** Public URL of the font file. */
+  src: string;
+  /** `woff2` | `woff` | `truetype` | `opentype` — value passed to `format(...)`. */
+  format: 'woff2' | 'woff' | 'truetype' | 'opentype';
+  /** Optional CSS `font-weight` descriptor (e.g. `400`, `bold`, `100 900`). */
+  weight?: string;
+  /** Optional CSS `font-style` descriptor. */
+  style?: 'normal' | 'italic' | 'oblique';
 }
 
 export interface NospressSiteInjection {
@@ -126,7 +147,7 @@ export function hasSiteSettingsContent(s: NospressSiteSettings | null | undefine
   const m = s.meta;
   if (m && (m.siteName || m.description || m.ogImage || m.favicon || m.twitterCard || (m.customTags?.length ?? 0) > 0)) return true;
   const t = s.theme;
-  if (t && (t.fontFamily || (t.palette && Object.keys(t.palette).length > 0))) return true;
+  if (t && (t.fontFamily || (t.palette && Object.keys(t.palette).length > 0) || (t.customFonts?.length ?? 0) > 0)) return true;
   const i = s.injection;
   if (i && (i.headSnippet || i.bodyEndSnippet || (i.cssLinks?.length ?? 0) > 0 || (i.jsScripts?.length ?? 0) > 0)) return true;
   if (s.customCss && s.customCss.trim().length > 0) return true;

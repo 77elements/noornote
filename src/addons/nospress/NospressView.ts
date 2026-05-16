@@ -20,7 +20,9 @@ import { NospressService } from '../../services/NospressService';
 import { NospressPageIndexService } from '../../services/NospressPageIndexService';
 import { NospressMenuService } from '../../services/NospressMenuService';
 import { NospressSiteSettingsService } from '../../services/NospressSiteSettingsService';
-import { DEFAULT_PALETTE, PALETTE_KEYS, type NospressSiteSettings, type NospressBreakpoint, type BreakpointType } from './blocks/siteSettings';
+import { DEFAULT_PALETTE, PALETTE_KEYS, type NospressSiteSettings, type NospressBreakpoint, type BreakpointType, type NospressCustomFont } from './blocks/siteSettings';
+import { mirrorFontFacesIntoCss } from './fontFaceMirror';
+import { uploadCustomFont, deleteCustomFont } from './fontUpload';
 import {
   defaultGradient,
   formatGradient,
@@ -39,6 +41,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
+import { PlatformService } from '../../services/PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
@@ -1233,6 +1236,21 @@ export class NospressView extends View {
         <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
           <div class="nn-ui-toggle__header" data-toggle-header>
             <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Custom Fonts</h2>
+              <p class="nn-ui-toggle__description">Upload webfonts (woff2 / woff / ttf / otf). The family names become available in every block's <em>Font family</em> dropdown.</p>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            ${this.renderCustomFontsSection(t.customFonts ?? [])}
+          </div>
+        </section>
+
+        <section class="nn-ui-toggle nospress-global__section" data-toggle-section>
+          <div class="nn-ui-toggle__header" data-toggle-header>
+            <div class="nn-ui-toggle__info">
               <h2 class="nn-ui-toggle__title">Navigation menus</h2>
             </div>
             <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
@@ -1470,6 +1488,151 @@ export class NospressView extends View {
     this.refreshActionBar();
     this.rerenderBreakpointsSection();
     this.updatePropertiesTab();
+  }
+
+  // ---- Custom Fonts ---------------------------------------------------------
+
+  /** Render the Custom Fonts list + Add button for the Global tab. Upload
+   *  / delete are only wired on Web — the PHP endpoint lives at
+   *  noornote.app/fonts/ and Electron / Capacitor have no same-origin path
+   *  to reach it. Existing fonts (uploaded from Web) keep working
+   *  everywhere via the auto-mirrored @font-face block in Custom CSS. */
+  private renderCustomFontsSection(fonts: NospressCustomFont[]): string {
+    const isWeb = PlatformService.getInstance().isBrowser;
+    const rows = fonts.length === 0
+      ? `<p class="form__note">No custom fonts yet.${isWeb ? ' Add one to use it in any block\'s <em>Font family</em> dropdown.' : ''}</p>`
+      : `<ul class="ui-list ui-list--compact" data-custom-fonts-list>
+          ${fonts.map(f => `
+            <li class="ui-list__item">
+              <span class="ui-list__title" style="font-family: ${escapeHtmlAttr(`'${f.family}'`)};">${escapeHtml(f.family)}</span>
+              <span class="ui-list__meta">${escapeHtml(f.format)}${f.weight ? ' · ' + escapeHtml(f.weight) : ''}${f.style && f.style !== 'normal' ? ' · ' + escapeHtml(f.style) : ''}</span>
+              ${isWeb ? `<button type="button" class="btn btn--mini btn--passive btn--danger" data-action="remove-custom-font" data-font-family="${escapeHtmlAttr(f.family)}" aria-label="Remove ${escapeHtmlAttr(f.family)}">×</button>` : ''}
+            </li>
+          `).join('')}
+        </ul>`;
+    const controls = isWeb
+      ? `<div class="form__row">
+          <button type="button" class="btn" data-action="add-custom-font">+ Add font</button>
+        </div>`
+      : `<p class="form__note">Custom fonts can be uploaded and removed only from <a href="https://noornote.app/nospress" target="_blank" rel="noopener">noornote.app</a> — the upload endpoint lives there. Fonts you added from Web keep working everywhere.</p>`;
+    return `
+      <div data-custom-fonts-mount>
+        ${rows}
+        ${controls}
+      </div>
+    `;
+  }
+
+  /** Re-render only the Custom Fonts list after add/remove. The mount lives
+   *  in the right-pane librarySlot — a sibling of `this.container`, NOT a
+   *  descendant — so we query `document` to find it. */
+  private rerenderCustomFontsSection(): void {
+    const mount = document.querySelector('[data-custom-fonts-mount]');
+    if (!mount) return;
+    const fonts = this.siteSettingsService.getSettings().theme?.customFonts ?? [];
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = this.renderCustomFontsSection(fonts);
+    const fresh = wrapper.firstElementChild;
+    if (fresh) mount.replaceWith(fresh);
+  }
+
+  /** Open the upload modal: Font name + file picker. */
+  private showAddCustomFontModal(): void {
+    const form = document.createElement('form');
+    form.className = 'nospress-add-font-form';
+    form.innerHTML = `
+      <div class="form__row">
+        <label for="nospress-font-name">Font name</label>
+        <input id="nospress-font-name" type="text" class="input" placeholder="e.g. Zen Kurenaido" required />
+        <p class="form__note">This name appears in every block's <em>Font family</em> dropdown.</p>
+      </div>
+      <div class="form__row">
+        <label for="nospress-font-file">Font file</label>
+        <input id="nospress-font-file" type="file" class="input" accept=".woff2,.woff,.ttf,.otf" required />
+        <p class="form__note">Supported: woff2, woff, ttf, otf · max 2 MB</p>
+      </div>
+      <div class="form__row">
+        <button type="submit" class="btn">Upload</button>
+      </div>
+      <p class="form__note" data-font-upload-status></p>
+    `;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nameInput = form.querySelector<HTMLInputElement>('#nospress-font-name')!;
+      const fileInput = form.querySelector<HTMLInputElement>('#nospress-font-file')!;
+      const status = form.querySelector<HTMLElement>('[data-font-upload-status]')!;
+      const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+      const family = nameInput.value.trim();
+      const file = fileInput.files?.[0];
+      if (!family || !file) return;
+      status.textContent = 'Uploading…';
+      submitBtn.disabled = true;
+      try {
+        const result = await uploadCustomFont(file, family);
+        this.addCustomFont({ family, src: result.url, format: result.format });
+        ModalService.getInstance().hide();
+        ToastService.show(`Font "${family}" uploaded`, 'success');
+      } catch (err) {
+        status.textContent = err instanceof Error ? err.message : 'Upload failed';
+        submitBtn.disabled = false;
+      }
+    });
+    ModalService.getInstance().show({
+      title: 'Add custom font',
+      content: form,
+      width: '480px',
+      height: 'auto'
+    });
+  }
+
+  /** Persist a new custom-font entry, mirror @font-face into Custom CSS, re-render. */
+  private addCustomFont(font: NospressCustomFont): void {
+    const settings = structuredClone(this.siteSettingsService.getSettings());
+    settings.theme ??= {};
+    const list = settings.theme.customFonts ?? [];
+    // Replace any existing entry with the same family (server overwrites the file).
+    const filtered = list.filter(f => f.family !== font.family);
+    filtered.push(font);
+    settings.theme.customFonts = filtered;
+    settings.customCss = mirrorFontFacesIntoCss(settings.customCss ?? '', filtered);
+    this.siteSettingsService.saveSettings(settings, { silent: true });
+    this.isDirty = true;
+    this.siteSettingsDirty = true;
+    this.refreshActionBar();
+    this.rerenderCustomFontsSection();
+  }
+
+  /** Remove a font entry by family name, refresh @font-face mirror + UI. */
+  private async removeCustomFontByFamily(family: string): Promise<void> {
+    const settings = structuredClone(this.siteSettingsService.getSettings());
+    const list = settings.theme?.customFonts ?? [];
+    const entry = list.find(f => f.family === family);
+    if (!entry) return;
+
+    // Server-side delete first; if it fails the file would be orphaned but
+    // the user is informed. (Local removal still proceeds — server cleanup
+    // can be retried manually.)
+    try {
+      await deleteCustomFont(entry.src);
+    } catch (err) {
+      ToastService.show(err instanceof Error ? err.message : 'Remote delete failed', 'error');
+    }
+
+    const remaining = list.filter(f => f.family !== family);
+    if (!settings.theme) settings.theme = {};
+    if (remaining.length === 0) delete settings.theme.customFonts;
+    else settings.theme.customFonts = remaining;
+    settings.customCss = mirrorFontFacesIntoCss(settings.customCss ?? '', remaining);
+    this.siteSettingsService.saveSettings(settings, { silent: true });
+    this.isDirty = true;
+    this.siteSettingsDirty = true;
+    this.refreshActionBar();
+    this.rerenderCustomFontsSection();
+    ToastService.show(
+      `Font "${family}" removed locally — click Save + Publish to remove it from your relays too.`,
+      'success',
+      7000
+    );
   }
 
   /** Re-render only the Breakpoints list + Add-button state. Keeps the
@@ -2145,6 +2308,17 @@ export class NospressView extends View {
 
     if (action.dataset.action === 'paste-palette-to-css') {
       this.pastePaletteToCustomCss();
+      return;
+    }
+
+    if (action.dataset.action === 'add-custom-font') {
+      this.showAddCustomFontModal();
+      return;
+    }
+
+    if (action.dataset.action === 'remove-custom-font') {
+      const family = action.dataset.fontFamily ?? '';
+      if (family) this.removeCustomFontByFamily(family);
       return;
     }
 
@@ -2999,6 +3173,7 @@ export class NospressView extends View {
    *  `writeStyleField`. */
   private mountStyleDropdowns(host: HTMLElement): void {
     const slots = host.querySelectorAll<HTMLElement>('[data-style-dropdown]');
+    const customFonts = this.siteSettingsService.getSettings().theme?.customFonts ?? [];
     slots.forEach(slot => {
       const scope = slot.dataset.styleScope ?? '';
       const field = slot.dataset.styleField ?? '';
@@ -3007,6 +3182,22 @@ export class NospressView extends View {
       try { options = JSON.parse(slot.dataset.options ?? '[]'); }
       catch { options = []; }
       if (!scope || !field || options.length === 0) return;
+
+      // Inject the user's uploaded custom fonts into every fontFamily
+      // dropdown — keeps the catalog static while letting the dropdown
+      // reflect Global-tab changes without a catalog rebuild. Custom fonts
+      // come first (right after the "(default)" entry) so the user's own
+      // assets out-rank the system fallbacks visually. Each value carries
+      // a `, sans-serif` fallback so the browser has something to draw
+      // with if the webfont fails to load.
+      if (field.endsWith('fontFamily') && customFonts.length > 0) {
+        const customEntries = customFonts.map(f => ({
+          value: `'${f.family.replace(/'/g, "\\'")}', sans-serif`,
+          label: f.family,
+        }));
+        options = [options[0]!, ...customEntries, ...options.slice(1)];
+      }
+
       const dropdown = new CustomDropdown({
         options,
         selectedValue: current,
