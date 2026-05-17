@@ -122,7 +122,7 @@ export class UISettingsSection extends SettingsSection {
             <span class="setting__label">Sign posts with "via NoorNote"</span>
             <div class="setting__control" id="client-tag-switch-container"></div>
             <p class="setting__desc">
-              When enabled, every event you publish carries a <code>client</code> tag identifying NoorNote (and the platform you posted from). Other Nostr clients display this as "via NoorNote" next to your posts.
+              When enabled, every event you publish carries a <code>client</code> tag identifying NoorNote. Other Nostr clients display this as "via NoorNote" next to your posts.
             </p>
           </div>
         </section>

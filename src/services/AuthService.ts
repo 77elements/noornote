@@ -332,9 +332,7 @@ export class AuthService {
     const { isClientTagEnabled } = await import('../helpers/clientTagSetting');
     if (isClientTagEnabled() && !event.tags?.some((tag: string[]) => tag[0] === 'client')) {
       if (!event.tags) event.tags = [];
-      const platform = PlatformService.getInstance();
-      const clientName = platform.isAndroid ? 'NoorNote (m)' : platform.isDesktop ? (platform.isMac ? 'NoorNote (d|m)' : 'NoorNote (d|l)') : 'NoorNote (w)';
-      event.tags.push(['client', clientName]);
+      event.tags.push(['client', 'NoorNote']);
     }
 
     try {
