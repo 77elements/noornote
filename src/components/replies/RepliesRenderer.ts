@@ -238,20 +238,28 @@ export class RepliesRenderer {
     this.systemLogger.info('RepliesRenderer', `🔍 Fetching quoted reposts for ${noteId.slice(0, 8)}...`);
 
     try {
-      const result = await fetchNostrEvents({
-        relays,
-        kinds: [1, 6], // Text notes and reposts
-        tags: { 'q': [noteId] }, // Quoted reference
-        limit: 100
-      });
+      // Two relay queries in parallel: NIP-18 q-tag AND legacy e-tag-with-mention
+      // (Primal-iOS pre-NIP-18 pattern). Tag-OR can't be expressed in one filter.
+      const [qTagResult, eTagResult] = await Promise.all([
+        fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'q': [noteId] }, limit: 100 }),
+        fetchNostrEvents({ relays, kinds: [1], tags: { 'e': [noteId] }, limit: 100 })
+      ]);
 
-      // Filter to only quoted reposts (those with 'q' tag and content)
-      const quotedReposts = result.events.filter(event => {
-        const qTags = event.tags.filter(tag => tag[0] === 'q');
-        const hasQTag = qTags.some(tag => tag[1] === noteId);
+      const byId = new Map<string, NostrEvent>();
+      for (const ev of [...qTagResult.events, ...eTagResult.events]) {
+        if (ev.id) byId.set(ev.id, ev);
+      }
+
+      const quotedReposts = Array.from(byId.values()).filter(event => {
         const hasContent = event.content.trim().length > 0;
+        if (!hasContent) return false;
 
-        return hasQTag && hasContent;
+        const qTags = event.tags.filter(tag => tag[0] === 'q');
+        if (qTags.some(tag => tag[1] === noteId)) return true;
+
+        const eTags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === noteId);
+        return eTags.some(tag => tag[3] === 'mention')
+          && /nostr:(nevent1|note1|naddr1)/.test(event.content);
       });
 
       this.systemLogger.info('RepliesRenderer', `✅ Quoted reposts: ${quotedReposts.length}`);

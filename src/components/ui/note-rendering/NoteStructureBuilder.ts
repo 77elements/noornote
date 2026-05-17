@@ -40,7 +40,10 @@ export class NoteStructureBuilder {
    * Uses NIP-10 convention with proper marker support
    */
   private static extractReplyInfo(event: NostrEvent): { parentEventId: string; relayHint: string | null } | null {
-    const eTags = event.tags.filter(tag => tag[0] === 'e');
+    // NIP-10: marker "mention" is citation, NOT reply parent. Filter them out
+    // so legacy quote-reposts (Primal-iOS pre-NIP-18: e-tag marked "mention")
+    // don't get the ThreadContextIndicator strip mounted at the top.
+    const eTags = event.tags.filter(tag => tag[0] === 'e' && tag[3] !== 'mention');
 
     if (eTags.length > 0) {
       // NIP-10: Look for explicit "reply" marker

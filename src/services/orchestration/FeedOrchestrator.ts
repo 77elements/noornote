@@ -427,6 +427,11 @@ export class FeedOrchestrator extends Orchestrator {
       // Tag-based detection: has 'e' tags (reply to event)
       const eTags = event.tags.filter(tag => tag[0] === 'e');
       if (eTags.length > 0) {
+        // Legacy quote-repost (Primal-iOS pre-NIP-18): all e-tags carry the
+        // NIP-10 "mention" marker AND the content embeds a nostr: reference.
+        const allMention = eTags.every(t => t[3] === 'mention');
+        const hasNostrRef = /nostr:(nevent1|note1|naddr1)/.test(event.content);
+        if (allMention && hasNostrRef) return true;
         return false;
       }
 

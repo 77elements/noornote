@@ -67,20 +67,30 @@ export class ThreadManager {
     this.systemLogger.info('ThreadManager', `Fetching quoted reposts for note ${this.config.noteId.slice(0, 8)}`);
 
     try {
-      const result = await fetchNostrEvents({
-        relays,
-        kinds: [1, 6],
-        tags: { 'q': [this.config.noteId] },
-        limit: 100
-      });
+      // Two relay queries in parallel: NIP-18 q-tag AND legacy e-tag-with-mention
+      // (Primal-iOS pre-NIP-18 pattern). Tag-OR can't be expressed in one filter.
+      const [qTagResult, eTagResult] = await Promise.all([
+        fetchNostrEvents({ relays, kinds: [1, 6], tags: { 'q': [this.config.noteId] }, limit: 100 }),
+        fetchNostrEvents({ relays, kinds: [1], tags: { 'e': [this.config.noteId] }, limit: 100 })
+      ]);
 
-      const quotedReposts = result.events.filter(event => {
-        const hasQTag = event.tags.some(tag => tag[0] === 'q' && tag[1] === this.config.noteId);
+      const byId = new Map<string, NostrEvent>();
+      for (const ev of [...qTagResult.events, ...eTagResult.events]) {
+        if (ev.id) byId.set(ev.id, ev);
+      }
+
+      const quotedReposts = Array.from(byId.values()).filter(event => {
         const hasContent = event.content.trim().length > 0;
-        return hasQTag && hasContent;
+        if (!hasContent) return false;
+
+        if (event.tags.some(tag => tag[0] === 'q' && tag[1] === this.config.noteId)) return true;
+
+        const eTags = event.tags.filter(tag => tag[0] === 'e' && tag[1] === this.config.noteId);
+        return eTags.some(tag => tag[3] === 'mention')
+          && /nostr:(nevent1|note1|naddr1)/.test(event.content);
       });
 
-      this.systemLogger.info('ThreadManager', `Fetched reposts: ${result.events.length}, quoted: ${quotedReposts.length}`);
+      this.systemLogger.info('ThreadManager', `Fetched reposts: ${qTagResult.events.length + eTagResult.events.length}, quoted: ${quotedReposts.length}`);
       return quotedReposts;
     } catch (error) {
       this.systemLogger.error('ThreadManager', `Failed to fetch quoted reposts: ${error}`);
