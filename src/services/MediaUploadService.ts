@@ -143,6 +143,13 @@ export class MediaUploadService {
   ): Promise<File> {
     if (mediaKind !== 'video' && mediaKind !== 'audio' && mediaKind !== 'image') return file;
 
+    // GIFs must skip the image compressor — it draws frame 1 into a canvas and
+    // re-encodes as JPEG, killing the animation. Upload the original instead.
+    if (file.type === 'image/gif') {
+      diagLog('system', 'Media compression skipped', { kind: 'image', reason: 'gif-animation-preserved', filename: file.name });
+      return file;
+    }
+
     const settings = this.loadCompressionSettings();
     const kindSettings = mediaKind === 'video' ? settings.video
       : mediaKind === 'audio' ? settings.audio
