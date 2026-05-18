@@ -650,6 +650,8 @@ export function buildPageBreakpointCss(
         }
       } else if (b.type === 'div' && Array.isArray((b as { children?: unknown }).children)) {
         walk((b as { children: never[] }).children);
+      } else if (b.type === 'card' && Array.isArray((b as { children?: unknown }).children)) {
+        walk((b as { children: never[] }).children);
       }
     }
   };

@@ -379,6 +379,11 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // typography (users do put headings + text inside), full sizing, plus
   // the divider edge-shapes that no other block scope supports.
   div:               [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
+  // Card: same permissive container schema as div — user typically tweaks
+  // margin/padding, background (to override the .nn-card var(--color-2)),
+  // border-radius (the molecule defaults to $radius-pill), and effects
+  // (shadow / hover lift).
+  card:              [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
   // Vendor footer (.user-site__footer) — site-wide platform-attribution
   // wrapper, fixed content, fully styleable. Same schema as textual
   // blocks plus the link sub-scope (rendered as the inner <a>). Storage
@@ -449,6 +454,7 @@ export const BLOCK_DEFAULT_DISPLAY: Record<string, string> = {
   'articles-list':   'block',
   weblog:            'block',
   div:               'block',
+  card:              'block',
   'nav-menu':        'block',
   'vendor-footer':   'block',
   portfolio:         'block',

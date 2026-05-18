@@ -37,6 +37,7 @@ import { PRIMARY_MENU_ID, type NavItem, type NospressMenu } from './blocks/menu'
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns, renderLayoutPreview } from './blocks/renderers/ColumnsRenderer';
 import { renderDiv } from './blocks/renderers/DivRenderer';
+import { renderCard } from './blocks/renderers/CardRenderer';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
@@ -146,7 +147,8 @@ function formatBytes(n: number): string {
 type Cursor =
   | { scope: 'page'; index: number }
   | { scope: 'column'; columnsBlockId: string; colIndex: number; index: number }
-  | { scope: 'div'; divBlockId: string; index: number };
+  | { scope: 'div'; divBlockId: string; index: number }
+  | { scope: 'card'; cardBlockId: string; index: number };
 
 export class NospressView extends View {
   private container: HTMLElement;
@@ -3413,12 +3415,18 @@ export class NospressView extends View {
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? col.length : cur.index, col.length));
         col.splice(insertIndex, 0, block);
         this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: insertIndex + 1 };
-      } else {
+      } else if (cur.scope === 'div') {
         const targetLoc = findBlockInPage(page, cur.divBlockId);
         if (!targetLoc || targetLoc.block.type !== 'div') return;
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? targetLoc.block.children.length : cur.index, targetLoc.block.children.length));
         targetLoc.block.children.splice(insertIndex, 0, block);
         this.cursor = { scope: 'div', divBlockId: cur.divBlockId, index: insertIndex + 1 };
+      } else {
+        const targetLoc = findBlockInPage(page, cur.cardBlockId);
+        if (!targetLoc || targetLoc.block.type !== 'card') return;
+        const insertIndex = Math.max(0, Math.min(cur.index < 0 ? targetLoc.block.children.length : cur.index, targetLoc.block.children.length));
+        targetLoc.block.children.splice(insertIndex, 0, block);
+        this.cursor = { scope: 'card', cardBlockId: cur.cardBlockId, index: insertIndex + 1 };
       }
     });
   }
@@ -3456,14 +3464,25 @@ export class NospressView extends View {
       }
       return;
     }
-    // scope === 'div'
-    const loc = findBlockInPage(page, cur.divBlockId);
-    if (!loc || loc.block.type !== 'div') {
+    if (cur.scope === 'div') {
+      const loc = findBlockInPage(page, cur.divBlockId);
+      if (!loc || loc.block.type !== 'div') {
+        this.cursor = { scope: 'page', index: page.blocks.length };
+        return;
+      }
+      if (cur.index < 0 || cur.index > loc.block.children.length) {
+        this.cursor = { scope: 'div', divBlockId: cur.divBlockId, index: loc.block.children.length };
+      }
+      return;
+    }
+    // scope === 'card'
+    const loc = findBlockInPage(page, cur.cardBlockId);
+    if (!loc || loc.block.type !== 'card') {
       this.cursor = { scope: 'page', index: page.blocks.length };
       return;
     }
     if (cur.index < 0 || cur.index > loc.block.children.length) {
-      this.cursor = { scope: 'div', divBlockId: cur.divBlockId, index: loc.block.children.length };
+      this.cursor = { scope: 'card', cardBlockId: cur.cardBlockId, index: loc.block.children.length };
     }
   }
 
@@ -3522,6 +3541,7 @@ export class NospressView extends View {
   private renderEditableBlock(block: Block): string {
     if (block.type === 'columns') return this.renderColumnsBlockEditable(block);
     if (block.type === 'div') return this.renderDivBlockEditable(block);
+    if (block.type === 'card') return this.renderCardBlockEditable(block);
     return BlockRenderer.renderOne(block, { editable: true });
   }
 
@@ -3588,6 +3608,42 @@ export class NospressView extends View {
             ? `<button type="button" class="nospress-block-div__paste" data-paste-here data-paste-target="div" data-div-block-id="${block.id}">Paste ${clip.type}</button>`
             : '';
           return `<div class="nospress-block-div__placeholder" data-div-placeholder data-div-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here${pasteHint}</div>`;
+        }
+
+        const inner: string[] = [];
+        for (let i = 0; i < block.children.length; i++) {
+          if (cursorHere && cur.index === i) inner.push(slot);
+          const cb = block.children[i]!;
+          inner.push(this.renderEditableBlock(cb));
+        }
+        if (cursorHere && cur.index >= block.children.length) inner.push(slot);
+        return inner.join('');
+      }
+    });
+    return `<div class="nospress-block-style" data-styled-block-id="${block.id}">${html}</div>`;
+  }
+
+  /**
+   * Render a `card` block with editable children. Mirrors the div pattern:
+   * the card's media-input row is emitted by CardRenderer; the children
+   * slot below it gets the cursor row injected at the active card-cursor
+   * index, or a click-to-place placeholder when the cursor is elsewhere.
+   */
+  private renderCardBlockEditable(block: Extract<Block, { type: 'card' }>): string {
+    const slot = `<div data-cursor-mount></div>`;
+    const cur = this.cursor;
+    const cursorHere = cur.scope === 'card' && cur.cardBlockId === block.id;
+
+    const html = renderCard(block, {
+      editable: true,
+      childrenInner: () => {
+        if (block.children.length === 0) {
+          if (cursorHere) return slot;
+          const clip = this.getClipboardBlock();
+          const pasteHint = clip
+            ? `<button type="button" class="nospress-block-card__paste" data-paste-here data-paste-target="card" data-card-block-id="${block.id}">Paste ${clip.type}</button>`
+            : '';
+          return `<div class="nospress-block-card__placeholder" data-card-placeholder data-card-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here${pasteHint}</div>`;
         }
 
         const inner: string[] = [];
@@ -3944,8 +4000,10 @@ export class NospressView extends View {
       this.cursor = { scope: 'page', index: loc.index + 1 };
     } else if (loc.container.type === 'column') {
       this.cursor = { scope: 'column', columnsBlockId: loc.container.block.id, colIndex: loc.container.colIndex, index: loc.index + 1 };
-    } else {
+    } else if (loc.container.type === 'div') {
       this.cursor = { scope: 'div', divBlockId: loc.container.block.id, index: loc.index + 1 };
+    } else {
+      this.cursor = { scope: 'card', cardBlockId: loc.container.block.id, index: loc.index + 1 };
     }
 
     await this.rerenderEditable();
@@ -4047,6 +4105,13 @@ export class NospressView extends View {
     this.pasteClipboardAtCursor();
   }
 
+  /** Same as above for a card block's empty children slot. */
+  private async pasteClipboardInCard(cardBlockId: string): Promise<void> {
+    if (this.getClipboardBlocks().length === 0) return;
+    this.cursor = { scope: 'card', cardBlockId, index: 0 };
+    this.pasteClipboardAtCursor();
+  }
+
   // ── Custom Block library (per-account templates) ──────────────────────
 
   /** Resolve `selectedBlockIds` into a top-level-only list of Block
@@ -4068,6 +4133,7 @@ export class NospressView extends View {
         topIdx++;
         if (b.type === 'columns') for (const col of b.content) walk(col);
         else if (b.type === 'div') walk(b.children);
+        else if (b.type === 'card') walk(b.children);
       }
     };
     walk(page.blocks);
@@ -4134,6 +4200,14 @@ export class NospressView extends View {
    *  "Click to add blocks here" placeholder. */
   private async setCursorInDiv(divBlockId: string): Promise<void> {
     this.cursor = { scope: 'div', divBlockId, index: 0 };
+    await this.rerenderEditable();
+    this.flashCursorRow();
+  }
+
+  /** Move cursor INTO an empty card. Triggered by clicking the card's
+   *  "Click to add blocks here" placeholder. */
+  private async setCursorInCard(cardBlockId: string): Promise<void> {
+    this.cursor = { scope: 'card', cardBlockId, index: 0 };
     await this.rerenderEditable();
     this.flashCursorRow();
   }
@@ -4975,6 +5049,7 @@ export class NospressView extends View {
         case 'add-link':               this.addLink(blockId); break;
         case 'delete-link':            if (itemIndex >= 0) this.deleteLink(blockId, itemIndex); break;
         case 'upload-image':           this.triggerImageUpload(blockId); break;
+        case 'upload-card-image':      this.triggerCardImageUpload(blockId); break;
         case 'add-gallery-url':        this.addGalleryUrl(blockId); break;
         case 'delete-gallery-url':     if (itemIndex >= 0) this.deleteGalleryUrl(blockId, itemIndex); break;
         case 'upload-gallery-images':  this.triggerGalleryUpload(blockId); break;
@@ -5033,6 +5108,9 @@ export class NospressView extends View {
         } else if (pasteTarget === 'div') {
           const dbId = pasteBtn.dataset.divBlockId;
           if (dbId) void this.pasteClipboardInDiv(dbId);
+        } else if (pasteTarget === 'card') {
+          const cardId = pasteBtn.dataset.cardBlockId;
+          if (cardId) void this.pasteClipboardInCard(cardId);
         }
         return;
       }
@@ -5054,6 +5132,16 @@ export class NospressView extends View {
         const dbId = divPh.dataset.divBlockId;
         if (dbId) {
           this.setCursorInDiv(dbId);
+          return;
+        }
+      }
+
+      // Click on an empty-card placeholder → put cursor in that card
+      const cardPh = target.closest('[data-card-placeholder]') as HTMLElement | null;
+      if (cardPh) {
+        const cardId = cardPh.dataset.cardBlockId;
+        if (cardId) {
+          this.setCursorInCard(cardId);
           return;
         }
       }
@@ -5141,6 +5229,14 @@ export class NospressView extends View {
         if (!blockId || !file) return;
         target.value = '';
         await this.handleImageUpload(blockId, file);
+        return;
+      }
+      if (target?.dataset?.cardImageFile !== undefined) {
+        const blockId = target.dataset.blockId;
+        const file = target.files?.[0];
+        if (!blockId || !file) return;
+        target.value = '';
+        await this.handleCardImageUpload(blockId, file);
         return;
       }
       if (target?.dataset?.galleryFiles !== undefined) {
@@ -5248,6 +5344,15 @@ export class NospressView extends View {
         if (field === 'url')     block.url = el.value;
         if (field === 'alt')     block.alt = el.value;
         if (field === 'caption') block.caption = el.value;
+      } else if (block.type === 'card') {
+        if (field === 'card-image') {
+          const v = el.value;
+          if (v) block.image = v; else delete block.image;
+        }
+        if (field === 'card-image-alt') {
+          const v = el.value;
+          if (v) block.imageAlt = v; else delete block.imageAlt;
+        }
       } else if (block.type === 'gallery') {
         if (field === 'gallery-url' && itemIndex >= 0) block.urls[itemIndex] = el.value;
       } else if (block.type === 'embed') {
@@ -5530,6 +5635,19 @@ export class NospressView extends View {
       this.mutateDraft((page) => {
         const block = findBlockInPage(page, blockId)?.block;
         if (block?.type === 'image') block.url = url;
+      });
+    });
+  }
+
+  private triggerCardImageUpload(blockId: string): void {
+    triggerSingleMediaUpload(this.container, blockId, 'card-image');
+  }
+
+  private async handleCardImageUpload(blockId: string, file: File): Promise<void> {
+    await handleSingleMediaUpload(this.container, blockId, file, 'card-image', (url) => {
+      this.mutateDraft((page) => {
+        const block = findBlockInPage(page, blockId)?.block;
+        if (block?.type === 'card') block.image = url;
       });
     });
   }

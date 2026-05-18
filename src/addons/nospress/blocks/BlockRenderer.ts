@@ -29,6 +29,7 @@ import { renderAudio } from './renderers/AudioRenderer';
 import { renderArticlesList } from './renderers/ArticlesListRenderer';
 import { renderWeblog } from './renderers/WeblogRenderer';
 import { renderDiv } from './renderers/DivRenderer';
+import { renderCard } from './renderers/CardRenderer';
 import { renderNavMenu } from './renderers/NavMenuRenderer';
 import { renderPortfolio } from './renderers/PortfolioRenderer';
 
@@ -63,6 +64,7 @@ export class BlockRenderer {
         case 'articles-list':   return renderArticlesList(block, editable);
         case 'weblog':          return renderWeblog(block, editable);
         case 'div':             return renderDiv(block, { editable });
+        case 'card':            return renderCard(block, { editable });
         case 'nav-menu':        return renderNavMenu(block, editable);
         case 'portfolio':       return renderPortfolio(block, editable);
       }

@@ -17,18 +17,24 @@
 import { MediaUploadService } from '../../../services/MediaUploadService';
 import { ToastService } from '../../../services/ToastService';
 
-export type SingleMediaKind = 'image' | 'video' | 'audio';
+export type SingleMediaKind = 'image' | 'video' | 'audio' | 'card-image';
 
 interface KindCfg {
   mimePrefix: string;
   actionAttr: string;
   errorLabel: string;
+  /** Override the `[data-${kind}-file]` selector when the file-input
+   *  attribute uses a different key than the kind itself. Lets `card-image`
+   *  reuse the image MIME validation + upload pipeline while keeping its
+   *  own DOM hooks separate from the standalone Image block. */
+  fileAttr?: string;
 }
 
 const KIND_CFG: Record<SingleMediaKind, KindCfg> = {
-  image: { mimePrefix: 'image/', actionAttr: 'upload-image', errorLabel: 'Image upload failed' },
-  video: { mimePrefix: 'video/', actionAttr: 'upload-video', errorLabel: 'Video upload failed' },
-  audio: { mimePrefix: 'audio/', actionAttr: 'upload-audio', errorLabel: 'Audio upload failed' },
+  image:        { mimePrefix: 'image/', actionAttr: 'upload-image',      errorLabel: 'Image upload failed' },
+  video:        { mimePrefix: 'video/', actionAttr: 'upload-video',      errorLabel: 'Video upload failed' },
+  audio:        { mimePrefix: 'audio/', actionAttr: 'upload-audio',      errorLabel: 'Audio upload failed' },
+  'card-image': { mimePrefix: 'image/', actionAttr: 'upload-card-image', errorLabel: 'Card image upload failed', fileAttr: 'card-image-file' },
 };
 
 const PROGRESS_SVG = `<svg width="20" height="20" class="upload-progress"><use href="#icon-upload-progress"/></svg>`;
@@ -39,7 +45,8 @@ const PROGRESS_CIRCUMFERENCE = 62.83; // 2 * PI * r=10
  * mounted it as `<input data-block-id="…" data-{kind}-file>`.
  */
 export function triggerSingleMediaUpload(container: HTMLElement, blockId: string, kind: SingleMediaKind): void {
-  const sel = `[data-block-id="${blockId}"][data-${kind}-file]`;
+  const fileAttr = KIND_CFG[kind].fileAttr ?? `${kind}-file`;
+  const sel = `[data-block-id="${blockId}"][data-${fileAttr}]`;
   const fileInput = container.querySelector(sel) as HTMLInputElement | null;
   fileInput?.click();
 }
@@ -63,7 +70,10 @@ export async function handleSingleMediaUpload(
   const cfg = KIND_CFG[kind];
 
   if (!file.type.startsWith(cfg.mimePrefix)) {
-    ToastService.show(`Please select a ${kind} file`, 'error');
+    // mimePrefix is `image/` / `video/` / `audio/` — strip the slash for
+    // the user-facing label so `card-image` reads as "image", not "card-image".
+    const label = cfg.mimePrefix.replace('/', '');
+    ToastService.show(`Please select a valid ${label} file`, 'error');
     return;
   }
 

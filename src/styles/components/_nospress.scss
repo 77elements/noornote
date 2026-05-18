@@ -1196,7 +1196,8 @@
 // "Click to add blocks here" hint; click pastes the clipboard block
 // straight into the slot, bypassing the cursor step.
 .nospress-block-columns__paste,
-.nospress-block-div__paste {
+.nospress-block-div__paste,
+.nospress-block-card__paste {
   display: inline-block;
   margin-top: calc($gap / 2);
   margin-left: calc($gap / 2);
@@ -1510,6 +1511,31 @@
 }
 
 .nospress-block-div__placeholder {
+  padding: $gap;
+  text-align: center;
+  color: $color-3;
+  font-style: italic;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: $color-4;
+  }
+}
+
+// Card editable slots — same hooks as the div equivalents (dashed children
+// container + click-to-place placeholder + paste pill). Card-specific look
+// for the children block goes on `.nn-card.nospress-block-card` itself on
+// the public side; the editor keeps neutral chrome so the user clearly sees
+// it's a schematic composer, not a live preview.
+.nospress-block-card__children {
+  margin-top: calc($gap / 2);
+  padding: $gap;
+  border: 1px dashed $color-2;
+  border-radius: $radius-xl;
+}
+
+.nospress-block-card__placeholder {
   padding: $gap;
   text-align: center;
   color: $color-3;

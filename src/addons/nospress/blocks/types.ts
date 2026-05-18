@@ -49,6 +49,7 @@ export type Block =
   | { id: string; type: 'articles-list'; pubkey?: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; includeWithoutHash?: boolean; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'card'; image?: string; imageAlt?: string; children: Block[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'nav-menu'; menuId: string; horizontal?: boolean; alignment?: 'left' | 'center' | 'right'; hamburgerBreakpoints?: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'portfolio'; projects: PortfolioProject[]; perPage?: number; sortOrder?: PortfolioSortOrder; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs };
 
@@ -127,6 +128,7 @@ export function createBlock(type: BlockType): Block {
     case 'articles-list':   return { id, type };
     case 'weblog':          return { id, type, hashtags: [] };
     case 'div':             return { id, type, tag: 'div', children: [] };
+    case 'card':            return { id, type, children: [] };
     case 'nav-menu':        return { id, type, menuId: PRIMARY_MENU_ID };
     case 'portfolio':       return { id, type, projects: [] };
   }
@@ -154,6 +156,8 @@ function resetBlockIds(block: Block): void {
   if (block.type === 'columns') {
     for (const col of block.content) for (const b of col) resetBlockIds(b);
   } else if (block.type === 'div') {
+    for (const b of block.children) resetBlockIds(b);
+  } else if (block.type === 'card') {
     for (const b of block.children) resetBlockIds(b);
   } else if (block.type === 'portfolio') {
     for (const p of block.projects) p.id = newId();
@@ -243,6 +247,14 @@ export function stripBlockContent(block: Block): Block {
     case 'div':
       fresh.children = fresh.children.map(stripBlockContent);
       break;
+    case 'card':
+      // Image is content (user picks per card); alt-text travels with it.
+      // Children recurse — their per-block style/layout configuration stays
+      // intact so a "card template" round-trips correctly.
+      fresh.image = '';
+      delete fresh.imageAlt;
+      fresh.children = fresh.children.map(stripBlockContent);
+      break;
     case 'portfolio':
       fresh.projects = [];
       // perPage, sortOrder kept (display behaviour)
@@ -274,6 +286,9 @@ function containsBlockId(parent: Block, childId: string, _seen: Set<string>): bo
   if (parent.type === 'div') {
     return parent.children.some(b => b.id === childId || containsBlockId(b, childId, _seen));
   }
+  if (parent.type === 'card') {
+    return parent.children.some(b => b.id === childId || containsBlockId(b, childId, _seen));
+  }
   return false;
 }
 
@@ -286,7 +301,8 @@ export interface BlockLocation {
   index: number;
   container?:
     | { type: 'column'; block: Extract<Block, { type: 'columns' }>; colIndex: number }
-    | { type: 'div'; block: Extract<Block, { type: 'div' }> };
+    | { type: 'div'; block: Extract<Block, { type: 'div' }> }
+    | { type: 'card'; block: Extract<Block, { type: 'card' }> };
 }
 
 /**
@@ -404,6 +420,8 @@ function normalizeBlocks(blocks: Block[]): void {
       for (const col of b.content) normalizeBlocks(col);
     } else if (b.type === 'div') {
       normalizeBlocks(b.children);
+    } else if (b.type === 'card') {
+      normalizeBlocks(b.children);
     }
   }
 }
@@ -428,6 +446,9 @@ function findInArray(
       }
     } else if (b.type === 'div') {
       const found = findInArray(b.children, blockId, { type: 'div', block: b });
+      if (found) return found;
+    } else if (b.type === 'card') {
+      const found = findInArray(b.children, blockId, { type: 'card', block: b });
       if (found) return found;
     }
   }
