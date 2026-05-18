@@ -74,7 +74,7 @@ export class RepostProcessor {
     const result: ProcessedNote = {
       id: event.id ?? '',
       type: 'repost',
-      timestamp: event.created_at,
+      timestamp: originalEvent?.created_at ?? event.created_at,
       author: buildAuthorObject(authorPubkey, authorProfile),
       reposter: buildAuthorObject(event.pubkey, reposterProfileObj),
       content: processedContent,
