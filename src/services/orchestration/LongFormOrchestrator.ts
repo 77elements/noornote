@@ -142,7 +142,12 @@ export class LongFormOrchestrator extends Orchestrator {
 
     try {
       const events = await this.transport.fetch(relays, filters, 5000, false, 'LongFormOrch');
-      return events[0] ?? null;
+      if (events.length === 0) return null;
+      // Pick the latest version by created_at. `limit: 1` is per-relay, so
+      // NDK can still aggregate multiple versions from different relays
+      // into the result set — `events[0]` would otherwise return whichever
+      // landed first in iteration order, occasionally a stale generation.
+      return events.reduce((latest, ev) => ev.created_at > latest.created_at ? ev : latest);
     } catch {
       return null;
     }

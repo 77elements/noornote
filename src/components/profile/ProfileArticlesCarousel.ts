@@ -67,11 +67,63 @@ export class ProfileArticlesCarousel {
       // Fetch published articles (+ drafts for own profile)
       const kinds = this.isOwnProfile ? [30023, 30024] : [30023];
 
-      const events = await this.transport.fetch(relays, [{
-        kinds,
-        authors: [this.pubkey],
-        limit: 20
-      }], 8000, false, 'ArticlesCarousel');
+      // Parallel: article events + the author's NIP-09 deletion requests.
+      // Without the kind:5 leg, a deleted draft that some relays haven't
+      // tombstoned still gets re-served from other relays and re-appears
+      // here — even after the user explicitly hit Delete. Pattern mirrors
+      // `bookmarks.ts:1695-1758` for kind:30003 lists.
+      const [rawEvents, deletionEvents] = await Promise.all([
+        this.transport.fetch(relays, [{
+          kinds,
+          authors: [this.pubkey],
+          limit: 20
+        }], 8000, false, 'ArticlesCarousel'),
+        this.transport.fetch(relays, [{
+          kinds: [5],
+          authors: [this.pubkey],
+          limit: 50
+        }], 8000, false, 'ArticlesCarousel:deletions'),
+      ]);
+
+      // Index NIP-09 `a`-tag deletions targeting our addressable kinds
+      // (30023 / 30024) for this pubkey. Map value = most recent
+      // deletion's created_at, so resurrection events strictly newer
+      // than the deletion stay visible (canonical NIP-09 behaviour).
+      const deletedCoordinates = new Map<string, number>();
+      const prefixes = kinds.map(k => `${k}:${this.pubkey}:`);
+      for (const delEvent of deletionEvents) {
+        for (const tag of delEvent.tags) {
+          if (tag[0] !== 'a' || !tag[1]) continue;
+          if (!prefixes.some(p => tag[1]!.startsWith(p))) continue;
+          const coord = tag[1];
+          const existing = deletedCoordinates.get(coord);
+          if (!existing || delEvent.created_at > existing) {
+            deletedCoordinates.set(coord, delEvent.created_at);
+          }
+        }
+      }
+
+      // Dedupe by addressable coordinate `<kind>:<pubkey>:<d>`. NDK's
+      // own Set-dedup runs on event id, so two versions of the same
+      // addressable slot served by different relays (or by one relay
+      // that hasn't replaced) both reach this code. Keep latest
+      // created_at per coord, then drop coords whose deletion is newer
+      // than the surviving event.
+      const eventsByCoord = new Map<string, NostrEvent>();
+      for (const event of rawEvents) {
+        const dTag = event.tags.find(t => t[0] === 'd')?.[1] ?? '';
+        const coord = `${event.kind}:${event.pubkey}:${dTag}`;
+        const existing = eventsByCoord.get(coord);
+        if (!existing || event.created_at > existing.created_at) {
+          eventsByCoord.set(coord, event);
+        }
+      }
+      const events = Array.from(eventsByCoord.entries())
+        .filter(([coord, event]) => {
+          const delTs = deletedCoordinates.get(coord);
+          return delTs === undefined || event.created_at > delTs;
+        })
+        .map(([, event]) => event);
 
       events.sort((a, b) => {
         const aPublished = parseInt(a.tags.find(t => t[0] === 'published_at')?.[1] || String(a.created_at));
