@@ -61,8 +61,10 @@ html.layout--public {
     display: flex;
     align-items: center;
     gap: $gap;
-    overflow-x: auto;
-    @include custom-scrollbar;
+    // `clip` instead of `auto`: avoids the CSS spec quirk where `overflow-x: auto`
+    // forces `overflow-y` from `visible` to `auto` and shows a scrollbar against
+    // the 40px bar height.
+    overflow-x: clip;
   }
 
   &__brand {
