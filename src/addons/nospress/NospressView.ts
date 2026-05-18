@@ -33,7 +33,7 @@ import {
   type GradientUnit,
 } from './blocks/gradientPicker';
 import { HOME_SLUG, GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, VENDOR_FOOTER_SLUG, normalizeSlug, isValidSlug, pageHeaderSlug, pageFooterSlug, type PageIndexEntry } from './blocks/pageIndex';
-import { PRIMARY_MENU_ID, type NavItem, type NospressMenu } from './blocks/menu';
+import { PRIMARY_MENU_ID, reconcileMenuWithPages, type NavItem, type NospressMenu, type NospressMenuSet } from './blocks/menu';
 import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns, renderLayoutPreview } from './blocks/renderers/ColumnsRenderer';
 import { renderDiv } from './blocks/renderers/DivRenderer';
@@ -172,6 +172,19 @@ export class NospressView extends View {
    *  One instance per menu; tracked so they can be torn down before the
    *  tab re-renders without leaking event listeners. */
   private navAddPageDropdowns: CustomDropdown[] = [];
+  /** Per-item "→ Move to …" CustomDropdowns rendered into the Nav tab.
+   *  One instance per menu item (only when 2+ menus exist); tracked so
+   *  they can be torn down before re-render to avoid listener leaks. */
+  private navMoveTargetDropdowns: CustomDropdown[] = [];
+  /** In-memory working copy of the menu set, populated on the first
+   *  Nav-tab mutation. Mirrors the page-draft pattern (`editingPage`):
+   *  edits buffer here until Save persists to localStorage and Publish
+   *  ships to relays. `null` means "no in-memory edits — read straight
+   *  from menuService". Discard clears it back to null. */
+  private editingMenuSet: NospressMenuSet | null = null;
+  /** True while `editingMenuSet` has unsaved (in-memory) changes. Cleared
+   *  on Save / Discard. Drives the global Save button's enabled state. */
+  private menusDirty: boolean = false;
   private cursorRow: CursorRow | null = null;
   /** Where the next block insert lands. Either at page level between
    *  top-level blocks, or inside a specific column of a `columns` block.
@@ -342,6 +355,8 @@ export class NospressView extends View {
     this.breakpointDropdowns = [];
     this.navAddPageDropdowns.forEach(d => d.destroy());
     this.navAddPageDropdowns = [];
+    this.navMoveTargetDropdowns.forEach(d => d.destroy());
+    this.navMoveTargetDropdowns = [];
     this.styleDropdowns.forEach(d => d.destroy());
     this.styleDropdowns = [];
     this.destroyCursorRow();
@@ -567,25 +582,30 @@ export class NospressView extends View {
   }
 
   private renderActionBar(editable: boolean): string {
-    // Save targets only the page draft. Site-settings are auto-persisted
-    // on every input so there is nothing to "save" for them — they only
-    // need shipping, which is the Publish button's job.
-    const saveDirty = this.isDirty;
+    // Save targets the page draft AND in-memory menu edits. Site-settings
+    // are auto-persisted on every input so there is nothing to "save"
+    // for them — they only need shipping, which is the Publish button's
+    // job.
+    const saveDirty = this.isDirty || this.menusDirty;
     // Publish ships anything that has not yet hit relays — page draft
-    // (in-memory or persisted) AND site-settings if they were touched.
+    // (in-memory or persisted), site-settings if touched, and menus
+    // when an in-memory editing snapshot still exists (cleared only
+    // after successful relay publish).
     const editSlug = this.currentEditSlug();
     const hasDraft = this.listService.hasDraftV2(editSlug);
-    const publishDirty = this.isDirty || hasDraft || this.siteSettingsDirty;
+    const publishDirty = this.isDirty || hasDraft || this.siteSettingsDirty
+      || this.menusDirty || this.editingMenuSet !== null;
     const hasPublished = this.listService.getPublishedV2(editSlug) !== null;
     const isPageOverride = this.editingTarget === 'page-header' || this.editingTarget === 'page-footer';
     const resetButton = isPageOverride
       ? `<button type="button" class="btn btn--passive btn--danger" data-action="reset-page-override">Reset to Global</button>`
       : '';
+    const discardEnabled = hasDraft || this.menusDirty || this.editingMenuSet !== null;
     const localButtons = editable
       ? `
         ${resetButton}
         <button type="button" class="btn" data-action="save" ${saveDirty ? '' : 'disabled'}>Save</button>
-        <button type="button" class="btn btn--passive" data-action="discard" ${hasDraft ? '' : 'disabled'}>Discard</button>
+        <button type="button" class="btn btn--passive" data-action="discard" ${discardEnabled ? '' : 'disabled'}>Discard</button>
       `
       : '';
     const breakdown = publishDirty ? this.computePublishSize(editSlug) : { page: 0, siteSettings: 0, total: 0 };
@@ -938,6 +958,13 @@ export class NospressView extends View {
     this.pagesTabContent = pagesContent;
     this.navTabContent = globalContent.querySelector<HTMLElement>('[data-nav-mount]');
     this.attachNavDragHandlers();
+    // Initial picker mount — the Nav tab's HTML is emitted inline in the
+    // Global-tab template, so the CustomDropdown slots stay empty until
+    // something triggers updateNavTab(). Mount them here too so first
+    // paint already shows "+ Add page…" and "→" pickers; without this,
+    // they only appear after the user clicks anything.
+    this.mountNavAddPagePickers();
+    this.mountMoveTargetPickers();
   }
 
   /**
@@ -2505,7 +2532,7 @@ export class NospressView extends View {
    * Add menu UI is hidden.
    */
   private renderNavContent(): string {
-    const set = this.menuService.getMenuSet();
+    const set = this.currentMenuSet();
     const orderedMenus = [...set.menus].sort((a, b) => {
       if (a.id === PRIMARY_MENU_ID) return -1;
       if (b.id === PRIMARY_MENU_ID) return 1;
@@ -2595,6 +2622,7 @@ export class NospressView extends View {
         <span class="nospress-nav__item-actions">
           <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-up" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}" ${upDisabled}>↑</button>
           <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-down" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}" ${downDisabled}>↓</button>
+          <div class="nospress-nav__item-move" data-move-target-picker data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}"></div>
           <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-remove" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}">×</button>
         </span>
       </li>
@@ -2607,9 +2635,12 @@ export class NospressView extends View {
       // CustomDropdown instances would leak listeners on detached DOM.
       this.navAddPageDropdowns.forEach(d => d.destroy());
       this.navAddPageDropdowns = [];
+      this.navMoveTargetDropdowns.forEach(d => d.destroy());
+      this.navMoveTargetDropdowns = [];
       this.navTabContent.innerHTML = this.renderNavContent();
       this.attachNavDragHandlers();
       this.mountNavAddPagePickers();
+      this.mountMoveTargetPickers();
     }
   }
 
@@ -2620,7 +2651,7 @@ export class NospressView extends View {
     if (!this.navTabContent) return;
     const slots = this.navTabContent.querySelectorAll<HTMLElement>('[data-add-page-picker]');
     const allPages = this.pageIndexService.getIndex().pages;
-    const set = this.menuService.getMenuSet();
+    const set = this.currentMenuSet();
     slots.forEach(slot => {
       const menuId = slot.dataset.menuId ?? '';
       if (!menuId) return;
@@ -2641,13 +2672,58 @@ export class NospressView extends View {
           if (!value) return;
           // Reset the picker label back to placeholder for the next add.
           dropdown.setValue('');
-          void this.commitMenuChange(() =>
-            this.menuService.appendMenuItem(menuId, { type: 'page', pageSlug: value }),
-          );
+          this.mutateEditingMenus(s => {
+            const m = s.menus.find(x => x.id === menuId);
+            if (!m) return;
+            m.items = [...m.items, { type: 'page', pageSlug: value }];
+          });
         },
       });
       slot.appendChild(dropdown.getElement());
       this.navAddPageDropdowns.push(dropdown);
+    });
+  }
+
+  /** Mount one CustomDropdown per `[data-move-target-picker]` slot in
+   *  the Nav tab. Each dropdown lists the OTHER menus as move targets;
+   *  picking one moves the item via `moveItemBetweenMenus` (single save
+   *  → single re-render). Skipped when only one menu exists (nothing to
+   *  move to). */
+  private mountMoveTargetPickers(): void {
+    if (!this.navTabContent) return;
+    const slots = this.navTabContent.querySelectorAll<HTMLElement>('[data-move-target-picker]');
+    const set = this.currentMenuSet();
+    if (set.menus.length < 2) return;
+    slots.forEach(slot => {
+      const sourceMenuId = slot.dataset.menuId ?? '';
+      const sourceIndex = parseInt(slot.dataset.itemIndex ?? '', 10);
+      if (!sourceMenuId || isNaN(sourceIndex)) return;
+      const targets = set.menus.filter(m => m.id !== sourceMenuId);
+      if (targets.length === 0) return;
+      const dropdown = new CustomDropdown({
+        options: [
+          { value: '', label: '→' },
+          ...targets.map(m => ({ value: m.id, label: m.name })),
+        ],
+        selectedValue: '',
+        onChange: (targetMenuId) => {
+          if (!targetMenuId) return;
+          dropdown.setValue('');
+          this.mutateEditingMenus(s => {
+            const fromMenu = s.menus.find(m => m.id === sourceMenuId);
+            const toMenu = s.menus.find(m => m.id === targetMenuId);
+            if (!fromMenu || !toMenu) return;
+            if (sourceIndex < 0 || sourceIndex >= fromMenu.items.length) return;
+            const items = [...fromMenu.items];
+            const [moved] = items.splice(sourceIndex, 1);
+            if (!moved) return;
+            fromMenu.items = items;
+            toMenu.items = [...toMenu.items, moved];
+          });
+        },
+      });
+      slot.appendChild(dropdown.getElement());
+      this.navMoveTargetDropdowns.push(dropdown);
     });
   }
 
@@ -2668,7 +2744,17 @@ export class NospressView extends View {
           const fromIndex = parseInt(draggedIdStr, 10);
           const toIndex = parseInt(dropTarget.dataset.itemIndex ?? '-1', 10);
           if (isNaN(fromIndex) || isNaN(toIndex) || fromIndex === toIndex) return;
-          void this.commitMenuChange(() => this.menuService.moveMenuItem(menuId, fromIndex, toIndex));
+          this.mutateEditingMenus(s => {
+            const m = s.menus.find(x => x.id === menuId);
+            if (!m) return;
+            if (fromIndex < 0 || fromIndex >= m.items.length) return;
+            if (toIndex < 0 || toIndex >= m.items.length) return;
+            const items = [...m.items];
+            const [moved] = items.splice(fromIndex, 1);
+            if (!moved) return;
+            items.splice(toIndex, 0, moved);
+            m.items = items;
+          });
         },
       });
     });
@@ -2684,15 +2770,37 @@ export class NospressView extends View {
     const index = indexStr !== undefined ? parseInt(indexStr, 10) : -1;
 
     if (action === 'menu-item-up' && index > 0) {
-      void this.commitMenuChange(() => this.menuService.moveMenuItem(menuId, index, index - 1));
+      this.mutateEditingMenus(s => {
+        const m = s.menus.find(x => x.id === menuId);
+        if (!m || index >= m.items.length) return;
+        const items = [...m.items];
+        const [moved] = items.splice(index, 1);
+        if (!moved) return;
+        items.splice(index - 1, 0, moved);
+        m.items = items;
+      });
       return;
     }
     if (action === 'menu-item-down' && index >= 0) {
-      void this.commitMenuChange(() => this.menuService.moveMenuItem(menuId, index, index + 1));
+      this.mutateEditingMenus(s => {
+        const m = s.menus.find(x => x.id === menuId);
+        if (!m || index < 0 || index + 1 >= m.items.length) return;
+        const items = [...m.items];
+        const [moved] = items.splice(index, 1);
+        if (!moved) return;
+        items.splice(index + 1, 0, moved);
+        m.items = items;
+      });
       return;
     }
     if (action === 'menu-item-remove' && index >= 0) {
-      void this.commitMenuChange(() => this.menuService.removeMenuItem(menuId, index));
+      this.mutateEditingMenus(s => {
+        const m = s.menus.find(x => x.id === menuId);
+        if (!m || index < 0 || index >= m.items.length) return;
+        const items = [...m.items];
+        items.splice(index, 1);
+        m.items = items;
+      });
       return;
     }
     if (action === 'add-url-toggle') {
@@ -2740,9 +2848,11 @@ export class NospressView extends View {
     const url = urlInput?.value.trim() ?? '';
     if (!menuId || !label || !url) return;
 
-    void this.commitMenuChange(() =>
-      this.menuService.appendMenuItem(menuId, { type: 'url', label, url })
-    );
+    this.mutateEditingMenus(s => {
+      const m = s.menus.find(x => x.id === menuId);
+      if (!m) return;
+      m.items = [...m.items, { type: 'url', label, url }];
+    });
   }
 
   private async createNewMenu(): Promise<void> {
@@ -2753,7 +2863,10 @@ export class NospressView extends View {
     });
     if (!name) return;
     const id = this.uniqueMenuId(this.slugifyMenuId(name));
-    void this.commitMenuChange(() => this.menuService.addMenu({ id, name, items: [] }));
+    this.mutateEditingMenus(s => {
+      if (s.menus.some(m => m.id === id)) return;
+      s.menus.push({ id, name, items: [] });
+    });
   }
 
   private slugifyMenuId(input: string): string {
@@ -2761,7 +2874,7 @@ export class NospressView extends View {
   }
 
   private uniqueMenuId(base: string): string {
-    const set = this.menuService.getMenuSet();
+    const set = this.currentMenuSet();
     const taken = new Set(set.menus.map(m => m.id));
     if (!taken.has(base)) return base;
     let i = 2;
@@ -2770,7 +2883,7 @@ export class NospressView extends View {
   }
 
   private async renameMenu(menuId: string): Promise<void> {
-    const menu = this.menuService.getMenu(menuId);
+    const menu = this.currentMenuSet().menus.find(m => m.id === menuId) ?? null;
     if (!menu) return;
     const name = await ModalService.getInstance().prompt({
       title: 'Rename menu',
@@ -2778,33 +2891,50 @@ export class NospressView extends View {
       defaultValue: menu.name,
     });
     if (!name || name === menu.name) return;
-    void this.commitMenuChange(() => this.menuService.renameMenu(menuId, name));
+    this.mutateEditingMenus(s => {
+      const m = s.menus.find(x => x.id === menuId);
+      if (!m) return;
+      m.name = name;
+    });
   }
 
   private async deleteMenu(menuId: string): Promise<void> {
     if (menuId === PRIMARY_MENU_ID) return;
-    const menu = this.menuService.getMenu(menuId);
+    const menu = this.currentMenuSet().menus.find(m => m.id === menuId);
     if (!menu) return;
     const confirmed = await ModalService.getInstance().confirm({
       title: 'Delete menu',
-      message: `Delete "${menu.name}"? This removes the menu from your relays. Cannot be undone.`,
+      message: `Delete "${menu.name}"? This will take effect once you click Save (local) and Publish (relays).`,
       confirmDestructive: true,
     });
     if (!confirmed) return;
-    void this.commitMenuChange(() => this.menuService.removeMenu(menuId));
+    this.mutateEditingMenus(s => {
+      s.menus = s.menus.filter(m => m.id !== menuId);
+    });
   }
 
 
-  /** Persist a menu change locally + publish to relays. The local mutation
-   *  fires `nospressMenus:changed`, which re-renders the Nav tab. */
-  private async commitMenuChange(mutate: () => void): Promise<void> {
-    try {
-      mutate();
-      await this.menuOrchestrator.publishToRelays(this.menuService.getMenuSet());
-    } catch (error) {
-      console.error('Failed to update menu:', error);
-      ToastService.show('Menu update failed', 'error');
+  /** Read-path helper: returns the in-memory edited menu set if present,
+   *  otherwise the persisted set from localStorage. The Nav tab render
+   *  and every mount-time picker that needs the current menu state goes
+   *  through here so unsaved edits are always reflected. */
+  private currentMenuSet(): NospressMenuSet {
+    return this.editingMenuSet ?? this.menuService.getMenuSet();
+  }
+
+  /** Write-path helper: lift the menu set into the in-memory buffer on
+   *  first call, apply the mutation, flip the dirty flag, re-render the
+   *  Nav tab + action bar. Mirrors `mutateDraft` for the page editor —
+   *  edits stay in memory until Save persists to localStorage and Publish
+   *  ships to relays. */
+  private mutateEditingMenus(mutate: (set: NospressMenuSet) => void): void {
+    if (!this.editingMenuSet) {
+      this.editingMenuSet = JSON.parse(JSON.stringify(this.menuService.getMenuSet()));
     }
+    mutate(this.editingMenuSet!);
+    this.menusDirty = true;
+    this.updateNavTab();
+    this.refreshActionBar();
   }
 
   /** Heading text shown above the editor body — reflects which template
@@ -3032,9 +3162,20 @@ export class NospressView extends View {
 
   /** Reconcile menus with the current page index and publish to relays.
    *  Best-effort — local sync always succeeds; relay publish failures
-   *  surface as a console warning so the local UI stays consistent. */
+   *  surface as a console warning so the local UI stays consistent.
+   *  If an in-memory editing snapshot exists, apply the same reconciliation
+   *  to it so a newly-created page isn't invisible in the Nav tab and a
+   *  deleted page can't be re-saved into a menu on next Save click. */
   private async syncMenusAndPublish(): Promise<void> {
     this.menuService.syncWithPages();
+    if (this.editingMenuSet) {
+      const pages = this.pageIndexService.getIndex().pages;
+      this.editingMenuSet = {
+        version: this.editingMenuSet.version,
+        menus: this.editingMenuSet.menus.map(menu => reconcileMenuWithPages(menu, pages)),
+      };
+      this.updateNavTab();
+    }
     try {
       await this.menuOrchestrator.publishToRelays(this.menuService.getMenuSet());
     } catch (err) {
@@ -4313,11 +4454,21 @@ export class NospressView extends View {
 
   private saveDraft(): void {
     // Page draft: persist if there are in-memory edits.
-    if (this.editingPage) {
-      this.persistEditingPage();
-    } else if (!this.isDirty) {
+    const hasPageWork = this.isDirty || this.editingPage !== null;
+    const hasMenuWork = this.menusDirty;
+    if (!hasPageWork && !hasMenuWork) {
       ToastService.show('Nothing to save', 'error');
       return;
+    }
+    if (this.editingPage) {
+      this.persistEditingPage();
+    }
+    // Menus: write the in-memory snapshot to localStorage silently. The
+    // snapshot stays in memory so Discard can still revert and Publish
+    // knows there's an unshipped change (via `editingMenuSet !== null`).
+    if (this.editingMenuSet && this.menusDirty) {
+      this.menuService.saveMenuSet(this.editingMenuSet, { silent: true });
+      this.menusDirty = false;
     }
     // Acknowledge the dirty state — site-settings were already auto-saved
     // on input; `siteSettingsDirty` stays so Publish still knows there is
@@ -4425,7 +4576,7 @@ export class NospressView extends View {
   private async discardDraft(): Promise<void> {
     const confirmed = await ModalService.getInstance().confirm({
       title: 'Discard draft',
-      message: 'This removes all unpublished changes from this device. The page on relays is not affected. Cannot be undone.',
+      message: 'This removes all unpublished changes from this device (page draft + menu edits). The state on relays is not affected. Cannot be undone.',
       confirmDestructive: true,
     });
     if (!confirmed) return;
@@ -4437,9 +4588,14 @@ export class NospressView extends View {
     this.editingPage = null;
     this.editingPageSlug = null;
     this.isDirty = false;
+    // Drop in-memory menu edits — Nav tab re-renders from the persisted
+    // (already-published) menuService state.
+    this.editingMenuSet = null;
+    this.menusDirty = false;
     ToastService.show('Draft discarded', 'success');
     this.rerenderEditable();
     this.updatePagesTab();
+    this.updateNavTab();
   }
 
   private async publishDraft(): Promise<void> {
@@ -4472,11 +4628,36 @@ export class NospressView extends View {
       }
     }
 
-    if (!draft) {
-      // Nothing on the page side; the only work was site-settings.
-      if (sitePublished) {
+    // Menus: same model as site-settings — own NIP-78 event, ships
+    // independently of any page draft. Persist locally first if the
+    // user hasn't hit Save yet, then publish, then drop the in-memory
+    // snapshot (cleared snapshot = "in sync with relays").
+    let menusPublished = false;
+    if (this.editingMenuSet) {
+      if (this.menusDirty) {
+        this.menuService.saveMenuSet(this.editingMenuSet, { silent: true });
+        this.menusDirty = false;
+      }
+      try {
+        await this.menuOrchestrator.publishToRelays(this.editingMenuSet);
+        this.editingMenuSet = null;
+        menusPublished = true;
+      } catch (e) {
+        console.error('Failed to publish menus:', e);
+        ToastService.show('Menu publish failed — try again', 'error');
         this.refreshActionBar();
-        ToastService.show('Site settings published', 'success');
+        return;
+      }
+    }
+
+    if (!draft) {
+      // Nothing on the page side; the only work was site-settings and/or menus.
+      const things: string[] = [];
+      if (sitePublished) things.push('site settings');
+      if (menusPublished) things.push('menus');
+      if (things.length > 0) {
+        this.refreshActionBar();
+        ToastService.show(`${things.join(' + ')} published`, 'success');
       } else {
         ToastService.show('Nothing to publish', 'error');
       }
@@ -4500,7 +4681,11 @@ export class NospressView extends View {
       this.editingPageSlug = null;
       this.isDirty = false;
       this.updatePagesTab();
-      ToastService.show(sitePublished ? 'Page + site settings published' : 'Page published', 'success');
+      const trailing: string[] = [];
+      if (sitePublished) trailing.push('site settings');
+      if (menusPublished) trailing.push('menus');
+      const suffix = trailing.length > 0 ? ` + ${trailing.join(' + ')}` : '';
+      ToastService.show(`Page${suffix} published`, 'success');
     } catch (error) {
       console.error('Failed to publish page:', error);
       ToastService.show('Publish failed — try again', 'error');

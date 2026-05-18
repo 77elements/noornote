@@ -1995,6 +1995,14 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   white-space: nowrap;
 }
 
+// Inline wrapper for the "→ Move to …" picker between the up/down and
+// remove buttons. CustomDropdown renders block-level by default; inline-
+// block keeps it on the same line as the surrounding action buttons.
+.nospress-nav__item-move {
+  display: inline-block;
+  vertical-align: middle;
+}
+
 .nospress-nav__empty {
   margin: 0 0 calc($gap / 2);
   color: $color-3;

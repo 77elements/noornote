@@ -124,6 +124,28 @@ export class NospressMenuService {
   }
 
   /**
+   * Move a single item from one menu to another. Single save → single
+   * event → single re-render (would be two if done as remove+append
+   * through the per-menu updateMenu helper).
+   */
+  public moveItemBetweenMenus(fromMenuId: string, fromIndex: number, toMenuId: string): void {
+    if (fromMenuId === toMenuId) return;
+    const set = this.getMenuSet();
+    const fromIdx = set.menus.findIndex(m => m.id === fromMenuId);
+    const toIdx = set.menus.findIndex(m => m.id === toMenuId);
+    if (fromIdx < 0 || toIdx < 0) return;
+    const fromMenu = set.menus[fromIdx]!;
+    const toMenu = set.menus[toIdx]!;
+    if (fromIndex < 0 || fromIndex >= fromMenu.items.length) return;
+    const fromItems = [...fromMenu.items];
+    const [moved] = fromItems.splice(fromIndex, 1);
+    if (!moved) return;
+    set.menus[fromIdx] = { ...fromMenu, items: fromItems };
+    set.menus[toIdx] = { ...toMenu, items: [...toMenu.items, moved] };
+    this.saveMenuSet(set);
+  }
+
+  /**
    * Reconcile every menu's items with the current page index — drop items
    * pointing to deleted pages, append new pages to the end. User-set order
    * for existing items is preserved. Idempotent — no event emit when no

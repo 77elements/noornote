@@ -90,9 +90,15 @@ export function reconcileMenuWithPages(menu: NospressMenu, pages: PageIndexEntry
     }
   }
 
-  for (const page of pages) {
-    if (!present.has(page.slug)) {
-      kept.push({ type: 'page', pageSlug: page.slug });
+  // Auto-append new pages ONLY for Primary Navigation. Other menus
+  // (Footer Menu, secondary nav, etc.) are user-curated — adding a new
+  // page should not spam every menu the user happens to have created.
+  // Dropping deleted pages still happens for all menus (above).
+  if (menu.id === PRIMARY_MENU_ID) {
+    for (const page of pages) {
+      if (!present.has(page.slug)) {
+        kept.push({ type: 'page', pageSlug: page.slug });
+      }
     }
   }
 
