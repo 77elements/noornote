@@ -196,6 +196,20 @@ export interface CommonStyle {
    *  propagates via `currentColor` to icons + counts). Same recursive
    *  pattern as `portfolio`. Only surfaced for the weblog block. */
   weblog?: Partial<Record<WeblogKey, CommonStyle>>;
+  /** Card block `:hover` state — applies to the styled-block wrapper
+   *  itself (`[data-styled-block-id="<id>"]:hover`). Same recursive
+   *  CommonStyle shape as the other sub-scopes, but only the props
+   *  surfaced by `CARD_HOVER_GROUPS` (color / background / border /
+   *  box-shadow / border-radius) make sense at the hover state.
+   *  Emitted with `!important` so it beats the `.nn-card:hover`
+   *  molecule defaults (transform + box-shadow) that ride along with
+   *  the molecule itself. */
+  cardHover?: CommonStyle;
+  /** CSS `box-shadow`. Single string — full shorthand the way the user
+   *  types it (e.g. `0 2px 4px rgba(0,0,0,0.1)`). Surfaced inside the
+   *  card-hover sub-scope (and any future Effects group that includes
+   *  it via PROPERTY_CATALOG). */
+  boxShadow?: string;
   /** CSS `text-decoration` (none / underline / overline / line-through).
    *  Applies to the block itself in regular Typography AND to any link
    *  sub-scope where overriding the underline is the most common case. */
@@ -287,7 +301,7 @@ export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
  *  which have their own recursive render paths; and `border`, the
  *  legacy shorthand kept on the type for read-side migration only —
  *  never surfaced as an editable entry). */
-export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList' | 'portfolio' | 'weblog'>;
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList' | 'portfolio' | 'weblog' | 'cardHover'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
@@ -295,7 +309,7 @@ export interface SinglePropertyEntry {
   key:
     | 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight'
     | 'fontStyle' | 'borderRadius' | 'width' | 'height' | 'gridGap'
-    | 'gridTemplateColumns';
+    | 'gridTemplateColumns' | 'boxShadow';
   label: string;
   cssProp: string;
   placeholder: string;

@@ -181,7 +181,12 @@ export class ArticleView {
       const editBtn = this.container.querySelector('[data-action="edit-article"]');
       editBtn?.addEventListener('click', () => {
         const naddr = encodeNaddr({
-          kind: 30023,
+          // Preserve the source kind so drafts (30024) round-trip through
+          // the editor — hardcoding 30023 here used to send draft owners
+          // to "/edit-article/<naddr-with-kind-30023>", which
+          // ArticleEditorView then failed to resolve on relays because
+          // no kind:30023 with that identifier exists for that pubkey.
+          kind: event.kind!,
           pubkey: event.pubkey,
           identifier: metadata.identifier,
           relays: []
@@ -203,7 +208,9 @@ export class ArticleView {
         if (!confirmed) return;
 
         const { DeletionService } = await import('../../services/DeletionService');
-        const coordinate = `30023:${event.pubkey}:${metadata.identifier}`;
+        // Use the source kind so a draft's deletion coordinate addresses
+        // 30024:<pubkey>:<d>, not the published 30023 path.
+        const coordinate = `${event.kind}:${event.pubkey}:${metadata.identifier}`;
         const deleted = await DeletionService.getInstance().deleteByCoordinates([coordinate]);
 
         if (deleted) {

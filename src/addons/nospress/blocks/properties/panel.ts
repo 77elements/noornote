@@ -20,6 +20,7 @@ import { readStyleField } from '../styles/access';
 import {
   ARTICLES_LIST_GROUPS,
   BOOKMARK_FOLDER_GROUPS,
+  CARD_HOVER_GROUPS,
   LINK_SUBSCOPE_GROUPS,
   MOBILE_MENU_SECTIONS,
   NAV_MENU_DESKTOP_GROUPS,
@@ -520,9 +521,16 @@ function renderPanelInternal(
   // main block properties than the inner-link styling.
   const showWeblog = !fieldPrefix && blockType === 'weblog';
   const weblogBody = showWeblog ? renderWeblogSections(opts) : '';
+  // Card-hover sub-scope: 1 accordion section ("Hover (:hover)") for
+  // the card block itself. Property set restricted to what makes sense
+  // on a hover transition — color / background / border / box-shadow /
+  // border-radius (no layout / spacing / typography size shifts because
+  // those would re-flow the page on mouseover).
+  const showCardHover = !fieldPrefix && blockType === 'card';
+  const cardHoverBody = showCardHover ? renderCardHoverSection(opts) : '';
   const specificBody = (opts.extras ?? '')
     + navMenuTopBody + weblogBody + linksBody + navMenuBottomBody
-    + bookmarkFolderBody + articlesListBody + portfolioBody;
+    + bookmarkFolderBody + articlesListBody + portfolioBody + cardHoverBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`). Paired
@@ -925,6 +933,34 @@ function renderWeblogSections(opts: RenderPropertyPanelOptions): string {
       </div>
       <div class="nn-ui-toggle__content">
         ${mentionBody}
+      </div>
+    </section>
+  `;
+}
+
+/** Card-block `:hover` sub-scope — single accordion section with the
+ *  user-tuneable hover-state properties (color/background/border/
+ *  box-shadow/border-radius). Sits at the very bottom of the card's
+ *  Properties panel, after the regular Effects group. */
+function renderCardHoverSection(opts: RenderPropertyPanelOptions): string {
+  const resolvedGroups: ResolvedPropertyGroup[] = CARD_HOVER_GROUPS.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const body = renderEntriesForGroups(opts, resolvedGroups, 'cardHover.');
+  return `
+    <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-card-section="hover">
+      <div class="nn-ui-toggle__header" data-toggle-header>
+        <div class="nn-ui-toggle__info">
+          <h2 class="nn-ui-toggle__title">Hover (:hover)</h2>
+        </div>
+        <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </div>
+      <div class="nn-ui-toggle__content">
+        ${body}
       </div>
     </section>
   `;

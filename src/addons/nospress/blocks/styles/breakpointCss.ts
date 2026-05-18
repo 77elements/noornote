@@ -20,6 +20,7 @@ import { buildImportantInlineStyle, buildInlineStyle } from './build';
 import {
   ARTICLES_LIST_GROUPS,
   BOOKMARK_FOLDER_GROUPS,
+  CARD_HOVER_GROUPS,
   LINK_SUBSCOPE_GROUPS,
   NAV_MENU_DESKTOP_GROUPS,
   PORTFOLIO_GROUPS,
@@ -54,6 +55,12 @@ import {
  *  `buildImportantInlineStyle` can be called per-pseudo-class without
  *  re-resolving the group list every time. */
 const LINK_SUBSCOPE_SCHEMA: PropertyEntry[] = LINK_SUBSCOPE_GROUPS
+  .flatMap(g => flattenGroupProps(g.props));
+
+/** Flat schema for the card-hover sub-scope — same pre-resolve as the
+ *  link sub-scope so `buildImportantInlineStyle` doesn't re-walk the
+ *  group list on every block render. */
+const CARD_HOVER_SCHEMA: PropertyEntry[] = CARD_HOVER_GROUPS
   .flatMap(g => flattenGroupProps(g.props));
 
 /** Same flat-schema treatment for the nav-menu desktop sub-scope
@@ -321,6 +328,40 @@ export function buildBlockWeblogCss(
         if (decls) inner.push(`${joinSel(key)} { ${decls} }`);
       }
       if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
+/** Per-block card `:hover` CSS — emits the user's hover-state styling
+ *  scoped to this card instance via `[data-styled-block-id="<id>"]:hover`.
+ *  `!important` always-on so the rule beats the molecule's own
+ *  `.nn-card:hover` defaults (transform + box-shadow) which carry equal
+ *  specificity (0,2,0). Default + per-BP pattern matches the other
+ *  sub-scope emitters. */
+export function buildBlockCardHoverCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'card') return '';
+  const sel = `[data-styled-block-id="${block.id}"]:hover`;
+  const parts: string[] = [];
+
+  const defaults = block.style?.cardHover;
+  if (defaults) {
+    const decls = buildImportantInlineStyle(CARD_HOVER_SCHEMA, defaults);
+    if (decls) parts.push(`${sel} { ${decls} }`);
+  }
+
+  if (block.breakpointStyles) {
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style?.cardHover) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      const decls = buildImportantInlineStyle(CARD_HOVER_SCHEMA, style.cardHover);
+      if (decls) parts.push(`@media ${mediaQuery} { ${sel} { ${decls} } }`);
     }
   }
 
@@ -640,6 +681,8 @@ export function buildPageBreakpointCss(
         if (portfolioCloseBtnCss) out.push(portfolioCloseBtnCss);
         const weblogCss = buildBlockWeblogCss(blockTyped, breakpoints);
         if (weblogCss) out.push(weblogCss);
+        const cardHoverCss = buildBlockCardHoverCss(blockTyped, breakpoints);
+        if (cardHoverCss) out.push(cardHoverCss);
         const columnsCss = buildBlockColumnsCss(blockTyped, breakpoints);
         if (columnsCss) out.push(columnsCss);
       }

@@ -183,6 +183,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
   textShadow:   { kind: 'text-shadow', key: 'textShadow', label: 'Text shadow' },
+  boxShadow:    { kind: 'single', key: 'boxShadow',    label: 'Box shadow',    cssProp: 'box-shadow',    placeholder: 'e.g. 0 4px 12px rgba(0,0,0,0.15)' },
 };
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -293,6 +294,19 @@ export const PORTFOLIO_GROUPS: Record<PortfolioKey, PropertyGroup[]> = {
     { key: 'border',     label: 'Border color', props: ['borderColor'] },
   ],
 };
+
+/** Property groups surfaced inside the card-block `:hover` sub-scope.
+ *  Mirrors the typical Background / Border / Effects partition but
+ *  scoped to the props that actually make sense on a hover state — no
+ *  layout / spacing / typography size shifts (those would re-flow the
+ *  page on mouseover). Color stays paired with background as everywhere
+ *  else; box-shadow + border-radius fit the "shape of the card" feel
+ *  the user is tuning. */
+export const CARD_HOVER_GROUPS: PropertyGroup[] = [
+  { key: 'typography', label: 'Color',      props: [['color', 'background']] },
+  { key: 'border',     label: 'Border',     props: ['borderWidth', ['borderStyle', 'borderRadius'], 'borderColor'] },
+  { key: 'effects',    label: 'Effects',    props: ['boxShadow'] },
+];
 
 /** Per-key restricted schemas for the weblog sub-scope. Three slots:
  *  `note` (the `.note-card` default), `noteHover` (the `.note-card:hover`

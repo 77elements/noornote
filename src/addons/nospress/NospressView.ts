@@ -51,7 +51,7 @@ import { FullscreenOverlay } from '../../components/ui/FullscreenOverlay';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
 import { cloneBlockWithFreshIds, createBlock, findBlockInPage, stripBlockContent, topLevelOnly, COLUMN_LAYOUT_PRESETS, DIV_TAGS, type Block, type BlockType, type DivTag, type NospressPageV2 } from './blocks/types';
-import { deleteCustomBlock, findCustomBlock, saveCustomBlock } from './customBlocks';
+import { deleteCustomBlock, findCustomBlock, getCustomBlocks, saveCustomBlock } from './customBlocks';
 import {
   groupedSchemaFor,
   readStyleField,
@@ -3969,7 +3969,9 @@ export class NospressView extends View {
         if (blocks.length === 0) return null;
         return { count: blocks.length, firstType: blocks[0]!.type };
       },
-      onPasteClipboard: () => this.pasteClipboardAtCursor()
+      onPasteClipboard: () => this.pasteClipboardAtCursor(),
+      getCustomBlocks: () => getCustomBlocks().map(cb => ({ id: cb.id, name: cb.name })),
+      onCustomBlockChosen: (id) => this.applyCustomBlock(id),
     });
     slot.appendChild(this.cursorRow.getElement());
   }

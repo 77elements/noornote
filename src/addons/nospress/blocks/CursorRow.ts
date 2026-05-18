@@ -34,6 +34,14 @@ export interface CursorRowOptions {
    *  slash menu. NospressView clones the clipboard block(s) with fresh
    *  ids and inserts them at the cursor. */
   onPasteClipboard: () => void;
+  /** Per-account custom-block library entries surfaced as additional
+   *  slash-menu items. Filtered by name against the `/`-prefix query so
+   *  e.g. `/Ser` matches a "Service" custom block. */
+  getCustomBlocks: () => Array<{ id: string; name: string }>;
+  /** Invoked when the user picks a custom-block entry from the slash
+   *  menu — NospressView clones the saved template with fresh ids and
+   *  inserts the blocks at the cursor. */
+  onCustomBlockChosen: (id: string) => void;
 }
 
 const RECENT_LIMIT = 5;
@@ -97,8 +105,9 @@ export class CursorRow {
       e.preventDefault();
       const value = this.input.value;
       if (this.menuOpen) {
-        // Pick first visible menu item on Enter
-        const firstItem = this.menu.querySelector<HTMLElement>('[data-block-type]');
+        // Pick first visible menu item on Enter — covers all interactive
+        // rows (built-in block types, paste-clipboard, custom blocks).
+        const firstItem = this.menu.querySelector<HTMLElement>('.nospress-cursor-row__menu-item');
         if (firstItem) firstItem.click();
         return;
       }
@@ -163,7 +172,14 @@ export class CursorRow {
     const recentHtml = filtered(recent);
     const othersHtml = filtered(others);
 
-    if (recentHtml.length === 0 && othersHtml.length === 0) {
+    // Custom blocks — per-account saved templates. Filtered by name only
+    // (description / type are static for all custom blocks, no signal).
+    const customBlocks = this.opts.getCustomBlocks();
+    const customHtml = this.menuFilter
+      ? customBlocks.filter(cb => cb.name.toLowerCase().includes(this.menuFilter))
+      : customBlocks;
+
+    if (recentHtml.length === 0 && othersHtml.length === 0 && customHtml.length === 0) {
       this.menu.innerHTML = `<div class="nospress-cursor-row__menu-empty">No matches for "${escapeHtml(this.menuFilter)}"</div>`;
       return;
     }
@@ -209,6 +225,16 @@ export class CursorRow {
       html += `<div class="nospress-cursor-row__menu-section">All blocks</div>`;
       html += othersHtml.map(renderRow).join('');
     }
+    if (customHtml.length > 0) {
+      html += `<div class="nospress-cursor-row__menu-section">Custom blocks</div>`;
+      html += customHtml.map(cb => `
+        <button type="button" class="nospress-cursor-row__menu-item" data-custom-block-id="${escapeHtmlAttr(cb.id)}">
+          <span class="nospress-cursor-row__menu-icon">🧩</span>
+          <span class="nospress-cursor-row__menu-label">${escapeHtml(cb.name)}</span>
+          <span class="nospress-cursor-row__menu-desc">Saved custom block template.</span>
+        </button>
+      `).join('');
+    }
     this.menu.innerHTML = html;
   }
 
@@ -219,6 +245,15 @@ export class CursorRow {
       this.input.value = '';
       this.closeMenu();
       this.opts.onPasteClipboard();
+      return;
+    }
+    const customBtn = target.closest<HTMLElement>('[data-custom-block-id]');
+    if (customBtn) {
+      const id = customBtn.dataset.customBlockId;
+      if (!id) return;
+      this.input.value = '';
+      this.closeMenu();
+      this.opts.onCustomBlockChosen(id);
       return;
     }
     const btn = target.closest<HTMLElement>('[data-block-type]');

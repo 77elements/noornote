@@ -82,6 +82,13 @@ export function readStyleField(styleIn: CommonStyle | undefined, path: string): 
     const sub = styleIn.weblog?.[key as WeblogKey];
     return readStyleField(sub, rest.join('.'));
   }
+  // Card-hover sub-scope: `cardHover.<rest>` → recurse into the flat
+  // sub-style. One hop shorter than the other sub-scopes — hover is the
+  // only state we surface for now, so no per-element key layer.
+  if (path.startsWith('cardHover.')) {
+    const [, ...rest] = path.split('.');
+    return readStyleField(styleIn.cardHover, rest.join('.'));
+  }
   // Hydrate the new border fields from the legacy shorthand if the user
   // hasn't touched them yet. Returned values pre-fill the property panel
   // inputs so old data is visible + editable; the next write clears the
@@ -200,6 +207,15 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
     writeStyleField(style.weblog[k]!, rest.join('.'), rawValue);
     if (Object.keys(style.weblog[k]!).length === 0) delete style.weblog[k];
     if (Object.keys(style.weblog).length === 0) delete style.weblog;
+    return;
+  }
+  // Card-hover sub-scope: `cardHover.<rest>` → ensure the sub exists,
+  // recurse, prune empty parent so `hasV2Content` stays accurate.
+  if (path.startsWith('cardHover.')) {
+    const [, ...rest] = path.split('.');
+    if (!style.cardHover) style.cardHover = {};
+    writeStyleField(style.cardHover, rest.join('.'), rawValue);
+    if (Object.keys(style.cardHover).length === 0) delete style.cardHover;
     return;
   }
   const segments = path.split('.');
