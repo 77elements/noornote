@@ -87,6 +87,8 @@ export class AboutView extends View {
 
           ${this.renderDataStorageSection()}
 
+          ${this.renderWebHostingSection()}
+
           <h3>Connections to Nostr Relays</h3>
           <p>
             All content you create (notes, articles, profile information, etc.) is stored on
@@ -99,10 +101,15 @@ export class AboutView extends View {
             and can be configured in the settings.
           </p>
 
-          <h3>No Tracking or Analytics</h3>
+          ${this.renderThirdPartySection()}
+
+          <h3>No Tracking or Analytics by NoorNote</h3>
           <p>
-            NoorNote does not use any tracking services, analytics, or cookies.
-            We do not collect any usage data.
+            NoorNote does not use any analytics services, tracking pixels, marketing cookies,
+            or telemetry. We do not collect, log, or transmit any usage data to ourselves.
+            The third-party connections described above are inherent to rendering content and
+            providing the service — they are not telemetry, and no identifier beyond a standard
+            HTTP request (IP, User-Agent) is sent.
           </p>
 
           <h3>Your Rights</h3>
@@ -185,7 +192,7 @@ export class AboutView extends View {
         <ul>
           <li><strong>Key Storage:</strong> Your private key is managed by your browser extension (e.g. Alby) and never shared with NoorNote or our server.</li>
           <li><strong>Cache:</strong> Temporary data is stored in your browser's IndexedDB and localStorage.</li>
-          <li><strong>No Server Storage:</strong> Our web server only hosts the static application files. We do not store any user data on the server.</li>
+          <li><strong>No User-Data Storage on Our Server:</strong> Our web host serves the static application bundle. We do not store, process, or have access to any user data on the server itself.</li>
         </ul>
         <p>
           <strong>We have no access to your data.</strong> All user data remains in your browser and can be cleared at any time via your browser settings.
@@ -205,6 +212,50 @@ export class AboutView extends View {
       <p>
         <strong>We have no access to this data.</strong> All data remains on your device.
       </p>`;
+  }
+
+  private renderWebHostingSection(): string {
+    if (!this.platform.isBrowser) return '';
+    return `
+      <h3>Web Hosting</h3>
+      <p>
+        The web version of NoorNote (<a href="https://noornote.app" rel="noopener noreferrer">noornote.app</a>) is hosted by
+        <strong>Mynymbox Hosting LLC</strong>, Hamilton Development, Unit B, Charlestown,
+        Nevis, West Indies, St. Kitts and Nevis
+        (<a href="https://mynymbox.io/privacypolicy" rel="noopener noreferrer">Privacy Policy</a>).
+        Like any web host, MyNymbox processes standard server log data when you load the
+        application — typically your IP address, request timestamp, the URL/file requested,
+        browser type, and referrer — for operational and security purposes (e.g. DDoS
+        mitigation, server stability). NoorNote itself does not access or use these logs.
+      </p>
+      <p>
+        <strong>Third country notice:</strong> St. Kitts and Nevis is not covered by an EU
+        adequacy decision (Art. 45 GDPR). Any transfer to MyNymbox's servers takes place
+        on the basis of the derogations of Art. 49 (1) GDPR.
+      </p>`;
+  }
+
+  private renderThirdPartySection(): string {
+    const desktopUpdateItem = this.platform.isDesktop
+      ? `<li><strong>Update check:</strong> The desktop version periodically queries <code>api.github.com</code> to detect new releases. GitHub is operated by GitHub, Inc., 88 Colin P Kelly Jr Street, San Francisco, CA 94107, USA.</li>`
+      : '';
+    const browserProxyItem = this.platform.isBrowser
+      ? `<li><strong>Media proxy:</strong> When loading images embedded in notes, NoorNote may route the request through a proxy operated by us at <code>noornote-proxy.77elements.deno.net</code> (running on Deno Deploy, Deno Land Inc., USA) to bypass CORS restrictions of the original image host. The proxy forwards your request to the third-party image host.</li>`
+      : '';
+    return `
+      <h3>Other Third-Party Connections</h3>
+      <p>
+        Beyond Nostr relays, NoorNote makes network requests to a small set of third-party
+        endpoints to render content correctly. Each request unavoidably exposes your IP
+        address to the receiving service:
+      </p>
+      <ul>
+        <li><strong>NIP-05 verification:</strong> When verifying a user's NIP-05 identifier (e.g. <code>alice@example.com</code>), NoorNote sends an HTTP request to <code>https://example.com/.well-known/nostr.json</code>. The owner of that domain may log the request.</li>
+        <li><strong>Profile pictures and embedded media:</strong> Avatars, images, videos, and audio referenced in Nostr events are loaded directly from whatever URL the author published. Each such load is a direct request from your device to that third-party host.</li>
+        ${browserProxyItem}
+        <li><strong>Scheduled Posts (optional addon):</strong> When the Scheduled Posts addon is enabled, your scheduled events are temporarily stored on a service operated by us at <code>noornote-scheduler.77elements.deno.net</code> (running on Deno Deploy, Deno Land Inc., USA) until their scheduled release time.</li>
+        ${desktopUpdateItem}
+      </ul>`;
   }
 
   private bindListeners(): void {
