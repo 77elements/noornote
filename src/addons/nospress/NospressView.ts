@@ -3565,11 +3565,7 @@ export class NospressView extends View {
 
         if (colBlocks.length === 0) {
           if (cursorHere) return slot;
-          const clip = this.getClipboardBlock();
-          const pasteHint = clip
-            ? `<button type="button" class="nospress-block-columns__paste" data-paste-here data-paste-target="column" data-columns-block-id="${block.id}" data-col-index="${colIndex}">Paste ${clip.type}</button>`
-            : '';
-          return `<div class="nospress-block-columns__placeholder" data-columns-placeholder data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here${pasteHint}</div>`;
+          return `<div class="nospress-block-columns__placeholder" data-columns-placeholder data-columns-block-id="${block.id}" data-col-index="${colIndex}" role="button" tabindex="0">Click to add blocks here</div>`;
         }
 
         const inner: string[] = [];
@@ -3603,11 +3599,7 @@ export class NospressView extends View {
       childrenInner: () => {
         if (block.children.length === 0) {
           if (cursorHere) return slot;
-          const clip = this.getClipboardBlock();
-          const pasteHint = clip
-            ? `<button type="button" class="nospress-block-div__paste" data-paste-here data-paste-target="div" data-div-block-id="${block.id}">Paste ${clip.type}</button>`
-            : '';
-          return `<div class="nospress-block-div__placeholder" data-div-placeholder data-div-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here${pasteHint}</div>`;
+          return `<div class="nospress-block-div__placeholder" data-div-placeholder data-div-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here</div>`;
         }
 
         const inner: string[] = [];
@@ -3639,11 +3631,7 @@ export class NospressView extends View {
       childrenInner: () => {
         if (block.children.length === 0) {
           if (cursorHere) return slot;
-          const clip = this.getClipboardBlock();
-          const pasteHint = clip
-            ? `<button type="button" class="nospress-block-card__paste" data-paste-here data-paste-target="card" data-card-block-id="${block.id}">Paste ${clip.type}</button>`
-            : '';
-          return `<div class="nospress-block-card__placeholder" data-card-placeholder data-card-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here${pasteHint}</div>`;
+          return `<div class="nospress-block-card__placeholder" data-card-placeholder data-card-block-id="${block.id}" role="button" tabindex="0">Click to add blocks here</div>`;
         }
 
         const inner: string[] = [];
@@ -4036,13 +4024,6 @@ export class NospressView extends View {
     PerAccountLocalStorage.getInstance().set(StorageKeys.NOSPRESS_CLIPBOARD, blocks);
   }
 
-  /** Convenience used by the CursorRow slash-menu label and by the
-   *  empty-column placeholder hint — returns the first clipboard block
-   *  for the icon/type pick, or null if the clipboard is empty. */
-  private getClipboardBlock(): Block | null {
-    return this.getClipboardBlocks()[0] ?? null;
-  }
-
   /** Copy a single block (with all properties + nested children) into
    *  the per-account clipboard. The stored snapshot keeps the original
    *  IDs; fresh IDs are minted at paste time so repeat-pastes never
@@ -4091,28 +4072,6 @@ export class NospressView extends View {
     }
   }
 
-  /** Same as `pasteClipboardAtCursor` but targets an empty column slot
-   *  directly — used when the user clicks "Paste …" inside an empty
-   *  column placeholder. */
-  private async pasteClipboardInColumn(columnsBlockId: string, colIndex: number): Promise<void> {
-    if (this.getClipboardBlocks().length === 0) return;
-    this.cursor = { scope: 'column', columnsBlockId, colIndex, index: 0 };
-    this.pasteClipboardAtCursor();
-  }
-
-  /** Same as above for a div block's empty children slot. */
-  private async pasteClipboardInDiv(divBlockId: string): Promise<void> {
-    if (this.getClipboardBlocks().length === 0) return;
-    this.cursor = { scope: 'div', divBlockId, index: 0 };
-    this.pasteClipboardAtCursor();
-  }
-
-  /** Same as above for a card block's empty children slot. */
-  private async pasteClipboardInCard(cardBlockId: string): Promise<void> {
-    if (this.getClipboardBlocks().length === 0) return;
-    this.cursor = { scope: 'card', cardBlockId, index: 0 };
-    this.pasteClipboardAtCursor();
-  }
 
   // ── Custom Block library (per-account templates) ──────────────────────
 
@@ -5093,27 +5052,6 @@ export class NospressView extends View {
         const action = multiBtn.dataset.action;
         if (action === 'multi-copy-group') void this.copyGroupToClipboard();
         else if (action === 'multi-save-custom') void this.saveSelectionAsCustomBlock();
-        return;
-      }
-
-      // Paste button inside an empty column/div placeholder — direct
-      // paste, no cursor-into-slot step. Handled before the placeholder
-      // click so the click doesn't double-trigger.
-      const pasteBtn = target.closest('[data-paste-here]') as HTMLElement | null;
-      if (pasteBtn) {
-        e.stopPropagation();
-        const pasteTarget = pasteBtn.dataset.pasteTarget;
-        if (pasteTarget === 'column') {
-          const cbId = pasteBtn.dataset.columnsBlockId;
-          const colIdx = pasteBtn.dataset.colIndex !== undefined ? parseInt(pasteBtn.dataset.colIndex, 10) : -1;
-          if (cbId && colIdx >= 0) void this.pasteClipboardInColumn(cbId, colIdx);
-        } else if (pasteTarget === 'div') {
-          const dbId = pasteBtn.dataset.divBlockId;
-          if (dbId) void this.pasteClipboardInDiv(dbId);
-        } else if (pasteTarget === 'card') {
-          const cardId = pasteBtn.dataset.cardBlockId;
-          if (cardId) void this.pasteClipboardInCard(cardId);
-        }
         return;
       }
 
