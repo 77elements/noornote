@@ -19,6 +19,9 @@
     z-index: 10;
 
     body.pv & {
+      top: 0;
+    }
+    .platform--mobile body.pv & {
       top: 12px;
     }
     display: grid;
