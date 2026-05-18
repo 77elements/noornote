@@ -1,20 +1,18 @@
-# NoorNote v0.9.2 — NosPress Custom Fonts + Avatar Reliability
+# NoorNote v0.9.3 — Privacy Hardening + Repost/Quote Fixes
 
-## NosPress
+## Client tag modification
 
-- **Upload your own webfonts.** New Fonts section in the Global tab lets you upload `.woff2 / .woff / .ttf / .otf` files, pick one as the body-text default, and use them in any block via the new Font family dropdown. Live preview shows the resulting cascade as you change settings.
-- **Color Theme one-click Save** writes your palette to Custom CSS, saves locally, and publishes to your relays — all from a single button.
+- **"via NoorNote" with no suffix.** When you enable the optional client tag, it now ships as plain `NoorNote` — the previous platform suffix (`m/d`, `l/w` etc.) is gone. Less fingerprinting, same opt-in.
 
-## Profile pictures
+## Reposts & Quotes
 
-- **No more blank avatars.** Profile pictures are more reliable everywhere — when a picture can't load you get a clean colored identicon instead of an empty circle. Larger cache, smarter fallbacks, and the avatar "blink" effect no longer flashes empty.
+- **Reposts show the original note's age.** A repost of a 5-year-old note no longer reads "7m ago" — the timestamp now reflects when the post was actually written.
+- **Legacy quote-reposts render correctly.** Older quote-style notes (from clients pre-NIP-18) now appear on the author's profile and in single-note view with the right "X quoted this note" header, instead of being miscategorized as replies.
 
-## Icons / Mobile
+## Media
 
-- **Mobile hamburger fixed** — the menu button now shows three lines again (was accidentally using the Lists icon).
-- **Reply icon refreshed** in both Notifications and the row of action buttons under each note (now a speech bubble).
-- **Note action row** spaces icons + counters more evenly.
+- **GIFs upload as animations.** Animated GIFs are no longer flattened to a still JPEG during the upload-compression step.
 
-## Fixes
+## Layout
 
-- **Upload progress chip** no longer hides behind modals.
+- **Profile timeline header sits flush on desktop.** The small gap above the sticky header on desktop is gone; the mobile spacing is unchanged.
