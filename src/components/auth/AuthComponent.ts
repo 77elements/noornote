@@ -9,6 +9,7 @@ import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../system/SystemLogger';
 import { Router } from '../../services/Router';
 import { PlatformService } from '../../services/PlatformService';
+import { LayoutService } from '../../services/LayoutService';
 import QRCode from 'qrcode';
 
 // Forward declaration to avoid circular dependency
@@ -25,6 +26,10 @@ export class AuthComponent {
   private mainLayout: MainLayoutInterface | null = null;
   private currentUser: { npub: string; pubkey: string } | null = null;
   private nostrConnectCancel: (() => void) | null = null;
+  /** Stored nostrconnect:// URI for the active session — used by the
+   *  mobile-web "Open Amber" deep-link button so a tap can hand off to
+   *  Amber via Android intent without scanning a QR code. */
+  private nostrConnectUri: string | null = null;
 
   constructor(mainLayout?: MainLayoutInterface) {
     this.authService = AuthService.getInstance();
@@ -91,8 +96,28 @@ export class AuthComponent {
 
     const platform = PlatformService.getInstance();
     const isDesktop = platform.isDesktop;
-    const isMobile = platform.isAndroid;
+    const isCapacitor = platform.isCapacitor;
     const isWeb = platform.isBrowser;
+    // "Mobile layout" covers Capacitor APK, mobile-web (Android UA), AND a
+    // desktop browser whose viewport sits below the phone breakpoint
+    // (responsive devtools). The login UI then collapses the QR section
+    // and offers a deep-link Amber button instead.
+    const isMobileLayout = platform.isAndroid
+      || LayoutService.getInstance().getCurrentMode() === 'phone';
+    // Single Amber button — same label everywhere. Handler branches on
+    // platform: Capacitor APK uses the NIP-55 plugin (direct intent),
+    // mobile-web uses the nostrconnect:// deep-link (Amber registered as
+    // URI handler on Android). Both end up logging in via the same relay
+    // subscription that initNostrConnect sets up. Button starts disabled
+    // on mobile-web until the URI is ready; Capacitor needs no URI so it
+    // stays enabled from first paint.
+    const showAmber = isCapacitor || isMobileLayout;
+    const amberStartsDisabled = !isCapacitor && isMobileLayout;
+    // Browser-extension login as a small inline link on mobile layout
+    // (Alby is available on mobile Firefox) instead of a big primary
+    // button, since Amber is the dominant signer story on a phone.
+    const showBrowserExtBig = isWeb && !isMobileLayout;
+    const showBrowserExtSmall = isWeb && isMobileLayout;
 
     // Check if adding account (from AccountSwitcher)
     const isAddingAccount = sessionStorage.getItem('noornote_add_account') === 'true';
@@ -109,13 +134,13 @@ export class AuthComponent {
             </button>
             <p class="auth-hint">Secure local key signer</p>
           </div>
-          <div class="auth-primary-action ${!isMobile ? 'hidden' : ''}">
-            <button class="btn btn--large" data-action="use-amber">
+          <div class="auth-primary-action ${!showAmber ? 'hidden' : ''}">
+            <button class="btn btn--large" data-action="use-amber" ${amberStartsDisabled ? 'disabled' : ''}>
               🔑 Use Amber
             </button>
             <p class="auth-hint">NIP-55 Android signer</p>
           </div>
-          <div class="auth-primary-action ${!isWeb ? 'hidden' : ''}">
+          <div class="auth-primary-action ${!showBrowserExtBig ? 'hidden' : ''}">
             <button class="btn btn--large" data-action="use-browser-ext-signer">
               🔑 Use Browser extension
             </button>
@@ -129,15 +154,16 @@ export class AuthComponent {
 
         <section class="auth-section">
           <h2>Remote Signer</h2>
-          <div class="auth-nostrconnect ${isMobile ? 'hidden' : ''}" data-container="nostrconnect">
+          <div class="auth-nostrconnect ${isMobileLayout ? 'hidden' : ''}" data-container="nostrconnect">
             <div class="auth-nostrconnect__qr" data-container="nostrconnect-qr">
               <div class="auth-nostrconnect__loading">Generating QR code...</div>
             </div>
             <p class="auth-hint">Scan with Amber or other mobile signer</p>
             <p class="auth-nostrconnect__status" data-status="nostrconnect">Waiting for connection...</p>
           </div>
-          <div class="auth-divider auth-divider--small ${isMobile ? 'hidden' : ''}">
-            <span>${isMobile ? '' : 'or '}enter bunker:// URI</span>
+          <p class="auth-nostrconnect__status ${!amberStartsDisabled ? 'hidden' : ''}" data-status="nostrconnect-mobile">Waiting for connection…</p>
+          <div class="auth-divider auth-divider--small ${isMobileLayout ? 'hidden' : ''}">
+            <span>${isMobileLayout ? '' : 'or '}enter bunker:// URI</span>
           </div>
           <div class="auth-input-group">
             <input
@@ -150,6 +176,14 @@ export class AuthComponent {
             <button class="btn" data-action="connect-bunker">Connect</button>
           </div>
         </section>
+
+        <div class="auth-divider ${showBrowserExtSmall ? '' : 'hidden'}">
+          <span>or</span>
+        </div>
+        <p class="auth-hint ${showBrowserExtSmall ? '' : 'hidden'}" style="text-align: center;">
+          <a href="#" data-action="use-browser-ext-signer">Use Browser extension</a>
+          (e.g. Alby on mobile Firefox)
+        </p>
 
         <div class="auth-divider">
           <span>or</span>
@@ -168,8 +202,10 @@ export class AuthComponent {
     // Setup event listeners for injected UI
     this.setupLoginViewListeners();
 
-    // Start nostrconnect QR flow (not on mobile — can't scan QR on same device)
-    if (!isMobile) {
+    // Start nostrconnect flow on every non-Capacitor platform — desktop
+    // uses the QR, mobile-web uses the deep-link button. Capacitor APK
+    // skips this since the Amber plugin path is synchronous.
+    if (!isCapacitor) {
       this.initNostrConnect();
     }
   }
@@ -181,23 +217,34 @@ export class AuthComponent {
   private async initNostrConnect(): Promise<void> {
     const qrContainer = document.querySelector('[data-container="nostrconnect-qr"]');
     const statusEl = document.querySelector('[data-status="nostrconnect"]');
-    if (!qrContainer) return;
+    const statusElMobile = document.querySelector('[data-status="nostrconnect-mobile"]');
+    // The mobile-web Amber button starts disabled (rendered as such)
+    // because its click needs the nostrconnect URI. We enable it as soon
+    // as the URI is in hand. Capacitor users never hit this branch — the
+    // function is only invoked on `!isCapacitor`.
+    const amberBtn = document.querySelector('[data-action="use-amber"]') as HTMLButtonElement | null;
 
     try {
       const session = await this.authService.startNostrConnect();
       this.nostrConnectCancel = session.cancel;
+      this.nostrConnectUri = session.uri;
 
-      // Render QR code
-      const qrDataUrl = await QRCode.toDataURL(session.uri, {
-        width: 200,
-        margin: 2,
-        color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
-      });
+      // QR is desktop-only — the container is hidden on mobile layout.
+      // Renders only if it actually exists in the DOM.
+      if (qrContainer) {
+        const qrDataUrl = await QRCode.toDataURL(session.uri, {
+          width: 200,
+          margin: 2,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        qrContainer.innerHTML = `<img src="${qrDataUrl}" alt="Scan to connect" style="border-radius: 8px; padding: 40px; background: #FFFFFF;" />`;
+      }
 
-      qrContainer.innerHTML = `<img src="${qrDataUrl}" alt="Scan to connect" style="border-radius: 8px; padding: 40px; background: #FFFFFF;" />`;
+      // Mobile-layout: enable the Amber button now that the URI is ready.
+      if (amberBtn) amberBtn.disabled = false;
 
       // Wait for connection in background
       const result = await session.waitForConnection();
@@ -206,11 +253,13 @@ export class AuthComponent {
         this.handleLoginSuccess(result.npub, result.pubkey, 'nostrconnect');
       } else if (result.error !== 'Cancelled') {
         if (statusEl) statusEl.textContent = 'Connection failed. Reload to try again.';
+        if (statusElMobile) statusElMobile.textContent = 'Connection failed. Reload to try again.';
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       this.systemLogger.warn('Auth', `NostrConnect init failed: ${msg}`);
-      qrContainer.innerHTML = '<p class="auth-hint">QR code unavailable</p>';
+      if (qrContainer) qrContainer.innerHTML = '<p class="auth-hint">QR code unavailable</p>';
+      if (statusElMobile) statusElMobile.textContent = 'Connection unavailable. Reload to try again.';
     }
   }
 
@@ -237,17 +286,23 @@ export class AuthComponent {
       keySignerBtn.addEventListener('click', this.handleKeySignerLogin.bind(this));
     }
 
-    // Amber button (Android)
+    // Amber button (Capacitor APK — NIP-55 plugin path)
     const amberBtn = primaryContent.querySelector('[data-action="use-amber"]');
     if (amberBtn) {
       amberBtn.addEventListener('click', this.handleAmberLogin.bind(this));
     }
 
-    // Browser Extension button (web)
-    const browserExtBtn = primaryContent.querySelector('[data-action="use-browser-ext-signer"]');
-    if (browserExtBtn) {
-      browserExtBtn.addEventListener('click', this.handleBrowserExtLogin.bind(this));
-    }
+    // Browser Extension login — both the big primary-action button (desktop)
+    // and the inline mobile-layout link (Alby on mobile Firefox) carry
+    // this data-action, so a single querySelectorAll wires whichever
+    // variant the current layout rendered.
+    const browserExtTriggers = primaryContent.querySelectorAll('[data-action="use-browser-ext-signer"]');
+    browserExtTriggers.forEach(el => {
+      el.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).tagName === 'A') e.preventDefault();
+        this.handleBrowserExtLogin();
+      });
+    });
 
     // Bunker connect button
     const bunkerBtn = primaryContent.querySelector('[data-action="connect-bunker"]');
@@ -426,13 +481,33 @@ export class AuthComponent {
   }
 
   /**
-   * Handle Amber login (Android, NIP-55)
+   * Handle Amber login. Two paths under one button:
+   *   - Capacitor APK: NIP-55 plugin → direct intent to Amber, returns
+   *     pubkey synchronously.
+   *   - Mobile-web: `window.location.href = nostrconnectUri` so Android
+   *     hands the URI to the registered handler (Amber). The login then
+   *     completes via the relay subscription opened by `initNostrConnect()`.
    */
   private async handleAmberLogin(): Promise<void> {
     const primaryContent = document.querySelector('.primary-content');
     const amberBtn = primaryContent?.querySelector('[data-action="use-amber"]') as HTMLButtonElement;
     if (!amberBtn) return;
 
+    // Mobile-web branch — deep-link hand-off. No button reset; the page
+    // is about to navigate away (intent) and login resolves in the
+    // background via the nostrconnect subscription.
+    if (!PlatformService.getInstance().isCapacitor) {
+      if (!this.nostrConnectUri) {
+        this.showError('Connection not ready yet — try again in a moment.');
+        return;
+      }
+      const statusElMobile = document.querySelector('[data-status="nostrconnect-mobile"]');
+      if (statusElMobile) statusElMobile.textContent = 'Opening Amber… approve there, then come back.';
+      window.location.href = this.nostrConnectUri;
+      return;
+    }
+
+    // Capacitor APK branch — synchronous plugin path.
     const originalText = '🔑 Use Amber';
     amberBtn.disabled = true;
     amberBtn.textContent = 'Opening Amber...';
