@@ -46,7 +46,7 @@
   &__title {
     @extend %h3;
     color: var(--color-5);
-    margin: 0 0 calc($gap / 4) 0;
+    margin: 0;
   }
 
   &__description {
@@ -91,7 +91,6 @@
 
     .nn-ui-toggle__content {
       display: block;
-      background-color: var(--color-2);
     }
   }
 }

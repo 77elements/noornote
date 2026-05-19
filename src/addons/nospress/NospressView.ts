@@ -2568,7 +2568,7 @@ export class NospressView extends View {
       : '';
 
     const addUrlButtonHtml = `
-      <button type="button" class="btn btn--passive btn--mini" data-action="add-url-toggle" data-menu-id="${escapeHtml(menu.id)}">+ Add URL</button>
+      <button type="button" class="btn btn--passive" data-action="add-url-toggle" data-menu-id="${escapeHtml(menu.id)}">+ Add URL</button>
     `;
 
     const addUrlFormHtml = `
@@ -2588,12 +2588,11 @@ export class NospressView extends View {
 
     return `
       <section class="nospress-nav__menu" data-menu-id="${escapeHtml(menu.id)}">
-        <header class="nospress-nav__menu-header">
-          <h3 class="nospress-nav__title">${escapeHtml(menu.name)}</h3>
-          ${menuActionsHtml}
-        </header>
-        <ol class="nospress-nav__items" data-menu-id="${escapeHtml(menu.id)}">${itemsHtml}</ol>
-        <div class="nospress-nav__add">
+        <fieldset class="nospress-nav__menu-fieldset">
+          <legend class="nospress-nav__title">${escapeHtml(menu.name)}${menuActionsHtml}</legend>
+          <ol class="nospress-nav__items" data-menu-id="${escapeHtml(menu.id)}">${itemsHtml}</ol>
+        </fieldset>
+        <div class="nospress-nav__add l-row--split">
           ${addPagePickerHtml}
           ${addUrlButtonHtml}
         </div>
@@ -2620,10 +2619,10 @@ export class NospressView extends View {
       <li class="nospress-nav__item" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}">
         <span class="nospress-nav__item-label">${escapeHtml(label)}${sub}</span>
         <span class="nospress-nav__item-actions">
-          <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-up" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}" ${upDisabled}>↑</button>
-          <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-down" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}" ${downDisabled}>↓</button>
           <div class="nospress-nav__item-move" data-move-target-picker data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}"></div>
-          <button type="button" class="btn btn--passive btn--mini" data-action="menu-item-remove" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}">×</button>
+          <button type="button" class="btn btn--passive btn--square-sm" data-action="menu-item-up" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}" ${upDisabled}>↑</button>
+          <button type="button" class="btn btn--passive btn--square-sm" data-action="menu-item-down" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}" ${downDisabled}>↓</button>
+          <button type="button" class="btn btn--passive btn--square-sm" data-action="menu-item-remove" data-menu-id="${escapeHtml(menu.id)}" data-item-index="${index}">×</button>
         </span>
       </li>
     `;
@@ -3151,6 +3150,19 @@ export class NospressView extends View {
     try {
       this.pageIndexService.addPage({ slug, title: title.trim() });
       await this.pageIndexOrchestrator.publishToRelays(this.pageIndexService.getIndex());
+
+      // One-shot: append the fresh page to Primary Navigation. The reconcile
+      // pass below only drops dead pages now, so this is the single place
+      // new pages enter the menu — keeps user-removed items from coming
+      // back after reload.
+      this.menuService.appendMenuItem(PRIMARY_MENU_ID, { type: 'page', pageSlug: slug });
+      if (this.editingMenuSet) {
+        const primary = this.editingMenuSet.menus.find(m => m.id === PRIMARY_MENU_ID);
+        if (primary) {
+          primary.items = [...primary.items, { type: 'page', pageSlug: slug }];
+        }
+      }
+
       await this.syncMenusAndPublish();
       await this.switchToPage(slug);
       ToastService.show(`Page "${title.trim()}" created`, 'success');

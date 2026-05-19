@@ -72,11 +72,14 @@ export function buildPrimaryMenuFromPages(pages: PageIndexEntry[]): NospressMenu
 /** Reconcile a menu's items with the current page set:
  *   - drop page items pointing to slugs that no longer exist
  *   - keep URL items untouched (no auto-sync semantics for those)
- *   - append new pages to the end (preserving user's existing order)
- *  Returns a new menu (caller decides whether to save). */
+ *  Returns a new menu (caller decides whether to save).
+ *
+ *  Note: NEW pages are NOT auto-appended here. Adding a fresh page to
+ *  Primary Navigation is a one-shot side-effect of page creation and
+ *  lives in the create-page handler — otherwise a reload would re-append
+ *  pages the user has deliberately removed from their menu. */
 export function reconcileMenuWithPages(menu: NospressMenu, pages: PageIndexEntry[]): NospressMenu {
   const validSlugs = new Set(pages.map(p => p.slug));
-  const present = new Set<string>();
   const kept: NavItem[] = [];
 
   for (const item of menu.items) {
@@ -86,19 +89,6 @@ export function reconcileMenuWithPages(menu: NospressMenu, pages: PageIndexEntry
     }
     if (validSlugs.has(item.pageSlug)) {
       kept.push(item);
-      present.add(item.pageSlug);
-    }
-  }
-
-  // Auto-append new pages ONLY for Primary Navigation. Other menus
-  // (Footer Menu, secondary nav, etc.) are user-curated — adding a new
-  // page should not spam every menu the user happens to have created.
-  // Dropping deleted pages still happens for all menus (above).
-  if (menu.id === PRIMARY_MENU_ID) {
-    for (const page of pages) {
-      if (!present.has(page.slug)) {
-        kept.push({ type: 'page', pageSlug: page.slug });
-      }
     }
   }
 

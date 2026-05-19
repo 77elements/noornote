@@ -1957,7 +1957,9 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 }
 
 .nospress-nav__item {
-  background: $color-2;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
   border-radius: $radius-xl;
   margin: 0 0 calc($gap / 4);
   padding: calc($gap / 2) calc($gap * 0.75);
@@ -1991,8 +1993,13 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
 }
 
 .nospress-nav__item-actions {
-  margin-left: calc($gap / 2);
   white-space: nowrap;
+}
+
+.nospress-nav__item-actions .btn--square-sm {
+  border: 1px solid var(--color-4);
+  width: 45px !important;
+  height: 45px !important;
 }
 
 // Inline wrapper for the "→ Move to …" picker between the up/down and
@@ -2015,6 +2022,11 @@ html.layout--phone .view-content--nospress.nospress-view--fullscreen {
   > * {
     margin-right: calc($gap / 4);
   }
+}
+
+// Spacing between Add-rows in stacked menus — last menu's row stays flush.
+.nospress-nav__menu:not(:last-child) .nospress-nav__add.l-row--split {
+  margin-bottom: $gap;
 }
 
 .nospress-nav__url-form {
