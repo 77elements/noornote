@@ -27,6 +27,8 @@ import { ArticleNotificationService } from '../../services/ArticleNotificationSe
 import type { ProfileListsComponent } from '../profile/ProfileListsComponent';
 import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
 import { ProfileVideosCarousel } from '../profile/ProfileVideosCarousel';
+import { ProfileListingsCarousel } from '../profile/ProfileListingsCarousel';
+import { isProfileListingsEnabled } from '../../addons/marketplace/index';
 import { FollowerCountService } from '../../services/FollowerCountService';
 import { AddonLoader } from '../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../addons/profile-recognition/runtime';
@@ -91,6 +93,7 @@ export class ProfileView extends View {
 
   // Articles carousel component
   private articlesCarousel: ProfileArticlesCarousel | null = null;
+  private listingsCarousel: ProfileListingsCarousel | null = null;
 
   // Videos carousel component
   private videosCarousel: ProfileVideosCarousel | null = null;
@@ -630,6 +633,7 @@ export class ProfileView extends View {
 
       <div class="profile-articles-mount"></div>
       <div class="profile-videos-mount"></div>
+      <div class="profile-listings-mount"></div>
       <div class="profile-zapstore-mount"></div>
       <div class="profile-timeline">
         <h2 class="profile-timeline-heading">Notes</h2>
@@ -652,6 +656,10 @@ export class ProfileView extends View {
 
       // Load videos carousel
       this.loadVideosCarousel();
+
+      // Load NIP-99 listings carousel (gated by profile owner's NIP-78
+      // visibility event — see loadListingsCarousel for details)
+      this.loadListingsCarousel();
 
       // Load Zapstore apps
       this.loadZapstoreApps();
@@ -1261,6 +1269,23 @@ export class ProfileView extends View {
   }
 
   /**
+   * Load NIP-99 listings carousel — gated by the viewer's local
+   * `isProfileListingsEnabled()` preference. Applies uniformly to own
+   * and foreign profiles. Listings are public events, no NIP-78 sync
+   * required.
+   */
+  private async loadListingsCarousel(): Promise<void> {
+    if (!isProfileListingsEnabled()) return;
+
+    const mount = this.container.querySelector('.profile-listings-mount');
+    if (!mount) return;
+
+    this.listingsCarousel = new ProfileListingsCarousel(this.pubkey);
+    const element = await this.listingsCarousel.render();
+    mount.appendChild(element);
+  }
+
+  /**
    * Load Zapstore apps for this user
    */
   private async loadZapstoreApps(): Promise<void> {
@@ -1478,6 +1503,10 @@ export class ProfileView extends View {
     }
     if (this.videosCarousel) {
       this.videosCarousel.destroy();
+    }
+    if (this.listingsCarousel) {
+      this.listingsCarousel.destroy();
+      this.listingsCarousel = null;
     }
     this.container.remove();
   }

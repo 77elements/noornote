@@ -1,6 +1,9 @@
 /**
  * MarketplaceSettingsSection
  * Toggle the Marketplace Add-On on/off.
+ * Toggle profile-page Products carousel (viewer-side preference — shows
+ * NIP-99 listings on every visited profile that has any, NoorNote user
+ * or not).
  * Toggle timeline listing injection with frequency selector.
  * Emits 'marketplace:toggle' so sidebar updates instantly (no reload needed).
  */
@@ -11,6 +14,7 @@ import {
   isMarketplaceEnabled, setMarketplaceEnabled,
   isTimelineListingsEnabled, setTimelineListingsEnabled,
   getTimelineListingFrequency, setTimelineListingFrequency,
+  isProfileListingsEnabled, setProfileListingsEnabled,
   type ListingFrequency
 } from '../../addons/marketplace/index';
 import { EventBus } from '../../services/EventBus';
@@ -19,6 +23,7 @@ import { ToastService } from '../../services/ToastService';
 export class MarketplaceSettingsSection extends SettingsSection {
   private marketplaceSwitch: Switch | null = null;
   private timelineSwitch: Switch | null = null;
+  private profileListingsSwitch: Switch | null = null;
 
   constructor() {
     super('marketplace-settings');
@@ -43,6 +48,19 @@ export class MarketplaceSettingsSection extends SettingsSection {
         bus.emit('marketplace:toggle', { enabled: checked });
         this.updateTimelineVisibility(contentContainer);
         ToastService.show(checked ? 'Marketplace enabled' : 'Marketplace disabled', 'success');
+      }
+    });
+
+    this.profileListingsSwitch = new Switch({
+      label: '',
+      checked: isProfileListingsEnabled(),
+      onChange: (checked) => {
+        setProfileListingsEnabled(checked);
+        EventBus.getInstance().emit('marketplace:profile-listings-toggle', { enabled: checked });
+        ToastService.show(
+          checked ? 'Products carousel enabled on profiles' : 'Products carousel hidden on profiles',
+          'success'
+        );
       }
     });
 
@@ -74,6 +92,11 @@ export class MarketplaceSettingsSection extends SettingsSection {
 
       <div class="marketplace-timeline-settings${marketplaceEnabled ? '' : ' is-hidden'}">
         <div class="setting">
+          <span class="setting__label">Show user's products on the profile page</span>
+          <div class="setting__control">${this.profileListingsSwitch.render()}</div>
+        </div>
+
+        <div class="setting">
           <span class="setting__label">Show listings from people I follow in my timeline</span>
           <div class="setting__control">${this.timelineSwitch.render()}</div>
         </div>
@@ -90,6 +113,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
     `;
 
     this.marketplaceSwitch.setupEventListeners(contentContainer);
+    this.profileListingsSwitch.setupEventListeners(contentContainer);
     this.timelineSwitch.setupEventListeners(contentContainer);
 
     // Frequency radio buttons
@@ -128,6 +152,10 @@ export class MarketplaceSettingsSection extends SettingsSection {
     if (this.marketplaceSwitch) {
       this.marketplaceSwitch.destroy();
       this.marketplaceSwitch = null;
+    }
+    if (this.profileListingsSwitch) {
+      this.profileListingsSwitch.destroy();
+      this.profileListingsSwitch = null;
     }
     if (this.timelineSwitch) {
       this.timelineSwitch.destroy();

@@ -58,3 +58,13 @@ export function getTimelineListingFrequency(): ListingFrequency {
 export function setTimelineListingFrequency(frequency: ListingFrequency): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_TIMELINE_FREQUENCY, frequency);
 }
+
+export function isProfileListingsEnabled(): boolean {
+  return PerAccountLocalStorage.getInstance().get<boolean>(
+    StorageKeys.MARKETPLACE_PROFILE_LISTINGS_ENABLED, false
+  );
+}
+
+export function setProfileListingsEnabled(enabled: boolean): void {
+  PerAccountLocalStorage.getInstance().set(StorageKeys.MARKETPLACE_PROFILE_LISTINGS_ENABLED, enabled);
+}

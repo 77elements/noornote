@@ -1,0 +1,39 @@
+/**
+ * Profile Listings Carousel
+ * Card content styles for NIP-99 listing cards on the ProfileView.
+ * Structure inherited from nn-scroll-carousel; only card width and
+ * media height differ from the articles/videos variants.
+ */
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.profile-listings-carousel {
+  .nn-card {
+    // Mirrors ProfileArticlesCarousel sizing — container queries on the
+    // scroll-carousel viewport so cards adapt to the carousel's width
+    // (not the page's), keeping the same look in Columns cells.
+    width: 85cqw;
+    max-width: 280px;
+
+    @container nn-scroll-carousel (min-width: 360px) {
+      width: 220px;
+    }
+
+    @container nn-scroll-carousel (min-width: 600px) {
+      width: 260px;
+    }
+
+    @container nn-scroll-carousel (min-width: 900px) {
+      width: 280px;
+    }
+  }
+
+  .nn-card__media {
+    height: 120px;
+  }
+
+  .nn-card__media--empty {
+    background: linear-gradient(135deg, var(--color-1) 0%, var(--color-2) 100%);
+  }
+}

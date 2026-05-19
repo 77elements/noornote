@@ -95,6 +95,7 @@ export const StorageKeys = {
   MARKETPLACE_ENABLED: 'noornote_marketplace_enabled_map',
   MARKETPLACE_TIMELINE_ENABLED: 'noornote_marketplace_timeline_enabled_map',
   MARKETPLACE_TIMELINE_FREQUENCY: 'noornote_marketplace_timeline_frequency_map',
+  MARKETPLACE_PROFILE_LISTINGS_ENABLED: 'noornote_marketplace_profile_listings_enabled_map',
   HASHTAG_SUBSCRIPTIONS_ENABLED: 'noornote_hashtag_subscriptions_enabled_map',
   PROFILE_RECOGNITION_WINDOW: 'noornote_profile_recognition_window_map',
   LIST_SETTINGS_ENABLED: 'noornote_list_settings_enabled_map',
