@@ -24,6 +24,7 @@ import {
   LINK_SUBSCOPE_GROUPS,
   MOBILE_MENU_SECTIONS,
   NAV_MENU_DESKTOP_GROUPS,
+  NAV_MENU_UL_EXTRA_GROUPS,
   PORTFOLIO_GROUPS,
   WEBLOG_GROUPS,
   getDefaultDisplayFor,
@@ -697,12 +698,23 @@ function renderNavMenuDesktopSections(
   opts: RenderPropertyPanelOptions,
   keys: ReadonlyArray<NavMenuDesktopKey>,
 ): string {
-  const resolvedGroups: ResolvedPropertyGroup[] = NAV_MENU_DESKTOP_GROUPS.map(g => ({
+  const baseGroups: ResolvedPropertyGroup[] = NAV_MENU_DESKTOP_GROUPS.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const ulExtraGroups: ResolvedPropertyGroup[] = NAV_MENU_UL_EXTRA_GROUPS.map(g => ({
     key: g.key,
     label: g.label,
     entries: resolveGroupEntries(g.props),
   }));
   return keys.map(key => {
+    // Insert the `ul`-only extras between Layout (index 0) and Spacing
+    // (index 1) so List sits up top next to its structural relatives,
+    // rather than being shoved past Border at the bottom of the panel.
+    const resolvedGroups = key === 'ul'
+      ? [baseGroups[0]!, ...ulExtraGroups, ...baseGroups.slice(1)]
+      : baseGroups;
     const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `navMenu.${key}.`);
     return `
       <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-nav-menu-section="${key}">

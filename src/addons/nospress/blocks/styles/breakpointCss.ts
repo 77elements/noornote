@@ -23,6 +23,7 @@ import {
   CARD_HOVER_GROUPS,
   LINK_SUBSCOPE_GROUPS,
   NAV_MENU_DESKTOP_GROUPS,
+  NAV_MENU_UL_EXTRA_GROUPS,
   PORTFOLIO_GROUPS,
   WEBLOG_GROUPS,
   flattenGroupProps,
@@ -64,10 +65,14 @@ const CARD_HOVER_SCHEMA: PropertyEntry[] = CARD_HOVER_GROUPS
   .flatMap(g => flattenGroupProps(g.props));
 
 /** Same flat-schema treatment for the nav-menu desktop sub-scope
- *  (ul/li). Currently identical to LINK_SUBSCOPE_SCHEMA — kept as a
- *  separate symbol so future divergence stays cheap. */
-const NAV_MENU_DESKTOP_SCHEMA: PropertyEntry[] = NAV_MENU_DESKTOP_GROUPS
-  .flatMap(g => flattenGroupProps(g.props));
+ *  (ul/li/aActive). Includes the `ul`-only extras (listStyleType etc.)
+ *  in the union — they only emit when the user actually set them on the
+ *  `ul` sub-key, since the panel only exposes them there. Keeping one
+ *  shared schema avoids a per-key emit branch in `buildBlockNavMenuDesktopCss`. */
+const NAV_MENU_DESKTOP_SCHEMA: PropertyEntry[] = [
+  ...NAV_MENU_DESKTOP_GROUPS.flatMap(g => flattenGroupProps(g.props)),
+  ...NAV_MENU_UL_EXTRA_GROUPS.flatMap(g => flattenGroupProps(g.props)),
+];
 
 /** Flat per-key schemas for the bookmark-folder sub-scope. Each entry
  *  is the single PropertyEntry the section exposes (background for

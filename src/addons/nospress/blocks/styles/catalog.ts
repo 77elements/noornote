@@ -184,6 +184,26 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
   textShadow:   { kind: 'text-shadow', key: 'textShadow', label: 'Text shadow' },
   boxShadow:    { kind: 'single', key: 'boxShadow',    label: 'Box shadow',    cssProp: 'box-shadow',    placeholder: 'e.g. 0 4px 12px rgba(0,0,0,0.15)' },
+  listStyleType: {
+    // Surfaced only on the nav-menu `ul` sub-scope (see
+    // `NAV_MENU_UL_EXTRA_GROUPS`). Empty first option keeps CustomDropdown
+    // from mislabelling the trigger as the first concrete value when
+    // nothing is set.
+    kind: 'dropdown', key: 'listStyleType', label: 'List style', cssProp: 'list-style-type',
+    options: [
+      { value: '',                    label: '(default)' },
+      { value: 'none',                label: 'none' },
+      { value: 'disc',                label: 'disc' },
+      { value: 'circle',              label: 'circle' },
+      { value: 'square',              label: 'square' },
+      { value: 'decimal',             label: 'decimal' },
+      { value: 'decimal-leading-zero', label: 'decimal-leading-zero' },
+      { value: 'lower-roman',         label: 'lower-roman' },
+      { value: 'upper-roman',         label: 'upper-roman' },
+      { value: 'lower-alpha',         label: 'lower-alpha' },
+      { value: 'upper-alpha',         label: 'upper-alpha' },
+    ],
+  },
 };
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -245,6 +265,14 @@ export const LINK_SUBSCOPE_GROUPS: PropertyGroup[] = [
  *  (ul/li). Reuses the link sub-scope group set — `<ul>` and `<li>` get
  *  the same kind of structural / typography / box styling. */
 export const NAV_MENU_DESKTOP_GROUPS: PropertyGroup[] = LINK_SUBSCOPE_GROUPS;
+
+/** Extra groups appended ONLY to the `ul` sub-scope panel — bullet
+ *  marker controls that don't make sense on `<li>` or the active link
+ *  selector. Sits after the standard groups, matching the bottom-of-
+ *  panel placement of Effects on container blocks. */
+export const NAV_MENU_UL_EXTRA_GROUPS: PropertyGroup[] = [
+  { key: 'list', label: 'List', props: ['listStyleType'] },
+];
 
 /** Per-key restricted schemas for the bookmark-folder sub-scope. Each
  *  section exposes EXACTLY ONE property — the NoorNote default chrome

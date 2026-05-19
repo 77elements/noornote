@@ -214,6 +214,10 @@ export interface CommonStyle {
    *  Applies to the block itself in regular Typography AND to any link
    *  sub-scope where overriding the underline is the most common case. */
   textDecoration?: string;
+  /** CSS `list-style-type` (none / disc / circle / square / decimal / …).
+   *  Surfaced only inside the nav-menu `ul` sub-scope so the bullet
+   *  marker on inline navigation items can be turned off or restyled. */
+  listStyleType?: string;
   /** Horizontal placement of an inline-block child within its parent — used
    *  by the `dm-button` block to position the button left / center / right
    *  inside the page flow. Emitted as `text-align` on an outer wrapper DIV
@@ -340,7 +344,7 @@ export interface QuadPropertyEntry {
  *  CustomDropdown instance after each render. */
 export interface DropdownPropertyEntry {
   kind: 'dropdown';
-  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton' | 'justifyItems' | 'alignItems' | 'fontFamily';
+  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton' | 'justifyItems' | 'alignItems' | 'fontFamily' | 'listStyleType';
   label: string;
   cssProp: string;
   options: Array<{ value: string; label: string }>;
