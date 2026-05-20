@@ -12,6 +12,7 @@ import { NoteRendererFactory } from './note-rendering/NoteRendererFactory';
 import { NoteStructureBuilder } from './note-rendering/NoteStructureBuilder';
 import { FallbackElementFactory } from './note-factories/FallbackElementFactory';
 import { InteractionStatusLine } from './InteractionStatusLine';
+import { isEventHidden } from '../../lists/mutes';
 
 // Import types for internal use
 import type { NoteUIOptions } from './types/NoteTypes';
@@ -61,6 +62,23 @@ export class NoteUI {
     }
 
     try {
+      // Last-line-of-defense mute guard. Any render path that bypassed an
+      // upstream fetch-time filter (timeline, replies, quoted reposts,
+      // notifications, search, marketplace, …) lands here — and a muted
+      // author MUST never reach the DOM. The synchronous isEventHidden()
+      // covers direct authors plus kind:6/16 transitive (original-author
+      // p-tag), so e.g. a reposter we follow boosting a muted user is also
+      // suppressed. Returning a zero-height hidden placeholder keeps the
+      // caller's appendChild(...) contract intact without producing visual
+      // output. Counts are still kept accurate by proactive fetch-time
+      // filtering at the orchestrator/manager level.
+      if (isEventHidden(event)) {
+        const placeholder = document.createElement('div');
+        placeholder.hidden = true;
+        placeholder.dataset.muteHidden = '1';
+        return placeholder;
+      }
+
       // Check if we've exceeded maximum nesting depth
       if (opts.depth! > NoteUI.MAX_NESTING_DEPTH) {
         console.warn(`⚠️ Max nesting depth (${NoteUI.MAX_NESTING_DEPTH}) reached for note ${event.id?.slice(0, 8) ?? 'unknown'}`);

@@ -18,6 +18,7 @@ import { Router } from '../../../services/Router';
 import { encodeNevent } from '../../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { fetchNostrEvents } from '../../../helpers/fetchNostrEvents';
+import { filterVisibleEvents } from '../../../lists/mutes';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export interface ThreadNode {
@@ -90,8 +91,14 @@ export class ThreadManager {
           && /nostr:(nevent1|note1|naddr1)/.test(event.content);
       });
 
-      this.systemLogger.info('ThreadManager', `Fetched reposts: ${qTagResult.events.length + eTagResult.events.length}, quoted: ${quotedReposts.length}`);
-      return quotedReposts;
+      // Drop QRs from muted authors at fetch time so the displayed count
+      // ("Replies & Quotes (N)") matches what the user actually sees. The
+      // NoteUI render-time guard is the fail-safe, but pre-filtering keeps
+      // counts honest.
+      const visibleQuotedReposts = filterVisibleEvents(quotedReposts);
+
+      this.systemLogger.info('ThreadManager', `Fetched reposts: ${qTagResult.events.length + eTagResult.events.length}, quoted: ${quotedReposts.length}, visible: ${visibleQuotedReposts.length}`);
+      return visibleQuotedReposts;
     } catch (error) {
       this.systemLogger.error('ThreadManager', `Failed to fetch quoted reposts: ${error}`);
       return [];

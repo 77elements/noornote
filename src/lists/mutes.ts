@@ -180,6 +180,7 @@ export function getMuteItems(): MuteItem[] {
  */
 export function setMuteItems(items: MuteItem[]): void {
   storage.set(StorageKeys.MUTES, items);
+  invalidateMutedSetCache();
   eventBus.emit('mute:updated', {});
 }
 
@@ -187,6 +188,7 @@ export function setMuteItems(items: MuteItem[]): void {
  * Clear mute items from browser storage
  */
 export function clearMuteItems(): void {
+  invalidateMutedSetCache();
   storage.remove(StorageKeys.MUTES);
 }
 
@@ -464,6 +466,73 @@ export function isTemporarilyUnmuted(pubkey: string): boolean {
 
 export function clearTemporaryUnmutes(): void {
   temporarilyUnmuted.clear();
+}
+
+// ============================================================
+// CENTRAL VISIBILITY FILTER
+// ============================================================
+//
+// Single source of truth for "is this user/event hidden from the UI".
+// Use isEventHidden() / filterVisibleEvents() at every choke point that
+// surfaces user content — feeds, replies, quotes, search, reactions,
+// notifications, marketplace, … — and at the render layer (NoteUI) as
+// the last-line-of-defense so nothing from a muted user can leak.
+//
+// Cache is invalidated whenever setMuteItems / clearMuteItems / temp-unmute
+// mutate the underlying list, plus on user:logout so an account switch
+// starts fresh. PerAccountLocalStorage keeps the underlying items per user,
+// but the in-memory Set is global and needs explicit invalidation.
+
+let _mutedPubkeysSet: Set<string> | null = null;
+
+function getMutedPubkeysSet(): Set<string> {
+  if (_mutedPubkeysSet === null) {
+    _mutedPubkeysSet = new Set(getAllMutedUsers());
+  }
+  return _mutedPubkeysSet;
+}
+
+function invalidateMutedSetCache(): void {
+  _mutedPubkeysSet = null;
+}
+
+// Drop the cache when the active account changes — the new account has its
+// own mute list (PerAccountLocalStorage scoping).
+eventBus.on('user:logout', () => invalidateMutedSetCache());
+
+/**
+ * Sync, O(1) predicate. Returns true if the event should be hidden from the UI.
+ * Checks:
+ *   1. Direct author muted (most common case).
+ *   2. NIP-18 repost (kind 6/16): original author from p-tag muted.
+ *   3. Temporary unmute overrides 1/2 (user explicitly clicked "show this user").
+ *
+ * Intentionally NOT recursive into quoted/inline events — we cannot decode
+ * them sync without a fetch round-trip. The render layer guards quoted notes
+ * separately via QuotedNoteRenderer, which calls isUserMuted() on the
+ * resolved quoted-author once it's fetched.
+ */
+export function isEventHidden(event: NostrEvent): boolean {
+  const mutedSet = getMutedPubkeysSet();
+
+  if (mutedSet.has(event.pubkey) && !isTemporarilyUnmuted(event.pubkey)) {
+    return true;
+  }
+
+  if (event.kind === 6 || event.kind === 16) {
+    const pTag = event.tags.find(tag => tag[0] === 'p');
+    const original = pTag?.[1];
+    if (original && mutedSet.has(original) && !isTemporarilyUnmuted(original)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/** Convenience: filter an array of events to only visible ones. */
+export function filterVisibleEvents(events: NostrEvent[]): NostrEvent[] {
+  return events.filter(event => !isEventHidden(event));
 }
 
 // ============================================================
@@ -994,6 +1063,10 @@ export const MuteOrchestrator = {
     removeTemporaryUnmute,
     isTemporarilyUnmuted,
     clearTemporaryUnmutes,
+
+    // Central visibility filter (sync, the workhorse for all render paths)
+    isEventHidden,
+    filterVisibleEvents,
 
     // Browser storage access
     getBrowserItems: () => getMuteItems(),
