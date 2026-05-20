@@ -285,12 +285,54 @@ const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',  
 // without surfacing a divider control on a button or text block.
 const GROUP_DIVIDER:    PropertyGroup = { key: 'divider',    label: 'Divider',    props: ['divider'] };
 
-/** Composition shorthand for prose-flow blocks (heading/text/list/links/
- *  dm-button/quote/button-cta) — typography + width sizing, no height
- *  (forcing height on text content clips silently). Background sits
- *  inside GROUP_TYPOGRAPHY (paired with color), so no separate
- *  GROUP_BACKGROUND here. */
-const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS];
+/** Canonical block-schema composer. The display order in the Properties
+ *  panel ALWAYS is: Layout → Spacing → Sizing → Content (Typography or
+ *  Background) → Border → Effects → [extras]. Per-block schemas pick a
+ *  layout variant + sizing strategy + content strategy + optional
+ *  trailing groups. Adding a new universal group (e.g. an "Animation"
+ *  section) = ONE edit here and it propagates to every block.
+ *
+ *  - `layout`  — defaults to `GROUP_LAYOUT`; buttons swap in
+ *    `GROUP_LAYOUT_BUTTON` (extra `alignButton`), columns in
+ *    `GROUP_LAYOUT_COLUMNS` (extra grid props).
+ *  - `sizing`  — `'width'` for prose-flow (forcing height clips silently),
+ *    `'full'` for container/media wrappers (hero bands, fixed-aspect
+ *    boxes), `'none'` for the page surface (fills its host).
+ *  - `content` — `'typography'` for text-bearing blocks (background
+ *    sits paired with color inside Typography); `'background'` for
+ *    container/media blocks where typography doesn't apply; `'none'`
+ *    for blocks that handle their own (currently unused — both paths
+ *    surface at least one of the two).
+ *  - `extras` — appended after the canonical tail. Used by `div` /
+ *    `card` to attach `GROUP_DIVIDER`, by `text` to attach
+ *    `GROUP_TEXT_ALIGN`. */
+type BlockSchemaOpts = {
+  layout?: PropertyGroup;
+  sizing?: 'width' | 'full' | 'none';
+  content?: 'typography' | 'background' | 'none';
+  extras?: PropertyGroup[];
+};
+
+function buildBlockSchema(opts: BlockSchemaOpts = {}): PropertyGroup[] {
+  const layout = opts.layout ?? GROUP_LAYOUT;
+  const sizingGroups =
+    opts.sizing === 'full' ? [GROUP_SIZING_FULL] :
+    opts.sizing === 'none' ? [] :
+    [GROUP_SIZING_W];
+  const contentGroups =
+    opts.content === 'background' ? [GROUP_BACKGROUND] :
+    opts.content === 'none'       ? [] :
+    [GROUP_TYPOGRAPHY];
+  return [
+    layout,
+    GROUP_SPACING,
+    ...sizingGroups,
+    ...contentGroups,
+    GROUP_BORDER,
+    GROUP_EFFECTS,
+    ...(opts.extras ?? []),
+  ];
+}
 
 /** Standalone single-prop group used to surface `text-align` ONLY on
  *  heading + text blocks (the other TEXTUAL_GROUPS sharers have
@@ -441,53 +483,52 @@ export const WEBLOG_GROUPS: Record<WeblogKey, PropertyGroup[]> = {
   ],
 };
 
-/** Composition shorthand for media/sub-component containers — full
- *  sizing (width + height for hero bands, fixed-aspect boxes), no
- *  typography (text styling doesn't apply to image/video/etc.).
- *  Background stays in its own section here — no typography to merge
- *  into. */
-const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS];
-
 /**
  * Per-scope group composition. The scope key matches whatever comes
  * BEFORE the first `:` in the runtime scope string — so 'page' and
  * 'heading:<uuid>' both resolve via this map. Add new rows here when a
  * block type starts supporting style.
  *
- * Display order is the canonical group order: Spacing → Sizing →
- * Typography → Background → Border → Effects. Each scope's array is
- * already authored in that order so the renderer iterates as-is.
+ * Every entry routes through `buildBlockSchema()` so the canonical
+ * display order (Layout → Spacing → Sizing → Typography/Background →
+ * Border → Effects → extras) stays consistent. Per-block variations
+ * are expressed as options to the builder (layout variant, sizing
+ * strategy, content strategy, extras) rather than ad-hoc re-orderings.
+ * The `divider` HR block is the only entry that does NOT route through
+ * the builder — it's intentionally a stripped-down 3-row schema with
+ * a single color-only typography slot.
  */
 export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // Page: everything except sizing — the page surface fills its host.
-  page: [GROUP_LAYOUT, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
-  text:              [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
-  list:              TEXTUAL_GROUPS,
-  links:             TEXTUAL_GROUPS,
-  'dm-button':       [GROUP_LAYOUT_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
-  // Divider block is restricted: only `color` from typography (no font
-  // styling — there's no text to style), plus standard box edges.
+  page: buildBlockSchema({ sizing: 'none' }),
+  text:              buildBlockSchema({ extras: [GROUP_TEXT_ALIGN] }),
+  list:              buildBlockSchema(),
+  links:             buildBlockSchema(),
+  'dm-button':       buildBlockSchema({ layout: GROUP_LAYOUT_BUTTON }),
+  // Divider block is intentionally stripped down: it's a horizontal
+  // rule, no content of its own to style — just a color slot on the
+  // typography axis plus box edges. Does NOT route through buildBlockSchema.
   divider:           [
     GROUP_SPACING,
     { key: 'typography', label: 'Typography', props: ['color'] },
     GROUP_BORDER,
   ],
-  image:             CONTAINER_GROUPS,
-  gallery:           CONTAINER_GROUPS,
-  embed:             CONTAINER_GROUPS,
-  'bookmark-folder': CONTAINER_GROUPS,
-  columns:           [GROUP_LAYOUT_COLUMNS, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS],
-  'profile-card':    CONTAINER_GROUPS,
-  quote:             TEXTUAL_GROUPS,
-  'button-cta':      [GROUP_LAYOUT_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
-  video:             CONTAINER_GROUPS,
-  audio:             CONTAINER_GROUPS,
-  'articles-list':   CONTAINER_GROUPS,
-  weblog:            CONTAINER_GROUPS,
-  portfolio:         CONTAINER_GROUPS,
+  image:             buildBlockSchema({ sizing: 'full', content: 'background' }),
+  gallery:           buildBlockSchema({ sizing: 'full', content: 'background' }),
+  embed:             buildBlockSchema({ sizing: 'full', content: 'background' }),
+  'bookmark-folder': buildBlockSchema({ sizing: 'full', content: 'background' }),
+  columns:           buildBlockSchema({ layout: GROUP_LAYOUT_COLUMNS, sizing: 'full', content: 'background' }),
+  'profile-card':    buildBlockSchema({ sizing: 'full', content: 'background' }),
+  quote:             buildBlockSchema(),
+  'button-cta':      buildBlockSchema({ layout: GROUP_LAYOUT_BUTTON }),
+  video:             buildBlockSchema({ sizing: 'full', content: 'background' }),
+  audio:             buildBlockSchema({ sizing: 'full', content: 'background' }),
+  'articles-list':   buildBlockSchema({ sizing: 'full', content: 'background' }),
+  weblog:            buildBlockSchema({ sizing: 'full', content: 'background' }),
+  portfolio:         buildBlockSchema({ sizing: 'full', content: 'background' }),
   // Nav-menu wrapper: like the textual blocks plus full sizing — the
   // menu container is positioned/sized like a media block.
-  'nav-menu':        [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
+  'nav-menu':        buildBlockSchema({ sizing: 'full' }),
   // Nav-menu mobile drawer sub-scope is rendered through a separate
   // section-aware path (`renderMobileMenuSubScope`), not via the flat
   // matrix here — the panel is per-selector accordion sections, each
@@ -496,18 +537,18 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // aside/nav/fieldset) is the most permissive container — full
   // typography (users do put headings + text inside), full sizing, plus
   // the divider edge-shapes that no other block scope supports.
-  div:               [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS, GROUP_DIVIDER],
+  div:               buildBlockSchema({ sizing: 'full', extras: [GROUP_DIVIDER] }),
   // Card: same permissive container schema as div — user typically tweaks
   // margin/padding, background (to override the .nn-card var(--color-2)),
   // border-radius (the molecule defaults to $radius-pill), and effects
   // (shadow / hover lift).
-  card:              [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS, GROUP_DIVIDER],
+  card:              buildBlockSchema({ sizing: 'full', extras: [GROUP_DIVIDER] }),
   // Vendor footer (.user-site__footer) — site-wide platform-attribution
   // wrapper, fixed content, fully styleable. Same schema as textual
   // blocks plus the link sub-scope (rendered as the inner <a>). Storage
   // lives in siteSettings.vendorFooter, NOT as a regular block in the
   // page tree.
-  'vendor-footer':   TEXTUAL_GROUPS,
+  'vendor-footer':   buildBlockSchema(),
 };
 
 // ──────────────────────────────────────────────────────────────────────────
