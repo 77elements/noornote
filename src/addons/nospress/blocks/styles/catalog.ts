@@ -234,11 +234,31 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
 // Property groups — canonical CSS-concept partition
 // ──────────────────────────────────────────────────────────────────────────
 
-// Position + Display + grid-gap fold into one "Layout" section. The first
-// row pairs position + display (two dropdowns side-by-side). positionInsets
-// is a quad — needs the full row width — and gridGap is conditional, so
-// both stay single below the pair.
-const GROUP_LAYOUT:     PropertyGroup = { key: 'layout',     label: 'Layout',     props: [['position', 'display'], 'positionInsets', 'gridGap', 'zIndex'] };
+// Layout group is built from a shared spine — position/display pair,
+// positionInsets, gridGap, zIndex tail — with two optional injection
+// points (`afterInsets`, `afterGap`) that the button/columns variants
+// use to inject their block-specific extras (alignButton between gap
+// and tail, gridTemplateColumns between insets and gap, columnOrder +
+// justify/align after gap). Adding a new property to ALL layout
+// variants = one edit to the spine; adding to a single variant = pass
+// it in the injection arg of that variant.
+type LayoutInjections = { afterInsets?: Array<PropertyKey | PropertyKey[]>; afterGap?: Array<PropertyKey | PropertyKey[]> };
+function buildLayoutGroup(extras: LayoutInjections = {}): PropertyGroup {
+  return {
+    key: 'layout',
+    label: 'Layout',
+    props: [
+      ['position', 'display'],
+      'positionInsets',
+      ...(extras.afterInsets ?? []),
+      'gridGap',
+      ...(extras.afterGap ?? []),
+      'zIndex',
+    ],
+  };
+}
+
+const GROUP_LAYOUT:     PropertyGroup = buildLayoutGroup();
 const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
 const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: [['width', 'height']] };
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
@@ -255,14 +275,22 @@ const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',   
 // Transition trio sits alongside since it drives base→state-class
 // animations (must be on the base selector to animate bi-directionally,
 // see STICKY_SUBSCOPE_GROUPS notes).
-const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['boxShadow', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'divider'] };
+//
+// Surfaced on EVERY visible block via STYLE_MATRIX — keeps the editor
+// flexible (any block can carry a drop-shadow / animated state change).
+const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['boxShadow', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction'] };
+// Divider: clip-path top/bottom edge cuts, only meaningful on full-width
+// container blocks (`div`, `card`). Splitting it out of GROUP_EFFECTS so
+// the cosmetic Effects group can be applied across the whole matrix
+// without surfacing a divider control on a button or text block.
+const GROUP_DIVIDER:    PropertyGroup = { key: 'divider',    label: 'Divider',    props: ['divider'] };
 
 /** Composition shorthand for prose-flow blocks (heading/text/list/links/
  *  dm-button/quote/button-cta) — typography + width sizing, no height
  *  (forcing height on text content clips silently). Background sits
  *  inside GROUP_TYPOGRAPHY (paired with color), so no separate
  *  GROUP_BACKGROUND here. */
-const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER];
+const TEXTUAL_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS];
 
 /** Standalone single-prop group used to surface `text-align` ONLY on
  *  heading + text blocks (the other TEXTUAL_GROUPS sharers have
@@ -275,13 +303,16 @@ const GROUP_TEXT_ALIGN: PropertyGroup = { key: 'text-align', label: 'Alignment',
  *  positionInsets/gridGap — no separate Alignment section, mirrors the
  *  dm-button placement so the same property lands in the same slot
  *  regardless of which button block the user is editing. */
-const GROUP_LAYOUT_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', 'alignButton', 'zIndex'] };
+const GROUP_LAYOUT_BUTTON: PropertyGroup = buildLayoutGroup({ afterGap: ['alignButton'] });
 
 /** Columns block uses a slightly fattened Layout group: `gridTemplateColumns`
  *  is exposed right before `gridGap` so the user can override the preset
  *  picker's `--nospress-cols` with a raw `grid-template-columns` value
  *  (mix of `fr`, fixed widths, `minmax()`, `auto-fit`, …). */
-const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', 'columnOrder', ['justifyItems', 'alignItems'], 'zIndex'] };
+const GROUP_LAYOUT_COLUMNS: PropertyGroup = buildLayoutGroup({
+  afterInsets: ['gridTemplateColumns'],
+  afterGap: ['columnOrder', ['justifyItems', 'alignItems']],
+});
 
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
@@ -415,7 +446,7 @@ export const WEBLOG_GROUPS: Record<WeblogKey, PropertyGroup[]> = {
  *  typography (text styling doesn't apply to image/video/etc.).
  *  Background stays in its own section here — no typography to merge
  *  into. */
-const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER];
+const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS];
 
 /**
  * Per-scope group composition. The scope key matches whatever comes
@@ -429,11 +460,11 @@ const CONTAINER_GROUPS: PropertyGroup[] = [GROUP_LAYOUT, GROUP_SPACING, GROUP_SI
  */
 export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // Page: everything except sizing — the page surface fills its host.
-  page: [GROUP_LAYOUT, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BORDER],
+  page: [GROUP_LAYOUT, GROUP_SPACING, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
   text:              [...TEXTUAL_GROUPS, GROUP_TEXT_ALIGN],
   list:              TEXTUAL_GROUPS,
   links:             TEXTUAL_GROUPS,
-  'dm-button':       [GROUP_LAYOUT_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER],
+  'dm-button':       [GROUP_LAYOUT_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
   // Divider block is restricted: only `color` from typography (no font
   // styling — there's no text to style), plus standard box edges.
   divider:           [
@@ -445,10 +476,10 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   gallery:           CONTAINER_GROUPS,
   embed:             CONTAINER_GROUPS,
   'bookmark-folder': CONTAINER_GROUPS,
-  columns:           [GROUP_LAYOUT_COLUMNS, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER],
+  columns:           [GROUP_LAYOUT_COLUMNS, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_BACKGROUND, GROUP_BORDER, GROUP_EFFECTS],
   'profile-card':    CONTAINER_GROUPS,
   quote:             TEXTUAL_GROUPS,
-  'button-cta':      [GROUP_LAYOUT_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER],
+  'button-cta':      [GROUP_LAYOUT_BUTTON, GROUP_SPACING, GROUP_SIZING_W, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
   video:             CONTAINER_GROUPS,
   audio:             CONTAINER_GROUPS,
   'articles-list':   CONTAINER_GROUPS,
@@ -456,7 +487,7 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   portfolio:         CONTAINER_GROUPS,
   // Nav-menu wrapper: like the textual blocks plus full sizing — the
   // menu container is positioned/sized like a media block.
-  'nav-menu':        [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER],
+  'nav-menu':        [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
   // Nav-menu mobile drawer sub-scope is rendered through a separate
   // section-aware path (`renderMobileMenuSubScope`), not via the flat
   // matrix here — the panel is per-selector accordion sections, each
@@ -465,12 +496,12 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // aside/nav/fieldset) is the most permissive container — full
   // typography (users do put headings + text inside), full sizing, plus
   // the divider edge-shapes that no other block scope supports.
-  div:               [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
+  div:               [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS, GROUP_DIVIDER],
   // Card: same permissive container schema as div — user typically tweaks
   // margin/padding, background (to override the .nn-card var(--color-2)),
   // border-radius (the molecule defaults to $radius-pill), and effects
   // (shadow / hover lift).
-  card:              [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS],
+  card:              [GROUP_LAYOUT, GROUP_SPACING, GROUP_SIZING_FULL, GROUP_TYPOGRAPHY, GROUP_BORDER, GROUP_EFFECTS, GROUP_DIVIDER],
   // Vendor footer (.user-site__footer) — site-wide platform-attribution
   // wrapper, fixed content, fully styleable. Same schema as textual
   // blocks plus the link sub-scope (rendered as the inner <a>). Storage
