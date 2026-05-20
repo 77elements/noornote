@@ -68,14 +68,24 @@ export function mountStickyObservers(root: ParentNode): void {
     const sentinel = document.createElement('div');
     sentinel.className = SENTINEL_CLASS;
     sentinel.setAttribute(STICKY_DATA_ATTR, el.dataset.styledBlockId ?? '');
-    sentinel.style.cssText = 'height:1px;width:100%;pointer-events:none;visibility:hidden;';
+    // 1px height is the minimum that reliably triggers IntersectionObserver
+    // (a 0-height target is allowed to report no intersection per spec).
+    // The negative margin cancels its layout footprint so the surrounding
+    // siblings butt up against each other with no visible gap — without
+    // the cancellation, the body / containing-block colour bleeds through
+    // as a thin line between admin-bar and the sticky element.
 
     if (hasTop && !hasBottom) {
+      // Sentinel sits ABOVE the sticky element → collapse downward into it.
+      sentinel.style.cssText = 'height:1px;width:100%;margin-bottom:-1px;pointer-events:none;visibility:hidden;';
       el.parentNode?.insertBefore(sentinel, el);
     } else if (hasBottom && !hasTop) {
+      // Sentinel sits BELOW the sticky element → collapse upward into it.
+      sentinel.style.cssText = 'height:1px;width:100%;margin-top:-1px;pointer-events:none;visibility:hidden;';
       el.parentNode?.insertBefore(sentinel, el.nextSibling);
     } else if (hasTop && hasBottom) {
       // Both sides set → unusual, but top wins (header-style behaviour).
+      sentinel.style.cssText = 'height:1px;width:100%;margin-bottom:-1px;pointer-events:none;visibility:hidden;';
       el.parentNode?.insertBefore(sentinel, el);
     } else {
       // No offset set → browser treats `position: sticky` as no-op
