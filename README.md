@@ -132,6 +132,7 @@ If the app crashes, check the log files:
 | [NIP-17](https://github.com/nostr-protocol/nips/blob/master/17.md) | Private Direct Messages | 13, 14, 1059, 10050 |
 | [NIP-18](https://github.com/nostr-protocol/nips/blob/master/18.md) | Reposts & generic reposts | 6, 16 |
 | [NIP-19](https://github.com/nostr-protocol/nips/blob/master/19.md) | bech32 encoding (npub, nsec, note, nevent, naddr) | - |
+| [NIP-21](https://github.com/nostr-protocol/nips/blob/master/21.md) | `nostr:` URI scheme | - |
 | [NIP-22](https://github.com/nostr-protocol/nips/blob/master/22.md) | Comments | 1111 |
 | [NIP-23](https://github.com/nostr-protocol/nips/blob/master/23.md) | Long-form content (articles + drafts) | 30023, 30024 |
 | [NIP-24](https://github.com/nostr-protocol/nips/blob/master/24.md) | Extra metadata fields and tags (banner, website, lud16, etc.) | - |
