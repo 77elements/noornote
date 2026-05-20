@@ -393,13 +393,31 @@ export function buildBlockStickyCss(
   // is rare and would need an @media-scoped sentinel/observer to avoid
   // false-positive `.is-stuck` toggles at the wrong viewport.
   if (block.style?.position !== 'sticky') return '';
-  const sel = `[data-styled-block-id="${block.id}"].is-stuck`;
+  const stuckSel = `[data-styled-block-id="${block.id}"].is-stuck`;
   const parts: string[] = [];
+
+  // Helper: build the link-pseudo selector under the `.is-stuck` scope,
+  // matching the recent base-link cascade fix (`a, a:link` for the
+  // `:link` slot so visited/hover inherit from the baseline).
+  const stuckLinkSel = (pseudo: string): string =>
+    pseudo === 'link' ? `${stuckSel} a, ${stuckSel} a:link` : `${stuckSel} a:${pseudo}`;
 
   const defaults = block.style?.sticky;
   if (defaults) {
     const decls = buildImportantInlineStyle(STICKY_SUBSCOPE_SCHEMA, defaults);
-    if (decls) parts.push(`${sel} { ${decls} }`);
+    if (decls) parts.push(`${stuckSel} { ${decls} }`);
+    // Stuck-state link sub-scope: `style.sticky.links[pseudo]` →
+    // `[id].is-stuck a:<pseudo> { … !important }`. Same per-pseudo loop
+    // as `buildBlockLinksCss` but scoped under the stuck-state selector.
+    const stickyLinks = defaults.links;
+    if (stickyLinks) {
+      for (const pseudo of LINK_PSEUDO_KEYS) {
+        const linkStyle = stickyLinks[pseudo];
+        if (!linkStyle) continue;
+        const linkDecls = buildImportantInlineStyle(LINK_SUBSCOPE_SCHEMA, linkStyle);
+        if (linkDecls) parts.push(`${stuckLinkSel(pseudo)} { ${linkDecls} }`);
+      }
+    }
   }
 
   if (block.breakpointStyles) {
@@ -408,8 +426,19 @@ export function buildBlockStickyCss(
       if (!style?.sticky) continue;
       const mediaQuery = buildMediaQuery(bp);
       if (!mediaQuery) continue;
+      const inner: string[] = [];
       const decls = buildImportantInlineStyle(STICKY_SUBSCOPE_SCHEMA, style.sticky);
-      if (decls) parts.push(`@media ${mediaQuery} { ${sel} { ${decls} } }`);
+      if (decls) inner.push(`${stuckSel} { ${decls} }`);
+      const stickyLinks = style.sticky.links;
+      if (stickyLinks) {
+        for (const pseudo of LINK_PSEUDO_KEYS) {
+          const linkStyle = stickyLinks[pseudo];
+          if (!linkStyle) continue;
+          const linkDecls = buildImportantInlineStyle(LINK_SUBSCOPE_SCHEMA, linkStyle);
+          if (linkDecls) inner.push(`${stuckLinkSel(pseudo)} { ${linkDecls} }`);
+        }
+      }
+      if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
     }
   }
 

@@ -988,6 +988,13 @@ function renderStickySubScopeSection(opts: RenderPropertyPanelOptions): string {
     entries: resolveGroupEntries(g.props),
   }));
   const body = renderEntriesForGroups(opts, resolvedGroups, 'sticky.');
+  // Nested link sub-scopes (link/visited/hover/focus/active) for blocks
+  // that surface the regular link sub-scope at top-level. Lets the user
+  // shift link colors / hover-states only when the block is `.is-stuck`,
+  // independent of the base-state link styling.
+  const blockType = matrixKey(opts.scope);
+  const includeStickyLinks = BLOCKS_WITH_LINKS_SUBSCOPE.has(blockType);
+  const stickyLinksBody = includeStickyLinks ? renderLinkSubScopeSections(opts, 'sticky.') : '';
   return `
     <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-sticky-section="stuck">
       <div class="nn-ui-toggle__header" data-toggle-header>
@@ -1000,6 +1007,7 @@ function renderStickySubScopeSection(opts: RenderPropertyPanelOptions): string {
       </div>
       <div class="nn-ui-toggle__content">
         ${body}
+        ${stickyLinksBody}
       </div>
     </section>
   `;
@@ -1033,18 +1041,21 @@ function renderCardHoverSection(opts: RenderPropertyPanelOptions): string {
   `;
 }
 
-function renderLinkSubScopeSections(opts: RenderPropertyPanelOptions): string {
+function renderLinkSubScopeSections(opts: RenderPropertyPanelOptions, parentPrefix: string = ''): string {
   const resolvedGroups: ResolvedPropertyGroup[] = LINK_SUBSCOPE_GROUPS.map(g => ({
     key: g.key,
     label: g.label,
     entries: resolveGroupEntries(g.props),
   }));
+  // `parentPrefix` lets the section nest inside another sub-scope (e.g.
+  // `sticky.` → `sticky.links.<pseudo>.<prop>`) so stuck-state link
+  // styles ride along with the rest of the Sticky-Sub-Scope panel.
   return LINK_PSEUDO_KEYS.map(pseudo => {
     // All collapsed by default — rare-use sub-scope, don't crowd the
     // panel on every block selection.
-    const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `links.${pseudo}.`);
+    const sectionBody = renderEntriesForGroups(opts, resolvedGroups, `${parentPrefix}links.${pseudo}.`);
     return `
-      <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-link-pseudo="${pseudo}">
+      <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-link-pseudo="${pseudo}" data-link-parent="${escapeHtmlAttr(parentPrefix)}">
         <div class="nn-ui-toggle__header" data-toggle-header>
           <div class="nn-ui-toggle__info">
             <h2 class="nn-ui-toggle__title">${escapeHtmlAttr(LINK_PSEUDO_LABELS[pseudo])}</h2>

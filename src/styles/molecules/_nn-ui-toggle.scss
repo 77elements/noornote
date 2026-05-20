@@ -78,18 +78,22 @@
     padding: $gap;
   }
 
-  // Open state
+  // Open state — DIRECT-CHILD combinators so a `.open` outer toggle
+  // doesn't force-open every nested `.nn-ui-toggle__content` descendant.
+  // Without `>`, the descendant selector `.nn-ui-toggle.open .nn-ui-toggle__content`
+  // matches ANY inner __content too, regardless of the inner toggle's own
+  // open state — which is exactly the nesting bug we want to avoid.
   &.open {
-    .nn-ui-toggle__header {
+    > .nn-ui-toggle__header {
       background-color: var(--color-2);
       border-bottom: 1px solid var(--color-3);
+
+      .nn-ui-toggle__toggle {
+        transform: rotate(180deg);
+      }
     }
 
-    .nn-ui-toggle__toggle {
-      transform: rotate(180deg);
-    }
-
-    .nn-ui-toggle__content {
+    > .nn-ui-toggle__content {
       display: block;
     }
   }

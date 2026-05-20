@@ -89,6 +89,13 @@ export function readStyleField(styleIn: CommonStyle | undefined, path: string): 
     const [, ...rest] = path.split('.');
     return readStyleField(styleIn.cardHover, rest.join('.'));
   }
+  // Sticky sub-scope: `sticky.<rest>` → same flat single-state shape as
+  // cardHover. Surfaced when `position: sticky` and toggled by the
+  // IntersectionObserver-driven `.is-stuck` class at runtime.
+  if (path.startsWith('sticky.')) {
+    const [, ...rest] = path.split('.');
+    return readStyleField(styleIn.sticky, rest.join('.'));
+  }
   // Hydrate the new border fields from the legacy shorthand if the user
   // hasn't touched them yet. Returned values pre-fill the property panel
   // inputs so old data is visible + editable; the next write clears the
@@ -216,6 +223,15 @@ export function writeStyleField(style: CommonStyle, path: string, rawValue: stri
     if (!style.cardHover) style.cardHover = {};
     writeStyleField(style.cardHover, rest.join('.'), rawValue);
     if (Object.keys(style.cardHover).length === 0) delete style.cardHover;
+    return;
+  }
+  // Sticky sub-scope: `sticky.<rest>` → same flat-sub-style + prune
+  // pattern as cardHover.
+  if (path.startsWith('sticky.')) {
+    const [, ...rest] = path.split('.');
+    if (!style.sticky) style.sticky = {};
+    writeStyleField(style.sticky, rest.join('.'), rawValue);
+    if (Object.keys(style.sticky).length === 0) delete style.sticky;
     return;
   }
   const segments = path.split('.');

@@ -8,6 +8,14 @@ html.layout--public {
   body {
     background: var(--color-1);
     color: var(--color-5);
+    // App-wide `body { overflow-x: hidden }` (in _base.scss) makes the
+    // body a scroll container, which breaks `position: sticky` for any
+    // user-block on the public page: sticky resolves its scroll-root
+    // to <body>, but the document actually scrolls on <html>, so the
+    // sticky element never pins. Public page has no need for body-level
+    // horizontal-overflow clipping — <html overflow-x: hidden> already
+    // prevents document-level horizontal scroll.
+    overflow: visible;
   }
 }
 
