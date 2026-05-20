@@ -272,7 +272,7 @@ export class SearchSpotlight {
       this.userSuggestionsElement.innerHTML = this.isSearchingUsers
         ? `<div class="search-spotlight__user-section">
             <div class="search-spotlight__user-header">Users</div>
-            <div class="search-spotlight__user-loading">Searching...</div>
+            <div class="search-spotlight__user-loading pulsate">Searching...</div>
           </div>`
         : '';
       return;
@@ -300,7 +300,7 @@ export class SearchSpotlight {
 
     this.userSuggestionsElement.innerHTML = `
       <div class="search-spotlight__user-section">
-        <div class="search-spotlight__user-header">Users${this.isSearchingUsers ? ' (loading...)' : ''}</div>
+        <div class="search-spotlight__user-header">Users${this.isSearchingUsers ? ' <span class="pulsate">(loading…)</span>' : ''}</div>
         ${usersHtml}
       </div>
     `;
