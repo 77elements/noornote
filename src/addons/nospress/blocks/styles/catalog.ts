@@ -238,7 +238,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
 // row pairs position + display (two dropdowns side-by-side). positionInsets
 // is a quad — needs the full row width — and gridGap is conditional, so
 // both stay single below the pair.
-const GROUP_LAYOUT:     PropertyGroup = { key: 'layout',     label: 'Layout',     props: [['position', 'display'], 'positionInsets', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'zIndex'] };
+const GROUP_LAYOUT:     PropertyGroup = { key: 'layout',     label: 'Layout',     props: [['position', 'display'], 'positionInsets', 'gridGap', 'zIndex'] };
 const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
 const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: [['width', 'height']] };
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
@@ -249,7 +249,13 @@ const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',   
 const GROUP_TYPOGRAPHY: PropertyGroup = { key: 'typography', label: 'Typography', props: [['color', 'background'], 'fontFamily', ['fontSize', 'lineHeight'], ['fontWeight', 'fontStyle'], 'textDecoration', 'textShadow'] };
 const GROUP_BACKGROUND: PropertyGroup = { key: 'background', label: 'Background', props: ['background'] };
 const GROUP_BORDER:     PropertyGroup = { key: 'border',     label: 'Border',     props: ['borderWidth', ['borderStyle', 'borderRadius'], 'borderColor'] };
-const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['divider'] };
+// Effects: visual effects + transition timing controls. Box-shadow lives
+// here (not nested inside any sub-scope) so it's reachable on every block
+// that supports effects, not only on the `.is-stuck` / `:hover` variants.
+// Transition trio sits alongside since it drives base→state-class
+// animations (must be on the base selector to animate bi-directionally,
+// see STICKY_SUBSCOPE_GROUPS notes).
+const GROUP_EFFECTS:    PropertyGroup = { key: 'effects',    label: 'Effects',    props: ['boxShadow', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'divider'] };
 
 /** Composition shorthand for prose-flow blocks (heading/text/list/links/
  *  dm-button/quote/button-cta) — typography + width sizing, no height
@@ -269,13 +275,13 @@ const GROUP_TEXT_ALIGN: PropertyGroup = { key: 'text-align', label: 'Alignment',
  *  positionInsets/gridGap — no separate Alignment section, mirrors the
  *  dm-button placement so the same property lands in the same slot
  *  regardless of which button block the user is editing. */
-const GROUP_LAYOUT_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'alignButton', 'zIndex'] };
+const GROUP_LAYOUT_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', 'alignButton', 'zIndex'] };
 
 /** Columns block uses a slightly fattened Layout group: `gridTemplateColumns`
  *  is exposed right before `gridGap` so the user can override the preset
  *  picker's `--nospress-cols` with a raw `grid-template-columns` value
  *  (mix of `fr`, fixed widths, `minmax()`, `auto-fit`, …). */
-const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'columnOrder', ['justifyItems', 'alignItems'], 'zIndex'] };
+const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', 'columnOrder', ['justifyItems', 'alignItems'], 'zIndex'] };
 
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
@@ -373,6 +379,7 @@ export const STICKY_SUBSCOPE_GROUPS: PropertyGroup[] = [
   { key: 'border',     label: 'Border',     props: ['borderWidth', ['borderStyle', 'borderRadius'], 'borderColor'] },
   { key: 'effects',    label: 'Effects',    props: ['boxShadow'] },
 ];
+
 
 /** Per-key restricted schemas for the weblog sub-scope. Three slots:
  *  `note` (the `.note-card` default), `noteHover` (the `.note-card:hover`

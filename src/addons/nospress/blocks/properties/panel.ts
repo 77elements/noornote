@@ -418,17 +418,11 @@ function renderEntriesForGroups(
         || getDefaultDisplayFor(opts.scope, fieldPrefix);
       if (display !== 'grid' && display !== 'inline-grid') return '';
     }
-    // Conditional: the transition trio (duration / delay / timing-function)
-    // only makes sense when `position: sticky` drives the base → .is-stuck
-    // state change. Otherwise the transition declarations would fire on
-    // any incidental CSS change and clutter the Layout group.
-    if (
-      (entry.kind === 'single' && (entry.key === 'transitionDuration' || entry.key === 'transitionDelay'))
-      || (entry.kind === 'dropdown' && entry.key === 'transitionTimingFunction')
-    ) {
-      const pos = readStyleField(opts.style, fieldPrefix + 'position') || 'relative';
-      if (pos !== 'sticky') return '';
-    }
+    // Transition trio (duration / delay / timing-function) is no longer
+    // surfaced via the Layout group — it now lives inside the Sticky
+    // sub-scope (`renderStickySubScopeSection`), the only place where
+    // a transition actually does anything useful (animating base→stuck
+    // and stuck→base). No conditional needed here anymore.
     // Conditional: columnOrder only surfaces when (a) the caller passed a
     // positive columnsCount AND (b) the effective `display` is `grid` —
     // CSS `order` does nothing outside grid/flex context, so showing the
