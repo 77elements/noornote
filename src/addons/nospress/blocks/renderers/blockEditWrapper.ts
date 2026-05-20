@@ -6,6 +6,12 @@
  * `extraButtons` lets specific block types prepend their own toolbar
  * actions (e.g. heading/text inject an Insert-Link button before the
  * generic move/delete cluster).
+ *
+ * `badgeOverride` replaces the static `<span class="…__type-badge">div</span>`
+ * label on the left of the toolbar with caller-supplied HTML. Used by the
+ * `div` block to surface its HTML-tag picker (header / footer / main / …)
+ * directly in the toolbar — the static "div" label was redundant since the
+ * div block is the only one whose semantic tag is user-chooseable.
  */
 
 import { PerAccountLocalStorage, StorageKeys } from '../../../../services/PerAccountLocalStorage';
@@ -22,12 +28,19 @@ function hasStylesInClipboard(): boolean {
   return data != null;
 }
 
-export function wrapEditable(blockId: string, type: string, contentHtml: string, extraButtons: string = ''): string {
+export function wrapEditable(
+  blockId: string,
+  type: string,
+  contentHtml: string,
+  extraButtons: string = '',
+  badgeOverride: string = '',
+): string {
   const showPasteStyles = hasStylesInClipboard();
+  const badgeHtml = badgeOverride || `<span class="nospress-block-edit__type-badge">${type}</span>`;
   return `
     <div class="nospress-block-edit" data-block-edit data-block-id="${blockId}" data-block-type="${type}">
       <div class="nospress-block-edit__toolbar">
-        <span class="nospress-block-edit__type-badge">${type}</span>
+        ${badgeHtml}
         <div class="nospress-block-edit__actions">
           ${extraButtons}
           <button type="button" class="nospress-block-edit__btn" data-block-id="${blockId}" data-action="copy-block" title="Copy block (with properties)" aria-label="Copy block">

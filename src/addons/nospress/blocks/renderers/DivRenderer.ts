@@ -38,11 +38,15 @@ export function renderDiv(
 
   if (editable) {
     const childrenHtml = opts.childrenInner ? opts.childrenInner() : '';
+    // Tag picker now lives in the toolbar's badge slot (via wrapEditable's
+    // badgeOverride), replacing the static "div" label — the only block
+    // type whose semantic tag is user-chooseable should surface that
+    // choice on its main row, not buried inside the content area.
+    const tagSlot = `<div class="nospress-block-div__tag-slot" data-block-dropdown="div-tag" data-block-id="${block.id}" data-current-value="${escapeHtmlAttr(tag)}"></div>`;
     const inner = `
-      <div class="nospress-block-div__tag-slot" data-block-dropdown="div-tag" data-block-id="${block.id}" data-current-value="${escapeHtmlAttr(tag)}"></div>
       <div class="nospress-block-div__children" data-div-block-id="${block.id}">${childrenHtml}</div>
     `;
-    return wrapEditable(block.id, 'div', inner);
+    return wrapEditable(block.id, 'div', inner, '', tagSlot);
   }
 
   // Self-wrapping readonly: the user-chosen tag IS the styled outer
