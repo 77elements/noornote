@@ -9,9 +9,20 @@ import { EventBus } from '../../services/EventBus';
 import { UserSearchService, type UserSearchResult } from '../../services/UserSearchService';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
+import { resolveNip05 } from '../../addons/nospress/Nip05Resolver';
 
-/** Prefixes that bypass user search */
-const SPECIAL_INPUT_PREFIXES = ['/', 'http', 'npub1', 'nevent1'] as const;
+/** Prefixes that bypass user search (the user clearly wants direct navigation, not a name match) */
+const SPECIAL_INPUT_PREFIXES = ['/', 'http', 'npub1', 'nprofile1', 'nevent1', 'note1', 'naddr1', 'nostr:'] as const;
+
+/** Loose NIP-05 shape check: "name@domain.tld" — full validation happens in the resolver */
+function looksLikeNip05(input: string): boolean {
+  const at = input.indexOf('@');
+  if (at <= 0 || at >= input.length - 1) return false;
+  const domain = input.slice(at + 1);
+  if (!domain.includes('.')) return false;
+  // Reject spaces or chars that obviously aren't part of an identifier
+  return !/\s/.test(input);
+}
 
 export class SearchSpotlight {
   private element: HTMLElement;
@@ -319,9 +330,12 @@ export class SearchSpotlight {
   }
 
   private async navigateToInputURL(): Promise<void> {
-    const input = this.inputElement?.value.trim();
-    if (!input) return;
+    const raw = this.inputElement?.value.trim();
+    if (!raw) return;
 
+    // Strip the optional NIP-21 `nostr:` URI prefix so identifiers behind it
+    // ("nostr:npub1…", "nostr:nevent1…") route the same as bare ones.
+    const input = raw.replace(/^nostr:/, '');
     const route = this.resolveInputRoute(input);
 
     if (route === null) {
@@ -330,6 +344,19 @@ export class SearchSpotlight {
     } else if (route) {
       // Internal route
       this.router.navigate(route);
+    } else if (looksLikeNip05(input)) {
+      // NIP-05 identifier ("alice@domain.tld") — resolve to pubkey and navigate.
+      // On failure, fall through to full-text search so the user still gets a result.
+      const resolved = await resolveNip05(input);
+      if (resolved?.pubkey) {
+        const npub = hexToNpub(resolved.pubkey);
+        if (npub) {
+          this.router.navigate(`/profile/${npub}`);
+          this.close();
+          return;
+        }
+      }
+      this.eventBus.emit('globalSearch:start', { query: input });
     } else {
       // No route resolved - treat as full-text search
       this.eventBus.emit('globalSearch:start', { query: input });
@@ -343,16 +370,24 @@ export class SearchSpotlight {
     if (input.startsWith('http://') || input.startsWith('https://')) {
       return null; // External URL
     }
-    if (input.startsWith('npub1') && input.length === 63) {
+    // Profile identifiers: npub (bare 63-char) and nprofile (variable length, carries relay hints)
+    if ((input.startsWith('npub1') && input.length === 63) || input.startsWith('nprofile1')) {
       return `/profile/${input}`;
     }
-    if (input.startsWith('nevent1')) {
+    // Event identifiers: note (bare, 63-char) and nevent (with relay hints). SNV decodes both.
+    if (input.startsWith('nevent1') || input.startsWith('note1')) {
+      return `/note/${input}`;
+    }
+    // Addressable events (kind 30000–39999): articles, listings, follow packs, …
+    // The single-note route also handles naddr via App.getRouteForAddressableEvent
+    // for known kinds, but lacking the kind context here we fall back to /note/.
+    if (input.startsWith('naddr1')) {
       return `/note/${input}`;
     }
     if (input.startsWith('/')) {
       return input;
     }
-    return ''; // Empty string signals search query
+    return ''; // Empty string signals search query (or NIP-05 attempt upstream)
   }
 
   /**

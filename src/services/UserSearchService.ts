@@ -69,26 +69,28 @@ export class UserSearchService {
 
     const queryLower = query.toLowerCase();
 
-    // Run local and remote searches in parallel
-    this.searchLocal(queryLower, abortController.signal)
+    // Run local and remote searches in parallel. allSettled + finally guarantees
+    // onComplete fires exactly once even if either branch throws — so the UI's
+    // loading flag is always cleared, never sticky.
+    const localPromise = this.searchLocal(queryLower, abortController.signal)
       .then(localResults => {
         if (!abortController.signal.aborted) {
           callbacks.onLocalResults(localResults);
         }
       });
 
-    this.searchRemote(queryLower, abortController.signal)
+    const remotePromise = this.searchRemote(queryLower, abortController.signal)
       .then(remoteResults => {
         if (!abortController.signal.aborted) {
           callbacks.onRemoteResults(remoteResults);
-          callbacks.onComplete();
-        }
-      })
-      .catch(() => {
-        if (!abortController.signal.aborted) {
-          callbacks.onComplete();
         }
       });
+
+    Promise.allSettled([localPromise, remotePromise]).finally(() => {
+      if (!abortController.signal.aborted) {
+        callbacks.onComplete();
+      }
+    });
 
     return abortController;
   }
