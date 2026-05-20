@@ -138,6 +138,7 @@ export const StorageKeys = {
   NOSPRESS_MENUS: 'noornote_nospress_menus_map',
   NOSPRESS_SITE_SETTINGS: 'noornote_nospress_site_settings_map',
   NOSPRESS_CLIPBOARD: 'noornote_nospress_clipboard_map',
+  NOSPRESS_STYLES_CLIPBOARD: 'noornote_nospress_styles_clipboard_map',
   NOSPRESS_CUSTOM_BLOCKS: 'noornote_nospress_custom_blocks_map',
   LIST_SYNC_MODE: 'noornote_list_sync_mode_map',
   EMOJI_FREQUENTLY_USED: 'noornote_emoji_frequently_used_map',

@@ -166,7 +166,14 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   columnOrder: { kind: 'column-order', key: 'columnOrder', label: 'Order' },
   position:     {
     kind: 'dropdown', key: 'position', label: 'Position', cssProp: 'position',
+    // Empty first option lets per-BP tabs revert to "inherit from Default".
+    // Without it the user couldn't clear a per-BP slot that drifted away
+    // from the Default value (e.g. an old `relative` lingering on the
+    // desktop tab while the Default tab is set to `sticky` — the per-BP
+    // emitter ships `position: relative !important` and kills sticky at
+    // ≥1280px). Same `(default)` convention as textAlign/borderStyle/etc.
     options: [
+      { value: '',         label: '(default)' },
       { value: 'static',   label: 'static' },
       { value: 'relative', label: 'relative' },
       { value: 'absolute', label: 'absolute' },
@@ -184,6 +191,22 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
   textShadow:   { kind: 'text-shadow', key: 'textShadow', label: 'Text shadow' },
   boxShadow:    { kind: 'single', key: 'boxShadow',    label: 'Box shadow',    cssProp: 'box-shadow',    placeholder: 'e.g. 0 4px 12px rgba(0,0,0,0.15)' },
+  // Transition trio — only meaningful when `position: sticky` drives the
+  // base→.is-stuck state change. Panel hides these unless position=sticky
+  // (same pattern as positionInsets / gridGap visibility conditionals).
+  transitionDuration:       { kind: 'single', key: 'transitionDuration', label: 'Transition duration', cssProp: 'transition-duration', placeholder: 'e.g. 300ms' },
+  transitionDelay:          { kind: 'single', key: 'transitionDelay',    label: 'Transition delay',    cssProp: 'transition-delay',    placeholder: 'e.g. 0ms' },
+  transitionTimingFunction: {
+    kind: 'dropdown', key: 'transitionTimingFunction', label: 'Transition curve', cssProp: 'transition-timing-function',
+    options: [
+      { value: '',            label: '(default)' },
+      { value: 'ease-in-out', label: 'ease-in-out' },
+      { value: 'ease',        label: 'ease' },
+      { value: 'ease-in',     label: 'ease-in' },
+      { value: 'ease-out',    label: 'ease-out' },
+      { value: 'linear',      label: 'linear' },
+    ],
+  },
   listStyleType: {
     // Surfaced only on the nav-menu `ul` sub-scope (see
     // `NAV_MENU_UL_EXTRA_GROUPS`). Empty first option keeps CustomDropdown
@@ -214,7 +237,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
 // row pairs position + display (two dropdowns side-by-side). positionInsets
 // is a quad — needs the full row width — and gridGap is conditional, so
 // both stay single below the pair.
-const GROUP_LAYOUT:     PropertyGroup = { key: 'layout',     label: 'Layout',     props: [['position', 'display'], 'positionInsets', 'gridGap'] };
+const GROUP_LAYOUT:     PropertyGroup = { key: 'layout',     label: 'Layout',     props: [['position', 'display'], 'positionInsets', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction'] };
 const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
 const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: [['width', 'height']] };
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
@@ -245,13 +268,13 @@ const GROUP_TEXT_ALIGN: PropertyGroup = { key: 'text-align', label: 'Alignment',
  *  positionInsets/gridGap — no separate Alignment section, mirrors the
  *  dm-button placement so the same property lands in the same slot
  *  regardless of which button block the user is editing. */
-const GROUP_LAYOUT_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', 'alignButton'] };
+const GROUP_LAYOUT_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'alignButton'] };
 
 /** Columns block uses a slightly fattened Layout group: `gridTemplateColumns`
  *  is exposed right before `gridGap` so the user can override the preset
  *  picker's `--nospress-cols` with a raw `grid-template-columns` value
  *  (mix of `fr`, fixed widths, `minmax()`, `auto-fit`, …). */
-const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', 'columnOrder', ['justifyItems', 'alignItems']] };
+const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'columnOrder', ['justifyItems', 'alignItems']] };
 
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
@@ -332,6 +355,20 @@ export const PORTFOLIO_GROUPS: Record<PortfolioKey, PropertyGroup[]> = {
  *  the user is tuning. */
 export const CARD_HOVER_GROUPS: PropertyGroup[] = [
   { key: 'typography', label: 'Color',      props: [['color', 'background']] },
+  { key: 'border',     label: 'Border',     props: ['borderWidth', ['borderStyle', 'borderRadius'], 'borderColor'] },
+  { key: 'effects',    label: 'Effects',    props: ['boxShadow'] },
+];
+
+/** Property groups surfaced inside the sticky-stuck sub-scope. Same
+ *  philosophy as CARD_HOVER_GROUPS but tuned for the "header gets a
+ *  drop-shadow + background tint when stuck" use case. Reduced surface:
+ *  background, color, font-size (typography), padding (spacing),
+ *  border + border-radius, box-shadow. Width/height/position/etc. stay
+ *  out because changing geometry on .is-stuck would cause the page to
+ *  jump under the user. */
+export const STICKY_SUBSCOPE_GROUPS: PropertyGroup[] = [
+  { key: 'typography', label: 'Color',      props: [['color', 'background'], 'fontSize'] },
+  { key: 'spacing',    label: 'Spacing',    props: ['padding'] },
   { key: 'border',     label: 'Border',     props: ['borderWidth', ['borderStyle', 'borderRadius'], 'borderColor'] },
   { key: 'effects',    label: 'Effects',    props: ['boxShadow'] },
 ];

@@ -11,6 +11,7 @@ import { BlockRenderer } from './blocks/BlockRenderer';
 import { sanitizeStyleValue, buildPageBreakpointCss, buildInlineStyle, schemaFor, type CommonStyle } from './blocks/styles';
 import { GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, HOME_SLUG, pageHeaderSlug, pageFooterSlug } from './blocks/pageIndex';
 import { mountNospressNavMenus, unmountNospressNavMenus } from './navMenuMount';
+import { mountStickyObservers, unmountStickyObservers } from './stickyObserver';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { showLoggedOutReactionModal } from '../../helpers/LoggedOutModals';
@@ -162,6 +163,10 @@ export class PublicNospressPage {
         breakpoints: siteSettings?.breakpoints ?? [],
       });
     }
+    // Wire sticky observers AFTER all mounts have populated the DOM —
+    // we need final layout (sentinel placement assumes the sticky
+    // element is in flow) before the IntersectionObserver attaches.
+    mountStickyObservers(this.container);
     this.bindSigningActionCtas();
   }
 
@@ -177,6 +182,7 @@ export class PublicNospressPage {
     removeUserCss();
     this.resetSiteSettings();
     unmountNospressNavMenus();
+    unmountStickyObservers();
     this.container.innerHTML = '';
   }
 

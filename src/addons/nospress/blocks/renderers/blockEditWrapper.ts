@@ -7,7 +7,23 @@
  * actions (e.g. heading/text inject an Insert-Link button before the
  * generic move/delete cluster).
  */
+
+import { PerAccountLocalStorage, StorageKeys } from '../../../../services/PerAccountLocalStorage';
+
+/** True when the per-account styles clipboard has a payload — used to
+ *  conditionally render the Paste-Styles button on every editable block.
+ *  Read fresh on each block render: NospressView re-runs the entire
+ *  editable tree after every copy/paste action, so the flag is always
+ *  in sync with the latest clipboard state. */
+function hasStylesInClipboard(): boolean {
+  const data = PerAccountLocalStorage.getInstance().get<unknown>(
+    StorageKeys.NOSPRESS_STYLES_CLIPBOARD, null,
+  );
+  return data != null;
+}
+
 export function wrapEditable(blockId: string, type: string, contentHtml: string, extraButtons: string = ''): string {
+  const showPasteStyles = hasStylesInClipboard();
   return `
     <div class="nospress-block-edit" data-block-edit data-block-id="${blockId}" data-block-type="${type}">
       <div class="nospress-block-edit__toolbar">
@@ -17,6 +33,12 @@ export function wrapEditable(blockId: string, type: string, contentHtml: string,
           <button type="button" class="nospress-block-edit__btn" data-block-id="${blockId}" data-action="copy-block" title="Copy block (with properties)" aria-label="Copy block">
             <svg width="14" height="14"><use href="#icon-copy"/></svg>
           </button>
+          <button type="button" class="nospress-block-edit__btn" data-block-id="${blockId}" data-action="copy-block-styles" title="Copy styles only" aria-label="Copy styles">
+            <svg width="14" height="14"><use href="#icon-highlight"/></svg>
+          </button>
+          ${showPasteStyles ? `<button type="button" class="nospress-block-edit__btn" data-block-id="${blockId}" data-action="paste-block-styles" title="Paste styles onto this block" aria-label="Paste styles">
+            <svg width="14" height="14"><use href="#icon-paint-bucket"/></svg>
+          </button>` : ''}
           <button type="button" class="nospress-block-edit__btn" data-block-id="${blockId}" data-action="cursor-after" title="Move cursor below this block" aria-label="Move cursor below">
             <svg width="14" height="14"><use href="#icon-plus"/></svg>
           </button>

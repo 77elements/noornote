@@ -205,6 +205,27 @@ export interface CommonStyle {
    *  molecule defaults (transform + box-shadow) that ride along with
    *  the molecule itself. */
   cardHover?: CommonStyle;
+  /** Sticky-stuck state — applies when `position: sticky` AND the
+   *  element has scrolled past its anchor (sentinel + IntersectionObserver
+   *  toggles `.is-stuck` on the styled-block wrapper at runtime).
+   *  Reduced prop surface (background / color / box-shadow / fontSize /
+   *  padding / border / borderRadius) — see `STICKY_SUBSCOPE_GROUPS` —
+   *  so the stuck-state stays a re-skin, not a re-layout. Emitted with
+   *  `!important` to beat the base inline-style. Only surfaced in the
+   *  Properties panel when `style.position === 'sticky'`. */
+  sticky?: CommonStyle;
+  /** Transition duration for the base block (drives the animation between
+   *  default and `.is-stuck` state). Only surfaced when
+   *  `style.position === 'sticky'`. Free-form CSS time value
+   *  (e.g. `300ms`, `0.25s`). Emitted as `transition-duration`. */
+  transitionDuration?: string;
+  /** Transition delay — pairs with `transitionDuration`. Free-form CSS
+   *  time value. Emitted as `transition-delay`. */
+  transitionDelay?: string;
+  /** Transition timing function — one of `ease-in-out` / `ease` /
+   *  `ease-in` / `ease-out` / `linear`. Emitted as
+   *  `transition-timing-function`. */
+  transitionTimingFunction?: string;
   /** CSS `box-shadow`. Single string — full shorthand the way the user
    *  types it (e.g. `0 2px 4px rgba(0,0,0,0.1)`). Surfaced inside the
    *  card-hover sub-scope (and any future Effects group that includes
@@ -305,7 +326,7 @@ export const BLOCKS_WITH_LINKS_SUBSCOPE = new Set<string>([
  *  which have their own recursive render paths; and `border`, the
  *  legacy shorthand kept on the type for read-side migration only —
  *  never surfaced as an editable entry). */
-export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList' | 'portfolio' | 'weblog' | 'cardHover'>;
+export type PropertyKey = Exclude<keyof CommonStyle, 'mobileMenu' | 'border' | 'links' | 'navMenu' | 'bookmarkFolder' | 'articlesList' | 'portfolio' | 'weblog' | 'cardHover' | 'sticky'>;
 
 /** A "single" entry maps to one CSS declaration (e.g. `color: red`). */
 export interface SinglePropertyEntry {
@@ -313,7 +334,8 @@ export interface SinglePropertyEntry {
   key:
     | 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight'
     | 'fontStyle' | 'borderRadius' | 'width' | 'height' | 'gridGap'
-    | 'gridTemplateColumns' | 'boxShadow';
+    | 'gridTemplateColumns' | 'boxShadow'
+    | 'transitionDuration' | 'transitionDelay';
   label: string;
   cssProp: string;
   placeholder: string;
@@ -344,7 +366,7 @@ export interface QuadPropertyEntry {
  *  CustomDropdown instance after each render. */
 export interface DropdownPropertyEntry {
   kind: 'dropdown';
-  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton' | 'justifyItems' | 'alignItems' | 'fontFamily' | 'listStyleType';
+  key: 'borderStyle' | 'display' | 'position' | 'textDecoration' | 'textAlign' | 'alignButton' | 'justifyItems' | 'alignItems' | 'fontFamily' | 'listStyleType' | 'transitionTimingFunction';
   label: string;
   cssProp: string;
   options: Array<{ value: string; label: string }>;

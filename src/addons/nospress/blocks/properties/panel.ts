@@ -22,6 +22,7 @@ import {
   BOOKMARK_FOLDER_GROUPS,
   CARD_HOVER_GROUPS,
   LINK_SUBSCOPE_GROUPS,
+  STICKY_SUBSCOPE_GROUPS,
   MOBILE_MENU_SECTIONS,
   NAV_MENU_DESKTOP_GROUPS,
   NAV_MENU_UL_EXTRA_GROUPS,
@@ -216,14 +217,15 @@ function renderEntriesForGroups(
    *  `mountStyleDropdowns` fills with a `CustomDropdown` instance. */
   const dropdown = (e: DropdownPropertyEntry) => {
     // Pre-fill: stored value wins, else a per-key fallback. `display`
-    // uses the block's natural CSS default; `position` defaults to
-    // `relative` everywhere (rather than the CSS-spec `static`) so
-    // descendant absolute children resolve against the block by
-    // default. `borderStyle` has its own `(none)` first option, no
-    // fallback needed.
+    // uses the block's natural CSS default so the dropdown reflects what
+    // the element actually renders as before any user override.
+    // `position` no longer fallback-displays as `relative` — that was
+    // masking the empty/inherited state and made it impossible to tell
+    // a per-BP slot apart from the Default-tab slot. With the explicit
+    // `(default)` first option in the catalog, empty = `(default)` and
+    // the user can clear a per-BP slot by re-picking it.
     const stored = v(e.key);
     const fallback = e.key === 'display' ? getDefaultDisplayFor(opts.scope, fieldPrefix)
-      : e.key === 'position' ? 'relative'
       : '';
     const current = stored || fallback;
     const mixed = isMixed(e.key);
@@ -416,6 +418,17 @@ function renderEntriesForGroups(
         || getDefaultDisplayFor(opts.scope, fieldPrefix);
       if (display !== 'grid' && display !== 'inline-grid') return '';
     }
+    // Conditional: the transition trio (duration / delay / timing-function)
+    // only makes sense when `position: sticky` drives the base → .is-stuck
+    // state change. Otherwise the transition declarations would fire on
+    // any incidental CSS change and clutter the Layout group.
+    if (
+      (entry.kind === 'single' && (entry.key === 'transitionDuration' || entry.key === 'transitionDelay'))
+      || (entry.kind === 'dropdown' && entry.key === 'transitionTimingFunction')
+    ) {
+      const pos = readStyleField(opts.style, fieldPrefix + 'position') || 'relative';
+      if (pos !== 'sticky') return '';
+    }
     // Conditional: columnOrder only surfaces when (a) the caller passed a
     // positive columnsCount AND (b) the effective `display` is `grid` —
     // CSS `order` does nothing outside grid/flex context, so showing the
@@ -529,9 +542,21 @@ function renderPanelInternal(
   // those would re-flow the page on mouseover).
   const showCardHover = !fieldPrefix && blockType === 'card';
   const cardHoverBody = showCardHover ? renderCardHoverSection(opts) : '';
+  // Sticky-stuck sub-scope: 1 accordion section ("Sticky (stuck state)").
+  // Only surfaced when the block has `position: sticky` set — checking
+  // the Default tab's style covers the common case (per-BP-only sticky
+  // is rare and the user would still benefit from the Default-tab
+  // section as the write target). Available on any block that allows
+  // position sticky, which is every styled block today.
+  const stickyPos = !fieldPrefix
+    ? readStyleField(opts.style, 'position')
+    : '';
+  const showSticky = !fieldPrefix && stickyPos === 'sticky';
+  const stickyBody = showSticky ? renderStickySubScopeSection(opts) : '';
   const specificBody = (opts.extras ?? '')
     + navMenuTopBody + weblogBody + linksBody + navMenuBottomBody
-    + bookmarkFolderBody + articlesListBody + portfolioBody + cardHoverBody;
+    + bookmarkFolderBody + articlesListBody + portfolioBody + cardHoverBody
+    + stickyBody;
 
   // Identifiers section — only for block scopes. The page itself doesn't get
   // a configurable class/id (its wrapper is always `.user-site`). Paired
@@ -945,6 +970,36 @@ function renderWeblogSections(opts: RenderPropertyPanelOptions): string {
       </div>
       <div class="nn-ui-toggle__content">
         ${mentionBody}
+      </div>
+    </section>
+  `;
+}
+
+/** Sticky-stuck sub-scope — single accordion section with the
+ *  user-tuneable stuck-state properties (color/background/font-size/
+ *  padding/border/box-shadow). Only surfaced when the block has
+ *  `position: sticky` — otherwise the styles never fire and the section
+ *  would be noise. Runtime toggles `.is-stuck` on the wrapper via an
+ *  IntersectionObserver sentinel pattern (see stickyObserver.ts). */
+function renderStickySubScopeSection(opts: RenderPropertyPanelOptions): string {
+  const resolvedGroups: ResolvedPropertyGroup[] = STICKY_SUBSCOPE_GROUPS.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const body = renderEntriesForGroups(opts, resolvedGroups, 'sticky.');
+  return `
+    <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-sticky-section="stuck">
+      <div class="nn-ui-toggle__header" data-toggle-header>
+        <div class="nn-ui-toggle__info">
+          <h2 class="nn-ui-toggle__title">Sticky (stuck state)</h2>
+        </div>
+        <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </div>
+      <div class="nn-ui-toggle__content">
+        ${body}
       </div>
     </section>
   `;

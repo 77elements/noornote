@@ -25,6 +25,7 @@ import {
   NAV_MENU_DESKTOP_GROUPS,
   NAV_MENU_UL_EXTRA_GROUPS,
   PORTFOLIO_GROUPS,
+  STICKY_SUBSCOPE_GROUPS,
   WEBLOG_GROUPS,
   flattenGroupProps,
   schemaFor,
@@ -62,6 +63,10 @@ const LINK_SUBSCOPE_SCHEMA: PropertyEntry[] = LINK_SUBSCOPE_GROUPS
  *  link sub-scope so `buildImportantInlineStyle` doesn't re-walk the
  *  group list on every block render. */
 const CARD_HOVER_SCHEMA: PropertyEntry[] = CARD_HOVER_GROUPS
+  .flatMap(g => flattenGroupProps(g.props));
+
+/** Flat schema for the sticky-stuck sub-scope — same pre-resolve. */
+const STICKY_SUBSCOPE_SCHEMA: PropertyEntry[] = STICKY_SUBSCOPE_GROUPS
   .flatMap(g => flattenGroupProps(g.props));
 
 /** Same flat-schema treatment for the nav-menu desktop sub-scope
@@ -366,6 +371,44 @@ export function buildBlockCardHoverCss(
       const mediaQuery = buildMediaQuery(bp);
       if (!mediaQuery) continue;
       const decls = buildImportantInlineStyle(CARD_HOVER_SCHEMA, style.cardHover);
+      if (decls) parts.push(`@media ${mediaQuery} { ${sel} { ${decls} } }`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
+/** Per-block sticky-stuck CSS — emits the user's stuck-state styling
+ *  scoped to `[data-styled-block-id="<id>"].is-stuck`. The `.is-stuck`
+ *  class is toggled at runtime by `stickyObserver.ts` via an
+ *  IntersectionObserver sentinel pattern. `!important` is always-on so
+ *  the rule beats the block's own inline-style (which carries the
+ *  default-state values). Default + per-BP pattern matches the other
+ *  sub-scope emitters. */
+export function buildBlockStickyCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  // Only emit when position=sticky on the Default tab — per-BP-only sticky
+  // is rare and would need an @media-scoped sentinel/observer to avoid
+  // false-positive `.is-stuck` toggles at the wrong viewport.
+  if (block.style?.position !== 'sticky') return '';
+  const sel = `[data-styled-block-id="${block.id}"].is-stuck`;
+  const parts: string[] = [];
+
+  const defaults = block.style?.sticky;
+  if (defaults) {
+    const decls = buildImportantInlineStyle(STICKY_SUBSCOPE_SCHEMA, defaults);
+    if (decls) parts.push(`${sel} { ${decls} }`);
+  }
+
+  if (block.breakpointStyles) {
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style?.sticky) continue;
+      const mediaQuery = buildMediaQuery(bp);
+      if (!mediaQuery) continue;
+      const decls = buildImportantInlineStyle(STICKY_SUBSCOPE_SCHEMA, style.sticky);
       if (decls) parts.push(`@media ${mediaQuery} { ${sel} { ${decls} } }`);
     }
   }
@@ -688,6 +731,8 @@ export function buildPageBreakpointCss(
         if (weblogCss) out.push(weblogCss);
         const cardHoverCss = buildBlockCardHoverCss(blockTyped, breakpoints);
         if (cardHoverCss) out.push(cardHoverCss);
+        const stickyCss = buildBlockStickyCss(blockTyped, breakpoints);
+        if (stickyCss) out.push(stickyCss);
         const columnsCss = buildBlockColumnsCss(blockTyped, breakpoints);
         if (columnsCss) out.push(columnsCss);
       }

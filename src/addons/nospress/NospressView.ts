@@ -4225,6 +4225,68 @@ export class NospressView extends View {
     }
   }
 
+  /** Styles-only clipboard payload — `style` + `breakpointStyles` lifted
+   *  off a source block. `sourceType` is purely informational (toast +
+   *  future smart filtering). Lives in its own PerAccountLocalStorage
+   *  slot so the regular block clipboard isn't disturbed: user can have
+   *  both a copied block AND copied styles in flight at the same time. */
+  private getClipboardStyles(): { style?: unknown; breakpointStyles?: unknown; sourceType: string } | null {
+    return PerAccountLocalStorage.getInstance().get<{
+      style?: unknown;
+      breakpointStyles?: unknown;
+      sourceType: string;
+    } | null>(StorageKeys.NOSPRESS_STYLES_CLIPBOARD, null);
+  }
+
+  /** Copy just the style + breakpointStyles of a block (without content
+   *  or attrs) into the per-account styles clipboard. `attrs.class` /
+   *  `attrs.id` are NOT copied — those are identity, not styling. */
+  private async copyBlockStyles(blockId: string): Promise<void> {
+    const editSlug = this.currentEditSlug();
+    const current = this.listService.getDraftV2(editSlug)
+      ?? this.listService.getPublishedV2(editSlug)
+      ?? this.listService.getPageV2(editSlug);
+    const loc = findBlockInPage(current, blockId);
+    if (!loc) return;
+    const block = loc.block as Block & { style?: unknown; breakpointStyles?: unknown };
+    const payload: { style?: unknown; breakpointStyles?: unknown; sourceType: string } = {
+      sourceType: block.type,
+    };
+    if (block.style != null) payload.style = JSON.parse(JSON.stringify(block.style));
+    if (block.breakpointStyles != null) payload.breakpointStyles = JSON.parse(JSON.stringify(block.breakpointStyles));
+    PerAccountLocalStorage.getInstance().set(StorageKeys.NOSPRESS_STYLES_CLIPBOARD, payload);
+    ToastService.show(`Copied styles from ${block.type} block`, 'success');
+    // Rerender so the Paste-Styles button appears on every editable block
+    // (the wrapper reads the clipboard fresh on each render).
+    await this.rerenderEditable();
+  }
+
+  /** Apply the styles clipboard onto a target block, overwriting its
+   *  `style` + `breakpointStyles` slots. Incompatible keys (e.g. a
+   *  `fontSize` lifted off a text block pasted onto an image block) are
+   *  silently dropped by the renderer/builders — we keep the payload
+   *  unfiltered here for simplicity. */
+  private async pasteBlockStyles(blockId: string): Promise<void> {
+    const payload = this.getClipboardStyles();
+    if (!payload) {
+      ToastService.show('No styles in clipboard', 'info');
+      return;
+    }
+    let pastedType = '';
+    this.mutateDraft((page) => {
+      const target = findBlockInPage(page, blockId)?.block as
+        (Block & { style?: unknown; breakpointStyles?: unknown }) | undefined;
+      if (!target) return;
+      pastedType = target.type;
+      // Deep clone so future paste-onto-other-block doesn't share refs.
+      if (payload.style != null) (target as { style?: unknown }).style = JSON.parse(JSON.stringify(payload.style));
+      else delete (target as { style?: unknown }).style;
+      if (payload.breakpointStyles != null) (target as { breakpointStyles?: unknown }).breakpointStyles = JSON.parse(JSON.stringify(payload.breakpointStyles));
+      else delete (target as { breakpointStyles?: unknown }).breakpointStyles;
+    });
+    ToastService.show(`Pasted styles${pastedType ? ` onto ${pastedType}` : ''}`, 'success');
+  }
+
 
   // ── Custom Block library (per-account templates) ──────────────────────
 
@@ -5199,6 +5261,8 @@ export class NospressView extends View {
       switch (action) {
         case 'delete':                 this.deleteBlock(blockId); break;
         case 'copy-block':             void this.copyBlock(blockId); break;
+        case 'copy-block-styles':      void this.copyBlockStyles(blockId); break;
+        case 'paste-block-styles':     void this.pasteBlockStyles(blockId); break;
         case 'move-up':                this.moveBlock(blockId, -1); break;
         case 'move-down':              this.moveBlock(blockId, +1); break;
         case 'cursor-after':           this.setCursorAfterBlock(blockId); break;
