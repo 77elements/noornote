@@ -64,6 +64,11 @@ export interface CommonStyle {
   /** CSS `position` mode (static / relative / absolute / fixed / sticky).
    *  Always defaults to `static` (the CSS default for every element). */
   position?: string;
+  /** CSS `z-index` — controls stacking order. Only takes effect on
+   *  positioned elements (`position !== static`) and on flex/grid
+   *  children, but the panel surfaces it unconditionally since the
+   *  failure mode (no effect on static elements) is silent and harmless. */
+  zIndex?: string;
   /** Per-side `top` / `right` / `bottom` / `left` offsets — only
    *  meaningful when `position` is `absolute` / `fixed` / `sticky` /
    *  `relative`. Surfaced in the panel only for `absolute` / `sticky`
@@ -334,7 +339,7 @@ export interface SinglePropertyEntry {
   key:
     | 'color' | 'background' | 'fontSize' | 'lineHeight' | 'fontWeight'
     | 'fontStyle' | 'borderRadius' | 'width' | 'height' | 'gridGap'
-    | 'gridTemplateColumns' | 'boxShadow'
+    | 'gridTemplateColumns' | 'boxShadow' | 'zIndex'
     | 'transitionDuration' | 'transitionDelay';
   label: string;
   cssProp: string;

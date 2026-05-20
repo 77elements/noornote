@@ -560,6 +560,16 @@ export function buildBlockLinksCss(
   const sel = `[data-styled-block-id="${block.id}"]`;
   const parts: string[] = [];
 
+  // The `:link` sub-scope intentionally emits BOTH `a` and `a:link` in the
+  // selector list, so its declarations act as the BASELINE for every
+  // anchor state — visited / hover / focus / active inherit (via the
+  // bare-`a` half) and individual per-state sub-scopes only override what
+  // they explicitly set. Without the bare `a`, `:link` only matches anchors
+  // with an `href` AND no visited state, leaving `:visited` to fall back
+  // to the browser default purple.
+  const selectorFor = (pseudo: string): string =>
+    pseudo === 'link' ? `${sel} a, ${sel} a:link` : `${sel} a:${pseudo}`;
+
   // Default-tab rules — applied at all viewports, no @media wrap, no
   // !important (they're the base, nothing to outrank).
   const defaultLinks = block.style?.links;
@@ -568,7 +578,7 @@ export function buildBlockLinksCss(
       const linkStyle = defaultLinks[pseudo];
       if (!linkStyle) continue;
       const decls = buildInlineStyle(LINK_SUBSCOPE_SCHEMA, linkStyle);
-      if (decls) parts.push(`${sel} a:${pseudo} { ${decls} }`);
+      if (decls) parts.push(`${selectorFor(pseudo)} { ${decls} }`);
     }
   }
 
@@ -587,7 +597,7 @@ export function buildBlockLinksCss(
         const linkStyle = linkOverrides[pseudo];
         if (!linkStyle) continue;
         const decls = buildImportantInlineStyle(LINK_SUBSCOPE_SCHEMA, linkStyle);
-        if (decls) inner.push(`${sel} a:${pseudo} { ${decls} }`);
+        if (decls) inner.push(`${selectorFor(pseudo)} { ${decls} }`);
       }
       if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
     }

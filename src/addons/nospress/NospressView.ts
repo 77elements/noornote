@@ -3846,21 +3846,12 @@ export class NospressView extends View {
       activeBreakpoint: inSubScope ? '' : this.activeBpName,
       ...(inSubScope ? { header: '<h2>Mobile Menu</h2>' } : {}),
       extras: inSubScope ? '' : this.renderBlockExtras(block),
-      // Text block: the semantic-tag picker (`p` / `h1`..`h6`) renders as
-      // the very first row of the General fieldset — it changes WHAT HTML
-      // the block emits, which is more fundamental than any class/id or
-      // CSS-property setting on the same block.
-      ...(block.type === 'text' && !inSubScope ? {
-        preIdentifiers: `
-          <div class="nospress-prop-row">
-            <label class="nospress-prop-row__label">Tag</label>
-            <div class="nospress-prop-row__input"
-                 data-block-dropdown="text-tag"
-                 data-block-id="${block.id}"
-                 data-current-value="${escapeHtmlAttr((block as Extract<Block, { type: 'text' }>).tag ?? 'p')}"></div>
-          </div>
-        `,
-      } : {}),
+      // Text-block semantic-tag picker (`p` / `h1`..`h6`) previously rode
+      // here as a Properties-panel `preIdentifiers` row. It moved to the
+      // block-edit toolbar's badge slot (TextRenderer emits the dropdown
+      // slot via wrapEditable's `badgeOverride`) so the same surface as
+      // the DIV block's tag-picker — both blocks whose semantic tag is
+      // user-chooseable now expose that choice on the block's own toolbar.
       // Columns block: pass the live layout length so the columnOrder
       // property row draws exactly N number inputs. Other block types
       // don't carry the field at all — spread-conditional keeps the

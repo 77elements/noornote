@@ -186,6 +186,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
   // not `<prefix>-<side>`. The renderer surfaces this entry only when
   // the current `position` value is `absolute` or `sticky`.
   positionInsets: { kind: 'quad', key: 'positionInsets', label: 'Offsets', cssPrefix: '', placeholder: 'e.g. 10px' },
+  zIndex:       { kind: 'single', key: 'zIndex',       label: 'Z-index',       cssProp: 'z-index',       placeholder: 'e.g. 10' },
   margin:       { kind: 'quad',   key: 'margin',       label: 'Margin',        cssPrefix: 'margin' },
   padding:      { kind: 'quad',   key: 'padding',      label: 'Padding',       cssPrefix: 'padding' },
   divider:      { kind: 'divider', key: 'divider',     label: 'Divider' },
@@ -237,7 +238,7 @@ export const PROPERTY_CATALOG: Record<PropertyKey, PropertyEntry> = {
 // row pairs position + display (two dropdowns side-by-side). positionInsets
 // is a quad — needs the full row width — and gridGap is conditional, so
 // both stay single below the pair.
-const GROUP_LAYOUT:     PropertyGroup = { key: 'layout',     label: 'Layout',     props: [['position', 'display'], 'positionInsets', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction'] };
+const GROUP_LAYOUT:     PropertyGroup = { key: 'layout',     label: 'Layout',     props: [['position', 'display'], 'positionInsets', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'zIndex'] };
 const GROUP_SPACING:    PropertyGroup = { key: 'spacing',    label: 'Spacing',    props: ['margin', 'padding'] };
 const GROUP_SIZING_FULL:PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: [['width', 'height']] };
 const GROUP_SIZING_W:   PropertyGroup = { key: 'sizing',     label: 'Sizing',     props: ['width'] };
@@ -268,13 +269,13 @@ const GROUP_TEXT_ALIGN: PropertyGroup = { key: 'text-align', label: 'Alignment',
  *  positionInsets/gridGap — no separate Alignment section, mirrors the
  *  dm-button placement so the same property lands in the same slot
  *  regardless of which button block the user is editing. */
-const GROUP_LAYOUT_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'alignButton'] };
+const GROUP_LAYOUT_BUTTON: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'alignButton', 'zIndex'] };
 
 /** Columns block uses a slightly fattened Layout group: `gridTemplateColumns`
  *  is exposed right before `gridGap` so the user can override the preset
  *  picker's `--nospress-cols` with a raw `grid-template-columns` value
  *  (mix of `fr`, fixed widths, `minmax()`, `auto-fit`, …). */
-const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'columnOrder', ['justifyItems', 'alignItems']] };
+const GROUP_LAYOUT_COLUMNS: PropertyGroup = { key: 'layout', label: 'Layout', props: [['position', 'display'], 'positionInsets', 'gridTemplateColumns', 'gridGap', ['transitionDuration', 'transitionDelay'], 'transitionTimingFunction', 'columnOrder', ['justifyItems', 'alignItems'], 'zIndex'] };
 
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
