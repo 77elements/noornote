@@ -893,8 +893,12 @@ export class DMService {
         return cached.relays;
       }
 
-      // Cache miss: fetch kind:10050 from read relays
-      const relays = this.relayConfig.getReadRelays();
+      // Cache miss: fetch kind:10050 from read relays + the recipient's NIP-65
+      // write relays (outbound). kind:10050 is replaceable metadata and SHOULD
+      // be on metadata aggregators (purplepag.es) and the user's own outbox —
+      // querying only our read relays misses recipients who don't overlap.
+      const { OutboundRelaysOrchestrator } = await import('../orchestration/OutboundRelaysOrchestrator');
+      const relays = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([pubkey], true);
       const filter: NDKFilter = {
         kinds: [KIND_DM_RELAY_LIST],
         authors: [pubkey],

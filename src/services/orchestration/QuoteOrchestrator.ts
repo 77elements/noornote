@@ -54,9 +54,13 @@ export class QuoteOrchestrator extends Orchestrator {
    * Fetch quoted event from nostr reference
    * Handles: nostr:note1..., nostr:nevent1..., nostr:naddr1..., hex event IDs
    * @param nostrRef - Nostr reference string
+   * @param authorHint - Optional author pubkey (hex), used for outbound resolution
+   *                    when the reference itself doesn't carry author info (e.g. raw
+   *                    hex IDs or bare note1 references). nevent's embedded author
+   *                    takes precedence over this hint.
    * @returns Event or null if not found
    */
-  public async fetchQuotedEvent(nostrRef: string): Promise<NostrEvent | null> {
+  public async fetchQuotedEvent(nostrRef: string, authorHint?: string): Promise<NostrEvent | null> {
     // If already fetching, wait for that request (deduplication)
     if (this.fetchingQuotes.has(nostrRef)) {
       return await this.fetchingQuotes.get(nostrRef)!;
@@ -76,11 +80,15 @@ export class QuoteOrchestrator extends Orchestrator {
     }
 
     // Extract event ID, relay hints, and author from reference (note, nevent, hex)
-    const { eventId, relayHints, author } = this.extractEventIdAndHints(nostrRef);
+    const { eventId, relayHints, author: extractedAuthor } = this.extractEventIdAndHints(nostrRef);
     if (!eventId) {
       this.systemLogger.error('QuoteOrchestrator', `Invalid reference format: ${nostrRef.slice(0, 20)}...`);
       return null;
     }
+
+    // Prefer the author embedded in the reference (nevent.author) over the
+    // caller-supplied hint, since the reference itself is authoritative.
+    const author = extractedAuthor || authorHint || null;
 
     // Start new fetch with relay hints and author for outbound relay discovery
     const fetchPromise = this.fetchEventById(eventId, relayHints, author);

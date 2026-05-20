@@ -171,9 +171,12 @@ export class RepostRenderer {
         `;
         repostDiv.appendChild(placeholderDiv);
 
-        // Fetch original event via QuoteOrchestrator (async, non-blocking)
+        // Fetch original event via QuoteOrchestrator (async, non-blocking).
+        // Pass the original author (resolved from p-tag by RepostProcessor) so
+        // QuoteOrchestrator can fall back to the author's outbound relays when
+        // the original note isn't on our read relays.
         const quoteOrchestrator = QuoteOrchestrator.getInstance();
-        quoteOrchestrator.fetchQuotedEvent(originalEventId).then(async originalEvent => {
+        quoteOrchestrator.fetchQuotedEvent(originalEventId, note.author?.pubkey).then(async originalEvent => {
             if (originalEvent) {
               // Check if original author is muted
               const authService = AuthService.getInstance();

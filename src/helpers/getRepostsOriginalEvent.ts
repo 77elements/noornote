@@ -8,6 +8,11 @@
  * - Regular notes (kind !== 6): Return as-is
  * - Reposts (kind 6): Extract original note from content (JSON) or fetch via e-tag
  *
+ * Outbound resolution: when fetching by e-tag, the p-tag in a NIP-18 repost
+ * identifies the original author. We route the fetch through QuoteOrchestrator
+ * with that pubkey so it can fall back to the author's outbound relays if the
+ * original isn't on our read relays.
+ *
  * @param event - Nostr event (potentially a repost)
  * @returns Original event (unwrapped if repost, same if not)
  */
@@ -38,14 +43,12 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
   const eTag = event.tags.find(t => t[0] === 'e');
   if (eTag && eTag[1]) {
     try {
-      const { NostrTransport } = await import('../services/transport/NostrTransport');
-      const { RelayConfig } = await import('../services/RelayConfig');
+      const { QuoteOrchestrator } = await import('../services/orchestration/QuoteOrchestrator');
+      // NIP-18: p-tag carries the original author pubkey
+      const pTag = event.tags.find(t => t[0] === 'p');
+      const originalAuthor = pTag?.[1];
 
-      const transport = NostrTransport.getInstance();
-      const relays = RelayConfig.getInstance().getReadRelays();
-
-      const events = await transport.fetch(relays, [{ ids: [eTag[1]] }], 5000, false, 'getRepostsOriginal');
-      const originalEvent = events[0];
+      const originalEvent = await QuoteOrchestrator.getInstance().fetchQuotedEvent(eTag[1], originalAuthor);
       if (originalEvent) {
         return originalEvent;
       }
