@@ -81,10 +81,20 @@
   flex-shrink: 0;
 }
 
-// Anonymous actor label (e.g. NIP-88 poll votes — voter not exposed)
+// Anonymous actor label (NIP-88 poll votes, anonymous zaps — actor not exposed).
+// Inline-flex + nowrap keeps the lock SVG glued to the "Someone" text so the
+// narrow notification-item__user-identity slot can't break them across lines.
 .notification-item__anonymous {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
   font-weight: 600;
   color: var(--color-5);
+
+  svg {
+    flex-shrink: 0;
+  }
 }
 
 .notification-item__zaps:empty {

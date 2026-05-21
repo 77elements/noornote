@@ -89,6 +89,7 @@ export class ZapReceiptProcessor {
     let amountSats = 0;
 
     // Parse the embedded zap request (kind 9734)
+    let isAnon = false;
     if (descriptionJson) {
       try {
         const zapRequest = JSON.parse(descriptionJson) as NostrEvent;
@@ -98,8 +99,15 @@ export class ZapReceiptProcessor {
           message = zapRequest.content;
         }
 
-        // Get sender from zap request if not in P tag
-        if (!senderPubkey && zapRequest.pubkey) {
+        // Detect anonymous zaps (PR #1271 / Damus / Amethyst / Wisp convention).
+        // The pubkey on the embedded request is an ephemeral throwaway — not a
+        // real user — so we drop senderPubkey and let the renderer's existing
+        // "Anonymous" fallback take over.
+        isAnon = Array.isArray(zapRequest.tags)
+          && zapRequest.tags.some((t: string[]) => t[0] === 'anon');
+
+        // Get sender from zap request if not in P tag (skip for anon zaps)
+        if (!senderPubkey && zapRequest.pubkey && !isAnon) {
           senderPubkey = zapRequest.pubkey;
         }
 
@@ -111,6 +119,12 @@ export class ZapReceiptProcessor {
       } catch {
         // Failed to parse description
       }
+    }
+
+    // If the zap is anonymous, strip the ephemeral P tag too — caller should
+    // see "no sender" so its Anonymous fallback paths fire consistently.
+    if (isAnon) {
+      senderPubkey = undefined;
     }
 
     // Fallback: try to extract amount from bolt11 invoice

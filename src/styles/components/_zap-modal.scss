@@ -99,6 +99,15 @@
     }
   }
 
+  &__silent {
+    display: flex;
+    justify-content: flex-end;
+
+    .switch-container {
+      margin: 0;
+    }
+  }
+
   &__actions {
     display: flex;
     justify-content: flex-end;

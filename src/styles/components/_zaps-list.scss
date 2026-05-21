@@ -45,6 +45,30 @@
     border-radius: $radius-full;
     object-fit: cover;
     flex-shrink: 0;
+
+    &--anonymous {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background-color: var(--color-2);
+      color: var(--color-5);
+    }
+  }
+
+  &__own-anon {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  &__own-lock {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    background-color: var(--color-1);
+    border-radius: $radius-full;
+    padding: 1px;
+    color: var(--color-5);
   }
 
   &__icon {

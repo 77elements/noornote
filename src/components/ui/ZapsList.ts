@@ -6,8 +6,10 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { UserProfileService } from '../../services/UserProfileService';
+import { AuthService } from '../../services/AuthService';
+import { ZapService } from '../../services/ZapService';
 import { escapeHtml } from '../../helpers/escapeHtml';
-import { extractZapperPubkey, extractZapMessage, getZapAmountSats, formatNumberWithCommas } from '../../helpers/zapUtils';
+import { extractZapperPubkey, extractZapMessage, getZapAmountSats, formatNumberWithCommas, isZapAnonymous } from '../../helpers/zapUtils';
 import { UserHoverCard } from './UserHoverCard';
 
 interface ZapData {
@@ -16,16 +18,22 @@ interface ZapData {
   amountSats: number;
   message: string;
   avatarUrl: string;
+  isAnonymous: boolean;
+  isOwn: boolean;
 }
 
 export class ZapsList {
   private element: HTMLElement;
   private zapEvents: NostrEvent[];
   private userProfileService: UserProfileService;
+  private authService: AuthService;
+  private zapService: ZapService;
 
   constructor(zapEvents: NostrEvent[]) {
     this.zapEvents = zapEvents;
     this.userProfileService = UserProfileService.getInstance();
+    this.authService = AuthService.getInstance();
+    this.zapService = ZapService.getInstance();
     this.element = this.createElement();
   }
 
@@ -36,6 +44,45 @@ export class ZapsList {
     const zaps: ZapData[] = [];
 
     for (const event of this.zapEvents) {
+      const anon = isZapAnonymous(event);
+
+      if (anon) {
+        // Distinguish OWN anonymous zaps (matched via bolt11 in local storage)
+        // from anonymous zaps sent by others. Only the sender's own browser
+        // can resolve this — other viewers see a generic lock badge.
+        const bolt11 = event.tags.find(t => t[0] === 'bolt11')?.[1];
+        const isOwn = !!bolt11 && this.zapService.isOwnAnonZapInvoice(bolt11);
+
+        if (isOwn) {
+          const currentUser = this.authService.getCurrentUser();
+          const ownProfile = currentUser
+            ? await this.userProfileService.getUserProfile(currentUser.pubkey)
+            : null;
+          zaps.push({
+            zapperPubkey: currentUser?.pubkey || '',
+            username: ownProfile?.display_name || ownProfile?.name || 'You',
+            amountSats: getZapAmountSats(event),
+            message: extractZapMessage(event),
+            avatarUrl: ownProfile?.picture || '',
+            isAnonymous: true,
+            isOwn: true,
+          });
+        } else {
+          // For anonymous zaps from others the embedded pubkey is a throwaway —
+          // skip the profile lookup, render a lock badge instead.
+          zaps.push({
+            zapperPubkey: '',
+            username: 'Anonymous',
+            amountSats: getZapAmountSats(event),
+            message: extractZapMessage(event),
+            avatarUrl: '',
+            isAnonymous: true,
+            isOwn: false,
+          });
+        }
+        continue;
+      }
+
       const zapperPubkey = extractZapperPubkey(event);
       const profile = await this.userProfileService.getUserProfile(zapperPubkey);
 
@@ -44,7 +91,9 @@ export class ZapsList {
         username: profile?.display_name || profile?.name || 'Anonymous',
         amountSats: getZapAmountSats(event),
         message: extractZapMessage(event),
-        avatarUrl: profile?.picture || ''
+        avatarUrl: profile?.picture || '',
+        isAnonymous: false,
+        isOwn: false,
       });
     }
 
@@ -77,27 +126,52 @@ export class ZapsList {
 
     for (const zap of zaps) {
       const badge = document.createElement('div');
-      badge.className = 'zaps-list__badge';
-      badge.dataset.zapperPubkey = zap.zapperPubkey;
+      const badgeClasses = ['zaps-list__badge'];
+      if (zap.isAnonymous && !zap.isOwn) badgeClasses.push('zaps-list__badge--anonymous');
+      if (zap.isOwn) badgeClasses.push('zaps-list__badge--own-anonymous');
+      badge.className = badgeClasses.join(' ');
+
+      if (!zap.isAnonymous || zap.isOwn) {
+        badge.dataset.zapperPubkey = zap.zapperPubkey;
+      }
 
       const displayText = zap.message
         ? escapeHtml(zap.message)
         : `Zapped by ${escapeHtml(zap.username)}`;
 
+      // Own anonymous zap: render OUR avatar + a small lock badge so the sender
+      // can see at a glance "this was my secret zap" while other viewers see
+      // only the lock-only badge.
+      let avatarHtml: string;
+      if (zap.isAnonymous && !zap.isOwn) {
+        avatarHtml = `<span class="zaps-list__avatar zaps-list__avatar--anonymous"><svg width="20" height="20"><use href="#icon-lock"></use></svg></span>`;
+      } else if (zap.isOwn) {
+        const img = zap.avatarUrl
+          ? `<img src="${zap.avatarUrl}" alt="${escapeHtml(zap.username)}" class="zaps-list__avatar" />`
+          : `<span class="zaps-list__avatar"></span>`;
+        avatarHtml = `<span class="zaps-list__own-anon">${img}<svg class="zaps-list__own-lock" width="12" height="12"><use href="#icon-lock"></use></svg></span>`;
+      } else {
+        avatarHtml = `<img src="${zap.avatarUrl}" alt="${escapeHtml(zap.username)}" class="zaps-list__avatar" />`;
+      }
+
       badge.innerHTML = `
-        <img src="${zap.avatarUrl}" alt="${escapeHtml(zap.username)}" class="zaps-list__avatar" />
+        ${avatarHtml}
         <span class="zaps-list__icon">⚡</span>
         <span class="zaps-list__amount">${formatNumberWithCommas(zap.amountSats)}</span>
         <span class="zaps-list__text">${displayText}</span>
       `;
 
-      badge.addEventListener('mouseenter', () => {
-        userHoverCard.show(zap.zapperPubkey, badge);
-      });
+      // Hover card is identity-bound: skip for anonymous (no identity to show);
+      // for OWN anonymous show our own card.
+      if (!zap.isAnonymous || zap.isOwn) {
+        badge.addEventListener('mouseenter', () => {
+          userHoverCard.show(zap.zapperPubkey, badge);
+        });
 
-      badge.addEventListener('mouseleave', () => {
-        userHoverCard.hide();
-      });
+        badge.addEventListener('mouseleave', () => {
+          userHoverCard.hide();
+        });
+      }
 
       scrollContainer.appendChild(badge);
     }

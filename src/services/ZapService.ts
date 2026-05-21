@@ -7,6 +7,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { generateSecretKey, finalizeEvent } from './NostrToolsAdapter';
 import { NWCService, type PayInvoiceResult } from './NWCService';
 import { AuthService } from './AuthService';
 import { UserProfileService } from './UserProfileService';
@@ -31,6 +32,12 @@ export interface ZapRequest {
    * and articleEventId is the actual event ID (hex). Both are needed for proper tagging.
    */
   articleEventId?: string;
+  /**
+   * When true, the kind:9734 zap request is signed with a throwaway ephemeral key
+   * and carries an `["anon", ""]` tag — recipient sees the sats but neither relays
+   * nor recipient nor any third party can identify the real sender.
+   */
+  anonymous?: boolean;
 }
 
 export interface ZapResult {
@@ -191,7 +198,8 @@ export class ZapService {
     authorPubkey: string,
     amount: number,
     comment?: string,
-    articleEventId?: string
+    articleEventId?: string,
+    anonymous?: boolean
   ): Promise<ZapResult> {
     const connectionError = await this.checkPaymentAvailability();
     if (connectionError) return connectionError;
@@ -200,6 +208,7 @@ export class ZapService {
     if (noteId) zapRequest.noteId = noteId;
     if (comment) zapRequest.comment = comment;
     if (articleEventId) zapRequest.articleEventId = articleEventId;
+    if (anonymous) zapRequest.anonymous = true;
 
     return this.sendZap(zapRequest);
   }
@@ -271,6 +280,14 @@ export class ZapService {
     }
 
     this.systemLogger.info('ZapService', 'Invoice received');
+
+    // Record own anonymous-zap bolt11 BEFORE payment so ZapsList can identify
+    // it as ours when the receipt later shows up. The bolt11 is the only stable
+    // link between the throwaway-signed 9734 and its 9735 receipt — the
+    // ephemeral pubkey has been discarded by now.
+    if (request.anonymous) {
+      this.markOwnAnonZapInvoice(invoice);
+    }
 
     // Step 4: Pay invoice (NWC if configured, otherwise WebLN)
     const useNWC = this.nwcService.isConnected();
@@ -547,6 +564,31 @@ export class ZapService {
       }
       // else: PROFILE ZAP — only #p tag, no #e/#a (NIP-57)
 
+      // ANONYMOUS branch: throwaway ephemeral key, ["anon", ""] tag.
+      // The logged-in signer is bypassed entirely — neither NIP-46 bunker nor
+      // NIP-55 Amber sees the event, so the signer cannot log "user zapped X".
+      // ephPriv goes out of scope on return and is GC-eligible.
+      if (request.anonymous) {
+        tags.push(['anon', '']);
+
+        const ephPriv = generateSecretKey();
+        // finalizeEvent derives the pubkey internally from ephPriv — we just
+        // need to keep ephPriv alive for that one call, then let it fall out
+        // of scope so it's GC-eligible. Nothing else may reference it.
+        const anonEvent = finalizeEvent({
+          kind: 9734,
+          created_at: Math.floor(Date.now() / 1000),
+          tags,
+          content: request.comment || '',
+        }, ephPriv);
+
+        // Do NOT log the ephemeral pubkey or event id — that would give a
+        // filesystem-access attacker a correlation path despite the anon signature.
+        this.systemLogger.info('ZapService', 'Anonymous zap request created');
+
+        return anonEvent as unknown as NostrEvent;
+      }
+
       const unsignedEvent = {
         kind: 9734,
         created_at: Math.floor(Date.now() / 1000),
@@ -699,6 +741,35 @@ export class ZapService {
     zaps[noteId] = amount;
     PerAccountLocalStorage.getInstance().set(StorageKeys.USER_ZAPS, zaps);
     this.systemLogger.info('ZapService', `Stored zap: ${amount} sats for note ${noteId.slice(0, 8)}`);
+  }
+
+  /** Cap on the per-account ring buffer of own anonymous-zap invoices. */
+  private static readonly OWN_ANON_ZAP_CAP = 500;
+
+  /**
+   * Remember a bolt11 invoice we just paid as an anonymous zap.
+   * ZapsList consults this to render our own anon-zaps with our own avatar +
+   * a lock badge, while still showing them as Anonymous to other viewers
+   * (their localStorage doesn't have this entry).
+   */
+  private markOwnAnonZapInvoice(invoice: string): void {
+    const store = PerAccountLocalStorage.getInstance();
+    const list = store.get<string[]>(StorageKeys.OWN_ANON_ZAP_INVOICES, []);
+    if (list.includes(invoice)) return;
+    list.push(invoice);
+    while (list.length > ZapService.OWN_ANON_ZAP_CAP) list.shift();
+    store.set(StorageKeys.OWN_ANON_ZAP_INVOICES, list);
+  }
+
+  /**
+   * Check whether a bolt11 invoice belongs to an anonymous zap we sent ourselves.
+   * Used by ZapsList to badge our own anonymous zaps in our own UI without
+   * leaking that information to other viewers.
+   */
+  public isOwnAnonZapInvoice(invoice: string): boolean {
+    const list = PerAccountLocalStorage.getInstance()
+      .get<string[]>(StorageKeys.OWN_ANON_ZAP_INVOICES, []);
+    return list.includes(invoice);
   }
 
   /**

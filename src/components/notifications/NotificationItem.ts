@@ -95,12 +95,20 @@ export class NotificationItem {
       </div>
     `;
 
-    // Insert UserIdentity component (anonymized for poll votes)
+    // Insert UserIdentity component (anonymized for poll votes + anonymous zaps)
     const identityContainer = item.querySelector('.notification-item__user-identity');
     if (identityContainer) {
       if (this.options.type === 'poll_vote') {
         // NIP-88 votes: don't expose the voter — show neutral "Someone" instead.
         identityContainer.innerHTML = '<span class="notification-item__anonymous">Someone</span>';
+      } else if (this.isAnonymousZap()) {
+        // Anonymous zap: the embedded pubkey is an ephemeral throwaway, so we
+        // don't render it. Lock icon + "Someone" makes the secret nature
+        // obvious; the actual npub is only available via diagnostic logs.
+        identityContainer.innerHTML =
+          '<span class="notification-item__anonymous">' +
+          '<svg width="14" height="14" aria-hidden="true"><use href="#icon-lock"></use></svg>' +
+          'Someone</span>';
       } else {
         const authorPubkey = this.getAuthorPubkey();
         this.userIdentity = new UserIdentity({
@@ -364,7 +372,8 @@ export class NotificationItem {
       case 'reaction': return `reacted to your ${target}`;
       case 'zap': {
         const amount = this.getZapAmount();
-        return amount ? `zapped your ${target} ${amount.toLocaleString()} sats` : `zapped your ${target}`;
+        const verb = this.isAnonymousZap() ? 'silently zapped' : 'zapped';
+        return amount ? `${verb} your ${target} ${amount.toLocaleString()} sats` : `${verb} your ${target}`;
       }
       case 'poll_vote': return 'voted on your poll';
       case 'article': return 'posted a new article';
@@ -379,6 +388,25 @@ export class NotificationItem {
       case 'mutual_new': return 'started following you back!';
       case 'highlight': return `highlighted your ${target}`;
       default: return `interacted with your ${target}`;
+    }
+  }
+
+  /**
+   * Detect whether a kind:9735 zap receipt's embedded zap request carries an
+   * `anon` tag — anonymous zap (PR #1271 / Damus / Amethyst / Wisp convention).
+   * The pubkey on the embedded request is then an ephemeral throwaway and the
+   * UI should render a generic "Someone" + lock instead.
+   */
+  private isAnonymousZap(): boolean {
+    if (this.options.type !== 'zap') return false;
+    const descTag = this.options.event.tags.find((t: string[]) => t[0] === 'description');
+    if (!descTag?.[1]) return false;
+    try {
+      const zapRequest = JSON.parse(descTag[1]);
+      return Array.isArray(zapRequest.tags)
+        && zapRequest.tags.some((t: string[]) => t[0] === 'anon');
+    } catch {
+      return false;
     }
   }
 

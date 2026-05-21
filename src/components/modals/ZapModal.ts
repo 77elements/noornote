@@ -10,6 +10,7 @@ import { NWCService } from '../../services/NWCService';
 import { ToastService } from '../../services/ToastService';
 import { PlatformService } from '../../services/PlatformService';
 import { SystemLogger } from '../system/SystemLogger';
+import { Switch } from '../ui/Switch';
 
 const PRESET_AMOUNTS = [
   { display: '21', value: 21 },
@@ -45,6 +46,8 @@ export class ZapModal {
   private systemLogger: SystemLogger;
   private currentOptions: ZapModalOptions | null = null;
   private isSending: boolean = false;
+  private isAnonymous: boolean = false;
+  private silentSwitch: Switch | null = null;
 
   constructor(options: ZapModalOptions) {
     this.modalService = ModalService.getInstance();
@@ -97,6 +100,17 @@ export class ZapModal {
       `<button type="button" class="btn btn--mini zap-modal__preset${p.value === defaults.amount ? ' zap-modal__preset--active' : ''}" data-amount="${p.value}">${p.display}</button>`
     ).join('');
 
+    // Silent Zap switch: throwaway-key Anonymous mode. Always available — works
+    // with every signer (NIP-07/46/55/nsec) and every zap target (note/profile/article).
+    this.silentSwitch = new Switch({
+      label: 'Silent Zap',
+      checked: false,
+      id: 'zap-silent-switch',
+      onChange: (checked) => {
+        this.isAnonymous = checked;
+      },
+    });
+
     container.innerHTML = `
       <div class="zap-modal__content">
         <div class="zap-modal__amount-display">
@@ -126,6 +140,10 @@ export class ZapModal {
           />
         </div>
 
+        <div class="zap-modal__silent">
+          ${this.silentSwitch.render()}
+        </div>
+
         <div class="zap-modal__actions">
           <button type="button" class="btn btn--passive" id="zap-cancel-btn">Cancel</button>
           <button type="button" class="btn" id="zap-send-btn">
@@ -151,6 +169,11 @@ export class ZapModal {
     if (!amountInput || !commentInput || !cancelBtn || !sendBtn) {
       this.systemLogger.error('ZapModal', 'Failed to find modal elements');
       return;
+    }
+
+    // Wire up the Silent Zap switch (must run after innerHTML is mounted).
+    if (this.silentSwitch) {
+      this.silentSwitch.setupEventListeners(document.body);
     }
 
     // Focus amount input
@@ -260,7 +283,8 @@ export class ZapModal {
         this.currentOptions.authorPubkey,
         amount,
         comment,
-        this.currentOptions.articleEventId
+        this.currentOptions.articleEventId,
+        this.isAnonymous
       );
 
       // Hide loading state
