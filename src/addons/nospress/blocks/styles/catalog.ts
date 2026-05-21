@@ -635,6 +635,13 @@ export const MOBILE_SECTION_DEFAULT_DISPLAY: Record<MobileMenuSection, string> =
  *  we're editing the wrapper (`''`) or a mobile-menu sub-section
  *  (`mobileMenu.<sec>.`). */
 export function getDefaultDisplayFor(scope: string, fieldPrefix: string): string {
+  // Stuck-state hamburger sub-scope rides on the same per-section defaults
+  // as the regular mobile-menu sub-scope — strip the `sticky.` head and
+  // delegate to the existing MOBILE_SECTION lookup.
+  if (fieldPrefix.startsWith('sticky.mobileMenu.')) {
+    const sec = fieldPrefix.slice('sticky.mobileMenu.'.length).split('.')[0] as MobileMenuSection;
+    return MOBILE_SECTION_DEFAULT_DISPLAY[sec] ?? '';
+  }
   if (fieldPrefix.startsWith('mobileMenu.')) {
     const sec = fieldPrefix.slice('mobileMenu.'.length).split('.')[0] as MobileMenuSection;
     return MOBILE_SECTION_DEFAULT_DISPLAY[sec] ?? '';

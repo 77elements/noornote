@@ -982,12 +982,15 @@ function renderStickySubScopeSection(opts: RenderPropertyPanelOptions): string {
     entries: resolveGroupEntries(g.props),
   }));
   const body = renderEntriesForGroups(opts, resolvedGroups, 'sticky.');
-  // Nested link sub-scopes (link/visited/hover/focus/active) for blocks
-  // that surface the regular link sub-scope at top-level. Lets the user
-  // shift link colors / hover-states only when the block is `.is-stuck`,
-  // independent of the base-state link styling.
+  // Nested hamburger sub-scope (stuck-state styling for the nav-menu's
+  // hamburger button). Surfaced for the same block set that gets the
+  // nested link sub-scopes — any block whose subtree can contain the
+  // hamburger button (nav-menu directly, or a container wrapping one).
+  // Writes flow through `sticky.mobileMenu.hamburger.<prop>` and emit as
+  // `[id].is-stuck .nospress-nav-menu__hamburger { … !important }`.
   const blockType = matrixKey(opts.scope);
   const includeStickyLinks = BLOCKS_WITH_LINKS_SUBSCOPE.has(blockType);
+  const stickyHamburgerBody = includeStickyLinks ? renderStickyHamburgerSubScopeSection(opts) : '';
   const stickyLinksBody = includeStickyLinks ? renderLinkSubScopeSections(opts, 'sticky.') : '';
   return `
     <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-sticky-section="stuck">
@@ -1001,7 +1004,40 @@ function renderStickySubScopeSection(opts: RenderPropertyPanelOptions): string {
       </div>
       <div class="nn-ui-toggle__content">
         ${body}
+        ${stickyHamburgerBody}
         ${stickyLinksBody}
+      </div>
+    </section>
+  `;
+}
+
+/** Stuck-state hamburger sub-scope — one accordion section, mirrors the
+ *  Hamburger entry from `MOBILE_MENU_SECTIONS` group-for-group so the user
+ *  gets the same property surface they already know from the mobile-menu
+ *  panel, but scoped to `.is-stuck`. Writes land at
+ *  `style.sticky.mobileMenu.hamburger.<prop>` via the existing recursive
+ *  read/writeStyleField machinery (no access-layer change needed). */
+function renderStickyHamburgerSubScopeSection(opts: RenderPropertyPanelOptions): string {
+  const hamburgerSection = MOBILE_MENU_SECTIONS.find(s => s.key === 'hamburger');
+  if (!hamburgerSection) return '';
+  const resolvedGroups: ResolvedPropertyGroup[] = hamburgerSection.groups.map(g => ({
+    key: g.key,
+    label: g.label,
+    entries: resolveGroupEntries(g.props),
+  }));
+  const body = renderEntriesForGroups(opts, resolvedGroups, 'sticky.mobileMenu.hamburger.');
+  return `
+    <section class="nn-ui-toggle nospress-prop-link-section" data-toggle-section data-sticky-mobile-section="hamburger">
+      <div class="nn-ui-toggle__header" data-toggle-header>
+        <div class="nn-ui-toggle__info">
+          <h2 class="nn-ui-toggle__title">Hamburger button</h2>
+        </div>
+        <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+          <svg width="16" height="16"><use href="#icon-chevron-down"/></svg>
+        </button>
+      </div>
+      <div class="nn-ui-toggle__content">
+        ${body}
       </div>
     </section>
   `;

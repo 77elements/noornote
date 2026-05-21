@@ -22,6 +22,7 @@ import {
   BOOKMARK_FOLDER_GROUPS,
   CARD_HOVER_GROUPS,
   LINK_SUBSCOPE_GROUPS,
+  MOBILE_MENU_SECTIONS,
   NAV_MENU_DESKTOP_GROUPS,
   NAV_MENU_UL_EXTRA_GROUPS,
   PORTFOLIO_GROUPS,
@@ -68,6 +69,16 @@ const CARD_HOVER_SCHEMA: PropertyEntry[] = CARD_HOVER_GROUPS
 /** Flat schema for the sticky-stuck sub-scope — same pre-resolve. */
 const STICKY_SUBSCOPE_SCHEMA: PropertyEntry[] = STICKY_SUBSCOPE_GROUPS
   .flatMap(g => flattenGroupProps(g.props));
+
+/** Flat schema for the stuck-state hamburger sub-scope. Pulled from the
+ *  Hamburger section of `MOBILE_MENU_SECTIONS` so the emitter writes the
+ *  same property surface the Hamburger Properties panel exposes
+ *  (Layout/Spacing/Sizing/Typography/Border). Empty fallback `[]` keeps
+ *  the build branch defensive if the catalog ever drops the hamburger
+ *  entry. */
+const STICKY_HAMBURGER_SUBSCOPE_SCHEMA: PropertyEntry[] = (
+  MOBILE_MENU_SECTIONS.find(s => s.key === 'hamburger')?.groups ?? []
+).flatMap(g => flattenGroupProps(g.props));
 
 /** Same flat-schema treatment for the nav-menu desktop sub-scope
  *  (ul/li/aActive). Includes the `ul`-only extras (listStyleType etc.)
@@ -402,6 +413,14 @@ export function buildBlockStickyCss(
   const stuckLinkSel = (pseudo: string): string =>
     pseudo === 'link' ? `${stuckSel} a, ${stuckSel} a:link` : `${stuckSel} a:${pseudo}`;
 
+  // Stuck-state hamburger selector — mirrors the mobile-menu sub-scope's
+  // `[..=X] .nospress-nav-menu__hamburger` pattern but scoped under
+  // `.is-stuck` so the rule fires only when the wrapper is stuck. Uses a
+  // flat single-section schema (the standard property catalog) since
+  // `mobileMenu.hamburger` is itself a `CommonStyle` and gets the same
+  // property surface as any block body.
+  const stuckHamburgerSel = `${stuckSel} .nospress-nav-menu__hamburger`;
+
   const defaults = block.style?.sticky;
   if (defaults) {
     const decls = buildImportantInlineStyle(STICKY_SUBSCOPE_SCHEMA, defaults);
@@ -417,6 +436,16 @@ export function buildBlockStickyCss(
         const linkDecls = buildImportantInlineStyle(LINK_SUBSCOPE_SCHEMA, linkStyle);
         if (linkDecls) parts.push(`${stuckLinkSel(pseudo)} { ${linkDecls} }`);
       }
+    }
+    // Stuck-state hamburger sub-scope: `style.sticky.mobileMenu.hamburger` →
+    // standalone rule targeting the descendant hamburger button. The full
+    // PROPERTY_CATALOG schema is used so every group surfaced by the
+    // Hamburger Properties panel (Layout/Spacing/Sizing/Typography/Border)
+    // can emit a declaration.
+    const stuckHamburger = defaults.mobileMenu?.hamburger;
+    if (stuckHamburger) {
+      const hamburgerDecls = buildImportantInlineStyle(STICKY_HAMBURGER_SUBSCOPE_SCHEMA, stuckHamburger);
+      if (hamburgerDecls) parts.push(`${stuckHamburgerSel} { ${hamburgerDecls} }`);
     }
   }
 
@@ -437,6 +466,11 @@ export function buildBlockStickyCss(
           const linkDecls = buildImportantInlineStyle(LINK_SUBSCOPE_SCHEMA, linkStyle);
           if (linkDecls) inner.push(`${stuckLinkSel(pseudo)} { ${linkDecls} }`);
         }
+      }
+      const stuckHamburger = style.sticky.mobileMenu?.hamburger;
+      if (stuckHamburger) {
+        const hamburgerDecls = buildImportantInlineStyle(STICKY_HAMBURGER_SUBSCOPE_SCHEMA, stuckHamburger);
+        if (hamburgerDecls) inner.push(`${stuckHamburgerSel} { ${hamburgerDecls} }`);
       }
       if (inner.length > 0) parts.push(`@media ${mediaQuery} { ${inner.join(' ')} }`);
     }
