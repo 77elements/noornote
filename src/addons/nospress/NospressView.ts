@@ -2252,11 +2252,24 @@ export class NospressView extends View {
     const draft = this.gradientEdit.draft;
 
     if (target.dataset?.gradientStopColorInput !== undefined) {
-      this.setSelectedStopColor(target.value);
+      // Light commit: every keystroke would otherwise re-render the editor,
+      // tearing down the input the user is typing into and resetting their
+      // cursor mid-paste. Full commit fires on `change` (blur / Enter) below.
+      const stop = this.gradientEdit.draft.stops[this.gradientEdit.selectedStopIndex];
+      if (stop) stop.color = target.value;
+      if (e.type === 'change') this.commitGradientLive();
+      else this.commitGradientLive({ light: true });
       return true;
     }
     if (target.dataset?.gradientStopColorNative !== undefined) {
-      this.setSelectedStopColor(target.value);
+      // The OS-level native color picker is anchored to this <input> element.
+      // A full re-render rebuilds the element and the OS popup loses its
+      // anchor → closes on first keystroke / paste in its HEX field. Light
+      // commit keeps the element alive so the picker stays open.
+      const stop = this.gradientEdit.draft.stops[this.gradientEdit.selectedStopIndex];
+      if (stop) stop.color = target.value;
+      if (e.type === 'change') this.commitGradientLive();
+      else this.commitGradientLive({ light: true });
       return true;
     }
     if (target.dataset?.gradientStopPosition !== undefined) {
