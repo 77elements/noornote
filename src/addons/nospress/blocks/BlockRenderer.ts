@@ -30,6 +30,7 @@ import { renderArticlesList } from './renderers/ArticlesListRenderer';
 import { renderWeblog } from './renderers/WeblogRenderer';
 import { renderDiv } from './renderers/DivRenderer';
 import { renderCard } from './renderers/CardRenderer';
+import { renderFlipCard } from './renderers/FlipCardRenderer';
 import { renderNavMenu } from './renderers/NavMenuRenderer';
 import { renderPortfolio } from './renderers/PortfolioRenderer';
 
@@ -65,6 +66,7 @@ export class BlockRenderer {
         case 'weblog':          return renderWeblog(block, editable);
         case 'div':             return renderDiv(block, { editable });
         case 'card':            return renderCard(block, { editable });
+        case 'flip-card':       return renderFlipCard(block, { editable });
         case 'nav-menu':        return renderNavMenu(block, editable);
         case 'portfolio':       return renderPortfolio(block, editable);
       }

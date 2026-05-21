@@ -39,6 +39,7 @@ export const BLOCK_CATALOG: BlockTypeMeta[] = [
   { type: 'gallery',         label: 'Gallery',         description: 'Multi-image grid',                         icon: '⚏', enabled: true },
   { type: 'columns',         label: 'Columns',         description: 'Multi-column layout (20 presets)',         icon: '⊞', enabled: true },
   { type: 'card',            label: 'Card',            description: 'Media card with optional cover image and nested content blocks', icon: '🃏', enabled: true },
+  { type: 'flip-card',       label: 'Flip Card',       description: 'Two-faced card that animates from front to back on hover or click', icon: '🔄', enabled: true },
 
   // 4. Nostr / NoorNote-specific blocks (consume on-relay data).
   { type: 'embed',           label: 'Nostr Embed',     description: 'Embed a Nostr note or article',            icon: '🔮', enabled: true },

@@ -543,6 +543,11 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // border-radius (the molecule defaults to $radius-pill), and effects
   // (shadow / hover lift).
   card:              buildBlockSchema({ sizing: 'full', extras: [GROUP_DIVIDER] }),
+  // Flip-card: same container schema as card. The 3D flip transform plus
+  // both faces' inner blocks all sit inside the styled wrapper so user
+  // overrides (background, padding, border-radius, box-shadow) propagate
+  // naturally to the rotating container.
+  'flip-card':       buildBlockSchema({ sizing: 'full', content: 'background' }),
   // Vendor footer (.user-site__footer) — site-wide platform-attribution
   // wrapper, fixed content, fully styleable. Same schema as textual
   // blocks plus the link sub-scope (rendered as the inner <a>). Storage
@@ -614,6 +619,7 @@ export const BLOCK_DEFAULT_DISPLAY: Record<string, string> = {
   weblog:            'block',
   div:               'block',
   card:              'block',
+  'flip-card':       'block',
   'nav-menu':        'block',
   'vendor-footer':   'block',
   portfolio:         'block',

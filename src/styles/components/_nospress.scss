@@ -1521,6 +1521,67 @@
   }
 }
 
+// Flip-card editor chrome — Front/Back segmented toggle on top, three
+// inline config rows (effect / duration / trigger), and the dashed
+// children slot for whichever face is currently active. Neutral look
+// like the rest of the editor: schematic composer, not a live preview.
+.nospress-block-flip-card__edit {
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+}
+
+.nospress-block-flip-card__side-toggle {
+  display: inline-flex;
+  align-self: flex-start;
+  padding: 2px;
+  border: 1px solid $color-2;
+  border-radius: $radius-pill;
+  gap: 2px;
+}
+
+.nospress-block-flip-card__side-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: $color-3;
+  padding: calc($gap / 4) $gap;
+  border-radius: $radius-pill;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+  user-select: none;
+
+  &:hover {
+    color: $color-5;
+  }
+
+  &.is-active {
+    background: $color-4;
+    color: $color-1;
+  }
+}
+
+.nospress-block-flip-card__face {
+  margin-top: calc($gap / 2);
+  padding: $gap;
+  border: 1px dashed $color-2;
+  border-radius: $radius-xl;
+}
+
+.nospress-block-flip-card__placeholder {
+  padding: $gap;
+  text-align: center;
+  color: $color-3;
+  font-style: italic;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    color: $color-4;
+  }
+}
+
 // Text edit
 .nospress-block-text__input {
   min-height: 80px;

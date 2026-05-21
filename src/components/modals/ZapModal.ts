@@ -140,16 +140,17 @@ export class ZapModal {
           />
         </div>
 
-        <div class="zap-modal__silent">
-          ${this.silentSwitch.render()}
-        </div>
-
-        <div class="zap-modal__actions">
-          <button type="button" class="btn btn--passive" id="zap-cancel-btn">Cancel</button>
-          <button type="button" class="btn" id="zap-send-btn">
-            <span class="btn__text">Zap</span>
-            <span class="btn__loading" style="display: none;">Sending...</span>
-          </button>
+        <div class="l-row--split zap-modal__bottom">
+          <div class="zap-modal__silent">
+            ${this.silentSwitch.render()}
+          </div>
+          <div class="zap-modal__buttons">
+            <button type="button" class="btn btn--passive" id="zap-cancel-btn">Cancel</button>
+            <button type="button" class="btn" id="zap-send-btn">
+              <span class="btn__text">Zap</span>
+              <span class="btn__loading" style="display: none;">Sending...</span>
+            </button>
+          </div>
         </div>
       </div>
     `;

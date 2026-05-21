@@ -50,8 +50,21 @@ export type Block =
   | { id: string; type: 'weblog'; pubkey?: string; hashtags?: string[]; includeWithoutHash?: boolean; postsPerPage?: number; excludeReplies?: boolean; excludeReposts?: boolean; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'div'; tag: DivTag; children: Block[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'card'; image?: string; imageAlt?: string; children: Block[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
+  | { id: string; type: 'flip-card'; frontChildren: Block[]; backChildren: Block[]; flipEffect?: FlipEffect; flipDuration?: string; flipTrigger?: FlipTrigger; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'nav-menu'; menuId: string; horizontal?: boolean; alignment?: 'left' | 'center' | 'right'; hamburgerBreakpoints?: string[]; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs }
   | { id: string; type: 'portfolio'; projects: PortfolioProject[]; perPage?: number; sortOrder?: PortfolioSortOrder; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle>; attrs?: BlockAttrs };
+
+/** Flip-card animation between front and back face.
+ *  `horizontal` rotates around the Y axis, `vertical` around the X axis,
+ *  `fade` cross-fades the two faces without a 3D transform (mobile-safe). */
+export type FlipEffect = 'horizontal' | 'vertical' | 'fade';
+export const FLIP_EFFECTS: readonly FlipEffect[] = ['horizontal', 'vertical', 'fade'] as const;
+
+/** What flips the card to its back face on the public page. `hover` is
+ *  desktop-only — touch devices never fire it. `click` works everywhere
+ *  but loses the natural mouse-out auto-flip-back behaviour. */
+export type FlipTrigger = 'hover' | 'click';
+export const FLIP_TRIGGERS: readonly FlipTrigger[] = ['hover', 'click'] as const;
 
 /** Project sort modes:
  *   - `manual`  → use the drag-order the editor maintains in `projects[]`
@@ -129,6 +142,7 @@ export function createBlock(type: BlockType): Block {
     case 'weblog':          return { id, type, hashtags: [] };
     case 'div':             return { id, type, tag: 'div', children: [] };
     case 'card':            return { id, type, children: [] };
+    case 'flip-card':       return { id, type, frontChildren: [], backChildren: [], flipEffect: 'horizontal', flipDuration: '600ms', flipTrigger: 'hover' };
     case 'nav-menu':        return { id, type, menuId: PRIMARY_MENU_ID };
     case 'portfolio':       return { id, type, projects: [] };
   }
@@ -159,6 +173,9 @@ function resetBlockIds(block: Block): void {
     for (const b of block.children) resetBlockIds(b);
   } else if (block.type === 'card') {
     for (const b of block.children) resetBlockIds(b);
+  } else if (block.type === 'flip-card') {
+    for (const b of block.frontChildren) resetBlockIds(b);
+    for (const b of block.backChildren) resetBlockIds(b);
   } else if (block.type === 'portfolio') {
     for (const p of block.projects) p.id = newId();
   }
@@ -255,6 +272,13 @@ export function stripBlockContent(block: Block): Block {
       delete fresh.imageAlt;
       fresh.children = fresh.children.map(stripBlockContent);
       break;
+    case 'flip-card':
+      // Both faces recurse so their nested structure / styling survives,
+      // but inner user-typed content gets reset. `flipEffect / Duration /
+      // Trigger` are behaviour (kept like the weblog booleans).
+      fresh.frontChildren = fresh.frontChildren.map(stripBlockContent);
+      fresh.backChildren = fresh.backChildren.map(stripBlockContent);
+      break;
     case 'portfolio':
       fresh.projects = [];
       // perPage, sortOrder kept (display behaviour)
@@ -289,6 +313,10 @@ function containsBlockId(parent: Block, childId: string, _seen: Set<string>): bo
   if (parent.type === 'card') {
     return parent.children.some(b => b.id === childId || containsBlockId(b, childId, _seen));
   }
+  if (parent.type === 'flip-card') {
+    return parent.frontChildren.some(b => b.id === childId || containsBlockId(b, childId, _seen))
+      || parent.backChildren.some(b => b.id === childId || containsBlockId(b, childId, _seen));
+  }
   return false;
 }
 
@@ -302,7 +330,8 @@ export interface BlockLocation {
   container?:
     | { type: 'column'; block: Extract<Block, { type: 'columns' }>; colIndex: number }
     | { type: 'div'; block: Extract<Block, { type: 'div' }> }
-    | { type: 'card'; block: Extract<Block, { type: 'card' }> };
+    | { type: 'card'; block: Extract<Block, { type: 'card' }> }
+    | { type: 'flipCard'; block: Extract<Block, { type: 'flip-card' }>; side: 'front' | 'back' };
 }
 
 /**
@@ -422,6 +451,9 @@ function normalizeBlocks(blocks: Block[]): void {
       normalizeBlocks(b.children);
     } else if (b.type === 'card') {
       normalizeBlocks(b.children);
+    } else if (b.type === 'flip-card') {
+      normalizeBlocks(b.frontChildren);
+      normalizeBlocks(b.backChildren);
     }
   }
 }
@@ -450,6 +482,11 @@ function findInArray(
     } else if (b.type === 'card') {
       const found = findInArray(b.children, blockId, { type: 'card', block: b });
       if (found) return found;
+    } else if (b.type === 'flip-card') {
+      const foundFront = findInArray(b.frontChildren, blockId, { type: 'flipCard', block: b, side: 'front' });
+      if (foundFront) return foundFront;
+      const foundBack = findInArray(b.backChildren, blockId, { type: 'flipCard', block: b, side: 'back' });
+      if (foundBack) return foundBack;
     }
   }
   return null;

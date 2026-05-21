@@ -156,3 +156,79 @@ html.layout--public {
     }
   }
 }
+
+// Flip-card public render. Scoped under `html.layout--public` because the
+// editor uses the same `.nospress-block-flip-card__face--back` class but
+// must NOT inherit `backface-visibility: hidden` + `transform: rotateY(180deg)`
+// — that would make the back face invisible in the schematic composer.
+// The public page no longer wraps content in `.user-site` (cssScope anchors
+// directly to `#app` now), so the html-level `layout--public` flag set by
+// App.ts's public boot path is the canonical "this is a public render" gate.
+// Both faces sit at the same grid slot; the outer wrapper rotates via 3D
+// transform (horizontal/vertical) or cross-fades (fade). `--flip-duration`
+// is inlined per-instance so the user can dial the timing from the
+// Properties panel. Trigger gates: `hover` uses `:hover`, `click` toggles
+// the `.is-flipped` class via the small runtime in flipCardRuntime.
+html.layout--public {
+  .nospress-block-flip-card {
+    display: grid;
+    grid-template-areas: "stack";
+    perspective: 1000px;
+    position: relative;
+
+    // The two faces share the grid slot so the wrapper inherits the
+    // height of whichever face is taller — no jump on flip.
+    &__face {
+      grid-area: stack;
+      backface-visibility: hidden;
+      transition: transform var(--flip-duration, 600ms) ease, opacity var(--flip-duration, 600ms) ease;
+      transform-style: preserve-3d;
+
+      &--back {
+        // Default hidden orientation — overridden per flip-effect below.
+        transform: rotateY(180deg);
+      }
+    }
+
+    // Horizontal flip — rotate around Y.
+    &[data-flip-effect="horizontal"] {
+      .nospress-block-flip-card__face--front { transform: rotateY(0); }
+      .nospress-block-flip-card__face--back  { transform: rotateY(180deg); }
+
+      &[data-flip-trigger="hover"]:hover,
+      &[data-flip-trigger="click"].is-flipped {
+        .nospress-block-flip-card__face--front { transform: rotateY(-180deg); }
+        .nospress-block-flip-card__face--back  { transform: rotateY(0); }
+      }
+    }
+
+    // Vertical flip — rotate around X.
+    &[data-flip-effect="vertical"] {
+      .nospress-block-flip-card__face--front { transform: rotateX(0); }
+      .nospress-block-flip-card__face--back  { transform: rotateX(180deg); }
+
+      &[data-flip-trigger="hover"]:hover,
+      &[data-flip-trigger="click"].is-flipped {
+        .nospress-block-flip-card__face--front { transform: rotateX(-180deg); }
+        .nospress-block-flip-card__face--back  { transform: rotateX(0); }
+      }
+    }
+
+    // Fade — cross-fade opacity, no 3D rotation. Mobile-safe fallback for
+    // sites that don't want the flip animation.
+    &[data-flip-effect="fade"] {
+      .nospress-block-flip-card__face {
+        transform: none;
+        transition: opacity var(--flip-duration, 600ms) ease;
+      }
+      .nospress-block-flip-card__face--front { opacity: 1; }
+      .nospress-block-flip-card__face--back  { opacity: 0; }
+
+      &[data-flip-trigger="hover"]:hover,
+      &[data-flip-trigger="click"].is-flipped {
+        .nospress-block-flip-card__face--front { opacity: 0; }
+        .nospress-block-flip-card__face--back  { opacity: 1; }
+      }
+    }
+  }
+}

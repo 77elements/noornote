@@ -38,6 +38,7 @@ import { BlockRenderer } from './blocks/BlockRenderer';
 import { renderColumns, renderLayoutPreview } from './blocks/renderers/ColumnsRenderer';
 import { renderDiv } from './blocks/renderers/DivRenderer';
 import { renderCard } from './blocks/renderers/CardRenderer';
+import { renderFlipCard } from './blocks/renderers/FlipCardRenderer';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
@@ -148,7 +149,8 @@ type Cursor =
   | { scope: 'page'; index: number }
   | { scope: 'column'; columnsBlockId: string; colIndex: number; index: number }
   | { scope: 'div'; divBlockId: string; index: number }
-  | { scope: 'card'; cardBlockId: string; index: number };
+  | { scope: 'card'; cardBlockId: string; index: number }
+  | { scope: 'flipCard'; flipCardBlockId: string; side: 'front' | 'back'; index: number };
 
 export class NospressView extends View {
   private container: HTMLElement;
@@ -190,6 +192,11 @@ export class NospressView extends View {
    *  top-level blocks, or inside a specific column of a `columns` block.
    *  index = -1 means "not set yet, default to end on next render". */
   private cursor: Cursor = { scope: 'page', index: -1 };
+  /** Editor-only state — which face of each flip-card block is currently
+   *  visible/editable. Map keyed by blockId; missing entries default to
+   *  'front'. Resets per editor session (not persisted) since it's UI
+   *  state, not page data. */
+  private flipCardActiveSide: Map<string, 'front' | 'back'> = new Map();
   /** Most-recently-used block types in MRU order. In-memory only. */
   private recentBlockTypes: BlockType[] = [];
   /** Currently focused/selected block ids in the editor. Empty set = no
@@ -3587,12 +3594,19 @@ export class NospressView extends View {
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? targetLoc.block.children.length : cur.index, targetLoc.block.children.length));
         targetLoc.block.children.splice(insertIndex, 0, block);
         this.cursor = { scope: 'div', divBlockId: cur.divBlockId, index: insertIndex + 1 };
-      } else {
+      } else if (cur.scope === 'card') {
         const targetLoc = findBlockInPage(page, cur.cardBlockId);
         if (!targetLoc || targetLoc.block.type !== 'card') return;
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? targetLoc.block.children.length : cur.index, targetLoc.block.children.length));
         targetLoc.block.children.splice(insertIndex, 0, block);
         this.cursor = { scope: 'card', cardBlockId: cur.cardBlockId, index: insertIndex + 1 };
+      } else {
+        const targetLoc = findBlockInPage(page, cur.flipCardBlockId);
+        if (!targetLoc || targetLoc.block.type !== 'flip-card') return;
+        const childrenArr = cur.side === 'back' ? targetLoc.block.backChildren : targetLoc.block.frontChildren;
+        const insertIndex = Math.max(0, Math.min(cur.index < 0 ? childrenArr.length : cur.index, childrenArr.length));
+        childrenArr.splice(insertIndex, 0, block);
+        this.cursor = { scope: 'flipCard', flipCardBlockId: cur.flipCardBlockId, side: cur.side, index: insertIndex + 1 };
       }
     });
   }
@@ -3641,14 +3655,26 @@ export class NospressView extends View {
       }
       return;
     }
-    // scope === 'card'
-    const loc = findBlockInPage(page, cur.cardBlockId);
-    if (!loc || loc.block.type !== 'card') {
+    if (cur.scope === 'card') {
+      const loc = findBlockInPage(page, cur.cardBlockId);
+      if (!loc || loc.block.type !== 'card') {
+        this.cursor = { scope: 'page', index: page.blocks.length };
+        return;
+      }
+      if (cur.index < 0 || cur.index > loc.block.children.length) {
+        this.cursor = { scope: 'card', cardBlockId: cur.cardBlockId, index: loc.block.children.length };
+      }
+      return;
+    }
+    // scope === 'flipCard'
+    const flipLoc = findBlockInPage(page, cur.flipCardBlockId);
+    if (!flipLoc || flipLoc.block.type !== 'flip-card') {
       this.cursor = { scope: 'page', index: page.blocks.length };
       return;
     }
-    if (cur.index < 0 || cur.index > loc.block.children.length) {
-      this.cursor = { scope: 'card', cardBlockId: cur.cardBlockId, index: loc.block.children.length };
+    const flipChildren = cur.side === 'back' ? flipLoc.block.backChildren : flipLoc.block.frontChildren;
+    if (cur.index < 0 || cur.index > flipChildren.length) {
+      this.cursor = { scope: 'flipCard', flipCardBlockId: cur.flipCardBlockId, side: cur.side, index: flipChildren.length };
     }
   }
 
@@ -3708,6 +3734,7 @@ export class NospressView extends View {
     if (block.type === 'columns') return this.renderColumnsBlockEditable(block);
     if (block.type === 'div') return this.renderDivBlockEditable(block);
     if (block.type === 'card') return this.renderCardBlockEditable(block);
+    if (block.type === 'flip-card') return this.renderFlipCardBlockEditable(block);
     return BlockRenderer.renderOne(block, { editable: true });
   }
 
@@ -3807,6 +3834,44 @@ export class NospressView extends View {
           inner.push(this.renderEditableBlock(cb));
         }
         if (cursorHere && cur.index >= block.children.length) inner.push(slot);
+        return inner.join('');
+      }
+    });
+    return `<div class="nospress-block-style" data-styled-block-id="${block.id}">${html}</div>`;
+  }
+
+  /**
+   * Render a `flip-card` block with editable children. The block always
+   * stores both faces, but the editor only renders the active one — the
+   * Front/Back segmented toggle inside the block flips `flipCardActiveSide`
+   * and re-renders. Cursor injection mirrors the card path with the extra
+   * `side` discriminator so adding/removing blocks lands in the right face.
+   */
+  private renderFlipCardBlockEditable(block: Extract<Block, { type: 'flip-card' }>): string {
+    const slot = `<div data-cursor-mount></div>`;
+    const cur = this.cursor;
+    const side: 'front' | 'back' = this.flipCardActiveSide.get(block.id) ?? 'front';
+    const children = side === 'back' ? block.backChildren : block.frontChildren;
+    const cursorHere = cur.scope === 'flipCard'
+      && cur.flipCardBlockId === block.id
+      && cur.side === side;
+
+    const html = renderFlipCard(block, {
+      editable: true,
+      activeSide: side,
+      activeChildrenInner: () => {
+        if (children.length === 0) {
+          if (cursorHere) return slot;
+          return `<div class="nospress-block-flip-card__placeholder" data-flip-card-placeholder data-flip-card-block-id="${block.id}" data-flip-side="${side}" role="button" tabindex="0">Click to add blocks here</div>`;
+        }
+
+        const inner: string[] = [];
+        for (let i = 0; i < children.length; i++) {
+          if (cursorHere && cur.index === i) inner.push(slot);
+          const cb = children[i]!;
+          inner.push(this.renderEditableBlock(cb));
+        }
+        if (cursorHere && cur.index >= children.length) inner.push(slot);
         return inner.join('');
       }
     });
@@ -4149,8 +4214,10 @@ export class NospressView extends View {
       this.cursor = { scope: 'column', columnsBlockId: loc.container.block.id, colIndex: loc.container.colIndex, index: loc.index + 1 };
     } else if (loc.container.type === 'div') {
       this.cursor = { scope: 'div', divBlockId: loc.container.block.id, index: loc.index + 1 };
-    } else {
+    } else if (loc.container.type === 'card') {
       this.cursor = { scope: 'card', cardBlockId: loc.container.block.id, index: loc.index + 1 };
+    } else {
+      this.cursor = { scope: 'flipCard', flipCardBlockId: loc.container.block.id, side: loc.container.side, index: loc.index + 1 };
     }
 
     await this.rerenderEditable();
@@ -4388,6 +4455,14 @@ export class NospressView extends View {
    *  "Click to add blocks here" placeholder. */
   private async setCursorInCard(cardBlockId: string): Promise<void> {
     this.cursor = { scope: 'card', cardBlockId, index: 0 };
+    await this.rerenderEditable();
+    this.flashCursorRow();
+  }
+
+  /** Move cursor INTO the active face of an empty flip-card side. The
+   *  segmented Front/Back toggle determines which face the cursor enters. */
+  private async setCursorInFlipCard(flipCardBlockId: string, side: 'front' | 'back'): Promise<void> {
+    this.cursor = { scope: 'flipCard', flipCardBlockId, side, index: 0 };
     await this.rerenderEditable();
     this.flashCursorRow();
   }
@@ -4910,6 +4985,50 @@ export class NospressView extends View {
         });
         slot.appendChild(dropdown.getElement());
         this.blockDropdowns.push(dropdown);
+      } else if (kind === 'flip-effect') {
+        const current = slot.dataset.currentValue || 'horizontal';
+        const dropdown = new CustomDropdown({
+          options: [
+            { value: 'horizontal', label: 'Horizontal (rotateY)' },
+            { value: 'vertical',   label: 'Vertical (rotateX)' },
+            { value: 'fade',       label: 'Fade' },
+          ],
+          selectedValue: current,
+          onChange: (value) => {
+            // silent: editor view doesn't preview the flip, so no need to
+            // rebuild the composer DOM. mutateDraft + persist runs anyway
+            // so the public page picks up the new effect on next reload.
+            this.mutateDraft((page) => {
+              const block = findBlockInPage(page, blockId)?.block;
+              if (block?.type !== 'flip-card') return;
+              if (value === 'horizontal' || value === 'vertical' || value === 'fade') {
+                block.flipEffect = value;
+              }
+            }, { silent: true });
+          },
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
+      } else if (kind === 'flip-trigger') {
+        const current = slot.dataset.currentValue || 'hover';
+        const dropdown = new CustomDropdown({
+          options: [
+            { value: 'hover', label: 'Hover (desktop)' },
+            { value: 'click', label: 'Click / tap' },
+          ],
+          selectedValue: current,
+          onChange: (value) => {
+            this.mutateDraft((page) => {
+              const block = findBlockInPage(page, blockId)?.block;
+              if (block?.type !== 'flip-card') return;
+              if (value === 'hover' || value === 'click') {
+                block.flipTrigger = value;
+              }
+            }, { silent: true });
+          },
+        });
+        slot.appendChild(dropdown.getElement());
+        this.blockDropdowns.push(dropdown);
       } else if (kind === 'portfolio-sort') {
         // Options come from the renderer's `data-options` JSON — keeps
         // the catalog of choices co-located with the markup that needs
@@ -5351,6 +5470,39 @@ export class NospressView extends View {
         }
       }
 
+      // Front / Back segmented toggle inside a flip-card block. The user
+      // flips which face the editor renders; both faces stay in the data
+      // model untouched. Re-render the editable view so the cursor row +
+      // children of the newly-active face land in the right slot.
+      const flipSideBtn = target.closest('[data-flip-card-block-id][data-flip-side]') as HTMLElement | null;
+      if (flipSideBtn && !flipSideBtn.classList.contains('nospress-block-flip-card__placeholder')) {
+        const flipId = flipSideBtn.dataset.flipCardBlockId;
+        const flipSide = flipSideBtn.dataset.flipSide === 'back' ? 'back' : 'front';
+        if (flipId && flipSideBtn.classList.contains('nospress-block-flip-card__side-btn')) {
+          this.flipCardActiveSide.set(flipId, flipSide);
+          // If the cursor was inside this flip-card on the other side, move
+          // it to the newly-active face so the user lands on a usable insert
+          // point instead of an invisible one.
+          const cur = this.cursor;
+          if (cur.scope === 'flipCard' && cur.flipCardBlockId === flipId && cur.side !== flipSide) {
+            this.cursor = { scope: 'flipCard', flipCardBlockId: flipId, side: flipSide, index: 0 };
+          }
+          void this.rerenderEditable();
+          return;
+        }
+      }
+
+      // Click on an empty-flip-card-side placeholder → put cursor in that face
+      const flipPh = target.closest('[data-flip-card-placeholder]') as HTMLElement | null;
+      if (flipPh) {
+        const flipId = flipPh.dataset.flipCardBlockId;
+        const flipSide = flipPh.dataset.flipSide === 'back' ? 'back' : 'front';
+        if (flipId) {
+          this.setCursorInFlipCard(flipId, flipSide);
+          return;
+        }
+      }
+
       // Mobile-sub-scope trigger on the nav-menu block: toggles the
       // properties panel between wrapper-style and drawer-style scopes.
       // Handled BEFORE the generic interactive-control skip below so the
@@ -5557,6 +5709,15 @@ export class NospressView extends View {
         if (field === 'card-image-alt') {
           const v = el.value;
           if (v) block.imageAlt = v; else delete block.imageAlt;
+        }
+      } else if (block.type === 'flip-card') {
+        // flip-effect + flip-trigger are driven by CustomDropdowns mounted
+        // in `mountBlockDropdowns` — they mutate the draft directly via
+        // their onChange callbacks. Only the timing text input flows
+        // through this generic field-input path.
+        if (field === 'flip-duration') {
+          const v = el.value.trim();
+          if (v) block.flipDuration = v; else delete block.flipDuration;
         }
       } else if (block.type === 'gallery') {
         if (field === 'gallery-url' && itemIndex >= 0) block.urls[itemIndex] = el.value;

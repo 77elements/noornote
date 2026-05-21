@@ -99,26 +99,21 @@
     }
   }
 
-  &__silent {
-    display: flex;
-    justify-content: flex-end;
-
-    .switch-container {
-      margin: 0;
-    }
-  }
-
-  &__actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: $gap;
+  // Bottom row: Silent-Zap switch on the left, Cancel + Zap buttons on
+  // the right. Layout comes from `.l-row--split` (molecule); this scope
+  // just adds the breathing room the old `&__actions` rule contributed
+  // and keeps the send-button loading-state styling scoped to the modal.
+  &__bottom {
     padding-top: calc($gap / 2);
     margin-bottom: $gap;
+  }
 
-    // Loading state for send button
-    .btn--sending {
-      .btn__text { display: none; }
-      .btn__loading { display: inline !important; }
-    }
+  &__silent .switch-container {
+    margin: 0;
+  }
+
+  .btn--sending {
+    .btn__text { display: none; }
+    .btn__loading { display: inline !important; }
   }
 }
