@@ -44,10 +44,12 @@ export class QuoteRenderer {
             QuoteRenderer.articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
             marker.remove();
           } else {
-            // Regular note quote handling
+            // Regular note quote handling. Parent author = the quoting note
+            // — fed to QuoteOrchestrator's outbound fallback so the quoter's
+            // own relays are tried before "Note not found".
             const skeleton = QuoteRenderer.quotedNoteRenderer.createQuoteSkeleton();
             marker.replaceWith(skeleton);
-            QuoteRenderer.quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, opts.collapsible || false);
+            QuoteRenderer.quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, opts.collapsible || false, note.author?.pubkey);
           }
         }
       });

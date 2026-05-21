@@ -44,11 +44,34 @@ export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrE
   if (eTag && eTag[1]) {
     try {
       const { QuoteOrchestrator } = await import('../services/orchestration/QuoteOrchestrator');
-      // NIP-18: p-tag carries the original author pubkey
+      const { encodeNevent } = await import('../services/NostrToolsAdapter');
+      // NIP-18: p-tag carries the original author pubkey, e-tag[2] is the
+      // relay hint where the reposter saw the original.
       const pTag = event.tags.find(t => t[0] === 'p');
       const originalAuthor = pTag?.[1];
+      const relayHint = eTag[2] || '';
 
-      const originalEvent = await QuoteOrchestrator.getInstance().fetchQuotedEvent(eTag[1], originalAuthor);
+      // Wrap into an nevent so QuoteOrchestrator's stage-1 hint fetch fires
+      // (bare hex would skip straight to our read set, missing the relay
+      // the reposter explicitly pointed at — typical cross-relay-repost
+      // failure mode).
+      const neventRef = encodeNevent(
+        eTag[1],
+        relayHint ? [relayHint] : [],
+        originalAuthor,
+      );
+
+      // Pass the REPOSTER's own pubkey (event.pubkey) as an extra outbound
+      // fallback candidate. The reposter saw the original on their relays;
+      // those are the next best guess after the original author's outbound.
+      // Without this, cross-relay reposts (reposter's read set vs. original
+      // author's write set don't overlap, and the original author's NIP-65
+      // is incomplete or stale) hit the "Note not found" error.
+      const originalEvent = await QuoteOrchestrator.getInstance().fetchQuotedEvent(
+        `nostr:${neventRef}`,
+        originalAuthor,
+        [event.pubkey],
+      );
       if (originalEvent) {
         return originalEvent;
       }

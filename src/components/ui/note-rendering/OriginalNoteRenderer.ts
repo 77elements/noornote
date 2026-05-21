@@ -50,10 +50,13 @@ export class OriginalNoteRenderer {
               articleRenderer.renderArticlePreview(ref.fullMatch, marker.parentElement!);
               marker.remove();
             } else {
-              // Regular note quote handling
+              // Regular note quote handling. Parent author = the note that
+              // CONTAINS this quote — passed through so QuoteOrchestrator can
+              // fall back to the quoter's outbound relays when the quoted
+              // event's own author relays don't carry the original.
               const skeleton = quotedNoteRenderer.createQuoteSkeleton();
               marker.replaceWith(skeleton);
-              quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, opts.collapsible || false);
+              quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, opts.collapsible || false, note.author?.pubkey);
             }
           }
       });

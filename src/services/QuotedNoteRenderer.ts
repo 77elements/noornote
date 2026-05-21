@@ -50,7 +50,12 @@ export class QuotedNoteRenderer {
    * Handles both regular notes and long-form articles (naddr)
    * @param enableCollapsible - Whether to enable "Show More" for long quotes
    */
-  renderQuotedNotes(quotedReferences: QuotedReference[], container: Element, enableCollapsible: boolean = true): void {
+  renderQuotedNotes(
+    quotedReferences: QuotedReference[],
+    container: Element,
+    enableCollapsible: boolean = true,
+    parentAuthorPubkey?: string,
+  ): void {
     quotedReferences.forEach((ref) => {
       // Route naddr references
       if (ref.type === 'addr') {
@@ -74,7 +79,7 @@ export class QuotedNoteRenderer {
       container.appendChild(skeleton);
 
       // Fetch quote in background
-      this.fetchAndRenderQuote(ref, skeleton, enableCollapsible);
+      this.fetchAndRenderQuote(ref, skeleton, enableCollapsible, parentAuthorPubkey);
     });
   }
 
@@ -82,9 +87,14 @@ export class QuotedNoteRenderer {
    * Fetch single quote and update DOM when ready (background task)
    * Made public for use by QuoteRenderer and internal nested quote rendering
    */
-  async fetchAndRenderQuote(ref: QuotedReference, skeleton: HTMLElement, enableCollapsible: boolean): Promise<void> {
+  async fetchAndRenderQuote(
+    ref: QuotedReference,
+    skeleton: HTMLElement,
+    enableCollapsible: boolean,
+    parentAuthorPubkey?: string,
+  ): Promise<void> {
     try {
-      const result = await this.quoteFetcher.fetchQuotedEventWithError(ref.fullMatch);
+      const result = await this.quoteFetcher.fetchQuotedEventWithError(ref.fullMatch, parentAuthorPubkey);
 
       if (result.success) {
         // Check if author is muted
@@ -238,14 +248,16 @@ export class QuotedNoteRenderer {
     // Mount header as first child
     quoteBox.insertBefore(header.getElement(), quoteBox.firstChild);
 
-    // Render nested quoted references (if any)
+    // Render nested quoted references (if any). Parent author for the
+    // nested fetch is THIS quote's author — its outbound relays are the
+    // best guess for resolving whatever it itself quotes.
     if (processedContent.quotedReferences.length > 0) {
       processedContent.quotedReferences.forEach(ref => {
         const marker = quoteBox.querySelector(`.quote-marker[data-quote-ref="${ref.fullMatch}"]`);
         if (marker) {
           const skeleton = this.createQuoteSkeleton();
           marker.replaceWith(skeleton);
-          this.fetchAndRenderQuote(ref, skeleton, false); // No collapsible for nested quotes
+          this.fetchAndRenderQuote(ref, skeleton, false, event.pubkey); // No collapsible for nested quotes
         }
       });
     }

@@ -54,13 +54,25 @@ export class QuoteOrchestrator extends Orchestrator {
    * Fetch quoted event from nostr reference
    * Handles: nostr:note1..., nostr:nevent1..., nostr:naddr1..., hex event IDs
    * @param nostrRef - Nostr reference string
-   * @param authorHint - Optional author pubkey (hex), used for outbound resolution
-   *                    when the reference itself doesn't carry author info (e.g. raw
-   *                    hex IDs or bare note1 references). nevent's embedded author
-   *                    takes precedence over this hint.
+   * @param authorHint - Optional author pubkey (hex) of the quoted event itself,
+   *                    used for outbound resolution when the reference doesn't
+   *                    carry author info (e.g. raw hex IDs / bare note1).
+   *                    nevent's embedded author takes precedence over this hint.
+   * @param extraOutboundPubkeys - Additional pubkeys to include in stage-3
+   *                    outbound fallback. Typically the PARENT note's author
+   *                    (the user who quoted/reposted), since they obviously
+   *                    saw the original on some relay and that relay is the
+   *                    best next guess after the quoted-event-author's own
+   *                    outbound. Without this hop, cross-relay quotes (the
+   *                    quoter's read set vs. the quoted author's write set
+   *                    don't intersect) collapse to "Note not found".
    * @returns Event or null if not found
    */
-  public async fetchQuotedEvent(nostrRef: string, authorHint?: string): Promise<NostrEvent | null> {
+  public async fetchQuotedEvent(
+    nostrRef: string,
+    authorHint?: string,
+    extraOutboundPubkeys: string[] = [],
+  ): Promise<NostrEvent | null> {
     // If already fetching, wait for that request (deduplication)
     if (this.fetchingQuotes.has(nostrRef)) {
       return await this.fetchingQuotes.get(nostrRef)!;
@@ -91,7 +103,7 @@ export class QuoteOrchestrator extends Orchestrator {
     const author = extractedAuthor || authorHint || null;
 
     // Start new fetch with relay hints and author for outbound relay discovery
-    const fetchPromise = this.fetchEventById(eventId, relayHints, author);
+    const fetchPromise = this.fetchEventById(eventId, relayHints, author, extraOutboundPubkeys);
     this.fetchingQuotes.set(nostrRef, fetchPromise);
 
     try {
@@ -167,9 +179,16 @@ export class QuoteOrchestrator extends Orchestrator {
    * Stage 0: Check NoteService cache first
    * Stage 1: Try relay hints (from nevent)
    * Stage 2: Try standard relays
-   * Stage 3: If not found, try standard + outbound relays
+   * Stage 3: If not found, try outbound relays of EVERY known relevant pubkey
+   *         (quoted event's author + the parent-note author / reposter that
+   *         pulled it onto our radar in the first place).
    */
-  private async fetchEventById(eventId: string, relayHints: string[] = [], author: string | null = null): Promise<NostrEvent | null> {
+  private async fetchEventById(
+    eventId: string,
+    relayHints: string[] = [],
+    author: string | null = null,
+    extraOutboundPubkeys: string[] = [],
+  ): Promise<NostrEvent | null> {
     const shortId = eventId.slice(0, 8);
 
     // Stage 0: Check NoteService cache first
@@ -206,14 +225,20 @@ export class QuoteOrchestrator extends Orchestrator {
 
     // Stage 3: Not found on standard relays, try with outbound relays
     // skipCache=true forces relay-only fetch (bypasses NDK cache from stage 2)
-    if (author) {
+    // Union of (quoted-event author, parent-note author / reposter) — both are
+    // legitimate "who saw this note" signals and either's outbound is a
+    // better next guess than just one of them.
+    const outboundPubkeys = Array.from(
+      new Set([author, ...extraOutboundPubkeys].filter((p): p is string => !!p))
+    );
+    if (outboundPubkeys.length > 0) {
       try {
-        const outboundRelays = await this.relayDiscovery.getCombinedRelays([author], true);
+        const outboundRelays = await this.relayDiscovery.getCombinedRelays(outboundPubkeys, true);
         const standardRelays = new Set(this.transport.getReadRelays());
         const newRelays = outboundRelays.filter(r => !standardRelays.has(r));
         diagLog('relays', 'QuoteOrchestrator: stage 3 trying outbound', {
           eventId: shortId,
-          author: author.slice(0, 8),
+          pubkeys: outboundPubkeys.map(p => p.slice(0, 8)),
           relayCount: outboundRelays.length,
           newRelays: newRelays.slice(0, 5)
         });
@@ -229,10 +254,14 @@ export class QuoteOrchestrator extends Orchestrator {
         diagLog('relays', 'QuoteOrchestrator: stage 3 (outbound) failed', { eventId: shortId, error: String(error) });
       }
     } else {
-      diagLog('relays', 'QuoteOrchestrator: no author for outbound fallback', { eventId: shortId });
+      diagLog('relays', 'QuoteOrchestrator: no pubkeys for outbound fallback', { eventId: shortId });
     }
 
-    diagLog('relays', 'QuoteOrchestrator: NOT FOUND after all stages', { eventId: shortId, hasAuthor: !!author, hasHints: relayHints.length > 0 });
+    diagLog('relays', 'QuoteOrchestrator: NOT FOUND after all stages', {
+      eventId: shortId,
+      outboundPubkeyCount: outboundPubkeys.length,
+      hasHints: relayHints.length > 0,
+    });
     return null;
   }
 

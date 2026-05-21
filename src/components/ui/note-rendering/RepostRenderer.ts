@@ -177,14 +177,19 @@ export class RepostRenderer {
         // Wrap (id + e-tag relay hint + author p-tag) into an nevent so QuoteOrchestrator's
         // stage-1 hint fetch fires — bare hex id would skip straight to our read relays.
         const authorPubkey = note.author?.pubkey;
+        const reposterPubkey = note.rawEvent.pubkey;
         const neventRef = encodeNevent(
           originalRef.id,
           originalRef.relayHint ? [originalRef.relayHint] : [],
           authorPubkey
         );
 
+        // Stage-3 outbound includes BOTH the original author AND the reposter
+        // — the reposter visibly saw the note on their relays before reposting,
+        // so when the original author's NIP-65 is incomplete / stale, the
+        // reposter's outbound is the next-best guess.
         const quoteOrchestrator = QuoteOrchestrator.getInstance();
-        quoteOrchestrator.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey).then(async originalEvent => {
+        quoteOrchestrator.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey, [reposterPubkey]).then(async originalEvent => {
             if (originalEvent) {
               // Check if original author is muted
               const authService = AuthService.getInstance();

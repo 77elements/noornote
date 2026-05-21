@@ -34,18 +34,32 @@ export class QuoteNoteFetcher {
   }
 
   /**
-   * Fetch event from nostr reference (delegates to QuoteOrchestrator)
+   * Fetch event from nostr reference (delegates to QuoteOrchestrator).
+   * @param parentAuthorPubkey - The pubkey of the note that CONTAINS this
+   *        quote, NOT the quoted event's own author. Passed as an extra
+   *        outbound-fallback candidate so cross-relay quotes resolve via
+   *        the quoter's relays when the quoted author's relays don't carry
+   *        the original.
    */
-  public async fetchQuotedEvent(nostrRef: string): Promise<NostrEvent | null> {
-    return await this.orchestrator.fetchQuotedEvent(nostrRef);
+  public async fetchQuotedEvent(nostrRef: string, parentAuthorPubkey?: string): Promise<NostrEvent | null> {
+    return await this.orchestrator.fetchQuotedEvent(
+      nostrRef,
+      undefined,
+      parentAuthorPubkey ? [parentAuthorPubkey] : [],
+    );
   }
 
   /**
-   * Fetch event with detailed error result (delegates to QuoteOrchestrator)
+   * Fetch event with detailed error result (delegates to QuoteOrchestrator).
+   * `parentAuthorPubkey` see {@link fetchQuotedEvent}.
    */
-  public async fetchQuotedEventWithError(nostrRef: string): Promise<QuoteFetchResult> {
+  public async fetchQuotedEventWithError(nostrRef: string, parentAuthorPubkey?: string): Promise<QuoteFetchResult> {
     try {
-      const event = await this.orchestrator.fetchQuotedEvent(nostrRef);
+      const event = await this.orchestrator.fetchQuotedEvent(
+        nostrRef,
+        undefined,
+        parentAuthorPubkey ? [parentAuthorPubkey] : [],
+      );
 
       if (event) {
         return { success: true, event };
