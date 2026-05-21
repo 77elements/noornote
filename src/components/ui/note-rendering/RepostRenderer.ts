@@ -19,7 +19,7 @@ import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { hexToNpub } from '../../../helpers/nip19';
-import { encodeNaddr } from '../../../services/NostrToolsAdapter';
+import { encodeNaddr, encodeNevent } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
 import { Router } from '../../../services/Router';
 import { AddonLoader } from '../../../addons/AddonLoader';
@@ -39,11 +39,14 @@ export class RepostRenderer {
   }
 
   /**
-   * Extract original event ID from repost tags
+   * Extract original event id + relay hint from the kind:6 e-tag.
+   * NIP-18 puts the relay where the original lives at position [2] — without it,
+   * cross-relay reposts (e.g. ditto.pub originals shown via our read set) can't be resolved.
    */
-  private static extractOriginalEventId(note: ProcessedNote): string | null {
-    const eTags = note.rawEvent.tags.filter(tag => tag[0] === 'e');
-    return eTags[0]?.[1] ?? null;
+  private static extractOriginalEventRef(note: ProcessedNote): { id: string; relayHint: string } | null {
+    const eTag = note.rawEvent.tags.find(tag => tag[0] === 'e');
+    if (!eTag?.[1]) return null;
+    return { id: eTag[1], relayHint: eTag[2] || '' };
   }
 
   /**
@@ -157,9 +160,9 @@ export class RepostRenderer {
     // Check if we have the reposted event (standard repost) or need to fetch (NIP-18)
     if (!note.repostedEvent) {
       // NIP-18 repost: content is empty, need to fetch original event
-      const originalEventId = RepostRenderer.extractOriginalEventId(note);
+      const originalRef = RepostRenderer.extractOriginalEventRef(note);
 
-      if (originalEventId) {
+      if (originalRef) {
         // Show placeholder while fetching
         const placeholderDiv = document.createElement('div');
         placeholderDiv.className = 'repost-loading-placeholder';
@@ -171,12 +174,17 @@ export class RepostRenderer {
         `;
         repostDiv.appendChild(placeholderDiv);
 
-        // Fetch original event via QuoteOrchestrator (async, non-blocking).
-        // Pass the original author (resolved from p-tag by RepostProcessor) so
-        // QuoteOrchestrator can fall back to the author's outbound relays when
-        // the original note isn't on our read relays.
+        // Wrap (id + e-tag relay hint + author p-tag) into an nevent so QuoteOrchestrator's
+        // stage-1 hint fetch fires — bare hex id would skip straight to our read relays.
+        const authorPubkey = note.author?.pubkey;
+        const neventRef = encodeNevent(
+          originalRef.id,
+          originalRef.relayHint ? [originalRef.relayHint] : [],
+          authorPubkey
+        );
+
         const quoteOrchestrator = QuoteOrchestrator.getInstance();
-        quoteOrchestrator.fetchQuotedEvent(originalEventId, note.author?.pubkey).then(async originalEvent => {
+        quoteOrchestrator.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey).then(async originalEvent => {
             if (originalEvent) {
               // Check if original author is muted
               const authService = AuthService.getInstance();

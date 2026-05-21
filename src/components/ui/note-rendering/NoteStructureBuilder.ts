@@ -276,8 +276,6 @@ export class NoteStructureBuilder {
         target.closest('.quote-box') ||
         target.closest('.article-preview-card') ||
         target.closest('.timeline-listing-card') ||
-        target.closest('.note-media') ||
-        target.closest('.note-media') ||
         target.closest('.reply-indicator') ||
         target.closest('.thread-context-indicator')
       ) {
