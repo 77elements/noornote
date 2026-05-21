@@ -3575,11 +3575,14 @@ export class NospressView extends View {
     // at any depth. findBlockInPage walks recursively so cursor / mutation
     // resolves the right array regardless of where the container sits.
 
+    // Universal rule: a block never positions the cursor for the user.
+    // After any insert (library, slash-menu, text-typing-Enter), the
+    // cursor goes invisible. The user re-positions manually by clicking
+    // a placeholder / cursor-after button / face area.
     this.mutateDraft((page) => {
       if (cur.scope === 'page') {
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? page.blocks.length : cur.index, page.blocks.length));
         page.blocks.splice(insertIndex, 0, block);
-        this.cursor = { scope: 'page', index: insertIndex + 1 };
       } else if (cur.scope === 'column') {
         const targetLoc = findBlockInPage(page, cur.columnsBlockId);
         if (!targetLoc || targetLoc.block.type !== 'columns') return;
@@ -3587,27 +3590,24 @@ export class NospressView extends View {
         if (!col) return;
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? col.length : cur.index, col.length));
         col.splice(insertIndex, 0, block);
-        this.cursor = { scope: 'column', columnsBlockId: cur.columnsBlockId, colIndex: cur.colIndex, index: insertIndex + 1 };
       } else if (cur.scope === 'div') {
         const targetLoc = findBlockInPage(page, cur.divBlockId);
         if (!targetLoc || targetLoc.block.type !== 'div') return;
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? targetLoc.block.children.length : cur.index, targetLoc.block.children.length));
         targetLoc.block.children.splice(insertIndex, 0, block);
-        this.cursor = { scope: 'div', divBlockId: cur.divBlockId, index: insertIndex + 1 };
       } else if (cur.scope === 'card') {
         const targetLoc = findBlockInPage(page, cur.cardBlockId);
         if (!targetLoc || targetLoc.block.type !== 'card') return;
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? targetLoc.block.children.length : cur.index, targetLoc.block.children.length));
         targetLoc.block.children.splice(insertIndex, 0, block);
-        this.cursor = { scope: 'card', cardBlockId: cur.cardBlockId, index: insertIndex + 1 };
       } else {
         const targetLoc = findBlockInPage(page, cur.flipCardBlockId);
         if (!targetLoc || targetLoc.block.type !== 'flip-card') return;
         const childrenArr = cur.side === 'back' ? targetLoc.block.backChildren : targetLoc.block.frontChildren;
         const insertIndex = Math.max(0, Math.min(cur.index < 0 ? childrenArr.length : cur.index, childrenArr.length));
         childrenArr.splice(insertIndex, 0, block);
-        this.cursor = { scope: 'flipCard', flipCardBlockId: cur.flipCardBlockId, side: cur.side, index: insertIndex + 1 };
       }
+      this.cursor = { scope: 'page', index: -1 };
     });
   }
 
@@ -3862,6 +3862,9 @@ export class NospressView extends View {
       activeChildrenInner: () => {
         if (children.length === 0) {
           if (cursorHere) return slot;
+          // Match the Columns block pattern: empty face shows a visible
+          // "Click to add blocks here" placeholder. Click drops the cursor
+          // into the active face.
           return `<div class="nospress-block-flip-card__placeholder" data-flip-card-placeholder data-flip-card-block-id="${block.id}" data-flip-side="${side}" role="button" tabindex="0">Click to add blocks here</div>`;
         }
 
@@ -5480,13 +5483,13 @@ export class NospressView extends View {
         const flipSide = flipSideBtn.dataset.flipSide === 'back' ? 'back' : 'front';
         if (flipId && flipSideBtn.classList.contains('nospress-block-flip-card__side-btn')) {
           this.flipCardActiveSide.set(flipId, flipSide);
-          // If the cursor was inside this flip-card on the other side, move
-          // it to the newly-active face so the user lands on a usable insert
-          // point instead of an invisible one.
-          const cur = this.cursor;
-          if (cur.scope === 'flipCard' && cur.flipCardBlockId === flipId && cur.side !== flipSide) {
-            this.cursor = { scope: 'flipCard', flipCardBlockId: flipId, side: flipSide, index: 0 };
-          }
+          // Side toggle is a pure VIEW switch — cursor stays exactly where
+          // it was. If the cursor sat inside the side the user is leaving,
+          // it's now logically on a hidden face; the renderer's
+          // `cursorHere` check evaluates false, so no stray cursor-row
+          // appears above the newly-active face's content. To resume
+          // typing on the new side, the user clicks an empty-face
+          // placeholder or any block's "cursor-after" toolbar button.
           void this.rerenderEditable();
           return;
         }
