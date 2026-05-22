@@ -178,8 +178,22 @@ html.layout--public {
 
     // The two faces share the grid slot so the wrapper inherits the
     // height of whichever face is taller — no jump on flip.
+    //
+    // `place-self: stretch` keeps both faces filling the wrapper cell
+    // regardless of any `justify-items` / `align-items` the user sets
+    // on the wrapper (Properties → Layout). Without it, those values
+    // would shrink the faces and centre them within the cell.
+    //
+    // The face is also a grid container that inherits the wrapper's
+    // `justify-items` / `align-items` — so the user-facing properties
+    // travel one level deeper and centre the face's INNER children
+    // (text / image blocks) instead of repositioning the face itself.
     &__face {
       grid-area: stack;
+      place-self: stretch;
+      display: grid;
+      justify-items: inherit;
+      align-items: inherit;
       backface-visibility: hidden;
       transition: transform var(--flip-duration, 600ms) ease, opacity var(--flip-duration, 600ms) ease;
       transform-style: preserve-3d;

@@ -356,6 +356,17 @@ const GROUP_LAYOUT_COLUMNS: PropertyGroup = buildLayoutGroup({
   afterGap: ['columnOrder', ['justifyItems', 'alignItems']],
 });
 
+/** Flip-card layout group: adds `[justifyItems, alignItems]` after gridGap
+ *  so the user can center the inner face content. These emit inline on
+ *  the wrapper; the public SCSS makes the faces `display: grid` with
+ *  `justify-items / align-items: inherit` so the wrapper-level setting
+ *  controls how each face's children are placed, while `place-self:
+ *  stretch` on the face keeps both faces filling the wrapper cell
+ *  regardless of the wrapper's justify/align values. */
+const GROUP_LAYOUT_FLIP_CARD: PropertyGroup = buildLayoutGroup({
+  afterGap: [['justifyItems', 'alignItems']],
+});
+
 /** Schema slice surfaced inside each link sub-scope section
  *  (Link/Visited/Hover/Focus/Active). No sizing — `<a>` elements are
  *  inline by default and sizing rarely makes sense. No effects/divider —
@@ -543,11 +554,13 @@ export const STYLE_MATRIX: Record<string, PropertyGroup[]> = {
   // border-radius (the molecule defaults to $radius-pill), and effects
   // (shadow / hover lift).
   card:              buildBlockSchema({ sizing: 'full', extras: [GROUP_DIVIDER] }),
-  // Flip-card: same container schema as card. The 3D flip transform plus
-  // both faces' inner blocks all sit inside the styled wrapper so user
-  // overrides (background, padding, border-radius, box-shadow) propagate
-  // naturally to the rotating container.
-  'flip-card':       buildBlockSchema({ sizing: 'full', content: 'background' }),
+  // Flip-card: same container schema as card, plus `[justifyItems,
+  // alignItems]` in the Layout group so the user can center the inner
+  // face content. Public SCSS forwards the wrapper's justify/align
+  // values into both faces (which are `display: grid` with
+  // `*-items: inherit`) so the setting controls face-CONTENT placement,
+  // not the face's own grid-cell sizing.
+  'flip-card':       buildBlockSchema({ layout: GROUP_LAYOUT_FLIP_CARD, sizing: 'full', content: 'background' }),
   // Vendor footer (.user-site__footer) — site-wide platform-attribution
   // wrapper, fixed content, fully styleable. Same schema as textual
   // blocks plus the link sub-scope (rendered as the inner <a>). Storage
