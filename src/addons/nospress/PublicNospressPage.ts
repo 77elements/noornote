@@ -4,6 +4,7 @@ import { NospressOrchestrator } from '../../services/orchestration/NospressOrche
 import { NospressMenuOrchestrator } from '../../services/orchestration/NospressMenuOrchestrator';
 import { NospressPageIndexOrchestrator } from '../../services/orchestration/NospressPageIndexOrchestrator';
 import { NospressSiteSettingsOrchestrator } from '../../services/orchestration/NospressSiteSettingsOrchestrator';
+import { NospressEnabledOrchestrator } from '../../services/orchestration/NospressEnabledOrchestrator';
 import type { NospressSiteSettings } from './blocks/siteSettings';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
@@ -97,6 +98,20 @@ export class PublicNospressPage {
       return;
     }
     this.ownerNpub = encodeNpub(pubkey);
+
+    // Opt-in gate — the route only resolves for users who deliberately
+    // enabled the NosPress addon (which publishes a tiny marker event
+    // to relays). Without the marker, fall back to the same "Page not
+    // found" surface as a bad handle so we don't serve a NoorNote-
+    // branded empty-state for every Nostr identity in the wild. See
+    // `NospressEnabledOrchestrator` for the publish/delete lifecycle.
+    const optInMarker = await NospressEnabledOrchestrator.getInstance()
+      .fetchFromRelays(pubkey, true)
+      .catch(() => null);
+    if (!optInMarker) {
+      this.renderError();
+      return;
+    }
 
     const viewerProfilePromise = this.viewerPubkey
       ? UserProfileService.getInstance().getUserProfile(this.viewerPubkey).catch(() => null)

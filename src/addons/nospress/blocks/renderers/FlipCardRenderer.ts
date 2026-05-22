@@ -21,7 +21,7 @@
 import { BlockRenderer } from '../BlockRenderer';
 import { escapeHtmlAttr } from '../../../../helpers/escapeHtml';
 import { wrapEditable } from './blockEditWrapper';
-import { styleWrap } from '../styles';
+import { buildInlineStyle, schemaFor, styleWrap } from '../styles';
 import {
   FLIP_EFFECTS,
   FLIP_TRIGGERS,
@@ -112,11 +112,27 @@ export function renderFlipCard(
   // per variant. `--flip-duration` is inlined so each instance ticks at
   // its own configured pace. Click runtime toggles `.is-flipped` on the
   // outer wrapper; hover uses `:hover` directly.
+  //
+  // `background` + `border*` + `borderRadius` are intentionally
+  // redirected from the wrapper to each face: the wrapper is fully
+  // covered by the two stacked faces, so wrapper-level box decoration
+  // never shows. Inlining the Default-tab values on each face puts them
+  // where users actually see them. The per-BP emission is handled in
+  // `buildBlockFlipCardFaceCss` (see `breakpointCss.ts`);
+  // `excludeStyleKeys` keeps the same keys out of the wrapper's inline
+  // emission so the redirect is single-sourced.
   const frontHtml = BlockRenderer.renderAll(block.frontChildren, { editable: false });
   const backHtml = BlockRenderer.renderAll(block.backChildren, { editable: false });
+  const faceInline = buildInlineStyle(
+    schemaFor('flip-card'),
+    block.style,
+    undefined,
+    FLIP_CARD_FACE_KEYS,
+  );
+  const faceStyleAttr = faceInline ? ` style="${escapeHtmlAttr(faceInline)}"` : '';
   const inner = `
-    <div class="nospress-block-flip-card__face nospress-block-flip-card__face--front">${frontHtml}</div>
-    <div class="nospress-block-flip-card__face nospress-block-flip-card__face--back">${backHtml}</div>
+    <div class="nospress-block-flip-card__face nospress-block-flip-card__face--front"${faceStyleAttr}>${frontHtml}</div>
+    <div class="nospress-block-flip-card__face nospress-block-flip-card__face--back"${faceStyleAttr}>${backHtml}</div>
   `;
 
   const extraAttrs = `data-flip-effect="${effect}" data-flip-trigger="${trigger}"${trigger === 'click' ? ` tabindex="0" role="button"` : ''}`;
@@ -130,6 +146,21 @@ export function renderFlipCard(
       baseClass: 'nospress-block-flip-card',
       extraAttrs,
       extraInlineStyle,
+      excludeStyleKeys: FLIP_CARD_WRAPPER_EXCLUDES,
     },
   );
 }
+
+/** Style keys that are emitted on the face elements (inline for the
+ *  Default tab, via `buildBlockFlipCardFaceCss` for per-BP @media rules)
+ *  — never on the wrapper. Border + border-radius travel along with
+ *  background because they describe the visible box, which is the face
+ *  rather than the rotating wrapper. */
+const FLIP_CARD_FACE_KEYS = new Set([
+  'background',
+  'borderWidth',
+  'borderStyle',
+  'borderColor',
+  'borderRadius',
+]);
+const FLIP_CARD_WRAPPER_EXCLUDES = FLIP_CARD_FACE_KEYS;

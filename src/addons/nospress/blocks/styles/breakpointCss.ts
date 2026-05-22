@@ -210,6 +210,13 @@ export function buildBlockBreakpointCss(
   const schema = schemaFor(block.type);
   const parts: string[] = [];
 
+  // Flip-card hides its wrapper behind both stacked faces — emitting
+  // `background` on the wrapper would never reach the viewer. Strip it
+  // from both the Default-tab rule and per-BP @media overrides here;
+  // `buildBlockFlipCardFaceCss` re-emits the same value scoped to the
+  // face selector instead.
+  const wrapperExcludes = block.type === 'flip-card' ? FLIP_CARD_WRAPPER_EXCLUDES : undefined;
+
   // Default-tab styles also emit as a regular (non-media) CSS rule —
   // not just as inline `style="…"` on the readonly wrapper. The editor
   // preview wrapper (`.nospress-block-style[data-styled-block-id]`)
@@ -220,7 +227,7 @@ export function buildBlockBreakpointCss(
   // a no-op on the public page.
   const defaults = block.style;
   if (defaults) {
-    const defaultDecls = buildInlineStyle(schema, defaults);
+    const defaultDecls = buildInlineStyle(schema, defaults, wrapperExcludes);
     if (defaultDecls) {
       parts.push(`[data-styled-block-id="${block.id}"] { ${defaultDecls} }`);
     }
@@ -239,7 +246,7 @@ export function buildBlockBreakpointCss(
   for (const bp of breakpoints) {
     const style = overrides[bp.name];
     if (!style) continue;
-    const declarations = buildImportantInlineStyle(schema, style);
+    const declarations = buildImportantInlineStyle(schema, style, wrapperExcludes);
     if (!declarations) continue;
     const mediaQuery = buildMediaQuery(bp);
     if (!mediaQuery) continue;
@@ -247,6 +254,62 @@ export function buildBlockBreakpointCss(
       `@media ${mediaQuery} { [data-styled-block-id="${block.id}"] { ${declarations} } }`,
     );
   }
+  return parts.join('\n');
+}
+
+/** Keys redirected from the flip-card wrapper to the face elements.
+ *  Mirrors the set used by `FlipCardRenderer` so the inline-style and
+ *  CSS-rule paths stay in sync. Background + border decoration only
+ *  show on the face — the wrapper is fully covered by both stacked
+ *  faces. */
+const FLIP_CARD_WRAPPER_EXCLUDES = new Set([
+  'background',
+  'borderWidth',
+  'borderStyle',
+  'borderColor',
+  'borderRadius',
+]);
+const FLIP_CARD_FACE_KEYS = FLIP_CARD_WRAPPER_EXCLUDES;
+
+/** Per-block flip-card face CSS — re-emits the values the user sets on
+ *  the flip-card block under `.nospress-block-flip-card__face` (both
+ *  front + back) instead of on the rotating wrapper, which is fully
+ *  covered and would never show the box decoration. Mirrors
+ *  `FlipCardRenderer`'s inline-style redirect for the per-BP @media
+ *  path.
+ *
+ *  Default-tab values also ride along on each face inline-style
+ *  (FlipCardRenderer), but we re-emit them here as a CSS rule too so
+ *  selectors with higher specificity (e.g. `:hover` from user CSS)
+ *  resolve against the same authored value. */
+export function buildBlockFlipCardFaceCss(
+  block: { id: string; type: string; style?: CommonStyle; breakpointStyles?: Record<string, CommonStyle> },
+  breakpoints: Array<{ name: string; type: 'min' | 'max' | 'between'; value: string; value2?: string }>,
+): string {
+  if (block.type !== 'flip-card') return '';
+  const schema = schemaFor('flip-card');
+  const sel = `[data-styled-block-id="${block.id}"] .nospress-block-flip-card__face`;
+  const parts: string[] = [];
+
+  if (block.style) {
+    const decls = buildInlineStyle(schema, block.style, undefined, FLIP_CARD_FACE_KEYS);
+    if (decls) parts.push(`${sel} { ${decls} }`);
+  }
+
+  if (block.breakpointStyles) {
+    // Walk site-settings BP order so the cascade is well-defined; see
+    // `buildBlockBreakpointCss` for the rationale.
+    for (const bp of breakpoints) {
+      const style = block.breakpointStyles[bp.name];
+      if (!style) continue;
+      const decls = buildImportantInlineStyle(schema, style, undefined, FLIP_CARD_FACE_KEYS);
+      if (!decls) continue;
+      const mq = buildMediaQuery(bp);
+      if (!mq) continue;
+      parts.push(`@media ${mq} { ${sel} { ${decls} } }`);
+    }
+  }
+
   return parts.join('\n');
 }
 
@@ -808,6 +871,8 @@ export function buildPageBreakpointCss(
         if (stickyCss) out.push(stickyCss);
         const columnsCss = buildBlockColumnsCss(blockTyped, breakpoints);
         if (columnsCss) out.push(columnsCss);
+        const flipCardFaceCss = buildBlockFlipCardFaceCss(blockTyped, breakpoints);
+        if (flipCardFaceCss) out.push(flipCardFaceCss);
       }
       // Recurse into containers
       if (b.type === 'columns' && Array.isArray((b as { content?: unknown }).content)) {

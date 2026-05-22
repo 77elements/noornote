@@ -78,6 +78,13 @@ export class NospressPageIndexOrchestrator {
     });
   }
 
+  /** Kind:5 deletion of the addressable coordinate. Used by the Global-tab
+   *  "Danger Zone → Delete from relays" path so a full site wipe can take
+   *  the page-index event off the user's relays too. */
+  public async deleteFromRelays(): Promise<void> {
+    await this.resource.delete('');
+  }
+
   public clearCache(pubkey?: string): void {
     this.resource.clearCache(pubkey);
   }

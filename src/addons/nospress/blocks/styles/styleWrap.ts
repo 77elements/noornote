@@ -42,12 +42,22 @@ const VOID_ELEMENTS = new Set(['hr', 'br', 'img', 'input']);
 export function styleWrap(
   block: { id: string; type: string; style?: CommonStyle; attrs?: { class?: string; id?: string } },
   inner: string,
-  opts: { tag?: string; baseClass?: string; extraAttrs?: string; extraInlineStyle?: string } = {},
+  opts: {
+    tag?: string;
+    baseClass?: string;
+    extraAttrs?: string;
+    extraInlineStyle?: string;
+    /** CommonStyle keys to keep out of the wrapper's inline emission.
+     *  Used by flip-card to redirect `background` onto the face elements
+     *  rather than the rotating wrapper (which is covered by both
+     *  faces). */
+    excludeStyleKeys?: Set<string>;
+  } = {},
 ): string {
   const tag = opts.tag ?? 'div';
   const baseClass = opts.baseClass ?? 'nospress-block-style';
 
-  const inlineStyle = buildInlineStyle(schemaFor(block.type), block.style);
+  const inlineStyle = buildInlineStyle(schemaFor(block.type), block.style, opts.excludeStyleKeys);
 
   // Divider is a clip-path on the wrapper itself — a true geometric cut so
   // whatever sits behind the block (the page body, the next section's bg,

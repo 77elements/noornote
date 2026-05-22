@@ -18,8 +18,22 @@
 import { sanitizeStyleValue } from './sanitize';
 import { QUAD_SIDES, type BoxValues, type CommonStyle, type PropertyEntry } from './types';
 
-/** Build the `style="…"` payload from a CommonStyle, restricted to schema. */
-export function buildInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle | undefined): string {
+/** Build the `style="…"` payload from a CommonStyle, restricted to schema.
+ *
+ *  `excludeKeys` lets a caller drop specific CommonStyle keys from the
+ *  emission — used by flip-card to keep `background` / `border*` out of
+ *  the wrapper so the same values can be redirected to the face
+ *  selector instead (see `FlipCardRenderer` / `buildBlockFlipCardFaceCss`).
+ *
+ *  `includeKeys` is the inverse: when set, ONLY entries with a matching
+ *  `.key` emit. Used by flip-card to compose the face's tiny
+ *  background+border inline-style without re-deriving a separate schema. */
+export function buildInlineStyle(
+  schema: PropertyEntry[],
+  styleIn: CommonStyle | undefined,
+  excludeKeys?: Set<string>,
+  includeKeys?: Set<string>,
+): string {
   if (!styleIn) return '';
   const style = migrateLegacyBorder(styleIn);
   const parts: string[] = [];
@@ -29,6 +43,8 @@ export function buildInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle |
     if (v) parts.push(`${prop}: ${v}`);
   };
   for (const entry of schema) {
+    if (excludeKeys?.has(entry.key)) continue;
+    if (includeKeys && !includeKeys.has(entry.key)) continue;
     if (entry.kind === 'single') {
       push(entry.cssProp, style[entry.key]);
     } else if (entry.kind === 'quad') {
@@ -70,8 +86,15 @@ export function buildInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle |
 
 /** Same payload as `buildInlineStyle` but appends `!important` to every
  *  declaration so per-breakpoint overrides outrank the wrapper's inline
- *  base styles when their media query matches. */
-export function buildImportantInlineStyle(schema: PropertyEntry[], styleIn: CommonStyle | undefined): string {
+ *  base styles when their media query matches.
+ *
+ *  `excludeKeys` / `includeKeys` behave identically to `buildInlineStyle`. */
+export function buildImportantInlineStyle(
+  schema: PropertyEntry[],
+  styleIn: CommonStyle | undefined,
+  excludeKeys?: Set<string>,
+  includeKeys?: Set<string>,
+): string {
   if (!styleIn) return '';
   const style = migrateLegacyBorder(styleIn);
   const parts: string[] = [];
@@ -81,6 +104,8 @@ export function buildImportantInlineStyle(schema: PropertyEntry[], styleIn: Comm
     if (v) parts.push(`${prop}: ${v} !important`);
   };
   for (const entry of schema) {
+    if (excludeKeys?.has(entry.key)) continue;
+    if (includeKeys && !includeKeys.has(entry.key)) continue;
     if (entry.kind === 'single') {
       push(entry.cssProp, style[entry.key]);
     } else if (entry.kind === 'quad') {

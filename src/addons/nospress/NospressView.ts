@@ -248,6 +248,13 @@ export class NospressView extends View {
   private fullscreenSplit: HTMLElement | null = null;
   private libraryToggleBtn: HTMLButtonElement | null = null;
   private libraryHidden: boolean = false;
+  /** Header action buttons — live inside the FullscreenOverlay header to
+   *  the left of "See Website". Set in `enterFullscreenEditor`, nulled in
+   *  `cleanupFullscreenEditor`. `refreshActionBar` updates their disabled
+   *  / textContent / title / hidden state in place; no innerHTML rebuild. */
+  private publishBtn: HTMLButtonElement | null = null;
+  private saveBtn: HTMLButtonElement | null = null;
+  private discardBtn: HTMLButtonElement | null = null;
   /** Right pane (tabs container). Holds the Blocks + Properties + Pages tabs. */
   private rightPaneEl: HTMLElement | null = null;
   /** Direct ref to the Properties tab body — re-rendered on selectBlock. */
@@ -544,9 +551,12 @@ export class NospressView extends View {
         ${templateHeadingHtml}
         ${blockCssHtml}
         ${composedBlocksHtml}
-        ${this.renderActionBar(editable)}
       </div>
     `;
+    // Header action buttons live outside `this.container` (in the
+    // FullscreenOverlay header) — refresh their state after every
+    // re-render so they stay in sync with dirty / publish flags.
+    this.refreshActionBar();
 
     this.mountFolderPickers();
     this.mountBlockDropdowns();
@@ -588,54 +598,9 @@ export class NospressView extends View {
     this.articlesCarousels = [];
   }
 
-  private renderActionBar(editable: boolean): string {
-    // Save targets the page draft AND in-memory menu edits. Site-settings
-    // are auto-persisted on every input so there is nothing to "save"
-    // for them — they only need shipping, which is the Publish button's
-    // job.
-    const saveDirty = this.isDirty || this.menusDirty;
-    // Publish ships anything that has not yet hit relays — page draft
-    // (in-memory or persisted), site-settings if touched, and menus
-    // when an in-memory editing snapshot still exists (cleared only
-    // after successful relay publish).
-    const editSlug = this.currentEditSlug();
-    const hasDraft = this.listService.hasDraftV2(editSlug);
-    const publishDirty = this.isDirty || hasDraft || this.siteSettingsDirty
-      || this.menusDirty || this.editingMenuSet !== null;
-    const hasPublished = this.listService.getPublishedV2(editSlug) !== null;
-    const isPageOverride = this.editingTarget === 'page-header' || this.editingTarget === 'page-footer';
-    const resetButton = isPageOverride
-      ? `<button type="button" class="btn btn--passive btn--danger" data-action="reset-page-override">Reset to Global</button>`
-      : '';
-    const discardEnabled = hasDraft || this.menusDirty || this.editingMenuSet !== null;
-    const localButtons = editable
-      ? `
-        ${resetButton}
-        <button type="button" class="btn" data-action="save" ${saveDirty ? '' : 'disabled'}>Save</button>
-        <button type="button" class="btn btn--passive" data-action="discard" ${discardEnabled ? '' : 'disabled'}>Discard</button>
-      `
-      : '';
-    const breakdown = publishDirty ? this.computePublishSize(editSlug) : { page: 0, siteSettings: 0, total: 0 };
-    const publishLabel = publishDirty ? `Publish ${formatBytes(breakdown.total)}` : 'Publish';
-    const publishTooltip = publishDirty
-      ? escapeHtmlAttr(
-          `Publish target: ${editSlug || 'Home (noornote/list)'}\n` +
-          `  page draft:    ${formatBytes(breakdown.page)}\n` +
-          `  site-settings: ${formatBytes(breakdown.siteSettings)}\n` +
-          `  total:         ${formatBytes(breakdown.total)}\n` +
-          `(other pages, header/footer, page-index and menus publish separately)`
-        )
-      : '';
-    return `
-      <div class="nospress-action-bar l-row--split" data-action-bar>
-        <div>
-          <button type="button" class="btn" data-action="publish" title="${publishTooltip}" ${publishDirty ? '' : 'disabled'}>${publishLabel}</button>
-          <button type="button" class="btn btn--passive btn--danger" data-action="delete-list" ${hasPublished ? '' : 'disabled'}>Unpublish</button>
-        </div>
-        <div>${localButtons}</div>
-      </div>
-    `;
-  }
+  // The header action buttons (Publish / Unpublish / Reset / Save /
+  // Discard) live in the FullscreenOverlay header — built once in
+  // `enterFullscreenEditor`, refreshed in place by `refreshActionBar`.
 
   /** Estimate the total bytes the next Publish would push to relays —
    *  page draft (after the same `customCss`/`style` strip as
@@ -662,14 +627,48 @@ export class NospressView extends View {
     return { page, siteSettings, total: page + siteSettings };
   }
 
-  /** Re-render only the action bar (used after save/dirty state changes). */
+  /** Update the FullscreenOverlay header action buttons in place to
+   *  reflect current dirty / publish / page-override state. Called after
+   *  every mutation that could affect what Save/Discard/Publish/Unpublish/
+   *  Reset-to-Global should look like. No-op until the overlay is mounted
+   *  (button refs are null before `enterFullscreenEditor`). */
   private refreshActionBar(): void {
-    const bar = this.container.querySelector('[data-action-bar]');
-    if (!bar) return;
-    const tmp = document.createElement('div');
-    tmp.innerHTML = this.renderActionBar(this.editMode);
-    const next = tmp.firstElementChild;
-    if (next) bar.replaceWith(next);
+    if (!this.publishBtn) return;
+
+    // Save targets the page draft AND in-memory menu edits. Site-settings
+    // are auto-persisted on every input so there is nothing to "save"
+    // for them — they only need shipping, which is the Publish button's
+    // job.
+    const saveDirty = this.isDirty || this.menusDirty;
+    const editSlug = this.currentEditSlug();
+    const hasDraft = this.listService.hasDraftV2(editSlug);
+    // Publish ships anything that has not yet hit relays — page draft
+    // (in-memory or persisted), site-settings if touched, and menus
+    // when an in-memory editing snapshot still exists (cleared only
+    // after successful relay publish).
+    const publishDirty = this.isDirty || hasDraft || this.siteSettingsDirty
+      || this.menusDirty || this.editingMenuSet !== null;
+    const discardEnabled = hasDraft || this.menusDirty || this.editingMenuSet !== null;
+    const breakdown = publishDirty ? this.computePublishSize(editSlug) : { page: 0, siteSettings: 0, total: 0 };
+
+    this.publishBtn.disabled = !publishDirty;
+    this.publishBtn.textContent = publishDirty ? `Publish ${formatBytes(breakdown.total)}` : 'Publish';
+    this.publishBtn.title = publishDirty
+      ? `Publish target: ${editSlug || 'Home (noornote/list)'}\n`
+        + `  page draft:    ${formatBytes(breakdown.page)}\n`
+        + `  site-settings: ${formatBytes(breakdown.siteSettings)}\n`
+        + `  total:         ${formatBytes(breakdown.total)}\n`
+        + `(other pages, header/footer, page-index and menus publish separately)`
+      : '';
+
+    if (this.saveBtn) {
+      this.saveBtn.hidden = !this.editMode;
+      this.saveBtn.disabled = !saveDirty;
+    }
+    if (this.discardBtn) {
+      this.discardBtn.hidden = !this.editMode;
+      this.discardBtn.disabled = !discardEnabled;
+    }
   }
 
   /**
@@ -699,30 +698,6 @@ export class NospressView extends View {
     this.inlineMountsComponents = [];
   }
 
-
-  private async confirmAndUnpublish(): Promise<void> {
-    const confirmed = await ModalService.getInstance().confirm({
-      title: 'Unpublish page',
-      message: 'This removes the published page from your relays. Your local draft is kept so you can re-publish later.',
-      confirmDestructive: true,
-    });
-    if (!confirmed) return;
-
-    try {
-      const editSlug = this.currentEditSlug();
-      await this.orchestrator.deleteFromRelays(editSlug);
-      this.listService.clearPublishedV2(editSlug);
-      if (editSlug === HOME_SLUG) {
-        this.listService.deleteList();
-      }
-      this.refreshActionBar();
-      this.updatePagesTab();
-      ToastService.show('Unpublished', 'success');
-    } catch (error) {
-      console.error('Failed to unpublish:', error);
-      ToastService.show('Unpublish failed', 'error');
-    }
-  }
 
   /**
    * Mount the fullscreen editor — the only edit surface. Re-parents
@@ -762,6 +737,33 @@ export class NospressView extends View {
     this.mountRightPane(librarySlot);
 
     this.rerenderEditable();
+
+    // Header action buttons (Publish / Unpublish / Reset / Save / Discard).
+    // Live in the FullscreenOverlay header — left of "See Website" — so
+    // the editor body stays free of a sticky bottom action bar. State
+    // (disabled, textContent, title, hidden) is updated in place by
+    // `refreshActionBar`; click handlers wire directly to the same
+    // methods the old `[data-action]` delegation routed to.
+    const publishBtn = document.createElement('button');
+    publishBtn.type = 'button';
+    publishBtn.className = 'btn btn--medium';
+    publishBtn.textContent = 'Publish';
+    publishBtn.addEventListener('click', () => this.publishDraft());
+    this.publishBtn = publishBtn;
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn btn--medium';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => this.saveDraft());
+    this.saveBtn = saveBtn;
+
+    const discardBtn = document.createElement('button');
+    discardBtn.type = 'button';
+    discardBtn.className = 'btn btn--passive btn--medium nospress-header-discard';
+    discardBtn.textContent = 'Discard';
+    discardBtn.addEventListener('click', () => this.discardDraft());
+    this.discardBtn = discardBtn;
 
     // "See Website" → opens the public NosPress page in a new tab. URL
     // composes handle + the active page slug (empty = home). Initial form
@@ -818,10 +820,13 @@ export class NospressView extends View {
       exitAsIcon: true,
       body: split,
       maxWidth: '100%',
-      extraActions: [seeWebsiteButton, cssEditorButton, libraryToggleBtn, backupBtn],
+      extraActions: [publishBtn, saveBtn, discardBtn, seeWebsiteButton, cssEditorButton, libraryToggleBtn, backupBtn],
       onExit: () => this.cleanupFullscreenEditor(),
     });
     this.fullscreenOverlay.mount();
+    // Seed initial disabled/label/visibility on the just-mounted header
+    // action buttons — they were created with neutral defaults.
+    this.refreshActionBar();
   }
 
   /**
@@ -1130,9 +1135,10 @@ export class NospressView extends View {
             </div>
           </div>
         </div>
-        ${isHome ? '' : `
+        ${(isHome && !hasPageHeader && !hasPageFooter) ? '' : `
           <div class="nospress-pages__card-actions">
-            <button type="button" class="btn btn--passive btn--mini" data-action="delete-page" data-page-slug="${escapeHtml(entry.slug)}">Delete</button>
+            ${isHome ? '' : `<button type="button" class="btn btn--passive btn--mini" data-action="delete-page" data-page-slug="${escapeHtml(entry.slug)}">Delete</button>`}
+            ${(hasPageHeader || hasPageFooter) ? `<button type="button" class="btn btn--passive btn--mini" data-action="reset-page-override" data-page-slug="${escapeHtml(entry.slug)}">Reset to Global</button>` : ''}
           </div>
         `}
       </div>
@@ -1337,6 +1343,25 @@ export class NospressView extends View {
             <div class="form__row">
               <label for="ssg-jsScripts">External JS URLs <small>(one per line)</small></label>
               <textarea id="ssg-jsScripts" class="textarea textarea--small input--monospace" data-global-field="injection.jsScripts">${escapeHtml((i.jsScripts ?? []).join('\n'))}</textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="nn-ui-toggle nospress-global__section nospress-global__section--danger-zone" data-toggle-section>
+          <div class="nn-ui-toggle__header" data-toggle-header>
+            <div class="nn-ui-toggle__info">
+              <h2 class="nn-ui-toggle__title">Danger Zone</h2>
+            </div>
+            <button class="nn-ui-toggle__toggle" aria-label="Toggle section">
+              <svg width="24" height="24"><use href="#icon-chevron-down"/></svg>
+            </button>
+          </div>
+          <div class="nn-ui-toggle__content">
+            <p class="form__note">Destructive site-wide actions. Use a Backup ZIP first if in doubt — there is no built-in undo.</p>
+            <div class="nospress-danger-zone__actions">
+              <button type="button" class="btn btn--passive btn--danger" data-action="delete-website-relays">Delete from Relays</button>
+              <button type="button" class="btn btn--passive btn--danger" data-action="delete-website-local">Delete local</button>
+              <button type="button" class="btn btn--danger" data-action="delete-website-completely">Delete completely</button>
             </div>
           </div>
         </section>
@@ -2493,6 +2518,127 @@ export class NospressView extends View {
       if (idx >= 0) this.removeBreakpoint(idx);
       return;
     }
+
+    if (action.dataset.action === 'delete-website-relays') {
+      void this.deleteWebsiteFromRelays();
+      return;
+    }
+    if (action.dataset.action === 'delete-website-local') {
+      void this.deleteWebsiteLocal();
+      return;
+    }
+    if (action.dataset.action === 'delete-website-completely') {
+      void this.deleteWebsiteCompletely();
+      return;
+    }
+  }
+
+  /** Collect every NIP-78 d-tag slug owned by this NosPress site —
+   *  Home, every sub-page, every page-specific header/footer override
+   *  that has content, plus the three global slots. Used by the wipe
+   *  paths so a single source of truth drives both the relay-delete
+   *  loop and the local-clear loop. */
+  private collectAllNospressSlugs(): string[] {
+    const slugs: string[] = [];
+    const index = this.pageIndexService.getIndex();
+    for (const entry of index.pages) {
+      slugs.push(entry.slug);
+      const hSlug = pageHeaderSlug(entry.slug);
+      const fSlug = pageFooterSlug(entry.slug);
+      if (this.listService.hasV2Content(hSlug)) slugs.push(hSlug);
+      if (this.listService.hasV2Content(fSlug)) slugs.push(fSlug);
+    }
+    slugs.push(GLOBAL_HEADER_SLUG, GLOBAL_FOOTER_SLUG, VENDOR_FOOTER_SLUG);
+    return slugs;
+  }
+
+  /** Send a kind:5 deletion for every NosPress event this user has on
+   *  relays — page bodies, every page-specific header/footer override,
+   *  the three globals, plus the menus / page-index / site-settings
+   *  resources. Local drafts and the local published mirror are
+   *  preserved; the user can republish from the editor afterwards. */
+  private async deleteWebsiteFromRelays(): Promise<void> {
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete website from relays',
+      message: 'This sends NIP-09 deletion events for every NosPress event on your relays — every page, every header/footer, the menus, the page index, and the site settings. Your local drafts stay so you can republish later. Continue?',
+      confirmDestructive: true,
+      confirmText: 'Delete from relays',
+    });
+    if (!confirmed) return;
+
+    let anyFailure = false;
+    for (const slug of this.collectAllNospressSlugs()) {
+      try { await this.orchestrator.deleteFromRelays(slug); }
+      catch (err) { anyFailure = true; console.error('Delete failed for slug', slug, err); }
+    }
+    try { await this.menuOrchestrator.deleteFromRelays(); }
+    catch (err) { anyFailure = true; console.error('Delete failed for menus', err); }
+    try { await this.pageIndexOrchestrator.deleteFromRelays(); }
+    catch (err) { anyFailure = true; console.error('Delete failed for page-index', err); }
+    try { await this.siteSettingsOrchestrator.deleteFromRelays(); }
+    catch (err) { anyFailure = true; console.error('Delete failed for site-settings', err); }
+
+    // Local published-mirror copies are now stale (point at events that
+    // no longer exist on relays) — drop them so the editor / public
+    // page don't show ghost content sourced from cache.
+    for (const slug of this.collectAllNospressSlugs()) {
+      this.listService.clearPublishedV2(slug);
+    }
+
+    ToastService.show(anyFailure ? 'Some relay deletions failed' : 'Website removed from relays', anyFailure ? 'error' : 'success');
+    this.fullscreenOverlay?.unmount();
+  }
+
+  /** Wipe every NosPress slot from this device's localStorage. The
+   *  events on relays stay; another client / a re-login still sees the
+   *  published site. */
+  private async deleteWebsiteLocal(): Promise<void> {
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete local copy',
+      message: 'This wipes every NosPress draft and cached published copy on this device. Events on your relays stay — other clients (and you, after a re-login or sync) will still see the published site. Continue?',
+      confirmDestructive: true,
+      confirmText: 'Delete local',
+    });
+    if (!confirmed) return;
+
+    this.listService.clear();
+    this.menuService.clear();
+    this.pageIndexService.clear();
+    this.siteSettingsService.clearSettings();
+
+    ToastService.show('Local NosPress data wiped', 'success');
+    this.fullscreenOverlay?.unmount();
+  }
+
+  /** Total wipe — relays + local. The Backup ZIP is the only path back. */
+  private async deleteWebsiteCompletely(): Promise<void> {
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete website completely',
+      message: 'This removes every NosPress event from your relays AND wipes every local draft on this device. There is no undo — restore from a Backup ZIP is the only recovery path. Continue?',
+      confirmDestructive: true,
+      confirmText: 'Delete completely',
+    });
+    if (!confirmed) return;
+
+    let anyFailure = false;
+    for (const slug of this.collectAllNospressSlugs()) {
+      try { await this.orchestrator.deleteFromRelays(slug); }
+      catch (err) { anyFailure = true; console.error('Delete failed for slug', slug, err); }
+    }
+    try { await this.menuOrchestrator.deleteFromRelays(); }
+    catch (err) { anyFailure = true; console.error('Delete failed for menus', err); }
+    try { await this.pageIndexOrchestrator.deleteFromRelays(); }
+    catch (err) { anyFailure = true; console.error('Delete failed for page-index', err); }
+    try { await this.siteSettingsOrchestrator.deleteFromRelays(); }
+    catch (err) { anyFailure = true; console.error('Delete failed for site-settings', err); }
+
+    this.listService.clear();
+    this.menuService.clear();
+    this.pageIndexService.clear();
+    this.siteSettingsService.clearSettings();
+
+    ToastService.show(anyFailure ? 'Wiped local — some relay deletions failed' : 'Website deleted', anyFailure ? 'error' : 'success');
+    this.fullscreenOverlay?.unmount();
   }
 
   /**
@@ -3068,38 +3214,66 @@ export class NospressView extends View {
     this.updatePropertiesTab();
   }
 
-  /** Reset a page-specific header/footer override back to inheriting from
-   *  the global. Local: clear draft + published mirror. Relay: kind:5 only
-   *  if there was a published mirror (otherwise nothing to delete). After
-   *  reset, switches the editor back to the page body. */
-  private async resetPageOverrideToGlobal(): Promise<void> {
-    if (this.editingTarget !== 'page-header' && this.editingTarget !== 'page-footer') return;
-    const slug = this.currentEditSlug();
-    const wasPublished = !!this.listService.getPublishedV2(slug);
+  /** Reset every page-specific header/footer override on a given page
+   *  back to inheriting from the global. Wired to the per-tile "Reset to
+   *  Global" button in the Pages tab — appears only when the page has
+   *  at least one custom override.
+   *
+   *  Local: clear draft + published mirror for whichever of
+   *  pageHeaderSlug/pageFooterSlug actually holds content. Relay: kind:5
+   *  only if the slug was also published (otherwise nothing to delete).
+   *
+   *  If the user is currently editing one of the just-reset targets, the
+   *  editor switches back to the page body so the now-empty override
+   *  doesn't stay open. */
+  private async resetPageOverridesForSlug(pageSlug: string): Promise<void> {
+    const headerSlug = pageHeaderSlug(pageSlug);
+    const footerSlug = pageFooterSlug(pageSlug);
+    const slugs: string[] = [];
+    if (this.listService.hasV2Content(headerSlug)) slugs.push(headerSlug);
+    if (this.listService.hasV2Content(footerSlug)) slugs.push(footerSlug);
+    if (slugs.length === 0) return;
 
-    this.listService.clearDraftV2(slug);
-    this.listService.clearPublishedV2(slug);
-
-    if (wasPublished) {
-      try {
-        await this.orchestrator.deleteFromRelays(slug);
-      } catch (err) {
-        console.error('Failed to publish kind:5 deletion for page override:', err);
-        ToastService.show('Reset locally, but relay deletion failed', 'error');
+    let relayFailure = false;
+    for (const slug of slugs) {
+      const wasPublished = !!this.listService.getPublishedV2(slug);
+      this.listService.clearDraftV2(slug);
+      this.listService.clearPublishedV2(slug);
+      if (wasPublished) {
+        try {
+          await this.orchestrator.deleteFromRelays(slug);
+        } catch (err) {
+          relayFailure = true;
+          console.error('Failed to publish kind:5 deletion for page override:', err);
+        }
       }
     }
 
-    this.editingTarget = 'body';
-    this.editingPage = null;
-    this.editingPageSlug = null;
-    this.isDirty = false;
-    this.selectedBlockId = null;
-    this.selectedSubScope = null;
-    this.cursor = { scope: 'page', index: -1 };
-    this.rerenderEditable();
+    // Editor was sitting on one of the just-cleared overrides → bounce
+    // back to the page body so the user isn't left editing a now-empty
+    // override slot.
+    const editingResetTarget =
+      (this.editingTarget === 'page-header' || this.editingTarget === 'page-footer')
+      && this.activeSlug === pageSlug;
+    if (editingResetTarget) {
+      this.editingTarget = 'body';
+      this.editingPage = null;
+      this.editingPageSlug = null;
+      this.isDirty = false;
+      this.selectedBlockId = null;
+      this.selectedSubScope = null;
+      this.cursor = { scope: 'page', index: -1 };
+      this.rerenderEditable();
+    }
+
     this.updatePagesTab();
     this.updatePropertiesTab();
-    ToastService.show('Reset to global', 'success');
+
+    if (relayFailure) {
+      ToastService.show('Reset locally, but some relay deletions failed', 'error');
+    } else {
+      ToastService.show('Reset to global', 'success');
+    }
   }
 
   private handlePagesTabClick(e: Event): void {
@@ -3123,6 +3297,10 @@ export class NospressView extends View {
     }
     if (action === 'delete-page') {
       void this.deletePageBySlug(slug);
+      return;
+    }
+    if (action === 'reset-page-override') {
+      void this.resetPageOverridesForSlug(slug);
       return;
     }
     if (action === 'select-global-header') {
@@ -3540,6 +3718,9 @@ export class NospressView extends View {
     this.fullscreenOverlay = null;
     this.fullscreenSplit = null;
     this.libraryToggleBtn = null;
+    this.publishBtn = null;
+    this.saveBtn = null;
+    this.discardBtn = null;
     this.libraryHidden = false;
     this.rightPaneEl = null;
     this.propertiesTabContent = null;
@@ -5374,8 +5555,6 @@ export class NospressView extends View {
         case 'save':                   this.saveDraft(); return;
         case 'discard':                this.discardDraft(); return;
         case 'publish':                this.publishDraft(); return;
-        case 'delete-list':            this.confirmAndUnpublish(); return;
-        case 'reset-page-override':    void this.resetPageOverrideToGlobal(); return;
         case 'dm-page-owner':          Router.getInstance().navigate(`/messages/${this.npub}`); return;
         case 'close-css-editor':       this.toggleCssEditor(); return;
       }
