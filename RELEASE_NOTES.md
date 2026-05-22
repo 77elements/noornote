@@ -1,9 +1,11 @@
-# NoorNote 0.9.4
+# NoorNote 0.9.5
 
-**NosPress** — Multi-menu editing now uses a Save/Publish/Discard draft buffer; deleted menu items stay deleted after reload. New Card block with optional cover image and nested children. Cleaner Nav-tab UI with grouped action buttons.
+**NosPress** — New Flip-card block (front/back faces, 3D rotate or fade, hover/click trigger). New Sticky-block state panel with transitions. New Danger Zone (Delete from Relays / Local / Both) in the Global tab. Public URLs at `noornote.app/<your-handle>/` are now opt-in via the addon toggle — turning the addon off removes the public space cleanly. Save / Publish / Discard moved into the editor header; Reset-to-Global migrated into per-page tiles.
 
-**Profile** — Optional Products carousel on profile pages, toggleable in Marketplace settings. Articles carousel dedupes addressable events and respects NIP-09 deletions.
+**Silent Zaps** — Send anonymous zaps signed with a throwaway ephemeral key; your npub never appears on the request and recipients see "Someone silently zapped".
 
-**Mobile** — Cleaner login on phone browsers: single "Use Amber" deep-link button replaces the QR flow.
+**Mute filter** — Centralized last-line-of-defense filter so nothing from a muted user (including transitive reposts) leaks across any timeline, thread, profile, notification, or quote.
 
-**Privacy** — More honest disclosures in privacy policy (hosting, NIP-05 lookups, media proxy).
+**Search** — Spotlight now recognises `nostr:` URIs, `nprofile1` / `note1` / `naddr1` identifiers, and NIP-05 handles like `alice@example.com` — paste and jump straight to the right view.
+
+**Reliability** — Quote and repost cross-relay fetches now find events much more often (parent-author outbound fallback, e-tag relay hints, cached NIP-65 outbox in IndexedDB). DM sends reach recipients whose inbox-list isn't on our read set.
