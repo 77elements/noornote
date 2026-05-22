@@ -5,7 +5,7 @@
 <!-- desc-sync:intro -->
 A slim yet feature rich Nostr client that doesn't rely on any Google services, under an open source license.
 
-It focuses not just on the social media side but also heavily on the other stuff aspect of Nostr. Things like marketplace products, Zap Streams, tribes, drag and drop bookmark lists with folders, follow packs, custom emojis, an onboarding wizard, plus tons of other Nostr services and innovative features you won't find in other clients are all built in as addons. Great for Nostr newbies as well as advanced users.
+It focuses not just on the social media side but also heavily on the other stuff aspect of Nostr. Things like a personal multi-page website published to your own relays (NosPress), marketplace products, Zap Streams, tribes, drag and drop bookmark lists with folders, follow packs, custom emojis, an onboarding wizard, plus tons of other Nostr services and innovative features you won't find in other clients are all built in as addons. Great for Nostr newbies as well as advanced users.
 
 **Available as [Web App](https://noornote.app), [Desktop App (Linux & macOS)](https://noornote.app/download/) and Android App (on [Zapstore](https://zapstore.dev)).** Windows is not officially supported.
 <!-- /desc-sync:intro -->
@@ -50,6 +50,7 @@ It focuses not just on the social media side but also heavily on the other stuff
 - **Article mentions** - Nostr references and note embeds render inside longform articles
 - **Custom Emojis & animated GIFs** - Render NIP-30 custom emojis from any author out of the box. Optional Custom Emojis add-on lets you upload your own pack and use them as reactions or in posts
 - **Opt-in client tag** - Choose whether your posts identify NoorNote as the publishing client
+- **Silent Zaps** - Send anonymous zaps signed with a throwaway ephemeral key — your npub never appears on the kind:9734 request, recipient and onlookers see "Someone silently zapped"
 
 ### Add-Ons
 
@@ -64,7 +65,7 @@ NoorNote ships with optional features that you enable on demand under **Settings
 | **Profile Recognition** | Visual cues (blinking profile pictures) when people you follow change their name or avatar |
 | **Marketplace** | Browse and publish NIP-99 classified listings, tag filters, image carousel, listings from people you follow injected into your timeline |
 | **Follow Packs** | Discover and share curated lists of Nostr users to follow |
-| **NostrIn** | Mount a bookmark folder or a custom user list to your profile so other NoorNote users can see them |
+| **NosPress** | Build a full multi-page personal website at `noornote.app/<your-nip-05-or-npub>/` — pages, header / footer, navigation menus, custom CSS, theme, palette, custom fonts, user-defined breakpoints. Stored as NIP-78 events on your own relays; enabling the addon publishes a tiny opt-in marker so visitors can find your space, turning it off deletes the marker and the public URL stops resolving. Block library covers text, lists, images, video, audio, columns, cards, flip-cards, embeds, profile cards, articles lists, and more |
 | **Hashtag Subscriptions** | Subscribe to any hashtag or word and get notified when someone posts a note containing it |
 | **List Sync Mode** | Switch between Easy Mode (automatic sync) and Manual Mode (action buttons + Danger Zone for resetting corrupted list data) |
 | **Word Filter** | Hide notes containing specific words from all timelines |
@@ -73,6 +74,12 @@ NoorNote ships with optional features that you enable on demand under **Settings
 | **Scheduled Posts** | Schedule notes and long-form articles to be published at a later date and time — via a NoorNote-operated hold-and-forward service, no private keys leave your device |
 
 ...and many more to come.
+
+## NosPress — Your Personal Site on Nostr
+
+NoorNote's built-in website builder. Activate the NosPress add-on and you get a public, multi-page personal site at `noornote.app/<your-nip-05-or-npub>/` — composed in-app with a block editor (text, lists, images, video, audio, columns, cards, flip-cards, embeds, navigation menus, profile cards, articles lists, …), styled with your own theme, palette, custom fonts, and user-defined responsive breakpoints. A `Custom CSS` panel scopes user CSS to your own site for full visual control.
+
+Every page, header, footer, navigation menu and site setting publishes as a NIP-78 event to your own relays — no NoorNote backend, no platform lock-in. Enabling the add-on publishes a tiny opt-in marker so visitors can find your space; turning it off deletes the marker via NIP-09 and the public URL stops resolving. A built-in Backup creates a ZIP snapshot of your full NosPress state for portable recovery across devices.
 
 ## Get Started
 
@@ -88,9 +95,21 @@ Since the app is not signed, macOS will show an error ("app is damaged"). Run th
 xattr -cr /Applications/Noornote.app
 ```
 
-## Screenshot
+## Screenshots
 
-![NoorNote Timeline](https://image.nostr.build/5831d6aeb91665e25e241277fb96a7df5596c8f316fe6543c7919cf00f1e71cc.png)
+<table>
+  <tr>
+    <td><img src="https://image.nostr.build/33ba14d4478a2014e725fb1508abc912d21e15656cda3bbd630642f870329b8b.png" alt="Welcome Page"></td>
+    <td><img src="https://image.nostr.build/fb151877c4f97a912a7d50da560715a95215fd2f01fe03f9541cd7fde4e411fe.png" alt="Timeline"></td>
+    <td><img src="https://image.nostr.build/76f06ea53995e7ee920648f7cff6cbc8003be9481f5594bbe806ef41b062f74a.png" alt="Notifications"></td>
+    <td><img src="https://image.nostr.build/9f957b8ac0ff651cd26a626ad41f3019589587b5216686486beca7398a84aff9.png" alt="Profile"></td>
+  </tr>
+  <tr>
+    <td><img src="https://image.nostr.build/2c7212ea8bcbff68af31232ef137956c667c8886e6776dd899ed29323f15ce4f.png" alt="NosPress"></td>
+    <td><img src="https://image.nostr.build/25344de4008899f03cfe3f19ed16891f44a1a122ddbaaa0d8506e518bc91232e.png" alt="Thread"></td>
+    <td><img src="https://image.nostr.build/dcaa8f478eef78d69613c52db0ae4a2cb9a89c870f372ebf0c87eed9841e61a8.png" alt="Themes"></td>
+  </tr>
+</table>
 
 ## Privacy & Security
 
