@@ -292,17 +292,32 @@ function generateRandomAvatars(count: number): string[] {
   });
 }
 
-// Top relays by user count (online only, source: stats.andotherstuff.org 2026-01-27)
-const RELAY_POOL = [
+// Curated default content-relay set. Three large, long-running general-
+// purpose relays plus one stable secondary. Every new account starts
+// with these as Read+Write. Picked for: high user count, multi-year
+// uptime, broadly compatible with every Nostr client out there.
+//
+// Notable omissions:
+//   - `purplepag.es` — runs in the background as the canonical profile
+//     indexer (see RelayConfig.getMetadataRelays). Putting it into the
+//     user-facing pool would muddle its role: it's not a general
+//     content-write target, it's a metadata indexer. NoorNote pushes
+//     kind:0 / kind:10002 / kind:10050 to it automatically via
+//     publishEverywhere regardless of the user's NIP-65 setup. Keeping
+//     it out of the wizard avoids confusing the user about its role.
+//   - `relay.mostr.pub` / `momostr.pink` — ActivityPub bridges. Useful
+//     for users who specifically want Mastodon cross-posting, but
+//     shipping them by default ships an opinion most users haven't
+//     formed yet. They can be added manually in Settings → Relays.
+//   - `relay.ditto.pub`, `nostr.mom` — niche / single-instance relays.
+//
+// Source for "main four": stats.andotherstuff.org 2026 + cross-checked
+// against nostr.watch reliability metrics.
+const DEFAULT_CONTENT_RELAYS: string[] = [
   'wss://relay.damus.io',
-  'wss://relay.primal.net',
-  'wss://relay.momostr.pink',
   'wss://nos.lol',
-  'wss://purplepag.es',
-  'wss://relay.ditto.pub',
-  'wss://nostr.mom',
+  'wss://relay.primal.net',
   'wss://offchain.pub',
-  'wss://relay.mostr.pub',
 ];
 
 // NIP-17 DM inbox relays (AUTH-capable, private inbox)
@@ -313,10 +328,13 @@ const INBOX_RELAY_POOL: WizardInboxRelay[] = [
   { url: 'wss://auth.nostr1.com', selected: false },
 ];
 
-/** Pick `count` random relays from the pool, all set to read+write */
-function pickRandomRelays(count: number): WizardRelay[] {
-  const shuffled = [...RELAY_POOL].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count).map(url => ({ url, read: true, write: true }));
+/** Pre-populate the wizard with the curated default content-relay set —
+ *  no randomness, every fresh account gets the same reliable baseline.
+ *  All set to read+write so the new user has both lanes covered from
+ *  the first save. They can deselect or replace any of them in the
+ *  wizard step before confirming. */
+function pickDefaultRelays(): WizardRelay[] {
+  return DEFAULT_CONTENT_RELAYS.map(url => ({ url, read: true, write: true }));
 }
 
 function generateRandomUsername(): string {
@@ -1681,7 +1699,7 @@ IMPORTANT:
       render: () => {
         // Initialize with 3 random relays if empty
         if (this.selectedRelays.length === 0) {
-          this.selectedRelays = pickRandomRelays(3);
+          this.selectedRelays = pickDefaultRelays();
         }
 
         const el = document.createElement('div');
@@ -1736,7 +1754,7 @@ IMPORTANT:
         suggestBtn.className = 'btn btn--passive wizard-relay-suggest';
         suggestBtn.textContent = 'Suggest different relays';
         suggestBtn.addEventListener('click', () => {
-          this.selectedRelays = pickRandomRelays(3);
+          this.selectedRelays = pickDefaultRelays();
           this.renderRelayList(relayList);
           this.updateNextButtonState(true);
         });

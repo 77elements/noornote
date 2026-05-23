@@ -192,41 +192,52 @@ export class RelayConfig {
   }
 
   /**
-   * Get aggregator relays that index events from many other relays.
-   * Used for content fetching (timeline, notes).
+   * Background discovery / metadata-indexer layer. Pure profile- and
+   * relay-list indexers — DOES NOT overlap with the wizard's curated
+   * content-relay default set (`damus.io`, `nos.lol`, `primal.net`,
+   * `offchain.pub` — see `AccountSetupWizard.DEFAULT_CONTENT_RELAYS`).
+   * That separation matters: a relay should not silently appear in
+   * both layers (the user's NIP-65 setup AND a hardcoded background
+   * channel) — otherwise the user can't reason about where their
+   * data actually lives.
+   *
+   * Used by:
+   *   - `publishEverywhere` (kind:0 / kind:10002 / kind:10050) — so
+   *     identity + relay-list metadata is broadly findable.
+   *   - `ProfileOrchestrator` (single + batch fetch) — purplepag.es is
+   *     the canonical profile indexer.
+   *   - `NotificationsOrchestrator`, `ReactionsOrchestrator`,
+   *     `lists/relays.ts:getReadRelays` — included as a fallback
+   *     source. The user's own NIP-65 read-relays carry the bulk of
+   *     content; this layer just ensures profile-context lookups work
+   *     even for users on uncommon relays.
+   *
+   * Content-fetch breadth (notifications, reactions) flows from the
+   * user's NIP-65 read-relays — NOT from this set. A wizard-configured
+   * user has `damus.io / nos.lol / primal.net / offchain.pub` in their
+   * read-set, so everyday fetch coverage is unchanged. A user who
+   * deliberately reduces to a single private relay accepts a
+   * correspondingly narrower fetch surface — by their own choice.
    */
   public getAggregatorRelays(): string[] {
-    // Data Saver: fewer relays to reduce duplicate events and connections
-    if (isDataSaverEnabled()) {
-      return [
-        'wss://relay.damus.io',
-        'wss://nos.lol',
-        'wss://relay.primal.net'
-      ];
-    }
     return [
-      'wss://relay.damus.io',
-      'wss://relay.snort.social',
-      'wss://nos.lol',
-      'wss://relay.primal.net',
-      'wss://purplepag.es',
-      'wss://relay.mostr.pub',
-      'wss://relay.zapstore.dev'
+      'wss://purplepag.es'
     ];
   }
 
   /**
-   * Get relays optimized for metadata queries (Kind 0, 3, 10002, 10050).
-   * Combines general aggregators with dedicated metadata indexers
-   * for better coverage of profiles, follows, and relay lists.
+   * Discovery + dedicated metadata indexers. Used for `publishEverywhere`
+   * broadcasts of identity events (kind:0 / kind:10002 / kind:10050) so
+   * other clients can find the user's relay-list and profile regardless
+   * of which relays they happen to query.
+   *
+   * Data Saver mode skips the secondary indexers (hzrd149 / coracle /
+   * kindpag.es) — `purplepag.es` alone is enough for primary
+   * discoverability and avoids opening three extra WebSockets.
    */
   public getMetadataRelays(): string[] {
-    // Data Saver: only 1 metadata indexer instead of 3
     if (isDataSaverEnabled()) {
-      return [
-        ...this.getAggregatorRelays(),
-        'wss://purplepag.es'
-      ];
+      return this.getAggregatorRelays();
     }
     return [
       ...this.getAggregatorRelays(),
