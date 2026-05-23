@@ -192,36 +192,49 @@ export class RelayConfig {
   }
 
   /**
-   * Background discovery / metadata-indexer layer. Pure profile- and
-   * relay-list indexers — DOES NOT overlap with the wizard's curated
-   * content-relay default set (`damus.io`, `nos.lol`, `primal.net`,
-   * `offchain.pub` — see `AccountSetupWizard.DEFAULT_CONTENT_RELAYS`).
-   * That separation matters: a relay should not silently appear in
-   * both layers (the user's NIP-65 setup AND a hardcoded background
-   * channel) — otherwise the user can't reason about where their
-   * data actually lives.
+   * Background fallback layer for content lookups and broad-reach
+   * broadcasts. Includes both mainstream content-relays (damus, snort,
+   * nos.lol, primal, offchain-via-NoteService's read-set union) AND
+   * the canonical profile-indexer (purplepag.es).
    *
    * Used by:
    *   - `publishEverywhere` (kind:0 / kind:10002 / kind:10050) — so
    *     identity + relay-list metadata is broadly findable.
-   *   - `ProfileOrchestrator` (single + batch fetch) — purplepag.es is
-   *     the canonical profile indexer.
-   *   - `NotificationsOrchestrator`, `ReactionsOrchestrator`,
-   *     `lists/relays.ts:getReadRelays` — included as a fallback
-   *     source. The user's own NIP-65 read-relays carry the bulk of
-   *     content; this layer just ensures profile-context lookups work
-   *     even for users on uncommon relays.
+   *   - `NoteService.fetchFromRelays` (bookmark resolution, quoted
+   *     notes, deep-link by event-id) — events whose author we don't
+   *     pre-know need a broad fetch surface.
+   *   - `BroadcastDeleteService` — kind:5 deletions need maximum reach.
+   *   - `ZapStatsService`, `FollowerCountService` — broad stats fetches.
+   *   - `StarterFeedOrchestrator`, `PublicTimelineComponent` —
+   *     onboarding paths where the user has no relay-setup yet.
+   *   - `NotificationsOrchestrator`, `ReactionsOrchestrator` — broad
+   *     coverage for reactor-pubkeys we don't know in advance.
    *
-   * Content-fetch breadth (notifications, reactions) flows from the
-   * user's NIP-65 read-relays — NOT from this set. A wizard-configured
-   * user has `damus.io / nos.lol / primal.net / offchain.pub` in their
-   * read-set, so everyday fetch coverage is unchanged. A user who
-   * deliberately reduces to a single private relay accepts a
-   * correspondingly narrower fetch surface — by their own choice.
+   * Yes, these relays overlap with what the wizard suggests as the
+   * user's default content-relay set (damus / nos.lol / primal /
+   * offchain). The overlap is intentional structural redundancy:
+   * multiple code paths can independently reach the same relay,
+   * NDK pools a single WebSocket per URL, so there is no double-
+   * connection cost. A previous attempt (66c1e727) to trim this set
+   * down to purplepag-only broke bookmark resolution, zap stats,
+   * broadcast-delete reach and onboarding feed coverage — reverted.
    */
   public getAggregatorRelays(): string[] {
+    if (isDataSaverEnabled()) {
+      return [
+        'wss://relay.damus.io',
+        'wss://nos.lol',
+        'wss://relay.primal.net'
+      ];
+    }
     return [
-      'wss://purplepag.es'
+      'wss://relay.damus.io',
+      'wss://relay.snort.social',
+      'wss://nos.lol',
+      'wss://relay.primal.net',
+      'wss://purplepag.es',
+      'wss://relay.mostr.pub',
+      'wss://relay.zapstore.dev'
     ];
   }
 
@@ -230,14 +243,13 @@ export class RelayConfig {
    * broadcasts of identity events (kind:0 / kind:10002 / kind:10050) so
    * other clients can find the user's relay-list and profile regardless
    * of which relays they happen to query.
-   *
-   * Data Saver mode skips the secondary indexers (hzrd149 / coracle /
-   * kindpag.es) — `purplepag.es` alone is enough for primary
-   * discoverability and avoids opening three extra WebSockets.
    */
   public getMetadataRelays(): string[] {
     if (isDataSaverEnabled()) {
-      return this.getAggregatorRelays();
+      return [
+        ...this.getAggregatorRelays(),
+        'wss://purplepag.es'
+      ];
     }
     return [
       ...this.getAggregatorRelays(),

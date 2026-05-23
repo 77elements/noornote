@@ -172,10 +172,34 @@ export class NoteService {
   }
 
   /**
+   * Resolve the relay-set for cross-event lookups (bookmark resolution,
+   * quote / e-tag resolution, deep-link by event-id, …). We don't know
+   * the event's author in advance — Outbound-by-pubkey is therefore
+   * impossible — so we union:
+   *   - the user's NIP-65 read-relays (where they normally read content),
+   *   - the discovery aggregator-set (purplepag-only for now, but kept
+   *     in the union so any future widening flows through here).
+   *
+   * Before the 2026-05-23 aggregator-trim this was just
+   * `getAggregatorRelays()` (7 broad mainstream relays). After the trim
+   * that single relay (purplepag.es) is profile-only and carries no
+   * kind:1 events, so bookmarks / quoted notes / e-tag refs would all
+   * fall through to "Note not found" unless the user's own read-set
+   * has broad coverage — which the wizard now seeds with damus.io /
+   * nos.lol / primal.net / offchain.pub explicitly.
+   */
+  private getLookupRelays(): string[] {
+    return [...new Set<string>([
+      ...this.relayConfig.getReadRelays(),
+      ...this.relayConfig.getAggregatorRelays(),
+    ])];
+  }
+
+  /**
    * Fetch single note from relays
    */
   private async fetchFromRelays(eventId: string): Promise<NostrEvent | null> {
-    const relays = this.relayConfig.getAggregatorRelays();
+    const relays = this.getLookupRelays();
 
     const filters: NDKFilter[] = [{
       ids: [eventId],
@@ -196,7 +220,7 @@ export class NoteService {
    */
   private async fetchMultipleFromRelays(eventIds: string[]): Promise<Map<string, NostrEvent>> {
     const result = new Map<string, NostrEvent>();
-    const relays = this.relayConfig.getAggregatorRelays();
+    const relays = this.getLookupRelays();
 
     const filters: NDKFilter[] = [{
       ids: eventIds
