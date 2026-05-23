@@ -143,7 +143,7 @@ export class Nip78ResourceOrchestrator<T> {
     const signed = await auth.signEvent(event);
     if (!signed) throw new Error(`Failed to sign ${this.cfg.name} event`);
 
-    await transport.publish(writeRelays, signed);
+    await transport.publishContent(signed);
     this.invalidate(currentUser.pubkey, key);
 
     diagLog('lists', `${this.cfg.name} publishToRelays`, { dTag, ...diagPayload });

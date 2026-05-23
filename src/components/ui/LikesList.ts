@@ -8,7 +8,6 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ReactionService } from '../../services/ReactionService';
 import { AuthGuard } from '../../services/AuthGuard';
-import { RelayConfig } from '../../services/RelayConfig';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 
 interface ReactionGroup {
@@ -23,14 +22,12 @@ export class LikesList {
   private noteId: string;
   private authorPubkey: string;
   private reactionService: ReactionService;
-  private relayConfig: RelayConfig;
 
   constructor(reactionEvents: NostrEvent[], noteId: string, authorPubkey: string) {
     this.reactionEvents = reactionEvents;
     this.noteId = noteId;
     this.authorPubkey = authorPubkey;
     this.reactionService = ReactionService.getInstance();
-    this.relayConfig = RelayConfig.getInstance();
   }
 
   /**
@@ -151,15 +148,12 @@ export class LikesList {
     // Disable button immediately to prevent multiple clicks
     badge.disabled = true;
 
-    // Get user's write relays
-    const relays = await this.relayConfig.getWriteRelays();
-
-    // Publish reaction
+    // Publish reaction — ReactionService resolves own write-relays
+    // and the author's NIP-65 outbox internally (Amethyst pattern).
     const result = await this.reactionService.publishReaction({
       noteId: this.noteId,
       authorPubkey: this.authorPubkey,
       emoji,
-      relays
     });
 
     if (result.success) {

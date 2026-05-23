@@ -87,7 +87,7 @@ export class NospressMountsOrchestrator {
       throw new Error('Failed to sign NosPress mounts event');
     }
 
-    await this.transport.publish(writeRelays, signed);
+    await this.transport.publishContent(signed);
 
     this.cache.set(currentUser.pubkey, mounts);
 

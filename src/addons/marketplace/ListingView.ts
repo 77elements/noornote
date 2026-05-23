@@ -215,7 +215,6 @@ export class ListingView extends View {
           const { RepostService } = await import('../../services/RepostService');
           await RepostService.getInstance().publishGenericRepost({
             originalEvent: event,
-            relays: writeRelays,
           });
         } else if (action === 'quote') {
           const naddr = encodeNaddr({ kind: 30402, pubkey: event.pubkey, identifier: dTag, relays: writeRelays.slice(0, 2) });

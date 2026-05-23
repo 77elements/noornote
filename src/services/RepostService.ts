@@ -13,13 +13,17 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
+import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
 import { getTag } from '../helpers/tagUtils';
 
 export interface RepostOptions {
   /** Note to repost (full event) */
   originalEvent: NostrEvent;
-  /** Target relays to publish to */
-  relays: string[];
+  /** Optional relay-hints harvested from the reposted event (e-tag relay
+   *  hint, source-relay if known). Service additionally resolves the
+   *  original author's NIP-65 write-relays via OutboundRelaysOrchestrator
+   *  so the repost reaches their inbox-set. */
+  relayHints?: string[];
 }
 
 export class RepostService {
@@ -75,7 +79,7 @@ export class RepostService {
    * @returns Promise<{ success: boolean; alreadyReposted?: boolean; error?: string }> - Result status
    */
   public async publishRepost(options: RepostOptions): Promise<{ success: boolean; alreadyReposted?: boolean; error?: string }> {
-    const { originalEvent, relays } = options;
+    const { originalEvent, relayHints = [] } = options;
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
@@ -92,8 +96,8 @@ export class RepostService {
       return { success: false, error: 'Invalid note data' };
     }
 
-    if (!relays || relays.length === 0) {
-      this.systemLogger.error('RepostService', 'Cannot publish repost: No relays specified');
+    if (this.transport.getWriteRelays().length === 0) {
+      this.systemLogger.error('RepostService', 'Cannot publish repost: No write-relays configured');
       ToastService.show('Keine Relays konfiguriert', 'error');
       return { success: false, error: 'No relays configured' };
     }
@@ -135,12 +139,21 @@ export class RepostService {
         return { success: false, error: 'Signing failed' };
       }
 
-      // Publish to specified relays
-      await this.transport.publish(relays, signedEvent);
+      // Resolve the reposted-event author's NIP-65 outbox so the
+      // repost reaches their inbox-set — combined with any caller-
+      // supplied relay-hints (e-tag relay-hint).
+      let authorOutbox: string[] = [];
+      try {
+        authorOutbox = await OutboundRelaysOrchestrator.getInstance()
+          .getCombinedRelays([originalEvent.pubkey], true);
+      } catch { /* fall back to relayHints + own write-relays only */ }
+      const hints = [...new Set([...relayHints, ...authorOutbox])];
+
+      const acceptedRelays = await this.transport.publishWithHints(signedEvent, hints);
 
       this.systemLogger.info(
         'RepostService',
-        `Repost published to ${relays.length} relay(s): note ${originalEvent.id.slice(0, 8)}...`
+        `Repost published to ${acceptedRelays.size} relay(s): note ${originalEvent.id.slice(0, 8)}...`
       );
 
       // Show success toast to user
@@ -164,15 +177,19 @@ export class RepostService {
    * Used for non-Kind-1 events (e.g. Kind 30402 marketplace listings).
    */
   public async publishGenericRepost(options: RepostOptions): Promise<{ success: boolean; error?: string }> {
-    const { originalEvent, relays } = options;
+    const { originalEvent, relayHints = [] } = options;
 
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       ToastService.show('Not authenticated', 'error');
       return { success: false, error: 'Not authenticated' };
     }
-    if (!originalEvent?.id || !relays?.length) {
+    if (!originalEvent?.id) {
       return { success: false, error: 'Invalid input' };
+    }
+    if (this.transport.getWriteRelays().length === 0) {
+      ToastService.show('Keine Relays konfiguriert', 'error');
+      return { success: false, error: 'No relays configured' };
     }
 
     try {
@@ -205,7 +222,14 @@ export class RepostService {
         return { success: false, error: 'Signing failed' };
       }
 
-      await this.transport.publish(relays, signedEvent);
+      let authorOutbox: string[] = [];
+      try {
+        authorOutbox = await OutboundRelaysOrchestrator.getInstance()
+          .getCombinedRelays([originalEvent.pubkey], true);
+      } catch { /* fall back to relayHints + own write-relays only */ }
+      const hints = [...new Set([...relayHints, ...authorOutbox])];
+
+      await this.transport.publishWithHints(signedEvent, hints);
       this.systemLogger.info('RepostService', `Generic repost (kind ${originalEvent.kind}) published`);
       ToastService.show('Repost published', 'success');
       return { success: true };

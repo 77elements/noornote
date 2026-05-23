@@ -206,6 +206,7 @@ export class UserProfileService {
 
     // Fetch missing profiles
     if (toFetch.length > 0) {
+      // Stage 1 — aggregator batch (fast, covers the vast majority).
       try {
         const fetchedProfiles = await this.fetchMultipleProfilesFromRelays(toFetch);
         fetchedProfiles.forEach((profile, pubkey) => {
@@ -213,14 +214,47 @@ export class UserProfileService {
           result.set(pubkey, profile);
         });
       } catch (error) {
-        console.warn('Failed to fetch user profiles:', error);
-        // Return default profiles for missing
-        toFetch.forEach(pubkey => {
-          if (!result.has(pubkey)) {
-            result.set(pubkey, this.getDefaultProfile(pubkey));
-          }
-        });
+        console.warn('Failed to fetch user profiles (aggregator batch):', error);
       }
+
+      // Stage 2 — outbound recovery for the long tail. A user who
+      // published their kind:0 only to their own NIP-65 write-relay
+      // (e.g. the Private-Relay-Sovereignty case) won't show up in the
+      // aggregator batch. Retry each miss via `ProfileOrchestrator.
+      // fetchProfile`, which does its own 2-stage aggregator-then-
+      // outbound fetch. Bounded parallelism keeps the WebSocket pool
+      // safe; RECOVERY_CAP keeps the total cost predictable even when
+      // a viewing context (e.g. a 500-member Tribes list) has many
+      // misses.
+      const stillMissing = toFetch.filter(pk => !result.has(pk));
+      if (stillMissing.length > 0) {
+        const RECOVERY_CAP = 20;
+        const CONCURRENCY = 4;
+        const slice = stillMissing.slice(0, RECOVERY_CAP);
+        for (let i = 0; i < slice.length; i += CONCURRENCY) {
+          const batch = slice.slice(i, i + CONCURRENCY);
+          await Promise.all(batch.map(async pubkey => {
+            try {
+              const profile = await this.orchestrator.fetchProfile(pubkey);
+              if (profile) {
+                const userProfile = profile as UserProfile;
+                this.profileCache.set(pubkey, userProfile);
+                result.set(pubkey, userProfile);
+              }
+            } catch {
+              // Leave for the default-profile fill below.
+            }
+          }));
+        }
+      }
+
+      // Fill remaining misses with a default profile so callers always
+      // get a non-null entry per requested pubkey.
+      toFetch.forEach(pubkey => {
+        if (!result.has(pubkey)) {
+          result.set(pubkey, this.getDefaultProfile(pubkey));
+        }
+      });
     }
 
     return result;

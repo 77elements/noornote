@@ -12,6 +12,7 @@ import { SystemLogger } from '../components/system/SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
+import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
 
 export interface ReactionOptions {
   /** Note ID to react to */
@@ -22,8 +23,12 @@ export interface ReactionOptions {
   emoji?: string;
   /** Optional NIP-30 emoji tag for custom-emoji reactions: ['emoji', code, url] */
   emojiTag?: [string, string, string];
-  /** Target relays to publish to */
-  relays: string[];
+  /** Optional relay-hints harvested from the reacted-to event (e-tag relay
+   *  hint, source-relay if known). Service additionally resolves the
+   *  author's NIP-65 write-relays via OutboundRelaysOrchestrator so the
+   *  reaction lands on the author's inbox regardless of where the user
+   *  saw the note. */
+  relayHints?: string[];
 }
 
 /** Normalize emoji: treat "+" and empty string as ❤️ (NIP-25 convention) */
@@ -102,7 +107,7 @@ export class ReactionService {
    * @returns Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> - Result status
    */
   public async publishReaction(options: ReactionOptions): Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> {
-    const { noteId, authorPubkey, emoji = '❤️', emojiTag, relays } = options;
+    const { noteId, authorPubkey, emoji = '❤️', emojiTag, relayHints = [] } = options;
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
@@ -119,8 +124,8 @@ export class ReactionService {
       return { success: false, error: 'Invalid note data' };
     }
 
-    if (!relays || relays.length === 0) {
-      this.systemLogger.error('ReactionService', 'Cannot publish reaction: No relays specified');
+    if (this.transport.getWriteRelays().length === 0) {
+      this.systemLogger.error('ReactionService', 'Cannot publish reaction: No write-relays configured');
       ToastService.show('No relays configured', 'error');
       return { success: false, error: 'No relays configured' };
     }
@@ -157,12 +162,23 @@ export class ReactionService {
         return { success: false, error: 'Signing failed' };
       }
 
-      // Publish to specified relays
-      await this.transport.publish(relays, signedEvent);
+      // Resolve the author's NIP-65 outbox so the reaction reliably
+      // reaches their inbox-set — even if the user saw the note on a
+      // relay that the author doesn't write to. Combined with any
+      // caller-supplied e-tag relay-hints. Amethyst's
+      // `computeRelayListToBroadcast` pattern.
+      let authorOutbox: string[] = [];
+      try {
+        authorOutbox = await OutboundRelaysOrchestrator.getInstance()
+          .getCombinedRelays([authorPubkey], true);
+      } catch { /* fall back to relayHints + own write-relays only */ }
+      const hints = [...new Set([...relayHints, ...authorOutbox])];
+
+      const acceptedRelays = await this.transport.publishWithHints(signedEvent, hints);
 
       this.systemLogger.info(
         'ReactionService',
-        `Reaction published to ${relays.length} relay(s): ${emoji} on note ${noteId.slice(0, 8)}...`
+        `Reaction published to ${acceptedRelays.size} relay(s): ${emoji} on note ${noteId.slice(0, 8)}...`
       );
 
       // Show success toast to user

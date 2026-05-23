@@ -16,6 +16,7 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
+import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../../components/system/SystemLogger';
 import { UserProfileService } from '../UserProfileService';
 import { isUserMuted } from '../../lists/mutes';
@@ -438,6 +439,24 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Resolve the relay set to query for reactions / reposts / replies
+   * targeting a given note. Same problem as
+   * `NotificationsOrchestrator.getReadRelays`: reactors are unknown in
+   * advance, and unioning every follow's outbound-set explodes the
+   * browser's WebSocket-per-origin limit.
+   *
+   * Bounded set: own NIP-65 read-relays + aggregator-relays. Covers
+   * mainstream reactors; misses the private-relay-only-reactor edge
+   * case (accepted gap, mirrors Amethyst behaviour).
+   */
+  private async getReactionFetchRelays(): Promise<string[]> {
+    const relayConfig = RelayConfig.getInstance();
+    const set = new Set<string>(this.transport.getReadRelays());
+    relayConfig.getAggregatorRelays().forEach((r: string) => set.add(r));
+    return [...set];
+  }
+
+  /**
    * Fetch reaction events (kind 7) - returns full events for Analytics Modal
    * Per NIP-25: ALL content values are valid (emojis, +, -, custom emoji)
    *
@@ -447,7 +466,7 @@ export class ReactionsOrchestrator extends Orchestrator {
   private async fetchReactionEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
     const reactions: NostrEvent[] = [];
     const seenAuthors = new Set<string>();
-    const relays = this.transport.getReadRelays();
+    const relays = await this.getReactionFetchRelays();
     const filters = this.buildFilters([7], noteId, articleEventId);
 
     return new Promise((resolve) => {
@@ -484,7 +503,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     const quoted: NostrEvent[] = [];
     const regularAuthors = new Set<string>();
     const quotedAuthors = new Set<string>();
-    const relays = this.transport.getReadRelays();
+    const relays = await this.getReactionFetchRelays();
 
     const isArticle = this.isLongFormArticle(noteId);
 
@@ -537,7 +556,7 @@ export class ReactionsOrchestrator extends Orchestrator {
   private async fetchReplyEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
     const replies: NostrEvent[] = [];
     const seenReplyIds = new Set<string>();
-    const relays = this.transport.getReadRelays();
+    const relays = await this.getReactionFetchRelays();
     const isArticle = this.isLongFormArticle(noteId);
     // Include kind:1 (NIP-10 replies) AND kind:1111 (NIP-22 comments).
     // NIP-22 is mandatory for replies to addressable events (articles, NIP-34 Git
@@ -588,7 +607,7 @@ export class ReactionsOrchestrator extends Orchestrator {
   private async fetchZapEvents(noteId: string, articleEventId?: string): Promise<NostrEvent[]> {
     const zaps: NostrEvent[] = [];
     const seenZapIds = new Set<string>();
-    const relays = this.transport.getReadRelays();
+    const relays = await this.getReactionFetchRelays();
     const filters = this.buildFilters([9735], noteId, articleEventId);
 
     return new Promise((resolve) => {
@@ -709,7 +728,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     }
 
     const now = Math.floor(Date.now() / 1000);
-    const relays = this.transport.getReadRelays();
+    const relays = await this.getReactionFetchRelays();
 
     const isArticle = this.isLongFormArticle(noteId);
     const articleEventId = isArticle ? this.articleEventIdCache.get(noteId) : undefined;

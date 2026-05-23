@@ -146,7 +146,6 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         authorPubkey: this.config.authorPubkey,
         emoji,
         ...(emojiTag ? { emojiTag } : {}),
-        relays: writeRelays
       });
 
       if (!result.success) {

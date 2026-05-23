@@ -146,14 +146,27 @@ export class ProfileEditorService {
         return null;
       }
 
-      // Publish to write relays + metadata indexers for maximum discoverability
-      const metadataRelays = this.relayConfig.getMetadataRelays();
-      const publishRelays = [...new Set([...writeRelays, ...metadataRelays])];
-      await this.transport.publish(publishRelays, signedEvent);
+      // Treat kind:0 (Profile) as a DISCOVERY event, alongside kind:10002
+      // and kind:10050: it goes to the user's own write-relays PLUS the
+      // aggregator + indexer set (purplepag.es / hzrd149 / coracle /
+      // kindpag.es) via `publishEverywhere`. Profiles are public and
+      // their broad presence on the well-known indexer relays is what
+      // lets every Nostr client — even those without strict NIP-65
+      // outbound resolution — render the user's name and avatar without
+      // forcing the casual user to manage a separate "Discovery" relay
+      // type in Settings. Same approach Jumble uses with its hardcoded
+      // `BIG_RELAY_URLS` discovery layer (see Jumble's
+      // `src/services/client.service.ts`).
+      //
+      // The Private-Relay-Sovereignty story is not broken by this:
+      // profiles are public-by-design, no encrypted-content leak. A user
+      // who wants true profile-privacy needs more than relay choice
+      // anyway — they need a separate npub.
+      await this.transport.publishEverywhere(signedEvent);
 
       this.systemLogger.info(
         'ProfileEditorService',
-        `Profile updated and published to ${publishRelays.length} relay(s): ${signedEvent.id?.slice(0, 8)}...`
+        `Profile updated and broadcast across discovery relays: ${signedEvent.id?.slice(0, 8)}...`
       );
 
       // Show success toast

@@ -732,8 +732,8 @@ export class DMService {
       // guaranteed once any inbox relay has the event). Writes to the remaining
       // relays continue in the background — full redundancy preserved.
       const publishResults = await Promise.allSettled([
-        this.transport.publish(recipientRelays, recipientWrap, 1),
-        selfWrap ? this.transport.publish(myRelays, selfWrap, 1) : Promise.resolve(),
+        this.transport.publishToInbox(recipientWrap, recipientRelays, 1),
+        selfWrap ? this.transport.publishToInbox(selfWrap, myRelays, 1) : Promise.resolve(),
       ]);
 
       if (publishResults[0].status === 'rejected') {

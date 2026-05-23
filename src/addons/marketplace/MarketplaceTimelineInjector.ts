@@ -248,10 +248,8 @@ export class MarketplaceTimelineInjector {
 
     if (action === 'repost') {
       const { RepostService } = await import('../../services/RepostService');
-      const writeRelays = await RelayConfig.getInstance().getWriteRelays();
       await RepostService.getInstance().publishGenericRepost({
         originalEvent: event,
-        relays: writeRelays,
       });
     } else if (action === 'quote') {
       const dTag = getTag(event.tags, 'd');

@@ -139,7 +139,7 @@ export class ReportService {
         return { success: false, error: 'No relays configured' };
       }
 
-      await this.transport.publish(writeRelays, signedEvent);
+      await this.transport.publishContent(signedEvent);
 
       this.systemLogger.info(
         'ReportService',

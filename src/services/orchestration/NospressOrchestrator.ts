@@ -150,7 +150,7 @@ export class NospressOrchestrator {
     const signed = await this.authService.signEvent(event);
     if (!signed) throw new Error('Failed to sign list event');
 
-    await this.transport.publish(writeRelays, signed);
+    await this.transport.publishContent(signed);
 
     this.resource.invalidate(currentUser.pubkey, HOME_SLUG);
 

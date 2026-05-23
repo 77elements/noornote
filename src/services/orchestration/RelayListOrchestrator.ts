@@ -94,11 +94,17 @@ export class RelayListOrchestrator extends Orchestrator {
   }
 
   /**
-   * Publish user's relay list (kind:10002) to publish relays
+   * Publish a user's relay-list metadata event (kind:10002 NIP-65, or
+   * kind:10050 NIP-17 inbox). Always broadcast via `publishEverywhere`
+   * so the new list is findable on every relay other clients query —
+   * solves the bootstrap problem when the user switches their write-
+   * relay set: the new kind:10002 ends up on aggregator + indexer
+   * relays even though the user only wrote it locally. Without this
+   * the change would be invisible to anyone not already polling the
+   * user's new write-set.
    */
   public async publishRelayList(
     relays: RelayInfo[],
-    publishRelays: string[],
     event: NostrEvent
   ): Promise<void> {
     this.systemLogger.info(
@@ -107,7 +113,7 @@ export class RelayListOrchestrator extends Orchestrator {
     );
 
     try {
-      await this.transport.publish(publishRelays, event);
+      await this.transport.publishEverywhere(event);
       this.systemLogger.info(
         'RelayListOrchestrator',
         `✓ Relay list published successfully`

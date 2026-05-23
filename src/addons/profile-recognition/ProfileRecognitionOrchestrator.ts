@@ -80,7 +80,7 @@ export class ProfileRecognitionOrchestrator {
       throw new Error('Failed to sign profile encounters event');
     }
 
-    await this.transport.publish(writeRelays, signed);
+    await this.transport.publishContent(signed);
 
     // Update cache for own profile
     this.cache.set(currentUser.pubkey, {

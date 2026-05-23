@@ -498,6 +498,88 @@ export class NostrTransport {
     }
   }
 
+  // ──────────────────────────────────────────────────────────────────────
+  // Publish helpers — semantic wrappers around `publish()` that decide the
+  // relay set based on what kind of event is going out. Caller code SHOULD
+  // use these instead of `publish(relays, event)` directly so the relay-
+  // target policy stays consistent across the app and the Private-Relay-
+  // Sovereignty story holds:
+  //
+  //   - `publishContent`     — user content (kind:0, 1, 3, 5, 6, 7, 9802,
+  //                             30023, 30078, …). Strictly your own NIP-65
+  //                             write-relays. No aggregators, no indexers.
+  //                             Other clients find your content via your
+  //                             kind:10002 — that's the discovery contract.
+  //   - `publishEverywhere`  — discovery metadata (kind:10002, 10050). Sent
+  //                             to write + read + aggregator + indexer set
+  //                             so it's broadly findable. Solves the
+  //                             bootstrap problem when the user switches
+  //                             write-relays.
+  //   - `publishWithHints`   — reactions (kind:7) + reposts (kind:6, 16).
+  //                             Adds the relay-hints from the reacted-to
+  //                             event so the original author actually
+  //                             receives the reaction (Amethyst's
+  //                             `computeRelayListToBroadcast` pattern).
+  //   - `publishToInbox`     — NIP-17 DM gift-wraps (kind:1059). Caller
+  //                             pre-resolves the recipient's kind:10050
+  //                             inbox (with NIP-65-read fallback) and
+  //                             passes it in.
+  //
+  // The low-level `publish(relays, event)` stays available for special
+  // cases (relay-AUTH, ad-hoc test publishes, single-relay broadcasts).
+
+  /**
+   * Publish a content event to the user's own NIP-65 write-relays only.
+   * No aggregators, no indexers — content discoverability flows through
+   * the user's kind:10002.
+   */
+  public async publishContent(event: NostrEvent, requiredRelayCount?: number): Promise<Set<string>> {
+    return this.publish(this.getWriteRelays(), event, requiredRelayCount);
+  }
+
+  /**
+   * Publish a discovery-metadata event (kind:10002, 10050) to every
+   * reachable relay — write + read + aggregator + indexer. Solves the
+   * NIP-65 bootstrap problem: when the user changes their write-relays,
+   * the new kind:10002 has to be findable on the relays other clients
+   * already query, otherwise the switch is invisible to the network.
+   */
+  public async publishEverywhere(event: NostrEvent, requiredRelayCount?: number): Promise<Set<string>> {
+    const set = new Set<string>([
+      ...this.relayConfig.getWriteRelays(),
+      ...this.relayConfig.getReadRelays(),
+      ...this.relayConfig.getMetadataRelays(),
+    ]);
+    return this.publish([...set], event, requiredRelayCount);
+  }
+
+  /**
+   * Publish a reaction or repost: own NIP-65 write-relays PLUS the
+   * relay-hints extracted from the reacted-to event's e-tag (or wherever
+   * the caller surfaces them from). That way the original author's
+   * inbox-set picks the event up even if it's on relays the reactor
+   * doesn't usually write to.
+   *
+   * Sanitises hints to wss:// / ws:// URLs only so a malformed hint
+   * can't poison the relay set.
+   */
+  public async publishWithHints(event: NostrEvent, hintRelays: string[], requiredRelayCount?: number): Promise<Set<string>> {
+    const safeHints = hintRelays.filter(r => r.startsWith('wss://') || r.startsWith('ws://'));
+    const set = new Set<string>([...this.getWriteRelays(), ...safeHints]);
+    return this.publish([...set], event, requiredRelayCount);
+  }
+
+  /**
+   * Publish a NIP-17 DM gift-wrap (kind:1059) to the recipient's inbox
+   * relays. Caller is responsible for resolving the inbox set (typically
+   * kind:10050 with kind:10002-read as fallback) — this helper is just a
+   * semantic alias around `publish()` so the call site reads "publish to
+   * recipient inbox" instead of "publish to a bag of strings".
+   */
+  public async publishToInbox(event: NostrEvent, inboxRelays: string[], requiredRelayCount?: number): Promise<Set<string>> {
+    return this.publish(inboxRelays, event, requiredRelayCount);
+  }
+
   /**
    * Close connections to specific relays
    */

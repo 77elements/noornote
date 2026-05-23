@@ -778,14 +778,29 @@ export class NotificationsOrchestrator extends Orchestrator {
   }
 
   /**
-   * Get read relays (lazy-loads RelayConfig)
+   * Resolve the relay set to query for notifications.
+   *
+   * Notifications are the hard case for NIP-65 Outbound: reactors are
+   * unknown in advance, so we cannot pre-resolve their write-relays
+   * without unioning every follow's outbound — which would blow past
+   * the browser's ~256-WebSocket-per-origin limit on healthy networks
+   * (200 follows × 3-5 relays each easily reaches 600+ unique URLs).
+   *
+   * Pragmatic strategy mirrors Amethyst's `NotificationRelayService`:
+   * stay bounded with own NIP-65 read-relays + aggregator-relays. That
+   * catches every reactor whose client publishes to mainstream relays.
+   * The Private-Relay-only-reactor case is the accepted residual gap —
+   * a notification feed missing a few obscure-relay reactions is far
+   * better than a crashed tab.
    */
   private async getReadRelays(): Promise<string[]> {
     if (!this.relayConfig) {
       const { RelayConfig } = await import('../RelayConfig');
       this.relayConfig = RelayConfig.getInstance();
     }
-    return this.relayConfig.getReadRelays();
+    const set = new Set<string>(this.relayConfig.getReadRelays());
+    this.relayConfig.getAggregatorRelays().forEach((r: string) => set.add(r));
+    return [...set];
   }
 
   /**

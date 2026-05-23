@@ -2379,10 +2379,11 @@ IMPORTANT:
 
     const signedEvent = await this.authService.signEvent(unsignedEvent);
 
+    // Orchestrator emits via `publishEverywhere` so the fresh NIP-65 lands
+    // on every reachable relay including aggregators — required for
+    // discovery from any other client on the network.
     const orchestrator = RelayListOrchestrator.getInstance();
-    const publishRelays = await this.getPublishRelays();
-
-    await orchestrator.publishRelayList(relayInfos, publishRelays, signedEvent);
+    await orchestrator.publishRelayList(relayInfos, signedEvent);
 
     // Replace RelayConfig with the user's chosen relays (clear defaults first)
     const { RelayConfig } = await import('../../services/RelayConfig');
@@ -2413,13 +2414,9 @@ IMPORTANT:
 
     const { NostrTransport } = await import('../../services/transport/NostrTransport');
     const transport = NostrTransport.getInstance();
-    // Kind 10050 (inbox) only goes to write relays, not metadata indexers
-    const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
-    const { RelayConfig: RC } = await import('../../services/RelayConfig');
-    const aggregators = RC.getInstance().getAggregatorRelays();
-    const inboxPublishRelays = [...new Set([...writeRelays, ...aggregators])];
-
-    await transport.publish(inboxPublishRelays, signedEvent);
+    // kind:10050 is discovery metadata — broadcast everywhere so other
+    // NIP-17 senders can find this user's inbox-set from any relay.
+    await transport.publishEverywhere(signedEvent);
 
     // Register inbox relays in RelayConfig so DMService can find them
     const { RelayConfig } = await import('../../services/RelayConfig');
@@ -2454,14 +2451,6 @@ IMPORTANT:
     p.className = 'wizard-intro';
     p.textContent = intro;
     parent.appendChild(p);
-  }
-
-  /** Get deduplicated list of write relays + aggregator + metadata indexer relays for publishing */
-  private async getPublishRelays(): Promise<string[]> {
-    const { RelayConfig } = await import('../../services/RelayConfig');
-    const metadataRelays = RelayConfig.getInstance().getMetadataRelays();
-    const writeRelays = this.selectedRelays.filter(r => r.write).map(r => r.url);
-    return [...new Set([...writeRelays, ...metadataRelays])];
   }
 
 }

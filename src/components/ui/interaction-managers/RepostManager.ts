@@ -121,10 +121,12 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       }
 
       // Kind 1 → standard repost (Kind 6), everything else → generic repost (Kind 16)
+      // RepostService resolves own write-relays + author's NIP-65 outbox
+      // (Amethyst pattern) internally — no relays passed.
       const isStandardNote = unwrappedEvent.kind === 1;
       const result = isStandardNote
-        ? await this.repostService.publishRepost({ originalEvent: unwrappedEvent, relays: writeRelays })
-        : await this.repostService.publishGenericRepost({ originalEvent: unwrappedEvent, relays: writeRelays });
+        ? await this.repostService.publishRepost({ originalEvent: unwrappedEvent })
+        : await this.repostService.publishGenericRepost({ originalEvent: unwrappedEvent });
 
       if (result.success) {
         // Update stats (cache invalidation + optimistic UI update)

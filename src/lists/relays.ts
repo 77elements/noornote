@@ -23,10 +23,31 @@ export function getTransport(): NostrTransport {
 }
 
 /**
- * Get aggregator relays for fetching
+ * Get the relay set to query when fetching the user's OWN replaceable
+ * list events (kind:3 follows, kind:10000 mutes, kind:30003 bookmarks,
+ * kind:30000 follow-packs, …) for cross-device sync.
+ *
+ * Order of preference:
+ *   1. The user's own NIP-65 write-relays — that's where THEIR replaceable
+ *      events live. Critical for the Private-Relay-Sovereignty case: a
+ *      user who writes only to their own private relay must still be
+ *      able to fetch their own follow-list back on another device.
+ *   2. The user's own NIP-65 read-relays — where they normally read from.
+ *   3. Aggregator-relays — long-standing fallback for cross-device sync
+ *      in mainstream-client setups (purplepag.es / damus / primal cache
+ *      kind:3 events broadly).
+ *
+ * Deduplicated. The earlier hardcoded "aggregators-only" behaviour was
+ * the silent gap that made `lists/follows.ts:fetchFromRelays` miss own
+ * lists for users who switched to a private-relay-only NIP-65.
  */
 export function getReadRelays(): string[] {
-  return RelayConfig.getInstance().getAggregatorRelays();
+  const cfg = RelayConfig.getInstance();
+  return [...new Set<string>([
+    ...getTransport().getWriteRelays(),
+    ...cfg.getReadRelays(),
+    ...cfg.getAggregatorRelays(),
+  ])];
 }
 
 /**
@@ -69,15 +90,15 @@ export async function fetchEvents(
 }
 
 /**
- * Publish event to relays
+ * Publish a content event (follows / mutes / bookmarks / tribes lists)
+ * strictly to the user's own NIP-65 write-relays. Other clients
+ * discover the lists via the user's kind:10002 outbound metadata.
  */
 export async function publishEvent(event: NostrEvent): Promise<Set<string>> {
-  const relays = getWriteRelays();
-  if (relays.length === 0) {
+  if (getWriteRelays().length === 0) {
     throw new Error('No write relays available');
   }
-  const confirmedRelays = await getTransport().publish(relays, event);
-  return confirmedRelays;
+  return getTransport().publishContent(event);
 }
 
 /**
