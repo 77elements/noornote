@@ -6,6 +6,7 @@
  * NIP-25: https://github.com/nostr-protocol/nips/blob/master/25.md
  */
 
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { AuthService } from './AuthService';
 import { NostrTransport } from './transport/NostrTransport';
 import { SystemLogger } from '../components/system/SystemLogger';
@@ -13,9 +14,13 @@ import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { ReactionsOrchestrator } from './orchestration/ReactionsOrchestrator';
 import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
+import { getAddressableIdentifier } from '../helpers/getAddressableIdentifier';
 
 export interface ReactionOptions {
-  /** Note ID to react to */
+  /** Note ID to react to. For non-addressable events this is the hex event-id;
+   *  for addressable events (kind 30000–39999) callers historically pass the
+   *  addressable identifier here — `targetEvent` (below) takes precedence and
+   *  is the correct path for NIP-25-compliant addressable reactions. */
   noteId: string;
   /** Note author pubkey */
   authorPubkey: string;
@@ -29,6 +34,17 @@ export interface ReactionOptions {
    *  reaction lands on the author's inbox regardless of where the user
    *  saw the note. */
   relayHints?: string[];
+  /** The original reacted-to event. When set AND addressable (kind 30000–
+   *  39999), the reaction is built per NIP-25:
+   *    - `e`-tag carries the actual hex event.id (NOT the addressable id)
+   *    - `a`-tag carries `kind:pubkey:dtag`
+   *    - `k`-tag carries the original kind
+   *  Required for likes on long-form articles (kind:30023) etc.; without it
+   *  strict relays (strfry, nostr-rs-relay) reject the e-tag as
+   *  "unexpected size for fixed-size tag: e" because they expect 32 bytes
+   *  hex but received the colon-separated addressable identifier. Amethyst
+   *  builds reactions the same way (quartz ReactionEvent.kt). */
+  targetEvent?: NostrEvent;
 }
 
 /** Normalize emoji: treat "+" and empty string as ❤️ (NIP-25 convention) */
@@ -107,7 +123,7 @@ export class ReactionService {
    * @returns Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> - Result status
    */
   public async publishReaction(options: ReactionOptions): Promise<{ success: boolean; alreadyLiked?: boolean; error?: string }> {
-    const { noteId, authorPubkey, emoji = '❤️', emojiTag, relayHints = [] } = options;
+    const { noteId, authorPubkey, emoji = '❤️', emojiTag, relayHints = [], targetEvent } = options;
 
     // Validate authentication
     const currentUser = this.authService.getCurrentUser();
@@ -132,10 +148,30 @@ export class ReactionService {
 
     try {
       // Build tags array (NIP-25)
-      const tags: string[][] = [
-        ['e', noteId],      // Event being reacted to
-        ['p', authorPubkey] // Author of the event being reacted to
-      ];
+      //
+      // For ADDRESSABLE reacted-to events (kind 30000–39999) we MUST emit the
+      // hex event-id in the `e`-tag and add `a` + `k` tags. The legacy code
+      // path passes the addressable identifier ("kind:pubkey:dtag") as
+      // `noteId` for long-form articles, which is NOT a valid 32-byte hex —
+      // strict relays reject it. The caller surfaces the original event
+      // via `targetEvent` so we can build the correct tags here.
+      const tags: string[][] = [];
+      const isAddressable =
+        targetEvent?.kind !== undefined &&
+        targetEvent.kind >= 30000 &&
+        targetEvent.kind < 40000 &&
+        !!targetEvent.id;
+
+      if (isAddressable && targetEvent && targetEvent.id) {
+        const addressableId = getAddressableIdentifier(targetEvent);
+        tags.push(['e', targetEvent.id]);
+        if (addressableId) tags.push(['a', addressableId]);
+        tags.push(['k', String(targetEvent.kind)]);
+        tags.push(['p', authorPubkey]);
+      } else {
+        tags.push(['e', noteId]);
+        tags.push(['p', authorPubkey]);
+      }
 
       // NIP-30: custom emoji reaction — content is `:shortcode:`, tags carry the URL
       if (emojiTag) {
@@ -164,13 +200,22 @@ export class ReactionService {
 
       // Resolve the author's NIP-65 outbox so the reaction reliably
       // reaches their inbox-set — even if the user saw the note on a
-      // relay that the author doesn't write to. Combined with any
-      // caller-supplied e-tag relay-hints. Amethyst's
-      // `computeRelayListToBroadcast` pattern.
+      // relay that the author doesn't write to. Use the narrow
+      // `discoverUserRelays + getOutboundRelays` pair instead of the
+      // broad `getCombinedRelays`: the latter unions in the user's own
+      // read-set + the aggregator-relays, which then overlap with the
+      // primary publish-set and trip NDK's per-relay duplicate-detection
+      // (only one OK-resolver gets popped per publish, leaving the
+      // other relaySet.publish waiting for a timeout → "0 published, 1
+      // required" even when the relay accepted the event).
+      // `getOutboundRelays` already excludes anything in the user's
+      // read-set internally — so the resulting hint-set is strictly
+      // author-specific.
       let authorOutbox: string[] = [];
       try {
-        authorOutbox = await OutboundRelaysOrchestrator.getInstance()
-          .getCombinedRelays([authorPubkey], true);
+        const orch = OutboundRelaysOrchestrator.getInstance();
+        const relayLists = await orch.discoverUserRelays([authorPubkey]);
+        authorOutbox = orch.getOutboundRelays(relayLists);
       } catch { /* fall back to relayHints + own write-relays only */ }
       const hints = [...new Set([...relayHints, ...authorOutbox])];
 

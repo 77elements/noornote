@@ -6,7 +6,7 @@
  * Used by: OrchestrationsRouter exclusively (no direct Component access)
  */
 
-import NDK, { NDKEvent, NDKRelaySet, NDKSubscriptionCacheUsage } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKRelaySet, NDKSubscriptionCacheUsage, normalizeRelayUrl } from '@nostr-dev-kit/ndk';
 import NDKCacheDexie from '@nostr-dev-kit/ndk-cache-dexie';
 import type { NDKCacheAdapter, NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -492,7 +492,24 @@ export class NostrTransport {
       // Return relay URLs (convert NDKRelay objects to strings)
       return new Set(Array.from(publishedRelays).map(relay => relay.url));
     } catch (error) {
-      diagLog('relays', 'Publish failed', { relayCount: relays.length, kind: event.kind, error: String(error) });
+      // NDKPublishError carries per-relay errors in `.errors` (Map<NDKRelay, Error>).
+      // Pull them into the diagnostic log so future "0 published" reports can be
+      // root-caused (auth-required, rate-limit, malformed-tag, blocked-pubkey, …)
+      // from exported logs without needing live-console access. The top-level
+      // "0 published, 1 required" message alone hides the actual cause.
+      const errAny = error as { errors?: Map<{ url: string }, Error> };
+      const perRelayErrors: Record<string, string> = {};
+      if (errAny?.errors instanceof Map) {
+        for (const [r, e] of errAny.errors.entries()) {
+          perRelayErrors[r.url] = e.message ?? String(e);
+        }
+      }
+      diagLog('relays', 'Publish failed', {
+        relayCount: relays.length,
+        kind: event.kind,
+        error: String(error),
+        ...(Object.keys(perRelayErrors).length > 0 ? { perRelayErrors } : {}),
+      });
       this.systemLogger.error('NostrTransport', 'Publish failed');
       throw error;
     }
@@ -564,9 +581,61 @@ export class NostrTransport {
    * can't poison the relay set.
    */
   public async publishWithHints(event: NostrEvent, hintRelays: string[], requiredRelayCount?: number): Promise<Set<string>> {
-    const safeHints = hintRelays.filter(r => r.startsWith('wss://') || r.startsWith('ws://'));
-    const set = new Set<string>([...this.getWriteRelays(), ...safeHints]);
-    return this.publish([...set], event, requiredRelayCount);
+    // Split into two independent publishes so a dead hint-relay (the
+    // common case — author has a stale NIP-65 listing relays that went
+    // offline) cannot drag down the user's own primary publish.
+    //
+    // The previous union approach was: one publish call with
+    // [user write-relays, hint-relays] joined. NDK fires that as a
+    // single relay-set publish; if the hint-relays' connect attempts
+    // hang the overall publish-promise can resolve with "0 published,
+    // 1 required" even when the user's healthy relays would have
+    // accepted the event — the publish-threshold accounting gets
+    // confused by the in-flight connect-attempts on the dead URLs.
+    //
+    // Semantic separation:
+    //   1. Primary publish to the user's own write-relays. MUST succeed
+    //      — that's where the user's own reaction must persist. Throws
+    //      on full failure, surfaces to the UI as "publish failed".
+    //   2. Best-effort publish to the hint-relays in parallel. Fire-
+    //      and-forget; failure here is silently swallowed because the
+    //      author's NIP-65 outbox being dead is not the reactor's
+    //      problem. Caches a debug log so we can still see what
+    //      happened during diagnostics.
+    const writeRelays = this.getWriteRelays();
+    // Dedupe hints against the primary publish-set after NDK URL
+    // normalisation (trailing-slash + auth + hash stripping). Required,
+    // not just an optimisation: NDK's relay.publish uses a per-relay
+    // `openEventPublishes` array and the OK handler at `relay.ts:1074`
+    // pops only ONE pending promise per OK. Publishing the SAME event-
+    // id to the SAME NDKRelay through two relaySet.publish calls leaves
+    // one promise dangling, the second relaySet.publish waits its full
+    // timeout and then throws "0 published, 1 required" — even though
+    // the relay actually accepted the event. Filtering overlap here
+    // avoids that NDK pathology. Earlier attempts used raw string
+    // equality which missed pairs like `wss://nos.lol` vs `wss://nos.lol/`.
+    const writeSet = new Set(writeRelays.map(r => normalizeRelayUrl(r)));
+    const safeHints = hintRelays
+      .filter(r => r.startsWith('wss://') || r.startsWith('ws://'))
+      .filter(r => !writeSet.has(normalizeRelayUrl(r)));
+
+    // Primary publish — propagates errors to the caller for UI feedback.
+    const accepted = await this.publish(writeRelays, event, requiredRelayCount);
+
+    // Hint-publish AFTER the primary has resolved. Sequential — avoids
+    // any concurrent pool mutation that might confuse NDK's per-relay
+    // publish accounting. Best-effort fire-and-forget.
+    if (safeHints.length > 0) {
+      void this.publish(safeHints, event, 1).catch(err => {
+        diagLog('relays', 'Hint-publish failed (non-fatal)', {
+          kind: event.kind,
+          hintCount: safeHints.length,
+          error: String(err),
+        });
+      });
+    }
+
+    return accepted;
   }
 
   /**

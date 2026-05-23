@@ -142,10 +142,14 @@ export class RepostService {
       // Resolve the reposted-event author's NIP-65 outbox so the
       // repost reaches their inbox-set — combined with any caller-
       // supplied relay-hints (e-tag relay-hint).
+      // Narrow author-outbound only (no user-read or aggregator union),
+      // see ReactionService for rationale — broader sets trip NDK's
+      // per-relay duplicate-publish accounting.
       let authorOutbox: string[] = [];
       try {
-        authorOutbox = await OutboundRelaysOrchestrator.getInstance()
-          .getCombinedRelays([originalEvent.pubkey], true);
+        const orch = OutboundRelaysOrchestrator.getInstance();
+        const relayLists = await orch.discoverUserRelays([originalEvent.pubkey]);
+        authorOutbox = orch.getOutboundRelays(relayLists);
       } catch { /* fall back to relayHints + own write-relays only */ }
       const hints = [...new Set([...relayHints, ...authorOutbox])];
 
@@ -222,10 +226,14 @@ export class RepostService {
         return { success: false, error: 'Signing failed' };
       }
 
+      // Narrow author-outbound only (no user-read or aggregator union),
+      // see ReactionService for rationale — broader sets trip NDK's
+      // per-relay duplicate-publish accounting.
       let authorOutbox: string[] = [];
       try {
-        authorOutbox = await OutboundRelaysOrchestrator.getInstance()
-          .getCombinedRelays([originalEvent.pubkey], true);
+        const orch = OutboundRelaysOrchestrator.getInstance();
+        const relayLists = await orch.discoverUserRelays([originalEvent.pubkey]);
+        authorOutbox = orch.getOutboundRelays(relayLists);
       } catch { /* fall back to relayHints + own write-relays only */ }
       const hints = [...new Set([...relayHints, ...authorOutbox])];
 

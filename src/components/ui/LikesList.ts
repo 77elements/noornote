@@ -22,12 +22,17 @@ export class LikesList {
   private noteId: string;
   private authorPubkey: string;
   private reactionService: ReactionService;
+  /** Original reacted-to event — required for NIP-25-compliant reactions on
+   *  addressable events (long-form articles etc.) so the e-tag carries the
+   *  hex event-id and `a` + `k` tags are added. */
+  private originalEvent?: NostrEvent;
 
-  constructor(reactionEvents: NostrEvent[], noteId: string, authorPubkey: string) {
+  constructor(reactionEvents: NostrEvent[], noteId: string, authorPubkey: string, originalEvent?: NostrEvent) {
     this.reactionEvents = reactionEvents;
     this.noteId = noteId;
     this.authorPubkey = authorPubkey;
     this.reactionService = ReactionService.getInstance();
+    if (originalEvent) this.originalEvent = originalEvent;
   }
 
   /**
@@ -154,6 +159,7 @@ export class LikesList {
       noteId: this.noteId,
       authorPubkey: this.authorPubkey,
       emoji,
+      ...(this.originalEvent ? { targetEvent: this.originalEvent } : {}),
     });
 
     if (result.success) {

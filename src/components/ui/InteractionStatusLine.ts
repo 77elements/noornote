@@ -112,7 +112,10 @@ export class InteractionStatusLine {
         onStatsUpdate: () => {
           this.updateStats({ likes: this.stats.likes + 1 });
         },
-        ...(this.config.onLike && { onLike: this.config.onLike })
+        ...(this.config.onLike && { onLike: this.config.onLike }),
+        // Pass the original event so reactions on addressable kinds
+        // (long-form articles etc.) get NIP-25-compliant e/a/k tags.
+        ...(this.config.originalEvent && { originalEvent: this.config.originalEvent }),
       });
     }
 

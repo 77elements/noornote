@@ -6,6 +6,7 @@
  * - Button state updates
  */
 
+import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ReactionService } from '../../../services/ReactionService';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { ToastService } from '../../../services/ToastService';
@@ -15,6 +16,12 @@ import { BaseInteractionManager, BaseInteractionConfig } from './BaseInteraction
 
 export interface LikeManagerConfig extends BaseInteractionConfig {
   onLike?: () => void;
+  /** Original reacted-to event — required for NIP-25-compliant reactions on
+   *  addressable events (kind 30000–39999, e.g. long-form articles). When
+   *  set, ReactionService builds the correct `e`/`a`/`k` tag combination.
+   *  Without it, articles get the addressable identifier in the `e`-tag and
+   *  strict relays reject the reaction. */
+  originalEvent?: NostrEvent;
 }
 
 export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
@@ -146,6 +153,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         authorPubkey: this.config.authorPubkey,
         emoji,
         ...(emojiTag ? { emojiTag } : {}),
+        ...(this.config.originalEvent ? { targetEvent: this.config.originalEvent } : {}),
       });
 
       if (!result.success) {

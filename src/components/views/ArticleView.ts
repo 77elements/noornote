@@ -263,8 +263,9 @@ export class ArticleView {
       });
       articleBody.insertAdjacentElement('afterend', isl.getElement());
 
-      // Load zaps and likes list (pass articleEventId for long-form article dual-tag search)
-      this.loadZapsList(noteId, event.pubkey, articleBody.parentElement as HTMLElement, articleEventId);
+      // Load zaps and likes list (pass articleEventId for long-form article dual-tag search,
+      // and the full event so emoji-badge reactions can build NIP-25-compliant addressable tags)
+      this.loadZapsList(noteId, event.pubkey, articleBody.parentElement as HTMLElement, articleEventId, event);
     }
 
     // Load and render replies (pass articleEventId for long-form article dual-tag search)
@@ -278,7 +279,7 @@ export class ArticleView {
    * @param articleContainer - Container element
    * @param articleEventId - Event ID for long-form articles (to search both #a and #e tags)
    */
-  private async loadZapsList(noteId: string, authorPubkey: string, articleContainer: HTMLElement, articleEventId?: string): Promise<void> {
+  private async loadZapsList(noteId: string, authorPubkey: string, articleContainer: HTMLElement, articleEventId?: string, articleEvent?: NostrEvent): Promise<void> {
     try {
       // LONG-FORM ARTICLE: Pass eventId to search both #a and #e tags
       const stats = await this.reactionsOrchestrator.getDetailedStats(noteId, articleEventId);
@@ -299,9 +300,11 @@ export class ArticleView {
         islContainer.parentNode.insertBefore(zapsList.getElement(), islContainer);
       }
 
-      // Render LikesList if reactions exist
+      // Render LikesList if reactions exist — pass the full article event so
+      // badge-clicks (additional emoji reactions) can build NIP-25-compliant
+      // tags for addressable kinds (long-form articles).
       if (stats.reactionEvents.length > 0) {
-        const likesList = new LikesList(stats.reactionEvents, noteId, authorPubkey);
+        const likesList = new LikesList(stats.reactionEvents, noteId, authorPubkey, articleEvent);
         await likesList.init();
         islContainer.parentNode.insertBefore(likesList.getElement(), islContainer);
       }
