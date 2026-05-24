@@ -47,7 +47,7 @@ import { ToastService } from '../../services/ToastService';
 import { isTribesEnabled } from '../../addons/tribes/index';
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 import { diagLog } from '../../services/DiagnosticLogger';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { getTag } from '../../helpers/tagUtils';
 
 // Initialize dayjs calendar system
@@ -590,6 +590,9 @@ export class ProfileView extends View {
                   <svg width="16" height="16"><use href="#icon-qr-code"/></svg>
                 </button>
                 ${this.renderTribeButton()}
+                <button class="profile-badge-btn" title="Award Badge" style="display:none">
+                  <svg width="16" height="16"><use href="#icon-badge"/></svg>
+                </button>
                 ${!isOwnProfile ? `
                 <button class="profile-dm-btn"${isBunker ? ' disabled' : ''} title="${isBunker ? 'Switch to NoorSigner or browser extension to send messages' : 'Send message'}">
                   <svg width="16" height="16"><use href="#icon-message"/></svg>
@@ -631,6 +634,7 @@ export class ProfileView extends View {
 
       </div>
 
+      <div class="profile-badges-mount"></div>
       <div class="profile-articles-mount"></div>
       <div class="profile-videos-mount"></div>
       <div class="profile-listings-mount"></div>
@@ -650,6 +654,9 @@ export class ProfileView extends View {
 
       // Load profile lists (mounted bookmark folders)
       this.loadProfileLists();
+
+      // Load accepted badges carousel
+      this.loadBadgesCarousel();
 
       // Load articles carousel
       this.loadArticlesCarousel();
@@ -675,6 +682,9 @@ export class ProfileView extends View {
 
       // Setup tribe button handler
       this.setupTribeButton();
+
+      // Setup badge award button (visible when addon enabled + foreign profile)
+      this.setupBadgeButton();
 
       // Setup edit button handler
       this.setupEditButton();
@@ -947,6 +957,71 @@ export class ProfileView extends View {
     dmBtn.addEventListener('click', (e) => {
       e.preventDefault();
       Router.getInstance().navigate(`/messages/${this.npub}`);
+    });
+  }
+
+  private setupBadgeButton(): void {
+    const badgeBtn = this.container.querySelector('.profile-badge-btn') as HTMLElement | null;
+    if (!badgeBtn) return;
+
+    // Only show for foreign profiles when addon is enabled
+    const isOwnProfile = this.authService.getCurrentUser()?.pubkey === this.pubkey;
+    if (isOwnProfile) return;
+
+    import('../../addons/badges/index').then(({ isBadgesEnabled }) => {
+      if (!isBadgesEnabled()) return;
+      badgeBtn.style.display = '';
+
+      badgeBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!AuthGuard.requireAuth('award badge')) return;
+
+        const { BadgeService } = await import('../../addons/badges/BadgeService');
+        const service = BadgeService.getInstance();
+        const defs = await service.fetchOwnDefinitions();
+
+        if (defs.length === 0) {
+          ToastService.show('No badges created yet. Create one in Addons → Badges.', 'info');
+          return;
+        }
+
+        const { ModalService } = await import('../../services/ModalService');
+        const content = document.createElement('div');
+        content.className = 'badge-picker';
+        content.innerHTML = defs.map(d => {
+          const img = d.imageUrl
+            ? `<img src="${escapeHtmlAttr(d.imageUrl)}" alt="${escapeHtmlAttr(d.name)}" />`
+            : '<span class="badge-picker__emoji">🏅</span>';
+          return `<div class="badge-picker__card" data-slug="${escapeHtmlAttr(d.slug)}">
+            <div class="badge-picker__name">${escapeHtml(d.name)}</div>
+            <div class="badge-picker__image">${img}</div>
+          </div>`;
+        }).join('');
+
+        content.addEventListener('click', async (ev) => {
+          const item = (ev.target as HTMLElement).closest('[data-slug]') as HTMLElement | null;
+          if (!item) return;
+          const slug = item.dataset.slug!;
+          const def = defs.find(d => d.slug === slug);
+          if (!def) return;
+
+          const issuerPubkey = this.authService.getCurrentUser()?.pubkey;
+          if (!issuerPubkey) return;
+          const coordinate = `30009:${issuerPubkey}:${slug}`;
+          const recipientPubkey = this.pubkey;
+          if (!recipientPubkey) return;
+
+          const success = await service.awardBadge(coordinate, [recipientPubkey]);
+          if (success) ModalService.getInstance().hide();
+        });
+
+        ModalService.getInstance().show({
+          title: 'Award Badge',
+          content,
+          width: '360px',
+          height: 'auto',
+        });
+      });
     });
   }
 
@@ -1241,6 +1316,103 @@ export class ProfileView extends View {
     const { ProfileListsComponent: PLC } = await import('../profile/ProfileListsComponent');
     this.profileListsComponent = new PLC(this.pubkey);
     await this.profileListsComponent.render(anchor);
+  }
+
+  private async loadBadgesCarousel(): Promise<void> {
+    const badgesMount = this.container.querySelector('.profile-badges-mount');
+    if (!badgesMount) return;
+
+    const { NostrTransport } = await import('../../services/transport/NostrTransport');
+    const { RelayConfig } = await import('../../services/RelayConfig');
+    const { OutboundRelaysOrchestrator } = await import('../../services/orchestration/OutboundRelaysOrchestrator');
+    const transport = NostrTransport.getInstance();
+    const baseRelays = [
+      ...transport.getReadRelays(),
+      ...RelayConfig.getInstance().getAggregatorRelays(),
+    ];
+
+    // Also include the profile owner's outbound relays (NIP-65)
+    let relays = baseRelays;
+    try {
+      const outbound = await OutboundRelaysOrchestrator.getInstance().getCombinedRelays([this.pubkey], true);
+      relays = [...new Set([...baseRelays, ...outbound])];
+    } catch { /* fall back to base relays */ }
+
+    // Fetch kind:10008 (new) and kind:30008 (legacy) for this profile
+    const events = await transport.fetch(
+      relays,
+      [{ kinds: [10008 as number, 30008 as number], authors: [this.pubkey] }],
+      5000, false, 'PV-Badges'
+    );
+
+    if (events.length === 0) return;
+
+    // Prefer kind:10008 over kind:30008
+    const profileBadges = events.find(e => e.kind === 10008) || events.find(e => e.kind === 30008);
+    if (!profileBadges) return;
+
+    // Parse alternating a+e tag pairs
+    const pairs: { coordinate: string; awardId: string }[] = [];
+    const tags = profileBadges.tags;
+    for (let i = 0; i < tags.length - 1; i++) {
+      if (tags[i]![0] === 'a' && tags[i + 1]![0] === 'e') {
+        pairs.push({ coordinate: tags[i]![1]!, awardId: tags[i + 1]![1]! });
+        i++;
+      }
+    }
+
+    if (pairs.length === 0) return;
+
+    const { BadgeOrchestrator } = await import('../../services/orchestration/BadgeOrchestrator');
+    const orch = BadgeOrchestrator.getInstance();
+
+    const section = document.createElement('div');
+    section.className = 'profile-badges-carousel section';
+    section.innerHTML = '<h2>Badges</h2><div class="profile-badges-carousel__list"></div>';
+    badgesMount.appendChild(section);
+
+    const list = section.querySelector('.profile-badges-carousel__list')!;
+    for (const pair of pairs.slice(0, 8)) {
+      const def = await orch.fetchBadgeDefinition(pair.coordinate);
+      if (!def) continue;
+
+      const thumb = document.createElement('div');
+      thumb.className = 'profile-badges-carousel__thumb';
+      thumb.title = def.name;
+
+      if (def.thumb || def.image) {
+        thumb.innerHTML = `<img src="${def.thumb || def.image}" alt="${def.name}" loading="lazy" />`;
+      } else {
+        thumb.textContent = '🏅';
+        thumb.classList.add('profile-badges-carousel__thumb--emoji');
+      }
+
+      const capturedDef = def;
+      thumb.addEventListener('click', async () => {
+        const { ModalService } = await import('../../services/ModalService');
+        const content = document.createElement('div');
+        const imgHtml = capturedDef.thumb || capturedDef.image
+          ? `<img src="${escapeHtmlAttr(capturedDef.image || capturedDef.thumb || '')}" alt="${escapeHtmlAttr(capturedDef.name)}" />`
+          : '<div>🏅</div>';
+        const issuerName = (await import('../../services/UserProfileService')).UserProfileService.getInstance().getDisplayName(capturedDef.issuerPubkey);
+        const issuerNpub = (await import('../../helpers/nip19')).hexToNpub(capturedDef.issuerPubkey);
+        content.innerHTML = `
+          <div>${imgHtml}</div>
+          ${capturedDef.description ? `<p>${escapeHtml(capturedDef.description)}</p>` : ''}
+          <p>by <a href="/profile/${issuerNpub}" class="mention-link">${escapeHtml(issuerName)}</a></p>
+        `;
+        ModalService.getInstance().show({ title: capturedDef.name, content, width: '360px', height: 'auto' });
+      });
+
+      list.appendChild(thumb);
+    }
+
+    if (pairs.length > 8) {
+      const more = document.createElement('span');
+      more.textContent = `+${pairs.length - 8}`;
+      more.className = 'profile-badges-carousel__more';
+      list.appendChild(more);
+    }
   }
 
   /**

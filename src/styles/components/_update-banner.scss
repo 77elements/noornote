@@ -1,0 +1,21 @@
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.update-banner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc($gap / 2);
+  padding: calc($gap / 2) $gap;
+  background: $bg-warning;
+  border-radius: $radius-xl;
+  margin: calc($gap / 2) $gap;
+  pointer-events: auto;
+
+  &__text {
+    @extend %small;
+    color: $color-warning;
+    text-align: center;
+    line-height: 1.5;
+  }
+}

@@ -132,6 +132,11 @@ export class App {
       this.checkForUpdates();
     }
 
+    // Web update banner (manual trigger, web-only)
+    if (platform.isBrowser) {
+      import('./services/UpdateBanner').then(({ mountUpdateBanner }) => mountUpdateBanner());
+    }
+
     // Read ?r= relay browser parameter (captured early in main.ts before HMR can strip query params)
     const relayParam: string | null = (window as any).__noornote_relay_param || null;
     if (relayParam) {
@@ -344,6 +349,7 @@ export class App {
     this.registerRoute('/addons/wordfilter',            'addon-wordfilter',            'addon-wordfilter',            'adv', true);
     this.registerRoute('/addons/live-streams-player',   'addon-live-streams-player',   'addon-live-streams-player',   'adv', true);
     this.registerRoute('/addons/scheduled-posts',       'addon-scheduled-posts',       'addon-scheduled-posts',       'adv', true);
+    this.registerRoute('/addons/badges',               'addon-badges',                'addon-badges',                'adv', true);
     // /addons (no slug) → redirect to first addon
     this.router.register('/addons', () => this.router.navigate('/addons/bookmarks'));
     this.registerMarketplaceRoutes();

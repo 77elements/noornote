@@ -516,6 +516,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-badges':
+        return {
+          factory: async () => {
+            const { BadgesView } = await import('../addons/badges/BadgesView');
+            const view = new BadgesView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'marketplace':
         return {
           factory: async () => {

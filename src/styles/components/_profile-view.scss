@@ -233,7 +233,8 @@
 // Lightning QR + Profile Zap + DM buttons (analog zu .qr-btn)
 .lightning-qr-btn,
 .profile-zap-btn,
-.profile-dm-btn {
+.profile-dm-btn,
+.profile-badge-btn {
   background: var(--color-2);
   border: 1px solid var(--color-3);
   border-radius: $radius-xl;

@@ -22,6 +22,7 @@ import { isMarketplaceEnabled } from './marketplace/index';
 import { isFollowPacksEnabled } from './follow-packs/index';
 import { isScheduledPostsEnabled } from './scheduled-posts/index';
 import { isNospressEnabled } from './nospress/index';
+import { isBadgesEnabled } from './badges/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -85,6 +86,12 @@ export function registerCoreAddons(): void {
     id: 'nospress',
     isEnabled: isNospressEnabled,
     load: () => import('./nospress/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'badges',
+    isEnabled: isBadgesEnabled,
+    load: () => import('./badges/runtime').then(m => m.default),
   });
 
   // Out of scope (list-adjacent, deferred — separate decision):

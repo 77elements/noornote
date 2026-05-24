@@ -61,9 +61,113 @@
     color: var(--color-3);
     margin-top: calc($gap / 4);
   }
+
+  &__recipients {
+    @extend %mini;
+    color: var(--color-3);
+    margin-top: calc($gap / 2);
+  }
+}
+
+.badge-revoke-link {
+  @extend %mini;
+  color: $color-red;
+  cursor: pointer;
+  margin-left: calc($gap / 4);
 }
 
 // Inline badge card used by QuotedNoteRenderer for embedded kind:8 references.
 .badge-award-card {
   margin: $gap 0;
+}
+
+// PV badges carousel
+.profile-badges-carousel {
+  &__list {
+    display: flex;
+    gap: calc($gap / 2);
+    flex-wrap: wrap;
+  }
+
+  &__thumb {
+    width: 44px;
+    height: 44px;
+    border-radius: $radius-xl;
+    overflow: hidden;
+    cursor: pointer;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &--emoji {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      background: var(--color-2);
+    }
+  }
+
+  &__more {
+    @extend %small;
+    display: flex;
+    align-items: center;
+    color: var(--color-3);
+  }
+}
+
+// Badge picker modal (PV award flow)
+.badge-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $gap;
+
+  &__card {
+    width: 120px;
+    height: 120px;
+    border: 1px solid var(--color-3);
+    border-radius: $radius-xl;
+    background: var(--color-2);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: calc($gap / 2);
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: var(--color-4);
+      background: var(--color-3);
+    }
+  }
+
+  &__name {
+    @extend %small;
+    font-weight: 600;
+    color: var(--color-5);
+    text-align: center;
+    margin-bottom: calc($gap / 4);
+  }
+
+  &__image {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+
+    img {
+      max-width: 72px;
+      max-height: 72px;
+      object-fit: contain;
+      border-radius: $radius-xl;
+    }
+  }
+
+  &__emoji {
+    font-size: 2.5rem;
+  }
 }

@@ -36,4 +36,5 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
   { id: 'wordfilter',            name: 'Word Filter',            route: '/addons/wordfilter',            viewId: 'addon-wordfilter' },
   { id: 'live-streams-player',   name: 'Live Streams Player',    route: '/addons/live-streams-player',   viewId: 'addon-live-streams-player' },
   { id: 'scheduled-posts',       name: 'Scheduled Posts',        route: '/addons/scheduled-posts',       viewId: 'addon-scheduled-posts' },
+  { id: 'badges',                name: 'Badges',                 route: '/addons/badges',                viewId: 'addon-badges' },
 ];

@@ -69,6 +69,14 @@ export class NotificationItem {
     const needsContext = this.options.type === 'reply' || this.options.type === 'mention' || this.options.type === 'thread-reply';
     const contextHtml = needsContext ? '<div class="thread-context-item"><span class="thread-context-content">Loading...</span></div>' : '';
 
+    // For badge-award notifications, add Accept/Decline buttons
+    const badgeFooterHtml = this.options.type === 'badge-award'
+      ? `<div class="notification-item__footer">
+          <button class="btn btn--mini btn--success" data-action="accept-badge">Accept</button>
+          <button class="btn btn--mini btn--secondary" data-action="decline-badge">Decline</button>
+        </div>`
+      : '';
+
     // For hashtag notifications, add footer with search and unsubscribe links
     const hashtag = this.options.meta?.hashtag;
     const hashtagFooterHtml = this.options.type === 'hashtag' && hashtag
@@ -91,6 +99,7 @@ export class NotificationItem {
         ${contextHtml}
         ${preview ? `<div class="notification-item__preview">${escapeHtml(preview)}</div>` : ''}
         <div class="notification-item__zaps"></div>
+        ${badgeFooterHtml}
         ${hashtagFooterHtml}
       </div>
     `;
@@ -122,6 +131,14 @@ export class NotificationItem {
       }
     }
 
+    // Setup badge accept/decline handlers
+    this.setupBadgeActions(item);
+
+    // Async-upgrade badge-award notification text with the badge name
+    if (this.options.type === 'badge-award') {
+      this.upgradeBadgeActionText(item);
+    }
+
     // Setup hashtag footer link handlers
     this.setupHashtagFooterLinks(item);
 
@@ -131,6 +148,44 @@ export class NotificationItem {
   /**
    * Setup click handlers for hashtag footer links
    */
+  private setupBadgeActions(item: HTMLElement): void {
+    const acceptBtn = item.querySelector('[data-action="accept-badge"]');
+    const declineBtn = item.querySelector('[data-action="decline-badge"]');
+    if (!acceptBtn && !declineBtn) return;
+
+    acceptBtn?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const { BadgeService } = await import('../../addons/badges/BadgeService');
+      const service = BadgeService.getInstance();
+      const event = this.options.event;
+      const aTag = event.tags.find((t: string[]) => t[0] === 'a')?.[1];
+      if (!aTag || !event.id) return;
+      const success = await service.acceptBadge(aTag, event.id);
+      if (success) {
+        const footer = (e.target as HTMLElement).closest('.notification-item__footer');
+        if (footer) footer.innerHTML = '<span style="color: var(--color-6)">Accepted</span>';
+      }
+    });
+
+    declineBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const footer = (e.target as HTMLElement).closest('.notification-item__footer');
+      if (footer) footer.innerHTML = '<span style="color: var(--color-3)">Declined</span>';
+    });
+  }
+
+  private upgradeBadgeActionText(item: HTMLElement): void {
+    const aTag = this.options.event.tags.find((t: string[]) => t[0] === 'a')?.[1];
+    if (!aTag) return;
+    import('../../services/orchestration/BadgeOrchestrator').then(({ BadgeOrchestrator }) => {
+      BadgeOrchestrator.getInstance().fetchBadgeDefinition(aTag).then(def => {
+        if (!def) return;
+        const actionEl = item.querySelector('.notification-item__action');
+        if (actionEl) actionEl.textContent = `awarded you a "${def.name}" badge`;
+      }).catch(() => {});
+    });
+  }
+
   private setupHashtagFooterLinks(item: HTMLElement): void {
     // Search link - opens hashtag search in scc
     const searchLink = item.querySelector('.notification-item__footer-link--search');
@@ -309,6 +364,9 @@ export class NotificationItem {
       case 'highlight':
         return `<svg width="18" height="18"><use href="#icon-highlight"/></svg>`;
 
+      case 'badge-award':
+        return `<svg width="18" height="18"><use href="#icon-badge"/></svg>`;
+
       default:
         return '🔔';
     }
@@ -387,6 +445,7 @@ export class NotificationItem {
       case 'mutual_unfollow': return 'stopped following you back';
       case 'mutual_new': return 'started following you back!';
       case 'highlight': return `highlighted your ${target}`;
+      case 'badge-award': return 'awarded you a badge';
       default: return `interacted with your ${target}`;
     }
   }
