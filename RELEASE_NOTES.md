@@ -1,11 +1,11 @@
-# NoorNote 0.9.5
+# NoorNote 0.9.6
 
-**NosPress** — New Flip-card block (front/back faces, 3D rotate or fade, hover/click trigger). New Sticky-block state panel with transitions. New Danger Zone (Delete from Relays / Local / Both) in the Global tab. Public URLs at `noornote.app/<your-handle>/` are now opt-in via the addon toggle — turning the addon off removes the public space cleanly. Save / Publish / Discard moved into the editor header; Reset-to-Global migrated into per-page tiles.
+**NIP-58 Badges** — Create custom badges, award them to users from their profile, accept/decline in notifications. Accepted badges appear as a carousel on the recipient's profile. Full NIP-58 read + write support.
 
-**Silent Zaps** — Send anonymous zaps signed with a throwaway ephemeral key; your npub never appears on the request and recipients see "Someone silently zapped".
+**Petnames** — Label any user with a personal tag ("Friend", "Scammer", etc.) visible only to you — in their profile header and inline mentions. NIP-44 encrypted, synced across devices via relays.
 
-**Mute filter** — Centralized last-line-of-defense filter so nothing from a muted user (including transitive reposts) leaks across any timeline, thread, profile, notification, or quote.
+**NIP-65 Outbound Model** — Reactions, reposts, profiles, and relay-list changes now route through the correct NIP-65 outbox. Likes and reposts reliably reach the original author's relays.
 
-**Search** — Spotlight now recognises `nostr:` URIs, `nprofile1` / `note1` / `naddr1` identifiers, and NIP-05 handles like `alice@example.com` — paste and jump straight to the right view.
+**Addressable Reactions** — Likes on long-form articles now use NIP-25-compliant tags so strict relays accept them.
 
-**Reliability** — Quote and repost cross-relay fetches now find events much more often (parent-author outbound fallback, e-tag relay hints, cached NIP-65 outbox in IndexedDB). DM sends reach recipients whose inbox-list isn't on our read set.
+**Web Update Banner** — noornote.app users see a one-time refresh prompt when a new version is deployed.
