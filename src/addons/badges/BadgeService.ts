@@ -12,6 +12,7 @@ import { NostrTransport } from '../../services/transport/NostrTransport';
 import { ToastService } from '../../services/ToastService';
 import { ErrorService } from '../../services/ErrorService';
 import { AuthGuard } from '../../services/AuthGuard';
+import { diagLog } from '../../services/DiagnosticLogger';
 
 export interface BadgeDefinitionInput {
   slug: string;
@@ -81,6 +82,7 @@ export class BadgeService {
         return false;
       }
       await this.transport.publishContent(signedEvent);
+      diagLog('system', 'Badge definition created', { slug: input.slug, name: input.name });
       ToastService.show('Badge created', 'success');
       void this.fetchOwnDefinitions();
       return true;
@@ -117,6 +119,7 @@ export class BadgeService {
         return false;
       }
       await this.transport.publishContent(signedEvent);
+      diagLog('system', 'Badge awarded', { coordinate, recipients: recipientPubkeys.length });
       ToastService.show('Badge awarded', 'success');
       return true;
     } catch (error) {
@@ -167,6 +170,7 @@ export class BadgeService {
         return false;
       }
       await this.transport.publishEverywhere(signedEvent);
+      diagLog('system', 'Badge accepted', { badgeCoordinate, awardEventId });
       ToastService.show('Badge accepted', 'success');
       return true;
     } catch (error) {
