@@ -264,7 +264,8 @@ export class ZapManager {
         if (!amountBadge) {
           amountBadge = document.createElement('span');
           amountBadge.className = 'badge badge--warning';
-          zapIcon.insertAdjacentElement('afterend', amountBadge);
+          const countEl = this.zapButton.querySelector('.isl-count');
+          (countEl || zapIcon).insertAdjacentElement('afterend', amountBadge);
         }
         amountBadge.textContent = this.zappedAmount.toString();
       } else {
