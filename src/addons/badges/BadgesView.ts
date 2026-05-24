@@ -245,7 +245,10 @@ export class BadgesView extends View {
           const awardId = (link as HTMLElement).dataset.awardId;
           if (!awardId) return;
           const success = await this.badgeService!.revokeAward(awardId);
-          if (success) this.loadGallery();
+          if (success) {
+            const entry = (link as HTMLElement).closest('span');
+            if (entry) entry.remove();
+          }
         });
       });
     }

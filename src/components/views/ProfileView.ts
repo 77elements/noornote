@@ -1380,12 +1380,17 @@ export class ProfileView extends View {
     const profileBadges = events.find(e => e.kind === 10008) || events.find(e => e.kind === 30008);
     if (!profileBadges) return;
 
-    // Parse alternating a+e tag pairs
+    // Parse alternating a+e tag pairs, deduplicate by coordinate
     const pairs: { coordinate: string; awardId: string }[] = [];
+    const seenCoordinates = new Set<string>();
     const tags = profileBadges.tags;
     for (let i = 0; i < tags.length - 1; i++) {
       if (tags[i]![0] === 'a' && tags[i + 1]![0] === 'e') {
-        pairs.push({ coordinate: tags[i]![1]!, awardId: tags[i + 1]![1]! });
+        const coord = tags[i]![1]!;
+        if (!seenCoordinates.has(coord)) {
+          seenCoordinates.add(coord);
+          pairs.push({ coordinate: coord, awardId: tags[i + 1]![1]! });
+        }
         i++;
       }
     }
