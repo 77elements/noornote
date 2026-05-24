@@ -109,6 +109,7 @@ export const StorageKeys = {
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
   LIVE_STREAMS_PLAYER_ENABLED: 'noornote_live_streams_player_enabled_map',
   BADGES_ENABLED: 'noornote_badges_enabled_map',
+  PETNAMES: 'noornote_petnames_map',
   DATA_SAVER_ENABLED: 'noornote_data_saver_enabled_map',
 
   // List privacy flags (per-account)

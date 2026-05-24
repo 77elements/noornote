@@ -571,7 +571,7 @@ export class ProfileView extends View {
           </div>
 
           <div class="profile-meta">
-            <h1 class="profile-name">${escapeHtml(displayName)}</h1>
+            <h1 class="profile-name">${escapeHtml(displayName)}<span class="profile-petname" data-role="petname"></span></h1>
             ${nip05s.length > 0 ? `<p class="profile-nip05">${nip05s.map(n => escapeHtml(n)).join(', ')}</p>` : ''}
 
             <div class="profile-identifiers">
@@ -685,6 +685,9 @@ export class ProfileView extends View {
 
       // Setup badge award button (visible when addon enabled + foreign profile)
       this.setupBadgeButton();
+
+      // Setup petname display + click-to-edit
+      this.setupPetname();
 
       // Setup edit button handler
       this.setupEditButton();
@@ -1021,6 +1024,32 @@ export class ProfileView extends View {
           width: '360px',
           height: 'auto',
         });
+      });
+    });
+  }
+
+  private setupPetname(): void {
+    const petnameEl = this.container.querySelector('[data-role="petname"]') as HTMLElement | null;
+    if (!petnameEl) return;
+
+    import('../../services/PetnameService').then(({ PetnameService }) => {
+      const service = PetnameService.getInstance();
+      const petname = service.getPetname(this.pubkey);
+      petnameEl.textContent = petname ? ` (${petname})` : ' (+)';
+
+      petnameEl.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const { ModalService } = await import('../../services/ModalService');
+        const current = service.getPetname(this.pubkey) ?? '';
+        const result = await ModalService.getInstance().prompt({
+          title: 'Set Petname',
+          message: 'Personal label for this user (only visible to you):',
+          defaultValue: current,
+          placeholder: 'e.g. Rassist, Scammer, Friend…',
+        });
+        if (result === null) return;
+        await service.setPetname(this.pubkey, result.trim());
+        petnameEl.textContent = result.trim() ? ` (${result.trim()})` : ' (+)';
       });
     });
   }
@@ -1571,9 +1600,8 @@ export class ProfileView extends View {
   ): void {
     // Don't apply profile recognition to your own profile
     if (this.authService.isCurrentUser(this.pubkey)) {
-      // Just set the image and name directly
       avatar.src = currentPicture;
-      nameEl.textContent = currentName;
+      this.setNamePreservingPetname(nameEl, currentName);
       return;
     }
 
@@ -1620,11 +1648,17 @@ export class ProfileView extends View {
       if (this.nameBlinker && this.nameBlinker.isBlinking()) {
         this.nameBlinker.stop(currentName);
       } else {
-        nameEl.textContent = currentName;
+        this.setNamePreservingPetname(nameEl, currentName);
       }
     }
   }
 
+
+  private setNamePreservingPetname(nameEl: HTMLElement, name: string): void {
+    const petnameSpan = nameEl.querySelector('[data-role="petname"]');
+    nameEl.textContent = name;
+    if (petnameSpan) nameEl.appendChild(petnameSpan);
+  }
 
   /**
    * Get the npub for this profile

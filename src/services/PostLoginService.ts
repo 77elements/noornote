@@ -92,6 +92,11 @@ export class PostLoginService {
     // Initialize AutoSyncService for Easy Mode list syncing
     const { AutoSyncService } = await import('./AutoSyncService');
     AutoSyncService.getInstance();
+
+    // Sync petnames from relays (NIP-78 encrypted, non-blocking)
+    import('./PetnameService').then(({ PetnameService }) => {
+      PetnameService.getInstance().syncFromRelays().catch(() => {});
+    });
   }
 
   /**

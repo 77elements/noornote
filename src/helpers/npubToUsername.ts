@@ -7,6 +7,7 @@ import { UserProfileService } from '../services/UserProfileService';
 import { npubToHex, nprofileToNpub } from './nip19';
 import { escapeHtml, escapeHtmlAttr } from './escapeHtml';
 import { getAvatarFallback } from './avatarFallback';
+import { getPetname as getPetnameSync } from './petnames';
 
 export interface Profile {
   name?: string;
@@ -98,7 +99,9 @@ function npubToUsernameHTMLSingle(npub: string, profileResolver: ProfileResolver
     const escapedUsername = escapeHtml(username);
     const picture = profile?.picture || getAvatarFallback(hexPubkey);
     const escapedPicture = escapeHtmlAttr(picture);
-    return `<a href="/profile/${npub}" class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${escapedPicture}" data-pubkey="${hexPubkey}" alt="" />${escapedUsername}</a>`;
+    const petname = getPetnameSync(hexPubkey);
+    const petnameSuffix = petname ? ` <span class="mention-petname">(${escapeHtml(petname)})</span>` : '';
+    return `<a href="/profile/${npub}" class="mention-link mention-link--bg"><img class="profile-pic profile-pic--mini" src="${escapedPicture}" data-pubkey="${hexPubkey}" alt="" />${escapedUsername}${petnameSuffix}</a>`;
   } catch {
     return npub;
   }
