@@ -14,6 +14,7 @@ import { UnsupportedKindRenderer } from './UnsupportedKindRenderer';
 import { FollowPackRenderer } from './FollowPackRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
+import { BadgeAwardRenderer } from './BadgeAwardRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -36,6 +37,8 @@ export class NoteRendererFactory {
         return GitEventRenderer.render(note, options);
       case 'highlight':
         return HighlightRenderer.render(note, options);
+      case 'badge-award':
+        return BadgeAwardRenderer.render(note, options);
       default:
         return OriginalNoteRenderer.render(note, options);
     }

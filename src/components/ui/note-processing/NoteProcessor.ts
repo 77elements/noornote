@@ -17,6 +17,7 @@ import { FileMetadataProcessor } from './FileMetadataProcessor';
 import { FollowPackProcessor } from './FollowPackProcessor';
 import { GitEventProcessor } from './GitEventProcessor';
 import { HighlightProcessor } from './HighlightProcessor';
+import { BadgeAwardProcessor } from './BadgeAwardProcessor';
 
 export class NoteProcessor {
   /**
@@ -32,6 +33,8 @@ export class NoteProcessor {
           return TextNoteProcessor.process(event);
         case 6:
           return RepostProcessor.process(event);
+        case 8:
+          return BadgeAwardProcessor.process(event);
         case 20:
           return PictureNoteProcessor.process(event);
         case 21:

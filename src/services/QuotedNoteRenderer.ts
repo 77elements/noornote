@@ -153,6 +153,14 @@ export class QuotedNoteRenderer {
           return;
         }
 
+        // Route NIP-58 badge awards (kind 8) to inline badge card
+        if (result.event.kind === 8) {
+          const { BadgeAwardRenderer } = await import('../components/ui/note-rendering/BadgeAwardRenderer');
+          const card = BadgeAwardRenderer.renderInlineCard(result.event);
+          skeleton.replaceWith(card);
+          return;
+        }
+
         // Route zap receipts (kind 9735) to ZapReceiptRenderer
         if (result.event.kind === 9735) {
           const { ZapReceiptRenderer } = await import('../components/ui/note-rendering/ZapReceiptRenderer');

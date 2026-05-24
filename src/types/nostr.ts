@@ -187,6 +187,7 @@ export const RENDERABLE_KINDS: number[] = [
   ...USER_CONTENT_KINDS,
   EventKind.REPOST,
   EventKind.ZAP_RECEIPT,
+  EventKind.BADGE_AWARD,
 ];
 
 /**

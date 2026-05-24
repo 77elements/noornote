@@ -1,0 +1,69 @@
+// NIP-58 Badge Award (kind 8) — card layout for awards in feed / SNV / quotes.
+
+@use '../abstracts/variables' as *;
+@use '../base/typography' as *;
+
+.badge-award {
+  display: flex;
+  gap: $gap;
+  padding: $gap;
+  border: 1px solid var(--color-2);
+  border-radius: $radius-xl;
+  background: var(--color-1);
+
+  &__thumb {
+    flex-shrink: 0;
+    width: 64px;
+    height: 64px;
+    border-radius: $radius-xl;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-2);
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    &--emoji {
+      font-size: 2rem;
+      background: transparent;
+    }
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__name {
+    font-weight: 600;
+    color: var(--color-5);
+  }
+
+  &__issuer {
+    @extend %small;
+    color: var(--color-3);
+    margin-top: calc($gap / 8);
+  }
+
+  &__desc {
+    @extend %small;
+    color: var(--color-4);
+    margin-top: calc($gap / 4);
+  }
+
+  &__awardees {
+    @extend %small;
+    color: var(--color-3);
+    margin-top: calc($gap / 4);
+  }
+}
+
+// Inline badge card used by QuotedNoteRenderer for embedded kind:8 references.
+.badge-award-card {
+  margin: $gap 0;
+}
