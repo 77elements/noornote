@@ -9,7 +9,8 @@
 
 import { NoteUI } from '../../ui/NoteUI';
 import { ThreadOrchestrator } from '../../../services/orchestration/ThreadOrchestrator';
-import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../../services/SystemLogger';
 import { UserProfileService } from '../../../services/UserProfileService';
@@ -38,7 +39,7 @@ export interface ThreadManagerConfig {
 export class ThreadManager {
   private config: ThreadManagerConfig;
   private threadOrchestrator: ThreadOrchestrator;
-  private reactionsOrchestrator: ReactionsOrchestrator;
+  private reactionsApi: ReactionsModuleApi | null;
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private profileService: UserProfileService;
@@ -47,7 +48,7 @@ export class ThreadManager {
   constructor(config: ThreadManagerConfig) {
     this.config = config;
     this.threadOrchestrator = ThreadOrchestrator.getInstance();
-    this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.profileService = UserProfileService.getInstance();
@@ -251,7 +252,7 @@ export class ThreadManager {
     if (isl) {
       await isl.waitForInitialFetch();
       isl.updateStats({ replies, quotedReposts });
-      this.reactionsOrchestrator.updateCachedStats(this.config.noteId, { replies, quotedReposts });
+      this.reactionsApi?.updateCachedStats(this.config.noteId, { replies, quotedReposts });
     }
 
     this.config.onStatsUpdate?.(replies, quotedReposts);
@@ -263,7 +264,7 @@ export class ThreadManager {
     if (isl && currentStats) {
       const newReplies = currentStats.replies + 1;
       isl.updateStats({ replies: newReplies });
-      this.reactionsOrchestrator.updateCachedStats(this.config.noteId, { replies: newReplies });
+      this.reactionsApi?.updateCachedStats(this.config.noteId, { replies: newReplies });
     }
   }
 

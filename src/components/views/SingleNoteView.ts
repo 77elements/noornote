@@ -13,7 +13,8 @@ import { LiveUpdatesManager } from './managers/LiveUpdatesManager';
 import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
 import { RelayConfig } from '../../services/RelayConfig';
 import { ThreadOrchestrator } from '../../services/orchestration/ThreadOrchestrator';
-import { ReactionsOrchestrator } from '../../services/orchestration/ReactionsOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
@@ -30,7 +31,7 @@ export class SingleNoteView extends View {
   private noteId: string;
   private relayConfig: RelayConfig;
   private threadOrchestrator: ThreadOrchestrator;
-  private reactionsOrchestrator: ReactionsOrchestrator;
+  private reactionsApi: ReactionsModuleApi | null;
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private appState: AppState;
@@ -53,14 +54,14 @@ export class SingleNoteView extends View {
     this.container.className = 'view-content view-content--single-note';
     this.relayConfig = RelayConfig.getInstance();
     this.threadOrchestrator = ThreadOrchestrator.getInstance();
-    this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.appState = AppState.getInstance();
     this.router = Router.getInstance();
     this.eventBus = EventBus.getInstance();
 
-    this.reactionsOrchestrator.resetFetchCounter();
+    this.reactionsApi?.resetFetchCounter();
     this.setupMuteListener();
     this.render();
   }
@@ -233,7 +234,7 @@ export class SingleNoteView extends View {
         const isl = NoteUI.getInteractionStatusLine(noteId);
         isl?.waitForInitialFetch().then(() => {
           isl.updateStats({ replies, quotedReposts });
-          this.reactionsOrchestrator.updateCachedStats(noteId, { replies, quotedReposts });
+          this.reactionsApi?.updateCachedStats(noteId, { replies, quotedReposts });
         });
       },
       onLoadZapsList: (replyId, authorPubkey, element) => {
@@ -261,7 +262,8 @@ export class SingleNoteView extends View {
 
   private async loadZapsList(noteId: string, authorPubkey: string, noteElement: HTMLElement): Promise<void> {
     try {
-      const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
+      const stats = await this.reactionsApi?.getDetailedStats(noteId);
+      if (!stats) return;
 
       const islContainer = noteElement.querySelector('.isl');
       if (!islContainer?.parentNode) return;
@@ -345,7 +347,7 @@ export class SingleNoteView extends View {
     if (this.currentNoteId) {
       this.systemLogger.info('SNV', `Stopping live updates for note ${this.currentNoteId.slice(0, 8)}`);
       this.threadOrchestrator.stopLiveReplies(this.currentNoteId);
-      this.reactionsOrchestrator.stopLiveReactions(this.currentNoteId);
+      this.reactionsApi?.stopLiveReactions(this.currentNoteId);
     }
 
     this.container.remove();

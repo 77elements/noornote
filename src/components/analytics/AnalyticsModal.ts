@@ -6,7 +6,8 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
-import { ReactionsOrchestrator, type DetailedStats } from '../../services/orchestration/ReactionsOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ReactionsModuleApi, DetailedStats } from '../../modules/reactions/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
@@ -24,13 +25,13 @@ const MODAL_CONFIG = {
 
 export class AnalyticsModal {
   private static instance: AnalyticsModal | null = null;
-  private orchestrator: ReactionsOrchestrator;
+  private reactionsApi: ReactionsModuleApi | null;
   private userProfileService: UserProfileService;
   private router: Router;
   private modalService: ModalService;
 
   private constructor() {
-    this.orchestrator = ReactionsOrchestrator.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
     this.modalService = ModalService.getInstance();
@@ -60,7 +61,11 @@ export class AnalyticsModal {
 
     // Fetch detailed stats
     try {
-      const stats = await this.orchestrator.getDetailedStats(noteId);
+      const stats = await this.reactionsApi?.getDetailedStats(noteId);
+      if (!stats) {
+        this.modalService.show({ ...MODAL_CONFIG, content: this.renderErrorContent('Reactions module not available') });
+        return;
+      }
       const statsContent = await this.renderStatsContent(stats, rawEvent);
       this.modalService.show({ ...MODAL_CONFIG, content: statsContent });
       this.updateISLInDOM(noteId, stats);

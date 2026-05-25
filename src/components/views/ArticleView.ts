@@ -10,7 +10,8 @@ import { RepliesRenderer } from '../replies/RepliesRenderer';
 import { ZapsList } from '../ui/ZapsList';
 import { LikesList } from '../ui/LikesList';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
-import { ReactionsOrchestrator } from '../../services/orchestration/ReactionsOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
@@ -36,14 +37,14 @@ export class ArticleView {
   private container: HTMLElement;
   private naddrRef: string;
   private orchestrator: LongFormOrchestrator;
-  private reactionsOrchestrator: ReactionsOrchestrator;
+  private reactionsApi: ReactionsModuleApi | null;
 
   constructor(naddrRef: string) {
     this.naddrRef = naddrRef;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article';
     this.orchestrator = LongFormOrchestrator.getInstance();
-    this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
 
     this.render();
   }
@@ -282,7 +283,8 @@ export class ArticleView {
   private async loadZapsList(noteId: string, authorPubkey: string, articleContainer: HTMLElement, articleEventId?: string, articleEvent?: NostrEvent): Promise<void> {
     try {
       // LONG-FORM ARTICLE: Pass eventId to search both #a and #e tags
-      const stats = await this.reactionsOrchestrator.getDetailedStats(noteId, articleEventId);
+      const stats = await this.reactionsApi?.getDetailedStats(noteId, articleEventId);
+      if (!stats) return;
 
       // Find ISL container
       const islContainer = articleContainer.querySelector('.isl');
@@ -344,7 +346,8 @@ export class ArticleView {
   private async loadZapsListForReply(noteId: string, authorPubkey: string, noteElement: HTMLElement): Promise<void> {
     try {
       // Replies are normal notes - no articleEventId needed
-      const stats = await this.reactionsOrchestrator.getDetailedStats(noteId);
+      const stats = await this.reactionsApi?.getDetailedStats(noteId);
+      if (!stats) return;
 
       const islContainer = noteElement.querySelector('.isl');
       if (!islContainer || !islContainer.parentNode) return;

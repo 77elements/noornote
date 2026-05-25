@@ -13,7 +13,8 @@ import { hexToNpub } from '../../helpers/nip19';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { ZapsList } from '../ui/ZapsList';
 import { AuthService } from '../../services/AuthService';
-import { ReactionsOrchestrator } from '../../services/orchestration/ReactionsOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { UserIdentity } from '../shared/UserIdentity';
 import { resolveQuotedContent } from '../../helpers/resolveQuotedContent';
 import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
@@ -34,7 +35,7 @@ export class NotificationItem {
   private element: HTMLElement;
   private userProfileService: UserProfileService;
   private authService: AuthService;
-  private reactionsOrch: ReactionsOrchestrator;
+  private reactionsApi: ReactionsModuleApi | null;
   private options: NotificationItemOptions;
   private userIdentity: UserIdentity | null = null;
   private isl: InteractionStatusLine | null = null;
@@ -43,7 +44,7 @@ export class NotificationItem {
   constructor(options: NotificationItemOptions) {
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
-    this.reactionsOrch = ReactionsOrchestrator.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.options = options;
     this.element = this.createElement();
     // UserIdentity is created in createElement() - no need for loadProfile()
@@ -254,7 +255,7 @@ export class NotificationItem {
     if (!eventId) return;
 
     // Fetch stats to get zap events
-    const stats = await this.reactionsOrch.getDetailedStats(eventId);
+    const stats = await this.reactionsApi?.getDetailedStats(eventId);
 
     if (stats && stats.zapEvents && stats.zapEvents.length > 0) {
       this.zapsList = new ZapsList(stats.zapEvents);

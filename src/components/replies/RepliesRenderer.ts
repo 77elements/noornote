@@ -6,7 +6,8 @@
 
 import { NoteUI } from '../ui/NoteUI';
 import { ThreadOrchestrator } from '../../services/orchestration/ThreadOrchestrator';
-import { ReactionsOrchestrator } from '../../services/orchestration/ReactionsOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
@@ -45,7 +46,7 @@ export class RepliesRenderer {
   private onLoadZapsList?: (noteId: string, authorPubkey: string, noteElement: HTMLElement) => void;
 
   private threadOrchestrator: ThreadOrchestrator;
-  private reactionsOrchestrator: ReactionsOrchestrator;
+  private reactionsApi: ReactionsModuleApi | null;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
 
@@ -57,7 +58,7 @@ export class RepliesRenderer {
     if (options.onLoadZapsList) this.onLoadZapsList = options.onLoadZapsList;
 
     this.threadOrchestrator = ThreadOrchestrator.getInstance();
-    this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }
@@ -135,7 +136,7 @@ export class RepliesRenderer {
           });
 
           // Also update the cache so Timeline shows correct count
-          this.reactionsOrchestrator.updateCachedStats(this.noteId, {
+          this.reactionsApi?.updateCachedStats(this.noteId, {
             replies: replies.length,
             quotedReposts: quotedReposts.length
           });

@@ -29,6 +29,7 @@ export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
       clearCache: (noteId) => orch?.clearCache(noteId),
       startLiveReactions: (noteId, callback, options) => orch?.startLiveReactions(noteId, callback, options),
       stopLiveReactions: (noteId) => orch?.stopLiveReactions(noteId),
+      resetFetchCounter: () => orch?.resetFetchCounter(),
       hasUserLiked: (noteId) => svc?.hasUserLiked(noteId) ?? Promise.resolve(false),
       hasUserLikedWithEmoji: (noteId, emoji) => svc?.hasUserLikedWithEmoji(noteId, emoji) ?? Promise.resolve(false),
       publishReaction: (options) => svc?.publishReaction(options) ?? Promise.resolve({ success: false, error: 'Module not loaded' }),

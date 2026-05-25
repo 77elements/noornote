@@ -10,7 +10,8 @@
  */
 
 import { ThreadOrchestrator } from '../../../services/orchestration/ThreadOrchestrator';
-import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { SystemLogger } from '../../../services/SystemLogger';
 import { EventBus } from '../../../services/EventBus';
@@ -31,7 +32,7 @@ export interface LiveUpdatesConfig {
 export class LiveUpdatesManager {
   private config: LiveUpdatesConfig;
   private threadOrchestrator: ThreadOrchestrator;
-  private reactionsOrchestrator: ReactionsOrchestrator;
+  private reactionsApi: ReactionsModuleApi | null;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private eventBus: EventBus;
@@ -46,7 +47,7 @@ export class LiveUpdatesManager {
   constructor(config: LiveUpdatesConfig) {
     this.config = config;
     this.threadOrchestrator = ThreadOrchestrator.getInstance();
-    this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.eventBus = EventBus.getInstance();
@@ -68,7 +69,7 @@ export class LiveUpdatesManager {
     });
 
     // Start live reactions polling (30s interval)
-    this.reactionsOrchestrator.startLiveReactions(this.config.noteId, (stats) => {
+    this.reactionsApi?.startLiveReactions(this.config.noteId, (stats) => {
       if (this.config.onStatsUpdate) {
         this.config.onStatsUpdate(stats);
       }
@@ -201,7 +202,7 @@ export class LiveUpdatesManager {
 
     // Stop orchestrators
     this.threadOrchestrator.stopLiveReplies(this.config.noteId);
-    this.reactionsOrchestrator.stopLiveReactions(this.config.noteId);
+    this.reactionsApi?.stopLiveReactions(this.config.noteId);
 
     this.systemLogger.info('LiveUpdatesManager', 'Destroyed live updates manager');
   }

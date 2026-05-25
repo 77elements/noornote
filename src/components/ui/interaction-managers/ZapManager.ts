@@ -11,7 +11,7 @@ import { AuthService } from '../../../services/AuthService';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ZapsModuleApi } from '../../../modules/zaps/contracts';
 import { ToastService } from '../../../services/ToastService';
-import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
+import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { EventBus } from '../../../services/EventBus';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
@@ -33,7 +33,7 @@ export class ZapManager {
   private config: ZapManagerConfig;
   private zapsApi: ZapsModuleApi | null;
   private authService: AuthService;
-  private reactionsOrchestrator: ReactionsOrchestrator;
+  private reactionsApi: ReactionsModuleApi | null;
   private eventBus: EventBus;
   private userProfileService: UserProfileService;
   private zapButton: HTMLElement | null = null;
@@ -45,7 +45,7 @@ export class ZapManager {
     this.config = config;
     this.zapsApi = ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
     this.authService = AuthService.getInstance();
-    this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.eventBus = EventBus.getInstance();
     this.userProfileService = UserProfileService.getInstance();
   }
@@ -205,7 +205,7 @@ export class ZapManager {
         this.eventBus.emit('zap:added', { noteId: this.config.noteId });
 
         // Cache invalidation
-        this.reactionsOrchestrator.clearCache(this.config.noteId);
+        this.reactionsApi?.clearCache(this.config.noteId);
       }
     } catch (error) {
       console.error('Failed to send zap:', error);
@@ -234,7 +234,7 @@ export class ZapManager {
         this.eventBus.emit('zap:added', { noteId: this.config.noteId });
 
         // Cache invalidation
-        this.reactionsOrchestrator.clearCache(this.config.noteId);
+        this.reactionsApi?.clearCache(this.config.noteId);
       }
     };
 
