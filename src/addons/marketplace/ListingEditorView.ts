@@ -18,7 +18,7 @@ import { PostEditorToolbar } from '../../components/post/PostEditorToolbar';
 import { MentionAutocomplete } from '../../components/mentions/MentionAutocomplete';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
-import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { parseListingMetadata } from './marketplace-helpers';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
@@ -117,8 +117,8 @@ export class ListingEditorView extends View {
     this.container.innerHTML = '<div class="marketplace-timeline__empty pulsate"><p>Loading listing...</p></div>';
 
     try {
-      const orchestrator = LongFormOrchestrator.getInstance();
-      const event = await orchestrator.fetchAddressableEvent(this.editNaddr!);
+      const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+      const event = await articlesApi?.fetchAddressableEvent(this.editNaddr!) ?? null;
 
       if (!event) {
         this.container.innerHTML = '<div class="marketplace-timeline__error"><p>Listing not found</p></div>';

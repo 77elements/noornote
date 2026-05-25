@@ -7,7 +7,8 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { View } from '../../components/views/View';
-import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
 import { UserProfileService } from '../../services/UserProfileService';
 import { ContentProcessor } from '../../services/ContentProcessor';
@@ -48,8 +49,8 @@ export class ListingView extends View {
     `;
 
     try {
-      const orchestrator = LongFormOrchestrator.getInstance();
-      const event = await orchestrator.fetchAddressableEvent(this.naddr);
+      const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+      const event = await articlesApi?.fetchAddressableEvent(this.naddr) ?? null;
 
       if (!event) {
         this.showNotFound();

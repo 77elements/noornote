@@ -9,8 +9,8 @@ import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';
 import { ZapsList } from '../ui/ZapsList';
 import { LikesList } from '../ui/LikesList';
-import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
@@ -25,7 +25,7 @@ import { formatQuotedReferences, type QuotedReference } from '../../helpers/form
 import { ContentProcessor } from '../../services/ContentProcessor';
 import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../../services/ArticlePreviewRenderer';
-import { NoteService } from '../../services/NoteService';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -36,14 +36,14 @@ import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 export class ArticleView {
   private container: HTMLElement;
   private naddrRef: string;
-  private orchestrator: LongFormOrchestrator;
+  private articlesApi: ArticlesModuleApi | null;
   private reactionsApi: ReactionsModuleApi | null;
 
   constructor(naddrRef: string) {
     this.naddrRef = naddrRef;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article';
-    this.orchestrator = LongFormOrchestrator.getInstance();
+    this.articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
     this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
 
     this.render();
@@ -63,7 +63,7 @@ export class ArticleView {
 
     try {
       // Fetch the article
-      const event = await this.orchestrator.fetchAddressableEvent(this.naddrRef);
+      const event = await this.articlesApi?.fetchAddressableEvent(this.naddrRef) ?? null;
 
       if (!event || !event.id) {
         this.showError('Article not found');
@@ -81,7 +81,7 @@ export class ArticleView {
    * Render the loaded article
    */
   private renderArticle(event: NostrEvent & { id: string }): void {
-    const metadata = LongFormOrchestrator.extractArticleMetadata(event);
+    const metadata = this.articlesApi?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
 
     // Check if current user is the author
     const isOwnArticle = AuthService.getInstance().isCurrentUser(event.pubkey);
@@ -91,7 +91,7 @@ export class ArticleView {
 
     // Register the article event so TextSelectionToolbar can resolve it sync
     // (NIP-84 highlights need the source event for a-tag construction).
-    NoteService.getInstance().registerNote(event);
+    ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNote(event);
 
     // Create article structure with replies container
     this.container.innerHTML = `

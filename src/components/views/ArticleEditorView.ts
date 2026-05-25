@@ -24,7 +24,7 @@ import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
-import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
@@ -130,8 +130,8 @@ export class ArticleEditorView extends View {
 
     try {
       this.systemLogger.info('ArticleEditorView', `Loading article: ${naddr.slice(0, 30)}...`);
-      const orchestrator = LongFormOrchestrator.getInstance();
-      const event = await orchestrator.fetchAddressableEvent(naddr);
+      const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+      const event = await articlesApi?.fetchAddressableEvent(naddr) ?? null;
 
       if (!event) {
         this.systemLogger.error('ArticleEditorView', 'Article not found on relays');
@@ -140,7 +140,7 @@ export class ArticleEditorView extends View {
       }
 
       // Extract metadata and pre-fill fields
-      const metadata = LongFormOrchestrator.extractArticleMetadata(event);
+      const metadata = articlesApi?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
       this.title = metadata.title;
       this.content = event.content;
       this.summary = metadata.summary;

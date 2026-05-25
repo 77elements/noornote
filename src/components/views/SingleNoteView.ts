@@ -15,7 +15,7 @@ import { RelayConfig } from '../../services/RelayConfig';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
-import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
@@ -107,7 +107,8 @@ export class SingleNoteView extends View {
   }
 
   private async fetchAddressable(naddrRef: string): Promise<NostrEvent | null> {
-    const event = await LongFormOrchestrator.getInstance().fetchAddressableEvent(naddrRef);
+    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const event = await articlesApi?.fetchAddressableEvent(naddrRef) ?? null;
     if (!event) {
       this.systemLogger.warn('SNV', `Note not found (${naddrRef.slice(0, 16)}…)`);
       return null;

@@ -7,7 +7,8 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
-import { LongFormOrchestrator } from '../../../services/orchestration/LongFormOrchestrator';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
 import { getTag } from '../../../helpers/tagUtils';
 
 export class HighlightRenderer {
@@ -35,8 +36,8 @@ export class HighlightRenderer {
     const naddr = link.getAttribute('href')?.replace('/article/', '');
     if (!naddr) return;
 
-    LongFormOrchestrator.getInstance()
-      .fetchAddressableEvent(naddr)
+    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    articlesApi?.fetchAddressableEvent(naddr)
       .then(article => {
         if (!article) return;
         const title = getTag(article.tags, 'title');

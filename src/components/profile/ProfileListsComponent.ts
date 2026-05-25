@@ -16,7 +16,8 @@ import { ProfileMountsService } from '../../services/ProfileMountsService';
 import { ProfileMountsOrchestrator } from '../../services/orchestration/ProfileMountsOrchestrator';
 import { NospressMountsService } from '../../services/NospressMountsService';
 import { NospressMountsOrchestrator } from '../../services/orchestration/NospressMountsOrchestrator';
-import { NoteService } from '../../services/NoteService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { encodeNaddr, encodeNevent } from '../../services/NostrToolsAdapter';
 import {
@@ -352,7 +353,8 @@ export class ProfileListsComponent {
     if (noteIds.size > 0) {
       work.push((async () => {
         try {
-          const notes = await NoteService.getInstance().getNotes(Array.from(noteIds));
+          const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+          const notes = await postsApi?.getNotes(Array.from(noteIds)) ?? new Map<string, import('@nostr-dev-kit/ndk').NostrEvent>();
           for (const [id, event] of notes.entries()) {
             const firstLine = (event.content || '').split('\n').map(l => l.trim()).find(l => l.length > 0) || '';
             this.resolvedDisplay.set(id, firstLine || `Note ${id.slice(0, 8)}…`);

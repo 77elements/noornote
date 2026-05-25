@@ -8,7 +8,8 @@
  */
 
 import { NostrTransport } from '../../services/transport/NostrTransport';
-import { LongFormOrchestrator, type ArticleMetadata } from '../../services/orchestration/LongFormOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ArticlesModuleApi, ArticleMetadata } from '../../modules/articles/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
@@ -133,7 +134,8 @@ export class ProfileArticlesCarousel {
 
       this.articles = events.map(event => {
         const isDraft = event.kind === 30024;
-        const metadata = LongFormOrchestrator.extractArticleMetadata(event);
+        const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+        const metadata = articlesApi?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
         const naddr = encodeNaddr({
           kind: event.kind!,
           pubkey: event.pubkey,

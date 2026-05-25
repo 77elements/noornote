@@ -12,7 +12,8 @@
  * native long-press selection collides with system selection handles.
  */
 
-import { NoteService } from '../../services/NoteService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { AuthService } from '../../services/AuthService';
 import { ToastService } from '../../services/ToastService';
 
@@ -164,7 +165,8 @@ export class TextSelectionToolbar {
   private async openModal(): Promise<void> {
     if (!this.pending) return;
 
-    const event = NoteService.getInstance().getCachedNote(this.pending.eventId);
+    const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+    const event = postsApi?.getCachedNote(this.pending.eventId) ?? null;
     if (!event) {
       ToastService.show('Could not resolve source note. Please reload and try again.', 'error');
       this.hide();

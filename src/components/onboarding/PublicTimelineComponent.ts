@@ -8,7 +8,8 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
-import { NoteService } from '../../services/NoteService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { NoteUI } from '../ui/NoteUI';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { RefreshButton } from '../ui/RefreshButton';
@@ -42,7 +43,6 @@ export class PublicTimelineComponent {
   private noteContainer: HTMLElement;
   private transport: NostrTransport;
   private relayConfig: RelayConfig;
-  private noteService: NoteService;
   private infiniteScroll: InfiniteScroll;
   private events: NostrEvent[] = [];
   private totalRenderedNotes = 0;
@@ -58,7 +58,6 @@ export class PublicTimelineComponent {
     this.container = container;
     this.transport = NostrTransport.getInstance();
     this.relayConfig = RelayConfig.getInstance();
-    this.noteService = NoteService.getInstance();
 
     // Create note container inside the provided container
     this.noteContainer = document.createElement('div');
@@ -98,7 +97,7 @@ export class PublicTimelineComponent {
 
       if (filtered.length > 0) {
         this.events = filtered;
-        this.noteService.registerNotes(filtered);
+        ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(filtered);
         this.newestTimestamp = filtered[0]!.created_at;
         this.oldestTimestamp = filtered[filtered.length - 1]!.created_at;
         this.renderNotes(filtered);
@@ -142,7 +141,7 @@ export class PublicTimelineComponent {
 
       if (newEvents.length > 0) {
         this.events.push(...newEvents);
-        this.noteService.registerNotes(newEvents);
+        ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(newEvents);
         this.oldestTimestamp = newEvents[newEvents.length - 1]!.created_at;
         this.renderNotes(newEvents);
       } else {
@@ -303,7 +302,7 @@ export class PublicTimelineComponent {
     // Update timestamps and state
     this.newestTimestamp = this.polledEvents[0]!.created_at;
     this.events.unshift(...this.polledEvents);
-    this.noteService.registerNotes(this.polledEvents);
+    ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(this.polledEvents);
 
     // Prepend to DOM using fragment (same pattern as TimelineRenderer)
     const fragment = document.createDocumentFragment();

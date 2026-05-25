@@ -1,7 +1,8 @@
 import { AuthService } from '../../services/AuthService';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
-import { NoteService } from '../../services/NoteService';
-import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { NoteUI } from '../../components/ui/NoteUI';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -31,7 +32,8 @@ async function resolveAndMount(slot: HTMLElement, nostrRef: string): Promise<voi
     let event: NostrEvent | null = null;
 
     if (cleaned.startsWith('naddr1')) {
-      event = await LongFormOrchestrator.getInstance().fetchAddressableEvent(cleaned);
+      const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+      event = await articlesApi?.fetchAddressableEvent(cleaned) ?? null;
     } else {
       // nevent1 / note1 / raw 64-char hex → resolve to event id, then go through
       // NoteService so repeated embeds of the same note hit the LRU cache and
@@ -48,7 +50,8 @@ async function resolveAndMount(slot: HTMLElement, nostrRef: string): Promise<voi
         id = cleaned.toLowerCase();
       }
       if (id) {
-        event = await NoteService.getInstance().getNote(id);
+        const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+        event = await postsApi?.getNote(id) ?? null;
       }
     }
 

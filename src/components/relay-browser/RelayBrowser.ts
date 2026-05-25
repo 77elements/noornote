@@ -8,7 +8,8 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { RelayBrowserOrchestrator } from '../../services/orchestration/RelayBrowserOrchestrator';
-import { NoteService } from '../../services/NoteService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { NoteUI } from '../ui/NoteUI';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
@@ -19,7 +20,6 @@ export class RelayBrowser {
   private element: HTMLElement;
   private notesContainer: HTMLElement;
   private orchestrator: RelayBrowserOrchestrator;
-  private noteService: NoteService;
   private infiniteScroll: InfiniteScroll;
   private refreshButton: RefreshButton;
   private relayUrl: string;
@@ -32,7 +32,6 @@ export class RelayBrowser {
   constructor(relayUrl: string) {
     this.relayUrl = relayUrl;
     this.orchestrator = RelayBrowserOrchestrator.getInstance();
-    this.noteService = NoteService.getInstance();
 
     this.orchestrator.setRelay(relayUrl);
 
@@ -91,7 +90,7 @@ export class RelayBrowser {
       this.hasMore = result.hasMore;
 
       if (result.events.length > 0) {
-        this.noteService.registerNotes(result.events);
+        ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(result.events);
         this.renderNotes(result.events);
         this.infiniteScroll.observe(this.notesContainer);
         this.startPolling();
@@ -134,7 +133,7 @@ export class RelayBrowser {
     if (this.polledEventsCache.length === 0) return;
 
     // Register and prepend cached notes
-    this.noteService.registerNotes(this.polledEventsCache);
+    ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(this.polledEventsCache);
     this.prependNotes(this.polledEventsCache);
 
     // Clear cache
@@ -218,7 +217,7 @@ export class RelayBrowser {
       this.hasMore = result.hasMore;
 
       if (result.events.length > 0) {
-        this.noteService.registerNotes(result.events);
+        ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.registerNotes(result.events);
         this.appendNotes(result.events);
       }
 

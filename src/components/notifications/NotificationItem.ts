@@ -15,6 +15,7 @@ import { ZapsList } from '../ui/ZapsList';
 import { AuthService } from '../../services/AuthService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { UserIdentity } from '../shared/UserIdentity';
 import { resolveQuotedContent } from '../../helpers/resolveQuotedContent';
 import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
@@ -728,9 +729,9 @@ export class NotificationItem {
             const pack = parseFollowPackEvent(refEvent);
             setPreview(`Follow Pack: ${pack.title}`);
           } else if (aKind === 30023) {
-            const { LongFormOrchestrator } = await import('../../services/orchestration/LongFormOrchestrator');
-            const metadata = LongFormOrchestrator.extractArticleMetadata(refEvent);
-            setPreview(`Article: ${metadata.title}`);
+            const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+            const metadata = articlesApi?.extractArticleMetadata(refEvent);
+            setPreview(`Article: ${metadata?.title ?? 'Untitled'}`);
           } else {
             const dTag = refEvent.tags.find((t: string[]) => t[0] === 'd')?.[1];
             setPreview(dTag ? `Event (kind ${aKind}): ${dTag}` : `Event (kind ${aKind})`);
