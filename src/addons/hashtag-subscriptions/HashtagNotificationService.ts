@@ -9,7 +9,8 @@
  * - ONE notification per hashtag (not per post)
  */
 
-import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SearchModuleApi } from '../../modules/search/contracts';
 import { EventBus } from '../../services/EventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
@@ -31,7 +32,7 @@ interface StorageData {
 
 export class HashtagNotificationService {
   private static instance: HashtagNotificationService;
-  private searchOrchestrator: SearchOrchestrator;
+  private searchApi: SearchModuleApi | null;
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
   private storage: PerAccountLocalStorage;
@@ -41,7 +42,7 @@ export class HashtagNotificationService {
   private isPollingStarted = false;
 
   private constructor() {
-    this.searchOrchestrator = SearchOrchestrator.getInstance();
+    this.searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
     this.eventBus = EventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
@@ -228,22 +229,20 @@ export class HashtagNotificationService {
 
       try {
         // Search for #hashtag
-        const hashtagResults = await this.searchOrchestrator.search({
+        const hashtagResults = await this.searchApi?.search({
           query: `#${hashtag}`,
           limit: 10
-        });
+        }) ?? [];
 
         let allResults = [...hashtagResults];
 
-        // If includeWithoutHash is enabled, also search for the term without #
         if (includeWithoutHash) {
-          const termResults = await this.searchOrchestrator.search({
+          const termResults = await this.searchApi?.search({
             query: hashtag,
             limit: 10
-          });
+          }) ?? [];
 
-          // Merge and deduplicate by event ID
-          const seenIds = new Set(allResults.map(e => e.id));
+          const seenIds = new Set(allResults.map((e: any) => e.id));
           for (const event of termResults) {
             if (!seenIds.has(event.id)) {
               allResults.push(event);

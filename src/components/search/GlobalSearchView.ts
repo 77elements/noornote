@@ -4,7 +4,8 @@
  * Uses SearchResultsView (modular component)
  */
 
-import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SearchModuleApi } from '../../modules/search/contracts';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { AuthService } from '../../services/AuthService';
 import { SearchResultsView, SearchResultsConfig } from './SearchResultsView';
@@ -18,7 +19,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 export class GlobalSearchView {
   private container: HTMLElement;
   private tabElement: HTMLElement | null = null;
-  private searchOrchestrator: SearchOrchestrator;
+  private searchApi: SearchModuleApi | null;
   private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private authService: AuthService;
   private searchResultsView: SearchResultsView | null = null;
@@ -36,7 +37,7 @@ export class GlobalSearchView {
   private currentHashtag: string = ''; // Track current hashtag for subscribe button (Phase 2)
 
   constructor() {
-    this.searchOrchestrator = SearchOrchestrator.getInstance();
+    this.searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
     this.muteOrchestrator = MuteOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
     this.router = Router.getInstance();
@@ -118,14 +119,13 @@ export class GlobalSearchView {
     this.showLoading();
 
     try {
-      const results = await this.searchOrchestrator.search({
+      const results = await this.searchApi?.search({
         query,
         limit: 50
-      });
+      }) ?? [];
 
       const filteredResults = await this.filterMutedUsers(results);
 
-      // Sort by created_at descending (newest first)
       filteredResults.sort((a, b) => b.created_at - a.created_at);
 
       this.currentResults = filteredResults;
@@ -198,19 +198,17 @@ export class GlobalSearchView {
 
     try {
       // Use oldestTimestamp - 1 to avoid duplicates (like Jumble does)
-      const moreResults = await this.searchOrchestrator.searchPaginated(
+      const moreResults = await this.searchApi?.searchPaginated(
         {
           query: this.currentQuery,
           limit: 50
         },
         this.oldestTimestamp - 1
-      );
+      ) ?? [];
 
-      // Filter out muted users
       const filteredResults = await this.filterMutedUsers(moreResults);
 
       if (filteredResults.length > 0) {
-        // Sort by created_at descending (newest first)
         filteredResults.sort((a, b) => b.created_at - a.created_at);
 
         this.currentResults = [...this.currentResults, ...filteredResults];

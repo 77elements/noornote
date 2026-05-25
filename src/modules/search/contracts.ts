@@ -5,6 +5,6 @@ export type { SearchOptions, ProfileSearchResult };
 
 export interface SearchModuleApi {
   search(options: SearchOptions): Promise<NostrEvent[]>;
-  searchPaginated(options: SearchOptions & { offset?: number; limit?: number }): Promise<NostrEvent[]>;
+  searchPaginated(options: SearchOptions, until?: number): Promise<NostrEvent[]>;
   searchProfiles(query: string, limit?: number): Promise<ProfileSearchResult[]>;
 }

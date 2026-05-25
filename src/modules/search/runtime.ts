@@ -17,7 +17,7 @@ export class SearchRuntime implements ModuleRuntime<SearchModuleApi> {
     const orch = this.orchestrator;
     return {
       search: (options) => orch?.search(options) ?? Promise.resolve([]),
-      searchPaginated: (options) => orch?.searchPaginated(options) ?? Promise.resolve([]),
+      searchPaginated: (options, until) => orch?.searchPaginated(options, until) ?? Promise.resolve([]),
       searchProfiles: (query, limit) => orch?.searchProfiles(query, limit) ?? Promise.resolve([]),
     };
   }

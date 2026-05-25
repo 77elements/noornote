@@ -1,7 +1,8 @@
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthService } from '../../services/AuthService';
-import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SearchModuleApi } from '../../modules/search/contracts';
 import { NoteUI } from '../../components/ui/NoteUI';
 import { resolvePubkey } from '../../helpers/resolvePubkey';
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
@@ -172,7 +173,7 @@ async function fetchByAuthor(state: WeblogState): Promise<NostrEvent[]> {
  * Client-side verification (case-insensitive) follows in `filterEvents`.
  */
 async function fetchByHashtagSearch(state: WeblogState): Promise<NostrEvent[]> {
-  const search = SearchOrchestrator.getInstance();
+  const search = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
   const limit = state.postsPerPage * 4; // generous, post-filter narrows it
   const queries: string[] = [];
   for (const tag of state.hashtags) {
@@ -181,10 +182,10 @@ async function fetchByHashtagSearch(state: WeblogState): Promise<NostrEvent[]> {
   }
   const results = await Promise.all(
     queries.map(q =>
-      search.searchPaginated(
+      search?.searchPaginated(
         { query: q, authors: [state.pubkey], limit },
         state.oldestSeen,
-      ).catch(() => [] as NostrEvent[]),
+      )?.catch(() => [] as NostrEvent[]) ?? Promise.resolve([] as NostrEvent[]),
     ),
   );
 
