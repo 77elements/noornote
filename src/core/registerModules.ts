@@ -40,4 +40,26 @@ export function registerCoreModules(): void {
     activation: 'manual',
     load: () => import('../modules/media/runtime').then(m => m.default),
   });
+
+  loader.register({
+    id: 'articles',
+    activation: 'route',
+    routes: ['/article', '/write-article', '/edit-article'],
+    load: () => import('../modules/articles/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'search',
+    activation: 'route',
+    routes: ['/search'],
+    load: () => import('../modules/search/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'relay-browser',
+    activation: 'route',
+    routes: ['/relay'],
+    sleepPolicy: 'sleep-on-leave',
+    load: () => import('../modules/relay-browser/runtime').then(m => m.default),
+  });
 }
