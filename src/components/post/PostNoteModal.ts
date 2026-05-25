@@ -14,7 +14,7 @@
 import { ModalService } from '../../services/ModalService';
 import { PostService } from '../../services/PostService';
 import { RelayConfig } from '../../services/RelayConfig';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { RelaySelector } from './RelaySelector';

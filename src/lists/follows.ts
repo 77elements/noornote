@@ -21,7 +21,7 @@ import { readJsonFile, writeJsonFile, uploadJsonFile, downloadAsJson } from './f
 import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey } from './relays';
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from '../services/SystemLogger';
 import { EventBus } from '../services/EventBus';
 import { AuthService } from '../services/AuthService';
 import { diagLog } from '../services/DiagnosticLogger';

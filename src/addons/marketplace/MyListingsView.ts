@@ -10,7 +10,7 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
 import { DeletionService } from '../../services/DeletionService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { ToastService } from '../../services/ToastService';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';

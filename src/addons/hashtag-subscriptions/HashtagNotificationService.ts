@@ -11,7 +11,7 @@
 
 import { SearchOrchestrator } from '../../services/orchestration/SearchOrchestrator';
 import { EventBus } from '../../services/EventBus';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { NoteService } from '../../services/NoteService';
 

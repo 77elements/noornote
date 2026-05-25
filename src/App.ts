@@ -8,7 +8,7 @@ import { MainLayout } from './components/layout/MainLayout';
 import { Router } from './services/Router';
 import { AppState } from './services/AppState';
 import { AuthService } from './services/AuthService';
-import { SystemLogger } from './components/system/SystemLogger';
+import { SystemLogger } from './services/SystemLogger';
 import { EventBus } from './services/EventBus';
 import { KeySignerClient } from './services/KeySignerClient';
 import { ModalService } from './services/ModalService';

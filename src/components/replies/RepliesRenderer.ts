@@ -11,7 +11,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
 import { RelayConfig } from '../../services/RelayConfig';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { Router } from '../../services/Router';

@@ -23,7 +23,7 @@ import {
   requireAuth, getCurrentUserPubkey
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from '../services/SystemLogger';
 import { EventBus } from '../services/EventBus';
 import { diagLog } from '../services/DiagnosticLogger';
 // UI component imports

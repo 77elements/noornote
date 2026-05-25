@@ -20,7 +20,7 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { getBookmarkFolderService } from '../lists/bookmarks';
 
 // Legacy keys

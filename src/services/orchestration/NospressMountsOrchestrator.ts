@@ -16,7 +16,7 @@
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { NospressMountsService } from '../NospressMountsService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 
 const NIP78_KIND = 30078;

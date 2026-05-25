@@ -19,7 +19,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { NoteService } from '../NoteService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';

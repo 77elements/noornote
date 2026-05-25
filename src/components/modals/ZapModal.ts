@@ -9,7 +9,7 @@ import { ZapService } from '../../services/ZapService';
 import { NWCService } from '../../services/NWCService';
 import { ToastService } from '../../services/ToastService';
 import { PlatformService } from '../../services/PlatformService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { Switch } from '../ui/Switch';
 
 const PRESET_AMOUNTS = [

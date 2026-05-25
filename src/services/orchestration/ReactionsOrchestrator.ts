@@ -17,7 +17,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { UserProfileService } from '../UserProfileService';
 import { isUserMuted } from '../../lists/mutes';
 

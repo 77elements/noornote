@@ -12,7 +12,7 @@ import { EventBus } from '../../services/EventBus';
 import { ToastService } from '../../services/ToastService';
 import { ModalService } from '../../services/ModalService';
 import { AuthService } from '../../services/AuthService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { isScheduledPostsEnabled, setScheduledPostsEnabled } from './index';
 import { ScheduledPostService, type ScheduledPost } from './ScheduledPostService';

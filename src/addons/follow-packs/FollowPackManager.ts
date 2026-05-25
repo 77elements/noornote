@@ -19,7 +19,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { ToastService } from '../../services/ToastService';
 import { Router } from '../../services/Router';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { hexToNpub } from '../../helpers/nip19';
 import { npubToUsername } from '../../helpers/npubToUsername';

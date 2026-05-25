@@ -18,7 +18,7 @@ import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrche
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';

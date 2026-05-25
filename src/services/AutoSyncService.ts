@@ -17,7 +17,7 @@ import { getListLastModified, setListLastModified, type ListType as StorageListT
 import { AuthService } from './AuthService';
 import { ConnectivityService } from './ConnectivityService';
 import { PlatformService } from './PlatformService';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { isEasyMode } from '../helpers/ListSyncMode';
 import { diagLog } from './DiagnosticLogger';
 import { AddonLoader } from '../addons/AddonLoader';

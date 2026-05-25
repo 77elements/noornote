@@ -16,7 +16,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { isNospressEnabled } from '../addons/nospress/index';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from '../services/SystemLogger';
 import { EventBus } from '../services/EventBus';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';

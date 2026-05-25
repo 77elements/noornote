@@ -10,7 +10,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
 import { getTag } from '../../helpers/tagUtils';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';

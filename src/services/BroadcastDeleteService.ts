@@ -11,7 +11,7 @@
  * Only SystemLog messages indicate progress (no UI, no toasts).
  */
 
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { RelayConfig } from './RelayConfig';
 
 /** Signed Nostr event structure for WebSocket broadcasting */

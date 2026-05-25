@@ -11,7 +11,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { STARTER_ACCOUNTS } from './configs/StarterAccountsConfig';
 import { npubToHex } from '../../helpers/nip19';
 

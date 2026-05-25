@@ -18,7 +18,7 @@ import { Router } from '../../services/Router';
 import { ArticleService } from '../../services/ArticleService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';

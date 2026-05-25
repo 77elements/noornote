@@ -9,7 +9,7 @@ import { NotificationItem, type NotificationItemOptions } from '../notifications
 import { EventBus } from '../../services/EventBus';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { UserProfileService } from '../../services/UserProfileService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { NotificationsCacheService } from '../../services/NotificationsCacheService';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 

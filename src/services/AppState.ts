@@ -5,7 +5,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 
 export interface SyncStatusData {
   status: 'idle' | 'syncing' | 'synced' | 'error';

@@ -26,7 +26,7 @@
 import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { DeletionService } from '../DeletionService';
 import { diagLog } from '../DiagnosticLogger';
 

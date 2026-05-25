@@ -8,7 +8,7 @@
 
 import { KeySignerClient } from '../KeySignerClient';
 import { PlatformService } from '../PlatformService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 
 export interface KeySignerAuthResult {
   success: boolean;

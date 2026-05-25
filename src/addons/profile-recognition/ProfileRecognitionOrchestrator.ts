@@ -13,7 +13,7 @@
 
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { AuthService } from '../../services/AuthService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import type { ProfileEncounterData } from './ProfileEncounterFileStorage';
 
 const NIP78_KIND = 30078;

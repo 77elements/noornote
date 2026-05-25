@@ -14,7 +14,7 @@ import type { View } from '../components/views/View';
 import type { MainLayout } from '../components/layout/MainLayout';
 import { Router } from './Router';
 import { ViewLifecycleManager } from './ViewLifecycleManager';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 
 type ViewFactory = (param?: string) => Promise<{ element: HTMLElement; view?: View } | null>;
 

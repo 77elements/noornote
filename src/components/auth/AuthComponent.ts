@@ -6,7 +6,7 @@
  */
 
 import { AuthService } from '../../services/AuthService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { Router } from '../../services/Router';
 import { PlatformService } from '../../services/PlatformService';
 import { LayoutService } from '../../services/LayoutService';

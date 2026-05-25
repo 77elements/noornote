@@ -14,7 +14,7 @@
 import { MutualChangeDetector } from './MutualChangeDetector';
 import { MutualChangeStorage } from '../lists/MutualChangeStorage';
 import { MutualCheckDebugLog } from '../lists/MutualCheckDebugLog';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { AuthService } from './AuthService';
 
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000; // 4 hours

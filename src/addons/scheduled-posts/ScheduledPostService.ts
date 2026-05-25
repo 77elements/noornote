@@ -1,5 +1,5 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 
 export interface ScheduledPost {
   id: string;

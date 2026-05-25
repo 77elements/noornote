@@ -12,7 +12,7 @@ import { DMService } from '../../services/dm/DMService';
 import type { DMMessage } from '../../services/dm/DMStore';
 import { EventBus } from '../../services/EventBus';
 import { Router } from '../../services/Router';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator';
 import { NotificationsOrchestrator } from '../../services/orchestration/NotificationsOrchestrator';

@@ -10,7 +10,7 @@
  */
 
 import { EventBus } from './EventBus';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { UserProfileService } from './UserProfileService';
 import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';

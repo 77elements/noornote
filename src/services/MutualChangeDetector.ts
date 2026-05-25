@@ -16,7 +16,7 @@ import { MutualService } from './MutualService';
 import { MutualChangeStorage, type MutualChange } from '../lists/MutualChangeStorage';
 import { MutualCheckDebugLog } from '../lists/MutualCheckDebugLog';
 import { EventBus } from './EventBus';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { AuthService } from './AuthService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 

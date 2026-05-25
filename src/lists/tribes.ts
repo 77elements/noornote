@@ -24,7 +24,7 @@ import {
   requireAuth, getCurrentUserPubkey
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from '../services/SystemLogger';
 import { EventBus } from '../services/EventBus';
 import { DeletionService } from '../services/DeletionService';
 import { diagLog } from '../services/DiagnosticLogger';

@@ -14,7 +14,7 @@ import { ModalService } from '../../services/ModalService';
 import { ProfileEditorService, type ProfileMetadata } from '../../services/ProfileEditorService';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { ImageUploader } from './ImageUploader';
 import { EventBus } from '../../services/EventBus';
 import { escapeHtml } from '../../helpers/escapeHtml';

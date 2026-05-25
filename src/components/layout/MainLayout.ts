@@ -5,7 +5,7 @@
 
 import { AuthComponent } from '../auth/AuthComponent';
 import { OnboardingComponent } from '../onboarding/OnboardingComponent';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { AccountSwitcher } from '../ui/AccountSwitcher';
 import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
 import { ThemeSwitcher } from '../ui/ThemeSwitcher';

@@ -7,7 +7,7 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { FollowStorageAdapter } from '../lists/follows';
 import { AuthService } from './AuthService';
 

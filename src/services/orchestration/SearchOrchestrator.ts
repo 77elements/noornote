@@ -6,7 +6,7 @@
 
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 
 /** NIP-50 search relay endpoints (only relays that support full-text search) */

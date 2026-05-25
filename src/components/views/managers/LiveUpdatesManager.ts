@@ -12,7 +12,7 @@
 import { ThreadOrchestrator } from '../../../services/orchestration/ThreadOrchestrator';
 import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
 import { RelayConfig } from '../../../services/RelayConfig';
-import { SystemLogger } from '../../system/SystemLogger';
+import { SystemLogger } from '../../../services/SystemLogger';
 import { EventBus } from '../../../services/EventBus';
 import { NostrTransport } from '../../../services/transport/NostrTransport';
 import { Router } from '../../../services/Router';

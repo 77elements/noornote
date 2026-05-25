@@ -10,7 +10,7 @@ import { AuthService } from '../../services/AuthService';
 import { SearchResultsView, SearchResultsConfig } from './SearchResultsView';
 import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';

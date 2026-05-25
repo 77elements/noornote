@@ -5,9 +5,9 @@
  * Local logs are filtered by current Router view
  */
 
-import { Router } from '../../services/Router';
-import { escapeHtml } from '../../helpers/escapeHtml';
-import { diagLog } from '../../services/DiagnosticLogger';
+import { Router } from './Router';
+import { escapeHtml } from '../helpers/escapeHtml';
+import { diagLog } from './DiagnosticLogger';
 
 export type LogLevel = 'info' | 'debug' | 'warn' | 'error' | 'success';
 export type LogCategory = 'global' | 'page';

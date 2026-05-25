@@ -21,7 +21,7 @@
 import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from '../transport/NostrTransport';
 import { Orchestrator } from './Orchestrator';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 
 interface SubCloser {
   close: () => void;

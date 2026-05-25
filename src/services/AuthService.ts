@@ -191,7 +191,7 @@ export class AuthService {
       this.nip46SubType = 'bunker';
       this.setSession(result.npub, result.pubkey, 'nip46', bunkerUri);
 
-      const { SystemLogger } = await import('../components/system/SystemLogger');
+      const { SystemLogger } = await import('./SystemLogger');
       const { ToastService } = await import('./ToastService');
       SystemLogger.getInstance().info('Auth', 'Login with Remote Signer: successful');
       ToastService.show('Login with Remote Signer: successful', 'success');
@@ -213,7 +213,7 @@ export class AuthService {
         this.nip46SubType = 'nostrconnect';
         this.setSession(result.npub, result.pubkey, 'nip46');
 
-        const { SystemLogger } = await import('../components/system/SystemLogger');
+        const { SystemLogger } = await import('./SystemLogger');
         const { ToastService } = await import('./ToastService');
         SystemLogger.getInstance().info('Auth', 'Login with Remote Signer (QR): successful');
         ToastService.show('Connected to remote signer', 'success');

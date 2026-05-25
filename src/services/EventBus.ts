@@ -11,7 +11,7 @@
  * - notifications:badge-update - Fired when notifications badge should update
  */
 
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 
 type EventCallback = (data?: any) => void;
 

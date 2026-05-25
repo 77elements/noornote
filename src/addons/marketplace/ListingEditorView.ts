@@ -12,7 +12,7 @@ import { Router } from '../../services/Router';
 import { ListingService } from './ListingService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../../components/post/RelaySelector';
 import { PostEditorToolbar } from '../../components/post/PostEditorToolbar';
 import { MentionAutocomplete } from '../../components/mentions/MentionAutocomplete';

@@ -17,7 +17,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { calculateEventHash, verifyEventSignature } from '../NostrToolsAdapter';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 
 export interface VerificationResult {
   /** True if event is cryptographically valid */

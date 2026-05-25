@@ -11,7 +11,7 @@ import type { NWCTransaction } from '../../services/NWCService';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { UserProfileService } from '../../services/UserProfileService';
 import { KeychainStorage } from '../../services/KeychainStorage';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';

@@ -26,7 +26,7 @@ window.addEventListener('unhandledrejection', (event) => {
 import { App } from './App';
 import { AuthService } from './services/AuthService';
 import { UserProfileService } from './services/UserProfileService';
-import { SystemLogger } from './components/system/SystemLogger';
+import { SystemLogger } from './services/SystemLogger';
 import { CrashLogger } from './services/CrashLogger';
 import './styles/main.scss';
 import './services/AuthStateManager'; // Initialize AuthStateManager and window.isLoggedIn()

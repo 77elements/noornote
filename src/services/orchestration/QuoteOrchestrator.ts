@@ -20,7 +20,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { LongFormOrchestrator } from './LongFormOrchestrator';
 import { NoteService } from '../NoteService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 
 export class QuoteOrchestrator extends Orchestrator {

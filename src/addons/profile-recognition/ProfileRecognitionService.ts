@@ -18,7 +18,7 @@
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ProfileEncounterFileStorage, type ProfileEncounter } from './ProfileEncounterFileStorage';
 import { EventBus } from '../../services/EventBus';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { FollowStorageAdapter } from '../../lists/follows';
 import { UserProfileService } from '../../services/UserProfileService';
 import { ProfileRecognitionOrchestrator } from './ProfileRecognitionOrchestrator';

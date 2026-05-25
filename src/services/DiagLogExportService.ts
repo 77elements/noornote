@@ -9,7 +9,7 @@
 
 import { zipSync } from 'fflate';
 import { PlatformService } from './PlatformService';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 
 const logger = SystemLogger.getInstance();
 const platform = PlatformService.getInstance();

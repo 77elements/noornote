@@ -6,7 +6,7 @@
  * @purpose Reduce code duplication in afterRelaySync callbacks
  */
 
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from '../services/SystemLogger';
 
 export interface FolderService {
   getFolders(): { id: string; name: string }[];

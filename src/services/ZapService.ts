@@ -15,7 +15,7 @@ import { RelayConfig } from './RelayConfig';
 import { NostrTransport } from './transport/NostrTransport';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { OutboundRelaysOrchestrator } from './orchestration/OutboundRelaysOrchestrator';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
 import { PlatformService } from './PlatformService';

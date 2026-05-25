@@ -19,7 +19,7 @@ import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { RelayConfig } from '../RelayConfig';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 
 export interface Profile {

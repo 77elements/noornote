@@ -20,7 +20,7 @@ import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { MutualChangeStorage } from '../../lists/MutualChangeStorage';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { AuthService } from '../AuthService';
 import { EventBus } from '../EventBus';
 import { decodeNip19 } from '../NostrToolsAdapter';

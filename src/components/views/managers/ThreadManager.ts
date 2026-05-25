@@ -11,7 +11,7 @@ import { NoteUI } from '../../ui/NoteUI';
 import { ThreadOrchestrator } from '../../../services/orchestration/ThreadOrchestrator';
 import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
 import { AuthService } from '../../../services/AuthService';
-import { SystemLogger } from '../../system/SystemLogger';
+import { SystemLogger } from '../../../services/SystemLogger';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { Router } from '../../../services/Router';

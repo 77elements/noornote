@@ -11,7 +11,7 @@
  * - Manual logCrash() calls
  */
 
-import { SystemLogger, type LogEntry } from '../components/system/SystemLogger';
+import { SystemLogger, type LogEntry } from './SystemLogger';
 import { PlatformService } from './PlatformService';
 import { diagLog } from './DiagnosticLogger';
 

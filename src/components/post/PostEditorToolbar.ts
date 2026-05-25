@@ -9,7 +9,7 @@
  */
 
 import { MediaUploadService } from '../../services/MediaUploadService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { ModalService } from '../../services/ModalService';
 import { EmojiPicker, type CustomEmojiEntry } from '../emoji/EmojiPicker';
 import { isCustomEmojisEnabled } from '../../addons/custom-emojis/index';

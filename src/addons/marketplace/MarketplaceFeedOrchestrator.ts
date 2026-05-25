@@ -10,7 +10,7 @@ import { Orchestrator } from '../../services/orchestration/Orchestrator';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { parseListingMetadata } from './marketplace-helpers';
 import { RelayConfig } from '../../services/RelayConfig';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { getTag } from '../../helpers/tagUtils';
 
 export interface ListingFeedResult {

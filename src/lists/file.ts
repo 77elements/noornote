@@ -7,7 +7,7 @@
  * Per-account isolation: Files are stored in user-specific directories.
  */
 
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from '../services/SystemLogger';
 import { PlatformService } from '../services/PlatformService';
 import { AuthService } from '../services/AuthService';
 

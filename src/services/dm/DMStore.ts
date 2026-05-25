@@ -7,7 +7,7 @@
  * @used-by DMService
  */
 
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 
 export type DMFormat = 'nip17' | 'legacy';
 

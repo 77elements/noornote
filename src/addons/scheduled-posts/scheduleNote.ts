@@ -12,7 +12,7 @@
 
 import type { PollData } from '../../components/poll/PollCreator';
 import { AuthService } from '../../services/AuthService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';

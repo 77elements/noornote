@@ -21,7 +21,7 @@ import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { NoteService } from '../NoteService';
 import { AuthService } from '../AuthService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { LRUCache, getCacheSize } from '../../helpers/LRUCache';
 

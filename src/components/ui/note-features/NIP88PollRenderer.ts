@@ -11,7 +11,7 @@ import type { PollData } from '../../poll/PollCreator';
 import { PollOrchestrator } from '../../../services/orchestration/PollOrchestrator';
 import { PollVoteService } from '../../../services/PollVoteService';
 import { AuthService } from '../../../services/AuthService';
-import { SystemLogger } from '../../system/SystemLogger';
+import { SystemLogger } from '../../../services/SystemLogger';
 import { EventBus } from '../../../services/EventBus';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { escapeHtml } from '../../../helpers/escapeHtml';

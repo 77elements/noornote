@@ -12,7 +12,7 @@ import type { NDKCacheAdapter, NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { NDKCacheAdapterDexieOptions } from '@nostr-dev-kit/ndk-cache-dexie';
 import { RelayConfig } from '../RelayConfig';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { EventBus } from '../EventBus';
 import { PlatformService } from '../PlatformService';
 import { SignatureVerificationService } from '../security/SignatureVerificationService';

@@ -11,7 +11,7 @@
  */
 
 import { ToastService } from './ToastService';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { CrashLogger } from './CrashLogger';
 import { diagLog } from './DiagnosticLogger';
 

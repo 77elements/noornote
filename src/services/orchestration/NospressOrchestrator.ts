@@ -34,7 +34,7 @@ import {
   isPageFooterSlug,
   extractPagePart,
 } from '../../addons/nospress/blocks/pageIndex';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { Nip78ResourceOrchestrator } from './Nip78ResourceOrchestrator';
 

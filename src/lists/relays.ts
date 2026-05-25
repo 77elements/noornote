@@ -9,7 +9,7 @@ import type { NostrEvent, NDKFilter } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from '../services/transport/NostrTransport';
 import { RelayConfig } from '../services/RelayConfig';
 import { AuthService } from '../services/AuthService';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from '../services/SystemLogger';
 import { diagLog } from '../services/DiagnosticLogger';
 
 const logger = SystemLogger.getInstance();

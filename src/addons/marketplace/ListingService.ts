@@ -9,7 +9,7 @@
 
 import { AuthService } from '../../services/AuthService';
 import { NostrTransport } from '../../services/transport/NostrTransport';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';

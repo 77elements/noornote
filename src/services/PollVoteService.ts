@@ -7,7 +7,7 @@
 
 import { AuthService } from './AuthService';
 import { NostrTransport } from './transport/NostrTransport';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 
 export interface VoteOptions {
   /** Poll event ID to vote on */

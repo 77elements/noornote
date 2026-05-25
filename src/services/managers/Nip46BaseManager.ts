@@ -12,7 +12,7 @@
  */
 
 import { NDKNip46Signer, NDKUser } from '@nostr-dev-kit/ndk';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 
 export const NIP46_STORAGE_KEY = 'noornote_nip46_payload';
 

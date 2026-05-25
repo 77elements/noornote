@@ -4,7 +4,7 @@
  */
 
 import { NWCService } from '../../services/NWCService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';

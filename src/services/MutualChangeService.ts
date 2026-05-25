@@ -16,7 +16,7 @@ import { EventBus } from './EventBus';
 import { MutualChangeStorage } from '../lists/MutualChangeStorage';
 import { MutualChangeScheduler } from './MutualChangeScheduler';
 import { MutualChangeDetector } from './MutualChangeDetector';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 
 const DELAYED_START_MS = 3 * 60 * 1000; // 3 minutes
 

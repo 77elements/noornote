@@ -14,7 +14,7 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { decodeNip19, nip04, finalizeEvent, getPublicKeyFromPrivate, hexToBytes } from './NostrToolsAdapter';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { ErrorService } from './ErrorService';
 import { ToastService } from './ToastService';
 import { KeychainStorage } from './KeychainStorage';

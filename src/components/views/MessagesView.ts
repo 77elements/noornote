@@ -13,7 +13,7 @@ import type { DMConversation } from '../../services/dm/DMStore';
 import { UserProfileService } from '../../services/UserProfileService';
 import { EventBus } from '../../services/EventBus';
 import { Router } from '../../services/Router';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { ToastService } from '../../services/ToastService';

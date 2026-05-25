@@ -10,7 +10,7 @@ import { UserProfileService } from '../../services/UserProfileService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 
 export interface ReportModalOptions {
   /** User pubkey being reported */

@@ -11,7 +11,7 @@
  */
 
 import { MediaUploadService } from '../../services/MediaUploadService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { ToastService } from '../../services/ToastService';
 
 export interface ImageUploaderConfig {

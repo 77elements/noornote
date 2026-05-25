@@ -8,7 +8,7 @@
  * Usage: Extend this class and implement abstract methods
  */
 
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { PlatformService } from './PlatformService';
 import { AuthService } from './AuthService';
 

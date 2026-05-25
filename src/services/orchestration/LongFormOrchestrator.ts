@@ -19,7 +19,7 @@ import { decodeNip19 } from '../NostrToolsAdapter';
 import { Orchestrator } from './Orchestrator';
 import { NostrTransport } from '../transport/NostrTransport';
 import { OutboundRelaysOrchestrator } from './OutboundRelaysOrchestrator';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { getTag } from '../../helpers/tagUtils';
 
 export interface AddressableEventData {

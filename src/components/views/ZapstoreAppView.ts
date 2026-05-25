@@ -7,7 +7,7 @@
 import { View } from './View';
 import { AuthService } from '../../services/AuthService';
 import { NostrTransport } from '../../services/transport/NostrTransport';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { PlatformService } from '../../services/PlatformService';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';

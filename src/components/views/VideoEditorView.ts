@@ -17,7 +17,7 @@ import { VideoService } from '../../services/VideoService';
 import type { VideoOptions } from '../../services/VideoService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { MediaUploadService } from '../../services/MediaUploadService';

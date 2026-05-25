@@ -15,7 +15,7 @@ import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
 import { EventBus } from '../../services/EventBus';
 import { AuthService } from '../../services/AuthService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { isTribesEnabled } from '../../addons/tribes/index';
 
 type TabType = 'timeline' | 'tribe';

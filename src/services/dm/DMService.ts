@@ -20,7 +20,7 @@ import { AuthService } from '../AuthService';
 import { RelayConfig } from '../RelayConfig';
 import { DMStore, type DMMessage, type DMConversation } from './DMStore';
 import { EventBus } from '../EventBus';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { FollowCheckService } from '../FollowCheckService';
 import { MuteOrchestrator } from '../../lists/mutes';

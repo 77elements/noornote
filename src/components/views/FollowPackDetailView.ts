@@ -9,7 +9,7 @@ import { Router } from '../../services/Router';
 import { AuthService } from '../../services/AuthService';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { UserProfileService } from '../../services/UserProfileService';
-import { SystemLogger } from '../system/SystemLogger';
+import { SystemLogger } from '../../services/SystemLogger';
 import { EventBus } from '../../services/EventBus';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';

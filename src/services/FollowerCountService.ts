@@ -8,7 +8,7 @@
  */
 
 import { RelayConfig } from './RelayConfig';
-import { SystemLogger } from '../components/system/SystemLogger';
+import { SystemLogger } from './SystemLogger';
 import { SignatureVerificationService } from './security/SignatureVerificationService';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 

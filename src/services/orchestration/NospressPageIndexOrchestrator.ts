@@ -12,7 +12,7 @@
 
 import { AuthService } from '../AuthService';
 import { NospressPageIndexService } from '../NospressPageIndexService';
-import { SystemLogger } from '../../components/system/SystemLogger';
+import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { Nip78ResourceOrchestrator } from './Nip78ResourceOrchestrator';
 import {
