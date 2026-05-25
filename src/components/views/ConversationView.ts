@@ -8,7 +8,7 @@
  */
 
 import { View } from './View';
-import { DMService } from '../../services/dm/DMService';
+import type { DMsModuleApi } from '../../modules/dms/contracts';
 import type { DMMessage } from '../../services/dm/DMStore';
 import { EventBus } from '../../services/EventBus';
 import { Router } from '../../services/Router';
@@ -29,7 +29,7 @@ import { npubToHex } from '../../helpers/nip19';
 
 export class ConversationView extends View {
   private container: HTMLElement;
-  private dmService: DMService;
+  private dmsApi: DMsModuleApi | null;
   private eventBus: EventBus;
   private router: Router;
   private systemLogger: SystemLogger;
@@ -50,7 +50,7 @@ export class ConversationView extends View {
     this.partnerPubkey = npubToHex(partnerPubkey) || partnerPubkey;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--conversation';
-    this.dmService = DMService.getInstance();
+    this.dmsApi = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
     this.eventBus = EventBus.getInstance();
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -303,10 +303,10 @@ export class ConversationView extends View {
   private async loadConversation(): Promise<void> {
     try {
       // Mark conversation as read
-      await this.dmService.markAsRead(this.partnerPubkey);
+      await this.dmsApi?.markAsRead(this.partnerPubkey);
 
       // Load messages and sort oldest first (newest at bottom)
-      this.messages = await this.dmService.getMessages(this.partnerPubkey);
+      this.messages = await this.dmsApi?.getMessages(this.partnerPubkey) ?? [];
       this.messages.sort((a, b) => a.createdAt - b.createdAt);
 
       // Render messages and scroll to bottom
@@ -416,7 +416,7 @@ export class ConversationView extends View {
     sendBtn.disabled = true;
 
     try {
-      const success = await this.dmService.sendMessage(this.partnerPubkey, content);
+      const success = await this.dmsApi?.sendMessage(this.partnerPubkey, content) ?? false;
 
       if (success) {
         // Clear input
