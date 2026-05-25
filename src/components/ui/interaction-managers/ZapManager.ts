@@ -8,7 +8,8 @@
 
 import { AuthGuard } from '../../../services/AuthGuard';
 import { AuthService } from '../../../services/AuthService';
-import { ZapService } from '../../../services/ZapService';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ZapsModuleApi } from '../../../modules/zaps/contracts';
 import { ToastService } from '../../../services/ToastService';
 import { ReactionsOrchestrator } from '../../../services/orchestration/ReactionsOrchestrator';
 import { EventBus } from '../../../services/EventBus';
@@ -30,7 +31,7 @@ export interface ZapManagerConfig {
 
 export class ZapManager {
   private config: ZapManagerConfig;
-  private zapService: ZapService;
+  private zapsApi: ZapsModuleApi | null;
   private authService: AuthService;
   private reactionsOrchestrator: ReactionsOrchestrator;
   private eventBus: EventBus;
@@ -42,7 +43,7 @@ export class ZapManager {
 
   constructor(config: ZapManagerConfig) {
     this.config = config;
-    this.zapService = ZapService.getInstance();
+    this.zapsApi = ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
     this.authService = AuthService.getInstance();
     this.reactionsOrchestrator = ReactionsOrchestrator.getInstance();
     this.eventBus = EventBus.getInstance();
@@ -76,7 +77,7 @@ export class ZapManager {
       const currentUser = this.authService.getCurrentUser();
       if (!currentUser) return;
 
-      const zapAmount = this.zapService.getUserZapAmount(this.config.noteId);
+      const zapAmount = this.zapsApi?.getUserZapAmount(this.config.noteId) ?? 0;
 
       if (zapAmount > 0) {
         this.zappedAmount = zapAmount;
@@ -184,21 +185,20 @@ export class ZapManager {
     try {
       this.updateButtonLoading(true);
 
-      const result = await this.zapService.sendQuickZap(
+      const result = await this.zapsApi?.sendQuickZap(
         this.config.noteId,
         this.config.authorPubkey,
         this.config.articleEventId
-      );
+      ) ?? { success: false };
 
       this.updateButtonLoading(false);
 
-      if (result.success && result.amount) {
-        this.zappedAmount = this.zapService.getUserZapAmount(this.config.noteId);
+      if (result.success) {
+        this.zappedAmount = this.zapsApi?.getUserZapAmount(this.config.noteId) ?? 0;
         this.updateButtonState(true);
 
-        // Update stats
         if (this.config.onStatsUpdate) {
-          this.config.onStatsUpdate(result.amount);
+          this.config.onStatsUpdate(this.zappedAmount);
         }
 
         // Emit event for ZapsList refresh
@@ -223,10 +223,9 @@ export class ZapManager {
       noteId: this.config.noteId,
       authorPubkey: this.config.authorPubkey,
       onZapSent: (amount: number) => {
-        this.zappedAmount = this.zapService.getUserZapAmount(this.config.noteId);
+        this.zappedAmount = this.zapsApi?.getUserZapAmount(this.config.noteId) ?? 0;
         this.updateButtonState(true);
 
-        // Update stats
         if (this.config.onStatsUpdate) {
           this.config.onStatsUpdate(amount);
         }

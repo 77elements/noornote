@@ -5,7 +5,8 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { ZapService } from '../../services/ZapService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ZapsModuleApi } from '../../modules/zaps/contracts';
 import { NWCService } from '../../services/NWCService';
 import { ToastService } from '../../services/ToastService';
 import { PlatformService } from '../../services/PlatformService';
@@ -41,7 +42,7 @@ export interface ZapModalOptions {
 
 export class ZapModal {
   private modalService: ModalService;
-  private zapService: ZapService;
+  private zapsApi: ZapsModuleApi | null;
   private nwcService: NWCService;
   private systemLogger: SystemLogger;
   private currentOptions: ZapModalOptions | null = null;
@@ -51,7 +52,7 @@ export class ZapModal {
 
   constructor(options: ZapModalOptions) {
     this.modalService = ModalService.getInstance();
-    this.zapService = ZapService.getInstance();
+    this.zapsApi = ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
     this.nwcService = NWCService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.currentOptions = options;
@@ -279,16 +280,15 @@ export class ZapModal {
 
     try {
       // Send custom zap via ZapService
-      const result = await this.zapService.sendCustomZap(
+      const result = await this.zapsApi?.sendCustomZap(
         this.currentOptions.noteId,
         this.currentOptions.authorPubkey,
         amount,
         comment,
         this.currentOptions.articleEventId,
         this.isAnonymous
-      );
+      ) ?? { success: false };
 
-      // Hide loading state
       this.isSending = false;
       sendBtn.disabled = false;
       sendBtn.classList.remove('btn--sending');

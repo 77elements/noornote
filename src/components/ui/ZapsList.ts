@@ -7,7 +7,8 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
-import { ZapService } from '../../services/ZapService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ZapsModuleApi } from '../../modules/zaps/contracts';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { extractZapperPubkey, extractZapMessage, getZapAmountSats, formatNumberWithCommas, isZapAnonymous } from '../../helpers/zapUtils';
 import { UserHoverCard } from './UserHoverCard';
@@ -27,13 +28,13 @@ export class ZapsList {
   private zapEvents: NostrEvent[];
   private userProfileService: UserProfileService;
   private authService: AuthService;
-  private zapService: ZapService;
+  private zapsApi: ZapsModuleApi | null;
 
   constructor(zapEvents: NostrEvent[]) {
     this.zapEvents = zapEvents;
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
-    this.zapService = ZapService.getInstance();
+    this.zapsApi = ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
     this.element = this.createElement();
   }
 
@@ -51,7 +52,7 @@ export class ZapsList {
         // from anonymous zaps sent by others. Only the sender's own browser
         // can resolve this — other viewers see a generic lock badge.
         const bolt11 = event.tags.find(t => t[0] === 'bolt11')?.[1];
-        const isOwn = !!bolt11 && this.zapService.isOwnAnonZapInvoice(bolt11);
+        const isOwn = !!bolt11 && (this.zapsApi?.isOwnAnonZapInvoice(bolt11) ?? false);
 
         if (isOwn) {
           const currentUser = this.authService.getCurrentUser();
