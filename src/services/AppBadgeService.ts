@@ -12,6 +12,9 @@
 import { EventBus } from './EventBus';
 import { PlatformService } from './PlatformService';
 import { AuthService } from './AuthService';
+import { ModuleLoader } from '../core/ModuleLoader';
+import type { NotificationsModuleApi } from '../modules/notifications/contracts';
+import type { DMsModuleApi } from '../modules/dms/contracts';
 
 export class AppBadgeService {
   private static instance: AppBadgeService;
@@ -22,10 +25,6 @@ export class AppBadgeService {
   private originalTitle: string;
   private badgeApi: any = null;
 
-  // Lazy-loaded deps
-  private notificationsOrch: any = null;
-  private dmService: any = null;
-  private depsLoaded = false;
 
   private constructor() {
     this.eventBus = EventBus.getInstance();
@@ -50,19 +49,6 @@ export class AppBadgeService {
     return AppBadgeService.instance;
   }
 
-  /**
-   * Lazy-load heavy dependencies (NotificationsOrchestrator, DMService)
-   */
-  private async loadDeps(): Promise<void> {
-    if (this.depsLoaded) return;
-    const [{ NotificationsOrchestrator }, { DMService }] = await Promise.all([
-      import('./orchestration/NotificationsOrchestrator'),
-      import('./dm/DMService')
-    ]);
-    this.notificationsOrch = NotificationsOrchestrator.getInstance();
-    this.dmService = DMService.getInstance();
-    this.depsLoaded = true;
-  }
 
   /**
    * Initialize badge API (Electron only)
@@ -113,12 +99,14 @@ export class AppBadgeService {
       return;
     }
 
-    await this.loadDeps();
+    const ml = ModuleLoader.getInstance();
+    const notifApi = ml.getApi<NotificationsModuleApi>('notifications');
+    const dmsApi = ml.getApi<DMsModuleApi>('dms');
 
-    const notificationCount = this.notificationsOrch.getUnreadCount();
+    const notificationCount = notifApi?.getUnreadCount() ?? 0;
     let dmCount = 0;
     try {
-      dmCount = await this.dmService.getUnreadCount();
+      dmCount = await (dmsApi?.getUnreadCount() ?? Promise.resolve(0));
     } catch {
       // DM count not available
     }
