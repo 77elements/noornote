@@ -124,6 +124,11 @@ export class ModuleLoader {
       void this.handleLogout();
     });
 
+    window.addEventListener('router:navigate', (event: any) => {
+      const path = event.detail?.path;
+      if (path) this.handleRouteChange(path);
+    });
+
     diagLog('system', 'module_boot_scan', {
       registered: Array.from(this.entries.keys()),
     });
