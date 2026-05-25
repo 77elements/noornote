@@ -8,20 +8,21 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { DMService } from '../../services/dm/DMService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { DMsModuleApi } from '../../modules/dms/contracts';
 import { ToastService } from '../../services/ToastService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { UserSearchInput } from '../user-search/UserSearchInput';
 
 export class DMComposeModal {
   private modalService: ModalService;
-  private dmService: DMService;
+  private dmsApi: DMsModuleApi | null;
   private userSearchInput: UserSearchInput | null = null;
   private isSending: boolean = false;
 
   constructor() {
     this.modalService = ModalService.getInstance();
-    this.dmService = DMService.getInstance();
+    this.dmsApi = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
   }
 
   /**
@@ -181,7 +182,7 @@ export class DMComposeModal {
     this.setLoadingState(sendBtn, true);
 
     try {
-      const success = await this.dmService.sendMessage(recipientPubkey, content);
+      const success = await this.dmsApi?.sendMessage(recipientPubkey, content) ?? false;
 
       if (success) {
         ToastService.show('Message sent', 'success');
