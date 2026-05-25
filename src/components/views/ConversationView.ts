@@ -15,7 +15,8 @@ import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator';
-import { NotificationsOrchestrator } from '../../services/orchestration/NotificationsOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { ToastService } from '../../services/ToastService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ContentProcessor } from '../../services/ContentProcessor';
@@ -279,10 +280,10 @@ export class ConversationView extends View {
 
       // Refresh muted users in orchestrators
       const feedOrch = FeedOrchestrator.getInstance();
-      const notifOrch = NotificationsOrchestrator.getInstance();
+      const notifApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
       await Promise.all([
         feedOrch.refreshMutedUsers(),
-        notifOrch.refreshMutedUsers()
+        notifApi?.refreshMutedUsers() ?? Promise.resolve()
       ]);
 
       // Notify that mute list was updated
