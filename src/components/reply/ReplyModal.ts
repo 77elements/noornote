@@ -21,7 +21,8 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { PostService } from '../../services/PostService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { RelayConfig } from '../../services/RelayConfig';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AuthService } from '../../services/AuthService';
@@ -47,7 +48,7 @@ import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHand
 export class ReplyModal {
   private static instance: ReplyModal;
   private modalService: ModalService;
-  private postService: PostService;
+  private postsApi: PostsModuleApi | null;
   private relayConfig: RelayConfig;
   private authService: AuthService;
   private systemLogger: SystemLogger;
@@ -77,7 +78,7 @@ export class ReplyModal {
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.postService = PostService.getInstance();
+    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -600,7 +601,7 @@ export class ReplyModal {
     try {
       this.systemLogger.info('ReplyModal', `Calling PostService.createReply...`);
 
-      const replyEvent = await this.postService.createReply({
+      const replyEvent = await this.postsApi?.createReply({
         content: this.content,
         parentEvent: this.parentEvent,
         relays: Array.from(this.selectedRelays),

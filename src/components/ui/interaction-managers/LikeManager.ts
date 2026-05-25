@@ -7,7 +7,8 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { ReactionService } from '../../../services/ReactionService';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { ToastService } from '../../../services/ToastService';
 import { EmojiPicker, type CustomEmojiEntry } from '../../emoji/EmojiPicker';
@@ -25,12 +26,12 @@ export interface LikeManagerConfig extends BaseInteractionConfig {
 }
 
 export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
-  private reactionService: ReactionService;
+  private reactionsApi: ReactionsModuleApi | null;
   private emojiPicker: EmojiPicker | null = null;
 
   constructor(config: LikeManagerConfig) {
     super(config);
-    this.reactionService = ReactionService.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
 
   /**
@@ -38,7 +39,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
    */
   public async checkInteractionStatus(): Promise<void> {
     try {
-      this.hasInteracted = await this.reactionService.hasUserLiked(this.config.noteId);
+      this.hasInteracted = await this.reactionsApi?.hasUserLiked(this.config.noteId) ?? false;
       if (this.hasInteracted) {
         this.updateButtonState(true);
       }
@@ -148,7 +149,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         return;
       }
 
-      const result = await this.reactionService.publishReaction({
+      const result = await this.reactionsApi?.publishReaction({
         noteId: this.config.noteId,
         authorPubkey: this.config.authorPubkey,
         emoji,
@@ -156,7 +157,7 @@ export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
         ...(this.config.originalEvent ? { targetEvent: this.config.originalEvent } : {}),
       });
 
-      if (!result.success) {
+      if (!result?.success) {
         // Revert optimistic update on failure
         this.hasInteracted = false;
         this.updateButtonState(false);

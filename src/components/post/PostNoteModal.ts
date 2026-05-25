@@ -12,7 +12,8 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { PostService } from '../../services/PostService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { RelayConfig } from '../../services/RelayConfig';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AuthService } from '../../services/AuthService';
@@ -47,7 +48,7 @@ export interface HighlightSource {
 export class PostNoteModal {
   private static instance: PostNoteModal;
   private modalService: ModalService;
-  private postService: PostService;
+  private postsApi: PostsModuleApi | null;
   private relayConfig: RelayConfig;
   private authService: AuthService;
   private systemLogger: SystemLogger;
@@ -77,7 +78,7 @@ export class PostNoteModal {
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.postService = PostService.getInstance();
+    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -692,14 +693,14 @@ export class PostNoteModal {
           scheduledAt: this.scheduledAt,
         });
       } else {
-        success = await this.postService.createPost({
+        success = await this.postsApi?.createPost({
           content: this.content,
           relays: Array.from(this.selectedRelays),
           contentWarning: this.isNSFW,
           ...(this.pollData ? { pollData: this.pollData } : {}),
           ...(quotedEvent ? { quotedEvent } : {}),
           ...(quotedArticle ? { quotedArticle } : {})
-        });
+        }) ?? false;
       }
 
       if (success) {
@@ -742,7 +743,7 @@ export class PostNoteModal {
     }
 
     try {
-      const success = await this.postService.createHighlight({
+      const success = await this.postsApi?.createHighlight({
         highlightedText: this.highlightSource.selectedText,
         comment: this.content,
         sourceEvent: this.highlightSource.event,

@@ -6,7 +6,8 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { ReactionService } from '../../services/ReactionService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AuthGuard } from '../../services/AuthGuard';
 import { resolveReactionEmoji } from '../../helpers/formatCustomEmojis';
 
@@ -21,7 +22,7 @@ export class LikesList {
   private reactionEvents: NostrEvent[];
   private noteId: string;
   private authorPubkey: string;
-  private reactionService: ReactionService;
+  private reactionsApi: ReactionsModuleApi | null;
   /** Original reacted-to event — required for NIP-25-compliant reactions on
    *  addressable events (long-form articles etc.) so the e-tag carries the
    *  hex event-id and `a` + `k` tags are added. */
@@ -31,7 +32,7 @@ export class LikesList {
     this.reactionEvents = reactionEvents;
     this.noteId = noteId;
     this.authorPubkey = authorPubkey;
-    this.reactionService = ReactionService.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     if (originalEvent) this.originalEvent = originalEvent;
   }
 
@@ -108,7 +109,7 @@ export class LikesList {
       badge.type = 'button';
 
       // Check if user has already reacted with this emoji
-      const hasReacted = await this.reactionService.hasUserLikedWithEmoji(this.noteId, group.emoji);
+      const hasReacted = await this.reactionsApi?.hasUserLikedWithEmoji(this.noteId, group.emoji);
       if (hasReacted) {
         badge.classList.add('likes-list__badge--active');
         badge.disabled = true; // Disable if user already reacted
@@ -145,7 +146,7 @@ export class LikesList {
     }
 
     // Check if already reacted with this emoji (before disabling)
-    const hasReacted = await this.reactionService.hasUserLikedWithEmoji(this.noteId, emoji);
+    const hasReacted = await this.reactionsApi?.hasUserLikedWithEmoji(this.noteId, emoji);
     if (hasReacted) {
       return; // Already reacted, do nothing
     }
@@ -155,14 +156,14 @@ export class LikesList {
 
     // Publish reaction — ReactionService resolves own write-relays
     // and the author's NIP-65 outbox internally (Amethyst pattern).
-    const result = await this.reactionService.publishReaction({
+    const result = await this.reactionsApi?.publishReaction({
       noteId: this.noteId,
       authorPubkey: this.authorPubkey,
       emoji,
       ...(this.originalEvent ? { targetEvent: this.originalEvent } : {}),
     });
 
-    if (result.success) {
+    if (result?.success) {
       // Mark badge as active
       badge.classList.add('likes-list__badge--active');
 
