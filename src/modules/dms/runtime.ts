@@ -27,9 +27,12 @@ export class DMsRuntime implements ModuleRuntime<DMsModuleApi> {
       refreshSubscriptions: () => svc?.refreshSubscriptions() ?? Promise.resolve(),
       sendMessage: (recipientPubkey, content, replyTo) => svc?.sendMessage(recipientPubkey, content, replyTo) ?? Promise.resolve(false),
       getConversations: (limit, offset) => svc?.getConversations(limit, offset) ?? Promise.resolve([]),
+      getConversationsFiltered: (filter, limit, offset) => svc?.getConversationsFiltered(filter, limit, offset) ?? Promise.resolve([]),
       getMessages: (partnerPubkey, limit, before) => svc?.getMessages(partnerPubkey, limit, before) ?? Promise.resolve([]),
+      getFetchProgress: () => svc?.getFetchProgress() ?? { current: 0, total: 0, isLoading: false },
       markAsRead: (partnerPubkey) => svc?.markAsRead(partnerPubkey) ?? Promise.resolve(),
       markAllAsRead: () => svc?.markAllAsRead() ?? Promise.resolve(),
+      markAllAsUnread: () => svc?.markAllAsUnread() ?? Promise.resolve(),
       start: () => svc?.start() ?? Promise.resolve(),
       stop: () => svc?.stop(),
     };

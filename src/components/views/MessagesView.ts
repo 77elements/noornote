@@ -8,7 +8,8 @@
  */
 
 import { View } from './View';
-import { DMService } from '../../services/dm/DMService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { DMsModuleApi } from '../../modules/dms/contracts';
 import type { DMConversation } from '../../services/dm/DMStore';
 import { UserProfileService } from '../../services/UserProfileService';
 import { EventBus } from '../../services/EventBus';
@@ -29,7 +30,7 @@ type TabFilter = 'known' | 'unknown';
 
 export class MessagesView extends View {
   private container: HTMLElement;
-  private dmService: DMService;
+  private dmsApi: DMsModuleApi | null;
   private userProfileService: UserProfileService;
   private eventBus: EventBus;
   private router: Router;
@@ -52,7 +53,7 @@ export class MessagesView extends View {
 
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--messages';
-    this.dmService = DMService.getInstance();
+    this.dmsApi = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
     this.userProfileService = UserProfileService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.router = Router.getInstance();
@@ -224,7 +225,7 @@ export class MessagesView extends View {
 
     // Start DM service - this triggers fetchHistoricalMessages
     // which emits dm:fetch-progress and dm:fetch-complete events
-    await this.dmService.start();
+    await this.dmsApi?.start();
   }
 
   /**
@@ -261,7 +262,7 @@ export class MessagesView extends View {
    * Update unread badge counts
    */
   private async updateBadgeCounts(): Promise<void> {
-    const counts = await this.dmService.getUnreadCountsSplit();
+    const counts = await this.dmsApi?.getUnreadCountsSplit() ?? { known: 0, unknown: 0, total: 0 };
     this.updateBadge('known', counts.known);
     this.updateBadge('unknown', counts.unknown);
   }
@@ -322,22 +323,19 @@ export class MessagesView extends View {
       }
 
       // Get batch of conversations filtered by tab
-      const batch = await this.dmService.getConversationsFiltered(
+      const batch = await this.dmsApi?.getConversationsFiltered(
         this.activeTab,
         BATCH_SIZE,
         this.currentOffset
-      );
+      ) ?? [];
 
-      // Check if we have more
       if (batch.length < BATCH_SIZE) {
         this.hasMoreConversations = false;
       }
 
-      // Add to our list
       this.conversations.push(...batch);
       this.currentOffset += batch.length;
 
-      // Render the batch
       await this.renderConversationsBatch(batch, isInitialLoad, list as HTMLElement);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -469,7 +467,7 @@ export class MessagesView extends View {
    */
   private openConversation(partnerPubkey: string): void {
     // Mark as read
-    this.dmService.markAsRead(partnerPubkey);
+    this.dmsApi?.markAsRead(partnerPubkey);
 
     // Navigate to conversation view
     this.router.navigate(`/messages/${partnerPubkey}`);
@@ -615,13 +613,13 @@ export class MessagesView extends View {
   private async handleMenuAction(action: string): Promise<void> {
     switch (action) {
       case 'mark-all-read':
-        await this.dmService.markAllAsRead();
+        await this.dmsApi?.markAllAsRead();
         // Immediately update UI (don't wait for event)
         await this.refreshConversationsQuiet();
         ToastService.show('All messages marked as read', 'success');
         break;
       case 'mark-all-unread':
-        await this.dmService.markAllAsUnread();
+        await this.dmsApi?.markAllAsUnread();
         // Immediately update UI (don't wait for event)
         await this.refreshConversationsQuiet();
         ToastService.show('All messages marked as unread', 'success');
