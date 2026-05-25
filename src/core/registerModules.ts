@@ -28,4 +28,16 @@ export function registerCoreModules(): void {
     activation: 'login',
     load: () => import('../modules/zaps/runtime').then(m => m.default),
   });
+
+  loader.register({
+    id: 'posts',
+    activation: 'login',
+    load: () => import('../modules/posts/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'media',
+    activation: 'manual',
+    load: () => import('../modules/media/runtime').then(m => m.default),
+  });
 }
