@@ -5,7 +5,8 @@
  */
 
 import { View } from '../views/View';
-import { FeedOrchestrator, type NewNotesInfo } from '../../services/orchestration/FeedOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { TimelineModuleApi, NewNotesInfo, FeedLoadRequest } from '../../modules/timeline/contracts';
 import { UserService } from '../../services/UserService';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthService } from '../../services/AuthService';
@@ -26,7 +27,7 @@ import { isMarketplaceEnabled, isTimelineListingsEnabled } from '../../addons/ma
 
 export class Timeline extends View {
   private element: HTMLElement;
-  private feedOrchestrator: FeedOrchestrator;
+  private timelineApi: TimelineModuleApi | null;
   private userService: UserService;
   private relayConfig: RelayConfig;
   private authService: AuthService;
@@ -70,7 +71,7 @@ export class Timeline extends View {
     if (tribePubkeys !== undefined) {
       this.tribePubkeys = tribePubkeys;
     }
-    this.feedOrchestrator = FeedOrchestrator.getInstance();
+    this.timelineApi = ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline');
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
@@ -82,7 +83,7 @@ export class Timeline extends View {
 
     // Initialize managers
     this.stateManager = new TimelineStateManager();
-    this.lifecycleManager = new TimelineLifecycleManager(this.feedOrchestrator, this.infiniteScroll);
+    this.lifecycleManager = new TimelineLifecycleManager(this.timelineApi, this.infiniteScroll);
     this.uiStateHandler = new TimelineUIStateHandler(this.element);
     this.islStatsUpdater = new ISLStatsUpdater(this.element);
     this.scrollPositionManager = new ScrollPositionManager(this.element);
@@ -96,7 +97,7 @@ export class Timeline extends View {
 
     // Initialize event handler (requires refresh button, renderer, and dropdown to be set up first)
     this.eventHandler = new TimelineEventHandler(
-      this.feedOrchestrator,
+      this.timelineApi,
       this.stateManager,
       this.uiStateHandler,
       this.refreshButton,
@@ -383,19 +384,19 @@ export class Timeline extends View {
     const newestTimestamp = this.stateManager.getNewestTimestamp();
     if (pubkeys.length === 0 || newestTimestamp === 0) return;
 
-    const newEvents = await this.feedOrchestrator.pollOnce(
+    const newEvents = await this.timelineApi?.pollOnce(
       pubkeys,
       newestTimestamp,
       this.stateManager.getIncludeReplies(),
       this.stateManager.getSelectedRelay(),
       this.filterAuthorPubkey
-    );
+    ) ?? [];
 
     if (newEvents.length > 0) {
       const unique = this.stateManager.prependEvents(newEvents);
       if (unique.length > 0) {
         this.renderer.prependNewEvents(unique);
-        this.feedOrchestrator.resetPollingTimestamp(newEvents[0]!.created_at);
+        this.timelineApi?.resetPollingTimestamp(newEvents[0]!.created_at);
       }
     }
 
@@ -405,7 +406,7 @@ export class Timeline extends View {
     }
 
     // Clear polled events cache so next poll cycle starts fresh
-    this.feedOrchestrator.getPolledEvents();
+    this.timelineApi?.getPolledEvents();
 
     // Scroll to top
     this.element.scrollTo({ top: 0, behavior: 'smooth' });
@@ -424,7 +425,7 @@ export class Timeline extends View {
     }
 
     // Stop and restart polling immediately
-    this.feedOrchestrator.stopPolling();
+    this.timelineApi?.stopPolling();
     this.doStartPolling(0);
 
     // Schedule link to reappear after 60s
@@ -441,7 +442,7 @@ export class Timeline extends View {
       return;
     }
 
-    this.feedOrchestrator.startPolling(
+    this.timelineApi?.startPolling(
       this.stateManager.getFollowingPubkeys(),
       newestTimestamp,
       (info: NewNotesInfo) => this.handleNewNotesDetected(info),
@@ -497,9 +498,9 @@ export class Timeline extends View {
         }
       }
 
-      // Use FeedOrchestrator for loading
+      // Use TimelineModuleApi for loading
       const dateRange = this.stateManager.getDateRange();
-      const feedRequest: Parameters<typeof this.feedOrchestrator.loadInitialFeed>[0] = {
+      const feedRequest: FeedLoadRequest = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
         timeWindowHours: 1 // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
@@ -516,7 +517,7 @@ export class Timeline extends View {
       if (this.filterAuthorPubkey) {
         feedRequest.exemptFromMuteFilter = this.filterAuthorPubkey; // Don't filter profile user's notes in ProfileView
       }
-      const result = await this.feedOrchestrator.loadInitialFeed(feedRequest);
+      const result = await this.timelineApi?.loadInitialFeed(feedRequest) ?? { events: [], hasMore: false };
 
       this.stateManager.setEvents(result.events);
 

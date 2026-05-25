@@ -6,8 +6,8 @@
  */
 
 import { type Event as NostrEvent } from '../../services/NostrToolsAdapter';
-import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import type { TimelineModuleApi } from '../../modules/timeline/contracts';
 import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { RawEventModal } from '../raw-event/RawEventModal';
 import { ReportModal } from '../report/ReportModal';
@@ -218,8 +218,8 @@ export class NoteMenu {
    * Add relay section to menu
    */
   private addRelaySection(menu: HTMLElement): void {
-    const feedOrchestrator = FeedOrchestrator.getInstance();
-    const relays = feedOrchestrator.getEventRelays(this.options.eventId);
+    const timelineApi = ModuleLoader.getInstance().getApi<TimelineModuleApi>('timeline');
+    const relays = timelineApi?.getEventRelays(this.options.eventId) ?? [];
 
     // Only show section if we have relay data
     if (!relays || relays.length === 0) {
@@ -490,9 +490,11 @@ export class NoteMenu {
       ToastService.show(isPrivate ? 'User muted privately' : 'User muted publicly', 'success');
 
       // Refresh muted users in orchestrators
-      const notifApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
+      const loader = ModuleLoader.getInstance();
+      const timelineApi = loader.getApi<TimelineModuleApi>('timeline');
+      const notifApi = loader.getApi<NotificationsModuleApi>('notifications');
       await Promise.all([
-        FeedOrchestrator.getInstance().refreshMutedUsers(),
+        timelineApi?.refreshMutedUsers() ?? Promise.resolve(),
         notifApi?.refreshMutedUsers() ?? Promise.resolve()
       ]);
 

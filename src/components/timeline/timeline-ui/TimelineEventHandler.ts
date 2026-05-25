@@ -4,7 +4,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { FeedOrchestrator } from '../../../services/orchestration/FeedOrchestrator';
+import type { TimelineModuleApi, FeedLoadRequest } from '../../../modules/timeline/contracts';
 import { TimelineStateManager } from '../timeline-state/TimelineStateManager';
 import { TimelineUIStateHandler } from './TimelineUIStateHandler';
 import { pickDateRange, formatDateRangeLabel } from '../../../helpers/datePickerModal';
@@ -14,7 +14,7 @@ import { AppState } from '../../../services/AppState';
 import { NoteUI } from '../../ui/NoteUI';
 
 export class TimelineEventHandler {
-  private feedOrchestrator: FeedOrchestrator;
+  private timelineApi: TimelineModuleApi | null;
   private stateManager: TimelineStateManager;
   private uiStateHandler: TimelineUIStateHandler;
   private refreshButton: RefreshButton | null;
@@ -30,7 +30,7 @@ export class TimelineEventHandler {
   private onInitializeTimeline: () => Promise<void>;
 
   constructor(
-    feedOrchestrator: FeedOrchestrator,
+    timelineApi: TimelineModuleApi | null,
     stateManager: TimelineStateManager,
     uiStateHandler: TimelineUIStateHandler,
     refreshButton: RefreshButton | null,
@@ -44,7 +44,7 @@ export class TimelineEventHandler {
       onInitializeTimeline: () => Promise<void>;
     }
   ) {
-    this.feedOrchestrator = feedOrchestrator;
+    this.timelineApi = timelineApi;
     this.stateManager = stateManager;
     this.uiStateHandler = uiStateHandler;
     this.refreshButton = refreshButton;
@@ -103,8 +103,8 @@ export class TimelineEventHandler {
 
     // View change requires full reload (not just prepending cached events)
     // Stop polling and clear cache from previous filter
-    this.feedOrchestrator.stopPolling();
-    this.feedOrchestrator.getPolledEvents(); // Clear cache
+    this.timelineApi?.stopPolling();
+    this.timelineApi?.getPolledEvents(); // Clear cache
 
     // Reset state and reload
     this.stateManager.reset();
@@ -148,8 +148,8 @@ export class TimelineEventHandler {
     this.previousView = 'time-range';
 
     // Stop polling and clear cache
-    this.feedOrchestrator.stopPolling();
-    this.feedOrchestrator.getPolledEvents();
+    this.timelineApi?.stopPolling();
+    this.timelineApi?.getPolledEvents();
 
     // Reset state and reload with date range
     this.stateManager.reset();
@@ -188,7 +188,7 @@ export class TimelineEventHandler {
    */
   public async handleRefresh(): Promise<void> {
     // Get cached polled events (cleared after retrieval)
-    const newEvents = this.feedOrchestrator.getPolledEvents();
+    const newEvents = this.timelineApi?.getPolledEvents() ?? [];
 
     if (newEvents.length > 0) {
       // Prepend new events to existing timeline
@@ -201,10 +201,10 @@ export class TimelineEventHandler {
 
       // Update polling timestamp to latest event
       const latestTimestamp = newEvents.reduce((max, e) => e.created_at > max ? e.created_at : max, 0);
-      this.feedOrchestrator.resetPollingTimestamp(latestTimestamp);
+      this.timelineApi?.resetPollingTimestamp(latestTimestamp);
     } else {
       // Fallback: Full reload if no cached events
-      this.feedOrchestrator.stopPolling();
+      this.timelineApi?.stopPolling();
       this.stateManager.reset();
       this.element.querySelectorAll('.note-card').forEach(card => {
       const eventId = card.getAttribute('data-event-id');
@@ -242,9 +242,9 @@ export class TimelineEventHandler {
         return;
       }
 
-      // Use FeedOrchestrator for load more
+      // Use TimelineModuleApi for load more
       // Build request object, only adding optional properties if they have values
-      const loadMoreRequest: Parameters<typeof this.feedOrchestrator.loadMore>[0] = {
+      const loadMoreRequest: FeedLoadRequest & { until: number } = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
         until: oldestEvent.created_at,
@@ -262,7 +262,7 @@ export class TimelineEventHandler {
       if (dateRange) {
         loadMoreRequest.since = dateRange.since;
       }
-      const result = await this.feedOrchestrator.loadMore(loadMoreRequest);
+      const result = await this.timelineApi?.loadMore(loadMoreRequest) ?? { events: [], hasMore: false };
 
       // Add events with deduplication
       const uniqueNewEvents = this.stateManager.addEvents(result.events);

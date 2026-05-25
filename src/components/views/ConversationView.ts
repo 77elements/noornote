@@ -14,8 +14,8 @@ import { EventBus } from '../../services/EventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
 import { MuteOrchestrator } from '../../lists/mutes';
-import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import type { TimelineModuleApi } from '../../modules/timeline/contracts';
 import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { ToastService } from '../../services/ToastService';
 import { AuthGuard } from '../../services/AuthGuard';
@@ -279,10 +279,11 @@ export class ConversationView extends View {
       ToastService.show(`User muted ${isPrivate ? 'privately' : 'publicly'}`, 'success');
 
       // Refresh muted users in orchestrators
-      const feedOrch = FeedOrchestrator.getInstance();
-      const notifApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
+      const loader = ModuleLoader.getInstance();
+      const timelineApi = loader.getApi<TimelineModuleApi>('timeline');
+      const notifApi = loader.getApi<NotificationsModuleApi>('notifications');
       await Promise.all([
-        feedOrch.refreshMutedUsers(),
+        timelineApi?.refreshMutedUsers() ?? Promise.resolve(),
         notifApi?.refreshMutedUsers() ?? Promise.resolve()
       ]);
 

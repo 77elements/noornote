@@ -8,8 +8,9 @@
  * Replaces/extends ReplyIndicator with full thread context
  */
 
-import { ThreadOrchestrator } from '../../services/orchestration/ThreadOrchestrator';
-import type { ThreadContext } from '../../services/orchestration/ThreadOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
+import type { ThreadContext } from '../../modules/single-note/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
 import { truncateNoteContent } from '../../helpers/truncateNoteContent';
@@ -24,14 +25,14 @@ export interface ThreadContextIndicatorOptions {
 export class ThreadContextIndicator {
   private element: HTMLElement;
   private options: ThreadContextIndicatorOptions;
-  private threadOrchestrator: ThreadOrchestrator;
+  private singleNoteApi: SingleNoteModuleApi | null;
   private userProfileService: UserProfileService;
   private router: Router;
 
   constructor(options: ThreadContextIndicatorOptions) {
     this.options = options;
     this.element = this.createElement();
-    this.threadOrchestrator = ThreadOrchestrator.getInstance();
+    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
 
@@ -54,7 +55,12 @@ export class ThreadContextIndicator {
    */
   private async loadThreadContext(): Promise<void> {
     try {
-      const context = await this.threadOrchestrator.fetchParentChain(this.options.noteId);
+      const context = await this.singleNoteApi?.fetchParentChain(this.options.noteId);
+
+      if (!context) {
+        this.element.style.display = 'none';
+        return;
+      }
 
       if (!context.directParent && !context.root) {
         // No thread context, hide component

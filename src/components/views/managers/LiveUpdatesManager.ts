@@ -9,8 +9,8 @@
  * - Reply confirmation
  */
 
-import { ThreadOrchestrator } from '../../../services/orchestration/ThreadOrchestrator';
 import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { SystemLogger } from '../../../services/SystemLogger';
@@ -31,7 +31,7 @@ export interface LiveUpdatesConfig {
 
 export class LiveUpdatesManager {
   private config: LiveUpdatesConfig;
-  private threadOrchestrator: ThreadOrchestrator;
+  private singleNoteApi: SingleNoteModuleApi | null;
   private reactionsApi: ReactionsModuleApi | null;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
@@ -46,7 +46,7 @@ export class LiveUpdatesManager {
 
   constructor(config: LiveUpdatesConfig) {
     this.config = config;
-    this.threadOrchestrator = ThreadOrchestrator.getInstance();
+    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -62,7 +62,7 @@ export class LiveUpdatesManager {
     this.systemLogger.info('LiveUpdatesManager', `🔴 Starting live updates for note ${this.config.noteId.slice(0, 8)}`);
 
     // Start live reply subscription (real-time)
-    this.threadOrchestrator.startLiveReplies(this.config.noteId, (newReply) => {
+    this.singleNoteApi?.startLiveReplies(this.config.noteId, (newReply) => {
       if (this.config.onLiveReply) {
         this.config.onLiveReply(newReply);
       }
@@ -201,7 +201,7 @@ export class LiveUpdatesManager {
     }
 
     // Stop orchestrators
-    this.threadOrchestrator.stopLiveReplies(this.config.noteId);
+    this.singleNoteApi?.stopLiveReplies(this.config.noteId);
     this.reactionsApi?.stopLiveReactions(this.config.noteId);
 
     this.systemLogger.info('LiveUpdatesManager', 'Destroyed live updates manager');

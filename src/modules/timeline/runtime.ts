@@ -23,6 +23,21 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
       hasLoadedNote: (eventId) => orch?.hasLoadedNote(eventId) ?? false,
       registerNotes: (events) => orch?.registerNotes(events),
       clearCache: () => orch?.clearCache(),
+
+      // Polling
+      startPolling: (followingPubkeys, lastLoadedTimestamp, callback, includeReplies, delayMs, specificRelay, exemptFromMuteFilter) =>
+        orch?.startPolling(followingPubkeys, lastLoadedTimestamp, callback, includeReplies, delayMs ?? 10000, specificRelay ?? null, exemptFromMuteFilter),
+      stopPolling: () => orch?.stopPolling(),
+      getPolledEvents: () => orch?.getPolledEvents() ?? [],
+      resetPollingTimestamp: (newTimestamp) => orch?.resetPollingTimestamp(newTimestamp),
+      pollOnce: (followingPubkeys, newestTimestamp, includeReplies, specificRelay, exemptFromMuteFilter) =>
+        orch?.pollOnce(followingPubkeys, newestTimestamp, includeReplies, specificRelay, exemptFromMuteFilter) ?? Promise.resolve([]),
+
+      // Mute management
+      refreshMutedUsers: () => orch?.refreshMutedUsers() ?? Promise.resolve(),
+
+      // Event metadata
+      getEventRelays: (eventId) => orch?.getEventRelays(eventId) ?? [],
     };
   }
 }

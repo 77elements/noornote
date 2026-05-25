@@ -12,8 +12,8 @@ import { ThreadManager } from './managers/ThreadManager';
 import { LiveUpdatesManager } from './managers/LiveUpdatesManager';
 import { fetchNostrEvents } from '../../helpers/fetchNostrEvents';
 import { RelayConfig } from '../../services/RelayConfig';
-import { ThreadOrchestrator } from '../../services/orchestration/ThreadOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -30,7 +30,7 @@ export class SingleNoteView extends View {
   private container: HTMLElement;
   private noteId: string;
   private relayConfig: RelayConfig;
-  private threadOrchestrator: ThreadOrchestrator;
+  private singleNoteApi: SingleNoteModuleApi | null;
   private reactionsApi: ReactionsModuleApi | null;
   private authService: AuthService;
   private systemLogger: SystemLogger;
@@ -53,7 +53,7 @@ export class SingleNoteView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--single-note';
     this.relayConfig = RelayConfig.getInstance();
-    this.threadOrchestrator = ThreadOrchestrator.getInstance();
+    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -346,7 +346,7 @@ export class SingleNoteView extends View {
 
     if (this.currentNoteId) {
       this.systemLogger.info('SNV', `Stopping live updates for note ${this.currentNoteId.slice(0, 8)}`);
-      this.threadOrchestrator.stopLiveReplies(this.currentNoteId);
+      this.singleNoteApi?.stopLiveReplies(this.currentNoteId);
       this.reactionsApi?.stopLiveReactions(this.currentNoteId);
     }
 

@@ -4,21 +4,21 @@
  * Extracts from: TimelineUI.pause(), resume(), destroy()
  */
 
-import { FeedOrchestrator, type NewNotesInfo } from '../../../services/orchestration/FeedOrchestrator';
+import type { TimelineModuleApi, NewNotesInfo } from '../../../modules/timeline/contracts';
 import { InfiniteScroll } from '../../ui/InfiniteScroll';
 import { RefreshButton } from '../../ui/RefreshButton';
 import { CustomDropdown } from '../../ui/CustomDropdown';
 import { NoteHeader } from '../../ui/NoteHeader';
 
 export class TimelineLifecycleManager {
-  private feedOrchestrator: FeedOrchestrator;
+  private timelineApi: TimelineModuleApi | null;
   private infiniteScroll: InfiniteScroll;
   private refreshButton: RefreshButton | null = null;
   private viewDropdown: CustomDropdown | null = null;
   private noteHeaders: Map<string, NoteHeader> = new Map();
 
-  constructor(feedOrchestrator: FeedOrchestrator, infiniteScroll: InfiniteScroll) {
-    this.feedOrchestrator = feedOrchestrator;
+  constructor(timelineApi: TimelineModuleApi | null, infiniteScroll: InfiniteScroll) {
+    this.timelineApi = timelineApi;
     this.infiniteScroll = infiniteScroll;
   }
 
@@ -47,7 +47,7 @@ export class TimelineLifecycleManager {
    * Pause background tasks (polling, subscriptions) when navigating away
    */
   pause(): void {
-    this.feedOrchestrator.stopPolling();
+    this.timelineApi?.stopPolling();
     this.infiniteScroll.disconnect();
   }
 
@@ -65,7 +65,7 @@ export class TimelineLifecycleManager {
   ): void {
     // Restart polling if we have events
     if (newestTimestamp > 0) {
-      this.feedOrchestrator.startPolling(
+      this.timelineApi?.startPolling(
         followingPubkeys,
         newestTimestamp,
         onNewNotes,
@@ -87,7 +87,7 @@ export class TimelineLifecycleManager {
    */
   destroy(): void {
     // Stop polling
-    this.feedOrchestrator.stopPolling();
+    this.timelineApi?.stopPolling();
 
     // Disconnect infinite scroll
     this.infiniteScroll.disconnect();

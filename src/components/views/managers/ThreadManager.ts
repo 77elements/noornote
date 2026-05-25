@@ -8,8 +8,8 @@
  */
 
 import { NoteUI } from '../../ui/NoteUI';
-import { ThreadOrchestrator } from '../../../services/orchestration/ThreadOrchestrator';
 import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../../services/SystemLogger';
@@ -38,7 +38,7 @@ export interface ThreadManagerConfig {
 
 export class ThreadManager {
   private config: ThreadManagerConfig;
-  private threadOrchestrator: ThreadOrchestrator;
+  private singleNoteApi: SingleNoteModuleApi | null;
   private reactionsApi: ReactionsModuleApi | null;
   private authService: AuthService;
   private systemLogger: SystemLogger;
@@ -47,7 +47,7 @@ export class ThreadManager {
 
   constructor(config: ThreadManagerConfig) {
     this.config = config;
-    this.threadOrchestrator = ThreadOrchestrator.getInstance();
+    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -118,7 +118,7 @@ export class ThreadManager {
     `;
 
     try {
-      const allReplies = await this.threadOrchestrator.fetchReplies(this.config.noteId);
+      const allReplies = await this.singleNoteApi?.fetchReplies(this.config.noteId) ?? [];
 
       const filteredQuotedReposts = quotedReposts.filter(q => q.pubkey !== this.config.noteAuthor);
       const quotedRepostIds = new Set(filteredQuotedReposts.map(q => q.id));

@@ -764,14 +764,13 @@ export class FollowPackManager {
 
     // Load timeline
     try {
-      const { FeedOrchestrator } = await import('../../services/orchestration/FeedOrchestrator');
-      const feedOrch = FeedOrchestrator.getInstance();
+      const timelineApi = ModuleLoader.getInstance().getApi<import('../../modules/timeline/contracts').TimelineModuleApi>('timeline');
 
-      const result = await feedOrch.loadInitialFeed({
+      const result = await timelineApi?.loadInitialFeed({
         followingPubkeys: pack.userPubkeys,
         includeReplies: false,
         timeWindowHours: 24
-      });
+      }) ?? { events: [], hasMore: false };
 
       timelineContainer.innerHTML = '';
 

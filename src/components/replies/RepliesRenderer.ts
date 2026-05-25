@@ -5,8 +5,8 @@
  */
 
 import { NoteUI } from '../ui/NoteUI';
-import { ThreadOrchestrator } from '../../services/orchestration/ThreadOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
@@ -45,7 +45,7 @@ export class RepliesRenderer {
   private updateISL: boolean;
   private onLoadZapsList?: (noteId: string, authorPubkey: string, noteElement: HTMLElement) => void;
 
-  private threadOrchestrator: ThreadOrchestrator;
+  private singleNoteApi: SingleNoteModuleApi | null;
   private reactionsApi: ReactionsModuleApi | null;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
@@ -57,7 +57,7 @@ export class RepliesRenderer {
     this.updateISL = options.updateISL !== false; // Default true
     if (options.onLoadZapsList) this.onLoadZapsList = options.onLoadZapsList;
 
-    this.threadOrchestrator = ThreadOrchestrator.getInstance();
+    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -78,7 +78,7 @@ export class RepliesRenderer {
     try {
       // Fetch both replies and quoted reposts in parallel
       const [allReplies, allQuotedReposts] = await Promise.all([
-        this.threadOrchestrator.fetchReplies(this.noteId),
+        this.singleNoteApi?.fetchReplies(this.noteId) ?? Promise.resolve([]),
         this.fetchQuotedReposts(this.noteId)
       ]);
 
