@@ -539,12 +539,13 @@ export class App {
   private async handleVisibilityChange(): Promise<void> {
     if (document.visibilityState !== 'visible') return;
 
-    const notificationsApi = ModuleLoader.getInstance().getApi<import('./modules/notifications/contracts').NotificationsModuleApi>('notifications');
+    const ml = ModuleLoader.getInstance();
+    const notificationsApi = ml.getApi<import('./modules/notifications/contracts').NotificationsModuleApi>('notifications');
+    const dmsApi = ml.getApi<import('./modules/dms/contracts').DMsModuleApi>('dms');
 
     const [notifResult, dmResult] = await Promise.allSettled([
       notificationsApi?.refreshSubscriptions() ?? Promise.resolve(),
-      import('./services/dm/DMService')
-        .then(({ DMService }) => DMService.getInstance().refreshSubscriptions())
+      dmsApi?.refreshSubscriptions() ?? Promise.resolve(),
     ]);
 
     if (notifResult.status === 'rejected') {
