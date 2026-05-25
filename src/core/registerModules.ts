@@ -62,4 +62,32 @@ export function registerCoreModules(): void {
     sleepPolicy: 'sleep-on-leave',
     load: () => import('../modules/relay-browser/runtime').then(m => m.default),
   });
+
+  loader.register({
+    id: 'settings',
+    activation: 'route',
+    routes: ['/settings'],
+    load: () => import('../modules/settings/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'timeline',
+    activation: 'login',
+    routes: ['/timeline', '/'],
+    load: () => import('../modules/timeline/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'profile',
+    activation: 'route',
+    routes: ['/profile'],
+    load: () => import('../modules/profile/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'single-note',
+    activation: 'route',
+    routes: ['/note'],
+    load: () => import('../modules/single-note/runtime').then(m => m.default),
+  });
 }
