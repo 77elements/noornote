@@ -7,7 +7,8 @@
 
 import { type Event as NostrEvent } from '../../services/NostrToolsAdapter';
 import { FeedOrchestrator } from '../../services/orchestration/FeedOrchestrator';
-import { NotificationsOrchestrator } from '../../services/orchestration/NotificationsOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { RawEventModal } from '../raw-event/RawEventModal';
 import { ReportModal } from '../report/ReportModal';
 import { DeleteNoteModal } from '../delete/DeleteNoteModal';
@@ -489,9 +490,10 @@ export class NoteMenu {
       ToastService.show(isPrivate ? 'User muted privately' : 'User muted publicly', 'success');
 
       // Refresh muted users in orchestrators
+      const notifApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
       await Promise.all([
         FeedOrchestrator.getInstance().refreshMutedUsers(),
-        NotificationsOrchestrator.getInstance().refreshMutedUsers()
+        notifApi?.refreshMutedUsers() ?? Promise.resolve()
       ]);
 
       EventBus.getInstance().emit('mute:updated', {});
