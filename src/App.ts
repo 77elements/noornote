@@ -539,9 +539,10 @@ export class App {
   private async handleVisibilityChange(): Promise<void> {
     if (document.visibilityState !== 'visible') return;
 
+    const notificationsApi = ModuleLoader.getInstance().getApi<import('./modules/notifications/contracts').NotificationsModuleApi>('notifications');
+
     const [notifResult, dmResult] = await Promise.allSettled([
-      import('./services/orchestration/NotificationsOrchestrator')
-        .then(({ NotificationsOrchestrator }) => NotificationsOrchestrator.getInstance().refreshSubscriptions()),
+      notificationsApi?.refreshSubscriptions() ?? Promise.resolve(),
       import('./services/dm/DMService')
         .then(({ DMService }) => DMService.getInstance().refreshSubscriptions())
     ]);

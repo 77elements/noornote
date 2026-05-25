@@ -1,26 +1,26 @@
 import type { ModuleRuntime, ModuleContext } from '../../core/ModuleLoader';
 import type { NotificationsModuleApi } from './contracts';
 
+/**
+ * Notifications module runtime — thin wrapper around existing singletons.
+ *
+ * IMPORTANT: Does NOT call orchestrator.start() or articleService.startPolling()
+ * here. PostLoginService already handles startup. Adding a second start() call
+ * creates a race condition (both enter the async start() before ptagSubId is set,
+ * causing duplicate subscriptions and phantom notifications).
+ *
+ * Once PostLoginService is fully migrated away, start() moves here.
+ */
 export class NotificationsRuntime implements ModuleRuntime<NotificationsModuleApi> {
   private orchestrator: import('../../services/orchestration/NotificationsOrchestrator').NotificationsOrchestrator | null = null;
-  private articleService: import('../../services/ArticleNotificationService').ArticleNotificationService | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
     const { NotificationsOrchestrator } = await import('../../services/orchestration/NotificationsOrchestrator');
-    const { ArticleNotificationService } = await import('../../services/ArticleNotificationService');
-
     this.orchestrator = NotificationsOrchestrator.getInstance();
-    this.articleService = ArticleNotificationService.getInstance();
-
-    await this.orchestrator.start();
-    this.articleService.startPolling();
   }
 
   async destroy(): Promise<void> {
-    this.orchestrator?.stop();
-    this.articleService?.stopPolling();
     this.orchestrator = null;
-    this.articleService = null;
   }
 
   getApi(): NotificationsModuleApi {
