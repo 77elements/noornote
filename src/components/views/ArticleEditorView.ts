@@ -22,7 +22,8 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
-import { MediaUploadService } from '../../services/MediaUploadService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { MediaModuleApi } from '../../modules/media/contracts';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
@@ -57,7 +58,7 @@ export class ArticleEditorView extends View {
   private articleService: ArticleService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private mediaUploadService: MediaUploadService;
+  private mediaApi: MediaModuleApi | null = null;
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -100,7 +101,7 @@ export class ArticleEditorView extends View {
     this.articleService = ArticleService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.mediaUploadService = MediaUploadService.getInstance();
+    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
 
     // Generate initial identifier
     this.identifier = ArticleService.generateIdentifier();
@@ -647,7 +648,10 @@ export class ArticleEditorView extends View {
     if (!file.type.startsWith('image/')) return;
 
     try {
-      const result = await this.mediaUploadService.uploadFile(file);
+      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      if (!api) return;
+
+      const result = await api.uploadFile(file);
 
       if (result.success && result.url) {
         this.insertAtCursor(`![](${result.url})\n`);
@@ -700,7 +704,10 @@ export class ArticleEditorView extends View {
     }
 
     try {
-      const result = await this.mediaUploadService.uploadFile(file);
+      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      if (!api) return;
+
+      const result = await api.uploadFile(file);
 
       if (result.success && result.url) {
         this.image = result.url;

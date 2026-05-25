@@ -10,7 +10,8 @@
  * - Uses MediaUploadService (configured in Settings)
  */
 
-import { MediaUploadService } from '../../services/MediaUploadService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ToastService } from '../../services/ToastService';
 
@@ -33,7 +34,7 @@ export interface ImageUploaderConfig {
 
 export class ImageUploader {
   private config: ImageUploaderConfig;
-  private mediaUploadService: MediaUploadService;
+  private mediaApi: MediaModuleApi | null = null;
   private systemLogger: SystemLogger;
   private container: HTMLElement | null = null;
   private fileInput: HTMLInputElement | null = null;
@@ -42,7 +43,7 @@ export class ImageUploader {
 
   constructor(config: ImageUploaderConfig) {
     this.config = config;
-    this.mediaUploadService = MediaUploadService.getInstance();
+    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
     this.systemLogger = SystemLogger.getInstance();
   }
 
@@ -131,8 +132,14 @@ export class ImageUploader {
     this.showProgressCircle();
 
     try {
-      // Upload via MediaUploadService
-      const result = await this.mediaUploadService.uploadFile(file, (progress) => {
+      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      if (!api) {
+        ToastService.show('Media module is not available. Please try again later.', 'error');
+        return;
+      }
+
+      // Upload via media module
+      const result = await api.uploadFile(file, (progress) => {
         this.updateProgress(progress);
         this.config.onProgress?.(progress);
       });

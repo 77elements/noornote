@@ -8,7 +8,8 @@
  * - Modular and reusable
  */
 
-import { MediaUploadService } from '../../services/MediaUploadService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { MediaModuleApi } from '../../modules/media/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ModalService } from '../../services/ModalService';
 import { EmojiPicker, type CustomEmojiEntry } from '../emoji/EmojiPicker';
@@ -26,7 +27,7 @@ export interface PostEditorToolbarConfig {
 
 export class PostEditorToolbar {
   private config: PostEditorToolbarConfig;
-  private mediaUploadService: MediaUploadService;
+  private mediaApi: MediaModuleApi | null = null;
   private systemLogger: SystemLogger;
   private modalService: ModalService;
   private emojiPicker: EmojiPicker | null = null;
@@ -34,7 +35,7 @@ export class PostEditorToolbar {
 
   constructor(config: PostEditorToolbarConfig) {
     this.config = config;
-    this.mediaUploadService = MediaUploadService.getInstance();
+    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
     this.systemLogger = SystemLogger.getInstance();
     this.modalService = ModalService.getInstance();
   }
@@ -133,10 +134,21 @@ export class PostEditorToolbar {
     `;
 
     try {
+      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      if (!api) {
+        this.systemLogger.error('PostEditorToolbar', 'Media module not loaded');
+        this.modalService.show({
+          title: 'Upload Failed',
+          content: '<p>Media module is not available. Please try again later.</p>',
+          showCloseButton: true
+        });
+        return;
+      }
+
       const firstFile = files[0];
       if (files.length === 1 && firstFile) {
         // Single file upload
-        const result = await this.mediaUploadService.uploadFile(firstFile, (progress) => {
+        const result = await api.uploadFile(firstFile, (progress) => {
           this.updateUploadProgress(progress);
         });
 
@@ -153,10 +165,8 @@ export class PostEditorToolbar {
         }
       } else {
         // Multiple files upload
-        const results = await this.mediaUploadService.uploadFiles(files, (fileIndex, progress, totalFiles) => {
-          // Update progress: show which file and overall progress
-          const overallProgress = ((fileIndex / totalFiles) * 100) + ((progress / totalFiles));
-          this.updateUploadProgress(Math.min(overallProgress, 99));
+        const results = await api.uploadFiles(files, (progress) => {
+          this.updateUploadProgress(Math.min(progress, 99));
         });
 
         // Insert all successful URLs

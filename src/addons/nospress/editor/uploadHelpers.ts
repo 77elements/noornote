@@ -14,7 +14,8 @@
  * `strokeDashoffset` for the radial fill animation.
  */
 
-import { MediaUploadService } from '../../../services/MediaUploadService';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { MediaModuleApi } from '../../../modules/media/contracts';
 import { ToastService } from '../../../services/ToastService';
 
 export type SingleMediaKind = 'image' | 'video' | 'audio' | 'card-image';
@@ -94,7 +95,9 @@ export async function handleSingleMediaUpload(
   };
 
   try {
-    const result = await MediaUploadService.getInstance().uploadFile(file, updateProgress);
+    const mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+    if (!mediaApi) { ToastService.show('Media module not available', 'error'); return; }
+    const result = await mediaApi.uploadFile(file, updateProgress);
     if (result.success && result.url) {
       applyUrl(result.url);
     }
@@ -154,12 +157,12 @@ export async function handleMultiMediaUpload(
   };
 
   try {
-    const results = await MediaUploadService.getInstance().uploadFiles(
+    const mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+    if (!mediaApi) { ToastService.show('Media module not available', 'error'); return; }
+    const results = await mediaApi.uploadFiles(
       accepted,
-      (fileIndex, progress, totalFiles) => {
-        // Overall = portion of completed files + portion of current file.
-        const overall = (fileIndex / totalFiles) * 100 + (progress / totalFiles);
-        updateProgress(Math.min(overall, 99));
+      (progress) => {
+        updateProgress(Math.min(progress, 99));
       },
     );
     const urls = results.filter(r => r.success && r.url).map(r => r.url as string);

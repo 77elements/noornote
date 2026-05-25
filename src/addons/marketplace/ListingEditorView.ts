@@ -16,7 +16,8 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../../components/post/RelaySelector';
 import { PostEditorToolbar } from '../../components/post/PostEditorToolbar';
 import { MentionAutocomplete } from '../../components/mentions/MentionAutocomplete';
-import { MediaUploadService } from '../../services/MediaUploadService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { MediaModuleApi } from '../../modules/media/contracts';
 import { LongFormOrchestrator } from '../../services/orchestration/LongFormOrchestrator';
 import { parseListingMetadata } from './marketplace-helpers';
 import { marked } from 'marked';
@@ -41,7 +42,7 @@ export class ListingEditorView extends View {
   private listingService: ListingService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private mediaUploadService: MediaUploadService;
+  private mediaApi: MediaModuleApi | null = null;
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -82,7 +83,7 @@ export class ListingEditorView extends View {
     this.listingService = ListingService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.mediaUploadService = MediaUploadService.getInstance();
+    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
 
     this.identifier = ListingService.generateIdentifier();
     this.loadRelayConfiguration();
@@ -485,7 +486,10 @@ export class ListingEditorView extends View {
     if (uploadBtn) uploadBtn.disabled = true;
 
     try {
-      const result = await this.mediaUploadService.uploadFile(file);
+      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      if (!api) return;
+
+      const result = await api.uploadFile(file);
       if (result.success && result.url) {
         this.images.push(result.url);
         this.refreshImageList();

@@ -24,7 +24,8 @@ import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { hexToNpub } from '../../helpers/nip19';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
-import { MediaUploadService } from '../../services/MediaUploadService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { MediaModuleApi } from '../../modules/media/contracts';
 import { renderFollowPackMembers } from '../../components/follow-packs/renderFollowPackMembers';
 
 type ViewMode = 'grid' | 'detail' | 'timeline' | 'edit' | 'create';
@@ -447,7 +448,9 @@ export class FollowPackManager {
         const originalHTML = coverUploadBtn.innerHTML;
         coverUploadBtn.textContent = '...';
         try {
-          const result = await MediaUploadService.getInstance().uploadFile(file);
+          const mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+          if (!mediaApi) { ToastService.show('Media module not available', 'error'); return; }
+          const result = await mediaApi.uploadFile(file);
           if (result.success && result.url) {
             coverInput.value = result.url;
             this.editCoverImage = result.url;

@@ -99,8 +99,11 @@ export class BadgesView extends View {
       const status = this.container.querySelector('[data-role="upload-status"]') as HTMLElement | null;
       if (status) { status.textContent = 'Uploading…'; status.classList.add('pulsate'); }
       try {
-        const { MediaUploadService } = await import('../../services/MediaUploadService');
-        const result = await MediaUploadService.getInstance().uploadFile(file);
+        const { ModuleLoader } = await import('../../core/ModuleLoader');
+        type MediaApi = import('../../modules/media/contracts').MediaModuleApi;
+        const mediaApi = await ModuleLoader.getInstance().ensure<MediaApi>('media');
+        if (!mediaApi) { ToastService.show('Media module not available', 'error'); return; }
+        const result = await mediaApi.uploadFile(file);
         if (result.success && result.url) {
           const urlInput = this.container.querySelector('[data-field="imageUrl"]') as HTMLInputElement | null;
           if (urlInput) urlInput.value = result.url;

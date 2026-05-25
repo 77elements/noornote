@@ -239,8 +239,11 @@ export class CustomEmojisSettings extends SettingsSection {
     }
 
     try {
-      const { MediaUploadService } = await import('../../services/MediaUploadService');
-      const result = await MediaUploadService.getInstance().uploadFile(file);
+      const { ModuleLoader } = await import('../../core/ModuleLoader');
+      type MediaApi = import('../../modules/media/contracts').MediaModuleApi;
+      const mediaApi = await ModuleLoader.getInstance().ensure<MediaApi>('media');
+      if (!mediaApi) { ToastService.show('Media module not available', 'error'); return; }
+      const result = await mediaApi.uploadFile(file);
       if (result.success && result.url) {
         urlInput.value = result.url;
         ToastService.show('Uploaded — give it a shortcode and click Add', 'success');

@@ -20,7 +20,8 @@ import { AuthGuard } from '../../services/AuthGuard';
 import { SystemLogger } from '../../services/SystemLogger';
 import { RelaySelector } from '../post/RelaySelector';
 import { PostEditorToolbar } from '../post/PostEditorToolbar';
-import { MediaUploadService } from '../../services/MediaUploadService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { MediaModuleApi } from '../../modules/media/contracts';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
@@ -32,7 +33,7 @@ export class VideoEditorView extends View {
   private videoService: VideoService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private mediaUploadService: MediaUploadService;
+  private mediaApi: MediaModuleApi | null = null;
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -63,7 +64,7 @@ export class VideoEditorView extends View {
     this.videoService = VideoService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.mediaUploadService = MediaUploadService.getInstance();
+    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
 
     this.loadRelayConfiguration();
     this.render();
@@ -368,7 +369,13 @@ export class VideoEditorView extends View {
         this.kindOverride = false;
       }
 
-      const result = await this.mediaUploadService.uploadFile(file);
+      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      if (!api) {
+        ToastService.show('Media module not available', 'error');
+        return;
+      }
+
+      const result = await api.uploadFile(file);
 
       if (result.success && result.url) {
         this.videoUrl = result.url;
@@ -458,7 +465,10 @@ export class VideoEditorView extends View {
     }
 
     try {
-      const result = await this.mediaUploadService.uploadFile(file);
+      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      if (!api) return;
+
+      const result = await api.uploadFile(file);
 
       if (result.success && result.url) {
         this.thumbnailUrl = result.url;
