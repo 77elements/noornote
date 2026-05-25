@@ -24,6 +24,8 @@ import { ViewMountingService } from './services/ViewMountingService';
 import { PostLoginService } from './services/PostLoginService';
 import { AddonLoader } from './addons/AddonLoader';
 import { registerCoreAddons } from './addons/registerAddons';
+import { ModuleLoader } from './core/ModuleLoader';
+import { registerCoreModules } from './core/registerModules';
 import { decodeNip19 } from './services/NostrToolsAdapter';
 import type { PublicPageBootstrap as PublicPageBootstrapT } from './addons/nospress/PublicPageBootstrap';
 import { hexToNpub } from './helpers/nip19';
@@ -88,6 +90,9 @@ export class App {
     // event loop, giving loadSession() a chance to finish first.
     registerCoreAddons();
     AddonLoader.getInstance().bootstrap();
+
+    registerCoreModules();
+    ModuleLoader.getInstance().bootstrap();
 
     OfflineOverlay.getInstance();
     CollapsibleManager.init();
@@ -194,6 +199,7 @@ export class App {
         // Fallback: ensure addons load even if user:login was emitted before
         // AddonLoader subscribed. Already-loaded addons are skipped (idempotent).
         AddonLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
+        ModuleLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
       }
     }
 

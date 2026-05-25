@@ -133,6 +133,10 @@ export class ModuleLoader {
     }
   }
 
+  public refresh(pubkey: string, npub: string | null): void {
+    void this.handleLogin(pubkey, npub);
+  }
+
   // ── Route-based activation ─────────────────────────────────
 
   public handleRouteChange(path: string): void {
