@@ -10,6 +10,8 @@
 
 import { EventBus } from '../../../services/EventBus';
 import { AuthService } from '../../../services/AuthService';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { NotificationsModuleApi } from '../../../modules/notifications/contracts';
 
 export class NotificationsBadgeManager {
   private eventBus: EventBus;
@@ -18,8 +20,7 @@ export class NotificationsBadgeManager {
   private badgeUpdateSubscriptionId: string | null = null;
   private prioritiesChangedSubscriptionId: string | null = null;
 
-  // Lazy-loaded dep
-  private notificationsOrch: any = null;
+  private notificationsApi: NotificationsModuleApi | null = null;
 
   constructor(badgeElement: HTMLElement) {
     this.badgeElement = badgeElement;
@@ -30,13 +31,11 @@ export class NotificationsBadgeManager {
     this.updateBadgeCount();
   }
 
-  /**
-   * Lazy-load NotificationsOrchestrator
-   */
-  private async loadDeps(): Promise<void> {
-    if (this.notificationsOrch) return;
-    const { NotificationsOrchestrator } = await import('../../../services/orchestration/NotificationsOrchestrator');
-    this.notificationsOrch = NotificationsOrchestrator.getInstance();
+  private loadApi(): NotificationsModuleApi | null {
+    if (!this.notificationsApi) {
+      this.notificationsApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
+    }
+    return this.notificationsApi;
   }
 
   /**
@@ -60,22 +59,20 @@ export class NotificationsBadgeManager {
    * - Priority 2: Solid badge (normal: mentions, reactions)
    * - Priority 3: Hollow badge (low: hashtags)
    */
-  public async updateBadgeCount(): Promise<void> {
+  public updateBadgeCount(): void {
     if (!this.badgeElement) return;
 
-    // Only show badge if user is logged in
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser) {
       this.badgeElement.style.display = 'none';
       return;
     }
 
-    await this.loadDeps();
+    const api = this.loadApi();
+    if (!api) return;
 
-    // Use NotificationsOrchestrator for badge count (uses fetched notifications + lastSeen)
-    const unreadCount = this.notificationsOrch.getUnreadCount();
+    const unreadCount = api.getUnreadCount();
 
-    // Remove all priority classes first
     this.badgeElement.classList.remove(
       'notifications-badge--priority-high',
       'notifications-badge--hashtag-only'
@@ -85,17 +82,13 @@ export class NotificationsBadgeManager {
       this.badgeElement.textContent = unreadCount > 99 ? '99+' : unreadCount.toString();
       this.badgeElement.style.display = 'inline-flex';
 
-      // Get highest priority among unread notifications
-      const highestPriority = this.notificationsOrch.getHighestUnreadPriority();
+      const highestPriority = api.getHighestUnreadPriority();
 
       if (highestPriority === 1) {
-        // Pulsing badge for high priority
         this.badgeElement.classList.add('notifications-badge--priority-high');
       } else if (highestPriority === 3) {
-        // Hollow badge for low priority (hashtags only)
         this.badgeElement.classList.add('notifications-badge--hashtag-only');
       }
-      // Priority 2 uses default solid badge (no extra class needed)
     } else {
       this.badgeElement.style.display = 'none';
     }
