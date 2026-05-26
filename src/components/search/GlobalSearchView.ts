@@ -19,7 +19,13 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 export class GlobalSearchView {
   private container: HTMLElement;
   private tabElement: HTMLElement | null = null;
-  private searchApi: SearchModuleApi | null;
+  private _searchApi: SearchModuleApi | null = null;
+  private get searchApi(): SearchModuleApi | null {
+    if (!this._searchApi) {
+      this._searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+    }
+    return this._searchApi;
+  }
   private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private authService: AuthService;
   private searchResultsView: SearchResultsView | null = null;
@@ -37,7 +43,7 @@ export class GlobalSearchView {
   private currentHashtag: string = ''; // Track current hashtag for subscribe button (Phase 2)
 
   constructor() {
-    this.searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+    // searchApi resolved lazily via getter
     this.muteOrchestrator = MuteOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
     this.router = Router.getInstance();

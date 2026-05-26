@@ -50,7 +50,7 @@ export function registerCoreModules(): void {
 
   loader.register({
     id: 'search',
-    activation: 'route',
+    activation: 'login',
     routes: ['/search'],
     load: () => import('../modules/search/runtime').then(m => m.default),
   });
