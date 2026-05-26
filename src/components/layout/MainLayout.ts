@@ -1161,6 +1161,14 @@ export class MainLayout {
 
     dropdownMount.appendChild(this.sccDefaultDropdown.getElement());
     this.activateSccDefault(savedDefault);
+
+    this.eventBus.on('settings:scc-excerpt-limit-changed', () => {
+      if (!this.sccArticleFeed) return;
+      const contentDiv = this.element.querySelector('[data-tab-content="newest-articles"]') as HTMLElement | null;
+      if (!contentDiv) return;
+      this.sccArticleFeed.destroy();
+      this.sccArticleFeed = new SccArticleFeed(contentDiv);
+    });
   }
 
   private activateSccDefault(value: SccDefaultContent): void {

@@ -213,6 +213,10 @@ export interface PostTruncationChangedPayload {
   disabled: boolean;
 }
 
+export interface SccExcerptLimitChangedPayload {
+  limit: number;
+}
+
 // ═════════════════════════════════════════════════════════════
 //  Central Event Registry — ALL EventBus events in one place.
 //  New events MUST be added here. build-validate enforces this.
@@ -277,6 +281,7 @@ export interface AppEvents {
   'font-size:changed': FontSizeChangedPayload;
   'settings:calendar-system-changed': CalendarSystemChangedPayload;
   'settings:post-truncation-changed': PostTruncationChangedPayload;
+  'settings:scc-excerpt-limit-changed': SccExcerptLimitChangedPayload;
 
   // ── View Tabs ──────────────────────────────
   'view-tab:opened': ViewTabOpenedPayload;

@@ -54,6 +54,7 @@ export const StorageKeys = {
 
   // UI preferences (per-account)
   DISABLE_POST_TRUNCATION: 'noornote_disable_post_truncation_map',
+  SCC_ARTICLE_EXCERPT_LIMIT: 'noornote_scc_article_excerpt_limit_map',
   CONTENT_VISIBILITY_AUTO: 'noornote_content_visibility_auto_map', // boolean: enable CSS content-visibility:auto on note cards (memory optimization)
   LAYOUT_MODE: 'noornote_layout_mode_map', // 'default' | 'right-pane' | 'wide'
 

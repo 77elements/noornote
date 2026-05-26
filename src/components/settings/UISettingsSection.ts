@@ -109,6 +109,18 @@ export class UISettingsSection extends SettingsSection {
 
         <section class="section">
           <div class="setting">
+            <span class="setting__label">Article excerpt limit in secondary content column</span>
+            <div class="setting__control">
+              <input type="number" class="input" id="scc-excerpt-limit-input" min="50" max="1000" step="10" style="width: 80px" />
+            </div>
+            <p class="setting__desc">
+              Maximum number of characters for article excerpts in the side column. Default: 200.
+            </p>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
             <span class="setting__label">Memory optimization (experimental)</span>
             <div class="setting__control" id="content-visibility-switch-container"></div>
             <p class="setting__desc">
@@ -248,6 +260,20 @@ export class UISettingsSection extends SettingsSection {
 
       postTruncationContainer.innerHTML = this.postTruncationSwitch.render();
       this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
+    }
+
+    // Initialize SCC Article Excerpt Limit input
+    const excerptInput = contentContainer.querySelector('#scc-excerpt-limit-input') as HTMLInputElement | null;
+    if (excerptInput) {
+      const saved = this.storage.get<number>(StorageKeys.SCC_ARTICLE_EXCERPT_LIMIT, 200);
+      excerptInput.value = String(saved);
+      excerptInput.addEventListener('change', () => {
+        const val = Math.max(50, Math.min(1000, parseInt(excerptInput.value, 10) || 200));
+        excerptInput.value = String(val);
+        this.storage.set(StorageKeys.SCC_ARTICLE_EXCERPT_LIMIT, val);
+        this.eventBus.emit('settings:scc-excerpt-limit-changed', { limit: val });
+        ToastService.show(`Article excerpt limit set to ${val} characters`, 'success');
+      });
     }
 
     // Initialize Content Visibility switch

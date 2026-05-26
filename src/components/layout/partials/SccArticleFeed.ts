@@ -11,6 +11,7 @@ import { hexToNpub } from '../../../helpers/nip19';
 import { formatTimestamp } from '../../../helpers/formatTimestamp';
 import { setupUserMentionHandlers } from '../../../helpers/UserMentionHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
+import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
 
 const BATCH_SIZE = 7;
 
@@ -165,7 +166,8 @@ export class SccArticleFeed {
   private createCard(event: NostrEvent): HTMLElement {
     const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
     const metadata = articlesApi?.extractArticleMetadata(event) ?? { title: '', summary: '', image: '', identifier: '', publishedAt: 0, topics: [] };
-    const excerpt = this.extractExcerpt(event.content || '', 200);
+    const excerptLimit = PerAccountLocalStorage.getInstance().get<number>(StorageKeys.SCC_ARTICLE_EXCERPT_LIMIT, 200);
+    const excerpt = this.extractExcerpt(event.content || '', excerptLimit);
     const naddr = encodeNaddr({
       kind: 30023,
       pubkey: event.pubkey,
