@@ -146,7 +146,7 @@ export class SingleNoteView extends View {
     }
 
     let authorPubkey = event.pubkey;
-    if (event.kind === 6) {
+    if (event.kind === 6 || event.kind === 16) {
       const pTag = event.tags.find(tag => tag[0] === 'p');
       if (pTag?.[1]) authorPubkey = pTag[1];
     }
@@ -163,7 +163,7 @@ export class SingleNoteView extends View {
   }
 
   private async renderNote(event: NostrEvent): Promise<void> {
-    if (event.kind === 6) {
+    if (event.kind === 6 || event.kind === 16) {
       const originalNoteId = extractOriginalNoteId(event);
       if (!originalNoteId) {
         this.showError('Could not extract original note ID from repost');

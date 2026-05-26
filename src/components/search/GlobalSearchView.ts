@@ -419,7 +419,7 @@ export class GlobalSearchView {
         }
 
         // Filter reposts (Kind 6) where the original author is muted
-        if (event.kind === 6) {
+        if (event.kind === 6 || event.kind === 16) {
           const repostedAuthorPubkey = event.tags.find(tag => tag[0] === 'p')?.[1];
           if (repostedAuthorPubkey && mutedSet.has(repostedAuthorPubkey)) {
             return false;

@@ -574,7 +574,7 @@ export class NoteMenu {
     try {
       // For Reposts (Kind 6), bookmark the reposted note, not the repost itself
       let eventIdToBookmark = this.options.eventId;
-      if (this.options.rawEvent && this.options.rawEvent.kind === 6) {
+      if (this.options.rawEvent && (this.options.rawEvent.kind === 6 || this.options.rawEvent.kind === 16)) {
         // Extract reposted event ID from 'e' tag
         const eTag = this.options.rawEvent.tags.find(tag => tag[0] === 'e');
         if (eTag && eTag[1]) {

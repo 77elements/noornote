@@ -508,7 +508,7 @@ export class ReactionsOrchestrator extends Orchestrator {
     const isArticle = this.isLongFormArticle(noteId);
 
     // Build filters - reposts need special handling for #q tag
-    const filters: NDKFilter[] = this.buildFilters([6], noteId, articleEventId);
+    const filters: NDKFilter[] = this.buildFilters([6, 16], noteId, articleEventId);
 
     // Add quoted repost filters (#q tag)
     if (isArticle) {
@@ -523,7 +523,7 @@ export class ReactionsOrchestrator extends Orchestrator {
       let timeout: ReturnType<typeof setTimeout>;
       this.transport.subscribe(relays, filters, {
         onEvent: (event: NostrEvent) => {
-          if (event.kind === 6) {
+          if (event.kind === 6 || event.kind === 16) {
             if (!regularAuthors.has(event.pubkey)) {
               regularAuthors.add(event.pubkey);
               regular.push(event);

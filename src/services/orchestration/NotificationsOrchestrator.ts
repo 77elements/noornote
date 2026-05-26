@@ -196,7 +196,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     // Filter 1: Direct mentions/tags (#p filter)
     const ptagFilter: NDKFilter = {
       '#p': [this.userPubkey],
-      kinds: [1, 6, 7, 8, 20, 21, 22, 1111, 9735, 9802] as any,
+      kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
       since: now
     };
 
@@ -304,7 +304,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for last 100 notifications
       const ptagFilter: NDKFilter = {
         '#p': [userPubkey],
-        kinds: [1, 6, 7, 8, 20, 21, 22, 1111, 9735, 9802] as any,
+        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
         limit: 100
       };
 
@@ -373,7 +373,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for new notifications
       const ptagFilter: NDKFilter = {
         '#p': [currentUser.pubkey],
-        kinds: [1, 6, 7, 8, 20, 21, 22, 1111, 9735, 9802] as any,
+        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
         since: since
       };
 
@@ -438,7 +438,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       // Build filter for older notifications
       const ptagFilter: NDKFilter = {
         '#p': [currentUser.pubkey],
-        kinds: [1, 6, 7, 8, 20, 21, 22, 1111, 9735, 9802] as any,
+        kinds: [1, 6, 7, 8, 16, 20, 21, 22, 1111, 9735, 9802] as any,
         until: until,
         limit: limit
       };
@@ -958,7 +958,7 @@ export class NotificationsOrchestrator extends Orchestrator {
       if (hasUserPtag) return 'mention';
     }
 
-    if (event.kind === 6) return 'repost';
+    if (event.kind === 6 || event.kind === 16) return 'repost';
     if (event.kind === 7) return 'reaction';
     if (event.kind === 8) return 'badge-award';
     if (event.kind === 1018) return 'poll_vote';

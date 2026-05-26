@@ -32,6 +32,7 @@ export class NoteProcessor {
         case 1111:
           return TextNoteProcessor.process(event);
         case 6:
+        case 16:
           return RepostProcessor.process(event);
         case 8:
           return BadgeAwardProcessor.process(event);

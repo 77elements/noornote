@@ -11,7 +11,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export function extractOriginalNoteId(event: NostrEvent): string | undefined {
   // For regular notes (not reposts), return their ID
-  if (event.kind !== 6) {
+  if (event.kind !== 6 && event.kind !== 16) {
     return event.id;
   }
 

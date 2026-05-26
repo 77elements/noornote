@@ -51,7 +51,7 @@ export function filterContentWords(events: NostrEvent[]): NostrEvent[] {
 function getContentToCheck(event: NostrEvent): string | null {
   if (!event.content) return null;
 
-  if (event.kind === 6) {
+  if (event.kind === 6 || event.kind === 16) {
     try {
       const original = JSON.parse(event.content);
       return original?.content || null;

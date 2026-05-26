@@ -21,11 +21,11 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export async function getRepostsOriginalEvent(event: NostrEvent): Promise<NostrEvent> {
   // Not a repost - return as-is
-  if (event.kind !== 6) {
+  if (event.kind !== 6 && event.kind !== 16) {
     return event;
   }
 
-  // Repost (kind 6) - extract original note
+  // Repost (kind 6/16) - extract original note
 
   // Try 1: Parse from content (legacy format - embedded JSON)
   if (event.content) {

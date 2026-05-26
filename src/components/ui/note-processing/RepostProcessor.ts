@@ -7,6 +7,8 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ProcessedNote } from '../types/NoteTypes';
 import { ContentProcessor } from '../../../services/ContentProcessor';
 import { PollProcessor } from './PollProcessor';
+import { PictureNoteProcessor } from './PictureNoteProcessor';
+import { VideoNoteProcessor } from './VideoNoteProcessor';
 
 export class RepostProcessor {
   private static contentProcessor = ContentProcessor.getInstance();
@@ -38,10 +40,20 @@ export class RepostProcessor {
       console.warn('⚠️ Could not parse repost content as JSON');
     }
 
-    // Process content with original event's tags for proper mention handling
-    const processedContent = originalEvent
-      ? RepostProcessor.contentProcessor.processContentWithTags(originalContent, originalEvent.tags)
-      : RepostProcessor.contentProcessor.processContent(originalContent);
+    // For media events (kind 20/21/22), delegate to specialized processors
+    // so imeta tags are extracted and media is rendered properly.
+    let processedContent;
+    if (originalEvent && originalEvent.kind === 20) {
+      processedContent = RepostProcessor.contentProcessor.processContentWithTags(originalContent, originalEvent.tags);
+      PictureNoteProcessor.prependPictureContent(processedContent, originalEvent.tags);
+    } else if (originalEvent && (originalEvent.kind === 21 || originalEvent.kind === 22)) {
+      processedContent = RepostProcessor.contentProcessor.processContentWithTags(originalContent, originalEvent.tags);
+      VideoNoteProcessor.prependVideoContent(processedContent, originalEvent.tags);
+    } else {
+      processedContent = originalEvent
+        ? RepostProcessor.contentProcessor.processContentWithTags(originalContent, originalEvent.tags)
+        : RepostProcessor.contentProcessor.processContent(originalContent);
+    }
 
     // Build profile objects with explicit undefined handling for exactOptionalPropertyTypes
     const buildProfile = (profile: { name?: string; display_name?: string; picture?: string } | null): { name?: string; display_name?: string; picture?: string } | undefined => {
