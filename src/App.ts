@@ -137,11 +137,6 @@ export class App {
       this.checkForUpdates();
     }
 
-    // Web update banner (manual trigger, web-only)
-    if (platform.isBrowser) {
-      import('./services/UpdateBanner').then(({ mountUpdateBanner }) => mountUpdateBanner());
-    }
-
     // Read ?r= relay browser parameter (captured early in main.ts before HMR can strip query params)
     const relayParam: string | null = (window as any).__noornote_relay_param || null;
     if (relayParam) {
