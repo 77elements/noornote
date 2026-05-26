@@ -42,7 +42,10 @@ export class ListingEditorView extends View {
   private listingService: ListingService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private mediaApi: MediaModuleApi | null = null;
+  private _mediaApi?: MediaModuleApi | null;
+  private get mediaApi(): MediaModuleApi | null {
+    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+  }
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -83,8 +86,6 @@ export class ListingEditorView extends View {
     this.listingService = ListingService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
-
     this.identifier = ListingService.generateIdentifier();
     this.loadRelayConfiguration();
 
@@ -486,7 +487,7 @@ export class ListingEditorView extends View {
     if (uploadBtn) uploadBtn.disabled = true;
 
     try {
-      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      const api = this.mediaApi;
       if (!api) return;
 
       const result = await api.uploadFile(file);
