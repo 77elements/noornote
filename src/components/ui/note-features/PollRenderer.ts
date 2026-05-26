@@ -5,7 +5,8 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { PollOrchestrator } from '../../../services/orchestration/PollOrchestrator';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 
 interface LocalPollOption {
   id: string;
@@ -58,10 +59,10 @@ export class PollRenderer {
     }
 
     // Fetch poll results asynchronously
-    const pollOrchestrator = PollOrchestrator.getInstance();
-    pollOrchestrator.fetchPollResults(eventId, pollOptions).then(results => {
+    const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+    (singleNoteApi?.fetchPollResults(eventId, pollOptions) ?? Promise.reject('Module not loaded')).then(results => {
         // Update UI with vote counts
-        results.options.forEach(option => {
+        results.options.forEach((option: { id: string; voteCount: number }) => {
           const optionBtn = pollContainer.querySelector(`[data-option-index="${option.id}"]`);
           if (!(optionBtn instanceof HTMLElement)) return;
 

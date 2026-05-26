@@ -1,1 +1,1 @@
-export type { PostsModuleApi, PostOptions, ReplyOptions, HighlightOptions } from './contracts';
+export type { PostsModuleApi, PostOptions, ReplyOptions, HighlightOptions, RepostOptions, DeletionOptions } from './contracts';

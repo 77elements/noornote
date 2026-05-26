@@ -9,6 +9,8 @@
 import { View } from './View';
 import { PlatformService } from '../../services/PlatformService';
 import { UserProfileService } from '../../services/UserProfileService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { extractDisplayName } from '../../helpers/extractDisplayName';
 import { npubToHex } from '../../helpers/nip19';
@@ -261,8 +263,8 @@ export class AboutView extends View {
   private bindListeners(): void {
     const checkUpdateBtn = this.container.querySelector('#about-check-update-btn');
     checkUpdateBtn?.addEventListener('click', async () => {
-      const { UpdateCheckService } = await import('../../services/UpdateCheckService');
-      await UpdateCheckService.getInstance().checkManually(checkUpdateBtn as HTMLButtonElement);
+      const settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+      await settingsApi?.checkUpdateManually(checkUpdateBtn as HTMLButtonElement);
     });
   }
 

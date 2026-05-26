@@ -11,7 +11,8 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { ProfileEditorService, type ProfileMetadata } from '../../services/ProfileEditorService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ProfileModuleApi, ProfileMetadata } from '../../modules/profile/contracts';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -22,7 +23,7 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 export class ProfileEditModal {
   private static instance: ProfileEditModal;
   private modalService: ModalService;
-  private profileEditorService: ProfileEditorService;
+  private profileApi: ProfileModuleApi | null;
   private userProfileService: UserProfileService;
   private authService: AuthService;
   private systemLogger: SystemLogger;
@@ -40,7 +41,7 @@ export class ProfileEditModal {
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.profileEditorService = ProfileEditorService.getInstance();
+    this.profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
@@ -314,7 +315,7 @@ export class ProfileEditModal {
         profileToSave.nip05 = nip05s[0] || '';
       }
 
-      const result = await this.profileEditorService.updateProfile(profileToSave);
+      const result = await (this.profileApi?.updateProfile(profileToSave) ?? Promise.resolve(null));
 
       if (result) {
         this.eventBus.emit('profile:updated', {

@@ -1,7 +1,23 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { ThreadContext } from '../../services/orchestration/ThreadOrchestrator';
+import type { VoteOptions } from '../../services/PollVoteService';
 
-export type { ThreadContext };
+export type { ThreadContext, VoteOptions };
+
+interface ParentAuthorInfo {
+  displayName: string;
+  avatarUrl: string;
+  pubkey: string;
+}
+
+export type { ParentAuthorInfo };
+
+interface PollOptionInput {
+  id: string;
+  label: string;
+}
+
+export type { PollOptionInput };
 
 export interface SingleNoteModuleApi {
   fetchReplies(noteId: string): Promise<NostrEvent[]>;
@@ -9,4 +25,17 @@ export interface SingleNoteModuleApi {
   startLiveReplies(noteId: string, callback: (event: NostrEvent) => void): void;
   stopLiveReplies(noteId: string): void;
   clearCache(noteId: string): void;
+
+  // ParentNoteFetcher
+  fetchParentAuthor(parentEventId: string, relayHint: string | null): Promise<ParentAuthorInfo | null>;
+
+  // PollVoteService
+  castVote(options: VoteOptions): Promise<boolean>;
+
+  // QuoteOrchestrator
+  fetchQuotedEvent(nostrRef: string, authorHint?: string, extraOutboundPubkeys?: string[]): Promise<NostrEvent | null>;
+
+  // PollOrchestrator
+  fetchPollResults(pollEventId: string, pollOptions: PollOptionInput[], currentUserPubkey?: string): Promise<any>;
+  clearPollCache(pollEventId: string): void;
 }

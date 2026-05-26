@@ -10,11 +10,11 @@
 
 import { SettingsSection } from './SettingsSection';
 import { RelayConfig, type RelayInfo, type RelayType } from '../../services/RelayConfig';
-import { RelayListOrchestrator } from '../../services/orchestration/RelayListOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
-import { RelayHealthMonitor } from '../../services/RelayHealthMonitor';
 import { EventBus } from '../../services/EventBus';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -27,10 +27,9 @@ interface LocalRelaySettings {
 
 export class RelaySettingsSection extends SettingsSection {
   private relayConfig: RelayConfig;
-  private relayListOrchestrator: RelayListOrchestrator;
+  private settingsApi: SettingsModuleApi | null;
   private authService: AuthService;
   private modalService: ModalService;
-  private healthMonitor: RelayHealthMonitor;
   private eventBus: EventBus;
   private eventBusSubscriptions: string[] = [];
   private localRelaySettings: LocalRelaySettings;
@@ -40,10 +39,9 @@ export class RelaySettingsSection extends SettingsSection {
   constructor() {
     super('relay-settings');
     this.relayConfig = RelayConfig.getInstance();
-    this.relayListOrchestrator = RelayListOrchestrator.getInstance();
+    this.settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
     this.authService = AuthService.getInstance();
     this.modalService = ModalService.getInstance();
-    this.healthMonitor = RelayHealthMonitor.getInstance();
     this.eventBus = EventBus.getInstance();
 
     // Load settings
@@ -94,7 +92,7 @@ export class RelaySettingsSection extends SettingsSection {
       const url = (item as HTMLElement).dataset.url;
       if (!url) return;
 
-      const metrics = this.healthMonitor.getMetrics(url);
+      const metrics = this.settingsApi?.getRelayHealthMetrics(url);
       const indicator = item.querySelector('.relay-health-indicator');
 
       if (indicator && metrics) {
@@ -112,7 +110,7 @@ export class RelaySettingsSection extends SettingsSection {
     const summaryContainer = document.querySelector('#relay-health-summary');
     if (!summaryContainer) return;
 
-    const summary = await this.healthMonitor.getHealthSummary();
+    const summary = await this.settingsApi?.getHealthSummary() ?? { healthy: 0, total: 0, warnings: [] };
     summaryContainer.innerHTML = this.renderHealthSummary(summary);
   }
 
@@ -242,7 +240,7 @@ export class RelaySettingsSection extends SettingsSection {
    * Render single relay item
    */
   private renderRelayItem(relay: RelayInfo): string {
-    const metrics = this.healthMonitor.getMetrics(relay.url);
+    const metrics = this.settingsApi?.getRelayHealthMetrics(relay.url);
     const isConnected = metrics?.isConnected ?? false;
     const latency = metrics?.latency;
 
@@ -555,7 +553,7 @@ export class RelaySettingsSection extends SettingsSection {
     if (!context) return;
 
     try {
-      const relayTags = RelayListOrchestrator.relayInfosToTags(this.tempRelays);
+      const relayTags = this.settingsApi?.relayInfosToTags(this.tempRelays) ?? [];
       const unsignedEvent = {
         kind: 10002,
         created_at: Math.floor(Date.now() / 1000),
@@ -569,7 +567,7 @@ export class RelaySettingsSection extends SettingsSection {
       // Orchestrator emits via `publishEverywhere` so the NIP-65 lands on
       // write + read + aggregator + indexer relays — required for the
       // bootstrap path when the user moves to a smaller write-set.
-      await this.relayListOrchestrator.publishRelayList(
+      await this.settingsApi?.publishRelayList(
         this.tempRelays,
         signedEvent
       );

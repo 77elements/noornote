@@ -5,7 +5,8 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { DeletionService } from '../../services/DeletionService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
 
@@ -17,12 +18,12 @@ export interface DeleteNoteModalOptions {
 export class DeleteNoteModal {
   private static instance: DeleteNoteModal | null = null;
   private modalService: ModalService;
-  private deletionService: DeletionService;
+  private postsApi: PostsModuleApi | null;
   private currentOptions: DeleteNoteModalOptions | null = null;
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.deletionService = DeletionService.getInstance();
+    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
   }
 
   /**
@@ -113,7 +114,7 @@ export class DeleteNoteModal {
     if (!this.currentOptions) return;
 
     try {
-      const success = await this.deletionService.deleteEvent(this.currentOptions.eventId);
+      const success = await (this.postsApi?.deleteEvent(this.currentOptions.eventId) ?? Promise.resolve(false));
 
       if (success) {
         // Close modal

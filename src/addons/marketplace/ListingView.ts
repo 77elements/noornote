@@ -213,8 +213,8 @@ export class ListingView extends View {
         const writeRelays = await RelayConfig.getInstance().getWriteRelays();
 
         if (action === 'repost') {
-          const { RepostService } = await import('../../services/RepostService');
-          await RepostService.getInstance().publishGenericRepost({
+          const { ModuleLoader } = await import('../../core/ModuleLoader');
+          await ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')?.publishGenericRepost({
             originalEvent: event,
           });
         } else if (action === 'quote') {

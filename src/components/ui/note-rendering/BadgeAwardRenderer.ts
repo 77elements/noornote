@@ -9,7 +9,6 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
-import { BadgeOrchestrator } from '../../../services/orchestration/BadgeOrchestrator';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { hexToNpub } from '../../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
@@ -68,7 +67,8 @@ export class BadgeAwardRenderer {
 
   private static upgradeWithDefinition(container: HTMLElement, coordinate: string): void {
     if (!coordinate) return;
-    BadgeOrchestrator.getInstance().fetchBadgeDefinition(coordinate).then(def => {
+    import('../../../services/orchestration/BadgeOrchestrator').then(({ BadgeOrchestrator }) =>
+    BadgeOrchestrator.getInstance().fetchBadgeDefinition(coordinate)).then(def => {
       if (!def) return;
       const nameEl = container.querySelector('.badge-award__name');
       if (nameEl) nameEl.textContent = def.name;

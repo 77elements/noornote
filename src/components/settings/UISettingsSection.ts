@@ -16,6 +16,8 @@ import { LayoutService } from '../../services/LayoutService';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
 import { PlatformService } from '../../services/PlatformService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SettingsModuleApi } from '../../modules/settings/contracts';
 
 export class UISettingsSection extends SettingsSection {
   private storage: PerAccountLocalStorage;
@@ -301,14 +303,13 @@ export class UISettingsSection extends SettingsSection {
     const autoUpdateContainer = contentContainer.querySelector('#auto-update-switch-container');
     if (!autoUpdateContainer) return;
 
-    import('../../services/UpdateCheckService').then(({ UpdateCheckService }) => {
-      const service = UpdateCheckService.getInstance();
-
+    const settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+    if (settingsApi) {
       this.autoUpdateSwitch = new Switch({
         label: '',
-        checked: service.isAutoCheckEnabled(),
+        checked: settingsApi.isAutoCheckEnabled(),
         onChange: (checked) => {
-          service.setAutoCheckEnabled(checked);
+          settingsApi.setAutoCheckEnabled(checked);
           ToastService.show(
             checked ? 'Auto-update check enabled' : 'Auto-update check disabled',
             'success'
@@ -318,12 +319,12 @@ export class UISettingsSection extends SettingsSection {
 
       autoUpdateContainer.innerHTML = this.autoUpdateSwitch.render();
       this.autoUpdateSwitch.setupEventListeners(autoUpdateContainer as HTMLElement);
-    });
+    }
 
     const checkNowBtn = contentContainer.querySelector('#check-update-now-btn');
     checkNowBtn?.addEventListener('click', async () => {
-      const { UpdateCheckService } = await import('../../services/UpdateCheckService');
-      await UpdateCheckService.getInstance().checkManually(checkNowBtn as HTMLButtonElement);
+      const api = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+      await api?.checkUpdateManually(checkNowBtn as HTMLButtonElement);
     });
   }
 

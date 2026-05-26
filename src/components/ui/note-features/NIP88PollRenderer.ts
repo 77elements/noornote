@@ -8,8 +8,8 @@
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { PollData } from '../../poll/PollCreator';
-import { PollOrchestrator } from '../../../services/orchestration/PollOrchestrator';
-import { PollVoteService } from '../../../services/PollVoteService';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../../services/SystemLogger';
 import { EventBus } from '../../../services/EventBus';
@@ -72,7 +72,7 @@ export class NIP88PollRenderer {
     pollDataCache.set(eventId, pollData);
 
     // Get services
-    const pollOrchestrator = PollOrchestrator.getInstance();
+    const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     const authService = AuthService.getInstance();
     const systemLogger = SystemLogger.getInstance();
 
@@ -192,13 +192,13 @@ export class NIP88PollRenderer {
 
     // Fetch and display vote counts
     try {
-      const results = await pollOrchestrator.fetchPollResults(
+      const results = await singleNoteApi?.fetchPollResults(
         eventId,
         pollData.options,
         currentUser?.pubkey
       );
 
-      this.updatePollResults(pollContainer, results, pollData);
+      if (results) this.updatePollResults(pollContainer, results, pollData);
     } catch (error) {
       systemLogger.error('NIP88PollRenderer', `Failed to fetch poll results: ${error}`);
     }
@@ -213,8 +213,7 @@ export class NIP88PollRenderer {
     pollData: PollData,
     _pollContainer: HTMLElement
   ): Promise<void> {
-    const voteService = PollVoteService.getInstance();
-    const pollOrchestrator = PollOrchestrator.getInstance();
+    const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     const authService = AuthService.getInstance();
     const systemLogger = SystemLogger.getInstance();
 
@@ -228,25 +227,25 @@ export class NIP88PollRenderer {
     const relays = [...new Set([...pollRelays, ...aggregatorRelays])];
 
     // Cast vote
-    const success = await voteService.castVote({
+    const success = await (singleNoteApi?.castVote({
       pollEventId,
       optionIds: [optionId], // For now, single choice only
       relays
-    });
+    }) ?? Promise.resolve(false));
 
     if (success) {
       // Clear cache and refetch results
-      pollOrchestrator.clearCache(pollEventId);
+      singleNoteApi?.clearPollCache(pollEventId);
 
       try {
-        const results = await pollOrchestrator.fetchPollResults(
+        const results = await singleNoteApi?.fetchPollResults(
           pollEventId,
           pollData.options,
           currentUser.pubkey
         );
 
         // Emit event to update ALL poll containers across all views
-        this.eventBus.emit('poll:voted', { pollEventId, results });
+        if (results) this.eventBus.emit('poll:voted', { pollEventId, results });
       } catch (error) {
         systemLogger.error('NIP88PollRenderer', `Failed to refresh poll results: ${error}`);
       }

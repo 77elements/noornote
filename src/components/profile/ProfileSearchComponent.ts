@@ -1,15 +1,15 @@
 /**
  * ProfileSearchComponent - Search trigger for profile pages
- * Uses ProfileSearchOrchestrator for client-side filtering
+ * Uses ProfileModuleApi for client-side filtering
  */
 
-import { ProfileSearchOrchestrator } from '../../services/orchestration/ProfileSearchOrchestrator';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { EventBus } from '../../services/EventBus';
 
 export class ProfileSearchComponent {
   private container: HTMLElement;
   private pubkeyHex: string;
-  private orchestrator: ProfileSearchOrchestrator;
   private eventBus: EventBus;
   private isExpanded: boolean = false;
   private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
@@ -17,7 +17,6 @@ export class ProfileSearchComponent {
 
   constructor(pubkeyHex: string) {
     this.pubkeyHex = pubkeyHex;
-    this.orchestrator = ProfileSearchOrchestrator.getInstance();
     this.eventBus = EventBus.getInstance();
     this.container = this.createElement();
     this.setupEventListeners();
@@ -160,8 +159,13 @@ export class ProfileSearchComponent {
       button.disabled = true;
       button.textContent = 'Searching...';
 
-      // Perform search via ProfileSearchOrchestrator (fetches all notes, client-side filter)
-      const result = await this.orchestrator.searchUserNotes({
+      const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+      if (!profileApi) {
+        throw new Error('Profile module not available');
+      }
+
+      // Perform search via ProfileModuleApi (fetches all notes, client-side filter)
+      const result = await profileApi.searchUserNotes({
         pubkeyHex: this.pubkeyHex,
         searchTerms,
         onProgress: (message) => this.showStatus(message, 'info')

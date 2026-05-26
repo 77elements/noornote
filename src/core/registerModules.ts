@@ -43,8 +43,8 @@ export function registerCoreModules(): void {
 
   loader.register({
     id: 'articles',
-    activation: 'route',
-    routes: ['/article', '/write-article', '/edit-article'],
+    activation: 'login',
+    routes: ['/article', '/articles', '/write-article', '/edit-article'],
     load: () => import('../modules/articles/runtime').then(m => m.default),
   });
 

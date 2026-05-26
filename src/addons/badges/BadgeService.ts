@@ -200,8 +200,8 @@ export class BadgeService {
    */
   public async revokeAward(awardEventId: string): Promise<boolean> {
     try {
-      const { DeletionService } = await import('../../services/DeletionService');
-      const success = await DeletionService.getInstance().deleteEvent(awardEventId);
+      const { ModuleLoader } = await import('../../core/ModuleLoader');
+      const success = await (ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')?.deleteEvent(awardEventId) ?? Promise.resolve(false));
       if (success) ToastService.show('Badge revoked', 'success');
       return success;
     } catch (error) {

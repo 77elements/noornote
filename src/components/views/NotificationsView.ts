@@ -10,7 +10,8 @@ import { EventBus } from '../../services/EventBus';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { UserProfileService } from '../../services/UserProfileService';
 import { SystemLogger } from '../../services/SystemLogger';
-import { NotificationsCacheService } from '../../services/NotificationsCacheService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 
 type TabType = 'all' | 'mentions' | 'reactions' | 'zaps' | 'replies';
@@ -21,7 +22,7 @@ export class NotificationsView extends View {
   private userProfileService: UserProfileService;
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
-  private cacheService: NotificationsCacheService;
+  private notificationsApi: NotificationsModuleApi | null;
   private activeTab: TabType = 'all';
   private notificationItems: NotificationItem[] = [];
   private infiniteScroll: InfiniteScroll;
@@ -40,7 +41,7 @@ export class NotificationsView extends View {
     this.userProfileService = UserProfileService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.cacheService = NotificationsCacheService.getInstance();
+    this.notificationsApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
       loadingMessage: 'Loading more notifications...'
     });
@@ -49,7 +50,7 @@ export class NotificationsView extends View {
     this.setupInfiniteScroll();
 
     // Update lastSeen timestamp (syncs both cache and orchestrator)
-    this.cacheService.updateLastSeen();
+    this.notificationsApi?.updateLastSeen();
 
     // Immediately clear badge (user is viewing notifications)
     this.eventBus.emit('notifications:badge-update');
@@ -121,7 +122,7 @@ export class NotificationsView extends View {
    */
   private async loadFromCacheAndFetch(): Promise<void> {
     // Step 1: Load cached notifications (instant display)
-    const cachedNotifications = this.cacheService.getCachedNotifications();
+    const cachedNotifications = this.notificationsApi?.getCachedNotifications() ?? [];
 
     if (cachedNotifications.length > 0) {
       // Feed cached events into NotificationsOrchestrator
@@ -137,14 +138,14 @@ export class NotificationsView extends View {
     }
 
     // Step 2: Fetch new notifications since lastFetch
-    const lastFetch = this.cacheService.getLastFetch();
+    const lastFetch = this.notificationsApi?.getLastFetch() ?? 0;
     if (lastFetch > 0) {
       // Fetch only new notifications
       await this.notificationsOrch.fetchNewNotifications(lastFetch);
 
       // Get all current notifications and update cache
       const allNotifications = this.notificationsOrch.getAllNotificationEvents();
-      this.cacheService.addNotifications(allNotifications);
+      this.notificationsApi?.addNotifications(allNotifications);
 
       // Log if new notifications arrived (but don't re-render - they're already in orchestrator)
       const newCount = allNotifications.filter(e => e.created_at > lastFetch).length;
@@ -154,7 +155,7 @@ export class NotificationsView extends View {
     } else {
       // First time - cache what we just fetched
       const allNotifications = this.notificationsOrch.getAllNotificationEvents();
-      this.cacheService.addNotifications(allNotifications);
+      this.notificationsApi?.addNotifications(allNotifications);
     }
 
     // Update badge after fetch completes (reflects any new notifications that arrived)
@@ -389,7 +390,7 @@ export class NotificationsView extends View {
   private async handleNewNotification(notification: NotificationEvent): Promise<void> {
     // Update cache with new notification
     const allNotifications = this.notificationsOrch.getAllNotificationEvents();
-    this.cacheService.addNotifications(allNotifications);
+    this.notificationsApi?.addNotifications(allNotifications);
 
     // Only add if current tab matches (or "all" tab is active)
     const filterType = this.getNotificationTypeFromTab();

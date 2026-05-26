@@ -13,18 +13,25 @@ import type { NotificationsModuleApi } from './contracts';
  */
 export class NotificationsRuntime implements ModuleRuntime<NotificationsModuleApi> {
   private orchestrator: import('../../services/orchestration/NotificationsOrchestrator').NotificationsOrchestrator | null = null;
+  private cacheService: import('../../services/NotificationsCacheService').NotificationsCacheService | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
-    const { NotificationsOrchestrator } = await import('../../services/orchestration/NotificationsOrchestrator');
-    this.orchestrator = NotificationsOrchestrator.getInstance();
+    const [orchMod, cacheMod] = await Promise.all([
+      import('../../services/orchestration/NotificationsOrchestrator'),
+      import('../../services/NotificationsCacheService'),
+    ]);
+    this.orchestrator = orchMod.NotificationsOrchestrator.getInstance();
+    this.cacheService = cacheMod.NotificationsCacheService.getInstance();
   }
 
   async destroy(): Promise<void> {
     this.orchestrator = null;
+    this.cacheService = null;
   }
 
   getApi(): NotificationsModuleApi {
     const orch = this.orchestrator;
+    const cs = this.cacheService;
     return {
       getUnreadCount: () => orch?.getUnreadCount() ?? 0,
       getHighestUnreadPriority: () => orch?.getHighestUnreadPriority() ?? null,
@@ -33,6 +40,12 @@ export class NotificationsRuntime implements ModuleRuntime<NotificationsModuleAp
       markAsRead: () => orch?.markAsRead(),
       start: () => orch?.start() ?? Promise.resolve(),
       stop: () => orch?.stop(),
+      getCacheLimit: () => cs?.getLimit() ?? 100,
+      setCacheLimit: (limit) => cs?.setLimit(limit),
+      updateLastSeen: () => cs?.updateLastSeen(),
+      getCachedNotifications: () => cs?.getCachedNotifications() ?? [],
+      getLastFetch: () => cs?.getLastFetch() ?? 0,
+      addNotifications: (events) => cs?.addNotifications(events),
     };
   }
 }

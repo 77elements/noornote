@@ -12,12 +12,11 @@
  * @used-by ProfileView
  */
 
-import { ProfileMountsService } from '../../services/ProfileMountsService';
-import { ProfileMountsOrchestrator } from '../../services/orchestration/ProfileMountsOrchestrator';
 import { NospressMountsService } from '../../services/NospressMountsService';
 import { NospressMountsOrchestrator } from '../../services/orchestration/NospressMountsOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { encodeNaddr, encodeNevent } from '../../services/NostrToolsAdapter';
 import {
@@ -73,8 +72,16 @@ export class ProfileListsComponent {
       this.mountsService = NospressMountsService.getInstance();
       this.mountsOrch = NospressMountsOrchestrator.getInstance();
     } else {
-      this.mountsService = ProfileMountsService.getInstance();
-      this.mountsOrch = ProfileMountsOrchestrator.getInstance();
+      const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+      this.mountsService = {
+        getMounts: () => profileApi?.getProfileMounts() ?? [],
+        setMountsFromRelay: () => { /* handled by module */ },
+        reorderMounts: (newOrder) => profileApi?.reorderProfileMounts(newOrder),
+      };
+      this.mountsOrch = {
+        fetchFromRelays: (pk, force) => profileApi?.fetchMountsFromRelays(pk, force) ?? Promise.resolve([]),
+        publishToRelays: () => profileApi?.publishMountsToRelays() ?? Promise.resolve(),
+      };
     }
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
     this.folderService = getBookmarkFolderService();

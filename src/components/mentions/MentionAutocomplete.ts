@@ -13,7 +13,8 @@
  */
 
 import { AppState } from '../../services/AppState';
-import { MentionProfileCache } from '../../services/MentionProfileCache';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export interface MentionSuggestion {
@@ -40,13 +41,11 @@ export class MentionAutocomplete {
   private searchQuery: string = '';
 
   private appState: AppState;
-  private mentionCache: MentionProfileCache;
   private options: MentionAutocompleteOptions;
 
   constructor(options: MentionAutocompleteOptions) {
     this.options = options;
     this.appState = AppState.getInstance();
-    this.mentionCache = MentionProfileCache.getInstance();
   }
 
   /**
@@ -187,7 +186,8 @@ export class MentionAutocomplete {
     }
 
     // Get suggestions from global cache (instant if preloaded at login)
-    const allSuggestions = await this.mentionCache.getSuggestions(followingPubkeys);
+    const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+    const allSuggestions = await postsApi?.getMentionSuggestions(followingPubkeys) ?? [];
 
     if (allSuggestions.length === 0) {
       this.hide();

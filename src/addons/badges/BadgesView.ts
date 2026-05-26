@@ -199,8 +199,8 @@ export class BadgesView extends View {
         const user = (await import('../../services/AuthService')).AuthService.getInstance().getCurrentUser();
         if (!user) return;
         const coordinate = `30009:${user.pubkey}:${slug}`;
-        const { DeletionService } = await import('../../services/DeletionService');
-        const success = await DeletionService.getInstance().deleteByCoordinates([coordinate]);
+        const { ModuleLoader } = await import('../../core/ModuleLoader');
+        const success = await (ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts')?.deleteByCoordinates([coordinate]) ?? Promise.resolve(false));
         if (success) {
           ToastService.show('Badge deleted', 'success');
           this.loadGallery();

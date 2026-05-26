@@ -8,7 +8,8 @@
  * @used-by DMComposeModal
  */
 
-import { UserSearchService, type UserSearchResult } from '../../services/UserSearchService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SearchModuleApi, UserSearchResult } from '../../modules/search/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { renderUserMention, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
@@ -28,7 +29,7 @@ export class UserSearchInput {
   private inputElement: HTMLInputElement | null = null;
   private dropdownElement: HTMLElement | null = null;
   private selectedUserElement: HTMLElement | null = null;
-  private userSearchService: UserSearchService;
+  private searchApi: SearchModuleApi | null;
   private userProfileService: UserProfileService;
   private options: UserSearchInputOptions;
 
@@ -46,7 +47,7 @@ export class UserSearchInput {
 
   constructor(options: UserSearchInputOptions = {}) {
     this.options = options;
-    this.userSearchService = UserSearchService.getInstance();
+    this.searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
     this.userProfileService = UserProfileService.getInstance();
     this.container = this.createElement();
     this.setupEventListeners();
@@ -234,7 +235,7 @@ export class UserSearchInput {
    * Perform user search
    */
   private performSearch(query: string): void {
-    this.currentSearchController = this.userSearchService.search(query, {
+    this.currentSearchController = this.searchApi?.searchUsers(query, {
       onLocalResults: (results) => {
         this.userResults = results;
         this.renderDropdown();
@@ -250,7 +251,7 @@ export class UserSearchInput {
         this.isSearching = false;
         this.renderDropdown();
       }
-    });
+    }) ?? null;
   }
 
   /**

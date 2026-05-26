@@ -10,7 +10,8 @@ import { SettingsSection } from './SettingsSection';
 import { ToastService } from '../../services/ToastService';
 import { ErrorService } from '../../services/ErrorService';
 import { ModalService } from '../../services/ModalService';
-import { NotificationsCacheService } from '../../services/NotificationsCacheService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { NotificationsModuleApi } from '../../modules/notifications/contracts';
 import { PlatformService } from '../../services/PlatformService';
 
 interface NDKCacheConfig {
@@ -67,8 +68,8 @@ export class CacheSettingsSection extends SettingsSection {
     if (!contentContainer) return;
 
     const config = this.getConfig();
-    const notificationsCacheService = NotificationsCacheService.getInstance();
-    const notificationsCacheLimit = notificationsCacheService.getLimit();
+    const notificationsApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
+    const notificationsCacheLimit = notificationsApi?.getCacheLimit() ?? 100;
 
     contentContainer.innerHTML = this.renderContent(config, notificationsCacheLimit);
     this.bindListeners(contentContainer);
@@ -229,7 +230,7 @@ export class CacheSettingsSection extends SettingsSection {
         ToastService.show('Invalid notifications cache size (10-1000)', 'error');
         return;
       }
-      NotificationsCacheService.getInstance().setLimit(val);
+      ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications')?.setCacheLimit(val);
       ToastService.show('Notifications cache size saved', 'success');
     };
     notifInput?.addEventListener('blur', saveNotifCache);

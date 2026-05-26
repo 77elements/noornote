@@ -14,14 +14,15 @@
  */
 
 import { Router } from '../../services/Router';
-import { ProfileEditorService, type ProfileMetadata } from '../../services/ProfileEditorService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ProfileModuleApi, ProfileMetadata } from '../../modules/profile/contracts';
 import { AuthService } from '../../services/AuthService';
 import { EventBus } from '../../services/EventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ImageUploader } from '../profile/ImageUploader';
 import { ToastService } from '../../services/ToastService';
 import { UserProfileService } from '../../services/UserProfileService';
-import { RelayListOrchestrator } from '../../services/orchestration/RelayListOrchestrator';
+import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import type { RelayInfo, RelayType } from '../../services/RelayConfig';
 import { PlatformService } from '../../services/PlatformService';
 import {
@@ -345,7 +346,7 @@ function generateRandomUsername(): string {
 
 export class AccountSetupWizard {
   private router: Router;
-  private profileEditorService: ProfileEditorService;
+  private profileApi: ProfileModuleApi | null;
   private authService: AuthService;
   private eventBus: EventBus;
   private storage: PerAccountLocalStorage;
@@ -378,7 +379,7 @@ export class AccountSetupWizard {
 
   constructor() {
     this.router = Router.getInstance();
-    this.profileEditorService = ProfileEditorService.getInstance();
+    this.profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     this.authService = AuthService.getInstance();
     this.eventBus = EventBus.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
@@ -2312,7 +2313,7 @@ IMPORTANT:
     try {
       // 1. Publish profile (Kind-0)
       this.updateFinishStatus(finishSpinner, 'Publishing profile...');
-      const result = await this.profileEditorService.updateProfile(this.profileData);
+      const result = await (this.profileApi?.updateProfile(this.profileData) ?? Promise.resolve(null));
       if (!result) {
         this.resetFinishButton(finishBtn, finishText, finishSpinner);
         return;
@@ -2386,7 +2387,8 @@ IMPORTANT:
       };
     });
 
-    const relayTags = RelayListOrchestrator.relayInfosToTags(relayInfos);
+    const settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+    const relayTags = settingsApi?.relayInfosToTags(relayInfos) ?? [];
     const unsignedEvent = {
       kind: 10002,
       created_at: Math.floor(Date.now() / 1000),
@@ -2400,8 +2402,7 @@ IMPORTANT:
     // Orchestrator emits via `publishEverywhere` so the fresh NIP-65 lands
     // on every reachable relay including aggregators — required for
     // discovery from any other client on the network.
-    const orchestrator = RelayListOrchestrator.getInstance();
-    await orchestrator.publishRelayList(relayInfos, signedEvent);
+    await settingsApi?.publishRelayList(relayInfos, signedEvent);
 
     // Replace RelayConfig with the user's chosen relays (clear defaults first)
     const { RelayConfig } = await import('../../services/RelayConfig');

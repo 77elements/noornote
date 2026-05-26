@@ -23,13 +23,14 @@ import { ClipboardActionsService } from '../../services/ClipboardActionsService'
 import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
 import { AuthGuard } from '../../services/AuthGuard';
-import { ArticleNotificationService } from '../../services/ArticleNotificationService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import type { ProfileListsComponent } from '../profile/ProfileListsComponent';
 import { ProfileArticlesCarousel } from '../profile/ProfileArticlesCarousel';
 import { ProfileVideosCarousel } from '../profile/ProfileVideosCarousel';
 import { ProfileListingsCarousel } from '../profile/ProfileListingsCarousel';
 import { isProfileListingsEnabled } from '../../addons/marketplace/index';
-import { FollowerCountService } from '../../services/FollowerCountService';
+import type { ProfileModuleApi } from '../../modules/profile/contracts';
 import { AddonLoader } from '../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../addons/profile-recognition/runtime';
 
@@ -37,7 +38,7 @@ import type { ProfileRecognitionRuntime } from '../../addons/profile-recognition
 // Types only (erased at build time) — live runtime accessed via AddonLoader
 type ProfileBlinkerType = import('../../addons/profile-recognition/profileBlinking').ProfileBlinker;
 type TextBlinkerType = import('../../addons/profile-recognition/profileBlinking').TextBlinker;
-import { ProfileOrchestrator } from '../../services/orchestration/ProfileOrchestrator';
+// ProfileOrchestrator accessed via profile module API
 import dayjs from 'dayjs';
 import calendarSystems from '@calidy/dayjs-calendarsystems';
 import HijriCalendarSystem from '@calidy/dayjs-calendarsystems/calendarSystems/HijriCalendarSystem';
@@ -102,8 +103,7 @@ export class ProfileView extends View {
   private lud16: string = '';
 
   // Services
-  private followerCountService: FollowerCountService;
-  private profileOrchestrator: ProfileOrchestrator;
+  private profileModuleApi: ProfileModuleApi | null;
 
   // Profile recognition blinker instances — service + classes live in the
   // addon runtime, looked up fresh via AddonLoader at use time.
@@ -128,8 +128,7 @@ export class ProfileView extends View {
     this.userService = UserService.getInstance();
     this.appState = AppState.getInstance();
     this.eventBus = EventBus.getInstance();
-    this.followerCountService = FollowerCountService.getInstance();
-    this.profileOrchestrator = ProfileOrchestrator.getInstance();
+    this.profileModuleApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     // Decode npub or nprofile to pubkey
     try {
       const decoded = decodeNip19(npub);
@@ -281,15 +280,11 @@ export class ProfileView extends View {
         // paths target the same singleton via getInstance(), so this dynamic
         // import is functionally identical to going through the runtime —
         // skipping the runtime field avoids a race with init() population.
-        const [
-          { ProfileMountsOrchestrator },
-          { NospressOrchestrator },
-        ] = await Promise.all([
-          import('../../services/orchestration/ProfileMountsOrchestrator'),
-          import('../../services/orchestration/NospressOrchestrator'),
-        ]);
+        const { NospressOrchestrator } = await import(
+          '../../services/orchestration/NospressOrchestrator'
+        );
         await Promise.all([
-          ProfileMountsOrchestrator.getInstance().syncFromRelays(),
+          this.profileModuleApi?.syncMountsFromRelays() ?? Promise.resolve(),
           NospressOrchestrator.getInstance().syncFromRelays(),
         ]);
         this.loadProfileLists();
@@ -395,14 +390,14 @@ export class ProfileView extends View {
     this.updateFollowerDisplay(); // Start pulsing
 
     try {
-      const count = await this.followerCountService.getFollowerCount(
+      const count = await (this.profileModuleApi?.getFollowerCount(
         this.pubkey,
         (currentCount, _relay) => {
           // Update UI after each relay
           this.followerCount = currentCount;
           this.updateFollowerDisplay();
         }
-      );
+      ) ?? Promise.resolve(0));
       // Final update
       this.followerCount = count;
       this.isLoadingFollowers = false;
@@ -442,7 +437,7 @@ export class ProfileView extends View {
     this.updateJoinedDateDisplay();
 
     try {
-      const oldestTimestamp = await this.profileOrchestrator.fetchOldestEvent(this.pubkey);
+      const oldestTimestamp = await this.profileModuleApi?.fetchOldestEvent(this.pubkey) ?? null;
 
       if (oldestTimestamp) {
         // Format date based on calendar system setting
@@ -814,8 +809,8 @@ export class ProfileView extends View {
       return muteButton;
     }
 
-    const articleNotifService = ArticleNotificationService.getInstance();
-    const isSubscribed = articleNotifService.isSubscribed(this.pubkey);
+    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const isSubscribed = articlesApi?.isSubscribedToArticleNotifications(this.pubkey) ?? false;
 
     const articleNotifCheckbox = `
       <label class="nn-checkbox" title="Get notified when this user posts a new article">
@@ -879,8 +874,8 @@ export class ProfileView extends View {
     const articleNotifCheckbox = this.container.querySelector('#article-notif-toggle') as HTMLInputElement;
     if (articleNotifCheckbox) {
       articleNotifCheckbox.addEventListener('change', () => {
-        const articleNotifService = ArticleNotificationService.getInstance();
-        articleNotifService.toggle(this.pubkey);
+        const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+        articlesApi?.toggleArticleNotifications(this.pubkey);
       });
     }
   }

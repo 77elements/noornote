@@ -4,24 +4,48 @@ import type { PostsModuleApi } from './contracts';
 export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
   private service: import('../../services/PostService').PostService | null = null;
   private noteService: import('../../services/NoteService').NoteService | null = null;
+  private repostService: import('../../services/RepostService').RepostService | null = null;
+  private deletionService: import('../../services/DeletionService').DeletionService | null = null;
+  private reportService: import('../../services/ReportService').ReportService | null = null;
+  private ReportServiceClass: typeof import('../../services/ReportService').ReportService | null = null;
+  private mentionCache: import('../../services/MentionProfileCache').MentionProfileCache | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
-    const [postMod, noteMod] = await Promise.all([
+    const [postMod, noteMod, repostMod, deletionMod, reportMod, mentionMod] = await Promise.all([
       import('../../services/PostService'),
       import('../../services/NoteService'),
+      import('../../services/RepostService'),
+      import('../../services/DeletionService'),
+      import('../../services/ReportService'),
+      import('../../services/MentionProfileCache'),
     ]);
     this.service = postMod.PostService.getInstance();
     this.noteService = noteMod.NoteService.getInstance();
+    this.repostService = repostMod.RepostService.getInstance();
+    this.deletionService = deletionMod.DeletionService.getInstance();
+    this.reportService = reportMod.ReportService.getInstance();
+    this.ReportServiceClass = reportMod.ReportService;
+    this.mentionCache = mentionMod.MentionProfileCache.getInstance();
   }
 
   async destroy(): Promise<void> {
     this.service = null;
     this.noteService = null;
+    this.repostService = null;
+    this.deletionService = null;
+    this.reportService = null;
+    this.ReportServiceClass = null;
+    this.mentionCache = null;
   }
 
   getApi(): PostsModuleApi {
     const svc = this.service;
     const ns = this.noteService;
+    const rs = this.repostService;
+    const ds = this.deletionService;
+    const rps = this.reportService;
+    const RpsCls = this.ReportServiceClass;
+    const mc = this.mentionCache;
     return {
       createPost: (options) => svc?.createPost(options) ?? Promise.resolve(false),
       createReply: (options) => svc?.createReply(options) ?? Promise.resolve(null),
@@ -32,6 +56,17 @@ export class PostsRuntime implements ModuleRuntime<PostsModuleApi> {
       registerNote: (event) => ns?.registerNote(event),
       registerNotes: (events) => ns?.registerNotes(events),
       hasNote: (eventId) => ns?.hasNote(eventId) ?? false,
+      hasUserReposted: (noteId) => rs?.hasUserReposted(noteId) ?? Promise.resolve(false),
+      publishRepost: (options) => rs?.publishRepost(options) ?? Promise.resolve({ success: false, error: 'Module not loaded' }),
+      publishGenericRepost: (options) => rs?.publishGenericRepost(options) ?? Promise.resolve({ success: false, error: 'Module not loaded' }),
+      deleteEvent: (eventId, reason) => ds?.deleteEvent(eventId, reason) ?? Promise.resolve(false),
+      deleteEvents: (options) => ds?.deleteEvents(options) ?? Promise.resolve(false),
+      deleteByCoordinates: (coordinates, reason) => ds?.deleteByCoordinates(coordinates, reason) ?? Promise.resolve(false),
+      createReport: (options) => rps?.createReport(options) ?? Promise.resolve({ success: false, error: 'Module not loaded' }),
+      getReportTypes: () => RpsCls?.getReportTypes() ?? [],
+      getReportTypeLabel: (type) => RpsCls?.getReportTypeLabel(type) ?? '',
+      getReportTypeDescription: (type) => RpsCls?.getReportTypeDescription(type) ?? '',
+      getMentionSuggestions: (followingPubkeys) => mc?.getSuggestions(followingPubkeys) ?? Promise.resolve([]),
     };
   }
 }

@@ -9,7 +9,8 @@ import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { RelayConfig } from '../../services/RelayConfig';
-import { DeletionService } from '../../services/DeletionService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ToastService } from '../../services/ToastService';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
@@ -200,7 +201,7 @@ export class MyListingsView extends View {
 
     try {
       const coordinate = `30402:${event.pubkey}:${identifier}`;
-      const success = await DeletionService.getInstance().deleteByCoordinates([coordinate], 'listing removed');
+      const success = await (ModuleLoader.getInstance().getApi<PostsModuleApi>('posts')?.deleteByCoordinates([coordinate], 'listing removed') ?? Promise.resolve(false));
 
       if (success) {
         rowEl.remove();

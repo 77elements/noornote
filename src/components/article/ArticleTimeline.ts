@@ -19,7 +19,6 @@ import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export class ArticleTimeline {
   private element: HTMLElement;
-  private feedOrchestrator: ArticleFeedOrchestrator;
   private userProfileService: UserProfileService;
   private router: Router;
   private infiniteScroll: InfiniteScroll;
@@ -28,7 +27,6 @@ export class ArticleTimeline {
   private hasMore: boolean = true;
 
   constructor() {
-    this.feedOrchestrator = ArticleFeedOrchestrator.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
     this.element = this.createElement();
@@ -52,6 +50,10 @@ export class ArticleTimeline {
       <div class="article-timeline__list nn-card-grid nn-card-grid--nonresponsive"></div>
     `;
     return container;
+  }
+
+  private get feedOrchestrator() {
+    return ArticleFeedOrchestrator.getInstance();
   }
 
   /**

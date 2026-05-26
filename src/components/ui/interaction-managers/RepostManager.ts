@@ -6,7 +6,8 @@
  * - Button state updates
  */
 
-import { RepostService } from '../../../services/RepostService';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { PostsModuleApi } from '../../../modules/posts/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { ToastService } from '../../../services/ToastService';
 import { PostNoteModal } from '../../post/PostNoteModal';
@@ -22,11 +23,11 @@ export interface RepostManagerConfig extends BaseInteractionConfig {
 }
 
 export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
-  private repostService: RepostService;
+  private postsApi: PostsModuleApi | null;
 
   constructor(config: RepostManagerConfig) {
     super(config);
-    this.repostService = RepostService.getInstance();
+    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
   }
 
   /**
@@ -34,7 +35,7 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
    */
   public async checkInteractionStatus(): Promise<void> {
     try {
-      this.hasInteracted = await this.repostService.hasUserReposted(this.config.noteId);
+      this.hasInteracted = await (this.postsApi?.hasUserReposted(this.config.noteId) ?? Promise.resolve(false));
       if (this.hasInteracted) {
         this.updateButtonState(true);
       }
@@ -125,8 +126,8 @@ export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
       // (Amethyst pattern) internally — no relays passed.
       const isStandardNote = unwrappedEvent.kind === 1;
       const result = isStandardNote
-        ? await this.repostService.publishRepost({ originalEvent: unwrappedEvent })
-        : await this.repostService.publishGenericRepost({ originalEvent: unwrappedEvent });
+        ? await (this.postsApi?.publishRepost({ originalEvent: unwrappedEvent }) ?? Promise.resolve({ success: false }))
+        : await (this.postsApi?.publishGenericRepost({ originalEvent: unwrappedEvent }) ?? Promise.resolve({ success: false }));
 
       if (result.success) {
         // Update stats (cache invalidation + optimistic UI update)

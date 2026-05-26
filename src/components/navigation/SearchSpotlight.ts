@@ -6,7 +6,8 @@
 
 import { Router } from '../../services/Router';
 import { EventBus } from '../../services/EventBus';
-import { UserSearchService, type UserSearchResult } from '../../services/UserSearchService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SearchModuleApi, UserSearchResult } from '../../modules/search/contracts';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { resolveNip05 } from '../../addons/nospress/Nip05Resolver';
@@ -28,7 +29,7 @@ export class SearchSpotlight {
   private element: HTMLElement;
   private router: Router;
   private eventBus: EventBus;
-  private userSearchService: UserSearchService;
+  private searchApi: SearchModuleApi | null;
   private isOpen: boolean = false;
   private inputElement: HTMLInputElement | null = null;
   private userSuggestionsElement: HTMLElement | null = null;
@@ -48,7 +49,7 @@ export class SearchSpotlight {
   constructor() {
     this.router = Router.getInstance();
     this.eventBus = EventBus.getInstance();
-    this.userSearchService = UserSearchService.getInstance();
+    this.searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
     this.element = this.createElement();
 
     // ESC handler with capture phase - fires BEFORE ModalService ESC handler
@@ -246,7 +247,7 @@ export class SearchSpotlight {
    * Perform user search (local + remote)
    */
   private performUserSearch(query: string): void {
-    this.currentSearchController = this.userSearchService.search(query, {
+    this.currentSearchController = this.searchApi?.searchUsers(query, {
       onLocalResults: (results) => {
         // Merge local results (they come first)
         this.userResults = results;
@@ -263,7 +264,7 @@ export class SearchSpotlight {
         this.isSearchingUsers = false;
         this.updateUserSuggestions();
       }
-    });
+    }) ?? null;
   }
 
   /** Update user suggestions display */

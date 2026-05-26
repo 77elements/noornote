@@ -14,7 +14,7 @@ import { ReportModal } from '../report/ReportModal';
 import { DeleteNoteModal } from '../delete/DeleteNoteModal';
 import { AuthService } from '../../services/AuthService';
 import { MuteOrchestrator } from '../../lists/mutes';
-import { ArticleNotificationService } from '../../services/ArticleNotificationService';
+import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ToastService } from '../../services/ToastService';
 import { EventBus } from '../../services/EventBus';
@@ -123,8 +123,8 @@ export class NoteMenu {
     const privateMutesEnabled = muteOrch.isPrivateMutesEnabled();
 
     // Check if subscribed to article notifications for this user
-    const articleNotifService = ArticleNotificationService.getInstance();
-    const isSubscribedToArticles = articleNotifService.isSubscribed(this.options.authorPubkey);
+    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const isSubscribedToArticles = articlesApi?.isSubscribedToArticleNotifications(this.options.authorPubkey) ?? false;
 
     // Build mute user buttons based on private mutes setting
     const muteUserButtons = privateMutesEnabled ? `
@@ -545,8 +545,8 @@ export class NoteMenu {
       return;
     }
 
-    const articleNotifService = ArticleNotificationService.getInstance();
-    const isNowSubscribed = articleNotifService.toggle(this.options.authorPubkey);
+    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const isNowSubscribed = articlesApi?.toggleArticleNotifications(this.options.authorPubkey) ?? false;
 
     if (isNowSubscribed) {
       ToastService.show('You will be notified about new articles', 'success');

@@ -6,7 +6,8 @@
 
 import { ModalService } from '../../services/ModalService';
 import { PlatformService } from '../../services/PlatformService';
-import { UpdateCheckService, type UpdateInfo } from '../../services/UpdateCheckService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SettingsModuleApi, UpdateInfo } from '../../modules/settings/contracts';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 declare const __APP_VERSION__: string;
@@ -130,7 +131,7 @@ export class UpdateModal {
     });
 
     skipBtn?.addEventListener('click', () => {
-      UpdateCheckService.getInstance().skipVersion(update.version);
+      ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings')?.skipVersion(update.version);
       this.modalService.hide();
     });
   }

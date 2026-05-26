@@ -10,7 +10,8 @@
  */
 
 import { AuthGuard } from '../../../services/AuthGuard';
-import { StatsUpdateService } from '../../../services/StatsUpdateService';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 
 export interface BaseInteractionConfig {
   noteId: string;
@@ -20,13 +21,13 @@ export interface BaseInteractionConfig {
 
 export abstract class BaseInteractionManager<TConfig extends BaseInteractionConfig> {
   protected config: TConfig;
-  protected statsUpdateService: StatsUpdateService;
+  protected reactionsApi: ReactionsModuleApi | null;
   protected button: HTMLElement | null = null;
   protected hasInteracted: boolean = false;
 
   constructor(config: TConfig) {
     this.config = config;
-    this.statsUpdateService = StatsUpdateService.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
 
   /**
@@ -58,7 +59,7 @@ export abstract class BaseInteractionManager<TConfig extends BaseInteractionConf
    * Update stats after successful interaction
    */
   protected updateStats(interactionType: 'like' | 'repost'): void {
-    this.statsUpdateService.updateAfterInteraction(
+    this.reactionsApi?.updateAfterInteraction(
       this.config.noteId,
       interactionType
     );

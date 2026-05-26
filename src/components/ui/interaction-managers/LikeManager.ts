@@ -7,8 +7,6 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { ModuleLoader } from '../../../core/ModuleLoader';
-import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { ToastService } from '../../../services/ToastService';
 import { EmojiPicker, type CustomEmojiEntry } from '../../emoji/EmojiPicker';
@@ -26,12 +24,10 @@ export interface LikeManagerConfig extends BaseInteractionConfig {
 }
 
 export class LikeManager extends BaseInteractionManager<LikeManagerConfig> {
-  private reactionsApi: ReactionsModuleApi | null;
   private emojiPicker: EmojiPicker | null = null;
 
   constructor(config: LikeManagerConfig) {
     super(config);
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
 
   /**

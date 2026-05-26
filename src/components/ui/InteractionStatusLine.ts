@@ -4,7 +4,8 @@
  * Used in both Timeline View and Single Note View
  */
 
-import { InteractionStatsService } from '../../services/InteractionStatsService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AuthGuard } from '../../services/AuthGuard';
 import { formatCount } from '../../helpers/formatCount';
 import { ZapManager } from './interaction-managers/ZapManager';
@@ -44,7 +45,7 @@ export class InteractionStatusLine {
   private element: HTMLElement;
   private config: ISLConfig;
   private stats: ISLStats;
-  private interactionStatsService: InteractionStatsService;
+  private reactionsApi: ReactionsModuleApi | null;
   private initialFetchPromise?: Promise<void>;
   private zapManager: ZapManager | null = null;
   private likeManager: LikeManager | null = null;
@@ -52,13 +53,13 @@ export class InteractionStatusLine {
 
   constructor(config: ISLConfig) {
     this.config = config;
-    this.interactionStatsService = InteractionStatsService.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
 
     // Initialize stats: use provided stats, or check cache (Timeline shows cached SNV stats)
     if (config.stats) {
       this.stats = config.stats;
     } else {
-      const cachedStats = this.interactionStatsService.getCachedStats(config.noteId);
+      const cachedStats = this.reactionsApi?.getCachedStats(config.noteId) ?? null;
       if (cachedStats) {
         // Convert InteractionStats to ISLStats
         this.stats = {
@@ -156,10 +157,11 @@ export class InteractionStatusLine {
    */
   private async fetchStats(): Promise<void> {
     try {
-      const stats = await this.interactionStatsService.getStats(
+      const stats = await this.reactionsApi?.getStats(
         this.config.noteId,
         this.config.authorPubkey
       );
+      if (!stats) return;
       this.updateStats({
         replies: stats.replies,
         reposts: stats.reposts,

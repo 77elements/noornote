@@ -5,7 +5,8 @@
  */
 
 import { ModalService } from '../../services/ModalService';
-import { ReportService, type ReportType } from '../../services/ReportService';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { PostsModuleApi, ReportType } from '../../modules/posts/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ToastService } from '../../services/ToastService';
@@ -22,14 +23,14 @@ export interface ReportModalOptions {
 export class ReportModal {
   private static instance: ReportModal | null = null;
   private modalService: ModalService;
-  private reportService: ReportService;
+  private postsApi: PostsModuleApi | null;
   private userProfileService: UserProfileService;
   private systemLogger: SystemLogger;
   private currentOptions: ReportModalOptions | null = null;
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.reportService = ReportService.getInstance();
+    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     this.userProfileService = UserProfileService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }
@@ -76,7 +77,7 @@ export class ReportModal {
    */
   private renderContent(options: ReportModalOptions): HTMLElement {
     const username = this.userProfileService.getUsername(options.reportedPubkey) ?? 'Unknown';
-    const reportTypes = ReportService.getReportTypes();
+    const reportTypes = this.postsApi?.getReportTypes() ?? [];
 
     const container = document.createElement('div');
     container.className = 'report-modal';
@@ -89,8 +90,8 @@ export class ReportModal {
     // Report types list
     const reportTypesHtml = reportTypes
       .map((type) => {
-        const label = ReportService.getReportTypeLabel(type);
-        const description = ReportService.getReportTypeDescription(type);
+        const label = this.postsApi?.getReportTypeLabel(type) ?? '';
+        const description = this.postsApi?.getReportTypeDescription(type) ?? '';
 
         return `
         <label class="report-modal__option">
@@ -210,7 +211,7 @@ export class ReportModal {
     }
 
     try {
-      const reportOptions: Parameters<typeof this.reportService.createReport>[0] = {
+      const reportOptions: { type: ReportType; reportedPubkey: string; reason?: string; reportedEventId?: string } = {
         type: reportType,
         reportedPubkey: this.currentOptions.reportedPubkey
       };
@@ -220,7 +221,7 @@ export class ReportModal {
       if (this.currentOptions.reportedEventId) {
         reportOptions.reportedEventId = this.currentOptions.reportedEventId;
       }
-      const result = await this.reportService.createReport(reportOptions);
+      const result = await this.postsApi?.createReport(reportOptions) ?? { success: false, error: 'Module not loaded' };
 
       if (result.success) {
         this.systemLogger.info('ReportModal', 'Report submitted successfully');

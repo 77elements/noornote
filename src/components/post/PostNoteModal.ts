@@ -27,7 +27,7 @@ import { PollCreator, type PollData } from '../poll/PollCreator';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { renderQuotePreview } from '../../helpers/renderQuotePreview';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
-import { StatsUpdateService } from '../../services/StatsUpdateService';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AppState } from '../../services/AppState';
 import { ContentValidationManager } from './ContentValidationManager';
 import { EditorStateManager } from './EditorStateManager';
@@ -705,10 +705,10 @@ export class PostNoteModal {
 
       if (success) {
         if (quotedEvent?.eventId) {
-          StatsUpdateService.getInstance().clearCacheOnly(quotedEvent.eventId);
+          ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions')?.clearCacheOnly(quotedEvent.eventId);
         }
         if (quotedArticle?.addressableId) {
-          StatsUpdateService.getInstance().clearCacheOnly(quotedArticle.addressableId);
+          ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions')?.clearCacheOnly(quotedArticle.addressableId);
         }
 
         this.draftContent = '';

@@ -7,9 +7,9 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { RelayBrowserOrchestrator } from '../../services/orchestration/RelayBrowserOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
+import type { RelayBrowserModuleApi } from '../../modules/relay-browser/contracts';
 import { NoteUI } from '../ui/NoteUI';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
@@ -19,7 +19,7 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 export class RelayBrowser {
   private element: HTMLElement;
   private notesContainer: HTMLElement;
-  private orchestrator: RelayBrowserOrchestrator;
+  private relayBrowserApi: RelayBrowserModuleApi | null;
   private infiniteScroll: InfiniteScroll;
   private refreshButton: RefreshButton;
   private relayUrl: string;
@@ -31,9 +31,9 @@ export class RelayBrowser {
 
   constructor(relayUrl: string) {
     this.relayUrl = relayUrl;
-    this.orchestrator = RelayBrowserOrchestrator.getInstance();
+    this.relayBrowserApi = ModuleLoader.getInstance().getApi<RelayBrowserModuleApi>('relay-browser');
 
-    this.orchestrator.setRelay(relayUrl);
+    this.relayBrowserApi?.setRelay(relayUrl);
 
     this.refreshButton = new RefreshButton({
       newNotesCount: 0,
@@ -86,7 +86,7 @@ export class RelayBrowser {
     this.showLoading();
 
     try {
-      const result = await this.orchestrator.loadInitial();
+      const result = await this.relayBrowserApi?.loadInitial() ?? { events: [], hasMore: false };
       this.hasMore = result.hasMore;
 
       if (result.events.length > 0) {
@@ -117,7 +117,7 @@ export class RelayBrowser {
   }
 
   private async poll(): Promise<void> {
-    const newEvents = await this.orchestrator.pollNewNotes();
+    const newEvents = await this.relayBrowserApi?.pollNewNotes() ?? [];
     if (newEvents.length === 0) return;
 
     // Cache polled events (accumulate between refreshes)
@@ -213,7 +213,7 @@ export class RelayBrowser {
     this.infiniteScroll.showLoading();
 
     try {
-      const result = await this.orchestrator.loadMore();
+      const result = await this.relayBrowserApi?.loadMore() ?? { events: [], hasMore: false };
       this.hasMore = result.hasMore;
 
       if (result.events.length > 0) {

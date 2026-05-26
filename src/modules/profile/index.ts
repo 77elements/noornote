@@ -1,1 +1,1 @@
-export type { ProfileModuleApi, Profile } from './contracts';
+export type { ProfileModuleApi, Profile, ProfileMetadata } from './contracts';

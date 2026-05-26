@@ -3,18 +3,25 @@ import type { MediaModuleApi } from './contracts';
 
 export class MediaRuntime implements ModuleRuntime<MediaModuleApi> {
   private service: import('../../services/MediaUploadService').MediaUploadService | null = null;
+  private videoService: import('../../services/VideoService').VideoService | null = null;
 
   async init(_ctx: ModuleContext): Promise<void> {
-    const { MediaUploadService } = await import('../../services/MediaUploadService');
-    this.service = MediaUploadService.getInstance();
+    const [uploadMod, videoMod] = await Promise.all([
+      import('../../services/MediaUploadService'),
+      import('../../services/VideoService'),
+    ]);
+    this.service = uploadMod.MediaUploadService.getInstance();
+    this.videoService = videoMod.VideoService.getInstance();
   }
 
   async destroy(): Promise<void> {
     this.service = null;
+    this.videoService = null;
   }
 
   getApi(): MediaModuleApi {
     const svc = this.service;
+    const vs = this.videoService;
     return {
       uploadFile: (file, onProgress) => svc?.uploadFile(file, onProgress) as any ?? Promise.resolve({ success: false, error: 'Module not loaded' }),
       uploadFiles: (files, onProgress) => {
@@ -29,6 +36,7 @@ export class MediaRuntime implements ModuleRuntime<MediaModuleApi> {
         return svc.uploadFiles(files, internalCb);
       },
       cancelUpload: () => svc?.cancelUpload(),
+      publishVideo: (options) => vs?.publishVideo(options) ?? Promise.resolve(null),
     };
   }
 }

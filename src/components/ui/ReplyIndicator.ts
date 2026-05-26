@@ -4,7 +4,8 @@
  * Clickable to navigate to parent note
  */
 
-import { ParentNoteFetcher } from '../../services/ParentNoteFetcher';
+import { ModuleLoader } from '../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import { Router } from '../../services/Router';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 
@@ -16,12 +17,12 @@ export interface ReplyIndicatorOptions {
 export class ReplyIndicator {
   private element: HTMLElement;
   private options: ReplyIndicatorOptions;
-  private parentNoteFetcher: ParentNoteFetcher;
+  private singleNoteApi: SingleNoteModuleApi | null;
 
   constructor(options: ReplyIndicatorOptions) {
     this.options = options;
     this.element = this.createElement();
-    this.parentNoteFetcher = ParentNoteFetcher.getInstance();
+    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
 
     // Load parent author info asynchronously
     this.loadParentAuthor();
@@ -52,10 +53,10 @@ export class ReplyIndicator {
    */
   private async loadParentAuthor(): Promise<void> {
     try {
-      const info = await this.parentNoteFetcher.fetchParentAuthor(
+      const info = await (this.singleNoteApi?.fetchParentAuthor(
         this.options.parentEventId,
         this.options.relayHint
-      );
+      ) ?? Promise.resolve(null));
 
       if (!info) {
         // Parent not found

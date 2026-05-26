@@ -1,7 +1,11 @@
 import type { PostOptions, ReplyOptions, HighlightOptions } from '../../services/PostService';
+import type { RepostOptions } from '../../services/RepostService';
+import type { DeletionOptions } from '../../services/DeletionService';
+import type { ReportType, ReportOptions } from '../../services/ReportService';
+import type { MentionSuggestion } from '../../components/mentions/MentionAutocomplete';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
-export type { PostOptions, ReplyOptions, HighlightOptions };
+export type { PostOptions, ReplyOptions, HighlightOptions, RepostOptions, DeletionOptions, ReportType, ReportOptions, MentionSuggestion };
 
 export interface PostsModuleApi {
   createPost(options: PostOptions): Promise<boolean>;
@@ -15,4 +19,23 @@ export interface PostsModuleApi {
   registerNote(event: NostrEvent): void;
   registerNotes(events: NostrEvent[]): void;
   hasNote(eventId: string): boolean;
+
+  // RepostService
+  hasUserReposted(noteId: string): Promise<boolean>;
+  publishRepost(options: RepostOptions): Promise<{ success: boolean; alreadyReposted?: boolean; error?: string }>;
+  publishGenericRepost(options: RepostOptions): Promise<{ success: boolean; error?: string }>;
+
+  // DeletionService
+  deleteEvent(eventId: string, reason?: string): Promise<boolean>;
+  deleteEvents(options: DeletionOptions): Promise<boolean>;
+  deleteByCoordinates(coordinates: string[], reason?: string): Promise<boolean>;
+
+  // ReportService
+  createReport(options: ReportOptions): Promise<{ success: boolean; error?: string }>;
+  getReportTypes(): ReportType[];
+  getReportTypeLabel(type: ReportType): string;
+  getReportTypeDescription(type: ReportType): string;
+
+  // MentionProfileCache
+  getMentionSuggestions(followingPubkeys: string[]): Promise<MentionSuggestion[]>;
 }

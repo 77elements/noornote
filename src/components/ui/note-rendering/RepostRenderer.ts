@@ -14,7 +14,8 @@ import { GIT_EVENT_KINDS } from '../../../types/nostr';
 import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
 import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
-import { QuoteOrchestrator } from '../../../services/orchestration/QuoteOrchestrator';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import { MuteOrchestrator } from '../../../lists/mutes';
 import { AuthService } from '../../../services/AuthService';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
@@ -188,8 +189,8 @@ export class RepostRenderer {
         // — the reposter visibly saw the note on their relays before reposting,
         // so when the original author's NIP-65 is incomplete / stale, the
         // reposter's outbound is the next-best guess.
-        const quoteOrchestrator = QuoteOrchestrator.getInstance();
-        quoteOrchestrator.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey, [reposterPubkey]).then(async originalEvent => {
+        const singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+        (singleNoteApi?.fetchQuotedEvent(`nostr:${neventRef}`, authorPubkey, [reposterPubkey]) ?? Promise.resolve(null)).then(async originalEvent => {
             if (originalEvent) {
               // Check if original author is muted
               const authService = AuthService.getInstance();

@@ -11,10 +11,10 @@
 
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SearchModuleApi } from '../../modules/search/contracts';
+import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { EventBus } from '../../services/EventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
-import { NoteService } from '../../services/NoteService';
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes in milliseconds
 
@@ -36,7 +36,6 @@ export class HashtagNotificationService {
   private eventBus: EventBus;
   private systemLogger: SystemLogger;
   private storage: PerAccountLocalStorage;
-  private noteService: NoteService;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
   private initialPollTimeout: ReturnType<typeof setTimeout> | null = null;
   private isPollingStarted = false;
@@ -46,7 +45,6 @@ export class HashtagNotificationService {
     this.eventBus = EventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
-    this.noteService = NoteService.getInstance();
   }
 
   public static getInstance(): HashtagNotificationService {
@@ -269,8 +267,9 @@ export class HashtagNotificationService {
           return false;
         });
 
-        // Register verified notes in NoteService for cache reuse
-        this.noteService.registerNotes(allResults);
+        // Register verified notes in NoteService (via PostsModuleApi) for cache reuse
+        const postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+        postsApi?.registerNotes(allResults);
 
         // Filter: only posts newer than lastSeenTimestamp
         const newPosts = allResults.filter(e => e.created_at > subscription.lastSeenTimestamp);

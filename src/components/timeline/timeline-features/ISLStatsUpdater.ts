@@ -5,17 +5,18 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { InteractionStatsService } from '../../../services/InteractionStatsService';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
 import { formatCount } from '../../../helpers/formatCount';
 
 export class ISLStatsUpdater {
   private container: HTMLElement;
-  private statsService: InteractionStatsService;
+  private reactionsApi: ReactionsModuleApi | null;
 
   constructor(container: HTMLElement) {
     this.container = container;
-    this.statsService = InteractionStatsService.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
 
   /**
@@ -28,7 +29,7 @@ export class ISLStatsUpdater {
       const noteIdForStats = extractOriginalNoteId(event);
       if (!noteIdForStats) return;
 
-      const cachedStats = this.statsService.getCachedStats(noteIdForStats);
+      const cachedStats = this.reactionsApi?.getCachedStats(noteIdForStats) ?? null;
       if (cachedStats) {
         // Find ISL element in DOM (not via Map, as SNV may have overwritten it)
         const islElement = this.container.querySelector(`.isl[data-note-id="${noteIdForStats}"]`) as HTMLElement;

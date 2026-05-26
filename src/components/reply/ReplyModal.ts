@@ -34,7 +34,7 @@ import { stripTrackingParams } from '../../helpers/stripTrackingParams';
 import { Switch } from '../ui/Switch';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { renderQuotePreview } from '../../helpers/renderQuotePreview';
-import { StatsUpdateService } from '../../services/StatsUpdateService';
+import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AppState } from '../../services/AppState';
 import { EventBus } from '../../services/EventBus';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -53,7 +53,7 @@ export class ReplyModal {
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private appState: AppState;
-  private statsUpdateService: StatsUpdateService;
+  private reactionsApi: ReactionsModuleApi | null;
   private eventBus: EventBus;
 
   // Sub-components
@@ -83,7 +83,7 @@ export class ReplyModal {
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.appState = AppState.getInstance();
-    this.statsUpdateService = StatsUpdateService.getInstance();
+    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.eventBus = EventBus.getInstance();
   }
 
@@ -614,7 +614,7 @@ export class ReplyModal {
       if (replyEvent && replyEvent.id) {
         // Update parent note's reply count (cache invalidation + optimistic UI update)
         if (this.parentEvent?.id) {
-          this.statsUpdateService.clearCacheOnly(this.parentEvent.id);
+          this.reactionsApi?.clearCacheOnly(this.parentEvent.id);
         }
 
         // Emit event for optimistic UI update (SingleNoteView listens to this)

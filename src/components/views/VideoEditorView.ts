@@ -13,8 +13,7 @@
 
 import { View } from './View';
 import { Router } from '../../services/Router';
-import { VideoService } from '../../services/VideoService';
-import type { VideoOptions } from '../../services/VideoService';
+import type { VideoOptions } from '../../modules/media/contracts';
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -30,7 +29,6 @@ type DetectedKind = 21 | 22;
 export class VideoEditorView extends View {
   private container: HTMLElement;
   private router: Router;
-  private videoService: VideoService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private mediaApi: MediaModuleApi | null = null;
@@ -61,7 +59,6 @@ export class VideoEditorView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--video-editor';
     this.router = Router.getInstance();
-    this.videoService = VideoService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
@@ -567,7 +564,7 @@ export class VideoEditorView extends View {
       if (topics.length > 0) videoData.topics = topics;
       if (this.kindOverride) videoData.kindOverride = this.detectedKind;
 
-      const nevent = await this.videoService.publishVideo(videoData);
+      const nevent = await this.mediaApi?.publishVideo(videoData) ?? null;
 
       if (nevent) {
         this.router.navigate('/');

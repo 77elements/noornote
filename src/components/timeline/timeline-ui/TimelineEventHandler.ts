@@ -14,7 +14,7 @@ import { AppState } from '../../../services/AppState';
 import { NoteUI } from '../../ui/NoteUI';
 
 export class TimelineEventHandler {
-  private timelineApi: TimelineModuleApi | null;
+  private timelineApi: TimelineModuleApi;
   private stateManager: TimelineStateManager;
   private uiStateHandler: TimelineUIStateHandler;
   private refreshButton: RefreshButton | null;
@@ -30,7 +30,7 @@ export class TimelineEventHandler {
   private onInitializeTimeline: () => Promise<void>;
 
   constructor(
-    timelineApi: TimelineModuleApi | null,
+    timelineApi: TimelineModuleApi,
     stateManager: TimelineStateManager,
     uiStateHandler: TimelineUIStateHandler,
     refreshButton: RefreshButton | null,
@@ -103,8 +103,8 @@ export class TimelineEventHandler {
 
     // View change requires full reload (not just prepending cached events)
     // Stop polling and clear cache from previous filter
-    this.timelineApi?.stopPolling();
-    this.timelineApi?.getPolledEvents(); // Clear cache
+    this.timelineApi.stopPolling();
+    this.timelineApi.getPolledEvents(); // Clear cache
 
     // Reset state and reload
     this.stateManager.reset();
@@ -148,8 +148,8 @@ export class TimelineEventHandler {
     this.previousView = 'time-range';
 
     // Stop polling and clear cache
-    this.timelineApi?.stopPolling();
-    this.timelineApi?.getPolledEvents();
+    this.timelineApi.stopPolling();
+    this.timelineApi.getPolledEvents();
 
     // Reset state and reload with date range
     this.stateManager.reset();
@@ -188,7 +188,7 @@ export class TimelineEventHandler {
    */
   public async handleRefresh(): Promise<void> {
     // Get cached polled events (cleared after retrieval)
-    const newEvents = this.timelineApi?.getPolledEvents() ?? [];
+    const newEvents = this.timelineApi.getPolledEvents() ?? [];
 
     if (newEvents.length > 0) {
       // Prepend new events to existing timeline
@@ -201,10 +201,10 @@ export class TimelineEventHandler {
 
       // Update polling timestamp to latest event
       const latestTimestamp = newEvents.reduce((max, e) => e.created_at > max ? e.created_at : max, 0);
-      this.timelineApi?.resetPollingTimestamp(latestTimestamp);
+      this.timelineApi.resetPollingTimestamp(latestTimestamp);
     } else {
       // Fallback: Full reload if no cached events
-      this.timelineApi?.stopPolling();
+      this.timelineApi.stopPolling();
       this.stateManager.reset();
       this.element.querySelectorAll('.note-card').forEach(card => {
       const eventId = card.getAttribute('data-event-id');
@@ -262,7 +262,7 @@ export class TimelineEventHandler {
       if (dateRange) {
         loadMoreRequest.since = dateRange.since;
       }
-      const result = await this.timelineApi?.loadMore(loadMoreRequest) ?? { events: [], hasMore: false };
+      const result = await this.timelineApi.loadMore(loadMoreRequest) ?? { events: [], hasMore: false };
 
       // Add events with deduplication
       const uniqueNewEvents = this.stateManager.addEvents(result.events);

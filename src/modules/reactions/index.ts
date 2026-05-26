@@ -1,1 +1,1 @@
-export type { ReactionsModuleApi, InteractionStats, DetailedStats } from './contracts';
+export type { ReactionsModuleApi, InteractionStats, DetailedStats, StatsUpdateType } from './contracts';

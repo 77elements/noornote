@@ -208,11 +208,12 @@ export class ArticleView {
 
         if (!confirmed) return;
 
-        const { DeletionService } = await import('../../services/DeletionService');
+        const { ModuleLoader } = await import('../../core/ModuleLoader');
+        const postsApi = ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts');
         // Use the source kind so a draft's deletion coordinate addresses
         // 30024:<pubkey>:<d>, not the published 30023 path.
         const coordinate = `${event.kind}:${event.pubkey}:${metadata.identifier}`;
-        const deleted = await DeletionService.getInstance().deleteByCoordinates([coordinate]);
+        const deleted = await (postsApi?.deleteByCoordinates([coordinate]) ?? Promise.resolve(false));
 
         if (deleted) {
           Router.getInstance().back();

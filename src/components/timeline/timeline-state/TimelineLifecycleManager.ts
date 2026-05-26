@@ -11,13 +11,13 @@ import { CustomDropdown } from '../../ui/CustomDropdown';
 import { NoteHeader } from '../../ui/NoteHeader';
 
 export class TimelineLifecycleManager {
-  private timelineApi: TimelineModuleApi | null;
+  private timelineApi: TimelineModuleApi;
   private infiniteScroll: InfiniteScroll;
   private refreshButton: RefreshButton | null = null;
   private viewDropdown: CustomDropdown | null = null;
   private noteHeaders: Map<string, NoteHeader> = new Map();
 
-  constructor(timelineApi: TimelineModuleApi | null, infiniteScroll: InfiniteScroll) {
+  constructor(timelineApi: TimelineModuleApi, infiniteScroll: InfiniteScroll) {
     this.timelineApi = timelineApi;
     this.infiniteScroll = infiniteScroll;
   }
@@ -47,7 +47,7 @@ export class TimelineLifecycleManager {
    * Pause background tasks (polling, subscriptions) when navigating away
    */
   pause(): void {
-    this.timelineApi?.stopPolling();
+    this.timelineApi.stopPolling();
     this.infiniteScroll.disconnect();
   }
 
@@ -65,7 +65,7 @@ export class TimelineLifecycleManager {
   ): void {
     // Restart polling if we have events
     if (newestTimestamp > 0) {
-      this.timelineApi?.startPolling(
+      this.timelineApi.startPolling(
         followingPubkeys,
         newestTimestamp,
         onNewNotes,
@@ -87,7 +87,7 @@ export class TimelineLifecycleManager {
    */
   destroy(): void {
     // Stop polling
-    this.timelineApi?.stopPolling();
+    this.timelineApi.stopPolling();
 
     // Disconnect infinite scroll
     this.infiniteScroll.disconnect();

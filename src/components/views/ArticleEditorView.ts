@@ -15,7 +15,7 @@
 
 import { View } from './View';
 import { Router } from '../../services/Router';
-import { ArticleService } from '../../services/ArticleService';
+// ArticleService accessed via articles module API
 import { RelayConfig } from '../../services/RelayConfig';
 import { AuthGuard } from '../../services/AuthGuard';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -24,7 +24,7 @@ import { PostEditorToolbar } from '../post/PostEditorToolbar';
 import { MentionAutocomplete } from '../mentions/MentionAutocomplete';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
-import type { ArticlesModuleApi } from '../../modules/articles/contracts';
+import type { ArticlesModuleApi, ArticleOptions } from '../../modules/articles/contracts';
 import { ModalService } from '../../services/ModalService';
 import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
@@ -55,7 +55,7 @@ interface EditorSnapshot {
 export class ArticleEditorView extends View {
   private container: HTMLElement;
   private router: Router;
-  private articleService: ArticleService;
+  private articlesApi: ArticlesModuleApi | null;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
   private mediaApi: MediaModuleApi | null = null;
@@ -98,13 +98,13 @@ export class ArticleEditorView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article-editor';
     this.router = Router.getInstance();
-    this.articleService = ArticleService.getInstance();
+    this.articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
 
     // Generate initial identifier
-    this.identifier = ArticleService.generateIdentifier();
+    this.identifier = this.articlesApi?.generateIdentifier() ?? '';
 
     this.loadRelayConfiguration();
 
@@ -548,7 +548,7 @@ export class ArticleEditorView extends View {
       titleInput?.addEventListener('blur', () => {
         if (this.title && !this.identifier.includes('-')) {
           // Only auto-generate if identifier hasn't been customized
-          this.identifier = ArticleService.generateIdentifier(this.title);
+          this.identifier = this.articlesApi?.generateIdentifier(this.title) ?? '';
           const identifierInput = this.container.querySelector('[data-field="identifier"]') as HTMLInputElement;
           if (identifierInput) {
             identifierInput.value = this.identifier;
@@ -923,7 +923,7 @@ export class ArticleEditorView extends View {
       const naddr = await scheduleArticle({
         title: this.title,
         content: this.content,
-        identifier: this.identifier || ArticleService.generateIdentifier(this.title),
+        identifier: this.identifier || this.articlesApi?.generateIdentifier(this.title) || '',
         relays: Array.from(this.selectedRelays),
         scheduledAt,
         ...(this.summary ? { summary: this.summary } : {}),
@@ -959,9 +959,10 @@ export class ArticleEditorView extends View {
 
     if (!confirmed) return;
 
-    const { DeletionService } = await import('../../services/DeletionService');
+    const { ModuleLoader } = await import('../../core/ModuleLoader');
+    const postsApi = ModuleLoader.getInstance().getApi<import('../../modules/posts/contracts').PostsModuleApi>('posts');
     const coordinate = `30024:${this.editPubkey}:${this.identifier}`;
-    const deleted = await DeletionService.getInstance().deleteByCoordinates([coordinate]);
+    const deleted = await (postsApi?.deleteByCoordinates([coordinate]) ?? Promise.resolve(false));
 
     if (deleted) {
       this.saveSnapshot(); // Prevent unsaved changes warning
@@ -989,10 +990,10 @@ export class ArticleEditorView extends View {
     try {
       const topics = this.tags.split(',').map(t => t.trim()).filter(Boolean);
 
-      const articleData: Parameters<typeof this.articleService.publishArticle>[0] = {
+      const articleData: ArticleOptions = {
         title: this.title,
         content: this.content,
-        identifier: this.identifier || ArticleService.generateIdentifier(this.title),
+        identifier: this.identifier || this.articlesApi?.generateIdentifier(this.title) || '',
         relays: Array.from(this.selectedRelays)
       };
 
@@ -1003,8 +1004,8 @@ export class ArticleEditorView extends View {
       if (this.publishedAt) articleData.publishedAt = this.publishedAt;
 
       const naddr = isDraft
-        ? await this.articleService.saveDraft(articleData)
-        : await this.articleService.publishArticle(articleData);
+        ? await this.articlesApi?.saveDraft(articleData) ?? null
+        : await this.articlesApi?.publishArticle(articleData) ?? null;
 
       // After successful save, update snapshot so dirty-check won't trigger
       this.saveSnapshot();
