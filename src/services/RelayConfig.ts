@@ -263,10 +263,8 @@ export class RelayConfig {
    * Get user-configured read relays (excludes aggregator relays)
    */
   public getUserReadRelays(): string[] {
-    const aggregators = new Set(this.getAggregatorRelays());
     const readRelays = this.getRelaysByType('read')
-      .map(relay => relay.url)
-      .filter(url => !aggregators.has(url));
+      .map(relay => relay.url);
 
     const localRelaySettings = this.loadLocalRelaySettings();
     if (localRelaySettings.enabled && !readRelays.includes(localRelaySettings.url)) {

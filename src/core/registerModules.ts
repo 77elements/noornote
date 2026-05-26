@@ -6,14 +6,12 @@ export function registerCoreModules(): void {
   loader.register({
     id: 'notifications',
     activation: 'login',
-    routes: ['/notifications'],
     load: () => import('../modules/notifications/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'dms',
     activation: 'login',
-    routes: ['/messages', '/conversation'],
     load: () => import('../modules/dms/runtime').then(m => m.default),
   });
 
@@ -37,57 +35,49 @@ export function registerCoreModules(): void {
 
   loader.register({
     id: 'media',
-    activation: 'manual',
+    activation: 'login',
     load: () => import('../modules/media/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'articles',
     activation: 'login',
-    routes: ['/article', '/articles', '/write-article', '/edit-article'],
     load: () => import('../modules/articles/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'search',
     activation: 'login',
-    routes: ['/search'],
     load: () => import('../modules/search/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'relay-browser',
-    activation: 'route',
-    routes: ['/relay'],
-    sleepPolicy: 'sleep-on-leave',
+    activation: 'login',
     load: () => import('../modules/relay-browser/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'settings',
-    activation: 'route',
-    routes: ['/settings'],
+    activation: 'login',
     load: () => import('../modules/settings/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'timeline',
     activation: 'login',
-    routes: ['/timeline', '/'],
     load: () => import('../modules/timeline/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'profile',
-    activation: 'route',
-    routes: ['/profile'],
+    activation: 'login',
     load: () => import('../modules/profile/runtime').then(m => m.default),
   });
 
   loader.register({
     id: 'single-note',
-    activation: 'route',
-    routes: ['/note'],
+    activation: 'login',
     load: () => import('../modules/single-note/runtime').then(m => m.default),
   });
 }

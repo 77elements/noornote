@@ -27,7 +27,13 @@ interface LocalRelaySettings {
 
 export class RelaySettingsSection extends SettingsSection {
   private relayConfig: RelayConfig;
-  private settingsApi: SettingsModuleApi | null;
+  private _settingsApi: SettingsModuleApi | null = null;
+  private get settingsApi(): SettingsModuleApi | null {
+    if (!this._settingsApi) {
+      this._settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+    }
+    return this._settingsApi;
+  }
   private authService: AuthService;
   private modalService: ModalService;
   private eventBus: EventBus;
@@ -39,7 +45,7 @@ export class RelaySettingsSection extends SettingsSection {
   constructor() {
     super('relay-settings');
     this.relayConfig = RelayConfig.getInstance();
-    this.settingsApi = ModuleLoader.getInstance().getApi<SettingsModuleApi>('settings');
+    // settingsApi resolved lazily via getter
     this.authService = AuthService.getInstance();
     this.modalService = ModalService.getInstance();
     this.eventBus = EventBus.getInstance();

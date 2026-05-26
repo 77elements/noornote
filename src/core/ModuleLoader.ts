@@ -142,6 +142,14 @@ export class ModuleLoader {
     void this.handleLogin(pubkey, npub);
   }
 
+  public async awaitReady(): Promise<void> {
+    const promises: Promise<void>[] = [];
+    for (const entry of this.entries.values()) {
+      promises.push(entry.opChain);
+    }
+    await Promise.all(promises);
+  }
+
   // ── Route-based activation ─────────────────────────────────
 
   public handleRouteChange(path: string): void {

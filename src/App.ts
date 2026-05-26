@@ -200,6 +200,7 @@ export class App {
         // AddonLoader subscribed. Already-loaded addons are skipped (idempotent).
         AddonLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
         ModuleLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
+        await ModuleLoader.getInstance().awaitReady();
       }
     }
 
