@@ -1,11 +1,7 @@
-# NoorNote 0.9.6
+# NoorNote 0.9.7
 
-**NIP-58 Badges** — Create custom badges, award them to users from their profile, accept/decline in notifications. Accepted badges appear as a carousel on the recipient's profile. Full NIP-58 read + write support.
+**Internal architecture overhaul** — All cross-component communication is now type-checked at build time. 14 feature modules, typed event system, enforced layer boundaries. Long-term stability and reliability improvement.
 
-**Petnames** — Label any user with a personal tag ("Friend", "Scammer", etc.) visible only to you — in their profile header and inline mentions. NIP-44 encrypted, synced across devices via relays.
+**Customizable sidebar content** — The third column (previously fixed to System Logs) is now a dropdown where you choose what to display: System Logs, Newest Articles from people you follow, or a Media feed (pictures & videos in a masonry grid). Your choice is remembered per account.
 
-**NIP-65 Outbound Model** — Reactions, reposts, profiles, and relay-list changes now route through the correct NIP-65 outbox. Likes and reposts reliably reach the original author's relays.
-
-**Addressable Reactions** — Likes on long-form articles now use NIP-25-compliant tags so strict relays accept them.
-
-**Web Update Banner** — noornote.app users see a one-time refresh prompt when a new version is deployed.
+**Badges fix** — The badges toggle in settings was broken and is now working correctly.
