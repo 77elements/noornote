@@ -1,10 +1,13 @@
 /**
  * Central State Manager (Singleton)
- * Single source of truth for all application state
- * Uses subscription pattern for reactive updates
+ *
+ * Facade over 4 domain-specific StateStores. Public API is unchanged —
+ * consumers continue using getState('key'), setState('key', updates),
+ * subscribe('key', cb). Internally each domain is a separate store.
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { StateStore } from '../core/StateStore';
 import { SystemLogger } from './SystemLogger';
 
 export interface SyncStatusData {
@@ -29,7 +32,7 @@ export interface TimelineState {
   includeReplies: boolean;
   lastLoadedTimestamp: number;
   scrollPosition: number;
-  selectedRelay: string | null; // null = all relays, string = specific relay URL
+  selectedRelay: string | null;
 }
 
 export interface ViewState {
@@ -67,56 +70,54 @@ export interface AppStateData {
 type StateKey = keyof AppStateData;
 type StateCallback<K extends StateKey> = (state: AppStateData[K]) => void;
 
+const USER_DEFAULTS: UserState = {
+  isAuthenticated: false,
+  npub: null,
+  pubkey: null,
+  followingPubkeys: []
+};
+
+const TIMELINE_DEFAULTS: TimelineState = {
+  events: [],
+  hasMore: true,
+  loading: false,
+  includeReplies: false,
+  lastLoadedTimestamp: 0,
+  scrollPosition: 0,
+  selectedRelay: null
+};
+
+const VIEW_DEFAULTS: ViewState = {
+  currentView: 'timeline',
+  profileScrollPosition: 0
+};
+
+const PROFILE_SEARCH_DEFAULTS: ProfileSearchState = {
+  isActive: false,
+  pubkeyHex: null,
+  searchTerms: '',
+  results: [],
+  matchCount: 0,
+  totalNotes: 0,
+  scrollPosition: 0,
+  dateRange: { start: 'N/A', end: 'N/A' },
+  navigatedToSNV: false
+};
+
 export class AppState {
   private static instance: AppState;
   private systemLogger: SystemLogger;
 
-  private state: AppStateData = {
-    user: {
-      isAuthenticated: false,
-      npub: null,
-      pubkey: null,
-      followingPubkeys: []
-    },
-    timeline: {
-      events: [],
-      hasMore: true,
-      loading: false,
-      includeReplies: false,
-      lastLoadedTimestamp: 0,
-      scrollPosition: 0,
-      selectedRelay: null
-    },
-    view: {
-      currentView: 'timeline',
-      profileScrollPosition: 0
-    },
-    profileSearch: {
-      isActive: false,
-      pubkeyHex: null,
-      searchTerms: '',
-      results: [],
-      matchCount: 0,
-      totalNotes: 0,
-      scrollPosition: 0,
-      dateRange: {
-        start: 'N/A',
-        end: 'N/A'
-      },
-      navigatedToSNV: false
-    }
+  // Domain stores
+  private stores = {
+    user: new StateStore<UserState>(USER_DEFAULTS),
+    timeline: new StateStore<TimelineState>(TIMELINE_DEFAULTS),
+    view: new StateStore<ViewState>(VIEW_DEFAULTS),
+    profileSearch: new StateStore<ProfileSearchState>(PROFILE_SEARCH_DEFAULTS),
   };
-
-  private subscribers: Map<StateKey, Set<StateCallback<any>>> = new Map();
 
   private constructor() {
     this.systemLogger = SystemLogger.getInstance();
-
-    // Initialize subscriber maps
-    this.subscribers.set('user', new Set());
-    this.subscribers.set('timeline', new Set());
-    this.subscribers.set('view', new Set());
-    this.subscribers.set('profileSearch', new Set());
   }
 
   public static getInstance(): AppState {
@@ -126,45 +127,40 @@ export class AppState {
     return AppState.instance;
   }
 
-  /**
-   * Get current state (immutable)
-   */
   public getState<K extends StateKey>(key: K): AppStateData[K] {
-    return { ...this.state[key] } as AppStateData[K];
+    return this.stores[key].get() as AppStateData[K];
   }
 
-  /**
-   * Get entire state (immutable)
-   */
   public getAllState(): AppStateData {
     return {
-      user: { ...this.state.user },
-      timeline: { ...this.state.timeline },
-      view: { ...this.state.view },
-      profileSearch: { ...this.state.profileSearch }
+      user: this.stores.user.get(),
+      timeline: this.stores.timeline.get(),
+      view: this.stores.view.get(),
+      profileSearch: this.stores.profileSearch.get(),
     };
   }
 
-  /**
-   * Update state and notify subscribers
-   */
   public setState<K extends StateKey>(key: K, updates: Partial<AppStateData[K]>): void {
-    // Merge updates into existing state
-    this.state[key] = {
-      ...this.state[key],
-      ...updates
-    } as AppStateData[K];
-
-    // Notify all subscribers for this state key
-    this.notifySubscribers(key);
-
-    // Hollywood-style state logs
+    (this.stores[key] as StateStore<any>).set(updates);
     this.logStateChange(key, updates);
   }
 
-  /**
-   * Log state changes in Hollywood-style
-   */
+  public subscribe<K extends StateKey>(key: K, callback: StateCallback<K>): () => void {
+    return (this.stores[key] as StateStore<any>).subscribe(callback);
+  }
+
+  public reset(): void {
+    this.stores.user.reset(USER_DEFAULTS);
+    this.stores.timeline.reset(TIMELINE_DEFAULTS);
+    this.stores.view.reset(VIEW_DEFAULTS);
+    this.stores.profileSearch.reset(PROFILE_SEARCH_DEFAULTS);
+    this.systemLogger.info('AppState', '🔄 State reset to defaults');
+  }
+
+  public debug(): void {
+    this.systemLogger.info('AppState', '📊 Current state:', this.getAllState());
+  }
+
   private logStateChange<K extends StateKey>(key: K, updates: Partial<AppStateData[K]>): void {
     if (key === 'view') {
       const viewState = updates as Partial<ViewState>;
@@ -193,102 +189,6 @@ export class AppState {
       } else if (searchState.isActive === false) {
         this.systemLogger.info('AppState', '🔍 Search deactivated');
       }
-      if (searchState.scrollPosition !== undefined && searchState.scrollPosition > 0) {
-        this.systemLogger.info('AppState', `📜 Search scroll position saved: ${searchState.scrollPosition}px`);
-      }
     }
-    // timeline state changes are not logged (too spammy)
-  }
-
-  /**
-   * Subscribe to state changes
-   * @returns Unsubscribe function
-   */
-  public subscribe<K extends StateKey>(
-    key: K,
-    callback: StateCallback<K>
-  ): () => void {
-    const callbacks = this.subscribers.get(key);
-    if (callbacks) {
-      callbacks.add(callback);
-    }
-
-    // Immediately call with current state
-    callback(this.getState(key));
-
-    // Return unsubscribe function
-    return () => {
-      const callbacks = this.subscribers.get(key);
-      if (callbacks) {
-        callbacks.delete(callback);
-      }
-    };
-  }
-
-  /**
-   * Notify all subscribers of a state change
-   */
-  private notifySubscribers<K extends StateKey>(key: K): void {
-    const callbacks = this.subscribers.get(key);
-    if (callbacks) {
-      const currentState = this.getState(key);
-      callbacks.forEach(callback => callback(currentState));
-    }
-  }
-
-  /**
-   * Reset entire state (useful for logout)
-   */
-  public reset(): void {
-    this.state = {
-      user: {
-        isAuthenticated: false,
-        npub: null,
-        pubkey: null,
-        followingPubkeys: []
-      },
-      timeline: {
-        events: [],
-        hasMore: true,
-        loading: false,
-        includeReplies: false,
-        lastLoadedTimestamp: 0,
-        scrollPosition: 0,
-        selectedRelay: null
-      },
-      view: {
-        currentView: 'timeline',
-        profileScrollPosition: 0
-      },
-      profileSearch: {
-        isActive: false,
-        pubkeyHex: null,
-        searchTerms: '',
-        results: [],
-        matchCount: 0,
-        totalNotes: 0,
-        scrollPosition: 0,
-        dateRange: {
-          start: 'N/A',
-          end: 'N/A'
-        },
-        navigatedToSNV: false
-      }
-    };
-
-    // Notify all subscribers
-    this.notifySubscribers('user');
-    this.notifySubscribers('timeline');
-    this.notifySubscribers('view');
-    this.notifySubscribers('profileSearch');
-
-    this.systemLogger.info('AppState', '🔄 State reset to defaults');
-  }
-
-  /**
-   * Debug: Log current state
-   */
-  public debug(): void {
-    this.systemLogger.info('AppState', '📊 Current state:', this.getAllState());
   }
 }
