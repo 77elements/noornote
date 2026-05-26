@@ -29,6 +29,7 @@ import { diagLog } from '../services/DiagnosticLogger';
 // UI component imports
 import { View } from '../components/views/View';
 import { switchTabWithContent } from '../helpers/TabsHelper';
+import { getSccDefaultTab } from '../helpers/sccDefaultTab';
 import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncMode';
 import { UserProfileService, type UserProfile } from '../services/UserProfileService';
 import { NoteService } from '../services/NoteService';
@@ -1544,7 +1545,7 @@ export class MuteListManager {
   }
 
   private switchToSystemLogsTab(): void {
-    switchTabWithContent(this.containerElement, 'system-log');
+    switchTabWithContent(this.containerElement, getSccDefaultTab());
   }
 
   public destroy(): void {

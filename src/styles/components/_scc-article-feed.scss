@@ -1,0 +1,43 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.scc-article-feed {
+  height: 100%;
+  overflow-y: auto;
+  padding: $gap 0;
+  @include custom-scrollbar;
+
+  .nn-card {
+    margin-bottom: $gap;
+  }
+
+  .nn-card__media {
+    height: 140px;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .nn-card__title {
+    font-size: 0.95rem;
+  }
+
+  &__excerpt {
+    @extend %small;
+    color: var(--color-3);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__empty {
+    padding: $gap;
+    color: var(--color-3);
+    text-align: center;
+  }
+}

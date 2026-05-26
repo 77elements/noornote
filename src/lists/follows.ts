@@ -29,6 +29,7 @@ import { ToastService } from '../services/ToastService';
 import { AppState } from '../services/AppState';
 import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModal';
 import { switchTabWithContent } from '../helpers/TabsHelper';
+import { getSccDefaultTab } from '../helpers/sccDefaultTab';
 import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncMode';
 import { PlatformService } from '../services/PlatformService';
 import { UserProfileService } from '../services/UserProfileService';
@@ -1292,7 +1293,7 @@ export class FollowListManager {
    * Switch to System Logs tab (inlined from BaseListManager)
    */
   private switchToSystemLogsTab(): void {
-    switchTabWithContent(this.containerElement, 'system-log');
+    switchTabWithContent(this.containerElement, getSccDefaultTab());
   }
 
   /**

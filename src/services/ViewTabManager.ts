@@ -18,6 +18,7 @@ import type { View } from '../components/views/View';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { UserProfileService } from './UserProfileService';
 import { NostrTransport } from './transport/NostrTransport';
+import { getSccDefaultTab } from '../helpers/sccDefaultTab';
 import { RelayConfig } from './RelayConfig';
 import { decodeNip19 } from './NostrToolsAdapter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -72,7 +73,7 @@ export class ViewTabManager {
     }
 
     // Replace active tab (if requested and not System Log)
-    if (replaceActive && this.activeTabId && this.activeTabId !== 'system-log') {
+    if (replaceActive && this.activeTabId && this.activeTabId !== getSccDefaultTab()) {
       this.closeTab(this.activeTabId);
     }
 
@@ -124,10 +125,10 @@ export class ViewTabManager {
         } else if (currentIndex > 0 && prevTab) {
           nextTabId = prevTab.id;
         } else {
-          nextTabId = 'system-log';
+          nextTabId = getSccDefaultTab();
         }
       } else {
-        nextTabId = 'system-log';
+        nextTabId = getSccDefaultTab();
       }
     }
 
@@ -201,7 +202,7 @@ export class ViewTabManager {
   public closeAllTabs(): void {
     this.tabs.forEach(tab => tab.viewInstance.destroy());
     this.tabs.clear();
-    this.activeTabId = 'system-log';
+    this.activeTabId = getSccDefaultTab();
   }
 
   /**

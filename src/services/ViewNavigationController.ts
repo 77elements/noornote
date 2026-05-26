@@ -18,6 +18,7 @@
 import { LayoutService } from './LayoutService';
 import { Router } from './Router';
 import { ViewTabManager } from './ViewTabManager';
+import { getSccDefaultTab } from '../helpers/sccDefaultTab';
 
 export type ViewType = 'single-note' | 'profile' | 'notifications' | 'messages';
 
@@ -94,10 +95,11 @@ export class ViewNavigationController {
     }
 
     const activeTab = this.viewTabManager.getActiveTab();
-    const isSystemLogActive = !activeTab || activeTab.id === 'system-log';
+    const sccDefault = getSccDefaultTab();
+    const isDefaultActive = !activeTab || activeTab.id === sccDefault;
 
-    if (isSystemLogActive) {
-      return 'new-tab'; // Don't replace System Log
+    if (isDefaultActive) {
+      return 'new-tab';
     }
 
     return 'replace-active';

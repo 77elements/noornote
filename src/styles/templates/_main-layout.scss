@@ -170,6 +170,19 @@ html.layout--phone {
 
   .tabs {
     border-bottom: 1px solid var(--color-2);
+
+    .scc-default-dropdown {
+      flex-shrink: 0;
+
+      .custom-dropdown__trigger {
+        background: none;
+        border: none;
+        border-bottom: 2px solid var(--color-5);
+        border-radius: $radius-xl $radius-xl 0 0;
+        padding: calc($gap / 2) $gap;
+        color: var(--color-5);
+      }
+    }
   }
 
   .secondary-content-body {

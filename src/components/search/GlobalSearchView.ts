@@ -14,6 +14,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
+import { getSccDefaultTab } from '../../helpers/sccDefaultTab';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 export class GlobalSearchView {
@@ -386,7 +387,7 @@ export class GlobalSearchView {
 
     const secondaryContent = document.querySelector('.secondary-content');
     if (secondaryContent) {
-      switchTabWithContent(secondaryContent as HTMLElement, 'system-log');
+      switchTabWithContent(secondaryContent as HTMLElement, getSccDefaultTab());
     }
   }
 

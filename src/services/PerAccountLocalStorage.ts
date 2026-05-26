@@ -153,6 +153,9 @@ export const StorageKeys = {
   USER_ZAPS: 'noornote_user_zaps_map',
   OWN_ANON_ZAP_INVOICES: 'noornote_own_anon_zap_invoices_map',
 
+  // SCC default content preference (per-account)
+  SCC_DEFAULT_CONTENT: 'noornote_scc_default_content_map',
+
   // Follow Pack snapshots (per-account) — for diffing 39089 updates in TV/PV
   FOLLOW_PACK_SNAPSHOTS: 'noornote_follow_pack_snapshots_map',
 

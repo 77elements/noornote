@@ -38,10 +38,13 @@ import { NotificationsBadgeManager } from './managers/NotificationsBadgeManager'
 import { DMBadgeManager } from './managers/DMBadgeManager';
 import { HamburgerBadgeManager } from './managers/HamburgerBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
+import { SccArticleFeed } from './partials/SccArticleFeed';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { CustomDropdown } from '../ui/CustomDropdown';
+import { getSccDefaultTab, setSccDefaultTab, type SccDefaultContent } from '../../helpers/sccDefaultTab';
 import { LayoutService } from '../../services/LayoutService';
 import { PlatformService } from '../../services/PlatformService';
 import { PullToRefresh } from '../ui/PullToRefresh';
@@ -83,6 +86,8 @@ export class MainLayout {
   private viewTabEventSubscriptions: string[] = [];
   private layoutService: LayoutService;
   private pullToRefresh: PullToRefresh | null = null;
+  private sccDefaultDropdown: CustomDropdown | null = null;
+  private sccArticleFeed: SccArticleFeed | null = null;
   private _dayjs: any = null;
 
   constructor() {
@@ -1132,18 +1137,43 @@ export class MainLayout {
    * Note: List tabs (Bookmarks/Follows/Mutes) are handled dynamically via openListTab()
    */
   private setupTabSwitching(): void {
-    // Only setup System Logs tab (static tab)
-    // List tabs are created dynamically and have their own handlers
-    const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
-    const systemLogTab = this.element.querySelector('[data-tab="system-log"]');
+    const dropdownMount = this.element.querySelector('[data-role="scc-dropdown-mount"]');
+    if (!dropdownMount) return;
 
-    if (systemLogTab && secondaryContent) {
-      systemLogTab.addEventListener('click', () => {
-        switchTabWithContent(secondaryContent, 'system-log');
-        // Notify ViewTabManager that a non-view tab was activated
-        this.viewTabManager?.deactivateCurrentViewTab();
-      });
+    const savedDefault = getSccDefaultTab();
+
+    this.sccDefaultDropdown = new CustomDropdown({
+      options: [
+        { value: 'system-log', label: 'System Logs' },
+        { value: 'newest-articles', label: 'Newest Articles' }
+      ],
+      selectedValue: savedDefault,
+      onChange: (value) => {
+        const sccValue = value as SccDefaultContent;
+        setSccDefaultTab(sccValue);
+        this.activateSccDefault(sccValue);
+      },
+      className: 'scc-default-dropdown'
+    });
+
+    dropdownMount.appendChild(this.sccDefaultDropdown.getElement());
+    this.activateSccDefault(savedDefault);
+  }
+
+  private activateSccDefault(value: SccDefaultContent): void {
+    const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
+    if (!secondaryContent) return;
+
+    if (value === 'newest-articles' && !this.sccArticleFeed) {
+      const contentDiv = secondaryContent.querySelector('[data-tab-content="newest-articles"]');
+      if (contentDiv) {
+        this.sccArticleFeed = new SccArticleFeed(contentDiv as HTMLElement);
+      }
     }
+
+    deactivateAllTabs(secondaryContent);
+    switchTabWithContent(secondaryContent, value);
+    this.viewTabManager?.deactivateCurrentViewTab();
   }
 
 
@@ -1275,12 +1305,15 @@ export class MainLayout {
           <!-- User status will be mounted here -->
         </div>
         <div id="sidebar-tabs" class="tabs">
-          <button class="tab tab--active" data-tab="system-log">System Logs</button>
+          <div data-role="scc-dropdown-mount"></div>
           <!-- List tabs (Bookmarks/Follows/Mutes) will be inserted dynamically here -->
         </div>
         <div class="secondary-content-body">
           <div class="tab-content tab-content--active" data-tab-content="system-log">
             <!-- Debug Logger will be mounted here -->
+          </div>
+          <div class="tab-content" data-tab-content="newest-articles">
+            <!-- Article feed will be mounted here -->
           </div>
           <!-- List content will be inserted dynamically here -->
         </div>
@@ -2190,12 +2223,9 @@ export class MainLayout {
       // Clear active state on list sublinks
       this.setActiveListSublink(null);
 
-      // Activate System Logs tab (scoped to secondary-content only)
       const secondaryContent = this.element.querySelector('.secondary-content') as HTMLElement;
       if (secondaryContent) {
-        switchTabWithContent(secondaryContent, 'system-log');
-        // Notify ViewTabManager that a non-view tab was activated
-        this.viewTabManager?.deactivateCurrentViewTab();
+        this.activateSccDefault(getSccDefaultTab());
       }
     }
   }
