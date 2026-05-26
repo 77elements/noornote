@@ -1,7 +1,8 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { getAllFollowedPubkeys } from '../../../lists/follows';
 import { fetchEvents } from '../../../lists/relays';
-import { ArticleFeedOrchestrator } from '../../../services/orchestration/ArticleFeedOrchestrator';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { Router } from '../../../services/Router';
 import { InfiniteScroll } from '../../ui/InfiniteScroll';
@@ -162,7 +163,8 @@ export class SccArticleFeed {
   }
 
   private createCard(event: NostrEvent): HTMLElement {
-    const metadata = ArticleFeedOrchestrator.extractMetadata(event);
+    const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+    const metadata = articlesApi?.extractArticleMetadata(event) ?? { title: '', summary: '', image: '', identifier: '', publishedAt: 0, topics: [] };
     const excerpt = this.extractExcerpt(event.content || '', 200);
     const naddr = encodeNaddr({
       kind: 30023,
