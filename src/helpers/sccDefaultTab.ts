@@ -1,6 +1,6 @@
 import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
 
-export type SccDefaultContent = 'system-log' | 'newest-articles';
+export type SccDefaultContent = 'system-log' | 'newest-articles' | 'media';
 
 export function getSccDefaultTab(): SccDefaultContent {
   return PerAccountLocalStorage.getInstance()

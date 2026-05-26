@@ -182,6 +182,11 @@ html.layout--phone {
         padding: calc($gap / 2) $gap;
         color: var(--color-5);
       }
+
+      .custom-dropdown__menu {
+        left: 0;
+        right: auto;
+      }
     }
   }
 

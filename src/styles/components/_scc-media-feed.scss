@@ -1,0 +1,92 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+.scc-media-feed {
+  height: 100%;
+  overflow-y: auto;
+  padding: calc($gap / 2);
+  @include custom-scrollbar;
+
+  &__masonry {
+    columns: 2;
+    column-gap: calc($gap / 2);
+  }
+
+  &__tile {
+    break-inside: avoid;
+    margin-bottom: calc($gap / 2);
+    border-radius: $radius-xl;
+    overflow: hidden;
+    background: var(--color-2);
+    cursor: pointer;
+    transition: opacity $transition-fast;
+
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+
+  &__tile-media {
+    position: relative;
+
+    img, video {
+      width: 100%;
+      display: block;
+    }
+  }
+
+  &__tile-placeholder {
+    width: 100%;
+    height: 120px;
+    background: var(--color-1);
+  }
+
+  &__play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: $radius-full;
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    color: $color-white;
+    pointer-events: none;
+  }
+
+  &__tile-info {
+    padding: calc($gap / 2);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__tile-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--color-5);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  &__tile-author {
+    @extend %small;
+    color: var(--color-4);
+  }
+
+  &__tile-time {
+    @extend %small;
+    color: var(--color-3);
+  }
+
+  &__empty {
+    padding: $gap;
+    color: var(--color-3);
+    text-align: center;
+  }
+}

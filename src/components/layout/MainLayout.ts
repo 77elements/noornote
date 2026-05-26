@@ -39,6 +39,7 @@ import { DMBadgeManager } from './managers/DMBadgeManager';
 import { HamburgerBadgeManager } from './managers/HamburgerBadgeManager';
 import { ListViewPartial, type ListType } from './partials/ListViewPartial';
 import { SccArticleFeed } from './partials/SccArticleFeed';
+import { SccMediaFeed } from './partials/SccMediaFeed';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
@@ -88,6 +89,7 @@ export class MainLayout {
   private pullToRefresh: PullToRefresh | null = null;
   private sccDefaultDropdown: CustomDropdown | null = null;
   private sccArticleFeed: SccArticleFeed | null = null;
+  private sccMediaFeed: SccMediaFeed | null = null;
   private _dayjs: any = null;
 
   constructor() {
@@ -1145,7 +1147,8 @@ export class MainLayout {
     this.sccDefaultDropdown = new CustomDropdown({
       options: [
         { value: 'system-log', label: 'System Logs' },
-        { value: 'newest-articles', label: 'Newest Articles' }
+        { value: 'newest-articles', label: 'Newest Articles' },
+        { value: 'media', label: 'Media' }
       ],
       selectedValue: savedDefault,
       onChange: (value) => {
@@ -1168,6 +1171,13 @@ export class MainLayout {
       const contentDiv = secondaryContent.querySelector('[data-tab-content="newest-articles"]');
       if (contentDiv) {
         this.sccArticleFeed = new SccArticleFeed(contentDiv as HTMLElement);
+      }
+    }
+
+    if (value === 'media' && !this.sccMediaFeed) {
+      const contentDiv = secondaryContent.querySelector('[data-tab-content="media"]');
+      if (contentDiv) {
+        this.sccMediaFeed = new SccMediaFeed(contentDiv as HTMLElement);
       }
     }
 
@@ -1313,6 +1323,8 @@ export class MainLayout {
             <!-- Debug Logger will be mounted here -->
           </div>
           <div class="tab-content" data-tab-content="newest-articles">
+          </div>
+          <div class="tab-content" data-tab-content="media">
             <!-- Article feed will be mounted here -->
           </div>
           <!-- List content will be inserted dynamically here -->
