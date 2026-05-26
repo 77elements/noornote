@@ -277,8 +277,9 @@ export class MediaUploadService {
       || (settings.protocol === 'blossom' ? this.DEFAULT_BLOSSOM_MAX_FILE_SIZE : this.DEFAULT_NIP96_MAX_FILE_SIZE);
 
     if (file.size > maxSize) {
+      const fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
       const maxSizeMB = Math.floor(maxSize / 1024 / 1024);
-      return { valid: false, error: `File too large. Maximum size: ${maxSizeMB} MB` };
+      return { valid: false, error: `File too large (${fileSizeMB} MB). Maximum size: ${maxSizeMB} MB` };
     }
     return { valid: true };
   }
