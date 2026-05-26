@@ -31,7 +31,7 @@
 
 import { View } from '../components/views/View';
 import { Switch } from '../components/ui/Switch';
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
 import { escapeHtml } from '../helpers/escapeHtml';
 
@@ -42,7 +42,7 @@ export interface AddonToggleViewOptions {
   name: string;
   /** One-paragraph description shown under the toggle */
   description: string;
-  /** Optional EventBus event emitted on toggle (e.g. 'bookmarks:addon-toggle') */
+  /** Optional TypedEventBus event emitted on toggle (e.g. 'bookmarks:addon-toggle') */
   toggleEvent?: string;
   /** Synchronous enabled-state read */
   isEnabled: () => boolean;
@@ -72,7 +72,7 @@ export class AddonToggleView extends View {
       onChange: (checked) => {
         this.opts.setEnabled(checked);
         if (this.opts.toggleEvent) {
-          EventBus.getInstance().emit(this.opts.toggleEvent, { enabled: checked });
+          TypedEventBus.getInstance().emit(this.opts.toggleEvent as any, { enabled: checked });
         }
         ToastService.show(
           checked ? `${this.opts.name} enabled` : `${this.opts.name} disabled`,

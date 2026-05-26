@@ -15,7 +15,7 @@
 import { MutualService } from './MutualService';
 import { MutualChangeStorage, type MutualChange } from '../lists/MutualChangeStorage';
 import { MutualCheckDebugLog } from '../lists/MutualCheckDebugLog';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { SystemLogger } from './SystemLogger';
 import { AuthService } from './AuthService';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -33,7 +33,7 @@ export class MutualChangeDetector {
   private mutualService: MutualService;
   private storage: MutualChangeStorage;
   private debugLog: MutualCheckDebugLog;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
   private authService: AuthService;
 
@@ -41,7 +41,7 @@ export class MutualChangeDetector {
     this.mutualService = MutualService.getInstance();
     this.storage = MutualChangeStorage.getInstance();
     this.debugLog = MutualCheckDebugLog.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.authService = AuthService.getInstance();
   }

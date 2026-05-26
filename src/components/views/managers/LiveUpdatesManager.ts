@@ -1,6 +1,6 @@
 /**
  * LiveUpdatesManager
- * Handles live updates and EventBus subscriptions for SingleNoteView:
+ * Handles live updates and TypedEventBus subscriptions for SingleNoteView:
  * - Live reply subscription
  * - Live reactions polling
  * - Zap events
@@ -14,7 +14,7 @@ import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { SystemLogger } from '../../../services/SystemLogger';
-import { EventBus } from '../../../services/EventBus';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 import { NostrTransport } from '../../../services/transport/NostrTransport';
 import { Router } from '../../../services/Router';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -31,11 +31,17 @@ export interface LiveUpdatesConfig {
 
 export class LiveUpdatesManager {
   private config: LiveUpdatesConfig;
-  private singleNoteApi: SingleNoteModuleApi | null;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _singleNoteApi?: SingleNoteModuleApi | null;
+  private get singleNoteApi(): SingleNoteModuleApi | null {
+    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+  }
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private transport: NostrTransport;
   private router: Router;
 
@@ -46,11 +52,9 @@ export class LiveUpdatesManager {
 
   constructor(config: LiveUpdatesConfig) {
     this.config = config;
-    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.transport = NostrTransport.getInstance();
     this.router = Router.getInstance();
   }
@@ -75,7 +79,7 @@ export class LiveUpdatesManager {
       }
     }, { interval: 30000 }); // 30 seconds
 
-    // Setup EventBus listeners
+    // Setup TypedEventBus listeners
     this.setupZapListener();
     this.setupMuteListener();
     this.setupDeleteListener();
@@ -186,7 +190,7 @@ export class LiveUpdatesManager {
    * Cleanup all subscriptions
    */
   public destroy(): void {
-    // Unsubscribe from EventBus
+    // Unsubscribe from TypedEventBus
     if (this.zapAddedUnsubscribe) {
       this.eventBus.off(this.zapAddedUnsubscribe);
     }

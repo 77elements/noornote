@@ -17,7 +17,7 @@ import { Router } from '../../services/Router';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ProfileModuleApi, ProfileMetadata } from '../../modules/profile/contracts';
 import { AuthService } from '../../services/AuthService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ImageUploader } from '../profile/ImageUploader';
 import { ToastService } from '../../services/ToastService';
@@ -346,9 +346,12 @@ function generateRandomUsername(): string {
 
 export class AccountSetupWizard {
   private router: Router;
-  private profileApi: ProfileModuleApi | null;
+  private _profileApi?: ProfileModuleApi | null;
+  private get profileApi(): ProfileModuleApi | null {
+    return this._profileApi ??= ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+  }
   private authService: AuthService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private storage: PerAccountLocalStorage;
 
   private steps: WizardStep[] = [];
@@ -379,9 +382,8 @@ export class AccountSetupWizard {
 
   constructor() {
     this.router = Router.getInstance();
-    this.profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     this.authService = AuthService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
 
     // Build steps list based on platform
@@ -2347,9 +2349,9 @@ IMPORTANT:
       }
 
       // Done
-      this.eventBus.emit('profile:updated', {
-        pubkey: currentPubkey
-      });
+      if (currentPubkey) {
+        this.eventBus.emit('profile:updated', { pubkey: currentPubkey });
+      }
 
       this.storage.remove(StorageKeys.NEEDS_PROFILE_SETUP);
       this.clearProgress();

@@ -15,7 +15,7 @@ import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 type ListType = 'follows' | 'bookmarks' | 'mutes';
 
 interface PrivacySectionConfig {
@@ -145,7 +145,7 @@ export class PrivacySettingsSection extends SettingsSection {
 
     const viewBtn = contentContainer.querySelector(`#view-${config.id}-btn`);
     viewBtn?.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: config.id });
+      TypedEventBus.getInstance().emit('list:open', { listType: config.id });
     });
   }
 

@@ -8,13 +8,13 @@
  * NotificationsOrchestrator loaded lazily to keep it out of main bundle.
  */
 
-import { EventBus } from '../../../services/EventBus';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 import { AuthService } from '../../../services/AuthService';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { NotificationsModuleApi } from '../../../modules/notifications/contracts';
 
 export class NotificationsBadgeManager {
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private badgeElement: HTMLElement | null = null;
   private badgeUpdateSubscriptionId: string | null = null;
@@ -24,7 +24,7 @@ export class NotificationsBadgeManager {
 
   constructor(badgeElement: HTMLElement) {
     this.badgeElement = badgeElement;
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
 
     this.setupEventListeners();

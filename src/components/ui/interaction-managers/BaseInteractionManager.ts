@@ -21,13 +21,15 @@ export interface BaseInteractionConfig {
 
 export abstract class BaseInteractionManager<TConfig extends BaseInteractionConfig> {
   protected config: TConfig;
-  protected reactionsApi: ReactionsModuleApi | null;
+  protected _reactionsApi?: ReactionsModuleApi | null;
+  protected get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   protected button: HTMLElement | null = null;
   protected hasInteracted: boolean = false;
 
   constructor(config: TConfig) {
     this.config = config;
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
 
   /**

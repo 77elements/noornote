@@ -9,7 +9,7 @@
  * to keep them out of the main bundle entry path.
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { PlatformService } from './PlatformService';
 import { AuthService } from './AuthService';
 import { ModuleLoader } from '../core/ModuleLoader';
@@ -18,7 +18,7 @@ import type { DMsModuleApi } from '../modules/dms/contracts';
 
 export class AppBadgeService {
   private static instance: AppBadgeService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private platform: PlatformService;
   private subscriptionIds: string[] = [];
@@ -27,7 +27,7 @@ export class AppBadgeService {
 
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.platform = PlatformService.getInstance();
     this.originalTitle = document.title;

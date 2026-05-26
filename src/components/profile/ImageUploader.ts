@@ -34,7 +34,10 @@ export interface ImageUploaderConfig {
 
 export class ImageUploader {
   private config: ImageUploaderConfig;
-  private mediaApi: MediaModuleApi | null = null;
+  private _mediaApi?: MediaModuleApi | null;
+  private get mediaApi(): MediaModuleApi | null {
+    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+  }
   private systemLogger: SystemLogger;
   private container: HTMLElement | null = null;
   private fileInput: HTMLInputElement | null = null;
@@ -43,7 +46,6 @@ export class ImageUploader {
 
   constructor(config: ImageUploaderConfig) {
     this.config = config;
-    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
     this.systemLogger = SystemLogger.getInstance();
   }
 
@@ -132,7 +134,7 @@ export class ImageUploader {
     this.showProgressCircle();
 
     try {
-      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      const api = this.mediaApi;
       if (!api) {
         ToastService.show('Media module is not available. Please try again later.', 'error');
         return;

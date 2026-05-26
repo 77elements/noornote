@@ -9,7 +9,7 @@
 import { SettingsSection } from './SettingsSection';
 import { PerAccountLocalStorage, StorageKeys, type NotificationPriority, type NotificationPriorityMap } from '../../services/PerAccountLocalStorage';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { MoveDropdown, type MoveTarget } from '../ui/MoveDropdown';
 
 interface NotificationTypeInfo {
@@ -53,7 +53,7 @@ const PRIORITY_LABELS: Record<NotificationPriority, { title: string; description
 
 export class NotificationPrioritySection extends SettingsSection {
   private storage: PerAccountLocalStorage;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private priorities: NotificationPriorityMap;
   private contentContainer: HTMLElement | null = null;
   private hasUnsavedChanges = false;
@@ -76,7 +76,7 @@ export class NotificationPrioritySection extends SettingsSection {
   constructor() {
     super('notification-priority');
     this.storage = PerAccountLocalStorage.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.priorities = this.loadPriorities();
   }
 

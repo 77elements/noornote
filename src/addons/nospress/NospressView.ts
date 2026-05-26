@@ -47,7 +47,7 @@ import { PlatformService } from '../../services/PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { ProfileListsComponent } from '../../components/profile/ProfileListsComponent';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { FullscreenOverlay } from '../../components/ui/FullscreenOverlay';
 import { BlockLibraryView } from './blocks/BlockLibraryView';
 import { CursorRow } from './blocks/CursorRow';
@@ -359,7 +359,7 @@ export class NospressView extends View {
   }
 
   public destroy(): void {
-    const eventBus = EventBus.getInstance();
+    const eventBus = TypedEventBus.getInstance();
     this.eventBusSubscriptions.forEach(id => eventBus.off(id));
     this.eventBusSubscriptions = [];
     this.destroyInlineMounts();
@@ -408,7 +408,7 @@ export class NospressView extends View {
    * a full re-mount, e.g. via browser history)
    */
   private setupChangeListeners(): void {
-    const eventBus = EventBus.getInstance();
+    const eventBus = TypedEventBus.getInstance();
     this.eventBusSubscriptions.push(
       eventBus.on('nospressList:changed', () => this.rerenderEditable())
     );

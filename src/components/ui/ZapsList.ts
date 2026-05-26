@@ -28,13 +28,15 @@ export class ZapsList {
   private zapEvents: NostrEvent[];
   private userProfileService: UserProfileService;
   private authService: AuthService;
-  private zapsApi: ZapsModuleApi | null;
+  private _zapsApi?: ZapsModuleApi | null;
+  private get zapsApi(): ZapsModuleApi | null {
+    return this._zapsApi ??= ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
+  }
 
   constructor(zapEvents: NostrEvent[]) {
     this.zapEvents = zapEvents;
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
-    this.zapsApi = ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
     this.element = this.createElement();
   }
 

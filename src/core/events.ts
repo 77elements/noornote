@@ -1,4 +1,12 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import type { RelayHealthMetrics } from '../services/RelayHealthMonitor';
+import type { NotificationEvent } from '../services/orchestration/NotificationsOrchestrator';
+import type { ArticleNotification } from '../services/ArticleNotificationService';
+import type { DMMessage } from '../services/dm/DMStore';
+import type { ViewTab } from '../services/ViewTabManager';
+import type { ListingFrequency } from '../addons/marketplace/index';
+import type { PersonalEmoji } from '../addons/custom-emojis/EmojiService';
+import type { UploadStatus } from '../services/media/compression-types';
 
 // ── Auth / User ──────────────────────────────────────────────
 
@@ -10,7 +18,7 @@ export interface UserLoginPayload {
 // ── DMs ──────────────────────────────────────────────────────
 
 export interface DMNewMessagePayload {
-  message: any;
+  message: DMMessage;
   conversationWith: string;
 }
 
@@ -22,7 +30,7 @@ export interface DMFetchProgressPayload {
 // ── Notifications ────────────────────────────────────────────
 
 export interface NotificationsNewPayload {
-  notification: NostrEvent;
+  notification: NotificationEvent;
 }
 
 // ── Notes / Content ──────────────────────────────────────────
@@ -40,26 +48,34 @@ export interface PollVotedPayload {
   results: any;
 }
 
-export interface ReplyCreatedPayload {
-  eventId: string;
-}
-
 // ── Relay ────────────────────────────────────────────────────
 
 export interface RelayConnectedPayload {
   url: string;
-  latency: number;
+  latency?: number;
 }
 
 export interface RelayErrorPayload {
   url: string;
 }
 
+export interface RelayDisconnectedPayload {
+  url: string;
+}
+
+export interface RelayHealthUpdatedPayload {
+  url: string;
+  metrics: RelayHealthMetrics;
+}
+
 // ── Profile ──────────────────────────────────────────────────
 
 export interface ProfileUpdatedPayload {
   pubkey: string;
-  [key: string]: any;
+}
+
+export interface ProfileMountsChangedPayload {
+  mounts: string[];
 }
 
 // ── Layout / Settings ────────────────────────────────────────
@@ -67,6 +83,8 @@ export interface ProfileUpdatedPayload {
 export interface LayoutChangedPayload {
   mode: string;
   previousMode: string;
+  screenSize?: string;
+  forced?: boolean;
 }
 
 export interface FontSizeChangedPayload {
@@ -80,7 +98,7 @@ export interface ConnectivityStatusPayload {
 // ── View Tabs ────────────────────────────────────────────────
 
 export interface ViewTabOpenedPayload {
-  tab: any;
+  tab: ViewTab;
 }
 
 export interface ViewTabClosedPayload {
@@ -94,6 +112,8 @@ export interface ViewTabSwitchedPayload {
 export interface ViewTabLabelUpdatedPayload {
   tabId: string;
   label: string;
+  pubkey?: string;
+  profilePicUrl?: string;
 }
 
 // ── Search ───────────────────────────────────────────────────
@@ -102,26 +122,81 @@ export interface SearchStartPayload {
   query: string;
 }
 
+export interface HashtagSearchStartPayload {
+  hashtag: string;
+}
+
+export interface ProfileSearchCompletePayload {
+  query: string;
+  results: NostrEvent[];
+  meta: string;
+}
+
+// ── Lists ────────────────────────────────────────────────────
+
+export interface ListOpenPayload {
+  listType: string;
+  pubkey?: string;
+  packId?: string;
+  packMode?: 'timeline' | 'edit';
+}
+
+export interface ListSyncModeChangedPayload {
+  mode: string;
+}
+
+export interface MuteThreadUpdatedPayload {
+  eventId: string;
+}
+
+export interface BookmarkRelaySyncCompletePayload {
+  categoryAssignments: Map<string, string>;
+  categories: string[];
+}
+
 // ── Mutual Changes ───────────────────────────────────────────
 
 export interface MutualChangesDetectedPayload {
-  newFollowers: string[];
-  unfollowers: string[];
-  timestamp: number;
+  unfollowCount: number;
+  newMutualCount: number;
+}
+
+export interface MutualNotificationNewPayload {
+  event: NostrEvent;
+  type: 'mutual_unfollow' | 'mutual_new';
 }
 
 // ── Hashtag ──────────────────────────────────────────────────
 
+export interface HashtagSubscriptionUpdatedPayload {
+  hashtag: string;
+  subscribed?: boolean;
+  includeWithoutHash?: boolean;
+}
+
 export interface HashtagNewPostsPayload {
   hashtag: string;
   count: number;
-  events: NostrEvent[];
+  latestEvent: NostrEvent;
+}
+
+// ── Emojis ───────────────────────────────────────────────────
+
+export interface EmojisUpdatedPayload {
+  emojis: PersonalEmoji[];
+}
+
+// ── Article Notifications ────────────────────────────────────
+
+export interface ArticleNotificationUpdatedPayload {
+  pubkey: string;
+  subscribed: boolean;
 }
 
 // ── Marketplace ──────────────────────────────────────────────
 
 export interface MarketplaceFrequencyChangePayload {
-  frequency: number;
+  frequency: ListingFrequency;
 }
 
 // ── NosPress ─────────────────────────────────────────────────
@@ -129,6 +204,10 @@ export interface MarketplaceFrequencyChangePayload {
 export interface NospressDraftChangedPayload {
   page: any;
   slug: string;
+}
+
+export interface NospressMountsChangedPayload {
+  mounts: string[];
 }
 
 // ── Addon Toggle (shared shape) ──────────────────────────────
@@ -158,21 +237,21 @@ export interface AppEvents {
   // ── Follow / Mute / Bookmark / Tribe ───────
   'follow:updated': void;
   'mute:updated': void;
-  'mute:thread:updated': void;
+  'mute:thread:updated': MuteThreadUpdatedPayload;
   'bookmark:updated': void;
   'bookmark:order-changed': void;
-  'bookmark:relay-sync-complete': void;
+  'bookmark:relay-sync-complete': BookmarkRelaySyncCompletePayload;
   'tribe:updated': void;
-  'list:open': any;
-  'list-sync-mode:changed': void;
+  'list:open': ListOpenPayload;
+  'list-sync-mode:changed': ListSyncModeChangedPayload;
 
   // ── Notifications ──────────────────────────
   'notifications:badge-update': void;
   'notifications:new': NotificationsNewPayload;
   'notifications:filtered': void;
   'notifications:priorities-changed': void;
-  'article-notification:new': NostrEvent;
-  'article-notification:updated': void;
+  'article-notification:new': ArticleNotification;
+  'article-notification:updated': ArticleNotificationUpdatedPayload;
 
   // ── DMs ────────────────────────────────────
   'dm:badge-update': void;
@@ -183,7 +262,7 @@ export interface AppEvents {
 
   // ── Notes / Content ────────────────────────
   'note:deleted': NoteDeletedPayload;
-  'reply:created': ReplyCreatedPayload;
+  'reply:created': NostrEvent;
   'poll:voted': PollVotedPayload;
 
   // ── Zaps ───────────────────────────────────
@@ -192,13 +271,13 @@ export interface AppEvents {
 
   // ── Profile ────────────────────────────────
   'profile:updated': ProfileUpdatedPayload;
-  'profileMounts:changed': void;
+  'profileMounts:changed': ProfileMountsChangedPayload;
 
   // ── Relay ──────────────────────────────────
   'relay:connected': RelayConnectedPayload;
   'relay:error': RelayErrorPayload;
-  'relay:disconnected': void;
-  'relay:health:updated': void;
+  'relay:disconnected': RelayDisconnectedPayload;
+  'relay:health:updated': RelayHealthUpdatedPayload;
   'relays:loaded': void;
   'relays:updated': void;
 
@@ -220,28 +299,31 @@ export interface AppEvents {
   'view-tab:switched': ViewTabSwitchedPayload;
   'view-tab:label-updated': ViewTabLabelUpdatedPayload;
 
+  // ── Media Upload ────────────────────────────
+  'media-upload:status': UploadStatus;
+
   // ── Timeline ───────────────────────────────
   'timeline:pull-refresh': void;
 
   // ── Search ─────────────────────────────────
   'globalSearch:start': SearchStartPayload;
   'globalSearch:internal': any;
-  'hashtagSearch:start': SearchStartPayload;
+  'hashtagSearch:start': HashtagSearchStartPayload;
   'hashtagSearch:internal': any;
-  'profileSearch:complete': void;
+  'profileSearch:complete': ProfileSearchCompletePayload;
   'profileSearch:internal': any;
 
   // ── Mutual Changes ─────────────────────────
   'mutual-changes:detected': MutualChangesDetectedPayload;
   'mutual-changes:seen': void;
-  'mutual-notification:new': any;
+  'mutual-notification:new': MutualNotificationNewPayload;
 
   // ── Hashtag Subscriptions ──────────────────
-  'hashtag-subscription:updated': void;
+  'hashtag-subscription:updated': HashtagSubscriptionUpdatedPayload;
   'hashtag:new-posts': HashtagNewPostsPayload;
 
   // ── Emojis ─────────────────────────────────
-  'emojis:updated': void;
+  'emojis:updated': EmojisUpdatedPayload;
 
   // ── NosPress ───────────────────────────────
   'nospressDraftV2:changed': NospressDraftChangedPayload;
@@ -249,7 +331,7 @@ export interface AppEvents {
   'nospressMenus:changed': any;
   'nospressPageIndex:changed': any;
   'nospressSiteSettings:changed': any;
-  'nospressMounts:changed': void;
+  'nospressMounts:changed': NospressMountsChangedPayload;
 
   // ── Scheduled Posts ────────────────────────
   'scheduled-posts:changed': void;

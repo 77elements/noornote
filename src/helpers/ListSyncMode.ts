@@ -6,7 +6,7 @@
  * @used-by BaseListSecondaryManager, BookmarkSecondaryManager
  */
 
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
 import { PlatformService } from '../services/PlatformService';
 import { PerAccountLocalStorage, StorageKeys } from '../services/PerAccountLocalStorage';
@@ -32,7 +32,7 @@ export function setListSyncMode(mode: ListSyncMode): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.LIST_SYNC_MODE, mode);
 
   if (previousMode !== mode) {
-    EventBus.getInstance().emit(MODE_CHANGED_EVENT, { mode });
+    TypedEventBus.getInstance().emit(MODE_CHANGED_EVENT, { mode });
   }
 }
 

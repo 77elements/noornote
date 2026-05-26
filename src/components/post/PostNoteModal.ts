@@ -48,7 +48,10 @@ export interface HighlightSource {
 export class PostNoteModal {
   private static instance: PostNoteModal;
   private modalService: ModalService;
-  private postsApi: PostsModuleApi | null;
+  private _postsApi?: PostsModuleApi | null;
+  private get postsApi(): PostsModuleApi | null {
+    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+  }
   private relayConfig: RelayConfig;
   private authService: AuthService;
   private systemLogger: SystemLogger;
@@ -78,7 +81,6 @@ export class PostNoteModal {
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();

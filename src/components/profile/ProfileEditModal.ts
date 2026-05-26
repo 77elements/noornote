@@ -17,17 +17,20 @@ import { UserProfileService, type UserProfile } from '../../services/UserProfile
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ImageUploader } from './ImageUploader';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 export class ProfileEditModal {
   private static instance: ProfileEditModal;
   private modalService: ModalService;
-  private profileApi: ProfileModuleApi | null;
+  private _profileApi?: ProfileModuleApi | null;
+  private get profileApi(): ProfileModuleApi | null {
+    return this._profileApi ??= ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+  }
   private userProfileService: UserProfileService;
   private authService: AuthService;
   private systemLogger: SystemLogger;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
 
   // Sub-components
   private avatarUploader: ImageUploader | null = null;
@@ -41,11 +44,10 @@ export class ProfileEditModal {
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): ProfileEditModal {
@@ -318,9 +320,10 @@ export class ProfileEditModal {
       const result = await (this.profileApi?.updateProfile(profileToSave) ?? Promise.resolve(null));
 
       if (result) {
-        this.eventBus.emit('profile:updated', {
-          pubkey: this.authService.getCurrentUser()?.pubkey
-        });
+        const pubkey = this.authService.getCurrentUser()?.pubkey;
+        if (pubkey) {
+          this.eventBus.emit('profile:updated', { pubkey });
+        }
         this.cleanup();
         this.modalService.hide();
       } else {

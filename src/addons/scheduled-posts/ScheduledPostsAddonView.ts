@@ -8,7 +8,7 @@
 
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { ModalService } from '../../services/ModalService';
 import { AuthService } from '../../services/AuthService';
@@ -38,7 +38,7 @@ export class ScheduledPostsAddonView extends View {
       checked: enabled,
       onChange: (checked) => {
         setScheduledPostsEnabled(checked);
-        EventBus.getInstance().emit('scheduled-posts:addon-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('scheduled-posts:addon-toggle', { enabled: checked });
         ToastService.show(
           checked ? 'Scheduled Posts enabled' : 'Scheduled Posts disabled',
           'success'
@@ -70,13 +70,13 @@ export class ScheduledPostsAddonView extends View {
       this.mountList();
     }
 
-    this.toggleSubId = EventBus.getInstance().on('scheduled-posts:addon-toggle', (payload: { enabled: boolean }) => {
+    this.toggleSubId = TypedEventBus.getInstance().on('scheduled-posts:addon-toggle', (payload: { enabled: boolean }) => {
       if (payload.enabled) this.mountList();
       else this.unmountList();
     });
 
     // Refresh the list whenever a post is scheduled or cancelled elsewhere.
-    this.changedSubId = EventBus.getInstance().on('scheduled-posts:changed', () => {
+    this.changedSubId = TypedEventBus.getInstance().on('scheduled-posts:changed', () => {
       if (isScheduledPostsEnabled()) {
         void this.loadAndRenderList();
       }
@@ -89,11 +89,11 @@ export class ScheduledPostsAddonView extends View {
 
   public destroy(): void {
     if (this.toggleSubId) {
-      EventBus.getInstance().off(this.toggleSubId);
+      TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
     }
     if (this.changedSubId) {
-      EventBus.getInstance().off(this.changedSubId);
+      TypedEventBus.getInstance().off(this.changedSubId);
       this.changedSubId = null;
     }
     this.enableSwitch?.destroy();
@@ -223,7 +223,7 @@ export class ScheduledPostsAddonView extends View {
       diagLog('system', 'scheduled_post_cancelled', { id });
       this.posts = this.posts.filter((p) => p.id !== id);
       this.renderList();
-      EventBus.getInstance().emit('scheduled-posts:changed', {});
+      TypedEventBus.getInstance().emit('scheduled-posts:changed');
       ToastService.show('Scheduled post cancelled', 'success');
     } catch (err) {
       SystemLogger.getInstance().warn('ScheduledPostsAddonView', `Cancel failed: ${err}`);

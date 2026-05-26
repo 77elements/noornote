@@ -12,7 +12,7 @@
  *   - Web/Phone: No file operations (only relay sync)
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { getListLastModified, setListLastModified, type ListType as StorageListType } from '../lists/storage';
 import { AuthService } from './AuthService';
 import { ConnectivityService } from './ConnectivityService';
@@ -60,7 +60,7 @@ type ListType = 'follows' | 'bookmarks' | 'mutes' | 'tribes';
 export class AutoSyncService {
   private static instance: AutoSyncService;
 
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private connectivityService: ConnectivityService;
   private systemLogger: SystemLogger;
@@ -88,7 +88,7 @@ export class AutoSyncService {
   private isSyncing: Set<ListType> = new Set();
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.connectivityService = ConnectivityService.getInstance();
     this.systemLogger = SystemLogger.getInstance();

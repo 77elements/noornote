@@ -22,7 +22,7 @@ import { extractOriginalNoteId } from '../../helpers/extractOriginalNoteId';
 import { SystemLogger } from '../../services/SystemLogger';
 import { AppState } from '../../services/AppState';
 import { Router } from '../../services/Router';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { decodeNip19, encodeNpub } from '../../services/NostrToolsAdapter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -30,13 +30,19 @@ export class SingleNoteView extends View {
   private container: HTMLElement;
   private noteId: string;
   private relayConfig: RelayConfig;
-  private singleNoteApi: SingleNoteModuleApi | null;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _singleNoteApi?: SingleNoteModuleApi | null;
+  private get singleNoteApi(): SingleNoteModuleApi | null {
+    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+  }
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private appState: AppState;
   private router: Router;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private currentNoteId: string | null = null;
   private currentEvent: NostrEvent | null = null;
 
@@ -44,7 +50,7 @@ export class SingleNoteView extends View {
   private threadManager?: ThreadManager;
   private liveUpdatesManager?: LiveUpdatesManager;
 
-  // EventBus subscription IDs
+  // TypedEventBus subscription IDs
   private muteUpdatedSubscriptionId?: string;
 
   constructor(noteId: string) {
@@ -53,13 +59,11 @@ export class SingleNoteView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--single-note';
     this.relayConfig = RelayConfig.getInstance();
-    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.appState = AppState.getInstance();
     this.router = Router.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
 
     this.reactionsApi?.resetFetchCounter();
     this.setupMuteListener();

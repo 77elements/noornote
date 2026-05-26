@@ -15,7 +15,7 @@ import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { ErrorService } from '../../services/ErrorService';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { ScheduledPostService } from './ScheduledPostService';
 
@@ -141,7 +141,7 @@ export async function scheduleNote(options: ScheduleNoteOptions): Promise<boolea
       contentLength: content.trim().length,
     });
 
-    EventBus.getInstance().emit('scheduled-posts:changed', {});
+    TypedEventBus.getInstance().emit('scheduled-posts:changed');
     const when = new Date(scheduledAt * 1000).toLocaleString();
     ToastService.show(`Scheduled for ${when}`, 'success');
     return true;

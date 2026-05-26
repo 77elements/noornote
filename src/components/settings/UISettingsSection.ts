@@ -14,7 +14,7 @@ import { FontSizeSwitcher } from '../ui/FontSizeSwitcher';
 import { PerAccountLocalStorage, StorageKeys, type LayoutMode } from '../../services/PerAccountLocalStorage';
 import { LayoutService } from '../../services/LayoutService';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../../services/PlatformService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
@@ -22,7 +22,7 @@ import type { SettingsModuleApi } from '../../modules/settings/contracts';
 export class UISettingsSection extends SettingsSection {
   private storage: PerAccountLocalStorage;
   private layoutService: LayoutService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private layoutModeDropdown: CustomDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
   private contentVisibilitySwitch: Switch | null = null;
@@ -36,7 +36,7 @@ export class UISettingsSection extends SettingsSection {
     super('ui-settings');
     this.storage = PerAccountLocalStorage.getInstance();
     this.layoutService = LayoutService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   /**

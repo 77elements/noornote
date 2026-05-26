@@ -3,7 +3,7 @@
  * Self-initializing service for mutual change detection (Phase 2-4)
  *
  * Architecture:
- * - Listens to user:login / user:logout via EventBus
+ * - Listens to user:login / user:logout via TypedEventBus
  * - Delayed start: 3 minutes after login
  * - Stops on logout
  * - Completely decoupled from App.ts
@@ -12,7 +12,7 @@
  * @used-by Automatically initializes on import
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { MutualChangeStorage } from '../lists/MutualChangeStorage';
 import { MutualChangeScheduler } from './MutualChangeScheduler';
 import { MutualChangeDetector } from './MutualChangeDetector';
@@ -21,7 +21,7 @@ import { SystemLogger } from './SystemLogger';
 const DELAYED_START_MS = 3 * 60 * 1000; // 3 minutes
 
 class MutualChangeServiceImpl {
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private storage: MutualChangeStorage;
   private scheduler: MutualChangeScheduler;
   private detector: MutualChangeDetector;
@@ -30,7 +30,7 @@ class MutualChangeServiceImpl {
   private isInitialized: boolean = false;
 
   constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.storage = MutualChangeStorage.getInstance();
     this.scheduler = MutualChangeScheduler.getInstance();
     this.detector = MutualChangeDetector.getInstance();

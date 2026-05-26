@@ -19,7 +19,7 @@ import { Router } from '../../services/Router';
 import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
 import { AuthService } from '../../services/AuthService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ADDON_REGISTRY } from '../../addons/registry';
 // WalletBalanceDisplay is owned by src/addons/wallet-balance/runtime.ts and
 // managed by the AddonLoader. MainLayout only provides the mount point
@@ -66,7 +66,7 @@ export class MainLayout {
   private appState: AppState;
   private authStateManager: AuthStateManager;
   private authService: AuthService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private cacheSizeUpdateInterval: number | null = null;
   private dateTimeUpdateInterval: number | null = null;
   private authStateUnsubscribe: (() => void) | null = null;
@@ -92,7 +92,7 @@ export class MainLayout {
     this.appState = AppState.getInstance();
     this.authStateManager = AuthStateManager.getInstance();
     this.authService = AuthService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.layoutService = LayoutService.getInstance();
     this.setupNavigationLinks();
     this.setupMobileSidebar();
@@ -256,20 +256,20 @@ export class MainLayout {
 
 
     // Listen for list:open events from Settings → Privacy links, ProfileView, FollowPackDetailView
-    this.eventBus.on('list:open', (data: { listType: ListType; pubkey?: string; packId?: string; packMode?: 'timeline' | 'edit' }) => {
+    this.eventBus.on('list:open', (data) => {
       // Check if this is an external user's follows (not current user)
       const currentUser = this.authService.getCurrentUser();
       if (data.listType === 'follows' && data.pubkey && currentUser?.pubkey !== data.pubkey) {
         this.openExternalFollowsTab(data.pubkey);
       } else {
-        this.openListTab(data.listType);
+        this.openListTab(data.listType as ListType);
       }
     });
   }
 
   /**
    * Initialize ViewTabManager if layout mode is 'right-pane'
-   * Subscribe to EventBus events for tab management
+   * Subscribe to TypedEventBus events for tab management
    */
   private initializeViewTabManager(): void {
     // ALWAYS subscribe to layout mode change event (even if currently disabled)
@@ -572,7 +572,7 @@ export class MainLayout {
    * In wide mode: Prevents GlobalSearchView from processing tab creation, renders in pcc instead
    */
   private setupSearchEventInterceptors(): void {
-    // NOTE: EventBus processes listeners in registration order
+    // NOTE: TypedEventBus processes listeners in registration order
     // These are registered FIRST (in MainLayout constructor) before GlobalSearchView
 
     // Intercept global search (Cmd+K → search query) with high priority
@@ -774,7 +774,7 @@ export class MainLayout {
         }
         // Re-initialize addons now that auth is available
         // (initial init in constructor may have run before auth completed)
-        // wallet-balance is handled by AddonLoader via the user:login EventBus event.
+        // wallet-balance is handled by AddonLoader via the user:login TypedEventBus event.
         this.initializeAddonsAfterAuth();
         // Update sidebar for logged-in state
         this.element.querySelector('.sidebar')?.classList.remove('sidebar--logged-out');
@@ -1040,7 +1040,7 @@ export class MainLayout {
       const currentView = appState.getState('view').currentView;
 
       if (currentView === 'timeline' || currentView === 'profile') {
-        EventBus.getInstance().emit('timeline:pull-refresh');
+        TypedEventBus.getInstance().emit('timeline:pull-refresh');
       } else {
         const router = Router.getInstance();
         router.navigate(router.getCurrentPath(), true);

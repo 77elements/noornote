@@ -36,15 +36,19 @@ import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 export class ArticleView {
   private container: HTMLElement;
   private naddrRef: string;
-  private articlesApi: ArticlesModuleApi | null;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _articlesApi?: ArticlesModuleApi | null;
+  private get articlesApi(): ArticlesModuleApi | null {
+    return this._articlesApi ??= ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+  }
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
 
   constructor(naddrRef: string) {
     this.naddrRef = naddrRef;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article';
-    this.articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
 
     this.render();
   }

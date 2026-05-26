@@ -11,7 +11,7 @@ import { SettingsSection } from './SettingsSection';
 import { Switch } from '../ui/Switch';
 import { ToastService } from '../../services/ToastService';
 import { ModalService } from '../../services/ModalService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { isListSettingsEnabled, setListSettingsEnabled } from '../../addons/list-settings/index';
 import {
@@ -71,7 +71,7 @@ export class ListSettingsSection extends SettingsSection {
     if (contentZone) this.renderAdvancedContent(contentZone, enabled);
 
     // Sync when mode changes externally (e.g. "Switch to manual mode" link in list views)
-    this.modeChangedSubscriptionId = EventBus.getInstance().on(
+    this.modeChangedSubscriptionId = TypedEventBus.getInstance().on(
       'list-sync-mode:changed',
       ({ mode }: { mode: string }) => {
         this.currentMode = mode as ListSyncMode;
@@ -426,7 +426,7 @@ export class ListSettingsSection extends SettingsSection {
   public unmount(): void {
     this.enableSwitch = null;
     if (this.modeChangedSubscriptionId) {
-      EventBus.getInstance().off(this.modeChangedSubscriptionId);
+      TypedEventBus.getInstance().off(this.modeChangedSubscriptionId);
       this.modeChangedSubscriptionId = null;
     }
   }

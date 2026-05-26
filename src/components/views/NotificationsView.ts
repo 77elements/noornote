@@ -6,7 +6,7 @@
 import { View } from './View';
 import { NotificationsOrchestrator, type NotificationType, type NotificationEvent } from '../../services/orchestration/NotificationsOrchestrator';
 import { NotificationItem, type NotificationItemOptions } from '../notifications/NotificationItem';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { UserProfileService } from '../../services/UserProfileService';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -20,9 +20,12 @@ export class NotificationsView extends View {
   private container: HTMLElement;
   private notificationsOrch: NotificationsOrchestrator;
   private userProfileService: UserProfileService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
-  private notificationsApi: NotificationsModuleApi | null;
+  private _notificationsApi?: NotificationsModuleApi | null;
+  private get notificationsApi(): NotificationsModuleApi | null {
+    return this._notificationsApi ??= ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
+  }
   private activeTab: TabType = 'all';
   private notificationItems: NotificationItem[] = [];
   private infiniteScroll: InfiniteScroll;
@@ -39,9 +42,8 @@ export class NotificationsView extends View {
     this.container.className = 'view-content view-content--notifications';
     this.notificationsOrch = NotificationsOrchestrator.getInstance();
     this.userProfileService = UserProfileService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.notificationsApi = ModuleLoader.getInstance().getApi<NotificationsModuleApi>('notifications');
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
       loadingMessage: 'Loading more notifications...'
     });

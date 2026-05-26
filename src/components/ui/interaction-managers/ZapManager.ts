@@ -12,7 +12,7 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ZapsModuleApi } from '../../../modules/zaps/contracts';
 import { ToastService } from '../../../services/ToastService';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
-import { EventBus } from '../../../services/EventBus';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 import { UserProfileService } from '../../../services/UserProfileService';
 import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
 
@@ -31,10 +31,16 @@ export interface ZapManagerConfig {
 
 export class ZapManager {
   private config: ZapManagerConfig;
-  private zapsApi: ZapsModuleApi | null;
+  private _zapsApi?: ZapsModuleApi | null;
+  private get zapsApi(): ZapsModuleApi | null {
+    return this._zapsApi ??= ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
+  }
   private authService: AuthService;
-  private reactionsApi: ReactionsModuleApi | null;
-  private eventBus: EventBus;
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
+  private eventBus: TypedEventBus;
   private userProfileService: UserProfileService;
   private zapButton: HTMLElement | null = null;
   private zappedAmount: number = 0;
@@ -43,10 +49,8 @@ export class ZapManager {
 
   constructor(config: ZapManagerConfig) {
     this.config = config;
-    this.zapsApi = ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
     this.authService = AuthService.getInstance();
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.userProfileService = UserProfileService.getInstance();
   }
 

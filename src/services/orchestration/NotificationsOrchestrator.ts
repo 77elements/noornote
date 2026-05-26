@@ -22,7 +22,7 @@ import { MuteOrchestrator } from '../../lists/mutes';
 import { MutualChangeStorage } from '../../lists/MutualChangeStorage';
 import { SystemLogger } from '../SystemLogger';
 import { AuthService } from '../AuthService';
-import { EventBus } from '../EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { decodeNip19 } from '../NostrToolsAdapter';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { NoteService } from '../NoteService';
@@ -45,7 +45,7 @@ export class NotificationsOrchestrator extends Orchestrator {
   private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
   private systemLogger: SystemLogger;
   private authService: AuthService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private mutedPubkeys: Set<string> = new Set();
   private mutedEventIds: Set<string> = new Set(); // Thread muting (Hell Thread protection)
 
@@ -88,7 +88,7 @@ export class NotificationsOrchestrator extends Orchestrator {
     this.muteOrchestrator = MuteOrchestrator.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.authService = AuthService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.perAccountStorage = PerAccountLocalStorage.getInstance();
     this.noteService = NoteService.getInstance();
 

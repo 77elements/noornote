@@ -9,7 +9,7 @@
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import {
   isContentWordFilterEnabled,
   setContentWordFilterEnabled,
@@ -38,7 +38,7 @@ export class ContentWordFilterSettings extends SettingsSection {
         // Emit the uniform AddonLoader toggle event (id matches ADDON_REGISTRY).
         // Also emit the legacy event so existing listeners (WordFilterAddonView)
         // keep working.
-        const bus = EventBus.getInstance();
+        const bus = TypedEventBus.getInstance();
         bus.emit('wordfilter:addon-toggle', { enabled: checked });
         bus.emit('content-word-filter:toggle', { enabled: checked });
         ToastService.show(

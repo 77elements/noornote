@@ -15,7 +15,7 @@ import { MutualService } from '../services/MutualService';
 import { MutualChangeDetector } from '../services/MutualChangeDetector';
 import { MutualChangeStorage } from './MutualChangeStorage';
 import { ZapStatsService } from '../services/ZapStatsService';
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from '../services/ToastService';
 import { ProgressBarHelper } from '../helpers/ProgressBarHelper';
 import { extractDisplayName } from '../helpers/extractDisplayName';
@@ -34,7 +34,7 @@ export class FollowsExtendedFeatures {
   private mutualChangeStorage: MutualChangeStorage;
   private zapStatsService: ZapStatsService;
   private userProfileService: UserProfileService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
 
   // State
   public mutualCount: number = 0;
@@ -46,11 +46,11 @@ export class FollowsExtendedFeatures {
     this.mutualChangeStorage = MutualChangeStorage.getInstance();
     this.zapStatsService = ZapStatsService.getInstance();
     this.userProfileService = UserProfileService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   /**
-   * Setup EventBus listeners for extended features.
+   * Setup TypedEventBus listeners for extended features.
    * Returns subscription IDs for cleanup.
    */
   public setupEventListeners(callbacks: {

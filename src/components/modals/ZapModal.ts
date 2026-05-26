@@ -42,7 +42,10 @@ export interface ZapModalOptions {
 
 export class ZapModal {
   private modalService: ModalService;
-  private zapsApi: ZapsModuleApi | null;
+  private _zapsApi?: ZapsModuleApi | null;
+  private get zapsApi(): ZapsModuleApi | null {
+    return this._zapsApi ??= ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
+  }
   private nwcService: NWCService;
   private systemLogger: SystemLogger;
   private currentOptions: ZapModalOptions | null = null;
@@ -52,7 +55,6 @@ export class ZapModal {
 
   constructor(options: ZapModalOptions) {
     this.modalService = ModalService.getInstance();
-    this.zapsApi = ModuleLoader.getInstance().getApi<ZapsModuleApi>('zaps');
     this.nwcService = NWCService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.currentOptions = options;

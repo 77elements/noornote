@@ -17,7 +17,7 @@ import {
   isProfileListingsEnabled, setProfileListingsEnabled,
   type ListingFrequency
 } from '../../addons/marketplace/index';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 
 export class MarketplaceSettingsSection extends SettingsSection {
@@ -43,7 +43,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
         // Emit the uniform AddonLoader event + the legacy event so existing
         // listeners (Timeline, MainLayout sidebar, MarketplaceAddonView) keep
         // working unchanged.
-        const bus = EventBus.getInstance();
+        const bus = TypedEventBus.getInstance();
         bus.emit('marketplace:addon-toggle', { enabled: checked });
         bus.emit('marketplace:toggle', { enabled: checked });
         this.updateTimelineVisibility(contentContainer);
@@ -56,7 +56,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
       checked: isProfileListingsEnabled(),
       onChange: (checked) => {
         setProfileListingsEnabled(checked);
-        EventBus.getInstance().emit('marketplace:profile-listings-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('marketplace:profile-listings-toggle', { enabled: checked });
         ToastService.show(
           checked ? 'Products carousel enabled on profiles' : 'Products carousel hidden on profiles',
           'success'
@@ -69,7 +69,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
       checked: isTimelineListingsEnabled(),
       onChange: (checked) => {
         setTimelineListingsEnabled(checked);
-        EventBus.getInstance().emit('marketplace:timeline-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('marketplace:timeline-toggle', { enabled: checked });
         this.updateFrequencyVisibility(contentContainer);
         ToastService.show(checked ? 'Timeline listings enabled' : 'Timeline listings disabled', 'success');
       }
@@ -121,7 +121,7 @@ export class MarketplaceSettingsSection extends SettingsSection {
       radio.addEventListener('change', (e) => {
         const value = (e.target as HTMLInputElement).value as ListingFrequency;
         setTimelineListingFrequency(value);
-        EventBus.getInstance().emit('marketplace:timeline-frequency-change', { frequency: value });
+        TypedEventBus.getInstance().emit('marketplace:timeline-frequency-change', { frequency: value });
         const labels: Record<ListingFrequency, string> = {
           rare: 'Rare (60 min)',
           moderate: 'Moderate (30 min)',

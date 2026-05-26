@@ -17,7 +17,7 @@
  */
 
 import { PerAccountLocalStorage, type LayoutMode } from './PerAccountLocalStorage';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { PlatformService } from './PlatformService';
 
 type ScreenSize = 'desktop' | 'tablet' | 'phone';
@@ -25,7 +25,7 @@ type ScreenSize = 'desktop' | 'tablet' | 'phone';
 export class LayoutService {
   private static instance: LayoutService;
   private storage: PerAccountLocalStorage;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private userPreference: LayoutMode = 'default';
   private effectiveMode: LayoutMode = 'default';
   private currentScreenSize: ScreenSize = 'desktop';
@@ -34,7 +34,7 @@ export class LayoutService {
 
   private constructor() {
     this.storage = PerAccountLocalStorage.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.userPreference = this.storage.getLayoutMode();
     this.currentScreenSize = this.detectScreenSize();
     this.effectiveMode = this.calculateEffectiveMode();

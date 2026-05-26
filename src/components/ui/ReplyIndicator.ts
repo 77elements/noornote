@@ -17,12 +17,14 @@ export interface ReplyIndicatorOptions {
 export class ReplyIndicator {
   private element: HTMLElement;
   private options: ReplyIndicatorOptions;
-  private singleNoteApi: SingleNoteModuleApi | null;
+  private _singleNoteApi?: SingleNoteModuleApi | null;
+  private get singleNoteApi(): SingleNoteModuleApi | null {
+    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+  }
 
   constructor(options: ReplyIndicatorOptions) {
     this.options = options;
     this.element = this.createElement();
-    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
 
     // Load parent author info asynchronously
     this.loadParentAuthor();

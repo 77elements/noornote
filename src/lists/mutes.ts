@@ -24,7 +24,7 @@ import {
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../services/SystemLogger';
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { diagLog } from '../services/DiagnosticLogger';
 // UI component imports
 import { View } from '../components/views/View';
@@ -42,7 +42,7 @@ import { SyncConfirmationModal } from '../components/modals/SyncConfirmationModa
 import { setupUserMentionHandlers } from '../helpers/UserMentionHelper';
 
 const logger = SystemLogger.getInstance();
-const eventBus = EventBus.getInstance();
+const eventBus = TypedEventBus.getInstance();
 
 // ============================================================
 // TYPES
@@ -181,7 +181,7 @@ export function getMuteItems(): MuteItem[] {
 export function setMuteItems(items: MuteItem[]): void {
   storage.set(StorageKeys.MUTES, items);
   invalidateMutedSetCache();
-  eventBus.emit('mute:updated', {});
+  eventBus.emit('mute:updated');
 }
 
 /**
@@ -1463,7 +1463,7 @@ export class MuteListView extends View {
         NotificationsOrchestrator.getInstance().refreshMutedUsers()
       ]);
 
-      EventBus.getInstance().emit('mute:updated', {});
+      TypedEventBus.getInstance().emit('mute:updated');
     } catch {
       ToastService.show('Failed to unmute user', 'error');
     }
@@ -1478,7 +1478,7 @@ export class MuteListView extends View {
       this.renderMuteList();
 
       eventBus.emit('mute:thread:updated', { eventId });
-      eventBus.emit('mute:updated', {});
+      eventBus.emit('mute:updated');
     } catch {
       ToastService.show('Failed to unmute thread', 'error');
     }
@@ -1498,7 +1498,7 @@ export class MuteListView extends View {
 // ============================================================
 
 export class MuteListManager {
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private adapter: MuteStorageAdapter;
   private containerElement: HTMLElement;
@@ -1510,7 +1510,7 @@ export class MuteListManager {
 
   constructor(containerElement: HTMLElement) {
     this.containerElement = containerElement;
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.adapter = new MuteStorageAdapter();
     this.muteOrch = MuteOrchestrator.getInstance();
@@ -1902,7 +1902,7 @@ export class MuteListManager {
         NotificationsOrchestrator.getInstance().refreshMutedUsers()
       ]);
 
-      this.eventBus.emit('mute:updated', {});
+      this.eventBus.emit('mute:updated');
     } catch (error) {
       console.error('Failed to unmute user:', error);
       ToastService.show('Failed to unmute user', 'error');
@@ -1918,7 +1918,7 @@ export class MuteListManager {
       this.mutedThreads = this.mutedThreads.filter(t => t.eventId !== eventId);
 
       this.eventBus.emit('mute:thread:updated', { eventId });
-      this.eventBus.emit('mute:updated', {});
+      this.eventBus.emit('mute:updated');
     } catch (error) {
       console.error('Failed to unmute thread:', error);
       ToastService.show('Failed to unmute thread', 'error');

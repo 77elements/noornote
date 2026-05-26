@@ -8,7 +8,7 @@
 
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { isCustomEmojisEnabled, setCustomEmojisEnabled } from './index';
 import { EmojiService, type PersonalEmoji, type RemoteEmojiPack } from './EmojiService';
@@ -17,14 +17,14 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 
 export class CustomEmojisSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private updatedSubId: string | null = null;
   private currentContentZone: HTMLElement | null = null;
   private userSearchInput: UserSearchInput | null = null;
 
   constructor() {
     super('custom-emojis-settings');
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public mount(parentContainer: HTMLElement): void {

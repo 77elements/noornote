@@ -3,7 +3,7 @@ import { BadgeService, type OwnBadgeDefinition } from './BadgeService';
 import { isBadgesEnabled, setBadgesEnabled } from './index';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 
 export class BadgesView extends View {
@@ -72,7 +72,7 @@ export class BadgesView extends View {
       checked: enabled,
       onChange: (checked) => {
         setBadgesEnabled(checked);
-        EventBus.getInstance().emit('badges:addon-toggle', checked);
+        TypedEventBus.getInstance().emit('badges:addon-toggle', { enabled: checked });
         this.render();
       },
     });

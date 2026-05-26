@@ -6,19 +6,19 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys, type FontSizeScale } from './PerAccountLocalStorage';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 
 const SCALES: FontSizeScale[] = ['small', 'default', 'large', 'x-large'];
 
 export class FontSizeService {
   private static instance: FontSizeService;
   private storage: PerAccountLocalStorage;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private currentScale: FontSizeScale = 'default';
 
   private constructor() {
     this.storage = PerAccountLocalStorage.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.currentScale = this.storage.get<FontSizeScale>(StorageKeys.FONT_SIZE_SCALE, 'default');
     this.applyClass();
   }

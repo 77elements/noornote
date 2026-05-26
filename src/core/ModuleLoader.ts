@@ -24,10 +24,10 @@
  *
  * Coexistence: ModuleLoader and AddonLoader run side by side during migration.
  * AddonLoader continues managing addons. ModuleLoader manages new feature modules.
- * They share the same EventBus for login/logout events.
+ * They share the same TypedEventBus for login/logout events.
  */
 
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { diagLog } from '../services/DiagnosticLogger';
 
 // ── Types ────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ import { diagLog } from '../services/DiagnosticLogger';
 export interface ModuleContext {
   pubkey: string | null;
   npub: string | null;
-  eventBus: EventBus;
+  eventBus: TypedEventBus;
   require<T>(moduleId: string): Promise<T | null>;
 }
 
@@ -75,7 +75,7 @@ interface ModuleEntry {
 
 export class ModuleLoader {
   private static instance: ModuleLoader | null = null;
-  private readonly eventBus: EventBus;
+  private readonly eventBus: TypedEventBus;
   private readonly entries = new Map<string, ModuleEntry>();
   private currentPubkey: string | null = null;
   private currentNpub: string | null = null;
@@ -83,7 +83,7 @@ export class ModuleLoader {
   private currentRoute: string = '';
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): ModuleLoader {

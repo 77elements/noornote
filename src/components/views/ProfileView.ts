@@ -21,7 +21,7 @@ import { linkifyUrls } from '../../helpers/linkifyUrls';
 import { convertLineBreaks } from '../../helpers/convertLineBreaks';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { Router } from '../../services/Router';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
@@ -70,7 +70,7 @@ export class ProfileView extends View {
   private authService: AuthService;
   private userService: UserService;
   private appState: AppState;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private timeline: Timeline | null = null;
   private followingCount: number = 0;
   private followerCount: number = 0;
@@ -103,7 +103,10 @@ export class ProfileView extends View {
   private lud16: string = '';
 
   // Services
-  private profileModuleApi: ProfileModuleApi | null;
+  private _profileModuleApi?: ProfileModuleApi | null;
+  private get profileModuleApi(): ProfileModuleApi | null {
+    return this._profileModuleApi ??= ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+  }
 
   // Profile recognition blinker instances — service + classes live in the
   // addon runtime, looked up fresh via AddonLoader at use time.
@@ -115,7 +118,7 @@ export class ProfileView extends View {
   private tribeDropdown: CustomDropdown | null = null;
   private tribeDropdownCleanupHandlers: Array<(e: MouseEvent | KeyboardEvent) => void> = [];
 
-  // EventBus subscription IDs for cleanup
+  // TypedEventBus subscription IDs for cleanup
   private eventBusSubscriptions: string[] = [];
 
   constructor(npub: string) {
@@ -127,8 +130,7 @@ export class ProfileView extends View {
     this.authService = AuthService.getInstance();
     this.userService = UserService.getInstance();
     this.appState = AppState.getInstance();
-    this.eventBus = EventBus.getInstance();
-    this.profileModuleApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+    this.eventBus = TypedEventBus.getInstance();
     // Decode npub or nprofile to pubkey
     try {
       const decoded = decodeNip19(npub);
@@ -749,7 +751,7 @@ export class ProfileView extends View {
 
     newLink.addEventListener('click', () => {
       // Pass pubkey to show this profile's follows (not own follows)
-      EventBus.getInstance().emit('list:open', {
+      TypedEventBus.getInstance().emit('list:open', {
         listType: 'follows',
         pubkey: this.pubkey
       });
@@ -1682,7 +1684,7 @@ export class ProfileView extends View {
     this.profileUnsubscribe?.();
     this.profileUnsubscribe = null;
 
-    // Cleanup EventBus subscriptions
+    // Cleanup TypedEventBus subscriptions
     this.eventBusSubscriptions.forEach(id => this.eventBus.off(id));
     this.eventBusSubscriptions = [];
 

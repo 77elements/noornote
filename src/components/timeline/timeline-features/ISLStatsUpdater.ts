@@ -12,11 +12,13 @@ import { formatCount } from '../../../helpers/formatCount';
 
 export class ISLStatsUpdater {
   private container: HTMLElement;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
 
   constructor(container: HTMLElement) {
     this.container = container;
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
 
   /**

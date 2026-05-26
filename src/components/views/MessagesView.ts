@@ -12,7 +12,7 @@ import { ModuleLoader } from '../../core/ModuleLoader';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
 import type { DMConversation } from '../../services/dm/DMStore';
 import { UserProfileService } from '../../services/UserProfileService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
@@ -30,9 +30,12 @@ type TabFilter = 'known' | 'unknown';
 
 export class MessagesView extends View {
   private container: HTMLElement;
-  private dmsApi: DMsModuleApi | null;
+  private _dmsApi?: DMsModuleApi | null;
+  private get dmsApi(): DMsModuleApi | null {
+    return this._dmsApi ??= ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+  }
   private userProfileService: UserProfileService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private router: Router;
   private systemLogger: SystemLogger;
   private conversations: DMConversation[] = [];
@@ -53,9 +56,8 @@ export class MessagesView extends View {
 
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--messages';
-    this.dmsApi = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
     this.userProfileService = UserProfileService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {

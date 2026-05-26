@@ -8,7 +8,7 @@ import type { NotificationType } from '../../services/orchestration/Notification
 import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { hexToNpub } from '../../helpers/nip19';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { ZapsList } from '../ui/ZapsList';
@@ -36,7 +36,10 @@ export class NotificationItem {
   private element: HTMLElement;
   private userProfileService: UserProfileService;
   private authService: AuthService;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   private options: NotificationItemOptions;
   private userIdentity: UserIdentity | null = null;
   private isl: InteractionStatusLine | null = null;
@@ -45,7 +48,6 @@ export class NotificationItem {
   constructor(options: NotificationItemOptions) {
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.options = options;
     this.element = this.createElement();
     // UserIdentity is created in createElement() - no need for loadProfile()
@@ -197,7 +199,7 @@ export class NotificationItem {
         e.stopPropagation();
         const hashtag = (searchLink as HTMLElement).dataset.hashtag;
         if (hashtag) {
-          const eventBus = EventBus.getInstance();
+          const eventBus = TypedEventBus.getInstance();
           eventBus.emit('hashtagSearch:start', { hashtag });
         }
       });

@@ -27,7 +27,10 @@ export interface PostEditorToolbarConfig {
 
 export class PostEditorToolbar {
   private config: PostEditorToolbarConfig;
-  private mediaApi: MediaModuleApi | null = null;
+  private _mediaApi?: MediaModuleApi | null;
+  private get mediaApi(): MediaModuleApi | null {
+    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+  }
   private systemLogger: SystemLogger;
   private modalService: ModalService;
   private emojiPicker: EmojiPicker | null = null;
@@ -35,7 +38,6 @@ export class PostEditorToolbar {
 
   constructor(config: PostEditorToolbarConfig) {
     this.config = config;
-    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
     this.systemLogger = SystemLogger.getInstance();
     this.modalService = ModalService.getInstance();
   }
@@ -134,7 +136,7 @@ export class PostEditorToolbar {
     `;
 
     try {
-      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+      const api = this.mediaApi;
       if (!api) {
         this.systemLogger.error('PostEditorToolbar', 'Media module not loaded');
         this.modalService.show({

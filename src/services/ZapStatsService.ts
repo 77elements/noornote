@@ -11,7 +11,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from './transport/NostrTransport';
 import { AuthService } from './AuthService';
 import { RelayConfig } from './RelayConfig';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { extractZapperPubkey, getZapAmountSats } from '../helpers/zapUtils';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
@@ -45,7 +45,7 @@ export class ZapStatsService {
   private transport: NostrTransport;
   private authService: AuthService;
   private relayConfig: RelayConfig;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
 
   private statsCache: LRUCache<ZapStats> = new LRUCache<ZapStats>(getCacheSize(500, 200, 100));
   private isLoading: boolean = false;
@@ -55,7 +55,7 @@ export class ZapStatsService {
     this.transport = NostrTransport.getInstance();
     this.authService = AuthService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): ZapStatsService {
@@ -93,7 +93,7 @@ export class ZapStatsService {
 
     this.loadingPromise = this.fetchZapStats(currentUser.pubkey, pubkeys)
       .then(() => {
-        this.eventBus.emit('zapstats:loaded', {});
+        this.eventBus.emit('zapstats:loaded');
       })
       .catch(error => {
         console.error('[ZapStatsService] Failed to load zap stats:', error);

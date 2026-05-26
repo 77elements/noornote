@@ -17,7 +17,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { isNospressEnabled } from '../addons/nospress/index';
 import { SystemLogger } from '../services/SystemLogger';
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { AuthService } from '../services/AuthService';
 import { ToastService } from '../services/ToastService';
 import { ModalService } from '../services/ModalService';
@@ -476,7 +476,7 @@ export function readBrowserBookmarks(): BookmarkItem[] {
 export function writeBrowserBookmarks(items: BookmarkItem[]): void {
   diagLog('lists', 'writeBrowserBookmarks', { count: items.length, ids: items.map(i => i.id) });
   writeList(StorageKeys.BOOKMARKS, items);
-  EventBus.getInstance().emit('bookmark:updated');
+  TypedEventBus.getInstance().emit('bookmark:updated');
 }
 
 /**
@@ -2209,7 +2209,7 @@ export class BookmarkStorageAdapter {
 
   setBrowserItems(items: BookmarkItem[]): void {
     writeBrowserBookmarks(items);
-    EventBus.getInstance().emit('bookmark:updated');
+    TypedEventBus.getInstance().emit('bookmark:updated');
   }
 
   getItemId(item: BookmarkItem): string { return item.id; }
@@ -2911,7 +2911,7 @@ interface BookmarkSyncFromFileResult {
  */
 export class BookmarkManager {
   private containerElement: HTMLElement;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private folderService: BookmarkFolderServiceImpl;
   private noteService: NoteService;
@@ -2929,7 +2929,7 @@ export class BookmarkManager {
 
   constructor(containerElement: HTMLElement) {
     this.containerElement = containerElement;
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.folderService = getBookmarkFolderService();
     this.noteService = NoteService.getInstance();

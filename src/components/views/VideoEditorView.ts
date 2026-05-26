@@ -31,7 +31,10 @@ export class VideoEditorView extends View {
   private router: Router;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private mediaApi: MediaModuleApi | null = null;
+  private _mediaApi?: MediaModuleApi | null;
+  private get mediaApi(): MediaModuleApi | null {
+    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+  }
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -61,7 +64,6 @@ export class VideoEditorView extends View {
     this.router = Router.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
 
     this.loadRelayConfiguration();
     this.render();
@@ -366,13 +368,12 @@ export class VideoEditorView extends View {
         this.kindOverride = false;
       }
 
-      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
-      if (!api) {
+      if (!this.mediaApi) {
         ToastService.show('Media module not available', 'error');
         return;
       }
 
-      const result = await api.uploadFile(file);
+      const result = await this.mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.videoUrl = result.url;
@@ -462,10 +463,9 @@ export class VideoEditorView extends View {
     }
 
     try {
-      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
-      if (!api) return;
+      if (!this.mediaApi) return;
 
-      const result = await api.uploadFile(file);
+      const result = await this.mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.thumbnailUrl = result.url;

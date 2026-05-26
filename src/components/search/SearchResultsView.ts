@@ -11,7 +11,7 @@ import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { isHashtagSubscriptionsEnabled } from '../../addons/hashtag-subscriptions/index';
 import { AddonLoader } from '../../addons/AddonLoader';
 import type { HashtagSubscriptionsRuntime } from '../../addons/hashtag-subscriptions/runtime';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 
 export interface SearchResultsConfig {
   title: string;
@@ -33,7 +33,7 @@ export class SearchResultsView {
   private callbacks: SearchResultsCallbacks;
   private infiniteScroll?: InfiniteScroll;
   private listElement?: HTMLElement;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private subscribeButton?: HTMLButtonElement;
   private subscriptionUpdatedId?: string;
 
@@ -44,7 +44,7 @@ export class SearchResultsView {
   constructor(config: SearchResultsConfig, callbacks: SearchResultsCallbacks) {
     this.config = config;
     this.callbacks = callbacks;
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.container = this.createElement();
   }
 
@@ -155,7 +155,7 @@ export class SearchResultsView {
     headerRow.appendChild(this.subscribeButton);
 
     // Listen for subscription updates to update button state
-    this.subscriptionUpdatedId = this.eventBus.on('hashtag-subscription:updated', (data: { hashtag: string; subscribed: boolean }) => {
+    this.subscriptionUpdatedId = this.eventBus.on('hashtag-subscription:updated', (data) => {
       if (data.hashtag === this.config.hashtag) {
         this.updateSubscribeButton();
       }

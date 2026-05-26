@@ -22,7 +22,7 @@ import { fetchEvents, publishEvent, signEvent, requireAuth, getCurrentUserPubkey
 import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../services/SystemLogger';
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { AuthService } from '../services/AuthService';
 import { diagLog } from '../services/DiagnosticLogger';
 import { ToastService } from '../services/ToastService';
@@ -44,7 +44,7 @@ import { ArticleNotificationService } from '../services/ArticleNotificationServi
 import type { UserProfile } from '../services/UserProfileService';
 
 const logger = SystemLogger.getInstance();
-const eventBus = EventBus.getInstance();
+const eventBus = TypedEventBus.getInstance();
 
 // ============================================================
 // TYPES
@@ -198,7 +198,7 @@ export function getFollowItems(): FollowItem[] {
  */
 export function setFollowItems(items: FollowItem[]): void {
   storage.set(StorageKeys.FOLLOWS, items);
-  eventBus.emit('follow:updated', {});
+  eventBus.emit('follow:updated');
 }
 
 /**
@@ -1092,7 +1092,7 @@ export class ProfileFollowManager {
       followUser(this.targetPubkey, type === 'private');
 
       this.isFollowingState = true;
-      eventBus.emit('follow:updated', {});
+      eventBus.emit('follow:updated');
       onStateChange();
 
       ToastService.show(`Followed ${type === 'public' ? 'publicly' : 'privately'} (local)`, 'success');
@@ -1130,7 +1130,7 @@ export class ProfileFollowManager {
       unfollowUser(this.targetPubkey);
 
       this.isFollowingState = false;
-      eventBus.emit('follow:updated', {});
+      eventBus.emit('follow:updated');
       onStateChange();
 
       ToastService.show('Unfollowed successfully (local)', 'success');
@@ -1160,7 +1160,7 @@ export class ProfileFollowManager {
 
 export class FollowListManager {
   // Base properties
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private containerElement: HTMLElement;
   private infiniteScroll: InfiniteScroll | null = null;
@@ -1191,7 +1191,7 @@ export class FollowListManager {
 
   constructor(containerElement: HTMLElement) {
     this.containerElement = containerElement;
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
 
     this.adapter = new FollowStorageAdapter();
@@ -1248,7 +1248,7 @@ export class FollowListManager {
   }
 
   /**
-   * Setup extended features EventBus listeners (called after extended is initialized)
+   * Setup extended features TypedEventBus listeners (called after extended is initialized)
    */
   private setupExtendedEventListeners(): void {
     if (!this.extended) return;
@@ -2034,7 +2034,7 @@ export class FollowListManager {
         }
       }
 
-      this.eventBus.emit('follow:updated', {});
+      this.eventBus.emit('follow:updated');
     } catch (error) {
       console.error('Failed to unfollow user:', error);
       ToastService.show('Failed to unfollow user', 'error');
@@ -2521,7 +2521,7 @@ export class ExternalFollowListManager {
       followBtn.replaceWith(this.createStatusElement());
 
       ToastService.show('Followed (local)', 'success');
-      eventBus.emit('follow:updated', {});
+      eventBus.emit('follow:updated');
     } catch (error) {
       console.error('Failed to follow:', error);
       ToastService.show('Failed to follow', 'error');

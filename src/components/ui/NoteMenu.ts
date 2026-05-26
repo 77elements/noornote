@@ -17,7 +17,7 @@ import { MuteOrchestrator } from '../../lists/mutes';
 import type { ArticlesModuleApi } from '../../modules/articles/contracts';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ClipboardActionsService } from '../../services/ClipboardActionsService';
 import { ModalService } from '../../services/ModalService';
 import { isBookmarksEnabled } from '../../addons/bookmarks/index';
@@ -498,7 +498,7 @@ export class NoteMenu {
         notifApi?.refreshMutedUsers() ?? Promise.resolve()
       ]);
 
-      EventBus.getInstance().emit('mute:updated', {});
+      TypedEventBus.getInstance().emit('mute:updated');
     } catch (error) {
       console.error(`Failed to mute user ${isPrivate ? 'privately' : 'publicly'}:`, error);
       ToastService.show('Failed to mute user', 'error');
@@ -515,7 +515,7 @@ export class NoteMenu {
     }
 
     const muteOrch = MuteOrchestrator.getInstance();
-    const eventBus = EventBus.getInstance();
+    const eventBus = TypedEventBus.getInstance();
 
     try {
       const isCurrentlyMuted = await muteOrch.isEventMuted(this.options.eventId);
@@ -530,7 +530,7 @@ export class NoteMenu {
 
       // Notify UI to refresh
       eventBus.emit('mute:thread:updated', { eventId: this.options.eventId });
-      eventBus.emit('mute:updated', {});
+      eventBus.emit('mute:updated');
     } catch (error) {
       console.error('Failed to toggle thread mute:', error);
       ToastService.show('Failed to update thread mute', 'error');
@@ -603,8 +603,8 @@ export class NoteMenu {
       }
 
       // Notify bookmarks list to refresh
-      const eventBus = EventBus.getInstance();
-      eventBus.emit('bookmark:updated', {});
+      const eventBus = TypedEventBus.getInstance();
+      eventBus.emit('bookmark:updated');
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
       ToastService.show('Failed to update bookmark', 'error');

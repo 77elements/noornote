@@ -25,13 +25,15 @@ const MODAL_CONFIG = {
 
 export class AnalyticsModal {
   private static instance: AnalyticsModal | null = null;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   private userProfileService: UserProfileService;
   private router: Router;
   private modalService: ModalService;
 
   private constructor() {
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
     this.modalService = ModalService.getInstance();

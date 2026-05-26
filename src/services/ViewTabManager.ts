@@ -6,7 +6,7 @@
  * - View instances
  * - Tab lifecycle (create, destroy, pause, resume)
  * - Duplicate prevention
- * - EventBus integration
+ * - TypedEventBus integration
  *
  * ONLY used when VIEW_TABS_RIGHT_PANE setting is enabled
  *
@@ -15,7 +15,7 @@
 
 import type { ViewType } from './ViewNavigationController';
 import type { View } from '../components/views/View';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { UserProfileService } from './UserProfileService';
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
@@ -37,13 +37,13 @@ export class ViewTabManager {
   private static instance: ViewTabManager;
   private tabs: Map<string, ViewTab> = new Map();
   private activeTabId: string | null = null;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private userProfileService: UserProfileService;
   private transport: NostrTransport;
   private relayConfig: RelayConfig;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.userProfileService = UserProfileService.getInstance();
     this.transport = NostrTransport.getInstance();
     this.relayConfig = RelayConfig.getInstance();
@@ -328,8 +328,8 @@ export class ViewTabManager {
       this.eventBus.emit('view-tab:label-updated', {
         tabId: tab.id,
         label: finalLabel,
-        pubkey,
-        profilePicUrl
+        ...(pubkey != null && { pubkey }),
+        ...(profilePicUrl != null && { profilePicUrl })
       });
     } catch (error) {
       console.warn('Failed to fetch tab label:', error);

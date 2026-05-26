@@ -10,7 +10,7 @@ import { MuteOrchestrator } from '../../lists/mutes';
 import { AuthService } from '../../services/AuthService';
 import { SearchResultsView, SearchResultsConfig } from './SearchResultsView';
 import { Router } from '../../services/Router';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
@@ -30,7 +30,7 @@ export class GlobalSearchView {
   private authService: AuthService;
   private searchResultsView: SearchResultsView | null = null;
   private router: Router;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
   private eventBusSubscriptions: string[] = [];
 
@@ -47,7 +47,7 @@ export class GlobalSearchView {
     this.muteOrchestrator = MuteOrchestrator.getInstance();
     this.authService = AuthService.getInstance();
     this.router = Router.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.container = this.createElement();
     this.setupEventListeners();

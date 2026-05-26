@@ -1,6 +1,6 @@
 import { View } from '../../components/views/View';
 import { ContentWordFilterSettings, mountWordFilterContent } from './ContentWordFilterSettings';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { isContentWordFilterEnabled } from './index';
 
 export class WordFilterAddonView extends View {
@@ -27,7 +27,7 @@ export class WordFilterAddonView extends View {
       this.mountContent();
     }
 
-    this.toggleSubId = EventBus.getInstance().on('content-word-filter:toggle', (payload: { enabled: boolean }) => {
+    this.toggleSubId = TypedEventBus.getInstance().on('content-word-filter:toggle', (payload: { enabled: boolean }) => {
       if (payload.enabled) this.mountContent();
       else this.unmountContent();
     });
@@ -48,7 +48,7 @@ export class WordFilterAddonView extends View {
 
   public destroy(): void {
     if (this.toggleSubId) {
-      EventBus.getInstance().off(this.toggleSubId);
+      TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
     }
     this.settings?.unmount();

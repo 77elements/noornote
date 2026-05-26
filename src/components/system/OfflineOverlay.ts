@@ -6,19 +6,19 @@
  * @architecture Singleton component, controlled by App.ts and ConnectivityService
  */
 
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ConnectivityService } from '../../services/ConnectivityService';
 
 export class OfflineOverlay {
   private static instance: OfflineOverlay;
   private element: HTMLElement;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private connectivityService: ConnectivityService;
   private isVisible: boolean = false;
   private retryInProgress: boolean = false;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.connectivityService = ConnectivityService.getInstance();
     this.element = this.createElement();
     this.setupEventListeners();

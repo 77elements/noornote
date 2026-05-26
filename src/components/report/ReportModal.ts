@@ -23,14 +23,16 @@ export interface ReportModalOptions {
 export class ReportModal {
   private static instance: ReportModal | null = null;
   private modalService: ModalService;
-  private postsApi: PostsModuleApi | null;
+  private _postsApi?: PostsModuleApi | null;
+  private get postsApi(): PostsModuleApi | null {
+    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+  }
   private userProfileService: UserProfileService;
   private systemLogger: SystemLogger;
   private currentOptions: ReportModalOptions | null = null;
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     this.userProfileService = UserProfileService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }

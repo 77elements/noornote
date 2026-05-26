@@ -7,21 +7,21 @@
  * @used-by MainLayout
  */
 
-import { EventBus } from '../../../services/EventBus';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 import { AuthService } from '../../../services/AuthService';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { NotificationsModuleApi } from '../../../modules/notifications/contracts';
 import type { DMsModuleApi } from '../../../modules/dms/contracts';
 
 export class HamburgerBadgeManager {
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private dotElement: HTMLElement | null = null;
   private subscriptionIds: string[] = [];
 
   constructor(dotElement: HTMLElement) {
     this.dotElement = dotElement;
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
 
     this.setupEventListeners();

@@ -10,7 +10,7 @@
 import { View } from './View';
 import type { DMsModuleApi } from '../../modules/dms/contracts';
 import type { DMMessage } from '../../services/dm/DMStore';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { Router } from '../../services/Router';
 import { SystemLogger } from '../../services/SystemLogger';
 import { MuteOrchestrator } from '../../lists/mutes';
@@ -29,8 +29,11 @@ import { npubToHex } from '../../helpers/nip19';
 
 export class ConversationView extends View {
   private container: HTMLElement;
-  private dmsApi: DMsModuleApi | null;
-  private eventBus: EventBus;
+  private _dmsApi?: DMsModuleApi | null;
+  private get dmsApi(): DMsModuleApi | null {
+    return this._dmsApi ??= ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+  }
+  private eventBus: TypedEventBus;
   private router: Router;
   private systemLogger: SystemLogger;
   private contentProcessor: ContentProcessor;
@@ -50,8 +53,7 @@ export class ConversationView extends View {
     this.partnerPubkey = npubToHex(partnerPubkey) || partnerPubkey;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--conversation';
-    this.dmsApi = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.router = Router.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.contentProcessor = ContentProcessor.getInstance();
@@ -288,7 +290,7 @@ export class ConversationView extends View {
       ]);
 
       // Notify that mute list was updated
-      this.eventBus.emit('mute:updated', {});
+      this.eventBus.emit('mute:updated');
 
       // Navigate back to messages list
       this.router.navigate('/messages');

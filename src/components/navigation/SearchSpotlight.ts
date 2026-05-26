@@ -5,7 +5,7 @@
  */
 
 import { Router } from '../../services/Router';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SearchModuleApi, UserSearchResult } from '../../modules/search/contracts';
 import { hexToNpub } from '../../helpers/nip19';
@@ -28,8 +28,11 @@ function looksLikeNip05(input: string): boolean {
 export class SearchSpotlight {
   private element: HTMLElement;
   private router: Router;
-  private eventBus: EventBus;
-  private searchApi: SearchModuleApi | null;
+  private eventBus: TypedEventBus;
+  private _searchApi?: SearchModuleApi | null;
+  private get searchApi(): SearchModuleApi | null {
+    return this._searchApi ??= ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+  }
   private isOpen: boolean = false;
   private inputElement: HTMLInputElement | null = null;
   private userSuggestionsElement: HTMLElement | null = null;
@@ -48,8 +51,7 @@ export class SearchSpotlight {
 
   constructor() {
     this.router = Router.getInstance();
-    this.eventBus = EventBus.getInstance();
-    this.searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+    this.eventBus = TypedEventBus.getInstance();
     this.element = this.createElement();
 
     // ESC handler with capture phase - fires BEFORE ModalService ESC handler

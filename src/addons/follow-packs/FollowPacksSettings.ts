@@ -7,7 +7,7 @@
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { isFollowPacksEnabled, setFollowPacksEnabled } from './index';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 
 export class FollowPacksSettings extends SettingsSection {
@@ -28,7 +28,7 @@ export class FollowPacksSettings extends SettingsSection {
         setFollowPacksEnabled(checked);
         // Emit the uniform AddonLoader event + the legacy event so
         // FollowPacksView's existing listener keeps working.
-        const bus = EventBus.getInstance();
+        const bus = TypedEventBus.getInstance();
         bus.emit('follow-packs:addon-toggle', { enabled: checked });
         bus.emit('follow-packs:toggle', { enabled: checked });
         ToastService.show(checked ? 'Follow Packs enabled' : 'Follow Packs disabled', 'success');

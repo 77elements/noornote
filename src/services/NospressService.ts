@@ -19,7 +19,7 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { NospressMountsService } from './NospressMountsService';
 import { migrateV1ToV2 } from '../addons/nospress/blocks/migrate';
 import { HOME_SLUG } from '../addons/nospress/blocks/pageIndex';
@@ -53,10 +53,10 @@ type SlugMap<T> = Record<string, T>;
 
 export class NospressService {
   private static instance: NospressService | null = null;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): NospressService {

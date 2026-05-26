@@ -3,7 +3,7 @@
  * Displays poll options with vote counts and allows voting
  *
  * Cross-view sync: After voting, all poll containers with matching pollEventId
- * are updated across all views (TV, SNV, PV) via EventBus
+ * are updated across all views (TV, SNV, PV) via TypedEventBus
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -12,7 +12,7 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../../modules/single-note/contracts';
 import { AuthService } from '../../../services/AuthService';
 import { SystemLogger } from '../../../services/SystemLogger';
-import { EventBus } from '../../../services/EventBus';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 import { RelayConfig } from '../../../services/RelayConfig';
 import { escapeHtml } from '../../../helpers/escapeHtml';
 import { isImageUrl } from '../../../helpers/extractMedia';
@@ -21,7 +21,7 @@ import { isImageUrl } from '../../../helpers/extractMedia';
 const pollDataCache = new Map<string, PollData>();
 
 export class NIP88PollRenderer {
-  private static eventBus = EventBus.getInstance();
+  private static eventBus = TypedEventBus.getInstance();
   private static listenerSetup = false;
 
   /**

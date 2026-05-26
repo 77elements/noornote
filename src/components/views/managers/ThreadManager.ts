@@ -38,8 +38,14 @@ export interface ThreadManagerConfig {
 
 export class ThreadManager {
   private config: ThreadManagerConfig;
-  private singleNoteApi: SingleNoteModuleApi | null;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _singleNoteApi?: SingleNoteModuleApi | null;
+  private get singleNoteApi(): SingleNoteModuleApi | null {
+    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+  }
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private profileService: UserProfileService;
@@ -47,8 +53,6 @@ export class ThreadManager {
 
   constructor(config: ThreadManagerConfig) {
     this.config = config;
-    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.profileService = UserProfileService.getInstance();

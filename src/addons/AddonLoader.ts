@@ -33,7 +33,7 @@
  *   Every `destroy()` MUST fully and synchronously complete:
  *     - removeEventListener for every addEventListener (same fn reference, same options)
  *     - clearInterval / clearTimeout for every setInterval / setTimeout
- *     - EventBus.off() for every subscription id returned by .on()
+ *     - TypedEventBus.off() for every subscription id returned by .on()
  *     - detach / empty every DOM node the addon mounted
  *     - drop every cache/store reference so it becomes GC-eligible
  *     - set cancel flags so in-flight promises do not write post-destroy state
@@ -47,7 +47,7 @@
  *   - Messages are additive; never rename existing ones (script compatibility).
  */
 
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { diagLog } from '../services/DiagnosticLogger';
 
 export interface AddonContext {
@@ -55,8 +55,8 @@ export interface AddonContext {
   pubkey: string | null;
   /** npub form for convenience (storage paths, logging). */
   npub: string | null;
-  /** Shared EventBus instance. Runtimes should track subscription ids and off() in destroy. */
-  eventBus: EventBus;
+  /** Shared TypedEventBus instance. Runtimes should track subscription ids and off() in destroy. */
+  eventBus: TypedEventBus;
 }
 
 export interface AddonRuntime {
@@ -83,7 +83,7 @@ interface AddonLoaderEntry {
 
 export class AddonLoader {
   private static instance: AddonLoader | null = null;
-  private readonly eventBus: EventBus;
+  private readonly eventBus: TypedEventBus;
   private readonly entries = new Map<string, AddonLoaderEntry>();
   private currentPubkey: string | null = null;
   private currentNpub: string | null = null;
@@ -92,7 +92,7 @@ export class AddonLoader {
   private initialized = false;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): AddonLoader {
@@ -123,7 +123,7 @@ export class AddonLoader {
     });
     // Subscribe to the per-addon toggle event. AddonToggleView emits
     // `<id>:addon-toggle` with { enabled: boolean }.
-    this.eventBus.on(`${entry.id}:addon-toggle`, (data?: { enabled?: boolean }) => {
+    this.eventBus.on(`${entry.id}:addon-toggle` as any, (data?: { enabled?: boolean }) => {
       const enabled = !!(data && data.enabled);
       diagLog('addons', enabled ? 'addons_toggle_on' : 'addons_toggle_off', { id: entry.id });
       if (enabled) {

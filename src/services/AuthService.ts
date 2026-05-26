@@ -14,7 +14,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { calculateEventHash, decodeNip19, type UnsignedEvent } from './NostrToolsAdapter';
 import { KeychainStorage } from './KeychainStorage';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { AccountStorageService, type StoredAccount } from './AccountStorageService';
 import { PlatformService } from './PlatformService';
 import { PerAccountListStorageMigration } from './PerAccountListStorageMigration';
@@ -46,7 +46,7 @@ export class AuthService {
   private isReadOnly: boolean = false;
   private nip46SubType: 'bunker' | 'nostrconnect' | null = null;
   private readonly storageKey = 'noornote_auth_session';
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private accountStorage: AccountStorageService;
 
   // Initialization
@@ -55,7 +55,7 @@ export class AuthService {
   private initPromise: Promise<void>;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.accountStorage = AccountStorageService.getInstance();
 
     this.initPromise = new Promise<void>(resolve => {

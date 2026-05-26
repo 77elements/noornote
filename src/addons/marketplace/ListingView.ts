@@ -19,7 +19,7 @@ import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { createCarousel, type CarouselInstance } from '../../helpers/CarouselHelper';
 import { AuthService } from '../../services/AuthService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { getTag } from '../../helpers/tagUtils';
 import { RelayConfig } from '../../services/RelayConfig';
@@ -261,7 +261,7 @@ export class ListingView extends View {
       btn.classList.toggle('listing-view__bookmark-btn--active', nowBookmarked);
       btn.innerHTML = nowBookmarked ? BOOKMARK_SVG_FILLED : BOOKMARK_SVG_OUTLINE;
 
-      EventBus.getInstance().emit('bookmark:updated', {});
+      TypedEventBus.getInstance().emit('bookmark:updated');
     } catch {
       ToastService.show('Failed to update bookmark', 'error');
     }

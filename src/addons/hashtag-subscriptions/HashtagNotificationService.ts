@@ -12,7 +12,7 @@
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SearchModuleApi } from '../../modules/search/contracts';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
@@ -32,8 +32,11 @@ interface StorageData {
 
 export class HashtagNotificationService {
   private static instance: HashtagNotificationService;
-  private searchApi: SearchModuleApi | null;
-  private eventBus: EventBus;
+  private _searchApi?: SearchModuleApi | null;
+  private get searchApi(): SearchModuleApi | null {
+    return this._searchApi ??= ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+  }
+  private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
   private storage: PerAccountLocalStorage;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
@@ -41,8 +44,7 @@ export class HashtagNotificationService {
   private isPollingStarted = false;
 
   private constructor() {
-    this.searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.storage = PerAccountLocalStorage.getInstance();
   }
@@ -287,7 +289,7 @@ export class HashtagNotificationService {
           this.eventBus.emit('hashtag:new-posts', {
             hashtag,
             count: newPosts.length,
-            latestEvent: newPosts[0] // Most recent post for preview
+            latestEvent: newPosts[0]!
           });
         }
       } catch (error) {

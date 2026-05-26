@@ -2,7 +2,7 @@
  * UploadProgressOverlay
  *
  * Singleton bottom-right floating chip that shows the live state of media
- * compression + upload. Driven by EventBus events emitted by
+ * compression + upload. Driven by TypedEventBus events emitted by
  * MediaUploadService — every upload entry point in the app is covered by a
  * single mounted instance.
  *
@@ -19,13 +19,13 @@
  * service emits an UploadStatus event.
  */
 
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import type { UploadStatus } from '../../services/media/compression-types';
 
 const COMPRESSED_PAUSE_MS = 1500;
 const DISMISS_AFTER_UPLOADED_MS = 2000;
 
-export const UPLOAD_STATUS_EVENT = 'media-upload:status';
+export const UPLOAD_STATUS_EVENT = 'media-upload:status' as const;
 
 export class UploadProgressOverlay {
   private static instance: UploadProgressOverlay | null = null;
@@ -62,14 +62,14 @@ export class UploadProgressOverlay {
     document.body.appendChild(el);
     this.root = el;
 
-    this.subscriptionId = EventBus.getInstance().on(UPLOAD_STATUS_EVENT, (status: UploadStatus) => {
+    this.subscriptionId = TypedEventBus.getInstance().on(UPLOAD_STATUS_EVENT, (status: UploadStatus) => {
       this.handleStatus(status);
     });
   }
 
   public unmount(): void {
     if (this.subscriptionId) {
-      EventBus.getInstance().off(this.subscriptionId);
+      TypedEventBus.getInstance().off(this.subscriptionId);
       this.subscriptionId = null;
     }
     if (this.dismissTimer !== null) {

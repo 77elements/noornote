@@ -25,7 +25,7 @@ import {
 } from './relays';
 import { PerAccountLocalStorage } from '../services/PerAccountLocalStorage';
 import { SystemLogger } from '../services/SystemLogger';
-import { EventBus } from '../services/EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { DeletionService } from '../services/DeletionService';
 import { diagLog } from '../services/DiagnosticLogger';
 import { AuthService } from '../services/AuthService';
@@ -260,7 +260,7 @@ interface SyncFromFileResult {
   diff: SyncDiff;
   fileItems: TribeMember[];
 }
-const eventBus = EventBus.getInstance();
+const eventBus = TypedEventBus.getInstance();
 
 // ============================================================
 // TYPES (exact same format as before - DO NOT CHANGE!)

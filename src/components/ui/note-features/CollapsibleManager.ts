@@ -11,7 +11,7 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccountLocalStorage';
-import { EventBus } from '../../../services/EventBus';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 
 export interface CollapsibleOptions {
   /** Max height when collapsed, e.g. '40vh'. Applied via CSS var. */
@@ -70,7 +70,7 @@ export class CollapsibleManager {
     if (this.initialized) return;
     this.initialized = true;
 
-    EventBus.getInstance().on('settings:post-truncation-changed', () => {
+    TypedEventBus.getInstance().on('settings:post-truncation-changed', () => {
       document.querySelectorAll<HTMLElement>('.collapsible-wrapper').forEach(wrapper => {
         const btn = wrapper.parentElement?.querySelector<HTMLElement>(':scope > .btn--show-more');
         if (btn) CollapsibleManager.checkAndCollapse(wrapper, btn);

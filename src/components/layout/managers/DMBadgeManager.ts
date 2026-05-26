@@ -6,20 +6,20 @@
  * @used-by MainLayout
  */
 
-import { EventBus } from '../../../services/EventBus';
+import { TypedEventBus } from '../../../core/TypedEventBus';
 import { AuthService } from '../../../services/AuthService';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { DMsModuleApi } from '../../../modules/dms/contracts';
 
 export class DMBadgeManager {
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private badgeElement: HTMLElement | null = null;
   private subscriptionIds: string[] = [];
 
   constructor(badgeElement: HTMLElement) {
     this.badgeElement = badgeElement;
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
 
     this.setupEventListeners();

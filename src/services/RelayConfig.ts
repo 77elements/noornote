@@ -9,7 +9,7 @@
  * - Emits 'relays:loaded' after loading (for UI updates)
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { SystemLogger } from './SystemLogger';
 import { UserProfileService } from './UserProfileService';
 import { RelayListOrchestrator } from './orchestration/RelayListOrchestrator';
@@ -32,12 +32,12 @@ export interface RelayInfo {
 export class RelayConfig {
   private static instance: RelayConfig;
   private relays: Map<string, RelayInfo> = new Map();
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
   private perAccountStorage: PerAccountLocalStorage;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.perAccountStorage = PerAccountLocalStorage.getInstance();
 

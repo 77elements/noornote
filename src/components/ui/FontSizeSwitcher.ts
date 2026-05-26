@@ -5,7 +5,7 @@
  */
 
 import { FontSizeService } from '../../services/FontSizeService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 
 export class FontSizeSwitcher {
   private element: HTMLElement;
@@ -17,7 +17,7 @@ export class FontSizeSwitcher {
     this.element = this.createElement();
     this.updateButtonStates();
 
-    this.subscription = EventBus.getInstance().on('font-size:changed', () => {
+    this.subscription = TypedEventBus.getInstance().on('font-size:changed', () => {
       this.updateButtonStates();
     });
   }
@@ -53,7 +53,7 @@ export class FontSizeSwitcher {
   }
 
   public destroy(): void {
-    EventBus.getInstance().off(this.subscription);
+    TypedEventBus.getInstance().off(this.subscription);
     this.element.remove();
   }
 }

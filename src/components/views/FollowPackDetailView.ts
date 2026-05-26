@@ -10,7 +10,7 @@ import { AuthService } from '../../services/AuthService';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import { UserProfileService } from '../../services/UserProfileService';
 import { SystemLogger } from '../../services/SystemLogger';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';
 import { NoteHeader } from '../ui/NoteHeader';
@@ -235,14 +235,14 @@ export class FollowPackDetailView extends View {
       if (npub) this.router.navigate(`/messages/${npub}`);
     });
 
-    // See Notes — open pack timeline in scc via EventBus
+    // See Notes — open pack timeline in scc via TypedEventBus
     this.container.querySelector('.follow-packs__btn-see-notes')?.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: 'follow-packs', packId: pack.id, packMode: 'timeline' as const });
+      TypedEventBus.getInstance().emit('list:open', { listType: 'follow-packs', packId: pack.id, packMode: 'timeline' as const });
     });
 
-    // Edit List — open pack edit view in scc via EventBus
+    // Edit List — open pack edit view in scc via TypedEventBus
     this.container.querySelector('.follow-packs__btn-edit')?.addEventListener('click', () => {
-      EventBus.getInstance().emit('list:open', { listType: 'follow-packs', packId: pack.id, packMode: 'edit' as const });
+      TypedEventBus.getInstance().emit('list:open', { listType: 'follow-packs', packId: pack.id, packMode: 'edit' as const });
     });
   }
 

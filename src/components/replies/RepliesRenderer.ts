@@ -45,8 +45,14 @@ export class RepliesRenderer {
   private updateISL: boolean;
   private onLoadZapsList?: (noteId: string, authorPubkey: string, noteElement: HTMLElement) => void;
 
-  private singleNoteApi: SingleNoteModuleApi | null;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _singleNoteApi?: SingleNoteModuleApi | null;
+  private get singleNoteApi(): SingleNoteModuleApi | null {
+    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+  }
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
 
@@ -57,8 +63,6 @@ export class RepliesRenderer {
     this.updateISL = options.updateISL !== false; // Default true
     if (options.onLoadZapsList) this.onLoadZapsList = options.onLoadZapsList;
 
-    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
   }

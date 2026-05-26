@@ -15,7 +15,7 @@ import type { SettingsModuleApi } from '../../modules/settings/contracts';
 import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { NostrTransport } from '../../services/transport/NostrTransport';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
@@ -36,7 +36,7 @@ export class RelaySettingsSection extends SettingsSection {
   }
   private authService: AuthService;
   private modalService: ModalService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private eventBusSubscriptions: string[] = [];
   private localRelaySettings: LocalRelaySettings;
   private tempRelays: RelayInfo[];
@@ -48,7 +48,7 @@ export class RelaySettingsSection extends SettingsSection {
     // settingsApi resolved lazily via getter
     this.authService = AuthService.getInstance();
     this.modalService = ModalService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
 
     // Load settings
     this.localRelaySettings = this.loadLocalRelaySettings();

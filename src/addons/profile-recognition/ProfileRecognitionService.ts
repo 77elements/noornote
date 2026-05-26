@@ -17,7 +17,7 @@
 
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { ProfileEncounterFileStorage, type ProfileEncounter } from './ProfileEncounterFileStorage';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../../services/SystemLogger';
 import { FollowStorageAdapter } from '../../lists/follows';
 import { UserProfileService } from '../../services/UserProfileService';
@@ -33,7 +33,7 @@ export class ProfileRecognitionService {
   private storage: PerAccountLocalStorage;
   private fileStorage: ProfileEncounterFileStorage;
   private orchestrator: ProfileRecognitionOrchestrator;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
   private followAdapter: FollowStorageAdapter;
   private userProfileService: UserProfileService;
@@ -43,7 +43,7 @@ export class ProfileRecognitionService {
   private fileSaveTimeout: ReturnType<typeof setTimeout> | null = null;
   private relaySaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // EventBus subscription id for 'follow:updated' — stored so destroy() can off()
+  // TypedEventBus subscription id for 'follow:updated' — stored so destroy() can off()
   private followUpdatedSubId: string | null = null;
 
   // Initialization state
@@ -53,7 +53,7 @@ export class ProfileRecognitionService {
     this.storage = PerAccountLocalStorage.getInstance();
     this.fileStorage = ProfileEncounterFileStorage.getInstance();
     this.orchestrator = ProfileRecognitionOrchestrator.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.followAdapter = new FollowStorageAdapter();
     this.userProfileService = UserProfileService.getInstance();

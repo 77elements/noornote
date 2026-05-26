@@ -13,7 +13,7 @@
 
 import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
 import { isTribesEnabled } from '../../addons/tribes/index';
@@ -29,7 +29,7 @@ interface TabInfo {
 export class TimelineView extends View {
   private container: HTMLElement;
   private timeline: Timeline | null = null;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private currentTabId: string = 'timeline';
   private tabs: TabInfo[] = [];
@@ -40,7 +40,7 @@ export class TimelineView extends View {
 
   constructor() {
     super();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--timeline';

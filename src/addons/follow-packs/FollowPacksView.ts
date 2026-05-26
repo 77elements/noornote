@@ -1,7 +1,7 @@
 import { View } from '../../components/views/View';
 import { FollowPacksSettings } from './FollowPacksSettings';
 import { FollowPackManager } from './FollowPackManager';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { isFollowPacksEnabled } from './index';
 
 export class FollowPacksView extends View {
@@ -28,7 +28,7 @@ export class FollowPacksView extends View {
       this.mountContent();
     }
 
-    this.toggleSubId = EventBus.getInstance().on('follow-packs:toggle', (payload: { enabled: boolean }) => {
+    this.toggleSubId = TypedEventBus.getInstance().on('follow-packs:toggle', (payload: { enabled: boolean }) => {
       if (payload.enabled) this.mountContent();
       else this.unmountContent();
     });
@@ -50,7 +50,7 @@ export class FollowPacksView extends View {
 
   public destroy(): void {
     if (this.toggleSubId) {
-      EventBus.getInstance().off(this.toggleSubId);
+      TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
     }
     this.settings?.unmount();

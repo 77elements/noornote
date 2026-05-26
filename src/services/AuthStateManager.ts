@@ -4,7 +4,7 @@
  * Provides reactive updates via subscribe pattern
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { AuthService } from './AuthService';
 import { UserProfileService } from './UserProfileService';
 
@@ -14,12 +14,12 @@ export class AuthStateManager {
   private static instance: AuthStateManager;
   private isAuthenticated: boolean = false;
   private subscribers: Set<AuthStateCallback> = new Set();
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private authService: AuthService;
   private userProfileService: UserProfileService;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.authService = AuthService.getInstance();
     this.userProfileService = UserProfileService.getInstance();
 
@@ -29,7 +29,7 @@ export class AuthStateManager {
     // Set initial body class
     this.updateBodyClass();
 
-    // Listen for auth state changes via EventBus
+    // Listen for auth state changes via TypedEventBus
     this.eventBus.on('user:login', (data: { npub: string; pubkey: string }) => {
       this.setAuthState(true);
       // Fetch and cache own profile on login (force refresh from relays)
@@ -88,7 +88,7 @@ export class AuthStateManager {
 
   /**
    * Set auth state and notify all subscribers
-   * Internal use only - state changes come from EventBus
+   * Internal use only - state changes come from TypedEventBus
    */
   private setAuthState(isLoggedIn: boolean): void {
     if (this.isAuthenticated === isLoggedIn) {

@@ -1,7 +1,7 @@
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { isNospressEnabled, setNospressEnabled } from './index';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { NospressEnabledOrchestrator } from '../../services/orchestration/NospressEnabledOrchestrator';
 import { AuthService } from '../../services/AuthService';
@@ -22,7 +22,7 @@ export class NospressSettings extends SettingsSection {
       checked: isNospressEnabled(),
       onChange: (checked) => {
         setNospressEnabled(checked);
-        EventBus.getInstance().emit('nospress:addon-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('nospress:addon-toggle', { enabled: checked });
         // Publish / delete the relay-visible opt-in marker so visitors
         // hitting `noornote.app/<handle>/` only see this user's space
         // after a deliberate enable. Fire-and-forget — local toggle

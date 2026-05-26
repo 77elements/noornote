@@ -22,7 +22,10 @@ export class LikesList {
   private reactionEvents: NostrEvent[];
   private noteId: string;
   private authorPubkey: string;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   /** Original reacted-to event — required for NIP-25-compliant reactions on
    *  addressable events (long-form articles etc.) so the e-tag carries the
    *  hex event-id and `a` + `k` tags are added. */
@@ -32,7 +35,6 @@ export class LikesList {
     this.reactionEvents = reactionEvents;
     this.noteId = noteId;
     this.authorPubkey = authorPubkey;
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
     if (originalEvent) this.originalEvent = originalEvent;
   }
 

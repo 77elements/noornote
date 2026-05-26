@@ -16,7 +16,7 @@ import { PlatformService } from './PlatformService';
 import { ToastService } from './ToastService';
 import { createMediaUploadAdapter, type MediaUploadAdapter } from './media';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { diagLog } from './DiagnosticLogger';
 import {
   DEFAULT_MEDIA_COMPRESSION_SETTINGS,
@@ -123,7 +123,7 @@ export class MediaUploadService {
 
   private emitStatus(status: UploadStatus): void {
     console.debug('[MediaUploadService] emit', status.phase, status.percent, status.mediaKind);
-    EventBus.getInstance().emit(UPLOAD_STATUS_EVENT, status);
+    TypedEventBus.getInstance().emit(UPLOAD_STATUS_EVENT, status);
   }
 
   /**

@@ -17,7 +17,7 @@
 
 import { fetchEvents, publishEvent, signEvent, getCurrentUserPubkey } from '../../lists/relays';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { now } from '../../lists/storage';
 
 export interface PersonalEmoji {
@@ -45,12 +45,12 @@ export class EmojiService {
   private static instance: EmojiService | null = null;
 
   private storage: PerAccountLocalStorage;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private emojis: PersonalEmoji[] = [];
 
   private constructor() {
     this.storage = PerAccountLocalStorage.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.loadFromCache();
   }
 
@@ -63,7 +63,7 @@ export class EmojiService {
 
   /**
    * Tear down the service. Called by the AddonLoader runtime on toggle-OFF,
-   * logout, or account switch. The service has no timers and no EventBus
+   * logout, or account switch. The service has no timers and no TypedEventBus
    * subscriptions (only emits), so the only cleanup needed is releasing the
    * static singleton so the next getInstance() returns a fresh instance with
    * the new account's emoji pack loaded from PerAccountLocalStorage cache.

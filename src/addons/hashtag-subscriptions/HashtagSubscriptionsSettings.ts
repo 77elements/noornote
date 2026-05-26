@@ -9,7 +9,7 @@
 import { SettingsSection } from '../../components/settings/SettingsSection';
 import { Switch } from '../../components/ui/Switch';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { isHashtagSubscriptionsEnabled, setHashtagSubscriptionsEnabled } from './index';
 
 // Lazy-loaded types
@@ -17,13 +17,13 @@ type HashtagNotificationServiceType = import('./HashtagNotificationService').Has
 
 export class HashtagSubscriptionsSettings extends SettingsSection {
   private enableSwitch: Switch | null = null;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private hashtagService: HashtagNotificationServiceType | null = null;
   private subscriptionEventId: string | null = null;
 
   constructor() {
     super('hashtag-subscriptions-settings');
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public mount(parentContainer: HTMLElement): void {

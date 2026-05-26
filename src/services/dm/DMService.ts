@@ -19,7 +19,7 @@ import { NostrTransport } from '../transport/NostrTransport';
 import { AuthService } from '../AuthService';
 import { RelayConfig } from '../RelayConfig';
 import { DMStore, type DMMessage, type DMConversation } from './DMStore';
-import { EventBus } from '../EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { FollowCheckService } from '../FollowCheckService';
@@ -45,7 +45,7 @@ export class DMService {
   private authService: AuthService;
   private relayConfig: RelayConfig;
   private dmStore: DMStore;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
   private followCheckService: FollowCheckService;
   private muteOrchestrator: ReturnType<typeof MuteOrchestrator.getInstance>;
@@ -83,7 +83,7 @@ export class DMService {
     this.authService = AuthService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.dmStore = DMStore.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.followCheckService = FollowCheckService.getInstance();
     this.muteOrchestrator = MuteOrchestrator.getInstance();

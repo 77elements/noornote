@@ -8,7 +8,7 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import {
   EMPTY_SITE_SETTINGS,
   type NospressSiteSettings,
@@ -16,10 +16,10 @@ import {
 
 export class NospressSiteSettingsService {
   private static instance: NospressSiteSettingsService | null = null;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): NospressSiteSettingsService {
@@ -49,7 +49,7 @@ export class NospressSiteSettingsService {
   }
 
   /** Used by the orchestrator after a successful relay-fetch to update the
-   *  local mirror without re-emitting the EventBus event (would cause
+   *  local mirror without re-emitting the TypedEventBus event (would cause
    *  unnecessary re-renders). */
   public setSettingsFromRelay(settings: NospressSiteSettings): void {
     PerAccountLocalStorage.getInstance().set(StorageKeys.NOSPRESS_SITE_SETTINGS, settings);

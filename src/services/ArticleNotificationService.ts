@@ -10,7 +10,7 @@
 
 import { NostrTransport } from './transport/NostrTransport';
 import { RelayConfig } from './RelayConfig';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { encodeNaddr } from './NostrToolsAdapter';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
@@ -40,14 +40,14 @@ export class ArticleNotificationService {
   private static instance: ArticleNotificationService;
   private transport: NostrTransport;
   private relayConfig: RelayConfig;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private pollInterval: ReturnType<typeof setInterval> | null = null;
   private isPollingStarted = false;
 
   private constructor() {
     this.transport = NostrTransport.getInstance();
     this.relayConfig = RelayConfig.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): ArticleNotificationService {

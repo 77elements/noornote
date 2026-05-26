@@ -13,7 +13,7 @@ import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import type { NDKCacheAdapterDexieOptions } from '@nostr-dev-kit/ndk-cache-dexie';
 import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
-import { EventBus } from '../EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../PlatformService';
 import { SignatureVerificationService } from '../security/SignatureVerificationService';
 import { diagLog } from '../DiagnosticLogger';
@@ -91,13 +91,13 @@ export class NostrTransport {
   private ndkConnected: boolean = false;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private subscriptions: Map<string, { closer: SubCloser; relays: string[] }> = new Map();
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
 
     // Initialize NDK with Dexie cache (using config from localStorage)
     const cacheConfig = getNDKCacheConfig();
@@ -160,7 +160,7 @@ export class NostrTransport {
 
   /**
    * Setup listeners for NDK relay events (disconnect, connect)
-   * Forwards events to EventBus for ConnectivityService
+   * Forwards events to TypedEventBus for ConnectivityService
    */
   private setupRelayEventListeners(): void {
     const setupRelayListeners = (relay: NDKRelay): void => {

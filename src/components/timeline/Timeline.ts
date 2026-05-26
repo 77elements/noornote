@@ -20,7 +20,7 @@ import { TimelineRenderer } from './timeline-ui/TimelineRenderer';
 import { ISLStatsUpdater } from './timeline-features/ISLStatsUpdater';
 import { ScrollPositionManager } from './timeline-features/ScrollPositionManager';
 import { NoteUI } from '../ui/NoteUI';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { CacheManager } from '../../services/CacheManager';
 import { isMarketplaceEnabled, isTimelineListingsEnabled } from '../../addons/marketplace/index';
 
@@ -48,8 +48,8 @@ export class Timeline extends View {
   private islStatsUpdater: ISLStatsUpdater;
   private scrollPositionManager: ScrollPositionManager;
 
-  // EventBus subscriptions
-  private eventBus: EventBus;
+  // TypedEventBus subscriptions
+  private eventBus: TypedEventBus;
   private userLoginSubscriptionId?: string;
   private muteUpdatedSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
@@ -74,7 +74,7 @@ export class Timeline extends View {
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.element = this.createElement();
     this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
       loadingMessage: 'Loading more notes...'

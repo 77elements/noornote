@@ -8,7 +8,7 @@
 
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { isWalletBalanceEnabled, setWalletBalanceEnabled } from './index';
 import type { WalletTransactionList } from './WalletTransactionList';
@@ -32,7 +32,7 @@ export class WalletBalanceAddonView extends View {
       checked: enabled,
       onChange: (checked) => {
         setWalletBalanceEnabled(checked);
-        EventBus.getInstance().emit('wallet-balance:addon-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('wallet-balance:addon-toggle', { enabled: checked });
         ToastService.show(
           checked ? 'Wallet Balance enabled' : 'Wallet Balance disabled',
           'success'
@@ -64,7 +64,7 @@ export class WalletBalanceAddonView extends View {
       this.mountTxList();
     }
 
-    this.toggleSubId = EventBus.getInstance().on('wallet-balance:addon-toggle', (payload: { enabled: boolean }) => {
+    this.toggleSubId = TypedEventBus.getInstance().on('wallet-balance:addon-toggle', (payload: { enabled: boolean }) => {
       if (payload.enabled) this.mountTxList();
       else this.unmountTxList();
     });
@@ -89,7 +89,7 @@ export class WalletBalanceAddonView extends View {
 
   public destroy(): void {
     if (this.toggleSubId) {
-      EventBus.getInstance().off(this.toggleSubId);
+      TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
     }
     this.enableSwitch?.destroy();

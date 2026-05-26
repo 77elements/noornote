@@ -3,7 +3,7 @@ import { NospressSettings } from './NospressSettings';
 import { isNospressEnabled } from './index';
 import { AuthService } from '../../services/AuthService';
 import { Router } from '../../services/Router';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 
 export class NospressAddonView extends View {
   private container: HTMLElement;
@@ -23,7 +23,7 @@ export class NospressAddonView extends View {
     this.settings.mount(this.container);
 
     this.renderSetupButton();
-    this.toggleSubId = EventBus.getInstance().on('nospress:addon-toggle', () => this.renderSetupButton());
+    this.toggleSubId = TypedEventBus.getInstance().on('nospress:addon-toggle', () => this.renderSetupButton());
   }
 
   public getElement(): HTMLElement {
@@ -32,7 +32,7 @@ export class NospressAddonView extends View {
 
   public destroy(): void {
     if (this.toggleSubId) {
-      EventBus.getInstance().off(this.toggleSubId);
+      TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
     }
     this.settings?.unmount();

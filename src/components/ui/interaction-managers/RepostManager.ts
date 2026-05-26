@@ -23,11 +23,13 @@ export interface RepostManagerConfig extends BaseInteractionConfig {
 }
 
 export class RepostManager extends BaseInteractionManager<RepostManagerConfig> {
-  private postsApi: PostsModuleApi | null;
+  private _postsApi?: PostsModuleApi | null;
+  private get postsApi(): PostsModuleApi | null {
+    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+  }
 
   constructor(config: RepostManagerConfig) {
     super(config);
-    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
   }
 
   /**

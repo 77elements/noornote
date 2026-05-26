@@ -9,7 +9,7 @@
  * @used-by BookmarkSecondaryManager (checkbox), ProfileView (display)
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 interface ProfileMountData {
@@ -27,10 +27,10 @@ const MAX_MOUNTS = 5;
 
 export class ProfileMountsService {
   private static instance: ProfileMountsService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): ProfileMountsService {

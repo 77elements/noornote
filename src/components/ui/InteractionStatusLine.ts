@@ -45,7 +45,10 @@ export class InteractionStatusLine {
   private element: HTMLElement;
   private config: ISLConfig;
   private stats: ISLStats;
-  private reactionsApi: ReactionsModuleApi | null;
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
   private initialFetchPromise?: Promise<void>;
   private zapManager: ZapManager | null = null;
   private likeManager: LikeManager | null = null;
@@ -53,7 +56,6 @@ export class InteractionStatusLine {
 
   constructor(config: ISLConfig) {
     this.config = config;
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
 
     // Initialize stats: use provided stats, or check cache (Timeline shows cached SNV stats)
     if (config.stats) {

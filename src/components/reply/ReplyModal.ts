@@ -36,7 +36,7 @@ import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { renderQuotePreview } from '../../helpers/renderQuotePreview';
 import type { ReactionsModuleApi } from '../../modules/reactions/contracts';
 import { AppState } from '../../services/AppState';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { NoteUI } from '../ui/NoteUI';
 import { ContentValidationManager } from '../post/ContentValidationManager';
@@ -48,13 +48,19 @@ import { ModalEventHandlerManager, type TabMode } from '../modals/ModalEventHand
 export class ReplyModal {
   private static instance: ReplyModal;
   private modalService: ModalService;
-  private postsApi: PostsModuleApi | null;
+  private _postsApi?: PostsModuleApi | null;
+  private get postsApi(): PostsModuleApi | null {
+    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+  }
   private relayConfig: RelayConfig;
   private authService: AuthService;
   private systemLogger: SystemLogger;
   private appState: AppState;
-  private reactionsApi: ReactionsModuleApi | null;
-  private eventBus: EventBus;
+  private _reactionsApi?: ReactionsModuleApi | null;
+  private get reactionsApi(): ReactionsModuleApi | null {
+    return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
+  }
+  private eventBus: TypedEventBus;
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -78,13 +84,11 @@ export class ReplyModal {
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
     this.relayConfig = RelayConfig.getInstance();
     this.authService = AuthService.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.appState = AppState.getInstance();
-    this.reactionsApi = ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): ReplyModal {

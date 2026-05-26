@@ -5,19 +5,19 @@
 
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { ProfileModuleApi } from '../../modules/profile/contracts';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 
 export class ProfileSearchComponent {
   private container: HTMLElement;
   private pubkeyHex: string;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private isExpanded: boolean = false;
   private escapeHandler: ((e: KeyboardEvent) => void) | null = null;
   private clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
 
   constructor(pubkeyHex: string) {
     this.pubkeyHex = pubkeyHex;
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.container = this.createElement();
     this.setupEventListeners();
   }

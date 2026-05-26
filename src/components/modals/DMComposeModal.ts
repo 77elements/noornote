@@ -16,13 +16,15 @@ import { UserSearchInput } from '../user-search/UserSearchInput';
 
 export class DMComposeModal {
   private modalService: ModalService;
-  private dmsApi: DMsModuleApi | null;
+  private _dmsApi?: DMsModuleApi | null;
+  private get dmsApi(): DMsModuleApi | null {
+    return this._dmsApi ??= ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
+  }
   private userSearchInput: UserSearchInput | null = null;
   private isSending: boolean = false;
 
   constructor() {
     this.modalService = ModalService.getInstance();
-    this.dmsApi = ModuleLoader.getInstance().getApi<DMsModuleApi>('dms');
   }
 
   /**

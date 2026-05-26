@@ -8,7 +8,7 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import {
   DEFAULT_PAGE_INDEX,
   HOME_SLUG,
@@ -19,10 +19,10 @@ import {
 
 export class NospressPageIndexService {
   private static instance: NospressPageIndexService | null = null;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): NospressPageIndexService {

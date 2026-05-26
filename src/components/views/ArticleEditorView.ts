@@ -55,10 +55,16 @@ interface EditorSnapshot {
 export class ArticleEditorView extends View {
   private container: HTMLElement;
   private router: Router;
-  private articlesApi: ArticlesModuleApi | null;
+  private _articlesApi?: ArticlesModuleApi | null;
+  private get articlesApi(): ArticlesModuleApi | null {
+    return this._articlesApi ??= ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
+  }
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
-  private mediaApi: MediaModuleApi | null = null;
+  private _mediaApi?: MediaModuleApi | null;
+  private get mediaApi(): MediaModuleApi | null {
+    return this._mediaApi ??= ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
+  }
 
   // Sub-components
   private relaySelector: RelaySelector | null = null;
@@ -98,10 +104,8 @@ export class ArticleEditorView extends View {
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article-editor';
     this.router = Router.getInstance();
-    this.articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
-    this.mediaApi = ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
 
     // Generate initial identifier
     this.identifier = this.articlesApi?.generateIdentifier() ?? '';
@@ -130,8 +134,7 @@ export class ArticleEditorView extends View {
 
     try {
       this.systemLogger.info('ArticleEditorView', `Loading article: ${naddr.slice(0, 30)}...`);
-      const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
-      const event = await articlesApi?.fetchAddressableEvent(naddr) ?? null;
+      const event = await this.articlesApi?.fetchAddressableEvent(naddr) ?? null;
 
       if (!event) {
         this.systemLogger.error('ArticleEditorView', 'Article not found on relays');
@@ -140,7 +143,7 @@ export class ArticleEditorView extends View {
       }
 
       // Extract metadata and pre-fill fields
-      const metadata = articlesApi?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
+      const metadata = this.articlesApi?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
       this.title = metadata.title;
       this.content = event.content;
       this.summary = metadata.summary;
@@ -648,10 +651,9 @@ export class ArticleEditorView extends View {
     if (!file.type.startsWith('image/')) return;
 
     try {
-      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
-      if (!api) return;
+      if (!this.mediaApi) return;
 
-      const result = await api.uploadFile(file);
+      const result = await this.mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.insertAtCursor(`![](${result.url})\n`);
@@ -704,10 +706,9 @@ export class ArticleEditorView extends View {
     }
 
     try {
-      const api = this.mediaApi ?? ModuleLoader.getInstance().getApi<MediaModuleApi>('media');
-      if (!api) return;
+      if (!this.mediaApi) return;
 
-      const result = await api.uploadFile(file);
+      const result = await this.mediaApi.uploadFile(file);
 
       if (result.success && result.url) {
         this.image = result.url;

@@ -11,7 +11,7 @@
  * - Unhealthy relays checked every cycle
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { diagLog } from './DiagnosticLogger';
 import { isDataSaverEnabled } from './DataSaverService';
 
@@ -33,7 +33,7 @@ const BATCH_SIZE = 3;
 export class RelayHealthMonitor {
   private static instance: RelayHealthMonitor;
   private metrics: Map<string, RelayHealthMetrics> = new Map();
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private connectionChecks: Map<string, number> = new Map(); // url -> timestamp of last check
   private healthCheckInterval: number | null = null;
   private readonly HEALTH_CHECK_INTERVAL = isDataSaverEnabled() ? 30 * 60 * 1000 : 10 * 60 * 1000;
@@ -48,7 +48,7 @@ export class RelayHealthMonitor {
   private isFirstCheck = true;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.setupEventListeners();
     this.startPeriodicHealthCheck();
   }

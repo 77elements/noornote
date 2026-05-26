@@ -8,7 +8,7 @@ import { ModalService } from '../../services/ModalService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import { ToastService } from '../../services/ToastService';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 
 export interface DeleteNoteModalOptions {
   /** Event ID to delete */
@@ -18,12 +18,14 @@ export interface DeleteNoteModalOptions {
 export class DeleteNoteModal {
   private static instance: DeleteNoteModal | null = null;
   private modalService: ModalService;
-  private postsApi: PostsModuleApi | null;
+  private _postsApi?: PostsModuleApi | null;
+  private get postsApi(): PostsModuleApi | null {
+    return this._postsApi ??= ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
+  }
   private currentOptions: DeleteNoteModalOptions | null = null;
 
   private constructor() {
     this.modalService = ModalService.getInstance();
-    this.postsApi = ModuleLoader.getInstance().getApi<PostsModuleApi>('posts');
   }
 
   /**
@@ -121,7 +123,7 @@ export class DeleteNoteModal {
         this.modalService.hide();
 
         // Notify UI to remove note from timeline
-        const eventBus = EventBus.getInstance();
+        const eventBus = TypedEventBus.getInstance();
         eventBus.emit('note:deleted', { eventId: this.currentOptions.eventId });
       } else {
         ToastService.show('Failed to send deletion request', 'error');

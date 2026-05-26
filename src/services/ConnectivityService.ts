@@ -3,15 +3,15 @@
  * Checks and monitors internet connectivity status
  *
  * @purpose Detect offline state early to prevent cascade of errors
- * @architecture Singleton service, integrates with EventBus
+ * @architecture Singleton service, integrates with TypedEventBus
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { ToastService } from './ToastService';
 
 export class ConnectivityService {
   private static instance: ConnectivityService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private _isOnline: boolean = true;
   private checkInProgress: boolean = false;
   private offlineTimer: number | null = null;
@@ -24,7 +24,7 @@ export class ConnectivityService {
   private readonly RELAY_ERROR_WINDOW = 10 * 1000; // 10 second window
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.setupBrowserListeners();
     this.setupRelayListeners();
   }
@@ -137,7 +137,7 @@ export class ConnectivityService {
     this.offlineTimer = window.setTimeout(() => {
       // Still offline after 120s - show overlay
       if (!this._isOnline) {
-        this.eventBus.emit('connectivity:prolonged-offline', {});
+        this.eventBus.emit('connectivity:prolonged-offline');
       }
     }, this.OFFLINE_OVERLAY_DELAY);
   }

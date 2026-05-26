@@ -19,7 +19,10 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 export class RelayBrowser {
   private element: HTMLElement;
   private notesContainer: HTMLElement;
-  private relayBrowserApi: RelayBrowserModuleApi | null;
+  private _relayBrowserApi?: RelayBrowserModuleApi | null;
+  private get relayBrowserApi(): RelayBrowserModuleApi | null {
+    return this._relayBrowserApi ??= ModuleLoader.getInstance().getApi<RelayBrowserModuleApi>('relay-browser');
+  }
   private infiniteScroll: InfiniteScroll;
   private refreshButton: RefreshButton;
   private relayUrl: string;
@@ -31,7 +34,6 @@ export class RelayBrowser {
 
   constructor(relayUrl: string) {
     this.relayUrl = relayUrl;
-    this.relayBrowserApi = ModuleLoader.getInstance().getApi<RelayBrowserModuleApi>('relay-browser');
 
     this.relayBrowserApi?.setRelay(relayUrl);
 

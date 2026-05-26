@@ -17,7 +17,7 @@
 
 import { zipSync, unzipSync, strToU8, strFromU8 } from 'fflate';
 import { PerAccountLocalStorage, StorageKeys, type StorageKey } from '../../services/PerAccountLocalStorage';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 
 /** Storage keys included in every backup. Order is the canonical
  *  reading + writing order (no functional impact, just consistency in
@@ -131,7 +131,7 @@ export function applyBackupBundle(bundle: NospressBackupBundle, pubkey: string):
   }
   // Tell the editor + services to re-read. Match what the AutoSync
   // path emits after a relay sync — same UI refresh shape.
-  const bus = EventBus.getInstance();
+  const bus = TypedEventBus.getInstance();
   bus.emit('nospressDraftV2:changed', { page: null, slug: '' });
   bus.emit('nospressPageIndex:changed', null);
   bus.emit('nospressMenus:changed', null);

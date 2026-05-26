@@ -25,14 +25,16 @@ export interface ThreadContextIndicatorOptions {
 export class ThreadContextIndicator {
   private element: HTMLElement;
   private options: ThreadContextIndicatorOptions;
-  private singleNoteApi: SingleNoteModuleApi | null;
+  private _singleNoteApi?: SingleNoteModuleApi | null;
+  private get singleNoteApi(): SingleNoteModuleApi | null {
+    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
+  }
   private userProfileService: UserProfileService;
   private router: Router;
 
   constructor(options: ThreadContextIndicatorOptions) {
     this.options = options;
     this.element = this.createElement();
-    this.singleNoteApi = ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
     this.userProfileService = UserProfileService.getInstance();
     this.router = Router.getInstance();
 

@@ -11,7 +11,7 @@
  * @used-by BookmarkSecondaryManager (checkbox), NospressView (display)
  */
 
-import { EventBus } from './EventBus';
+import { TypedEventBus } from '../core/TypedEventBus';
 import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
 
 interface NospressMountData {
@@ -28,10 +28,10 @@ const MAX_MOUNTS = 15;
 
 export class NospressMountsService {
   private static instance: NospressMountsService | null = null;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
 
   private constructor() {
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
   }
 
   public static getInstance(): NospressMountsService {

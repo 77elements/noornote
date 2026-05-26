@@ -13,7 +13,7 @@
 import { View } from '../../components/views/View';
 import { MarketplaceSettingsSection } from '../../components/settings/MarketplaceSettingsSection';
 import { MarketplaceTimeline } from './MarketplaceTimeline';
-import { EventBus } from '../../services/EventBus';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { isMarketplaceEnabled } from './index';
 
 export class MarketplaceAddonView extends View {
@@ -41,7 +41,7 @@ export class MarketplaceAddonView extends View {
       this.mountTimeline();
     }
 
-    this.toggleSubId = EventBus.getInstance().on('marketplace:toggle', (payload: { enabled: boolean }) => {
+    this.toggleSubId = TypedEventBus.getInstance().on('marketplace:toggle', (payload: { enabled: boolean }) => {
       if (payload.enabled) this.mountTimeline();
       else this.unmountTimeline();
     });
@@ -65,7 +65,7 @@ export class MarketplaceAddonView extends View {
 
   public destroy(): void {
     if (this.toggleSubId) {
-      EventBus.getInstance().off(this.toggleSubId);
+      TypedEventBus.getInstance().off(this.toggleSubId);
       this.toggleSubId = null;
     }
     this.settings?.unmount();

@@ -29,7 +29,10 @@ export class UserSearchInput {
   private inputElement: HTMLInputElement | null = null;
   private dropdownElement: HTMLElement | null = null;
   private selectedUserElement: HTMLElement | null = null;
-  private searchApi: SearchModuleApi | null;
+  private _searchApi?: SearchModuleApi | null;
+  private get searchApi(): SearchModuleApi | null {
+    return this._searchApi ??= ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
+  }
   private userProfileService: UserProfileService;
   private options: UserSearchInputOptions;
 
@@ -47,7 +50,6 @@ export class UserSearchInput {
 
   constructor(options: UserSearchInputOptions = {}) {
     this.options = options;
-    this.searchApi = ModuleLoader.getInstance().getApi<SearchModuleApi>('search');
     this.userProfileService = UserProfileService.getInstance();
     this.container = this.createElement();
     this.setupEventListeners();

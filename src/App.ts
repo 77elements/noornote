@@ -9,7 +9,7 @@ import { Router } from './services/Router';
 import { AppState } from './services/AppState';
 import { AuthService } from './services/AuthService';
 import { SystemLogger } from './services/SystemLogger';
-import { EventBus } from './services/EventBus';
+import { TypedEventBus } from './core/TypedEventBus';
 import { KeySignerClient } from './services/KeySignerClient';
 import { ModalService } from './services/ModalService';
 import { PlatformService } from './services/PlatformService';
@@ -44,7 +44,7 @@ export class App {
   private router: Router;
   private appState: AppState;
   private authService: AuthService;
-  private eventBus: EventBus;
+  private eventBus: TypedEventBus;
   private systemLogger: SystemLogger;
   private viewMountingService: ViewMountingService;
   private postLoginService: PostLoginService;
@@ -58,7 +58,7 @@ export class App {
     this.router = Router.getInstance();
     this.appState = AppState.getInstance();
     this.authService = AuthService.getInstance();
-    this.eventBus = EventBus.getInstance();
+    this.eventBus = TypedEventBus.getInstance();
     this.systemLogger = SystemLogger.getInstance();
     this.viewMountingService = ViewMountingService.getInstance();
     this.postLoginService = PostLoginService.getInstance();
