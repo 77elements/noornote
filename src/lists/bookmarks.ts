@@ -3012,10 +3012,6 @@ export class BookmarkManager {
     this.eventBus.on('bookmark:updated', () => this.refreshIfActive());
     this.eventBus.on('list-sync-mode:changed', () => this.refreshIfActive());
 
-    this.eventBus.on('bookmark:relay-sync-complete', (data: { categoryAssignments: Map<string, string>; categories: string[] }) => {
-      this.handleRelaySyncComplete(data.categoryAssignments, data.categories);
-    });
-
     const resetState = (): void => {
       this.currentFolderId = '';
       this.bookmarksCache.clear();
@@ -3040,13 +3036,6 @@ export class BookmarkManager {
     if (listTab?.classList.contains('tab-content--active')) {
       this.renderBookmarksTab(listTab);
     }
-  }
-
-  private handleRelaySyncComplete(categoryAssignments: Map<string, string>, categories: string[]): void {
-    if (!categoryAssignments || categoryAssignments.size === 0) return;
-    this.applyRelayFolderAssignments(categoryAssignments, categories, true);
-    this.bookmarksCache.clear();
-    this.refreshIfActive();
   }
 
   private applyRelayFolderAssignments(

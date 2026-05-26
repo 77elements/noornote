@@ -580,8 +580,6 @@ export class MainLayout {
       if (!this.layoutService.isSecondaryVisible()) {
         // Wide/Mobile mode: Render search in primary content
         this.renderSearchInPrimaryContent('global', data.query);
-        // Emit internal event to trigger GlobalSearchView's search logic
-        this.eventBus.emit('globalSearch:internal', data);
       }
       // Default/Right-pane mode: Let GlobalSearchView handle it (via its own listener)
     });
@@ -591,8 +589,6 @@ export class MainLayout {
       if (!this.layoutService.isSecondaryVisible()) {
         // Wide/Mobile mode: Render search in primary content
         this.renderSearchInPrimaryContent('hashtag', data.hashtag);
-        // Emit internal event to trigger GlobalSearchView's search logic
-        this.eventBus.emit('hashtagSearch:internal', data);
       }
       // Default/Right-pane mode: Let GlobalSearchView handle it (via its own listener)
     });
@@ -602,8 +598,6 @@ export class MainLayout {
       if (!this.layoutService.isSecondaryVisible()) {
         // Wide/Mobile mode: Render search in primary content
         this.renderSearchInPrimaryContent('profile', data.query);
-        // Emit internal event to trigger GlobalSearchView's display logic
-        this.eventBus.emit('profileSearch:internal', data);
       }
       // Default/Right-pane mode: Let GlobalSearchView handle it (via its own listener)
     });
@@ -1370,7 +1364,6 @@ export class MainLayout {
         checked: isDataSaverEnabled(),
         onChange: (checked) => {
           setDataSaverEnabled(checked);
-          this.eventBus.emit('data-saver:toggle', { enabled: checked });
           if (!checked) {
             document.querySelectorAll('.media-placeholder').forEach(ph => {
               const el = ph as HTMLElement;

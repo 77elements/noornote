@@ -80,13 +80,6 @@ export class AppBadgeService {
       this.eventBus.on('dm:fetch-complete', () => this.updateBadge())
     );
 
-    // Auth state changes (login/logout)
-    this.subscriptionIds.push(
-      this.eventBus.on('auth:login', () => this.updateBadge())
-    );
-    this.subscriptionIds.push(
-      this.eventBus.on('auth:logout', () => this.clearBadge())
-    );
   }
 
   /**

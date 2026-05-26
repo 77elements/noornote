@@ -69,10 +69,6 @@ export class RelayHealthMonitor {
       this.handleRelayConnected(data.url, data.latency);
     });
 
-    this.eventBus.on('relay:disconnected', (data: { url: string }) => {
-      this.handleRelayDisconnected(data.url);
-    });
-
     this.eventBus.on('relay:error', (data: { url: string }) => {
       this.handleRelayError(data.url);
     });
@@ -116,20 +112,7 @@ export class RelayHealthMonitor {
     this.eventBus.emit('relay:health:updated', { url, metrics });
   }
 
-  /**
-   * Handle relay disconnected event
-   */
-  private handleRelayDisconnected(url: string): void {
-    const metrics = this.getOrCreateMetrics(url);
-    metrics.isConnected = false;
-    metrics.lastDisconnected = new Date();
 
-    // Reset healthy streak
-    this.healthyStreaks.set(url, 0);
-
-    this.updateUptimePercentage(url);
-    this.eventBus.emit('relay:health:updated', { url, metrics });
-  }
 
   /**
    * Handle relay error event

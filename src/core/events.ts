@@ -4,9 +4,11 @@ import type { NotificationEvent } from '../services/orchestration/NotificationsO
 import type { ArticleNotification } from '../services/ArticleNotificationService';
 import type { DMMessage } from '../services/dm/DMStore';
 import type { ViewTab } from '../services/ViewTabManager';
-import type { ListingFrequency } from '../addons/marketplace/index';
 import type { PersonalEmoji } from '../addons/custom-emojis/EmojiService';
 import type { UploadStatus } from '../services/media/compression-types';
+import type { NospressMenuSet } from '../addons/nospress/blocks/menu';
+import type { NospressPageIndex } from '../addons/nospress/blocks/pageIndex';
+import type { NospressListSection } from '../services/NospressService';
 
 // ── Auth / User ──────────────────────────────────────────────
 
@@ -56,10 +58,6 @@ export interface RelayConnectedPayload {
 }
 
 export interface RelayErrorPayload {
-  url: string;
-}
-
-export interface RelayDisconnectedPayload {
   url: string;
 }
 
@@ -149,11 +147,6 @@ export interface MuteThreadUpdatedPayload {
   eventId: string;
 }
 
-export interface BookmarkRelaySyncCompletePayload {
-  categoryAssignments: Map<string, string>;
-  categories: string[];
-}
-
 // ── Mutual Changes ───────────────────────────────────────────
 
 export interface MutualChangesDetectedPayload {
@@ -195,10 +188,6 @@ export interface ArticleNotificationUpdatedPayload {
 
 // ── Marketplace ──────────────────────────────────────────────
 
-export interface MarketplaceFrequencyChangePayload {
-  frequency: ListingFrequency;
-}
-
 // ── NosPress ─────────────────────────────────────────────────
 
 export interface NospressDraftChangedPayload {
@@ -216,10 +205,12 @@ export interface AddonTogglePayload {
   enabled: boolean;
 }
 
-export interface SettingsTogglePayload {
-  disabled?: boolean;
-  system?: string;
-  mode?: string;
+export interface CalendarSystemChangedPayload {
+  system: string;
+}
+
+export interface PostTruncationChangedPayload {
+  disabled: boolean;
 }
 
 // ═════════════════════════════════════════════════════════════
@@ -231,8 +222,6 @@ export interface AppEvents {
   // ── Auth ───────────────────────────────────
   'user:login': UserLoginPayload;
   'user:logout': void;
-  'auth:login': void;
-  'auth:logout': void;
 
   // ── Follow / Mute / Bookmark / Tribe ───────
   'follow:updated': void;
@@ -240,7 +229,6 @@ export interface AppEvents {
   'mute:thread:updated': MuteThreadUpdatedPayload;
   'bookmark:updated': void;
   'bookmark:order-changed': void;
-  'bookmark:relay-sync-complete': BookmarkRelaySyncCompletePayload;
   'tribe:updated': void;
   'list:open': ListOpenPayload;
   'list-sync-mode:changed': ListSyncModeChangedPayload;
@@ -276,7 +264,6 @@ export interface AppEvents {
   // ── Relay ──────────────────────────────────
   'relay:connected': RelayConnectedPayload;
   'relay:error': RelayErrorPayload;
-  'relay:disconnected': RelayDisconnectedPayload;
   'relay:health:updated': RelayHealthUpdatedPayload;
   'relays:loaded': void;
   'relays:updated': void;
@@ -288,10 +275,8 @@ export interface AppEvents {
   // ── Layout / Settings ──────────────────────
   'layout:changed': LayoutChangedPayload;
   'font-size:changed': FontSizeChangedPayload;
-  'data-saver:toggle': AddonTogglePayload;
-  'settings:calendar-system-changed': SettingsTogglePayload;
-  'settings:post-truncation-changed': SettingsTogglePayload;
-  'settings:layout-mode-changed': SettingsTogglePayload;
+  'settings:calendar-system-changed': CalendarSystemChangedPayload;
+  'settings:post-truncation-changed': PostTruncationChangedPayload;
 
   // ── View Tabs ──────────────────────────────
   'view-tab:opened': ViewTabOpenedPayload;
@@ -307,11 +292,8 @@ export interface AppEvents {
 
   // ── Search ─────────────────────────────────
   'globalSearch:start': SearchStartPayload;
-  'globalSearch:internal': any;
   'hashtagSearch:start': HashtagSearchStartPayload;
-  'hashtagSearch:internal': any;
   'profileSearch:complete': ProfileSearchCompletePayload;
-  'profileSearch:internal': any;
 
   // ── Mutual Changes ─────────────────────────
   'mutual-changes:detected': MutualChangesDetectedPayload;
@@ -327,9 +309,9 @@ export interface AppEvents {
 
   // ── NosPress ───────────────────────────────
   'nospressDraftV2:changed': NospressDraftChangedPayload;
-  'nospressList:changed': any;
-  'nospressMenus:changed': any;
-  'nospressPageIndex:changed': any;
+  'nospressList:changed': { sections: NospressListSection[] } | null;
+  'nospressMenus:changed': { set: NospressMenuSet } | null;
+  'nospressPageIndex:changed': { index: NospressPageIndex } | null;
   'nospressSiteSettings:changed': any;
   'nospressMounts:changed': NospressMountsChangedPayload;
 
@@ -339,15 +321,12 @@ export interface AppEvents {
   // ── Marketplace ────────────────────────────
   'marketplace:toggle': AddonTogglePayload;
   'marketplace:timeline-toggle': AddonTogglePayload;
-  'marketplace:timeline-frequency-change': MarketplaceFrequencyChangePayload;
-  'marketplace:profile-listings-toggle': AddonTogglePayload;
 
   // ── Addon Toggles ─────────────────────────
   'badges:addon-toggle': AddonTogglePayload;
   'bookmarks:addon-toggle': AddonTogglePayload;
   'content-word-filter:toggle': AddonTogglePayload;
   'custom-emojis:addon-toggle': AddonTogglePayload;
-  'custom-emojis:toggle': AddonTogglePayload;
   'extended-follows:toggle': AddonTogglePayload;
   'follow-packs:addon-toggle': AddonTogglePayload;
   'follow-packs:toggle': AddonTogglePayload;

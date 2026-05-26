@@ -103,8 +103,7 @@ export class LayoutService {
     // Emit event for components that need to react
     this.eventBus.emit('layout:changed', { mode: this.effectiveMode, previousMode });
 
-    // Also emit legacy event for backward compatibility during migration
-    this.eventBus.emit('settings:layout-mode-changed', { mode: this.effectiveMode });
+
   }
 
   /**

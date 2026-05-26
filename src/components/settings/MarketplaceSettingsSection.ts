@@ -56,7 +56,6 @@ export class MarketplaceSettingsSection extends SettingsSection {
       checked: isProfileListingsEnabled(),
       onChange: (checked) => {
         setProfileListingsEnabled(checked);
-        TypedEventBus.getInstance().emit('marketplace:profile-listings-toggle', { enabled: checked });
         ToastService.show(
           checked ? 'Products carousel enabled on profiles' : 'Products carousel hidden on profiles',
           'success'
@@ -121,7 +120,6 @@ export class MarketplaceSettingsSection extends SettingsSection {
       radio.addEventListener('change', (e) => {
         const value = (e.target as HTMLInputElement).value as ListingFrequency;
         setTimelineListingFrequency(value);
-        TypedEventBus.getInstance().emit('marketplace:timeline-frequency-change', { frequency: value });
         const labels: Record<ListingFrequency, string> = {
           rare: 'Rare (60 min)',
           moderate: 'Moderate (30 min)',
