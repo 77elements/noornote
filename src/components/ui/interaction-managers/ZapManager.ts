@@ -108,7 +108,7 @@ export class ZapManager {
     try {
       const profile = await this.userProfileService.getUserProfile(this.config.authorPubkey);
 
-      if (!profile || (!profile.lud16 && !profile.lud06)) {
+      if (!profile || (!profile.lud16 && !profile.lud06 && !profile.nip05)) {
         this.canReceiveZaps = false;
         this.disableZapButton('This user has no Lightning wallet configured');
       }

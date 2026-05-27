@@ -346,11 +346,14 @@ export class ZapService {
       // Step 1: Try to get profile from standard relays
       let profile = await this.userProfileService.getUserProfile(pubkey);
 
-      // Step 2: Check if profile exists AND has lud16/lud06
+      // Step 2: Check if profile exists AND has lud16/lud06 (nip05 as fallback)
       let lightningProfile: ProfileWithLightning | null = null;
       if (profile) {
         lightningProfile = { pubkey: profile.pubkey };
         if (profile.lud16) lightningProfile.lud16 = profile.lud16;
+        else if (!profile.lud06 && profile.nip05 && profile.nip05.includes('@')) {
+          lightningProfile.lud16 = profile.nip05;
+        }
         if (profile.lud06) lightningProfile.lud06 = profile.lud06;
         if (profile.name) lightningProfile.name = profile.name;
         if (profile.display_name) lightningProfile.display_name = profile.display_name;
@@ -458,7 +461,7 @@ export class ZapService {
 
       return {
         pubkey,
-        lud16: profileData.lud16,
+        lud16: profileData.lud16 || (!profileData.lud06 && profileData.nip05?.includes('@') ? profileData.nip05 : undefined),
         lud06: profileData.lud06,
         name: profileData.name,
         display_name: profileData.display_name
