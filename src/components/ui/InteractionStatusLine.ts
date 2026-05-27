@@ -99,8 +99,8 @@ export class InteractionStatusLine {
       this.zapManager = new ZapManager({
         noteId: this.config.noteId,
         authorPubkey: this.config.authorPubkey,
-        onStatsUpdate: (amount: number) => {
-          this.updateStats({ zaps: this.stats.zaps + amount });
+        onStatsUpdate: (_amount: number) => {
+          setTimeout(() => this.fetchStats(), 2000);
         },
         ...(this.config.articleEventId && { articleEventId: this.config.articleEventId }),
         ...(this.config.onZap && { onCustomZap: this.config.onZap })

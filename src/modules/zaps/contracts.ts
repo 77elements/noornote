@@ -2,6 +2,7 @@ export interface ZapResult {
   success: boolean;
   preimage?: string;
   error?: string;
+  amount?: number;
 }
 
 export interface ZapsModuleApi {

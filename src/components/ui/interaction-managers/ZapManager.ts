@@ -198,18 +198,19 @@ export class ZapManager {
       this.updateButtonLoading(false);
 
       if (result.success) {
-        this.zappedAmount = this.zapsApi?.getUserZapAmount(this.config.noteId) ?? 0;
+        const zapAmount = result.amount ?? 0;
+        this.zappedAmount = this.zapsApi?.getUserZapAmount(this.config.noteId) ?? zapAmount;
         this.updateButtonState(true);
 
-        if (this.config.onStatsUpdate) {
-          this.config.onStatsUpdate(this.zappedAmount);
+        // Clear stale cache before triggering stats refresh
+        this.reactionsApi?.clearCache(this.config.noteId);
+
+        if (this.config.onStatsUpdate && zapAmount > 0) {
+          this.config.onStatsUpdate(zapAmount);
         }
 
         // Emit event for ZapsList refresh
         this.eventBus.emit('zap:added', { noteId: this.config.noteId });
-
-        // Cache invalidation
-        this.reactionsApi?.clearCache(this.config.noteId);
       }
     } catch (error) {
       console.error('Failed to send zap:', error);
@@ -230,15 +231,15 @@ export class ZapManager {
         this.zappedAmount = this.zapsApi?.getUserZapAmount(this.config.noteId) ?? 0;
         this.updateButtonState(true);
 
+        // Clear stale cache before triggering stats refresh
+        this.reactionsApi?.clearCache(this.config.noteId);
+
         if (this.config.onStatsUpdate) {
           this.config.onStatsUpdate(amount);
         }
 
         // Emit event for ZapsList refresh
         this.eventBus.emit('zap:added', { noteId: this.config.noteId });
-
-        // Cache invalidation
-        this.reactionsApi?.clearCache(this.config.noteId);
       }
     };
 
