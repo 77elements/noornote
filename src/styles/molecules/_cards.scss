@@ -135,6 +135,9 @@
       margin-bottom: calc($gap / 2);
       padding: 0;
     }
+    > .btn--mini {
+      padding: 0 0.5rem;
+    }
     > *:last-child {
       margin-bottom: 0;
     }
