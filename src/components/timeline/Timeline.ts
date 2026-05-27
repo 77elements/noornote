@@ -105,8 +105,8 @@ export class Timeline extends View {
       this.viewDropdown,
       {
         onRenderEvents: () => this.renderer.renderEvents(),
-        onAppendEvents: (events) => this.renderer.appendNewEvents(events),
-        onPrependEvents: (events) => this.renderer.prependNewEvents(events),
+        onAppendEvents: (events) => { this.renderer.appendNewEvents(events); this.islStatsUpdater.fetchAndUpdateStats(events); },
+        onPrependEvents: (events) => { this.renderer.prependNewEvents(events); this.islStatsUpdater.fetchAndUpdateStats(events); },
         onInitializeTimeline: () => this.initializeTimeline()
       }
     );
@@ -395,6 +395,7 @@ export class Timeline extends View {
       const unique = this.stateManager.prependEvents(newEvents);
       if (unique.length > 0) {
         this.renderer.prependNewEvents(unique);
+        this.islStatsUpdater.fetchAndUpdateStats(unique);
         this.feedOrchestrator.resetPollingTimestamp(newEvents[0]!.created_at);
       }
     }
@@ -523,6 +524,9 @@ export class Timeline extends View {
       // Hide skeletons and render actual events
       this.uiStateHandler.hideSkeletonLoaders();
       this.renderer.renderEvents();
+
+      // Batch-fetch ISL stats for rendered notes (non-blocking)
+      this.islStatsUpdater.fetchAndUpdateStats(result.events);
 
       this.stateManager.setHasMore(result.hasMore);
 

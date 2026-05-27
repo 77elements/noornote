@@ -6,6 +6,7 @@ export type { InteractionStats, DetailedStats, StatsUpdateType };
 
 export interface ReactionsModuleApi {
   getStats(noteId: string, authorPubkey?: string, eventId?: string): Promise<InteractionStats>;
+  batchFetchStats(noteIds: string[]): Promise<Map<string, InteractionStats>>;
   getCachedStats(noteId: string): InteractionStats | null;
   getDetailedStats(noteId: string, eventId?: string): Promise<DetailedStats>;
   updateCachedStats(noteId: string, updates: Partial<InteractionStats>): void;

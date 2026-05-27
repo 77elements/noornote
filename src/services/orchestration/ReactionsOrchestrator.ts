@@ -648,6 +648,77 @@ export class ReactionsOrchestrator extends Orchestrator {
   }
 
   /**
+   * Batch-fetch stats for multiple notes in a single relay round-trip.
+   * Skips already-cached and invalid IDs. Articles (addressable events) are excluded
+   * because they need #a-tag filters that can't be batched with normal #e-tag notes.
+   */
+  public async batchFetchStats(noteIds: string[]): Promise<Map<string, InteractionStats>> {
+    const result = new Map<string, InteractionStats>();
+
+    const uncachedIds = noteIds.filter(id => {
+      if (!this.isValidNoteId(id) || this.isLongFormArticle(id)) return false;
+      const cached = this.getCachedStats(id);
+      if (cached) { result.set(id, cached); return false; }
+      return true;
+    });
+
+    if (uncachedIds.length === 0) return result;
+
+    const relays = await this.getReactionFetchRelays();
+    const collectors = new Map<string, DetailedStats>();
+    for (const id of uncachedIds) {
+      collectors.set(id, {
+        replyEvents: [], repostEvents: [], quotedEvents: [],
+        reactionEvents: [], zapEvents: [], lastUpdated: Date.now()
+      });
+    }
+
+    const filters: NDKFilter[] = [
+      { kinds: [7], '#e': uncachedIds },
+      { kinds: [6, 16], '#e': uncachedIds },
+      { kinds: [1, 1111], '#e': uncachedIds },
+      { kinds: [1], '#q': uncachedIds },
+      { kinds: [9735], '#e': uncachedIds },
+    ];
+
+    await new Promise<void>((resolve) => {
+      const timeout = setTimeout(resolve, 8000);
+      this.transport.subscribe(relays, filters, {
+        onEvent: (event: NostrEvent) => {
+          const qTag = event.tags.find(tag => tag[0] === 'q' && collectors.has(tag[1]!));
+          if (qTag) {
+            collectors.get(qTag[1]!)!.quotedEvents.push(event);
+            return;
+          }
+          const eTag = event.tags.find(tag => tag[0] === 'e' && collectors.has(tag[1]!));
+          if (!eTag) return;
+          const stats = collectors.get(eTag[1]!)!;
+          if (event.kind === 7) stats.reactionEvents.push(event);
+          else if (event.kind === 6 || event.kind === 16) stats.repostEvents.push(event);
+          else if (event.kind === 1 || event.kind === 1111) stats.replyEvents.push(event);
+          else if (event.kind === 9735) stats.zapEvents.push(event);
+        },
+        onEose: () => { clearTimeout(timeout); resolve(); }
+      });
+    });
+
+    for (const [id, stats] of collectors) {
+      this.detailedStatsCache.set(id, stats);
+      result.set(id, {
+        replies: countVisibleReplies(stats.replyEvents),
+        reposts: stats.repostEvents.length,
+        quotedReposts: stats.quotedEvents.length,
+        likes: stats.reactionEvents.length,
+        zaps: this.calculateTotalZaps(stats.zapEvents),
+        lastUpdated: stats.lastUpdated
+      });
+    }
+
+    this.systemLogger.info('ReactionsOrch', `📊 Batch stats loaded for ${collectors.size} notes`);
+    return result;
+  }
+
+  /**
    * Clear cached stats for a note
    */
   public clearCache(noteId: string): void {

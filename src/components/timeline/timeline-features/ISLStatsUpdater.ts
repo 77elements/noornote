@@ -9,6 +9,7 @@ import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ReactionsModuleApi } from '../../../modules/reactions/contracts';
 import { extractOriginalNoteId } from '../../../helpers/extractOriginalNoteId';
 import { formatCount } from '../../../helpers/formatCount';
+import { NoteUI } from '../../ui/NoteUI';
 
 export class ISLStatsUpdater {
   private container: HTMLElement;
@@ -16,6 +17,7 @@ export class ISLStatsUpdater {
   private get reactionsApi(): ReactionsModuleApi | null {
     return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
   }
+  private fetchedNoteIds = new Set<string>();
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -27,16 +29,13 @@ export class ISLStatsUpdater {
    */
   updateFromCache(events: NostrEvent[]): void {
     events.forEach(event => {
-      // Extract original note ID (for reposts, gets the reposted note ID)
       const noteIdForStats = extractOriginalNoteId(event);
       if (!noteIdForStats) return;
 
       const cachedStats = this.reactionsApi?.getCachedStats(noteIdForStats) ?? null;
       if (cachedStats) {
-        // Find ISL element in DOM (not via Map, as SNV may have overwritten it)
         const islElement = this.container.querySelector(`.isl[data-note-id="${noteIdForStats}"]`) as HTMLElement;
         if (islElement) {
-          // Update DOM directly
           const repliesCount = islElement.querySelector('.isl-reply .isl-count');
           const repostsCount = islElement.querySelector('.isl-repost .isl-count');
           const quotedRepostsCount = islElement.querySelector('.isl-quote .isl-count');
@@ -51,5 +50,48 @@ export class ISLStatsUpdater {
         }
       }
     });
+  }
+
+  /**
+   * Batch-fetch stats from relays for rendered notes, then update ISL instances.
+   * Skips notes that were already fetched in this timeline session.
+   */
+  async fetchAndUpdateStats(events: NostrEvent[]): Promise<void> {
+    const noteIds: string[] = [];
+    for (const event of events) {
+      const id = extractOriginalNoteId(event);
+      if (id && !this.fetchedNoteIds.has(id)) {
+        noteIds.push(id);
+      }
+    }
+    if (noteIds.length === 0) return;
+
+    const chunks = [];
+    for (let i = 0; i < noteIds.length; i += 25) {
+      chunks.push(noteIds.slice(i, i + 25));
+    }
+
+    for (const chunk of chunks) {
+      const statsMap = await this.reactionsApi?.batchFetchStats(chunk);
+      if (!statsMap) continue;
+
+      for (const [noteId, stats] of statsMap) {
+        this.fetchedNoteIds.add(noteId);
+        const isl = NoteUI.getInteractionStatusLine(noteId);
+        if (isl) {
+          isl.updateStats({
+            replies: stats.replies,
+            reposts: stats.reposts,
+            quotedReposts: stats.quotedReposts,
+            likes: stats.likes,
+            zaps: stats.zaps
+          });
+        }
+      }
+    }
+  }
+
+  resetFetchedIds(): void {
+    this.fetchedNoteIds.clear();
   }
 }

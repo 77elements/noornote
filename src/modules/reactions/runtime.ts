@@ -30,6 +30,7 @@ export class ReactionsRuntime implements ModuleRuntime<ReactionsModuleApi> {
     const emptyStats: InteractionStats = { likes: 0, reposts: 0, quotedReposts: 0, zaps: 0, replies: 0, lastUpdated: 0 };
     return {
       getStats: (noteId, authorPubkey, eventId) => orch?.getStats(noteId, authorPubkey, eventId) ?? Promise.resolve(emptyStats),
+      batchFetchStats: (noteIds) => orch?.batchFetchStats(noteIds) ?? Promise.resolve(new Map()),
       getCachedStats: (noteId) => orch?.getCachedStats(noteId) ?? null,
       getDetailedStats: (noteId, eventId) => orch?.getDetailedStats(noteId, eventId) ?? Promise.resolve({ replyEvents: [], repostEvents: [], quotedEvents: [], reactionEvents: [], zapEvents: [], totalZapAmount: 0 } as any),
       updateCachedStats: (noteId, updates) => orch?.updateCachedStats(noteId, updates),
