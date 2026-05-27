@@ -122,9 +122,12 @@ function buildHintLines(pack: ReturnType<typeof parseFollowPackEvent>): string[]
     return fallback;
   }
 
-  if (pack.createdAt <= prev.createdAt) return [];
+  if (pack.createdAt <= prev.createdAt) return prev.diffLines ?? [];
 
   const diff = computeFollowPackDiffLines(prev, pack);
-  setFollowPackSnapshot(pack.authorPubkey, pack.id, snapshotFromPack(pack));
-  return diff.length > 0 ? diff : fallback;
+  const lines = diff.length > 0 ? diff : fallback;
+  const snapshot = snapshotFromPack(pack);
+  snapshot.diffLines = lines;
+  setFollowPackSnapshot(pack.authorPubkey, pack.id, snapshot);
+  return lines;
 }

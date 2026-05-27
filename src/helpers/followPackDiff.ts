@@ -17,6 +17,7 @@ export interface FollowPackSnapshot {
   description: string;
   coverImage: string;
   members: string[];
+  diffLines?: string[];
 }
 
 type SnapshotMap = Record<string, FollowPackSnapshot>;
