@@ -219,7 +219,7 @@ export class RepostRenderer {
 
               // Setup collapsible if needed
               if (opts.depth === 0 && opts.collapsible) {
-                CollapsibleManager.setup(repostDiv, { maxHeight: '40vh' });
+                CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
               }
             } else {
               // Failed to fetch - show error
@@ -389,7 +389,7 @@ export class RepostRenderer {
 
             // Setup collapsible for long reposts (only for top-level reposts)
             if (opts.depth === 0 && opts.collapsible) {
-              CollapsibleManager.setup(repostDiv, { maxHeight: '40vh' });
+              CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
             }
           }
         });
@@ -403,7 +403,7 @@ export class RepostRenderer {
 
         // Setup collapsible for long reposts (only for top-level reposts)
         if (opts.depth === 0 && opts.collapsible) {
-          CollapsibleManager.setup(repostDiv, { maxHeight: '40vh' });
+          CollapsibleManager.setup(repostDiv, { maxHeight: '40vh', contentSelector: '.note-card--original' });
         }
       }
     }
