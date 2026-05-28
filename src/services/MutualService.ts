@@ -10,7 +10,7 @@
  */
 
 import { AuthService } from './AuthService';
-import { UserService } from './UserService';
+import { FollowVerificationService } from './FollowVerificationService';
 import { FollowStorageAdapter, type FollowItem } from '../lists/follows';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
 
@@ -32,7 +32,7 @@ export interface MutualStats {
 export class MutualService {
   private static instance: MutualService;
   private authService: AuthService;
-  private userService: UserService;
+  private followVerification: FollowVerificationService;
   private followAdapter: FollowStorageAdapter;
 
   // In-memory cache for mutual status (cleared on logout)
@@ -40,7 +40,7 @@ export class MutualService {
 
   private constructor() {
     this.authService = AuthService.getInstance();
-    this.userService = UserService.getInstance();
+    this.followVerification = FollowVerificationService.getInstance();
     this.followAdapter = new FollowStorageAdapter();
   }
 
@@ -178,37 +178,15 @@ export class MutualService {
   }
 
   /**
-   * Check if a specific user follows back
-   * Uses UserService as single source of truth for follow lists
+   * Check if a specific user follows back.
+   * Delegates to FollowVerificationService (NIP-65 outbox-aware, tri-state).
+   * For the list view, 'unknown' collapses to false (no badge).
    */
   private async checkIfMutual(
     userPubkey: string,
-    currentUserPubkey: string
+    _currentUserPubkey: string
   ): Promise<boolean> {
-    try {
-      // Use UserService to get their follow list (single source of truth)
-      const theirFollows = await this.userService.getUserFollowing(userPubkey);
-      return theirFollows.includes(currentUserPubkey);
-    } catch {
-      return false;
-    }
-  }
-
-  /**
-   * Check if a specific user follows back with fresh data (no cache)
-   * Used for double-checking to prevent false positives
-   */
-  public async checkIfMutualFresh(pubkey: string): Promise<boolean> {
-    const currentUser = this.authService.getCurrentUser();
-    if (!currentUser) return false;
-
-    try {
-      // Use UserService with forceRefresh to bypass all caches
-      const theirFollows = await this.userService.getUserFollowing(pubkey, true);
-      return theirFollows.includes(currentUser.pubkey);
-    } catch {
-      return false;
-    }
+    return this.followVerification.followsBackSimple(userPubkey);
   }
 
   /**

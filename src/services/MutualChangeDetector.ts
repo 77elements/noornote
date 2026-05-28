@@ -13,6 +13,7 @@
  */
 
 import { MutualService } from './MutualService';
+import { FollowVerificationService } from './FollowVerificationService';
 import { MutualChangeStorage, type MutualChange } from '../lists/MutualChangeStorage';
 import { MutualCheckDebugLog } from '../lists/MutualCheckDebugLog';
 import { TypedEventBus } from '../core/TypedEventBus';
@@ -31,6 +32,7 @@ export interface DetectionResult {
 export class MutualChangeDetector {
   private static instance: MutualChangeDetector;
   private mutualService: MutualService;
+  private followVerification: FollowVerificationService;
   private storage: MutualChangeStorage;
   private debugLog: MutualCheckDebugLog;
   private eventBus: TypedEventBus;
@@ -39,6 +41,7 @@ export class MutualChangeDetector {
 
   private constructor() {
     this.mutualService = MutualService.getInstance();
+    this.followVerification = FollowVerificationService.getInstance();
     this.storage = MutualChangeStorage.getInstance();
     this.debugLog = MutualCheckDebugLog.getInstance();
     this.eventBus = TypedEventBus.getInstance();
@@ -168,18 +171,46 @@ export class MutualChangeDetector {
         pubkey => !currentMutuals.has(pubkey)
       );
 
-      // DOUBLE-CHECK unfollows to prevent false positives
-      // Re-check each potential unfollow with fresh data (bypasses all caches)
+      // DOUBLE-CHECK with tri-state verdict (NIP-65 outbox-aware).
+      // Only 'does-not-follow' becomes a real unfollow; 'follows' and
+      // 'unknown' are re-added to the snapshot so they aren't flagged
+      // on the next check either.
       const unfollows: string[] = [];
+      let skippedUnknown = 0;
+      let preventedFalsePositive = 0;
       if (potentialUnfollows.length > 0) {
         for (const pubkey of potentialUnfollows) {
-          const stillMutual = await this.mutualService.checkIfMutualFresh(pubkey);
-          if (!stillMutual) {
+          const verdict = await this.followVerification.verifyFollowsBack(
+            pubkey,
+            { forceRefresh: true }
+          );
+          if (verdict.status === 'does-not-follow') {
             unfollows.push(pubkey);
+          } else if (verdict.status === 'follows') {
+            preventedFalsePositive++;
+            currentMutualPubkeys.push(pubkey);
+            this.systemLogger.info(
+              'MutualChangeDetector',
+              `False positive prevented: ${pubkey.slice(0, 8)}... still follows`
+            );
           } else {
-            this.systemLogger.info('MutualChangeDetector', `False positive prevented: ${pubkey.slice(0, 8)}... still follows`);
+            skippedUnknown++;
+            currentMutualPubkeys.push(pubkey);
+            this.systemLogger.info(
+              'MutualChangeDetector',
+              `Skipped ${pubkey.slice(0, 8)}...: verification unknown (${verdict.reason})`
+            );
           }
         }
+      }
+      if (skippedUnknown > 0 || preventedFalsePositive > 0) {
+        await this.debugLog.log('DOUBLE_CHECK_SUMMARY', {
+          potentialUnfollows: potentialUnfollows.length,
+          verifiedUnfollows: unfollows.length,
+          falsePositivesPrevented: preventedFalsePositive,
+          skippedUnknown,
+          note: 'unknown verdicts are carried over — no unfollow notification'
+        });
       }
 
       // New mutuals: in current but NOT in previous

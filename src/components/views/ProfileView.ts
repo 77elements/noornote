@@ -9,6 +9,7 @@ import { View } from './View';
 import { UserProfileService, type UserProfile } from '../../services/UserProfileService';
 import { AuthService } from '../../services/AuthService';
 import { UserService } from '../../services/UserService';
+import { FollowVerificationService } from '../../services/FollowVerificationService';
 import { Timeline } from '../timeline/Timeline';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { ProfileFollowManager } from '../../lists/follows';
@@ -59,6 +60,7 @@ dayjs.registerCalendarSystem('hijri' as any, new HijriCalendarSystem());
 type ProfileLoadResult = {
   profile: UserProfile;
   following: string[];
+  followsYou: boolean;
 };
 const loadingProfiles: Map<string, Promise<ProfileLoadResult>> = new Map();
 
@@ -69,6 +71,7 @@ export class ProfileView extends View {
   private userProfileService: UserProfileService;
   private authService: AuthService;
   private userService: UserService;
+  private followVerification: FollowVerificationService;
   private appState: AppState;
   private eventBus: TypedEventBus;
   private timeline: Timeline | null = null;
@@ -129,6 +132,7 @@ export class ProfileView extends View {
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.userService = UserService.getInstance();
+    this.followVerification = FollowVerificationService.getInstance();
     this.appState = AppState.getInstance();
     this.eventBus = TypedEventBus.getInstance();
     // Decode npub or nprofile to pubkey
@@ -347,13 +351,13 @@ export class ProfileView extends View {
       }
 
       // Fetch profile data (uses shared promise to prevent duplicate requests)
-      const { profile, following } = await this.getProfileData();
+      const { profile, following, followsYou } = await this.getProfileData();
 
       this.followingCount = following.length;
 
       // Check follow relationships (only for other profiles when logged in)
       if (currentUser && this.pubkey !== currentUser.pubkey) {
-        this.followsYou = following.includes(currentUser.pubkey);
+        this.followsYou = followsYou;
         const isFollowing = await this.followManager.checkFollowStatus();
         this.lastKnownFollowStatus = isFollowing;
       }
@@ -506,12 +510,17 @@ export class ProfileView extends View {
    */
   private async fetchProfileData(): Promise<ProfileLoadResult> {
     try {
-      const [profile, following] = await Promise.all([
+      const isSelf = this.authService.isCurrentUser(this.pubkey);
+      const [profile, following, followsYouVerdict] = await Promise.all([
         this.userProfileService.getUserProfile(this.pubkey),
-        this.userService.getUserFollowing(this.pubkey)
+        this.userService.getUserFollowing(this.pubkey),
+        isSelf
+          ? Promise.resolve(null)
+          : this.followVerification.verifyFollowsBack(this.pubkey)
       ]);
 
-      return { profile, following };
+      const followsYou = followsYouVerdict?.status === 'follows';
+      return { profile, following, followsYou };
     } finally {
       // Remove from loading map after completion (success or error)
       loadingProfiles.delete(this.pubkey);
