@@ -20,6 +20,7 @@ import { MuteOrchestrator } from '../lists/mutes';
 import { AuthService } from './AuthService';
 import { escapeHtml } from '../helpers/escapeHtml';
 import { getTag } from '../helpers/tagUtils';
+import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../components/ui/note-rendering/DittoFeatureRenderer';
 
 export class QuotedNoteRenderer {
   private static instance: QuotedNoteRenderer;
@@ -66,6 +67,14 @@ export class QuotedNoteRenderer {
             const listingContainer = document.createElement('div');
             container.appendChild(listingContainer);
             void this.renderListingPreview(ref.fullMatch, listingContainer);
+            return;
+          }
+          // Ditto geocache (kind 37516): proprietary, no NIP — build the notice
+          // straight from the naddr coordinate, no fetch needed.
+          if (decoded.type === 'naddr' && decoded.data?.kind === DITTO_GEOCACHE_KIND) {
+            container.appendChild(DittoFeatureRenderer.renderFromCoordinate(
+              decoded.data.kind, decoded.data.pubkey, decoded.data.identifier,
+            ));
             return;
           }
         } catch { /* fall through to article renderer */ }
@@ -122,6 +131,14 @@ export class QuotedNoteRenderer {
             skeleton.replaceWith(mutedPlaceholder);
             return;
           }
+        }
+
+        // Ditto geocache (kind 37516): proprietary, no NIP — must precede the
+        // addressable check below, which would otherwise dump it into the
+        // article-preview renderer and produce garbage.
+        if (result.event.kind === DITTO_GEOCACHE_KIND) {
+          skeleton.replaceWith(DittoFeatureRenderer.render(result.event));
+          return;
         }
 
         // Route NIP-34 git events (must precede addressable check so 30617 doesn't fall into article preview)

@@ -5,12 +5,19 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { encodeNevent } from '../../../services/NostrToolsAdapter';
+import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
 
 export class UnsupportedKindRenderer {
   /**
    * Render unsupported kind fallback element
    */
   static render(note: ProcessedNote, _opts: NoteUIOptions): HTMLElement {
+    // Ditto geocache (kind 37516): show a dedicated "open in Ditto" notice
+    // instead of a generic "unsupported kind" + njump link.
+    if (note.rawEvent.kind === DITTO_GEOCACHE_KIND) {
+      return DittoFeatureRenderer.render(note.rawEvent);
+    }
+
     const element = document.createElement('div');
     element.className = 'note-card note-card--unsupported';
     if (note.id) element.dataset.eventId = note.id;

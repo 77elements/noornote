@@ -10,6 +10,7 @@ import { NoteProcessor } from '../note-processing/NoteProcessor';
 import { OriginalNoteRenderer } from './OriginalNoteRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
+import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
 import { GIT_EVENT_KINDS } from '../../../types/nostr';
 import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
 import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
@@ -205,6 +206,12 @@ export class RepostRenderer {
                 }
               }
 
+              // Ditto geocache (kind 37516): proprietary, no NIP — show notice
+              if (originalEvent.kind === DITTO_GEOCACHE_KIND) {
+                placeholderDiv.replaceWith(DittoFeatureRenderer.render(originalEvent));
+                return;
+              }
+
               // Process the fetched event as a note
               const processedNote = NoteProcessor.process(originalEvent);
 
@@ -345,6 +352,12 @@ export class RepostRenderer {
       });
 
       repostDiv.appendChild(appContainer);
+    } else if (note.repostedEvent.kind === DITTO_GEOCACHE_KIND) {
+      // Reposted event is a Ditto geocache (kind:37516) — proprietary, no NIP
+      const dittoContainer = document.createElement('div');
+      dittoContainer.className = 'repost-article-container';
+      dittoContainer.appendChild(DittoFeatureRenderer.render(note.repostedEvent));
+      repostDiv.appendChild(dittoContainer);
     } else if (note.repostedEvent.kind === 9802) {
       // Reposted event is a NIP-84 highlight (kind:9802)
       const highlightContainer = document.createElement('div');
