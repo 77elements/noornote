@@ -1,7 +1,11 @@
-# NoorNote 0.9.7
+# NoorNote 0.9.8
 
-**Internal architecture overhaul** — All cross-component communication is now type-checked at build time. 14 feature modules, typed event system, enforced layer boundaries. Long-term stability and reliability improvement.
+**Bulletproof follower detection** — The "Check for changes" feature and the "Follows you" badge on profiles are now driven by a single NIP-65-aware verification path. False "stopped following you back" notifications are eliminated: if we can't reach a user's actual relays, we say so instead of guessing.
 
-**Customizable sidebar content** — The third column (previously fixed to System Logs) is now a dropdown where you choose what to display: System Logs, Newest Articles from people you follow, or a Media feed (pictures & videos in a masonry grid). Your choice is remembered per account.
+**Repost & quote polish** — Long reposts keep their interaction bar visible under the Show More button. Nested Show More buttons on quoted posts are gone — only the outer note truncates. Quotes of reposts now show the original content instead of raw JSON.
 
-**Badges fix** — The badges toggle in settings was broken and is now working correctly.
+**Generic reposts (kind 16)** — The newer kind 16 repost format is now fully supported across feed, notifications, and rendering.
+
+**Faster timeline stats** — Zap, reaction, and reply counts for timeline notes are batched, making the feed feel snappier.
+
+**Fixes** — Correct zap totals in the timeline, Lightning Address fallback to NIP-05 when lud16/lud06 are missing, accurate file size in upload error toasts.
