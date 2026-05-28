@@ -49,7 +49,9 @@ export class QuoteRenderer {
             // own relays are tried before "Note not found".
             const skeleton = QuoteRenderer.quotedNoteRenderer.createQuoteSkeleton();
             marker.replaceWith(skeleton);
-            QuoteRenderer.quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, opts.collapsible || false, note.author?.pubkey);
+            // Always false: the outer note's collapsible (set up below) handles
+            // truncation for the entire content including nested quotes.
+            QuoteRenderer.quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, false, note.author?.pubkey);
           }
         }
       });

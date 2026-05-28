@@ -56,7 +56,10 @@ export class OriginalNoteRenderer {
               // event's own author relays don't carry the original.
               const skeleton = quotedNoteRenderer.createQuoteSkeleton();
               marker.replaceWith(skeleton);
-              quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, opts.collapsible || false, note.author?.pubkey);
+              // Always false: the outer note's collapsible (set up below) handles
+              // truncation for the entire content including nested quotes. Letting
+              // the inner quote add its own Show More would stack two buttons.
+              quotedNoteRenderer.fetchAndRenderQuote(ref, skeleton, false, note.author?.pubkey);
             }
           }
       });
