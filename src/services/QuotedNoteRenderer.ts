@@ -97,6 +97,21 @@ export class QuotedNoteRenderer {
       const result = await this.quoteFetcher.fetchQuotedEventWithError(ref.fullMatch, parentAuthorPubkey);
 
       if (result.success) {
+        // Unwrap kind:6 / kind:16 reposts: their content field holds the
+        // JSON-stringified inner event. Without this, the quote box would
+        // process that JSON as plain text and dump it on the page.
+        if ((result.event.kind === 6 || result.event.kind === 16) && result.event.content) {
+          try {
+            const inner = JSON.parse(result.event.content);
+            if (inner && typeof inner === 'object' && typeof inner.kind === 'number' && inner.pubkey && inner.id) {
+              result.event = inner as NostrEvent;
+            }
+          } catch {
+            // Content wasn't valid JSON — fall through and render the
+            // kind:6/16 event as-is (still imperfect, but no regression).
+          }
+        }
+
         // Check if author is muted
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
