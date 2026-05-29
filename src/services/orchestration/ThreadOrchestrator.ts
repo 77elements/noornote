@@ -397,8 +397,19 @@ export class ThreadOrchestrator extends Orchestrator {
       return null;
     }
 
-    // NIP-10: kind:1 uses e-tags with markers
-    const eTags = event.tags.filter(tag => tag[0] === 'e');
+    // NIP-10: kind:1 uses e-tags with markers.
+    // Exclude quote references so a quoted note never appears as a reply parent
+    // in the thread-context chain (e.g. replies to a quote-repost must not show
+    // the quoted note above the QR author). Mirrors NoorNote's canonical quote
+    // detection (NoteStructureBuilder / RepliesRenderer / ThreadManager):
+    //   - NIP-10 "mention"-marked e-tags are citations, not reply parents
+    //   - NIP-18 'q'-tag targets are quotes, not reply parents
+    const quotedIds = new Set(
+      event.tags.filter(tag => tag[0] === 'q' && tag[1]).map(tag => tag[1])
+    );
+    const eTags = event.tags.filter(
+      tag => tag[0] === 'e' && tag[3] !== 'mention' && !quotedIds.has(tag[1])
+    );
     if (eTags.length === 0) {
       // Legacy NIP-10 style on addressable parents (Yakihonne, Highlighter):
       // kind:1 reply with only an 'a' tag. Require an explicit "reply" or
