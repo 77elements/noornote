@@ -1968,6 +1968,11 @@ export class FollowListManager {
     const npub = hexToNpub(item.pubkey);
     const avatarUrl = item.profile?.picture || '';
 
+    // Private encrypted note (NIP-78) — icon shown when the "Private petnames"
+    // setting is on. Empty = peach (--color-5), filled = mint (--color-6).
+    const notesEnabled = storage.get<boolean>(StorageKeys.PRIVATE_PETNAMES_ENABLED, false);
+    const hasNote = !!(storage.get<Record<string, string>>(StorageKeys.PETNAMES, {}) ?? {})[item.pubkey];
+
     const mutualBadgeHtml = this.extended?.renderMutualBadge(item.isMutual) ?? '';
     const zapBadgeHtml = this.extended?.renderZapBadge(item.pubkey) ?? '';
 
@@ -1982,6 +1987,8 @@ export class FollowListManager {
         <div class="follow-item__info">
           <div class="follow-item__username">
             ${escapeHtml(username)}
+            ${!item.isPrivate ? `<span class="follow-item__petname-edit" data-role="petname-edit">${item.petname ? `(${escapeHtml(item.petname)})` : '(+)'}</span>` : ''}
+            ${notesEnabled ? `<span class="follow-item__note${hasNote ? ' follow-item__note--filled' : ''}" data-role="petname-note" title="${hasNote ? 'Edit private note' : 'Add private note'}"><svg width="16" height="16"><use href="#icon-note"/></svg></span>` : ''}
             ${item.isPrivate ? '<span class="private-badge">🔒 Private</span>' : ''}
             ${this.renderArticleNotifLabel(item.pubkey)}
           </div>
@@ -1989,7 +1996,6 @@ export class FollowListManager {
             ${mutualBadgeHtml}
             ${zapBadgeHtml}
           </div>
-          ${item.petname ? `<div class="follow-item__petname">${escapeHtml(item.petname)}</div>` : ''}
         </div>
       </div>
       <button class="follow-item__unfollow-btn btn btn--passive btn--medium" data-pubkey="${item.pubkey}">
@@ -2006,6 +2012,52 @@ export class FollowListManager {
     unfollowBtn?.addEventListener('click', async (e) => {
       e.stopPropagation();
       await this.handleRemoveItem(item, followItemDiv);
+    });
+
+    // Inline NIP-02 petname (public follows only) — click to set/edit/clear.
+    const petnameEdit = followItemDiv.querySelector('[data-role="petname-edit"]');
+    petnameEdit?.addEventListener('click', async (e) => {
+      e.stopPropagation(); // don't navigate to the profile
+      const { ModalService } = await import('../services/ModalService');
+      const current = getFollowPetname(item.pubkey) ?? '';
+      const result = await ModalService.getInstance().prompt({
+        title: 'Set Petname',
+        message: '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.',
+        defaultValue: current,
+        placeholder: 'e.g. Bob from work',
+        allowEmpty: true,
+      });
+      if (result === null) return;
+      const trimmed = result.trim();
+      await setFollowPetname(item.pubkey, trimmed);
+      if (trimmed) item.petname = trimmed; else delete item.petname;
+      (petnameEdit as HTMLElement).textContent = trimmed ? `(${trimmed})` : '(+)';
+    });
+
+    // Inline private note (NIP-78, encrypted) — click to write/edit/clear.
+    const noteEdit = followItemDiv.querySelector('[data-role="petname-note"]');
+    noteEdit?.addEventListener('click', async (e) => {
+      e.stopPropagation(); // don't navigate to the profile
+      const [{ ModalService }, { PetnameService }] = await Promise.all([
+        import('../services/ModalService'),
+        import('../services/PetnameService'),
+      ]);
+      const service = PetnameService.getInstance();
+      const current = service.getPetname(item.pubkey) ?? '';
+      const result = await ModalService.getInstance().prompt({
+        title: 'Private Note',
+        message: '🔒 Encrypted note about this user. Only you can decrypt and read it.',
+        defaultValue: current,
+        placeholder: 'Write anything you want to remember about this user…',
+        allowEmpty: true,
+        multiline: true,
+      });
+      if (result === null) return;
+      const trimmed = result.trim();
+      await service.setPetname(item.pubkey, trimmed);
+      const el = noteEdit as HTMLElement;
+      el.classList.toggle('follow-item__note--filled', !!trimmed);
+      el.title = trimmed ? 'Edit private note' : 'Add private note';
     });
 
     return followItemDiv;

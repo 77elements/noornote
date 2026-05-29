@@ -130,6 +130,7 @@
 // ========================================
 .follows-header {
   @include pb.progress-bar-container();
+  background: var(--color-1);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -190,7 +191,7 @@
   }
 
   &__info {
-    gap: calc($gap / 4);
+    line-height: 1.5;
   }
 
   &__username {
@@ -201,9 +202,24 @@
     gap: calc($gap / 2);
   }
 
-  &__petname {
-    @extend %small;
-    color: color-mix(in srgb, var(--color-5) 60%, black);
+  &__petname-edit {
+    color: $color-warning;
+    font-weight: 400;
+    cursor: pointer;
+  }
+
+  &__note {
+    color: var(--color-5);
+    cursor: pointer;
+
+    svg {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    &--filled {
+      color: var(--color-6);
+    }
   }
 
   &__unfollow-btn {
