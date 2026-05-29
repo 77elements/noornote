@@ -142,7 +142,7 @@ If the app crashes, check the log files:
 | NIP | Description | Kind(s) |
 |-----|-------------|---------|
 | [NIP-01](https://github.com/nostr-protocol/nips/blob/master/01.md) | Basic protocol (notes, profiles) | 0, 1 |
-| [NIP-02](https://github.com/nostr-protocol/nips/blob/master/02.md) | Follow list | 3 |
+| [NIP-02](https://github.com/nostr-protocol/nips/blob/master/02.md) | Follow list + public petnames | 3 |
 | [NIP-04](https://github.com/nostr-protocol/nips/blob/master/04.md) | Encrypted DMs (legacy) | 4 |
 | [NIP-05](https://github.com/nostr-protocol/nips/blob/master/05.md) | DNS-based verification | - |
 | [NIP-07](https://github.com/nostr-protocol/nips/blob/master/07.md) | Browser extension signing | - |
@@ -174,7 +174,7 @@ If the app crashes, check the log files:
 | [NIP-68](https://github.com/nostr-protocol/nips/blob/master/68.md) | Picture events | 20 |
 | [NIP-58](https://github.com/nostr-protocol/nips/blob/master/58.md) | Badges | 8, 30009, 10008, 30008 |
 | [NIP-71](https://github.com/nostr-protocol/nips/blob/master/71.md) | Video events | 21, 22 |
-| [NIP-78](https://github.com/nostr-protocol/nips/blob/master/78.md) | Application-specific data | 30078 |
+| [NIP-78](https://github.com/nostr-protocol/nips/blob/master/78.md) | Application-specific data (incl. private encrypted petnames) | 30078 |
 | [NIP-84](https://github.com/nostr-protocol/nips/blob/master/84.md) | Highlights | 9802 |
 | [NIP-88](https://github.com/nostr-protocol/nips/blob/master/88.md) | Polls | 1068, 1018 |
 | [NIP-92](https://github.com/nostr-protocol/nips/blob/master/92.md) | Media attachments (`imeta` tags) | - |
