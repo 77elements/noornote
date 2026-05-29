@@ -577,7 +577,7 @@ export class ProfileView extends View {
           </div>
 
           <div class="profile-meta">
-            <h1 class="profile-name">${escapeHtml(displayName)}<span class="profile-petname" data-role="petname"></span></h1>
+            <h1 class="profile-name">${escapeHtml(displayName)}<span class="profile-petname" data-role="petname"></span><span class="profile-petname-note" data-role="petname-note"></span></h1>
             ${nip05s.length > 0 ? `<p class="profile-nip05">${nip05s.map(n => escapeHtml(n)).join(', ')}</p>` : ''}
 
             <div class="profile-identifiers">
@@ -1035,27 +1035,91 @@ export class ProfileView extends View {
   }
 
   private setupPetname(): void {
+    this.setupPublicPetname();
+    this.setupPrivateNote();
+  }
+
+  /**
+   * Public NIP-02 petname (4th p-tag element of the contact list). Only shown
+   * for users you publicly follow — NIP-02 has no slot for a petname otherwise.
+   * Publicly readable by anyone who reads your contact list.
+   */
+  private setupPublicPetname(): void {
     const petnameEl = this.container.querySelector('[data-role="petname"]') as HTMLElement | null;
     if (!petnameEl) return;
 
-    import('../../services/PetnameService').then(({ PetnameService }) => {
-      const service = PetnameService.getInstance();
-      const petname = service.getPetname(this.pubkey);
-      petnameEl.textContent = petname ? ` (${petname})` : ' (+)';
+    import('../../lists/follows').then(({ isFollowing, getFollowPetname, setFollowPetname }) => {
+      const render = (): void => {
+        if (!isFollowing(this.pubkey).public) {
+          petnameEl.textContent = '';
+          petnameEl.style.display = 'none';
+          return;
+        }
+        petnameEl.style.display = '';
+        const petname = getFollowPetname(this.pubkey);
+        petnameEl.textContent = petname ? ` (${petname})` : ' (+)';
+      };
+      render();
 
       petnameEl.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!isFollowing(this.pubkey).public) return;
+        const { ModalService } = await import('../../services/ModalService');
+        const current = getFollowPetname(this.pubkey) ?? '';
+        const result = await ModalService.getInstance().prompt({
+          title: 'Set Petname',
+          message: '⚠️ Public label, stored in your contact list (NIP-02). Anyone who reads your follow list can see it.',
+          defaultValue: current,
+          placeholder: 'e.g. Bob from work',
+          allowEmpty: true,
+        });
+        if (result === null) return;
+        await setFollowPetname(this.pubkey, result.trim());
+        render();
+      });
+    });
+  }
+
+  /**
+   * Private encrypted note (NIP-78, NIP-44 self-encrypted). Gated behind the
+   * "Private petnames" Privacy setting. Empty = peach icon, filled = mint green.
+   */
+  private setupPrivateNote(): void {
+    const noteEl = this.container.querySelector('[data-role="petname-note"]') as HTMLElement | null;
+    if (!noteEl) return;
+
+    import('../../services/PetnameService').then(({ PetnameService }) => {
+      const service = PetnameService.getInstance();
+      if (!service.isPrivateNotesEnabled()) {
+        noteEl.style.display = 'none';
+        return;
+      }
+      noteEl.style.display = '';
+
+      const render = (): void => {
+        const note = service.getPetname(this.pubkey);
+        const filled = !!note;
+        noteEl.classList.toggle('profile-petname-note--filled', filled);
+        noteEl.title = filled ? 'Edit private note' : 'Add private note';
+        noteEl.innerHTML = '<svg width="18" height="18"><use href="#icon-note"/></svg>';
+      };
+      render();
+
+      noteEl.addEventListener('click', async (e) => {
         e.preventDefault();
         const { ModalService } = await import('../../services/ModalService');
         const current = service.getPetname(this.pubkey) ?? '';
         const result = await ModalService.getInstance().prompt({
-          title: 'Set Petname',
-          message: 'Personal label for this user (only visible to you):',
+          title: 'Private Note',
+          message: '🔒 Encrypted note about this user. Only you can decrypt and read it.',
           defaultValue: current,
-          placeholder: 'e.g. Rassist, Scammer, Friend…',
+          placeholder: 'Write anything you want to remember about this user…',
+          allowEmpty: true,
+          multiline: true,
         });
         if (result === null) return;
         await service.setPetname(this.pubkey, result.trim());
-        petnameEl.textContent = result.trim() ? ` (${result.trim()})` : ' (+)';
+        render();
       });
     });
   }
@@ -1667,8 +1731,10 @@ export class ProfileView extends View {
 
   private setNamePreservingPetname(nameEl: HTMLElement, name: string): void {
     const petnameSpan = nameEl.querySelector('[data-role="petname"]');
+    const noteSpan = nameEl.querySelector('[data-role="petname-note"]');
     nameEl.textContent = name;
     if (petnameSpan) nameEl.appendChild(petnameSpan);
+    if (noteSpan) nameEl.appendChild(noteSpan);
   }
 
   /**

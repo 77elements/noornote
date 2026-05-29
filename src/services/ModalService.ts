@@ -32,6 +32,8 @@ export interface PromptConfig {
   defaultValue?: string;
   confirmText?: string;        // default: 'OK'
   cancelText?: string;         // default: 'Cancel'
+  allowEmpty?: boolean;        // default: false. When true, confirming with an empty input resolves '' instead of null (lets callers distinguish "clear" from "cancel").
+  multiline?: boolean;         // default: false. When true, renders a <textarea> instead of a single-line input (Enter inserts a newline, does not submit).
 }
 
 export class ModalService {
@@ -210,15 +212,14 @@ export class ModalService {
 
       const content = document.createElement('div');
       content.className = 'modal-prompt';
+      const field = config.multiline
+        ? `<textarea class="textarea modal-prompt__input" placeholder="${escapeHtml(config.placeholder ?? '')}">${escapeHtml(config.defaultValue ?? '')}</textarea>`
+        : `<input type="text" class="modal-prompt__input" placeholder="${escapeHtml(config.placeholder ?? '')}" value="${escapeHtml(config.defaultValue ?? '')}" />`;
+
       content.innerHTML = `
         <p class="modal-prompt__message">${escapeHtml(config.message)}</p>
         <div class="form__row">
-          <input
-            type="text"
-            class="modal-prompt__input"
-            placeholder="${escapeHtml(config.placeholder ?? '')}"
-            value="${escapeHtml(config.defaultValue ?? '')}"
-          />
+          ${field}
         </div>
         <div class="l-row l-row--center">
           <button class="btn btn--passive modal-prompt__cancel">${escapeHtml(cancelText)}</button>
@@ -226,7 +227,7 @@ export class ModalService {
         </div>
       `;
 
-      const input = content.querySelector('.modal-prompt__input') as HTMLInputElement | null;
+      const input = content.querySelector('.modal-prompt__input') as HTMLInputElement | HTMLTextAreaElement | null;
       const cancelBtn = content.querySelector('.modal-prompt__cancel');
       const confirmBtn = content.querySelector('.modal-prompt__confirm');
 
@@ -239,7 +240,7 @@ export class ModalService {
 
       const submit = (): void => {
         const v = input?.value?.trim() ?? '';
-        settle(v.length > 0 ? v : null);
+        settle(v.length > 0 || config.allowEmpty ? v : null);
         this.hide();
       };
 
@@ -248,12 +249,15 @@ export class ModalService {
         this.hide();
       });
       confirmBtn?.addEventListener('click', submit);
-      input?.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          submit();
-        }
-      });
+      // Single-line: Enter submits. Multiline textarea: Enter inserts a newline.
+      if (!config.multiline) {
+        input?.addEventListener('keydown', (e) => {
+          if ((e as KeyboardEvent).key === 'Enter') {
+            e.preventDefault();
+            submit();
+          }
+        });
+      }
 
       this.show({
         title: config.title,

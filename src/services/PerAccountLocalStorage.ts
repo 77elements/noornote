@@ -119,6 +119,7 @@ export const StorageKeys = {
   FOLLOWS_FILE_MIGRATION: 'noornote_follows_file_migration_map',
   PRIVATE_BOOKMARKS_ENABLED: 'noornote_private_bookmarks_enabled_map',
   PRIVATE_MUTES_ENABLED: 'noornote_private_mutes_enabled_map',
+  PRIVATE_PETNAMES_ENABLED: 'noornote_private_petnames_enabled_map',
   MUTE_ENCRYPTION_METHOD: 'noornote_mute_encryption_method_map',
 
   // Media & display (per-account)

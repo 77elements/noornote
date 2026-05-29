@@ -237,6 +237,23 @@
   cursor: pointer;
 }
 
+// Private encrypted notes (NIP-78) — note icon next to the public petname.
+// Empty: peach (--color-5). With content: mint green (--color-6).
+.profile-petname-note {
+  margin-left: calc($gap / 2);
+  color: var(--color-5);
+  cursor: pointer;
+
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+  }
+
+  &--filled {
+    color: var(--color-6);
+  }
+}
+
 .lightning-qr-btn,
 .profile-zap-btn,
 .profile-dm-btn,

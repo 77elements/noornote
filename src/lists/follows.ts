@@ -255,6 +255,54 @@ export function isFollowing(pubkey: string): { public: boolean; private: boolean
 }
 
 /**
+ * Read the NIP-02 petname (4th p-tag element) for a publicly-followed user.
+ * Sync, from local storage. Returns null if not publicly followed or unset.
+ */
+export function getFollowPetname(pubkey: string): string | null {
+  const item = getFollowItems().find(i => i.pubkey === pubkey && !i.isPrivate);
+  return item?.petname ?? null;
+}
+
+/**
+ * Set or clear the NIP-02 petname for a publicly-followed user.
+ *
+ * NIP-02 petnames only exist as the 4th element of a contact-list p-tag, so we
+ * NEVER create a follow just to attach a label — if the user isn't publicly
+ * followed this is a no-op returning false. Empty/blank clears the petname.
+ *
+ * Mirrors the unfollow path: updates local storage (which schedules the Easy-Mode
+ * sync via follow:updated) and then republishes immediately to bypass the debounce.
+ * publishToRelays rebuilds the full kind:3 from local items, so all other follow
+ * data (other follows, relays, petnames) is preserved.
+ *
+ * @returns true if updated, false if the user isn't publicly followed.
+ */
+export async function setFollowPetname(pubkey: string, petname: string): Promise<boolean> {
+  requireAuth();
+
+  const items = getFollowItems();
+  const item = items.find(i => i.pubkey === pubkey && !i.isPrivate);
+  if (!item) return false;
+
+  const trimmed = petname.trim();
+  if (trimmed) {
+    item.petname = trimmed;
+  } else {
+    delete item.petname;
+  }
+
+  setFollowItems(items);
+
+  try {
+    await publishToRelays();
+    diagLog('lists', 'setFollowPetname: published', { pubkey: pubkey.slice(0, 8), hasPetname: !!trimmed });
+  } catch (err) {
+    diagLog('lists', 'setFollowPetname: immediate publish failed', { error: String(err) });
+  }
+  return true;
+}
+
+/**
  * Follow a user
  */
 export function followUser(pubkey: string, isPrivate: boolean = false, relay?: string, petname?: string): void {
@@ -570,13 +618,20 @@ export async function publishToRelays(): Promise<void> {
     privatePubkeys: privateItems.map(i => i.pubkey.slice(0, 8))
   });
 
-  // Build kind:3 tags (p, pubkey, relay?, petname?)
-  const publicTags: string[][] = publicItems.map(item => [
-    'p',
-    item.pubkey,
-    ...(item.relay ? [item.relay] : []),
-    ...(item.petname ? [item.petname] : [])
-  ]);
+  // Build kind:3 tags: ['p', pubkey, relay, petname] per NIP-02.
+  // The petname is the 4th element, so the relay slot MUST be present whenever a
+  // petname exists (empty string is allowed by NIP-02). A naive conditional spread
+  // would drop the relay slot for petname-without-relay and collapse the petname
+  // into the relay position — non-conformant and breaks round-tripping.
+  const publicTags: string[][] = publicItems.map(item => {
+    const tag = ['p', item.pubkey];
+    if (item.petname) {
+      tag.push(item.relay ?? '', item.petname);
+    } else if (item.relay) {
+      tag.push(item.relay);
+    }
+    return tag;
+  });
 
   // Build and publish kind:3 event (public follows)
   const kind3Event = {

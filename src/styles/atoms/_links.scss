@@ -53,11 +53,6 @@ a {
   }
 }
 
-.mention-petname {
-  color: $color-warning;
-  font-style: italic;
-}
-
 // Modifier: with background (for inline mentions, Analytics Modal, etc.)
 .mention-link--bg {
   background-color: color-mix(in srgb, var(--color-2) 80%, white);

@@ -11,12 +11,13 @@ import { FollowListOrchestrator } from '../../lists/follows';
 import { BookmarkOrchestrator } from '../../lists/bookmarks';
 import { MuteOrchestrator } from '../../lists/mutes';
 import { isBookmarksEnabled } from '../../addons/bookmarks/index';
+import { PetnameService } from '../../services/PetnameService';
 import { AuthService } from '../../services/AuthService';
 import { ModalService } from '../../services/ModalService';
 import { ToastService } from '../../services/ToastService';
 import { Switch } from '../ui/Switch';
 import { TypedEventBus } from '../../core/TypedEventBus';
-type ListType = 'follows' | 'bookmarks' | 'mutes';
+type ListType = 'follows' | 'bookmarks' | 'mutes' | 'petnames';
 
 interface PrivacySectionConfig {
   id: ListType;
@@ -24,7 +25,8 @@ interface PrivacySectionConfig {
   listName: string;
   switchLabel: string;
   description: string;
-  viewButtonLabel: string;
+  viewButtonLabel?: string;   // omit to hide the "View …" button (e.g. petnames have no list view)
+  betaWarning?: boolean;      // default true; set false for non-NIP-51 features (petnames are NIP-78)
   isEnabled: () => boolean;
   setEnabled: (enabled: boolean) => void;
 }
@@ -33,6 +35,7 @@ export class PrivacySettingsSection extends SettingsSection {
   private followListOrch: ReturnType<typeof FollowListOrchestrator.getInstance>;
   private bookmarkOrch: ReturnType<typeof BookmarkOrchestrator.getInstance>;
   private muteOrch: ReturnType<typeof MuteOrchestrator.getInstance>;
+  private petnameService: PetnameService;
   private authService: AuthService;
   private modalService: ModalService;
   private switches: Map<ListType, Switch> = new Map();
@@ -42,6 +45,7 @@ export class PrivacySettingsSection extends SettingsSection {
     this.followListOrch = FollowListOrchestrator.getInstance();
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
     this.muteOrch = MuteOrchestrator.getInstance();
+    this.petnameService = PetnameService.getInstance();
     this.authService = AuthService.getInstance();
     this.modalService = ModalService.getInstance();
   }
@@ -85,6 +89,16 @@ export class PrivacySettingsSection extends SettingsSection {
         viewButtonLabel: 'View Muted Users',
         isEnabled: () => this.muteOrch.isPrivateMutesEnabled(),
         setEnabled: (enabled) => this.muteOrch.setPrivateMutesEnabled(enabled)
+      },
+      {
+        id: 'petnames',
+        title: 'Private Petnames',
+        listName: 'petnames',
+        switchLabel: 'Private petnames',
+        description: 'Adds a note icon next to each profile where you can store an encrypted, private note about that user (NIP-78). Notes are NIP-44 self-encrypted — only you can read them, and they are never published unencrypted. This is separate from public petnames, which live in your contact list and are visible to everyone.',
+        betaWarning: false,
+        isEnabled: () => this.petnameService.isPrivateNotesEnabled(),
+        setEnabled: (enabled) => this.petnameService.setPrivateNotesEnabled(enabled)
       }
     ];
   }
@@ -98,17 +112,22 @@ export class PrivacySettingsSection extends SettingsSection {
   }
 
   private renderPrivacySubsection(config: PrivacySectionConfig): string {
+    const warning = config.betaWarning === false ? '' :
+      `<p class="setting__desc ${config.id}-warning"><strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private ${config.listName}.</p>`;
+    const viewButton = config.viewButtonLabel
+      ? `<div class="l-row l-row--right">
+          <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
+        </div>`
+      : '';
     return `
       <section class="section">
         <div class="setting">
           <span class="setting__label">${config.switchLabel}</span>
           <div class="setting__control" id="private-${config.id}-switch-container"></div>
           <p class="setting__desc">${config.description}</p>
-          <p class="setting__desc ${config.id}-warning"><strong>Beta Feature:</strong> Not all Nostr clients support NIP-51 yet. If you use other clients that don't support NIP-51, you won't be able to see your private ${config.listName}.</p>
+          ${warning}
         </div>
-        <div class="l-row l-row--right">
-          <button class="btn btn--medium" id="view-${config.id}-btn">${config.viewButtonLabel}</button>
-        </div>
+        ${viewButton}
       </section>
     `;
   }

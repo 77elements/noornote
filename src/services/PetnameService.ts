@@ -39,6 +39,19 @@ export class PetnameService {
     PetnameService.instance = null;
   }
 
+  /**
+   * Whether the "Private petnames" feature is enabled (Privacy Settings).
+   * When on, profiles show a note icon for these encrypted, self-only notes.
+   * Default off — existing entries stay safe on relays but hidden until opted in.
+   */
+  public isPrivateNotesEnabled(): boolean {
+    return this.pals.get<boolean>(StorageKeys.PRIVATE_PETNAMES_ENABLED, false);
+  }
+
+  public setPrivateNotesEnabled(enabled: boolean): void {
+    this.pals.set(StorageKeys.PRIVATE_PETNAMES_ENABLED, enabled);
+  }
+
   public getPetname(pubkey: string): string | null {
     const map = this.pals.get<Record<string, string>>(StorageKeys.PETNAMES, {});
     return map?.[pubkey] ?? null;
