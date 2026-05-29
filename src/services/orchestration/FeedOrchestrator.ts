@@ -461,8 +461,9 @@ export class FeedOrchestrator extends Orchestrator {
     filteredEvents = await this.filterMutedUsers(filteredEvents, exemptFromMuteFilter);
 
     // Filter self-reposts (user boosting their own note) when enabled.
-    // Skipped for ProfileView (exemptFromMuteFilter) so a profile still shows everything.
-    if (!exemptFromMuteFilter && isHideSelfRepostsEnabled()) {
+    // Applies in ProfileView too — unlike the mute/word filters, the profile
+    // owner's exemption does not shield their own self-reposts here.
+    if (isHideSelfRepostsEnabled()) {
       filteredEvents = this.filterSelfReposts(filteredEvents);
     }
 
