@@ -52,6 +52,7 @@ export class Timeline extends View {
   private eventBus: TypedEventBus;
   private userLoginSubscriptionId?: string;
   private muteUpdatedSubscriptionId?: string;
+  private hideSelfRepostsSubscriptionId?: string;
   private noteDeletedSubscriptionId?: string;
   private pullRefreshSubscriptionId?: string;
   private marketplaceToggleSubId?: string;
@@ -172,6 +173,11 @@ export class Timeline extends View {
   private setupMuteListener(): void {
     this.muteUpdatedSubscriptionId = this.eventBus.on('mute:updated', async () => {
       // Re-fetch feed with updated mute list
+      await this.eventHandler.handleRefreshClick();
+    });
+
+    // Re-fetch when the self-repost visibility setting is toggled
+    this.hideSelfRepostsSubscriptionId = this.eventBus.on('settings:hide-self-reposts-changed', async () => {
       await this.eventHandler.handleRefreshClick();
     });
   }
@@ -689,6 +695,9 @@ export class Timeline extends View {
     }
     if (this.muteUpdatedSubscriptionId) {
       this.eventBus.off(this.muteUpdatedSubscriptionId);
+    }
+    if (this.hideSelfRepostsSubscriptionId) {
+      this.eventBus.off(this.hideSelfRepostsSubscriptionId);
     }
     if (this.noteDeletedSubscriptionId) {
       this.eventBus.off(this.noteDeletedSubscriptionId);

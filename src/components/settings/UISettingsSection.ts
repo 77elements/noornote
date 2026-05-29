@@ -25,6 +25,7 @@ export class UISettingsSection extends SettingsSection {
   private eventBus: TypedEventBus;
   private layoutModeDropdown: CustomDropdown | null = null;
   private postTruncationSwitch: Switch | null = null;
+  private hideSelfRepostsSwitch: Switch | null = null;
   private contentVisibilitySwitch: Switch | null = null;
   private clientTagSwitch: Switch | null = null;
   private calendarDropdown: CustomDropdown | null = null;
@@ -94,6 +95,16 @@ export class UISettingsSection extends SettingsSection {
               <li><strong>Hijri:</strong> Islamic calendar (e.g., "26. Rabi' ath-Thani 1446")</li>
               <li><strong>Gregorian + Hijri:</strong> Both calendars side-by-side</li>
             </ul>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="setting">
+            <span class="setting__label">Hide self-reposts</span>
+            <div class="setting__control" id="hide-self-reposts-switch-container"></div>
+            <p class="setting__desc">
+              When enabled, reposts of a user's own notes are hidden from your timeline. Reposts of other people's notes are unaffected.
+            </p>
           </div>
         </section>
 
@@ -260,6 +271,27 @@ export class UISettingsSection extends SettingsSection {
 
       postTruncationContainer.innerHTML = this.postTruncationSwitch.render();
       this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
+    }
+
+    // Initialize Hide Self-Reposts switch
+    const hideSelfRepostsContainer = contentContainer.querySelector('#hide-self-reposts-switch-container');
+    if (hideSelfRepostsContainer) {
+      import('../../helpers/selfRepostSetting').then(({ isHideSelfRepostsEnabled, setHideSelfRepostsEnabled }) => {
+        this.hideSelfRepostsSwitch = new Switch({
+          label: '',
+          checked: isHideSelfRepostsEnabled(),
+          onChange: (checked) => {
+            setHideSelfRepostsEnabled(checked);
+            this.eventBus.emit('settings:hide-self-reposts-changed', { hidden: checked });
+            ToastService.show(
+              checked ? 'Self-reposts hidden from timeline' : 'Self-reposts shown again',
+              'success'
+            );
+          }
+        });
+        hideSelfRepostsContainer.innerHTML = this.hideSelfRepostsSwitch.render();
+        this.hideSelfRepostsSwitch.setupEventListeners(hideSelfRepostsContainer as HTMLElement);
+      });
     }
 
     // Initialize SCC Article Excerpt Limit input

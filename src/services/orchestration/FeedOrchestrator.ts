@@ -24,6 +24,7 @@ import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
 import { isDataSaverEnabled } from '../DataSaverService';
+import { isHideSelfRepostsEnabled } from '../../helpers/selfRepostSetting';
 
 export interface FeedLoadRequest {
   followingPubkeys: string[];
@@ -459,6 +460,12 @@ export class FeedOrchestrator extends Orchestrator {
     // Filter muted users
     filteredEvents = await this.filterMutedUsers(filteredEvents, exemptFromMuteFilter);
 
+    // Filter self-reposts (user boosting their own note) when enabled.
+    // Skipped for ProfileView (exemptFromMuteFilter) so a profile still shows everything.
+    if (!exemptFromMuteFilter && isHideSelfRepostsEnabled()) {
+      filteredEvents = this.filterSelfReposts(filteredEvents);
+    }
+
     // Filter content words (skip for ProfileView — exemptFromMuteFilter means PV)
     if (!exemptFromMuteFilter) {
       const { isContentWordFilterEnabled, filterContentWords, getFilterWords } = await import('../../addons/content-word-filter/index');
@@ -476,6 +483,45 @@ export class FeedOrchestrator extends Orchestrator {
     filteredEvents.sort((a, b) => b.created_at - a.created_at);
 
     return filteredEvents;
+  }
+
+  /**
+   * Drop self-reposts: kind:6/16 events where the reposter is the original author.
+   * Foreign reposts (boosting someone else's note) pass through untouched.
+   */
+  private filterSelfReposts(events: NostrEvent[]): NostrEvent[] {
+    let removed = 0;
+    const filtered = events.filter(event => {
+      if (event.kind !== 6 && event.kind !== 16) return true;
+      const originalAuthor = this.getRepostedAuthorPubkey(event);
+      if (originalAuthor && originalAuthor === event.pubkey) {
+        removed++;
+        return false;
+      }
+      return true;
+    });
+    if (removed > 0) {
+      diagLog('system', `Hid ${removed} self-repost(s) from timeline`, {});
+    }
+    return filtered;
+  }
+
+  /**
+   * Resolve the original author's pubkey of a repost (kind:6/16).
+   * Prefers the embedded event's pubkey (NIP-18 standard reposts embed the full
+   * original event in content), falls back to the 'p' tag.
+   */
+  private getRepostedAuthorPubkey(event: NostrEvent): string | null {
+    if (event.content && event.content.trim()) {
+      try {
+        const inner = JSON.parse(event.content);
+        if (inner && typeof inner.pubkey === 'string') return inner.pubkey;
+      } catch {
+        // content is not an embedded event — fall back to the p tag
+      }
+    }
+    const pTag = event.tags.find(tag => tag[0] === 'p');
+    return pTag?.[1] ?? null;
   }
 
   /**
