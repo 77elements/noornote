@@ -24,7 +24,7 @@ import { AppState } from '../AppState';
 import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
 import { isDataSaverEnabled } from '../DataSaverService';
-import { isHideSelfRepostsEnabled } from '../../helpers/selfRepostSetting';
+import { isHideSelfRepostsEnabled, getSelfRepostGapSeconds } from '../../helpers/selfRepostSetting';
 
 export interface FeedLoadRequest {
   followingPubkeys: string[];
@@ -487,14 +487,32 @@ export class FeedOrchestrator extends Orchestrator {
 
   /**
    * Drop self-reposts: kind:6/16 events where the reposter is the original author.
-   * Foreign reposts (boosting someone else's note) pass through untouched.
+   * A self-repost is hidden only when the gap between the original note and the
+   * repost is below the configured threshold ('all' = hide regardless of gap).
+   * If the original timestamp can't be resolved, the repost is kept (we never
+   * over-hide on incomplete data). Foreign reposts pass through untouched.
    */
   private filterSelfReposts(events: NostrEvent[]): NostrEvent[] {
+    const maxGapSeconds = getSelfRepostGapSeconds();
     let removed = 0;
     const filtered = events.filter(event => {
       if (event.kind !== 6 && event.kind !== 16) return true;
-      const originalAuthor = this.getRepostedAuthorPubkey(event);
-      if (originalAuthor && originalAuthor === event.pubkey) {
+
+      const inner = this.getRepostedInner(event);
+      const originalAuthor = inner?.pubkey ?? event.tags.find(tag => tag[0] === 'p')?.[1] ?? null;
+      if (!originalAuthor || originalAuthor !== event.pubkey) return true; // not a self-repost
+
+      // 'all' → hide every self-repost regardless of timing
+      if (maxGapSeconds === Infinity) {
+        removed++;
+        return false;
+      }
+
+      // Need the original timestamp to measure the gap — keep if unknown
+      if (inner?.created_at == null) return true;
+
+      const gapSeconds = event.created_at - inner.created_at;
+      if (gapSeconds < maxGapSeconds) {
         removed++;
         return false;
       }
@@ -507,21 +525,25 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
-   * Resolve the original author's pubkey of a repost (kind:6/16).
-   * Prefers the embedded event's pubkey (NIP-18 standard reposts embed the full
-   * original event in content), falls back to the 'p' tag.
+   * Parse the original event embedded in a repost's content (NIP-18 standard
+   * reposts embed the full original event). Returns its pubkey + created_at,
+   * or null if content is not a parseable embedded event.
    */
-  private getRepostedAuthorPubkey(event: NostrEvent): string | null {
+  private getRepostedInner(event: NostrEvent): { pubkey?: string; created_at?: number } | null {
     if (event.content && event.content.trim()) {
       try {
         const inner = JSON.parse(event.content);
-        if (inner && typeof inner.pubkey === 'string') return inner.pubkey;
+        if (inner && typeof inner === 'object') {
+          return {
+            pubkey: typeof inner.pubkey === 'string' ? inner.pubkey : undefined,
+            created_at: typeof inner.created_at === 'number' ? inner.created_at : undefined,
+          };
+        }
       } catch {
-        // content is not an embedded event — fall back to the p tag
+        // content is not an embedded event
       }
     }
-    const pTag = event.tags.find(tag => tag[0] === 'p');
-    return pTag?.[1] ?? null;
+    return null;
   }
 
   /**

@@ -16,6 +16,10 @@ import { LayoutService } from '../../services/LayoutService';
 import { ToastService } from '../../services/ToastService';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../../services/PlatformService';
+import {
+  isHideSelfRepostsEnabled, setHideSelfRepostsEnabled,
+  getSelfRepostGap, setSelfRepostGap, type SelfRepostGap,
+} from '../../helpers/selfRepostSetting';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SettingsModuleApi } from '../../modules/settings/contracts';
 
@@ -57,6 +61,16 @@ export class UISettingsSection extends SettingsSection {
   private renderContent(): string {
     const platform = PlatformService.getInstance();
     const isDesktop = platform.isDesktop;
+
+    const hideSelfReposts = isHideSelfRepostsEnabled();
+    const currentGap = getSelfRepostGap();
+    const gapOptions: Array<[SelfRepostGap, string]> = [
+      ['3d', '3 days'],
+      ['1w', '1 week'],
+      ['3mo', '3 months'],
+      ['1y', '1 year'],
+      ['all', 'All self-reposts (any age)'],
+    ];
 
     return `
         <section class="section">
@@ -105,6 +119,15 @@ export class UISettingsSection extends SettingsSection {
             <p class="setting__desc">
               When enabled, reposts of a user's own notes are hidden from your timeline. Reposts of other people's notes are unaffected.
             </p>
+            <div class="self-repost-gap${hideSelfReposts ? '' : ' is-hidden'}" id="self-repost-gap-selector">
+              <span class="setting__label">Disable self-reposts younger than:</span>
+              ${gapOptions.map(([value, label]) => `
+                <label class="nn-checkbox nn-checkbox--label-left">
+                  <span class="setting__label">${label}</span>
+                  <input type="radio" name="self-repost-gap" value="${value}" ${currentGap === value ? 'checked' : ''} />
+                </label>
+              `).join('')}
+            </div>
           </div>
         </section>
 
@@ -273,24 +296,38 @@ export class UISettingsSection extends SettingsSection {
       this.postTruncationSwitch.setupEventListeners(postTruncationContainer as HTMLElement);
     }
 
-    // Initialize Hide Self-Reposts switch
+    // Initialize Hide Self-Reposts switch + gap selector
     const hideSelfRepostsContainer = contentContainer.querySelector('#hide-self-reposts-switch-container');
     if (hideSelfRepostsContainer) {
-      import('../../helpers/selfRepostSetting').then(({ isHideSelfRepostsEnabled, setHideSelfRepostsEnabled }) => {
-        this.hideSelfRepostsSwitch = new Switch({
-          label: '',
-          checked: isHideSelfRepostsEnabled(),
-          onChange: (checked) => {
-            setHideSelfRepostsEnabled(checked);
-            this.eventBus.emit('settings:hide-self-reposts-changed', { hidden: checked });
-            ToastService.show(
-              checked ? 'Self-reposts hidden from timeline' : 'Self-reposts shown again',
-              'success'
-            );
-          }
+      this.hideSelfRepostsSwitch = new Switch({
+        label: '',
+        checked: isHideSelfRepostsEnabled(),
+        onChange: (checked) => {
+          setHideSelfRepostsEnabled(checked);
+          contentContainer.querySelector('#self-repost-gap-selector')?.classList.toggle('is-hidden', !checked);
+          this.eventBus.emit('settings:hide-self-reposts-changed', { hidden: checked });
+          ToastService.show(
+            checked ? 'Self-reposts hidden from timeline' : 'Self-reposts shown again',
+            'success'
+          );
+        }
+      });
+      hideSelfRepostsContainer.innerHTML = this.hideSelfRepostsSwitch.render();
+      this.hideSelfRepostsSwitch.setupEventListeners(hideSelfRepostsContainer as HTMLElement);
+
+      const gapLabels: Record<SelfRepostGap, string> = {
+        '3d': '3 days', '1w': '1 week', '3mo': '3 months', '1y': '1 year', 'all': 'all',
+      };
+      contentContainer.querySelectorAll('input[name="self-repost-gap"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          const value = (e.target as HTMLInputElement).value as SelfRepostGap;
+          setSelfRepostGap(value);
+          this.eventBus.emit('settings:hide-self-reposts-changed', { hidden: true });
+          ToastService.show(
+            value === 'all' ? 'Hiding all self-reposts' : `Hiding self-reposts younger than ${gapLabels[value]}`,
+            'success'
+          );
         });
-        hideSelfRepostsContainer.innerHTML = this.hideSelfRepostsSwitch.render();
-        this.hideSelfRepostsSwitch.setupEventListeners(hideSelfRepostsContainer as HTMLElement);
       });
     }
 

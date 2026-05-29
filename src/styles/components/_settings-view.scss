@@ -929,3 +929,22 @@
     }
   }
 }
+
+// Self-repost gap selector (radio list under the "Hide self-reposts" toggle).
+// .nn-checkbox rows are flex containers, so they stack as block-level on their own.
+.self-repost-gap {
+  margin-top: calc($gap / 2);
+
+  &.is-hidden {
+    display: none;
+  }
+
+  > .setting__label {
+    display: block;
+    margin-bottom: calc($gap / 2);
+  }
+
+  .nn-checkbox {
+    margin-top: calc($gap / 2);
+  }
+}
