@@ -13,6 +13,7 @@ import type { AddonContext, AddonRuntime } from '../AddonLoader';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { NoteTakingService } from './NoteTakingService';
 import { NoteTakingSyncService } from './NoteTakingSyncService';
+import { NoteTakingReminderService } from './NoteTakingReminderService';
 
 export class NoteTakingRuntime implements AddonRuntime {
   private initialized = false;
@@ -23,12 +24,15 @@ export class NoteTakingRuntime implements AddonRuntime {
     await NoteTakingService.getInstance().init();
     // Registers the publish-on-change hook + runs the initial relay sync.
     void NoteTakingSyncService.getInstance().start();
+    // Local reminder scheduler (fires the core AlertBar when a reminder is due).
+    NoteTakingReminderService.getInstance().start();
     diagLog('system', 'note-taking: runtime init', { npub: ctx.npub?.slice(0, 12) });
   }
 
   async destroy(): Promise<void> {
     if (!this.initialized) return;
     this.initialized = false;
+    NoteTakingReminderService.getInstance().destroy();
     NoteTakingSyncService.getInstance().destroy();
     NoteTakingService.getInstance().destroy();
     diagLog('system', 'note-taking: runtime destroy');

@@ -27,11 +27,13 @@ export class NoteEditorModal {
   private pinned: boolean;
   private archived: boolean;
   private color: string;
+  private reminderAt: number;
 
   constructor(private readonly opts: NoteEditorOptions) {
     this.pinned = opts.note?.pinned ?? false;
     this.archived = opts.note?.archived ?? false;
     this.color = opts.note?.color ?? 'default';
+    this.reminderAt = opts.note?.reminderAt ?? 0;
   }
 
   public open(): void {
@@ -60,10 +62,14 @@ export class NoteEditorModal {
       <div class="note-taking-editor__colors" data-colors>
         ${NOTE_COLORS.map((c) => `<button type="button" class="note-taking-swatch note-taking-color-${c}${c === this.color ? ' is-active' : ''}" data-color="${c}" title="${c}" aria-label="${c} color"></button>`).join('')}
       </div>
+      <div class="note-taking-editor__reminder-hint" data-reminder-hint></div>
       <div class="note-taking-editor__actions l-row--split">
         <div>
           <button type="button" class="btn-icon note-taking-editor__pin${this.pinned ? ' is-active' : ''}" title="Pin to top" aria-label="Pin to top">
             <svg width="18" height="18"><use href="#icon-bookmark"/></svg>
+          </button>
+          <button type="button" class="btn-icon note-taking-editor__reminder${this.reminderAt ? ' is-active' : ''}" title="Set reminder" aria-label="Set reminder">
+            <svg width="18" height="18"><use href="#icon-calendar"/></svg>
           </button>
           ${note ? `
           <button type="button" class="btn-icon note-taking-editor__archive${this.archived ? ' is-active' : ''}" title="${this.archived ? 'Unarchive' : 'Archive'}" aria-label="${this.archived ? 'Unarchive' : 'Archive'}">
@@ -98,6 +104,24 @@ export class NoteEditorModal {
       archiveBtn.setAttribute('aria-label', label);
       archiveBtn.blur();
     });
+
+    // Reminder: pick a date+time with the shared picker; show a hint with Clear.
+    const reminderBtn = content.querySelector('.note-taking-editor__reminder') as HTMLButtonElement;
+    reminderBtn.addEventListener('click', async () => {
+      const { pickDateTime } = await import('../../helpers/datePickerModal');
+      const picked = await pickDateTime({
+        title: 'Set reminder',
+        initial: this.reminderAt ? new Date(this.reminderAt * 1000) : new Date(Date.now() + 60 * 60 * 1000),
+        min: new Date(Date.now() + 60 * 1000),
+        confirmLabel: 'Set',
+        anchorEl: reminderBtn,
+      });
+      reminderBtn.blur();
+      if (!picked) return;
+      this.reminderAt = Math.floor(picked.getTime() / 1000);
+      this.renderReminderHint(content);
+    });
+    this.renderReminderHint(content);
 
     // Checklist: render existing items, wire "Add item".
     const list = content.querySelector('[data-checklist]') as HTMLElement;
@@ -194,6 +218,27 @@ export class NoteEditorModal {
       .filter((item) => item.text.length > 0);
   }
 
+  /** Show "Reminder: <when>" + Clear when a reminder is set; sync the button state. */
+  private renderReminderHint(content: HTMLElement): void {
+    const hint = content.querySelector('[data-reminder-hint]') as HTMLElement | null;
+    const btn = content.querySelector('.note-taking-editor__reminder') as HTMLButtonElement | null;
+    if (!hint) return;
+    btn?.classList.toggle('is-active', this.reminderAt > 0);
+    if (!this.reminderAt) {
+      hint.innerHTML = '';
+      return;
+    }
+    const when = new Date(this.reminderAt * 1000).toLocaleString();
+    hint.innerHTML = `
+      <span>Reminder: ${escapeHtml(when)}</span>
+      <button type="button" class="note-taking-editor__reminder-clear" data-reminder-clear>Clear</button>
+    `;
+    hint.querySelector('[data-reminder-clear]')?.addEventListener('click', () => {
+      this.reminderAt = 0;
+      this.renderReminderHint(content);
+    });
+  }
+
   private async handleSave(content: HTMLElement): Promise<void> {
     const title = (content.querySelector('.note-taking-editor__title') as HTMLInputElement).value.trim();
     const body = (content.querySelector('.note-taking-editor__body') as HTMLTextAreaElement).value;
@@ -208,9 +253,9 @@ export class NoteEditorModal {
 
     const service = NoteTakingService.getInstance();
     if (this.opts.note) {
-      await service.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, archived: this.archived, color: this.color, checklist, labels });
+      await service.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, archived: this.archived, color: this.color, reminderAt: this.reminderAt, checklist, labels });
     } else {
-      await service.createNote({ title, body, pinned: this.pinned, archived: this.archived, color: this.color, checklist, labels });
+      await service.createNote({ title, body, pinned: this.pinned, archived: this.archived, color: this.color, reminderAt: this.reminderAt, checklist, labels });
     }
 
     ModalService.getInstance().hide();

@@ -69,6 +69,9 @@ export class NoteTakingView extends View {
     await NoteTakingService.getInstance().init();
     await this.load();
     await this.backgroundSync();
+    // Apply the reminder highlight only once the board is fully settled (after
+    // any background-sync reload), so the pulse isn't cut off by a re-render.
+    this.applyPendingHighlight();
   }
 
   /** Pull from relays in the background, reload the board if anything changed. */
@@ -162,6 +165,21 @@ export class NoteTakingView extends View {
         this.openEditor(note);
       });
     });
+  }
+
+  /** If we arrived from a reminder, pulse + scroll the target note's card. */
+  private applyPendingHighlight(): void {
+    const id = NoteTakingService.getInstance().consumeHighlight();
+    if (!id) return;
+    const card = this.container.querySelector(`[data-note-id="${CSS.escape(id)}"]`) as HTMLElement | null;
+    if (!card) return;
+    card.classList.add('pulsate-card');
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Remove the class when the (finite) animation ends, so the SCSS iteration
+    // count controls the pulse length. Fallback timeout in case animationend is missed.
+    const clear = () => card.classList.remove('pulsate-card');
+    card.addEventListener('animationend', clear, { once: true });
+    window.setTimeout(clear, 8000);
   }
 
   /** Render the label filter chips ("All" + one per label). Hidden if no labels. */

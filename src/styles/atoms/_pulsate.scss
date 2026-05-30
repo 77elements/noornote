@@ -63,3 +63,24 @@
 .pulse-once {
   animation: pulse-once 0.5s ease-out forwards;
 }
+
+// ============================================================================
+// CARD PULSE - draws attention to a whole card for a few cycles, then stops.
+// Solid accent ring (spread 0 -> 3px), no transparency.
+// ============================================================================
+
+// Glows the card's OWN border color (set --pulse-ring-color per context;
+// defaults to --color-4). Tight spread so it reads as the existing border
+// pulsing, not an added ring.
+@keyframes pulsate-card {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--pulse-ring-color, var(--color-4));
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--pulse-ring-color, var(--color-4));
+  }
+}
+
+.pulsate-card {
+  animation: pulsate-card 1s ease-in-out 5;
+}

@@ -26,10 +26,24 @@ export class NoteTakingService {
   private readonly store: NoteTakingStore;
   /** Set by NoteTakingSyncService.start() - fired after every local note change. */
   private changeListener: ((record: NoteRecord) => void) | null = null;
+  /** Note id to pulse on the next board render (set when opening from a reminder). */
+  private pendingHighlightId: string | null = null;
 
   private constructor() {
     this.auth = AuthService.getInstance();
     this.store = NoteTakingStore.getInstance();
+  }
+
+  /** Mark a note to be highlighted (pulsed) on the next board render. */
+  public setHighlight(id: string): void {
+    this.pendingHighlightId = id;
+  }
+
+  /** Read + clear the pending highlight id. */
+  public consumeHighlight(): string | null {
+    const id = this.pendingHighlightId;
+    this.pendingHighlightId = null;
+    return id;
   }
 
   public static getInstance(): NoteTakingService {

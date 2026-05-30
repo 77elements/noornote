@@ -1,0 +1,104 @@
+/* ================================
+   AlertBar - generic top-of-app alert strip (pushes content down)
+   ================================ */
+
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+@use '../base/typography' as *;
+
+// When the bar is present, lay #app out as a column so the bar takes its own
+// (dynamic) height and the main layout fills the rest, instead of overflowing.
+#app:has(> .alert-bar) {
+  display: flex;
+  flex-direction: column;
+
+  > .main-layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+  }
+}
+
+.alert-bar {
+  background: var(--color-red);
+  color: var(--color-white);
+  @include small;
+  line-height: 1.5;
+  flex-shrink: 0;
+}
+
+.alert-bar__inner {
+  padding: calc($gap / 4) calc($gap * 1.5);
+
+  // Mobile: stack the two columns. Compound selector beats .l-spread regardless
+  // of import order.
+  &.l-spread {
+    @include mobile-down {
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: flex-start;
+      gap: calc($gap / 4);
+    }
+  }
+}
+
+.alert-bar__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+
+  &--clickable {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+}
+
+.alert-bar__actions {
+  display: flex;
+  align-items: center;
+  gap: $gap;
+  flex-shrink: 0;
+}
+
+.alert-bar__link {
+  color: var(--color-white);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.alert-bar__snooze {
+  position: relative;
+}
+
+.alert-bar__snooze-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+
+  &[hidden] {
+    display: none;
+  }
+  min-width: 120px;
+  background: var(--color-1);
+  border: 1px solid var(--color-2);
+  border-radius: $radius-xl;
+  overflow: hidden;
+}
+
+.alert-bar__snooze-option {
+  padding: calc($gap / 2) $gap;
+  color: var(--color-5);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-2);
+  }
+}
