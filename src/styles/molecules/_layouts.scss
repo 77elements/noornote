@@ -2,6 +2,16 @@
  * Layout Containers
  * Agnostic layout patterns that arrange child elements.
  * No visual styling — purely structural.
+ *
+ * Preferred usage (reuse these — never hand-roll a flex row for button bars):
+ *   .l-spread        Header bar: title left, action(s) right (space-between).
+ *   .l-row--right    A single action aligned to the right (e.g. one "New" / "Save" button).
+ *   .l-row--center   Centered content (e.g. a single centered button or text).
+ *   .l-row--end-pair A PAIR of buttons aligned to the right (Cancel + Save).
+ *   .l-row--split    Two groups: first child pinned left, last child pinned right
+ *                    (e.g. modal footer with icon actions left + primary button right).
+ *   For .l-row--split / .l-spread wrap each side in its own element (`<div>`),
+ *   even if a side has only one button.
  */
 
 @use '../abstracts/variables' as *;

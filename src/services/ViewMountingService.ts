@@ -525,6 +525,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-nostr-keep':
+        return {
+          factory: async () => {
+            const { NostrKeepAddonView } = await import('../addons/nostr-keep/NostrKeepAddonView');
+            const view = new NostrKeepAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'marketplace':
         return {
           factory: async () => {

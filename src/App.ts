@@ -352,6 +352,7 @@ export class App {
     this.registerRoute('/addons/live-streams-player',   'addon-live-streams-player',   'addon-live-streams-player',   'adv', true);
     this.registerRoute('/addons/scheduled-posts',       'addon-scheduled-posts',       'addon-scheduled-posts',       'adv', true);
     this.registerRoute('/addons/badges',               'addon-badges',                'addon-badges',                'adv', true);
+    this.registerRoute('/addons/nostr-keep',            'addon-nostr-keep',            'addon-nostr-keep',            'adv', true);
     // /addons (no slug) → redirect to first addon
     this.router.register('/addons', () => this.router.navigate('/addons/bookmarks'));
     this.registerMarketplaceRoutes();

@@ -344,6 +344,7 @@ export interface AppEvents {
   'live-streams-player:addon-toggle': AddonTogglePayload;
   'marketplace:addon-toggle': AddonTogglePayload;
   'nospress:addon-toggle': AddonTogglePayload;
+  'nostr-keep:addon-toggle': AddonTogglePayload;
   'profile-recognition:addon-toggle': AddonTogglePayload;
   'scheduled-posts:addon-toggle': AddonTogglePayload;
   'tribes:addon-toggle': AddonTogglePayload;

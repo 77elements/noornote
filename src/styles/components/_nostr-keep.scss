@@ -1,0 +1,119 @@
+/* ================================
+   Nostr Keep — encrypted notes board
+   ================================ */
+
+@use '../abstracts/variables' as *;
+
+.nostr-keep {
+  display: flex;
+  flex-direction: column;
+}
+
+.nostr-keep__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $gap;
+  padding: $gap calc($gap * 1.5);
+}
+
+.nostr-keep__board {
+  flex: 1;
+  padding-bottom: calc($gap * 1.5);
+}
+
+.nostr-keep__toolbar {
+  padding-bottom: $gap;
+}
+
+.nostr-keep__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: calc($gap * 4);
+  text-align: center;
+  color: var(--color-4);
+
+  svg {
+    margin-bottom: $gap;
+  }
+
+  p {
+    margin: 0;
+
+    &.text-alpha-medium {
+      color: var(--color-3);
+      margin-top: calc($gap / 2);
+    }
+  }
+}
+
+/* Masonry-ish note grid via CSS columns */
+.nostr-keep__grid {
+  column-width: 220px;
+  column-gap: $gap;
+}
+
+.keep-card {
+  break-inside: avoid;
+  display: block;
+  width: 100%;
+  margin-bottom: $gap;
+  padding: $gap;
+  border: 1px solid var(--color-2);
+  border-radius: $radius-xl;
+  background: var(--color-1);
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+
+  &:hover {
+    border-color: var(--color-4);
+  }
+
+  &--pinned {
+    border-color: var(--color-4);
+  }
+
+  &__pin {
+    display: block;
+    margin-bottom: calc($gap / 2);
+    color: var(--color-6);
+  }
+
+  &__title {
+    color: var(--color-5);
+    margin-bottom: calc($gap / 2);
+    word-break: break-word;
+  }
+
+  &__body {
+    color: var(--color-5);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+/* Note editor (inside ModalService modal) */
+.keep-editor {
+  display: flex;
+  flex-direction: column;
+  gap: $gap;
+
+  &__title {
+    font-weight: 600;
+  }
+
+  &__body {
+    min-height: 220px;
+    resize: vertical;
+  }
+
+  &__pin.is-active {
+    color: var(--color-6);
+  }
+
+  &__delete:hover {
+    color: var(--color-red);
+  }
+}
