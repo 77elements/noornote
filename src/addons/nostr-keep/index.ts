@@ -1,5 +1,5 @@
 /**
- * Nostr Keep — cheap flag accessor (no heavy imports).
+ * Nostr Keep - cheap flag accessor (no heavy imports).
  *
  * Encrypted, offline-first note-taking ("Google Keep" style). Notes are
  * NIP-44 self-encrypted and synced as per-note NIP-78 (kind 30078) events.

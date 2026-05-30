@@ -1,5 +1,5 @@
 /**
- * NoteEditorModal — create/edit a Keep note in a modal.
+ * NoteEditorModal - create/edit a Keep note in a modal.
  *
  * Title + Markdown body (shared MarkdownToolbar: heading/bold/italic/quote/image)
  * + pin toggle + delete. Saves via KeepService (local; relay sync in phase 1d).
@@ -47,7 +47,7 @@ export class NoteEditorModal {
     content.innerHTML = `
       <input type="text" class="input keep-editor__title" placeholder="Title" value="${escapeHtml(note?.title ?? '')}" />
       ${this.toolbar.render()}
-      <textarea class="textarea textarea--large keep-editor__body" placeholder="Take a note…">${escapeHtml(note?.body ?? '')}</textarea>
+      <textarea class="textarea keep-editor__body" placeholder="Take a note…">${escapeHtml(note?.body ?? '')}</textarea>
       <div class="keep-editor__checklist" data-checklist></div>
       <button type="button" class="keep-editor__add-item" data-add-item>
         <svg width="14" height="14"><use href="#icon-plus"/></svg>

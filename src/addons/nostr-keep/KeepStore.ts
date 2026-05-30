@@ -1,5 +1,5 @@
 /**
- * KeepStore — per-user IndexedDB store for Nostr Keep notes.
+ * KeepStore - per-user IndexedDB store for Nostr Keep notes.
  *
  * Mirrors DMStore's per-user DB pattern (db `noornote_keep_{pubkey}`). Notes are
  * held as PLAINTEXT locally (instant search/render); only ciphertext leaves the
@@ -23,11 +23,11 @@ export interface KeepAttachment {
   blurhash?: string;
 }
 
-/** The encrypted payload — exactly what gets published to relays (kind 30078). */
+/** The encrypted payload - exactly what gets published to relays (kind 30078). */
 export interface KeepNotePayload {
   /** Schema version */
   v: number;
-  /** UUID — also the kind:30078 d-tag suffix */
+  /** UUID - also the kind:30078 d-tag suffix */
   id: string;
   title: string;
   /** Markdown body */

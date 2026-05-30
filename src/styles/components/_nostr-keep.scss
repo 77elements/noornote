@@ -1,10 +1,10 @@
 /* ================================
-   Nostr Keep — encrypted notes board
+   Nostr Keep - encrypted notes board
    ================================ */
 
 @use '../abstracts/variables' as *;
 
-// Note accent colors (solid, theme-independent — keep keys in sync with keepColors.ts)
+// Note accent colors (solid, theme-independent - keep keys in sync with keepColors.ts)
 $keep-colors: (
   red: #e57373,
   orange: #ffb74d,
@@ -94,6 +94,26 @@ $keep-colors: (
       color: var(--color-3);
       margin-top: calc($gap / 2);
     }
+  }
+}
+
+.nostr-keep__empty-info {
+  max-width: 460px;
+  margin-top: calc($gap * 1.5);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 2);
+
+  p {
+    margin: 0;
+    color: var(--color-3);
+    line-height: 1.5;
+  }
+
+  strong {
+    color: var(--color-5);
+    font-weight: 600;
   }
 }
 
@@ -305,7 +325,7 @@ $keep-colors: (
   gap: calc($gap / 4);
 }
 
-/* Card checklist item — the full .nn-checkbox--label-left pattern (label left,
+/* Card checklist item - the full .nn-checkbox--label-left pattern (label left,
    ✓ control right). Only the checked state is customised. */
 .keep-checklist-item.is-checked .setting__label {
   text-decoration: line-through;

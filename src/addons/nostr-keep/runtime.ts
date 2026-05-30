@@ -1,5 +1,5 @@
 /**
- * Nostr Keep runtime — AddonLoader lifecycle owner.
+ * Nostr Keep runtime - AddonLoader lifecycle owner.
  *
  * Loaded on login (when enabled) / toggle-ON; destroyed on logout / account
  * switch / toggle-OFF. Heavy modules (KeepStore, KeepService, KeepSyncService)

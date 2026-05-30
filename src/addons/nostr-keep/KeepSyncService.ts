@@ -1,5 +1,5 @@
 /**
- * KeepSyncService — NIP-78 (kind 30078) relay sync for Nostr Keep.
+ * KeepSyncService - NIP-78 (kind 30078) relay sync for Nostr Keep.
  *
  * One replaceable event PER note (`d` = `noornote-keep:<uuid>`), content =
  * NIP-44 ciphertext (via KeepService). Deletion publishes a `deleted:true`

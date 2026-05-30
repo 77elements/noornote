@@ -1,6 +1,6 @@
 /**
  * Note color keys. Shared by the editor (swatches) and the board (card accent).
- * The actual color values live in `_nostr-keep.scss` ($keep-colors) — keep the
+ * The actual color values live in `_nostr-keep.scss` ($keep-colors) - keep the
  * keys here in sync with that map. 'default' = no accent (normal card border).
  */
 export const KEEP_COLORS = [

@@ -1,9 +1,9 @@
 /**
- * KeepService — Nostr Keep note management + NIP-44 self-encryption.
+ * KeepService - Nostr Keep note management + NIP-44 self-encryption.
  *
  * Owns local CRUD (via KeepStore) and the crypto used by KeepSyncService.
  * Notes are NIP-44-encrypted to the user's OWN pubkey (auth-method-agnostic,
- * same pattern as PetnameService). NO NIP-04 — if the signer can't do NIP-44,
+ * same pattern as PetnameService). NO NIP-04 - if the signer can't do NIP-44,
  * Keep is unavailable (mirrors DMService's bunker guard).
  *
  * @service KeepService
@@ -24,7 +24,7 @@ export class KeepService {
   private static instance: KeepService;
   private readonly auth: AuthService;
   private readonly store: KeepStore;
-  /** Set by KeepSyncService.start() — fired after every local note change. */
+  /** Set by KeepSyncService.start() - fired after every local note change. */
   private changeListener: ((record: KeepNoteRecord) => void) | null = null;
 
   private constructor() {
@@ -71,7 +71,7 @@ export class KeepService {
     return all.filter((n) => !n.deleted);
   }
 
-  /** All dirty records (incl. pending tombstones) — for KeepSyncService. */
+  /** All dirty records (incl. pending tombstones) - for KeepSyncService. */
   public async listDirty(): Promise<KeepNoteRecord[]> {
     return this.store.getDirty();
   }
@@ -231,7 +231,7 @@ export class KeepService {
   /**
    * NIP-44-encrypt a note payload to the user's own pubkey, with an integrity
    * guard: a silently-failed encrypt that returned plaintext would leak the
-   * note to relays — so we refuse to emit anything that still looks like JSON.
+   * note to relays - so we refuse to emit anything that still looks like JSON.
    */
   public async encryptPayload(payload: KeepNotePayload): Promise<string> {
     const user = this.auth.getCurrentUser();
@@ -240,7 +240,7 @@ export class KeepService {
     const plaintext = JSON.stringify(payload);
     const ciphertext = await this.auth.nip44Encrypt(plaintext, user.pubkey);
 
-    // Integrity check: NIP-44 output is version-prefixed base64 — it must not be
+    // Integrity check: NIP-44 output is version-prefixed base64 - it must not be
     // the plaintext JSON. These markers can only appear if encryption failed.
     if (
       !ciphertext ||

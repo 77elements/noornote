@@ -1,5 +1,5 @@
 /**
- * NostrKeepView — the Keep board, mounted inline inside NostrKeepAddonView.
+ * NostrKeepView - the Keep board, mounted inline inside NostrKeepAddonView.
  *
  * Renders a "New note" action + a grid of note cards (pinned first). Cards open
  * the NoteEditorModal. Reads from KeepService (local IndexedDB); relay sync in 1d.
@@ -103,19 +103,38 @@ export class NostrKeepView extends View {
       : viewNotes;
 
     if (notes.length === 0) {
-      let msg: { head: string; sub: string };
+      const isFirstRun = allNotes.length === 0;
+      let head: string;
+      let sub: string;
       if (this.activeLabel) {
-        msg = { head: 'No notes with this label', sub: 'Pick another label or “All”.' };
+        head = 'No notes with this label';
+        sub = 'Pick another label or “All”.';
       } else if (this.view === 'archived') {
-        msg = { head: 'No archived notes', sub: 'Archive a note to tuck it away here.' };
+        head = 'No archived notes';
+        sub = 'Archive a note to tuck it away here.';
+      } else if (isFirstRun) {
+        head = 'No notes yet';
+        sub = 'Tap “New note” to write your first encrypted note.';
       } else {
-        msg = { head: 'No notes yet', sub: 'Tap “New note” to write your first encrypted note.' };
+        head = 'Nothing here';
+        sub = 'All your notes are archived.';
       }
+
+      // First-run: spell out what this addon is (and isn't) about.
+      const info = isFirstRun ? `
+        <div class="nostr-keep__empty-info">
+          <p>Note taking is built for your own <strong>private, local</strong> use. Your notes are <strong>never published</strong> to the network.</p>
+          <p>Relay sync is only a <strong>backup</strong> and keeps your NoorNote devices in sync. Every note is encrypted with <strong>NIP-44 using your own key</strong>, so only ciphertext ever leaves this device.</p>
+          <p>Deleting a note <strong>physically overwrites</strong> its content on the relays. It is not a deletion request they might ignore.</p>
+          <p>In short: your notes stay safe, encrypted, and yours.</p>
+        </div>` : '';
+
       board.innerHTML = `
         <div class="nostr-keep__empty">
           <svg width="48" height="48"><use href="#icon-note"/></svg>
-          <p>${msg.head}</p>
-          <p class="text-alpha-medium">${msg.sub}</p>
+          <p>${head}</p>
+          <p class="text-alpha-medium">${sub}</p>
+          ${info}
         </div>
       `;
       return;
