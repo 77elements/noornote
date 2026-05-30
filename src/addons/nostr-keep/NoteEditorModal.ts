@@ -12,7 +12,7 @@ import type { MediaModuleApi } from '../../modules/media/contracts';
 import { MarkdownToolbar } from '../../components/ui/MarkdownToolbar';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { KeepService } from './KeepService';
-import type { KeepNoteRecord } from './KeepStore';
+import type { KeepChecklistItem, KeepNoteRecord } from './KeepStore';
 
 export interface NoteEditorOptions {
   /** Existing note to edit, or undefined for a new note. */
@@ -43,6 +43,11 @@ export class NoteEditorModal {
       <input type="text" class="input keep-editor__title" placeholder="Title" value="${escapeHtml(note?.title ?? '')}" />
       ${this.toolbar.render()}
       <textarea class="textarea textarea--large keep-editor__body" placeholder="Take a note…">${escapeHtml(note?.body ?? '')}</textarea>
+      <div class="keep-editor__checklist" data-checklist></div>
+      <button type="button" class="keep-editor__add-item" data-add-item>
+        <svg width="14" height="14"><use href="#icon-plus"/></svg>
+        List item
+      </button>
       <div class="keep-editor__actions l-row--split">
         <div>
           <button type="button" class="btn-icon keep-editor__pin${this.pinned ? ' is-active' : ''}" title="Pin to top" aria-label="Pin to top">
@@ -68,6 +73,13 @@ export class NoteEditorModal {
       pinBtn.classList.toggle('is-active', this.pinned);
     });
 
+    // Checklist: render existing items, wire "Add item".
+    const list = content.querySelector('[data-checklist]') as HTMLElement;
+    (note?.checklist ?? []).forEach((item) => this.addChecklistRow(list, item));
+    content.querySelector('[data-add-item]')?.addEventListener('click', () => {
+      this.addChecklistRow(list, { text: '', checked: false }, true);
+    });
+
     content.querySelector('.keep-editor__delete')?.addEventListener('click', () => this.handleDelete());
     content.querySelector('.keep-editor__save')?.addEventListener('click', () => this.handleSave(content));
 
@@ -84,21 +96,48 @@ export class NoteEditorModal {
     (content.querySelector('.keep-editor__title') as HTMLInputElement)?.focus();
   }
 
+  /** Append a checklist row (checkbox + text + remove). */
+  private addChecklistRow(list: HTMLElement, item: KeepChecklistItem, focus = false): void {
+    const row = document.createElement('div');
+    row.className = 'keep-checklist-row';
+    row.innerHTML = `
+      <input type="checkbox" class="keep-checklist-row__check"${item.checked ? ' checked' : ''} />
+      <input type="text" class="input keep-checklist-row__text" placeholder="List item" value="${escapeHtml(item.text)}" />
+      <button type="button" class="btn-icon keep-checklist-row__remove" aria-label="Remove item">
+        <svg width="14" height="14"><use href="#icon-close"/></svg>
+      </button>
+    `;
+    row.querySelector('.keep-checklist-row__remove')?.addEventListener('click', () => row.remove());
+    list.appendChild(row);
+    if (focus) (row.querySelector('.keep-checklist-row__text') as HTMLInputElement)?.focus();
+  }
+
+  /** Read checklist rows back into items, dropping blanks. */
+  private collectChecklist(content: HTMLElement): KeepChecklistItem[] {
+    return Array.from(content.querySelectorAll('.keep-checklist-row'))
+      .map((row) => ({
+        text: (row.querySelector('.keep-checklist-row__text') as HTMLInputElement).value.trim(),
+        checked: (row.querySelector('.keep-checklist-row__check') as HTMLInputElement).checked,
+      }))
+      .filter((item) => item.text.length > 0);
+  }
+
   private async handleSave(content: HTMLElement): Promise<void> {
     const title = (content.querySelector('.keep-editor__title') as HTMLInputElement).value.trim();
     const body = (content.querySelector('.keep-editor__body') as HTMLTextAreaElement).value;
+    const checklist = this.collectChecklist(content);
 
     // Discard genuinely empty notes instead of persisting blanks.
-    if (!title && !body.trim()) {
+    if (!title && !body.trim() && checklist.length === 0) {
       ModalService.getInstance().hide();
       return;
     }
 
     const keep = KeepService.getInstance();
     if (this.opts.note) {
-      await keep.updateNote(this.opts.note.id, { title, body, pinned: this.pinned });
+      await keep.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, checklist });
     } else {
-      await keep.createNote({ title, body, pinned: this.pinned });
+      await keep.createNote({ title, body, pinned: this.pinned, checklist });
     }
 
     ModalService.getInstance().hide();

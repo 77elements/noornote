@@ -91,6 +91,8 @@
     color: var(--color-5);
     white-space: pre-wrap;
     word-break: break-word;
+    line-height: 1.5;
+    margin-bottom: 1rem;
   }
 }
 
@@ -116,4 +118,68 @@
   &__delete:hover {
     color: var(--color-red);
   }
+
+  &__checklist {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  &__add-item {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: calc($gap / 2);
+    padding: calc($gap / 2) 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-4);
+  }
+}
+
+.keep-checklist-row {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+
+  &__text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__check {
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  &__remove {
+    flex-shrink: 0;
+    color: var(--color-3);
+
+    &:hover {
+      color: var(--color-red);
+    }
+  }
+}
+
+/* Checklist preview on a card */
+.keep-card__checklist {
+  list-style: none;
+  margin: calc($gap / 2) 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc($gap / 4);
+}
+
+/* Card checklist item — the full .nn-checkbox--label-left pattern (label left,
+   ✓ control right). Only the checked state is customised. */
+.keep-checklist-item.is-checked .setting__label {
+  text-decoration: line-through;
+  color: var(--color-3);
+}
+
+.keep-card__checklist-more {
+  color: var(--color-3);
 }

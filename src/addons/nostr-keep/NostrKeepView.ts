@@ -77,23 +77,51 @@ export class NostrKeepView extends View {
     board.innerHTML = `<div class="nostr-keep__grid">${ordered.map((n) => this.cardHtml(n)).join('')}</div>`;
 
     board.querySelectorAll('[data-note-id]').forEach((el) => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
         const id = (el as HTMLElement).dataset.noteId!;
         const note = notes.find((n) => n.id === id);
-        if (note) this.openEditor(note);
+        if (!note) return;
+
+        // A click on a checklist item toggles it (don't open the editor).
+        const item = (e.target as HTMLElement).closest('.keep-checklist-item') as HTMLElement | null;
+        if (item) {
+          e.preventDefault();  // stop the native label toggle; load() re-renders the true state
+          e.stopPropagation();
+          void this.toggleChecklistItem(note, Number(item.dataset.checkIndex));
+          return;
+        }
+        this.openEditor(note);
       });
     });
   }
 
   private cardHtml(note: KeepNoteRecord): string {
     const preview = note.body.length > 280 ? `${note.body.slice(0, 280)}…` : note.body;
+    const MAX_ITEMS = 8;
+    const checklist = note.checklist.length > 0 ? `
+        <div class="keep-card__checklist">
+          ${note.checklist.slice(0, MAX_ITEMS).map((item, i) => `
+            <label class="nn-checkbox nn-checkbox--label-left keep-checklist-item${item.checked ? ' is-checked' : ''}" data-check-index="${i}">
+              <span class="setting__label">${escapeHtml(item.text)}</span>
+              <input type="checkbox"${item.checked ? ' checked' : ''} />
+            </label>`).join('')}
+          ${note.checklist.length > MAX_ITEMS ? `<div class="keep-card__checklist-more">+${note.checklist.length - MAX_ITEMS} more</div>` : ''}
+        </div>` : '';
     return `
       <div class="keep-card${note.pinned ? ' keep-card--pinned' : ''}" data-note-id="${escapeHtml(note.id)}">
         ${note.pinned ? '<svg class="keep-card__pin" width="14" height="14"><use href="#icon-bookmark"/></svg>' : ''}
         ${note.title ? `<h2 class="keep-card__title h4">${escapeHtml(note.title)}</h2>` : ''}
         ${preview ? `<div class="keep-card__body">${escapeHtml(preview)}</div>` : ''}
+        ${checklist}
       </div>
     `;
+  }
+
+  private async toggleChecklistItem(note: KeepNoteRecord, index: number): Promise<void> {
+    if (Number.isNaN(index) || index < 0 || index >= note.checklist.length) return;
+    const checklist = note.checklist.map((it, i) => (i === index ? { ...it, checked: !it.checked } : it));
+    await KeepService.getInstance().updateNote(note.id, { checklist });
+    await this.load();
   }
 
   private openEditor(note?: KeepNoteRecord): void {
