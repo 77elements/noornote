@@ -135,6 +135,7 @@ export class KeepStore {
   /** Get a single note by id. */
   public async get(id: string): Promise<KeepNoteRecord | null> {
     await this.init();
+    if (!this.db) return null;
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction(NOTES_STORE, 'readonly');
       const request = tx.objectStore(NOTES_STORE).get(id);
@@ -146,6 +147,7 @@ export class KeepStore {
   /** All notes, newest-updated first. */
   public async getAll(): Promise<KeepNoteRecord[]> {
     await this.init();
+    if (!this.db) return [];
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction(NOTES_STORE, 'readonly');
       const request = tx.objectStore(NOTES_STORE).getAll();

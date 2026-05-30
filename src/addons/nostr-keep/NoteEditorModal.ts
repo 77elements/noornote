@@ -24,9 +24,11 @@ export interface NoteEditorOptions {
 export class NoteEditorModal {
   private toolbar: MarkdownToolbar | null = null;
   private pinned: boolean;
+  private archived: boolean;
 
   constructor(private readonly opts: NoteEditorOptions) {
     this.pinned = opts.note?.pinned ?? false;
+    this.archived = opts.note?.archived ?? false;
   }
 
   public open(): void {
@@ -58,6 +60,9 @@ export class NoteEditorModal {
             <svg width="18" height="18"><use href="#icon-bookmark"/></svg>
           </button>
           ${note ? `
+          <button type="button" class="btn-icon keep-editor__archive${this.archived ? ' is-active' : ''}" title="${this.archived ? 'Unarchive' : 'Archive'}" aria-label="${this.archived ? 'Unarchive' : 'Archive'}">
+            <svg width="18" height="18"><use href="#icon-folder"/></svg>
+          </button>
           <button type="button" class="btn-icon keep-editor__delete" title="Delete note" aria-label="Delete note">
             <svg width="18" height="18"><use href="#icon-trash"/></svg>
           </button>` : ''}
@@ -75,6 +80,15 @@ export class NoteEditorModal {
     pinBtn.addEventListener('click', () => {
       this.pinned = !this.pinned;
       pinBtn.classList.toggle('is-active', this.pinned);
+    });
+
+    const archiveBtn = content.querySelector('.keep-editor__archive') as HTMLButtonElement | null;
+    archiveBtn?.addEventListener('click', () => {
+      this.archived = !this.archived;
+      archiveBtn.classList.toggle('is-active', this.archived);
+      const label = this.archived ? 'Unarchive' : 'Archive';
+      archiveBtn.title = label;
+      archiveBtn.setAttribute('aria-label', label);
     });
 
     // Checklist: render existing items, wire "Add item".
@@ -177,9 +191,9 @@ export class NoteEditorModal {
 
     const keep = KeepService.getInstance();
     if (this.opts.note) {
-      await keep.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, checklist, labels });
+      await keep.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, archived: this.archived, checklist, labels });
     } else {
-      await keep.createNote({ title, body, pinned: this.pinned, checklist, labels });
+      await keep.createNote({ title, body, pinned: this.pinned, archived: this.archived, checklist, labels });
     }
 
     ModalService.getInstance().hide();

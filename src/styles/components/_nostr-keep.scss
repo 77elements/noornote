@@ -26,6 +26,10 @@
   padding-bottom: $gap;
 }
 
+.nostr-keep__views {
+  margin-bottom: $gap;
+}
+
 /* Label filter chips */
 .nostr-keep__filters {
   display: flex;
@@ -152,7 +156,8 @@
     resize: vertical;
   }
 
-  &__pin.is-active {
+  &__pin.is-active,
+  &__archive.is-active {
     color: var(--color-6);
   }
 

@@ -17,6 +17,8 @@ export class NostrKeepView extends View {
   private container: HTMLElement;
   /** Active label filter (null = all notes). */
   private activeLabel: string | null = null;
+  /** Notes vs Archive view. */
+  private view: 'active' | 'archived' = 'active';
 
   constructor(_npub: string) {
     super();
@@ -32,6 +34,10 @@ export class NostrKeepView extends View {
           New note
         </button>
       </div>
+      <div class="tabs nostr-keep__views">
+        <button type="button" class="tab tab--active" data-view="active">Notes</button>
+        <button type="button" class="tab" data-view="archived">Archive</button>
+      </div>
       <div class="nostr-keep__filters" data-keep-filters></div>
       <div class="nostr-keep__board" data-keep-board></div>
     `;
@@ -39,8 +45,29 @@ export class NostrKeepView extends View {
       ?.addEventListener('click', () => this.openEditor());
     this.container.querySelector('[data-action="sync"]')
       ?.addEventListener('click', () => this.syncNow());
+    this.container.querySelectorAll('[data-view]').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const view = (tab as HTMLElement).dataset.view as 'active' | 'archived';
+        if (view === this.view) return;
+        this.view = view;
+        this.activeLabel = null; // reset label filter when switching views
+        this.container.querySelectorAll('[data-view]').forEach((t) =>
+          t.classList.toggle('tab--active', (t as HTMLElement).dataset.view === view));
+        void this.load();
+      });
+    });
 
-    void this.load().then(() => this.backgroundSync());
+    void this.boot();
+  }
+
+  /**
+   * Ensure the per-user store is open BEFORE the first read (the addon runtime
+   * may still be initializing when the board mounts), then load + background-sync.
+   */
+  private async boot(): Promise<void> {
+    await KeepService.getInstance().init();
+    await this.load();
+    await this.backgroundSync();
   }
 
   /** Pull from relays in the background, reload the board if anything changed. */
@@ -61,21 +88,28 @@ export class NostrKeepView extends View {
     if (!board) return;
 
     const allNotes = await KeepService.getInstance().listNotes();
+    // Split by the current view (Notes = not archived, Archive = archived).
+    const viewNotes = allNotes.filter((n) => (this.view === 'archived' ? n.archived : !n.archived));
 
-    // Collect labels; drop the active filter if its label no longer exists.
+    // Collect labels within this view; drop the filter if its label no longer exists.
     const labelSet = new Set<string>();
-    allNotes.forEach((n) => n.labels.forEach((l) => labelSet.add(l)));
+    viewNotes.forEach((n) => n.labels.forEach((l) => labelSet.add(l)));
     if (this.activeLabel && !labelSet.has(this.activeLabel)) this.activeLabel = null;
     this.renderFilters(Array.from(labelSet).sort((a, b) => a.localeCompare(b)));
 
     const notes = this.activeLabel
-      ? allNotes.filter((n) => n.labels.includes(this.activeLabel as string))
-      : allNotes;
+      ? viewNotes.filter((n) => n.labels.includes(this.activeLabel as string))
+      : viewNotes;
 
     if (notes.length === 0) {
-      const msg = allNotes.length === 0
-        ? { head: 'No notes yet', sub: 'Tap “New note” to write your first encrypted note.' }
-        : { head: 'No notes with this label', sub: 'Pick another label or “All”.' };
+      let msg: { head: string; sub: string };
+      if (this.activeLabel) {
+        msg = { head: 'No notes with this label', sub: 'Pick another label or “All”.' };
+      } else if (this.view === 'archived') {
+        msg = { head: 'No archived notes', sub: 'Archive a note to tuck it away here.' };
+      } else {
+        msg = { head: 'No notes yet', sub: 'Tap “New note” to write your first encrypted note.' };
+      }
       board.innerHTML = `
         <div class="nostr-keep__empty">
           <svg width="48" height="48"><use href="#icon-note"/></svg>
