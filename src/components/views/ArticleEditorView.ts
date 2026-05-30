@@ -30,6 +30,7 @@ import { marked } from 'marked';
 import { setupTabClickHandlers, switchTab } from '../../helpers/TabsHelper';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { FullscreenOverlay } from '../ui/FullscreenOverlay';
+import { MarkdownToolbar } from '../ui/MarkdownToolbar';
 import { npubToUsername } from '../../helpers/npubToUsername';
 import { upgradeInlineMentions, setupUserMentionHandlers } from '../../helpers/UserMentionHelper';
 import { upgradeArticleImages } from '../../helpers/upgradeArticleImages';
@@ -91,6 +92,10 @@ export class ArticleEditorView extends View {
   private fullscreenOverlay: FullscreenOverlay | null = null;
   private previewQuotedRefs: QuotedReference[] = [];
 
+  // Shared Markdown formatting toolbar (main editor + focus mode)
+  private readonly mdToolbar: MarkdownToolbar;
+  private focusMdToolbar: MarkdownToolbar | null = null;
+
   // Dirty-state tracking
   private snapshot: EditorSnapshot = { title: '', content: '', summary: '', image: '', tags: '', publishedAt: null };
   private beforeUnloadHandler = (e: BeforeUnloadEvent): void => {
@@ -106,6 +111,13 @@ export class ArticleEditorView extends View {
     this.router = Router.getInstance();
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
+
+    // Main-editor Markdown toolbar — operates on the content textarea; the
+    // existing input listener keeps this.content + button states in sync.
+    this.mdToolbar = new MarkdownToolbar({
+      getTextarea: () => this.container.querySelector('.article-editor-content') as HTMLTextAreaElement | null,
+      onImageUpload: (file) => this.uploadContentImage(file),
+    });
 
     // Generate initial identifier
     this.identifier = this.articlesApi?.generateIdentifier() ?? '';
@@ -273,29 +285,6 @@ export class ArticleEditorView extends View {
   /**
    * Render Markdown formatting toolbar
    */
-  private renderMarkdownToolbar(): string {
-    return `
-      <div class="md-toolbar">
-        <button type="button" class="btn-icon" data-md-action="heading" title="Heading">
-          <svg width="16" height="16"><use href="#icon-heading"/></svg>
-        </button>
-        <button type="button" class="btn-icon" data-md-action="bold" title="Bold">
-          <svg width="16" height="16"><use href="#icon-bold"/></svg>
-        </button>
-        <button type="button" class="btn-icon" data-md-action="italic" title="Italic">
-          <svg width="16" height="16"><use href="#icon-italic"/></svg>
-        </button>
-        <button type="button" class="btn-icon" data-md-action="quote" title="Quote">
-          <svg width="16" height="16"><use href="#icon-quote"/></svg>
-        </button>
-        <button type="button" class="btn-icon" data-md-action="image" title="Insert Image">
-          <svg width="16" height="16"><use href="#icon-image"/></svg>
-        </button>
-        <input type="file" accept="image/*" class="md-toolbar__file-input" data-md-file-input style="display: none;" />
-      </div>
-    `;
-  }
-
   /**
    * Render edit mode content
    */
@@ -316,7 +305,7 @@ export class ArticleEditorView extends View {
 
         <div class="form__row">
           <label for="article-content">Content (Markdown)</label>
-          ${this.renderMarkdownToolbar()}
+          ${this.mdToolbar.render()}
           <textarea
             id="article-content"
             class="textarea textarea--code textarea--large article-editor-content"
@@ -568,100 +557,26 @@ export class ArticleEditorView extends View {
    * Setup Markdown toolbar event listeners
    */
   private setupMarkdownToolbar(): void {
-    const buttons = this.container.querySelectorAll('[data-md-action]');
-    const fileInput = this.container.querySelector('[data-md-file-input]') as HTMLInputElement;
-
-    buttons.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const action = (e.currentTarget as HTMLElement).dataset.mdAction;
-        this.handleMarkdownAction(action || '');
-      });
-    });
-
-    // File input for image upload
-    if (fileInput) {
-      fileInput.addEventListener('change', async (e) => {
-        const target = e.target as HTMLInputElement;
-        const file = target.files?.[0];
-        if (file) {
-          await this.handleContentImageUpload(file);
-          target.value = '';
-        }
-      });
-    }
+    const root = this.container.querySelector('.md-toolbar') as HTMLElement | null;
+    if (root) this.mdToolbar.attach(root);
   }
 
   /**
-   * Handle Markdown formatting action
+   * Upload an image for the Markdown toolbar, returning its URL (or null).
+   * Shared by the main editor and focus-mode toolbars.
    */
-  private handleMarkdownAction(action: string, textareaOverride?: HTMLTextAreaElement, fileInputOverride?: HTMLInputElement): void {
-    const textarea = textareaOverride
-      ?? (this.container.querySelector('.article-editor-content') as HTMLTextAreaElement);
-    if (!textarea) return;
-
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = this.content.slice(start, end);
-    const before = this.content.slice(0, start);
-    const after = this.content.slice(end);
-
-    let insertion = '';
-    let cursorOffset = 0;
-
-    switch (action) {
-      case 'heading':
-        insertion = selectedText ? `## ${selectedText}` : '## ';
-        cursorOffset = selectedText ? insertion.length : 3;
-        break;
-      case 'bold':
-        insertion = selectedText ? `**${selectedText}**` : '****';
-        cursorOffset = selectedText ? insertion.length : 2;
-        break;
-      case 'italic':
-        insertion = selectedText ? `*${selectedText}*` : '**';
-        cursorOffset = selectedText ? insertion.length : 1;
-        break;
-      case 'quote':
-        insertion = selectedText ? `> ${selectedText}` : '> ';
-        cursorOffset = insertion.length;
-        break;
-      case 'image':
-        // Trigger file input
-        const fileInput = fileInputOverride
-          ?? (this.container.querySelector('[data-md-file-input]') as HTMLInputElement);
-        fileInput?.click();
-        return;
-    }
-
-    this.content = before + insertion + after;
-    textarea.value = this.content;
-
-    // Set cursor position
-    const newPos = start + cursorOffset;
-    textarea.setSelectionRange(newPos, newPos);
-    textarea.focus();
-
-    this.updateButtonStates();
-  }
-
-  /**
-   * Handle content image upload (from Markdown toolbar)
-   */
-  private async handleContentImageUpload(file: File): Promise<void> {
-    if (!file.type.startsWith('image/')) return;
-
+  private async uploadContentImage(file: File): Promise<string | null> {
     try {
-      if (!this.mediaApi) return;
-
+      if (!this.mediaApi) return null;
       const result = await this.mediaApi.uploadFile(file);
-
       if (result.success && result.url) {
-        this.insertAtCursor(`![](${result.url})\n`);
         this.systemLogger.info('ArticleEditorView', 'Image uploaded and inserted');
+        return result.url;
       }
     } catch (_error) {
       this.systemLogger.error('ArticleEditorView', 'Image upload failed:', _error);
     }
+    return null;
   }
 
   /**
@@ -1111,6 +1026,13 @@ export class ArticleEditorView extends View {
 
     const body = document.createElement('div');
     body.className = 'article-editor-focus-body';
+
+    // Focus-mode Markdown toolbar — same component, bound to the focus textarea.
+    this.focusMdToolbar = new MarkdownToolbar({
+      getTextarea: () => body.querySelector('[data-focus-field="content"]') as HTMLTextAreaElement | null,
+      onImageUpload: (file) => this.uploadContentImage(file),
+    });
+
     body.innerHTML = `
       <section class="section">
         <div class="form__row">
@@ -1119,7 +1041,7 @@ export class ArticleEditorView extends View {
         </div>
         <div class="form__row">
           <label for="focus-content">Content (Markdown)</label>
-          ${this.renderMarkdownToolbar()}
+          ${this.focusMdToolbar.render()}
           <textarea id="focus-content" class="textarea textarea--code textarea--large" placeholder="Write your article in Markdown..." data-focus-field="content"></textarea>
         </div>
       </section>
@@ -1133,22 +1055,8 @@ export class ArticleEditorView extends View {
     titleInput.addEventListener('input', () => { this.title = titleInput.value; });
     contentInput.addEventListener('input', () => { this.content = contentInput.value; });
 
-    const focusFileInput = body.querySelector('[data-md-file-input]') as HTMLInputElement;
-    body.querySelectorAll('[data-md-action]').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const action = (e.currentTarget as HTMLElement).dataset.mdAction || '';
-        this.handleMarkdownAction(action, contentInput, focusFileInput);
-      });
-    });
-    focusFileInput?.addEventListener('change', async (e) => {
-      const target = e.target as HTMLInputElement;
-      const file = target.files?.[0];
-      if (file) {
-        await this.handleContentImageUpload(file);
-        contentInput.value = this.content;
-        target.value = '';
-      }
-    });
+    const focusToolbarRoot = body.querySelector('.md-toolbar') as HTMLElement | null;
+    if (focusToolbarRoot) this.focusMdToolbar.attach(focusToolbarRoot);
 
     this.fullscreenOverlay = new FullscreenOverlay({
       title: this.isEditMode ? 'Edit Article' : 'Write Article',
@@ -1165,6 +1073,8 @@ export class ArticleEditorView extends View {
           realContent.value = this.content;
           realContent.dispatchEvent(new Event('input', { bubbles: true }));
         }
+        this.focusMdToolbar?.destroy();
+        this.focusMdToolbar = null;
         this.fullscreenOverlay = null;
       },
     });
@@ -1177,6 +1087,9 @@ export class ArticleEditorView extends View {
    */
   public destroy(): void {
     window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+    this.mdToolbar.destroy();
+    this.focusMdToolbar?.destroy();
+    this.focusMdToolbar = null;
     if (this.fullscreenOverlay) {
       this.fullscreenOverlay.unmount();
       this.fullscreenOverlay = null;
