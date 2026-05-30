@@ -500,6 +500,10 @@ export class MessagesView extends View {
         <svg width="16" height="16"><use href="#icon-circle"/></svg>
         Mark all unread
       </button>
+      <button class="dropdown-menu-item" data-action="resync">
+        <svg width="16" height="16"><use href="#icon-sync"/></svg>
+        Re-sync messages
+      </button>
     `;
 
     // Setup menu click handler
@@ -626,6 +630,22 @@ export class MessagesView extends View {
         await this.refreshConversationsQuiet();
         ToastService.show('All messages marked as unread', 'success');
         break;
+      case 'resync': {
+        const { ModalService } = await import('../../services/ModalService');
+        const confirmed = await ModalService.getInstance().confirm({
+          title: 'Re-sync messages',
+          message: 'Re-fetch your full message history from the relays. Existing messages are kept — this only pulls anything missing. May take a moment.',
+          confirmText: 'Re-sync',
+          cancelText: 'Cancel',
+        });
+        if (!confirmed) break;
+        // Drive the same progress UI as the initial load; completion resets it
+        // via the dm:fetch-complete listener.
+        this.isFetchingDMs = true;
+        this.progressBar?.start();
+        await this.dmsApi?.resyncAll();
+        break;
+      }
     }
   }
 

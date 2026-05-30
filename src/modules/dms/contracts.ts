@@ -10,6 +10,7 @@ export interface DMsModuleApi {
   markAsRead(partnerPubkey: string): Promise<void>;
   markAllAsRead(): Promise<void>;
   markAllAsUnread(): Promise<void>;
+  resyncAll(): Promise<void>;
   start(): Promise<void>;
   stop(): void;
 }

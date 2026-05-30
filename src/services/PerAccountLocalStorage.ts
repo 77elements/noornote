@@ -73,6 +73,14 @@ export const StorageKeys = {
   // 0xchat model: fetch once, trust until publish fails → invalidate entry.
   DM_INBOX_RELAYS_CACHE: 'noornote_dm_inbox_relays_cache_map',
 
+  // DM incremental sync checkpoint (per-account) — wall-clock seconds of the
+  // last successful historical sync. On next launch we fetch only DMs newer
+  // than this (minus a backdate safety margin), instead of the full history.
+  DM_LAST_SYNCED_AT: 'noornote_dm_last_synced_at_map',
+  // DM backward paging cursor (per-account) — oldest OUTER gift-wrap created_at
+  // fetched so far. Used by "load older messages" to page history on demand.
+  DM_BACKWARD_CURSOR: 'noornote_dm_backward_cursor_map',
+
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',
 

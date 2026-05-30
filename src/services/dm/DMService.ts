@@ -78,6 +78,15 @@ export class DMService {
   private incomingBatchTimer: number | null = null;
   private static readonly INCOMING_BATCH_WINDOW_MS = 50;
 
+  // Incremental cold-start sync. NIP-17 gift wraps are backdated up to 48h
+  // (see randomizeTimestamp); the relay filters on the OUTER randomized
+  // created_at, so the incremental `since` must reach back at least that far
+  // to not miss backdated wraps. 2 days matches the NIP-17 informal ceiling;
+  // resyncAll() is the escape hatch for rarer outliers.
+  private static readonly DM_BACKDATE_MARGIN_SECONDS = 2 * 24 * 60 * 60;
+  // NIP-04 (kind:4) is NOT backdated — small clock-skew margin only.
+  private static readonly DM_LEGACY_SKEW_SECONDS = 60 * 60;
+
   private constructor() {
     this.transport = NostrTransport.getInstance();
     this.authService = AuthService.getInstance();
@@ -283,7 +292,10 @@ export class DMService {
   private async fetchMissedMessages(): Promise<void> {
     if (!this.userPubkey) return;
 
-    const since = Math.floor(Date.now() / 1000) - (35 * 60); // last 35 minutes
+    // Capture before fetch so the cold-start checkpoint keeps advancing through
+    // a long-running session (otherwise a restart re-fetches the whole session).
+    const missedStartedAt = Math.floor(Date.now() / 1000);
+    const since = missedStartedAt - (35 * 60); // last 35 minutes
 
     try {
       const inboxRelays = await this.getMyInboxRelays();
@@ -314,6 +326,13 @@ export class DMService {
         diagLog('dms', 'Catch-up complete', { nip17: nip17Events.length, legacy: legacyEvents.length });
         this.systemLogger.info('DMService', `Caught up: ${nip17Events.length} NIP-17, ${legacyEvents.length} legacy events`);
         this.eventBus.emit('dm:badge-update');
+      }
+
+      // Advance the cold-start checkpoint — but only if one already exists, so a
+      // refresh can't pre-empt the initial full seed on a fresh install.
+      const store = PerAccountLocalStorage.getInstance();
+      if (store.get<number>(StorageKeys.DM_LAST_SYNCED_AT, 0) > 0) {
+        store.set(StorageKeys.DM_LAST_SYNCED_AT, missedStartedAt);
       }
     } catch (error) {
       diagLog('dms', 'Catch-up fetch failed', { error: String(error) });
@@ -360,42 +379,55 @@ export class DMService {
     this.pendingBadgeUpdate = false;
     this.fetchProgress = { current: 0, total: 0 };
 
+    // Capture the sync start time BEFORE fetching, so messages that arrive
+    // mid-sync are still covered by the next run's `since`. Persisted only on
+    // success → a failed/interrupted sync keeps the previous checkpoint.
+    const store = PerAccountLocalStorage.getInstance();
+    const syncStartedAt = Math.floor(Date.now() / 1000);
+    const lastSyncedAt = store.get<number>(StorageKeys.DM_LAST_SYNCED_AT, 0);
+    const isIncremental = lastSyncedAt > 0;
+
     try {
       // NIP-17 uses inbox relays
       const inboxRelays = await this.getMyInboxRelays();
 
-      // Fetch NIP-17 Gift Wraps (kind:1059)
-      const nip17Filter: NDKFilter = {
-        kinds: [KIND_GIFT_WRAP],
-        '#p': [this.userPubkey],
-        limit: 500
-      };
+      // Fetch NIP-17 Gift Wraps (kind:1059).
+      // Incremental: only wraps newer than the checkpoint (minus the backdate
+      // margin), no limit — the delta is small. Seed (first run): newest 500.
+      const nip17Since = lastSyncedAt - DMService.DM_BACKDATE_MARGIN_SECONDS;
+      const nip17Filter: NDKFilter = isIncremental
+        ? { kinds: [KIND_GIFT_WRAP], '#p': [this.userPubkey], since: nip17Since }
+        : { kinds: [KIND_GIFT_WRAP], '#p': [this.userPubkey], limit: 500 };
 
-      diagLog('dms', 'Fetching NIP-17 DMs', { relayCount: inboxRelays.length, relays: inboxRelays.slice(0, 3) });
+      diagLog('dms', isIncremental ? 'Fetching NIP-17 DMs (incremental)' : 'Fetching NIP-17 DMs (seed)', { relayCount: inboxRelays.length, since: isIncremental ? nip17Since : undefined });
       this.systemLogger.info('DMService', `Fetching NIP-17 DMs from ${inboxRelays.length} inbox relays: ${inboxRelays.slice(0, 3).join(', ')}${inboxRelays.length > 3 ? '...' : ''}`);
       const nip17Events = await this.transport.fetch(inboxRelays, [nip17Filter], 15000, false, 'DMService');
       diagLog('dms', 'NIP-17 fetch complete', { count: nip17Events.length });
       this.systemLogger.info('DMService', `Fetched ${nip17Events.length} NIP-17 events`);
 
-      // Legacy NIP-04 uses READ relays (they're on normal relays, not specialized inbox)
+      // Legacy NIP-04 uses READ relays (normal relays, not specialized inbox).
+      // Not backdated → small clock-skew margin only when incremental.
       const readRelays = this.relayConfig.getReadRelays();
+      const legacySince = isIncremental ? lastSyncedAt - DMService.DM_LEGACY_SKEW_SECONDS : undefined;
 
       const legacyFilters: NDKFilter[] = [
         // Received DMs
         {
           kinds: [KIND_LEGACY_DM],
           '#p': [this.userPubkey],
-          limit: 500
+          limit: 500,
+          ...(legacySince !== undefined ? { since: legacySince } : {})
         },
         // Sent DMs (our own messages)
         {
           kinds: [KIND_LEGACY_DM],
           authors: [this.userPubkey],
-          limit: 500
+          limit: 500,
+          ...(legacySince !== undefined ? { since: legacySince } : {})
         }
       ];
 
-      diagLog('dms', 'Fetching legacy NIP-04 DMs', { relayCount: readRelays.length });
+      diagLog('dms', 'Fetching legacy NIP-04 DMs', { relayCount: readRelays.length, incremental: isIncremental });
       this.systemLogger.info('DMService', `Fetching legacy NIP-04 DMs from ${readRelays.length} read relays: ${readRelays.slice(0, 3).join(', ')}${readRelays.length > 3 ? '...' : ''}`);
       const legacyEvents = await this.transport.fetch(readRelays, legacyFilters, 15000, false, 'DMService');
       diagLog('dms', 'Legacy NIP-04 fetch complete', { count: legacyEvents.length });
@@ -427,6 +459,22 @@ export class DMService {
         }
       }
 
+      // Persist the checkpoint only after a successful fetch (uses the pre-fetch
+      // time, so no gap). Advances even on an empty delta → window slides forward.
+      store.set(StorageKeys.DM_LAST_SYNCED_AT, syncStartedAt);
+
+      // Seed the backward-paging cursor on the first (seed) run: the oldest
+      // OUTER timestamp fetched marks the boundary for "load older" (Checkpoint C).
+      if (!isIncremental && allEvents.length > 0) {
+        const oldest = allEvents.reduce(
+          (min, { event }) => Math.min(min, event.created_at),
+          Number.POSITIVE_INFINITY
+        );
+        if (Number.isFinite(oldest)) {
+          store.set(StorageKeys.DM_BACKWARD_CURSOR, oldest);
+        }
+      }
+
     } catch (error) {
       this.systemLogger.error('DMService', 'Failed to fetch historical messages:', error);
     } finally {
@@ -443,6 +491,23 @@ export class DMService {
         this.pendingBadgeUpdate = false;
       }
     }
+  }
+
+  /**
+   * Force a full DM re-sync from relays (escape hatch).
+   * Clears the incremental checkpoint + backward cursor so the next fetch runs
+   * the full-history seed again. Covers the rare case of a sender backdating a
+   * gift wrap beyond the 2-day margin while the app was closed. Existing local
+   * messages are preserved (dedup via wrapId); this only re-pulls from relays.
+   */
+  public async resyncAll(): Promise<void> {
+    if (!this.userPubkey) return;
+    const store = PerAccountLocalStorage.getInstance();
+    store.remove(StorageKeys.DM_LAST_SYNCED_AT);
+    store.remove(StorageKeys.DM_BACKWARD_CURSOR);
+    diagLog('dms', 'Full DM resync requested');
+    this.systemLogger.info('DMService', 'Re-syncing all DMs from relays...');
+    await this.fetchHistoricalMessages();
   }
 
   /**
