@@ -6,7 +6,7 @@
  */
 
 import { View } from '../../components/views/View';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { ToastService } from '../../services/ToastService';
 import { KeepService } from './KeepService';
 import { KeepSyncService } from './KeepSyncService';
@@ -15,6 +15,8 @@ import { NoteEditorModal } from './NoteEditorModal';
 
 export class NostrKeepView extends View {
   private container: HTMLElement;
+  /** Active label filter (null = all notes). */
+  private activeLabel: string | null = null;
 
   constructor(_npub: string) {
     super();
@@ -30,6 +32,7 @@ export class NostrKeepView extends View {
           New note
         </button>
       </div>
+      <div class="nostr-keep__filters" data-keep-filters></div>
       <div class="nostr-keep__board" data-keep-board></div>
     `;
     this.container.querySelector('[data-action="new-note"]')
@@ -52,18 +55,32 @@ export class NostrKeepView extends View {
     ToastService.show('Notes synced', 'success');
   }
 
-  /** Load notes from the store and (re)render the board. */
+  /** Load notes from the store and (re)render the filters + board. */
   private async load(): Promise<void> {
     const board = this.container.querySelector('[data-keep-board]') as HTMLElement | null;
     if (!board) return;
 
-    const notes = await KeepService.getInstance().listNotes();
+    const allNotes = await KeepService.getInstance().listNotes();
+
+    // Collect labels; drop the active filter if its label no longer exists.
+    const labelSet = new Set<string>();
+    allNotes.forEach((n) => n.labels.forEach((l) => labelSet.add(l)));
+    if (this.activeLabel && !labelSet.has(this.activeLabel)) this.activeLabel = null;
+    this.renderFilters(Array.from(labelSet).sort((a, b) => a.localeCompare(b)));
+
+    const notes = this.activeLabel
+      ? allNotes.filter((n) => n.labels.includes(this.activeLabel as string))
+      : allNotes;
+
     if (notes.length === 0) {
+      const msg = allNotes.length === 0
+        ? { head: 'No notes yet', sub: 'Tap “New note” to write your first encrypted note.' }
+        : { head: 'No notes with this label', sub: 'Pick another label or “All”.' };
       board.innerHTML = `
         <div class="nostr-keep__empty">
           <svg width="48" height="48"><use href="#icon-note"/></svg>
-          <p>No notes yet</p>
-          <p class="text-alpha-medium">Tap “New note” to write your first encrypted note.</p>
+          <p>${msg.head}</p>
+          <p class="text-alpha-medium">${msg.sub}</p>
         </div>
       `;
       return;
@@ -95,6 +112,27 @@ export class NostrKeepView extends View {
     });
   }
 
+  /** Render the label filter chips ("All" + one per label). Hidden if no labels. */
+  private renderFilters(labels: string[]): void {
+    const el = this.container.querySelector('[data-keep-filters]') as HTMLElement | null;
+    if (!el) return;
+    if (labels.length === 0) {
+      el.innerHTML = '';
+      return;
+    }
+    el.innerHTML = `
+      <button type="button" class="keep-filter${this.activeLabel === null ? ' is-active' : ''}" data-label="">All</button>
+      ${labels.map((l) => `<button type="button" class="keep-filter${this.activeLabel === l ? ' is-active' : ''}" data-label="${escapeHtmlAttr(l)}">${escapeHtml(l)}</button>`).join('')}
+    `;
+    el.querySelectorAll('.keep-filter').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const label = (btn as HTMLElement).dataset.label || '';
+        this.activeLabel = label === '' ? null : label;
+        void this.load();
+      });
+    });
+  }
+
   private cardHtml(note: KeepNoteRecord): string {
     const preview = note.body.length > 280 ? `${note.body.slice(0, 280)}…` : note.body;
     const MAX_ITEMS = 8;
@@ -107,12 +145,17 @@ export class NostrKeepView extends View {
             </label>`).join('')}
           ${note.checklist.length > MAX_ITEMS ? `<div class="keep-card__checklist-more">+${note.checklist.length - MAX_ITEMS} more</div>` : ''}
         </div>` : '';
+    const labels = note.labels.length > 0 ? `
+        <div class="keep-card__labels">
+          ${note.labels.map((l) => `<span class="keep-label">${escapeHtml(l)}</span>`).join('')}
+        </div>` : '';
     return `
       <div class="keep-card${note.pinned ? ' keep-card--pinned' : ''}" data-note-id="${escapeHtml(note.id)}">
         ${note.pinned ? '<svg class="keep-card__pin" width="14" height="14"><use href="#icon-bookmark"/></svg>' : ''}
         ${note.title ? `<h2 class="keep-card__title h4">${escapeHtml(note.title)}</h2>` : ''}
         ${preview ? `<div class="keep-card__body">${escapeHtml(preview)}</div>` : ''}
         ${checklist}
+        ${labels}
       </div>
     `;
   }

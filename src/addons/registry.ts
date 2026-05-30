@@ -37,5 +37,5 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
   { id: 'live-streams-player',   name: 'Live Streams Player',    route: '/addons/live-streams-player',   viewId: 'addon-live-streams-player' },
   { id: 'scheduled-posts',       name: 'Scheduled Posts',        route: '/addons/scheduled-posts',       viewId: 'addon-scheduled-posts' },
   { id: 'badges',                name: 'Badges',                 route: '/addons/badges',                viewId: 'addon-badges' },
-  { id: 'nostr-keep',            name: 'Note taking',            route: '/addons/nostr-keep',            viewId: 'addon-nostr-keep' },
+  { id: 'note-taking',           name: 'Note taking',            route: '/addons/note-taking',           viewId: 'addon-note-taking' },
 ];

@@ -96,7 +96,7 @@ export function registerCoreAddons(): void {
   });
 
   loader.register({
-    id: 'nostr-keep',
+    id: 'note-taking',
     isEnabled: isNostrKeepEnabled,
     load: () => import('./nostr-keep/runtime').then(m => m.default),
   });

@@ -22,7 +22,7 @@ export class NostrKeepAddonView extends View {
   constructor() {
     super();
     this.container = document.createElement('div');
-    this.container.className = 'view-content view-content--addon view-content--addon-nostr-keep';
+    this.container.className = 'view-content view-content--addon view-content--addon-note-taking';
     this.render();
   }
 
@@ -32,7 +32,7 @@ export class NostrKeepAddonView extends View {
       checked: isNostrKeepEnabled(),
       onChange: (checked) => {
         setNostrKeepEnabled(checked);
-        TypedEventBus.getInstance().emit('nostr-keep:addon-toggle', { enabled: checked });
+        TypedEventBus.getInstance().emit('note-taking:addon-toggle', { enabled: checked });
         ToastService.show(checked ? 'Note taking enabled' : 'Note taking disabled', 'success');
         this.renderBoard();
       },

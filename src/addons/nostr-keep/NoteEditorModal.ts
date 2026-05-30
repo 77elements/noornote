@@ -48,6 +48,10 @@ export class NoteEditorModal {
         <svg width="14" height="14"><use href="#icon-plus"/></svg>
         List item
       </button>
+      <div class="keep-editor__labels">
+        <div class="keep-editor__label-chips" data-label-chips></div>
+        <input type="text" class="input keep-editor__label-input" placeholder="Add label…" data-label-input />
+      </div>
       <div class="keep-editor__actions l-row--split">
         <div>
           <button type="button" class="btn-icon keep-editor__pin${this.pinned ? ' is-active' : ''}" title="Pin to top" aria-label="Pin to top">
@@ -78,6 +82,21 @@ export class NoteEditorModal {
     (note?.checklist ?? []).forEach((item) => this.addChecklistRow(list, item));
     content.querySelector('[data-add-item]')?.addEventListener('click', () => {
       this.addChecklistRow(list, { text: '', checked: false }, true);
+    });
+
+    // Labels: render existing chips, add on Enter / comma.
+    const chips = content.querySelector('[data-label-chips]') as HTMLElement;
+    (note?.labels ?? []).forEach((label) => this.addLabelChip(chips, label));
+    const labelInput = content.querySelector('[data-label-input]') as HTMLInputElement;
+    labelInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ',') {
+        e.preventDefault();
+        const value = labelInput.value.trim().replace(/,+$/, '').trim();
+        if (value) {
+          this.addLabelChip(chips, value);
+          labelInput.value = '';
+        }
+      }
     });
 
     content.querySelector('.keep-editor__delete')?.addEventListener('click', () => this.handleDelete());
@@ -112,6 +131,28 @@ export class NoteEditorModal {
     if (focus) (row.querySelector('.keep-checklist-row__text') as HTMLInputElement)?.focus();
   }
 
+  /** Append a label chip (text + remove), de-duplicated. */
+  private addLabelChip(container: HTMLElement, label: string): void {
+    const existing = Array.from(container.querySelectorAll('.keep-label-chip__text')).map((e) => e.textContent);
+    if (existing.includes(label)) return;
+    const chip = document.createElement('span');
+    chip.className = 'keep-label-chip';
+    chip.innerHTML = `
+      <span class="keep-label-chip__text">${escapeHtml(label)}</span>
+      <button type="button" class="keep-label-chip__remove" aria-label="Remove label">
+        <svg width="12" height="12"><use href="#icon-close"/></svg>
+      </button>
+    `;
+    chip.querySelector('.keep-label-chip__remove')?.addEventListener('click', () => chip.remove());
+    container.appendChild(chip);
+  }
+
+  private collectLabels(content: HTMLElement): string[] {
+    return Array.from(content.querySelectorAll('.keep-label-chip__text'))
+      .map((e) => (e.textContent || '').trim())
+      .filter(Boolean);
+  }
+
   /** Read checklist rows back into items, dropping blanks. */
   private collectChecklist(content: HTMLElement): KeepChecklistItem[] {
     return Array.from(content.querySelectorAll('.keep-checklist-row'))
@@ -126,6 +167,7 @@ export class NoteEditorModal {
     const title = (content.querySelector('.keep-editor__title') as HTMLInputElement).value.trim();
     const body = (content.querySelector('.keep-editor__body') as HTMLTextAreaElement).value;
     const checklist = this.collectChecklist(content);
+    const labels = this.collectLabels(content);
 
     // Discard genuinely empty notes instead of persisting blanks.
     if (!title && !body.trim() && checklist.length === 0) {
@@ -135,9 +177,9 @@ export class NoteEditorModal {
 
     const keep = KeepService.getInstance();
     if (this.opts.note) {
-      await keep.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, checklist });
+      await keep.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, checklist, labels });
     } else {
-      await keep.createNote({ title, body, pinned: this.pinned, checklist });
+      await keep.createNote({ title, body, pinned: this.pinned, checklist, labels });
     }
 
     ModalService.getInstance().hide();

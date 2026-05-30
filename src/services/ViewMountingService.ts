@@ -525,7 +525,7 @@ export class ViewMountingService {
           }
         };
 
-      case 'addon-nostr-keep':
+      case 'addon-note-taking':
         return {
           factory: async () => {
             const { NostrKeepAddonView } = await import('../addons/nostr-keep/NostrKeepAddonView');

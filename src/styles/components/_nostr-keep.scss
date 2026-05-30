@@ -26,6 +26,32 @@
   padding-bottom: $gap;
 }
 
+/* Label filter chips */
+.nostr-keep__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc($gap / 2);
+  padding-bottom: $gap;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.keep-filter {
+  padding: calc($gap / 4) calc($gap);
+  border: none;
+  border-radius: $radius-pill;
+  background: var(--color-2);
+  color: var(--color-5);
+  cursor: pointer;
+
+  &.is-active {
+    background: var(--color-4);
+    color: var(--color-1);
+  }
+}
+
 .nostr-keep__empty {
   display: flex;
   flex-direction: column;
@@ -94,6 +120,21 @@
     line-height: 1.5;
     margin-bottom: 1rem;
   }
+
+  &__labels {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc($gap / 4);
+    margin-top: calc($gap / 2);
+  }
+}
+
+/* Small read-only label pill (card) */
+.keep-label {
+  padding: calc($gap / 8) calc($gap / 2);
+  border-radius: $radius-pill;
+  background: var(--color-2);
+  color: var(--color-3);
 }
 
 /* Note editor (inside ModalService modal) */
@@ -135,6 +176,45 @@
     border: none;
     cursor: pointer;
     color: var(--color-4);
+  }
+
+  &__labels {
+    display: flex;
+    flex-direction: column;
+    gap: calc($gap / 2);
+  }
+
+  &__label-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc($gap / 2);
+
+    &:empty {
+      display: none;
+    }
+  }
+}
+
+.keep-label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: calc($gap / 4);
+  padding: calc($gap / 8) calc($gap / 2);
+  border-radius: $radius-pill;
+  background: var(--color-2);
+  color: var(--color-5);
+
+  &__remove {
+    display: flex;
+    align-items: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-3);
+
+    &:hover {
+      color: var(--color-red);
+    }
   }
 }
 
