@@ -262,13 +262,53 @@ export class KeepService {
     try {
       const plaintext = await this.auth.nip44Decrypt(ciphertext, user.pubkey);
       if (!plaintext) return null;
-      const parsed = JSON.parse(plaintext) as KeepNotePayload;
-      if (!parsed || typeof parsed.id !== 'string') return null;
-      return parsed;
+      const raw = JSON.parse(plaintext) as Record<string, unknown>;
+      if (!raw || typeof raw.id !== 'string') return null;
+      return this.normalizePayload(raw, raw.id);
     } catch (error) {
       diagLog('system', 'keep: decrypt failed', { error: String(error) });
       return null;
     }
+  }
+
+  /**
+   * Coerce a decrypted object into a well-typed payload. Defends the renderer
+   * against schema drift / corruption: every field gets a safe default of the
+   * right type, so a malformed note can never crash the board or be mistyped.
+   */
+  private normalizePayload(raw: Record<string, unknown>, id: string): KeepNotePayload {
+    const str = (v: unknown, d = ''): string => (typeof v === 'string' ? v : d);
+    const num = (v: unknown, d = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : d);
+    const checklist = Array.isArray(raw.checklist)
+      ? raw.checklist
+          .filter((it): it is Record<string, unknown> => !!it && typeof it === 'object')
+          .map((it) => ({ text: str(it.text), checked: !!it.checked }))
+          .filter((it) => it.text.length > 0)
+      : [];
+    const labels = Array.isArray(raw.labels)
+      ? raw.labels.filter((l): l is string => typeof l === 'string')
+      : [];
+    const attachments = Array.isArray(raw.attachments)
+      ? raw.attachments
+          .filter((a): a is Record<string, unknown> => !!a && typeof a === 'object')
+          .map((a) => ({ url: str(a.url), sha256: str(a.sha256), dim: str(a.dim), blurhash: str(a.blurhash) }))
+      : [];
+    return {
+      v: num(raw.v, PAYLOAD_VERSION),
+      id,
+      title: str(raw.title),
+      body: str(raw.body),
+      checklist,
+      labels,
+      color: str(raw.color, 'default'),
+      pinned: !!raw.pinned,
+      archived: !!raw.archived,
+      reminderAt: num(raw.reminderAt),
+      attachments,
+      createdAt: num(raw.createdAt),
+      updatedAt: num(raw.updatedAt),
+      ...(raw.deleted ? { deleted: true } : {}),
+    };
   }
 
   /** Tear down: close the store and drop the singleton. */

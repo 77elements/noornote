@@ -10,7 +10,7 @@ import { ToastService } from '../../services/ToastService';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { MediaModuleApi } from '../../modules/media/contracts';
 import { MarkdownToolbar } from '../../components/ui/MarkdownToolbar';
-import { escapeHtml } from '../../helpers/escapeHtml';
+import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 import { KeepService } from './KeepService';
 import type { KeepChecklistItem, KeepNoteRecord } from './KeepStore';
 import { KEEP_COLORS } from './keepColors';
@@ -45,7 +45,7 @@ export class NoteEditorModal {
     });
 
     content.innerHTML = `
-      <input type="text" class="input keep-editor__title" placeholder="Title" value="${escapeHtml(note?.title ?? '')}" />
+      <input type="text" class="input keep-editor__title" placeholder="Title" value="${escapeHtmlAttr(note?.title ?? '')}" />
       ${this.toolbar.render()}
       <textarea class="textarea keep-editor__body" placeholder="Take a note…">${escapeHtml(note?.body ?? '')}</textarea>
       <div class="keep-editor__checklist" data-checklist></div>
@@ -150,7 +150,7 @@ export class NoteEditorModal {
     row.className = 'keep-checklist-row';
     row.innerHTML = `
       <input type="checkbox" class="keep-checklist-row__check"${item.checked ? ' checked' : ''} />
-      <input type="text" class="input keep-checklist-row__text" placeholder="List item" value="${escapeHtml(item.text)}" />
+      <input type="text" class="input keep-checklist-row__text" placeholder="List item" value="${escapeHtmlAttr(item.text)}" />
       <button type="button" class="btn-icon keep-checklist-row__remove" aria-label="Remove item">
         <svg width="14" height="14"><use href="#icon-close"/></svg>
       </button>

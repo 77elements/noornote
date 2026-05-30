@@ -206,7 +206,7 @@ export class NostrKeepView extends View {
     const colored = isAccentColor(note.color);
     const colorClass = colored ? ` keep-color-${note.color}` : '';
     return `
-      <div class="keep-card${note.pinned ? ' keep-card--pinned' : ''}${colorClass}" data-note-id="${escapeHtml(note.id)}">
+      <div class="keep-card${note.pinned ? ' keep-card--pinned' : ''}${colorClass}" data-note-id="${escapeHtmlAttr(note.id)}">
         ${colored ? '<span class="keep-card__color-dot"></span>' : ''}
         ${note.pinned ? '<svg class="keep-card__pin" width="14" height="14"><use href="#icon-bookmark"/></svg>' : ''}
         ${note.title ? `<h2 class="keep-card__title h4">${escapeHtml(note.title)}</h2>` : ''}
