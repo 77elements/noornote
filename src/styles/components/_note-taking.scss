@@ -1,11 +1,11 @@
 /* ================================
-   Nostr Keep - encrypted notes board
+   Note taking - encrypted notes board
    ================================ */
 
 @use '../abstracts/variables' as *;
 
-// Note accent colors (solid, theme-independent - keep keys in sync with keepColors.ts)
-$keep-colors: (
+// Note accent colors (solid, theme-independent - keep keys in sync with noteColors.ts)
+$note-taking-colors: (
   red: #e57373,
   orange: #ffb74d,
   yellow: #fff176,
@@ -16,18 +16,18 @@ $keep-colors: (
   pink: #f06292,
 );
 
-@each $key, $val in $keep-colors {
-  .keep-color-#{$key} {
-    --keep-accent: #{$val};
+@each $key, $val in $note-taking-colors {
+  .note-taking-color-#{$key} {
+    --note-taking-accent: #{$val};
   }
 }
 
-.nostr-keep {
+.note-taking {
   display: flex;
   flex-direction: column;
 }
 
-.nostr-keep__header {
+.note-taking__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -35,21 +35,21 @@ $keep-colors: (
   padding: $gap calc($gap * 1.5);
 }
 
-.nostr-keep__board {
+.note-taking__board {
   flex: 1;
   padding-bottom: calc($gap * 1.5);
 }
 
-.nostr-keep__toolbar {
+.note-taking__toolbar {
   padding-bottom: $gap;
 }
 
-.nostr-keep__views {
+.note-taking__views {
   margin-bottom: $gap;
 }
 
 /* Label filter chips */
-.nostr-keep__filters {
+.note-taking__filters {
   display: flex;
   flex-wrap: wrap;
   gap: calc($gap / 2);
@@ -60,7 +60,7 @@ $keep-colors: (
   }
 }
 
-.keep-filter {
+.note-taking-filter {
   padding: calc($gap / 4) calc($gap);
   border: none;
   border-radius: $radius-pill;
@@ -74,7 +74,7 @@ $keep-colors: (
   }
 }
 
-.nostr-keep__empty {
+.note-taking__empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -97,7 +97,7 @@ $keep-colors: (
   }
 }
 
-.nostr-keep__empty-info {
+.note-taking__empty-info {
   max-width: 460px;
   margin-top: calc($gap * 1.5);
   text-align: left;
@@ -118,12 +118,12 @@ $keep-colors: (
 }
 
 /* Masonry-ish note grid via CSS columns */
-.nostr-keep__grid {
+.note-taking__grid {
   column-width: 220px;
   column-gap: $gap;
 }
 
-.keep-card {
+.note-taking-card {
   position: relative;
   break-inside: avoid;
   display: block;
@@ -131,7 +131,7 @@ $keep-colors: (
   margin-bottom: $gap;
   padding: $gap;
   // Accent border when the note has a color; normal border otherwise.
-  border: 1px solid var(--keep-accent, var(--color-2));
+  border: 1px solid var(--note-taking-accent, var(--color-2));
   border-radius: $radius-xl;
   background: var(--color-1);
   cursor: pointer;
@@ -143,7 +143,7 @@ $keep-colors: (
     width: 10px;
     height: 10px;
     border-radius: $radius-full;
-    background: var(--keep-accent);
+    background: var(--note-taking-accent);
   }
 
   &__pin {
@@ -175,7 +175,7 @@ $keep-colors: (
 }
 
 /* Small read-only label pill (card) */
-.keep-label {
+.note-taking-label {
   padding: calc($gap / 8) calc($gap / 2);
   border-radius: $radius-pill;
   background: var(--color-2);
@@ -183,7 +183,7 @@ $keep-colors: (
 }
 
 /* Note editor (inside ModalService modal) */
-.keep-editor {
+.note-taking-editor {
   display: flex;
   flex-direction: column;
   gap: $gap;
@@ -241,7 +241,7 @@ $keep-colors: (
   }
 }
 
-.keep-label-chip {
+.note-taking-label-chip {
   display: inline-flex;
   align-items: center;
   gap: calc($gap / 4);
@@ -265,21 +265,21 @@ $keep-colors: (
 }
 
 /* Color swatch picker (editor) */
-.keep-editor__colors {
+.note-taking-editor__colors {
   display: flex;
   flex-wrap: wrap;
   gap: calc($gap / 2);
 }
 
-.keep-swatch {
+.note-taking-swatch {
   width: 24px;
   height: 24px;
   border-radius: $radius-full;
   border: none;
   cursor: pointer;
-  background: var(--keep-accent, var(--color-1));
+  background: var(--note-taking-accent, var(--color-1));
 
-  &.keep-color-default {
+  &.note-taking-color-default {
     background: var(--color-1);
     border: 1px solid var(--color-3);
   }
@@ -290,7 +290,7 @@ $keep-colors: (
   }
 }
 
-.keep-checklist-row {
+.note-taking-checklist-row {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
@@ -316,7 +316,7 @@ $keep-colors: (
 }
 
 /* Checklist preview on a card */
-.keep-card__checklist {
+.note-taking-card__checklist {
   list-style: none;
   margin: calc($gap / 2) 0 0;
   padding: 0;
@@ -327,11 +327,11 @@ $keep-colors: (
 
 /* Card checklist item - the full .nn-checkbox--label-left pattern (label left,
    ✓ control right). Only the checked state is customised. */
-.keep-checklist-item.is-checked .setting__label {
+.note-taking-checklist-item.is-checked .setting__label {
   text-decoration: line-through;
   color: var(--color-3);
 }
 
-.keep-card__checklist-more {
+.note-taking-card__checklist-more {
   color: var(--color-3);
 }

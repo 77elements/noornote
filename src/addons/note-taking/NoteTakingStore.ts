@@ -1,22 +1,22 @@
 /**
- * KeepStore - per-user IndexedDB store for Nostr Keep notes.
+ * NoteTakingStore - per-user IndexedDB store for Note taking notes.
  *
- * Mirrors DMStore's per-user DB pattern (db `noornote_keep_{pubkey}`). Notes are
+ * Mirrors DMStore's per-user DB pattern (db `noornote_note_taking_{pubkey}`). Notes are
  * held as PLAINTEXT locally (instant search/render); only ciphertext leaves the
- * device, via KeepSyncService. The `dirty` flag marks notes needing a relay push.
+ * device, via NoteTakingSyncService. The `dirty` flag marks notes needing a relay push.
  *
- * @service KeepStore
- * @used-by KeepService
+ * @service NoteTakingStore
+ * @used-by NoteTakingService
  */
 
 import { SystemLogger } from '../../services/SystemLogger';
 
-export interface KeepChecklistItem {
+export interface NoteChecklistItem {
   text: string;
   checked: boolean;
 }
 
-export interface KeepAttachment {
+export interface NoteAttachment {
   url: string;
   sha256?: string;
   dim?: string;
@@ -24,7 +24,7 @@ export interface KeepAttachment {
 }
 
 /** The encrypted payload - exactly what gets published to relays (kind 30078). */
-export interface KeepNotePayload {
+export interface NotePayload {
   /** Schema version */
   v: number;
   /** UUID - also the kind:30078 d-tag suffix */
@@ -32,7 +32,7 @@ export interface KeepNotePayload {
   title: string;
   /** Markdown body */
   body: string;
-  checklist: KeepChecklistItem[];
+  checklist: NoteChecklistItem[];
   labels: string[];
   /** Palette key (e.g. 'default', 'coral', …) */
   color: string;
@@ -40,7 +40,7 @@ export interface KeepNotePayload {
   archived: boolean;
   /** Local reminder time (epoch sec), 0 = none */
   reminderAt: number;
-  attachments: KeepAttachment[];
+  attachments: NoteAttachment[];
   createdAt: number;
   updatedAt: number;
   /** Tombstone marker: when true, all content fields are emptied (a deleted note). */
@@ -48,17 +48,17 @@ export interface KeepNotePayload {
 }
 
 /** Local store record = payload + sync metadata (`dirty` is NOT published). */
-export interface KeepNoteRecord extends KeepNotePayload {
+export interface NoteRecord extends NotePayload {
   /** Needs a relay push (set on every local edit, cleared after publish). */
   dirty: boolean;
 }
 
-const DB_NAME_PREFIX = 'noornote_keep_';
+const DB_NAME_PREFIX = 'noornote_note_taking_';
 const DB_VERSION = 1;
 const NOTES_STORE = 'notes';
 
-export class KeepStore {
-  private static instance: KeepStore;
+export class NoteTakingStore {
+  private static instance: NoteTakingStore;
   private db: IDBDatabase | null = null;
   private systemLogger: SystemLogger;
   private initPromise: Promise<void> | null = null;
@@ -68,11 +68,11 @@ export class KeepStore {
     this.systemLogger = SystemLogger.getInstance();
   }
 
-  public static getInstance(): KeepStore {
-    if (!KeepStore.instance) {
-      KeepStore.instance = new KeepStore();
+  public static getInstance(): NoteTakingStore {
+    if (!NoteTakingStore.instance) {
+      NoteTakingStore.instance = new NoteTakingStore();
     }
-    return KeepStore.instance;
+    return NoteTakingStore.instance;
   }
 
   /** Open (or switch to) the per-user database. */
@@ -88,7 +88,7 @@ export class KeepStore {
 
     const pubkey = userPubkey || this.currentUserPubkey;
     if (!pubkey) {
-      this.systemLogger.warn('KeepStore', 'init() called without pubkey and no current user');
+      this.systemLogger.warn('NoteTakingStore', 'init() called without pubkey and no current user');
       return;
     }
 
@@ -100,7 +100,7 @@ export class KeepStore {
       const request = indexedDB.open(dbName, DB_VERSION);
 
       request.onerror = () => {
-        this.systemLogger.error('KeepStore', 'Failed to open IndexedDB:', request.error);
+        this.systemLogger.error('NoteTakingStore', 'Failed to open IndexedDB:', request.error);
         reject(request.error);
       };
 
@@ -122,7 +122,7 @@ export class KeepStore {
   }
 
   /** Insert or replace a note. */
-  public async put(record: KeepNoteRecord): Promise<void> {
+  public async put(record: NoteRecord): Promise<void> {
     await this.init();
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction(NOTES_STORE, 'readwrite');
@@ -133,26 +133,26 @@ export class KeepStore {
   }
 
   /** Get a single note by id. */
-  public async get(id: string): Promise<KeepNoteRecord | null> {
+  public async get(id: string): Promise<NoteRecord | null> {
     await this.init();
     if (!this.db) return null;
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction(NOTES_STORE, 'readonly');
       const request = tx.objectStore(NOTES_STORE).get(id);
-      request.onsuccess = () => resolve((request.result as KeepNoteRecord) || null);
+      request.onsuccess = () => resolve((request.result as NoteRecord) || null);
       request.onerror = () => reject(request.error);
     });
   }
 
   /** All notes, newest-updated first. */
-  public async getAll(): Promise<KeepNoteRecord[]> {
+  public async getAll(): Promise<NoteRecord[]> {
     await this.init();
     if (!this.db) return [];
     return new Promise((resolve, reject) => {
       const tx = this.db!.transaction(NOTES_STORE, 'readonly');
       const request = tx.objectStore(NOTES_STORE).getAll();
       request.onsuccess = () => {
-        const notes = (request.result as KeepNoteRecord[]) || [];
+        const notes = (request.result as NoteRecord[]) || [];
         notes.sort((a, b) => b.updatedAt - a.updatedAt);
         resolve(notes);
       };
@@ -161,7 +161,7 @@ export class KeepStore {
   }
 
   /** Notes that still need to be pushed to relays. */
-  public async getDirty(): Promise<KeepNoteRecord[]> {
+  public async getDirty(): Promise<NoteRecord[]> {
     const all = await this.getAll();
     return all.filter((n) => n.dirty);
   }

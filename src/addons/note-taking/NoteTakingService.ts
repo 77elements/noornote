@@ -1,42 +1,42 @@
 /**
- * KeepService - Nostr Keep note management + NIP-44 self-encryption.
+ * NoteTakingService - Note taking note management + NIP-44 self-encryption.
  *
- * Owns local CRUD (via KeepStore) and the crypto used by KeepSyncService.
+ * Owns local CRUD (via NoteTakingStore) and the crypto used by NoteTakingSyncService.
  * Notes are NIP-44-encrypted to the user's OWN pubkey (auth-method-agnostic,
  * same pattern as PetnameService). NO NIP-04 - if the signer can't do NIP-44,
- * Keep is unavailable (mirrors DMService's bunker guard).
+ * note-taking is unavailable (mirrors DMService's bunker guard).
  *
- * @service KeepService
- * @used-by NostrKeepView, KeepSyncService, runtime
+ * @service NoteTakingService
+ * @used-by NoteTakingView, NoteTakingSyncService, runtime
  */
 
 import { AuthService } from '../../services/AuthService';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
-import { KeepStore, type KeepNotePayload, type KeepNoteRecord } from './KeepStore';
+import { NoteTakingStore, type NotePayload, type NoteRecord } from './NoteTakingStore';
 
 const PAYLOAD_VERSION = 1;
 
 /** uuid → deletion timestamp (sec). Blocks resurrection of locally-deleted notes. */
-export type KeepTombstones = Record<string, number>;
+export type NoteTombstones = Record<string, number>;
 
-export class KeepService {
-  private static instance: KeepService;
+export class NoteTakingService {
+  private static instance: NoteTakingService;
   private readonly auth: AuthService;
-  private readonly store: KeepStore;
-  /** Set by KeepSyncService.start() - fired after every local note change. */
-  private changeListener: ((record: KeepNoteRecord) => void) | null = null;
+  private readonly store: NoteTakingStore;
+  /** Set by NoteTakingSyncService.start() - fired after every local note change. */
+  private changeListener: ((record: NoteRecord) => void) | null = null;
 
   private constructor() {
     this.auth = AuthService.getInstance();
-    this.store = KeepStore.getInstance();
+    this.store = NoteTakingStore.getInstance();
   }
 
-  public static getInstance(): KeepService {
-    if (!KeepService.instance) {
-      KeepService.instance = new KeepService();
+  public static getInstance(): NoteTakingService {
+    if (!NoteTakingService.instance) {
+      NoteTakingService.instance = new NoteTakingService();
     }
-    return KeepService.instance;
+    return NoteTakingService.instance;
   }
 
   /** Open the per-user store for the current user. Call on login / board mount. */
@@ -45,49 +45,49 @@ export class KeepService {
     if (user) await this.store.init(user.pubkey);
   }
 
-  /** True if the active signer can do NIP-44 (bunker URL cannot → Keep unavailable). */
+  /** True if the active signer can do NIP-44 (bunker URL cannot → note-taking unavailable). */
   public isAvailable(): boolean {
     return !this.auth.isBunkerAuth() && !!this.auth.getCurrentUser();
   }
 
-  /** Register the post-change hook (KeepSyncService publishes from here). */
-  public onChange(listener: ((record: KeepNoteRecord) => void) | null): void {
+  /** Register the post-change hook (NoteTakingSyncService publishes from here). */
+  public onChange(listener: ((record: NoteRecord) => void) | null): void {
     this.changeListener = listener;
   }
 
-  private notifyChange(record: KeepNoteRecord): void {
+  private notifyChange(record: NoteRecord): void {
     try {
       this.changeListener?.(record);
     } catch (error) {
-      diagLog('system', 'keep: change listener threw', { error: String(error) });
+      diagLog('system', 'note-taking: change listener threw', { error: String(error) });
     }
   }
 
   // ── Local CRUD ─────────────────────────────────────────────────────────────
 
   /** Live (non-deleted) notes for the board. */
-  public async listNotes(): Promise<KeepNoteRecord[]> {
+  public async listNotes(): Promise<NoteRecord[]> {
     const all = await this.store.getAll();
     return all.filter((n) => !n.deleted);
   }
 
-  /** All dirty records (incl. pending tombstones) - for KeepSyncService. */
-  public async listDirty(): Promise<KeepNoteRecord[]> {
+  /** All dirty records (incl. pending tombstones) - for NoteTakingSyncService. */
+  public async listDirty(): Promise<NoteRecord[]> {
     return this.store.getDirty();
   }
 
-  public get storeRef(): KeepStore {
+  public get storeRef(): NoteTakingStore {
     return this.store;
   }
 
-  public async getNote(id: string): Promise<KeepNoteRecord | null> {
+  public async getNote(id: string): Promise<NoteRecord | null> {
     return this.store.get(id);
   }
 
   /** Create a new note from a partial payload; assigns id + timestamps. */
-  public async createNote(partial: Partial<KeepNotePayload> = {}): Promise<KeepNoteRecord> {
+  public async createNote(partial: Partial<NotePayload> = {}): Promise<NoteRecord> {
     const now = Math.floor(Date.now() / 1000);
-    const record: KeepNoteRecord = {
+    const record: NoteRecord = {
       v: PAYLOAD_VERSION,
       id: crypto.randomUUID(),
       title: '',
@@ -105,7 +105,7 @@ export class KeepService {
       dirty: true,
     };
     await this.store.put(record);
-    diagLog('system', 'keep: note created', { id: record.id.slice(0, 8) });
+    diagLog('system', 'note-taking: note created', { id: record.id.slice(0, 8) });
     this.notifyChange(record);
     return record;
   }
@@ -113,11 +113,11 @@ export class KeepService {
   /** Patch an existing note; bumps updatedAt + marks dirty. */
   public async updateNote(
     id: string,
-    patch: Partial<KeepNotePayload>
-  ): Promise<KeepNoteRecord | null> {
+    patch: Partial<NotePayload>
+  ): Promise<NoteRecord | null> {
     const existing = await this.store.get(id);
     if (!existing) return null;
-    const updated: KeepNoteRecord = {
+    const updated: NoteRecord = {
       ...existing,
       ...patch,
       id: existing.id,
@@ -132,7 +132,7 @@ export class KeepService {
 
   /**
    * Delete a note: turn it into a tombstone (content emptied, `deleted:true`)
-   * and record a local tombstone. KeepSyncService publishes the tombstone, which
+   * and record a local tombstone. NoteTakingSyncService publishes the tombstone, which
    * REPLACES the note's own d-tag event → its content is physically removed from
    * relays (not merely flagged). The record stays local+dirty until published.
    */
@@ -141,7 +141,7 @@ export class KeepService {
     if (!existing) return;
 
     const now = Math.floor(Date.now() / 1000);
-    const tombstone: KeepNoteRecord = {
+    const tombstone: NoteRecord = {
       v: existing.v,
       id: existing.id,
       title: '',
@@ -160,20 +160,20 @@ export class KeepService {
     };
     await this.store.put(tombstone);
     this.addTombstone(id, now);
-    diagLog('system', 'keep: note deleted (tombstoned)', { id: id.slice(0, 8) });
+    diagLog('system', 'note-taking: note deleted (tombstoned)', { id: id.slice(0, 8) });
     this.notifyChange(tombstone);
   }
 
   // ── Tombstone set (resurrection guard) ─────────────────────────────────────
 
-  public getTombstones(): KeepTombstones {
-    return PerAccountLocalStorage.getInstance().get<KeepTombstones>(StorageKeys.KEEP_TOMBSTONES, {});
+  public getTombstones(): NoteTombstones {
+    return PerAccountLocalStorage.getInstance().get<NoteTombstones>(StorageKeys.NOTE_TAKING_TOMBSTONES, {});
   }
 
   public addTombstone(id: string, ts: number): void {
     const map = this.getTombstones();
     map[id] = ts;
-    PerAccountLocalStorage.getInstance().set(StorageKeys.KEEP_TOMBSTONES, map);
+    PerAccountLocalStorage.getInstance().set(StorageKeys.NOTE_TAKING_TOMBSTONES, map);
   }
 
   public isTombstoned(id: string, updatedAt: number): boolean {
@@ -181,12 +181,12 @@ export class KeepService {
     return ts !== undefined && updatedAt <= ts;
   }
 
-  // ── Sync merge helpers (used by KeepSyncService) ───────────────────────────
+  // ── Sync merge helpers (used by NoteTakingSyncService) ───────────────────────────
 
   /** After a successful publish: clear dirty, or drop the local tombstone record. */
-  public async markPublished(record: KeepNoteRecord): Promise<void> {
+  public async markPublished(record: NoteRecord): Promise<void> {
     if (record.deleted) {
-      // Tombstone is on relays now; drop the local record (KEEP_TOMBSTONES guards resurrection).
+      // Tombstone is on relays now; drop the local record (NOTE_TAKING_TOMBSTONES guards resurrection).
       await this.store.delete(record.id);
     } else {
       await this.store.put({ ...record, dirty: false });
@@ -200,7 +200,7 @@ export class KeepService {
    * - otherwise last-write-wins by updatedAt.
    * Returns true if local state changed.
    */
-  public async applyRemote(payload: KeepNotePayload): Promise<boolean> {
+  public async applyRemote(payload: NotePayload): Promise<boolean> {
     if (payload.deleted) {
       this.addTombstone(payload.id, payload.updatedAt);
       const local = await this.store.get(payload.id);
@@ -220,10 +220,10 @@ export class KeepService {
     return true;
   }
 
-  // ── Crypto (used by KeepSyncService) ───────────────────────────────────────
+  // ── Crypto (used by NoteTakingSyncService) ───────────────────────────────────────
 
   /** Strip local-only metadata, leaving just the publishable payload. */
-  public toPayload(record: KeepNoteRecord): KeepNotePayload {
+  public toPayload(record: NoteRecord): NotePayload {
     const { dirty: _dirty, ...payload } = record;
     return payload;
   }
@@ -233,9 +233,9 @@ export class KeepService {
    * guard: a silently-failed encrypt that returned plaintext would leak the
    * note to relays - so we refuse to emit anything that still looks like JSON.
    */
-  public async encryptPayload(payload: KeepNotePayload): Promise<string> {
+  public async encryptPayload(payload: NotePayload): Promise<string> {
     const user = this.auth.getCurrentUser();
-    if (!user) throw new Error('Keep: no user');
+    if (!user) throw new Error('Note taking: no user');
 
     const plaintext = JSON.stringify(payload);
     const ciphertext = await this.auth.nip44Encrypt(plaintext, user.pubkey);
@@ -248,15 +248,15 @@ export class KeepService {
       ciphertext.trimStart().startsWith('{') ||
       ciphertext.includes('"id":')
     ) {
-      diagLog('system', 'keep: encryption integrity check FAILED', { id: payload.id.slice(0, 8) });
-      throw new Error('Keep: encryption integrity check failed (output looks like plaintext)');
+      diagLog('system', 'note-taking: encryption integrity check FAILED', { id: payload.id.slice(0, 8) });
+      throw new Error('Note taking: encryption integrity check failed (output looks like plaintext)');
     }
 
     return ciphertext;
   }
 
   /** Decrypt a stored ciphertext back into a payload (null on failure). */
-  public async decryptPayload(ciphertext: string): Promise<KeepNotePayload | null> {
+  public async decryptPayload(ciphertext: string): Promise<NotePayload | null> {
     const user = this.auth.getCurrentUser();
     if (!user) return null;
     try {
@@ -266,7 +266,7 @@ export class KeepService {
       if (!raw || typeof raw.id !== 'string') return null;
       return this.normalizePayload(raw, raw.id);
     } catch (error) {
-      diagLog('system', 'keep: decrypt failed', { error: String(error) });
+      diagLog('system', 'note-taking: decrypt failed', { error: String(error) });
       return null;
     }
   }
@@ -276,7 +276,7 @@ export class KeepService {
    * against schema drift / corruption: every field gets a safe default of the
    * right type, so a malformed note can never crash the board or be mistyped.
    */
-  private normalizePayload(raw: Record<string, unknown>, id: string): KeepNotePayload {
+  private normalizePayload(raw: Record<string, unknown>, id: string): NotePayload {
     const str = (v: unknown, d = ''): string => (typeof v === 'string' ? v : d);
     const num = (v: unknown, d = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : d);
     const checklist = Array.isArray(raw.checklist)
@@ -315,6 +315,6 @@ export class KeepService {
   public destroy(): void {
     this.changeListener = null;
     this.store.close();
-    KeepService.instance = undefined as unknown as KeepService;
+    NoteTakingService.instance = undefined as unknown as NoteTakingService;
   }
 }

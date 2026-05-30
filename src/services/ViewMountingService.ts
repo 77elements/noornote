@@ -528,8 +528,8 @@ export class ViewMountingService {
       case 'addon-note-taking':
         return {
           factory: async () => {
-            const { NostrKeepAddonView } = await import('../addons/nostr-keep/NostrKeepAddonView');
-            const view = new NostrKeepAddonView();
+            const { NoteTakingAddonView } = await import('../addons/note-taking/NoteTakingAddonView');
+            const view = new NoteTakingAddonView();
             return { element: view.getElement(), view };
           }
         };

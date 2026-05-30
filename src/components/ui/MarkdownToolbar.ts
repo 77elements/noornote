@@ -1,7 +1,7 @@
 /**
  * MarkdownToolbar - shared rudimentary Markdown formatting toolbar.
  *
- * Extracted from ArticleEditorView so multiple features (Articles, Nostr Keep)
+ * Extracted from ArticleEditorView so multiple features (Articles, Note taking)
  * share one insert implementation. Operates purely on a caller-provided
  * <textarea>: it edits `textarea.value` + selection directly and dispatches an
  * `input` event, so the host keeps its own state in sync via its existing input
@@ -10,7 +10,7 @@
  * Scope is deliberately limited to: heading, bold, italic, quote, image.
  *
  * @component MarkdownToolbar
- * @used-by ArticleEditorView, NostrKeepView
+ * @used-by ArticleEditorView, NoteTakingView
  */
 
 export interface MarkdownToolbarOptions {

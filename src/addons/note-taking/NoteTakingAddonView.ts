@@ -1,7 +1,7 @@
 /**
- * NostrKeepAddonView - settings page + inline board (route `/addons/nostr-keep`).
+ * NoteTakingAddonView - settings page + inline board (route `/addons/note-taking`).
  *
- * Toggle (emits `nostr-keep:addon-toggle`). When enabled, the Keep board is
+ * Toggle (emits `note-taking:addon-toggle`). When enabled, the note-taking board is
  * rendered directly below the toggle - no separate full-screen route.
  * Backup/Restore buttons land in phase 1e.
  */
@@ -11,13 +11,13 @@ import { Switch } from '../../components/ui/Switch';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { AuthService } from '../../services/AuthService';
-import { isNostrKeepEnabled, setNostrKeepEnabled } from './index';
-import { NostrKeepView } from './NostrKeepView';
+import { isNoteTakingEnabled, setNoteTakingEnabled } from './index';
+import { NoteTakingView } from './NoteTakingView';
 
-export class NostrKeepAddonView extends View {
+export class NoteTakingAddonView extends View {
   private container: HTMLElement;
   private enableSwitch: Switch | null = null;
-  private board: NostrKeepView | null = null;
+  private board: NoteTakingView | null = null;
 
   constructor() {
     super();
@@ -29,9 +29,9 @@ export class NostrKeepAddonView extends View {
   private render(): void {
     this.enableSwitch = new Switch({
       label: '',
-      checked: isNostrKeepEnabled(),
+      checked: isNoteTakingEnabled(),
       onChange: (checked) => {
-        setNostrKeepEnabled(checked);
+        setNoteTakingEnabled(checked);
         TypedEventBus.getInstance().emit('note-taking:addon-toggle', { enabled: checked });
         ToastService.show(checked ? 'Note taking enabled' : 'Note taking disabled', 'success');
         this.renderBoard();
@@ -59,7 +59,7 @@ export class NostrKeepAddonView extends View {
     if (!slot) return;
 
     const npub = AuthService.getInstance().getCurrentUser()?.npub ?? '';
-    const shouldShow = isNostrKeepEnabled() && !!npub;
+    const shouldShow = isNoteTakingEnabled() && !!npub;
 
     if (!shouldShow) {
       this.board?.destroy();
@@ -69,7 +69,7 @@ export class NostrKeepAddonView extends View {
     }
 
     if (this.board) return; // already mounted
-    this.board = new NostrKeepView(npub);
+    this.board = new NoteTakingView(npub);
     slot.appendChild(this.board.getElement());
   }
 

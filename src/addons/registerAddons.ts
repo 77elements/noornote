@@ -23,7 +23,7 @@ import { isFollowPacksEnabled } from './follow-packs/index';
 import { isScheduledPostsEnabled } from './scheduled-posts/index';
 import { isNospressEnabled } from './nospress/index';
 import { isBadgesEnabled } from './badges/index';
-import { isNostrKeepEnabled } from './nostr-keep/index';
+import { isNoteTakingEnabled } from './note-taking/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -97,8 +97,8 @@ export function registerCoreAddons(): void {
 
   loader.register({
     id: 'note-taking',
-    isEnabled: isNostrKeepEnabled,
-    load: () => import('./nostr-keep/runtime').then(m => m.default),
+    isEnabled: isNoteTakingEnabled,
+    load: () => import('./note-taking/runtime').then(m => m.default),
   });
 
   // Out of scope (list-adjacent, deferred — separate decision):

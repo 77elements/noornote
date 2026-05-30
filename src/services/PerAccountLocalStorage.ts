@@ -120,10 +120,10 @@ export const StorageKeys = {
   WALLET_BALANCE_ADDON_ENABLED: 'noornote_wallet_balance_addon_enabled_map',
   LIVE_STREAMS_PLAYER_ENABLED: 'noornote_live_streams_player_enabled_map',
   BADGES_ENABLED: 'noornote_badges_enabled_map',
-  NOSTR_KEEP_ENABLED: 'noornote_nostr_keep_enabled_map',
-  // Nostr Keep deletion tombstones — Record<noteUuid, deletionTimestampSec>.
+  NOTE_TAKING_ENABLED: 'noornote_note_taking_enabled_map',
+  // Note taking deletion tombstones — Record<noteUuid, deletionTimestampSec>.
   // Prevents a GC'd kind:5 from resurrecting a deleted note on next fetch.
-  KEEP_TOMBSTONES: 'noornote_keep_tombstones_map',
+  NOTE_TAKING_TOMBSTONES: 'noornote_note_taking_tombstones_map',
   PETNAMES: 'noornote_petnames_map',
   DATA_SAVER_ENABLED: 'noornote_data_saver_enabled_map',
 
