@@ -4,6 +4,24 @@
 
 @use '../abstracts/variables' as *;
 
+// Note accent colors (solid, theme-independent — keep keys in sync with keepColors.ts)
+$keep-colors: (
+  red: #e57373,
+  orange: #ffb74d,
+  yellow: #fff176,
+  green: #81c784,
+  teal: #4db6ac,
+  blue: #64b5f6,
+  purple: #ba68c8,
+  pink: #f06292,
+);
+
+@each $key, $val in $keep-colors {
+  .keep-color-#{$key} {
+    --keep-accent: #{$val};
+  }
+}
+
 .nostr-keep {
   display: flex;
   flex-direction: column;
@@ -86,23 +104,26 @@
 }
 
 .keep-card {
+  position: relative;
   break-inside: avoid;
   display: block;
   width: 100%;
   margin-bottom: $gap;
   padding: $gap;
-  border: 1px solid var(--color-2);
+  // Accent border when the note has a color; normal border otherwise.
+  border: 1px solid var(--keep-accent, var(--color-2));
   border-radius: $radius-xl;
   background: var(--color-1);
   cursor: pointer;
-  transition: border-color 0.15s ease;
 
-  &:hover {
-    border-color: var(--color-4);
-  }
-
-  &--pinned {
-    border-color: var(--color-4);
+  &__color-dot {
+    position: absolute;
+    top: $gap;
+    right: $gap;
+    width: 10px;
+    height: 10px;
+    border-radius: $radius-full;
+    background: var(--keep-accent);
   }
 
   &__pin {
@@ -220,6 +241,32 @@
     &:hover {
       color: var(--color-red);
     }
+  }
+}
+
+/* Color swatch picker (editor) */
+.keep-editor__colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc($gap / 2);
+}
+
+.keep-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: $radius-full;
+  border: none;
+  cursor: pointer;
+  background: var(--keep-accent, var(--color-1));
+
+  &.keep-color-default {
+    background: var(--color-1);
+    border: 1px solid var(--color-3);
+  }
+
+  &.is-active {
+    outline: 2px solid var(--color-5);
+    outline-offset: 2px;
   }
 }
 

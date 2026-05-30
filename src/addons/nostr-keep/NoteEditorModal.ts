@@ -13,6 +13,7 @@ import { MarkdownToolbar } from '../../components/ui/MarkdownToolbar';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { KeepService } from './KeepService';
 import type { KeepChecklistItem, KeepNoteRecord } from './KeepStore';
+import { KEEP_COLORS } from './keepColors';
 
 export interface NoteEditorOptions {
   /** Existing note to edit, or undefined for a new note. */
@@ -25,10 +26,12 @@ export class NoteEditorModal {
   private toolbar: MarkdownToolbar | null = null;
   private pinned: boolean;
   private archived: boolean;
+  private color: string;
 
   constructor(private readonly opts: NoteEditorOptions) {
     this.pinned = opts.note?.pinned ?? false;
     this.archived = opts.note?.archived ?? false;
+    this.color = opts.note?.color ?? 'default';
   }
 
   public open(): void {
@@ -53,6 +56,9 @@ export class NoteEditorModal {
       <div class="keep-editor__labels">
         <div class="keep-editor__label-chips" data-label-chips></div>
         <input type="text" class="input keep-editor__label-input" placeholder="Add label…" data-label-input />
+      </div>
+      <div class="keep-editor__colors" data-colors>
+        ${KEEP_COLORS.map((c) => `<button type="button" class="keep-swatch keep-color-${c}${c === this.color ? ' is-active' : ''}" data-color="${c}" title="${c}" aria-label="${c} color"></button>`).join('')}
       </div>
       <div class="keep-editor__actions l-row--split">
         <div>
@@ -111,6 +117,15 @@ export class NoteEditorModal {
           labelInput.value = '';
         }
       }
+    });
+
+    // Color swatches: select one, highlight it.
+    content.querySelectorAll('.keep-swatch').forEach((swatch) => {
+      swatch.addEventListener('click', () => {
+        this.color = (swatch as HTMLElement).dataset.color || 'default';
+        content.querySelectorAll('.keep-swatch').forEach((s) =>
+          s.classList.toggle('is-active', (s as HTMLElement).dataset.color === this.color));
+      });
     });
 
     content.querySelector('.keep-editor__delete')?.addEventListener('click', () => this.handleDelete());
@@ -191,9 +206,9 @@ export class NoteEditorModal {
 
     const keep = KeepService.getInstance();
     if (this.opts.note) {
-      await keep.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, archived: this.archived, checklist, labels });
+      await keep.updateNote(this.opts.note.id, { title, body, pinned: this.pinned, archived: this.archived, color: this.color, checklist, labels });
     } else {
-      await keep.createNote({ title, body, pinned: this.pinned, archived: this.archived, checklist, labels });
+      await keep.createNote({ title, body, pinned: this.pinned, archived: this.archived, color: this.color, checklist, labels });
     }
 
     ModalService.getInstance().hide();

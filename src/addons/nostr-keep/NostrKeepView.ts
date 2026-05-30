@@ -12,6 +12,7 @@ import { KeepService } from './KeepService';
 import { KeepSyncService } from './KeepSyncService';
 import type { KeepNoteRecord } from './KeepStore';
 import { NoteEditorModal } from './NoteEditorModal';
+import { isAccentColor } from './keepColors';
 
 export class NostrKeepView extends View {
   private container: HTMLElement;
@@ -183,8 +184,11 @@ export class NostrKeepView extends View {
         <div class="keep-card__labels">
           ${note.labels.map((l) => `<span class="keep-label">${escapeHtml(l)}</span>`).join('')}
         </div>` : '';
+    const colored = isAccentColor(note.color);
+    const colorClass = colored ? ` keep-color-${note.color}` : '';
     return `
-      <div class="keep-card${note.pinned ? ' keep-card--pinned' : ''}" data-note-id="${escapeHtml(note.id)}">
+      <div class="keep-card${note.pinned ? ' keep-card--pinned' : ''}${colorClass}" data-note-id="${escapeHtml(note.id)}">
+        ${colored ? '<span class="keep-card__color-dot"></span>' : ''}
         ${note.pinned ? '<svg class="keep-card__pin" width="14" height="14"><use href="#icon-bookmark"/></svg>' : ''}
         ${note.title ? `<h2 class="keep-card__title h4">${escapeHtml(note.title)}</h2>` : ''}
         ${preview ? `<div class="keep-card__body">${escapeHtml(preview)}</div>` : ''}
