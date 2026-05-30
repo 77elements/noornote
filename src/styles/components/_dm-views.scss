@@ -188,6 +188,24 @@
   .badge {
     flex-shrink: 0;
   }
+
+  &__delete {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc($gap / 2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-3);
+    border-radius: $radius-full;
+
+    &:hover {
+      color: var(--color-red);
+      background: var(--color-2);
+    }
+  }
 }
 
 /* ================================

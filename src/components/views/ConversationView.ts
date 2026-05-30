@@ -233,9 +233,16 @@ export class ConversationView extends View {
 
     const privateMutesEnabled = MuteOrchestrator.getInstance().isPrivateMutesEnabled();
 
-    menu.innerHTML = privateMutesEnabled
+    const muteItems = privateMutesEnabled
       ? this.createMuteMenuItems(['mute-privately', 'mute-publicly'])
       : this.createMuteMenuItems(['mute-publicly']);
+
+    menu.innerHTML = muteItems + `
+      <button class="note-menu-item note-menu-item--danger" data-action="delete-conversation">
+        <svg width="16" height="16"><use href="#icon-trash"/></svg>
+        Delete conversation
+      </button>
+    `;
 
     menu.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -243,10 +250,33 @@ export class ConversationView extends View {
       if (!item) return;
 
       this.closeMenu();
-      this.muteUser(item.dataset.action === 'mute-privately');
+      if (item.dataset.action === 'delete-conversation') {
+        this.confirmDelete();
+      } else {
+        this.muteUser(item.dataset.action === 'mute-privately');
+      }
     });
 
     return menu;
+  }
+
+  /**
+   * Confirm + locally soft-delete this conversation, then return to the list.
+   */
+  private async confirmDelete(): Promise<void> {
+    const { ModalService } = await import('../../services/ModalService');
+    const confirmed = await ModalService.getInstance().confirm({
+      title: 'Delete conversation',
+      message: 'Delete this conversation? It is removed only from this device.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+
+    await this.dmsApi?.deleteConversation(this.partnerPubkey);
+    ToastService.show('Conversation deleted', 'success');
+    this.router.navigate('/messages');
   }
 
   /**

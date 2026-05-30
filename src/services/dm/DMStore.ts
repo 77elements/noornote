@@ -47,10 +47,14 @@ export interface DMConversation {
   lastReadAt: number;
   /** Conversation subject (latest) */
   subject?: string;
+  /** Locally soft-deleted: hidden from lists, messages up to deletedAt filtered out */
+  deleted?: boolean;
+  /** Soft-delete cutoff (seconds). A newer message resurrects the conversation. */
+  deletedAt?: number;
 }
 
 const DB_NAME_PREFIX = 'noornote_dm_';
-const DB_VERSION = 3; // Bumped for lastReadAt field
+const DB_VERSION = 4; // v4: added optional deleted/deletedAt (additive, no migration)
 const MESSAGES_STORE = 'messages';
 const CONVERSATIONS_STORE = 'conversations';
 
@@ -187,11 +191,19 @@ export class DMStore {
           const existing = getConvRequest.result as DMConversation | undefined;
           const isNewer = !existing || message.createdAt > existing.lastMessageAt;
 
+          // Soft-delete handling: a message newer than the delete cutoff
+          // resurrects the conversation; an older one (e.g. re-synced history)
+          // keeps it hidden and does NOT bump unread.
+          const wasDeleted = existing?.deleted === true;
+          const resurrect = wasDeleted && message.createdAt > (existing?.deletedAt || 0);
+          const staysDeleted = wasDeleted && !resurrect;
+
           // Only count as unread if:
           // 1. Not my own message
           // 2. Message is newer than lastReadAt (or no lastReadAt exists = 0)
+          // 3. The conversation isn't staying soft-deleted
           const lastReadAt = existing?.lastReadAt || 0;
-          const shouldIncrementUnread = !message.isMine && message.createdAt > lastReadAt;
+          const shouldIncrementUnread = !message.isMine && message.createdAt > lastReadAt && !staysDeleted;
 
           const subject = message.subject || existing?.subject;
           const conversation: DMConversation = {
@@ -202,7 +214,9 @@ export class DMStore {
               ? (existing?.unreadCount || 0) + 1
               : (existing?.unreadCount || 0),
             lastReadAt: lastReadAt,
-            ...(subject && { subject })
+            ...(subject && { subject }),
+            // Keep hidden only while staying deleted; resurrection/new convo clears it.
+            ...(staysDeleted && { deleted: true, deletedAt: existing!.deletedAt })
           };
 
           conversationsStore.put(conversation);
@@ -221,31 +235,45 @@ export class DMStore {
     await this.init();
 
     return new Promise((resolve, reject) => {
-      const tx = this.db!.transaction(MESSAGES_STORE, 'readonly');
-      const store = tx.objectStore(MESSAGES_STORE);
-      const index = store.index('conversationWith');
-      const request = index.getAll(IDBKeyRange.only(partnerPubkey));
+      const tx = this.db!.transaction([MESSAGES_STORE, CONVERSATIONS_STORE], 'readonly');
 
-      request.onsuccess = () => {
-        let result = request.result as DMMessage[];
+      // Look up the soft-delete cutoff first, so messages up to deletedAt stay hidden.
+      const convRequest = tx.objectStore(CONVERSATIONS_STORE).get(partnerPubkey);
+      convRequest.onsuccess = () => {
+        const conv = convRequest.result as DMConversation | undefined;
+        const deletedAt = conv?.deletedAt || 0;
 
-        // Apply before filter if specified
-        if (before) {
-          result = result.filter(m => m.createdAt < before);
-        }
+        const index = tx.objectStore(MESSAGES_STORE).index('conversationWith');
+        const request = index.getAll(IDBKeyRange.only(partnerPubkey));
 
-        // Sort by createdAt ascending (oldest first for display)
-        result = result.sort((a, b) => a.createdAt - b.createdAt);
+        request.onsuccess = () => {
+          let result = request.result as DMMessage[];
 
-        // Apply limit (take newest)
-        if (result.length > limit) {
-          result = result.slice(-limit);
-        }
+          // Filter out messages from before a local soft-delete
+          if (deletedAt) {
+            result = result.filter(m => m.createdAt > deletedAt);
+          }
 
-        resolve(result);
+          // Apply before filter if specified
+          if (before) {
+            result = result.filter(m => m.createdAt < before);
+          }
+
+          // Sort by createdAt ascending (oldest first for display)
+          result = result.sort((a, b) => a.createdAt - b.createdAt);
+
+          // Apply limit (take newest)
+          if (result.length > limit) {
+            result = result.slice(-limit);
+          }
+
+          resolve(result);
+        };
+
+        request.onerror = () => reject(request.error);
       };
 
-      request.onerror = () => reject(request.error);
+      convRequest.onerror = () => reject(convRequest.error);
     });
   }
 
@@ -268,6 +296,12 @@ export class DMStore {
         const cursor = request.result;
         if (!cursor) {
           resolve(conversations);
+          return;
+        }
+
+        // Skip locally soft-deleted conversations entirely (not counted toward offset)
+        if ((cursor.value as DMConversation).deleted === true) {
+          cursor.continue();
           return;
         }
 
@@ -329,6 +363,61 @@ export class DMStore {
         resolve();
       };
 
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /**
+   * Soft-delete a conversation: hide it from lists and filter out its messages
+   * up to the deletion time. A newer message (via saveMessage) resurrects it.
+   * Messages stay in the store (dedup) but are filtered on read.
+   */
+  public async softDeleteConversation(partnerPubkey: string): Promise<void> {
+    await this.init();
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction(CONVERSATIONS_STORE, 'readwrite');
+      const store = tx.objectStore(CONVERSATIONS_STORE);
+      const request = store.get(partnerPubkey);
+
+      request.onsuccess = () => {
+        const conversation = request.result as DMConversation | undefined;
+        if (conversation) {
+          conversation.deleted = true;
+          conversation.deletedAt = Math.floor(Date.now() / 1000);
+          conversation.unreadCount = 0;
+          store.put(conversation);
+        }
+        resolve();
+      };
+
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
+  /**
+   * Hard-delete a conversation and all its messages (no resurrection).
+   * Used for the "delete & mute" path where the sender is also muted.
+   */
+  public async purgeConversation(partnerPubkey: string): Promise<void> {
+    await this.init();
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db!.transaction([MESSAGES_STORE, CONVERSATIONS_STORE], 'readwrite');
+      tx.objectStore(CONVERSATIONS_STORE).delete(partnerPubkey);
+
+      // Delete every message in this conversation via the conversationWith index
+      const index = tx.objectStore(MESSAGES_STORE).index('conversationWith');
+      const cursorReq = index.openCursor(IDBKeyRange.only(partnerPubkey));
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (cursor) {
+          cursor.delete();
+          cursor.continue();
+        }
+      };
+
+      tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
   }

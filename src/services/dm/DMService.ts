@@ -23,7 +23,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { SystemLogger } from '../SystemLogger';
 import { diagLog } from '../DiagnosticLogger';
 import { FollowCheckService } from '../FollowCheckService';
-import { MuteOrchestrator } from '../../lists/mutes';
+import { MuteOrchestrator, muteUser } from '../../lists/mutes';
 import { PerAccountLocalStorage, StorageKeys } from '../PerAccountLocalStorage';
 import { generateSecretKey, getPublicKey, calculateEventHash } from '../../services/NostrToolsAdapter';
 
@@ -1113,6 +1113,27 @@ export class DMService {
    */
   public async markAllAsUnread(): Promise<void> {
     await this.dmStore.markAllAsUnread();
+    this.eventBus.emit('dm:badge-update');
+  }
+
+  /**
+   * Soft-delete a conversation locally (hidden from lists, messages filtered).
+   * A future newer message resurrects it. Relays are NOT touched (NIP-17 wraps
+   * can't be deleted — see docs/todos/dm-incremental-sync.md).
+   */
+  public async deleteConversation(partnerPubkey: string): Promise<void> {
+    await this.dmStore.softDeleteConversation(partnerPubkey);
+    this.eventBus.emit('dm:badge-update');
+  }
+
+  /**
+   * Hard-delete a conversation AND mute the sender (privately). Used for spam:
+   * purges local messages and adds the pubkey to the mute list, so it stays
+   * excluded from every tab even if the sender messages again.
+   */
+  public async deleteAndMute(partnerPubkey: string): Promise<void> {
+    await this.dmStore.purgeConversation(partnerPubkey);
+    muteUser(partnerPubkey, true); // private mute — emits 'mute:updated'
     this.eventBus.emit('dm:badge-update');
   }
 

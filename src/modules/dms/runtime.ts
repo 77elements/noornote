@@ -33,6 +33,8 @@ export class DMsRuntime implements ModuleRuntime<DMsModuleApi> {
       markAsRead: (partnerPubkey) => svc?.markAsRead(partnerPubkey) ?? Promise.resolve(),
       markAllAsRead: () => svc?.markAllAsRead() ?? Promise.resolve(),
       markAllAsUnread: () => svc?.markAllAsUnread() ?? Promise.resolve(),
+      deleteConversation: (partnerPubkey) => svc?.deleteConversation(partnerPubkey) ?? Promise.resolve(),
+      deleteAndMute: (partnerPubkey) => svc?.deleteAndMute(partnerPubkey) ?? Promise.resolve(),
       resyncAll: () => svc?.resyncAll() ?? Promise.resolve(),
       start: () => svc?.start() ?? Promise.resolve(),
       stop: () => svc?.stop(),

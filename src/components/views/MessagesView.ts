@@ -454,6 +454,9 @@ export class MessagesView extends View {
       ${conversation.unreadCount > 0 ? `
         <div class="badge">${conversation.unreadCount}</div>
       ` : ''}
+      <button class="conversation-item__delete" aria-label="${this.activeTab === 'unknown' ? 'Delete &amp; mute sender' : 'Delete conversation'}" title="${this.activeTab === 'unknown' ? 'Delete &amp; mute sender' : 'Delete conversation'}">
+        <svg width="18" height="18"><use href="#icon-trash"/></svg>
+      </button>
     `;
 
     // Click handler to open conversation
@@ -461,7 +464,45 @@ export class MessagesView extends View {
       this.openConversation(conversation.pubkey);
     });
 
+    // Per-row delete — stop propagation so it doesn't open the conversation
+    const deleteBtn = item.querySelector('.conversation-item__delete');
+    deleteBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.confirmDeleteConversation(conversation.pubkey, displayName);
+    });
+
     return item;
+  }
+
+  /**
+   * Confirm + delete a conversation. In the Unknown (spam) tab this also mutes
+   * the sender; in the Known tab it's a plain local soft-delete.
+   */
+  private async confirmDeleteConversation(partnerPubkey: string, displayName: string): Promise<void> {
+    const { ModalService } = await import('../../services/ModalService');
+    const isUnknown = this.activeTab === 'unknown';
+
+    const confirmed = await ModalService.getInstance().confirm({
+      title: isUnknown ? 'Delete & mute' : 'Delete conversation',
+      message: isUnknown
+        ? `Delete this conversation and mute ${displayName}? They won't appear in your messages again.`
+        : `Delete this conversation with ${displayName}? It's removed only from this device.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      confirmDestructive: true,
+    });
+    if (!confirmed) return;
+
+    if (isUnknown) {
+      await this.dmsApi?.deleteAndMute(partnerPubkey);
+    } else {
+      await this.dmsApi?.deleteConversation(partnerPubkey);
+    }
+
+    // Remove the row from the DOM immediately
+    this.container.querySelector(`.conversation-item[data-pubkey="${partnerPubkey}"]`)?.remove();
+    this.conversations = this.conversations.filter(c => c.pubkey !== partnerPubkey);
+    ToastService.show(isUnknown ? 'Conversation deleted & sender muted' : 'Conversation deleted', 'success');
   }
 
   /**

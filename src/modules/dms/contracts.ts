@@ -10,6 +10,8 @@ export interface DMsModuleApi {
   markAsRead(partnerPubkey: string): Promise<void>;
   markAllAsRead(): Promise<void>;
   markAllAsUnread(): Promise<void>;
+  deleteConversation(partnerPubkey: string): Promise<void>;
+  deleteAndMute(partnerPubkey: string): Promise<void>;
   resyncAll(): Promise<void>;
   start(): Promise<void>;
   stop(): void;
