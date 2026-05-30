@@ -6,14 +6,14 @@
 
 // Note accent colors (solid, theme-independent - keep keys in sync with noteColors.ts)
 $note-taking-colors: (
-  red: #e57373,
-  orange: #ffb74d,
-  yellow: #fff176,
-  green: #81c784,
-  teal: #4db6ac,
-  blue: #64b5f6,
-  purple: #ba68c8,
-  pink: #f06292,
+  'red': #e57373,
+  'orange': #ffb74d,
+  'yellow': #fff176,
+  'green': #81c784,
+  'teal': #4db6ac,
+  'blue': #64b5f6,
+  'purple': #ba68c8,
+  'pink': #f06292,
 );
 
 @each $key, $val in $note-taking-colors {
