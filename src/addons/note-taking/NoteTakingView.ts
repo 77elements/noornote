@@ -103,7 +103,9 @@ export class NoteTakingView extends View {
       : viewNotes;
 
     if (notes.length === 0) {
-      const isFirstRun = allNotes.length === 0;
+      // The plain Notes view, whenever empty (first run OR everything archived),
+      // always shows the same intro + privacy explainer.
+      const isPlainEmpty = !this.activeLabel && this.view === 'active';
       let head: string;
       let sub: string;
       if (this.activeLabel) {
@@ -112,16 +114,12 @@ export class NoteTakingView extends View {
       } else if (this.view === 'archived') {
         head = 'No archived notes';
         sub = 'Archive a note to tuck it away here.';
-      } else if (isFirstRun) {
+      } else {
         head = 'No notes yet';
         sub = 'Tap “New note” to write your first encrypted note.';
-      } else {
-        head = 'Nothing here';
-        sub = 'All your notes are archived.';
       }
 
-      // First-run: spell out what this addon is (and isn't) about.
-      const info = isFirstRun ? `
+      const info = isPlainEmpty ? `
         <div class="note-taking__empty-info">
           <p>Note taking is built for your own <strong>private, local</strong> use. Your notes are <strong>never published</strong> to the network.</p>
           <p>Relay sync is only a <strong>backup</strong> and keeps your NoorNote devices in sync. Every note is encrypted with <strong>NIP-44 using your own key</strong>, so only ciphertext ever leaves this device.</p>

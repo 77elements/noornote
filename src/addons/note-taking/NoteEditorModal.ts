@@ -86,6 +86,7 @@ export class NoteEditorModal {
     pinBtn.addEventListener('click', () => {
       this.pinned = !this.pinned;
       pinBtn.classList.toggle('is-active', this.pinned);
+      pinBtn.blur(); // drop focus so .btn-icon:focus green doesn't mask the toggle state
     });
 
     const archiveBtn = content.querySelector('.note-taking-editor__archive') as HTMLButtonElement | null;
@@ -95,6 +96,7 @@ export class NoteEditorModal {
       const label = this.archived ? 'Unarchive' : 'Archive';
       archiveBtn.title = label;
       archiveBtn.setAttribute('aria-label', label);
+      archiveBtn.blur();
     });
 
     // Checklist: render existing items, wire "Add item".
