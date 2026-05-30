@@ -71,6 +71,16 @@
   flex-direction: column;
 }
 
+.messages-view__load-older {
+  display: flex;
+  justify-content: center;
+  padding: calc($gap * 1.5);
+
+  .btn:disabled {
+    cursor: default;
+  }
+}
+
 .messages-view__loading,
 .messages-view__empty,
 .messages-view__error {

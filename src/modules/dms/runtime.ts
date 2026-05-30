@@ -36,6 +36,7 @@ export class DMsRuntime implements ModuleRuntime<DMsModuleApi> {
       deleteConversation: (partnerPubkey) => svc?.deleteConversation(partnerPubkey) ?? Promise.resolve(),
       deleteAndMute: (partnerPubkey) => svc?.deleteAndMute(partnerPubkey) ?? Promise.resolve(),
       resyncAll: () => svc?.resyncAll() ?? Promise.resolve(),
+      loadOlderMessages: () => svc?.loadOlderMessages() ?? Promise.resolve({ fetched: 0, reachedEnd: true }),
       start: () => svc?.start() ?? Promise.resolve(),
       stop: () => svc?.stop(),
     };

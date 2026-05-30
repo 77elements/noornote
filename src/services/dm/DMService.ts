@@ -511,6 +511,74 @@ export class DMService {
   }
 
   /**
+   * Load one page of OLDER history from relays, walking backward from the
+   * persisted cursor (oldest outer wrap created_at fetched so far). On-demand,
+   * so cold-start cost stays bounded. Returns whether the bottom was reached.
+   */
+  public async loadOlderMessages(): Promise<{ fetched: number; reachedEnd: boolean }> {
+    if (!this.userPubkey) return { fetched: 0, reachedEnd: true };
+
+    const store = PerAccountLocalStorage.getInstance();
+    const cursor = store.get<number>(StorageKeys.DM_BACKWARD_CURSOR, 0);
+    if (cursor <= 0) return { fetched: 0, reachedEnd: true };
+
+    const PAGE_LIMIT = 200;
+
+    // Batch mode: suppress per-message events, single badge update at the end.
+    this.isFetchingHistorical = true;
+    this.pendingBadgeUpdate = false;
+    try {
+      const inboxRelays = await this.getMyInboxRelays();
+      const readRelays = this.relayConfig.getReadRelays();
+
+      // `until` is inclusive — the boundary event is re-fetched (deduped on write).
+      const nip17Events = await this.transport.fetch(inboxRelays, [{
+        kinds: [KIND_GIFT_WRAP],
+        '#p': [this.userPubkey],
+        until: cursor,
+        limit: PAGE_LIMIT
+      }], 15000, false, 'DMService');
+
+      const legacyEvents = await this.transport.fetch(readRelays, [
+        { kinds: [KIND_LEGACY_DM], '#p': [this.userPubkey], until: cursor, limit: PAGE_LIMIT },
+        { kinds: [KIND_LEGACY_DM], authors: [this.userPubkey], until: cursor, limit: PAGE_LIMIT }
+      ], 15000, false, 'DMService');
+
+      const allEvents: Array<{ event: NostrEvent; isNip17: boolean }> = [
+        ...nip17Events.map(event => ({ event, isNip17: true })),
+        ...legacyEvents.map(event => ({ event, isNip17: false }))
+      ];
+
+      for (const { event, isNip17 } of allEvents) {
+        if (isNip17) await this.processGiftWrap(event);
+        else await this.processLegacyDM(event);
+      }
+
+      // No events at or before the cursor ⇒ bottom of history reached.
+      const reachedEnd = nip17Events.length === 0 && legacyEvents.length === 0;
+      if (!reachedEnd) {
+        const oldest = allEvents.reduce(
+          (min, { event }) => Math.min(min, event.created_at),
+          Number.POSITIVE_INFINITY
+        );
+        // Advance strictly past the oldest we saw (guarantees forward progress).
+        if (Number.isFinite(oldest)) {
+          store.set(StorageKeys.DM_BACKWARD_CURSOR, oldest - 1);
+        }
+      }
+
+      diagLog('dms', 'Loaded older DMs', { nip17: nip17Events.length, legacy: legacyEvents.length, reachedEnd });
+      return { fetched: allEvents.length, reachedEnd };
+    } finally {
+      this.isFetchingHistorical = false;
+      if (this.pendingBadgeUpdate) {
+        this.eventBus.emit('dm:badge-update');
+        this.pendingBadgeUpdate = false;
+      }
+    }
+  }
+
+  /**
    * Start live subscription for new DMs (NIP-17 + Legacy NIP-04)
    */
   private async startSubscription(): Promise<void> {

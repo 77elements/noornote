@@ -157,6 +157,11 @@ export class MessagesView extends View {
           </div>
         </div>
       </div>
+      <div class="messages-view__load-older">
+        <button class="btn btn--medium messages-view__load-older-btn">
+          <span class="messages-view__load-older-label">Load older messages</span>
+        </button>
+      </div>
     `;
 
     // Initialize progress bar on header
@@ -183,6 +188,49 @@ export class MessagesView extends View {
 
     // Setup tab click handlers using TabsHelper
     setupTabClickHandlers(this.container, (tabId) => this.handleTabSwitch(tabId as TabFilter));
+
+    // "Load older messages" — manual backward paging from relays
+    const loadOlderBtn = this.container.querySelector('.messages-view__load-older-btn');
+    loadOlderBtn?.addEventListener('click', () => this.handleLoadOlder());
+  }
+
+  /**
+   * Fetch one page of older history from relays, then refresh the visible list.
+   * Disables the button and shows "No older messages" when the bottom is reached.
+   */
+  private async handleLoadOlder(): Promise<void> {
+    const btn = this.container.querySelector('.messages-view__load-older-btn') as HTMLButtonElement | null;
+    const label = btn?.querySelector('.messages-view__load-older-label') as HTMLElement | null;
+    if (!btn || btn.disabled) return;
+
+    btn.disabled = true;
+    if (label) {
+      label.textContent = 'Loading older messages…';
+      label.classList.add('pulsate');
+    }
+
+    try {
+      const result = await this.dmsApi?.loadOlderMessages() ?? { fetched: 0, reachedEnd: true };
+      // Older history may add conversations to the active tab — refresh it.
+      await this.refreshConversationsQuiet();
+
+      if (label) label.classList.remove('pulsate');
+      if (result.reachedEnd) {
+        if (label) label.textContent = 'No older messages';
+        // Stays disabled — nothing more to load.
+      } else {
+        if (label) label.textContent = 'Load older messages';
+        btn.disabled = false;
+      }
+    } catch (error) {
+      this.systemLogger.warn('MessagesView', `Failed to load older messages: ${error instanceof Error ? error.message : String(error)}`);
+      if (label) {
+        label.classList.remove('pulsate');
+        label.textContent = 'Load older messages';
+      }
+      btn.disabled = false;
+      ToastService.show('Could not load older messages', 'error');
+    }
   }
 
   /**

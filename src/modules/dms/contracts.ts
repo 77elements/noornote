@@ -13,6 +13,7 @@ export interface DMsModuleApi {
   deleteConversation(partnerPubkey: string): Promise<void>;
   deleteAndMute(partnerPubkey: string): Promise<void>;
   resyncAll(): Promise<void>;
+  loadOlderMessages(): Promise<{ fetched: number; reachedEnd: boolean }>;
   start(): Promise<void>;
   stop(): void;
 }
