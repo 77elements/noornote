@@ -86,14 +86,14 @@ export class TimelineEventHandler {
     if (selectedView.startsWith('relay:')) {
       const relayUrl = selectedView.substring(6); // Remove 'relay:' prefix
       this.config.relays = { kind: 'explicit', urls: [relayUrl] };
-      this.stateManager.setIncludeReplies(false); // Reset to latest (no replies) when switching to relay
+      this.config.includeReplies = false; // Reset to latest (no replies) when switching to relay
 
       // Update AppState so PostNoteModal can react to relay filter
       this.appState.setState('timeline', { selectedRelay: relayUrl });
     } else {
       // Standard filters (latest, latest-replies)
       this.config.relays = { kind: 'auto' }; // Clear relay filter
-      this.stateManager.setIncludeReplies(selectedView === 'latest-replies');
+      this.config.includeReplies = (selectedView === 'latest-replies');
 
       // Update AppState
       this.appState.setState('timeline', { selectedRelay: null });
@@ -139,7 +139,7 @@ export class TimelineEventHandler {
     // Store date range and update dropdown label
     this.config.range = { kind: 'between', since: result.since, until: result.until };
     this.config.relays = { kind: 'auto' };
-    this.stateManager.setIncludeReplies(false);
+    this.config.includeReplies = false;
     this.appState.setState('timeline', { selectedRelay: null });
 
     if (this.viewDropdown) {
@@ -247,7 +247,7 @@ export class TimelineEventHandler {
       // Build request object, only adding optional properties if they have values
       const loadMoreRequest: FeedLoadRequest & { until: number } = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
-        includeReplies: this.stateManager.getIncludeReplies(),
+        includeReplies: this.config.includeReplies,
         until: oldestEvent.created_at,
         timeWindowHours: this.config.relays.kind === 'author-outbox' ? 720 : 3, // ProfileView: 30 days, TimelineView: 3 hours
         config: this.config

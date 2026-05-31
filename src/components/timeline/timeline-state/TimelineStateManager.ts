@@ -11,7 +11,6 @@ export class TimelineStateManager {
   private loading = false;
   private hasMore = true;
   private followingPubkeys: string[] = [];
-  private includeReplies = false;
 
   /**
    * Get all events
@@ -150,24 +149,13 @@ export class TimelineStateManager {
   }
 
   /**
-   * Include replies filter
-   */
-  getIncludeReplies(): boolean {
-    return this.includeReplies;
-  }
-
-  setIncludeReplies(include: boolean): void {
-    this.includeReplies = include;
-  }
-
-  /**
-   * Reset all state (for refresh). Relay filter / time range live in the
-   * TimelineConfig now, not here.
+   * Reset all state (for refresh). Filter preferences (replies, relay, time
+   * range) live in the TimelineConfig now, not here.
    */
   reset(): void {
     this.events = [];
     this.hasMore = true;
-    // Keep loading, followingPubkeys, includeReplies as they are
+    // Keep loading, followingPubkeys as they are
   }
 
   /**
@@ -179,6 +167,5 @@ export class TimelineStateManager {
     this.loading = false;
     this.hasMore = true;
     this.followingPubkeys = [];
-    // Keep filter preferences (includeReplies) as user preference
   }
 }

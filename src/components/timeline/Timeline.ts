@@ -402,7 +402,7 @@ export class Timeline extends View {
     const newEvents = await this.feedOrchestrator.pollOnce(
       pubkeys,
       newestTimestamp,
-      this.stateManager.getIncludeReplies(),
+      this.config.includeReplies,
       relayFilterUrl(this.config),
       this.config.muteExemptPubkey
     ) ?? [];
@@ -462,7 +462,7 @@ export class Timeline extends View {
       this.stateManager.getFollowingPubkeys(),
       newestTimestamp,
       (info: NewNotesInfo) => this.handleNewNotesDetected(info),
-      this.stateManager.getIncludeReplies(),
+      this.config.includeReplies,
       initialDelayMs,
       relayFilterUrl(this.config),
       this.config.muteExemptPubkey
@@ -515,7 +515,7 @@ export class Timeline extends View {
       const dateRange = timeRangeOf(this.config);
       const feedRequest: FeedLoadRequest = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
-        includeReplies: this.stateManager.getIncludeReplies(),
+        includeReplies: this.config.includeReplies,
         timeWindowHours: 1, // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
         config: this.config
       };
@@ -679,7 +679,7 @@ export class Timeline extends View {
       this.stateManager.getFollowingPubkeys(),
       this.stateManager.getNewestTimestamp(),
       (info: NewNotesInfo) => this.handleNewNotesDetected(info),
-      this.stateManager.getIncludeReplies(),
+      this.config.includeReplies,
       loadTrigger,
       relayFilterUrl(this.config),
       this.config.muteExemptPubkey // Don't filter profile user's notes in ProfileView
