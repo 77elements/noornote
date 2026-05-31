@@ -112,6 +112,7 @@ export class Timeline extends View {
       this.element,
       this.filterAuthorPubkey,
       this.viewDropdown,
+      this.config,
       {
         onRenderEvents: () => this.renderer.renderEvents(),
         onAppendEvents: (events) => { this.renderer.appendNewEvents(events); this.islStatsUpdater.fetchAndUpdateStats(events); },
@@ -525,7 +526,8 @@ export class Timeline extends View {
       const feedRequest: FeedLoadRequest = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
-        timeWindowHours: 1 // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
+        timeWindowHours: 1, // Both ProfileView and TimelineView start with 1h (auto-load extends if needed)
+        config: this.config
       };
       // Time range mode: use explicit since/until boundaries
       if (dateRange) {

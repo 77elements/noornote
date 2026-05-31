@@ -25,6 +25,7 @@ import { AuthService } from '../AuthService';
 import { diagLog } from '../DiagnosticLogger';
 import { isDataSaverEnabled } from '../DataSaverService';
 import { isHideSelfRepostsEnabled, getSelfRepostGapSeconds } from '../../helpers/selfRepostSetting';
+import type { TimelineConfig } from '../../components/timeline/TimelineConfig';
 
 export interface FeedLoadRequest {
   followingPubkeys: string[];
@@ -35,6 +36,10 @@ export interface FeedLoadRequest {
   specificRelay?: string; // Optional: Only fetch from this relay (for relay-filtered timeline)
   recursionDepth?: number; // Track recursion depth to prevent infinite loops
   exemptFromMuteFilter?: string; // Optional: Pubkey to exempt from mute filtering (for ProfileView)
+  config?: TimelineConfig; // The view's typed use-case config. When present, the use
+  // case is read from it instead of guessed (e.g. ProfileView via relays.kind),
+  // killing the `followingPubkeys.length === 1` heuristic. Absent for legacy
+  // callers (e.g. FollowPackManager) which keep today's derivation.
 }
 
 export interface FeedLoadResult {
@@ -144,7 +149,12 @@ export class FeedOrchestrator extends Orchestrator {
    */
   public async loadInitialFeed(request: FeedLoadRequest): Promise<FeedLoadResult> {
     const { followingPubkeys, includeReplies, timeWindowHours = 1, specificRelay, exemptFromMuteFilter, since: explicitSince, until: explicitUntil } = request;
-    const isProfileView = followingPubkeys.length === 1;
+    // Use case is read from the config (author-outbox relays ⟺ single-author
+    // ProfileView). Legacy callers without a config fall back to the old
+    // length-based heuristic. See docs/todos/timeline-component-modularization.md.
+    const isProfileView = request.config
+      ? request.config.relays.kind === 'author-outbox'
+      : followingPubkeys.length === 1;
     const isTimeRangeMode = explicitSince !== undefined;
 
     this.systemLogger.info(
@@ -289,7 +299,10 @@ export class FeedOrchestrator extends Orchestrator {
    */
   public async loadMore(request: FeedLoadRequest & { until: number }): Promise<FeedLoadResult> {
     const { followingPubkeys, includeReplies, until, timeWindowHours = 3, specificRelay, recursionDepth = 0, exemptFromMuteFilter, since: explicitSince } = request;
-    const isProfileView = followingPubkeys.length === 1;
+    // Use case from config (see loadInitialFeed), else legacy length heuristic.
+    const isProfileView = request.config
+      ? request.config.relays.kind === 'author-outbox'
+      : followingPubkeys.length === 1;
     const isTimeRangeMode = explicitSince !== undefined;
 
     this.systemLogger.info(

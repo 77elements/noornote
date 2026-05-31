@@ -12,6 +12,7 @@ import { RefreshButton } from '../../ui/RefreshButton';
 import { CustomDropdown } from '../../ui/CustomDropdown';
 import { AppState } from '../../../services/AppState';
 import { NoteUI } from '../../ui/NoteUI';
+import type { TimelineConfig } from '../TimelineConfig';
 
 export class TimelineEventHandler {
   private timelineApi: TimelineModuleApi;
@@ -23,6 +24,9 @@ export class TimelineEventHandler {
   private viewDropdown: CustomDropdown | null;
   private appState: AppState;
   private previousView: string = 'latest'; // Track previous view for cancel/revert
+
+  // Typed use-case config, forwarded into loadMore requests (see TimelineConfig).
+  private config: TimelineConfig;
 
   // Callbacks
   private onAppendEvents: (events: NostrEvent[]) => void;
@@ -37,6 +41,7 @@ export class TimelineEventHandler {
     element: HTMLElement,
     filterAuthorPubkey: string | undefined,
     viewDropdown: CustomDropdown | null,
+    config: TimelineConfig,
     callbacks: {
       onRenderEvents: () => void;
       onAppendEvents: (events: NostrEvent[]) => void;
@@ -53,6 +58,7 @@ export class TimelineEventHandler {
       this.filterAuthorPubkey = filterAuthorPubkey;
     }
     this.viewDropdown = viewDropdown;
+    this.config = config;
     this.appState = AppState.getInstance();
     this.onAppendEvents = callbacks.onAppendEvents;
     this.onPrependEvents = callbacks.onPrependEvents;
@@ -248,7 +254,8 @@ export class TimelineEventHandler {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
         until: oldestEvent.created_at,
-        timeWindowHours: this.filterAuthorPubkey ? 720 : 3 // ProfileView: 30 days, TimelineView: 3 hours
+        timeWindowHours: this.filterAuthorPubkey ? 720 : 3, // ProfileView: 30 days, TimelineView: 3 hours
+        config: this.config
       };
       const selectedRelay = this.stateManager.getSelectedRelay();
       if (selectedRelay) {
