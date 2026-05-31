@@ -174,6 +174,30 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     return result;
   }
 
+  /**
+   * Lean, author-centric relay set for a single profile's feed (ProfileView):
+   * the author's own NIP-65 write relays, capped at 8, with the standard read
+   * relays as fallback when discovery finds nothing. Deliberately excludes
+   * aggregators and the current user's read relays — a single author publishes
+   * to their own write relays, so this set is both smaller and more complete for
+   * their history (used with the raw, gap-free direct fetch).
+   */
+  public async getProfileRelays(pubkey: string): Promise<string[]> {
+    const relayLists = await this.discoverUserRelays([pubkey]);
+    const writeRelays = Array.from(
+      new Set(relayLists.flatMap((l) => l.writeRelays).filter((r) => this.isValidRelay(r)))
+    ).slice(0, 8);
+
+    if (writeRelays.length === 0) {
+      const fallback = this.relayConfig.getReadRelays();
+      this.systemLogger.info(this.LOG_TAG, `Profile relays: none discovered, falling back to ${fallback.length} read relays`);
+      return fallback;
+    }
+
+    this.systemLogger.info(this.LOG_TAG, `Profile relays: ${writeRelays.length} author write relays`);
+    return writeRelays;
+  }
+
   public async getCombinedRelays(pubkeys: string[], includeOutbound: boolean = true): Promise<string[]> {
     const standardRelays = this.relayConfig.getReadRelays();
 

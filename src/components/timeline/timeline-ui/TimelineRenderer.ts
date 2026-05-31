@@ -20,15 +20,24 @@ export class TimelineRenderer {
   private element: HTMLElement;
   private stateManager: TimelineStateManager;
   private uiStateHandler: TimelineUIStateHandler;
+  /**
+   * ProfileView must always show the COMPLETE author timeline (no matter how the
+   * user enters it, and so a back-from-note lands exactly where they left off).
+   * Trimming the DOM/state would drop the newest cards once the user scrolls
+   * deep, so it is disabled for ProfileView. The main Timeline keeps trimming.
+   */
+  private readonly disableTrim: boolean;
 
   constructor(
     element: HTMLElement,
     stateManager: TimelineStateManager,
-    uiStateHandler: TimelineUIStateHandler
+    uiStateHandler: TimelineUIStateHandler,
+    disableTrim: boolean = false
   ) {
     this.element = element;
     this.stateManager = stateManager;
     this.uiStateHandler = uiStateHandler;
+    this.disableTrim = disableTrim;
   }
 
   /**
@@ -129,6 +138,9 @@ export class TimelineRenderer {
    * Compensates scroll position so the user doesn't see a jump.
    */
   private trimExcessCards(): void {
+    // ProfileView keeps the full timeline (see disableTrim) — never trim.
+    if (this.disableTrim) return;
+
     // Get only top-level note-cards (not nested quotes)
     const topLevelCards = this.getTopLevelCards();
     const excess = topLevelCards.length - MAX_DOM_CARDS;

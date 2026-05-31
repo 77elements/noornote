@@ -383,24 +383,64 @@ export class NostrTransport {
     filters: NDKFilter[],
     timeout: number = 5000
   ): Promise<NostrEvent[]> {
+    return this.fetchDirect(relays, filters, timeout, 'search');
+  }
+
+  /**
+   * Clean, relay-only fetch via raw WebSockets: one REQ per relay, collect until
+   * EOSE, dedupe by id, verify signatures, merge. Bypasses NDK's fetchEvents so
+   * the result is EXACTLY what the given relays return — no outbox/pool
+   * expansion, no in-memory-store bleed (NDK's fetchEvents pulls scattered cached
+   * events even with ONLY_RELAY, which corrupts feed pagination). Use where a
+   * gap-free, deterministic newest-N over a known relay set is required
+   * (ProfileView feed), and for NIP-50 search (custom filter fields NDK can't send).
+   */
+  public async fetchDirect(
+    relays: string[],
+    filters: NDKFilter[],
+    timeout: number = 5000,
+    caller: string = ''
+  ): Promise<NostrEvent[]> {
     return new Promise((resolve) => {
       const events = new Map<string, NostrEvent>();
       const connections: WebSocket[] = [];
       let closedCount = 0;
+      let settled = false;
 
       const cleanup = () => {
+        if (settled) return;
+        settled = true;
         connections.forEach(ws => {
           if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
             ws.close();
           }
         });
+        diagLog('relays', 'Direct fetch OK', { caller, relayCount: relays.length, eventCount: events.size });
         resolve(Array.from(events.values()));
       };
 
+      if (relays.length === 0) {
+        cleanup();
+        return;
+      }
+
       const timeoutId = setTimeout(cleanup, timeout);
+      const markClosed = () => {
+        closedCount++;
+        if (closedCount >= relays.length) {
+          clearTimeout(timeoutId);
+          cleanup();
+        }
+      };
 
       relays.forEach(relayUrl => {
-        const ws = new WebSocket(relayUrl);
+        let ws: WebSocket;
+        try {
+          ws = new WebSocket(relayUrl);
+        } catch (_e) {
+          markClosed();
+          return;
+        }
         connections.push(ws);
 
         ws.onopen = () => {
@@ -410,9 +450,7 @@ export class NostrTransport {
 
         ws.onmessage = (msg) => {
           try {
-            const data = JSON.parse(msg.data);
-            const [type, _subId, event] = data;
-
+            const [type, , event] = JSON.parse(msg.data);
             if (type === 'EVENT' && event) {
               const verification = SignatureVerificationService.getInstance().verifyEvent(event);
               if (verification.valid) {
@@ -426,14 +464,7 @@ export class NostrTransport {
           }
         };
 
-        ws.onclose = () => {
-          closedCount++;
-          if (closedCount === relays.length) {
-            clearTimeout(timeoutId);
-            cleanup();
-          }
-        };
-
+        ws.onclose = () => markClosed();
         ws.onerror = () => ws.close();
       });
     });

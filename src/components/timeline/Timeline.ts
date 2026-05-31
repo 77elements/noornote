@@ -88,8 +88,9 @@ export class Timeline extends View {
     this.islStatsUpdater = new ISLStatsUpdater(this.element);
     this.scrollPositionManager = new ScrollPositionManager(this.element);
 
-    // Initialize renderer
-    this.renderer = new TimelineRenderer(this.element, this.stateManager, this.uiStateHandler);
+    // Initialize renderer (ProfileView disables card trimming so it always keeps
+    // the complete author timeline — full history + preserved scroll on return).
+    this.renderer = new TimelineRenderer(this.element, this.stateManager, this.uiStateHandler, !!this.filterAuthorPubkey);
 
     this.setupViewDropdown();
     this.setupInfiniteScroll();

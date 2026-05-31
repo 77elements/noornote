@@ -65,6 +65,10 @@ export class FeedOrchestrator extends Orchestrator {
   /** New notes polling */
   private pollingInterval: number = isDataSaverEnabled() ? 180000 : 60000;
   private readonly fetchLimit = isDataSaverEnabled() ? 20 : 50;
+  // ProfileView (single author) uses a larger page so each request reaches deep
+  // enough that multi-relay pages stay contiguous (Jumble uses 200). Paired with
+  // pure `until` pagination and the raw direct fetch.
+  private readonly profileFetchLimit = isDataSaverEnabled() ? 100 : 200;
   private readonly pollLimit = isDataSaverEnabled() ? 30 : 100;
   private pollingIntervalId: number | null = null;
   private pollingTimeoutId: number | null = null; // Track setTimeout for cancellation
@@ -163,7 +167,7 @@ export class FeedOrchestrator extends Orchestrator {
         filters = [{
           authors: followingPubkeys,
           kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089],
-          limit: this.fetchLimit
+          limit: this.profileFetchLimit
         }];
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
@@ -265,7 +269,7 @@ export class FeedOrchestrator extends Orchestrator {
         };
       }
 
-      const resultEvents = filteredEvents.slice(0, this.fetchLimit);
+      const resultEvents = filteredEvents.slice(0, isProfileView ? this.profileFetchLimit : this.fetchLimit);
       this.registerNotes(resultEvents);
       return {
         events: resultEvents,
@@ -309,13 +313,20 @@ export class FeedOrchestrator extends Orchestrator {
 
       const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, isProfileView);
 
-      const filters: NDKFilter<number>[] = [{
+      // ProfileView (single author): pure `until` pagination, no `since` window,
+      // larger page. The window + small limit fragmented multi-relay pages into
+      // gaps. Timeline + time-range keep the windowed page.
+      const pureUntilProfile = isProfileView && !isTimeRangeMode;
+      const filterObj: NDKFilter<number> = {
         authors: followingPubkeys,
         kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089],
         until: until - 1,
-        since,
-        limit: 50
-      }];
+        limit: pureUntilProfile ? this.profileFetchLimit : 50
+      };
+      if (!pureUntilProfile) {
+        filterObj.since = since;
+      }
+      const filters: NDKFilter<number>[] = [filterObj];
 
       const events = await this.fetchEvents(relays, filters, isProfileView, !!specificRelay);
       const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter);
@@ -381,7 +392,7 @@ export class FeedOrchestrator extends Orchestrator {
         return await this.loadMore(recursiveRequest);
       }
 
-      const resultEvents = filteredEvents.slice(0, this.fetchLimit);
+      const resultEvents = filteredEvents.slice(0, pureUntilProfile ? this.profileFetchLimit : this.fetchLimit);
       this.registerNotes(resultEvents);
 
       // In time range mode, check if we've reached the lower boundary
@@ -558,11 +569,22 @@ export class FeedOrchestrator extends Orchestrator {
     if (specificRelay) {
       return [specificRelay];
     }
+    // ProfileView: lean author-centric set (no aggregator/read union) — combined
+    // with the raw direct fetch this keeps the single-author feed gap-free.
+    if (isProfileView && followingPubkeys.length === 1) {
+      return await this.relayDiscovery.getProfileRelays(followingPubkeys[0] as string);
+    }
     return await this.relayDiscovery.getCombinedRelays(followingPubkeys, isProfileView);
   }
 
   /**
-   * Fetch events using appropriate method (subscription for ProfileView, fetch for Timeline)
+   * Fetch events using the appropriate transport.
+   *
+   * ProfileView uses a raw, relay-only direct fetch (transport.fetchDirect): a
+   * single author's feed must be gap-free, and NDK's fetchEvents pollutes the
+   * result with scattered cached/outbox events that corrupt pagination (the
+   * oldest such event drags the loadMore cursor far back, skipping whole ranges).
+   * Timeline keeps the NDK cache-first fetch for speed.
    */
   private async fetchEvents(
     relays: string[],
@@ -570,7 +592,10 @@ export class FeedOrchestrator extends Orchestrator {
     isProfileView: boolean,
     skipCache: boolean
   ): Promise<NostrEvent[]> {
-    return await this.transport.fetch(relays, filters, isProfileView ? 15000 : 5000, skipCache, 'FeedOrch');
+    if (isProfileView) {
+      return await this.transport.fetchDirect(relays, filters, 15000, 'FeedOrch-PV');
+    }
+    return await this.transport.fetch(relays, filters, 5000, skipCache, 'FeedOrch');
   }
 
   /**
