@@ -85,6 +85,19 @@ function getNDKCacheConfig(): NDKCacheAdapterDexieOptions {
   }
 }
 
+/**
+ * On an HTTPS page the browser blocks insecure ws:// WebSockets (mixed-content),
+ * and `new WebSocket('ws://…')` throws a SecurityError SYNCHRONOUSLY. Inside NDK's
+ * fetchEvents Promise.all that abort aborts the whole fetch, so a single ws:// relay
+ * in an author's kind:10002 outbox left the timeline empty on the web — never locally,
+ * where file://-served Electron has no mixed-content rule. Strip ws:// when on HTTPS.
+ */
+function secureRelays(relays: string[]): string[] {
+  const onHttps = typeof location !== 'undefined' && location.protocol === 'https:';
+  if (!onHttps) return relays;
+  return relays.filter(url => !url.toLowerCase().startsWith('ws://'));
+}
+
 export class NostrTransport {
   private static instance: NostrTransport;
   private ndk: NDK;
@@ -102,7 +115,7 @@ export class NostrTransport {
     // Initialize NDK with Dexie cache (using config from localStorage)
     const cacheConfig = getNDKCacheConfig();
     this.ndk = new NDK({
-      explicitRelayUrls: this.relayConfig.getReadRelays(),
+      explicitRelayUrls: secureRelays(this.relayConfig.getReadRelays()),
       cacheAdapter: new NDKCacheDexie(cacheConfig) as unknown as NDKCacheAdapter,
       enableOutboxModel: false, // Disable for now, can enable later for performance
       autoConnectUserRelays: false // We manage relays explicitly via RelayConfig
@@ -259,6 +272,8 @@ export class NostrTransport {
   ): Promise<SubCloser> {
     await this.ensureConnected();
 
+    relays = secureRelays(relays);
+
     const startTime = Date.now();
     let hasReceivedEvent = false;
 
@@ -318,6 +333,8 @@ export class NostrTransport {
   ): Promise<NostrEvent[]> {
     try {
       await this.ensureConnected();
+
+      relays = secureRelays(relays);
 
       // Check if this is a NIP-50 search query (has 'search' field)
       // @ts-ignore - search field not in NDKFilter types
@@ -401,6 +418,7 @@ export class NostrTransport {
     timeout: number = 5000,
     caller: string = ''
   ): Promise<NostrEvent[]> {
+    relays = secureRelays(relays);
     return new Promise((resolve) => {
       const events = new Map<string, NostrEvent>();
       const connections: WebSocket[] = [];
@@ -481,6 +499,8 @@ export class NostrTransport {
    */
   public async publish(relays: string[], event: NostrEvent, requiredRelayCount?: number): Promise<Set<string>> {
     await this.ensureConnected();
+
+    relays = secureRelays(relays);
 
     this.systemLogger.info('NostrTransport', `Sending to ${relays.length} relays`);
 

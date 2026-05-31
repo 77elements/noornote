@@ -223,10 +223,7 @@ export class TimelineEventHandler {
    * Load more events for infinite scroll - pure UI orchestration
    */
   private async loadMoreEvents(): Promise<void> {
-    console.log('🔄 INFINITE SCROLL TRIGGERED');
-
     if (this.stateManager.isLoading() || !this.stateManager.getHasMore() || this.stateManager.getFollowingPubkeys().length === 0) {
-      console.log('❌ Infinite scroll blocked:', { loading: this.stateManager.isLoading(), hasMore: this.stateManager.getHasMore() });
       return;
     }
 
@@ -236,7 +233,6 @@ export class TimelineEventHandler {
     try {
       const oldestEvent = this.stateManager.getOldestEvent();
       if (!oldestEvent) {
-        console.log('⚠️ No oldest event found');
         this.stateManager.setHasMore(false);
         return;
       }
@@ -268,19 +264,14 @@ export class TimelineEventHandler {
       const uniqueNewEvents = this.stateManager.addEvents(result.events);
 
       if (uniqueNewEvents.length > 0) {
-        console.log(`📝 Adding ${uniqueNewEvents.length} new events to timeline`);
         this.onAppendEvents(uniqueNewEvents);
-      } else {
-        console.log('⚠️ No unique events to add (all were duplicates)');
-        console.log(`🔍 EXISTING IDs:`, this.stateManager.getEvents().slice(0, 5).map(e => e.id?.slice(0, 8)));
-        console.log(`🔍 NEW IDs:`, result.events.slice(0, 5).map(e => e.id?.slice(0, 8)));
       }
 
       this.stateManager.setHasMore(result.hasMore);
-      console.log(`📱 LOAD MORE UI: ${uniqueNewEvents.length} new events, hasMore: ${result.hasMore}`);
 
-    } catch (error) {
-      console.error('💥 INFINITE SCROLL ERROR:', error);
+    } catch {
+      // Load-more failure is non-fatal; finally resets the loading state so
+      // a later scroll can retry. State stays consistent (no events added).
     } finally {
       this.stateManager.setLoading(false);
       this.uiStateHandler.showMoreLoading(false);
