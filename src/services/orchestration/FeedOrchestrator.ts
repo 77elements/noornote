@@ -149,17 +149,12 @@ export class FeedOrchestrator extends Orchestrator {
    */
   public async loadInitialFeed(request: FeedLoadRequest): Promise<FeedLoadResult> {
     const { followingPubkeys, includeReplies, timeWindowHours = 1, specificRelay, exemptFromMuteFilter, since: explicitSince, until: explicitUntil } = request;
-    // Use case is read from the config (author-outbox relays ⟺ single-author
-    // ProfileView). Legacy callers without a config fall back to the old
-    // length-based heuristic. See docs/todos/timeline-component-modularization.md.
-    const isProfileView = request.config
-      ? request.config.relays.kind === 'author-outbox'
-      : followingPubkeys.length === 1;
+    const params = this.resolveFetchParams(request);
     const isTimeRangeMode = explicitSince !== undefined;
 
     this.systemLogger.info(
       'FeedOrchestrator',
-      isProfileView
+      params.fetchMode === 'direct'
         ? `Loading profile for ${followingPubkeys[0]?.slice(0, 8)} (direct fetch, no time window)`
         : isTimeRangeMode
           ? `Loading time range ${new Date(explicitSince * 1000).toLocaleDateString()} – ${new Date((explicitUntil ?? Date.now() / 1000) * 1000).toLocaleDateString()}`
@@ -167,17 +162,17 @@ export class FeedOrchestrator extends Orchestrator {
     );
 
     try {
-      const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, isProfileView);
+      const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, params.relayStrategy);
 
-      // ProfileView: Direct fetch with limit only (no time window) - gets newest posts regardless of age
-      // Time Range Mode: Use explicit since/until boundaries
-      // TimelineView: Time-windowed fetch (default 1h)
+      // 'until' pagination (ProfileView): direct fetch, limit only, no time window.
+      // Time Range Mode: explicit since/until boundaries.
+      // 'window' pagination (TimelineView): time-windowed fetch (default 1h).
       let filters: NDKFilter<number>[];
-      if (isProfileView) {
+      if (params.pagination === 'until') {
         filters = [{
           authors: followingPubkeys,
           kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089],
-          limit: this.profileFetchLimit
+          limit: params.pageSize
         }];
       } else if (isTimeRangeMode) {
         const filterObj: NDKFilter<number> = {
@@ -194,12 +189,12 @@ export class FeedOrchestrator extends Orchestrator {
         filters = [{
           authors: followingPubkeys,
           kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089],
-          limit: this.fetchLimit,
+          limit: params.pageSize,
           since: Math.floor(Date.now() / 1000) - (timeWindowHours * 3600)
         }];
       }
 
-      const events = await this.fetchEvents(relays, filters, isProfileView, !!specificRelay);
+      const events = await this.fetchEvents(relays, filters, params.fetchMode, !!specificRelay);
       const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter);
 
       this.systemLogger.info(
@@ -217,9 +212,9 @@ export class FeedOrchestrator extends Orchestrator {
         };
       }
 
-      // Auto-load more if needed (Timeline only - Profile gets all via direct fetch)
+      // Auto-load more if needed (windowed feeds only - 'until' feeds get all via direct fetch)
       const minimumNotes = 10;
-      if (!isProfileView && filteredEvents.length < minimumNotes) {
+      if (params.pagination === 'window' && filteredEvents.length < minimumNotes) {
         const maxAttempts = 16; // Timeline: 16 attempts (48h)
         const now = Math.floor(Date.now() / 1000);
 
@@ -245,7 +240,8 @@ export class FeedOrchestrator extends Orchestrator {
             followingPubkeys,
             includeReplies,
             until: currentUntil,
-            timeWindowHours: 3 // Load More uses 3h chunks
+            timeWindowHours: 3, // Load More uses 3h chunks
+            ...(request.config ? { config: request.config } : {})
           };
           if (specificRelay !== undefined) {
             loadMoreRequest.specificRelay = specificRelay;
@@ -279,7 +275,7 @@ export class FeedOrchestrator extends Orchestrator {
         };
       }
 
-      const resultEvents = filteredEvents.slice(0, isProfileView ? this.profileFetchLimit : this.fetchLimit);
+      const resultEvents = filteredEvents.slice(0, params.pageSize);
       this.registerNotes(resultEvents);
       return {
         events: resultEvents,
@@ -299,10 +295,7 @@ export class FeedOrchestrator extends Orchestrator {
    */
   public async loadMore(request: FeedLoadRequest & { until: number }): Promise<FeedLoadResult> {
     const { followingPubkeys, includeReplies, until, timeWindowHours = 3, specificRelay, recursionDepth = 0, exemptFromMuteFilter, since: explicitSince } = request;
-    // Use case from config (see loadInitialFeed), else legacy length heuristic.
-    const isProfileView = request.config
-      ? request.config.relays.kind === 'author-outbox'
-      : followingPubkeys.length === 1;
+    const params = this.resolveFetchParams(request);
     const isTimeRangeMode = explicitSince !== undefined;
 
     this.systemLogger.info(
@@ -324,24 +317,24 @@ export class FeedOrchestrator extends Orchestrator {
         return { events: [], hasMore: false };
       }
 
-      const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, isProfileView);
+      const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, params.relayStrategy);
 
-      // ProfileView (single author): pure `until` pagination, no `since` window,
-      // larger page. The window + small limit fragmented multi-relay pages into
-      // gaps. Timeline + time-range keep the windowed page.
-      const pureUntilProfile = isProfileView && !isTimeRangeMode;
+      // 'until' pagination (single author): no `since` window, larger page. The
+      // window + small limit fragmented multi-relay pages into gaps. Windowed
+      // feeds + time-range keep the windowed page.
+      const pureUntil = params.pagination === 'until' && !isTimeRangeMode;
       const filterObj: NDKFilter<number> = {
         authors: followingPubkeys,
         kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089],
         until: until - 1,
-        limit: pureUntilProfile ? this.profileFetchLimit : 50
+        limit: pureUntil ? params.pageSize : 50
       };
-      if (!pureUntilProfile) {
+      if (!pureUntil) {
         filterObj.since = since;
       }
       const filters: NDKFilter<number>[] = [filterObj];
 
-      const events = await this.fetchEvents(relays, filters, isProfileView, !!specificRelay);
+      const events = await this.fetchEvents(relays, filters, params.fetchMode, !!specificRelay);
       const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter);
 
       this.systemLogger.info(
@@ -358,13 +351,13 @@ export class FeedOrchestrator extends Orchestrator {
         const timeSinceUntil = now - until;
         const hoursSinceUntil = timeSinceUntil / 3600;
 
-        // Max recursion depth: ProfileView 3 attempts, TimelineView check time limit
-        const maxRecursionDepth = isProfileView ? 3 : 56; // Profile: 3 attempts (9h), Timeline: 56 attempts (7 days)
+        // Max recursion depth: 'until' feeds 3 attempts, windowed feeds check time limit
+        const maxRecursionDepth = params.pagination === 'until' ? 3 : 56; // until: 3 attempts (9h), window: 56 attempts (7 days)
 
         if (recursionDepth >= maxRecursionDepth) {
           this.systemLogger.info(
             'FeedOrchestrator',
-            isProfileView
+            params.pagination === 'until'
               ? `📭 No events found after ${recursionDepth} attempts (${Math.round(hoursSinceUntil)}h searched)`
               : '📭 Reached 7-day limit - no more events'
           );
@@ -374,8 +367,8 @@ export class FeedOrchestrator extends Orchestrator {
           };
         }
 
-        // Timeline View: also check time limit (7 days)
-        if (!isProfileView && hoursSinceUntil >= 168) {
+        // Windowed feeds: also check time limit (7 days)
+        if (params.pagination === 'window' && hoursSinceUntil >= 168) {
           this.systemLogger.info(
             'FeedOrchestrator',
             '📭 Reached 7-day limit - no more events'
@@ -397,7 +390,8 @@ export class FeedOrchestrator extends Orchestrator {
           includeReplies,
           until: until - timeWindowSeconds,
           timeWindowHours,
-          recursionDepth: recursionDepth + 1
+          recursionDepth: recursionDepth + 1,
+          ...(request.config ? { config: request.config } : {})
         };
         if (specificRelay !== undefined) {
           recursiveRequest.specificRelay = specificRelay;
@@ -405,7 +399,7 @@ export class FeedOrchestrator extends Orchestrator {
         return await this.loadMore(recursiveRequest);
       }
 
-      const resultEvents = filteredEvents.slice(0, pureUntilProfile ? this.profileFetchLimit : this.fetchLimit);
+      const resultEvents = filteredEvents.slice(0, params.pageSize);
       this.registerNotes(resultEvents);
 
       // In time range mode, check if we've reached the lower boundary
@@ -572,22 +566,52 @@ export class FeedOrchestrator extends Orchestrator {
   }
 
   /**
-   * Get relays for fetching based on request parameters
+   * Resolve the concrete fetch parameters for a request from its TimelineConfig.
+   * This is the single place the use case maps to relay/fetch/pagination/page-size
+   * — no `isProfileView` guessing elsewhere. Legacy callers without a config fall
+   * back to the old length-based derivation, so their behavior is unchanged.
+   * See docs/todos/timeline-component-modularization.md.
+   */
+  private resolveFetchParams(request: FeedLoadRequest): {
+    relayStrategy: 'auto' | 'author-outbox';
+    fetchMode: 'cache-first' | 'direct';
+    pagination: 'window' | 'until';
+    pageSize: number;
+  } {
+    const cfg = request.config;
+    if (cfg) {
+      return {
+        relayStrategy: cfg.relays.kind === 'author-outbox' ? 'author-outbox' : 'auto',
+        fetchMode: cfg.fetchMode,
+        pagination: cfg.pagination,
+        pageSize: cfg.pageSize,
+      };
+    }
+    const isProfileView = request.followingPubkeys.length === 1;
+    return {
+      relayStrategy: isProfileView ? 'author-outbox' : 'auto',
+      fetchMode: isProfileView ? 'direct' : 'cache-first',
+      pagination: isProfileView ? 'until' : 'window',
+      pageSize: isProfileView ? this.profileFetchLimit : this.fetchLimit,
+    };
+  }
+
+  /**
+   * Get relays for fetching. `author-outbox` uses the author's own write relays
+   * (lean, gap-free with the direct fetch); `auto` uses the standard relay set.
    */
   private async getRelaysForRequest(
     followingPubkeys: string[],
-    specificRelay?: string,
-    isProfileView: boolean = false
+    specificRelay: string | undefined,
+    relayStrategy: 'auto' | 'author-outbox'
   ): Promise<string[]> {
     if (specificRelay) {
       return [specificRelay];
     }
-    // ProfileView: lean author-centric set (no aggregator/read union) — combined
-    // with the raw direct fetch this keeps the single-author feed gap-free.
-    if (isProfileView && followingPubkeys.length === 1) {
+    if (relayStrategy === 'author-outbox') {
       return await this.relayDiscovery.getProfileRelays(followingPubkeys[0] as string);
     }
-    return await this.relayDiscovery.getCombinedRelays(followingPubkeys, isProfileView);
+    return await this.relayDiscovery.getCombinedRelays(followingPubkeys, false);
   }
 
   /**
@@ -602,10 +626,10 @@ export class FeedOrchestrator extends Orchestrator {
   private async fetchEvents(
     relays: string[],
     filters: NDKFilter<number>[],
-    isProfileView: boolean,
+    fetchMode: 'cache-first' | 'direct',
     skipCache: boolean
   ): Promise<NostrEvent[]> {
-    if (isProfileView) {
+    if (fetchMode === 'direct') {
       return await this.transport.fetchDirect(relays, filters, 15000, 'FeedOrch-PV');
     }
     return await this.transport.fetch(relays, filters, 5000, skipCache, 'FeedOrch');
