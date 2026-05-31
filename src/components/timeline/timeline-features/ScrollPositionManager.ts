@@ -1,18 +1,19 @@
 /**
- * ScrollPositionManager - Manages scroll position persistence
- * Saves/restores scroll position to/from CSM for seamless navigation
- * Extracts from: TimelineUI.saveScrollPosition() / restoreScrollPosition()
+ * ScrollPositionManager - Saves/restores a timeline's scroll position across
+ * navigation (e.g. ProfileView -> note -> back lands where you left off).
+ *
+ * The position is kept in a PER-INSTANCE field, not a shared global key. Each
+ * timeline (main feed, ProfileView, tribe feed) is a kept-alive cached view with
+ * its own manager, so they restore independently and never clobber each other.
  */
-
-import { AppState } from '../../../services/AppState';
 
 export class ScrollPositionManager {
   private container: HTMLElement;
-  private appState: AppState;
+  /** This view's last scroll offset (0 = top / not yet saved). */
+  private savedPosition = 0;
 
   constructor(container: HTMLElement) {
     this.container = container;
-    this.appState = AppState.getInstance();
   }
 
   /**
@@ -25,32 +26,34 @@ export class ScrollPositionManager {
     if (timelineViewContainer) {
       return timelineViewContainer;
     }
-    // Fallback to .primary-content for other cases
+    // Fallback to .primary-content for other cases (e.g. ProfileView)
     return this.container.closest('.primary-content');
   }
 
   /**
-   * Save current scroll position to CSM
+   * Save current scroll position (called when navigating away from this view)
    */
   save(): void {
     const scrollContainer = this.getScrollContainer();
     if (scrollContainer) {
-      this.appState.setState('timeline', { scrollPosition: scrollContainer.scrollTop });
+      this.savedPosition = scrollContainer.scrollTop;
     }
   }
 
   /**
-   * Restore saved scroll position from CSM
+   * Restore saved scroll position (called when returning to this view).
+   * Restores across two animation frames so the (re-attached) content is laid
+   * out before we set scrollTop — a single setTimeout(0) lands before reflow.
    */
   restore(): void {
     const scrollContainer = this.getScrollContainer();
-    const savedPosition = this.appState.getState('timeline').scrollPosition;
-
-    if (scrollContainer && savedPosition > 0) {
-      // Use setTimeout to ensure DOM is fully rendered before scrolling
-      setTimeout(() => {
-        scrollContainer.scrollTop = savedPosition;
-      }, 0);
+    if (scrollContainer && this.savedPosition > 0) {
+      const target = this.savedPosition;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollContainer.scrollTop = target;
+        });
+      });
     }
   }
 }

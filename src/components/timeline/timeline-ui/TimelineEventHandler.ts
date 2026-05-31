@@ -179,8 +179,6 @@ export class TimelineEventHandler {
     const scrollContainer = this.element.parentElement;
     if (scrollContainer && scrollContainer.classList.contains('timeline-view__timeline')) {
       scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
-      // Reset scroll position in AppState
-      this.appState.setState('timeline', { scrollPosition: 0 });
     }
   }
 

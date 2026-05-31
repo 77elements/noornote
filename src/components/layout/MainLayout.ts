@@ -1078,7 +1078,6 @@ export class MainLayout {
     const timelineViewScroll = this.element.querySelector('.timeline-view__timeline');
     if (timelineViewScroll) {
       timelineViewScroll.scrollTo({ top: 0, behavior: 'smooth' });
-      this.appState.setState('timeline', { scrollPosition: 0 });
       return;
     }
 
@@ -1086,7 +1085,6 @@ export class MainLayout {
     const primaryContent = this.element.querySelector('.primary-content');
     if (primaryContent) {
       primaryContent.scrollTo({ top: 0, behavior: 'smooth' });
-      this.appState.setState('timeline', { scrollPosition: 0 });
     }
   }
 

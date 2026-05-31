@@ -16,7 +16,6 @@ import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { ProfileFollowManager } from '../../lists/follows';
 import { ProfileMuteManager } from '../../lists/mutes';
 import { ProfileEditModal } from '../profile/ProfileEditModal';
-import { AppState } from '../../services/AppState';
 import { QRCodeModal } from '../qrcode/QRCodeModal';
 import { decodeNip19 } from '../../services/NostrToolsAdapter';
 import { linkifyUrls } from '../../helpers/linkifyUrls';
@@ -73,7 +72,6 @@ export class ProfileView extends View {
   private authService: AuthService;
   private userService: UserService;
   private followVerification: FollowVerificationService;
-  private appState: AppState;
   private eventBus: TypedEventBus;
   private timeline: Timeline | null = null;
   private followingCount: number = 0;
@@ -134,7 +132,6 @@ export class ProfileView extends View {
     this.authService = AuthService.getInstance();
     this.userService = UserService.getInstance();
     this.followVerification = FollowVerificationService.getInstance();
-    this.appState = AppState.getInstance();
     this.eventBus = TypedEventBus.getInstance();
     // Decode npub or nprofile to pubkey
     try {
@@ -1637,21 +1634,16 @@ export class ProfileView extends View {
    * Save view state (implements View base class)
    */
   public override saveState(): void {
-    const position = this.container.scrollTop;
-    this.appState.setState('view', { profileScrollPosition: position });
+    // Delegate to the inner timeline — it owns the correct scroll container
+    // (.primary-content for ProfileView) via its ScrollPositionManager.
+    this.timeline?.saveState();
   }
 
   /**
    * Restore view state (implements View base class)
    */
   public override restoreState(): void {
-    const savedPosition = this.appState.getState('view').profileScrollPosition;
-    if (savedPosition !== undefined && savedPosition !== null) {
-      // Use setTimeout to ensure DOM is fully rendered before scrolling
-      setTimeout(() => {
-        this.container.scrollTop = savedPosition;
-      }, 0);
-    }
+    this.timeline?.restoreState();
   }
 
   /**
