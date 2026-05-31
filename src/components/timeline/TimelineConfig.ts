@@ -118,3 +118,22 @@ export function buildTimelineConfig(
     applyWordFilter: true,
   };
 }
+
+// Named factories — the API views use to express intent ("for this user", "for
+// these users", "my follows"). They wrap buildTimelineConfig so the per-use-case
+// defaults live in one place.
+
+/** ProfileView: a single author's complete, gap-free feed. */
+export function profileTimelineConfig(authorPubkey: string): TimelineConfig {
+  return buildTimelineConfig(authorPubkey, undefined);
+}
+
+/** TribeView / tribe tab: the notes of an explicit set of users. */
+export function tribeTimelineConfig(memberPubkeys: string[]): TimelineConfig {
+  return buildTimelineConfig(undefined, memberPubkeys);
+}
+
+/** Main timeline: the current user's follow list. */
+export function followingTimelineConfig(): TimelineConfig {
+  return buildTimelineConfig(undefined, undefined);
+}

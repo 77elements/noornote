@@ -11,6 +11,7 @@ import { AuthService } from '../../services/AuthService';
 import { UserService } from '../../services/UserService';
 import { FollowVerificationService } from '../../services/FollowVerificationService';
 import { Timeline } from '../timeline/Timeline';
+import { profileTimelineConfig } from '../timeline/TimelineConfig';
 import { ProfileSearchComponent } from '../profile/ProfileSearchComponent';
 import { ProfileFollowManager } from '../../lists/follows';
 import { ProfileMuteManager } from '../../lists/mutes';
@@ -1333,8 +1334,8 @@ export class ProfileView extends View {
       // (TimelineUI needs first param, but when filterAuthorPubkey is set, following list is not used)
       const userPubkey = currentUser ? currentUser.pubkey : this.pubkey;
 
-      // Create TimelineUI with author filter (second param = show only this author's notes)
-      this.timeline = new Timeline(userPubkey, this.pubkey);
+      // Create the timeline for a single author's complete feed
+      this.timeline = new Timeline(userPubkey, profileTimelineConfig(this.pubkey));
 
       // Mount timeline
       timelineContainer.appendChild(this.timeline.getElement());

@@ -19,7 +19,7 @@ import { TimelineEventHandler } from './timeline-ui/TimelineEventHandler';
 import { TimelineRenderer } from './timeline-ui/TimelineRenderer';
 import { ISLStatsUpdater } from './timeline-features/ISLStatsUpdater';
 import { ScrollPositionManager } from './timeline-features/ScrollPositionManager';
-import { buildTimelineConfig, type TimelineConfig } from './TimelineConfig';
+import type { TimelineConfig } from './TimelineConfig';
 import { NoteUI } from '../ui/NoteUI';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { CacheManager } from '../../services/CacheManager';
@@ -66,13 +66,12 @@ export class Timeline extends View {
   // Marketplace timeline injection (addon, lazy-loaded)
   private marketplaceInjector: import('../../addons/marketplace/MarketplaceTimelineInjector').MarketplaceTimelineInjector | null = null;
 
-  constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
+  constructor(userPubkey: string, config: TimelineConfig) {
     super(); // Call View base class constructor
     this.userPubkey = userPubkey;
-    // The use case (profile / tribe / following) is captured once here as a
-    // typed config; the rest of the component reads the config, never the raw
-    // params. See docs/todos/timeline-component-modularization.md.
-    this.config = buildTimelineConfig(filterAuthorPubkey, tribePubkeys);
+    // The caller hands in a typed use-case config; the whole component is driven
+    // by it. See docs/todos/timeline-component-modularization.md.
+    this.config = config;
     this.feedOrchestrator = FeedOrchestrator.getInstance();
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();

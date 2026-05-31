@@ -13,6 +13,7 @@
 
 import { View } from './View';
 import { Timeline } from '../timeline/Timeline';
+import { followingTimelineConfig, tribeTimelineConfig } from '../timeline/TimelineConfig';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
 import { SystemLogger } from '../../services/SystemLogger';
@@ -255,8 +256,11 @@ export class TimelineView extends View {
       this.timeline = null;
     }
 
-    // Create new timeline
-    this.timeline = new Timeline(this.userPubkey, undefined, filterPubkeys);
+    // Create new timeline: a tribe tab (explicit members) or the main following feed
+    this.timeline = new Timeline(
+      this.userPubkey,
+      filterPubkeys ? tribeTimelineConfig(filterPubkeys) : followingTimelineConfig()
+    );
 
     // Mount timeline
     const timelineContainer = this.container.querySelector('.timeline-view__timeline');

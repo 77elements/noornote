@@ -42,6 +42,7 @@ import { UpNavigator } from '../components/bookmarks/UpNavigator';
 import { SyncConfirmationModal, type MovedItemInfo } from '../components/modals/SyncConfirmationModal';
 import { View } from '../components/views/View';
 import { Timeline } from '../components/timeline/Timeline';
+import { tribeTimelineConfig } from '../components/timeline/TimelineConfig';
 import { PlatformService } from '../services/PlatformService';
 import { escapeHtml } from '../helpers/escapeHtml';
 import { ICON_TRASH_16 } from '../helpers/svgIcons';
@@ -3017,8 +3018,8 @@ export class TribeView extends View {
       this.timeline = null;
     }
 
-    // Create new timeline with tribe filter
-    this.timeline = new Timeline(userPubkey, undefined, tribePubkeys);
+    // Create new timeline for the tribe's members
+    this.timeline = new Timeline(userPubkey, tribeTimelineConfig(tribePubkeys));
 
     // Mount timeline
     const timelineContainer = this.container.querySelector('.tribe-view__timeline');
