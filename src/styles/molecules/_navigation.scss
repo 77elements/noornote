@@ -59,8 +59,9 @@
       text-decoration: none;
     }
 
-    // Home link has 3 columns (icon, text, scroll-to-top)
-    &--home {
+    // Links with a scroll-to-top button (Timeline, Profile) have 3 columns
+    // (icon, text, scroll-to-top)
+    &--timeline {
       grid-template-columns: 20px 1fr 20px;
     }
 

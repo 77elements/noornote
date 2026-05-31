@@ -682,7 +682,7 @@ export class MainLayout {
 
     // Set Timeline as active by default (it's the default route)
     // Will be updated by router:view-changed event when navigating
-    const homeLink = this.element.querySelector('.primary-nav .primary-nav__link--home');
+    const homeLink = this.element.querySelector('.primary-nav .primary-nav__link--timeline');
     homeLink?.classList.add('is-active');
   }
 
@@ -698,7 +698,7 @@ export class MainLayout {
 
     // Map viewClass abbreviations to nav selectors
     const viewToSelector: Record<string, string> = {
-      'tv': '.primary-nav__link--home',           // Timeline View
+      'tv': '.primary-nav__link--timeline',           // Timeline View
       'pv': '.primary-nav__link--profile',        // Profile View
       'nv': '.primary-nav__link--notifications',  // Notifications View
       'atv': '.primary-nav__link--articles',      // Articles Timeline View
@@ -839,7 +839,7 @@ export class MainLayout {
    * Setup navigation links to use router instead of page reload
    */
   private setupNavigationLinks(): void {
-    const homeLink = this.element.querySelector('.sidebar .primary-nav__link--home');
+    const homeLink = this.element.querySelector('.sidebar .primary-nav__link--timeline');
     if (homeLink) {
       homeLink.addEventListener('click', (e) => {
         e.preventDefault();
@@ -847,12 +847,15 @@ export class MainLayout {
       });
     }
 
-    const scrollToTopBtn = this.element.querySelector('.scroll-to-top-btn');
-    if (scrollToTopBtn) {
-      scrollToTopBtn.addEventListener('click', () => {
+    // Each scroll-to-top button only scrolls its view to the top — it must not
+    // trigger its parent nav link's navigation (profiles vary by pubkey).
+    this.element.querySelectorAll('.scroll-to-top-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         this.scrollToTop();
       });
-    }
+    });
 
     const notificationsLink = this.element.querySelector('.sidebar .primary-nav__link--notifications') as HTMLElement | null;
     if (notificationsLink) {
@@ -937,6 +940,11 @@ export class MainLayout {
         e.preventDefault();
         const currentUser = this.authService.getCurrentUser();
         if (currentUser) {
+          // Already on own profile -> scroll to top (mirrors the Timeline menu item)
+          if (Router.getInstance().getCurrentPath() === `/profile/${currentUser.npub}`) {
+            this.scrollToTop();
+            return;
+          }
           const navController = getViewNavigationController();
           navController.openView('profile', currentUser.npub, e);
         }
@@ -1095,20 +1103,18 @@ export class MainLayout {
   private setupScrollListener(): void {
     // Wait for element to be mounted
     setTimeout(() => {
-      const scrollToTopBtn = this.element.querySelector('.scroll-to-top-btn') as HTMLElement;
-      if (!scrollToTopBtn) return;
+      const scrollButtons = this.element.querySelectorAll('.scroll-to-top-btn');
+      if (scrollButtons.length === 0) return;
 
-      // Handler to check scroll position and show/hide button
+      // Each scroll-to-top button is scoped to a view via data-scroll-view.
+      // Show the one matching the current view once scrolled down (> 100px).
       const handleScroll = (scrollContainer: Element) => {
         const currentView = this.appState.getState('view').currentView;
-        const scrollPosition = scrollContainer.scrollTop;
-
-        // Show button if in timeline and scrolled down (> 100px)
-        if (currentView === 'timeline' && scrollPosition > 100) {
-          scrollToTopBtn.style.display = 'inline-block';
-        } else {
-          scrollToTopBtn.style.display = 'none';
-        }
+        const scrolled = scrollContainer.scrollTop > 100;
+        scrollButtons.forEach((btn) => {
+          const forView = (btn as HTMLElement).dataset.scrollView;
+          (btn as HTMLElement).style.display = forView === currentView && scrolled ? 'inline-block' : 'none';
+        });
       };
 
       // Listen to primary-content scroll (covers most cases)
@@ -1225,16 +1231,17 @@ export class MainLayout {
             </div>
             <ul class="primary-nav">
             <li>
-              <a href="/" class="primary-nav__link primary-nav__link--home" title="Scroll to top">
+              <a href="/" class="primary-nav__link primary-nav__link--timeline" title="Scroll to top">
                 <svg class="primary-nav__item-icon"><use href="#icon-home"/></svg>
                 <span class="primary-nav__item-desc">Timeline</span>
-                <svg class="scroll-to-top-btn" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
+                <svg class="scroll-to-top-btn" data-scroll-view="timeline" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
               </a>
             </li>
             <li>
-              <a href="/profile" class="primary-nav__link primary-nav__link--profile">
+              <a href="/profile" class="primary-nav__link primary-nav__link--timeline primary-nav__link--profile" title="Scroll to top">
                 <svg class="primary-nav__item-icon"><use href="#icon-profile"/></svg>
                 <span class="primary-nav__item-desc">Profile</span>
+                <svg class="scroll-to-top-btn" data-scroll-view="profile" style="display: none;" role="button" aria-label="Scroll to top" tabindex="0"><use href="#icon-scroll-to-top"/></svg>
               </a>
             </li>
             <li>
