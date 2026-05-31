@@ -19,6 +19,7 @@ import { TimelineEventHandler } from './timeline-ui/TimelineEventHandler';
 import { TimelineRenderer } from './timeline-ui/TimelineRenderer';
 import { ISLStatsUpdater } from './timeline-features/ISLStatsUpdater';
 import { ScrollPositionManager } from './timeline-features/ScrollPositionManager';
+import { buildTimelineConfig, type TimelineConfig } from './TimelineConfig';
 import { NoteUI } from '../ui/NoteUI';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { CacheManager } from '../../services/CacheManager';
@@ -34,6 +35,11 @@ export class Timeline extends View {
   private userPubkey: string;
   private filterAuthorPubkey?: string; // Optional: filter timeline to specific author (for ProfileView)
   private tribePubkeys?: string[]; // Optional: filter timeline to tribe members (for TribeView)
+  /**
+   * Typed description of this timeline's use case. Phase 0: built here but not
+   * yet consumed downstream (behavior-preserving). See TimelineConfig.ts.
+   */
+  private readonly config: TimelineConfig;
   private refreshButton: RefreshButton | null = null;
   private viewDropdown: CustomDropdown | null = null;
   private lookForNotesLink: HTMLElement | null = null;
@@ -71,6 +77,7 @@ export class Timeline extends View {
     if (tribePubkeys !== undefined) {
       this.tribePubkeys = tribePubkeys;
     }
+    this.config = buildTimelineConfig(filterAuthorPubkey, tribePubkeys);
     this.feedOrchestrator = FeedOrchestrator.getInstance();
     this.userService = UserService.getInstance();
     this.relayConfig = RelayConfig.getInstance();
@@ -156,6 +163,14 @@ export class Timeline extends View {
    */
   public getPubkey(): string {
     return this.userPubkey;
+  }
+
+  /**
+   * The typed use-case config for this timeline (Phase 0 access point; consumers
+   * are wired in later phases — see docs/todos/timeline-component-modularization.md).
+   */
+  public getConfig(): TimelineConfig {
+    return this.config;
   }
 
   /**
