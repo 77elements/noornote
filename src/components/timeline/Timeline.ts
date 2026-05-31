@@ -33,8 +33,6 @@ export class Timeline extends View {
   private authService: AuthService;
   private infiniteScroll: InfiniteScroll;
   private userPubkey: string;
-  private filterAuthorPubkey?: string; // Optional: filter timeline to specific author (for ProfileView)
-  private tribePubkeys?: string[]; // Optional: filter timeline to tribe members (for TribeView)
   /**
    * Typed description of this timeline's use case. Phase 0: built here but not
    * yet consumed downstream (behavior-preserving). See TimelineConfig.ts.
@@ -71,12 +69,9 @@ export class Timeline extends View {
   constructor(userPubkey: string, filterAuthorPubkey?: string, tribePubkeys?: string[]) {
     super(); // Call View base class constructor
     this.userPubkey = userPubkey;
-    if (filterAuthorPubkey !== undefined) {
-      this.filterAuthorPubkey = filterAuthorPubkey;
-    }
-    if (tribePubkeys !== undefined) {
-      this.tribePubkeys = tribePubkeys;
-    }
+    // The use case (profile / tribe / following) is captured once here as a
+    // typed config; the rest of the component reads the config, never the raw
+    // params. See docs/todos/timeline-component-modularization.md.
     this.config = buildTimelineConfig(filterAuthorPubkey, tribePubkeys);
     this.feedOrchestrator = FeedOrchestrator.getInstance();
     this.userService = UserService.getInstance();
@@ -410,7 +405,7 @@ export class Timeline extends View {
       newestTimestamp,
       this.stateManager.getIncludeReplies(),
       this.stateManager.getSelectedRelay(),
-      this.filterAuthorPubkey
+      this.config.muteExemptPubkey
     ) ?? [];
 
     if (newEvents.length > 0) {
@@ -471,7 +466,7 @@ export class Timeline extends View {
       this.stateManager.getIncludeReplies(),
       initialDelayMs,
       this.stateManager.getSelectedRelay(),
-      this.filterAuthorPubkey
+      this.config.muteExemptPubkey
     );
   }
 
@@ -495,13 +490,10 @@ export class Timeline extends View {
       // Wait for auth to be fully initialized (session restore, NIP-46, etc.)
       await this.authService.waitForInitialization();
 
-      // Get authors to fetch: tribe members, specific author, or following list
-      if (this.tribePubkeys && this.tribePubkeys.length > 0) {
-        // TribeView: show notes from tribe members
-        this.stateManager.setFollowingPubkeys(this.tribePubkeys);
-      } else if (this.filterAuthorPubkey) {
-        // ProfileView: show only this author's notes
-        this.stateManager.setFollowingPubkeys([this.filterAuthorPubkey]);
+      // Get authors to fetch from the config source: explicit authors (profile /
+      // tribe) or the current user's following list.
+      if (this.config.source.kind === 'authors') {
+        this.stateManager.setFollowingPubkeys(this.config.source.pubkeys);
       } else {
         // TimelineView: show following list + current user's own posts
         let followingPubkeys = await this.userService.getUserFollowing(this.userPubkey);
@@ -691,7 +683,7 @@ export class Timeline extends View {
       this.stateManager.getIncludeReplies(),
       loadTrigger,
       this.stateManager.getSelectedRelay(),
-      this.filterAuthorPubkey // Don't filter profile user's notes in ProfileView
+      this.config.muteExemptPubkey // Don't filter profile user's notes in ProfileView
     );
 
     // Schedule "Look for new notes" link visibility
