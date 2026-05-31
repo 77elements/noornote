@@ -20,7 +20,6 @@ export class TimelineEventHandler {
   private uiStateHandler: TimelineUIStateHandler;
   private refreshButton: RefreshButton | null;
   private element: HTMLElement;
-  private filterAuthorPubkey?: string;
   private viewDropdown: CustomDropdown | null;
   private appState: AppState;
   private previousView: string = 'latest'; // Track previous view for cancel/revert
@@ -39,7 +38,6 @@ export class TimelineEventHandler {
     uiStateHandler: TimelineUIStateHandler,
     refreshButton: RefreshButton | null,
     element: HTMLElement,
-    filterAuthorPubkey: string | undefined,
     viewDropdown: CustomDropdown | null,
     config: TimelineConfig,
     callbacks: {
@@ -54,9 +52,6 @@ export class TimelineEventHandler {
     this.uiStateHandler = uiStateHandler;
     this.refreshButton = refreshButton;
     this.element = element;
-    if (filterAuthorPubkey) {
-      this.filterAuthorPubkey = filterAuthorPubkey;
-    }
     this.viewDropdown = viewDropdown;
     this.config = config;
     this.appState = AppState.getInstance();
@@ -254,15 +249,15 @@ export class TimelineEventHandler {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
         until: oldestEvent.created_at,
-        timeWindowHours: this.filterAuthorPubkey ? 720 : 3, // ProfileView: 30 days, TimelineView: 3 hours
+        timeWindowHours: this.config.relays.kind === 'author-outbox' ? 720 : 3, // ProfileView: 30 days, TimelineView: 3 hours
         config: this.config
       };
       const selectedRelay = this.stateManager.getSelectedRelay();
       if (selectedRelay) {
         loadMoreRequest.specificRelay = selectedRelay;
       }
-      if (this.filterAuthorPubkey) {
-        loadMoreRequest.exemptFromMuteFilter = this.filterAuthorPubkey; // Don't filter profile user's notes in ProfileView
+      if (this.config.muteExemptPubkey) {
+        loadMoreRequest.exemptFromMuteFilter = this.config.muteExemptPubkey; // Don't filter profile user's notes in ProfileView
       }
       // Pass date range lower bound so loadMore stops at boundary
       const dateRange = this.stateManager.getDateRange();

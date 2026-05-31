@@ -95,9 +95,9 @@ export class Timeline extends View {
     this.islStatsUpdater = new ISLStatsUpdater(this.element);
     this.scrollPositionManager = new ScrollPositionManager(this.element);
 
-    // Initialize renderer (ProfileView disables card trimming so it always keeps
-    // the complete author timeline — full history + preserved scroll on return).
-    this.renderer = new TimelineRenderer(this.element, this.stateManager, this.uiStateHandler, !!this.filterAuthorPubkey);
+    // Initialize renderer. `trimDom: false` (ProfileView) keeps the complete
+    // author timeline — full history + preserved scroll on return.
+    this.renderer = new TimelineRenderer(this.element, this.stateManager, this.uiStateHandler, !this.config.trimDom);
 
     this.setupViewDropdown();
     this.setupInfiniteScroll();
@@ -110,7 +110,6 @@ export class Timeline extends View {
       this.uiStateHandler,
       this.refreshButton,
       this.element,
-      this.filterAuthorPubkey,
       this.viewDropdown,
       this.config,
       {
@@ -133,13 +132,13 @@ export class Timeline extends View {
     // Listen for pull-to-refresh events
     this.pullRefreshSubscriptionId = this.eventBus.on('timeline:pull-refresh', () => this.handlePullToRefresh());
 
-    // Listen for user account switches (only for main timeline, not ProfileView)
-    if (!this.filterAuthorPubkey) {
+    // Listen for user account switches (not for a single-author ProfileView)
+    if (this.config.relays.kind !== 'author-outbox') {
       this.setupUserLoginListener();
     }
 
-    // Listen for marketplace addon toggle (stop injector immediately when disabled)
-    if (!this.filterAuthorPubkey && !this.tribePubkeys) {
+    // Listen for marketplace addon toggle (main timeline only)
+    if (this.config.marketplaceInjection) {
       this.marketplaceToggleSubId = this.eventBus.on('marketplace:toggle', (data: { enabled: boolean }) => {
         if (!data.enabled) {
           this.stopMarketplaceInjector();
@@ -538,8 +537,8 @@ export class Timeline extends View {
       if (selectedRelay) {
         feedRequest.specificRelay = selectedRelay;
       }
-      if (this.filterAuthorPubkey) {
-        feedRequest.exemptFromMuteFilter = this.filterAuthorPubkey; // Don't filter profile user's notes in ProfileView
+      if (this.config.muteExemptPubkey) {
+        feedRequest.exemptFromMuteFilter = this.config.muteExemptPubkey; // Don't filter profile user's notes in ProfileView
       }
       const result = await this.feedOrchestrator.loadInitialFeed(feedRequest) ?? { events: [], hasMore: false };
 
@@ -554,13 +553,13 @@ export class Timeline extends View {
 
       this.stateManager.setHasMore(result.hasMore);
 
-      // Start polling for new notes (disabled in time range mode — viewing historical data)
-      if (!dateRange) {
+      // Start polling for new notes (config opt-in; never in time range mode)
+      if (this.config.polling && !dateRange) {
         this.startNewNotesPolling();
       }
 
-      // Marketplace timeline injection (only on main timeline, not ProfileView/TribeView)
-      if (!this.filterAuthorPubkey && !this.tribePubkeys) {
+      // Marketplace timeline injection (main timeline only)
+      if (this.config.marketplaceInjection) {
         this.startMarketplaceInjector();
       }
 
