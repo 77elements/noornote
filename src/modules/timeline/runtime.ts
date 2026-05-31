@@ -25,13 +25,13 @@ export class TimelineRuntime implements ModuleRuntime<TimelineModuleApi> {
       clearCache: () => orch?.clearCache(),
 
       // Polling
-      startPolling: (followingPubkeys, lastLoadedTimestamp, callback, includeReplies, delayMs, specificRelay, exemptFromMuteFilter) =>
-        orch?.startPolling(followingPubkeys, lastLoadedTimestamp, callback, includeReplies, delayMs ?? 10000, specificRelay ?? null, exemptFromMuteFilter),
+      startPolling: (followingPubkeys, lastLoadedTimestamp, callback, includeReplies, delayMs, specificRelay, exemptFromMuteFilter, applyWordFilter) =>
+        orch?.startPolling(followingPubkeys, lastLoadedTimestamp, callback, includeReplies, delayMs ?? 10000, specificRelay ?? null, exemptFromMuteFilter, applyWordFilter ?? true),
       stopPolling: () => orch?.stopPolling(),
       getPolledEvents: () => orch?.getPolledEvents() ?? [],
       resetPollingTimestamp: (newTimestamp) => orch?.resetPollingTimestamp(newTimestamp),
-      pollOnce: (followingPubkeys, newestTimestamp, includeReplies, specificRelay, exemptFromMuteFilter) =>
-        orch?.pollOnce(followingPubkeys, newestTimestamp, includeReplies, specificRelay, exemptFromMuteFilter) ?? Promise.resolve([]),
+      pollOnce: (followingPubkeys, newestTimestamp, includeReplies, specificRelay, exemptFromMuteFilter, applyWordFilter) =>
+        orch?.pollOnce(followingPubkeys, newestTimestamp, includeReplies, specificRelay, exemptFromMuteFilter, applyWordFilter) ?? Promise.resolve([]),
 
       // Mute management
       refreshMutedUsers: () => orch?.refreshMutedUsers() ?? Promise.resolve(),

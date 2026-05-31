@@ -84,6 +84,7 @@ export class FeedOrchestrator extends Orchestrator {
   private pollingIncludeReplies: boolean = false;
   private pollingSpecificRelay: string | null = null; // Poll only from this relay (for relay-filtered timeline)
   private pollingExemptFromMuteFilter: string | undefined = undefined; // Exempt pubkey for ProfileView
+  private pollingApplyWordFilter: boolean = true; // Whether the content word-filter applies (config.applyWordFilter)
   private lastFoundCount: number = 0;
   private polledEventsCache: NostrEvent[] = []; // Cache for new events found during polling
   private isManualPoll: boolean = false; // Track if this is a manual poll (user clicked link)
@@ -195,7 +196,8 @@ export class FeedOrchestrator extends Orchestrator {
       }
 
       const events = await this.fetchEvents(relays, filters, params.fetchMode, !!specificRelay);
-      const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter);
+      const applyWordFilter = request.config ? request.config.applyWordFilter : !exemptFromMuteFilter;
+      const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter, applyWordFilter);
 
       this.systemLogger.info(
         'FeedOrchestrator',
@@ -335,7 +337,8 @@ export class FeedOrchestrator extends Orchestrator {
       const filters: NDKFilter<number>[] = [filterObj];
 
       const events = await this.fetchEvents(relays, filters, params.fetchMode, !!specificRelay);
-      const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter);
+      const applyWordFilter = request.config ? request.config.applyWordFilter : !exemptFromMuteFilter;
+      const filteredEvents = await this.processEvents(events, includeReplies, exemptFromMuteFilter, applyWordFilter);
 
       this.systemLogger.info(
         'FeedOrchestrator',
@@ -465,7 +468,8 @@ export class FeedOrchestrator extends Orchestrator {
   private async processEvents(
     events: NostrEvent[],
     includeReplies: boolean,
-    exemptFromMuteFilter?: string
+    exemptFromMuteFilter: string | undefined,
+    applyWordFilter: boolean
   ): Promise<NostrEvent[]> {
     // Deduplicate events by ID
     const uniqueEvents = Array.from(
@@ -485,8 +489,9 @@ export class FeedOrchestrator extends Orchestrator {
       filteredEvents = this.filterSelfReposts(filteredEvents);
     }
 
-    // Filter content words (skip for ProfileView — exemptFromMuteFilter means PV)
-    if (!exemptFromMuteFilter) {
+    // Content word filter (addon) — gated by the config's explicit applyWordFilter
+    // flag (false for ProfileView). No longer inferred from the mute exemption.
+    if (applyWordFilter) {
       const { isContentWordFilterEnabled, filterContentWords, getFilterWords } = await import('../../addons/content-word-filter/index');
       if (isContentWordFilterEnabled()) {
         const before = filteredEvents.length;
@@ -683,7 +688,8 @@ export class FeedOrchestrator extends Orchestrator {
     includeReplies: boolean = false,
     delayMs: number = 10000,
     specificRelay: string | null = null,
-    exemptFromMuteFilter?: string
+    exemptFromMuteFilter?: string,
+    applyWordFilter: boolean = true
   ): void {
     // Stop any existing polling
     this.stopPolling();
@@ -694,6 +700,7 @@ export class FeedOrchestrator extends Orchestrator {
     this.pollingIncludeReplies = includeReplies;
     this.pollingSpecificRelay = specificRelay;
     this.pollingExemptFromMuteFilter = exemptFromMuteFilter;
+    this.pollingApplyWordFilter = applyWordFilter;
     this.pollingScheduled = true; // Mark as scheduled immediately
 
     // Track manual poll (user clicked link) vs automatic poll
@@ -792,7 +799,7 @@ export class FeedOrchestrator extends Orchestrator {
       }];
 
       const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch'); // Skip cache for polling
-      const filteredEvents = await this.processEvents(events, this.pollingIncludeReplies, this.pollingExemptFromMuteFilter);
+      const filteredEvents = await this.processEvents(events, this.pollingIncludeReplies, this.pollingExemptFromMuteFilter, this.pollingApplyWordFilter);
 
       if (filteredEvents.length > 0) {
         // Cache polled events for later retrieval (already sorted by processEvents)
@@ -932,7 +939,8 @@ export class FeedOrchestrator extends Orchestrator {
     newestTimestamp: number,
     includeReplies: boolean,
     specificRelay: string | null,
-    exemptFromMuteFilter?: string
+    exemptFromMuteFilter: string | undefined,
+    applyWordFilter: boolean
   ): Promise<NostrEvent[]> {
     try {
       const relays = specificRelay
@@ -951,7 +959,7 @@ export class FeedOrchestrator extends Orchestrator {
       }];
 
       const events = await this.transport.fetch(relays, filters, 5000, true, 'FeedOrch');
-      return await this.processEvents(events, includeReplies, exemptFromMuteFilter);
+      return await this.processEvents(events, includeReplies, exemptFromMuteFilter, applyWordFilter);
     } catch (error) {
       this.systemLogger.error('FeedOrchestrator', `pollOnce failed: ${error}`);
       return [];

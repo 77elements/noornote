@@ -404,7 +404,8 @@ export class Timeline extends View {
       newestTimestamp,
       this.config.includeReplies,
       relayFilterUrl(this.config),
-      this.config.muteExemptPubkey
+      this.config.muteExemptPubkey,
+      this.config.applyWordFilter
     ) ?? [];
 
     if (newEvents.length > 0) {
@@ -465,7 +466,8 @@ export class Timeline extends View {
       this.config.includeReplies,
       initialDelayMs,
       relayFilterUrl(this.config),
-      this.config.muteExemptPubkey
+      this.config.muteExemptPubkey,
+      this.config.applyWordFilter
     );
   }
 
@@ -682,7 +684,8 @@ export class Timeline extends View {
       this.config.includeReplies,
       loadTrigger,
       relayFilterUrl(this.config),
-      this.config.muteExemptPubkey // Don't filter profile user's notes in ProfileView
+      this.config.muteExemptPubkey, // Don't filter profile user's notes in ProfileView
+      this.config.applyWordFilter
     );
 
     // Schedule "Look for new notes" link visibility

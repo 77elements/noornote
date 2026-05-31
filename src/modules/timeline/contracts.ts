@@ -21,7 +21,8 @@ export interface TimelineModuleApi {
     includeReplies?: boolean,
     delayMs?: number,
     specificRelay?: string | null,
-    exemptFromMuteFilter?: string
+    exemptFromMuteFilter?: string,
+    applyWordFilter?: boolean
   ): void;
   stopPolling(): void;
   getPolledEvents(): NostrEvent[];
@@ -31,7 +32,8 @@ export interface TimelineModuleApi {
     newestTimestamp: number,
     includeReplies: boolean,
     specificRelay: string | null,
-    exemptFromMuteFilter?: string
+    exemptFromMuteFilter: string | undefined,
+    applyWordFilter: boolean
   ): Promise<NostrEvent[]>;
 
   // Mute management

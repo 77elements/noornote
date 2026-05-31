@@ -61,7 +61,8 @@ export class TimelineLifecycleManager {
     includeReplies: boolean,
     loadTrigger: HTMLElement | null,
     selectedRelay: string | null = null,
-    exemptFromMuteFilter?: string
+    exemptFromMuteFilter?: string,
+    applyWordFilter: boolean = true
   ): void {
     // Restart polling if we have events
     if (newestTimestamp > 0) {
@@ -72,7 +73,8 @@ export class TimelineLifecycleManager {
         includeReplies,
         60000,
         selectedRelay,
-        exemptFromMuteFilter
+        exemptFromMuteFilter,
+        applyWordFilter
       );
     }
 
