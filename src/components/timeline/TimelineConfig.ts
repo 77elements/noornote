@@ -137,3 +137,16 @@ export function tribeTimelineConfig(memberPubkeys: string[]): TimelineConfig {
 export function followingTimelineConfig(): TimelineConfig {
   return buildTimelineConfig(undefined, undefined);
 }
+
+// Runtime overrides (relay filter / time-machine) live in the config too, so it
+// stays the single source of truth for the feed. These read them back out.
+
+/** The single relay a relay-filtered feed is pinned to, or null. */
+export function relayFilterUrl(c: TimelineConfig): string | null {
+  return c.relays.kind === 'explicit' ? (c.relays.urls[0] ?? null) : null;
+}
+
+/** The selected time-machine window, or null when live. */
+export function timeRangeOf(c: TimelineConfig): { since: number; until: number } | null {
+  return c.range.kind === 'between' ? { since: c.range.since, until: c.range.until } : null;
+}

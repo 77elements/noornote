@@ -19,7 +19,7 @@ import { TimelineEventHandler } from './timeline-ui/TimelineEventHandler';
 import { TimelineRenderer } from './timeline-ui/TimelineRenderer';
 import { ISLStatsUpdater } from './timeline-features/ISLStatsUpdater';
 import { ScrollPositionManager } from './timeline-features/ScrollPositionManager';
-import type { TimelineConfig } from './TimelineConfig';
+import { type TimelineConfig, relayFilterUrl, timeRangeOf } from './TimelineConfig';
 import { NoteUI } from '../ui/NoteUI';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { CacheManager } from '../../services/CacheManager';
@@ -403,7 +403,7 @@ export class Timeline extends View {
       pubkeys,
       newestTimestamp,
       this.stateManager.getIncludeReplies(),
-      this.stateManager.getSelectedRelay(),
+      relayFilterUrl(this.config),
       this.config.muteExemptPubkey
     ) ?? [];
 
@@ -464,7 +464,7 @@ export class Timeline extends View {
       (info: NewNotesInfo) => this.handleNewNotesDetected(info),
       this.stateManager.getIncludeReplies(),
       initialDelayMs,
-      this.stateManager.getSelectedRelay(),
+      relayFilterUrl(this.config),
       this.config.muteExemptPubkey
     );
   }
@@ -512,7 +512,7 @@ export class Timeline extends View {
       }
 
       // Use TimelineModuleApi for loading
-      const dateRange = this.stateManager.getDateRange();
+      const dateRange = timeRangeOf(this.config);
       const feedRequest: FeedLoadRequest = {
         followingPubkeys: this.stateManager.getFollowingPubkeys(),
         includeReplies: this.stateManager.getIncludeReplies(),
@@ -524,7 +524,7 @@ export class Timeline extends View {
         feedRequest.since = dateRange.since;
         feedRequest.until = dateRange.until;
       }
-      const selectedRelay = this.stateManager.getSelectedRelay();
+      const selectedRelay = relayFilterUrl(this.config);
       if (selectedRelay) {
         feedRequest.specificRelay = selectedRelay;
       }
@@ -681,7 +681,7 @@ export class Timeline extends View {
       (info: NewNotesInfo) => this.handleNewNotesDetected(info),
       this.stateManager.getIncludeReplies(),
       loadTrigger,
-      this.stateManager.getSelectedRelay(),
+      relayFilterUrl(this.config),
       this.config.muteExemptPubkey // Don't filter profile user's notes in ProfileView
     );
 

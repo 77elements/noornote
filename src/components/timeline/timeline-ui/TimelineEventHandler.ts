@@ -12,7 +12,7 @@ import { RefreshButton } from '../../ui/RefreshButton';
 import { CustomDropdown } from '../../ui/CustomDropdown';
 import { AppState } from '../../../services/AppState';
 import { NoteUI } from '../../ui/NoteUI';
-import type { TimelineConfig } from '../TimelineConfig';
+import { type TimelineConfig, relayFilterUrl, timeRangeOf } from '../TimelineConfig';
 
 export class TimelineEventHandler {
   private timelineApi: TimelineModuleApi;
@@ -80,19 +80,19 @@ export class TimelineEventHandler {
     }
 
     // Clear date range when switching away from time range mode
-    this.stateManager.clearDateRange();
+    this.config.range = { kind: 'live' };
 
     // Check if this is a relay-specific filter
     if (selectedView.startsWith('relay:')) {
       const relayUrl = selectedView.substring(6); // Remove 'relay:' prefix
-      this.stateManager.setSelectedRelay(relayUrl);
+      this.config.relays = { kind: 'explicit', urls: [relayUrl] };
       this.stateManager.setIncludeReplies(false); // Reset to latest (no replies) when switching to relay
 
       // Update AppState so PostNoteModal can react to relay filter
       this.appState.setState('timeline', { selectedRelay: relayUrl });
     } else {
       // Standard filters (latest, latest-replies)
-      this.stateManager.setSelectedRelay(null); // Clear relay filter
+      this.config.relays = { kind: 'auto' }; // Clear relay filter
       this.stateManager.setIncludeReplies(selectedView === 'latest-replies');
 
       // Update AppState
@@ -137,8 +137,8 @@ export class TimelineEventHandler {
     }
 
     // Store date range and update dropdown label
-    this.stateManager.setDateRange(result);
-    this.stateManager.setSelectedRelay(null);
+    this.config.range = { kind: 'between', since: result.since, until: result.until };
+    this.config.relays = { kind: 'auto' };
     this.stateManager.setIncludeReplies(false);
     this.appState.setState('timeline', { selectedRelay: null });
 
@@ -252,7 +252,7 @@ export class TimelineEventHandler {
         timeWindowHours: this.config.relays.kind === 'author-outbox' ? 720 : 3, // ProfileView: 30 days, TimelineView: 3 hours
         config: this.config
       };
-      const selectedRelay = this.stateManager.getSelectedRelay();
+      const selectedRelay = relayFilterUrl(this.config);
       if (selectedRelay) {
         loadMoreRequest.specificRelay = selectedRelay;
       }
@@ -260,7 +260,7 @@ export class TimelineEventHandler {
         loadMoreRequest.exemptFromMuteFilter = this.config.muteExemptPubkey; // Don't filter profile user's notes in ProfileView
       }
       // Pass date range lower bound so loadMore stops at boundary
-      const dateRange = this.stateManager.getDateRange();
+      const dateRange = timeRangeOf(this.config);
       if (dateRange) {
         loadMoreRequest.since = dateRange.since;
       }

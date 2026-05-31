@@ -12,8 +12,6 @@ export class TimelineStateManager {
   private hasMore = true;
   private followingPubkeys: string[] = [];
   private includeReplies = false;
-  private selectedRelay: string | null = null; // null = all relays, string = specific relay URL
-  private dateRange: { since: number; until: number } | null = null; // null = live mode, set = time range mode
 
   /**
    * Get all events
@@ -163,38 +161,13 @@ export class TimelineStateManager {
   }
 
   /**
-   * Selected relay filter
-   */
-  getSelectedRelay(): string | null {
-    return this.selectedRelay;
-  }
-
-  setSelectedRelay(relayUrl: string | null): void {
-    this.selectedRelay = relayUrl;
-  }
-
-  /**
-   * Date range filter (time range mode)
-   */
-  getDateRange(): { since: number; until: number } | null {
-    return this.dateRange;
-  }
-
-  setDateRange(range: { since: number; until: number }): void {
-    this.dateRange = range;
-  }
-
-  clearDateRange(): void {
-    this.dateRange = null;
-  }
-
-  /**
-   * Reset all state (for refresh)
+   * Reset all state (for refresh). Relay filter / time range live in the
+   * TimelineConfig now, not here.
    */
   reset(): void {
     this.events = [];
     this.hasMore = true;
-    // Keep loading, followingPubkeys, includeReplies, selectedRelay as they are
+    // Keep loading, followingPubkeys, includeReplies as they are
   }
 
   /**
@@ -206,7 +179,6 @@ export class TimelineStateManager {
     this.loading = false;
     this.hasMore = true;
     this.followingPubkeys = [];
-    this.dateRange = null;
-    // Keep filter preferences (includeReplies, selectedRelay) as user preference
+    // Keep filter preferences (includeReplies) as user preference
   }
 }
