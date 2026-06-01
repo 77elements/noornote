@@ -15,7 +15,6 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatTimeAgo } from '../../helpers/formatTimeAgo';
-import satsIconUrl from '../../assets/sats.svg';
 
 const PAGE_SIZE = 20;
 
@@ -98,7 +97,7 @@ export class WalletTransactionList {
     let html = `<div class="wallet-tx-balance">`;
     if (balanceSats !== null) {
       html += `<span class="wallet-tx-balance__sats">${balanceSats.toLocaleString()}</span>`;
-      html += ` <img src="${satsIconUrl}" class="wallet-tx-balance__sats-icon" alt="sats" />`;
+      html += ` <span class="wallet-tx-balance__sats-icon">丰</span>`;
     } else {
       html += `<span class="wallet-tx-balance__sats">--</span>`;
     }

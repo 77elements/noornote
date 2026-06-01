@@ -38,9 +38,7 @@
 }
 
 .wallet-balance-content .sats-icon {
-  width: 18px;
-  height: 18px;
-  filter: brightness(0) saturate(100%) invert(93%) sepia(9%) saturate(414%) hue-rotate(329deg) brightness(103%) contrast(91%);
+  color: var(--color-5);
   margin: 0;
   display: inline-block;
   vertical-align: text-bottom;
@@ -58,7 +56,7 @@
   height: 18px;
   color: var(--color-5);
   opacity: 0.6;
-  margin: 0 calc($gap / 4) 0 0;
+  margin: 0 0.25rem;
   vertical-align: middle;
 }
 
@@ -73,7 +71,7 @@
   padding: 0;
   opacity: 0.5;
   vertical-align: bottom;
-  margin-left: 10px;
+  margin-left: 5px;
   transition: opacity 0.2s ease;
 
   &:hover {
@@ -121,9 +119,8 @@
 }
 
 .wallet-tx-balance__sats-icon {
-  width: 20px;
-  height: 20px;
-  filter: brightness(0) saturate(100%) invert(93%) sepia(9%) saturate(414%) hue-rotate(329deg) brightness(103%) contrast(91%);
+  font-size: 1.4rem;
+  color: var(--color-5);
   vertical-align: text-bottom;
 }
 

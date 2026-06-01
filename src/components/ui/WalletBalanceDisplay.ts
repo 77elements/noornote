@@ -8,7 +8,6 @@ import { SystemLogger } from '../../services/SystemLogger';
 import { ExchangeRateService } from '../../services/ExchangeRateService';
 import { KeychainStorage } from '../../services/KeychainStorage';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
-import satsIconUrl from '../../assets/sats.svg';
 
 export class WalletBalanceDisplay {
   private element: HTMLElement;
@@ -88,7 +87,7 @@ export class WalletBalanceDisplay {
     container.innerHTML = `
       <div class="wallet-balance-content">
         <span class="wallet-balance-amount">--</span>
-        <img src="${satsIconUrl}" class="sats-icon" alt="sats" />
+        <span class="sats-icon">丰</span>
         <svg class="wallet-balance-exchange"><use href="#icon-switch-arrows-horizontal"/></svg>
         <span class="wallet-balance-fiat-amount">--</span>
         <button class="wallet-balance-toggle" title="Toggle visibility" aria-label="Toggle balance visibility">
