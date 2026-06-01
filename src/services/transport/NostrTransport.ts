@@ -419,35 +419,58 @@ export class NostrTransport {
     caller: string = ''
   ): Promise<NostrEvent[]> {
     relays = secureRelays(relays);
+    // PV-DBG: temporary instrumentation to root-cause the empty-on-first-visit bug.
+    console.log(`[PV-DBG] ${caller}: direct fetch over ${relays.length} relays: ${relays.join(', ')}`);
+    const dbgStart = Date.now();
+    let dbgOpened = 0, dbgErrored = 0, dbgEosed = 0;
     return new Promise((resolve) => {
       const events = new Map<string, NostrEvent>();
       const connections: WebSocket[] = [];
-      let closedCount = 0;
-      let settled = false;
+      let settledRelays = 0;
+      let done = false;
+      let hardTimeoutId: ReturnType<typeof setTimeout> | undefined;
+      let graceTimer: ReturnType<typeof setTimeout> | undefined;
 
-      const cleanup = () => {
-        if (settled) return;
-        settled = true;
+      // A single relay that connects but never sends EOSE used to hold the whole
+      // fetch hostage for the full hard timeout (the ~15s blank ProfileView). Once
+      // a quorum of relays has answered (EOSE / error / close) AND we already have
+      // events, resolve after a short grace window instead of waiting on stragglers.
+      // The events-present guard keeps a genuinely empty result waiting until the
+      // hard timeout, so we never flash an empty timeline prematurely.
+      const QUORUM = Math.max(1, Math.ceil(relays.length * 0.6));
+      const GRACE_MS = 1000;
+
+      const finish = () => {
+        if (done) return;
+        done = true;
+        if (graceTimer) clearTimeout(graceTimer);
+        if (hardTimeoutId) clearTimeout(hardTimeoutId);
         connections.forEach(ws => {
           if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
             ws.close();
           }
         });
         diagLog('relays', 'Direct fetch OK', { caller, relayCount: relays.length, eventCount: events.size });
+        // PV-DBG: summary — distinguishes fast-empty (all relays failed) from slow-empty (connected, no events).
+        console.log(`[PV-DBG] ${caller}: done in ${Date.now() - dbgStart}ms — opened ${dbgOpened}/${relays.length}, errored ${dbgErrored}, eosed ${dbgEosed}, events ${events.size}`);
         resolve(Array.from(events.values()));
       };
 
       if (relays.length === 0) {
-        cleanup();
+        finish();
         return;
       }
 
-      const timeoutId = setTimeout(cleanup, timeout);
-      const markClosed = () => {
-        closedCount++;
-        if (closedCount >= relays.length) {
-          clearTimeout(timeoutId);
-          cleanup();
+      hardTimeoutId = setTimeout(finish, timeout);
+
+      const markSettled = () => {
+        settledRelays++;
+        if (settledRelays >= relays.length) {
+          finish(); // every relay answered — no reason to wait
+          return;
+        }
+        if (settledRelays >= QUORUM && events.size > 0 && !graceTimer) {
+          graceTimer = setTimeout(finish, GRACE_MS);
         }
       };
 
@@ -456,12 +479,13 @@ export class NostrTransport {
         try {
           ws = new WebSocket(relayUrl);
         } catch (_e) {
-          markClosed();
+          markSettled();
           return;
         }
         connections.push(ws);
 
         ws.onopen = () => {
+          dbgOpened++; // PV-DBG
           const subId = Math.random().toString(36).substring(7);
           ws.send(JSON.stringify(['REQ', subId, ...filters]));
         };
@@ -475,6 +499,7 @@ export class NostrTransport {
                 events.set(event.id, event);
               }
             } else if (type === 'EOSE') {
+              dbgEosed++; // PV-DBG
               ws.close();
             }
           } catch (_error) {
@@ -482,8 +507,8 @@ export class NostrTransport {
           }
         };
 
-        ws.onclose = () => markClosed();
-        ws.onerror = () => ws.close();
+        ws.onclose = () => markSettled();
+        ws.onerror = () => { dbgErrored++; ws.close(); }; // PV-DBG
       });
     });
   }
