@@ -1,11 +1,13 @@
-# NoorNote 0.9.8
+# NoorNote 0.9.9
 
-**Bulletproof follower detection** — The "Check for changes" feature and the "Follows you" badge on profiles are now driven by a single NIP-65-aware verification path. False "stopped following you back" notifications are eliminated: if we can't reach a user's actual relays, we say so instead of guessing.
+**Note taking (new add-on).** A private, offline-first notes board, encrypted with your own key (NIP-44) and synced across your devices via Nostr relays, so only ciphertext ever leaves your device. Markdown notes with a formatting toolbar, checklists, labels, colors, pin and archive, reminders, full-text search, and local backup and restore.
 
-**Repost & quote polish** — Long reposts keep their interaction bar visible under the Show More button. Nested Show More buttons on quoted posts are gone — only the outer note truncates. Quotes of reposts now show the original content instead of raw JSON.
+**Profiles load reliably.** Opening a profile now always loads its notes, fast and gap-free, even when the author's own relays are down. Fixes empty and stalling profile timelines, including the web-only "no notes" case caused by insecure relays.
 
-**Generic reposts (kind 16)** — The newer kind 16 repost format is now fully supported across feed, notifications, and rendering.
+**Direct messages.** Delete a conversation locally (or delete-and-mute), page back through older history on demand, and a faster cold-start sync that resumes per account.
 
-**Faster timeline stats** — Zap, reaction, and reply counts for timeline notes are batched, making the feed feel snappier.
+**Petnames and private notes.** Optionally keep your own pet-names for users and private encrypted notes about them, shown as subtle affordances in the follows list. Strictly opt-in behind a privacy toggle.
 
-**Fixes** — Correct zap totals in the timeline, Lightning Address fallback to NIP-05 when lud16/lud06 are missing, accurate file size in upload error toasts.
+**Hide self-reposts.** New setting to hide a user's reposts of their own notes, with an adjustable age threshold, applied in the timeline and on profiles.
+
+**Fixes and polish.** Wallet balance shows a cleaner 丰 sats glyph; Ditto geocache posts (kind 37516) render as a tidy notice with an open-in-Ditto link; per-view scroll position is restored correctly; quoted notes no longer pollute reply threads.
