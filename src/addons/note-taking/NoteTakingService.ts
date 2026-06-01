@@ -190,6 +190,14 @@ export class NoteTakingService {
     PerAccountLocalStorage.getInstance().set(StorageKeys.NOTE_TAKING_TOMBSTONES, map);
   }
 
+  /** Drop a tombstone so an explicit restore can bring a deleted note back. */
+  public clearTombstone(id: string): void {
+    const map = this.getTombstones();
+    if (map[id] === undefined) return;
+    delete map[id];
+    PerAccountLocalStorage.getInstance().set(StorageKeys.NOTE_TAKING_TOMBSTONES, map);
+  }
+
   public isTombstoned(id: string, updatedAt: number): boolean {
     const ts = this.getTombstones()[id];
     return ts !== undefined && updatedAt <= ts;
@@ -215,9 +223,15 @@ export class NoteTakingService {
    * Returns true if local state changed.
    */
   public async applyRemote(payload: NotePayload): Promise<boolean> {
+    const local = await this.store.get(payload.id);
+
     if (payload.deleted) {
+      // Last-write-wins, even for tombstones: a newer local copy (e.g. an explicit
+      // restore that bumped updatedAt) must NOT be deleted by an older relay
+      // tombstone. A genuine deletion always carries a newer ts than the note it
+      // replaces, so this still blocks resurrection of truly-deleted notes.
+      if (local && local.updatedAt > payload.updatedAt) return false;
       this.addTombstone(payload.id, payload.updatedAt);
-      const local = await this.store.get(payload.id);
       if (local) {
         await this.store.delete(payload.id);
         return true;
@@ -226,8 +240,6 @@ export class NoteTakingService {
     }
 
     if (this.isTombstoned(payload.id, payload.updatedAt)) return false;
-
-    const local = await this.store.get(payload.id);
     if (local && local.updatedAt >= payload.updatedAt) return false;
 
     await this.store.put({ ...payload, dirty: false });

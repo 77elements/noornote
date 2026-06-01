@@ -13,6 +13,7 @@ import { NoteTakingSyncService } from './NoteTakingSyncService';
 import type { NoteRecord } from './NoteTakingStore';
 import { NoteEditorModal } from './NoteEditorModal';
 import { isAccentColor } from './noteColors';
+import { backupNotes, restoreNotes } from './NoteTakingBackup';
 
 export class NoteTakingView extends View {
   private container: HTMLElement;
@@ -30,17 +31,17 @@ export class NoteTakingView extends View {
     this.container = document.createElement('div');
     this.container.className = 'note-taking';
     this.container.innerHTML = `
-      <div class="note-taking__toolbar l-spread">
+      <div class="note-taking__toolbar">
         <button type="button" class="btn-icon" data-action="sync" title="Sync now" aria-label="Sync now">
           <svg width="18" height="18"><use href="#icon-sync"/></svg>
         </button>
-        <div class="note-taking__toolbar-actions">
-          <input type="search" class="input note-taking__search-input" placeholder="Search notes…" aria-label="Search notes" />
-          <button type="button" class="btn" data-action="new-note">
-            <svg width="16" height="16"><use href="#icon-plus"/></svg>
-            New note
-          </button>
-        </div>
+        <a href="#" data-action="backup">Backup notes</a>
+        <a href="#" data-action="restore">Restore notes</a>
+        <input type="search" class="input note-taking__search-input" placeholder="Search notes…" aria-label="Search notes" />
+        <button type="button" class="btn" data-action="new-note">
+          <svg width="16" height="16"><use href="#icon-plus"/></svg>
+          New note
+        </button>
       </div>
       <div class="tabs note-taking__views">
         <button type="button" class="tab tab--active" data-view="active">Notes</button>
@@ -53,6 +54,14 @@ export class NoteTakingView extends View {
       ?.addEventListener('click', () => this.openEditor());
     this.container.querySelector('[data-action="sync"]')
       ?.addEventListener('click', () => this.syncNow());
+    this.container.querySelector('[data-action="backup"]')
+      ?.addEventListener('click', (e) => { e.preventDefault(); void backupNotes(); });
+    this.container.querySelector('[data-action="restore"]')
+      ?.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await restoreNotes();
+        await this.load();
+      });
 
     const searchInput = this.container.querySelector('.note-taking__search-input') as HTMLInputElement | null;
     searchInput?.addEventListener('input', () => {

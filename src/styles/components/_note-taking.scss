@@ -41,18 +41,16 @@ $note-taking-colors: (
 }
 
 .note-taking__toolbar {
-  padding-bottom: $gap;
-}
-
-.note-taking__toolbar-actions {
   display: flex;
   align-items: center;
   gap: calc($gap / 2);
+  padding-bottom: $gap;
 }
 
-/* Search field (left of "New note") */
+/* Search field grows to fill the space between the links and "New note" */
 .note-taking__search-input {
-  width: clamp(7rem, 32vw, 14rem);
+  flex: 1;
+  min-width: 0;
 }
 
 /* "Archived" tag shown on archived hits during a global search */
