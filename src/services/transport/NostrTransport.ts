@@ -422,7 +422,10 @@ export class NostrTransport {
     // PV-DBG: temporary instrumentation to root-cause the empty-on-first-visit bug.
     console.log(`[PV-DBG] ${caller}: direct fetch over ${relays.length} relays: ${relays.join(', ')}`);
     const dbgStart = Date.now();
-    let dbgOpened = 0, dbgErrored = 0, dbgEosed = 0;
+    // PV-DBG: per-relay outcome so one console line fully explains an empty fetch:
+    // recv = raw EVENTs received, ver = kept after signature check, drop = dropped by
+    // verification; state = open/eosed/error/timeout; ms = time to EOSE.
+    const stats = relays.map(u => ({ u: u.replace('wss://', '').replace(/\/$/, ''), recv: 0, ver: 0, drop: 0, state: 'pending', ms: 0 }));
     return new Promise((resolve) => {
       const events = new Map<string, NostrEvent>();
       const connections: WebSocket[] = [];
@@ -451,8 +454,12 @@ export class NostrTransport {
           }
         });
         diagLog('relays', 'Direct fetch OK', { caller, relayCount: relays.length, eventCount: events.size });
-        // PV-DBG: summary — distinguishes fast-empty (all relays failed) from slow-empty (connected, no events).
-        console.log(`[PV-DBG] ${caller}: done in ${Date.now() - dbgStart}ms — opened ${dbgOpened}/${relays.length}, errored ${dbgErrored}, eosed ${dbgEosed}, events ${events.size}`);
+        // PV-DBG: per-relay breakdown — recv/ver/drop + state(ms). Distinguishes
+        // "relays returned nothing" from "events received but verification dropped them".
+        const totalRecv = stats.reduce((s, r) => s + r.recv, 0);
+        const totalDrop = stats.reduce((s, r) => s + r.drop, 0);
+        const breakdown = stats.map(r => `${r.u}=${r.state}(recv${r.recv}/ver${r.ver}/drop${r.drop}${r.ms ? ',' + r.ms + 'ms' : ''})`).join('  ');
+        console.log(`[PV-DBG] ${caller}: done ${Date.now() - dbgStart}ms total=${events.size} received=${totalRecv} drop=${totalDrop} quorum=${QUORUM}/${relays.length} | ${breakdown}`);
         resolve(Array.from(events.values()));
       };
 
@@ -461,7 +468,10 @@ export class NostrTransport {
         return;
       }
 
-      hardTimeoutId = setTimeout(finish, timeout);
+      hardTimeoutId = setTimeout(() => {
+        stats.forEach(r => { if (r.state === 'pending' || r.state === 'opened') r.state = 'timeout'; });
+        finish();
+      }, timeout);
 
       const markSettled = () => {
         settledRelays++;
@@ -474,18 +484,20 @@ export class NostrTransport {
         }
       };
 
-      relays.forEach(relayUrl => {
+      relays.forEach((relayUrl, i) => {
+        const st = stats[i]!;
         let ws: WebSocket;
         try {
           ws = new WebSocket(relayUrl);
         } catch (_e) {
+          st.state = 'ctor-error';
           markSettled();
           return;
         }
         connections.push(ws);
 
         ws.onopen = () => {
-          dbgOpened++; // PV-DBG
+          st.state = 'opened';
           const subId = Math.random().toString(36).substring(7);
           ws.send(JSON.stringify(['REQ', subId, ...filters]));
         };
@@ -494,12 +506,17 @@ export class NostrTransport {
           try {
             const [type, , event] = JSON.parse(msg.data);
             if (type === 'EVENT' && event) {
+              st.recv++; // PV-DBG: raw EVENT received (pre-verification)
               const verification = SignatureVerificationService.getInstance().verifyEvent(event);
               if (verification.valid) {
                 events.set(event.id, event);
+                st.ver++;
+              } else {
+                st.drop++; // PV-DBG: dropped by signature verification
               }
             } else if (type === 'EOSE') {
-              dbgEosed++; // PV-DBG
+              st.state = 'eosed';
+              st.ms = Date.now() - dbgStart;
               ws.close();
             }
           } catch (_error) {
@@ -507,8 +524,15 @@ export class NostrTransport {
           }
         };
 
-        ws.onclose = () => markSettled();
-        ws.onerror = () => { dbgErrored++; ws.close(); }; // PV-DBG
+        ws.onclose = () => {
+          if (st.state === 'opened') st.state = 'closed-no-eose';
+          markSettled();
+        };
+        ws.onerror = () => {
+          st.state = 'error';
+          st.ms = Date.now() - dbgStart;
+          ws.close();
+        };
       });
     });
   }

@@ -67,12 +67,15 @@ export function buildTimelineConfig(
 ): TimelineConfig {
   const defaultPageSize = isDataSaverEnabled() ? 20 : 50;
 
-  // ProfileView: single author — gap-free direct fetch over author-outbox relays,
-  // pure `until`, larger page, full history (no trim). See the 2026-05-31 fixes.
+  // ProfileView: single author. Gap-free direct fetch (raw WS), pure `until`,
+  // larger page, full history (no trim). Relays = 'auto' (the broad read +
+  // aggregator union, the same set the main timeline uses) so the PV always
+  // loads even when the author's own NIP-65 relays are dead or sparse;
+  // author-outbox alone left profiles empty after the rebuild.
   if (filterAuthorPubkey) {
     return {
       source: { kind: 'authors', pubkeys: [filterAuthorPubkey] },
-      relays: { kind: 'author-outbox' },
+      relays: { kind: 'auto' },
       range: { kind: 'live' },
       includeReplies: false,
       fetchMode: 'direct',
