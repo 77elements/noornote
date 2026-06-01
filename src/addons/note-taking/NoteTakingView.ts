@@ -20,6 +20,10 @@ export class NoteTakingView extends View {
   private activeLabel: string | null = null;
   /** Notes vs Archive view. */
   private view: 'active' | 'archived' = 'active';
+  /** Free-text search query (empty = no search). */
+  private searchQuery = '';
+  /** Debounce timer for the search input. */
+  private searchTimer: number | undefined;
 
   constructor(_npub: string) {
     super();
@@ -30,10 +34,13 @@ export class NoteTakingView extends View {
         <button type="button" class="btn-icon" data-action="sync" title="Sync now" aria-label="Sync now">
           <svg width="18" height="18"><use href="#icon-sync"/></svg>
         </button>
-        <button type="button" class="btn" data-action="new-note">
-          <svg width="16" height="16"><use href="#icon-plus"/></svg>
-          New note
-        </button>
+        <div class="note-taking__toolbar-actions">
+          <input type="search" class="input note-taking__search-input" placeholder="Search notes…" aria-label="Search notes" />
+          <button type="button" class="btn" data-action="new-note">
+            <svg width="16" height="16"><use href="#icon-plus"/></svg>
+            New note
+          </button>
+        </div>
       </div>
       <div class="tabs note-taking__views">
         <button type="button" class="tab tab--active" data-view="active">Notes</button>
@@ -46,6 +53,17 @@ export class NoteTakingView extends View {
       ?.addEventListener('click', () => this.openEditor());
     this.container.querySelector('[data-action="sync"]')
       ?.addEventListener('click', () => this.syncNow());
+
+    const searchInput = this.container.querySelector('.note-taking__search-input') as HTMLInputElement | null;
+    searchInput?.addEventListener('input', () => {
+      if (this.searchTimer) clearTimeout(this.searchTimer);
+      // Debounce so a fast typist doesn't trigger a re-render per keystroke.
+      this.searchTimer = window.setTimeout(() => {
+        this.searchQuery = searchInput.value;
+        void this.load();
+      }, 150);
+    });
+
     this.container.querySelectorAll('[data-view]').forEach((tab) => {
       tab.addEventListener('click', () => {
         const view = (tab as HTMLElement).dataset.view as 'active' | 'archived';
@@ -86,32 +104,61 @@ export class NoteTakingView extends View {
     ToastService.show('Notes synced', 'success');
   }
 
+  /**
+   * Token search over a note's plaintext fields (title + body + checklist text +
+   * labels). Every whitespace-separated token must appear somewhere (any field,
+   * any order), case-insensitive.
+   */
+  private matchesQuery(note: NoteRecord, tokens: string[]): boolean {
+    if (tokens.length === 0) return true;
+    const haystack = [
+      note.title,
+      note.body,
+      note.checklist.map((c) => c.text).join(' '),
+      note.labels.join(' '),
+    ].join(' ').toLowerCase();
+    return tokens.every((t) => haystack.includes(t));
+  }
+
   /** Load notes from the store and (re)render the filters + board. */
   private async load(): Promise<void> {
     const board = this.container.querySelector('[data-note-board]') as HTMLElement | null;
     if (!board) return;
 
     const allNotes = await NoteTakingService.getInstance().listNotes();
-    // Split by the current view (Notes = not archived, Archive = archived).
-    const viewNotes = allNotes.filter((n) => (this.view === 'archived' ? n.archived : !n.archived));
+    const query = this.searchQuery.trim().toLowerCase();
+    const tokens = query ? query.split(/\s+/) : [];
+    const searching = tokens.length > 0;
 
-    // Collect labels within this view; drop the filter if its label no longer exists.
-    const labelSet = new Set<string>();
-    viewNotes.forEach((n) => n.labels.forEach((l) => labelSet.add(l)));
-    if (this.activeLabel && !labelSet.has(this.activeLabel)) this.activeLabel = null;
-    this.renderFilters(Array.from(labelSet).sort((a, b) => a.localeCompare(b)));
-
-    const notes = this.activeLabel
-      ? viewNotes.filter((n) => n.labels.includes(this.activeLabel as string))
-      : viewNotes;
+    let notes: NoteRecord[];
+    if (searching) {
+      // Global search: across ALL notes (active + archived, any label) so anything
+      // that exists can be found. The label filter is hidden while searching.
+      this.renderFilters([]);
+      notes = allNotes.filter((n) => this.matchesQuery(n, tokens));
+    } else {
+      // Split by the current view (Notes = not archived, Archive = archived).
+      const viewNotes = allNotes.filter((n) => (this.view === 'archived' ? n.archived : !n.archived));
+      // Collect labels within this view; drop the filter if its label no longer exists.
+      const labelSet = new Set<string>();
+      viewNotes.forEach((n) => n.labels.forEach((l) => labelSet.add(l)));
+      if (this.activeLabel && !labelSet.has(this.activeLabel)) this.activeLabel = null;
+      this.renderFilters(Array.from(labelSet).sort((a, b) => a.localeCompare(b)));
+      notes = this.activeLabel
+        ? viewNotes.filter((n) => n.labels.includes(this.activeLabel as string))
+        : viewNotes;
+    }
 
     if (notes.length === 0) {
       // The plain Notes view, whenever empty (first run OR everything archived),
       // always shows the same intro + privacy explainer.
-      const isPlainEmpty = !this.activeLabel && this.view === 'active';
+      const isPlainEmpty = !searching && !this.activeLabel && this.view === 'active';
       let head: string;
       let sub: string;
-      if (this.activeLabel) {
+      if (searching) {
+        head = 'No notes match your search';
+        sub = `Nothing found for “${escapeHtml(this.searchQuery.trim())}”.`;
+      } else if (this.activeLabel) {
         head = 'No notes with this label';
         sub = 'Pick another label or “All”.';
       } else if (this.view === 'archived') {
@@ -146,7 +193,7 @@ export class NoteTakingView extends View {
     const rest = notes.filter((n) => !n.pinned);
     const ordered = [...pinned, ...rest];
 
-    board.innerHTML = `<div class="note-taking__grid">${ordered.map((n) => this.cardHtml(n)).join('')}</div>`;
+    board.innerHTML = `<div class="note-taking__grid">${ordered.map((n) => this.cardHtml(n, searching)).join('')}</div>`;
 
     board.querySelectorAll('[data-note-id]').forEach((el) => {
       el.addEventListener('click', (e) => {
@@ -203,7 +250,7 @@ export class NoteTakingView extends View {
     });
   }
 
-  private cardHtml(note: NoteRecord): string {
+  private cardHtml(note: NoteRecord, searching = false): string {
     const preview = note.body.length > 280 ? `${note.body.slice(0, 280)}…` : note.body;
     const MAX_ITEMS = 8;
     const checklist = note.checklist.length > 0 ? `
@@ -221,10 +268,15 @@ export class NoteTakingView extends View {
         </div>` : '';
     const colored = isAccentColor(note.color);
     const colorClass = colored ? ` note-taking-color-${note.color}` : '';
+    // In global search the result set spans both views, so flag archived hits.
+    const archivedBadge = searching && note.archived
+      ? '<span class="note-taking-card__archived-badge">Archived</span>'
+      : '';
     return `
       <div class="note-taking-card${note.pinned ? ' note-taking-card--pinned' : ''}${colorClass}" data-note-id="${escapeHtmlAttr(note.id)}">
         ${colored ? '<span class="note-taking-card__color-dot"></span>' : ''}
         ${note.pinned ? '<svg class="note-taking-card__pin" width="14" height="14"><use href="#icon-bookmark"/></svg>' : ''}
+        ${archivedBadge}
         ${note.title ? `<h2 class="note-taking-card__title h4">${escapeHtml(note.title)}</h2>` : ''}
         ${preview ? `<div class="note-taking-card__body">${escapeHtml(preview)}</div>` : ''}
         ${checklist}
@@ -252,6 +304,7 @@ export class NoteTakingView extends View {
   }
 
   public destroy(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
     this.container.innerHTML = '';
   }
 }

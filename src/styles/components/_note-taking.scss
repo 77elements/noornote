@@ -44,6 +44,28 @@ $note-taking-colors: (
   padding-bottom: $gap;
 }
 
+.note-taking__toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: calc($gap / 2);
+}
+
+/* Search field (left of "New note") */
+.note-taking__search-input {
+  width: clamp(7rem, 32vw, 14rem);
+}
+
+/* "Archived" tag shown on archived hits during a global search */
+.note-taking-card__archived-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: calc($gap / 6) calc($gap / 2);
+  border-radius: $radius-pill;
+  background: var(--color-2);
+  color: var(--color-5);
+  font-size: 0.72rem;
+}
+
 .note-taking__views {
   margin-bottom: $gap;
 }
