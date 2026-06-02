@@ -79,10 +79,10 @@ export class NoteTakingService {
 
   // ── Local CRUD ─────────────────────────────────────────────────────────────
 
-  /** Live (non-deleted) notes for the board. */
+  /** Live notes for the board (excludes deleted + nostr-keep "trash"). */
   public async listNotes(): Promise<NoteRecord[]> {
     const all = await this.store.getAll();
-    return all.filter((n) => !n.deleted);
+    return all.filter((n) => !n.deleted && !n.trash);
   }
 
   /** All dirty records (incl. pending tombstones) - for NoteTakingSyncService. */
@@ -246,6 +246,18 @@ export class NoteTakingService {
     return true;
   }
 
+  /**
+   * Migration: force a note to be re-published (under the new nostr-keep d-tag)
+   * WITHOUT bumping `updatedAt`, so last-write-wins ordering is preserved. Used
+   * once per legacy note that has no new-format event yet.
+   */
+  public async markForRepublish(id: string): Promise<void> {
+    const record = await this.store.get(id);
+    if (record && !record.dirty) {
+      await this.store.put({ ...record, dirty: true });
+    }
+  }
+
   // ── Crypto (used by NoteTakingSyncService) ───────────────────────────────────────
 
   /** Strip local-only metadata, leaving just the publishable payload. */
@@ -263,7 +275,7 @@ export class NoteTakingService {
     const user = this.auth.getCurrentUser();
     if (!user) throw new Error('Note taking: no user');
 
-    const plaintext = JSON.stringify(payload);
+    const plaintext = JSON.stringify(this.toWire(payload));
     const ciphertext = await this.auth.nip44Encrypt(plaintext, user.pubkey);
 
     // Integrity check: NIP-44 output is version-prefixed base64 - it must not be
@@ -281,16 +293,20 @@ export class NoteTakingService {
     return ciphertext;
   }
 
-  /** Decrypt a stored ciphertext back into a payload (null on failure). */
-  public async decryptPayload(ciphertext: string): Promise<NotePayload | null> {
+  /**
+   * Decrypt a stored ciphertext back into a payload (null on failure). The note
+   * `id` comes from the event's d-tag suffix (nostr-keep convention: the id is
+   * NOT in the payload), so the caller passes it in.
+   */
+  public async decryptPayload(ciphertext: string, id: string): Promise<NotePayload | null> {
     const user = this.auth.getCurrentUser();
-    if (!user) return null;
+    if (!user || !id) return null;
     try {
       const plaintext = await this.auth.nip44Decrypt(ciphertext, user.pubkey);
       if (!plaintext) return null;
       const raw = JSON.parse(plaintext) as Record<string, unknown>;
-      if (!raw || typeof raw.id !== 'string') return null;
-      return this.normalizePayload(raw, raw.id);
+      if (!raw || typeof raw !== 'object') return null;
+      return this.fromWire(raw, id);
     } catch (error) {
       diagLog('system', 'note-taking: decrypt failed', { error: String(error) });
       return null;
@@ -298,11 +314,14 @@ export class NoteTakingService {
   }
 
   /**
-   * Coerce a decrypted object into a well-typed payload. Defends the renderer
-   * against schema drift / corruption: every field gets a safe default of the
-   * right type, so a malformed note can never crash the board or be mistyped.
+   * Map an on-relay JSON object (nostr-keep wire format) back into our internal
+   * NotePayload. Tolerant of BOTH keep's field names and our own legacy names, so
+   * notes published by the pre-interop NoorNote version still load. Defends the
+   * renderer: every field gets a safe, well-typed default.
+   *
+   * keep ↔ us: content↔body, updated_at(ms)↔updatedAt(sec), hex color↔palette key.
    */
-  private normalizePayload(raw: Record<string, unknown>, id: string): NotePayload {
+  private fromWire(raw: Record<string, unknown>, id: string): NotePayload {
     const str = (v: unknown, d = ''): string => (typeof v === 'string' ? v : d);
     const num = (v: unknown, d = 0): number => (typeof v === 'number' && Number.isFinite(v) ? v : d);
     const checklist = Array.isArray(raw.checklist)
@@ -319,21 +338,60 @@ export class NoteTakingService {
           .filter((a): a is Record<string, unknown> => !!a && typeof a === 'object')
           .map((a) => ({ url: str(a.url), sha256: str(a.sha256), dim: str(a.dim), blurhash: str(a.blurhash) }))
       : [];
+    // keep stores updated_at in ms; our legacy notes used updatedAt in sec.
+    const updatedAt = raw.updated_at !== undefined
+      ? Math.floor(num(raw.updated_at) / 1000)
+      : num(raw.updatedAt);
+    const createdAt = raw.createdAt !== undefined ? num(raw.createdAt) : updatedAt;
+    // keep's default note color is a hex; map it back to our palette 'default'.
+    // Our own palette keys (red/teal/…) are valid CSS colors, so they round-trip
+    // as-is; an unrecognised keep hex is kept verbatim (renders as no accent).
+    const rawColor = str(raw.color, 'default');
+    const color = (!rawColor || rawColor === '#202124') ? 'default' : rawColor;
     return {
       v: num(raw.v, PAYLOAD_VERSION),
       id,
       title: str(raw.title),
-      body: str(raw.body),
+      body: str(raw.content, str(raw.body)),
       checklist,
       labels,
-      color: str(raw.color, 'default'),
+      color,
       pinned: !!raw.pinned,
       archived: !!raw.archived,
       reminderAt: num(raw.reminderAt),
       attachments,
-      createdAt: num(raw.createdAt),
-      updatedAt: num(raw.updatedAt),
+      createdAt,
+      updatedAt,
+      ...(raw.trash ? { trash: true } : {}),
       ...(raw.deleted ? { deleted: true } : {}),
+    };
+  }
+
+  /**
+   * Map our internal NotePayload to the on-relay JSON in nostr-keep's convention
+   * so keep can read (and edit) our notes: `content`, hex `color`, ms `updated_at`,
+   * `trash`. Our extra fields ride along as additional keys — keep ignores them,
+   * NoorNote keeps full fidelity (lossy only if the note is edited inside keep).
+   */
+  private toWire(p: NotePayload): Record<string, unknown> {
+    return {
+      // nostr-keep canonical fields
+      title: p.title,
+      content: p.body,
+      color: p.color === 'default' ? '#202124' : p.color,
+      pinned: p.pinned,
+      archived: p.archived,
+      trash: !!p.trash,
+      labels: p.labels,
+      updated_at: p.updatedAt * 1000,
+      ...(p.deleted ? { deleted: true } : {}),
+      // NoorNote extras (keep ignores these; preserved on round-trip)
+      v: p.v,
+      id: p.id,
+      checklist: p.checklist,
+      reminderAt: p.reminderAt,
+      attachments: p.attachments,
+      createdAt: p.createdAt,
     };
   }
 

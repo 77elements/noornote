@@ -1,10 +1,12 @@
 /**
  * NoteTakingSyncService - NIP-78 (kind 30078) relay sync for Note taking.
  *
- * One replaceable event PER note (`d` = `noornote-note-taking:<uuid>`), content =
- * NIP-44 ciphertext (via NoteTakingService). Deletion publishes a `deleted:true`
+ * One replaceable event PER note (`d` = `nostr-keep-note-<uuid>`, the nostr-keep
+ * namespace — see docs/features/note-taking-addon.md interop), content = NIP-44
+ * ciphertext (via NoteTakingService). Deletion publishes a `deleted:true`
  * tombstone payload under the SAME d-tag → the relay replaces the old event,
  * physically removing the note's content. Merge is per-note last-write-wins.
+ * Legacy `noornote-note-taking:<uuid>` events are read and migrated forward.
  *
  * @service NoteTakingSyncService
  * @used-by runtime, NoteTakingView
@@ -18,7 +20,10 @@ import { NoteTakingService } from './NoteTakingService';
 import type { NoteRecord } from './NoteTakingStore';
 
 const NIP78_KIND = 30078;
-const NOTE_TAKING_LABEL = 'noornote-note-taking';
+// nostr-keep interop: we read/write keep's exact d-tag namespace.
+const KEEP_DTAG_PREFIX = 'nostr-keep-note-';
+// Legacy NoorNote namespace (pre-interop). Read-only — migrated forward to KEEP_DTAG_PREFIX.
+const LEGACY_DTAG_PREFIX = 'noornote-note-taking:';
 
 export class NoteTakingSyncService {
   private static instance: NoteTakingSyncService;
@@ -72,16 +77,37 @@ export class NoteTakingSyncService {
           false,
           'NoteTakingSync'
         );
-        let noteEvents = 0;
+        const newIds = new Set<string>();
+        const legacyIds = new Set<string>();
         for (const ev of events) {
           const dTag = ev?.tags?.find((t) => t[0] === 'd')?.[1];
-          if (!dTag || !dTag.startsWith(`${NOTE_TAKING_LABEL}:`) || !ev.content) continue;
-          noteEvents++;
-          const payload = await this.service.decryptPayload(ev.content);
-          if (!payload || typeof payload.id !== 'string') continue;
+          if (!dTag || !ev.content) continue;
+          let id: string;
+          if (dTag.startsWith(KEEP_DTAG_PREFIX)) {
+            id = dTag.slice(KEEP_DTAG_PREFIX.length);
+            newIds.add(id);
+          } else if (dTag.startsWith(LEGACY_DTAG_PREFIX)) {
+            id = dTag.slice(LEGACY_DTAG_PREFIX.length);
+            legacyIds.add(id);
+          } else {
+            continue;
+          }
+          if (!id) continue;
+          const payload = await this.service.decryptPayload(ev.content, id);
+          if (!payload) continue;
           if (await this.service.applyRemote(payload)) changed = true;
         }
-        diagLog('system', 'note-taking: synced from relays', { total: events.length, notes: noteEvents });
+        // Migration: a note that exists ONLY under the legacy d-tag gets re-published
+        // under the keep d-tag (markForRepublish keeps updatedAt → LWW preserved). We
+        // deliberately do NOT tombstone the legacy event: an un-upgraded second device
+        // must keep seeing it, and the local tombstone set already blocks resurrection.
+        for (const id of legacyIds) {
+          if (!newIds.has(id)) {
+            await this.service.markForRepublish(id);
+            changed = true;
+          }
+        }
+        diagLog('system', 'note-taking: synced from relays', { total: events.length, new: newIds.size, legacy: legacyIds.size });
       }
 
       // Push everything still pending.
@@ -108,9 +134,8 @@ export class NoteTakingSyncService {
         kind: NIP78_KIND,
         created_at: Math.floor(Date.now() / 1000),
         tags: [
-          ['d', `${NOTE_TAKING_LABEL}:${record.id}`],
-          ['l', NOTE_TAKING_LABEL],
-          ['alt', 'Encrypted NoorNote note'],
+          ['d', `${KEEP_DTAG_PREFIX}${record.id}`],
+          ['alt', 'Encrypted note'],
         ],
         content,
         pubkey: user.pubkey,

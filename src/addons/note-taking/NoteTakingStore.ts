@@ -43,6 +43,9 @@ export interface NotePayload {
   attachments: NoteAttachment[];
   createdAt: number;
   updatedAt: number;
+  /** nostr-keep interop: soft "trash" flag. We never set it, but preserve it on
+   * round-trip and hide trashed notes from the board. */
+  trash?: boolean;
   /** Tombstone marker: when true, all content fields are emptied (a deleted note). */
   deleted?: boolean;
 }
