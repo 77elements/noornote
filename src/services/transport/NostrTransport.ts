@@ -98,6 +98,14 @@ function secureRelays(relays: string[]): string[] {
   return relays.filter(url => !url.toLowerCase().startsWith('ws://'));
 }
 
+// Bound the NDK relay pool. Per-author outbound discovery (stats, reactions,
+// reposts, profile feeds) connects to every author's NIP-65 relays and NDK keeps
+// them open forever — browsing piles up 170+ sockets until the browser's WS
+// ceiling is hit and the feed can no longer connect (empty ProfileView). We keep
+// the core relays + any relay an active subscription needs, and prune the rest
+// past this cap. See docs/todos/timeline-component-modularization.md.
+const MAX_POOL_RELAYS = 32;
+
 export class NostrTransport {
   private static instance: NostrTransport;
   private ndk: NDK;
@@ -106,6 +114,7 @@ export class NostrTransport {
   private systemLogger: SystemLogger;
   private eventBus: TypedEventBus;
   private subscriptions: Map<string, { closer: SubCloser; relays: string[] }> = new Map();
+  private poolPruneInterval: ReturnType<typeof setInterval> | null = null;
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
@@ -159,6 +168,12 @@ export class NostrTransport {
     // Setup listeners for relay disconnect events
     this.setupRelayEventListeners();
 
+    // Periodically prune the relay pool so per-author outbound discovery can't grow
+    // it without bound and exhaust the browser's WebSocket ceiling (connection-bloat fix).
+    if (!this.poolPruneInterval) {
+      this.poolPruneInterval = setInterval(() => this.pruneRelayPool(), 12000);
+    }
+
     diagLog('relays', 'NDK connected', { connected: connectedRelays.length, total: this.ndk.pool.relays.size });
 
     if (connectedRelays.length > 0) {
@@ -168,6 +183,43 @@ export class NostrTransport {
       );
     } else {
       this.systemLogger.info('NostrTransport', 'Relays connecting in background...');
+    }
+  }
+
+  /**
+   * Keep the relay pool bounded. Core relays (read + aggregators) and any relay an
+   * active subscription depends on are always kept; the rest — transient per-author
+   * outbound relays from one-off fetches — are disconnected + removed once the pool
+   * exceeds MAX_POOL_RELAYS. Best-effort.
+   */
+  private pruneRelayPool(): void {
+    try {
+      const pool = this.ndk.pool;
+      const relays = pool.relays;
+      if (relays.size <= MAX_POOL_RELAYS) return;
+
+      const norm = (u: string) => u.replace(/\/+$/, '').toLowerCase();
+      const keep = new Set<string>();
+      [...this.relayConfig.getReadRelays(), ...this.relayConfig.getAggregatorRelays()]
+        .forEach(u => keep.add(norm(u)));
+      // Never prune a relay an active subscription is using.
+      this.subscriptions.forEach(sub => sub.relays.forEach(u => keep.add(norm(u))));
+
+      const prunable = [...relays.keys()].filter(url => !keep.has(norm(url)));
+      let toClose = relays.size - MAX_POOL_RELAYS;
+      let closed = 0;
+      for (const url of prunable) {
+        if (toClose <= 0) break;
+        relays.get(url)?.disconnect();
+        pool.removeRelay(url);
+        toClose--;
+        closed++;
+      }
+      if (closed > 0) {
+        diagLog('relays', 'Pruned outbound relays from pool', { closed, poolSize: relays.size });
+      }
+    } catch {
+      // best-effort
     }
   }
 

@@ -159,6 +159,12 @@ export class ViewMountingService {
           requiresParam: true,
           factory: async (param) => {
             if (!this.cachedProfile || this.cachedProfile.getNpub() !== param) {
+              // Destroy the previous profile view BEFORE replacing it. Otherwise its
+              // EventBus subscriptions keep the whole ProfileView + Timeline alive
+              // (with all its fetched events, DOM and relay connections), leaking
+              // ~500 MB per profile — ≈2.9 GB after a few navigations, which then
+              // exhausts the tab and the feed can no longer load (empty ProfileView).
+              this.cachedProfile?.destroy();
               const { ProfileView } = await import('../components/views/ProfileView');
               this.cachedProfile = new ProfileView(param!);
             }

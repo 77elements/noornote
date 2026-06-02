@@ -33,6 +33,11 @@ const IDB_NAME = 'noornote_nip65_cache';
 const IDB_VERSION = 1;
 const IDB_STORE = 'relay_lists';
 
+// Cap each author's outbound relays so a multi-author feed can't fan out to the
+// union of everyone's relays and exhaust the browser's WebSocket limit. Matches
+// the reference clients (Jumble slices to 5; Amethyst caps per author).
+const MAX_OUTBOUND_RELAYS_PER_AUTHOR = 4;
+
 export interface RelayDiscoveryStats {
   totalUsers: number;
   discoveredRelays: number;
@@ -161,9 +166,15 @@ export class OutboundRelaysOrchestrator extends Orchestrator {
     const baseRelays = new Set(this.relayConfig.getReadRelays());
 
     for (const relayList of userRelayLists) {
+      // Cap each author to their top few write relays (like Jumble's slice(0,5)).
+      // Without this, a feed of N authors fans out to ALL of everyone's relays and
+      // blows the browser's WebSocket ceiling, leaving ProfileView empty. See the
+      // connection-bloat fix in docs/todos/timeline-component-modularization.md.
+      let perAuthor = 0;
       for (const relay of relayList.writeRelays) {
         if (this.isValidRelay(relay) && !baseRelays.has(relay) && this.isQualityRelay(relay)) {
           outboundRelays.add(relay);
+          if (++perAuthor >= MAX_OUTBOUND_RELAYS_PER_AUTHOR) break;
         }
       }
     }
