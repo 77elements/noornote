@@ -17,6 +17,7 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../PlatformService';
 import { SignatureVerificationService } from '../security/SignatureVerificationService';
 import { diagLog } from '../DiagnosticLogger';
+import { webDiag } from '../WebDiag';
 
 export interface SubscriptionCallbacks {
   onEvent: (event: NostrEvent, relay: string) => void;
@@ -520,6 +521,18 @@ export class NostrTransport {
         const totalDrop = stats.reduce((s, r) => s + r.drop, 0);
         const breakdown = stats.map(r => `${r.u}=${r.state}(recv${r.recv}/ver${r.ver}/drop${r.drop}${r.ms ? ',' + r.ms + 'ms' : ''})`).join('  ');
         console.log(`[PV-DBG] ${caller}: done ${Date.now() - dbgStart}ms total=${events.size} received=${totalRecv} drop=${totalDrop} quorum=${QUORUM}/${relays.length} | ${breakdown}`);
+        // Persist to the web ring buffer so a cold empty-PV is recoverable later
+        // (see WebDiag). poolSize captures socket bloat; per-relay state captures
+        // "all relays errored in ~14ms" (the #2 signature).
+        webDiag('direct-fetch', {
+          caller,
+          ms: Date.now() - dbgStart,
+          total: events.size,
+          received: totalRecv,
+          quorum: `${QUORUM}/${relays.length}`,
+          poolSize: this.ndk?.pool?.relays?.size ?? -1,
+          relays: stats.map(r => `${r.u}=${r.state}(${r.ver}/${r.recv}${r.ms ? ',' + r.ms + 'ms' : ''})`)
+        });
         resolve({ events: Array.from(events.values()), perRelay });
       };
 
