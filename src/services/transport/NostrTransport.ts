@@ -400,7 +400,11 @@ export class NostrTransport {
       // Similar to nostr-tools SimplePool.ensureRelay() — connection happens in parallel with fetch
       for (const url of relays) {
         if (!this.ndk.pool.relays.get(url)) {
-          this.ndk.pool.getRelay(url, true); // add to pool, starts connecting
+          // temporary=true: transient relays (author-outbound, search) auto-remove
+          // after 30s idle instead of living in the pool forever and being
+          // reconnect-stormed (the cause of poolSize pegging at the cap → empty PV).
+          // Only marks NOT-already-pooled relays; NDK never removes explicitRelayUrls.
+          this.ndk.pool.getRelay(url, true, true);
         }
       }
 
@@ -491,7 +495,9 @@ export class NostrTransport {
     // Pre-add each relay to NDK's pool so the single-relay subscriptions below
     // REUSE the shared per-relay socket instead of opening a new one.
     for (const url of relays) {
-      if (!this.ndk.pool.relays.get(url)) this.ndk.pool.getRelay(url, true);
+      // temporary=true: transient relays (PV outbound, search) auto-remove after
+      // 30s idle instead of accumulating in the pool and being reconnect-stormed.
+      if (!this.ndk.pool.relays.get(url)) this.ndk.pool.getRelay(url, true, true);
     }
 
     const label = (u: string) => u.replace('wss://', '').replace(/\/$/, '');

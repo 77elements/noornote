@@ -153,8 +153,9 @@ export function initVideoThumbnails(container: HTMLElement): void {
 }
 
 /**
- * Auto-init video thumbnails for any video added to the DOM.
- * Call once at app startup.
+ * Lazily generate a video's thumbnail: load metadata + seek to 0.5s. Called ONLY
+ * when the video nears the viewport (see startVideoThumbnailObserver), so off-screen
+ * videos in a full-DOM feed are never loaded/decoded.
  */
 function initVideoThumb(el: HTMLVideoElement): void {
   if (el.dataset.thumbInit) return;
@@ -171,14 +172,40 @@ function initVideoThumb(el: HTMLVideoElement): void {
   }
 }
 
+// Load a video's metadata/thumbnail only once it nears the viewport. The previous
+// version force-loaded EVERY video on DOM insertion (even far off-screen ones), so a
+// full-DOM ProfileView decoded all its videos at once → multi-GB tab memory. Now
+// off-screen videos stay preload="none" and undecoded until scrolled near.
+let thumbVisibilityObserver: IntersectionObserver | null = null;
+
+function getThumbVisibilityObserver(): IntersectionObserver {
+  if (!thumbVisibilityObserver) {
+    thumbVisibilityObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const video = entry.target as HTMLVideoElement;
+          thumbVisibilityObserver!.unobserve(video); // generate the thumbnail once
+          initVideoThumb(video);
+        }
+      },
+      { rootMargin: '300px' }
+    );
+  }
+  return thumbVisibilityObserver;
+}
+
 export function startVideoThumbnailObserver(): void {
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
         if (node instanceof HTMLElement) {
-          const videos = node.tagName === 'VIDEO' ? [node] : Array.from(node.querySelectorAll('video'));
+          const videos = (node.tagName === 'VIDEO' ? [node] : Array.from(node.querySelectorAll('video'))) as HTMLVideoElement[];
           for (const video of videos) {
-            initVideoThumb(video as HTMLVideoElement);
+            // Register for near-viewport loading instead of force-loading on insert.
+            if (video.dataset.thumbObserved) continue;
+            video.dataset.thumbObserved = '1';
+            getThumbVisibilityObserver().observe(video);
           }
         }
       }
