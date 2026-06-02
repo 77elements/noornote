@@ -9,8 +9,9 @@
 
 import { RelayConfig } from './RelayConfig';
 import { SystemLogger } from './SystemLogger';
-import { SignatureVerificationService } from './security/SignatureVerificationService';
+import { NostrTransport } from './transport/NostrTransport';
 import { LRUCache, getCacheSize } from '../helpers/LRUCache';
+import type { NDKFilter } from '@nostr-dev-kit/ndk';
 
 interface BatchResult {
   followers: string[];
@@ -28,11 +29,13 @@ export class FollowerCountService {
   private static instance: FollowerCountService;
   private relayConfig: RelayConfig;
   private systemLogger: SystemLogger;
+  private transport: NostrTransport;
   private cache: LRUCache<CachedCount> = new LRUCache<CachedCount>(getCacheSize(500, 200, 100));
 
   private constructor() {
     this.relayConfig = RelayConfig.getInstance();
     this.systemLogger = SystemLogger.getInstance();
+    this.transport = NostrTransport.getInstance();
   }
 
   public static getInstance(): FollowerCountService {
@@ -200,76 +203,20 @@ export class FollowerCountService {
     targetPubkey: string,
     until?: number
   ): Promise<BatchResult> {
-    return new Promise((resolve, reject) => {
-      const ws = new WebSocket(relayUrl);
-      const followers: string[] = [];
-      const timestamps: number[] = [];
-      const subId = Math.random().toString(36).substring(7);
+    // Single-relay query over NDK's pooled connection (reuses the per-relay socket
+    // instead of opening a fresh WebSocket per batch). NDK verifies signatures.
+    const filter: NDKFilter = { kinds: [3], '#p': [targetPubkey] };
+    if (until !== undefined) {
+      filter.until = until;
+    }
 
-      let timeout: NodeJS.Timeout;
-
-      const cleanup = () => {
-        clearTimeout(timeout);
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify(['CLOSE', subId]));
-          ws.close();
-        }
-      };
-
-      // Safety timeout (30s per batch)
-      timeout = setTimeout(() => {
-        cleanup();
-        const oldestTimestamp = timestamps.length > 0 ? Math.min(...timestamps) : null;
-        resolve({ followers, oldestTimestamp });
-      }, 30000);
-
-      ws.onopen = () => {
-        // Build filter with optional 'until' for pagination
-        const filter: any = { kinds: [3], '#p': [targetPubkey] };
-        if (until !== undefined) {
-          filter.until = until;
-        }
-
-        ws.send(JSON.stringify(['REQ', subId, filter]));
-      };
-
-      ws.onmessage = (msg) => {
-        try {
-          const [type, id, event] = JSON.parse(msg.data);
-
-          if (type === 'EVENT' && id === subId && event) {
-            // Verify signature before trusting pubkey (external WebSocket event)
-            const verification = SignatureVerificationService.getInstance().verifyEvent(event);
-            if (!verification.valid) return;
-            // Collect author pubkey (who follows the target)
-            followers.push(event.pubkey);
-
-            // Track timestamp for pagination
-            if (event.created_at) {
-              timestamps.push(event.created_at);
-            }
-          } else if (type === 'EOSE' && id === subId) {
-            // End of stored events - batch is done
-            cleanup();
-            const oldestTimestamp = timestamps.length > 0 ? Math.min(...timestamps) : null;
-            resolve({ followers, oldestTimestamp });
-          }
-        } catch (error) {
-          // Ignore malformed messages
-        }
-      };
-
-      ws.onerror = () => {
-        cleanup();
-        reject(new Error('WebSocket error'));
-      };
-
-      ws.onclose = () => {
-        cleanup();
-        const oldestTimestamp = timestamps.length > 0 ? Math.min(...timestamps) : null;
-        resolve({ followers, oldestTimestamp });
-      };
-    });
+    const events = await this.transport.fetchDirect([relayUrl], [filter], 30000, 'FollowerCount');
+    const followers = events.map(e => e.pubkey).filter((p): p is string => typeof p === 'string');
+    const timestamps = events
+      .map(e => e.created_at)
+      .filter((t): t is number => typeof t === 'number');
+    const oldestTimestamp = timestamps.length > 0 ? Math.min(...timestamps) : null;
+    return { followers, oldestTimestamp };
   }
 
 }
