@@ -464,12 +464,13 @@ export class NostrTransport {
    * gap-free, deterministic newest-N over a known relay set is required
    * (ProfileView feed), and for NIP-50 search (custom filter fields NDK can't send).
    */
-  public async fetchDirect(
+  private async directFetch(
     relays: string[],
     filters: NDKFilter[],
     timeout: number = 5000,
-    caller: string = ''
-  ): Promise<NostrEvent[]> {
+    caller: string = '',
+    perRelayUntil?: Record<string, number>
+  ): Promise<{ events: NostrEvent[]; perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean }> }> {
     relays = secureRelays(relays);
     // PV-DBG: temporary instrumentation to root-cause the empty-on-first-visit bug.
     console.log(`[PV-DBG] ${caller}: direct fetch over ${relays.length} relays: ${relays.join(', ')}`);
@@ -480,6 +481,13 @@ export class NostrTransport {
     const stats = relays.map(u => ({ u: u.replace('wss://', '').replace(/\/$/, ''), recv: 0, ver: 0, drop: 0, state: 'pending', ms: 0 }));
     return new Promise((resolve) => {
       const events = new Map<string, NostrEvent>();
+      // Per-relay outcome: oldest created_at seen (this relay's next loadMore
+      // cursor), how many it returned (to detect exhaustion), and whether it
+      // EOSE'd. A single global cursor over the union let sparse low-retention
+      // relays drag pagination back years and skip the dense middle of a feed;
+      // each relay must page its own history independently.
+      const perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean }> = {};
+      relays.forEach(u => { perRelay[u] = { oldest: null, count: 0, eosed: false }; });
       const connections: WebSocket[] = [];
       let settledRelays = 0;
       let done = false;
@@ -512,7 +520,7 @@ export class NostrTransport {
         const totalDrop = stats.reduce((s, r) => s + r.drop, 0);
         const breakdown = stats.map(r => `${r.u}=${r.state}(recv${r.recv}/ver${r.ver}/drop${r.drop}${r.ms ? ',' + r.ms + 'ms' : ''})`).join('  ');
         console.log(`[PV-DBG] ${caller}: done ${Date.now() - dbgStart}ms total=${events.size} received=${totalRecv} drop=${totalDrop} quorum=${QUORUM}/${relays.length} | ${breakdown}`);
-        resolve(Array.from(events.values()));
+        resolve({ events: Array.from(events.values()), perRelay });
       };
 
       if (relays.length === 0) {
@@ -551,7 +559,13 @@ export class NostrTransport {
         ws.onopen = () => {
           st.state = 'opened';
           const subId = Math.random().toString(36).substring(7);
-          ws.send(JSON.stringify(['REQ', subId, ...filters]));
+          // Per-relay pagination: ask THIS relay for events older than its own
+          // cursor; omit (initial load) → newest. -1 so the cursor note isn't refetched.
+          const relayUntil = perRelayUntil ? perRelayUntil[relayUrl] : undefined;
+          const relayFilters = relayUntil !== undefined
+            ? filters.map(f => ({ ...f, until: relayUntil - 1 }))
+            : filters;
+          ws.send(JSON.stringify(['REQ', subId, ...relayFilters]));
         };
 
         ws.onmessage = (msg) => {
@@ -563,12 +577,16 @@ export class NostrTransport {
               if (verification.valid) {
                 events.set(event.id, event);
                 st.ver++;
+                const pr = perRelay[relayUrl]!;
+                pr.count++;
+                if (pr.oldest === null || event.created_at < pr.oldest) pr.oldest = event.created_at;
               } else {
                 st.drop++; // PV-DBG: dropped by signature verification
               }
             } else if (type === 'EOSE') {
               st.state = 'eosed';
               st.ms = Date.now() - dbgStart;
+              perRelay[relayUrl]!.eosed = true;
               ws.close();
             }
           } catch (_error) {
@@ -587,6 +605,36 @@ export class NostrTransport {
         };
       });
     });
+  }
+
+  /**
+   * One-shot relay-only fetch (raw WebSockets). Merged, deduped, signature-verified.
+   * Used for NIP-50 search and any newest-N fetch over a known relay set.
+   */
+  public async fetchDirect(
+    relays: string[],
+    filters: NDKFilter[],
+    timeout: number = 5000,
+    caller: string = ''
+  ): Promise<NostrEvent[]> {
+    return (await this.directFetch(relays, filters, timeout, caller)).events;
+  }
+
+  /**
+   * Per-relay paginated direct fetch. Each relay is queried for events older than
+   * its own cursor in `perRelayUntil` (omit a relay → newest). Returns the merged
+   * union plus, per relay, the oldest created_at seen (its next cursor), how many
+   * it returned (to detect exhaustion) and whether it EOSE'd — so the caller can
+   * page each relay independently and never skip the dense middle of a feed.
+   */
+  public async fetchDirectPaged(
+    relays: string[],
+    filters: NDKFilter[],
+    perRelayUntil: Record<string, number>,
+    timeout: number = 5000,
+    caller: string = ''
+  ): Promise<{ events: NostrEvent[]; perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean }> }> {
+    return this.directFetch(relays, filters, timeout, caller, perRelayUntil);
   }
 
   /**

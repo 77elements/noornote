@@ -165,6 +165,11 @@ export class FeedOrchestrator extends Orchestrator {
     try {
       const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, params.relayStrategy);
 
+      // ProfileView (single author): per-relay paginated fetch. See loadProfileDirect.
+      if (params.pagination === 'until' && params.fetchMode === 'direct') {
+        return await this.loadProfileDirect(followingPubkeys, relays, includeReplies, exemptFromMuteFilter, request, true);
+      }
+
       // 'until' pagination (ProfileView): direct fetch, limit only, no time window.
       // Time Range Mode: explicit since/until boundaries.
       // 'window' pagination (TimelineView): time-windowed fetch (default 1h).
@@ -321,6 +326,11 @@ export class FeedOrchestrator extends Orchestrator {
 
       const relays = await this.getRelaysForRequest(followingPubkeys, specificRelay, params.relayStrategy);
 
+      // ProfileView (single author): per-relay paginated fetch. See loadProfileDirect.
+      if (params.pagination === 'until' && params.fetchMode === 'direct' && !isTimeRangeMode) {
+        return await this.loadProfileDirect(followingPubkeys, relays, includeReplies, exemptFromMuteFilter, request, false);
+      }
+
       // 'until' pagination (single author): no `since` window, larger page. The
       // window + small limit fragmented multi-relay pages into gaps. Windowed
       // feeds + time-range keep the windowed page.
@@ -421,6 +431,130 @@ export class FeedOrchestrator extends Orchestrator {
         hasMore: false
       };
     }
+  }
+
+  /**
+   * Per-relay paginated ProfileView state.
+   *
+   * A single global until-cursor over the union of relays with uneven retention
+   * skipped the dense middle of an author's feed: sparse low-retention relays
+   * injected a few year-old notes into the first page, which dragged the global
+   * cursor back years, so loadMore fetched below them and the dense weeks in
+   * between were never requested (the visible "10-day gap").
+   *
+   * Fix: page every still-active relay from a shared DENSE frontier — the newest
+   * timestamp down to which EVERY active relay is fully fetched. Events below the
+   * frontier are kept (never lost) and revealed as the frontier descends, so each
+   * page handed to the timeline is dense and strictly older than the previous one
+   * (the renderer's append-at-bottom invariant stays intact).
+   */
+  private profilePager: {
+    pubkey: string;
+    frontier: number | null;            // shared `until` for next round; null = initial (newest)
+    done: Set<string>;                  // relays that have returned everything they hold
+    stalled: Map<string, number>;       // consecutive empty rounds per relay
+    fetched: Map<string, NostrEvent>;   // every event fetched this session (nothing discarded)
+    emitted: Set<string>;               // ids already handed to the timeline
+  } | null = null;
+
+  private async loadProfileDirect(
+    pubkeys: string[],
+    relays: string[],
+    includeReplies: boolean,
+    exemptFromMuteFilter: string | undefined,
+    request: FeedLoadRequest,
+    isInitial: boolean
+  ): Promise<FeedLoadResult> {
+    const pubkey = pubkeys[0] ?? '';
+    const pageSize = this.resolveFetchParams(request).pageSize;
+    const baseFilter: NDKFilter<number> = {
+      authors: pubkeys,
+      kinds: [1, 6, 16, 20, 21, 22, 1063, 1068, 1617, 1618, 1619, 1621, 1630, 1631, 1632, 1633, 9802, 30617, 39089],
+      limit: pageSize
+    };
+
+    if (isInitial || !this.profilePager || this.profilePager.pubkey !== pubkey) {
+      this.profilePager = {
+        pubkey,
+        frontier: null,
+        done: new Set(),
+        stalled: new Map(),
+        fetched: new Map(),
+        emitted: new Set()
+      };
+    }
+    const pager = this.profilePager;
+
+    const newlyEmitted: NostrEvent[] = [];
+    const MAX_ROUNDS = 6;
+
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      const active = relays.filter(r => !pager.done.has(r));
+      if (active.length === 0) break;
+
+      const perRelayUntil: Record<string, number> = {};
+      if (pager.frontier !== null) {
+        for (const r of active) perRelayUntil[r] = pager.frontier;
+      }
+
+      const { events, perRelay } = await this.transport.fetchDirectPaged(active, [baseFilter], perRelayUntil, 15000, 'FeedOrch-PV');
+      for (const e of events) { if (e.id) pager.fetched.set(e.id, e); }
+
+      // Update exhaustion and collect the frontier candidates (oldest of each
+      // relay that still has more to give).
+      const frontierCandidates: number[] = [];
+      for (const r of active) {
+        const info = perRelay[r];
+        if (!info) continue;
+        if (info.count === 0) {
+          // Returned nothing for this cursor. EOSE → fully drained. Otherwise it
+          // may have errored/timed out; retire it only after repeated empties so a
+          // flaky relay can't stall completion forever.
+          const empties = (pager.stalled.get(r) ?? 0) + 1;
+          pager.stalled.set(r, empties);
+          if (info.eosed || empties >= 2) pager.done.add(r);
+          continue;
+        }
+        pager.stalled.set(r, 0);
+        if (info.eosed && info.count < pageSize) {
+          pager.done.add(r);           // got all it holds
+        }
+        if (!pager.done.has(r) && info.oldest !== null) {
+          frontierCandidates.push(info.oldest);
+        }
+      }
+
+      const stillActive = relays.some(r => !pager.done.has(r));
+      // Dense frontier: complete coverage reaches down to the deepest point every
+      // still-active relay has fetched. With none left, reveal everything.
+      const newFrontier = frontierCandidates.length ? Math.max(...frontierCandidates) : null;
+      const floor = !stillActive ? Number.NEGATIVE_INFINITY : (newFrontier ?? Number.NEGATIVE_INFINITY);
+
+      for (const e of pager.fetched.values()) {
+        if (!e.id || e.created_at === undefined) continue;
+        if (!pager.emitted.has(e.id) && e.created_at >= floor) {
+          pager.emitted.add(e.id);
+          newlyEmitted.push(e);
+        }
+      }
+      pager.frontier = newFrontier;
+
+      if (newlyEmitted.length > 0 || !stillActive) break;
+      // Nothing new yet but relays still have history: loop to push the frontier deeper.
+    }
+
+    const applyWordFilter = request.config ? request.config.applyWordFilter : !exemptFromMuteFilter;
+    const filtered = await this.processEvents(newlyEmitted, includeReplies, exemptFromMuteFilter, applyWordFilter);
+    filtered.sort((a, b) => b.created_at - a.created_at);
+    this.registerNotes(filtered);
+
+    const hasMore = relays.some(r => !pager.done.has(r));
+    this.systemLogger.info(
+      'FeedOrchestrator',
+      `Profile ${pubkey.slice(0, 8)}: ${isInitial ? 'initial' : 'more'} page ${filtered.length} notes (frontier ${pager.frontier ? new Date(pager.frontier * 1000).toISOString().slice(0, 10) : 'none'}, hasMore ${hasMore})`
+    );
+
+    return { events: filtered, hasMore };
   }
 
   /**
