@@ -6,7 +6,7 @@
  * Used by: OrchestrationsRouter exclusively (no direct Component access)
  */
 
-import NDK, { NDKEvent, NDKRelaySet, NDKSubscriptionCacheUsage, normalizeRelayUrl } from '@nostr-dev-kit/ndk';
+import NDK, { NDKEvent, NDKRelaySet, NDKSubscription, NDKSubscriptionCacheUsage, normalizeRelayUrl } from '@nostr-dev-kit/ndk';
 import NDKCacheDexie from '@nostr-dev-kit/ndk-cache-dexie';
 import type { NDKCacheAdapter, NDKFilter, NDKRelay } from '@nostr-dev-kit/ndk';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -15,7 +15,6 @@ import { RelayConfig } from '../RelayConfig';
 import { SystemLogger } from '../SystemLogger';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { PlatformService } from '../PlatformService';
-import { SignatureVerificationService } from '../security/SignatureVerificationService';
 import { diagLog } from '../DiagnosticLogger';
 import { webDiag } from '../WebDiag';
 
@@ -445,8 +444,8 @@ export class NostrTransport {
   }
 
   /**
-   * Fetch events with NIP-50 search support (raw WebSocket)
-   * NDK doesn't support custom filter fields like 'search'
+   * Fetch events with NIP-50 search support. Routes through directFetch (pooled
+   * NDK subscriptions); NDK does serialize the `search` filter field.
    */
   private async fetchWithSearch(
     relays: string[],
@@ -457,13 +456,16 @@ export class NostrTransport {
   }
 
   /**
-   * Clean, relay-only fetch via raw WebSockets: one REQ per relay, collect until
-   * EOSE, dedupe by id, verify signatures, merge. Bypasses NDK's fetchEvents so
-   * the result is EXACTLY what the given relays return — no outbox/pool
-   * expansion, no in-memory-store bleed (NDK's fetchEvents pulls scattered cached
-   * events even with ONLY_RELAY, which corrupts feed pagination). Use where a
-   * gap-free, deterministic newest-N over a known relay set is required
-   * (ProfileView feed), and for NIP-50 search (custom filter fields NDK can't send).
+   * Clean, relay-only fetch over NDK's POOLED connections: one single-relay
+   * subscription per relay, each pinned to its relay (relayUrls + exclusiveRelay)
+   * with ONLY_RELAY + groupable:false. That gives EXACTLY what each relay returns
+   * — no cache, no outbox expansion, no cross-subscription filter-merge bleed —
+   * while REUSING the persistent per-relay socket (NDK multiplexes all REQs over
+   * one socket per relay). The previous version opened a raw `new WebSocket` per
+   * fetch, which accumulated until Chrome refused new sockets and every relay
+   * errored in ~3ms → empty ProfileView (#2). Per-relay subs are required (not one
+   * multi-relay sub) so NDK's per-id dedup can't distort per-relay counts, which
+   * the frontier pagination depends on. NDK auto-verifies signatures.
    */
   private async directFetch(
     relays: string[],
@@ -479,28 +481,32 @@ export class NostrTransport {
     // PV-DBG: per-relay outcome so one console line fully explains an empty fetch:
     // recv = raw EVENTs received, ver = kept after signature check, drop = dropped by
     // verification; state = open/eosed/error/timeout; ms = time to EOSE.
-    const stats = relays.map(u => ({ u: u.replace('wss://', '').replace(/\/$/, ''), recv: 0, ver: 0, drop: 0, state: 'pending', ms: 0 }));
+    // Per-relay outcome: oldest created_at (this relay's next loadMore cursor),
+    // count (to detect exhaustion), eosed, plus state/ms for diagnostics. Each
+    // relay pages its own history independently — a single global cursor let
+    // sparse relays drag pagination back years and skip the dense middle.
+    const perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean; state: string; ms: number }> = {};
+    relays.forEach(u => { perRelay[u] = { oldest: null, count: 0, eosed: false, state: 'pending', ms: 0 }; });
+
+    // Pre-add each relay to NDK's pool so the single-relay subscriptions below
+    // REUSE the shared per-relay socket instead of opening a new one.
+    for (const url of relays) {
+      if (!this.ndk.pool.relays.get(url)) this.ndk.pool.getRelay(url, true);
+    }
+
+    const label = (u: string) => u.replace('wss://', '').replace(/\/$/, '');
     return new Promise((resolve) => {
       const events = new Map<string, NostrEvent>();
-      // Per-relay outcome: oldest created_at seen (this relay's next loadMore
-      // cursor), how many it returned (to detect exhaustion), and whether it
-      // EOSE'd. A single global cursor over the union let sparse low-retention
-      // relays drag pagination back years and skip the dense middle of a feed;
-      // each relay must page its own history independently.
-      const perRelay: Record<string, { oldest: number | null; count: number; eosed: boolean }> = {};
-      relays.forEach(u => { perRelay[u] = { oldest: null, count: 0, eosed: false }; });
-      const connections: WebSocket[] = [];
+      const subs: NDKSubscription[] = [];
       let settledRelays = 0;
       let done = false;
       let hardTimeoutId: ReturnType<typeof setTimeout> | undefined;
       let graceTimer: ReturnType<typeof setTimeout> | undefined;
 
-      // A single relay that connects but never sends EOSE used to hold the whole
-      // fetch hostage for the full hard timeout (the ~15s blank ProfileView). Once
-      // a quorum of relays has answered (EOSE / error / close) AND we already have
-      // events, resolve after a short grace window instead of waiting on stragglers.
-      // The events-present guard keeps a genuinely empty result waiting until the
-      // hard timeout, so we never flash an empty timeline prematurely.
+      // Quorum is a render trigger, not a stop: once a quorum of relays has
+      // answered AND we have events, resolve after a short grace instead of
+      // waiting on stragglers. The events-present guard keeps a genuinely empty
+      // result waiting until the hard timeout, so we never flash empty early.
       const QUORUM = Math.max(1, Math.ceil(relays.length * 0.6));
       const GRACE_MS = 1000;
 
@@ -509,29 +515,20 @@ export class NostrTransport {
         done = true;
         if (graceTimer) clearTimeout(graceTimer);
         if (hardTimeoutId) clearTimeout(hardTimeoutId);
-        connections.forEach(ws => {
-          if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
-            ws.close();
-          }
-        });
+        subs.forEach(s => { try { s.stop(); } catch { /* ignore */ } });
         diagLog('relays', 'Direct fetch OK', { caller, relayCount: relays.length, eventCount: events.size });
-        // PV-DBG: per-relay breakdown — recv/ver/drop + state(ms). Distinguishes
-        // "relays returned nothing" from "events received but verification dropped them".
-        const totalRecv = stats.reduce((s, r) => s + r.recv, 0);
-        const totalDrop = stats.reduce((s, r) => s + r.drop, 0);
-        const breakdown = stats.map(r => `${r.u}=${r.state}(recv${r.recv}/ver${r.ver}/drop${r.drop}${r.ms ? ',' + r.ms + 'ms' : ''})`).join('  ');
-        console.log(`[PV-DBG] ${caller}: done ${Date.now() - dbgStart}ms total=${events.size} received=${totalRecv} drop=${totalDrop} quorum=${QUORUM}/${relays.length} | ${breakdown}`);
+        const breakdown = relays.map(u => { const r = perRelay[u]!; return `${label(u)}=${r.state}(${r.count}${r.ms ? ',' + r.ms + 'ms' : ''})`; });
+        console.log(`[PV-DBG] ${caller}: done ${Date.now() - dbgStart}ms total=${events.size} quorum=${QUORUM}/${relays.length} | ${breakdown.join('  ')}`);
         // Persist to the web ring buffer so a cold empty-PV is recoverable later
-        // (see WebDiag). poolSize captures socket bloat; per-relay state captures
-        // "all relays errored in ~14ms" (the #2 signature).
+        // (see WebDiag). poolSize captures socket bloat; per-relay state shows
+        // "all relays errored" — the #2 signature.
         webDiag('direct-fetch', {
           caller,
           ms: Date.now() - dbgStart,
           total: events.size,
-          received: totalRecv,
           quorum: `${QUORUM}/${relays.length}`,
           poolSize: this.ndk?.pool?.relays?.size ?? -1,
-          relays: stats.map(r => `${r.u}=${r.state}(${r.ver}/${r.recv}${r.ms ? ',' + r.ms + 'ms' : ''})`)
+          relays: breakdown
         });
         resolve({ events: Array.from(events.values()), perRelay });
       };
@@ -542,11 +539,15 @@ export class NostrTransport {
       }
 
       hardTimeoutId = setTimeout(() => {
-        stats.forEach(r => { if (r.state === 'pending' || r.state === 'opened') r.state = 'timeout'; });
+        relays.forEach(u => { const r = perRelay[u]!; if (r.state === 'pending') r.state = 'timeout'; });
         finish();
       }, timeout);
 
-      const markSettled = () => {
+      const markSettled = (url: string, state: string) => {
+        const r = perRelay[url]!;
+        if (r.state !== 'pending') return; // already settled
+        r.state = state;
+        r.ms = Date.now() - dbgStart;
         settledRelays++;
         if (settledRelays >= relays.length) {
           finish(); // every relay answered — no reason to wait
@@ -558,64 +559,39 @@ export class NostrTransport {
       };
 
       relays.forEach((relayUrl, i) => {
-        const st = stats[i]!;
-        let ws: WebSocket;
+        const pr = perRelay[relayUrl]!;
+        // Per-relay pagination: ask THIS relay for events older than its own
+        // cursor; omit (initial load) → newest. -1 so the cursor note isn't refetched.
+        const relayUntil = perRelayUntil ? perRelayUntil[relayUrl] : undefined;
+        const relayFilters = relayUntil !== undefined
+          ? filters.map(f => ({ ...f, until: relayUntil - 1 }))
+          : filters;
         try {
-          ws = new WebSocket(relayUrl);
+          const sub = this.ndk.subscribe(relayFilters, {
+            relayUrls: [relayUrl],          // pin this relay → bypass outbox + reuse pooled socket
+            cacheUsage: NDKSubscriptionCacheUsage.ONLY_RELAY,
+            groupable: false,               // no filter-merge with other subscriptions
+            exclusiveRelay: true,           // drop events not from this relay (kills cross-sub bleed)
+            closeOnEose: true,
+            subId: `direct-${caller}-${i}`,
+            onEvent: (ev: NDKEvent, _relay?: unknown, _sub?: unknown, fromCache?: boolean) => {
+              // Count ONLY fresh relay events. NDK's global dispatch also replays
+              // cached events (from other subs' cache reads) whose seenOn includes
+              // this relay; those would pollute the per-relay oldest/count that the
+              // frontier pagination depends on (min(created_at) is wrecked by a few
+              // stale outliers). ONLY_RELAY stops our own cache read, not the bus.
+              if (fromCache) return;
+              if (!ev.id) return;
+              events.set(ev.id, ev as unknown as NostrEvent);
+              pr.count++;
+              if (ev.created_at !== undefined && (pr.oldest === null || ev.created_at < pr.oldest)) pr.oldest = ev.created_at;
+            },
+            onEose: () => { pr.eosed = true; markSettled(relayUrl, 'eosed'); },
+          });
+          subs.push(sub);
         } catch (_e) {
-          st.state = 'ctor-error';
-          markSettled();
-          return;
+          markSettled(relayUrl, 'error');
         }
-        connections.push(ws);
-
-        ws.onopen = () => {
-          st.state = 'opened';
-          const subId = Math.random().toString(36).substring(7);
-          // Per-relay pagination: ask THIS relay for events older than its own
-          // cursor; omit (initial load) → newest. -1 so the cursor note isn't refetched.
-          const relayUntil = perRelayUntil ? perRelayUntil[relayUrl] : undefined;
-          const relayFilters = relayUntil !== undefined
-            ? filters.map(f => ({ ...f, until: relayUntil - 1 }))
-            : filters;
-          ws.send(JSON.stringify(['REQ', subId, ...relayFilters]));
-        };
-
-        ws.onmessage = (msg) => {
-          try {
-            const [type, , event] = JSON.parse(msg.data);
-            if (type === 'EVENT' && event) {
-              st.recv++; // PV-DBG: raw EVENT received (pre-verification)
-              const verification = SignatureVerificationService.getInstance().verifyEvent(event);
-              if (verification.valid) {
-                events.set(event.id, event);
-                st.ver++;
-                const pr = perRelay[relayUrl]!;
-                pr.count++;
-                if (pr.oldest === null || event.created_at < pr.oldest) pr.oldest = event.created_at;
-              } else {
-                st.drop++; // PV-DBG: dropped by signature verification
-              }
-            } else if (type === 'EOSE') {
-              st.state = 'eosed';
-              st.ms = Date.now() - dbgStart;
-              perRelay[relayUrl]!.eosed = true;
-              ws.close();
-            }
-          } catch (_error) {
-            // Ignore parse errors
-          }
-        };
-
-        ws.onclose = () => {
-          if (st.state === 'opened') st.state = 'closed-no-eose';
-          markSettled();
-        };
-        ws.onerror = () => {
-          st.state = 'error';
-          st.ms = Date.now() - dbgStart;
-          ws.close();
-        };
       });
     });
   }
