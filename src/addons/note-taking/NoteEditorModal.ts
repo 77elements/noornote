@@ -53,11 +53,11 @@ export class NoteEditorModal {
       <div class="note-taking-editor__checklist" data-checklist></div>
       <button type="button" class="note-taking-editor__add-item" data-add-item>
         <svg width="14" height="14"><use href="#icon-plus"/></svg>
-        List item
+        List item (i.e. todos)
       </button>
       <div class="note-taking-editor__labels">
         <div class="note-taking-editor__label-chips" data-label-chips></div>
-        <input type="text" class="input note-taking-editor__label-input" placeholder="Add label…" data-label-input />
+        <input type="text" class="input note-taking-editor__label-input" placeholder="Add label and press Enter…" data-label-input />
       </div>
       <div class="note-taking-editor__colors" data-colors>
         ${NOTE_COLORS.map((c) => `<button type="button" class="note-taking-swatch note-taking-color-${c}${c === this.color ? ' is-active' : ''}" data-color="${c}" title="${c}" aria-label="${c} color"></button>`).join('')}
