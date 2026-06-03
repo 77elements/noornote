@@ -12,8 +12,8 @@
  *   truthy, otherwise it would pre-empt this handler.
  */
 
-import { getImageViewer } from '../components/ui/ImageViewer';
-import { PerAccountLocalStorage, StorageKeys } from './PerAccountLocalStorage';
+import { getImageViewer } from './ImageViewer';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
 export class ImageClickHandler {
   private static instance: ImageClickHandler | null = null;

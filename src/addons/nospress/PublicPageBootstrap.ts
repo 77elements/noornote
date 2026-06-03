@@ -31,7 +31,7 @@ export class PublicPageBootstrap {
     // never registered here. Register it explicitly so portfolio (and any
     // future) galleries open the full-screen viewer on the public site
     // exactly like they do inside the in-app editor.
-    void import('../../services/ImageClickHandler').then(m => m.getImageClickHandler().init());
+    void import('../../components/ui/ImageClickHandler').then(m => m.getImageClickHandler().init());
 
     const { PublicNospressPage } = await import('./PublicNospressPage');
     // PublicNospressPage renders directly into `#app` — no extra wrapper.

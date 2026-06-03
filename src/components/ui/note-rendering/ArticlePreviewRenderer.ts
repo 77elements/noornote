@@ -5,24 +5,21 @@
  */
 
 import type { NostrEvent, NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
-import { LongFormOrchestrator } from './orchestration/LongFormOrchestrator';
-import { Router } from './Router';
-import { escapeHtml, escapeHtmlAttr } from '../helpers/escapeHtml';
-import { isLiveStreamsPlayerEnabled } from '../addons/live-streams-player/index';
-import { getAddressableIdentifier } from '../helpers/getAddressableIdentifier';
-import { getLiveStreamHost } from '../helpers/getLiveStreamHost';
-import { ZapManager } from '../components/ui/interaction-managers/ZapManager';
-import { LiveChatService } from './LiveChatService';
-import { RelayConfig } from './RelayConfig';
-import { NostrTransport } from './transport/NostrTransport';
+import { ModuleLoader } from '../../../core/ModuleLoader';
+import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
+import { Router } from '../../../services/Router';
+import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
+import { isLiveStreamsPlayerEnabled } from '../../../addons/live-streams-player/index';
+import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
+import { getLiveStreamHost } from '../../../helpers/getLiveStreamHost';
+import { ZapManager } from '../../../components/ui/interaction-managers/ZapManager';
+import { LiveChatService } from '../../../services/LiveChatService';
+import { RelayConfig } from '../../../services/RelayConfig';
+import { NostrTransport } from '../../../services/transport/NostrTransport';
 
 export class ArticlePreviewRenderer {
   private static instance: ArticlePreviewRenderer;
-  private orchestrator: LongFormOrchestrator;
-
-  private constructor() {
-    this.orchestrator = LongFormOrchestrator.getInstance();
-  }
+  private constructor() {}
 
   static getInstance(): ArticlePreviewRenderer {
     if (!ArticlePreviewRenderer.instance) {
@@ -45,7 +42,10 @@ export class ArticlePreviewRenderer {
 
   private async fetchAndRender(naddrRef: string, skeleton: HTMLElement): Promise<void> {
     try {
-      const event = await this.orchestrator.fetchAddressableEvent(naddrRef);
+      // The article (long-form) module is lazy-loaded; ensure it on demand so
+      // previews work on the minimal public-page boot too (see ProfileArticlesCarousel).
+      const api = await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
+      const event = (await api?.fetchAddressableEvent(naddrRef)) ?? null;
 
       if (event) {
         const previewCard = this.createPreviewCard(event, naddrRef);
@@ -289,7 +289,7 @@ export class ArticlePreviewRenderer {
       const watchBtn = card.querySelector('.live-stream-card__watch') as HTMLElement | null;
       if (watchBtn) watchBtn.style.display = 'none';
 
-      const { mountPlayer } = await import('../addons/live-streams-player/player');
+      const { mountPlayer } = await import('../../../addons/live-streams-player/player');
       await mountPlayer(playerEl, { streamUrl, poster });
     } catch (err) {
       console.warn('[LiveStreamsPlayer] Failed to mount inline player:', err);
@@ -352,7 +352,8 @@ export class ArticlePreviewRenderer {
    * Article preview card (kind 30023)
    */
   private createArticlePreviewCard(event: NostrEvent, naddrRef: string): HTMLElement {
-    const metadata = LongFormOrchestrator.extractArticleMetadata(event);
+    const metadata = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles')?.extractArticleMetadata(event)
+      ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
 
     const card = document.createElement('div');
     card.className = 'article-preview-card';

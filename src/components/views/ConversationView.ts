@@ -20,7 +20,7 @@ import type { NotificationsModuleApi } from '../../modules/notifications/contrac
 import { ToastService } from '../../services/ToastService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { ContentProcessor } from '../../services/ContentProcessor';
-import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
+import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
 import { replaceMediaPlaceholders } from '../../helpers/renderMediaContent';
 import { replaceBolt11Placeholders } from '../../helpers/renderBolt11';
 import { setupUserMentionHandlers } from '../../helpers/UserMentionHelper';

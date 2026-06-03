@@ -8,8 +8,8 @@ import { NoteStructureBuilder } from './NoteStructureBuilder';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
 import { PollRenderer } from '../note-features/PollRenderer';
 import { NIP88PollRenderer } from '../note-features/NIP88PollRenderer';
-import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
-import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
+import { QuotedNoteRenderer } from './QuotedNoteRenderer';
+import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { decodeNip19 } from '../../../services/NostrToolsAdapter';
 
 export class OriginalNoteRenderer {

@@ -38,8 +38,8 @@ import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
 import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 import { ContentProcessor } from '../../services/ContentProcessor';
-import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
-import { ArticlePreviewRenderer } from '../../services/ArticlePreviewRenderer';
+import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
+import { ArticlePreviewRenderer } from '../ui/note-rendering/ArticlePreviewRenderer';
 import { isScheduledPostsEnabled } from '../../addons/scheduled-posts/index';
 
 type TabMode = 'edit' | 'preview';

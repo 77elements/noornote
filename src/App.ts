@@ -112,7 +112,7 @@ export class App {
     // global MutationObserver for video.note-video (download button + auto-pause).
     // Single source of truth — works for ANY render path / nesting depth.
     // See ImageClickHandler.ts / VideoPlayerService.ts headers + /build-validate guard.
-    import('./services/ImageClickHandler').then(m => m.getImageClickHandler().init());
+    import('./components/ui/ImageClickHandler').then(m => m.getImageClickHandler().init());
     import('./services/VideoPlayerService').then(m => m.getVideoPlayerService().init());
 
     // Global avatar 404 fallback — any <img class="profile-pic"> whose URL fails

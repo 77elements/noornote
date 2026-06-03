@@ -5,22 +5,22 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { encodeNevent, decodeNip19 } from './NostrToolsAdapter';
-import { NoteHeader } from '../components/ui/NoteHeader';
-import { CollapsibleManager } from '../components/ui/note-features/CollapsibleManager';
-import { QuoteNoteFetcher } from './QuoteNoteFetcher';
+import { encodeNevent, decodeNip19 } from '../../../services/NostrToolsAdapter';
+import { NoteHeader } from '../../../components/ui/NoteHeader';
+import { CollapsibleManager } from '../../../components/ui/note-features/CollapsibleManager';
+import { QuoteNoteFetcher } from '../../../services/QuoteNoteFetcher';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
-import { ContentProcessor, type QuotedReference } from './ContentProcessor';
-import { replaceMediaPlaceholders } from '../helpers/renderMediaContent';
-import { replaceBolt11Placeholders } from '../helpers/renderBolt11';
-import { Router } from './Router';
-import { RENDERABLE_KINDS, GIT_EVENT_KINDS } from '../types/nostr';
-import { PollOrchestrator } from './orchestration/PollOrchestrator';
-import { MuteOrchestrator } from '../lists/mutes';
-import { AuthService } from './AuthService';
-import { escapeHtml } from '../helpers/escapeHtml';
-import { getTag } from '../helpers/tagUtils';
-import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../components/ui/note-rendering/DittoFeatureRenderer';
+import { ContentProcessor, type QuotedReference } from '../../../services/ContentProcessor';
+import { replaceMediaPlaceholders } from '../../../helpers/renderMediaContent';
+import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
+import { Router } from '../../../services/Router';
+import { RENDERABLE_KINDS, GIT_EVENT_KINDS } from '../../../types/nostr';
+import { PollOrchestrator } from '../../../services/orchestration/PollOrchestrator';
+import { MuteOrchestrator } from '../../../lists/mutes';
+import { AuthService } from '../../../services/AuthService';
+import { escapeHtml } from '../../../helpers/escapeHtml';
+import { getTag } from '../../../helpers/tagUtils';
+import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from '../../../components/ui/note-rendering/DittoFeatureRenderer';
 
 export class QuotedNoteRenderer {
   private static instance: QuotedNoteRenderer;
@@ -143,8 +143,8 @@ export class QuotedNoteRenderer {
 
         // Route NIP-34 git events (must precede addressable check so 30617 doesn't fall into article preview)
         if (result.event.kind !== undefined && GIT_EVENT_KINDS.includes(result.event.kind)) {
-          const { GitEventRenderer } = await import('../components/ui/note-rendering/GitEventRenderer');
-          const { GitEventProcessor } = await import('../components/ui/note-processing/GitEventProcessor');
+          const { GitEventRenderer } = await import('../../../components/ui/note-rendering/GitEventRenderer');
+          const { GitEventProcessor } = await import('../../../components/ui/note-processing/GitEventProcessor');
           const processedNote = GitEventProcessor.process(result.event);
           const gitElement = GitEventRenderer.render(processedNote, { collapsible: false, depth: 1 });
           skeleton.replaceWith(gitElement);
@@ -161,7 +161,7 @@ export class QuotedNoteRenderer {
             return;
           }
           // Everything else → article preview
-          const { encodeNaddr } = await import('./NostrToolsAdapter');
+          const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
           const dTag = getTag(result.event.tags, 'd');
           const naddrRef = 'nostr:' + encodeNaddr({
             kind: result.event.kind,
@@ -177,8 +177,8 @@ export class QuotedNoteRenderer {
 
         // Route NIP-84 highlights (kind 9802) to HighlightRenderer
         if (result.event.kind === 9802) {
-          const { HighlightRenderer } = await import('../components/ui/note-rendering/HighlightRenderer');
-          const { HighlightProcessor } = await import('../components/ui/note-processing/HighlightProcessor');
+          const { HighlightRenderer } = await import('../../../components/ui/note-rendering/HighlightRenderer');
+          const { HighlightProcessor } = await import('../../../components/ui/note-processing/HighlightProcessor');
           const processedNote = HighlightProcessor.process(result.event);
           const highlightElement = HighlightRenderer.render(processedNote, { collapsible: false, depth: 1 });
           skeleton.replaceWith(highlightElement);
@@ -187,7 +187,7 @@ export class QuotedNoteRenderer {
 
         // Route NIP-58 badge awards (kind 8) to inline badge card
         if (result.event.kind === 8) {
-          const { BadgeAwardRenderer } = await import('../components/ui/note-rendering/BadgeAwardRenderer');
+          const { BadgeAwardRenderer } = await import('../../../components/ui/note-rendering/BadgeAwardRenderer');
           const card = BadgeAwardRenderer.renderInlineCard(result.event);
           skeleton.replaceWith(card);
           return;
@@ -195,8 +195,8 @@ export class QuotedNoteRenderer {
 
         // Route zap receipts (kind 9735) to ZapReceiptRenderer
         if (result.event.kind === 9735) {
-          const { ZapReceiptRenderer } = await import('../components/ui/note-rendering/ZapReceiptRenderer');
-          const { ZapReceiptProcessor } = await import('../components/ui/note-processing/ZapReceiptProcessor');
+          const { ZapReceiptRenderer } = await import('../../../components/ui/note-rendering/ZapReceiptRenderer');
+          const { ZapReceiptProcessor } = await import('../../../components/ui/note-processing/ZapReceiptProcessor');
           const processedNote = ZapReceiptProcessor.process(result.event);
           const zapElement = ZapReceiptRenderer.render(processedNote, { collapsible: false });
           skeleton.replaceWith(zapElement);
@@ -205,8 +205,8 @@ export class QuotedNoteRenderer {
 
         // Route unsupported kinds to UnsupportedKindRenderer
         if (result.event.kind !== undefined && !RENDERABLE_KINDS.includes(result.event.kind)) {
-          const { UnsupportedKindRenderer } = await import('../components/ui/note-rendering/UnsupportedKindRenderer');
-          const { NoteProcessor } = await import('../components/ui/note-processing/NoteProcessor');
+          const { UnsupportedKindRenderer } = await import('../../../components/ui/note-rendering/UnsupportedKindRenderer');
+          const { NoteProcessor } = await import('../../../components/ui/note-processing/NoteProcessor');
           const processedNote = NoteProcessor.process(result.event);
           const unsupportedElement = UnsupportedKindRenderer.render(processedNote, { collapsible: false });
           skeleton.replaceWith(unsupportedElement);
@@ -240,19 +240,19 @@ export class QuotedNoteRenderer {
 
     // For picture events (Kind 20), extract images from imeta tags and prepend title
     if (event.kind === 20) {
-      const { PictureNoteProcessor } = await import('../components/ui/note-processing/PictureNoteProcessor');
+      const { PictureNoteProcessor } = await import('../../../components/ui/note-processing/PictureNoteProcessor');
       PictureNoteProcessor.prependPictureContent(processedContent, event.tags);
     }
 
     // For video events (Kind 21/22), extract video from imeta tags and prepend title
     if (event.kind === 21 || event.kind === 22) {
-      const { VideoNoteProcessor } = await import('../components/ui/note-processing/VideoNoteProcessor');
+      const { VideoNoteProcessor } = await import('../../../components/ui/note-processing/VideoNoteProcessor');
       VideoNoteProcessor.prependVideoContent(processedContent, event.tags);
     }
 
     // For file metadata events (Kind 1063), extract file from NIP-94 tags
     if (event.kind === 1063) {
-      const { FileMetadataProcessor } = await import('../components/ui/note-processing/FileMetadataProcessor');
+      const { FileMetadataProcessor } = await import('../../../components/ui/note-processing/FileMetadataProcessor');
       FileMetadataProcessor.prependFileContent(processedContent, event.tags);
     }
 
@@ -309,10 +309,10 @@ export class QuotedNoteRenderer {
 
     // Render NIP-88 poll (kind 1068)
     if (event.kind === 1068) {
-      const { PollProcessor } = await import('../components/ui/note-processing/PollProcessor');
+      const { PollProcessor } = await import('../../../components/ui/note-processing/PollProcessor');
       const pollData = PollProcessor.extractPollData(event.tags);
       if (pollData.options.length > 0) {
-        const { NIP88PollRenderer } = await import('../components/ui/note-features/NIP88PollRenderer');
+        const { NIP88PollRenderer } = await import('../../../components/ui/note-features/NIP88PollRenderer');
         NIP88PollRenderer.render(quoteBox, pollData, event).catch(() => {});
       }
     }
@@ -509,11 +509,11 @@ export class QuotedNoteRenderer {
    * Reuses marketplace-helpers for metadata parsing.
    */
   private async renderListingPreviewFromEvent(event: NostrEvent, container: Element): Promise<void> {
-    const { parseListingMetadata, formatPrice } = await import('../addons/marketplace/marketplace-helpers');
-    const { encodeNaddr } = await import('./NostrToolsAdapter');
-    const { UserProfileService } = await import('./UserProfileService');
-    const { hexToNpub } = await import('../helpers/nip19');
-    const { escapeHtmlAttr } = await import('../helpers/escapeHtml');
+    const { parseListingMetadata, formatPrice } = await import('../../../addons/marketplace/marketplace-helpers');
+    const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
+    const { UserProfileService } = await import('../../../services/UserProfileService');
+    const { hexToNpub } = await import('../../../helpers/nip19');
+    const { escapeHtmlAttr } = await import('../../../helpers/escapeHtml');
 
     const meta = parseListingMetadata(event);
     const naddr = encodeNaddr({

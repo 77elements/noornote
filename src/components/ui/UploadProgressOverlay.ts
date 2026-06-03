@@ -21,11 +21,10 @@
 
 import { TypedEventBus } from '../../core/TypedEventBus';
 import type { UploadStatus } from '../../services/media/compression-types';
+import { UPLOAD_STATUS_EVENT } from '../../core/events';
 
 const COMPRESSED_PAUSE_MS = 1500;
 const DISMISS_AFTER_UPLOADED_MS = 2000;
-
-export const UPLOAD_STATUS_EVENT = 'media-upload:status' as const;
 
 export class UploadProgressOverlay {
   private static instance: UploadProgressOverlay | null = null;

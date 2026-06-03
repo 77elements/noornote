@@ -10,6 +10,12 @@ import type { NospressMenuSet } from '../addons/nospress/blocks/menu';
 import type { NospressPageIndex } from '../addons/nospress/blocks/pageIndex';
 import type { NospressListSection } from '../services/NospressService';
 
+// Event-name constant for the media-upload status bus event (typed below as
+// 'media-upload:status'). Lives here in neutral core/ so both MediaUploadService
+// (emitter, services/) and UploadProgressOverlay (listener, components/) can import
+// it without a services→components layer inversion.
+export const UPLOAD_STATUS_EVENT = 'media-upload:status' as const;
+
 // ── Auth / User ──────────────────────────────────────────────
 
 export interface UserLoginPayload {

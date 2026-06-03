@@ -23,8 +23,8 @@ import { upgradeArticleImages } from '../../helpers/upgradeArticleImages';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
 import { ContentProcessor } from '../../services/ContentProcessor';
-import { QuotedNoteRenderer } from '../../services/QuotedNoteRenderer';
-import { ArticlePreviewRenderer } from '../../services/ArticlePreviewRenderer';
+import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
+import { ArticlePreviewRenderer } from '../ui/note-rendering/ArticlePreviewRenderer';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
@@ -66,8 +66,13 @@ export class ArticleView {
     `;
 
     try {
-      // Fetch the article
-      const event = await this.articlesApi?.fetchAddressableEvent(this.naddrRef) ?? null;
+      // Ensure the lazy articles module is loaded before fetching. On a full page
+      // load straight into /article/<naddr> — e.g. clicked from a public NosPress
+      // page carousel — the sync getApi('articles') can still be null and the
+      // article would wrongly show "not found". ensure() loads it on demand in any
+      // boot context (in-app it is already loaded and resolves instantly).
+      const api = await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
+      const event = (await api?.fetchAddressableEvent(this.naddrRef)) ?? null;
 
       if (!event || !event.id) {
         this.showError('Article not found');

@@ -25,7 +25,7 @@ import {
   type MediaKind,
   type UploadStatus,
 } from './media/compression-types';
-import { UPLOAD_STATUS_EVENT } from '../components/ui/UploadProgressOverlay';
+import { UPLOAD_STATUS_EVENT } from '../core/events';
 
 interface MediaServerSettings {
   url: string;

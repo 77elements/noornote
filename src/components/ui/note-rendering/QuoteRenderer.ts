@@ -5,8 +5,8 @@
 
 import type { ProcessedNote, NoteUIOptions } from '../types/NoteTypes';
 import { NoteStructureBuilder } from './NoteStructureBuilder';
-import { QuotedNoteRenderer } from '../../../services/QuotedNoteRenderer';
-import { ArticlePreviewRenderer } from '../../../services/ArticlePreviewRenderer';
+import { QuotedNoteRenderer } from './QuotedNoteRenderer';
+import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
 import { decodeNip19 } from '../../../services/NostrToolsAdapter';
 import { CollapsibleManager } from '../note-features/CollapsibleManager';
 
