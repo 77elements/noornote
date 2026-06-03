@@ -108,6 +108,48 @@
   }
 }
 
+// Video wrapper: reserves the video's height and shows the imeta poster; the real
+// <video> is mounted only while on screen (see startVideoThumbnailObserver) to bound
+// media memory. aspect-ratio keeps the height stable so swapping never shifts scroll.
+.note-video-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: var(--color-2);
+  border-radius: $radius-xl;
+  overflow: hidden;
+
+  > video,
+  > .note-video-wrap__poster {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    border-radius: $radius-xl;
+    object-fit: contain;
+  }
+
+  > .note-video-wrap__poster {
+    object-fit: cover;
+  }
+
+  .note-video-wrap__play {
+    position: absolute;
+    inset: 0;
+    @include flex-center;
+    font-size: 2.5rem;
+    color: var(--color-5);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  &--active > .note-video-wrap__poster,
+  &--active .note-video-wrap__play {
+    display: none;
+  }
+}
+
 // YouTube embed wrapper (iframe + external link)
 .youtube-embed-wrapper {
   margin: $gap 0;

@@ -24,6 +24,30 @@ function renderPlaceholder(type: string, url: string, index: number, alt?: strin
   return `<div class="media-placeholder media-placeholder--${type}" data-src="${escapeHtmlAttr(url)}" data-type="${type}" data-index="${index}"${poster ? ` data-poster="${escapeHtmlAttr(poster)}"` : ''}${alt ? ` data-alt="${escapeHtmlAttr(alt)}"` : ''}><span class="media-placeholder__icon">${icon}</span><span class="media-placeholder__label">${label}</span></div>`;
 }
 
+/**
+ * Render a video as a lightweight wrapper instead of a live <video> element.
+ *
+ * A real <video> element (even preload="none") instantiates a WebMediaPlayer in
+ * the renderer (~2MB native each). In an unbounded feed every video note kept one
+ * mounted, so dozens of off-screen videos piled up media/gpu memory. Instead we emit
+ * a placeholder wrapper that reserves the video's height and shows the imeta poster
+ * (when present); the global observer (getWrapObserver) mounts a real <video> only
+ * while the wrapper is near the viewport and unmounts it again once it scrolls far
+ * away, so media memory is bound to what's actually on screen. Height is reserved via
+ * aspect-ratio so swapping the inner element never shifts the scroll anchor.
+ */
+function renderVideo(item: MediaContent, index: number): string {
+  const src = escapeHtmlAttr(item.url);
+  const poster = item.thumbnail ? escapeHtmlAttr(item.thumbnail) : '';
+  const dim = item.dimensions;
+  const hasDim = !!(dim && dim.width && dim.height);
+  const styleAttr = hasDim ? ` style="aspect-ratio:${dim!.width}/${dim!.height}"` : '';
+  const dimAttr = hasDim ? ` data-dim="${dim!.width}x${dim!.height}"` : '';
+  const posterData = poster ? ` data-poster="${poster}"` : '';
+  const posterImg = poster ? `<img class="note-video-wrap__poster" src="${poster}" alt="" loading="lazy">` : '';
+  return `<div class="note-video-wrap" data-video-src="${src}" data-index="${index}"${posterData}${dimAttr}${styleAttr}>${posterImg}<span class="note-video-wrap__play" aria-hidden="true">▶</span></div>`;
+}
+
 export interface MediaContent {
   type: 'image' | 'video' | 'audio';
   url: string;
@@ -70,8 +94,7 @@ export function renderSingleMedia(item: MediaContent, index: number, isNSFW = fa
         const safeId = escapeHtmlAttr(videoId);
         return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
       }
-      const posterAttr = item.thumbnail ? ` poster="${escapeHtmlAttr(item.thumbnail)}"` : '';
-      return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="none"></video>`;
+      return renderVideo(item, index);
     case 'audio':
       return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
     default:
@@ -109,8 +132,7 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
           const safeId = escapeHtmlAttr(ytId);
           return `<div class="youtube-embed-wrapper"><div class="youtube-embed"><iframe src="https://www.youtube.com/embed/${safeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div><a href="https://www.youtube.com/watch?v=${safeId}" class="youtube-external-link">Watch on YouTube</a></div>`;
         }
-        const posterAttr = item.thumbnail ? ` poster="${escapeHtmlAttr(item.thumbnail)}"` : '';
-        return `<video src="${escapeHtmlAttr(item.url)}"${posterAttr} controls controlsList="nodownload" class="note-video" preload="none"></video>`;
+        return renderVideo(item, index);
       case 'audio':
         return `<audio src="${escapeHtmlAttr(item.url)}" controls preload="metadata" class="note-audio"></audio>`;
       default:
@@ -144,18 +166,9 @@ export function renderMediaContent(media: MediaContent[] | RenderMediaOptions): 
 }
 
 /**
- * Force video thumbnail rendering by seeking to 0.5s.
- * Call after inserting media HTML into the DOM.
- */
-export function initVideoThumbnails(container: HTMLElement): void {
-  const videos = container.querySelectorAll('video');
-  videos.forEach(video => initVideoThumb(video as HTMLVideoElement));
-}
-
-/**
- * Lazily generate a video's thumbnail: load metadata + seek to 0.5s. Called ONLY
- * when the video nears the viewport (see startVideoThumbnailObserver), so off-screen
- * videos in a full-DOM feed are never loaded/decoded.
+ * Lazily generate a raw <video>'s thumbnail by loading metadata + seeking to 0.5s.
+ * Used ONLY for legacy raw <video> elements that are not wrapped in .note-video-wrap
+ * (e.g. ProfileVideosCarousel). Called when the video nears the viewport.
  */
 function initVideoThumb(el: HTMLVideoElement): void {
   if (el.dataset.thumbInit) return;
@@ -172,10 +185,8 @@ function initVideoThumb(el: HTMLVideoElement): void {
   }
 }
 
-// Load a video's metadata/thumbnail only once it nears the viewport. The previous
-// version force-loaded EVERY video on DOM insertion (even far off-screen ones), so a
-// full-DOM ProfileView decoded all its videos at once → multi-GB tab memory. Now
-// off-screen videos stay preload="none" and undecoded until scrolled near.
+// Legacy raw-<video> thumbnail loader: load a video's metadata/thumbnail only once it
+// nears the viewport, so off-screen carousel videos stay undecoded.
 let thumbVisibilityObserver: IntersectionObserver | null = null;
 
 function getThumbVisibilityObserver(): IntersectionObserver {
@@ -195,19 +206,101 @@ function getThumbVisibilityObserver(): IntersectionObserver {
   return thumbVisibilityObserver;
 }
 
+// Mount a real <video> inside a .note-video-wrap, only while it is near the viewport.
+function mountVideo(wrap: HTMLElement): void {
+  if (wrap.querySelector('video')) return;
+  const src = wrap.dataset.videoSrc;
+  if (!src) return;
+  const poster = wrap.dataset.poster;
+  const video = document.createElement('video');
+  video.src = src;
+  video.controls = true;
+  video.setAttribute('controlsList', 'nodownload');
+  video.playsInline = true;
+  video.preload = 'metadata';
+  video.className = 'note-video';
+  if (poster) video.poster = poster;
+  video.addEventListener('loadedmetadata', () => {
+    // Lock the wrapper's aspect-ratio from the real dimensions if we did not know
+    // them upfront, so a later unmount/remount never changes the height.
+    if (!wrap.dataset.dim && video.videoWidth > 0 && video.videoHeight > 0) {
+      wrap.style.aspectRatio = `${video.videoWidth}/${video.videoHeight}`;
+      wrap.dataset.dim = `${video.videoWidth}x${video.videoHeight}`;
+    }
+    // No imeta poster → seek slightly in to surface a non-black thumbnail frame.
+    if (!poster) {
+      try { video.currentTime = 0.5; } catch { /* seeking unsupported */ }
+    }
+  }, { once: true });
+  wrap.appendChild(video);
+  wrap.classList.add('note-video-wrap--active');
+}
+
+// Remove the <video> again once the wrapper scrolls far off-screen, freeing its
+// WebMediaPlayer. A currently-playing video is left mounted so playback is not cut.
+function unmountVideo(wrap: HTMLElement): void {
+  const video = wrap.querySelector('video') as HTMLVideoElement | null;
+  if (!video) return;
+  if (!video.paused) return;
+  try { video.pause(); } catch { /* ignore */ }
+  video.removeAttribute('src');
+  try { video.load(); } catch { /* ignore */ }
+  video.remove();
+  wrap.classList.remove('note-video-wrap--active');
+}
+
+let wrapObserver: IntersectionObserver | null = null;
+
+function getWrapObserver(): IntersectionObserver {
+  if (!wrapObserver) {
+    wrapObserver = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const wrap = entry.target as HTMLElement;
+          if (entry.isIntersecting) mountVideo(wrap);
+          else unmountVideo(wrap);
+        }
+      },
+      { rootMargin: '300px' }
+    );
+  }
+  return wrapObserver;
+}
+
+/**
+ * Watch the DOM for inserted media and wire up viewport-driven video handling:
+ * - `.note-video-wrap` (timeline/notes) → mount a real <video> only while on screen,
+ *   unmount it again when it scrolls far away (bounds media memory to what's visible).
+ * - raw `<video>` not inside a wrapper (e.g. ProfileVideosCarousel) → legacy seek-to-
+ *   thumbnail when near the viewport.
+ * Call once at app startup.
+ */
 export function startVideoThumbnailObserver(): void {
+  const register = (root: HTMLElement) => {
+    const wraps = (root.classList?.contains('note-video-wrap')
+      ? [root]
+      : Array.from(root.querySelectorAll('.note-video-wrap'))) as HTMLElement[];
+    for (const wrap of wraps) {
+      if (wrap.dataset.videoObserved) continue;
+      wrap.dataset.videoObserved = '1';
+      getWrapObserver().observe(wrap);
+    }
+
+    const videos = (root.tagName === 'VIDEO'
+      ? [root]
+      : Array.from(root.querySelectorAll('video'))) as HTMLVideoElement[];
+    for (const video of videos) {
+      if (video.closest('.note-video-wrap')) continue; // managed by the wrap observer
+      if (video.dataset.thumbObserved) continue;
+      video.dataset.thumbObserved = '1';
+      getThumbVisibilityObserver().observe(video);
+    }
+  };
+
   const observer = new MutationObserver(mutations => {
     for (const mutation of mutations) {
       for (const node of mutation.addedNodes) {
-        if (node instanceof HTMLElement) {
-          const videos = (node.tagName === 'VIDEO' ? [node] : Array.from(node.querySelectorAll('video'))) as HTMLVideoElement[];
-          for (const video of videos) {
-            // Register for near-viewport loading instead of force-loading on insert.
-            if (video.dataset.thumbObserved) continue;
-            video.dataset.thumbObserved = '1';
-            getThumbVisibilityObserver().observe(video);
-          }
-        }
+        if (node instanceof HTMLElement) register(node);
       }
     }
   });
