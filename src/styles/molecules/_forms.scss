@@ -176,7 +176,7 @@ label {
   }
 
   &__description {
-    color: $color-3;
+    color: var(--color-3);
     line-height: 1.5;
   }
 
@@ -184,7 +184,7 @@ label {
     margin: calc($gap / 2) 0 0 0;
     padding-left: $gap;
     @extend %small;
-    color: $color-3;
+    color: var(--color-3);
 
     li {
       margin-bottom: calc($gap / 4);
@@ -361,7 +361,7 @@ label {
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      color: $color-5;
+      color: var(--color-5);
       font-size: 14px;
       line-height: 1;
     }

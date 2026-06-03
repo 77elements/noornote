@@ -169,7 +169,7 @@
   padding: calc($gap / 2);
   border: none;
   border-radius: 0.125rem;
-  color: $color-3;
+  color: var(--color-3);
   background-color: transparent;
   cursor: pointer;
   vertical-align: middle;
