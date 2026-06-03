@@ -132,9 +132,15 @@ export class ProfileArticlesCarousel {
         return bPublished - aPublished;
       });
 
+      // Ensure the articles module is loaded before extracting metadata. On the
+      // public NosPress page the app boots minimally (no login activation), so a
+      // sync getApi('articles') returned null there and every article fell back to
+      // empty metadata (no title/image, epoch date "Jan 1 1970"). ensure() loads it
+      // on demand in any context; in-app it is already loaded and resolves instantly.
+      const articlesApi = await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
+
       this.articles = events.map(event => {
         const isDraft = event.kind === 30024;
-        const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
         const metadata = articlesApi?.extractArticleMetadata(event) ?? { title: '', image: '', summary: '', publishedAt: 0, identifier: '', topics: [] };
         const naddr = encodeNaddr({
           kind: event.kind!,

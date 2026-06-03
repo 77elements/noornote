@@ -6,6 +6,7 @@ yarn-error.log*
 
 # Production builds
 dist/
+dist-electron/
 build/
 apk/
 public/download/noornote-release.apk
