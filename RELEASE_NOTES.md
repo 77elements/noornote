@@ -1,3 +1,6 @@
-## Fixes
+# NoorNote 0.9.11
 
-**Profiles load reliably again.** Opening several profiles in a row could leave a profile showing no notes, and memory piled up until the app got sluggish. Profiles now free their resources when you move on, so every profile loads all its notes, quickly, and memory stays low.
+- **Note taking** now interoperates with nostr-keep: your notes open and edit in both apps.
+- **Performance:** RAM and runtime optimizations for lighter, smoother browsing, especially in video-heavy feeds.
+- **NosPress:** public-page articles work again, and sites now follow your chosen palette.
+- **Fixes:** ProfileView no longer occasionally loads empty or with gaps.
