@@ -1196,6 +1196,10 @@ export class MainLayout {
     deactivateAllTabs(secondaryContent);
     switchTabWithContent(secondaryContent, value);
     this.viewTabManager?.deactivateCurrentViewTab();
+
+    // The log panel skips rendering while hidden; render its current logs now that
+    // it is the visible tab again.
+    if (value === 'system-log') this.systemLogger.refresh();
   }
 
 

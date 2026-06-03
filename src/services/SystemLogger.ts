@@ -8,6 +8,7 @@
 import { Router } from './Router';
 import { escapeHtml } from '../helpers/escapeHtml';
 import { diagLog } from './DiagnosticLogger';
+import { PlatformService } from './PlatformService';
 
 export type LogLevel = 'info' | 'debug' | 'warn' | 'error' | 'success';
 export type LogCategory = 'global' | 'page';
@@ -67,8 +68,16 @@ export class SystemLogger {
   private maxPageLogs = 5000; // Desktop: Keep last 5000 page logs (web: 500)
   private globalAutoScroll = true;
   private pageAutoScroll = true;
+  private renderScheduled = false;
+  private dirty: { global: boolean; page: boolean } = { global: false, page: false };
+  // On the native Android app (Capacitor) the live log panel is never reachable
+  // (the secondary column is display:none) and everything is already captured by the
+  // file-based DiagnosticLogger. So we skip the in-memory collection, dedup scan and
+  // rendering there entirely — only the diagLog mirror runs.
+  private suppressInMemory = false;
 
   private constructor() {
+    this.suppressInMemory = PlatformService.getInstance().isCapacitor;
     this.element = this.createElement();
     this.setupGlobalLogging();
     this.setupViewChangeListener();
@@ -84,7 +93,7 @@ export class SystemLogger {
       if (!this.router) {
         this.router = Router.getInstance();
       }
-      this.renderPageLogs();
+      this.scheduleRender('page');
     });
 
     // Clear page logs on navigation (avoid circular dependency with Router)
@@ -178,6 +187,9 @@ export class SystemLogger {
     // Mirror to DiagnosticLogger (writes to JSONL on mobile, no-op on web)
     diagLog('system', `[${level}] ${category}: ${message}`, data);
 
+    // Native Android: file logging only, no in-memory panel (see suppressInMemory).
+    if (this.suppressInMemory) return;
+
     const logCategory: LogCategory = GLOBAL_CATEGORIES.includes(category) ? 'global' : 'page';
     const normalizedMessage = this.normalizeMessageForDeduplication(message);
     const logs = logCategory === 'global' ? this.globalLogs : this.pageLogs;
@@ -192,7 +204,7 @@ export class SystemLogger {
     if (existingLog) {
       existingLog.count = (existingLog.count || 1) + 1;
       existingLog.timestamp = Date.now();
-      this.renderLogs(logCategory);
+      this.scheduleRender(logCategory);
       return;
     }
 
@@ -218,7 +230,6 @@ export class SystemLogger {
     const isGlobal = logCategory === 'global';
     const logs = isGlobal ? this.globalLogs : this.pageLogs;
     const maxLogs = isGlobal ? this.maxGlobalLogs : this.maxPageLogs;
-    const autoScroll = isGlobal ? this.globalAutoScroll : this.pageAutoScroll;
 
     logs.push(entry);
 
@@ -231,11 +242,28 @@ export class SystemLogger {
       }
     }
 
-    this.renderLogs(logCategory);
+    this.scheduleRender(logCategory);
+  }
 
-    if (autoScroll) {
-      this.scrollToBottom(logCategory);
-    }
+  /**
+   * Coalesce renders: a burst of log events within one frame triggers a single
+   * render, and rendering is skipped entirely while the panel is not visible (an
+   * inactive SCC tab, or phone where the secondary column is display:none — there
+   * the in-memory log arrays are still kept, just not painted). A category skipped
+   * because it was hidden stays dirty and renders once the panel is shown (refresh()).
+   */
+  private scheduleRender(logCategory: LogCategory): void {
+    if (logCategory === 'global') this.dirty.global = true;
+    else this.dirty.page = true;
+    if (this.renderScheduled) return;
+    this.renderScheduled = true;
+    requestAnimationFrame(() => this.flushRender());
+  }
+
+  private flushRender(): void {
+    this.renderScheduled = false;
+    if (this.dirty.global && this.renderGlobalLogs()) this.dirty.global = false;
+    if (this.dirty.page && this.renderPageLogs()) this.dirty.page = false;
   }
 
   /**
@@ -275,25 +303,33 @@ export class SystemLogger {
   /**
    * Render global logs to UI
    */
-  private renderGlobalLogs(): void {
-    const logsContainer = this.element.querySelector('.system-logger__global-logs');
-    if (!logsContainer) return;
+  private renderGlobalLogs(): boolean {
+    const logsContainer = this.element.querySelector('.system-logger__global-logs') as HTMLElement | null;
+    if (!logsContainer) return true;
+    // Skip while not visible (inactive tab / phone display:none / detached); offsetParent
+    // is null in all those cases. The caller keeps the category dirty so it renders later.
+    if (logsContainer.offsetParent === null) return false;
 
-    logsContainer.innerHTML = `<table class="system-log-table"><tbody>${this.globalLogs.map(entry => this.renderLogEntry(entry)).join('')}</tbody></table>`;
+    const visibleLogs = this.globalLogs.slice(-50);
+    logsContainer.innerHTML = `<table class="system-log-table"><tbody>${visibleLogs.map(entry => this.renderLogEntry(entry)).join('')}</tbody></table>`;
+    if (this.globalAutoScroll) this.scrollToBottom('global');
+    return true;
   }
 
   /**
    * Render page logs to UI (filtered by current Router view)
    */
-  private renderPageLogs(): void {
-    const logsContainer = this.element.querySelector('.system-logger__page-logs');
-    if (!logsContainer) return;
+  private renderPageLogs(): boolean {
+    const logsContainer = this.element.querySelector('.system-logger__page-logs') as HTMLElement | null;
+    if (!logsContainer) return true;
+    // Skip while not visible (see renderGlobalLogs); stays dirty until shown.
+    if (logsContainer.offsetParent === null) return false;
 
     // Prevent circular dependency: Don't initialize Router during early app startup
     // Router will trigger re-render via 'router:view-changed' event once initialized
     if (!this.router) {
-      // Queue logs, but don't render yet (Router not initialized)
-      return;
+      // Router not ready yet → keep dirty, render after init
+      return false;
     }
 
     // Get current view from Router
@@ -312,6 +348,8 @@ export class SystemLogger {
     const visibleLogs = filteredLogs.slice(-50);
 
     logsContainer.innerHTML = `<table class="system-log-table"><tbody>${visibleLogs.map(entry => this.renderLogEntry(entry)).join('')}</tbody></table>`;
+    if (this.pageAutoScroll) this.scrollToBottom('page');
+    return true;
   }
 
   /**
@@ -401,6 +439,16 @@ export class SystemLogger {
       this.pageLogs = this.pageLogs.filter(filterFn);
     }
     this.renderLogs(logCategory);
+  }
+
+  /**
+   * Force a render now, e.g. when the System Logs tab becomes visible. Renders only
+   * if the panel is actually on screen; otherwise the dirty flags keep it pending.
+   */
+  public refresh(): void {
+    this.dirty.global = true;
+    this.dirty.page = true;
+    this.flushRender();
   }
 
   /**
