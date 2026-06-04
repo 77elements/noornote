@@ -61,6 +61,8 @@ export interface NostrMajlisSettings {
   calcCity: CalcCity | null;
   /** In-app prayer reminders (AlertBar) while the app is open. */
   reminders: ReminderSettings;
+  /** Show the current-prayer / countdown widget in the sidebar. */
+  sidebarWidget: boolean;
 }
 
 const DEFAULT_SETTINGS: NostrMajlisSettings = {
@@ -73,6 +75,7 @@ const DEFAULT_SETTINGS: NostrMajlisSettings = {
     offsetMin: 10,
     prayers: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
   },
+  sidebarWidget: false,
 };
 
 export function isNostrMajlisEnabled(): boolean {

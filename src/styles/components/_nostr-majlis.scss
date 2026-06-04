@@ -20,3 +20,42 @@
     justify-self: end;
   }
 }
+
+// Sidebar widget: current prayer / time-left / next prayer (2 rows, 3 columns)
+.nm-sidebar-widget-container {
+  margin-bottom: $gap;
+}
+
+.nm-widget {
+  padding: calc($gap / 2) calc($gap * 0.75);
+  background: var(--color-2);
+  border-radius: $radius-xl;
+
+  &__row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: calc($gap / 2);
+
+    > span:first-child { text-align: left; }
+    > span:nth-child(2) { text-align: center; }
+    > span:last-child { text-align: right; }
+  }
+
+  &__head {
+    color: var(--color-3);
+    padding-bottom: calc($gap / 4);
+    margin-bottom: calc($gap / 4);
+    border-bottom: 1px solid var(--surface-tint);
+  }
+
+  &__vals {
+    color: var(--color-5);
+    font-weight: 500;
+  }
+
+  &__empty {
+    color: var(--color-3);
+    text-align: center;
+  }
+}

@@ -13,6 +13,8 @@
 
 import { View } from '../../components/views/View';
 import { Switch } from '../../components/ui/Switch';
+import { AddonLoader } from '../AddonLoader';
+import type { NostrMajlisRuntime } from './runtime';
 import { CustomDropdown, type DropdownOption } from '../../components/ui/CustomDropdown';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
@@ -56,6 +58,9 @@ export class NostrMajlisAddonView extends View {
   private masterSwitch: Switch | null = null;
   private offsetDD: CustomDropdown | null = null;
   private praySwitches: Switch[] = [];
+
+  // Sidebar-widget toggle
+  private widgetSwitch: Switch | null = null;
 
   // Diyanet cascade state
   private dCountries: DiyanetPlace[] = [];
@@ -114,6 +119,7 @@ export class NostrMajlisAddonView extends View {
 
     this.disposeDropdowns();
     this.disposeReminders();
+    this.widgetSwitch?.destroy(); this.widgetSwitch = null;
     this.sourceDD?.destroy(); this.sourceDD = null;
 
     if (!isNostrMajlisEnabled()) { slot.innerHTML = ''; return; }
@@ -122,10 +128,30 @@ export class NostrMajlisAddonView extends View {
       <section class="section" data-el="panel"></section>
       <section class="section" data-el="result"></section>
       <section class="section" data-el="reminders"></section>
+      <section class="section" data-el="widget-settings"></section>
     `;
 
     void this.renderPanel();
     this.renderReminders();
+    this.renderWidgetSettings();
+  }
+
+  // ---------- Sidebar widget setting ----------
+
+  private renderWidgetSettings(): void {
+    const host = this.container.querySelector('[data-el="widget-settings"]') as HTMLElement | null;
+    if (!host) return;
+    this.widgetSwitch?.destroy();
+    this.widgetSwitch = new Switch({
+      label: '',
+      checked: getNostrMajlisSettings().sidebarWidget,
+      onChange: (c) => {
+        setNostrMajlisSettings({ ...getNostrMajlisSettings(), sidebarWidget: c });
+        AddonLoader.getInstance().getRuntime<NostrMajlisRuntime>('nostr-majlis')?.widget?.refresh();
+      },
+    });
+    host.innerHTML = `<h2 class="h4">Sidebar Widget</h2><div class="setting"><span class="setting__label">Display sidebar widget</span><div class="setting__control">${this.widgetSwitch.render()}</div><p class="setting__desc">Shows the current prayer and the time left until the next one in the sidebar.</p></div>`;
+    this.widgetSwitch.setupEventListeners(host);
   }
 
   /** Build the panel section: Source dropdown + location picker + location heading + times. */
@@ -490,6 +516,7 @@ export class NostrMajlisAddonView extends View {
     this.disposed = true;
     this.disposeDropdowns();
     this.disposeReminders();
+    this.widgetSwitch?.destroy(); this.widgetSwitch = null;
     this.sourceDD?.destroy(); this.sourceDD = null;
     this.enableSwitch?.destroy(); this.enableSwitch = null;
     this.container.innerHTML = '';

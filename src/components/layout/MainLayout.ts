@@ -1287,6 +1287,7 @@ export class MainLayout {
               </a>
             </li>
           </ul>
+            <div class="nm-sidebar-widget-container"></div>
             <div class="data-saver-toggle"></div>
             <div class="current-datetime-display">--</div>
           </div>

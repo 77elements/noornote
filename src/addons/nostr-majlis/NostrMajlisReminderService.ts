@@ -16,8 +16,7 @@ import { AlertBarService } from '../../services/AlertBarService';
 import { Router } from '../../services/Router';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { isNostrMajlisEnabled, getNostrMajlisSettings, type ReminderPrayers } from './index';
-import { DiyanetService } from './DiyanetService';
-import { computeTimes, isCalcMethod } from './SalahService';
+import { getActiveTimes } from './activeTimes';
 
 const POLL_MS = 30_000;
 const PRAYERS: [keyof ReminderPrayers, string][] = [
@@ -47,24 +46,12 @@ export class NostrMajlisReminderService {
     this.timer = window.setInterval(() => void this.scan(), POLL_MS);
   }
 
-  private todayTimes(): { fajr: string; dhuhr: string; asr: string; maghrib: string; isha: string } | null {
-    const s = getNostrMajlisSettings();
-    if (s.source === 'diyanet') {
-      if (!s.diyanetLocation) return null;
-      return DiyanetService.getInstance().cachedToday(s.diyanetLocation.ilceId);
-    }
-    if (isCalcMethod(s.source) && s.calcCity) {
-      return computeTimes(s.calcCity, s.source, s.madhab);
-    }
-    return null;
-  }
-
   private scan(): void {
     if (!isNostrMajlisEnabled()) return;
     const s = getNostrMajlisSettings();
     if (!s.reminders?.enabled) return;
 
-    const times = this.todayTimes();
+    const times = getActiveTimes();
     if (!times) return;
 
     const now = new Date();
