@@ -50,9 +50,9 @@ export const DEFAULT_MEDIA_COMPRESSION_SETTINGS: MediaCompressionSettings = {
     quality: 'high',
     maxResolution: 1280,
     minSizeBytes: 100 * 1024, // 100 KB
-    stripExifCritical: false,
-    stripExifMedium: false,
-    stripExifWeak: false,
+    stripExifCritical: true,
+    stripExifMedium: true,
+    stripExifWeak: true,
   },
   video: {
     enabled: true,
