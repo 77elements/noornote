@@ -353,6 +353,7 @@ export class App {
     this.registerRoute('/addons/scheduled-posts',       'addon-scheduled-posts',       'addon-scheduled-posts',       'adv', true);
     this.registerRoute('/addons/badges',               'addon-badges',                'addon-badges',                'adv', true);
     this.registerRoute('/addons/note-taking',           'addon-note-taking',           'addon-note-taking',           'adv', true);
+    this.registerRoute('/addons/nostr-majlis',          'addon-nostr-majlis',          'addon-nostr-majlis',          'adv', true);
     // /addons (no slug) → redirect to first addon
     this.router.register('/addons', () => this.router.navigate('/addons/bookmarks'));
     this.registerMarketplaceRoutes();

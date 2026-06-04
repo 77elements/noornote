@@ -124,6 +124,8 @@ export const StorageKeys = {
   // Note taking deletion tombstones — Record<noteUuid, deletionTimestampSec>.
   // Prevents a GC'd kind:5 from resurrecting a deleted note on next fetch.
   NOTE_TAKING_TOMBSTONES: 'noornote_note_taking_tombstones_map',
+  NOSTR_MAJLIS_ENABLED: 'noornote_nostr_majlis_enabled_map',
+  NOSTR_MAJLIS_SETTINGS: 'noornote_nostr_majlis_settings_map',
   PETNAMES: 'noornote_petnames_map',
   DATA_SAVER_ENABLED: 'noornote_data_saver_enabled_map',
 

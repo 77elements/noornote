@@ -540,6 +540,15 @@ export class ViewMountingService {
           }
         };
 
+      case 'addon-nostr-majlis':
+        return {
+          factory: async () => {
+            const { NostrMajlisAddonView } = await import('../addons/nostr-majlis/NostrMajlisAddonView');
+            const view = new NostrMajlisAddonView();
+            return { element: view.getElement(), view };
+          }
+        };
+
       case 'marketplace':
         return {
           factory: async () => {

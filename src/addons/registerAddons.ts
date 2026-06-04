@@ -24,6 +24,7 @@ import { isScheduledPostsEnabled } from './scheduled-posts/index';
 import { isNospressEnabled } from './nospress/index';
 import { isBadgesEnabled } from './badges/index';
 import { isNoteTakingEnabled } from './note-taking/index';
+import { isNostrMajlisEnabled } from './nostr-majlis/index';
 
 export function registerCoreAddons(): void {
   const loader = AddonLoader.getInstance();
@@ -99,6 +100,12 @@ export function registerCoreAddons(): void {
     id: 'note-taking',
     isEnabled: isNoteTakingEnabled,
     load: () => import('./note-taking/runtime').then(m => m.default),
+  });
+
+  loader.register({
+    id: 'nostr-majlis',
+    isEnabled: isNostrMajlisEnabled,
+    load: () => import('./nostr-majlis/runtime').then(m => m.default),
   });
 
   // Out of scope (list-adjacent, deferred — separate decision):
