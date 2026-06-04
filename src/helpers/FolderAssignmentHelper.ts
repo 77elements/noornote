@@ -26,7 +26,8 @@ export async function applyFolderAssignments(
   categoryAssignments: Map<string, string>,
   folderService: FolderService,
   moveToFolder: (itemId: string, folderId: string) => void,
-  logCategory: string
+  logCategory: string,
+  isTombstoned?: (categoryName: string) => boolean
 ): Promise<void> {
   if (!categoryAssignments || categoryAssignments.size === 0) {
     return;
@@ -43,8 +44,14 @@ export async function applyFolderAssignments(
     }
   }
 
-  // Create folders for new categories
+  // Create folders for new categories — but never recreate a tombstoned folder
+  // (the user deleted it). Recreating it would also clear the tombstone via
+  // createFolder and resurrect the folder. Its items are routed to root below.
   for (const categoryName of categoriesWithItems) {
+    if (isTombstoned?.(categoryName)) {
+      systemLogger.info(logCategory, `Skipped tombstoned folder from relay: "${categoryName}"`);
+      continue;
+    }
     const existingFolder = existingFolders.find(f => f.name === categoryName);
     if (!existingFolder) {
       folderService.createFolder(categoryName);
@@ -55,8 +62,8 @@ export async function applyFolderAssignments(
   // Assign items to their categories
   const updatedFolders = folderService.getFolders();
   for (const [itemId, categoryName] of categoryAssignments) {
-    if (categoryName === '') {
-      // Root - move to root (folderId = '')
+    if (categoryName === '' || isTombstoned?.(categoryName)) {
+      // Root, or a tombstoned folder we did not recreate — move item to root.
       moveToFolder(itemId, '');
     } else {
       // Find folder by name and move item there

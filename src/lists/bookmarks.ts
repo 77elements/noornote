@@ -1478,6 +1478,9 @@ export function addBookmarkFolderTombstone(folderName: string): void {
   map[folderName] = Math.floor(Date.now() / 1000);
   setBookmarkTombstones(map);
   diagLog('lists', 'addBookmarkFolderTombstone', { folderName, total: Object.keys(map).length });
+  // Mirror into the shared, durable deletion record so the delete propagates
+  // to the user's other devices (best-effort, never blocks the local mutation).
+  publishBookmarkDeletionChange(folderName, true);
 }
 
 export function removeBookmarkFolderTombstone(folderName: string): void {
@@ -1487,6 +1490,132 @@ export function removeBookmarkFolderTombstone(folderName: string): void {
   delete map[folderName];
   setBookmarkTombstones(map);
   diagLog('lists', 'removeBookmarkFolderTombstone', { folderName, remaining: Object.keys(map).length });
+  // Mirror the revival (explicit re-creation) so it overrides the deletion on
+  // every device. Only fires when an actual tombstone was cleared (guard above).
+  publishBookmarkDeletionChange(folderName, false);
+}
+
+// ============================================================
+// Shared cross-device deletion record (NIP-78 kind:30078)
+// ------------------------------------------------------------
+// The local BOOKMARK_TOMBSTONES map is per-device and lost on reinstall. To make
+// "deleted stays deleted" work across all of the user's devices WITHOUT relying on
+// NIP-09 kind:5 (which relays garbage-collect — the root cause of resurrection), we
+// keep a single durable replaceable event that records, per folder name, the latest
+// intent: deleted (d:true) or revived (d:false) plus a timestamp. It is ordinary
+// app-data, not a deletion marker, so relays keep it like any replaceable event.
+//
+// Format is plaintext JSON (consistent with the existing folder-order event, which
+// already exposes active folder names): { v:1, entries: { "<name>": { t:<sec>, d:<bool> } } }.
+// Resolution is last-write-wins per name (max t). The local map mirrors this on every
+// fetch (syncBookmarkDeletionsIntoLocal); all existing tombstone filters then work
+// cross-device unchanged. See docs/features/lists.md "Resurrection-Comeback ... (2026-06-04)".
+// ============================================================
+
+const BOOKMARK_DELETIONS_DTAG = 'noornote:bookmark-deletions';
+const DELETION_MAX_AGE_SEC = 365 * 24 * 60 * 60; // prune entries older than 1 year
+
+interface SharedDeletionEntry { t: number; d: boolean; }
+
+async function fetchBookmarkDeletionEntries(pubkey: string): Promise<Record<string, SharedDeletionEntry>> {
+  const events = await fetchEvents([{
+    authors: [pubkey],
+    kinds: [30078],
+    '#d': [BOOKMARK_DELETIONS_DTAG]
+  }], 5000, true);
+  if (events.length === 0) return {};
+  const newest = events.sort((a, b) => b.created_at - a.created_at)[0];
+  if (!newest?.content) return {};
+  try {
+    const parsed = JSON.parse(newest.content) as { entries?: Record<string, unknown> };
+    if (!parsed.entries || typeof parsed.entries !== 'object') return {};
+    const out: Record<string, SharedDeletionEntry> = {};
+    for (const [name, raw] of Object.entries(parsed.entries)) {
+      const entry = raw as { t?: unknown; d?: unknown };
+      if (typeof entry?.t === 'number') out[name] = { t: entry.t, d: entry.d === true };
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Publish the shared deletion record. Union-on-publish: merges the relay's current
+ * entries with every locally-tombstoned name (as a deletion) so a stale device never
+ * drops another device's deletion. The explicit `change` (delete/revive) wins with a
+ * fresh timestamp. Does NOT mutate the local map — callers already did that.
+ */
+async function publishBookmarkDeletions(pubkey: string, change?: { name: string; deleted: boolean }): Promise<void> {
+  const nowSec = now();
+  const relayEntries = await fetchBookmarkDeletionEntries(pubkey);
+  const merged: Record<string, SharedDeletionEntry> = { ...relayEntries };
+
+  const localTombstones = getBookmarkTombstones();
+  for (const [name, ts] of Object.entries(localTombstones)) {
+    // Don't override a newer revival the relay already knows about.
+    if (!merged[name] || merged[name].t <= ts) merged[name] = { t: ts, d: true };
+  }
+
+  if (change?.name) merged[change.name] = { t: nowSec, d: change.deleted };
+
+  for (const [name, entry] of Object.entries(merged)) {
+    if (nowSec - entry.t > DELETION_MAX_AGE_SEC) delete merged[name];
+  }
+
+  const signed = await signEvent({
+    kind: 30078,
+    created_at: nowSec,
+    tags: [['d', BOOKMARK_DELETIONS_DTAG], ['alt', 'NoorNote deleted bookmark folders']],
+    content: JSON.stringify({ v: 1, entries: merged }),
+    pubkey
+  });
+  if (signed) {
+    await publishEvent(signed);
+    diagLog('lists', 'bookmark-deletions: published', { change, entryCount: Object.keys(merged).length });
+  }
+}
+
+/** Fire-and-forget wrapper used from the local tombstone add/remove hooks. */
+function publishBookmarkDeletionChange(folderName: string, deleted: boolean): void {
+  const pubkey = getCurrentUserPubkey();
+  if (!pubkey) return;
+  void publishBookmarkDeletions(pubkey, { name: folderName, deleted }).catch(err => {
+    diagLog('lists', 'bookmark-deletions: publish change FAILED', { folderName, deleted, error: String(err) });
+  });
+}
+
+/**
+ * Pull the shared deletion record into the local tombstone map. Deletions from any
+ * device add a local tombstone; revivals newer than our local deletion clear it.
+ * Runs inside fetchBookmarksFromRelays before the tombstone filter, so every relay-read
+ * path honours cross-device deletions. Prunes entries older than DELETION_MAX_AGE_SEC.
+ */
+async function syncBookmarkDeletionsIntoLocal(pubkey: string): Promise<void> {
+  const relayEntries = await fetchBookmarkDeletionEntries(pubkey);
+  const local = getBookmarkTombstones();
+  const nowSec = now();
+  let changed = false;
+
+  for (const [name, entry] of Object.entries(relayEntries)) {
+    if (entry.d) {
+      if (local[name] === undefined || local[name] < entry.t) { local[name] = entry.t; changed = true; }
+    } else {
+      if (local[name] !== undefined && entry.t >= local[name]) { delete local[name]; changed = true; }
+    }
+  }
+
+  for (const [name, ts] of Object.entries(local)) {
+    if (nowSec - ts > DELETION_MAX_AGE_SEC) { delete local[name]; changed = true; }
+  }
+
+  if (changed) {
+    setBookmarkTombstones(local);
+    diagLog('lists', 'bookmark-deletions: synced into local', {
+      relayEntryCount: Object.keys(relayEntries).length,
+      localTombstoneCount: Object.keys(local).length
+    });
+  }
 }
 
 /**
@@ -1714,6 +1843,15 @@ export async function fetchBookmarksFromRelays(pubkey: string): Promise<FetchFro
     diagLog('lists', 'fetchBookmarksFromRelays: deletion events', { count: deletionEvents.length, deletedCoordinates: Array.from(deletedCoordinates.entries()) });
     if (deletedCoordinates.size > 0) {
       logger.info('bookmarks.ts', `Found ${deletedCoordinates.size} deletion requests for bookmark sets`);
+    }
+
+    // Pull the shared cross-device deletion record into local tombstones BEFORE the
+    // tombstone filter below, so folders deleted on another device are suppressed here
+    // too (and a fresh/reinstalled device honours past deletions). Best-effort.
+    try {
+      await syncBookmarkDeletionsIntoLocal(pubkey);
+    } catch (delErr) {
+      diagLog('lists', 'fetchBookmarksFromRelays: deletion-record sync FAILED', { error: String(delErr) });
     }
 
     if (events.length === 0 && deletedCoordinates.size === 0) {
@@ -3045,9 +3183,11 @@ export class BookmarkManager {
   ): void {
     const existingFolders = this.folderService.getFolders();
 
-    // Create missing folders from relay
+    // Create missing folders from relay — but never recreate a tombstoned folder
+    // (the user deleted it). createFolder would also clear the tombstone, so skipping
+    // here keeps the deletion intact. Items of such folders are routed to root below.
     for (const categoryName of categories) {
-      if (categoryName !== '' && !existingFolders.find(f => f.name === categoryName)) {
+      if (categoryName !== '' && !isBookmarkFolderTombstoned(categoryName) && !existingFolders.find(f => f.name === categoryName)) {
         this.folderService.createFolder(categoryName);
       }
     }
@@ -3082,6 +3222,9 @@ export class BookmarkManager {
         includeRootBookmarks
           ? this.folderService.moveBookmarkToFolder(bookmarkId, '')
           : this.folderService.ensureBookmarkAssignment(bookmarkId);
+      } else if (isBookmarkFolderTombstoned(categoryName)) {
+        // Tombstoned folder was not recreated — keep its items in root instead of losing them.
+        this.folderService.moveBookmarkToFolder(bookmarkId, '');
       } else {
         const folder = updatedFolders.find(f => f.name === categoryName);
         if (folder) this.folderService.moveBookmarkToFolder(bookmarkId, folder.id);
@@ -3164,7 +3307,8 @@ export class BookmarkManager {
                   relayResult.categoryAssignments,
                   this.folderService,
                   (bookmarkId, folderId) => this.folderService.moveBookmarkToFolder(bookmarkId, folderId),
-                  'BookmarkManager'
+                  'BookmarkManager',
+                  isBookmarkFolderTombstoned
                 );
               }
             }
