@@ -34,6 +34,22 @@ export interface CalcCity {
   label: string;
 }
 
+/** Which of the five obligatory prayers fire an in-app reminder. */
+export interface ReminderPrayers {
+  fajr: boolean;
+  dhuhr: boolean;
+  asr: boolean;
+  maghrib: boolean;
+  isha: boolean;
+}
+
+export interface ReminderSettings {
+  enabled: boolean;
+  /** Minutes before each prayer the reminder fires. */
+  offsetMin: number;
+  prayers: ReminderPrayers;
+}
+
 export interface NostrMajlisSettings {
   /** 'diyanet' (official API) or an adhan calculation-method key. */
   source: string;
@@ -43,6 +59,8 @@ export interface NostrMajlisSettings {
   diyanetLocation: DiyanetLocation | null;
   /** Location for the calculation sources. */
   calcCity: CalcCity | null;
+  /** In-app prayer reminders (AlertBar) while the app is open. */
+  reminders: ReminderSettings;
 }
 
 const DEFAULT_SETTINGS: NostrMajlisSettings = {
@@ -50,6 +68,11 @@ const DEFAULT_SETTINGS: NostrMajlisSettings = {
   madhab: 'shafi',
   diyanetLocation: null,
   calcCity: null,
+  reminders: {
+    enabled: true,
+    offsetMin: 10,
+    prayers: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
+  },
 };
 
 export function isNostrMajlisEnabled(): boolean {

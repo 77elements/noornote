@@ -19,6 +19,7 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 import {
   isNostrMajlisEnabled, setNostrMajlisEnabled,
   getNostrMajlisSettings, setNostrMajlisSettings,
+  type ReminderPrayers,
 } from './index';
 import { DiyanetService, type DiyanetPlace, type DiyanetDayTimes } from './DiyanetService';
 import {
@@ -40,12 +41,20 @@ const MADHAB_OPTIONS: DropdownOption[] = [
   { value: 'shafi', label: 'Standard (Shafi / Maliki / Hanbali)' },
   { value: 'hanafi', label: 'Hanafi' },
 ];
+const REMINDER_PRAYERS: [keyof ReminderPrayers, string][] = [
+  ['fajr', 'Fajr'], ['dhuhr', 'Dhuhr'], ['asr', 'Asr'], ['maghrib', 'Maghrib'], ['isha', 'Isha'],
+];
 
 export class NostrMajlisAddonView extends View {
   private container: HTMLElement;
   private enableSwitch: Switch | null = null;
   private sourceDD: CustomDropdown | null = null;
   private dropdowns: CustomDropdown[] = []; // panel dropdowns, disposed on panel switch
+
+  // Reminder controls
+  private masterSwitch: Switch | null = null;
+  private offsetDD: CustomDropdown | null = null;
+  private praySwitches: Switch[] = [];
 
   // Diyanet cascade state
   private dCountries: DiyanetPlace[] = [];
@@ -103,6 +112,7 @@ export class NostrMajlisAddonView extends View {
     if (!slot) return;
 
     this.disposeDropdowns();
+    this.disposeReminders();
     this.sourceDD?.destroy(); this.sourceDD = null;
 
     if (!isNostrMajlisEnabled()) { slot.innerHTML = ''; return; }
@@ -112,6 +122,7 @@ export class NostrMajlisAddonView extends View {
         <div class="setting"><span class="setting__label">Source</span><div class="setting__control" data-control="source"></div></div>
       </section>
       <div data-el="panel"></div>
+      <section class="section" data-el="reminders"></section>
     `;
 
     this.sourceDD = new CustomDropdown({
@@ -128,6 +139,66 @@ export class NostrMajlisAddonView extends View {
     slot.querySelector('[data-control="source"]')?.appendChild(this.sourceDD.getElement());
 
     void this.renderPanel();
+    this.renderReminders();
+  }
+
+  // ---------- Reminders ----------
+
+  private renderReminders(): void {
+    const host = this.container.querySelector('[data-el="reminders"]') as HTMLElement | null;
+    if (!host) return;
+    this.disposeReminders();
+
+    const r = getNostrMajlisSettings().reminders;
+    this.masterSwitch = new Switch({
+      label: '',
+      checked: r.enabled,
+      onChange: (c) => {
+        const s = getNostrMajlisSettings();
+        setNostrMajlisSettings({ ...s, reminders: { ...s.reminders, enabled: c } });
+        this.renderReminders();
+      },
+    });
+
+    let html = `<div class="setting"><span class="setting__label">Prayer reminders</span><div class="setting__control">${this.masterSwitch.render()}</div><p class="setting__desc">Shows a banner before each prayer while NoorNote is open.</p></div>`;
+    if (r.enabled) {
+      html += `<div class="setting"><span class="setting__label">Minutes before</span><div class="setting__control" data-control="offset"></div></div>`;
+      for (const [key, name] of REMINDER_PRAYERS) {
+        const sw = new Switch({
+          label: '',
+          checked: r.prayers[key],
+          onChange: (c) => {
+            const s = getNostrMajlisSettings();
+            setNostrMajlisSettings({ ...s, reminders: { ...s.reminders, prayers: { ...s.reminders.prayers, [key]: c } } });
+          },
+        });
+        this.praySwitches.push(sw);
+        html += `<div class="setting"><span class="setting__label">${name}</span><div class="setting__control">${sw.render()}</div></div>`;
+      }
+    }
+    host.innerHTML = html;
+    this.masterSwitch.setupEventListeners(host);
+
+    if (r.enabled) {
+      this.offsetDD = new CustomDropdown({
+        options: [5, 10, 15, 20, 30, 45, 60].map(n => ({ value: String(n), label: `${n} min` })),
+        selectedValue: String(r.offsetMin),
+        width: '100%',
+        onChange: (v) => {
+          const s = getNostrMajlisSettings();
+          setNostrMajlisSettings({ ...s, reminders: { ...s.reminders, offsetMin: parseInt(v, 10) } });
+        },
+      });
+      host.querySelector('[data-control="offset"]')?.appendChild(this.offsetDD.getElement());
+      for (const sw of this.praySwitches) sw.setupEventListeners(host);
+    }
+  }
+
+  private disposeReminders(): void {
+    this.offsetDD?.destroy(); this.offsetDD = null;
+    this.masterSwitch?.destroy(); this.masterSwitch = null;
+    for (const sw of this.praySwitches) sw.destroy();
+    this.praySwitches = [];
   }
 
   private async renderPanel(): Promise<void> {
@@ -420,6 +491,7 @@ export class NostrMajlisAddonView extends View {
   public destroy(): void {
     this.disposed = true;
     this.disposeDropdowns();
+    this.disposeReminders();
     this.sourceDD?.destroy(); this.sourceDD = null;
     this.enableSwitch?.destroy(); this.enableSwitch = null;
     this.container.innerHTML = '';
