@@ -15,6 +15,7 @@ import { FollowPackRenderer } from './FollowPackRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
 import { BadgeAwardRenderer } from './BadgeAwardRenderer';
+import { EmojiPackRenderer } from './EmojiPackRenderer';
 
 export class NoteRendererFactory {
   /**
@@ -39,6 +40,8 @@ export class NoteRendererFactory {
         return HighlightRenderer.render(note, options);
       case 'badge-award':
         return BadgeAwardRenderer.render(note, options);
+      case 'emoji-pack':
+        return EmojiPackRenderer.render(note, options);
       default:
         return OriginalNoteRenderer.render(note, options);
     }

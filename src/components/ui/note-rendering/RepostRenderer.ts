@@ -10,6 +10,7 @@ import { NoteProcessor } from '../note-processing/NoteProcessor';
 import { OriginalNoteRenderer } from './OriginalNoteRenderer';
 import { GitEventRenderer } from './GitEventRenderer';
 import { HighlightRenderer } from './HighlightRenderer';
+import { EmojiPackRenderer } from './EmojiPackRenderer';
 import { DittoFeatureRenderer, DITTO_GEOCACHE_KIND } from './DittoFeatureRenderer';
 import { GIT_EVENT_KINDS } from '../../../types/nostr';
 import { ArticlePreviewRenderer } from './ArticlePreviewRenderer';
@@ -358,6 +359,14 @@ export class RepostRenderer {
       dittoContainer.className = 'repost-article-container';
       dittoContainer.appendChild(DittoFeatureRenderer.render(note.repostedEvent));
       repostDiv.appendChild(dittoContainer);
+    } else if (note.repostedEvent.kind === 30030) {
+      // Reposted event is a NIP-30 emoji pack (kind:30030)
+      const emojiContainer = document.createElement('div');
+      emojiContainer.className = 'repost-article-container';
+      const processedPack = NoteProcessor.process(note.repostedEvent);
+      const packElement = EmojiPackRenderer.render(processedPack, { collapsible: false, depth: (opts.depth ?? 0) + 1 });
+      emojiContainer.appendChild(packElement);
+      repostDiv.appendChild(emojiContainer);
     } else if (note.repostedEvent.kind === 9802) {
       // Reposted event is a NIP-84 highlight (kind:9802)
       const highlightContainer = document.createElement('div');

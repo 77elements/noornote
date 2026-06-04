@@ -15,6 +15,7 @@ import { VideoNoteProcessor } from './VideoNoteProcessor';
 import { PictureNoteProcessor } from './PictureNoteProcessor';
 import { FileMetadataProcessor } from './FileMetadataProcessor';
 import { FollowPackProcessor } from './FollowPackProcessor';
+import { EmojiPackProcessor } from './EmojiPackProcessor';
 import { GitEventProcessor } from './GitEventProcessor';
 import { HighlightProcessor } from './HighlightProcessor';
 import { BadgeAwardProcessor } from './BadgeAwardProcessor';
@@ -53,6 +54,8 @@ export class NoteProcessor {
           return ArticleProcessor.process(event);
         case 39089:
           return FollowPackProcessor.process(event);
+        case 30030:
+          return EmojiPackProcessor.process(event);
         case 1617:
         case 1618:
         case 1619:

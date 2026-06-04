@@ -398,6 +398,7 @@ export class NotificationItem {
       if (kind === 30023) return 'article';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
+      if (kind === 30030) return 'emoji pack';
       if (kind === 30617) return 'git repository';
       if (!isNaN(kind)) return 'event';
     }
@@ -411,6 +412,7 @@ export class NotificationItem {
       if (kind === 30023) return 'article';
       if (kind === 32267) return 'app on Zapstore';
       if (kind === 39089) return 'follow pack';
+      if (kind === 30030) return 'emoji pack';
       if (kind === 1617) return 'git patch';
       if (kind === 1618 || kind === 1619) return 'pull request';
       if (kind === 1621) return 'git issue';
@@ -526,6 +528,7 @@ export class NotificationItem {
       if (aKind === 30023) return 'Article';
       if (aKind === 32267) return 'App';
       if (aKind === 39089) return 'Follow Pack';
+      if (aKind === 30030) return 'Emoji Pack';
       if (!isNaN(aKind)) return `Event (kind ${aKind})`;
       if (dTag) return `Event ${dTag}`;
     }
@@ -535,6 +538,7 @@ export class NotificationItem {
       if (kKind === 30023) return 'Article';
       if (kKind === 32267) return 'App';
       if (kKind === 39089) return 'Follow Pack';
+      if (kKind === 30030) return 'Emoji Pack';
       if (!isNaN(kKind)) return `Event (kind ${kKind})`;
     }
     const eTags = this.options.event.tags.filter((t: string[]) => t[0] === 'e');
@@ -660,6 +664,13 @@ export class NotificationItem {
     if (this.options.type === 'repost') {
       try {
         const originalEvent = await getRepostsOriginalEvent(this.options.event);
+        // Empty-content addressable events (e.g. emoji packs) need a kind-aware label.
+        if (originalEvent.kind === 30030) {
+          const { parseEmojiPackEvent } = await import('../../helpers/parseEmojiPack');
+          const previewElement = this.element.querySelector('.notification-item__preview');
+          if (previewElement) previewElement.textContent = `Emoji Pack: ${parseEmojiPackEvent(originalEvent).title}`;
+          return;
+        }
         if (originalEvent.content) {
           const maxLength = 100;
           const content = originalEvent.content;
@@ -730,6 +741,9 @@ export class NotificationItem {
             const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
             const pack = parseFollowPackEvent(refEvent);
             setPreview(`Follow Pack: ${pack.title}`);
+          } else if (aKind === 30030) {
+            const { parseEmojiPackEvent } = await import('../../helpers/parseEmojiPack');
+            setPreview(`Emoji Pack: ${parseEmojiPackEvent(refEvent).title}`);
           } else if (aKind === 30023) {
             const articlesApi = ModuleLoader.getInstance().getApi<ArticlesModuleApi>('articles');
             const metadata = articlesApi?.extractArticleMetadata(refEvent);
@@ -765,6 +779,11 @@ export class NotificationItem {
           const { parseFollowPackEvent } = await import('../../helpers/parseFollowPack');
           const pack = parseFollowPackEvent(originalEvent);
           setPreview(`Follow Pack: ${pack.title}`);
+          return;
+        }
+        if (originalEvent.kind === 30030) {
+          const { parseEmojiPackEvent } = await import('../../helpers/parseEmojiPack');
+          setPreview(`Emoji Pack: ${parseEmojiPackEvent(originalEvent).title}`);
           return;
         }
         if (originalEvent.kind === 30023) {

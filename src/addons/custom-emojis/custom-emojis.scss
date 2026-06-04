@@ -154,3 +154,23 @@
     max-width: 100%;
   }
 }
+
+// Emoji-pack card (kind 30030 rendered in feed / SNV / reposts / quotes)
+.nn-card--emoji-pack {
+  .emoji-pack__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, 36px);
+    gap: calc($gap / 2);
+    margin: calc($gap / 2) 0;
+  }
+
+  .emoji-pack__emoji {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+  }
+
+  .emoji-pack__actions:not(:empty) {
+    margin-top: calc($gap / 2);
+  }
+}

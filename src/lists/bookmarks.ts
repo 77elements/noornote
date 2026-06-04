@@ -2657,6 +2657,12 @@ export class BookmarkCard {
       const name = event.tags.find(t => t[0] === 'name')?.[1] || 'App';
       return `App: ${name}`;
     }
+    if (event.kind === 30030) {
+      const title = event.tags.find(t => t[0] === 'title')?.[1]
+                 || event.tags.find(t => t[0] === 'name')?.[1]
+                 || 'Untitled';
+      return `Emoji Pack: ${title}`;
+    }
     if (event.kind === 20) {
       const s = this.getTextSnippet(event.content, 100);
       return s === '(No text content)' ? 'Picture' : s;

@@ -160,6 +160,15 @@ export class QuotedNoteRenderer {
             void this.renderListingPreviewFromEvent(result.event, container);
             return;
           }
+          // NIP-30 emoji packs (kind 30030) → emoji-pack card
+          if (result.event.kind === 30030) {
+            const { EmojiPackRenderer } = await import('../../../components/ui/note-rendering/EmojiPackRenderer');
+            const { EmojiPackProcessor } = await import('../../../components/ui/note-processing/EmojiPackProcessor');
+            const processedNote = EmojiPackProcessor.process(result.event);
+            const packElement = EmojiPackRenderer.render(processedNote, { collapsible: false, depth: 1 });
+            skeleton.replaceWith(packElement);
+            return;
+          }
           // Everything else → article preview
           const { encodeNaddr } = await import('../../../services/NostrToolsAdapter');
           const dTag = getTag(result.event.tags, 'd');
