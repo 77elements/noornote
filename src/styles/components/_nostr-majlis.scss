@@ -1,0 +1,22 @@
+/**
+ * Nostr-Majlis addon - prayer-times list layout.
+ * The times use .ui-list / .ui-list__item; this restores the label-left / value-right
+ * grid spread (like .setting) scoped to the times list.
+ */
+
+@use '../abstracts/variables' as *;
+
+.ui-list.times {
+  margin-bottom: $gap;
+}
+
+.times .ui-list__item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: $gap;
+
+  > span:last-child {
+    justify-self: end;
+  }
+}
