@@ -4,21 +4,52 @@
  * "Nostr-Majlis" is the Islamic features suite. Module M1 = Salah (prayer times).
  * M2 (holidays) and M3 (community dhikr) follow. See docs/todos/muslims-addon.md.
  *
- * This file must stay lightweight: only PerAccountLocalStorage, no adhan / no UI.
+ * Two prayer-time source kinds:
+ *  - 'diyanet' = official Diyanet times, fetched at runtime (exact, worldwide, online).
+ *  - a calculation method key (MuslimWorldLeague, Turkey, …) = computed locally via adhan
+ *    from a GeoNames city's coordinates (offline, worldwide, approximate).
+ *
+ * The addon is opt-in; enabling it + picking a city is the consented data flow (§5).
+ * This file stays lightweight: only PerAccountLocalStorage, no network / adhan / UI / dataset.
  */
 
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 
+/** A location in Diyanet's own hierarchy (Country -> Region -> District). */
+export interface DiyanetLocation {
+  ulkeId: string;
+  sehirId: string;
+  ilceId: string;
+  label: string;
+}
+
+/** A GeoNames city used by the calculation sources (coords + timezone, on-device). */
+export interface CalcCity {
+  name: string;
+  cc: string;
+  a1: string;
+  lat: number;
+  lng: number;
+  tz: string;
+  label: string;
+}
+
 export interface NostrMajlisSettings {
-  /** adhan CalculationMethod key, see SalahService.METHOD_FACTORIES. */
-  method: string;
-  /** Asr shadow ratio: Standard (Shafi/Maliki/Hanbali) vs Hanafi. */
+  /** 'diyanet' (official API) or an adhan calculation-method key. */
+  source: string;
+  /** Asr shadow ratio for calculation sources. */
   madhab: 'shafi' | 'hanafi';
+  /** Location for the Diyanet source. */
+  diyanetLocation: DiyanetLocation | null;
+  /** Location for the calculation sources. */
+  calcCity: CalcCity | null;
 }
 
 const DEFAULT_SETTINGS: NostrMajlisSettings = {
-  method: 'MuslimWorldLeague',
+  source: 'diyanet',
   madhab: 'shafi',
+  diyanetLocation: null,
+  calcCity: null,
 };
 
 export function isNostrMajlisEnabled(): boolean {

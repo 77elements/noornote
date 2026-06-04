@@ -109,6 +109,34 @@
     }
   }
 
+  // Searchable variant: sticky search box + scrollable list (for long lists)
+  &--searchable &__menu {
+    max-height: 320px;
+    overflow-y: auto;
+    @include custom-scrollbar;
+  }
+
+  &__search {
+    position: sticky;
+    top: 0;
+    padding: calc($gap / 4) calc($gap * 0.75) calc($gap / 2);
+    background: var(--color-2);
+  }
+
+  &__search-input {
+    width: 100%;
+    background: var(--color-1);
+    color: var(--color-5);
+    border: none;
+    border-radius: $radius-pill;
+    padding: calc($gap / 2) calc($gap * 0.75);
+    outline: none;
+
+    &:focus {
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-4) 20%, transparent);
+    }
+  }
+
   // Multi-select variant: menu contains nn-checkbox items
   &--multi &__menu {
     display: none;

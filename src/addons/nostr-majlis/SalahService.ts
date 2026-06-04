@@ -1,37 +1,36 @@
 /**
- * SalahService - local prayer-time calculation (paradigm A, sovereignty-clean).
+ * SalahService - local prayer-time calculation via adhan (the calculation sources).
  *
- * Pure on-device calculation via the `adhan` library (batoulapps/adhan-js). No network,
- * no location leak. The `adhan` import lives here (and is pulled into the addon's lazy
- * chunk), never into the main bundle.
- *
- * S1 scope: compute today's times for a HARDCODED test location. The cascading
- * Country -> Region -> City picker (GeoNames) and real coords/timezone land in S2.
- * Background reminder scheduling (AlertBar + native notifications) lands in S3/S4.
- *
- * See docs/todos/muslims-addon.md.
+ * Stateless: computes times from a GeoNames city's coordinates for a chosen calculation
+ * method + Asr madhab, formatted in the city's timezone. The Diyanet source does NOT use
+ * this (it uses official fetched data). adhan is imported here (addon's lazy chunk only).
+ * Pure calc cannot reproduce authority-published times at high latitudes — see docs.
  */
 
-import { CalculationMethod, type CalculationParameters, Coordinates, Madhab, PrayerTimes } from 'adhan';
-import { getNostrMajlisSettings } from './index';
-import { diagLog } from '../../services/DiagnosticLogger';
+import { CalculationMethod, type CalculationParameters, Coordinates, HighLatitudeRule, Madhab, PrayerTimes } from 'adhan';
+import type { CalcCity } from './index';
 
-/** S1 placeholder location until the GeoNames city picker (S2) provides real coords. */
-const TEST_LOCATION = {
-  label: 'Mecca — test location (city picker arrives in S2)',
-  latitude: 21.4225,
-  longitude: 39.8262,
-};
-
-export interface PrayerTime {
-  name: string;
-  time: Date;
+export interface ComputedTimes {
+  fajr: string; sunrise: string; dhuhr: string; asr: string; maghrib: string; isha: string;
 }
 
-/** adhan calculation methods exposed in the UI (Fajr/Isha twilight angles differ). */
-export const METHOD_FACTORIES: Record<string, () => CalculationParameters> = {
+/** Calculation-method source keys (Fajr/Isha twilight angles differ). */
+export const CALC_METHODS: { value: string; label: string }[] = [
+  { value: 'MuslimWorldLeague', label: 'Muslim World League' },
+  { value: 'NorthAmerica', label: 'ISNA (North America)' },
+  { value: 'Egyptian', label: 'Egyptian General Authority' },
+  { value: 'UmmAlQura', label: 'Umm al-Qura (Makkah)' },
+  { value: 'Karachi', label: 'Karachi' },
+  { value: 'Tehran', label: 'Tehran (Jafari)' },
+  { value: 'Dubai', label: 'Dubai' },
+  { value: 'Kuwait', label: 'Kuwait' },
+  { value: 'Qatar', label: 'Qatar' },
+  { value: 'Singapore', label: 'Singapore (MUIS)' },
+  { value: 'MoonsightingCommittee', label: 'Moonsighting Committee' },
+];
+
+const FACTORIES: Record<string, () => CalculationParameters> = {
   MuslimWorldLeague: () => CalculationMethod.MuslimWorldLeague(),
-  Turkey: () => CalculationMethod.Turkey(),
   NorthAmerica: () => CalculationMethod.NorthAmerica(),
   Egyptian: () => CalculationMethod.Egyptian(),
   UmmAlQura: () => CalculationMethod.UmmAlQura(),
@@ -44,41 +43,26 @@ export const METHOD_FACTORIES: Record<string, () => CalculationParameters> = {
   MoonsightingCommittee: () => CalculationMethod.MoonsightingCommittee(),
 };
 
-export class SalahService {
-  private static instance: SalahService | null = null;
+export function isCalcMethod(source: string): boolean {
+  return source in FACTORIES;
+}
 
-  static getInstance(): SalahService {
-    if (!SalahService.instance) SalahService.instance = new SalahService();
-    return SalahService.instance;
-  }
+export function computeTimes(city: CalcCity, method: string, madhab: 'shafi' | 'hanafi', date: Date = new Date()): ComputedTimes {
+  const factory = FACTORIES[method] ?? (() => CalculationMethod.MuslimWorldLeague());
+  const params = factory();
+  params.madhab = madhab === 'hanafi' ? Madhab.Hanafi : Madhab.Shafi;
+  const coords = new Coordinates(city.lat, city.lng);
+  // High-latitude twilight handling (else Fajr/Isha collapse to mid-night near solstice).
+  params.highLatitudeRule = HighLatitudeRule.recommended(coords);
 
-  get location(): typeof TEST_LOCATION {
-    return TEST_LOCATION;
-  }
-
-  /** Compute the day's prayer times for the configured method/madhab and test location. */
-  computeTimes(date: Date = new Date()): PrayerTime[] {
-    const settings = getNostrMajlisSettings();
-    const factory = METHOD_FACTORIES[settings.method] ?? (() => CalculationMethod.MuslimWorldLeague());
-    const params = factory();
-    params.madhab = settings.madhab === 'hanafi' ? Madhab.Hanafi : Madhab.Shafi;
-
-    const coords = new Coordinates(TEST_LOCATION.latitude, TEST_LOCATION.longitude);
-    const pt = new PrayerTimes(coords, date, params);
-
-    return [
-      { name: 'Fajr', time: pt.fajr },
-      { name: 'Sunrise', time: pt.sunrise },
-      { name: 'Dhuhr', time: pt.dhuhr },
-      { name: 'Asr', time: pt.asr },
-      { name: 'Maghrib', time: pt.maghrib },
-      { name: 'Isha', time: pt.isha },
-    ];
-  }
-
-  /** AddonLoader destroy contract: null the singleton so account-switch gets a fresh one. */
-  destroy(): void {
-    SalahService.instance = null;
-    diagLog('addons', 'nostr-majlis: SalahService destroyed');
-  }
+  const pt = new PrayerTimes(coords, date, params);
+  const fmt = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit', timeZone: city.tz });
+  return {
+    fajr: fmt.format(pt.fajr),
+    sunrise: fmt.format(pt.sunrise),
+    dhuhr: fmt.format(pt.dhuhr),
+    asr: fmt.format(pt.asr),
+    maghrib: fmt.format(pt.maghrib),
+    isha: fmt.format(pt.isha),
+  };
 }

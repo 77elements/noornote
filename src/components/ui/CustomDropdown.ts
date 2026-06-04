@@ -14,6 +14,7 @@
  *   onChange: (value) => console.log('Selected:', value),
  *   className: 'my-custom-class',
  *   width: '200px',
+ *   searchable: true,
  *   dataAttributes: { 'note-id': 'abc123', 'user-id': 'xyz789' }
  * });
  *
@@ -38,6 +39,10 @@ export interface CustomDropdownOptions {
   className?: string;
   /** Optional custom width (e.g., "200px", "100%", "auto") */
   width?: string;
+  /** Optional type-to-filter search box at the top of the menu (for long lists) */
+  searchable?: boolean;
+  /** Placeholder for the search box (default "Search…") */
+  searchPlaceholder?: string;
   /** Optional data-* attributes as key-value pairs (e.g., { "note-id": "abc123" }) */
   dataAttributes?: Record<string, string>;
 }
@@ -47,12 +52,14 @@ export class CustomDropdown {
   private options: DropdownOption[];
   private selectedValue: string;
   private onChange: (value: string) => void;
+  private searchable: boolean;
   private isOpen = false;
 
   constructor(config: CustomDropdownOptions) {
     this.options = config.options;
     this.selectedValue = config.selectedValue;
     this.onChange = config.onChange;
+    this.searchable = config.searchable ?? false;
     this.element = this.createElement(config);
     this.setupEventListeners();
   }
@@ -62,7 +69,7 @@ export class CustomDropdown {
    */
   private createElement(config: CustomDropdownOptions): HTMLElement {
     const container = document.createElement('div');
-    container.className = `custom-dropdown ${config.className || ''}`.trim();
+    container.className = `custom-dropdown ${this.searchable ? 'custom-dropdown--searchable' : ''} ${config.className || ''}`.replace(/\s+/g, ' ').trim();
 
     // Apply custom width if provided
     if (config.width) {
@@ -79,12 +86,17 @@ export class CustomDropdown {
     const selectedOption = this.options.find(opt => opt.value === this.selectedValue);
     const selectedLabel = selectedOption?.label ?? this.options[0]?.label ?? '';
 
+    const searchHtml = this.searchable
+      ? `<li class="custom-dropdown__search"><input type="text" class="custom-dropdown__search-input" placeholder="${config.searchPlaceholder ?? 'Search…'}" /></li>`
+      : '';
+
     container.innerHTML = `
       <button class="custom-dropdown__trigger" type="button">
         <span class="custom-dropdown__label">${selectedLabel}</span>
         <span class="custom-dropdown__arrow" aria-hidden="true"></span>
       </button>
       <ul class="custom-dropdown__menu" role="listbox">
+        ${searchHtml}
         ${this.options.map(option => `
           <li
             class="custom-dropdown__item ${option.value === this.selectedValue ? 'custom-dropdown__item--selected' : ''}"
@@ -128,6 +140,14 @@ export class CustomDropdown {
       });
     });
 
+    // Type-to-filter search (long lists)
+    if (this.searchable) {
+      const input = this.element.querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
+      input?.addEventListener('click', (e) => e.stopPropagation());
+      input?.addEventListener('keydown', (e) => e.stopPropagation());
+      input?.addEventListener('input', () => this.filterItems(input.value));
+    }
+
     // Close on click outside
     document.addEventListener('click', (e) => {
       if (this.isOpen && !this.element.contains(e.target as Node)) {
@@ -140,6 +160,25 @@ export class CustomDropdown {
       if (e.key === 'Escape' && this.isOpen) {
         this.close();
       }
+    });
+  }
+
+  /** Show only items whose label contains the query (case-insensitive). */
+  private filterItems(query: string): void {
+    const q = query.trim().toLowerCase();
+    this.element.querySelectorAll('.custom-dropdown__item').forEach(item => {
+      const label = (item.textContent || '').trim().toLowerCase();
+      (item as HTMLElement).style.display = !q || label.includes(q) ? '' : 'none';
+    });
+  }
+
+  /** Clear the search box and unhide all items. */
+  private resetFilter(): void {
+    if (!this.searchable) return;
+    const input = this.element.querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
+    if (input) input.value = '';
+    this.element.querySelectorAll('.custom-dropdown__item').forEach(item => {
+      (item as HTMLElement).style.display = '';
     });
   }
 
@@ -156,6 +195,11 @@ export class CustomDropdown {
   private open(): void {
     this.isOpen = true;
     this.element.classList.add('custom-dropdown--open');
+    if (this.searchable) {
+      const input = this.element.querySelector('.custom-dropdown__search-input') as HTMLInputElement | null;
+      // Focus after the menu becomes visible.
+      setTimeout(() => input?.focus(), 0);
+    }
   }
 
   /**
@@ -164,6 +208,7 @@ export class CustomDropdown {
   private close(): void {
     this.isOpen = false;
     this.element.classList.remove('custom-dropdown--open');
+    this.resetFilter();
   }
 
   /**

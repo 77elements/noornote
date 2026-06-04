@@ -126,6 +126,10 @@ export const StorageKeys = {
   NOTE_TAKING_TOMBSTONES: 'noornote_note_taking_tombstones_map',
   NOSTR_MAJLIS_ENABLED: 'noornote_nostr_majlis_enabled_map',
   NOSTR_MAJLIS_SETTINGS: 'noornote_nostr_majlis_settings_map',
+  // Persistent Diyanet prayer-time cache — Record<ilceId, DiyanetDayTimes[]>.
+  // The API only serves a rolling ~30 days; the "Fetch Prayer Times" button appends
+  // the next window so the times survive reloads and work offline until they run out.
+  NOSTR_MAJLIS_DIYANET_CACHE: 'noornote_nostr_majlis_diyanet_cache_map',
   PETNAMES: 'noornote_petnames_map',
   DATA_SAVER_ENABLED: 'noornote_data_saver_enabled_map',
 
