@@ -7,6 +7,10 @@
 @use '../abstracts/mixins' as *;
 @use '../base/typography' as *;
 
+// Fixed upper bound for a single image/video so it renders at the same size in the narrow
+// timeline and the wider right-pane column (like Jumble), instead of growing with the column.
+$note-media-max-width: 560px;
+
 // Base media container
 .note-media {
   margin: 1rem 0;
@@ -30,6 +34,15 @@
     height: auto;
     display: block;
     border-radius: $radius-xl;
+  }
+
+  // Single image (not a multi-image grid): cap width to a fixed size so it doesn't grow with a
+  // wide column, plus a height cap so an oversized / portrait image fits without scrolling.
+  // Aspect ratio preserved, never cropped.
+  &:not([class*="grid"]) .note-image {
+    max-width: min(100%, #{$note-media-max-width});
+    max-height: 60vh;
+    width: auto;
   }
 
   .note-video {
@@ -114,6 +127,8 @@
 .note-video-wrap {
   position: relative;
   width: 100%;
+  // Same fixed cap as single images so the 16:9 video doesn't fill a wide right-pane column.
+  max-width: min(100%, #{$note-media-max-width});
   aspect-ratio: 16 / 9;
   background: var(--color-2);
   border-radius: $radius-xl;
