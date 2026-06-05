@@ -19,7 +19,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 
 // HARDCODED: the only relays this addon ever touches. No outbox, no aggregated, no user relays.
-export const DHIKR_RELAYS = ['wss://noornote.nostr1.com', 'wss://bitcoinmajlis.nostr1.com'];
+export const DHIKR_RELAYS = ['wss://noornode.nostr1.com', 'wss://bitcoinmajlis.nostr1.com'];
 
 export const DHIKR_KIND = 30078;
 export const ROUND_LABEL = 'noornote-dhikr-round';

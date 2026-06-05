@@ -17,7 +17,7 @@ import type { NostrMajlisRuntime } from './runtime';
 import type { DhikrRound } from './dhikr';
 
 const ACCOUNT_HINT =
-  'You need an account on noornote.nostr1.com or bitcoinmajlis.nostr1.com to post here.';
+  'You need an account on noornode.nostr1.com or bitcoinmajlis.nostr1.com to post here.';
 
 export class DhikrModal {
   private submitting = false;
