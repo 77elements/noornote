@@ -311,9 +311,9 @@ export class NostrMajlisAddonView extends View {
         : `<button class="btn btn--passive btn--mini" data-action="commit" data-addr="${escapeHtml(r.addr)}">Commit</button>`;
       return `<tr>
         <td>${phrase}</td>
-        <td>${r.goal.toLocaleString()}</td>
+        <td>${r.goal}</td>
         <td>${date}</td>
-        <td>${total.toLocaleString()} / ${r.goal.toLocaleString()}</td>
+        <td>${total} / ${r.goal}</td>
         <td>${action}</td>
       </tr>`;
     }).join('');

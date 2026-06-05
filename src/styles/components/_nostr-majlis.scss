@@ -72,6 +72,11 @@
   }
 }
 
+// Account-needed hint spacing in the dhikr modal (.setting__desc is shared).
+.dhikr-modal .setting__desc {
+  margin-bottom: $gap;
+}
+
 .nm-dhikr__desc {
   display: block;
   margin-top: calc($gap / 4);
