@@ -16,6 +16,19 @@
  */
 
 import { isDataSaverEnabled } from '../../services/DataSaverService';
+import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+
+export type FeedMode = 'latest' | 'latest-replies';
+
+/** The main timeline's remembered feed mode (Latest vs Latest + Replies), restored on startup. */
+export function getSavedFeedMode(): FeedMode {
+  const v = PerAccountLocalStorage.getInstance().get<string>(StorageKeys.TIMELINE_VIEW, 'latest');
+  return v === 'latest-replies' ? 'latest-replies' : 'latest';
+}
+
+export function saveFeedMode(mode: FeedMode): void {
+  PerAccountLocalStorage.getInstance().set(StorageKeys.TIMELINE_VIEW, mode);
+}
 
 /** WHO the feed is for. */
 export type TimelineSource =
@@ -106,12 +119,12 @@ export function buildTimelineConfig(
     };
   }
 
-  // Main timeline (TV): the user's follow list.
+  // Main timeline (TV): the user's follow list. Replies preference is remembered across restarts.
   return {
     source: { kind: 'following' },
     relays: { kind: 'auto' },
     range: { kind: 'live' },
-    includeReplies: false,
+    includeReplies: getSavedFeedMode() === 'latest-replies',
     fetchMode: 'cache-first',
     pagination: 'window',
     pageSize: defaultPageSize,

@@ -302,7 +302,8 @@ export class Timeline extends View {
 
     this.viewDropdown = new CustomDropdown({
       options: allOptions,
-      selectedValue: 'latest',
+      // Reflect the actual config so the remembered feed mode (Latest / Latest + Replies) shows.
+      selectedValue: this.config.includeReplies ? 'latest-replies' : 'latest',
       onChange: (value: string) => this.eventHandler.handleViewChange(value),
       className: 'timeline-view-dropdown'
     });

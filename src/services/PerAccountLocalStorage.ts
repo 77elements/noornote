@@ -87,6 +87,9 @@ export const StorageKeys = {
   // Sidebar addon order — array of addon ids (per-account)
   ADDON_ORDER: 'noornote_addon_order_map',
 
+  // Main timeline feed mode — 'latest' | 'latest-replies' (per-account)
+  TIMELINE_VIEW: 'noornote_timeline_view_map',
+
   // Onboarding wizard (per-account)
   NEEDS_PROFILE_SETUP: 'noornote_needs_profile_setup_map',
   WIZARD_PROGRESS: 'noornote_wizard_progress_map',

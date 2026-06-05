@@ -12,7 +12,7 @@ import { RefreshButton } from '../../ui/RefreshButton';
 import { CustomDropdown } from '../../ui/CustomDropdown';
 import { AppState } from '../../../services/AppState';
 import { NoteUI } from '../../ui/NoteUI';
-import { type TimelineConfig, relayFilterUrl, timeRangeOf } from '../TimelineConfig';
+import { type TimelineConfig, relayFilterUrl, timeRangeOf, saveFeedMode } from '../TimelineConfig';
 
 export class TimelineEventHandler {
   private timelineApi: TimelineModuleApi;
@@ -94,6 +94,9 @@ export class TimelineEventHandler {
       // Standard filters (latest, latest-replies)
       this.config.relays = { kind: 'auto' }; // Clear relay filter
       this.config.includeReplies = (selectedView === 'latest-replies');
+
+      // Remember the main timeline's feed mode so it's restored on next start.
+      if (this.config.source.kind === 'following') saveFeedMode(selectedView === 'latest-replies' ? 'latest-replies' : 'latest');
 
       // Update AppState
       this.appState.setState('timeline', { selectedRelay: null });
