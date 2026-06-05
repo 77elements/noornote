@@ -31,8 +31,9 @@
   }
 }
 
-// Space below the Prev/Next-year nav (scoped to this view; .l-row--split is shared).
-.view-content--addon-nostr-majlis .l-row--split {
+// Space below action rows (scoped to this view; .l-row--split / .l-row--right are shared).
+.view-content--addon-nostr-majlis .l-row--split,
+.view-content--addon-nostr-majlis .l-row--right {
   margin-bottom: $gap;
 }
 
@@ -45,6 +46,38 @@
 
     .setting__label { color: var(--color-3); }
   }
+}
+
+// Community Dhikr: actions table (scrolls horizontally on narrow screens).
+.nm-dhikr-list {
+  overflow-x: auto;
+}
+
+.nm-dhikr {
+  width: 100%;
+  border-collapse: collapse;
+
+  th,
+  td {
+    text-align: left;
+    padding: calc($gap / 2);
+    border-bottom: 1px solid var(--surface-tint);
+    white-space: nowrap;
+    vertical-align: top;
+  }
+
+  th {
+    color: var(--color-3);
+    font-weight: 500;
+  }
+}
+
+.nm-dhikr__desc {
+  display: block;
+  margin-top: calc($gap / 4);
+  color: var(--color-3);
+  font-size: 0.85em;
+  white-space: normal;
 }
 
 // Sidebar widget: current prayer / time-left / next prayer (2 rows, 3 columns)

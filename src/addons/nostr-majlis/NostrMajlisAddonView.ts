@@ -22,6 +22,7 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 import { formatDateByCalendar } from '../../helpers/formatTimestamp';
 import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
 import { getHolidaysForGregorianYear } from './holidays';
+import { DhikrModal } from './DhikrModal';
 import {
   isNostrMajlisEnabled, setNostrMajlisEnabled,
   getNostrMajlisSettings, setNostrMajlisSettings,
@@ -51,6 +52,11 @@ const REMINDER_PRAYERS: [keyof ReminderPrayers, string][] = [
   ['fajr', 'Fajr'], ['dhuhr', 'Dhuhr'], ['asr', 'Asr'], ['maghrib', 'Maghrib'], ['isha', 'Isha'],
 ];
 
+/** Compact US-format date for the dhikr list, e.g. "6/5/26" (independent of the date-format setting). */
+function shortDate(d: Date): string {
+  return `${d.getMonth() + 1}/${d.getDate()}/${String(d.getFullYear()).slice(-2)}`;
+}
+
 export class NostrMajlisAddonView extends View {
   private container: HTMLElement;
   private enableSwitch: Switch | null = null;
@@ -70,6 +76,9 @@ export class NostrMajlisAddonView extends View {
   private calendarSubId: string | null = null;
   private holidaySwitch: Switch | null = null;
   private holidayDaysDD: CustomDropdown | null = null;
+
+  // Community Dhikr tab: live-data event subscription.
+  private dhikrBusSub: string | null = null;
 
   // Diyanet cascade state
   private dCountries: DiyanetPlace[] = [];
@@ -101,6 +110,7 @@ export class NostrMajlisAddonView extends View {
         ToastService.show(checked ? 'Nostr-Majlis enabled' : 'Nostr-Majlis disabled', 'success');
         void this.renderSalah();
         this.renderHolidays();
+        this.renderDhikr();
       },
     });
 
@@ -116,17 +126,22 @@ export class NostrMajlisAddonView extends View {
       <div class="tabs tabs--scrollable" data-el="majlis-tabs" hidden>
         <button class="tab tab--active" data-tab="salah">Salah</button>
         <button class="tab" data-tab="holidays">Holidays</button>
+        <button class="tab" data-tab="dhikr">Community Dhikr</button>
       </div>
       <div class="tab-content tab-content--active" data-tab-content="salah" data-addon-content="salah"></div>
       <div class="tab-content" data-tab-content="holidays" data-addon-content="holidays"></div>
+      <div class="tab-content" data-tab-content="dhikr" data-addon-content="dhikr"></div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
     setupTabClickHandlers(this.container, (tabId) => switchTabWithContent(this.container, tabId));
     void this.renderSalah();
     this.renderHolidays();
+    this.renderDhikr();
 
     // Holiday dates follow the user's Date Format setting; re-render the table when it changes.
     this.calendarSubId = TypedEventBus.getInstance().on('settings:calendar-system-changed', () => this.renderHolidaysTable());
+    // Live dhikr updates come over the bus, so this works regardless of when the service started.
+    this.dhikrBusSub = TypedEventBus.getInstance().on('nostr-majlis:dhikr-changed', () => this.renderDhikrList());
   }
 
   private stale(token: number): boolean {
@@ -248,6 +263,75 @@ export class NostrMajlisAddonView extends View {
   private disposeHolidayReminders(): void {
     this.holidayDaysDD?.destroy(); this.holidayDaysDD = null;
     this.holidaySwitch?.destroy(); this.holidaySwitch = null;
+  }
+
+  // ---------- Community Dhikr tab ----------
+
+  private dhikrService() {
+    return AddonLoader.getInstance().getRuntime<NostrMajlisRuntime>('nostr-majlis')?.dhikr ?? null;
+  }
+
+  /** Build the Community Dhikr tab: "Create new dhikr" button + the live actions table. */
+  private renderDhikr(): void {
+    const slot = this.container.querySelector('[data-addon-content="dhikr"]') as HTMLElement | null;
+    if (!slot) return;
+    if (!isNostrMajlisEnabled()) { slot.innerHTML = ''; return; }
+
+    slot.innerHTML = `
+      <section class="section">
+        <div class="l-row--right"><button class="btn btn--primary" data-action="create-dhikr">Create new dhikr</button></div>
+        <div class="nm-dhikr-list" data-el="dhikr-list"></div>
+      </section>
+    `;
+    slot.querySelector('[data-action="create-dhikr"]')?.addEventListener('click', () => new DhikrModal('create').open());
+    this.renderDhikrList();
+  }
+
+  /** Render the table from the current DhikrService state (live, re-rendered on changes). */
+  private renderDhikrList(): void {
+    const host = this.container.querySelector('[data-el="dhikr-list"]') as HTMLElement | null;
+    if (!host) return;
+    const svc = this.dhikrService();
+    const rounds = svc ? svc.getRounds() : [];
+
+    if (rounds.length === 0) {
+      host.innerHTML = (svc && svc.isLoaded())
+        ? `<p class="setting__desc">No dhikr actions yet. Create the first one.</p>`
+        : `<p class="setting__desc pulsate">Looking for existing dhikrs…</p>`;
+      return;
+    }
+
+    const rows = rounds.map(r => {
+      const total = svc!.getTotal(r.addr);
+      const complete = total >= r.goal;
+      const date = escapeHtml(shortDate(new Date(r.createdAt * 1000)));
+      const phrase = `${escapeHtml(r.phrase)}${complete ? ' 🎉' : ''}${r.description ? `<span class="nm-dhikr__desc">${escapeHtml(r.description)}</span>` : ''}`;
+      const action = complete
+        ? '✅'
+        : `<button class="btn btn--passive btn--mini" data-action="commit" data-addr="${escapeHtml(r.addr)}">Commit</button>`;
+      return `<tr>
+        <td>${phrase}</td>
+        <td>${r.goal.toLocaleString()}</td>
+        <td>${date}</td>
+        <td>${total.toLocaleString()} / ${r.goal.toLocaleString()}</td>
+        <td>${action}</td>
+      </tr>`;
+    }).join('');
+
+    host.innerHTML = `
+      <table class="nm-dhikr">
+        <thead><tr><th>Dhikr</th><th>Count</th><th>Date</th><th>Progress</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    `;
+
+    host.querySelectorAll('[data-action="commit"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const addr = (btn as HTMLElement).dataset.addr ?? '';
+        const round = svc?.getRounds().find(r => r.addr === addr);
+        if (round) new DhikrModal('commit', round).open();
+      });
+    });
   }
 
   /** Fill the year heading + table for the current `holidayYear` and clamp the nav buttons. */
@@ -638,6 +722,7 @@ export class NostrMajlisAddonView extends View {
   public destroy(): void {
     this.disposed = true;
     if (this.calendarSubId) { TypedEventBus.getInstance().off(this.calendarSubId); this.calendarSubId = null; }
+    if (this.dhikrBusSub) { TypedEventBus.getInstance().off(this.dhikrBusSub); this.dhikrBusSub = null; }
     this.disposeDropdowns();
     this.disposeReminders();
     this.disposeHolidayReminders();

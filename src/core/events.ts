@@ -336,6 +336,7 @@ export interface AppEvents {
 
   // ── Nostr-Majlis ───────────────────────────
   'nostr-majlis:settings-changed': void;
+  'nostr-majlis:dhikr-changed': void;
 
   // ── Marketplace ────────────────────────────
   'marketplace:toggle': AddonTogglePayload;

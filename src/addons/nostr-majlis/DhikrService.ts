@@ -11,44 +11,60 @@
 
 import type { NDKFilter, NostrEvent } from '@nostr-dev-kit/ndk';
 import { NostrTransport } from '../../services/transport/NostrTransport';
+import { TypedEventBus } from '../../core/TypedEventBus';
 import { AuthService } from '../../services/AuthService';
-import {
-  generateSecretKey, getPublicKeyFromPrivate, bytesToHex, calculateEventHash, signEventWithKey,
-  type UnsignedEvent,
-} from '../../services/NostrToolsAdapter';
 import { diagLog } from '../../services/DiagnosticLogger';
 import {
   DHIKR_RELAYS, DHIKR_KIND, ROUND_LABEL, COMMIT_LABEL,
   parseRound, parseCommit, buildRoundDraft, buildCommitDraft, stableCommitDtag,
-  type DhikrRound, type DhikrCommit, type DraftEvent,
+  type DhikrRound, type DhikrCommit,
 } from './dhikr';
 
-interface SubCloser { close: () => void; }
+const ROUND_SUB_ID = 'nostr-majlis-dhikr-rounds';
+const COMMIT_SUB_ID = 'nostr-majlis-dhikr-commits';
 
 export class DhikrService {
   private transport = NostrTransport.getInstance();
-  private roundSub: SubCloser | null = null;
-  private commitSub: SubCloser | null = null;
+  private bus = TypedEventBus.getInstance();
 
   private rounds = new Map<string, DhikrRound>();                 // addr -> latest round
   private commits = new Map<string, Map<string, DhikrCommit>>();  // addr -> (author:dtag -> latest commit)
-  private listeners = new Set<() => void>();
   private emitTimer: number | null = null;
+  private loaded = false; // false until the initial fetch has returned
+
+  /** True once the initial fetch finished (so an empty list means "none" rather than "still loading"). */
+  isLoaded(): boolean {
+    return this.loaded;
+  }
 
   async start(): Promise<void> {
+    // These relays aren't in the user's list, so pool + connect them explicitly first; otherwise
+    // NDK won't reach them via relayUrls (subscribe) or pool.getRelay (publish).
+    await this.ensureRelays();
+
     const roundFilter: NDKFilter[] = [{ kinds: [DHIKR_KIND], '#t': [ROUND_LABEL] }];
     const commitFilter: NDKFilter[] = [{ kinds: [DHIKR_KIND], '#t': [COMMIT_LABEL] }];
 
-    this.roundSub = await this.transport.subscribe(DHIKR_RELAYS, roundFilter, {
-      onEvent: (ev) => this.ingestRound(ev),
+    // Initial load: fetch() force-pools the relays and returns stored events reliably.
+    try {
+      const events = await this.transport.fetch(DHIKR_RELAYS, [...roundFilter, ...commitFilter], 6000, true, 'dhikr');
+      for (const ev of events) { this.ingestRound(ev); this.ingestCommit(ev); }
+    } catch { /* live subscription will still fill in */ }
+    this.loaded = true;
+    this.emit();
+
+    // Live updates via subscribeLive: it registers in the transport's subscription map, so the
+    // pool-pruner keeps these two relays alive (a plain subscribe() would let them be pruned).
+    await this.transport.subscribeLive(DHIKR_RELAYS, roundFilter, ROUND_SUB_ID, (ev) => {
+      this.ingestRound(ev); this.scheduleEmit();
     });
-    this.commitSub = await this.transport.subscribe(DHIKR_RELAYS, commitFilter, {
-      onEvent: (ev) => this.ingestCommit(ev),
+    await this.transport.subscribeLive(DHIKR_RELAYS, commitFilter, COMMIT_SUB_ID, (ev) => {
+      this.ingestCommit(ev); this.scheduleEmit();
     });
-    diagLog('addons', 'nostr-majlis: dhikr service started');
+    diagLog('addons', 'nostr-majlis: dhikr service started', { rounds: this.rounds.size });
   }
 
-  // ---------- ingestion ----------
+  // ---------- ingestion (state only; callers decide when to emit) ----------
 
   private ingestRound(ev: NostrEvent): void {
     const round = parseRound(ev);
@@ -56,14 +72,12 @@ export class DhikrService {
     const existing = this.rounds.get(round.addr);
     if (existing && existing.createdAt >= round.createdAt) return; // keep the latest (replaceable)
     this.rounds.set(round.addr, round);
-    this.scheduleEmit();
   }
 
   private ingestCommit(ev: NostrEvent): void {
     const commit = parseCommit(ev);
     if (!commit) return;
     this.addCommit(commit);
-    this.scheduleEmit();
   }
 
   private addCommit(commit: DhikrCommit): void {
@@ -101,56 +115,48 @@ export class DhikrService {
   // ---------- writes ----------
 
   /** Create a new dhikr action. */
-  async publishRound(phrase: string, goal: number, description: string, anon: boolean): Promise<void> {
-    const event = await this.sign(buildRoundDraft(phrase, goal, description, anon), anon);
+  async publishRound(phrase: string, goal: number, description: string): Promise<void> {
+    await this.ensureRelays();
+    const event = await AuthService.getInstance().signEvent(buildRoundDraft(phrase, goal, description)) as NostrEvent;
     await this.transport.publish(DHIKR_RELAYS, event);
-    this.ingestRound(event); // optimistic: show it to the author immediately
-    diagLog('addons', 'nostr-majlis: dhikr round published', { anon });
+    this.ingestRound(event); this.emit(); // optimistic: show it to the author immediately
+    diagLog('addons', 'nostr-majlis: dhikr round published');
   }
 
-  /** Add `amount` to the round's pot (cumulative for a signed-in user, standalone when anonymous). */
-  async commit(round: DhikrRound, amount: number, anon: boolean): Promise<void> {
-    const total = anon ? amount : this.myCount(round) + amount;
-    const event = await this.sign(buildCommitDraft(round, total, anon), anon);
+  /** Add `amount` to the round's pot (cumulative across the user's commits). */
+  async commit(round: DhikrRound, amount: number): Promise<void> {
+    await this.ensureRelays();
+    const total = this.myCount(round) + amount;
+    const event = await AuthService.getInstance().signEvent(buildCommitDraft(round, total)) as NostrEvent;
     await this.transport.publish(DHIKR_RELAYS, event);
-    this.ingestCommit(event);
-    diagLog('addons', 'nostr-majlis: dhikr commit published', { anon, amount });
+    this.ingestCommit(event); this.emit();
+    diagLog('addons', 'nostr-majlis: dhikr commit published', { amount });
   }
 
-  private async sign(draft: DraftEvent, anon: boolean): Promise<NostrEvent> {
-    if (!anon) return await AuthService.getInstance().signEvent(draft) as NostrEvent;
-    // Anonymous: one-time key, signed via the adapter (deliberately NOT the user's identity).
-    const skHex = bytesToHex(generateSecretKey());
-    const pubkey = getPublicKeyFromPrivate(skHex);
-    const unsigned = { ...draft, pubkey } as UnsignedEvent;
-    const id = calculateEventHash(unsigned);
-    const sig = signEventWithKey(unsigned, skHex);
-    return { ...unsigned, id, sig } as NostrEvent;
+  /** Pool + connect the two dhikr relays (idempotent); they're not in the user's relay list. */
+  private async ensureRelays(): Promise<void> {
+    await Promise.all(DHIKR_RELAYS.map(url => this.transport.connectToRelay(url).catch(() => false)));
   }
 
-  // ---------- change notification ----------
+  // ---------- change notification (via EventBus, so the view never depends on the
+  // service existing when it subscribes) ----------
 
-  onChange(cb: () => void): () => void {
-    this.listeners.add(cb);
-    return () => this.listeners.delete(cb);
+  private emit(): void {
+    this.bus.emit('nostr-majlis:dhikr-changed');
   }
 
-  /** Coalesce bursts of incoming events into a single notification. */
+  /** Coalesce bursts of incoming live events into a single notification. */
   private scheduleEmit(): void {
     if (this.emitTimer !== null) return;
-    this.emitTimer = window.setTimeout(() => {
-      this.emitTimer = null;
-      for (const cb of this.listeners) cb();
-    }, 200);
+    this.emitTimer = window.setTimeout(() => { this.emitTimer = null; this.emit(); }, 200);
   }
 
   destroy(): void {
     if (this.emitTimer !== null) { clearTimeout(this.emitTimer); this.emitTimer = null; }
-    this.roundSub?.close(); this.roundSub = null;
-    this.commitSub?.close(); this.commitSub = null;
+    this.transport.unsubscribeLive(ROUND_SUB_ID);
+    this.transport.unsubscribeLive(COMMIT_SUB_ID);
     this.rounds.clear();
     this.commits.clear();
-    this.listeners.clear();
     diagLog('addons', 'nostr-majlis: dhikr service destroyed');
   }
 }

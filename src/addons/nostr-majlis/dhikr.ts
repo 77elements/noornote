@@ -33,8 +33,7 @@ export interface DraftEvent { kind: number; created_at: number; tags: string[][]
 export interface DhikrRound {
   uuid: string;       // round id (suffix of the d-tag)
   addr: string;       // `30078:<pubkey>:<dtag>` addressable ref
-  author: string;     // pubkey (real or one-time/anonymous)
-  anon: boolean;
+  author: string;     // pubkey
   phrase: string;
   goal: number;
   description: string;
@@ -71,7 +70,6 @@ export function parseRound(ev: NostrEvent): DhikrRound | null {
     uuid: d.slice(ROUND_D_PREFIX.length),
     addr: `${DHIKR_KIND}:${ev.pubkey}:${d}`,
     author: ev.pubkey,
-    anon: tagValue(ev, 'anon') === 'true',
     phrase,
     goal,
     description: tagValue(ev, 'description') || '',
@@ -91,7 +89,7 @@ export function parseCommit(ev: NostrEvent): DhikrCommit | null {
 }
 
 /** Build the unsigned round event (signing + publishing done by DhikrService). */
-export function buildRoundDraft(phrase: string, goal: number, description: string, anon: boolean): DraftEvent {
+export function buildRoundDraft(phrase: string, goal: number, description: string): DraftEvent {
   const uuid = crypto.randomUUID();
   const tags: string[][] = [
     ['d', ROUND_D_PREFIX + uuid],
@@ -100,22 +98,16 @@ export function buildRoundDraft(phrase: string, goal: number, description: strin
     ['goal', String(goal)],
   ];
   if (description) tags.push(['description', description]);
-  if (anon) tags.push(['anon', 'true']);
   return { kind: DHIKR_KIND, created_at: Math.floor(Date.now() / 1000), tags, content: '' };
 }
 
-/**
- * Build the unsigned commit event for a round. A signed-in user gets a stable d (replaceable →
- * cumulative total), an anonymous commit gets a unique d so each one-time-key submission stands.
- */
-export function buildCommitDraft(round: DhikrRound, count: number, anon: boolean): DraftEvent {
-  const d = anon ? `${COMMIT_D_PREFIX}${round.uuid}/${crypto.randomUUID()}` : stableCommitDtag(round);
+/** Build the unsigned commit event: stable d per round → replaceable, so the count accumulates. */
+export function buildCommitDraft(round: DhikrRound, count: number): DraftEvent {
   const tags: string[][] = [
-    ['d', d],
+    ['d', stableCommitDtag(round)],
     ['t', COMMIT_LABEL],
     ['a', round.addr],
     ['count', String(count)],
   ];
-  if (anon) tags.push(['anon', 'true']);
   return { kind: DHIKR_KIND, created_at: Math.floor(Date.now() / 1000), tags, content: '' };
 }
