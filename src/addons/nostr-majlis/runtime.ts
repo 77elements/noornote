@@ -19,12 +19,15 @@ import { DiyanetService } from './DiyanetService';
 import { NostrMajlisReminderService } from './NostrMajlisReminderService';
 import { NostrMajlisNativeReminders } from './NostrMajlisNativeReminders';
 import { NostrMajlisSidebarWidget } from './NostrMajlisSidebarWidget';
+import { DhikrService } from './DhikrService';
 
 export class NostrMajlisRuntime implements AddonRuntime {
   private initialized = false;
   private native: NostrMajlisNativeReminders | null = null;
   /** Public so the settings view can refresh it live via AddonLoader.getRuntime(). */
   public widget: NostrMajlisSidebarWidget | null = null;
+  /** Public so the Community Dhikr tab can read/subscribe via AddonLoader.getRuntime(). */
+  public dhikr: DhikrService | null = null;
 
   async init(ctx: AddonContext): Promise<void> {
     if (this.initialized) return;
@@ -40,6 +43,10 @@ export class NostrMajlisRuntime implements AddonRuntime {
 
     this.widget = new NostrMajlisSidebarWidget();
     this.widget.mount();
+
+    this.dhikr = new DhikrService();
+    void this.dhikr.start();
+
     diagLog('addons', 'nostr-majlis: runtime init', { npub: ctx.npub?.slice(0, 12) });
   }
 
@@ -50,6 +57,7 @@ export class NostrMajlisRuntime implements AddonRuntime {
     this.widget = null;
     if (this.native) { await this.native.destroy(); this.native = null; }
     else NostrMajlisReminderService.getInstance().destroy();
+    this.dhikr?.destroy(); this.dhikr = null;
     DiyanetService.getInstance().destroy();
     diagLog('addons', 'nostr-majlis: runtime destroy');
   }
