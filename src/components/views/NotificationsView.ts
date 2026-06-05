@@ -34,6 +34,7 @@ export class NotificationsView extends View {
   private isLoading: boolean = false;
   private hasMoreNotifications: boolean = true;
   private loadingIndicator: HTMLElement | null = null;
+  private badgeUpdateSubId?: string;
 
   constructor() {
     super();
@@ -68,6 +69,19 @@ export class NotificationsView extends View {
     // Listen for mute-filtered notifications (refresh list when threads are muted)
     this.eventBus.on('notifications:filtered', () => {
       this.resetAndReload();
+    });
+
+    // Cold deep-load race: when the app boots directly on /notifications, this view
+    // mounts and reads an empty store BEFORE the orchestrator's initial fetch (kicked off
+    // by the un-awaited handleLogin) has landed — so it shows "No notifications yet" while
+    // the badge later correctly shows the count. Repaint when the fetch lands (badge-update)
+    // if we're still showing the empty state but data is now available.
+    this.badgeUpdateSubId = this.eventBus.on('notifications:badge-update', () => {
+      const list = this.container.querySelector('.notifications-view__list');
+      const showingEmpty = !!list?.querySelector('.notifications-view__empty');
+      if (showingEmpty && this.notificationsOrch.getNotificationCount(this.getNotificationTypeFromTab()) > 0) {
+        this.resetAndReload();
+      }
     });
   }
 
@@ -438,6 +452,7 @@ export class NotificationsView extends View {
    */
   public destroy(): void {
     this.infiniteScroll.destroy();
+    if (this.badgeUpdateSubId) this.eventBus.off(this.badgeUpdateSubId);
     this.notificationItems.forEach(item => item.destroy());
     this.notificationItems = [];
     this.container.remove();
