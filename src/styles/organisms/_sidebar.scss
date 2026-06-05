@@ -39,9 +39,13 @@
   padding-bottom: $gap * 4;
 }
 
-// Sidebar header (logo)
+// Sidebar header (logo + collapse toggle)
 .sidebar-header {
   margin-bottom: $gap;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc($gap / 2);
 
   // Hide in phone mode (logo shown in mobile header)
   .layout--phone & {
@@ -50,6 +54,91 @@
 
   .nn-logo {
     @extend %h1;
+  }
+}
+
+// Collapse/expand toggle (<< / >>)
+.sidebar-collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-3);
+  cursor: pointer;
+  border-radius: $radius-xl;
+  flex-shrink: 0;
+
+  &:hover {
+    color: var(--color-4);
+    background: var(--color-2);
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    fill: none; // chevron icons are stroke-based
+  }
+}
+
+// ============================================================
+// Collapsed sidebar — icon-only rail (not on phone, which uses a drawer).
+// ============================================================
+html.sidebar-collapsed:not(.layout--phone) {
+  // Hide text labels, sub-items and wide widgets.
+  .primary-nav__item-desc,
+  .primary-nav__sublink,
+  .primary-nav__submenu,
+  .sidebar-welcome-link,
+  .wallet-balance-container,
+  .nm-sidebar-widget-container,
+  .data-saver-toggle,
+  .current-datetime-display,
+  .nn-logo,
+  .scroll-to-top-btn,
+  .notifications-badge,
+  .dm-badge,
+  .dropup-arrow {
+    display: none !important;
+  }
+
+  // Center the remaining icons.
+  .primary-nav__link,
+  .primary-nav__accordion-trigger {
+    display: flex;
+    justify-content: center;
+    padding: calc($gap / 2);
+  }
+
+  // Accordion triggers are icon + bare text → drop the text (font-size:0), but force the icon
+  // size back (font-size:0 otherwise shrinks the Lists/Addons svgs, which size off the font).
+  .primary-nav__accordion-trigger {
+    font-size: 0;
+
+    svg {
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+  }
+
+  // Header keeps just the toggle, centered.
+  .sidebar-header {
+    justify-content: center;
+  }
+
+  // New Post button → just the plus icon.
+  .new-post-dropup {
+    margin: 0 calc($gap / 2);
+
+    .btn--new-post {
+      font-size: 0;
+      gap: 0;
+      padding: calc($gap * 0.75);
+    }
   }
 }
 

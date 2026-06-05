@@ -103,6 +103,7 @@ export class MainLayout {
     this.eventBus = TypedEventBus.getInstance();
     this.layoutService = LayoutService.getInstance();
     this.setupNavigationLinks();
+    this.setupSidebarCollapse();
     this.setupMobileSidebar();
     this.setupPullToRefresh();
     this.setupScrollListener();
@@ -839,6 +840,51 @@ export class MainLayout {
   /**
    * Setup navigation links to use router instead of page reload
    */
+  /** Collapse/expand the left nav sidebar to an icon-only rail; persisted per account. */
+  private setupSidebarCollapse(): void {
+    const toggle = this.element.querySelector('.sidebar-collapse-toggle') as HTMLElement | null;
+    if (!toggle) return;
+
+    const collapsed = PerAccountLocalStorage.getInstance().get<boolean>(StorageKeys.SIDEBAR_COLLAPSED, false);
+    this.applySidebarCollapse(collapsed);
+
+    toggle.addEventListener('click', () => {
+      const next = !document.documentElement.classList.contains('sidebar-collapsed');
+      this.applySidebarCollapse(next);
+      PerAccountLocalStorage.getInstance().set(StorageKeys.SIDEBAR_COLLAPSED, next);
+    });
+  }
+
+  private applySidebarCollapse(collapsed: boolean): void {
+    document.documentElement.classList.toggle('sidebar-collapsed', collapsed);
+
+    const toggle = this.element.querySelector('.sidebar-collapse-toggle') as HTMLElement | null;
+    const use = toggle?.querySelector('use');
+    if (use) use.setAttribute('href', collapsed ? '#icon-chevron-right' : '#icon-chevron-left');
+    if (toggle) {
+      toggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+      toggle.setAttribute('aria-label', toggle.title);
+    }
+
+    // Collapsed: surface each item's label as a hover tooltip (labels are hidden by CSS).
+    const sidebar = this.element.querySelector('.sidebar');
+    if (!sidebar) return;
+    sidebar.querySelectorAll<HTMLElement>('.primary-nav__link').forEach(link => {
+      const desc = link.querySelector('.primary-nav__item-desc')?.textContent?.trim() || '';
+      if (collapsed && desc) {
+        if (link.dataset.origTitle === undefined) link.dataset.origTitle = link.getAttribute('title') || '';
+        link.title = desc;
+      } else if (link.dataset.origTitle !== undefined) {
+        if (link.dataset.origTitle) link.title = link.dataset.origTitle; else link.removeAttribute('title');
+        delete link.dataset.origTitle;
+      }
+    });
+    sidebar.querySelectorAll<HTMLElement>('.primary-nav__accordion-trigger').forEach(trg => {
+      const label = trg.textContent?.trim() || '';
+      if (collapsed && label) trg.title = label; else trg.removeAttribute('title');
+    });
+  }
+
   private setupNavigationLinks(): void {
     const homeLink = this.element.querySelector('.sidebar .primary-nav__link--timeline');
     if (homeLink) {
@@ -1224,6 +1270,9 @@ export class MainLayout {
           <div class="sidebar-scrollable">
             <div class="sidebar-header">
               <span class="nn-logo">NoorNote</span>
+              <button class="sidebar-collapse-toggle" type="button" aria-label="Collapse sidebar" title="Collapse sidebar">
+                <svg class="sidebar-collapse-toggle__icon"><use href="#icon-chevron-left"/></svg>
+              </button>
             </div>
             <div class="sidebar-welcome-link">
               <a href="/welcome" class="primary-nav__link primary-nav__link--welcome">

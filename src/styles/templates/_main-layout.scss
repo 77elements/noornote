@@ -14,6 +14,9 @@
   box-sizing: border-box;
   overflow: hidden;
 
+  // Width of the left nav column; shrinks to an icon rail when the sidebar is collapsed.
+  --sidebar-w: 250px;
+
   // ========================================
   // Mobile-First: Base = Phone (0-639px)
   // ========================================
@@ -29,7 +32,7 @@
   // Tablet (640px+): 2 columns
   // ========================================
   @include tablet {
-    grid-template-columns: 250px 1fr;
+    grid-template-columns: var(--sidebar-w) 1fr;
     grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary";
     gap: $gap;
@@ -40,10 +43,15 @@
   // Desktop (1024px+): 3 columns
   // ========================================
   @include desktop {
-    grid-template-columns: 250px 1fr 1fr;
+    grid-template-columns: var(--sidebar-w) 1fr 1fr;
     grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary secondary";
   }
+}
+
+// Collapsed sidebar → icon rail (not on phone, where the sidebar is a drawer).
+html.sidebar-collapsed:not(.layout--phone) .main-layout {
+  --sidebar-w: 64px;
 }
 
 // ========================================
@@ -58,13 +66,13 @@ html.layout--wide .main-layout {
     "primary";
 
   @include tablet {
-    grid-template-columns: 250px 1fr;
+    grid-template-columns: var(--sidebar-w) 1fr;
     grid-template-rows: 1fr;
     grid-template-areas: "sidebar primary";
   }
 
   @include desktop {
-    grid-template-columns: 250px 1fr;
+    grid-template-columns: var(--sidebar-w) 1fr;
     grid-template-rows: 1fr;
   }
 
