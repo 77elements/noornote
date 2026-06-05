@@ -1,15 +1,20 @@
 /**
- * NostrMajlisReminderService - in-app prayer reminders via the core AlertBar.
+ * NostrMajlisReminderService - in-app prayer reminders (Electron / Web).
  *
  * Polls every 30s; when the device-local time enters [prayer − offset, prayer) for an
- * enabled prayer, it shows the AlertBar once (deduped per day+prayer). Times come from the
- * active source (Diyanet cache or local calculation). Owned by the addon runtime, so the
- * timer is cleared on logout / account-switch / toggle-off. In-app only — sleep-screen
- * notifications are S4. See docs/todos/muslims-addon.md.
+ * enabled prayer, it shows the core AlertBar once (deduped per day+prayer). When the window
+ * is NOT focused it additionally fires an OS notification (same web Notification API in both
+ * the Electron renderer and the browser), so the reminder surfaces even when NoorNote is in
+ * the background / minimised. Times come from the active source (Diyanet cache or local
+ * calculation). Owned by the addon runtime, so the timer is cleared on logout /
+ * account-switch / toggle-off.
+ *
+ * Not used on Capacitor: there NostrMajlisNativeReminders schedules OS-level alarms that fire
+ * even when the app is closed. Only one path runs per device, so reminders never double up.
  *
  * Timezone note: comparison uses device-local time, correct when the chosen city is where
  * the user is (the normal case). A foreign city only shifts reminder timing, not the
- * displayed times. Native notifications (S4) can refine this.
+ * displayed times.
  */
 
 import { AlertBarService } from '../../services/AlertBarService';
@@ -36,8 +41,15 @@ export class NostrMajlisReminderService {
 
   start(): void {
     if (this.timer !== null) return;
+    this.ensureOsPermission();
     void this.scan();
     this.timer = window.setInterval(() => void this.scan(), POLL_MS);
+  }
+
+  /** Ask once for OS-notification permission so background reminders can show. */
+  private ensureOsPermission(): void {
+    if (typeof Notification === 'undefined') return;
+    if (Notification.permission === 'default') void Notification.requestPermission();
   }
 
   private scan(): void {
@@ -73,7 +85,19 @@ export class NostrMajlisReminderService {
         onTextClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
         onOk: () => { /* acknowledge + dismiss */ },
       });
+      this.notifyOs(name, times[key], remaining);
     }
+  }
+
+  /** Background OS notification — only when the window isn't focused (else the AlertBar is enough). */
+  private notifyOs(name: string, time: string, remaining: number): void {
+    if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+    if (document.hasFocus()) return;
+    const n = new Notification(`${name} prayer`, {
+      body: `In ${remaining} min (${time})`,
+      tag: `nostr-majlis-${name}`,
+    });
+    n.onclick = () => { window.focus(); Router.getInstance().navigate('/addons/nostr-majlis'); };
   }
 
   destroy(): void {
