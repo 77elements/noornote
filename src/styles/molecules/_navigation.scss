@@ -219,6 +219,12 @@
     padding: 0;
     padding-left: calc(1.5 * $gap);
     margin: calc($gap / 4) 0 0 0;
+
+    li[data-addon-id] {
+      position: relative;
+      user-select: none;
+      cursor: grab;
+    }
   }
 
   &__sublink,
@@ -256,6 +262,51 @@
     white-space: nowrap;
   }
 
+  // Row being dragged (desktop reorder).
+  &__item--dragging {
+    opacity: 0.6;
+    cursor: grabbing;
+  }
+
+}
+
+// Addon list reordering — ▲▼ controls, hidden until touch reorder mode is on.
+.addon-reorder {
+  display: none;
+  position: absolute;
+  top: 50%;
+  right: calc($gap / 2);
+  transform: translateY(-50%);
+  gap: calc($gap / 4);
+  align-items: center;
+
+  .primary-nav__submenu--reorder & {
+    display: inline-flex;
+  }
+}
+
+.addon-reorder__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  padding: 0;
+  border: none;
+  border-radius: $radius-xl;
+  background: var(--color-2);
+  color: var(--color-5);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--color-4);
+  }
+
+  svg {
+    width: 0.9rem;
+    height: 0.9rem;
+    fill: none; // chevron icons are stroke-based (stroke="currentColor")
+  }
 }
 
 @keyframes badge-pulse {

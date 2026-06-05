@@ -20,7 +20,8 @@ import { ModalService } from '../../services/ModalService';
 import { AuthStateManager } from '../../services/AuthStateManager';
 import { AuthService } from '../../services/AuthService';
 import { TypedEventBus } from '../../core/TypedEventBus';
-import { ADDON_REGISTRY } from '../../addons/registry';
+import { getOrderedAddons } from '../../addons/addonOrder';
+import { wireAddonReorder } from './AddonNavReorder';
 // WalletBalanceDisplay is owned by src/addons/wallet-balance/runtime.ts and
 // managed by the AddonLoader. MainLayout only provides the mount point
 // (.wallet-balance-container, see this.element template).
@@ -1868,8 +1869,8 @@ export class MainLayout {
     if (!navContainer) return;
     if (navContainer.querySelector('.primary-nav__link--addons')) return;
 
-    // Source of truth: src/addons/registry.ts
-    const addonItems = ADDON_REGISTRY.map(a => ({ id: a.id, name: a.name }));
+    // Source of truth: src/addons/registry.ts, reordered by the user's saved preference.
+    const addonItems = getOrderedAddons().map(a => ({ id: a.id, name: a.name }));
 
     const li = document.createElement('li');
     li.className = 'primary-nav__item primary-nav__item--accordion primary-nav__link--addons';
@@ -1880,11 +1881,15 @@ export class MainLayout {
       </button>
       <ul class="primary-nav__submenu">
         ${addonItems.map(a => `
-          <li>
-            <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}">
+          <li data-addon-id="${a.id}">
+            <a href="#" class="primary-nav__sublink" data-addon-type="${a.id}" draggable="false">
               <svg class="primary-nav__sublink-icon"><use href="#icon-addons"/></svg>
               <span class="primary-nav__sublink-desc">${a.name}</span>
             </a>
+            <span class="addon-reorder">
+              <button class="addon-reorder__btn" data-reorder="up" aria-label="Move up"><svg><use href="#icon-chevron-up"/></svg></button>
+              <button class="addon-reorder__btn" data-reorder="down" aria-label="Move down"><svg><use href="#icon-chevron-down"/></svg></button>
+            </span>
           </li>
         `).join('')}
       </ul>
@@ -1913,6 +1918,10 @@ export class MainLayout {
         }
       });
     });
+
+    // Drag&drop (desktop) + long-press ▲▼ (touch) reordering of the addon list.
+    const submenu = li.querySelector('.primary-nav__submenu') as HTMLElement | null;
+    if (submenu) wireAddonReorder(submenu);
 
     const downloadLink = navContainer.querySelector('.primary-nav__link--download')?.parentElement;
     if (downloadLink) {

@@ -84,6 +84,9 @@ export const StorageKeys = {
   // Notification priority settings (per-account)
   NOTIFICATION_PRIORITIES: 'noornote_notification_priorities_map',
 
+  // Sidebar addon order — array of addon ids (per-account)
+  ADDON_ORDER: 'noornote_addon_order_map',
+
   // Onboarding wizard (per-account)
   NEEDS_PROFILE_SETUP: 'noornote_needs_profile_setup_map',
   WIZARD_PROGRESS: 'noornote_wizard_progress_map',
