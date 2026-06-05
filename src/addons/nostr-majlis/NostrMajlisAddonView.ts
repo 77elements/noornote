@@ -68,6 +68,8 @@ export class NostrMajlisAddonView extends View {
   // Holidays tab: which Gregorian year the table shows, and the calendar-system subscription.
   private holidayYear = new Date().getFullYear();
   private calendarSubId: string | null = null;
+  private holidaySwitch: Switch | null = null;
+  private holidayDaysDD: CustomDropdown | null = null;
 
   // Diyanet cascade state
   private dCountries: DiyanetPlace[] = [];
@@ -184,6 +186,7 @@ export class NostrMajlisAddonView extends View {
   private renderHolidays(): void {
     const slot = this.container.querySelector('[data-addon-content="holidays"]') as HTMLElement | null;
     if (!slot) return;
+    this.disposeHolidayReminders();
     if (!isNostrMajlisEnabled()) { slot.innerHTML = ''; return; }
 
     slot.innerHTML = `
@@ -196,10 +199,55 @@ export class NostrMajlisAddonView extends View {
         </div>
         <p class="setting__desc">Dates are calculated (Umm al-Qura calendar); local moon-sighting may shift Ramadan and the Eids by a day.</p>
       </section>
+      <section class="section" data-el="holiday-reminders"></section>
     `;
     slot.querySelector('[data-action="prev-year"]')?.addEventListener('click', () => { this.holidayYear -= 1; this.renderHolidaysTable(); });
     slot.querySelector('[data-action="next-year"]')?.addEventListener('click', () => { this.holidayYear += 1; this.renderHolidaysTable(); });
     this.renderHolidaysTable();
+    this.renderHolidayReminders();
+  }
+
+  /** Holiday reminder section: enable toggle + days-before dropdown (1 / 3 / 7 / 10). */
+  private renderHolidayReminders(): void {
+    const host = this.container.querySelector('[data-el="holiday-reminders"]') as HTMLElement | null;
+    if (!host) return;
+    this.disposeHolidayReminders();
+
+    const hr = getNostrMajlisSettings().holidayReminder;
+    this.holidaySwitch = new Switch({
+      label: '',
+      checked: hr.enabled,
+      onChange: (c) => {
+        const s = getNostrMajlisSettings();
+        setNostrMajlisSettings({ ...s, holidayReminder: { ...s.holidayReminder, enabled: c } });
+        this.renderHolidayReminders();
+      },
+    });
+
+    let html = `<h2 class="h4">Reminder Settings</h2><div class="setting"><span class="setting__label">Holiday reminders</span><div class="setting__control">${this.holidaySwitch.render()}</div><p class="setting__desc">Notifies you ahead of each holiday, through the same channels as the prayer reminders.</p></div>`;
+    if (hr.enabled) {
+      html += `<div class="setting"><span class="setting__label">Days before</span><div class="setting__control" data-control="holiday-days"></div></div>`;
+    }
+    host.innerHTML = html;
+    this.holidaySwitch.setupEventListeners(host);
+
+    if (hr.enabled) {
+      this.holidayDaysDD = new CustomDropdown({
+        options: [1, 3, 7, 10].map(n => ({ value: String(n), label: `${n} day${n === 1 ? '' : 's'} before` })),
+        selectedValue: String(hr.daysBefore),
+        width: '100%',
+        onChange: (v) => {
+          const s = getNostrMajlisSettings();
+          setNostrMajlisSettings({ ...s, holidayReminder: { ...s.holidayReminder, daysBefore: parseInt(v, 10) } });
+        },
+      });
+      host.querySelector('[data-control="holiday-days"]')?.appendChild(this.holidayDaysDD.getElement());
+    }
+  }
+
+  private disposeHolidayReminders(): void {
+    this.holidayDaysDD?.destroy(); this.holidayDaysDD = null;
+    this.holidaySwitch?.destroy(); this.holidaySwitch = null;
   }
 
   /** Fill the year heading + table for the current `holidayYear` and clamp the nav buttons. */
@@ -592,6 +640,7 @@ export class NostrMajlisAddonView extends View {
     if (this.calendarSubId) { TypedEventBus.getInstance().off(this.calendarSubId); this.calendarSubId = null; }
     this.disposeDropdowns();
     this.disposeReminders();
+    this.disposeHolidayReminders();
     this.widgetSwitch?.destroy(); this.widgetSwitch = null;
     this.sourceDD?.destroy(); this.sourceDD = null;
     this.enableSwitch?.destroy(); this.enableSwitch = null;

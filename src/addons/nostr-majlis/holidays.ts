@@ -76,3 +76,29 @@ export function getHolidaysForGregorianYear(gYear: number): HolidayOccurrence[] 
   out.sort((a, b) => a.date.getTime() - b.date.getTime());
   return out;
 }
+
+/** Local hour at which a holiday reminder fires on its reminder day. */
+export const HOLIDAY_REMINDER_HOUR = 9;
+
+export interface HolidayReminder extends HolidayOccurrence {
+  /** When the reminder fires: 09:00 local, `daysBefore` days before the holiday. */
+  fireAt: Date;
+}
+
+/**
+ * Holiday reminders across this and the next two Gregorian years (covers a full Hijri cycle),
+ * each with its fire instant. Consumers filter: the native scheduler takes future ones to
+ * enqueue, the in-app poll takes the one due today.
+ */
+export function getHolidayReminders(daysBefore: number): HolidayReminder[] {
+  const y = new Date().getFullYear();
+  const out: HolidayReminder[] = [];
+  for (let yr = y; yr <= y + 2; yr++) {
+    for (const h of getHolidaysForGregorianYear(yr)) {
+      const fireAt = new Date(h.date.getFullYear(), h.date.getMonth(), h.date.getDate() - daysBefore, HOLIDAY_REMINDER_HOUR, 0, 0);
+      out.push({ ...h, fireAt });
+    }
+  }
+  out.sort((a, b) => a.fireAt.getTime() - b.fireAt.getTime());
+  return out;
+}

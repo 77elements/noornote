@@ -22,11 +22,17 @@ import { Router } from '../../services/Router';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { isNostrMajlisEnabled, getNostrMajlisSettings, type ReminderPrayers } from './index';
 import { getActiveTimes, parseHHMM } from './activeTimes';
+import { getHolidayReminders } from './holidays';
+import { formatDateByCalendar } from '../../helpers/formatTimestamp';
 
 const POLL_MS = 30_000;
 const PRAYERS: [keyof ReminderPrayers, string][] = [
   ['fajr', 'Fajr'], ['dhuhr', 'Dhuhr'], ['asr', 'Asr'], ['maghrib', 'Maghrib'], ['isha', 'Isha'],
 ];
+
+function sameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
 
 export class NostrMajlisReminderService {
   private static instance: NostrMajlisReminderService | null = null;
@@ -38,6 +44,7 @@ export class NostrMajlisReminderService {
 
   private timer: number | null = null;
   private shown = new Set<string>(); // `${yyyy-m-d}:${prayerKey}` already fired today
+  private shownHolidays = new Set<string>(); // `${holidayDate}:${key}` already fired
 
   start(): void {
     if (this.timer !== null) return;
@@ -55,12 +62,15 @@ export class NostrMajlisReminderService {
   private scan(): void {
     if (!isNostrMajlisEnabled()) return;
     const s = getNostrMajlisSettings();
-    if (!s.reminders?.enabled) return;
+    const now = new Date();
+    if (s.reminders?.enabled) this.scanPrayers(s, now);
+    if (s.holidayReminder?.enabled) this.scanHolidays(s, now);
+  }
 
+  private scanPrayers(s: ReturnType<typeof getNostrMajlisSettings>, now: Date): void {
     const times = getActiveTimes();
     if (!times) return;
 
-    const now = new Date();
     const dateStr = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
     const nowMin = now.getHours() * 60 + now.getMinutes();
 
@@ -89,6 +99,32 @@ export class NostrMajlisReminderService {
     }
   }
 
+  /** Fire the holiday reminder due today (09:00, N days before), once per holiday occurrence. */
+  private scanHolidays(s: ReturnType<typeof getNostrMajlisSettings>, now: Date): void {
+    const days = s.holidayReminder.daysBefore;
+    for (const rem of getHolidayReminders(days)) {
+      // Due = fire time reached AND still the reminder day (don't replay a day we missed).
+      if (rem.fireAt.getTime() > now.getTime()) continue;
+      if (!sameDay(rem.fireAt, now)) continue;
+
+      const dedup = `${rem.date.toDateString()}:${rem.key}`;
+      if (this.shownHolidays.has(dedup)) continue;
+      this.shownHolidays.add(dedup);
+
+      const text = `${rem.name} in ${days} day${days === 1 ? '' : 's'} (${formatDateByCalendar(rem.date)})`;
+      diagLog('addons', 'nostr-majlis: holiday reminder fired', { holiday: rem.key, daysBefore: days });
+      AlertBarService.getInstance().show({
+        text,
+        onTextClick: () => Router.getInstance().navigate('/addons/nostr-majlis'),
+        onOk: () => { /* acknowledge + dismiss */ },
+      });
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && !document.hasFocus()) {
+        const n = new Notification(rem.name, { body: text, tag: `nostr-majlis-holiday-${rem.key}` });
+        n.onclick = () => { window.focus(); Router.getInstance().navigate('/addons/nostr-majlis'); };
+      }
+    }
+  }
+
   /** Background OS notification — only when the window isn't focused (else the AlertBar is enough). */
   private notifyOs(name: string, time: string, remaining: number): void {
     if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
@@ -106,6 +142,7 @@ export class NostrMajlisReminderService {
       this.timer = null;
     }
     this.shown.clear();
+    this.shownHolidays.clear();
     NostrMajlisReminderService.instance = null;
     diagLog('addons', 'nostr-majlis: ReminderService destroyed');
   }

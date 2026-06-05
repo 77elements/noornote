@@ -1,10 +1,13 @@
 /**
- * NostrMajlisNativeReminders - native scheduled prayer reminders (Capacitor / Android).
+ * NostrMajlisNativeReminders - native scheduled reminders (Capacitor / Android).
  *
  * Unlike the in-app AlertBar (NostrMajlisReminderService), these fire even when the app is
- * closed or the phone is asleep: it schedules OS-level local notifications at [prayer − offset]
- * for the next few days, using @capacitor/local-notifications. On Capacitor this REPLACES the
- * AlertBar reminder (the OS notification also shows in the foreground), so they don't double up.
+ * closed or the phone is asleep: it schedules OS-level local notifications via
+ * @capacitor/local-notifications. Two kinds:
+ *   - prayers:  [prayer − offset] for the next few days,
+ *   - holidays: 09:00 local, N days before each upcoming Islamic holiday.
+ * On Capacitor this REPLACES the AlertBar (the OS notification also shows in the foreground),
+ * so they don't double up.
  *
  * Rescheduling: on start, on every settings change (nostr-majlis:settings-changed) and on app
  * resume (date rollover / new times fetched). Owned by the addon runtime — destroy() removes the
@@ -21,15 +24,26 @@ import { TypedEventBus } from '../../core/TypedEventBus';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { isNostrMajlisEnabled, getNostrMajlisSettings, type ReminderPrayers } from './index';
 import { getUpcomingDays, parseHHMM } from './activeTimes';
+import { getHolidayReminders } from './holidays';
+import { formatDateByCalendar } from '../../helpers/formatTimestamp';
 
-const DAYS_AHEAD = 7;
-const ID_BASE = 90_000_000; // dedicated id range so we can cancel exactly our own notifications
+// Dedicated id ranges so we can cancel exactly our own notifications without touching others.
+const PRAYER_DAYS_AHEAD = 7;
 const PRAYERS: [keyof ReminderPrayers, string][] = [
   ['fajr', 'Fajr'], ['dhuhr', 'Dhuhr'], ['asr', 'Asr'], ['maghrib', 'Maghrib'], ['isha', 'Isha'],
 ];
-const POOL = DAYS_AHEAD * PRAYERS.length;
-const ID_POOL = Array.from({ length: POOL }, (_, i) => ({ id: ID_BASE + i }));
+const PRAYER_ID_BASE = 90_000_000;
+const PRAYER_POOL = PRAYER_DAYS_AHEAD * PRAYERS.length; // 35
+const HOLIDAY_ID_BASE = 90_001_000;
+const HOLIDAY_POOL = 16; // ~a full Hijri year of holidays ahead
+
+const ID_POOL = [
+  ...Array.from({ length: PRAYER_POOL }, (_, i) => ({ id: PRAYER_ID_BASE + i })),
+  ...Array.from({ length: HOLIDAY_POOL }, (_, i) => ({ id: HOLIDAY_ID_BASE + i })),
+];
 const RESCHEDULE_DEBOUNCE_MS = 600;
+
+interface NotificationSpec { id: number; title: string; body: string; schedule: { at: Date; allowWhileIdle: boolean }; }
 
 /** Minimal Capacitor PluginListenerHandle shape (avoids importing the type into core paths). */
 interface ListenerHandle { remove: () => Promise<void>; }
@@ -61,12 +75,14 @@ export class NostrMajlisNativeReminders {
     if (!PlatformService.getInstance().isCapacitor) return;
     const { LocalNotifications } = await import('@capacitor/local-notifications');
 
-    // Always clear our range first, so disabling / changing settings can't leave stale alarms.
+    // Always clear our ranges first, so disabling / changing settings can't leave stale alarms.
     await LocalNotifications.cancel({ notifications: ID_POOL });
 
     if (!isNostrMajlisEnabled()) return;
     const s = getNostrMajlisSettings();
-    if (!s.reminders?.enabled) return;
+    const wantPrayers = !!s.reminders?.enabled;
+    const wantHolidays = !!s.holidayReminder?.enabled;
+    if (!wantPrayers && !wantHolidays) return;
 
     let perm = await LocalNotifications.checkPermissions();
     if (perm.display !== 'granted') perm = await LocalNotifications.requestPermissions();
@@ -76,11 +92,17 @@ export class NostrMajlisNativeReminders {
     }
 
     const now = Date.now();
-    const notifications: Array<{ id: number; title: string; body: string; schedule: { at: Date; allowWhileIdle: boolean } }> = [];
-    let n = 0;
+    const notifications: NotificationSpec[] = [];
+    if (wantPrayers) this.buildPrayers(notifications, s, now);
+    if (wantHolidays) this.buildHolidays(notifications, s, now);
 
-    outer:
-    for (const day of getUpcomingDays(DAYS_AHEAD)) {
+    if (notifications.length) await LocalNotifications.schedule({ notifications });
+    diagLog('addons', 'nostr-majlis: native reminders scheduled', { count: notifications.length });
+  }
+
+  private buildPrayers(out: NotificationSpec[], s: ReturnType<typeof getNostrMajlisSettings>, now: number): void {
+    let n = 0;
+    for (const day of getUpcomingDays(PRAYER_DAYS_AHEAD)) {
       for (const [key, name] of PRAYERS) {
         if (!s.reminders.prayers[key]) continue;
         const pm = parseHHMM(day.times[key]);
@@ -88,9 +110,9 @@ export class NostrMajlisNativeReminders {
         const at = new Date(day.year, day.month, day.day, Math.floor(pm / 60), pm % 60, 0).getTime()
           - s.reminders.offsetMin * 60_000;
         if (at <= now) continue;
-        if (n >= POOL) break outer;
-        notifications.push({
-          id: ID_BASE + n,
+        if (n >= PRAYER_POOL) return;
+        out.push({
+          id: PRAYER_ID_BASE + n,
           title: `${name} prayer`,
           body: `In ${s.reminders.offsetMin} min (${day.times[key]})`,
           // allowWhileIdle: time-critical, must fire during Doze / while the phone is asleep.
@@ -99,9 +121,22 @@ export class NostrMajlisNativeReminders {
         n++;
       }
     }
+  }
 
-    if (notifications.length) await LocalNotifications.schedule({ notifications });
-    diagLog('addons', 'nostr-majlis: native reminders scheduled', { count: notifications.length });
+  private buildHolidays(out: NotificationSpec[], s: ReturnType<typeof getNostrMajlisSettings>, now: number): void {
+    const days = s.holidayReminder.daysBefore;
+    let n = 0;
+    for (const rem of getHolidayReminders(days)) {
+      if (rem.fireAt.getTime() <= now) continue;
+      if (n >= HOLIDAY_POOL) break;
+      out.push({
+        id: HOLIDAY_ID_BASE + n,
+        title: rem.name,
+        body: `In ${days} day${days === 1 ? '' : 's'} (${formatDateByCalendar(rem.date)})`,
+        schedule: { at: rem.fireAt, allowWhileIdle: true },
+      });
+      n++;
+    }
   }
 
   async destroy(): Promise<void> {

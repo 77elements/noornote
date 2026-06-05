@@ -51,6 +51,13 @@ export interface ReminderSettings {
   prayers: ReminderPrayers;
 }
 
+/** Reminders for Islamic holidays (M2), fired at 09:00 local on the day N days before. */
+export interface HolidayReminderSettings {
+  enabled: boolean;
+  /** Days before the holiday the reminder fires (1 / 3 / 7 / 10). */
+  daysBefore: number;
+}
+
 export interface NostrMajlisSettings {
   /** 'diyanet' (official API) or an adhan calculation-method key. */
   source: string;
@@ -62,6 +69,8 @@ export interface NostrMajlisSettings {
   calcCity: CalcCity | null;
   /** In-app prayer reminders (AlertBar) while the app is open. */
   reminders: ReminderSettings;
+  /** Reminders for Islamic holidays (M2). */
+  holidayReminder: HolidayReminderSettings;
   /** Show the current-prayer / countdown widget in the sidebar. */
   sidebarWidget: boolean;
 }
@@ -76,6 +85,7 @@ const DEFAULT_SETTINGS: NostrMajlisSettings = {
     offsetMin: 10,
     prayers: { fajr: true, dhuhr: true, asr: true, maghrib: true, isha: true },
   },
+  holidayReminder: { enabled: false, daysBefore: 3 },
   sidebarWidget: false,
 };
 
