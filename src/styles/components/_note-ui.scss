@@ -435,3 +435,28 @@ html.content-visibility-auto .note-card {
     line-height: 1.5;
   }
 }
+
+// Right Pane (RSS Mode): compact the timeline (TV) into a scannable list — text clamped to 3
+// lines, no media, no action bar. The note opened in the right pane (scc) stays full. The
+// `layout--rss` marker is set by LayoutService; it otherwise behaves exactly like right-pane.
+.layout--rss .timeline {
+  .note-media,
+  .note-video-wrap,
+  .youtube-embed-wrapper,
+  .quote-box {
+    display: none;
+  }
+
+  .event-content {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .isl,
+  .btn--show-more {
+    display: none;
+  }
+}

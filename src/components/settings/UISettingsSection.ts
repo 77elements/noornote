@@ -242,12 +242,13 @@ export class UISettingsSection extends SettingsSection {
     // Layout mode dropdown
     const layoutModeDropdownContainer = contentContainer.querySelector('.layout-mode-dropdown-container');
     if (layoutModeDropdownContainer) {
-      const currentMode = this.layoutService.getCurrentMode();
+      const currentMode = this.layoutService.getUserPreference();
 
       this.layoutModeDropdown = new CustomDropdown({
         options: [
           { value: 'default', label: 'Default' },
           { value: 'right-pane', label: 'Right Pane' },
+          { value: 'right-pane-rss', label: 'Right Pane (RSS Mode)' },
           { value: 'wide', label: 'Wide Mode' },
           { value: 'phone', label: 'Phone' },
         ],
@@ -259,6 +260,7 @@ export class UISettingsSection extends SettingsSection {
           const labels: Record<LayoutMode, string> = {
             'default': 'Default layout mode',
             'right-pane': 'Right pane mode (views as tabs)',
+            'right-pane-rss': 'Right pane RSS mode (compact timeline)',
             'wide': 'Wide mode (hide right pane)',
             'phone': 'Phone layout (390px width)',
           };

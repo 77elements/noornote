@@ -193,7 +193,7 @@ export const StorageKeys = {
 
 export type StorageKey = typeof StorageKeys[keyof typeof StorageKeys];
 
-export type LayoutMode = 'default' | 'right-pane' | 'wide' | 'phone';
+export type LayoutMode = 'default' | 'right-pane' | 'right-pane-rss' | 'wide' | 'phone';
 export type FontSizeScale = 'small' | 'default' | 'large' | 'x-large';
 
 // Notification priority: 1 = highest (pulsing), 2 = medium (solid), 3 = lowest (hollow)

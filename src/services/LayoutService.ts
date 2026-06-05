@@ -74,7 +74,8 @@ export class LayoutService {
    * Check if user preference is being overridden by platform
    */
   public isForced(): boolean {
-    return this.userPreference !== this.effectiveMode;
+    const normalizedPref = this.userPreference === 'right-pane-rss' ? 'right-pane' : this.userPreference;
+    return normalizedPref !== this.effectiveMode;
   }
 
   /**
@@ -192,7 +193,8 @@ export class LayoutService {
         return 'wide';
       case 'desktop':
       default:
-        return this.userPreference;
+        // RSS mode behaves exactly like right-pane; the compact timeline is a CSS-only marker.
+        return this.userPreference === 'right-pane-rss' ? 'right-pane' : this.userPreference;
     }
   }
 
@@ -202,13 +204,18 @@ export class LayoutService {
    */
   private applyLayoutClass(): void {
     const html = document.documentElement;
-    const layoutClasses = ['layout--default', 'layout--right-pane', 'layout--wide', 'layout--phone'];
+    const layoutClasses = ['layout--default', 'layout--right-pane', 'layout--wide', 'layout--phone', 'layout--rss'];
 
     // Remove all layout classes
     layoutClasses.forEach(cls => html.classList.remove(cls));
 
     // Add current layout class
     html.classList.add(`layout--${this.effectiveMode}`);
+
+    // RSS variant behaves as right-pane; this marker only drives the compact timeline CSS.
+    if (this.userPreference === 'right-pane-rss' && this.effectiveMode === 'right-pane') {
+      html.classList.add('layout--rss');
+    }
   }
 
   /**
