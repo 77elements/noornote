@@ -1,4 +1,4 @@
-# NoorNote 0.10.0
+# NoorNote 0.10.1
 
 **New: Nostr-Majlis, an Islamic features addon**
 Prayer times with reminders that fire even when the app is closed, Hijri holidays with reminders, and Community Dhikr where you join a shared dhikr and watch the count grow together.
@@ -16,4 +16,4 @@ Your feed choice (Latest or Latest + Replies) is now remembered. Large images an
 Photos are stripped of location, time and device data by default.
 
 **Fixes**
-Deleted bookmark folders stay deleted across devices, and notifications load reliably on startup.
+Deleted bookmark folders stay deleted across devices, notifications load reliably on startup, and Community Dhikr now connects to the correct relay.
