@@ -128,6 +128,24 @@ export function formatBookmarkTimestamp(timestamp: number): string {
 }
 
 /**
+ * Format a date (no time-of-day) per the user's Date Format setting. For holiday lists and
+ * other places that show a calendar date rather than a relative/absolute timestamp.
+ *   gregorian → "12 Apr 2026"
+ *   hijri     → "1 Ramadan 1448"
+ *   both      → "12 Apr 2026 (1 Ramadan 1448)"
+ */
+export function formatDateByCalendar(date: Date): string {
+  const system = getCalendarSystem();
+  const gregorian = `${date.getDate()} ${getMonthShort(date)} ${date.getFullYear()}`;
+  if (system === 'gregorian') return gregorian;
+
+  const h = dayjs(date).toCalendarSystem('hijri' as any);
+  const hijri = `${h.date()} ${HIJRI_MONTHS[h.month()]} ${h.year()}`;
+  if (system === 'hijri') return hijri;
+  return `${gregorian} (${hijri})`;
+}
+
+/**
  * Get user's calendar system preference
  */
 function getCalendarSystem(): CalendarSystem {

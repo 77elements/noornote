@@ -18,7 +18,8 @@
   margin-bottom: $gap;
 }
 
-.times .ui-list__item {
+.times .ui-list__item,
+.nm-holidays .ui-list__item {
   display: grid;
   grid-template-columns: auto 1fr;
   align-items: center;
@@ -26,6 +27,23 @@
 
   > span:last-child {
     justify-self: end;
+    text-align: right;
+  }
+}
+
+// Space below the Prev/Next-year nav (scoped to this view; .l-row--split is shared).
+.view-content--addon-nostr-majlis .l-row--split {
+  margin-bottom: $gap;
+}
+
+// Holidays table: spacing before the Prev/Next nav, past dates de-emphasised.
+.nm-holidays {
+  margin-bottom: $gap;
+
+  .ui-list__item.is-past {
+    color: var(--color-3);
+
+    .setting__label { color: var(--color-3); }
   }
 }
 

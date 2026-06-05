@@ -19,7 +19,9 @@ import { CustomDropdown, type DropdownOption } from '../../components/ui/CustomD
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { formatDateByCalendar } from '../../helpers/formatTimestamp';
 import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
+import { getHolidaysForGregorianYear } from './holidays';
 import {
   isNostrMajlisEnabled, setNostrMajlisEnabled,
   getNostrMajlisSettings, setNostrMajlisSettings,
@@ -63,6 +65,10 @@ export class NostrMajlisAddonView extends View {
   // Sidebar-widget toggle
   private widgetSwitch: Switch | null = null;
 
+  // Holidays tab: which Gregorian year the table shows, and the calendar-system subscription.
+  private holidayYear = new Date().getFullYear();
+  private calendarSubId: string | null = null;
+
   // Diyanet cascade state
   private dCountries: DiyanetPlace[] = [];
   private dRegions: DiyanetPlace[] = [];
@@ -92,6 +98,7 @@ export class NostrMajlisAddonView extends View {
         TypedEventBus.getInstance().emit('nostr-majlis:addon-toggle', { enabled: checked });
         ToastService.show(checked ? 'Nostr-Majlis enabled' : 'Nostr-Majlis disabled', 'success');
         void this.renderSalah();
+        this.renderHolidays();
       },
     });
 
@@ -106,12 +113,18 @@ export class NostrMajlisAddonView extends View {
       </section>
       <div class="tabs tabs--scrollable" data-el="majlis-tabs" hidden>
         <button class="tab tab--active" data-tab="salah">Salah</button>
+        <button class="tab" data-tab="holidays">Holidays</button>
       </div>
       <div class="tab-content tab-content--active" data-tab-content="salah" data-addon-content="salah"></div>
+      <div class="tab-content" data-tab-content="holidays" data-addon-content="holidays"></div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
     setupTabClickHandlers(this.container, (tabId) => switchTabWithContent(this.container, tabId));
     void this.renderSalah();
+    this.renderHolidays();
+
+    // Holiday dates follow the user's Date Format setting; re-render the table when it changes.
+    this.calendarSubId = TypedEventBus.getInstance().on('settings:calendar-system-changed', () => this.renderHolidaysTable());
   }
 
   private stale(token: number): boolean {
@@ -163,6 +176,57 @@ export class NostrMajlisAddonView extends View {
     });
     host.innerHTML = `<h2 class="h4">Sidebar Widget</h2><div class="setting"><span class="setting__label">Display sidebar widget</span><div class="setting__control">${this.widgetSwitch.render()}</div><p class="setting__desc">Shows the current prayer and the time left until the next one in the sidebar.</p></div>`;
     this.widgetSwitch.setupEventListeners(host);
+  }
+
+  // ---------- Holidays tab ----------
+
+  /** Build the Holidays tab: year heading + table + Previous/Next-year nav. */
+  private renderHolidays(): void {
+    const slot = this.container.querySelector('[data-addon-content="holidays"]') as HTMLElement | null;
+    if (!slot) return;
+    if (!isNostrMajlisEnabled()) { slot.innerHTML = ''; return; }
+
+    slot.innerHTML = `
+      <section class="section">
+        <h2 class="h4" data-el="holiday-year"></h2>
+        <div class="ui-list nm-holidays" data-el="holiday-table"></div>
+        <div class="l-row--split">
+          <button class="btn btn--passive" data-action="prev-year">Previous year</button>
+          <button class="btn btn--passive" data-action="next-year">Next year</button>
+        </div>
+        <p class="setting__desc">Dates are calculated (Umm al-Qura calendar); local moon-sighting may shift Ramadan and the Eids by a day.</p>
+      </section>
+    `;
+    slot.querySelector('[data-action="prev-year"]')?.addEventListener('click', () => { this.holidayYear -= 1; this.renderHolidaysTable(); });
+    slot.querySelector('[data-action="next-year"]')?.addEventListener('click', () => { this.holidayYear += 1; this.renderHolidaysTable(); });
+    this.renderHolidaysTable();
+  }
+
+  /** Fill the year heading + table for the current `holidayYear` and clamp the nav buttons. */
+  private renderHolidaysTable(): void {
+    const slot = this.container.querySelector('[data-addon-content="holidays"]') as HTMLElement | null;
+    if (!slot) return;
+    const yearEl = slot.querySelector('[data-el="holiday-year"]') as HTMLElement | null;
+    const tableEl = slot.querySelector('[data-el="holiday-table"]') as HTMLElement | null;
+    if (!yearEl || !tableEl) return;
+
+    const now = new Date();
+    const minYear = now.getFullYear() - 3;
+    const maxYear = now.getFullYear() + 10;
+    this.holidayYear = Math.min(maxYear, Math.max(minYear, this.holidayYear));
+
+    yearEl.textContent = `Holidays ${this.holidayYear}`;
+
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    tableEl.innerHTML = getHolidaysForGregorianYear(this.holidayYear).map(h => {
+      const past = h.date.getTime() < todayMid;
+      return `<div class="ui-list__item${past ? ' is-past' : ''}"><span class="setting__label">${escapeHtml(h.name)}</span><span>${escapeHtml(formatDateByCalendar(h.date))}</span></div>`;
+    }).join('');
+
+    const prev = slot.querySelector('[data-action="prev-year"]') as HTMLButtonElement | null;
+    const next = slot.querySelector('[data-action="next-year"]') as HTMLButtonElement | null;
+    if (prev) prev.disabled = this.holidayYear <= minYear;
+    if (next) next.disabled = this.holidayYear >= maxYear;
   }
 
   /** Build the panel section: Source dropdown + location picker + location heading + times. */
@@ -525,6 +589,7 @@ export class NostrMajlisAddonView extends View {
 
   public destroy(): void {
     this.disposed = true;
+    if (this.calendarSubId) { TypedEventBus.getInstance().off(this.calendarSubId); this.calendarSubId = null; }
     this.disposeDropdowns();
     this.disposeReminders();
     this.widgetSwitch?.destroy(); this.widgetSwitch = null;
