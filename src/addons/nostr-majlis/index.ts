@@ -14,6 +14,7 @@
  */
 
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
+import { TypedEventBus } from '../../core/TypedEventBus';
 
 /** A location in Diyanet's own hierarchy (Country -> Region -> District). */
 export interface DiyanetLocation {
@@ -95,4 +96,6 @@ export function getNostrMajlisSettings(): NostrMajlisSettings {
 
 export function setNostrMajlisSettings(settings: NostrMajlisSettings): void {
   PerAccountLocalStorage.getInstance().set(StorageKeys.NOSTR_MAJLIS_SETTINGS, settings);
+  // Let the native scheduler re-enqueue alarms after any source/location/reminder change.
+  TypedEventBus.getInstance().emit('nostr-majlis:settings-changed');
 }

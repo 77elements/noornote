@@ -9,7 +9,7 @@
  */
 
 import { getNostrMajlisSettings, type ReminderPrayers } from './index';
-import { getActiveTimes, type DayPrayerTimes } from './activeTimes';
+import { getActiveTimes, parseHHMM, type DayPrayerTimes } from './activeTimes';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 // Sunrise IS a period boundary: Fajr lasts only until sunrise, then we are in the
@@ -17,12 +17,6 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 const ORDER: [string, keyof DayPrayerTimes][] = [
   ['Fajr', 'fajr'], ['Sunrise', 'sunrise'], ['Dhuhr', 'dhuhr'], ['Asr', 'asr'], ['Maghrib', 'maghrib'], ['Isha', 'isha'],
 ];
-
-function parseHHMM(s: string): number | null {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
-  if (!m || m[1] === undefined || m[2] === undefined) return null;
-  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-}
 
 function pad(n: number): string { return String(n).padStart(2, '0'); }
 

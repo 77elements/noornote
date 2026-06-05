@@ -16,18 +16,12 @@ import { AlertBarService } from '../../services/AlertBarService';
 import { Router } from '../../services/Router';
 import { diagLog } from '../../services/DiagnosticLogger';
 import { isNostrMajlisEnabled, getNostrMajlisSettings, type ReminderPrayers } from './index';
-import { getActiveTimes } from './activeTimes';
+import { getActiveTimes, parseHHMM } from './activeTimes';
 
 const POLL_MS = 30_000;
 const PRAYERS: [keyof ReminderPrayers, string][] = [
   ['fajr', 'Fajr'], ['dhuhr', 'Dhuhr'], ['asr', 'Asr'], ['maghrib', 'Maghrib'], ['isha', 'Isha'],
 ];
-
-function parseHHMM(s: string): number | null {
-  const m = /^(\d{1,2}):(\d{2})$/.exec(s.trim());
-  if (!m || m[1] === undefined || m[2] === undefined) return null;
-  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
-}
 
 export class NostrMajlisReminderService {
   private static instance: NostrMajlisReminderService | null = null;

@@ -334,6 +334,9 @@ export interface AppEvents {
   // ── Scheduled Posts ────────────────────────
   'scheduled-posts:changed': void;
 
+  // ── Nostr-Majlis ───────────────────────────
+  'nostr-majlis:settings-changed': void;
+
   // ── Marketplace ────────────────────────────
   'marketplace:toggle': AddonTogglePayload;
   'marketplace:timeline-toggle': AddonTogglePayload;
