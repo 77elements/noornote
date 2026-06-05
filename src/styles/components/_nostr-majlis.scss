@@ -6,6 +6,14 @@
 
 @use '../abstracts/variables' as *;
 
+// The shared .tab-content scrolls internally (height:100% + overflow-y:auto) — meant for
+// fixed-height views. This addon view scrolls at .primary-content, so let the tab content
+// flow naturally instead, otherwise we get a double scrollbar.
+.view-content--addon-nostr-majlis .tab-content {
+  height: auto;
+  overflow-y: visible;
+}
+
 .ui-list.times {
   margin-bottom: $gap;
 }

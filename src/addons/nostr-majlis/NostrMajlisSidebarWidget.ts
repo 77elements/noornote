@@ -12,8 +12,10 @@ import { getNostrMajlisSettings, type ReminderPrayers } from './index';
 import { getActiveTimes, type DayPrayerTimes } from './activeTimes';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
-const ORDER: [string, keyof ReminderPrayers][] = [
-  ['Fajr', 'fajr'], ['Dhuhr', 'dhuhr'], ['Asr', 'asr'], ['Maghrib', 'maghrib'], ['Isha', 'isha'],
+// Sunrise IS a period boundary: Fajr lasts only until sunrise, then we are in the
+// "Sunrise" period until Dhuhr (no obligatory prayer, but the correct current label).
+const ORDER: [string, keyof DayPrayerTimes][] = [
+  ['Fajr', 'fajr'], ['Sunrise', 'sunrise'], ['Dhuhr', 'dhuhr'], ['Asr', 'asr'], ['Maghrib', 'maghrib'], ['Isha', 'isha'],
 ];
 
 function parseHHMM(s: string): number | null {
@@ -24,20 +26,22 @@ function parseHHMM(s: string): number | null {
 
 function pad(n: number): string { return String(n).padStart(2, '0'); }
 
-interface WidgetData { currentName: string; nextName: string; nextKey: keyof ReminderPrayers; nextTime: string; countdownMin: number; }
+interface WidgetData { currentName: string; nextName: string; nextKey: keyof DayPrayerTimes; nextTime: string; countdownMin: number; }
 
 function compute(times: DayPrayerTimes, nowMin: number): WidgetData | null {
-  const ms = ORDER.map(([name, key]) => ({ name, key, m: parseHHMM(times[key] ?? '') }));
-  if (ms.some(x => x.m === null)) return null;
-  const m = (i: number) => ms[i]!.m as number;
+  const ms = ORDER
+    .map(([name, key]) => ({ name, key, m: parseHHMM(times[key] ?? '') }))
+    .filter((x): x is { name: string; key: keyof DayPrayerTimes; m: number } => x.m !== null);
+  if (ms.length === 0) return null;
+  const last = ms.length - 1;
 
   let curIdx = -1;
-  for (let i = 0; i < ms.length; i++) if (m(i) <= nowMin) curIdx = i;
+  for (let i = 0; i < ms.length; i++) if (ms[i]!.m <= nowMin) curIdx = i;
 
   let cur, next, countdown;
-  if (curIdx === -1) { cur = ms[4]!; next = ms[0]!; countdown = m(0) - nowMin; }            // before Fajr → in Isha
-  else if (curIdx === 4) { cur = ms[4]!; next = ms[0]!; countdown = (1440 - nowMin) + m(0); } // in Isha → next is tomorrow Fajr
-  else { cur = ms[curIdx]!; next = ms[curIdx + 1]!; countdown = m(curIdx + 1) - nowMin; }
+  if (curIdx === -1) { cur = ms[last]!; next = ms[0]!; countdown = ms[0]!.m - nowMin; }                 // before the first → in the last period (Isha)
+  else if (curIdx === last) { cur = ms[last]!; next = ms[0]!; countdown = (1440 - nowMin) + ms[0]!.m; }  // in the last period → next is tomorrow's first
+  else { cur = ms[curIdx]!; next = ms[curIdx + 1]!; countdown = ms[curIdx + 1]!.m - nowMin; }
 
   return { currentName: cur.name, nextName: next.name, nextKey: next.key, nextTime: times[next.key] ?? '--', countdownMin: countdown };
 }
@@ -86,7 +90,9 @@ export class NostrMajlisSidebarWidget {
     // Pulsate the "time left" value once we're inside the reminder window for the next
     // prayer (i.e. a reminder is about to / would fire). Uses the same .pulsate as "Loading…".
     const r = getNostrMajlisSettings().reminders;
-    const pulsate = r.enabled && r.prayers[data.nextKey] && data.countdownMin >= 0 && data.countdownMin <= r.offsetMin;
+    // Sunrise is a period but not a reminder prayer → never pulsates.
+    const pulsate = r.enabled && data.nextKey !== 'sunrise' && r.prayers[data.nextKey as keyof ReminderPrayers]
+      && data.countdownMin >= 0 && data.countdownMin <= r.offsetMin;
 
     this.el.innerHTML = `
       <div class="nm-widget__row nm-widget__head"><span>${escapeHtml(data.currentName)}</span><span>time left</span><span>${escapeHtml(data.nextName)}</span></div>

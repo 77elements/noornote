@@ -19,6 +19,7 @@ import { CustomDropdown, type DropdownOption } from '../../components/ui/CustomD
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { ToastService } from '../../services/ToastService';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { setupTabClickHandlers, switchTabWithContent } from '../../helpers/TabsHelper';
 import {
   isNostrMajlisEnabled, setNostrMajlisEnabled,
   getNostrMajlisSettings, setNostrMajlisSettings,
@@ -103,9 +104,13 @@ export class NostrMajlisAddonView extends View {
           <p class="setting__desc">Islamic features for NoorNote: prayer times (Salah), Islamic holidays, and community dhikr. Pick Diyanet for official times, or a calculation method computed on your device.</p>
         </div>
       </section>
-      <div data-addon-content="salah"></div>
+      <div class="tabs tabs--scrollable" data-el="majlis-tabs" hidden>
+        <button class="tab tab--active" data-tab="salah">Salah</button>
+      </div>
+      <div class="tab-content tab-content--active" data-tab-content="salah" data-addon-content="salah"></div>
     `;
     this.enableSwitch.setupEventListeners(this.container);
+    setupTabClickHandlers(this.container, (tabId) => switchTabWithContent(this.container, tabId));
     void this.renderSalah();
   }
 
@@ -122,7 +127,13 @@ export class NostrMajlisAddonView extends View {
     this.widgetSwitch?.destroy(); this.widgetSwitch = null;
     this.sourceDD?.destroy(); this.sourceDD = null;
 
-    if (!isNostrMajlisEnabled()) { slot.innerHTML = ''; return; }
+    const tabsBar = this.container.querySelector('[data-el="majlis-tabs"]') as HTMLElement | null;
+    if (!isNostrMajlisEnabled()) {
+      if (tabsBar) tabsBar.hidden = true;
+      slot.innerHTML = '';
+      return;
+    }
+    if (tabsBar) tabsBar.hidden = false;
 
     slot.innerHTML = `
       <section class="section" data-el="panel"></section>
