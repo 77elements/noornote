@@ -479,6 +479,8 @@ export class EmojiPicker {
   private positionPicker(trigger: HTMLElement): void {
     const rect = trigger.getBoundingClientRect();
     const pickerHeight = 450; // From CSS
+    const pickerWidth = 300;  // From CSS
+    const margin = 10;
 
     // Try to position above trigger, if not enough space, position below
     const spaceAbove = rect.top;
@@ -494,9 +496,17 @@ export class EmojiPicker {
       this.container.style.bottom = 'auto';
     }
 
-    // Position left edge of picker over the trigger icon
-    this.container.style.left = `${rect.left}px`;
-    this.container.style.right = 'auto';
+    // Horizontal: open to the right (left edge over the trigger) by default, but
+    // flip to open leftward (right edge over the trigger) when there isn't room —
+    // e.g. when the note sits in the right-hand secondary pane. Collision-based,
+    // so it needs no layout-mode knowledge.
+    if (rect.left + pickerWidth > window.innerWidth - margin) {
+      this.container.style.right = `${window.innerWidth - rect.right}px`;
+      this.container.style.left = 'auto';
+    } else {
+      this.container.style.left = `${rect.left}px`;
+      this.container.style.right = 'auto';
+    }
   }
 
   /**
