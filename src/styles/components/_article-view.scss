@@ -141,6 +141,32 @@
     font-style: italic;
   }
 
+  // Tables (GFM)
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: $gap 0;
+  }
+
+  th, td {
+    border: 1px solid var(--color-2);
+    padding: calc($gap / 2);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  th {
+    background: var(--color-2);
+    font-weight: 600;
+  }
+
+  // Horizontal rules (--- in markdown)
+  hr {
+    border: 0;
+    border-top: 1px solid var(--color-2);
+    margin: calc($gap * 2) 0;
+  }
+
   // Images in content (exclude mention profile pics)
   img:not(.profile-pic) {
     max-width: 100%;
@@ -152,8 +178,13 @@
   @media (max-width: 600px) {
     @include h4;
   }
+}
 
-  // Footnotes (Pandoc-style, processed by src/helpers/processFootnotes.ts)
+// Footnotes (Pandoc-style, processed by src/helpers/processFootnotes.ts).
+// Shared with the article editor's Preview tab, which runs the same
+// renderMarkdown pipeline (see ArticleEditorView.renderMarkdownContent).
+.article-body,
+.article-editor__preview-content {
   sup.footnote-ref {
     a {
       color: var(--color-4);

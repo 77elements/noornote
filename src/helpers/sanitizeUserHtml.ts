@@ -16,3 +16,18 @@ export function sanitizeUserHtml(input: string | undefined | null): string {
   if (!input) return '';
   return DOMPurify.sanitize(input);
 }
+
+/**
+ * Sanitize marked-rendered article HTML (NIP-23). Single whitelist shared by
+ * ArticleView (reading view) and ArticleEditorView (preview tab) so the
+ * preview always shows exactly what the published article will show.
+ */
+export function sanitizeArticleHtml(input: string): string {
+  return DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'ul', 'ol', 'li',
+      'strong', 'em', 'b', 'i', 'u', 's', 'del', 'code', 'pre', 'blockquote',
+      'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'span', 'div', 'section'],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel', 'loading'],
+    ALLOW_DATA_ATTR: false
+  });
+}

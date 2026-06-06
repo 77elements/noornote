@@ -28,7 +28,7 @@ import { ArticlePreviewRenderer } from '../ui/note-rendering/ArticlePreviewRende
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { marked } from 'marked';
-import DOMPurify from 'dompurify';
+import { sanitizeArticleHtml } from '../../helpers/sanitizeUserHtml';
 import { escapeHtml } from '../../helpers/escapeHtml';
 import { processFootnotes } from '../../helpers/processFootnotes';
 import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
@@ -404,14 +404,9 @@ export class ArticleView {
       // Refs are replaced inline; the footnotes <section> is appended after marked parses.
       const { bodyMd, footnotesHtml } = processFootnotes(content);
 
-      // Parse markdown to HTML, then sanitize to prevent XSS
-      let html = DOMPurify.sanitize((marked.parse(bodyMd) as string) + footnotesHtml, {
-        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'hr', 'ul', 'ol', 'li',
-          'strong', 'em', 'b', 'i', 'u', 's', 'del', 'code', 'pre', 'blockquote',
-          'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'sup', 'sub', 'span', 'div', 'section'],
-        ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'target', 'rel', 'loading'],
-        ALLOW_DATA_ATTR: false
-      });
+      // Parse markdown to HTML, then sanitize to prevent XSS (shared whitelist
+      // with the editor preview — see sanitizeArticleHtml)
+      let html = sanitizeArticleHtml((marked.parse(bodyMd) as string) + footnotesHtml);
 
       // Replace nostr: references with quote marker spans
       if (quotedReferences.length > 0) {

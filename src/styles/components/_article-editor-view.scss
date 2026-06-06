@@ -203,6 +203,32 @@
       height: auto;
       border-radius: $radius-xl;
     }
+
+    // Tables (GFM) — same look as .article-body so Preview matches the article
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: $gap 0;
+    }
+
+    th, td {
+      border: 1px solid var(--color-2);
+      padding: calc($gap / 2);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: var(--color-2);
+      font-weight: 600;
+    }
+
+    // Horizontal rules (--- in markdown)
+    hr {
+      border: 0;
+      border-top: 1px solid var(--color-2);
+      margin: calc($gap * 2) 0;
+    }
   }
 
   &__preview-empty {

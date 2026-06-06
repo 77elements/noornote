@@ -37,6 +37,8 @@ import { upgradeArticleImages } from '../../helpers/upgradeArticleImages';
 import { extractQuotedReferences } from '../../helpers/extractQuotedReferences';
 import { formatQuotedReferences, type QuotedReference } from '../../helpers/formatQuotedReferences';
 import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
+import { processFootnotes } from '../../helpers/processFootnotes';
+import { sanitizeArticleHtml } from '../../helpers/sanitizeUserHtml';
 import { ContentProcessor } from '../../services/ContentProcessor';
 import { QuotedNoteRenderer } from '../ui/note-rendering/QuotedNoteRenderer';
 import { ArticlePreviewRenderer } from '../ui/note-rendering/ArticlePreviewRenderer';
@@ -957,7 +959,10 @@ export class ArticleEditorView extends View {
       const quotedReferences = extractQuotedReferences(content) as QuotedReference[];
       this.previewQuotedRefs = quotedReferences;
 
-      let html = marked.parse(content) as string;
+      // Same pipeline as ArticleView.renderMarkdown: footnotes + sanitize with
+      // the shared whitelist, so the preview shows exactly the published result.
+      const { bodyMd, footnotesHtml } = processFootnotes(content);
+      let html = sanitizeArticleHtml((marked.parse(bodyMd) as string) + footnotesHtml);
       // Add rel for security - global handler in App.ts opens external links
       html = html.replace(/<a href=/g, '<a rel="noopener noreferrer" href=');
 
