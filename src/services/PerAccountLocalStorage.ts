@@ -190,6 +190,9 @@ export const StorageKeys = {
   // Follow Pack snapshots (per-account) — for diffing 39089 updates in TV/PV
   FOLLOW_PACK_SNAPSHOTS: 'noornote_follow_pack_snapshots_map',
 
+  // Emoji Pack snapshots (per-account) — for diffing 30030 updates in TV/PV
+  EMOJI_PACK_SNAPSHOTS: 'noornote_emoji_pack_snapshots_map',
+
   // List sync timestamps (Easy Mode timestamp-based sync)
   LIST_LAST_MODIFIED_FOLLOWS: 'noornote_list_lm_follows_map',
   LIST_LAST_MODIFIED_BOOKMARKS: 'noornote_list_lm_bookmarks_map',

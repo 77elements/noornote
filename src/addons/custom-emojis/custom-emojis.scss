@@ -155,6 +155,19 @@
   }
 }
 
+// "What changed" sentence above an emoji-set card (mirrors .follow-pack-hint).
+.emoji-pack-hint {
+  @extend %small;
+  color: var(--color-3);
+  margin: calc($gap * 0.75) 0;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+}
+
 // Emoji-pack card (kind 30030 rendered in feed / SNV / reposts / quotes)
 .nn-card--emoji-pack {
   .emoji-pack__grid {
