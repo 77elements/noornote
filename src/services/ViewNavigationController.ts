@@ -20,7 +20,7 @@ import { Router } from './Router';
 import { ViewTabManager } from './ViewTabManager';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
 
-export type ViewType = 'single-note' | 'profile' | 'notifications' | 'messages';
+export type ViewType = 'single-note' | 'article' | 'profile' | 'notifications' | 'messages';
 
 export class ViewNavigationController {
   private static instance: ViewNavigationController;
@@ -130,6 +130,8 @@ export class ViewNavigationController {
     switch (viewType) {
       case 'single-note':
         return `/note/${param}`;
+      case 'article':
+        return `/article/${param}`;
       case 'profile':
         return `/profile/${param}`;
       case 'notifications':

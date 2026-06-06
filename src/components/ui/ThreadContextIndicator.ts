@@ -13,6 +13,7 @@ import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
 import type { ThreadContext } from '../../modules/single-note/contracts';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { truncateNoteContent } from '../../helpers/truncateNoteContent';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 import { npubToUsername } from '../../helpers/npubToUsername';
@@ -146,7 +147,7 @@ export class ThreadContextIndicator {
     // instead of a markdown-body snippet, plus a kind-specific navigation route.
     const isAddressable = kind >= 30000 && kind < 40000;
     let previewHtml: string;
-    let onClick: () => void;
+    let onClick: (e?: MouseEvent) => void;
 
     if (isAddressable) {
       const titleTag = tags.find(t => t[0] === 'title')?.[1]
@@ -160,11 +161,17 @@ export class ThreadContextIndicator {
       previewHtml = `<strong>${escapeHtmlAttr(label)}:</strong> ${escapeHtmlAttr(titleTag)}`;
 
       const dtag = tags.find(t => t[0] === 'd')?.[1] || '';
-      onClick = async () => {
+      onClick = async (e?: MouseEvent) => {
         const { encodeNaddr } = await import('../../services/NostrToolsAdapter');
         const naddr = encodeNaddr({ kind, pubkey, identifier: dtag, relays: [] });
-        const route = kind === 30023 ? `/article/${naddr}`
-                    : kind === 30402 ? `/listing/${naddr}`
+        // Articles have a secondary-pane view; route them through the controller so
+        // right-pane mode opens them in the scc. Other addressable kinds have no scc
+        // tab view yet, so they keep full Router navigation.
+        if (kind === 30023) {
+          getViewNavigationController().openView('article', naddr, e);
+          return;
+        }
+        const route = kind === 30402 ? `/listing/${naddr}`
                     : kind === 32267 ? `/zapstore/${naddr}`
                     : kind === 39089 ? `/follow-pack/${naddr}`
                     : `/note/${encodeNevent(eventId)}`;
@@ -192,9 +199,9 @@ export class ThreadContextIndicator {
       const contentWithMentions = npubToUsername(content, 'html-multi', profileResolver);
       previewHtml = truncateNoteContent(contentWithMentions, 100);
 
-      onClick = () => {
+      onClick = (e?: MouseEvent) => {
         const nevent = encodeNevent(eventId);
-        this.router.navigate(`/note/${nevent}`);
+        getViewNavigationController().openView('single-note', nevent, e);
       };
     }
 
@@ -206,7 +213,7 @@ export class ThreadContextIndicator {
     item.style.cursor = 'pointer';
     item.addEventListener('click', (e) => {
       e.stopPropagation();
-      onClick();
+      onClick(e);
     });
 
     return item;

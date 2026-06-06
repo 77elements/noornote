@@ -4,6 +4,7 @@
  * Similar to SingleNoteView but for addressable events
  */
 
+import { View } from './View';
 import { NoteHeader } from '../ui/NoteHeader';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
 import { RepliesRenderer } from '../replies/RepliesRenderer';
@@ -33,7 +34,7 @@ import { escapeHtml } from '../../helpers/escapeHtml';
 import { processFootnotes } from '../../helpers/processFootnotes';
 import { unwrapSolitaryParagraph } from '../../helpers/unwrapSolitaryParagraph';
 
-export class ArticleView {
+export class ArticleView extends View {
   private container: HTMLElement;
   private naddrRef: string;
   private _articlesApi?: ArticlesModuleApi | null;
@@ -46,6 +47,7 @@ export class ArticleView {
   }
 
   constructor(naddrRef: string) {
+    super();
     this.naddrRef = naddrRef;
     this.container = document.createElement('div');
     this.container.className = 'view-content view-content--article';

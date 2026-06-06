@@ -14,6 +14,7 @@ import { ContentProcessor, type QuotedReference } from '../../../services/Conten
 import { replaceMediaPlaceholders } from '../../../helpers/renderMediaContent';
 import { replaceBolt11Placeholders } from '../../../helpers/renderBolt11';
 import { Router } from '../../../services/Router';
+import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { RENDERABLE_KINDS, GIT_EVENT_KINDS } from '../../../types/nostr';
 import { PollOrchestrator } from '../../../services/orchestration/PollOrchestrator';
 import { MuteOrchestrator } from '../../../lists/mutes';
@@ -351,10 +352,10 @@ export class QuotedNoteRenderer {
         return;
       }
 
-      // Navigate to SNV for this quoted note
-      const router = Router.getInstance();
+      // Navigate to SNV for this quoted note. Route through the central controller
+      // so right-pane mode opens it in the secondary pane (scc), not the timeline (pcc).
       const nevent = encodeNevent(eventId);
-      router.navigate(`/note/${nevent}`);
+      getViewNavigationController().openView('single-note', nevent, e);
     });
 
     // Add cursor pointer style

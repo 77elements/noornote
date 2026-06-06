@@ -8,6 +8,7 @@ import type { NotificationType } from '../../services/orchestration/Notification
 import { USER_CONTENT_KINDS } from '../../types/nostr';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { TypedEventBus } from '../../core/TypedEventBus';
 import { hexToNpub } from '../../helpers/nip19';
 import { InteractionStatusLine } from '../ui/InteractionStatusLine';
@@ -880,13 +881,21 @@ export class NotificationItem {
             relays: []
           });
           const { App } = await import('../../App');
-          router.navigate(App.getRouteForAddressableEvent(kind, naddr));
+          const route = App.getRouteForAddressableEvent(kind, naddr);
+          // Articles have a secondary-pane view; route them through the controller so
+          // right-pane mode opens them in the scc. Other addressable kinds (zapstore,
+          // follow-pack, ...) have no scc tab view yet and keep full Router navigation.
+          if (route.startsWith('/article/')) {
+            getViewNavigationController().openView('article', naddr, e);
+          } else {
+            router.navigate(route);
+          }
           return;
         }
       }
       const noteId = this.getReferencedNoteId();
       if (noteId) {
-        router.navigate(`/note/${noteId}`);
+        getViewNavigationController().openView('single-note', noteId, e);
       }
       return;
     }
@@ -894,7 +903,9 @@ export class NotificationItem {
     // For reposts, navigate to original note
     if (type === 'repost') {
       const originalNoteId = extractOriginalNoteId(this.options.event);
-      router.navigate(`/note/${originalNoteId}`);
+      if (originalNoteId) {
+        getViewNavigationController().openView('single-note', originalNoteId, e);
+      }
       return;
     }
 
@@ -902,26 +913,28 @@ export class NotificationItem {
     if (type === 'article') {
       const dTag = this.options.event.tags.find((t: string[]) => t[0] === 'd');
       if (dTag && dTag[1]) {
-        router.navigate(`/article/${dTag[1]}`);
+        getViewNavigationController().openView('article', dTag[1], e);
       }
       return;
     }
 
     // For hashtag notifications, navigate directly to the post
     if (type === 'hashtag') {
-      router.navigate(`/note/${this.options.event.id}`);
+      getViewNavigationController().openView('single-note', this.options.event.id, e);
       return;
     }
 
     // For mutual notifications, navigate to profile
     if (type === 'mutual_unfollow' || type === 'mutual_new') {
       const npub = hexToNpub(this.options.event.pubkey);
-      router.navigate(`/profile/${npub}`);
+      if (npub) {
+        getViewNavigationController().openView('profile', npub, e);
+      }
       return;
     }
 
     // Default: navigate to the notification event itself
-    router.navigate(`/note/${this.options.event.id}`);
+    getViewNavigationController().openView('single-note', this.options.event.id, e);
   }
 
   /**

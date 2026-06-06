@@ -6,7 +6,7 @@
 
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SingleNoteModuleApi } from '../../modules/single-note/contracts';
-import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { encodeNevent } from '../../services/NostrToolsAdapter';
 
 export interface ReplyIndicatorOptions {
@@ -86,9 +86,10 @@ export class ReplyIndicator {
       this.element.style.cursor = 'pointer';
       this.element.addEventListener('click', (e) => {
         e.stopPropagation();
-        const router = Router.getInstance();
         const nevent = encodeNevent(this.options.parentEventId);
-        router.navigate(`/note/${nevent}`);
+        // Route through the central controller so right-pane mode opens the parent
+        // note in the secondary pane (scc) instead of navigating the timeline (pcc).
+        getViewNavigationController().openView('single-note', nevent, e);
       });
 
     } catch (error) {

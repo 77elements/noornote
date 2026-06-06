@@ -212,6 +212,8 @@ export class ViewTabManager {
     switch (type) {
       case 'single-note':
         return `snv-${param}`;
+      case 'article':
+        return `av-${param}`;
       case 'profile':
         return `pv-${param}`;
       case 'notifications':
@@ -229,6 +231,10 @@ export class ViewTabManager {
       case 'single-note': {
         const { SingleNoteView } = await import('../components/views/SingleNoteView');
         return new SingleNoteView(param!);
+      }
+      case 'article': {
+        const { ArticleView } = await import('../components/views/ArticleView');
+        return new ArticleView(param!);
       }
       case 'profile': {
         const { ProfileView } = await import('../components/views/ProfileView');
@@ -252,6 +258,8 @@ export class ViewTabManager {
     switch (type) {
       case 'single-note':
         return 'Note...';
+      case 'article':
+        return 'Article...';
       case 'profile':
         return 'Profile...';
       case 'notifications':

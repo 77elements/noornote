@@ -8,6 +8,7 @@ import type { NostrEvent, NDKFilter, NDKKind } from '@nostr-dev-kit/ndk';
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { ArticlesModuleApi } from '../../../modules/articles/contracts';
 import { Router } from '../../../services/Router';
+import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 import { isLiveStreamsPlayerEnabled } from '../../../addons/live-streams-player/index';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
@@ -362,7 +363,9 @@ export class ArticlePreviewRenderer {
       if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
       e.stopPropagation();
       const cleanNaddr = naddrRef.replace(/^nostr:/, '');
-      Router.getInstance().navigate(`/article/${cleanNaddr}`);
+      // Route through the central controller so right-pane mode opens the article
+      // in the secondary pane (scc) instead of navigating the timeline (pcc).
+      getViewNavigationController().openView('article', cleanNaddr, e);
     });
 
     card.innerHTML = `
