@@ -182,6 +182,16 @@ html.sidebar-collapsed:not(.layout--phone) {
     }
   }
 
+  // Collapsed icon rail: the menu is detached into a fixed layer (left/bottom set
+  // inline from the button position) so it floats over the timeline at a readable
+  // width instead of being squeezed into the 64px rail and clipped by it.
+  &__menu--floating {
+    position: fixed;
+    right: auto;
+    width: max-content;
+    min-width: calc($gap * 10);
+  }
+
   &__item {
     display: flex;
     align-items: center;

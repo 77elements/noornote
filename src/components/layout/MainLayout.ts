@@ -1688,10 +1688,44 @@ export class MainLayout {
 
     if (!dropup || !button || !menu) return;
 
+    const menuEl = menu as HTMLElement;
+    const buttonEl = button as HTMLElement;
+
+    // When the sidebar is collapsed to an icon rail (64px), there is no room for
+    // the menu inside the column and the rail clips horizontal overflow. In that
+    // case detach the menu into a fixed-position layer anchored to the button so
+    // it floats over the timeline instead of being squeezed and clipped.
+    const isRailCollapsed = () =>
+      document.documentElement.classList.contains('sidebar-collapsed') &&
+      !document.documentElement.classList.contains('layout--phone');
+
+    const openMenu = () => {
+      const floating = isRailCollapsed();
+      menuEl.classList.toggle('new-post-dropup__menu--floating', floating);
+      if (floating) {
+        const rect = buttonEl.getBoundingClientRect();
+        menuEl.style.left = `${rect.left}px`;
+        menuEl.style.bottom = `${window.innerHeight - rect.top + 8}px`;
+      }
+      menuEl.classList.add('is-open');
+    };
+
+    const closeMenu = () => {
+      menuEl.classList.remove('is-open', 'new-post-dropup__menu--floating');
+      menuEl.style.left = '';
+      menuEl.style.bottom = '';
+    };
+
     // Toggle menu on button click
     button.addEventListener('click', (e) => {
       e.stopPropagation();
-      menu.classList.toggle('is-open');
+      if (menuEl.classList.contains('is-open')) closeMenu();
+      else openMenu();
+    });
+
+    // A resize can invalidate the floating anchor; close to avoid a stale layer.
+    window.addEventListener('resize', () => {
+      if (menuEl.classList.contains('is-open')) closeMenu();
     });
 
     // Handle menu item clicks
@@ -1699,26 +1733,26 @@ export class MainLayout {
     const articleItem = menu.querySelector('[data-action="new-article"]');
 
     noteItem?.addEventListener('click', async () => {
-      menu.classList.remove('is-open');
+      closeMenu();
       const { PostNoteModal } = await import('../post/PostNoteModal');
       PostNoteModal.getInstance().show();
     });
 
     articleItem?.addEventListener('click', () => {
-      menu.classList.remove('is-open');
+      closeMenu();
       Router.getInstance().navigate('/write-article');
     });
 
     const videoItem = menu.querySelector('[data-action="new-video"]');
     videoItem?.addEventListener('click', () => {
-      menu.classList.remove('is-open');
+      closeMenu();
       Router.getInstance().navigate('/write-video');
     });
 
     // Product item (only visible when marketplace is enabled)
     const productItem = menu.querySelector('[data-action="new-product"]');
     productItem?.addEventListener('click', () => {
-      menu.classList.remove('is-open');
+      closeMenu();
       Router.getInstance().navigate('/write-listing');
     });
 
@@ -1736,7 +1770,7 @@ export class MainLayout {
     // Close menu when clicking outside
     document.addEventListener('click', (e) => {
       if (!dropup.contains(e.target as Node)) {
-        menu.classList.remove('is-open');
+        closeMenu();
       }
     });
   }
