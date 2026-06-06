@@ -1,19 +1,13 @@
-# NoorNote 0.10.1
+# NoorNote 0.10.2
 
-**New: Nostr-Majlis, an Islamic features addon**
-Prayer times with reminders that fire even when the app is closed, Hijri holidays with reminders, and Community Dhikr where you join a shared dhikr and watch the count grow together.
+**Right Pane improvements**
+Clicking articles, replies, marketplace listings, follow packs, profiles and notification targets now opens them in the right pane instead of replacing your timeline. The open right-pane tab — including lists and search results — is now saved in the address bar and restored when you reload.
 
-**New: Custom emoji packs**
-Emoji packs now show as cards with one tap to add them to your collection.
+**Articles**
+Tables and dividers now render in articles, and the editor Preview matches the published result.
 
-**New: Layout improvements**
-Collapse the sidebar to icons, reorder your addons by drag and drop, and try the new Right Pane (RSS Mode) for a compact, scannable timeline.
-
-**Timeline**
-Your feed choice (Latest or Latest + Replies) is now remembered. Large images and videos no longer blow up in wide layouts.
-
-**Privacy**
-Photos are stripped of location, time and device data by default.
+**Custom emojis**
+Emoji-set cards now show what changed since the last version.
 
 **Fixes**
-Deleted bookmark folders stay deleted across devices, notifications load reliably on startup, and Community Dhikr now connects to the correct relay.
+The New Post menu no longer gets squeezed when the sidebar is collapsed, and the reaction emoji picker no longer gets cut off on the right.
