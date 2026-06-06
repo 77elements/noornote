@@ -216,6 +216,8 @@ export class ViewTabManager {
         return `av-${param}`;
       case 'follow-pack':
         return `fpv-${param}`;
+      case 'listing':
+        return `lv-${param}`;
       case 'profile':
         return `pv-${param}`;
       case 'notifications':
@@ -241,6 +243,10 @@ export class ViewTabManager {
       case 'follow-pack': {
         const { FollowPackDetailView } = await import('../components/views/FollowPackDetailView');
         return new FollowPackDetailView(param!);
+      }
+      case 'listing': {
+        const { ListingView } = await import('../addons/marketplace/ListingView');
+        return new ListingView(param!);
       }
       case 'profile': {
         const { ProfileView } = await import('../components/views/ProfileView');
@@ -268,6 +274,8 @@ export class ViewTabManager {
         return 'Article...';
       case 'follow-pack':
         return 'Follow Pack...';
+      case 'listing':
+        return 'Listing...';
       case 'profile':
         return 'Profile...';
       case 'notifications':

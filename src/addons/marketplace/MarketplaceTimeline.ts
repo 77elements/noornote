@@ -11,6 +11,7 @@ import { MarketplaceFeedOrchestrator } from './MarketplaceFeedOrchestrator';
 import { parseListingMetadata, formatPrice } from './marketplace-helpers';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { AuthService } from '../../services/AuthService';
 import { InfiniteScroll } from '../../components/ui/InfiniteScroll';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
@@ -330,8 +331,9 @@ export class MarketplaceTimeline {
     }
 
     card.style.cursor = 'pointer';
-    card.addEventListener('click', () => {
-      this.router.navigate(`/listing/${naddr}`);
+    card.addEventListener('click', (e) => {
+      // Right-pane mode opens the listing in the secondary pane (scc).
+      getViewNavigationController().openView('listing', naddr, e);
     });
 
     this.loadAuthorName(card, event.pubkey);

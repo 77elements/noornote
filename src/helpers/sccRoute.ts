@@ -17,6 +17,8 @@ export function viewTypeToPath(viewType: ViewType, param?: string): string {
       return `/article/${param}`;
     case 'follow-pack':
       return `/follow-pack/${param}`;
+    case 'listing':
+      return `/listing/${param}`;
     case 'profile':
       return `/profile/${param}`;
     case 'notifications':
@@ -86,6 +88,8 @@ export function pathToView(path: string): { viewType: ViewType; param?: string }
       return segments[1] ? { viewType: 'article', param: segments[1] } : null;
     case 'follow-pack':
       return segments[1] ? { viewType: 'follow-pack', param: segments[1] } : null;
+    case 'listing':
+      return segments[1] ? { viewType: 'listing', param: segments[1] } : null;
     case 'profile':
       return segments[1] ? { viewType: 'profile', param: segments[1] } : null;
     case 'notifications':

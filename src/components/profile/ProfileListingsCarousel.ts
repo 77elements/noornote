@@ -13,7 +13,7 @@
  */
 
 import { NostrTransport } from '../../services/transport/NostrTransport';
-import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { createScrollCarousel, type ScrollCarouselInstance } from '../../helpers/CarouselHelper';
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
@@ -159,7 +159,8 @@ export class ProfileListingsCarousel {
       cards,
       onCardClick: (_index, data) => {
         if (!data.naddr) return;
-        Router.getInstance().navigate(`/listing/${data.naddr}`);
+        // Right-pane mode opens the listing in the secondary pane (scc).
+        getViewNavigationController().openView('listing', data.naddr);
       },
     });
 

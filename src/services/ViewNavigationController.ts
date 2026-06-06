@@ -21,7 +21,7 @@ import { ViewTabManager } from './ViewTabManager';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
 import { viewTypeToPath } from '../helpers/sccRoute';
 
-export type ViewType = 'single-note' | 'article' | 'follow-pack' | 'profile' | 'notifications' | 'messages';
+export type ViewType = 'single-note' | 'article' | 'follow-pack' | 'listing' | 'profile' | 'notifications' | 'messages';
 
 export class ViewNavigationController {
   private static instance: ViewNavigationController;

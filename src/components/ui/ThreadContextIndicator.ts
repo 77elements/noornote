@@ -175,9 +175,12 @@ export class ThreadContextIndicator {
           getViewNavigationController().openView('follow-pack', naddr, e);
           return;
         }
-        const route = kind === 30402 ? `/listing/${naddr}`
-                    : kind === 32267 ? `/zapstore/${naddr}`
-                    : kind === 39089 ? `/follow-pack/${naddr}`
+        if (kind === 30402) {
+          getViewNavigationController().openView('listing', naddr, e);
+          return;
+        }
+        // Remaining addressable kinds (e.g. zapstore apps) have no scc view yet.
+        const route = kind === 32267 ? `/zapstore/${naddr}`
                     : `/note/${encodeNevent(eventId)}`;
         this.router.navigate(route);
       };

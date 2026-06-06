@@ -5,6 +5,7 @@
 
 import { View } from '../../components/views/View';
 import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { AuthService } from '../../services/AuthService';
 import { AuthGuard } from '../../services/AuthGuard';
 import { NostrTransport } from '../../services/transport/NostrTransport';
@@ -166,9 +167,9 @@ export class MyListingsView extends View {
       </div>
     `;
 
-    // Click on row content → view listing
-    row.querySelector('.my-listings__row-content')?.addEventListener('click', () => {
-      this.router.navigate(`/listing/${naddr}`);
+    // Click on row content → view listing (right-pane opens it in the scc)
+    row.querySelector('.my-listings__row-content')?.addEventListener('click', (e) => {
+      getViewNavigationController().openView('listing', naddr, e as MouseEvent);
     });
 
     // Edit

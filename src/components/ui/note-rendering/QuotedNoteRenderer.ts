@@ -567,7 +567,8 @@ export class QuotedNoteRenderer {
         }
         return;
       }
-      Router.getInstance().navigate(`/listing/${naddr}`);
+      // Right-pane mode opens the listing in the secondary pane (scc).
+      getViewNavigationController().openView('listing', naddr, e);
     });
 
     container.appendChild(card);

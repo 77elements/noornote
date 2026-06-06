@@ -15,6 +15,7 @@ import { UserService } from '../../services/UserService';
 import { AuthService } from '../../services/AuthService';
 import { UserProfileService } from '../../services/UserProfileService';
 import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -234,7 +235,8 @@ export class MarketplaceTimelineInjector {
         }
         return;
       }
-      Router.getInstance().navigate(`/listing/${naddr}`);
+      // Right-pane mode opens the listing in the secondary pane (scc).
+      getViewNavigationController().openView('listing', naddr, e);
     });
 
     this.loadSellerName(card, event.pubkey);
