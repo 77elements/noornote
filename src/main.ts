@@ -9,6 +9,13 @@ const spriteDiv = document.createElement('div');
 spriteDiv.innerHTML = spriteContent;
 document.body.insertBefore(spriteDiv.firstElementChild!, document.body.firstChild);
 
+// Capture ?scc= secondary-pane state immediately (before the ?r= branch below can
+// strip the query). Restored after login in App.ts; otherwise left in the URL.
+const __capturedSccParam = new URLSearchParams(window.location.search).get('scc');
+if (__capturedSccParam) {
+  (window as any).__noornote_scc_param = __capturedSccParam;
+}
+
 // Capture ?r= relay browser parameter immediately (before any module side-effects or HMR)
 const __capturedRelayParam = new URLSearchParams(window.location.search).get('r');
 if (__capturedRelayParam) {

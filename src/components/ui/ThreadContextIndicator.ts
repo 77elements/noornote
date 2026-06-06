@@ -171,6 +171,10 @@ export class ThreadContextIndicator {
           getViewNavigationController().openView('article', naddr, e);
           return;
         }
+        if (kind === 39089) {
+          getViewNavigationController().openView('follow-pack', naddr, e);
+          return;
+        }
         const route = kind === 30402 ? `/listing/${naddr}`
                     : kind === 32267 ? `/zapstore/${naddr}`
                     : kind === 39089 ? `/follow-pack/${naddr}`

@@ -18,7 +18,7 @@ import { UserProfileService, UserProfile } from '../../services/UserProfileServi
 import { UserHoverCard } from '../ui/UserHoverCard';
 import { AddonLoader } from '../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../addons/profile-recognition/runtime';
-import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { hexToNpub } from '../../helpers/nip19';
 
 // Types only (erased at build time) — live runtime accessed via AddonLoader
@@ -40,7 +40,6 @@ export class UserIdentity {
   private element: HTMLElement;
   private config: Required<Omit<UserIdentityConfig, 'onClick'>> & Pick<UserIdentityConfig, 'onClick'>;
   private userProfileService: UserProfileService;
-  private router: Router;
   private profile: UserProfile | null = null;
   private unsubscribe?: () => void;
 
@@ -62,7 +61,6 @@ export class UserIdentity {
     };
 
     this.userProfileService = UserProfileService.getInstance();
-    this.router = Router.getInstance();
 
     this.element = this.createElement();
     // Element is hidden until first profile arrives (below). No async
@@ -258,10 +256,12 @@ export class UserIdentity {
       if (this.config.onClick) {
         this.config.onClick(this.config.pubkey);
       } else {
-        // Default: navigate to profile
+        // Default: navigate to profile. Route through the central controller so
+        // right-pane mode opens the profile in the secondary pane (scc) instead of
+        // navigating the timeline (pcc).
         const npub = hexToNpub(this.config.pubkey);
         if (npub) {
-          this.router.navigate(`/profile/${npub}`);
+          getViewNavigationController().openView('profile', npub, e);
         }
       }
     });

@@ -196,6 +196,10 @@ export class App {
         AddonLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
         ModuleLoader.getInstance().refresh(currentUser.pubkey, currentUser.npub);
         await ModuleLoader.getInstance().awaitReady();
+
+        // Restore the secondary pane (scc) from ?scc= now that the layout,
+        // modules and session are ready (lists/views need a logged-in user).
+        this.viewMountingService.getMainLayout()?.restoreSccFromUrl();
       }
     }
 

@@ -9,7 +9,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ArticleFeedOrchestrator } from '../../services/orchestration/ArticleFeedOrchestrator';
 import { UserProfileService } from '../../services/UserProfileService';
-import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { InfiniteScroll } from '../ui/InfiniteScroll';
 import { encodeNaddr } from '../../services/NostrToolsAdapter';
 import { hexToNpub } from '../../helpers/nip19';
@@ -20,7 +20,6 @@ import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
 export class ArticleTimeline {
   private element: HTMLElement;
   private userProfileService: UserProfileService;
-  private router: Router;
   private infiniteScroll: InfiniteScroll;
   private articlesContainer: HTMLElement;
   private isLoading: boolean = false;
@@ -28,7 +27,6 @@ export class ArticleTimeline {
 
   constructor() {
     this.userProfileService = UserProfileService.getInstance();
-    this.router = Router.getInstance();
     this.element = this.createElement();
     this.articlesContainer = this.element.querySelector('.article-timeline__list') as HTMLElement;
 
@@ -175,10 +173,11 @@ export class ArticleTimeline {
       </div>
     `;
 
-    // Make card clickable
+    // Make card clickable. Route through the central controller so right-pane mode
+    // opens the article in the secondary pane (scc) instead of the timeline (pcc).
     card.style.cursor = 'pointer';
-    card.addEventListener('click', () => {
-      this.router.navigate(`/article/${naddr}`);
+    card.addEventListener('click', (e) => {
+      getViewNavigationController().openView('article', naddr, e);
     });
 
     // Load author name

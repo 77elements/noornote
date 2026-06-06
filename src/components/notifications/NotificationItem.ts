@@ -887,6 +887,8 @@ export class NotificationItem {
           // follow-pack, ...) have no scc tab view yet and keep full Router navigation.
           if (route.startsWith('/article/')) {
             getViewNavigationController().openView('article', naddr, e);
+          } else if (route.startsWith('/follow-pack/')) {
+            getViewNavigationController().openView('follow-pack', naddr, e);
           } else {
             router.navigate(route);
           }

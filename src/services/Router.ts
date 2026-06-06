@@ -181,10 +181,15 @@ export class Router {
       // again would create a duplicate history entry, so the user would
       // need TWO Back-button presses to leave. Detect and use
       // replaceState in that case.
+      // Preserve the secondary-pane state (?scc=) across pcc navigation so the
+      // scc tab survives sidebar navigation and reload. The scc param itself is
+      // written by MainLayout; here we only carry it through.
+      const scc = new URLSearchParams(window.location.search).get('scc');
+      const targetUrl = scc ? `${path}?scc=${encodeURIComponent(scc)}` : path;
       if (window.location.pathname === path) {
-        window.history.replaceState({}, '', path);
+        window.history.replaceState({}, '', targetUrl);
       } else {
-        window.history.pushState({}, '', path);
+        window.history.pushState({}, '', targetUrl);
       }
     }
 

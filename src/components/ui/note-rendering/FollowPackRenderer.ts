@@ -15,7 +15,7 @@ import {
 } from '../../../helpers/followPackDiff';
 import { getAddressableIdentifier } from '../../../helpers/getAddressableIdentifier';
 import { encodeNaddr } from '../../../services/NostrToolsAdapter';
-import { Router } from '../../../services/Router';
+import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { escapeHtml, escapeHtmlAttr } from '../../../helpers/escapeHtml';
 
 export class FollowPackRenderer {
@@ -33,8 +33,6 @@ export class FollowPackRenderer {
       identifier: pack.id,
       relays: []
     });
-    const route = `/follow-pack/${naddr}`;
-
     const noteHeader = new NoteHeader({
       pubkey: event.pubkey,
       eventId: note.id,
@@ -78,17 +76,19 @@ export class FollowPackRenderer {
       </div>
     `;
 
+    // Route through the central controller so right-pane mode opens the pack in the
+    // secondary pane (scc) instead of navigating the timeline (pcc).
     const openBtn = card.querySelector('[data-action="open-pack"]');
     openBtn?.addEventListener('click', (e) => {
       e.stopPropagation();
-      Router.getInstance().navigate(route);
+      getViewNavigationController().openView('follow-pack', naddr, e as MouseEvent);
     });
 
     card.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       if (target.closest('.note-image--clickable, .note-media, video')) return;
       if (target.closest('button') || target.closest('a')) return;
-      Router.getInstance().navigate(route);
+      getViewNavigationController().openView('follow-pack', naddr, e);
     });
 
     element.appendChild(card);

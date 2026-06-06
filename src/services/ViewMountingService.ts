@@ -47,6 +47,10 @@ export class ViewMountingService {
     this.mainLayout = layout;
   }
 
+  public getMainLayout(): MainLayout | null {
+    return this.mainLayout;
+  }
+
   /**
    * Mount a view by type into .primary-content
    */

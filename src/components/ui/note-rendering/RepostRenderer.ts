@@ -25,6 +25,7 @@ import { hexToNpub } from '../../../helpers/nip19';
 import { encodeNaddr, encodeNevent } from '../../../services/NostrToolsAdapter';
 import { UserHoverCard } from '../UserHoverCard';
 import { Router } from '../../../services/Router';
+import { getViewNavigationController } from '../../../services/ViewNavigationController';
 import { AddonLoader } from '../../../addons/AddonLoader';
 import type { ProfileRecognitionRuntime } from '../../../addons/profile-recognition/runtime';
 import { getTag } from '../../../helpers/tagUtils';
@@ -313,7 +314,8 @@ export class RepostRenderer {
       packContainer.querySelector('.repost-pack-preview')?.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).closest('.note-image--clickable, .note-media, video')) return;
         e.preventDefault();
-        Router.getInstance().navigate(`/follow-pack/${naddr}`);
+        // Right-pane mode opens the pack in the secondary pane (scc) via the controller.
+        getViewNavigationController().openView('follow-pack', naddr, e as MouseEvent);
       });
 
       repostDiv.appendChild(packContainer);

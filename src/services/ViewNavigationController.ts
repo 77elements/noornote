@@ -19,8 +19,9 @@ import { LayoutService } from './LayoutService';
 import { Router } from './Router';
 import { ViewTabManager } from './ViewTabManager';
 import { getSccDefaultTab } from '../helpers/sccDefaultTab';
+import { viewTypeToPath } from '../helpers/sccRoute';
 
-export type ViewType = 'single-note' | 'article' | 'profile' | 'notifications' | 'messages';
+export type ViewType = 'single-note' | 'article' | 'follow-pack' | 'profile' | 'notifications' | 'messages';
 
 export class ViewNavigationController {
   private static instance: ViewNavigationController;
@@ -127,20 +128,7 @@ export class ViewNavigationController {
    * Build route path for Router navigation
    */
   private buildRoutePath(viewType: ViewType, param?: string): string {
-    switch (viewType) {
-      case 'single-note':
-        return `/note/${param}`;
-      case 'article':
-        return `/article/${param}`;
-      case 'profile':
-        return `/profile/${param}`;
-      case 'notifications':
-        return '/notifications';
-      case 'messages':
-        return '/messages';
-      default:
-        return '/';
-    }
+    return viewTypeToPath(viewType, param);
   }
 
   /**

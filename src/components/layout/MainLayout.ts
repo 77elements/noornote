@@ -51,6 +51,7 @@ import { LayoutService } from '../../services/LayoutService';
 import { PlatformService } from '../../services/PlatformService';
 import { PullToRefresh } from '../ui/PullToRefresh';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
+import { writeSccParam, readSccParam, parseSccParam, viewTypeToPath } from '../../helpers/sccRoute';
 // dayjs + calendar loaded lazily in initializeDateTimeCalendar (bundle optimization)
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
@@ -290,6 +291,8 @@ export class MainLayout {
         // Disable: Cleanup manager
         this.disableViewTabManager();
       }
+      // Re-sync the ?scc= param (clears it when leaving the scc-visible modes).
+      this.syncScc();
     });
     this.viewTabEventSubscriptions.push(layoutModeChangedSub);
 
@@ -335,16 +338,19 @@ export class MainLayout {
     // Subscribe to view-tab events
     const openedSub = this.eventBus.on('view-tab:opened', (data: { tab: ViewTab }) => {
       this.renderViewTab(data.tab);
+      this.syncScc();
     });
     this.viewTabEventSubscriptions.push(openedSub);
 
     const closedSub = this.eventBus.on('view-tab:closed', (data: { tabId: string }) => {
       this.removeViewTab(data.tabId);
+      this.syncScc();
     });
     this.viewTabEventSubscriptions.push(closedSub);
 
     const switchedSub = this.eventBus.on('view-tab:switched', (data: { tabId: string }) => {
       this.switchToViewTab(data.tabId);
+      this.syncScc();
     });
     this.viewTabEventSubscriptions.push(switchedSub);
 
@@ -542,6 +548,9 @@ export class MainLayout {
   private async initializeGlobalSearchView(): Promise<void> {
     const { GlobalSearchView } = await import('../search/GlobalSearchView');
     this.globalSearchView = new GlobalSearchView();
+    // The search tab activates/closes inside GlobalSearchView; let it trigger the
+    // single ?scc= writer here so search state is persisted like the other tabs.
+    this.globalSearchView.onSccChange = () => this.syncScc();
 
     // Mount in secondary content unless wide/mobile mode
     if (this.layoutService.isSecondaryVisible()) {
@@ -1247,6 +1256,8 @@ export class MainLayout {
     // The log panel skips rendering while hidden; render its current logs now that
     // it is the visible tab again.
     if (value === 'system-log') this.systemLogger.refresh();
+
+    this.syncScc();
   }
 
 
@@ -2237,6 +2248,7 @@ export class MainLayout {
         this.currentListView?.activate();
         // Notify ViewTabManager that a non-view tab was activated
         this.viewTabManager?.deactivateCurrentViewTab();
+        this.syncScc();
       });
 
       // Activate the new tab (scoped to secondary-content only)
@@ -2244,6 +2256,7 @@ export class MainLayout {
       this.currentListView.activate();
       // Notify ViewTabManager that a non-view tab was activated
       this.viewTabManager?.deactivateCurrentViewTab();
+      this.syncScc();
 
       // Render content
       this.currentListView.renderContent();
@@ -2349,6 +2362,56 @@ export class MainLayout {
       if (secondaryContent) {
         this.activateSccDefault(getSccDefaultTab());
       }
+    }
+  }
+
+  /**
+   * Mirror the active scc tab into the URL (?scc=) so a reload restores it.
+   * Single writer for the param: it reads the actually-active scc tab from the
+   * DOM, the one source that spans default tabs, lists, search and view tabs.
+   * Only the three scc-visible modes write it; Wide/Phone clear it.
+   */
+  private syncScc(): void {
+    if (!this.layoutService.isSecondaryVisible()) {
+      writeSccParam(null);
+      return;
+    }
+    const sc = this.element.querySelector('.secondary-content');
+    const activeId = sc?.querySelector('.tab-content--active')?.getAttribute('data-tab-content') || '';
+    let value: string | null = null;
+    if (activeId.startsWith('list-')) {
+      value = activeId;
+    } else if (activeId === 'search-results') {
+      value = this.globalSearchView?.getActiveSearchParam() ?? null;
+    } else if (activeId && activeId !== 'system-log' && activeId !== 'newest-articles' && activeId !== 'media') {
+      // A view tab (snv-/pv-/av-/fpv-/nv/messages) is active.
+      const active = this.viewTabManager?.getActiveTab();
+      value = active ? viewTypeToPath(active.type, active.param) : null;
+    }
+    writeSccParam(value);
+  }
+
+  /**
+   * Reopen the scc content encoded in ?scc= after a reload. Called once after
+   * login when layout + modules are ready. View tabs only restore in right-pane.
+   */
+  public restoreSccFromUrl(): void {
+    if (!this.layoutService.isSecondaryVisible()) return;
+    const raw = (window as any).__noornote_scc_param ?? readSccParam();
+    delete (window as any).__noornote_scc_param;
+    if (!raw) return;
+    const parsed = parseSccParam(raw);
+    if (!parsed) return;
+    if (parsed.kind === 'list') {
+      this.openListTab(parsed.listType as ListType);
+    } else if (parsed.kind === 'search') {
+      if (parsed.term.startsWith('#')) {
+        this.eventBus.emit('hashtagSearch:start', { hashtag: parsed.term.slice(1) });
+      } else {
+        this.eventBus.emit('globalSearch:start', { query: parsed.term });
+      }
+    } else if (parsed.kind === 'view' && this.layoutService.isRightPane()) {
+      getViewNavigationController().openView(parsed.viewType, parsed.param);
     }
   }
 

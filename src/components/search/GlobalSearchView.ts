@@ -43,6 +43,17 @@ export class GlobalSearchView {
   private isProfileSearch: boolean = false; // Track if this is profile search (no pagination)
   private currentHashtag: string = ''; // Track current hashtag for subscribe button (Phase 2)
 
+  /** Set by MainLayout: invoked whenever the search tab activates/closes so the
+   *  single ?scc= URL writer can persist the search state. */
+  public onSccChange?: () => void;
+
+  /** The active search encoded for ?scc= (search:<query> or search:#<hashtag>), or null. */
+  public getActiveSearchParam(): string | null {
+    if (this.currentHashtag) return `search:#${this.currentHashtag}`;
+    if (this.currentQuery) return `search:${this.currentQuery}`;
+    return null;
+  }
+
   constructor() {
     // searchApi resolved lazily via getter
     this.muteOrchestrator = MuteOrchestrator.getInstance();
@@ -340,6 +351,8 @@ export class GlobalSearchView {
 
     // Activate search content
     this.container.classList.add('tab-content--active');
+
+    this.onSccChange?.();
   }
 
   /**
@@ -389,6 +402,8 @@ export class GlobalSearchView {
     if (secondaryContent) {
       switchTabWithContent(secondaryContent as HTMLElement, getSccDefaultTab());
     }
+
+    this.onSccChange?.();
   }
 
   /**

@@ -214,6 +214,8 @@ export class ViewTabManager {
         return `snv-${param}`;
       case 'article':
         return `av-${param}`;
+      case 'follow-pack':
+        return `fpv-${param}`;
       case 'profile':
         return `pv-${param}`;
       case 'notifications':
@@ -235,6 +237,10 @@ export class ViewTabManager {
       case 'article': {
         const { ArticleView } = await import('../components/views/ArticleView');
         return new ArticleView(param!);
+      }
+      case 'follow-pack': {
+        const { FollowPackDetailView } = await import('../components/views/FollowPackDetailView');
+        return new FollowPackDetailView(param!);
       }
       case 'profile': {
         const { ProfileView } = await import('../components/views/ProfileView');
@@ -260,6 +266,8 @@ export class ViewTabManager {
         return 'Note...';
       case 'article':
         return 'Article...';
+      case 'follow-pack':
+        return 'Follow Pack...';
       case 'profile':
         return 'Profile...';
       case 'notifications':

@@ -7,7 +7,7 @@
 import { UserProfileService } from '../../services/UserProfileService';
 import { ProfileFollowManager } from '../../lists/follows';
 import { AuthService } from '../../services/AuthService';
-import { Router } from '../../services/Router';
+import { getViewNavigationController } from '../../services/ViewNavigationController';
 import { hexToNpub, npubToHex } from '../../helpers/nip19';
 import type { UserProfile } from '../../services/UserProfileService';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
@@ -20,14 +20,12 @@ export class UserHoverCard {
   private showTimeout: NodeJS.Timeout | null = null;
   private profileService: UserProfileService;
   private authService: AuthService;
-  private router: Router;
   private scrollHandler: (() => void) | null = null;
   private clickOutsideHandler: ((e: MouseEvent) => void) | null = null;
 
   private constructor() {
     this.profileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
-    this.router = Router.getInstance();
     this.setupGlobalListeners();
   }
 
@@ -160,7 +158,9 @@ export class UserHoverCard {
       }
       const npub = hexToNpub(pubkey);
       if (npub) {
-        this.router.navigate(`/profile/${npub}`);
+        // Route through the central controller so right-pane mode opens the profile
+        // in the secondary pane (scc) instead of navigating the timeline (pcc).
+        getViewNavigationController().openView('profile', npub, e as MouseEvent);
         this.removeCard();
       }
     });
