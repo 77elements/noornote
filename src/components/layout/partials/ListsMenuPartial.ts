@@ -9,6 +9,7 @@
 import type { ListType } from './ListViewPartial';
 import { isBookmarksEnabled } from '../../../addons/bookmarks/index';
 import { isTribesEnabled } from '../../../addons/tribes/index';
+import { RailFlyout } from '../../../helpers/RailFlyout';
 
 export interface ListsMenuConfig {
   onListClick: (listType: ListType) => void; // Callback when a list link is clicked
@@ -18,6 +19,7 @@ export class ListsMenuPartial {
   private config: ListsMenuConfig;
   private element: HTMLElement | null = null;
   private isExpanded: boolean = false;
+  private flyout: RailFlyout | null = null;
 
   constructor(config: ListsMenuConfig) {
     this.config = config;
@@ -63,10 +65,17 @@ export class ListsMenuPartial {
       </ul>
     `;
 
+    // Collapsed icon rail: the submenu opens as a floating panel next to the icon.
+    const trigger = li.querySelector('.primary-nav__accordion-trigger') as HTMLElement | null;
+    const submenu = li.querySelector('.primary-nav__submenu') as HTMLElement | null;
+    if (trigger && submenu) {
+      this.flyout = new RailFlyout(trigger, submenu);
+    }
+
     // Accordion trigger handler
-    const trigger = li.querySelector('.primary-nav__accordion-trigger');
     trigger?.addEventListener('click', (e) => {
       e.preventDefault();
+      if (this.flyout?.handleTriggerClick()) return;
       this.toggle();
     });
 
@@ -75,6 +84,7 @@ export class ListsMenuPartial {
     sublinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
+        this.flyout?.close();
         const listType = (link as HTMLElement).dataset.listType as ListType;
         if (listType) {
           this.config.onListClick(listType);
@@ -129,6 +139,8 @@ export class ListsMenuPartial {
    * Destroy (remove from DOM)
    */
   public destroy(): void {
+    this.flyout?.destroy();
+    this.flyout = null;
     this.element?.remove();
     this.element = null;
   }

@@ -89,9 +89,9 @@
 // ============================================================
 html.sidebar-collapsed:not(.layout--phone) {
   // Hide text labels, sub-items and wide widgets.
+  // (Submenus stay hidden unless RailFlyout floats them — see below.)
   .primary-nav__item-desc,
-  .primary-nav__sublink,
-  .primary-nav__submenu,
+  .primary-nav__submenu:not(.primary-nav__submenu--floating),
   .sidebar-welcome-link,
   .wallet-balance-container,
   .nm-sidebar-widget-container,
@@ -123,6 +123,26 @@ html.sidebar-collapsed:not(.layout--phone) {
       height: 20px;
       flex-shrink: 0;
     }
+  }
+
+  // Lists/Addons flyout: in the icon rail the submenu cannot expand inline, so
+  // RailFlyout detaches it into a fixed panel anchored right of the trigger icon
+  // (same approach as the floating New Post menu, left/top set inline from the
+  // trigger position).
+  .primary-nav__submenu--floating {
+    display: block;
+    position: fixed;
+    width: max-content;
+    min-width: calc($gap * 10);
+    max-height: calc(100vh - $gap);
+    overflow-y: auto;
+    @include custom-scrollbar;
+    margin: 0;
+    padding: calc($gap / 2);
+    background: var(--color-2);
+    border-radius: $radius-xl;
+    box-shadow: $box-shadow;
+    z-index: $z-dropdown;
   }
 
   // Header keeps just the toggle, centered.

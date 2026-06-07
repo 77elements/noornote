@@ -43,6 +43,7 @@ import { SccArticleFeed } from './partials/SccArticleFeed';
 import { SccMediaFeed } from './partials/SccMediaFeed';
 import { ListsMenuPartial } from './partials/ListsMenuPartial';
 import { deactivateAllTabs, switchTabWithContent, createClosableTab } from '../../helpers/TabsHelper';
+import { RailFlyout } from '../../helpers/RailFlyout';
 import { ViewTabManager, type ViewTab } from '../../services/ViewTabManager';
 import { PerAccountLocalStorage, StorageKeys } from '../../services/PerAccountLocalStorage';
 import { CustomDropdown } from '../ui/CustomDropdown';
@@ -1989,10 +1990,15 @@ export class MainLayout {
       </ul>
     `;
 
+    // Collapsed icon rail: the submenu opens as a floating panel next to the icon.
+    const addonsSubmenu = li.querySelector('.primary-nav__submenu') as HTMLElement | null;
+    const trigger = li.querySelector('.primary-nav__accordion-trigger') as HTMLElement | null;
+    const flyout = trigger && addonsSubmenu ? new RailFlyout(trigger, addonsSubmenu) : null;
+
     // Accordion trigger
-    const trigger = li.querySelector('.primary-nav__accordion-trigger');
     trigger?.addEventListener('click', (e) => {
       e.preventDefault();
+      if (flyout?.handleTriggerClick()) return;
       this.addonsAccordionOpen = !this.addonsAccordionOpen;
       li.classList.toggle('primary-nav__item--expanded', this.addonsAccordionOpen);
     });
@@ -2001,6 +2007,7 @@ export class MainLayout {
     li.querySelectorAll('.primary-nav__sublink').forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
+        flyout?.close();
         const addonId = (link as HTMLElement).dataset.addonType;
         if (addonId) {
           if (this.layoutService.isPhone()) {
