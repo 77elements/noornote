@@ -903,17 +903,19 @@ export class NotificationsOrchestrator extends Orchestrator {
         return 'quote';
       }
 
-      // Check if this is a direct reply to user's event
-      // A direct reply has either:
-      // 1. An 'e' tag with marker 'reply' pointing to user's event
-      // 2. An 'e' tag with marker 'root' pointing to user's event AND no other 'reply' marker
-      const replyTag = event.tags.find(t => t[0] === 'e' && t[3] === 'reply');
-      const rootTag = event.tags.find(t => t[0] === 'e' && t[3] === 'root');
-      const replyTargetId = replyTag?.[1];
-      const rootTargetId = rootTag?.[1];
+      // Check if this is a direct reply to user's event.
+      // The direct reply target is resolved in priority order:
+      //   1. NIP-10 'reply' marker (the event being responded to)
+      //   2. NIP-10 'root' marker (a direct reply to the root has no 'reply' marker)
+      //   3. Deprecated positional NIP-10: the last 'e' tag is the direct parent
+      // Without the positional fallback, unmarked replies (common from many clients)
+      // are misclassified as low-priority thread-replies instead of high-priority replies.
+      const eTags = event.tags.filter(t => t[0] === 'e');
+      const markedReplyId = eTags.find(t => t[3] === 'reply')?.[1];
+      const markedRootId = eTags.find(t => t[3] === 'root')?.[1];
+      const directTargetId = markedReplyId ?? markedRootId ?? eTags[eTags.length - 1]?.[1];
 
-      const isDirectReplyToUser = (replyTargetId && userEventIds.includes(replyTargetId)) ||
-                                  (rootTargetId && userEventIds.includes(rootTargetId) && !replyTag);
+      const isDirectReplyToUser = !!(directTargetId && userEventIds.includes(directTargetId));
 
       // Priority 1: Direct reply to user's own event
       if (isDirectReplyToUser) return 'reply';
