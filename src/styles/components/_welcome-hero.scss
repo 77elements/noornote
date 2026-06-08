@@ -492,28 +492,4 @@
       min-height: 200px;
     }
   }
-
-  &__cta {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: calc($gap / 2);
-    margin-top: $gap * 1.5;
-    padding-top: $gap;
-    border-top: 1px solid rgba($color-5, 0.08);
-  }
-
-  &__cta-create {
-    background: linear-gradient(135deg, $color-logo-start, $color-4) !important;
-    color: $color-1 !important;
-    font-weight: 700;
-  }
-
-  &__cta-note {
-    width: 100%;
-    text-align: center;
-    @include small;
-    color: var(--color-3);
-    margin-top: calc($gap / 4);
-  }
 }

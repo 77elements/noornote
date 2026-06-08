@@ -321,22 +321,13 @@ const DEFAULT_CONTENT_RELAYS: string[] = [
   'wss://offchain.pub',
 ];
 
-// NIP-17 DM inbox relays (AUTH-capable, private inbox)
-const INBOX_RELAY_POOL: WizardInboxRelay[] = [
-  { url: 'wss://noornode.nostr1.com', selected: true },
-  { url: 'wss://bitcoinmajlis.nostr1.com', selected: true },
-  { url: 'wss://relay.0xchat.com', selected: false },
-  { url: 'wss://auth.nostr1.com', selected: false },
+// NIP-17 DM inbox relays (AUTH-capable, private inbox). Seeded for the user —
+// the inbox-relay wizard step was removed; advanced users change them in Settings.
+const DEFAULT_INBOX_RELAYS: string[] = [
+  'wss://noornode.nostr1.com',
+  'wss://relay.0xchat.com',
+  'wss://auth.nostr1.com',
 ];
-
-/** Pre-populate the wizard with the curated default content-relay set —
- *  no randomness, every fresh account gets the same reliable baseline.
- *  All set to read+write so the new user has both lanes covered from
- *  the first save. They can deselect or replace any of them in the
- *  wizard step before confirming. */
-function pickDefaultRelays(): WizardRelay[] {
-  return DEFAULT_CONTENT_RELAYS.map(url => ({ url, read: true, write: true }));
-}
 
 function generateRandomUsername(): string {
   const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
@@ -399,8 +390,6 @@ export class AccountSetupWizard {
         this.createUsernameStep(),
         this.createAvatarStep(),
         this.createBioStep(),
-        this.createRelayStep(),
-        this.createInboxRelayStep(),
         this.createFollowPacksStep(),
         this.createLightningStep(),
         this.createDoneStep(),
@@ -413,8 +402,6 @@ export class AccountSetupWizard {
         this.createUsernameStep(),
         this.createAvatarStep(),
         this.createBioStep(),
-        this.createRelayStep(),
-        this.createInboxRelayStep(),
         this.createFollowPacksStep(),
         this.createLightningStep(),
         this.createDoneStep(),
@@ -431,12 +418,16 @@ export class AccountSetupWizard {
         this.createUsernameStep(),
         this.createAvatarStep(),
         this.createBioStep(),
-        this.createRelayStep(),
-        this.createInboxRelayStep(),
         this.createFollowPacksStep(),
         this.createDoneStep(),
       ];
     }
+
+    // Relays are no longer a wizard step — most beginners can't judge which
+    // relay does what. Seed sensible defaults (changeable later in Settings):
+    // the 4 mainstream content relays as read/write + 3 NIP-17 DM inbox relays.
+    this.selectedRelays = DEFAULT_CONTENT_RELAYS.map(url => ({ url, read: true, write: true }));
+    this.inboxRelays = DEFAULT_INBOX_RELAYS.map(url => ({ url, selected: true }));
   }
 
   /**
@@ -787,7 +778,7 @@ export class AccountSetupWizard {
       render: () => {
         const el = document.createElement('div');
         this.renderStepHeader(el, 'Install a Browser Extension',
-          'To use Nostr in your browser, you need a signing extension. We recommend Alby because it securely stores your keys and wallet.');
+          'To use Nostr in your browser, you need a signing extension. We recommend Alby because it securely stores your keys.');
 
         el.innerHTML += `
           <div class="wizard-extension-action">
@@ -1692,186 +1683,6 @@ IMPORTANT:
         if (textarea) this.profileData.about = textarea.value.trim();
       }
     };
-  }
-
-  private createRelayStep(): WizardStep {
-    return {
-      id: 'relays',
-      title: 'Relays',
-      required: true,
-      render: () => {
-        // Initialize with 3 random relays if empty
-        if (this.selectedRelays.length === 0) {
-          this.selectedRelays = pickDefaultRelays();
-        }
-
-        const el = document.createElement('div');
-        this.renderStepHeader(el, 'Choose Your Relays', 'Relays are servers that store and share your posts. We\'ve picked a few reliable ones to get you started. You can change these anytime in Settings.');
-
-        // Relay list
-        const relayList = document.createElement('div');
-        relayList.className = 'wizard-relay-list';
-        this.renderRelayList(relayList);
-        el.appendChild(relayList);
-
-        // Add custom relay
-        const addRow = document.createElement('div');
-        addRow.className = 'wizard-relay-add';
-        addRow.innerHTML = `
-          <input type="text" class="input" id="wizard-relay-custom" placeholder="wss://relay.example.com" />
-          <button class="btn btn--passive btn--square-elg" data-action="add-relay">Add</button>
-        `;
-        el.appendChild(addRow);
-
-        // Add relay handler
-        const addRelay = () => {
-          const input = el.querySelector('#wizard-relay-custom') as HTMLInputElement;
-          const url = input?.value.trim();
-          if (!url) return;
-
-          // Validate wss:// or ws:// URL
-          if (!url.startsWith('wss://') && !url.startsWith('ws://')) {
-            ToastService.show('Relay URL must start with wss:// or ws://', 'error');
-            return;
-          }
-
-          // Check duplicate
-          if (this.selectedRelays.some(r => r.url === url)) {
-            ToastService.show('Relay already added', 'error');
-            return;
-          }
-
-          this.selectedRelays.push({ url, read: true, write: true });
-          input.value = '';
-          this.renderRelayList(relayList);
-          this.updateNextButtonState(this.selectedRelays.length > 0);
-        };
-
-        addRow.querySelector('[data-action="add-relay"]')?.addEventListener('click', addRelay);
-        addRow.querySelector('#wizard-relay-custom')?.addEventListener('keydown', (e) => {
-          if ((e as KeyboardEvent).key === 'Enter') addRelay();
-        });
-
-        // Suggest more button
-        const suggestBtn = document.createElement('button');
-        suggestBtn.className = 'btn btn--passive wizard-relay-suggest';
-        suggestBtn.textContent = 'Suggest different relays';
-        suggestBtn.addEventListener('click', () => {
-          this.selectedRelays = pickDefaultRelays();
-          this.renderRelayList(relayList);
-          this.updateNextButtonState(true);
-        });
-        el.appendChild(suggestBtn);
-
-        setTimeout(() => {
-          this.updateNextButtonState(this.selectedRelays.length > 0);
-        }, 0);
-
-        return el;
-      },
-      validate: () => this.selectedRelays.length > 0,
-      collect: () => {}
-    };
-  }
-
-  private renderRelayList(container: HTMLElement): void {
-    container.innerHTML = '';
-
-    this.selectedRelays.forEach((relay, index) => {
-      const row = document.createElement('div');
-      row.className = 'wizard-relay-row';
-
-      row.innerHTML = `
-        <div class="wizard-relay-url">${escapeHtml(relay.url.replace('wss://', ''))}</div>
-        <div class="wizard-relay-toggles">
-          <label class="wizard-relay-toggle">
-            <input type="checkbox" data-relay-index="${index}" data-type="read" ${relay.read ? 'checked' : ''} />
-            <span>Read</span>
-          </label>
-          <label class="wizard-relay-toggle">
-            <input type="checkbox" data-relay-index="${index}" data-type="write" ${relay.write ? 'checked' : ''} />
-            <span>Write</span>
-          </label>
-        </div>
-        <button class="wizard-relay-remove" data-remove-index="${index}" title="Remove">&times;</button>
-      `;
-
-      // Toggle handlers
-      row.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.addEventListener('change', (e) => {
-          const target = e.target as HTMLInputElement;
-          const idx = parseInt(target.dataset.relayIndex!);
-          const type = target.dataset.type as 'read' | 'write';
-          this.selectedRelays[idx]![type] = target.checked;
-        });
-      });
-
-      // Remove handler
-      row.querySelector('.wizard-relay-remove')?.addEventListener('click', () => {
-        this.selectedRelays.splice(index, 1);
-        this.renderRelayList(container);
-        this.updateNextButtonState(this.selectedRelays.length > 0);
-      });
-
-      container.appendChild(row);
-    });
-  }
-
-  private createInboxRelayStep(): WizardStep {
-    return {
-      id: 'inbox-relays',
-      title: 'DM Inbox',
-      required: true,
-      render: () => {
-        // Initialize inbox relays from pool if empty
-        if (this.inboxRelays.length === 0) {
-          this.inboxRelays = INBOX_RELAY_POOL.map(r => ({ ...r }));
-        }
-
-        const el = document.createElement('div');
-        this.renderStepHeader(el, 'DM Inbox Relays', 'These relays receive your private messages. Pick at least 2 for reliability. Only you can read messages delivered here.');
-
-        const inboxList = document.createElement('div');
-        inboxList.className = 'wizard-inbox-relay-list';
-        this.renderInboxRelayList(inboxList);
-        el.appendChild(inboxList);
-
-        setTimeout(() => {
-          const count = this.inboxRelays.filter(r => r.selected).length;
-          this.updateNextButtonState(count >= 2);
-        }, 0);
-
-        return el;
-      },
-      validate: () => this.inboxRelays.filter(r => r.selected).length >= 2,
-      collect: () => {}
-    };
-  }
-
-  private renderInboxRelayList(container: HTMLElement): void {
-    container.innerHTML = '';
-
-    this.inboxRelays.forEach((relay, index) => {
-      const row = document.createElement('div');
-      row.className = `wizard-relay-row${relay.selected ? ' wizard-relay-row--selected' : ''}`;
-
-      row.innerHTML = `
-        <label class="wizard-inbox-relay-label">
-          <input type="checkbox" data-inbox-index="${index}" ${relay.selected ? 'checked' : ''} />
-          <span class="wizard-relay-url">${escapeHtml(relay.url.replace('wss://', ''))}</span>
-        </label>
-      `;
-
-      row.querySelector('input[type="checkbox"]')?.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        this.inboxRelays[index]!.selected = target.checked;
-        row.classList.toggle('wizard-relay-row--selected', target.checked);
-        const selectedCount = this.inboxRelays.filter(r => r.selected).length;
-        this.updateNextButtonState(selectedCount >= 2);
-      });
-
-      container.appendChild(row);
-    });
   }
 
   // ─── Follow Packs Step ──────────────────────────────────────

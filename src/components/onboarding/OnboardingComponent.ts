@@ -185,11 +185,6 @@ export class OnboardingComponent {
           </div>
         </div>
       </div>
-      <div class="scc-onboarding__cta">
-        <button class="btn scc-onboarding__cta-create" data-action="scc-create">Create my account</button>
-        <button class="btn btn--passive" data-action="scc-login">I already have a key</button>
-        <p class="scc-onboarding__cta-note">Ready in 2 minutes. No email. No phone number.</p>
-      </div>
     `;
 
     sccBody.prepend(onboardingContent);
@@ -208,18 +203,6 @@ export class OnboardingComponent {
         getImageViewer().open({ images: [carouselImage.src] });
       });
     }
-
-    // SCC CTA buttons
-    onboardingContent.querySelector('[data-action="scc-create"]')?.addEventListener('click', async () => {
-      const { AccountSetupWizard } = await import('./AccountSetupWizard');
-      const wizard = new AccountSetupWizard();
-      wizard.show();
-    });
-
-    onboardingContent.querySelector('[data-action="scc-login"]')?.addEventListener('click', () => {
-      localStorage.setItem('noornote_has_key', 'true');
-      this.router.navigate('/login');
-    });
   }
 
   /**

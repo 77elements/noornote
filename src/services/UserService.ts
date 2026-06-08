@@ -74,11 +74,12 @@ export class UserService {
         }
       }
 
-      this.systemLogger.warn('UserService', 'No follow list found, using fallback');
-      return this.relayConfig.getFallbackFollowing();
+      // New account (or no contact list yet): the user genuinely follows nobody.
+      // Never inject placeholder accounts — that's their real count.
+      return [];
     } catch (error) {
       this.systemLogger.error('UserService', `Error fetching follow list: ${error}`);
-      return this.relayConfig.getFallbackFollowing();
+      return [];
     }
   }
 
