@@ -14,7 +14,6 @@ export const STARTER_ACCOUNTS: string[] = [
   'npub18rdmnvrajwrp6srzpttz63934r58sh0sn9lwk3z57ykjzuzge4wqu6dhce',
   'npub1f4uyypghstsd8l4sxng4ptwzk6awfm3mf9ux0yallfrgkm6mj6es50r407',
   'npub1ymt2j3n8tesrlr0yhaheem6yyqmmwrr7actslurw6annls6vnrcslapxnz',
-  'npub1spdnfacgsd7lk0nlqkq443tkq4jx9z6c6ksvaquuewmw7d3qltpslcq6j7',
   'npub1ya6ds0y0j7yutq6pg2ftzxfvgdzaklls64g75vh0522c7svj7mjs9cug3q',
   'npub1qspus6smkn8mcdxg5jflh50s69vdgtwsd5p74gmjpzp2qekn5duqfv5afj',
   'npub1sk7mtp67zy7uex2f3dr5vdjynzpwu9dpc7q4f2c8cpjmguee6eeq56jraw',
@@ -51,4 +50,8 @@ export const STARTER_ACCOUNTS: string[] = [
   'npub1v7k63c6y2vktlqhsuupywt3yc7ykursujc34at964f9cv9s9y9csjutfk0',
   'npub1hxp75sgvu36q2xavu4067md89tdaeqcjr0dt2nxaar2m82cjv6esznw6td',
   'npub1uwjejfyn8j0e7t0cx3ys2h4nsk83fq8a6rz7mw2a7z97mnfwvcjqcvaxfl',
+  'npub1tuw5xsgy5t9d2hxwu6d3qmx5cyyh00hqzgswvwstkq893t7splkswp8560',
+  'npub175nul9cvufswwsnpy99lvyhg7ad9nkccxhkhusznxfkr7e0zxthql9g6w0',
+  'npub1nje4ghpkjsxe5thcd4gdt3agl2usxyxv3xxyx39ul3xgytl5009q87l02j',
+  'npub1cgd35mxmy37vhkfcmjckk9dylguz6q8l67cj6h9m45tj5rx569cql9kfex',
 ];

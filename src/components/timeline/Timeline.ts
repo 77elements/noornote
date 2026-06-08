@@ -508,9 +508,20 @@ export class Timeline extends View {
         this.stateManager.setFollowingPubkeys(followingPubkeys);
 
         if (followingPubkeys.length <= 1) {
-          this.uiStateHandler.hideSkeletonLoaders();
-          this.uiStateHandler.showError('No following list found. Please follow some users first.');
-          return;
+          // The user follows nobody yet. On the main timeline, fall back to the
+          // curated starter feed + a friendly banner so the screen isn't a dead
+          // end; as soon as they follow one person, this branch is skipped and
+          // the real feed loads. Other views keep the plain empty error.
+          if (this.config.curatedFallbackWhenEmpty) {
+            const { StarterFeedOrchestrator } = await import('../../services/orchestration/StarterFeedOrchestrator');
+            const curated = StarterFeedOrchestrator.getInstance().getStarterPubkeys();
+            this.stateManager.setFollowingPubkeys(curated);
+            this.uiStateHandler.showCuratedFallbackBanner();
+          } else {
+            this.uiStateHandler.hideSkeletonLoaders();
+            this.uiStateHandler.showError('No following list found. Please follow some users first.');
+            return;
+          }
         }
       }
 

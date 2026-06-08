@@ -6,6 +6,7 @@
 
 import { createNoteSkeleton } from '../../../helpers/createSkeleton';
 import { NoteUI } from '../../ui/NoteUI';
+import { Router } from '../../../services/Router';
 
 /** Remove note-cards from container, cleaning up NoteUI internals first */
 function removeNoteCards(container: HTMLElement): void {
@@ -31,6 +32,8 @@ export class TimelineUIStateHandler {
     if (!loadTrigger) return;
 
     removeNoteCards(this.container);
+    // Drop a stale curated-fallback banner so a re-init reflects the real state.
+    this.container.querySelector('.timeline-curated-banner')?.remove();
 
     // Create skeleton loaders
     const fragment = document.createDocumentFragment();
@@ -109,6 +112,41 @@ export class TimelineUIStateHandler {
    */
   showErrorState(message: string): void {
     this.showError(message);
+  }
+
+  /**
+   * Friendly banner shown above the curated starter feed when the user follows
+   * nobody yet. Pinned to the top of the timeline; persists until the user
+   * follows someone and the real feed takes over on the next load.
+   */
+  showCuratedFallbackBanner(): void {
+    this.container.querySelector('.timeline-curated-banner')?.remove();
+
+    const banner = document.createElement('div');
+    banner.className = 'timeline-curated-banner';
+
+    const title = document.createElement('p');
+    title.className = 'timeline-curated-banner__title';
+    title.textContent = "Looks like you're not following anyone yet.";
+
+    const text = document.createElement('p');
+    text.className = 'timeline-curated-banner__text';
+    text.append('Here are some suggestions to get you started. Just hover your mouse over a profile pic (or tap on it) to follow a user. Find more under Addons → ');
+
+    const link = document.createElement('a');
+    link.href = '/addons/follow-packs';
+    link.className = 'timeline-curated-banner__link';
+    link.textContent = 'Follow Packs';
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      Router.getInstance().navigate('/addons/follow-packs');
+    });
+    text.appendChild(link);
+    text.append('.');
+
+    banner.appendChild(title);
+    banner.appendChild(text);
+    this.container.insertBefore(banner, this.container.firstChild);
   }
 
   /**

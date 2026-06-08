@@ -123,6 +123,36 @@
     color: var(--color-5);
   }
 
+  .timeline-curated-banner {
+    padding: $gap * 1.5 $gap * 2;
+    margin-bottom: $gap;
+    text-align: center;
+    border-bottom: 1px solid var(--color-2);
+
+    &__title {
+      @include h4;
+      font-weight: 700;
+      color: var(--color-5);
+      margin-bottom: calc($gap / 2);
+    }
+
+    &__text {
+      @include compact;
+      color: var(--color-3);
+      line-height: 1.5;
+    }
+
+    &__link {
+      color: var(--color-4);
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
   .timeline-load-trigger {
     height: 20px;
     width: 100%;

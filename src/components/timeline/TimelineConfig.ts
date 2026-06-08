@@ -67,6 +67,12 @@ export interface TimelineConfig {
   muteExemptPubkey?: string;
   /** Apply the content word-filter addon. */
   applyWordFilter: boolean;
+  /**
+   * When the user follows nobody (following source, list <= self), fall back to
+   * the curated starter feed + a friendly banner instead of an error. Main
+   * timeline only — profile/tribe/relay-filter views keep the empty error.
+   */
+  curatedFallbackWhenEmpty?: boolean;
 }
 
 /**
@@ -132,6 +138,7 @@ export function buildTimelineConfig(
     trimDom: true,
     marketplaceInjection: true,
     applyWordFilter: true,
+    curatedFallbackWhenEmpty: true,
   };
 }
 
