@@ -15,7 +15,6 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
-import { isNospressEnabled } from '../addons/nospress/index';
 import { SystemLogger } from '../services/SystemLogger';
 import { TypedEventBus } from '../core/TypedEventBus';
 import { AuthService } from '../services/AuthService';
@@ -3533,7 +3532,7 @@ export class BookmarkManager {
     const currentUser = this.authService.getCurrentUser();
     const isLoggedIn = !!currentUser;
 
-    const showProfileMountCheckbox = isLoggedIn && isNospressEnabled();
+    const showProfileMountCheckbox = isLoggedIn;
     const folderData: FolderData = {
       id: folder.id,
       name: folder.name,

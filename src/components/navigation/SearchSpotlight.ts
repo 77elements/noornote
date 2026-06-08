@@ -10,7 +10,7 @@ import { ModuleLoader } from '../../core/ModuleLoader';
 import type { SearchModuleApi, UserSearchResult } from '../../modules/search/contracts';
 import { hexToNpub } from '../../helpers/nip19';
 import { escapeHtml, escapeHtmlAttr } from '../../helpers/escapeHtml';
-import { resolveNip05 } from '../../addons/nospress/Nip05Resolver';
+import { resolveNip05 } from '../../helpers/Nip05Resolver';
 
 /** Prefixes that bypass user search (the user clearly wants direct navigation, not a name match) */
 const SPECIAL_INPUT_PREFIXES = ['/', 'http', 'npub1', 'nprofile1', 'nevent1', 'note1', 'naddr1', 'nostr:'] as const;

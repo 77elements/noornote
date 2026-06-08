@@ -12,8 +12,6 @@
  * @used-by ProfileView
  */
 
-import { NospressMountsService } from '../../services/NospressMountsService';
-import { NospressMountsOrchestrator } from '../../services/orchestration/NospressMountsOrchestrator';
 import { ModuleLoader } from '../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../modules/posts/contracts';
 import type { ProfileModuleApi } from '../../modules/profile/contracts';
@@ -29,8 +27,6 @@ import { Router } from '../../services/Router';
 import { escapeHtml } from '../../helpers/escapeHtml';
 
 const MAX_ITEMS_COLLAPSED = 3;
-
-export type MountsSource = 'profile' | 'nospress';
 
 interface MountsServiceLike {
   getMounts(): string[];
@@ -61,28 +57,22 @@ export class ProfileListsComponent {
   private lists: ProfileListData[] = [];
   private elements: HTMLElement[] = [];
   private insertAfterEl: Element | null = null;
-  private insertMode: 'after' | 'append' = 'after';
   private resolvedDisplay: Map<string, string> = new Map();  // item.id (events) or item.value (a-tags) → display text
   private destroyed: boolean = false;
 
-  constructor(pubkey: string, source: MountsSource = 'profile') {
+  constructor(pubkey: string) {
     this.pubkey = pubkey;
 
-    if (source === 'nospress') {
-      this.mountsService = NospressMountsService.getInstance();
-      this.mountsOrch = NospressMountsOrchestrator.getInstance();
-    } else {
-      const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
-      this.mountsService = {
-        getMounts: () => profileApi?.getProfileMounts() ?? [],
-        setMountsFromRelay: () => { /* handled by module */ },
-        reorderMounts: (newOrder) => profileApi?.reorderProfileMounts(newOrder),
-      };
-      this.mountsOrch = {
-        fetchFromRelays: (pk, force) => profileApi?.fetchMountsFromRelays(pk, force) ?? Promise.resolve([]),
-        publishToRelays: () => profileApi?.publishMountsToRelays() ?? Promise.resolve(),
-      };
-    }
+    const profileApi = ModuleLoader.getInstance().getApi<ProfileModuleApi>('profile');
+    this.mountsService = {
+      getMounts: () => profileApi?.getProfileMounts() ?? [],
+      setMountsFromRelay: () => { /* handled by module */ },
+      reorderMounts: (newOrder) => profileApi?.reorderProfileMounts(newOrder),
+    };
+    this.mountsOrch = {
+      fetchFromRelays: (pk, force) => profileApi?.fetchMountsFromRelays(pk, force) ?? Promise.resolve([]),
+      publishToRelays: () => profileApi?.publishMountsToRelays() ?? Promise.resolve(),
+    };
     this.bookmarkOrch = BookmarkOrchestrator.getInstance();
     this.folderService = getBookmarkFolderService();
     this.authService = AuthService.getInstance();
@@ -91,37 +81,19 @@ export class ProfileListsComponent {
   }
 
   /**
-   * Render mounted lists into the DOM. Default mode (`'after'`) inserts
-   * each list as a sibling **after** `anchor` — used by ProfileView,
-   * where a stable anchor element marks the insertion point.
-   *
-   * NosPress's bookmark-folder block needs the lists INSIDE the styled
-   * wrapper instead (so per-block `style` / `breakpointStyles` like
-   * width/margin actually constrain the rendered list). For that path,
-   * pass `mode: 'append'` — lists become children of `anchor`.
+   * Render mounted lists into the DOM. Each list is inserted as a sibling
+   * **after** `anchor` — a stable element marking the insertion point on
+   * the profile.
    *
    * @param anchor - DOM element used as the insertion reference
-   * @param folderNamesOverride - if provided, use these folder names directly
-   *   instead of querying mountsService/mountsOrch. Used by NospressView to
-   *   render from v2 bookmark-folder blocks (draft/published) so the readonly
-   *   view reflects in-progress edits without waiting for publish.
-   * @param mode - `'after'` (default) inserts as siblings; `'append'`
-   *   inserts as children of `anchor`.
    */
-  public async render(
-    anchor: Element,
-    folderNamesOverride?: string[],
-    mode: 'after' | 'append' = 'after',
-  ): Promise<void> {
+  public async render(anchor: Element): Promise<void> {
     this.insertAfterEl = anchor;
-    this.insertMode = mode;
 
     try {
       let mountedFolders: string[];
 
-      if (folderNamesOverride !== undefined) {
-        mountedFolders = folderNamesOverride;
-      } else if (this.isOwnProfile) {
+      if (this.isOwnProfile) {
         // Trust local state. AutoSyncService handles cross-device sync at app
         // boot and on addon toggle. Re-fetching here would race with in-flight
         // publishToRelays from a just-toggled checkbox and revert the change.
@@ -196,32 +168,17 @@ export class ProfileListsComponent {
 
     if (this.lists.length === 0 || !this.insertAfterEl) return;
 
-    if (this.insertMode === 'append') {
-      // NosPress mode: lists become children of `anchor` so the styled
-      // wrapper's width/margin/etc. actually constrain the rendered
-      // list content.
-      for (let i = 0; i < this.lists.length; i++) {
-        const el = document.createElement('div');
-        el.className = 'profile-lists-mount';
-        el.dataset.listIndex = String(i);
-        el.innerHTML = this.renderListInner(this.lists[i]!, i);
-        this.insertAfterEl.appendChild(el);
-        this.elements.push(el);
-      }
-    } else {
-      // ProfileView mode: lists become siblings AFTER `anchor`, in
-      // order — each new entry appended after the previous so they
-      // stay sequential in the DOM.
-      let insertAfter: Element = this.insertAfterEl;
-      for (let i = 0; i < this.lists.length; i++) {
-        const el = document.createElement('div');
-        el.className = 'profile-lists-mount';
-        el.dataset.listIndex = String(i);
-        el.innerHTML = this.renderListInner(this.lists[i]!, i);
-        insertAfter.after(el);
-        this.elements.push(el);
-        insertAfter = el;
-      }
+    // Lists become siblings AFTER `anchor`, in order — each new entry
+    // appended after the previous so they stay sequential in the DOM.
+    let insertAfter: Element = this.insertAfterEl;
+    for (let i = 0; i < this.lists.length; i++) {
+      const el = document.createElement('div');
+      el.className = 'profile-lists-mount';
+      el.dataset.listIndex = String(i);
+      el.innerHTML = this.renderListInner(this.lists[i]!, i);
+      insertAfter.after(el);
+      this.elements.push(el);
+      insertAfter = el;
     }
 
     this.bindEvents();

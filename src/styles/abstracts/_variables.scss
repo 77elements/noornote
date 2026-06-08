@@ -245,7 +245,7 @@ $main-content-max-width: 1200px;
 // ========================================
 $z-dropdown:           1000;   // popovers, custom dropdowns, hover cards anchored inline
 $z-sticky:             1001;   // sticky toolbars within a scroll container
-$z-fullscreen-overlay: 8000;   // NosPress edit overlay, other in-app fullscreen surfaces
+$z-fullscreen-overlay: 8000;   // in-app fullscreen surfaces
 $z-image-viewer:       9999;   // lightbox, offline-overlay, blocking system banners
 $z-modal:              10000;  // generic ModalService backdrop + content
 $z-modal-top:          10001;  // elements above a modal's content (close button, popups inside modal)

@@ -21,7 +21,6 @@ import { isCustomEmojisEnabled } from './custom-emojis/index';
 import { isMarketplaceEnabled } from './marketplace/index';
 import { isFollowPacksEnabled } from './follow-packs/index';
 import { isScheduledPostsEnabled } from './scheduled-posts/index';
-import { isNospressEnabled } from './nospress/index';
 import { isBadgesEnabled } from './badges/index';
 import { isNoteTakingEnabled } from './note-taking/index';
 import { isNostrMajlisEnabled } from './nostr-majlis/index';
@@ -82,12 +81,6 @@ export function registerCoreAddons(): void {
     id: 'scheduled-posts',
     isEnabled: isScheduledPostsEnabled,
     load: () => import('./scheduled-posts/runtime').then(m => m.default),
-  });
-
-  loader.register({
-    id: 'nospress',
-    isEnabled: isNospressEnabled,
-    load: () => import('./nospress/runtime').then(m => m.default),
   });
 
   loader.register({

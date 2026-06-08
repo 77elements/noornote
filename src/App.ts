@@ -27,7 +27,6 @@ import { registerCoreAddons } from './addons/registerAddons';
 import { ModuleLoader } from './core/ModuleLoader';
 import { registerCoreModules } from './core/registerModules';
 import { decodeNip19 } from './services/NostrToolsAdapter';
-import type { PublicPageBootstrap as PublicPageBootstrapT } from './addons/nospress/PublicPageBootstrap';
 import { hexToNpub } from './helpers/nip19';
 
 /** Maps viewName to the AppState key that stores the route parameter */
@@ -67,20 +66,7 @@ export class App {
   async initialize(): Promise<void> {
     this.setupRoutes();
 
-    // Public-page boot path: when the URL is a top-level npub or nip05, we
-    // skip MainLayout entirely. The actual decision (logged-in redirect vs.
-    // public-view mount) finalizes after auth-init below.
-    // Dynamic-imported so the addon's nospress code stays out of the core
-    // chunk when the URL is not a public-page route.
-    const PublicPageBootstrap: typeof PublicPageBootstrapT =
-      (await import('./addons/nospress/PublicPageBootstrap')).PublicPageBootstrap;
-    const publicMatch = PublicPageBootstrap.detect();
-    // Wire the central popstate fallback: a Back button that lands on
-    // a NosPress public URL (`/npub1…` or `/alp@nostrplebs.com`) has no
-    // Route handler — only the boot path knows how to mount that view.
-    // Reloading lets PublicPageBootstrap pick the URL up again.
-    this.router.setFullReloadOnPopstate(path => PublicPageBootstrap.detect(path) !== null);
-    if (!publicMatch) this.setupUI();
+    this.setupUI();
 
     this.setupEventListeners();
 
@@ -171,15 +157,6 @@ export class App {
     }
 
     const isLoggedIn = this.authService.hasValidSession();
-
-    // Public-page boot branch: a public NosPress URL renders the clean
-    // single-column page regardless of auth state. Logged-in NoorNote users
-    // additionally get a sticky admin-style top-bar with quick-nav back into
-    // the app — owners of the page see an extra "Edit" button.
-    if (publicMatch && this.appElement) {
-      await PublicPageBootstrap.mountPublicView(publicMatch, this.appElement);
-      return;
-    }
 
     const targetPath = await this.resolveTargetPath(isLoggedIn, intendedURL);
     this.router.navigate(targetPath);
@@ -305,7 +282,6 @@ export class App {
     // Parameterized routes (public)
     this.registerRoute('/note/:noteId', 'single-note', 'single-note', 'snv', false,
       (params) => params.noteId ?? '');
-    this.registerRoute('/nospress', 'nospress', 'nospress', 'npev', true);
     this.registerRoute('/profile/:npub', 'profile', 'profile', 'pv', false,
       (params) => params.npub ?? '');
     this.registerRoute('/article/:naddr', 'article', 'article', 'av', false,
@@ -348,7 +324,6 @@ export class App {
     this.registerRoute('/addons/profile-recognition',   'addon-profile-recognition',   'addon-profile-recognition',   'adv', true);
     this.registerRoute('/addons/marketplace',           'addon-marketplace',           'addon-marketplace',           'adv', true);
     this.registerRoute('/addons/follow-packs',          'addon-follow-packs',          'addon-follow-packs',          'adv', true);
-    this.registerRoute('/addons/nospress',                'addon-nospress',                'addon-nospress',                'adv', true);
     this.registerRoute('/addons/hashtag-subscriptions', 'addon-hashtag-subscriptions', 'addon-hashtag-subscriptions', 'adv', true);
     this.registerRoute('/addons/list-settings',         'addon-list-settings',         'addon-list-settings',         'adv', true);
     this.registerRoute('/addons/custom-emojis',         'addon-custom-emojis',         'addon-custom-emojis',         'adv', true);

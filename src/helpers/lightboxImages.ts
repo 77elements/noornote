@@ -10,7 +10,7 @@
  *
  * If either side is missing, the handler bails silently. These helpers
  * keep both halves consistent across all HTML-string render paths
- * (timeline media, NosPress image/gallery blocks).
+ * (timeline media, gallery rendering).
  *
  * The DOM-based path (`upgradeArticleImages.ts`) walks already-rendered
  * elements and writes the same attributes there — it does not use these

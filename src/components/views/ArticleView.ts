@@ -68,11 +68,11 @@ export class ArticleView extends View {
     `;
 
     try {
-      // Ensure the lazy articles module is loaded before fetching. On a full page
-      // load straight into /article/<naddr> — e.g. clicked from a public NosPress
-      // page carousel — the sync getApi('articles') can still be null and the
-      // article would wrongly show "not found". ensure() loads it on demand in any
-      // boot context (in-app it is already loaded and resolves instantly).
+      // Ensure the lazy articles module is loaded before fetching. On a full
+      // page load straight into /article/<naddr> (e.g. a shared deep link) the
+      // sync getApi('articles') can still be null and the article would wrongly
+      // show "not found". ensure() loads it on demand in any boot context
+      // (in-app it is already loaded and resolves instantly).
       const api = await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
       const event = (await api?.fetchAddressableEvent(this.naddrRef)) ?? null;
 

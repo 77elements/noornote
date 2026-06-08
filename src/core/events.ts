@@ -6,9 +6,6 @@ import type { DMMessage } from '../services/dm/DMStore';
 import type { ViewTab } from '../services/ViewTabManager';
 import type { PersonalEmoji } from '../addons/custom-emojis/EmojiService';
 import type { UploadStatus } from '../services/media/compression-types';
-import type { NospressMenuSet } from '../addons/nospress/blocks/menu';
-import type { NospressPageIndex } from '../addons/nospress/blocks/pageIndex';
-import type { NospressListSection } from '../services/NospressService';
 
 // Event-name constant for the media-upload status bus event (typed below as
 // 'media-upload:status'). Lives here in neutral core/ so both MediaUploadService
@@ -194,17 +191,6 @@ export interface ArticleNotificationUpdatedPayload {
 
 // ── Marketplace ──────────────────────────────────────────────
 
-// ── NosPress ─────────────────────────────────────────────────
-
-export interface NospressDraftChangedPayload {
-  page: any;
-  slug: string;
-}
-
-export interface NospressMountsChangedPayload {
-  mounts: string[];
-}
-
 // ── Addon Toggle (shared shape) ──────────────────────────────
 
 export interface AddonTogglePayload {
@@ -323,14 +309,6 @@ export interface AppEvents {
   // ── Emojis ─────────────────────────────────
   'emojis:updated': EmojisUpdatedPayload;
 
-  // ── NosPress ───────────────────────────────
-  'nospressDraftV2:changed': NospressDraftChangedPayload;
-  'nospressList:changed': { sections: NospressListSection[] } | null;
-  'nospressMenus:changed': { set: NospressMenuSet } | null;
-  'nospressPageIndex:changed': { index: NospressPageIndex } | null;
-  'nospressSiteSettings:changed': any;
-  'nospressMounts:changed': NospressMountsChangedPayload;
-
   // ── Scheduled Posts ────────────────────────
   'scheduled-posts:changed': void;
 
@@ -353,7 +331,6 @@ export interface AppEvents {
   'hashtag-subscriptions:addon-toggle': AddonTogglePayload;
   'live-streams-player:addon-toggle': AddonTogglePayload;
   'marketplace:addon-toggle': AddonTogglePayload;
-  'nospress:addon-toggle': AddonTogglePayload;
   'note-taking:addon-toggle': AddonTogglePayload;
   'nostr-majlis:addon-toggle': AddonTogglePayload;
   'profile-recognition:addon-toggle': AddonTogglePayload;

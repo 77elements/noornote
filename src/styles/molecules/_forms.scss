@@ -229,58 +229,6 @@ label {
     }
   }
 
-  // Three-column variant: `Label | Value/Field | Control`. First column is
-  // a fixed-width label slot (100px), second column flexes to fill, third
-  // shrinks to the control's natural width (typically a checkbox / radio).
-  // Used in the NosPress Fonts section to align custom-font rows + the
-  // site-default input on the same grid.
-  &--3cols {
-    display: grid;
-    grid-template-columns: 100px 1fr auto;
-    align-items: center;
-    gap: $gap;
-
-    // Specificity-matched override of the base `.form__row label:not(.switch-label)`
-    // rule above (which sets display:block + margin-bottom). Without
-    // `:not(.switch-label)` here the parent rule wins on specificity and
-    // the label keeps its margin-bottom, breaking vertical centering in
-    // the grid.
-    label:not(.switch-label) {
-      display: inline-block;
-      margin-bottom: 0;
-    }
-
-    // Inline-styled radios / checkboxes in the third column — same visual
-    // pattern as `.nn-checkbox` (appearance: none + ✓ marker).
-    input[type="radio"],
-    input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      margin: 0;
-      cursor: pointer;
-      appearance: none;
-      background: transparent;
-      border: 1px solid var(--color-3);
-      border-radius: $radius-xl;
-      position: relative;
-
-      &:checked {
-        border-color: var(--color-4);
-
-        &::after {
-          content: '✓';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          color: var(--color-4);
-          font-size: 14px;
-          line-height: 1;
-        }
-      }
-    }
-  }
-
   input,
   textarea,
   .input-element {
@@ -412,23 +360,3 @@ label {
   }
 }
 
-// ========================================
-// Fieldset / Legend
-// ========================================
-// Groups related controls inside the NosPress Properties panel
-// ("General" vs "Specific"). Browser defaults are intentionally
-// neutralised — only the requested chrome (color-3 border, pill
-// radius, $gap padding) survives.
-fieldset {
-  margin: $gap 0;
-  padding: $gap;
-  border: 1px solid var(--color-3);
-  border-radius: $radius-pill;
-  min-inline-size: 0; // override UA default that forces min-width: min-content
-
-  legend {
-    padding: 0 calc($gap / 2);
-    color: var(--color-3);
-    font-weight: 500;
-  }
-}

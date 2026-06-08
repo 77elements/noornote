@@ -235,7 +235,7 @@
   <symbol id="icon-menu-bars" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <!-- Lucide `menu` — three horizontal lines, the canonical mobile-nav /
          drawer trigger. Use this for hamburger buttons in MainLayout,
-         NosPress nav-menu drawer, etc. The list-tree shape (#icon-hamburger
+         mobile nav drawers, etc. The list-tree shape (#icon-hamburger
          below) is reserved for the Lists sidebar item. -->
     <path d="M4 6h16" />
     <path d="M4 12h16" />

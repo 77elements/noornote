@@ -4,7 +4,7 @@
   position: fixed;
   inset: 0;
   // Below upload-progress-overlay (9000) so the upload status chip stays
-  // visible while the NosPress editor (and other fullscreen views) are open.
+  // visible while fullscreen views are open.
   // Toasts/modals/emoji-picker (10000+) still sit above this.
   z-index: 8000;
   background: var(--color-1);

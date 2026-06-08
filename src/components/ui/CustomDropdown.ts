@@ -132,8 +132,8 @@ export class CustomDropdown {
         e.stopPropagation();
         const value = (item as HTMLElement).dataset.value;
         // Truthy check rejected legitimate empty-string values used by
-        // "(default)" / "(none)" entries (NosPress catalog) — picking them
-        // was meant to clear the slot, but the click was silently dropped.
+        // "(default)" / "(none)" entries — picking them was meant to clear
+        // the slot, but the click was silently dropped.
         if (value !== undefined) {
           this.selectOption(value);
         }

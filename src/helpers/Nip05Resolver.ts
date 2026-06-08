@@ -4,15 +4,11 @@
  * Standard NIP-05 lookup against `https://{domain}/.well-known/nostr.json?name={name}`.
  * Returns null on any failure (network, malformed JSON, missing pubkey, CORS) —
  * callers should treat null as "handle did not resolve".
- *
- * This is the read-side resolver used by the public NosPress page boot path.
  * No relay hints are followed automatically; that is left to the caller.
  *
  * In-memory result cache with 1h TTL — browser HTTP cache cannot be relied
- * upon (server may set no-cache, CDN behavior varies). Two callers
- * (PublicPageBootstrap.resolveToNpub for logged-in redirect, then
- * PublicNospressPage.load) hit the same handle on the same page-load;
- * cache turns the second into a memory read.
+ * upon (server may set no-cache, CDN behavior varies); repeated lookups of the
+ * same handle within the TTL become memory reads.
  */
 
 export interface Nip05Resolution {

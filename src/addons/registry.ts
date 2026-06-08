@@ -29,7 +29,6 @@ export const ADDON_REGISTRY: AddonRegistryEntry[] = [
   { id: 'profile-recognition',   name: 'Profile Recognition',    route: '/addons/profile-recognition',   viewId: 'addon-profile-recognition' },
   { id: 'marketplace',           name: 'Marketplace',            route: '/addons/marketplace',           viewId: 'addon-marketplace' },
   { id: 'follow-packs',          name: 'Follow Packs',           route: '/addons/follow-packs',          viewId: 'addon-follow-packs' },
-  { id: 'nospress',              name: 'NosPress',               route: '/addons/nospress',              viewId: 'addon-nospress' },
   { id: 'hashtag-subscriptions', name: 'Hashtag Subscriptions',  route: '/addons/hashtag-subscriptions', viewId: 'addon-hashtag-subscriptions' },
   { id: 'list-settings',         name: 'List Sync Mode',         route: '/addons/list-settings',         viewId: 'addon-list-settings' },
   { id: 'custom-emojis',         name: 'Custom Emojis',          route: '/addons/custom-emojis',         viewId: 'addon-custom-emojis' },

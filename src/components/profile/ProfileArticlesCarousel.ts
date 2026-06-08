@@ -132,11 +132,9 @@ export class ProfileArticlesCarousel {
         return bPublished - aPublished;
       });
 
-      // Ensure the articles module is loaded before extracting metadata. On the
-      // public NosPress page the app boots minimally (no login activation), so a
-      // sync getApi('articles') returned null there and every article fell back to
-      // empty metadata (no title/image, epoch date "Jan 1 1970"). ensure() loads it
-      // on demand in any context; in-app it is already loaded and resolves instantly.
+      // Ensure the articles module is loaded before extracting metadata —
+      // ensure() loads it on demand in any boot context; in-app it is already
+      // loaded and resolves instantly.
       const articlesApi = await ModuleLoader.getInstance().ensure<ArticlesModuleApi>('articles');
 
       this.articles = events.map(event => {
@@ -217,15 +215,6 @@ export class ProfileArticlesCarousel {
         const route = data.isDraft === 'true'
           ? `/edit-article/${data.naddr}`
           : `/article/${data.naddr}`;
-        // Public NosPress page has no MainLayout (setupUI is skipped),
-        // so the in-app `Router.navigate` has no mount target. Full
-        // page-load reboots through App.ts → setupUI → article view,
-        // works for logged-in AND logged-out visitors (`/article/`
-        // route has `requiresAuth: false`).
-        if (document.documentElement.classList.contains('layout--public')) {
-          window.location.href = route;
-          return;
-        }
         Router.getInstance().navigate(route);
       }
     });

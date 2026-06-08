@@ -1,5 +1,5 @@
 /**
- * Shared grid drag-drop mechanics — bookmarks, tribes, NosPress nav menus.
+ * Shared grid drag-drop mechanics — bookmarks, tribes.
  *
  * Extracts the identical mousedown/mousemove/mouseup + threshold + placeholder
  * + fixed-positioning logic. Caller-specific drop handling stays in onDrop.

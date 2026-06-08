@@ -5,7 +5,7 @@
  * NEVER uses the user's relays, the aggregated relays or outbox - ONLY these two, for both
  * publishing and subscribing. Only NoorNote renders these events.
  *
- * Built on kind 30078 (NIP-78 addressable app data), the same mechanism note-taking / NosPress use:
+ * Built on kind 30078 (NIP-78 addressable app data), the same mechanism note-taking uses:
  *   - Round (a dhikr action): d=`noornote/dhikr/<uuid>`, t=`noornote-dhikr-round` (discovery),
  *     title/goal/description tags.
  *   - Commit (a participation): a=<round addr>, t=`noornote-dhikr-commit`, count tag. One per npub

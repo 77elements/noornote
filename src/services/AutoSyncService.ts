@@ -20,8 +20,6 @@ import { PlatformService } from './PlatformService';
 import { SystemLogger } from './SystemLogger';
 import { isEasyMode } from '../helpers/ListSyncMode';
 import { diagLog } from './DiagnosticLogger';
-import { AddonLoader } from '../addons/AddonLoader';
-import type { NospressRuntime } from '../addons/nospress/runtime';
 
 import {
   saveToFile as saveFollowsToFile,
@@ -209,7 +207,7 @@ export class AutoSyncService {
       await this.syncFromRelaysAll();
       this.startPeriodicSync();
 
-      // ProfileMounts sync (independent of the NosPress addon).
+      // ProfileMounts sync.
       try {
         const { ProfileMountsOrchestrator } = await import('./orchestration/ProfileMountsOrchestrator');
         await ProfileMountsOrchestrator.getInstance().syncFromRelays();
@@ -217,20 +215,6 @@ export class AutoSyncService {
         // ProfileMounts sync failed silently
       }
 
-      // NosPress sync — only when the addon runtime is loaded. The 10s
-      // startup delay above gives AddonLoader plenty of time to activate
-      // the runtime via the user:login event before this code runs.
-      try {
-        const runtime = AddonLoader.getInstance().getRuntime<NospressRuntime>('nospress');
-        if (runtime) {
-          await Promise.all([
-            runtime.mounts?.syncFromRelays(),
-            runtime.nospress?.syncFromRelays(),
-          ]);
-        }
-      } catch {
-        // NosPress sync failed silently
-      }
     }, this.STARTUP_SYNC_DELAY);
   }
 

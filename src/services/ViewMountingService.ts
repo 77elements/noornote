@@ -186,17 +186,6 @@ export class ViewMountingService {
           }
         };
 
-      case 'nospress':
-        return {
-          factory: async () => {
-            const { NospressView } = await import('../addons/nospress/NospressView');
-            const { AuthService } = await import('./AuthService');
-            const npub = AuthService.getInstance().getCurrentUser()?.npub ?? '';
-            const view = new NospressView(npub);
-            return { element: view.getElement(), view };
-          }
-        };
-
       case 'follow-pack':
         return {
           requiresParam: true,
@@ -459,15 +448,6 @@ export class ViewMountingService {
           factory: async () => {
             const { FollowPacksView } = await import('../addons/follow-packs/FollowPacksView');
             const view = new FollowPacksView();
-            return { element: view.getElement(), view };
-          }
-        };
-
-      case 'addon-nospress':
-        return {
-          factory: async () => {
-            const { NospressAddonView } = await import('../addons/nospress/NospressAddonView');
-            const view = new NospressAddonView();
             return { element: view.getElement(), view };
           }
         };

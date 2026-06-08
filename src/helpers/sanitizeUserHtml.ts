@@ -1,8 +1,8 @@
 import DOMPurify from 'dompurify';
 
 /**
- * Sanitize untrusted HTML coming from user-controlled fields (NosPress
- * block text, captions, list items, button labels, …).
+ * Sanitize untrusted HTML coming from user-controlled fields (block text,
+ * captions, list items, button labels, …).
  *
  * Centralizes the project's HTML-sanitization policy so future tightening
  * (narrower ALLOWED_TAGS / ALLOWED_ATTR, custom hooks) lives in one place

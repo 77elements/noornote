@@ -6,7 +6,6 @@
 
 import { ModalService } from '../services/ModalService';
 import { Router } from '../services/Router';
-import { AuthService } from '../services/AuthService';
 
 const POST_LOGIN_REDIRECT_KEY = 'noornote_post_login_redirect';
 
@@ -67,13 +66,6 @@ export function showLoggedOutReactionModal(
     <p class="logged-out-modal__note">Ready in 2 minutes. No email. No phone number.</p>
   `;
 
-  // On the public NosPress page there is no MainLayout in the DOM (setupUI()
-  // is skipped by App.ts's boot path), so router.navigate('/login') has no
-  // mount target. We instead try an in-place NIP-07 login (Alby popup) first;
-  // if that's not possible we fall back to a full page-load to /login where
-  // Bunker / NoorSigner / npub-paste are also available.
-  const isPublicView = document.documentElement.classList.contains('layout--public');
-
   const stashRedirect = (): void => {
     if (opts.postLoginAction) {
       sessionStorage.setItem(POST_LOGIN_REDIRECT_KEY, opts.postLoginAction);
@@ -93,28 +85,6 @@ export function showLoggedOutReactionModal(
   content.querySelector('.logged-out-modal__login')?.addEventListener('click', async () => {
     modalService.hide();
     stashRedirect();
-
-    // Public view: prefer in-place NIP-07 (Alby/nos2x popup, user stays on
-    // the page). Fall back to /login redirect for Bunker / NoorSigner /
-    // other auth methods, or when no extension is installed.
-    if (isPublicView) {
-      const authService = AuthService.getInstance();
-      if (authService.isExtensionAvailable()) {
-        try {
-          const result = await authService.authenticate();
-          if (result.success) {
-            // user:login event fires → PostLoginService consumes the
-            // redirect key; full reload triggers App.ts's logged-in branch.
-            window.location.reload();
-            return;
-          }
-        } catch {
-          // fall through to /login
-        }
-      }
-      window.location.href = '/login';
-      return;
-    }
 
     router.navigate('/login');
   });

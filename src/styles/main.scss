@@ -45,7 +45,6 @@
 @use 'components/skeleton';
 @use 'components/single-note-view';
 @use 'components/profile-view';
-@use 'components/nospress';
 @use 'components/profile-edit-modal';
 @use 'components/profile-search';
 @use 'components/settings-view';
@@ -59,7 +58,6 @@
 @use 'components/article-view';
 @use 'components/article-editor-view';
 @use 'components/fullscreen-overlay';
-@use 'components/public-nospress';
 @use 'components/video-editor-view';
 @use 'components/article-timeline';
 @use 'components/modal';

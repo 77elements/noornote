@@ -17,8 +17,8 @@
   width: 100%;
   height: 100%;
   // Sits above .fullscreen-overlay (8000) and .upload-progress-overlay
-  // (9000) so prompts/confirms triggered from inside the NosPress editor
-  // (or any other fullscreen surface) are actually visible.
+  // (9000) so prompts/confirms triggered from inside a fullscreen
+  // surface are actually visible.
   z-index: 10000;
   display: flex;
   align-items: center;
