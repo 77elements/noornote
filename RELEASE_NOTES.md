@@ -1,13 +1,14 @@
-# NoorNote 0.10.2
+# NoorNote 0.11.0
 
-**Right Pane improvements**
-Clicking articles, replies, marketplace listings, follow packs, profiles and notification targets now opens them in the right pane instead of replacing your timeline. The open right-pane tab — including lists and search results — is now saved in the address bar and restored when you reload.
-
-**Articles**
-Tables and dividers now render in articles, and the editor Preview matches the published result.
-
-**Custom emojis**
-Emoji-set cards now show what changed since the last version.
+**New & Improved**
+- Simpler onboarding: relay setup is now automatic, so there are fewer steps to get started.
+- New accounts begin with a friendly curated feed of suggested people, with a quick path to Follow Packs.
+- Reactions, zaps and replies are now visible even when you're logged out.
+- Lists and Addons menus pop out as floating panels when the sidebar is collapsed.
 
 **Fixes**
-The New Post menu no longer gets squeezed when the sidebar is collapsed, and the reaction emoji picker no longer gets cut off on the right.
+- Reply notifications are now correctly flagged as high-priority.
+- You land on the right page after signing in.
+
+**Removed**
+- The NosPress addon has been removed.
