@@ -38,7 +38,7 @@ export class SingleNoteRuntime implements ModuleRuntime<SingleNoteModuleApi> {
     const qo = this.quoteOrchestrator;
     const po = this.pollOrchestrator;
     return {
-      fetchReplies: (noteId) => orch?.fetchReplies(noteId) ?? Promise.resolve([]),
+      fetchReplies: (noteId, authorPubkey) => orch?.fetchReplies(noteId, authorPubkey) ?? Promise.resolve([]),
       fetchParentChain: (noteId) => orch?.fetchParentChain(noteId) ?? Promise.resolve({ items: [], rootId: null } as any),
       startLiveReplies: (noteId, callback) => orch?.startLiveReplies(noteId, callback),
       stopLiveReplies: (noteId) => orch?.stopLiveReplies(noteId),

@@ -159,7 +159,11 @@ export class InteractionStatusLine {
    */
   private async fetchStats(): Promise<void> {
     try {
-      const stats = await this.reactionsApi?.getStats(
+      // ensure() (not the cached getApi) so stats load on public, logged-out
+      // note views too — the reactions module activates on login, but reading
+      // stats must work without auth. Write actions stay AuthGuard-gated.
+      const reactionsApi = await ModuleLoader.getInstance().ensure<ReactionsModuleApi>('reactions');
+      const stats = await reactionsApi?.getStats(
         this.config.noteId,
         this.config.authorPubkey
       );

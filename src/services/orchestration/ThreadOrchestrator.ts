@@ -80,12 +80,12 @@ export class ThreadOrchestrator extends Orchestrator {
     return { root: null, parents: [], directParent: null, hasSkippedReplies: false };
   }
 
-  public async fetchReplies(noteId: string): Promise<NostrEvent[]> {
+  public async fetchReplies(noteId: string, authorPubkey?: string): Promise<NostrEvent[]> {
     if (this.fetchingReplies.has(noteId)) {
       return await this.fetchingReplies.get(noteId)!;
     }
 
-    const fetchPromise = this.fetchRepliesFromRelays(noteId);
+    const fetchPromise = this.fetchRepliesFromRelays(noteId, authorPubkey);
     this.fetchingReplies.set(noteId, fetchPromise);
 
     try {
@@ -101,9 +101,12 @@ export class ThreadOrchestrator extends Orchestrator {
   }
 
   /**
-   * Fetch replies with 2-stage strategy: read relays → outbound relays of note author
+   * Fetch replies with 2-stage strategy: read relays → outbound relays of note author.
+   * hintedAuthorPubkey lets callers (SNV) supply the note author directly so stage 2
+   * runs even when the note isn't in NoteService cache — e.g. a public note opened cold
+   * from an external link while logged out, where read relays are sparse.
    */
-  private async fetchRepliesFromRelays(noteId: string): Promise<NostrEvent[]> {
+  private async fetchRepliesFromRelays(noteId: string, hintedAuthorPubkey?: string): Promise<NostrEvent[]> {
     const isAddressable = noteId.includes(':');
     const filterLowerA: NDKFilter[] = isAddressable
       ? [{ kinds: [1, 1111], '#a': [noteId] }]
@@ -131,7 +134,9 @@ export class ThreadOrchestrator extends Orchestrator {
 
     // Stage 2: Outbound relays of the note's author (replies often land on same relays)
     // For addressable events (kind:pubkey:d-tag), extract pubkey directly from the identifier
-    const authorPubkey = isAddressable ? noteId.split(':')[1] : this.noteService.getCachedNote(noteId)?.pubkey;
+    const authorPubkey = isAddressable
+      ? noteId.split(':')[1]
+      : (hintedAuthorPubkey ?? this.noteService.getCachedNote(noteId)?.pubkey);
     if (authorPubkey) {
       try {
         const outboundRelays = await this.relayDiscovery.getCombinedRelays([authorPubkey], true);

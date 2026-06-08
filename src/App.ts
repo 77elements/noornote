@@ -129,14 +129,18 @@ export class App {
       delete (window as any).__noornote_relay_param;
     }
 
-    // Capture intended URL: ?r= override > sessionStorage (reload) > browser path (external link)
+    // Capture intended URL: ?r= override > explicit address-bar path (web) > sessionStorage (reload / Electron restore)
     const relayPath = relayParam ? `/relay/${encodeURIComponent(relayParam)}` : null;
     const lastURL = this.router.getLastURL();
     // In Electron prod, window.location.pathname is the on-disk file path of dist/index.html
     // (never matches an SPA route). Honor pathname only in true web builds; native deep links
     // arrive via electronAPI.onDeepLink / Capacitor app URL events.
     const browserPath = PlatformService.getInstance().isBrowser ? window.location.pathname : '/';
-    const intendedURL = relayPath || lastURL || (browserPath !== '/' ? browserPath : null);
+    // A specific address-bar path (web) is the user's explicit intent and must beat the stored
+    // lastURL — otherwise pasting /note/X after landing on /login or /welcome keeps the stale
+    // path and the user is stuck. lastURL stays the fallback for root '/' restore and Electron
+    // (where browserPath is always '/').
+    const intendedURL = relayPath || (browserPath !== '/' ? browserPath : null) || lastURL;
 
     // Wait for auth initialization with safety timeout
     let authTimedOut = false;

@@ -224,7 +224,8 @@ export class RelayConfig {
       return [
         'wss://relay.damus.io',
         'wss://nos.lol',
-        'wss://relay.primal.net'
+        'wss://relay.primal.net',
+        'wss://noornode.nostr1.com/'
       ];
     }
     return [
@@ -234,7 +235,8 @@ export class RelayConfig {
       'wss://relay.primal.net',
       'wss://purplepag.es',
       'wss://relay.mostr.pub',
-      'wss://relay.zapstore.dev'
+      'wss://relay.zapstore.dev',
+      'wss://noornode.nostr1.com/'
     ];
   }
 

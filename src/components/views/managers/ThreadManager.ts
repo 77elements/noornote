@@ -38,10 +38,6 @@ export interface ThreadManagerConfig {
 
 export class ThreadManager {
   private config: ThreadManagerConfig;
-  private _singleNoteApi?: SingleNoteModuleApi | null;
-  private get singleNoteApi(): SingleNoteModuleApi | null {
-    return this._singleNoteApi ??= ModuleLoader.getInstance().getApi<SingleNoteModuleApi>('single-note');
-  }
   private _reactionsApi?: ReactionsModuleApi | null;
   private get reactionsApi(): ReactionsModuleApi | null {
     return this._reactionsApi ??= ModuleLoader.getInstance().getApi<ReactionsModuleApi>('reactions');
@@ -122,7 +118,10 @@ export class ThreadManager {
     `;
 
     try {
-      const allReplies = await this.singleNoteApi?.fetchReplies(this.config.noteId) ?? [];
+      // ensure() so replies load on public, logged-out note views (the
+      // single-note module activates on login; reading replies needs no auth).
+      const singleNoteApi = await ModuleLoader.getInstance().ensure<SingleNoteModuleApi>('single-note');
+      const allReplies = await singleNoteApi?.fetchReplies(this.config.noteId, this.config.noteAuthor) ?? [];
 
       const filteredQuotedReposts = quotedReposts.filter(q => q.pubkey !== this.config.noteAuthor);
       const quotedRepostIds = new Set(filteredQuotedReposts.map(q => q.id));

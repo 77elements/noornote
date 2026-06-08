@@ -20,7 +20,7 @@ interface PollOptionInput {
 export type { PollOptionInput };
 
 export interface SingleNoteModuleApi {
-  fetchReplies(noteId: string): Promise<NostrEvent[]>;
+  fetchReplies(noteId: string, authorPubkey?: string): Promise<NostrEvent[]>;
   fetchParentChain(noteId: string): Promise<ThreadContext>;
   startLiveReplies(noteId: string, callback: (event: NostrEvent) => void): void;
   stopLiveReplies(noteId: string): void;

@@ -267,7 +267,9 @@ export class SingleNoteView extends View {
 
   private async loadZapsList(noteId: string, authorPubkey: string, noteElement: HTMLElement): Promise<void> {
     try {
-      const stats = await this.reactionsApi?.getDetailedStats(noteId);
+      // ensure() so the zaps/likes lists load on public, logged-out note views.
+      const reactionsApi = await ModuleLoader.getInstance().ensure<ReactionsModuleApi>('reactions');
+      const stats = await reactionsApi?.getDetailedStats(noteId);
       if (!stats) return;
 
       const islContainer = noteElement.querySelector('.isl');
