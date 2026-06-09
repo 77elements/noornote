@@ -46,6 +46,7 @@ export class ConversationView extends View {
   private menuElement: HTMLElement | null = null;
   private outsideClickHandler: () => void;
   private subscriptionId: string | null = null;
+  private fetchCompleteSubId: string | null = null;
 
   constructor(partnerPubkey: string) {
     super();
@@ -74,6 +75,17 @@ export class ConversationView extends View {
           container.appendChild(this.renderMessage(data.message));
         }
         this.scrollToBottom();
+      }
+    });
+
+    // On reload this view can mount before DMService has populated the store
+    // (start() runs after routing), so the initial load reads an empty store and
+    // shows "No messages yet". Reload once the historical fetch completes —
+    // guarded to the still-empty case so an active conversation isn't disrupted
+    // by the periodic background sync.
+    this.fetchCompleteSubId = this.eventBus.on('dm:fetch-complete', () => {
+      if (this.messages.length === 0) {
+        this.loadConversation();
       }
     });
   }
@@ -525,6 +537,10 @@ export class ConversationView extends View {
     if (this.subscriptionId) {
       this.eventBus.off(this.subscriptionId);
       this.subscriptionId = null;
+    }
+    if (this.fetchCompleteSubId) {
+      this.eventBus.off(this.fetchCompleteSubId);
+      this.fetchCompleteSubId = null;
     }
     if (this.userIdentity) {
       this.userIdentity.destroy();
