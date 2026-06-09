@@ -261,7 +261,6 @@ export class NoteStructureBuilder {
 
           if (profileView) {
             const scrollPosition = profileView.scrollTop;
-            console.log(`📍 NoteStructureBuilder: Saving ProfileView scroll before Analytics modal: ${scrollPosition}px`);
             const appState = AppState.getInstance();
             appState.setState('view', { profileScrollPosition: scrollPosition });
           }
