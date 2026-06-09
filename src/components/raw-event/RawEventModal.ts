@@ -7,6 +7,7 @@
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
 import { ModalService } from '../../services/ModalService';
 import { escapeHtml } from '../../helpers/escapeHtml';
+import { toPlainNostrEvent } from '../../helpers/toPlainNostrEvent';
 
 export class RawEventModal {
   private static instance: RawEventModal | null = null;
@@ -30,7 +31,9 @@ export class RawEventModal {
    * Show modal with raw event JSON
    */
   public show(event: NostrEvent): void {
-    const content = this.renderContent(event);
+    // Strip NDK-internal (circular) relay refs so JSON.stringify can't throw.
+    const plainEvent = toPlainNostrEvent(event);
+    const content = this.renderContent(plainEvent);
 
     this.modalService.show({
       title: 'Raw Event',
@@ -44,7 +47,7 @@ export class RawEventModal {
 
     // Setup copy button handler after modal is shown
     setTimeout(() => {
-      this.setupCopyButton(event);
+      this.setupCopyButton(plainEvent);
     }, 0);
   }
 

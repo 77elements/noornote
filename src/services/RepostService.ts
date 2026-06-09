@@ -7,6 +7,7 @@
  */
 
 import type { NostrEvent } from '@nostr-dev-kit/ndk';
+import { toPlainNostrEvent } from '../helpers/toPlainNostrEvent';
 import { AuthService } from './AuthService';
 import { NostrTransport } from './transport/NostrTransport';
 import { SystemLogger } from './SystemLogger';
@@ -124,7 +125,7 @@ export class RepostService {
         kind: 6,
         created_at: Math.floor(Date.now() / 1000),
         tags,
-        content: JSON.stringify(originalEvent),  // Stringified original event
+        content: JSON.stringify(toPlainNostrEvent(originalEvent)),  // Stringified original event
         pubkey: currentUser.pubkey
       };
 
@@ -216,7 +217,7 @@ export class RepostService {
         kind: 16,
         created_at: Math.floor(Date.now() / 1000),
         tags,
-        content: JSON.stringify(originalEvent),
+        content: JSON.stringify(toPlainNostrEvent(originalEvent)),
         pubkey: currentUser.pubkey
       };
 
