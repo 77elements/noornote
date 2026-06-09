@@ -52,7 +52,7 @@ import { LayoutService } from '../../services/LayoutService';
 import { PlatformService } from '../../services/PlatformService';
 import { PullToRefresh } from '../ui/PullToRefresh';
 import { getViewNavigationController } from '../../services/ViewNavigationController';
-import { writeSccParam, readSccParam, parseSccParam, viewTypeToPath } from '../../helpers/sccRoute';
+import { writeSccParam, readSccParam, parseSccParam, viewTypeToPath, userListToScc } from '../../helpers/sccRoute';
 // dayjs + calendar loaded lazily in initializeDateTimeCalendar (bundle optimization)
 import { HIJRI_MONTHS } from '../../helpers/formatTimestamp';
 
@@ -86,6 +86,12 @@ export class MainLayout {
   private hamburgerBadgeManager: HamburgerBadgeManager | null = null;
   private listsMenu: ListsMenuPartial | null = null;
   private currentListView: ListViewPartial | null = null;
+  /**
+   * Tracks an open external user-list (a target's follows/followers) so syncScc
+   * can mirror it into `?scc=` with its pubkey — the DOM tab id alone (`list-follows`)
+   * carries neither the target nor the follows/followers distinction.
+   */
+  private externalUserList: { mode: 'follows' | 'followers'; pubkey: string } | null = null;
   private viewTabManager: ViewTabManager | null = null;
   private viewTabEventSubscriptions: string[] = [];
   private layoutService: LayoutService;
@@ -268,10 +274,16 @@ export class MainLayout {
 
     // Listen for list:open events from Settings → Privacy links, ProfileView, FollowPackDetailView
     this.eventBus.on('list:open', (data) => {
-      // Check if this is an external user's follows (not current user)
+      // Followers: always an external read-only list (even for the own profile).
+      if (data.listType === 'followers' && data.pubkey) {
+        this.openExternalUserListTab(data.pubkey, 'followers');
+        return;
+      }
+      // Another user's follows open as a read-only list; the own follows use the
+      // editable list tab.
       const currentUser = this.authService.getCurrentUser();
       if (data.listType === 'follows' && data.pubkey && currentUser?.pubkey !== data.pubkey) {
-        this.openExternalFollowsTab(data.pubkey);
+        this.openExternalUserListTab(data.pubkey, 'follows');
       } else {
         this.openListTab(data.listType as ListType);
       }
@@ -2055,16 +2067,16 @@ export class MainLayout {
   }
 
   /**
-   * Open external user's follows tab (read-only view)
-   * Shows follows of another user, not the current user
+   * Open an external user-list tab (read-only): the target's follows, or the
+   * users who follow the target. Results stream in progressively.
    */
-  public openExternalFollowsTab(pubkey: string): void {
+  public openExternalUserListTab(pubkey: string, mode: 'follows' | 'followers'): void {
     // Import dynamically to avoid circular dependencies
     import('../../lists/follows').then(({ ExternalFollowListManager }) => {
       if (!this.layoutService.isSecondaryVisible()) {
-        this.renderExternalFollowsInPrimaryContent(pubkey, ExternalFollowListManager);
+        this.renderExternalFollowsInPrimaryContent(pubkey, mode, ExternalFollowListManager);
       } else {
-        this.renderExternalFollowsInSecondaryContent(pubkey, ExternalFollowListManager);
+        this.renderExternalFollowsInSecondaryContent(pubkey, mode, ExternalFollowListManager);
       }
     });
   }
@@ -2072,7 +2084,7 @@ export class MainLayout {
   /**
    * Render external follows in secondary content
    */
-  private renderExternalFollowsInSecondaryContent(pubkey: string, ExternalFollowListManager: any): void {
+  private renderExternalFollowsInSecondaryContent(pubkey: string, mode: 'follows' | 'followers', ExternalFollowListManager: any): void {
     // Close existing list tab if any
     if (this.currentListView) {
       this.currentListView.destroy();
@@ -2082,13 +2094,16 @@ export class MainLayout {
     // Clear active state on list sublinks
     this.clearActiveListSublinks();
 
+    // Track the open external list so syncScc can mirror it into ?scc=.
+    this.externalUserList = { mode, pubkey };
+
     // Create manager instance
-    const externalManager = new ExternalFollowListManager(pubkey);
+    const externalManager = ExternalFollowListManager.create(pubkey, mode);
 
     // Create new list view
     this.currentListView = new ListViewPartial({
       type: 'follows',
-      title: 'Following',
+      title: mode === 'followers' ? 'Followers' : 'Following',
       onClose: () => this.closeListTab(),
       onRender: (container) => {
         externalManager.renderListTab(container);
@@ -2115,6 +2130,7 @@ export class MainLayout {
         deactivateAllTabs(secondaryContent);
         this.currentListView?.activate();
         this.viewTabManager?.deactivateCurrentViewTab();
+        this.syncScc();
       });
 
       // Activate the new tab
@@ -2124,20 +2140,26 @@ export class MainLayout {
 
       // Render content
       this.currentListView.renderContent();
+
+      // Mirror the freshly opened external list into ?scc=.
+      this.syncScc();
     }
   }
 
   /**
    * Render external follows in primary content (wide mode)
    */
-  private renderExternalFollowsInPrimaryContent(pubkey: string, ExternalFollowListManager: any): void {
+  private renderExternalFollowsInPrimaryContent(pubkey: string, mode: 'follows' | 'followers', ExternalFollowListManager: any): void {
     const primaryContent = this.element.querySelector('.primary-content');
     if (!primaryContent) return;
 
     primaryContent.innerHTML = '';
 
+    // Primary (wide) mode has no scc tab; ensure no stale ?scc= state lingers.
+    this.externalUserList = null;
+
     // Create manager instance
-    const externalManager = new ExternalFollowListManager(pubkey);
+    const externalManager = ExternalFollowListManager.create(pubkey, mode);
 
     // Create container for list
     const listContainer = document.createElement('div');
@@ -2149,7 +2171,7 @@ export class MainLayout {
 
     const title = document.createElement('h2');
     title.className = 'list-view-primary__title';
-    title.textContent = 'Following';
+    title.textContent = mode === 'followers' ? 'Followers' : 'Following';
 
     const backBtn = document.createElement('button');
     backBtn.className = 'list-view-primary__back btn btn--medium btn--passive';
@@ -2190,6 +2212,9 @@ export class MainLayout {
       this.currentListView.destroy();
       this.currentListView = null;
     }
+
+    // Own list, not an external user-list — drop any tracked external state.
+    this.externalUserList = null;
 
     // Set active state on list sublink
     this.setActiveListSublink(listType);
@@ -2361,6 +2386,7 @@ export class MainLayout {
     if (this.currentListView) {
       this.currentListView.destroy();
       this.currentListView = null;
+      this.externalUserList = null;
 
       // Clear active state on list sublinks
       this.setActiveListSublink(null);
@@ -2369,6 +2395,9 @@ export class MainLayout {
       if (secondaryContent) {
         this.activateSccDefault(getSccDefaultTab());
       }
+
+      // Drop the ?scc= param now that we're back to the scc default.
+      this.syncScc();
     }
   }
 
@@ -2381,6 +2410,12 @@ export class MainLayout {
   private syncScc(): void {
     if (!this.layoutService.isSecondaryVisible()) {
       writeSccParam(null);
+      return;
+    }
+    // External follows/followers list active → encode target + mode (its DOM id
+    // is the generic `list-follows`, so derive the value from tracked state).
+    if (this.externalUserList && this.currentListView?.getContent()?.classList.contains('tab-content--active')) {
+      writeSccParam(userListToScc(this.externalUserList.mode, this.externalUserList.pubkey));
       return;
     }
     const sc = this.element.querySelector('.secondary-content');
@@ -2411,6 +2446,8 @@ export class MainLayout {
     if (!parsed) return;
     if (parsed.kind === 'list') {
       this.openListTab(parsed.listType as ListType);
+    } else if (parsed.kind === 'user-list') {
+      this.openExternalUserListTab(parsed.pubkey, parsed.mode);
     } else if (parsed.kind === 'search') {
       if (parsed.term.startsWith('#')) {
         this.eventBus.emit('hashtagSearch:start', { hashtag: parsed.term.slice(1) });

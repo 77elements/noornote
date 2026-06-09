@@ -2,9 +2,9 @@
  * FollowerCountService
  * Fetches follower counts sequentially from each relay with pagination
  *
- * @purpose Display follower counts in ProfileView
+ * @purpose Display follower counts in ProfileView, and stream the follower list
  * @pattern Sequential relay queries with pagination to overcome relay limits
- * @used-by ProfileView
+ * @used-by ProfileView (count), ExternalFollowListManager (list)
  */
 
 import { RelayConfig } from './RelayConfig';
@@ -48,10 +48,9 @@ export class FollowerCountService {
   /**
    * Get follower count for a user
    * Queries each relay sequentially with pagination, calling onUpdate after each batch
-   * No caching - fetches fresh data every time
    *
    * @param pubkey - User's public key
-   * @param onUpdate - Callback called after each relay completes (optional)
+   * @param onUpdate - Callback called after each relay batch completes (optional)
    * @returns Final deduplicated follower count
    */
   public async getFollowerCount(
@@ -67,10 +66,54 @@ export class FollowerCountService {
 
     this.systemLogger.success('FollowerCount', 'Fetching follower counts...');
 
+    const followers = await this.collectFollowers(pubkey, (_newPubkeys, total, lastRelay) => {
+      if (onUpdate && lastRelay) onUpdate(total, lastRelay);
+    });
+
+    const finalCount = followers.length;
+    this.cache.set(pubkey, { count: finalCount, timestamp: Date.now() });
+    this.systemLogger.success('FollowerCount', `✓ Follower count fetching completed: ${finalCount} followers`);
+
+    return finalCount;
+  }
+
+  /**
+   * Stream the deduplicated set of follower pubkeys.
+   *
+   * `onBatch` fires with the newly discovered pubkeys after each relay batch
+   * completes, so callers (e.g. the followers list) can fill progressively
+   * instead of waiting for the full sweep. Resolves with the complete
+   * deduplicated array. Always fetches fresh (the list itself isn't cached), but
+   * refreshes the count cache on completion so the displayed count stays in sync.
+   *
+   * @param pubkey - User's public key
+   * @param onBatch - Called with each chunk of newly found follower pubkeys
+   * @returns Final deduplicated follower pubkey array
+   */
+  public async streamFollowerList(
+    pubkey: string,
+    onBatch: (newPubkeys: string[]) => void
+  ): Promise<string[]> {
+    const followers = await this.collectFollowers(pubkey, (newPubkeys) => {
+      if (newPubkeys.length > 0) onBatch(newPubkeys);
+    });
+
+    this.cache.set(pubkey, { count: followers.length, timestamp: Date.now() });
+    return followers;
+  }
+
+  /**
+   * Core relay sweep shared by count and list: query read + aggregator relays in
+   * parallel batches, deduplicate followers across all relays, and report each
+   * batch's newly found pubkeys via `onBatch`.
+   */
+  private async collectFollowers(
+    pubkey: string,
+    onBatch?: (newPubkeys: string[], total: number, lastRelay: string | undefined) => void
+  ): Promise<string[]> {
     const relays = [
       ...this.relayConfig.getReadRelays(),
       ...this.relayConfig.getAggregatorRelays(),
-      // 'wss://relay.nostr.band/' // Additional relay for follower discovery
     ];
 
     // De-duplicate relay URLs
@@ -97,20 +140,25 @@ export class FollowerCountService {
           return { relay, followers: relayFollowers, success: true };
         } catch (error) {
           this.systemLogger.error('FollowerCount', `✗ ${relay} failed: ${error}`);
-          return { relay, followers: [], success: false };
+          return { relay, followers: [] as string[], success: false };
         }
       });
 
       // Wait for all relays in batch to complete
       const batchResults = await Promise.all(batchPromises);
 
-      // Process results from batch
+      // Process results from batch, tracking which pubkeys are new this batch
+      const newThisBatch: string[] = [];
       batchResults.forEach(result => {
         if (result.success) {
           const previousCount = followers.size;
 
-          // Add to global set (automatic deduplication)
-          result.followers.forEach(pubkey => followers.add(pubkey));
+          result.followers.forEach(follower => {
+            if (!followers.has(follower)) {
+              followers.add(follower);
+              newThisBatch.push(follower);
+            }
+          });
 
           const currentCount = followers.size;
           const newFollowers = currentCount - previousCount;
@@ -122,19 +170,12 @@ export class FollowerCountService {
         }
       });
 
-      // Update UI after each batch completes
+      // Report progress after each batch completes
       const lastRelay = batch[batch.length - 1];
-      if (onUpdate && lastRelay) {
-        onUpdate(followers.size, lastRelay);
-      }
+      if (onBatch) onBatch(newThisBatch, followers.size, lastRelay);
     }
 
-    const finalCount = followers.size;
-
-    this.cache.set(pubkey, { count: finalCount, timestamp: Date.now() });
-    this.systemLogger.success('FollowerCount', `✓ Follower count fetching completed: ${finalCount} followers`);
-
-    return finalCount;
+    return [...followers];
   }
 
   /**

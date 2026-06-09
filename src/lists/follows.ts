@@ -34,6 +34,7 @@ import { renderListSyncButtons, bindListSyncButtons } from '../helpers/ListSyncM
 import { PlatformService } from '../services/PlatformService';
 import { UserProfileService } from '../services/UserProfileService';
 import { UserService } from '../services/UserService';
+import { FollowerCountService } from '../services/FollowerCountService';
 import type { FollowsExtendedFeatures } from './follows-extended';
 import { isExtendedFollowsEnabled } from '../addons/extended-follows/index';
 import { Router } from '../services/Router';
@@ -2347,40 +2348,97 @@ interface ExternalFollowItemWithProfile {
  * - Load all link
  * - Sync buttons
  */
+/** What a user-list renders: the target's follows, or who follows the target. */
+export type UserListMode = 'follows' | 'followers';
+
+/**
+ * Pluggable data source for ExternalFollowListManager. Both modes render the
+ * same user rows; they differ only in how the pubkeys are acquired and how the
+ * header reads. Followers stream in batch-by-batch (see streamFollowerList).
+ */
+interface UserListSource {
+  loadingLabel: string;
+  emptyLabel: string;
+  /** Header sentence given the target's display name and the current count. */
+  describe(targetName: string, count: number): string;
+  /** Acquire pubkeys, streaming each new chunk via onBatch; resolves when done. */
+  load(targetPubkey: string, onBatch: (pubkeys: string[]) => void): Promise<void>;
+}
+
+const FOLLOWS_SOURCE: UserListSource = {
+  loadingLabel: 'Loading follows...',
+  emptyLabel: "This user doesn't follow anyone yet",
+  describe: (name, count) =>
+    `<strong>${escapeHtml(name)}</strong> follows ${count} ${count === 1 ? 'user' : 'users'}`,
+  load: async (targetPubkey, onBatch) => {
+    const pubkeys = await UserService.getInstance().getUserFollowing(targetPubkey);
+    onBatch(pubkeys);
+  },
+};
+
+const FOLLOWERS_SOURCE: UserListSource = {
+  loadingLabel: 'Loading followers...',
+  emptyLabel: 'No followers found',
+  describe: (name, count) =>
+    `${count} ${count === 1 ? 'user follows' : 'users follow'} <strong>${escapeHtml(name)}</strong>`,
+  load: (targetPubkey, onBatch) =>
+    FollowerCountService.getInstance().streamFollowerList(targetPubkey, onBatch).then(() => undefined),
+};
+
 export class ExternalFollowListManager {
   private targetPubkey: string;
-  private userService: UserService;
+  private source: UserListSource;
   private userProfileService: UserProfileService;
   private authService: AuthService;
   private router: Router;
   private containerElement: HTMLElement | null = null;
   private allItemsWithProfiles: ExternalFollowItemWithProfile[] = [];
+  private seen: Set<string> = new Set();
+  private myFollows: Set<string> = new Set();
+  private targetName: string = '';
   private currentOffset: number = 0;
   private hasMore: boolean = true;
   private isLoading: boolean = false;
+  private loadComplete: boolean = false;
+  private destroyed: boolean = false;
+  private batchChain: Promise<void> = Promise.resolve();
   private infiniteScroll: InfiniteScroll | null = null;
   private usernameFilter: string = '';
   private readonly BATCH_SIZE: number = 20;
+  /** Rows rendered eagerly before deferring the rest to infinite scroll. */
+  private readonly INITIAL_RENDER_CAP: number = 20;
 
-  constructor(targetPubkey: string) {
+  constructor(targetPubkey: string, source: UserListSource) {
     this.targetPubkey = targetPubkey;
-    this.userService = UserService.getInstance();
+    this.source = source;
     this.userProfileService = UserProfileService.getInstance();
     this.authService = AuthService.getInstance();
     this.router = Router.getInstance();
   }
 
+  /** Build a manager for a target's follows or followers list. */
+  static create(targetPubkey: string, mode: UserListMode): ExternalFollowListManager {
+    return new ExternalFollowListManager(targetPubkey, mode === 'followers' ? FOLLOWERS_SOURCE : FOLLOWS_SOURCE);
+  }
+
   /**
-   * Render list tab content
+   * Render list tab content. Opens immediately and fills progressively as the
+   * source streams pubkeys in, so a slow followers sweep shows results as they
+   * arrive instead of blocking on a multi-second spinner.
    */
   public async renderListTab(container: HTMLElement): Promise<void> {
     this.containerElement = container;
 
     // Reset state
     this.allItemsWithProfiles = [];
+    this.seen = new Set();
+    this.myFollows = new Set();
     this.currentOffset = 0;
     this.hasMore = true;
     this.isLoading = false;
+    this.loadComplete = false;
+    this.destroyed = false;
+    this.batchChain = Promise.resolve();
     this.usernameFilter = '';
 
     // Cleanup existing infinite scroll
@@ -2392,53 +2450,29 @@ export class ExternalFollowListManager {
     // Show loading state
     container.innerHTML = `
       <div class="follows-list-loading">
-        Loading follows...
+        ${escapeHtml(this.source.loadingLabel)}
       </div>
     `;
 
     try {
-      // Fetch follows from relay
-      const followPubkeys = await this.userService.getUserFollowing(this.targetPubkey);
-
-      if (followPubkeys.length === 0) {
-        container.innerHTML = `
-          <div class="follows-list-empty-state">
-            <p>This user doesn't follow anyone yet</p>
-          </div>
-        `;
-        return;
-      }
-
-      // Get profile of target user for title
+      // Resolve target name + my follow set up front (header + follow-state).
       const targetProfile = await this.userProfileService.getUserProfile(this.targetPubkey);
-      const targetName = extractDisplayName(targetProfile);
+      this.targetName = extractDisplayName(targetProfile);
+      this.myFollows = new Set(getFollowItems().map(f => f.pubkey));
 
-      // Get my follows to check which users I already follow
-      const myFollows = new Set(getFollowItems().map(f => f.pubkey));
+      if (this.destroyed) return;
 
-      // Fetch profiles for all followed users
-      const itemsWithProfiles: ExternalFollowItemWithProfile[] = await Promise.all(
-        followPubkeys.map(async (pubkey) => ({
-          pubkey,
-          profile: await this.userProfileService.getUserProfile(pubkey),
-          isFollowedByMe: myFollows.has(pubkey)
-        }))
-      );
-
-      // Store all items
-      this.allItemsWithProfiles = itemsWithProfiles;
-
-      // Render container
+      // Render the shell so rows can stream into the list.
       container.innerHTML = `
         <div class="external-follows-header">
-          <div class="external-follows-stats">
-            <strong>${targetName}</strong> follows ${itemsWithProfiles.length} ${itemsWithProfiles.length === 1 ? 'user' : 'users'}
-          </div>
+          <div class="external-follows-stats">${this.source.describe(this.targetName, 0)}</div>
           <input type="text"
                  class="external-follows-search"
                  placeholder="Filter by name..." />
         </div>
-        <div class="follows-list external-follows-list"></div>
+        <div class="follows-list external-follows-list">
+          <div class="follows-list-loading">${escapeHtml(this.source.loadingLabel)}</div>
+        </div>
       `;
 
       // Bind filter input
@@ -2448,27 +2482,101 @@ export class ExternalFollowListManager {
         this.reRenderList();
       });
 
-      const list = container.querySelector('.follows-list');
-      if (!list) return;
+      // Stream pubkeys in. Chain the (async) batch handlers so profile
+      // resolution and rendering stay serialized — concurrent batches would
+      // race the isLoading guard and drop rows.
+      await this.source.load(this.targetPubkey, (pubkeys) => {
+        this.batchChain = this.batchChain
+          .then(() => this.onBatch(pubkeys))
+          .catch(error => console.error('Failed to render user-list batch:', error));
+      });
 
-      // Load first batch
-      await this.loadBatch(list as HTMLElement);
-
-      // Setup infinite scroll if there are more items
-      if (this.hasMore) {
-        this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
-          loadingMessage: 'Loading more...'
-        });
-        this.infiniteScroll.observe(list as HTMLElement);
-      }
+      // Drain in-flight batch handlers, then settle the final state.
+      this.loadComplete = true;
+      await this.batchChain;
+      if (this.destroyed) return;
+      this.finalize();
     } catch (error) {
-      console.error('Failed to load external follows:', error);
+      console.error('Failed to load external user list:', error);
       container.innerHTML = `
         <div class="follows-list-empty-state">
-          <p>Failed to load follows</p>
+          <p>Failed to load</p>
         </div>
       `;
     }
+  }
+
+  /**
+   * Handle one streamed chunk of pubkeys: dedupe, resolve profiles, append, and
+   * render eagerly up to the initial cap (the rest is left to infinite scroll).
+   */
+  private async onBatch(pubkeys: string[]): Promise<void> {
+    if (this.destroyed) return;
+
+    const fresh = pubkeys.filter(pk => !this.seen.has(pk));
+    if (fresh.length === 0) return;
+    fresh.forEach(pk => this.seen.add(pk));
+
+    const items: ExternalFollowItemWithProfile[] = await Promise.all(
+      fresh.map(async (pubkey) => ({
+        pubkey,
+        profile: await this.userProfileService.getUserProfile(pubkey),
+        isFollowedByMe: this.myFollows.has(pubkey)
+      }))
+    );
+
+    if (this.destroyed) return;
+    this.allItemsWithProfiles.push(...items);
+
+    // Live count in the header.
+    const stats = this.containerElement?.querySelector('.external-follows-stats');
+    if (stats) stats.innerHTML = this.source.describe(this.targetName, this.allItemsWithProfiles.length);
+
+    await this.renderPending();
+  }
+
+  /**
+   * Render newly available items up to INITIAL_RENDER_CAP, then attach infinite
+   * scroll (once) so the remainder loads on demand.
+   */
+  private async renderPending(): Promise<void> {
+    const list = this.containerElement?.querySelector('.follows-list') as HTMLElement | null;
+    if (!list) return;
+
+    while (this.currentOffset < this.INITIAL_RENDER_CAP && this.currentOffset < this.filteredItems().length) {
+      await this.loadBatch(list);
+    }
+
+    if (!this.infiniteScroll && this.currentOffset > 0) {
+      this.infiniteScroll = new InfiniteScroll(() => this.handleLoadMore(), {
+        loadingMessage: 'Loading more...'
+      });
+      this.infiniteScroll.observe(list);
+    }
+  }
+
+  /** Items matching the current username filter (profiles already resolved). */
+  private filteredItems(): ExternalFollowItemWithProfile[] {
+    if (!this.usernameFilter) return this.allItemsWithProfiles;
+    return this.allItemsWithProfiles.filter(item => {
+      const username = extractDisplayName(item.profile).toLowerCase();
+      return username.includes(this.usernameFilter);
+    });
+  }
+
+  /** Streaming finished: show empty state if nothing came back, else settle hasMore. */
+  private finalize(): void {
+    if (this.allItemsWithProfiles.length === 0) {
+      if (this.containerElement) {
+        this.containerElement.innerHTML = `
+          <div class="follows-list-empty-state">
+            <p>${escapeHtml(this.source.emptyLabel)}</p>
+          </div>
+        `;
+      }
+      return;
+    }
+    this.hasMore = this.currentOffset < this.filteredItems().length;
   }
 
   /**
@@ -2481,10 +2589,12 @@ export class ExternalFollowListManager {
   }
 
   /**
-   * Load batch of items
+   * Render the next slice of filtered items. Streaming-aware: an empty slice
+   * only ends the list once the source has finished (loadComplete), so a gap
+   * between relay batches doesn't prematurely stop infinite scroll.
    */
   private async loadBatch(listElement: HTMLElement): Promise<void> {
-    if (this.isLoading || !this.hasMore) return;
+    if (this.isLoading) return;
 
     this.isLoading = true;
 
@@ -2493,13 +2603,7 @@ export class ExternalFollowListManager {
     }
 
     try {
-      // Filter items based on username filter
-      const filteredItems = this.usernameFilter
-        ? this.allItemsWithProfiles.filter(item => {
-            const username = extractDisplayName(item.profile).toLowerCase();
-            return username.includes(this.usernameFilter);
-          })
-        : this.allItemsWithProfiles;
+      const filteredItems = this.filteredItems();
 
       // Get next batch
       const batch = filteredItems.slice(
@@ -2508,12 +2612,13 @@ export class ExternalFollowListManager {
       );
 
       if (batch.length === 0) {
-        this.hasMore = false;
-        if (this.infiniteScroll) {
-          this.infiniteScroll.hideLoading();
-        }
+        // Nothing queued right now — only truly done once streaming completed.
+        this.hasMore = !this.loadComplete;
         return;
       }
+
+      // Drop the initial pulsating loader once the first rows arrive.
+      listElement.querySelector('.follows-list-loading')?.remove();
 
       // Render batch
       this.renderBatch(listElement, batch);
@@ -2521,10 +2626,8 @@ export class ExternalFollowListManager {
       // Update offset
       this.currentOffset += batch.length;
 
-      // Check if there are more items
-      if (this.currentOffset >= filteredItems.length) {
-        this.hasMore = false;
-      }
+      // More to show if items remain, or more may still stream in.
+      this.hasMore = this.currentOffset < filteredItems.length || !this.loadComplete;
     } finally {
       this.isLoading = false;
       if (this.infiniteScroll) {
@@ -2662,18 +2765,17 @@ export class ExternalFollowListManager {
       list.appendChild(sentinel);
     }
 
-    // Reset offset
+    // Reset render position and re-render from the top with the active filter.
     this.currentOffset = 0;
     this.hasMore = true;
-
-    // Load first batch with filter
-    this.loadBatch(list as HTMLElement);
+    void this.renderPending();
   }
 
   /**
    * Cleanup
    */
   public destroy(): void {
+    this.destroyed = true;
     if (this.infiniteScroll) {
       this.infiniteScroll.destroy();
       this.infiniteScroll = null;

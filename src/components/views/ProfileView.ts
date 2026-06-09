@@ -592,7 +592,7 @@ export class ProfileView extends View {
                 <strong>${this.followingCount.toLocaleString('en-US')}</strong>
                 <span>Following</span>
               </div>
-              <div class="stat-item">
+              <div class="stat-item stat-item--clickable" id="followers-count-link">
                 <strong id="followers-count">${this.followerCount ? this.followerCount.toLocaleString('en-US') : '...'}</strong>
                 <span>Followers</span>
               </div>
@@ -708,6 +708,7 @@ export class ProfileView extends View {
 
     // Setup following count click handler
     this.setupFollowingCountLink();
+    this.setupFollowersCountLink();
   }
 
   /**
@@ -725,6 +726,26 @@ export class ProfileView extends View {
       // Pass pubkey to show this profile's follows (not own follows)
       TypedEventBus.getInstance().emit('list:open', {
         listType: 'follows',
+        pubkey: this.pubkey
+      });
+    });
+  }
+
+  /**
+   * Setup followers count click handler — opens the list of users who follow
+   * this profile (mirrors the Following list, different data source).
+   */
+  private setupFollowersCountLink(): void {
+    const followersLink = this.container.querySelector('#followers-count-link');
+    if (!followersLink) return;
+
+    // Remove old listeners to prevent duplicates
+    const newLink = followersLink.cloneNode(true);
+    followersLink.parentNode?.replaceChild(newLink, followersLink);
+
+    newLink.addEventListener('click', () => {
+      TypedEventBus.getInstance().emit('list:open', {
+        listType: 'followers',
         pubkey: this.pubkey
       });
     });

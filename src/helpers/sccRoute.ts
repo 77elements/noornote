@@ -33,11 +33,23 @@ export function viewTypeToPath(viewType: ViewType, param?: string): string {
 /** The four list types that can occupy the scc, encoded as `list-<type>`. */
 const LIST_TYPES = ['follows', 'bookmarks', 'mutes', 'tribes'];
 
-/** Parsed `?scc=` value: a view route, a list, or a search term. */
+/**
+ * Parsed `?scc=` value: a view route, an own list, a search term, or an external
+ * user-list (another profile's follows / followers, which is target-specific).
+ */
 export type ParsedScc =
   | { kind: 'view'; viewType: ViewType; param?: string }
   | { kind: 'list'; listType: string }
-  | { kind: 'search'; term: string };
+  | { kind: 'search'; term: string }
+  | { kind: 'user-list'; mode: 'follows' | 'followers'; pubkey: string };
+
+/**
+ * Encode an external user-list (a target's follows or followers) for `?scc=`.
+ * Target-specific, so it carries the pubkey — unlike the own `list-<type>` tabs.
+ */
+export function userListToScc(mode: 'follows' | 'followers', pubkey: string): string {
+  return `${mode === 'followers' ? 'followers-of' : 'follows-of'}:${pubkey}`;
+}
 
 /** Decode a `?scc=` value into the scc content it represents (or null if unknown). */
 export function parseSccParam(value: string): ParsedScc | null {
@@ -45,6 +57,14 @@ export function parseSccParam(value: string): ParsedScc | null {
     const view = pathToView(value);
     if (!view) return null;
     return { kind: 'view', viewType: view.viewType, ...(view.param !== undefined && { param: view.param }) };
+  }
+  if (value.startsWith('followers-of:')) {
+    const pubkey = value.slice('followers-of:'.length);
+    return pubkey ? { kind: 'user-list', mode: 'followers', pubkey } : null;
+  }
+  if (value.startsWith('follows-of:')) {
+    const pubkey = value.slice('follows-of:'.length);
+    return pubkey ? { kind: 'user-list', mode: 'follows', pubkey } : null;
   }
   if (value.startsWith('list-')) {
     const listType = value.slice('list-'.length);
