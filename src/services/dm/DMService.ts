@@ -86,6 +86,11 @@ export class DMService {
   private static readonly DM_BACKDATE_MARGIN_SECONDS = 2 * 24 * 60 * 60;
   // NIP-04 (kind:4) is NOT backdated — small clock-skew margin only.
   private static readonly DM_LEGACY_SKEW_SECONDS = 60 * 60;
+  // Live subscription: bound the initial stored-event backlog. The live stream
+  // after EOSE is NOT limited by this — it keeps delivering every new event.
+  // NB: NDK treats `limit: 0` as falsy (it may drop it and dump the whole
+  // history), so we use a real positive limit, not 0.
+  private static readonly LIVE_BACKLOG_LIMIT = 100;
 
   private constructor() {
     this.transport = NostrTransport.getInstance();
@@ -586,26 +591,29 @@ export class DMService {
 
     const relays = this.getMyInboxRelays();
     this.activeInboxRelays = relays.slice().sort();
-    const now = Math.floor(Date.now() / 1000);
 
-    // Combined filter for NIP-17 and Legacy NIP-04
+    // Live subscription filters — deliberately NO `since`. NIP-17 gift wraps
+    // (kind:1059) carry a created_at randomized up to 2 days into the past
+    // (NIP-59), and relays apply `since` to that backdated timestamp — so any
+    // `since` on a live sub silently drops wraps that arrive now but look old
+    // (the reason DMs only surfaced after a reload). Without `since`, the relay
+    // streams every new wrap live regardless of created_at, bulletproof against
+    // any amount of backdating. The positive `limit` only bounds the initial
+    // stored backlog (deduped by hasMessage / DMStore); the post-EOSE live
+    // stream is unaffected by it. Historical backfill is handled separately by
+    // fetchHistoricalMessages()/fetchMissedMessages().
     const filters: NDKFilter[] = [
-      // NIP-17 Gift Wraps. Their created_at is randomized up to 2 days into the
-      // past (NIP-59) to defeat timing analysis, and relays filter on that
-      // backdated timestamp — so a `since: now` live filter silently drops wraps
-      // that arrive now but carry an older timestamp. That's exactly why DMs only
-      // surfaced after a reload. Roll `since` back by the same backdate margin the
-      // historical incremental fetch uses; dedup (hasMessage) absorbs the overlap.
+      // NIP-17 Gift Wraps
       {
         kinds: [KIND_GIFT_WRAP],
         '#p': [this.userPubkey],
-        since: now - DMService.DM_BACKDATE_MARGIN_SECONDS
+        limit: DMService.LIVE_BACKLOG_LIMIT
       },
-      // Legacy NIP-04 isn't backdated; a small skew margin guards clock drift.
+      // Legacy NIP-04 received
       {
         kinds: [KIND_LEGACY_DM],
         '#p': [this.userPubkey],
-        since: now - DMService.DM_LEGACY_SKEW_SECONDS
+        limit: DMService.LIVE_BACKLOG_LIMIT
       }
     ];
 
