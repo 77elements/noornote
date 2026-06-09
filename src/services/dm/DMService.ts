@@ -590,17 +590,22 @@ export class DMService {
 
     // Combined filter for NIP-17 and Legacy NIP-04
     const filters: NDKFilter[] = [
-      // NIP-17 Gift Wraps
+      // NIP-17 Gift Wraps. Their created_at is randomized up to 2 days into the
+      // past (NIP-59) to defeat timing analysis, and relays filter on that
+      // backdated timestamp — so a `since: now` live filter silently drops wraps
+      // that arrive now but carry an older timestamp. That's exactly why DMs only
+      // surfaced after a reload. Roll `since` back by the same backdate margin the
+      // historical incremental fetch uses; dedup (hasMessage) absorbs the overlap.
       {
         kinds: [KIND_GIFT_WRAP],
         '#p': [this.userPubkey],
-        since: now
+        since: now - DMService.DM_BACKDATE_MARGIN_SECONDS
       },
-      // Legacy NIP-04 received
+      // Legacy NIP-04 isn't backdated; a small skew margin guards clock drift.
       {
         kinds: [KIND_LEGACY_DM],
         '#p': [this.userPubkey],
-        since: now
+        since: now - DMService.DM_LEGACY_SKEW_SECONDS
       }
     ];
 
