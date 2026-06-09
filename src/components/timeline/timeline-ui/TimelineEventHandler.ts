@@ -112,9 +112,8 @@ export class TimelineEventHandler {
 
     // Reset state and reload
     this.stateManager.reset();
-    this.element.querySelectorAll('.note-card').forEach(card => {
-      const eventId = card.getAttribute('data-event-id');
-      if (eventId) NoteUI.cleanup(eventId);
+    this.element.querySelectorAll<HTMLElement>('.note-card').forEach(card => {
+      NoteUI.cleanupElement(card);
       card.remove();
     });
     await this.onInitializeTimeline();
@@ -157,9 +156,8 @@ export class TimelineEventHandler {
 
     // Reset state and reload with date range
     this.stateManager.reset();
-    this.element.querySelectorAll('.note-card').forEach(card => {
-      const eventId = card.getAttribute('data-event-id');
-      if (eventId) NoteUI.cleanup(eventId);
+    this.element.querySelectorAll<HTMLElement>('.note-card').forEach(card => {
+      NoteUI.cleanupElement(card);
       card.remove();
     });
     await this.onInitializeTimeline();
@@ -208,9 +206,8 @@ export class TimelineEventHandler {
       // Fallback: Full reload if no cached events
       this.timelineApi.stopPolling();
       this.stateManager.reset();
-      this.element.querySelectorAll('.note-card').forEach(card => {
-      const eventId = card.getAttribute('data-event-id');
-      if (eventId) NoteUI.cleanup(eventId);
+      this.element.querySelectorAll<HTMLElement>('.note-card').forEach(card => {
+      NoteUI.cleanupElement(card);
       card.remove();
     });
       await this.onInitializeTimeline();

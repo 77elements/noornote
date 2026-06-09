@@ -20,9 +20,23 @@ import { PerAccountLocalStorage, StorageKeys } from '../../../services/PerAccoun
 import { ModuleLoader } from '../../../core/ModuleLoader';
 import type { PostsModuleApi } from '../../../modules/posts/contracts';
 
-// Store component instances for cleanup
-const noteHeaderInstances: Map<string, NoteHeader> = new Map();
-const islInstances: Map<string, InteractionStatusLine> = new Map();
+// Component lifecycle is tied to the DOM node, never the note id: a card is
+// cleaned up by walking its own subtree, so removing one card can never destroy
+// another card that happens to share a note id (a note plus its repost, or a
+// duplicate feed entry). Keyed by the structural note element built below.
+interface NoteInstances {
+  header: NoteHeader;
+  isl?: InteractionStatusLine;
+  islNoteId?: string;
+}
+const instancesByElement: WeakMap<HTMLElement, NoteInstances> = new WeakMap();
+
+// Secondary index for by-id lookups only (SNV / replies push updated counts to
+// an ISL after an async fetch). A Set, not a single slot, so a duplicate note id
+// can never evict a live instance; getISLInstance returns the most recently
+// registered one (preserves the previous last-wins behaviour). Mutated only in
+// build() and cleanupElement(), so it stays in sync with instancesByElement.
+const islByNoteId: Map<string, Set<InteractionStatusLine>> = new Map();
 
 export interface NoteStructureBuildOptions {
   cssClass: string;
@@ -231,6 +245,7 @@ export class NoteStructureBuilder {
     const islNoteId = extractOriginalNoteId(note.rawEvent);
 
     // Only render ISL if we have a valid note ID
+    let islInstance: InteractionStatusLine | undefined;
     if (islNoteId) {
       const islAuthorPubkey = note.author.pubkey; // For reposts, this is already the original author
 
@@ -257,7 +272,7 @@ export class NoteStructureBuilder {
         }
       });
       noteDiv.appendChild(isl.getElement());
-      islInstances.set(islNoteId, isl);
+      islInstance = isl;
     }
 
     // Add click handler to navigate to Single Note View
@@ -289,43 +304,71 @@ export class NoteStructureBuilder {
       navController.openView('single-note', nevent, e);
     });
 
-    // Store header reference
-    noteHeaderInstances.set(note.id, noteHeader);
+    // Register lifecycle against the DOM node (see instancesByElement above).
+    const instances: NoteInstances = { header: noteHeader };
+    if (islInstance && islNoteId) {
+      instances.isl = islInstance;
+      instances.islNoteId = islNoteId;
+      let set = islByNoteId.get(islNoteId);
+      if (!set) {
+        set = new Set();
+        islByNoteId.set(islNoteId, set);
+      }
+      set.add(islInstance);
+    }
+    instancesByElement.set(noteDiv, instances);
 
     return { element: noteDiv, noteHeader };
   }
 
   /**
-   * Get stored component instances (for cleanup)
+   * Most recently registered ISL instance for a note id. Used by SNV / replies
+   * to push updated counts after an async fetch. Returns the latest registration
+   * so an open SNV (mounted after the timeline) wins, matching prior behaviour.
    */
-  static getHeaderInstance(noteId: string): NoteHeader | undefined {
-    return noteHeaderInstances.get(noteId);
-  }
-
   static getISLInstance(noteId: string): InteractionStatusLine | undefined {
-    return islInstances.get(noteId);
+    const set = islByNoteId.get(noteId);
+    if (!set || set.size === 0) return undefined;
+    let last: InteractionStatusLine | undefined;
+    for (const isl of set) last = isl;
+    return last;
   }
 
   /**
-   * Cleanup stored instances
+   * Destroy the header/ISL instances for every note element inside `root`
+   * (including `root` itself). Scoped to the DOM subtree being removed, so a
+   * card that shares a note id with another, still-visible card is never
+   * touched — this is what stops the ISL from vanishing on a sibling card.
    */
-  static cleanup(noteId: string): void {
-    const header = noteHeaderInstances.get(noteId);
-    if (header) {
-      header.destroy();
-      noteHeaderInstances.delete(noteId);
-    }
+  static cleanupElement(root: HTMLElement): void {
+    const elements: HTMLElement[] = [];
+    if (root.classList?.contains('note-card')) elements.push(root);
+    root.querySelectorAll<HTMLElement>('.note-card').forEach(el => elements.push(el));
 
-    const isl = islInstances.get(noteId);
-    if (isl) {
-      isl.destroy();
-      islInstances.delete(noteId);
+    for (const el of elements) {
+      const instances = instancesByElement.get(el);
+      if (!instances) continue;
+
+      instances.header.destroy();
+      if (instances.isl) {
+        instances.isl.destroy();
+        if (instances.islNoteId) {
+          const set = islByNoteId.get(instances.islNoteId);
+          if (set) {
+            set.delete(instances.isl);
+            if (set.size === 0) islByNoteId.delete(instances.islNoteId);
+          }
+        }
+      }
+      instancesByElement.delete(el);
     }
   }
 
-  static cleanupAll(): void {
-    noteHeaderInstances.clear();
-    islInstances.forEach(isl => isl.destroy());
-    islInstances.clear();
+  /**
+   * Cleanup every note element within `container` (defaults to the whole
+   * document). Used on view teardown / account switch.
+   */
+  static cleanupAll(container?: HTMLElement): void {
+    NoteStructureBuilder.cleanupElement(container ?? document.body);
   }
 }

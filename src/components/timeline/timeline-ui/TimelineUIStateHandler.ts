@@ -10,9 +10,8 @@ import { Router } from '../../../services/Router';
 
 /** Remove note-cards from container, cleaning up NoteUI internals first */
 function removeNoteCards(container: HTMLElement): void {
-  container.querySelectorAll('.note-card').forEach(card => {
-    const eventId = card.getAttribute('data-event-id');
-    if (eventId) NoteUI.cleanup(eventId);
+  container.querySelectorAll<HTMLElement>('.note-card').forEach(card => {
+    NoteUI.cleanupElement(card);
     card.remove();
   });
 }

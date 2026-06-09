@@ -333,6 +333,6 @@ export class PublicTimelineComponent {
       this.pollingIntervalId = null;
     }
     this.infiniteScroll.destroy();
-    NoteUI.cleanupAll();
+    NoteUI.cleanupAll(this.noteContainer);
   }
 }

@@ -49,9 +49,8 @@ export class TimelineRenderer {
     if (!loadTrigger) return;
 
     // Clear existing note-cards — cleanup NoteUI internals before removing from DOM
-    this.element.querySelectorAll('.note-card').forEach(card => {
-      const eventId = card.getAttribute('data-event-id');
-      if (eventId) NoteUI.cleanup(eventId);
+    this.element.querySelectorAll<HTMLElement>('.note-card').forEach(card => {
+      NoteUI.cleanupElement(card);
       card.remove();
     });
 
@@ -157,10 +156,7 @@ export class TimelineRenderer {
       removedHeight += card.getBoundingClientRect().height;
 
       // Cleanup NoteUI internals (ISL, headers, etc.)
-      const eventId = card.getAttribute('data-event-id');
-      if (eventId) {
-        NoteUI.cleanup(eventId);
-      }
+      NoteUI.cleanupElement(card);
       card.remove();
     }
 

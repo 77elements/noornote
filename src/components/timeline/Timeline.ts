@@ -201,9 +201,9 @@ export class Timeline extends View {
       this.stateManager.removeEvent(data.eventId);
 
       // Remove single note-card from DOM (no full re-render)
-      const card = this.element.querySelector(`.note-card[data-event-id="${data.eventId}"]`);
+      const card = this.element.querySelector<HTMLElement>(`.note-card[data-event-id="${data.eventId}"]`);
       if (card) {
-        NoteUI.cleanup(data.eventId);
+        NoteUI.cleanupElement(card);
         card.remove();
       }
     });
@@ -237,7 +237,7 @@ export class Timeline extends View {
     this.stateManager.clear();
 
     // Clear existing content — cleanup NoteUI internals first
-    NoteUI.cleanupAll();
+    NoteUI.cleanupAll(this.element);
     const eventsContainer = this.element.querySelector('.timeline-events');
     if (eventsContainer) {
       eventsContainer.innerHTML = '';
@@ -741,7 +741,7 @@ export class Timeline extends View {
     this.marketplaceInjector?.destroy();
     this.marketplaceInjector = null;
     this.lifecycleManager.destroy();
-    NoteUI.cleanupAll();
+    NoteUI.cleanupAll(this.element);
     this.element.remove();
   }
 }

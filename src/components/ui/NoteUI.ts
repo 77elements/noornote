@@ -98,19 +98,20 @@ export class NoteUI {
 
 
   /**
-   * Cleanup note headers and ISL for memory management
-   * Delegates to NoteStructureBuilder
+   * Cleanup the note headers and ISL for one card's DOM subtree before removing
+   * it. Pass the card element (not a note id) so a card sharing a note id with
+   * another visible card is never affected. Delegates to NoteStructureBuilder.
    */
-  static cleanup(noteId: string): void {
-    NoteStructureBuilder.cleanup(noteId);
+  static cleanupElement(element: HTMLElement): void {
+    NoteStructureBuilder.cleanupElement(element);
   }
 
   /**
-   * Cleanup all note headers and ISLs
-   * Delegates to NoteStructureBuilder
+   * Cleanup all note headers and ISLs within `container` (defaults to document).
+   * Delegates to NoteStructureBuilder.
    */
-  static cleanupAll(): void {
-    NoteStructureBuilder.cleanupAll();
+  static cleanupAll(container?: HTMLElement): void {
+    NoteStructureBuilder.cleanupAll(container);
   }
 
   /**

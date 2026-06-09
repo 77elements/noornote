@@ -149,6 +149,7 @@ export class RelayBrowser {
   // ─── Note Rendering ─────────────────────────────────────────────────
 
   private renderNotes(events: NostrEvent[]): void {
+    NoteUI.cleanupAll(this.notesContainer);
     this.notesContainer.innerHTML = '';
     const isLoggedIn = AuthService.getInstance().hasValidSession();
 
@@ -291,7 +292,7 @@ export class RelayBrowser {
     this.stopPolling();
     this.infiniteScroll.destroy();
     this.refreshButton.destroy();
-    NoteUI.cleanupAll();
+    NoteUI.cleanupAll(this.element);
     this.element.innerHTML = '';
   }
 }
