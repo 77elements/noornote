@@ -20,6 +20,7 @@ import { ToastService } from './ToastService';
 import type { PollData } from '../components/poll/PollCreator';
 import { RelayConfig } from './RelayConfig';
 import { getTag } from '../helpers/tagUtils';
+import { extractZapperPubkey } from '../helpers/zapUtils';
 
 export interface PostOptions {
   /** Note content (plain text) */
@@ -503,15 +504,20 @@ export class PostService {
       tags.push(['p', parentPubkey, relayHint]);
     } else {
       // Commenting on a regular event (kind:1 note, etc.)
+      // A zap receipt (kind:9735) is signed by the wallet/LNURL server, not the human zapper, so the
+      // P/p notification tag must point to the ZAPPER (extracted from the receipt), otherwise the
+      // "thank you" reaches a bot. E/e still anchor the thread to the 9735 (whose author is the server).
+      const notifyPubkey = parentKind === 9735 ? extractZapperPubkey(parentEvent) : parentPubkey;
+
       // Root scope
       tags.push(['E', parentId, relayHint, parentPubkey]);
       tags.push(['K', String(parentKind)]);
-      tags.push(['P', parentPubkey, relayHint]);
+      tags.push(['P', notifyPubkey, relayHint]);
 
       // Parent = same as root (top-level comment)
       tags.push(['e', parentId, relayHint, parentPubkey]);
       tags.push(['k', String(parentKind)]);
-      tags.push(['p', parentPubkey, relayHint]);
+      tags.push(['p', notifyPubkey, relayHint]);
     }
 
     return tags;

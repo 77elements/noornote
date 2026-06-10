@@ -39,6 +39,16 @@
     flex-shrink: 0;
   }
 
+  // Identifiable zaps are clickable to reply (NIP-22 comment on the kind:9735).
+  &__badge--replyable {
+    cursor: pointer;
+
+    &:hover {
+      background-color: color-mix(in srgb, var(--color-6) 18%, transparent);
+      border-color: color-mix(in srgb, var(--color-6) 35%, transparent);
+    }
+  }
+
   &__avatar {
     width: 20px;
     height: 20px;

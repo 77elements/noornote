@@ -21,6 +21,8 @@ interface ZapData {
   avatarUrl: string;
   isAnonymous: boolean;
   isOwn: boolean;
+  /** The raw kind:9735 receipt — needed to reply (NIP-22 comment) to this zap. */
+  event: NostrEvent;
 }
 
 export class ZapsList {
@@ -69,6 +71,7 @@ export class ZapsList {
             avatarUrl: ownProfile?.picture || '',
             isAnonymous: true,
             isOwn: true,
+            event,
           });
         } else {
           // For anonymous zaps from others the embedded pubkey is a throwaway —
@@ -81,6 +84,7 @@ export class ZapsList {
             avatarUrl: '',
             isAnonymous: true,
             isOwn: false,
+            event,
           });
         }
         continue;
@@ -97,6 +101,7 @@ export class ZapsList {
         avatarUrl: profile?.picture || '',
         isAnonymous: false,
         isOwn: false,
+        event,
       });
     }
 
@@ -173,6 +178,19 @@ export class ZapsList {
 
         badge.addEventListener('mouseleave', () => {
           userHoverCard.hide();
+        });
+      }
+
+      // Reply to a zap (NIP-22 comment on the kind:9735): only when the zapper is identifiable —
+      // an anonymous zap has nobody to notify, and replying to your own zap makes no sense.
+      if (!zap.isAnonymous) {
+        badge.classList.add('zaps-list__badge--replyable');
+        badge.title = `Reply to ${zap.username}'s zap`;
+        badge.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          userHoverCard.hide();
+          const { ReplyModal } = await import('../reply/ReplyModal');
+          await ReplyModal.getInstance().show(zap.event.id ?? '', zap.event);
         });
       }
 
