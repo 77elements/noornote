@@ -4,6 +4,10 @@
 @use '../abstracts/variables' as *;
 
 .follower-notification {
+  .l-spread {
+    margin-bottom: $gap;
+  }
+
   &__status {
     color: var(--color-5);
     margin: 0;
