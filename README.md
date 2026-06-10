@@ -108,6 +108,8 @@ xattr -cr /Applications/Noornote.app
 - **No tracking** - Zero analytics, no data collection
 - **Local-first lists** - Follows, bookmarks, and mutes are stored locally with optional relay sync
 - **Encrypted local storage** - Sensitive data (nsec, NWC string) stored in encrypted local files
+- **No false anonymity** - NoorNote makes sure the client itself reveals nothing about you (no client tag by default, no device/OS fingerprint, no analytics). It does not, and no Nostr client can, make you anonymous: your key is your identity, and your OS still sees your plaintext and IP.
+- **No bundled Tor/VPN, on purpose** - An in-app proxy toggle would create a false sense of safety on a platform we don't control, and real anonymity is a whole-system discipline (Tails/Whonix level), not a checkbox. If you want IP-level privacy, run a system-wide VPN or Tor yourself; NoorNote routes through it transparently.
 
 ## Troubleshooting
 
